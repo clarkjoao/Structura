@@ -70,7 +70,8 @@ export function zoomFactorFromWheel(event: WheelIntentInput): number {
  *
  * 1. `Ctrl`/`Cmd` → zoom. Browsers synthesize `ctrlKey` for a trackpad pinch, so this also
  *    covers pinch-to-zoom without having to identify the device.
- * 2. `Shift` → horizontal pan, driven by `deltaY` the way every scrollable surface does it.
+ * 2. `Shift` → horizontal pan. Prefer `deltaY` (classic Shift+wheel remap); if the
+ *    browser already converted the gesture to `deltaX` (common on macOS), use that.
  * 3. Otherwise the user's `scrollMode` preference decides, defaulting to pan.
  *
  * Panning follows the fingers: a downward two-finger swipe (`deltaY > 0`) moves the content up,
@@ -90,7 +91,10 @@ export function resolveWheelIntent(
   }
 
   if (event.shiftKey) {
-    return { kind: "pan", dx: dy, dy: 0 };
+    // Chrome/Safari on macOS often remap Shift+vertical-wheel to deltaX with
+    // deltaY === 0; Firefox keeps deltaY. Prefer the axis that actually moved.
+    const horizontal = dy !== 0 ? dy : dx;
+    return { kind: "pan", dx: horizontal, dy: 0 };
   }
 
   if (scrollMode === "zoom") {

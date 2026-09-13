@@ -6,6 +6,7 @@ import {
   isPanelComponent,
   getCachedCanvasSnapshot,
 } from "@/features/diagram";
+import { KEY, keyMatchesLetter } from "@/lib/core/keyboard";
 
 export const PASTE_OFFSET = 20;
 
@@ -51,6 +52,50 @@ export function isInputFocused(target: EventTarget | null): boolean {
     depth++;
   }
   return false;
+}
+
+/**
+ * Mark a keyboard event as fully handled by the canvas.
+ * `stopImmediatePropagation` cuts off other same-phase listeners on `document`
+ * that registered after us (other app code, some content scripts). It cannot
+ * beat a browser-extension command registered before the page or via
+ * `chrome.commands` — those need a different chord.
+ */
+export function claimShortcutEvent(event: KeyboardEvent): void {
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+}
+
+/**
+ * OS / field-editing chords that must stay with a focused input (copy text, undo
+ * typing, select-all in a title field). Canvas tool chords (Cmd+Shift+E, Cmd+F, …)
+ * are intentionally NOT listed — on `/model` those belong to the canvas even when
+ * ElementPanel or chat holds focus.
+ */
+export function isOsTextEditingChord(event: KeyboardEvent): boolean {
+  if (!isModKeyPressed(event)) return false;
+  return (
+    keyMatchesLetter(event, KEY.A) ||
+    keyMatchesLetter(event, KEY.C) ||
+    keyMatchesLetter(event, KEY.V) ||
+    keyMatchesLetter(event, KEY.X) ||
+    keyMatchesLetter(event, KEY.Z) ||
+    keyMatchesLetter(event, KEY.Y)
+  );
+}
+
+/**
+ * True when the canvas keydown handler should stand down for this event.
+ *
+ * Plain keys (letters, Delete, arrows) always yield to a focused field. Mod
+ * chords yield only when they are OS text-editing shortcuts; tool chords like
+ * Cmd+Shift+E keep running so an open side panel cannot swallow them.
+ */
+export function shouldYieldCanvasShortcutToFocusedField(event: KeyboardEvent): boolean {
+  if (!isInputFocused(event.target)) return false;
+  if (!isModKeyPressed(event)) return true;
+  return isOsTextEditingChord(event);
 }
 
 export function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | null): Node[] {

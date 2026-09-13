@@ -111,6 +111,32 @@ export default function ShortcutsModal({
                   </span>
                 }
               />
+              <ShortcutRow
+                label={t("shortcutsModal.saveToFolder")}
+                description={t("shortcutsModal.saveToFolderDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>S</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
+                label={t("shortcutsModal.autoLayout")}
+                description={t("shortcutsModal.autoLayoutDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>Alt</Kbd>
+                    <Kbd>L</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
+                label={t("shortcutsModal.spacePan")}
+                description={t("shortcutsModal.spacePanDesc")}
+                keys={<Kbd>Space</Kbd>}
+              />
             </ShortcutCard>
 
             <ShortcutCard title={t("shortcutsModal.selection")}>
@@ -250,6 +276,7 @@ export default function ShortcutsModal({
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>Shift</Kbd>
                     <Kbd>E</Kbd>
                   </span>
                 }
@@ -292,6 +319,34 @@ export default function ShortcutsModal({
               />
             </ShortcutCard>
 
+            <ShortcutCard title={t("shortcutsModal.wheelNav")}>
+              <ShortcutRow
+                label={t("shortcutsModal.wheelPan")}
+                description={t("shortcutsModal.wheelPanDesc")}
+                keys={<Kbd>Scroll</Kbd>}
+              />
+              <ShortcutRow
+                label={t("shortcutsModal.wheelZoom")}
+                description={t("shortcutsModal.wheelZoomDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>Scroll</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
+                label={t("shortcutsModal.wheelPanHorizontal")}
+                description={t("shortcutsModal.wheelPanHorizontalDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Shift</Kbd>
+                    <Kbd>Scroll</Kbd>
+                  </span>
+                }
+              />
+            </ShortcutCard>
+
             <ShortcutCard title={t("shortcutsModal.flowPlayback")}>
               <ShortcutRow label={t("shortcutsModal.flowStepBack")} keys={<Kbd>←</Kbd>} />
               <ShortcutRow
@@ -299,6 +354,17 @@ export default function ShortcutsModal({
                 description={t("shortcutsModal.flowStepNextDesc")}
                 keys={<Kbd>→</Kbd>}
               />
+              <ShortcutRow label={t("shortcutsModal.flowStepOver")} keys={<Kbd>F10</Kbd>} />
+              <ShortcutRow
+                label={t("shortcutsModal.flowStepOut")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Shift</Kbd>
+                    <Kbd>F11</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow label={t("shortcutsModal.flowExit")} keys={<Kbd>Esc</Kbd>} />
             </ShortcutCard>
           </div>
         </div>

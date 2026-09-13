@@ -163,15 +163,19 @@ export function AssistantUIChatPanel({
     });
   }, [messages.length, streamingContent]);
 
-  // ── Cmd+K: focus the composer textarea from anywhere in the chat.
+  // ── Cmd+K inside the chat focuses the composer. Canvas owns Cmd+K globally
+  // (command palette) on /model, so only handle it when the event lands in this panel.
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<{ focusTextarea: () => void } | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        composerRef.current?.focusTextarea();
-      }
+      if (!((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k")) return;
+      const root = panelRef.current;
+      const target = e.target;
+      if (!root || !(target instanceof Node) || !root.contains(target)) return;
+      e.preventDefault();
+      composerRef.current?.focusTextarea();
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -212,7 +216,10 @@ export function AssistantUIChatPanel({
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl">
+      <div
+        ref={panelRef}
+        className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl"
+      >
         {/* Header */}
         <ChatHeader
           title={threadedTitle}

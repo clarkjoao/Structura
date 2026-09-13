@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
@@ -14,23 +14,20 @@ import type {
   SvgComponent,
 } from "@/features/diagram";
 import { COMPONENT_TYPE_SVG, generateId, getCachedCanvasSnapshot } from "@/features/diagram";
-import { getViewportCenter } from "../viewport-utils";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
-import {
-  isInputFocused,
-  isModKeyPressed,
-  keyIs,
-  keyIsOneOf,
-  keyMatchesLetter,
-  KEY,
-} from "./keyboard/helpers";
+import { KEY, type KeyHandler } from "./keyboard/helpers";
 import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
 import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
 import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
 import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
 import { useEdgeWaypointShortcuts } from "./keyboard/useEdgeWaypointShortcuts";
 import { useLockShortcuts } from "./keyboard/useLockShortcuts";
+import { createToolShortcuts } from "./keyboard/createToolShortcuts";
+import {
+  dispatchCanvasKeydown,
+  type CanvasKeydownDispatch,
+} from "./keyboard/dispatchCanvasKeydown";
 import { validateSvgSize } from "../utils/svg.utils";
 import { sanitizeSvg } from "../utils/svg.sanitizer";
 
@@ -53,6 +50,36 @@ function prepareImportedSvgMarkup(
     return null;
   }
   return sanitized;
+}
+
+function readSvgDisplaySize(svgMarkup: string): { width: number; height: number } {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgMarkup, "image/svg+xml");
+  const svgEl = doc.querySelector("svg");
+  let width = 200;
+  let height = 200;
+  if (!svgEl) return { width, height };
+
+  const viewBox = svgEl.getAttribute("viewBox")?.trim().split(/[\s,]+/);
+  if (viewBox && viewBox.length === 4) {
+    const viewWidth = parseFloat(viewBox[2] ?? "");
+    const viewHeight = parseFloat(viewBox[3] ?? "");
+    if (viewWidth > 0) width = Math.round(viewWidth);
+    if (viewHeight > 0) height = Math.round(viewHeight);
+  } else {
+    const attrWidth = parseFloat(svgEl.getAttribute("width") ?? "");
+    const attrHeight = parseFloat(svgEl.getAttribute("height") ?? "");
+    if (attrWidth > 0) width = Math.round(attrWidth);
+    if (attrHeight > 0) height = Math.round(attrHeight);
+  }
+
+  const maxEdge = 800;
+  if (width > maxEdge || height > maxEdge) {
+    const ratio = Math.min(maxEdge / width, maxEdge / height);
+    width = Math.round(width * ratio);
+    height = Math.round(height * ratio);
+  }
+  return { width, height };
 }
 
 interface UseCanvasKeyboardParams {
@@ -120,6 +147,12 @@ interface UseCanvasKeyboardParams {
   onExitFlowPlayback?: () => boolean;
   onExitFocusMode?: () => boolean;
   onExitCompareMode?: () => boolean;
+}
+
+function useStableHandlerRef(handler: KeyHandler): MutableRefObject<KeyHandler> {
+  const ref = useRef(handler);
+  ref.current = handler;
+  return ref;
 }
 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
@@ -199,39 +232,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const pasteSvgAsCanvasNode = useCallback(
     (rawSvg: string, position: { x: number; y: number }): string | null => {
       if (!diagram) return null;
-
       const clean = prepareImportedSvgMarkup(rawSvg, t);
       if (!clean) return null;
 
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(clean, "image/svg+xml");
-      const svgEl = doc.querySelector("svg");
-      let width = 200;
-      let height = 200;
-      if (svgEl) {
-        const vb = svgEl
-          .getAttribute("viewBox")
-          ?.trim()
-          .split(/[\s,]+/);
-        if (vb && vb.length === 4) {
-          const vw = parseFloat(vb[2] ?? "");
-          const vh = parseFloat(vb[3] ?? "");
-          if (vw > 0) width = Math.round(vw);
-          if (vh > 0) height = Math.round(vh);
-        } else {
-          const w = parseFloat(svgEl.getAttribute("width") ?? "");
-          const h = parseFloat(svgEl.getAttribute("height") ?? "");
-          if (w > 0) width = Math.round(w);
-          if (h > 0) height = Math.round(h);
-        }
-        const MAX = 800;
-        if (width > MAX || height > MAX) {
-          const ratio = Math.min(MAX / width, MAX / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
-      }
-
+      const { width, height } = readSvgDisplaySize(clean);
       const id = generateId("el");
       const comp: SvgComponent = {
         id,
@@ -241,7 +245,6 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
         type: COMPONENT_TYPE_SVG,
         svgContent: clean,
       };
-
       const newIds = importDrawioResult(
         [comp],
         [],
@@ -257,8 +260,6 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     [t],
   );
 
-  const pastedSvgDefaultName = t("icons.pastedSvgDefaultName");
-
   const handleCopyPaste = useCopyPasteShortcuts({
     diagram,
     selectedNodeId,
@@ -273,12 +274,11 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     serviceCatalog,
     exportDrawioXml,
     setSelectedNodeIds,
-    pastedSvgDefaultName,
+    pastedSvgDefaultName: t("icons.pastedSvgDefaultName"),
     lastPointerScreenRef,
   });
 
   const recordingHandler = useRecordingShortcuts();
-
   const selectionHandler = useSelectionShortcuts({
     diagram,
     selectedNodeId,
@@ -295,9 +295,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onExitFocusMode,
     onExitCompareMode,
   });
-
   const undoRedoHandler = useUndoRedoShortcuts({ undo, redo });
-
   const groupHandler = useGroupShortcuts({
     diagram,
     reactFlowInstance,
@@ -308,14 +306,12 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     updateNodeLayout,
     resolvedSnapshot,
   });
-
   const edgeWaypointHandler = useEdgeWaypointShortcuts({
     diagram,
     selectedEdgeId,
     reactFlowInstance,
     resetEdgeControlPoints,
   });
-
   const lockHandler = useLockShortcuts({
     diagram,
     reactFlowInstance,
@@ -323,24 +319,53 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     updateComponent,
   });
 
-  // Refs estáveis para handlers que mudam frequentemente — evita re-registrar o listener
-  const handleCopyPasteRef = useRef(handleCopyPaste);
-  handleCopyPasteRef.current = handleCopyPaste;
+  const copyPasteRef = useStableHandlerRef(handleCopyPaste);
+  const selectionRef = useStableHandlerRef(selectionHandler);
+  const undoRedoRef = useStableHandlerRef(undoRedoHandler);
+  const groupRef = useStableHandlerRef(groupHandler);
+  const edgeWaypointRef = useStableHandlerRef(edgeWaypointHandler);
+  const lockRef = useStableHandlerRef(lockHandler);
 
-  const selectionHandlerRef = useRef(selectionHandler);
-  selectionHandlerRef.current = selectionHandler;
-
-  const undoRedoHandlerRef = useRef(undoRedoHandler);
-  undoRedoHandlerRef.current = undoRedoHandler;
-
-  const groupHandlerRef = useRef(groupHandler);
-  groupHandlerRef.current = groupHandler;
-
-  const edgeWaypointHandlerRef = useRef(edgeWaypointHandler);
-  edgeWaypointHandlerRef.current = edgeWaypointHandler;
-
-  const lockHandlerRef = useRef(lockHandler);
-  lockHandlerRef.current = lockHandler;
+  const dispatchRef = useRef<CanvasKeydownDispatch | null>(null);
+  dispatchRef.current = {
+    flags: {
+      isCompareMode,
+      isPlaying,
+      isRecording,
+      isFlowPanelOpen,
+      isSearchOpen,
+      isCommandPaletteOpen,
+      isScenesDrawerOpen,
+    },
+    hasDiagram: Boolean(diagram),
+    onCloseScenesDrawer,
+    forceSaveToFolder,
+    onAutoLayout,
+    setCompareScene,
+    recordingHandler,
+    editHandlers: [
+      (event) => copyPasteRef.current(event),
+      (event) => selectionRef.current(event),
+      (event) => undoRedoRef.current(event),
+      (event) => groupRef.current(event),
+      (event) => edgeWaypointRef.current(event),
+      (event) => lockRef.current(event),
+    ],
+    toolHandler: createToolShortcuts({
+      reactFlowInstance,
+      isPanelOpen,
+      c4ShortcutMap,
+      lastPointerScreenRef,
+      onOpenSearch,
+      onOpenCommandPalette,
+      onToggleDiagramSidebar,
+      onOpenQuickInsert,
+      addComponent,
+      setSelectedNodeId,
+      setSelectedNodeIds,
+      setSelectedEdgeId,
+    }),
+  };
 
   useEffect(() => {
     const onPointerMove = (event: PointerEvent) => {
@@ -351,171 +376,12 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   }, []);
 
   useEffect(() => {
-    const handler = async (event: KeyboardEvent) => {
-      if (isInputFocused(event.target)) return;
-
-      if (isScenesDrawerOpen) {
-        if (keyIs(event, KEY.ESCAPE)) {
-          event.preventDefault();
-          onCloseScenesDrawer?.();
-        }
-        return;
-      }
-
-      const modForFolderSave = isModKeyPressed(event);
-      if (
-        modForFolderSave &&
-        keyMatchesLetter(event, KEY.S) &&
-        !isFlowPanelOpen &&
-        !isPlaying &&
-        !isCompareMode &&
-        !isRecording &&
-        !isSearchOpen &&
-        !isCommandPaletteOpen
-      ) {
-        event.preventDefault();
-        void forceSaveToFolder();
-        return;
-      }
-
-      if (!diagram) return;
-
-      const modAutoLayout = isModKeyPressed(event);
-      if (modAutoLayout && event.shiftKey && keyMatchesLetter(event, KEY.L)) {
-        event.preventDefault();
-        if (!isRecording && !isCompareMode && !isPlaying && !isFlowPanelOpen) {
-          onAutoLayout?.();
-        }
-        return;
-      }
-
-      if (recordingHandler(event)) return;
-
-      if (keyIs(event, KEY.ESCAPE) && isCompareMode) {
-        if (isPlaying) {
-          event.preventDefault();
-          return;
-        }
-        event.preventDefault();
-        setCompareScene(null);
-        return;
-      }
-
-      if (isCompareMode) {
-        if (keyIsOneOf(event, [KEY.DELETE, KEY.BACKSPACE])) {
-          event.preventDefault();
-          return;
-        }
-        if (
-          isModKeyPressed(event) &&
-          (keyMatchesLetter(event, KEY.V) ||
-            keyMatchesLetter(event, KEY.D) ||
-            keyMatchesLetter(event, KEY.C))
-        ) {
-          event.preventDefault();
-          return;
-        }
-      }
-
-      if (isFlowPanelOpen || isPlaying || isCompareMode || isRecording) return;
-
-      if (isSearchOpen || isCommandPaletteOpen) return;
-
-      if (await handleCopyPasteRef.current(event)) return;
-
-      if (selectionHandlerRef.current(event)) return;
-
-      if (undoRedoHandlerRef.current(event)) return;
-
-      if (groupHandlerRef.current(event)) return;
-
-      if (edgeWaypointHandlerRef.current(event)) return;
-
-      if (lockHandlerRef.current(event)) return;
-
-      const mod = isModKeyPressed(event);
-
-      if (mod && keyMatchesLetter(event, KEY.F)) {
-        event.preventDefault();
-        onOpenSearch?.();
-        return;
-      }
-
-      if (mod && !event.shiftKey && keyMatchesLetter(event, KEY.K)) {
-        event.preventDefault();
-        onOpenCommandPalette?.();
-        return;
-      }
-
-      if (mod && keyMatchesLetter(event, KEY.B)) {
-        event.preventDefault();
-        onToggleDiagramSidebar?.();
-        return;
-      }
-
-      if (mod && keyIs(event, KEY.SLASH)) {
-        event.preventDefault();
-        onOpenSearch?.();
-        return;
-      }
-
-      const c4Shortcut = mod ? c4ShortcutMap[event.key] : undefined;
-      if (c4Shortcut) {
-        event.preventDefault();
-        const { type, name } = c4Shortcut;
-        const pos = getViewportCenter(reactFlowInstance, isPanelOpen);
-        const created = addComponent(type, name, null, pos);
-        if (created?.id) {
-          setSelectedNodeId(created.id);
-          setSelectedNodeIds(new Set([created.id]));
-          setSelectedEdgeId(null);
-        }
-        return;
-      }
-      if (mod && keyMatchesLetter(event, KEY.E)) {
-        event.preventDefault();
-        const lastScreen = lastPointerScreenRef.current;
-        if (lastScreen) {
-          onOpenQuickInsert?.({
-            screenPos: lastScreen,
-            flowPos: reactFlowInstance.screenToFlowPosition(lastScreen),
-          });
-        } else {
-          onOpenQuickInsert?.({
-            screenPos: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
-            flowPos: getViewportCenter(reactFlowInstance, isPanelOpen),
-          });
-        }
-        return;
-      }
+    const onKeyDown = (event: KeyboardEvent) => {
+      const dispatch = dispatchRef.current;
+      if (!dispatch) return;
+      void dispatchCanvasKeydown(event, dispatch);
     };
-
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [
-    diagram,
-    setCompareScene,
-    isCompareMode,
-    isPlaying,
-    isRecording,
-    isFlowPanelOpen,
-    isSearchOpen,
-    isScenesDrawerOpen,
-    onCloseScenesDrawer,
-    isCommandPaletteOpen,
-    forceSaveToFolder,
-    recordingHandler,
-    onOpenSearch,
-    onToggleDiagramSidebar,
-    onOpenCommandPalette,
-    onOpenQuickInsert,
-    onAutoLayout,
-    c4ShortcutMap,
-    reactFlowInstance,
-    isPanelOpen,
-    addComponent,
-    setSelectedNodeId,
-    setSelectedNodeIds,
-    setSelectedEdgeId,
-  ]);
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, []);
 }

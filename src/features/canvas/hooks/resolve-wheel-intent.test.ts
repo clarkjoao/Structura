@@ -96,8 +96,19 @@ describe("resolveWheelIntent — modifiers outrank the preference", () => {
     expect(intent).toEqual({ kind: "zoom", factor: expectedZoomFactor(-2.5, true) });
   });
 
-  it("pans horizontally on shift+wheel", () => {
+  it("pans horizontally on shift+wheel using deltaY", () => {
     const intent = resolveWheelIntent(wheel({ deltaY: 40, shiftKey: true }), "pan", PANE_HEIGHT);
+
+    expect(intent).toEqual({ kind: "pan", dx: 40, dy: 0 });
+  });
+
+  it("pans horizontally on shift+wheel when the browser already remapped to deltaX", () => {
+    // Chrome/Safari macOS: Shift+vertical scroll arrives as deltaX with deltaY === 0.
+    const intent = resolveWheelIntent(
+      wheel({ deltaX: 40, deltaY: 0, shiftKey: true }),
+      "pan",
+      PANE_HEIGHT,
+    );
 
     expect(intent).toEqual({ kind: "pan", dx: 40, dy: 0 });
   });
