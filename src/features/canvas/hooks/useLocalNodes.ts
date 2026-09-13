@@ -16,7 +16,7 @@
 import { useEffect, useRef, useState, useCallback, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
-import { canMoveNodeInSceneMode } from "@/features/diagram";
+import { canMoveNodeInSceneMode, useDiagramStore } from "@/features/diagram";
 
 /** Refs shared between useLocalNodes and the event handlers for drag-selection parity. */
 export const dragSelectionRef = {
@@ -39,13 +39,66 @@ function filterNodeChangesForSceneMoveLock(
   });
 }
 
-function isUndoRedoTransition(
+/**
+ * True when the store jumped to another point in history, so the local node
+ * copy describes a diagram that no longer exists and has to be dropped.
+ *
+ * Named for the decision, not for the signal: this used to compare
+ * `nodeLayouts` by identity, which *every* store write changes — a plain drag
+ * commit was indistinguishable from an undo, so every commit took the discard
+ * path below and handed React Flow 400 nodes stripped of `measured`. The name
+ * said "undo/redo" while the body said "something moved", and that gap cost
+ * several investigations. `_lastUndoRedoAt` is stamped only by `undo` and
+ * `redo` in `history.slice.ts`, which is the question actually being asked.
+ */
+function shouldDiscardLocalNodes(
   prevDiagram: Diagram | DiagramModel | null | undefined,
   nextDiagram: Diagram | DiagramModel | null | undefined,
+  prevLastUndoRedoAt: number,
+  lastUndoRedoAt: number,
 ): boolean {
   if (!prevDiagram || !nextDiagram) return false;
   if (prevDiagram.id !== nextDiagram.id) return false;
-  return prevDiagram.nodeLayouts !== nextDiagram.nodeLayouts;
+  return prevLastUndoRedoAt !== lastUndoRedoAt;
+}
+
+/**
+ * Re-attaches React Flow's measured sizes to a store-derived node array.
+ *
+ * The store never carries `measured`: only React Flow knows it, and it reaches
+ * the local copy through `dimensions` changes. Hand React Flow a node without
+ * it and `parseHandles` (`@xyflow/system`) drops that node's `handleBounds` —
+ * Structura nodes carry no `handles` either, so there is nothing left to
+ * rebuild the bounds from. `getEdgePosition` then returns `null` for every
+ * edge touching the node and `EdgeWrapper` renders `null`, so on a whole-array
+ * replacement the entire edge layer unmounts and only comes back once the
+ * ResizeObserver has measured again. Measured on 400 nodes / 439 edges: 1756
+ * `childList` mutations and ~184 ms of extra long task per drag commit.
+ * See `docs/investigation/edge-relayer.md`.
+ *
+ * Only `measured` crosses over. Everything else — position, parenting,
+ * selection — must come from the store, which is the point of the discard.
+ *
+ * Returns the input array untouched when there is nothing to carry over, so an
+ * unchanged array keeps its identity and React Flow is not re-seeded for free.
+ */
+function withLocalMeasured(storeNodes: Node[], localNodes: Node[]): Node[] {
+  if (localNodes.length === 0) return storeNodes;
+
+  const measuredById = new Map<string, Node["measured"]>();
+  for (const node of localNodes) {
+    if (node.measured?.width !== undefined) measuredById.set(node.id, node.measured);
+  }
+  if (measuredById.size === 0) return storeNodes;
+
+  let changed = false;
+  const adopted = storeNodes.map((node) => {
+    const measured = measuredById.get(node.id);
+    if (!measured || node.measured === measured) return node;
+    changed = true;
+    return { ...node, measured };
+  });
+  return changed ? adopted : storeNodes;
 }
 
 /**
@@ -89,6 +142,13 @@ export function useLocalNodes(
   /** Merged local nodes — held in a ref, not state, so the merge below never schedules a render. */
   const localNodesStateRef = useRef<Node[]>([]);
 
+  /**
+   * Stamped only by `undo`/`redo`. A primitive, so this subscription re-renders
+   * the canvas on history jumps and on nothing else.
+   */
+  const lastUndoRedoAt = useDiagramStore((state) => state._lastUndoRedoAt);
+  const prevLastUndoRedoAtRef = useRef(lastUndoRedoAt);
+
   const activeDiagramId = diagram?.id ?? null;
 
   // Derived state, computed during render on purpose. In a layout effect the merge would only land
@@ -108,17 +168,28 @@ export function useLocalNodes(
       localNodesRef.current = storeNodes;
       prevStoreNodesRef.current = storeNodes;
       prevDiagramRef.current = diagram;
+      prevLastUndoRedoAtRef.current = lastUndoRedoAt;
     } else if (storeNodes !== prevStoreNodesRef.current) {
       prevStoreNodesRef.current = storeNodes;
 
-      const undoRedo = isUndoRedoTransition(prevDiagramRef.current, diagram);
+      const discardLocal = shouldDiscardLocalNodes(
+        prevDiagramRef.current,
+        diagram,
+        prevLastUndoRedoAtRef.current,
+        lastUndoRedoAt,
+      );
       prevDiagramRef.current = diagram;
+      prevLastUndoRedoAtRef.current = lastUndoRedoAt;
 
       const prev = localNodesStateRef.current;
 
-      if (prev.length === 0 || undoRedo) {
-        localNodesStateRef.current = storeNodes;
-        localNodesRef.current = storeNodes;
+      if (prev.length === 0 || discardLocal) {
+        // Positions, parenting and selection come from the store — that is the
+        // point of discarding. `measured` is not stale state, it is the only
+        // record of what React Flow painted, so it has to survive.
+        const adopted = withLocalMeasured(storeNodes, prev);
+        localNodesStateRef.current = adopted;
+        localNodesRef.current = adopted;
       } else if (prev.length !== storeNodes.length) {
         const localMap = new Map(prev.map((n) => [n.id, n]));
         const merged = storeNodes.map((sn) => {
