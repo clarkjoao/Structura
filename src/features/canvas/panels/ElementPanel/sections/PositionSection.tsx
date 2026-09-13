@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { NodeLayout } from "@/features/diagram";
 
 const MIN_PANEL_WIDTH = 200;
 const MIN_PANEL_HEIGHT = 150;
-const DEBOUNCE_MS = 300;
 
 export interface PositionSectionProps {
   componentId: string;
@@ -28,6 +27,12 @@ export function PositionSection({
   const [yInput, setYInput] = useState("");
   const [widthInput, setWidthInput] = useState("");
   const [heightInput, setHeightInput] = useState("");
+  /**
+   * True while one of these fields has focus. The store is not the only writer of
+   * a node's position -- a drag, the keyboard and the layout pass all move it --
+   * so the fields follow the store, but never while the user is mid-edit.
+   */
+  const isEditingRef = useRef(false);
 
   useEffect(() => {
     if (!nodeLayout) {
@@ -37,6 +42,7 @@ export function PositionSection({
       setHeightInput("");
       return;
     }
+    if (isEditingRef.current) return;
     setXInput(String(Math.round(nodeLayout.x)));
     setYInput(String(Math.round(nodeLayout.y)));
     setWidthInput(String(Math.round(nodeLayout.width ?? 0)));
@@ -87,15 +93,30 @@ export function PositionSection({
     updateNodeLayout(componentId, { x: nextX, y: nextY });
   }, [componentId, heightInput, isPanel, nodeLayout, updateNodeLayout, widthInput, xInput, yInput]);
 
-  useEffect(() => {
-    if (!nodeLayout) return;
+  /**
+   * Position is committed only from a real edit -- blur or Enter. This used to run
+   * on a 300ms timer re-armed by every `nodeLayout` identity change, which meant a
+   * drag made the panel write the rounded position straight back to the store. That
+   * write and the ResizeObserver layout write then re-triggered each other, and the
+   * node oscillated between its dragged and original position for as long as the
+   * panel stayed open. Measured 2026-09-13; see docs/epico-virtualizacao/.
+   */
+  const handleFocus = useCallback(() => {
+    isEditingRef.current = true;
+  }, []);
 
-    const timeoutId = window.setTimeout(() => {
+  const handleBlur = useCallback(() => {
+    isEditingRef.current = false;
+    commit();
+  }, [commit]);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLInputElement>) => {
+      if (event.key !== "Enter") return;
       commit();
-    }, DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [commit, nodeLayout]);
+    },
+    [commit],
+  );
 
   if (!nodeLayout) {
     return null;
@@ -118,7 +139,9 @@ export function PositionSection({
             type="number"
             value={xInput}
             onChange={(event) => setXInput(event.target.value)}
-            onBlur={commit}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             className={inputClassName}
           />
         </div>
@@ -130,7 +153,9 @@ export function PositionSection({
             type="number"
             value={yInput}
             onChange={(event) => setYInput(event.target.value)}
-            onBlur={commit}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
             className={inputClassName}
           />
         </div>
@@ -146,7 +171,9 @@ export function PositionSection({
               min={MIN_PANEL_WIDTH}
               value={widthInput}
               onChange={(event) => setWidthInput(event.target.value)}
-              onBlur={commit}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
               className={inputClassName}
             />
           </div>
@@ -159,7 +186,9 @@ export function PositionSection({
               min={MIN_PANEL_HEIGHT}
               value={heightInput}
               onChange={(event) => setHeightInput(event.target.value)}
-              onBlur={commit}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
               className={inputClassName}
             />
           </div>
