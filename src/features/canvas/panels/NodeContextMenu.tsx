@@ -378,8 +378,8 @@ const NodeContextMenu = ({
           <MenuItem
             icon={LayoutGrid}
             label={t("autoLayout.contextMenuLabel")}
-            shortcutMac="⌘⇧L"
-            shortcutOther="Ctrl+Shift+L"
+            shortcutMac="⌘⌥L"
+            shortcutOther="Ctrl+Alt+L"
             platform={platform}
             disabled={isAutoLayoutRunning}
             onClick={() => {

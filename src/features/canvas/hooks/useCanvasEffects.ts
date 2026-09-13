@@ -3,12 +3,13 @@ import { useStore, type ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import {
+  CANVAS_MAX_ZOOM,
+  CANVAS_MIN_ZOOM,
   FIT_VIEW_DURATION_MS,
   FIT_VIEW_INITIAL_PADDING,
   FIT_VIEW_MAX_ZOOM,
   FIT_VIEW_READING_PADDING,
   VIEWPORT_MIN_ZOOM,
-  WHEEL_MAX_ZOOM,
 } from "../canvas.constants";
 import { useCanvasPreferencesStore } from "../preferences";
 import { useFrameReadStep } from "../flow/reading/useFrameReadStep";
@@ -30,8 +31,21 @@ interface Viewport {
   zoom: number;
 }
 
+interface PendingWheelFrame {
+  dx: number;
+  dy: number;
+  zoomFactor: number;
+  cursor: { x: number; y: number } | null;
+  hasPan: boolean;
+  hasZoom: boolean;
+}
+
 function clampZoom(zoom: number): number {
-  return Math.min(WHEEL_MAX_ZOOM, Math.max(VIEWPORT_MIN_ZOOM, zoom));
+  return Math.min(CANVAS_MAX_ZOOM, Math.max(CANVAS_MIN_ZOOM, zoom));
+}
+
+function emptyPendingWheel(): PendingWheelFrame {
+  return { dx: 0, dy: 0, zoomFactor: 1, cursor: null, hasPan: false, hasZoom: false };
 }
 
 function cursorCenteredZoom(
@@ -114,31 +128,60 @@ export function useCanvasEffects({
     const wrapperEl = document.querySelector<HTMLElement>(".react-flow__renderer");
     if (!wrapperEl || !diagramId) return;
 
+    // Trackpads emit many wheel events per frame. Applying each one with setViewport
+    // notifies every React Flow subscriber (and walks occupancy) N times — that is the
+    // "sticky" feel vs a mouse that only notches a few times a second. Coalesce to one
+    // write per animation frame; compose pan deltas and multiply zoom factors.
+    let pending = emptyPendingWheel();
+    let rafId = 0;
+
+    const flushWheelFrame = () => {
+      rafId = 0;
+      const paneRect = wrapperEl.getBoundingClientRect();
+      let next = reactFlowInstance.getViewport();
+
+      if (pending.hasZoom) {
+        next = cursorCenteredZoom(next, pending.cursor, pending.zoomFactor, paneRect);
+      }
+      if (pending.hasPan) {
+        next = { x: next.x - pending.dx, y: next.y - pending.dy, zoom: next.zoom };
+      }
+
+      pending = emptyPendingWheel();
+      reactFlowInstance.setViewport(next, { duration: 0 });
+    };
+
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const viewport = reactFlowInstance.getViewport();
+      // Own the gesture fully — with zoomOnPinch left on, d3-zoom also handles
+      // ctrl+wheel (trackpad pinch) and the two writers fight.
+      e.stopImmediatePropagation();
+
       const paneRect = wrapperEl.getBoundingClientRect();
       const intent = resolveWheelIntent(e, scrollMode, paneRect.height);
 
       if (intent.kind === "zoom") {
-        const next = cursorCenteredZoom(
-          viewport,
-          { x: e.clientX, y: e.clientY },
-          intent.factor,
-          paneRect,
-        );
-        reactFlowInstance.setViewport(next, { duration: 0 });
-        return;
+        if (intent.factor === 1) return;
+        pending.hasZoom = true;
+        pending.zoomFactor *= intent.factor;
+        pending.cursor = { x: e.clientX, y: e.clientY };
+      } else {
+        if (intent.dx === 0 && intent.dy === 0) return;
+        pending.hasPan = true;
+        pending.dx += intent.dx;
+        pending.dy += intent.dy;
       }
 
-      reactFlowInstance.setViewport(
-        { x: viewport.x - intent.dx, y: viewport.y - intent.dy, zoom: viewport.zoom },
-        { duration: 0 },
-      );
+      if (rafId === 0) {
+        rafId = window.requestAnimationFrame(flushWheelFrame);
+      }
     };
 
-    wrapperEl.addEventListener("wheel", handleWheel, { passive: false });
-    return () => wrapperEl.removeEventListener("wheel", handleWheel);
+    wrapperEl.addEventListener("wheel", handleWheel, { passive: false, capture: true });
+    return () => {
+      wrapperEl.removeEventListener("wheel", handleWheel, { capture: true });
+      if (rafId !== 0) window.cancelAnimationFrame(rafId);
+    };
   }, [reactFlowInstance, diagramId, scrollMode]);
 
   /**

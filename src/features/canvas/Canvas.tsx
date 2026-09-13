@@ -36,7 +36,13 @@ import { useFlowSewNotices } from "./flow/useFlowSewNotices";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import { CANVAS_STYLES, GRID_SIZE, isSnapToGridDisabledForE2E } from "./canvas.constants";
+import {
+  CANVAS_MAX_ZOOM,
+  CANVAS_MIN_ZOOM,
+  CANVAS_STYLES,
+  GRID_SIZE,
+  isSnapToGridDisabledForE2E,
+} from "./canvas.constants";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import EditableEdge from "./edges/EditableEdge";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
@@ -411,11 +417,13 @@ const Canvas = (props: CanvasProps = {}) => {
                   }
                   selectionMode={SelectionMode.Partial}
                   zoomOnScroll={false}
-                  zoomOnPinch
+                  // Custom wheel handler owns pinch too — leaving this on lets d3-zoom
+                  // fight setViewport on every trackpad pinch frame.
+                  zoomOnPinch={false}
                   deleteKeyCode={null}
                   zoomOnDoubleClick={false}
-                  minZoom={0.3}
-                  maxZoom={1.5}
+                  minZoom={CANVAS_MIN_ZOOM}
+                  maxZoom={CANVAS_MAX_ZOOM}
                   multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
                   selectionKeyCode={SELECTION_KEY_CODE}
                   nodeDragThreshold={DRAG_THRESHOLD_PX}
@@ -435,7 +443,12 @@ const Canvas = (props: CanvasProps = {}) => {
                   into it. One per edge meant one document.querySelector per edge on
                   every React Flow store notification, i.e. on every drag frame. */}
                   <EdgeLabelPortalHost />
-                  <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
+                  <Background
+                    variant={BackgroundVariant.Lines}
+                    gap={10}
+                    lineWidth={1}
+                    color="hsl(var(--muted) / 0.6)"
+                  />
                   {pendingNodeIds.map((nodeId) => {
                     const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
                     if (!suggestionId) {

@@ -25,10 +25,25 @@ export const FIT_VIEW_INITIAL_PADDING = 0.3;
 /** Tighter than the initial fit: the reading rail has already taken its share of the width. */
 export const FIT_VIEW_READING_PADDING = 0.12;
 
-/** Max zoom reachable via the custom wheel handler. Must match `<ReactFlow maxZoom>`. */
-export const WHEEL_MAX_ZOOM = 1.5;
-/** Per-step zoom factor for the custom wheel handler. */
-export const WHEEL_ZOOM_FACTOR = 1.1;
+/**
+ * React Flow zoom bounds. The custom wheel handler clamps to the same range as
+ * `<ReactFlow minZoom>` / `maxZoom` (and therefore the Controls buttons).
+ */
+export const CANVAS_MIN_ZOOM = 0.1;
+export const CANVAS_MAX_ZOOM = 3;
+
+/**
+ * Pixel-mode scale used to turn a wheel `deltaY` into a d3-zoom-compatible log2 step.
+ * Same constant as `@xyflow/system`'s `wheelDelta` for `deltaMode === 0`.
+ */
+export const WHEEL_ZOOM_PIXEL_SCALE = 0.002;
+/** Line-mode scale — matches `@xyflow/system` (`deltaMode === 1`). */
+export const WHEEL_ZOOM_LINE_SCALE = 0.05;
+/**
+ * Trackpad pinch on macOS (and most browsers) synthesizes `ctrlKey` with tiny pixel
+ * deltas; without this boost pinch feels dead. Matches `@xyflow/system`.
+ */
+export const WHEEL_PINCH_DELTA_BOOST = 10;
 
 /**
  * Pixels per line used to normalize `WheelEvent.deltaMode === DOM_DELTA_LINE`. Mice that report
@@ -44,7 +59,7 @@ export const FIELD_DEBOUNCE_MS = 300;
 export const FLOW_PARTICLE_DURATION_MS = 1200;
 
 /** Canvas grid spacing (flow units) shared by node snapping and edge editing. */
-export const GRID_SIZE = 15;
+export const GRID_SIZE = 10;
 
 /**
  * E2E-only escape hatch for `snapToGrid`.
