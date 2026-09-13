@@ -48,12 +48,35 @@ function isUndoRedoTransition(
   return prevDiagram.nodeLayouts !== nextDiagram.nodeLayouts;
 }
 
+/**
+ * A frame of an in-progress drag: React Flow reports one position change per
+ * dragged node, all with `dragging: true`. The last event of a gesture carries
+ * `dragging: false`, so it falls through to the tick and lets the `nodes` prop
+ * catch up with what React Flow already has.
+ */
+function isDragFrame(changes: NodeChange[]): boolean {
+  for (const change of changes) {
+    if (change.type !== "position") return false;
+    if (!change.dragging) return false;
+  }
+  return true;
+}
+
 export function useLocalNodes(
   storeNodes: Node[],
   innerOnNodesChange: OnNodesChange,
   localNodesRef: MutableRefObject<Node[]>,
   onSelectionFromChanges?: (selectedIds: string[]) => void,
   diagram?: Diagram | DiagramModel | null,
+  /**
+   * Hands a drag frame's merged nodes straight to React Flow's store. React
+   * Flow is controlled here, so the merged array has to reach `setNodes` or the
+   * dragged node does not move; ticking React to re-render the Canvas is one
+   * way to get there, and it re-runs the whole controller hook chain once per
+   * pointermove. Without this the tick is still the path, so the hook stays
+   * usable (and testable) outside a React Flow provider.
+   */
+  publishDragFrame?: (nodes: Node[]) => void,
 ) {
   const [, setTick] = useState(0);
 
@@ -302,9 +325,14 @@ export function useLocalNodes(
         onSelectionFromChanges(selectedIds);
       }
 
+      if (publishDragFrame && isDragFrame(changes)) {
+        publishDragFrame(updated);
+        return;
+      }
+
       setTick((tick) => tick + 1);
     },
-    [diagram, innerOnNodesChange, localNodesRef, onSelectionFromChanges],
+    [diagram, innerOnNodesChange, localNodesRef, onSelectionFromChanges, publishDragFrame],
   );
 
   return { nodes: localNodesStateRef.current, onNodesChange };
