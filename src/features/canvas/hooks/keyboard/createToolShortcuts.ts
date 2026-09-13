@@ -36,10 +36,7 @@ interface CreateToolShortcutsParams extends ToolShortcutCallbacks {
   lastPointerScreenRef: React.RefObject<{ x: number; y: number } | null>;
 }
 
-function openQuickInsert(
-  params: CreateToolShortcutsParams,
-  event: KeyboardEvent,
-): void {
+function openQuickInsert(params: CreateToolShortcutsParams, event: KeyboardEvent): void {
   claimShortcutEvent(event);
   const { reactFlowInstance, isPanelOpen, onOpenQuickInsert, lastPointerScreenRef } = params;
   const lastScreen = lastPointerScreenRef.current;

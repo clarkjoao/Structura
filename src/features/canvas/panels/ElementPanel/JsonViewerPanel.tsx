@@ -285,7 +285,6 @@ export default function JsonViewerPanel({
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

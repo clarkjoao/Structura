@@ -19,9 +19,7 @@ export interface CanvasKeydownModeFlags {
 
 /** True when edit/tool shortcuts must not run (flow, playback, compare, record). */
 export function isCanvasEditingLocked(flags: CanvasKeydownModeFlags): boolean {
-  return (
-    flags.isFlowPanelOpen || flags.isPlaying || flags.isCompareMode || flags.isRecording
-  );
+  return flags.isFlowPanelOpen || flags.isPlaying || flags.isCompareMode || flags.isRecording;
 }
 
 /** True when search or command palette owns the keyboard surface. */

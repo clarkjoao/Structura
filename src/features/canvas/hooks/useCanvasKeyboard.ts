@@ -60,7 +60,10 @@ function readSvgDisplaySize(svgMarkup: string): { width: number; height: number 
   let height = 200;
   if (!svgEl) return { width, height };
 
-  const viewBox = svgEl.getAttribute("viewBox")?.trim().split(/[\s,]+/);
+  const viewBox = svgEl
+    .getAttribute("viewBox")
+    ?.trim()
+    .split(/[\s,]+/);
   if (viewBox && viewBox.length === 4) {
     const viewWidth = parseFloat(viewBox[2] ?? "");
     const viewHeight = parseFloat(viewBox[3] ?? "");
