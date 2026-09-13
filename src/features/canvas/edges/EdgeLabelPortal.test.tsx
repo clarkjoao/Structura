@@ -1,0 +1,263 @@
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { ReactFlow, ReactFlowProvider } from "@xyflow/react";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { useState, type ReactNode } from "react";
+import { beforeAll, describe, expect, it } from "vitest";
+import {
+  EdgeLabelPortal,
+  EdgeLabelPortalHost,
+  EdgeLabelPortalProvider,
+  useEdgeLabelPortalContainer,
+} from "./EdgeLabelPortal";
+
+/**
+ * Stands in for EdgeLabelPortalHost's attach path (ref callback into the shared
+ * container). Avoids React Flow's store; mirrors the host's attach contract.
+ */
+function TestHost() {
+  const container = useEdgeLabelPortalContainer();
+  return (
+    <div
+      data-testid="host"
+      ref={(mount) => {
+        if (!container) return;
+        if (mount) {
+          if (container.parentElement !== mount) mount.appendChild(container);
+          return;
+        }
+        if (container.parentElement) container.remove();
+      }}
+    />
+  );
+}
+
+/**
+ * Reproduces the real host failure mode: the mount node is missing on the first
+ * paint (EdgeLabelRenderer returned null), then appears later without the host
+ * component identity changing. A mount-only useEffect keyed on `container`
+ * would miss that transition and leave portals detached.
+ */
+function LateMountHost({ showMount }: { showMount: boolean }) {
+  const container = useEdgeLabelPortalContainer();
+  if (!showMount) return null;
+  return (
+    <div
+      data-testid="host"
+      ref={(mount) => {
+        if (!container) return;
+        if (mount) {
+          if (container.parentElement !== mount) mount.appendChild(container);
+          return;
+        }
+        if (container.parentElement) container.remove();
+      }}
+    />
+  );
+}
+
+function LateMountFixture({ children }: { children: ReactNode }) {
+  const [showMount, setShowMount] = useState(false);
+  return (
+    <EdgeLabelPortalProvider>
+      <button type="button" onClick={() => setShowMount(true)}>
+        ready
+      </button>
+      <LateMountHost showMount={showMount} />
+      {children}
+    </EdgeLabelPortalProvider>
+  );
+}
+
+describe("EdgeLabelPortal", () => {
+  it("renders many edges' labels into one shared container", () => {
+    const { container } = render(
+      <EdgeLabelPortalProvider>
+        <TestHost />
+        <div data-testid="tree">
+          {Array.from({ length: 5 }, (_, i) => (
+            <EdgeLabelPortal key={i}>
+              <span data-label={i}>label {i}</span>
+            </EdgeLabelPortal>
+          ))}
+        </div>
+      </EdgeLabelPortalProvider>,
+    );
+
+    const labels = document.querySelectorAll("[data-label]");
+    expect(labels).toHaveLength(5);
+    // all five landed in the same parent element
+    const parents = new Set([...labels].map((el) => el.parentElement));
+    expect(parents.size).toBe(1);
+    // and none of them is inline in the caller's tree
+    expect(container.querySelector("[data-testid='tree'] [data-label]")).toBeNull();
+  });
+
+  it("attaches a portal that rendered before the mount node existed", () => {
+    let sharedContainer: HTMLElement | null = null;
+    function CaptureContainer() {
+      sharedContainer = useEdgeLabelPortalContainer();
+      return null;
+    }
+
+    render(
+      <LateMountFixture>
+        <CaptureContainer />
+        <EdgeLabelPortal>
+          <span data-testid="toolbar">toolbar</span>
+        </EdgeLabelPortal>
+      </LateMountFixture>,
+    );
+
+    // Content already rendered into the detached container, but not in the document —
+    // the failure mode that hid EdgeToolbar after the single-renderer change.
+    expect(sharedContainer).not.toBeNull();
+    expect(sharedContainer!.querySelector("[data-testid='toolbar']")).not.toBeNull();
+    expect(document.body.contains(sharedContainer)).toBe(false);
+    expect(screen.queryByTestId("toolbar")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "ready" }));
+
+    const toolbar = screen.getByTestId("toolbar");
+    expect(document.body.contains(sharedContainer)).toBe(true);
+    expect(screen.getByTestId("host").contains(toolbar)).toBe(true);
+  });
+
+  it("renders nothing outside a provider instead of throwing", () => {
+    expect(() =>
+      render(
+        <EdgeLabelPortal>
+          <span data-testid="orphan">x</span>
+        </EdgeLabelPortal>,
+      ),
+    ).not.toThrow();
+    expect(screen.queryByTestId("orphan")).toBeNull();
+  });
+});
+
+/**
+ * The cost this change removes is proportional to how many
+ * `<EdgeLabelRenderer>` instances are mounted, so the count is the contract:
+ * exactly one, in the host. An edge component reaching for it directly puts the
+ * per-edge `querySelector` back.
+ */
+describe("edge-label renderer instances", () => {
+  it("is imported by the portal host and nowhere else under features/canvas", () => {
+    // an import, not a mention: prose may name it, code may not reach for it
+    const root = join(process.cwd(), "src/features/canvas");
+    const offenders: string[] = [];
+
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) {
+          walk(full);
+          continue;
+        }
+        if (!/\.tsx?$/.test(entry)) continue;
+        if (entry.startsWith("EdgeLabelPortal.")) continue;
+        const source = readFileSync(full, "utf8");
+        const importsIt =
+          /import\s*\{[^}]*\bEdgeLabelRenderer\b[^}]*\}\s*from\s*["']@xyflow\/react["']/s.test(
+            source,
+          );
+        if (importsIt) offenders.push(full.slice(root.length + 1));
+      }
+    };
+    walk(root);
+
+    expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * The host re-renders on every Canvas render, and the Canvas renders once per
+ * drag frame. An inline `ref={(mount) => …}` is a new function on each of those
+ * renders, so React detaches the old ref (`container.remove()`) and attaches the
+ * new one (`mount.appendChild(container)`) — two DOM mutations per frame, on the
+ * element that holds every edge label on the canvas. Measured on the 400-node
+ * fixture: 283 mutation records over 40 drag frames, against 229 with a stable
+ * ref, and 11.0 ms of JS per frame against 9.2. The attach itself must stay a
+ * ref callback (see LateMountHost above); what has to be stable is its identity.
+ */
+describe("EdgeLabelPortalHost attachment stability", () => {
+  // jsdom has no layout; React Flow needs an observer that answers to mount.
+  beforeAll(() => {
+    (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
+      observe(): void {}
+      unobserve(): void {}
+      disconnect(): void {}
+    };
+  });
+
+  function HostFixture({ tick }: { tick: number }) {
+    return (
+      <EdgeLabelPortalProvider>
+        <ReactFlowProvider>
+          <ReactFlow nodes={[]} edges={[]}>
+            <EdgeLabelPortalHost />
+            <span data-testid="tick">{tick}</span>
+          </ReactFlow>
+        </ReactFlowProvider>
+      </EdgeLabelPortalProvider>
+    );
+  }
+
+  it("does not detach and re-attach the shared container on every render", async () => {
+    const { rerender } = render(<HostFixture tick={0} />);
+
+    const renderer = await waitFor(() => {
+      const el = document.querySelector(".react-flow__edgelabel-renderer");
+      expect(el).not.toBeNull();
+      expect(el!.querySelector("div > div")).not.toBeNull();
+      return el!;
+    });
+
+    const observer = new MutationObserver(() => {});
+    observer.observe(renderer, { childList: true, subtree: true });
+
+    for (let tick = 1; tick <= 5; tick++) {
+      rerender(<HostFixture tick={tick} />);
+    }
+
+    const records = observer.takeRecords();
+    observer.disconnect();
+    expect(records.map((record) => record.type)).toEqual([]);
+  });
+});
+
+/**
+ * `EdgeLabelPortal` renders nothing when no provider is above it, and the edge
+ * components that used to mount their own `<EdgeLabelRenderer>` now all portal.
+ * So a surface that renders `<ReactFlow>` with those edge types and forgets the
+ * host does not fall back to anything: its labels, toolbars and collaboration
+ * highlights are simply absent, with no error. The embedded viewer shipped that
+ * way. The rule is therefore per render site, not per component.
+ */
+describe("every canvas surface", () => {
+  it("mounts the portal host next to its <ReactFlow>", () => {
+    const root = join(process.cwd(), "src");
+    const missing: string[] = [];
+
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) {
+          if (entry === "__tests__" || entry === "node_modules") continue;
+          walk(full);
+          continue;
+        }
+        if (!/\.tsx$/.test(entry) || /\.test\.tsx$/.test(entry)) continue;
+        const source = readFileSync(full, "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, "")
+          .replace(/\/\/[^\n]*/g, "");
+        // a JSX element, not ReactFlowProvider and not a type reference
+        if (!/<ReactFlow[\s>]/.test(source)) continue;
+        if (!source.includes("EdgeLabelPortalHost")) missing.push(full.slice(root.length + 1));
+      }
+    };
+    walk(root);
+
+    expect(missing).toEqual([]);
+  });
+});

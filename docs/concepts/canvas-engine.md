@@ -53,6 +53,11 @@ discipline exists because:
 
 Recorded as [ADR-0001](../adr/0001-react-flow.md).
 
+Drag-frame and store-write performance rules (one portal host, O(1) gesture
+indexes, stable RF handlers, one `set()` per gesture, identity caches) live in
+[canvas-hot-path.md](./canvas-hot-path.md). Do not regress those; remaining
+opportunities are listed there for future work.
+
 ## Domain-agnosticism in practice
 
 The canvas never switches on `ComponentType`. When node behavior varies by

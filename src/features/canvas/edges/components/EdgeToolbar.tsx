@@ -1,4 +1,3 @@
-import { EdgeLabelRenderer } from "@xyflow/react";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { EdgeStyle, EdgeMarker, Point } from "@/features/diagram";
@@ -11,6 +10,7 @@ import {
   dropdownToEdgeStyle,
   edgeStyleToDropdown,
 } from "@/features/canvas/selection-actions/edgeStyleMapping";
+import { EdgeLabelPortal } from "../EdgeLabelPortal";
 
 interface EdgeToolbarProps {
   anchor: Point;
@@ -48,7 +48,7 @@ export function EdgeToolbar({
   const hasStyleControls = !!onStyleChange;
 
   return (
-    <EdgeLabelRenderer>
+    <EdgeLabelPortal>
       <div
         className="nodrag nopan absolute z-[3] pointer-events-auto flex items-center gap-0.5
                    rounded-md border border-border bg-card px-1 py-0.5 shadow-lg"
@@ -112,6 +112,6 @@ export function EdgeToolbar({
           <Trash2 className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
-    </EdgeLabelRenderer>
+    </EdgeLabelPortal>
   );
 }

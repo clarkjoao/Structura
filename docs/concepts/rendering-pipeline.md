@@ -61,6 +61,10 @@ Edges follow the same shape through `useCanvasEdges` and `CustomEdge`
   reconstructable, never persisted.
 - Cypress `stress-*` specs are the regression net for all of the above.
 
+The full hot-path contract (one RF portal host, gesture indexes, stable
+handlers, one `set()` per gesture, no per-entity subscription to canvas-wide
+flags) is [canvas-hot-path.md](./canvas-hot-path.md).
+
 ## Static rendering (no React Flow)
 
 `lib/diagram-preview/generatePreviewSvg.ts` renders diagram previews as plain

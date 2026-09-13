@@ -2,11 +2,9 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import {
   BaseEdge,
-  EdgeLabelRenderer,
   getBezierPath,
   getSmoothStepPath,
   getStraightPath,
-  useStore,
   type Edge,
   type EdgeProps,
 } from "@xyflow/react";
@@ -21,6 +19,7 @@ import {
   type Point,
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
+import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
 import { buildStepPath } from "./geometry/orthogonal";
@@ -38,6 +37,7 @@ import { EdgeParticle } from "./overlays/EdgeParticle";
 import { EdgePayloadOverlay } from "./overlays/EdgePayloadOverlay";
 import { CollabEdgeHighlight } from "./overlays/CollabEdgeHighlight";
 import type { EdgeData } from "./data/edgeData.types";
+import { EdgeLabelPortal } from "./EdgeLabelPortal";
 
 export type { EdgeData };
 
@@ -81,7 +81,10 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const target = useMemo<Point>(() => ({ x: targetX, y: targetY }), [targetX, targetY]);
 
   // Read-only surfaces (viewer, playback) turn off selection; never edit there.
-  const elementsSelectable = useStore((state) => state.elementsSelectable);
+  // Read from the canvas, not `useStore`: the value is the same for every edge,
+  // and a React Flow subscription per edge runs its selector on every store
+  // write, drag frames included.
+  const elementsSelectable = useElementsSelectable();
   const edgeStyle = edgeData.edgeStyle ?? EdgeStyle.EditableStep;
   const isStep = edgeStyle === EdgeStyle.EditableStep;
   const isCurve = edgeStyle === EdgeStyle.Editable;
@@ -126,8 +129,20 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     projectionRef.current = projectionPoints;
   }, [projectionPoints]);
 
+  const canDragLabel = Boolean(edgeData.label && activeDiagramId);
+  // Declared here because `labelOffset` -- and so every anchor derived from it
+  // -- has to follow the pointer during a drag. The gesture keeps its offset
+  // local and writes the store once, on release.
+  const labelDrag = useEdgeLabelDrag({
+    connectionId,
+    enabled: canDragLabel,
+    source,
+    target,
+    pointsRef: projectionRef,
+  });
+
   const storedLabelOffset = useEdgeLabelOffset(connectionId);
-  const labelOffset = clampOffset(storedLabelOffset ?? edgeData.labelPosition);
+  const labelOffset = clampOffset(labelDrag.offset ?? storedLabelOffset ?? edgeData.labelPosition);
 
   const [hovered, setHovered] = useState(false);
 
@@ -198,15 +213,6 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   // Snap guides come from whichever editing surface is active for this style.
   const activeGuides = isStep ? segmentDrag.snapGuides : snapGuides;
-
-  const canDragLabel = Boolean(edgeData.label && activeDiagramId);
-  const labelDrag = useEdgeLabelDrag({
-    connectionId,
-    enabled: canDragLabel,
-    source,
-    target,
-    pointsRef: projectionRef,
-  });
 
   const handleResetDoubleClick = (event: ReactMouseEvent<SVGPathElement>) => {
     if (!isEditable || points.length === 0 || !activeDiagramId) return;
@@ -383,14 +389,14 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
       )}
 
       {isActivePlayback && edgeData.activePayload && payloadDirection && (
-        <EdgeLabelRenderer>
+        <EdgeLabelPortal>
           <EdgePayloadOverlay
             labelPoint={labelPoint}
             labelOffsetY={edgeData.label ? 52 : 16}
             payload={edgeData.activePayload}
             direction={payloadDirection}
           />
-        </EdgeLabelRenderer>
+        </EdgeLabelPortal>
       )}
     </>
   );

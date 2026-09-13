@@ -185,6 +185,7 @@ const selectDiagramActions = pickFromStore([
   "updateConnection",
   "removeConnection",
   "updateNodeLayout",
+  "batchUpdateNodeLayouts",
   "updateViewport",
   "setEdgeControlPoints",
   "addEdgeControlPoint",
@@ -266,6 +267,7 @@ const selectConnectionActions = pickFromStore([
 
 const selectLayoutActions = pickFromStore([
   "updateNodeLayout",
+  "batchUpdateNodeLayouts",
   "updateViewport",
   "setEdgeControlPoints",
   "addEdgeControlPoint",

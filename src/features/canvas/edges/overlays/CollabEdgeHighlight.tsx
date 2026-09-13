@@ -1,6 +1,6 @@
-import { EdgeLabelRenderer } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration";
 import type { Point } from "@/features/diagram";
+import { EdgeLabelPortal } from "../EdgeLabelPortal";
 
 interface CollabEdgeHighlightProps {
   edgeId: string;
@@ -26,7 +26,7 @@ export function CollabEdgeHighlight({ edgeId, edgePath, labelPoint }: CollabEdge
         strokeOpacity={0.5}
         style={{ pointerEvents: "none" }}
       />
-      <EdgeLabelRenderer>
+      <EdgeLabelPortal>
         <div
           className="absolute pointer-events-none z-[2] text-[9px] font-semibold
                      text-white px-1.5 py-0.5 rounded-full whitespace-nowrap"
@@ -37,7 +37,7 @@ export function CollabEdgeHighlight({ edgeId, edgePath, labelPoint }: CollabEdge
         >
           {collabHighlight.userName}
         </div>
-      </EdgeLabelRenderer>
+      </EdgeLabelPortal>
     </>
   );
 }

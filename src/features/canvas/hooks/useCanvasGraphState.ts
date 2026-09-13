@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type MutableRefObject } from "react";
 import type { TFunction } from "i18next";
-import type { Node } from "@xyflow/react";
+import { useStoreApi, type Node } from "@xyflow/react";
 import type { Component } from "@/features/diagram";
 import type { DiagramSceneState } from "../nodes/useCanvasNodes";
 import type { Flow } from "@/features/diagram";
@@ -197,12 +197,28 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     [visibleTags],
   );
 
+  /*
+   * A drag frame's only reader is React Flow, and `<ReactFlow nodes>` reaches
+   * its store through `setNodes`. Calling it here is that same call without a
+   * Canvas render: the controller's hook chain runs on store changes, not once
+   * per pointermove. The `nodes` prop catches up on the first render after the
+   * gesture -- the drag's last change carries `dragging: false`.
+   */
+  const reactFlowStore = useStoreApi();
+  const publishDragFrame = useCallback(
+    (dragged: Node[]) => {
+      reactFlowStore.getState().setNodes(dragged);
+    },
+    [reactFlowStore],
+  );
+
   const { nodes, onNodesChange } = useLocalNodes(
     storeNodes,
     innerOnNodesChange,
     localNodesRef,
     onSelectionFromChanges,
     diagram,
+    publishDragFrame,
   );
 
   const edges = useCanvasEdges({

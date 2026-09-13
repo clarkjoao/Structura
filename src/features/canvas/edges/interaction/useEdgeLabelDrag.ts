@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useActiveDiagramId, useDiagramActions, type Point } from "@/features/diagram";
@@ -13,15 +13,18 @@ interface UseEdgeLabelDragParams {
 }
 
 export interface UseEdgeLabelDragResult {
+  /** Where the label sits while the gesture is live; null when idle. */
+  offset: number | null;
   handlePointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
   handlePointerMove: (event: ReactPointerEvent<HTMLDivElement>) => void;
   handlePointerUp: (event: ReactPointerEvent<HTMLDivElement>) => void;
 }
 
 /**
- * Drag an edge label along its path. Streams the normalized offset to the store
- * without pushing history on every move; the first committed move records one
- * checkpoint so the whole gesture is a single undo step.
+ * Drag an edge label along its path. The offset stays in local state and
+ * reaches the store once, on release, so one gesture is one store write and one
+ * undo step -- each diagram-store `set()` serializes the whole workspace for
+ * persist and is diffed for collaboration.
  */
 export function useEdgeLabelDrag({
   connectionId,
@@ -34,12 +37,13 @@ export function useEdgeLabelDrag({
   const { screenToFlowPosition } = useReactFlow();
   const { setEdgeLabelOffset } = useDiagramActions();
   const draggingRef = useRef(false);
-  const checkpointedRef = useRef(false);
   const lastOffsetRef = useRef<number | null>(null);
+  const [offset, setOffset] = useState<number | null>(null);
 
   useEffect(() => {
     draggingRef.current = false;
-    checkpointedRef.current = false;
+    lastOffsetRef.current = null;
+    setOffset(null);
   }, [connectionId]);
 
   const handlePointerDown = useCallback(
@@ -49,7 +53,7 @@ export function useEdgeLabelDrag({
       event.stopPropagation();
       event.currentTarget.setPointerCapture(event.pointerId);
       draggingRef.current = true;
-      checkpointedRef.current = false;
+      lastOffsetRef.current = null;
     },
     [activeDiagramId, enabled],
   );
@@ -64,30 +68,29 @@ export function useEdgeLabelDrag({
         return;
       }
       lastOffsetRef.current = clamped;
-      setEdgeLabelOffset(activeDiagramId, connectionId, clamped, {
-        history: !checkpointedRef.current,
-      });
-      checkpointedRef.current = true;
+      setOffset(clamped);
     },
-    [
-      activeDiagramId,
-      connectionId,
-      screenToFlowPosition,
-      setEdgeLabelOffset,
-      source,
-      target,
-      pointsRef,
-    ],
+    [activeDiagramId, screenToFlowPosition, source, target, pointsRef],
   );
 
-  const handlePointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    lastOffsetRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  }, []);
+  const handlePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      const dragged = lastOffsetRef.current;
+      lastOffsetRef.current = null;
+      // One write for the gesture, and the draft is cleared in the same handler
+      // so React commits both together and the label does not jump back first.
+      if (dragged !== null && activeDiagramId) {
+        setEdgeLabelOffset(activeDiagramId, connectionId, dragged, { history: true });
+      }
+      setOffset(null);
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    },
+    [activeDiagramId, connectionId, setEdgeLabelOffset],
+  );
 
-  return { handlePointerDown, handlePointerMove, handlePointerUp };
+  return { offset, handlePointerDown, handlePointerMove, handlePointerUp };
 }

@@ -110,6 +110,11 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
 - `useLocalNodes` (canvas) keeps a local copy of nodes during drags and merges
   store updates back in; it is deliberate (drag performance) and fragile — don't
   refactor casually, it has tests.
+- Canvas drag/store hot path: one `EdgeLabelRenderer` host, O(1) gesture
+  indexes, referentially stable RF handlers, one store `set()` per gesture,
+  identity caches for RF node/edge arrays. Do not reintroduce per-edge
+  `EdgeLabelRenderer` / `useStore` for canvas-wide flags. Rules and remaining
+  opportunities: `docs/concepts/canvas-hot-path.md`.
 - Undo/redo stores full diagram snapshots with coalescing; bounded by
   `MAX_HISTORY_STEPS`.
 - The `@/features/diagram` and `@/features/canvas` barrels couple the bundle

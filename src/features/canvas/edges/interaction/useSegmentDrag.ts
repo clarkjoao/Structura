@@ -45,9 +45,11 @@ export interface UseSegmentDragResult {
  * draw.io-style orthogonal editing: drag a horizontal/vertical segment
  * perpendicular to reposition it, or drag a corner directly, materializing the
  * affected corners as control points. Drags snap magnetically to node
- * alignment lines and the grid (Alt bypasses), show a live preview, and stream
- * updates without history after a single checkpoint, so one drag is one undo
- * step. Corners can also be nudged with the keyboard.
+ * alignment lines and the grid (Alt bypasses) and show a live preview. The
+ * moving corners stay in local state and reach the store once, on release, so
+ * one gesture is one store write and one undo step -- each diagram-store
+ * `set()` serializes the whole workspace for persist and is diffed for
+ * collaboration. Corners can also be nudged with the keyboard.
  */
 export function useSegmentDrag(
   connectionId: string,
@@ -61,13 +63,17 @@ export function useSegmentDrag(
   const { capture } = useEdgeSnapping();
   const points = useEdgeControlPoints(connectionId);
 
-  const corners = useMemo<Point[]>(
+  /** The in-progress gesture's corners: what the edge draws until release. */
+  const [draftCorners, setDraftCorners] = useState<Point[] | null>(null);
+
+  const storedCorners = useMemo<Point[]>(
     () =>
       points.length > 0
         ? points.map((p) => ({ x: p.x, y: p.y }))
         : defaultOrthogonalCorners(source, target, sourcePosition),
     [points, source, target, sourcePosition],
   );
+  const corners = draftCorners ?? storedCorners;
   const segments = useMemo(
     () => buildStepSegments(source, target, corners),
     [source, target, corners],
@@ -82,9 +88,9 @@ export function useSegmentDrag(
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
 
   useEffect(() => {
-    cornersRef.current = corners;
+    cornersRef.current = storedCorners;
     pointsRef.current = points;
-  }, [corners, points]);
+  }, [storedCorners, points]);
 
   useEffect(
     () => () => {
@@ -119,6 +125,7 @@ export function useSegmentDrag(
     setActiveCornerIndex(null);
     setPreviewPath(null);
     setSnapGuides([]);
+    setDraftCorners(null);
   }, []);
 
   const startSegmentDrag = useCallback(
@@ -134,7 +141,6 @@ export function useSegmentDrag(
       const originAxis = horizontal ? segment.y1 : segment.x1;
       const perp = horizontal ? (segment.x1 + segment.x2) / 2 : (segment.y1 + segment.y2) / 2;
       const session = capture();
-      let checkpointed = false;
       let lastNext: Point[] | null = null;
       setActiveSegmentIndex(segment.index);
       document.body.style.cursor = horizontal ? "ns-resize" : "ew-resize";
@@ -154,15 +160,15 @@ export function useSegmentDrag(
         const next = computeSegmentDrag(source, target, initialCorners, segment, delta);
         lastNext = next;
         setPreviewPath(buildStepPath(source, target, next));
-        commit(activeDiagramId, next, !checkpointed);
-        checkpointed = true;
+        setDraftCorners(next);
       };
 
       const onUp = () => {
-        if (lastNext) {
-          const pruned = pruneRedundantCorners(source, target, lastNext);
-          if (pruned.length !== lastNext.length) commit(activeDiagramId, pruned, false);
-        }
+        // One write for the gesture, on the pruned route. `detach` clears the
+        // draft in the same handler, so React commits both together and the
+        // edge never paints the pre-drag route between them.
+        if (lastNext)
+          commit(activeDiagramId, pruneRedundantCorners(source, target, lastNext), true);
         detach(onMove, onUp);
       };
       window.addEventListener("pointermove", onMove);
@@ -185,7 +191,6 @@ export function useSegmentDrag(
       if (!origin) return;
       const startPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       const session = capture();
-      let checkpointed = false;
       let lastNext: Point[] | null = null;
       setActiveCornerIndex(cornerIndex);
       document.body.style.cursor = "move";
@@ -207,15 +212,12 @@ export function useSegmentDrag(
         const next = computeCornerDrag(source, target, initialCorners, cornerIndex, delta);
         lastNext = next;
         setPreviewPath(buildStepPath(source, target, next));
-        commit(activeDiagramId, next, !checkpointed);
-        checkpointed = true;
+        setDraftCorners(next);
       };
 
       const onUp = () => {
-        if (lastNext) {
-          const pruned = pruneRedundantCorners(source, target, lastNext);
-          if (pruned.length !== lastNext.length) commit(activeDiagramId, pruned, false);
-        }
+        if (lastNext)
+          commit(activeDiagramId, pruneRedundantCorners(source, target, lastNext), true);
         detach(onMove, onUp);
       };
       window.addEventListener("pointermove", onMove);
