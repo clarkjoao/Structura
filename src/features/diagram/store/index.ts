@@ -86,7 +86,7 @@ export {
 export { PERSIST_KEY, buildPersistStoragePayload } from "./persist.config";
 
 // ─── Storage monitoring ──────────────────────────────────────────────────────
-export { useStorageMonitor } from "./useStorageMonitor";
+export { startStorageMonitor } from "./useStorageMonitor";
 export {
   checkStorageHealth,
   measureLocalStorageUsage,

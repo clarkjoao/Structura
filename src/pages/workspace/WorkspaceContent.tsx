@@ -29,10 +29,10 @@ import {
 import { Canvas, FlowPanel, FlowReadingRail, FlowRecorderPanel } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
-import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
+import { EmbedModal, useFlowMode, useInteractionMode, useStorageMonitor } from "@/features/canvas";
 import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
-import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
+import { useActiveDiagram, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
 import { ExportModal } from "./ExportModal";

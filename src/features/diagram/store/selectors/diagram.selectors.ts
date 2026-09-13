@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { DiagramModel } from "../../model/diagram.types";
 import { useDiagramStore } from "../diagram.store";
@@ -32,11 +31,7 @@ export const useDiagram = (id: string) => useDiagramStore((s) => s.diagrams[id])
 export const useDiagrams = () => useDiagramStore(useShallow((s) => s.diagrams));
 
 /**
- * Lists all diagrams for dashboards / sidebars. Subscribes to the `diagrams`
- * map (key-level shallow compare) so add/remove reliably updates the UI; values
- * are memoized from that map.
+ * Lists all diagrams for dashboards / sidebars. Shallow-compares the value array
+ * so add/remove updates the UI without a React `useMemo`.
  */
-export const useAllDiagrams = () => {
-  const byId = useDiagramStore(useShallow((s) => s.diagrams));
-  return useMemo(() => Object.values(byId), [byId]);
-};
+export const useAllDiagrams = () => useDiagramStore(useShallow((s) => Object.values(s.diagrams)));

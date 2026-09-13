@@ -33,4 +33,5 @@ export { FlowScriptList, FlowScriptPanel, useFlowScriptActions, useFlowViewStore
 export { EmbedModal } from "./components/EmbedModal";
 export { useInteractionMode } from "./hooks/useInteractionMode";
 export type { InteractionMode } from "./hooks/useInteractionMode";
+export { useStorageMonitor } from "./hooks/useStorageMonitor";
 export { AnalysisPanel, useDiagramContext, useLLMChat } from "./chat";
