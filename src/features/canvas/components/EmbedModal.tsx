@@ -42,10 +42,15 @@ export function EmbedModal({ open, onOpenChange, diagram }: EmbedModalProps) {
   const [activeMethod, setActiveMethod] = useState<EmbedMethod>("iframe-hash");
   const origin = window.location.origin;
 
+  // Only while the dialog is open: generateViewerUrl lz-compresses the whole
+  // diagram, and this component is mounted unconditionally, so keying it on the
+  // diagram alone re-compressed everything on every store mutation with nobody
+  // looking at the result. Measured 2026-09-13; see docs/epico-virtualizacao/.
   const hashIframeCode = useMemo(() => {
+    if (!open) return "";
     const embedUrl = generateViewerUrl(diagram);
     return buildIframeCode(embedUrl);
-  }, [diagram]);
+  }, [open, diagram]);
 
   const reactSnippet = useMemo(
     () => `import { useEffect, useRef } from "react";
