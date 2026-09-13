@@ -41,7 +41,12 @@ function diagram(): Diagram {
   } as unknown as Diagram;
 }
 
-const payloadOf = (url: string) => url.split("#share=")[1]!.split("&")[0]!;
+/**
+ * The payload as a reader receives it: through `URLSearchParams`, which undoes
+ * the percent-encoding `generateShareUrl` applies over the compressed payload.
+ * A raw string split would leave it encoded — see `share-url.test.ts`.
+ */
+const payloadOf = (url: string) => new URLSearchParams(url.split("#")[1]).get("share")!;
 const flowOf = (url: string) => new URLSearchParams(url.split("#")[1]).get("flow");
 
 describe("a share link that names a script", () => {

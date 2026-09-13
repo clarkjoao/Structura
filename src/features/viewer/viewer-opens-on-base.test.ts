@@ -5,6 +5,13 @@ import { generateShareUrl, decodeShareParam } from "@/lib/share-url";
 import { useDiagramToFlow } from "./hooks/useDiagramToFlow";
 
 /**
+ * The payload as a reader receives it: through `URLSearchParams`, which undoes
+ * the percent-encoding `generateShareUrl` applies over the compressed payload.
+ * A raw string split would leave it encoded — see `lib/share-url/share-url.test.ts`.
+ */
+const shareParamOf = (url: string) => new URLSearchParams(url.split("#")[1]).get("share")!;
+
+/**
  * A link opens on the base.
  *
  * `activeSceneId` is which scene the author had open when they copied the
@@ -69,7 +76,7 @@ function nodeNames(diagram: Diagram): string[] {
 
 describe("the scripts reach the viewer in the payload", () => {
   it("carries every flow through a share link", () => {
-    const shared = decodeShareParam(generateShareUrl(diagramInScene()).url.split("#share=")[1]!);
+    const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
     expect(
       Object.values(shared!.snapshot.flows)
@@ -79,14 +86,14 @@ describe("the scripts reach the viewer in the payload", () => {
   });
 
   it("carries the title and the note a reader is meant to read", () => {
-    const shared = decodeShareParam(generateShareUrl(diagramInScene()).url.split("#share=")[1]!);
+    const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
     const step = shared!.snapshot.flows.f1!.steps.s1!;
     expect([step.title, step.note]).toEqual(["The ask", "Only the happy path."]);
   });
 
   it("carries the scenes themselves, which are part of the diagram", () => {
-    const shared = decodeShareParam(generateShareUrl(diagramInScene()).url.split("#share=")[1]!);
+    const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
     expect(Object.values(shared!.scenes ?? {}).map((s) => s.name)).toEqual(["Sem ledger"]);
   });
@@ -94,13 +101,13 @@ describe("the scripts reach the viewer in the payload", () => {
 
 describe("a link opens on the base, not in the author's scene", () => {
   it("stops carrying which scene the author had open", () => {
-    const shared = decodeShareParam(generateShareUrl(diagramInScene()).url.split("#share=")[1]!);
+    const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
     expect(shared!.activeSceneId).toBeUndefined();
   });
 
   it("shows the node the scene was hiding", () => {
-    const shared = decodeShareParam(generateShareUrl(diagramInScene()).url.split("#share=")[1]!);
+    const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
     expect(nodeNames(shared!)).toEqual(["Gateway", "Ledger"]);
   });
@@ -130,7 +137,7 @@ describe("a link opens on the base, not in the author's scene", () => {
   });
 
   it("keeps everything else the link carried", () => {
-    const shared = decodeShareParam(generateShareUrl(diagramInScene()).url.split("#share=")[1]!);
+    const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
     expect(shared!.name).toBe("Checkout");
     expect(Object.keys(shared!.snapshot.components).sort()).toEqual(["c1", "c2"]);
