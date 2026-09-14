@@ -1,10 +1,6 @@
 import type { ServiceDefinition } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
-import {
-  AWS_CATEGORIES,
-  type AwsCategoryId,
-  type AwsService,
-} from "@/features/cloud/providers/aws/aws.catalog";
+import { AWS_CATEGORIES, type AwsCategoryId, type AwsService } from "@/features/cloud/providers/aws/aws.catalog";
 import { AWS_SPOTLIGHT_IDS } from "./constants";
 
 export function resolveAwsSpotlight(): { svc: AwsService; categoryId: AwsCategoryId }[] {
