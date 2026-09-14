@@ -60,7 +60,13 @@ describe("recording writes into the store as it goes", () => {
     await i18n.changeLanguage("en");
     // `past` is global to the store; each test starts from a clean history so
     // one test's undo cannot change what the next one sees.
-    useDiagramStore.setState({ past: [], future: [], _lastUndoRedoAt: 0, _flowSession: null });
+    useDiagramStore.setState({
+      past: [],
+      future: [],
+      _lastUndoRedoAt: 0,
+      _lastUndoRedoTimestamp: 0,
+      _flowSession: null,
+    });
   });
 
   it("has a flow in the store from the first click, not at the end", () => {

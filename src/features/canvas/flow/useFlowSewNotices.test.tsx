@@ -35,7 +35,13 @@ describe("deleting a node that a script walks through says so", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
     vi.mocked(toast.warning).mockClear();
-    useDiagramStore.setState({ past: [], future: [], _lastUndoRedoAt: 0, _flowSewNotices: null });
+    useDiagramStore.setState({
+      past: [],
+      future: [],
+      _lastUndoRedoAt: 0,
+      _lastUndoRedoTimestamp: 0,
+      _flowSewNotices: null,
+    });
   });
 
   it("names what left, and where the script joined up", () => {

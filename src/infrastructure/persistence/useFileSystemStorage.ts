@@ -81,6 +81,7 @@ export function useFileSystemStorage() {
       past: [],
       future: [],
       _lastUndoRedoAt: 0,
+      _lastUndoRedoTimestamp: 0,
       clipboard: null,
     });
     useCustomComponentStore.setState({ templates: {} });

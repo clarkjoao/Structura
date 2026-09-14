@@ -42,6 +42,7 @@ export function createDiagramStore(
         past: [] as DiagramSnapshot[],
         future: [] as DiagramSnapshot[],
         _lastUndoRedoAt: 0,
+        _lastUndoRedoTimestamp: 0,
         _flowSession: null as { undoMark: number | null } | null,
         _flowSewNotices: null as AppState["_flowSewNotices"],
         ...diagramsSlice(set, get as () => AppState),

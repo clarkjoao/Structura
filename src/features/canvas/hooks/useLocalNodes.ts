@@ -16,7 +16,7 @@
 import { useEffect, useRef, useState, useCallback, type MutableRefObject } from "react";
 import { applyNodeChanges, type Node, type NodeChange, type OnNodesChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
-import { canMoveNodeInSceneMode, useDiagramStore } from "@/features/diagram";
+import { canMoveNodeInSceneMode } from "@/features/diagram";
 
 /** Refs shared between useLocalNodes and the event handlers for drag-selection parity. */
 export const dragSelectionRef = {
@@ -130,6 +130,7 @@ export function useLocalNodes(
    * usable (and testable) outside a React Flow provider.
    */
   publishDragFrame?: (nodes: Node[]) => void,
+  lastUndoRedoAt = 0,
 ) {
   const [, setTick] = useState(0);
 
@@ -142,11 +143,6 @@ export function useLocalNodes(
   /** Merged local nodes — held in a ref, not state, so the merge below never schedules a render. */
   const localNodesStateRef = useRef<Node[]>([]);
 
-  /**
-   * Stamped only by `undo`/`redo`. A primitive, so this subscription re-renders
-   * the canvas on history jumps and on nothing else.
-   */
-  const lastUndoRedoAt = useDiagramStore((state) => state._lastUndoRedoAt);
   const prevLastUndoRedoAtRef = useRef(lastUndoRedoAt);
 
   const activeDiagramId = diagram?.id ?? null;

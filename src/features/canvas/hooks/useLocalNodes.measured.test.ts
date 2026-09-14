@@ -20,10 +20,9 @@
 
 import { act, renderHook } from "@testing-library/react";
 import type { MutableRefObject } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram";
-import { useDiagramStore } from "@/features/diagram";
 import { useLocalNodes } from "./useLocalNodes";
 
 const MEASURED = { width: 100, height: 40 };
@@ -60,13 +59,14 @@ function storeNodesAt(x: number, parentIdOfA: string | undefined = undefined): N
 interface HookProps {
   nodes: Node[];
   diagram: Diagram;
+  lastUndoRedoAt?: number;
 }
 
 function mount(initial: HookProps) {
   const localNodesRef: MutableRefObject<Node[]> = { current: [] };
   const view = renderHook(
-    ({ nodes, diagram }: HookProps) =>
-      useLocalNodes(nodes, vi.fn(), localNodesRef, undefined, diagram),
+    ({ nodes, diagram, lastUndoRedoAt }: HookProps) =>
+      useLocalNodes(nodes, vi.fn(), localNodesRef, undefined, diagram, undefined, lastUndoRedoAt),
     { initialProps: initial },
   );
   return { ...view, localNodesRef };
@@ -83,10 +83,6 @@ function measureAll(onNodesChange: ReturnType<typeof useLocalNodes>["onNodesChan
 }
 
 describe("useLocalNodes — measured dimensions", () => {
-  beforeEach(() => {
-    useDiagramStore.setState({ _lastUndoRedoAt: 0 });
-  });
-
   it("keeps measured across a drag commit", () => {
     const { result, rerender } = mount({
       nodes: storeNodesAt(0),
@@ -118,10 +114,7 @@ describe("useLocalNodes — measured dimensions", () => {
     expect(result.current.nodes[0].position.x).toBe(999);
 
     // A real undo: the history slice stamps `_lastUndoRedoAt` and swaps `nodeLayouts`.
-    act(() => {
-      useDiagramStore.setState({ _lastUndoRedoAt: Date.now() });
-    });
-    rerender({ nodes: storeNodesAt(0), diagram: makeDiagram(layoutsAt(0)) });
+    rerender({ nodes: storeNodesAt(0), diagram: makeDiagram(layoutsAt(0)), lastUndoRedoAt: 1 });
 
     // The stale local position is discarded — that is what the branch exists for.
     expect(result.current.nodes[0].position.x).toBe(0);

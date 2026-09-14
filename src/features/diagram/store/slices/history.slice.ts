@@ -46,7 +46,7 @@ export function pushHistoryCheckpoint(state: AppState): boolean {
 export function pushHistory(state: AppState, mutationType: HistoryMutationKind = "soft"): void {
   const d = getActiveDiagram(state);
   if (!d) return;
-  if (Date.now() - state._lastUndoRedoAt < UNDO_REDO_COOLDOWN_MS) return;
+  if (Date.now() - state._lastUndoRedoTimestamp < UNDO_REDO_COOLDOWN_MS) return;
   if (mutationType !== STRUCTURAL_MUTATION_MARKER) {
     const last = state.past[state.past.length - 1];
     if (last?.diagramId === d.id && Date.now() - last.timestamp < HISTORY_COALESCE_MS) return;
@@ -97,7 +97,8 @@ export const historySlice = (
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
       d.scenes = entry.scenes;
-      state._lastUndoRedoAt = Date.now();
+      state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
+      state._lastUndoRedoTimestamp = Date.now();
     });
   },
 
@@ -139,7 +140,8 @@ export const historySlice = (
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
       d.scenes = entry.scenes;
-      state._lastUndoRedoAt = Date.now();
+      state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
+      state._lastUndoRedoTimestamp = Date.now();
     });
   },
 
