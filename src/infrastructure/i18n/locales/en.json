@@ -1322,6 +1322,19 @@
       "invalidDiagram": "Invalid diagram"
     }
   },
+  "viewPage": {
+    "arranging": "Arranging diagram...",
+    "file": {
+      "open": "Choose the file",
+      "noPath": "No file named"
+    },
+    "errors": {
+      "noSource": "Nothing to show: pass ?diagramId= or ?source=file",
+      "notFound": "No diagram with id {{id}}",
+      "invalidFile": "That file is not a Structura diagram",
+      "noFilePicker": "This browser cannot open local files"
+    }
+  },
   "viewerFlows": {
     "invite_one": "This diagram has one flow:",
     "invite_other": "This diagram has {{count}} flows:",

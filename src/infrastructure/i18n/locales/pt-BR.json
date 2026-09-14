@@ -1322,6 +1322,19 @@
       "invalidDiagram": "Diagrama inválido"
     }
   },
+  "viewPage": {
+    "arranging": "Organizando o diagrama...",
+    "file": {
+      "open": "Escolher o arquivo",
+      "noPath": "Nenhum arquivo indicado"
+    },
+    "errors": {
+      "noSource": "Nada para mostrar: use ?diagramId= ou ?source=file",
+      "notFound": "Nenhum diagrama com o id {{id}}",
+      "invalidFile": "Esse arquivo não é um diagrama do Structura",
+      "noFilePicker": "Este navegador não consegue abrir arquivos locais"
+    }
+  },
   "viewerFlows": {
     "invite_one": "Este diagrama tem um roteiro:",
     "invite_other": "Este diagrama tem {{count}} roteiros:",
