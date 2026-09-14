@@ -1592,7 +1592,7 @@
     "ungroupDesc": "Quando um painel está selecionado",
     "quickC4": "Criação rápida (C4)",
     "quickInsertOpen": "Abrir Quick Insert no canvas",
-    "quickInsertDesc": "Cmd/Ctrl+Shift+E perto do cursor, ou clique com o direito em área vazia (sem seleção e fora de flow play/record)",
+    "quickInsertDesc": "Shift+E perto do cursor, ou clique com o direito em área vazia (sem seleção e fora de flow play/record)",
     "addPerson": "Adicionar Person",
     "addSystem": "Adicionar System",
     "addContainer": "Adicionar Container",

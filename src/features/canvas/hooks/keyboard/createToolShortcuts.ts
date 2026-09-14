@@ -6,6 +6,7 @@ import {
   isModKeyPressed,
   keyIs,
   keyMatchesLetter,
+  keyMatchesLetterOrCode,
   KEY,
   type KeyHandler,
 } from "./helpers";
@@ -36,10 +37,7 @@ interface CreateToolShortcutsParams extends ToolShortcutCallbacks {
   lastPointerScreenRef: React.RefObject<{ x: number; y: number } | null>;
 }
 
-function openQuickInsert(
-  params: CreateToolShortcutsParams,
-  event: KeyboardEvent,
-): void {
+function openQuickInsert(params: CreateToolShortcutsParams, event: KeyboardEvent): void {
   claimShortcutEvent(event);
   const { reactFlowInstance, isPanelOpen, onOpenQuickInsert, lastPointerScreenRef } = params;
   const lastScreen = lastPointerScreenRef.current;
@@ -75,12 +73,25 @@ function createC4Element(params: CreateToolShortcutsParams, event: KeyboardEvent
 /**
  * Canvas tool chords: search, palette, sidebar, C4 quick-create, Quick Insert.
  *
- * Quick Insert is Cmd/Ctrl+Shift+E — plain Cmd+E is often claimed by browser
- * extensions (e.g. Claude) before the page receives the event.
+ * Quick Insert is Shift+E (no Cmd/Ctrl). Cmd+E and Cmd+Shift+E belong to Chrome
+ * DevTools Performance; plain Shift+E still yields to focused inputs as typing.
  */
 export function createToolShortcuts(params: CreateToolShortcutsParams): KeyHandler {
   return (event: KeyboardEvent): boolean => {
     const mod = isModKeyPressed(event);
+
+    // Before mod-only chords: Shift+E must not require Cmd (DevTools owns those).
+    if (
+      !mod &&
+      event.shiftKey &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      keyMatchesLetterOrCode(event, KEY.E, "KeyE")
+    ) {
+      openQuickInsert(params, event);
+      return true;
+    }
 
     if (mod && keyMatchesLetter(event, KEY.F)) {
       claimShortcutEvent(event);
@@ -107,11 +118,6 @@ export function createToolShortcuts(params: CreateToolShortcutsParams): KeyHandl
     }
 
     if (createC4Element(params, event)) return true;
-
-    if (mod && event.shiftKey && !event.altKey && keyMatchesLetter(event, KEY.E)) {
-      openQuickInsert(params, event);
-      return true;
-    }
 
     return false;
   };

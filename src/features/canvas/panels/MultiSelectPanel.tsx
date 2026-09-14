@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   X,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Node } from "@xyflow/react";
+import { useReactFlow } from "@xyflow/react";
 import {
   useActiveDiagram,
   useActiveDiagramId,
@@ -23,9 +24,11 @@ import {
   resetWaypointsForConnections,
 } from "@/features/canvas/edges/reset-edge-waypoints";
 import type { Component, ComponentType } from "@/features/diagram";
-import { isPanelType } from "@/features/diagram";
 import { captureSelectionAsTemplate } from "@/features/canvas/utils/capture-template";
+import { duplicateSelection } from "@/features/canvas/utils/duplicateSelection";
 import { SaveTemplateModal } from "@/features/canvas/components/SaveTemplateModal";
+import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
+import { KEY, keyIs } from "@/lib/core/keyboard";
 import { cn } from "@/lib/utils";
 import { layoutScopedNodes } from "@/features/canvas/layout/layoutScopedNodes";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
@@ -37,11 +40,9 @@ function readTechnology(component: Component): string | undefined {
   return undefined;
 }
 
-function readAwsService(component: Component): string | undefined {
-  if ("awsService" in component && typeof component.awsService === "string") {
-    return component.awsService;
-  }
-  return undefined;
+function tagsEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((tag, index) => tag === right[index]);
 }
 
 interface MultiSelectPanelProps {
@@ -52,7 +53,12 @@ interface MultiSelectPanelProps {
 export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelProps) {
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
+  const reactFlowInstance = useReactFlow();
+  const setSelectedNodeIds = useCanvasSelectionStore((state) => state.setSelectedNodeIds);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [tagsAreMixed, setTagsAreMixed] = useState(false);
   const typeLabelKeys: Record<string, string> = useMemo(
     () => ({
       person: "multiSelect.typePerson",
@@ -68,14 +74,16 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const {
     groupNodes,
     removeElements,
-    addComponent,
     updateComponent,
+    copyToClipboard,
+    pasteFromClipboard,
     saveUserTemplate,
     resetEdgeControlPoints,
     applyAutoLayout,
   } = useDiagramActions();
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
+  const idsKey = ids.join(",");
   const resolved = useMemo(
     () => (diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null),
     [diagram],
@@ -84,12 +92,32 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     () => (resolved ? ids.map((id) => resolved.components[id]).filter(Boolean) : []),
     [resolved, ids],
   );
+  const tagsHydratedForIdsRef = useRef("");
+
+  useEffect(() => {
+    if (tagsHydratedForIdsRef.current !== idsKey) {
+      tagsHydratedForIdsRef.current = "";
+    }
+    if (components.length === 0) {
+      setTags([]);
+      setTagsAreMixed(false);
+      setTagInput("");
+      return;
+    }
+    if (tagsHydratedForIdsRef.current === idsKey) return;
+    tagsHydratedForIdsRef.current = idsKey;
+    const first = components[0].tags ?? [];
+    const allSame = components.every((component) => tagsEqual(component.tags ?? [], first));
+    setTags(allSame ? [...first] : []);
+    setTagsAreMixed(!allSame);
+    setTagInput("");
+  }, [idsKey, components]);
 
   const typeCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     selectedNodes.forEach((n) => {
-      const t = (n.data?.type as string) ?? "component";
-      counts[t] = (counts[t] ?? 0) + 1;
+      const nodeType = (n.data?.type as string) ?? "component";
+      counts[nodeType] = (counts[nodeType] ?? 0) + 1;
     });
     return counts;
   }, [selectedNodes]);
@@ -126,12 +154,24 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     return allSame ? first : null;
   }, [components]);
 
-  const sharedTags = useMemo(() => {
-    if (components.length === 0) return undefined;
-    const first = components[0].tags?.join(", ") ?? "";
-    const allSame = components.every((c) => (c.tags?.join(", ") ?? "") === first);
-    return allSame ? first : null;
-  }, [components]);
+  const applyTagsToSelection = (nextTags: string[]) => {
+    ids.forEach((id) => updateComponent(id, { tags: nextTags }));
+    setTags(nextTags);
+    setTagsAreMixed(false);
+  };
+
+  const handleCommitTagInput = () => {
+    const newTag = tagInput.trim();
+    if (!newTag) return;
+    if (!tags.includes(newTag)) {
+      applyTagsToSelection([...tags, newTag]);
+    }
+    setTagInput("");
+  };
+
+  const handleRemoveTag = (tag: string) => {
+    applyTagsToSelection(tags.filter((item) => item !== tag));
+  };
 
   const handleGroup = () => {
     const panelId = groupNodes(ids);
@@ -139,23 +179,18 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   };
 
   const handleDuplicate = () => {
-    if (!diagram || !resolved) return;
-    ids.forEach((id, index) => {
-      const comp = resolved.components[id];
-      if (!comp || isPanelType(comp.type)) return;
-      const layout = resolved.nodeLayouts[id];
-      addComponent(
-        comp.type,
-        `${comp.name}${t("common.copySuffix")}`,
-        comp.parentId,
-        {
-          x: (layout?.x ?? 0) + 30 * (index + 1),
-          y: (layout?.y ?? 0) + 30 * (index + 1),
-        },
-        readAwsService(comp),
-      );
+    if (!diagram) return;
+    const newIds = duplicateSelection({
+      diagram,
+      nodes: selectedNodes,
+      copyToClipboard,
+      pasteFromClipboard,
     });
-    onClose();
+    if (newIds.length === 0) return;
+    reactFlowInstance.setNodes((nodes) =>
+      nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
+    );
+    setSelectedNodeIds(new Set(newIds));
   };
 
   const handleDelete = () => {
@@ -169,16 +204,6 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
 
   const handleDescriptionChange = (value: string) => {
     ids.forEach((id) => updateComponent(id, { description: value }));
-  };
-
-  const handleTagsChange = (value: string) => {
-    const tags = value
-      ? value
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : [];
-    ids.forEach((id) => updateComponent(id, { tags }));
   };
 
   const handleResetWaypoints = () => {
@@ -355,15 +380,42 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
             {t("common.tags")}
           </label>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="hover:text-foreground leading-none"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           <input
-            value={sharedTags !== null ? sharedTags : ""}
-            onChange={(e) => handleTagsChange(e.target.value)}
+            type="text"
+            value={tagInput}
+            onChange={(event) => setTagInput(event.target.value)}
+            onBlur={handleCommitTagInput}
+            onKeyDown={(event) => {
+              if (keyIs(event, KEY.ENTER) && tagInput.trim()) {
+                event.preventDefault();
+                handleCommitTagInput();
+              }
+            }}
             placeholder={
-              sharedTags === null ? t("common.multipleValues") : t("common.commaSeparatedTags")
+              tagsAreMixed ? t("common.multipleValues") : t("elementPanel.tagsPlaceholder")
             }
             className={cn(
               "w-full rounded-md border bg-background px-3 py-2 text-sm",
-              sharedTags === null && "italic text-muted-foreground",
+              tagsAreMixed && tags.length === 0 && "italic text-muted-foreground",
             )}
           />
         </div>

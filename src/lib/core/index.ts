@@ -5,5 +5,12 @@
  * everything — this barrel exists for convenience in high-usage spots.
  */
 export { cn } from "./cn";
-export { KEY, keyIs, keyIsEnterOrSpace, keyIsOneOf, keyMatchesLetter } from "./keyboard";
+export {
+  KEY,
+  keyIs,
+  keyIsEnterOrSpace,
+  keyIsOneOf,
+  keyMatchesLetter,
+  keyMatchesLetterOrCode,
+} from "./keyboard";
 export { formatTimestamp } from "./format-timestamp";

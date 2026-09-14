@@ -55,7 +55,7 @@ describe("shouldYieldCanvasShortcutToFocusedField", () => {
     expect(shouldYieldCanvasShortcutToFocusedField(event)).toBe(true);
   });
 
-  it("does not yield Cmd+Shift+E to a focused panel field (canvas tool chord)", () => {
+  it("yields Shift+E to a focused panel field (typing a capital E)", () => {
     vi.stubGlobal("navigator", {
       ...navigator,
       userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)",
@@ -63,7 +63,25 @@ describe("shouldYieldCanvasShortcutToFocusedField", () => {
     });
     const input = document.createElement("input");
     document.body.appendChild(input);
-    const event = macModEvent("e", input, { shiftKey: true });
+    const event = new KeyboardEvent("keydown", {
+      key: "E",
+      code: "KeyE",
+      shiftKey: true,
+      bubbles: true,
+    });
+    Object.defineProperty(event, "target", { value: input });
+    expect(shouldYieldCanvasShortcutToFocusedField(event)).toBe(true);
+  });
+
+  it("does not yield Cmd+F to a focused panel field (canvas tool chord)", () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)",
+      platform: "MacIntel",
+    });
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    const event = macModEvent("f", input);
     expect(shouldYieldCanvasShortcutToFocusedField(event)).toBe(false);
   });
 

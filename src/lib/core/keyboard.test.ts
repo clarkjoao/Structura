@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { KEY, keyIs, keyIsEnterOrSpace, keyIsOneOf, keyMatchesLetter } from "./keyboard";
+import {
+  KEY,
+  keyIs,
+  keyIsEnterOrSpace,
+  keyIsOneOf,
+  keyMatchesLetter,
+  keyMatchesLetterOrCode,
+} from "./keyboard";
 
-function keyEv(key: string): KeyboardEvent {
-  return new KeyboardEvent("keydown", { key });
+function keyEv(key: string, init: KeyboardEventInit = {}): KeyboardEvent {
+  return new KeyboardEvent("keydown", { key, ...init });
 }
 
 describe("keyMatchesLetter", () => {
@@ -22,6 +29,20 @@ describe("keyMatchesLetter", () => {
 
   it("returns false when letter argument is not a single character", () => {
     expect(keyMatchesLetter(keyEv("e"), "ee")).toBe(false);
+  });
+});
+
+describe("keyMatchesLetterOrCode", () => {
+  it("matches via key when the character is a Latin letter", () => {
+    expect(keyMatchesLetterOrCode(keyEv("l"), "l", "KeyL")).toBe(true);
+  });
+
+  it("matches via code when Option remaps the character", () => {
+    expect(keyMatchesLetterOrCode(keyEv("¬", { code: "KeyL" }), "l", "KeyL")).toBe(true);
+  });
+
+  it("returns false when neither key nor code matches", () => {
+    expect(keyMatchesLetterOrCode(keyEv("¬", { code: "KeyK" }), "l", "KeyL")).toBe(false);
   });
 });
 

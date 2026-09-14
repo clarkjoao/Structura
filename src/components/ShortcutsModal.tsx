@@ -127,7 +127,7 @@ export default function ShortcutsModal({
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
-                    <Kbd>Alt</Kbd>
+                    <Kbd>Shift</Kbd>
                     <Kbd>L</Kbd>
                   </span>
                 }
@@ -275,7 +275,6 @@ export default function ShortcutsModal({
                 description={t("shortcutsModal.quickInsertDesc")}
                 keys={
                   <span className="inline-flex items-center gap-1">
-                    <Kbd>Cmd/Ctrl</Kbd>
                     <Kbd>Shift</Kbd>
                     <Kbd>E</Kbd>
                   </span>

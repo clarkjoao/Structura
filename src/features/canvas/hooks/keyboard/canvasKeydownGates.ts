@@ -4,6 +4,7 @@ import {
   keyIs,
   keyIsOneOf,
   keyMatchesLetter,
+  keyMatchesLetterOrCode,
   KEY,
 } from "./helpers";
 
@@ -19,9 +20,7 @@ export interface CanvasKeydownModeFlags {
 
 /** True when edit/tool shortcuts must not run (flow, playback, compare, record). */
 export function isCanvasEditingLocked(flags: CanvasKeydownModeFlags): boolean {
-  return (
-    flags.isFlowPanelOpen || flags.isPlaying || flags.isCompareMode || flags.isRecording
-  );
+  return flags.isFlowPanelOpen || flags.isPlaying || flags.isCompareMode || flags.isRecording;
 }
 
 /** True when search or command palette owns the keyboard surface. */
@@ -54,13 +53,19 @@ export function handleSaveShortcut(
   return true;
 }
 
+/**
+ * Auto layout: Cmd/Ctrl+Shift+L.
+ *
+ * Plain Cmd+L is Chrome's address bar; Cmd+Alt+L remaps `event.key` on macOS
+ * (Option produces symbols). Shift+L avoids both; match via code as well.
+ */
 export function handleAutoLayoutShortcut(
   event: KeyboardEvent,
   flags: CanvasKeydownModeFlags,
   onAutoLayout?: () => void,
 ): boolean {
-  if (!isModKeyPressed(event) || !event.altKey || event.shiftKey) return false;
-  if (!keyMatchesLetter(event, KEY.L)) return false;
+  if (!isModKeyPressed(event) || !event.shiftKey || event.altKey) return false;
+  if (!keyMatchesLetterOrCode(event, KEY.L, "KeyL")) return false;
   claimShortcutEvent(event);
   if (!isCanvasEditingLocked(flags)) {
     onAutoLayout?.();
