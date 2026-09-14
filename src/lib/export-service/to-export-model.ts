@@ -290,15 +290,6 @@ function mapNode(
       borderStyle: c.borderStyle ?? "solid",
     };
   }
-  if (isApiGroupComponent(c)) {
-    return {
-      ...base,
-      kind: "apiGroup",
-      serviceName: c.serviceName,
-      basePath: c.basePath,
-      protocol: c.protocol,
-    };
-  }
   if (isAwsComponent(c)) {
     return {
       ...base,
@@ -309,15 +300,6 @@ function mapNode(
   }
   if (isC4Component(c)) {
     return c4Node(c, base, serviceCatalog);
-  }
-  if (isEndpointComponent(c)) {
-    return {
-      ...base,
-      kind: "endpoint",
-      method: c.method,
-      path: c.path,
-      endpointDescription: c.endpointDescription,
-    };
   }
   if (isGcpComponent(c) || isAzureComponent(c)) {
     return c4Node(c, base, serviceCatalog);

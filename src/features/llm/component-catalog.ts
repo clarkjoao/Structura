@@ -23,22 +23,6 @@ export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [
       "A visual grouping container. Use for bounded contexts, domains, or any logical grouping of nodes. Supports swimlane layout.",
     example: '{ "nodeType": "panel", "name": "Payment Domain", "parentId": null }',
   },
-  {
-    nodeType: "api-group",
-    displayName: "API Group",
-    description:
-      "Represents a REST/gRPC/GraphQL/WebSocket API surface. Use when defining a service API contract. Must have a basePath and protocol.",
-    requiredFields: ["serviceName", "basePath", "protocol"],
-    example: '{ "nodeType": "api-group", "name": "User API", "parentId": "service-node-id" }',
-  },
-  {
-    nodeType: "endpoint",
-    displayName: "API Endpoint",
-    description:
-      "A single HTTP or event endpoint. Must be a child of an api-group node. Requires method (GET/POST/PUT/PATCH/DELETE/EVENT) and path.",
-    requiredFields: ["method", "path"],
-    example: '{ "nodeType": "endpoint", "name": "Get Users", "parentId": "api-group-node-id" }',
-  },
 ];
 
 export const C4_TYPES: ComponentTypeDefinition[] = [
