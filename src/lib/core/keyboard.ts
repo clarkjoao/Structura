@@ -25,6 +25,7 @@ export const KEY = {
   F11: "F11",
 
   SLASH: "/",
+  PERIOD: ".",
   BACKTICK: "`",
 
   DIGIT_1: "1",
@@ -70,6 +71,21 @@ export function keyMatchesLetter(event: KeyboardEvent, letter: string): boolean 
   const k = event.key;
   if (k.length !== 1) return false;
   return k.toLowerCase() === letter.toLowerCase();
+}
+
+/**
+ * Match a Latin letter by `event.key`, or by physical `event.code` when Option/Alt
+ * remaps the character (macOS: Option+L → "¬" while code stays `"KeyL"`).
+ *
+ * @example keyMatchesLetterOrCode(event, KEY.L, "KeyL")
+ */
+export function keyMatchesLetterOrCode(
+  event: KeyboardEvent,
+  letter: string,
+  code: string,
+): boolean {
+  if (keyMatchesLetter(event, letter)) return true;
+  return event.code === code;
 }
 
 export function keyIs(event: { key: string }, key: string): boolean {

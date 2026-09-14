@@ -34,14 +34,14 @@ describe("canvasKeydownGates", () => {
     ).toBe(true);
   });
 
-  it("handles Cmd+Alt+L as auto layout", () => {
+  it("handles Cmd+Shift+L as auto layout", () => {
     vi.stubGlobal("navigator", {
       ...navigator,
       userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)",
       platform: "MacIntel",
     });
     const onAutoLayout = vi.fn();
-    const event = modEvent("l", { altKey: true });
+    const event = modEvent("l", { shiftKey: true });
     const handled = handleAutoLayoutShortcut(
       event,
       {
@@ -54,6 +54,70 @@ describe("canvasKeydownGates", () => {
     );
     expect(handled).toBe(true);
     expect(onAutoLayout).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
+  });
+
+  it("matches auto layout when Option remapped key but code is KeyL", () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)",
+      platform: "MacIntel",
+    });
+    const onAutoLayout = vi.fn();
+    const event = new KeyboardEvent("keydown", {
+      key: "¬",
+      code: "KeyL",
+      metaKey: true,
+      shiftKey: true,
+      bubbles: true,
+    });
+    const handled = handleAutoLayoutShortcut(
+      event,
+      {
+        isCompareMode: false,
+        isPlaying: false,
+        isRecording: false,
+        isFlowPanelOpen: false,
+      },
+      onAutoLayout,
+    );
+    expect(handled).toBe(true);
+    expect(onAutoLayout).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
+  });
+
+  it("ignores plain Cmd+L and Cmd+Alt+L for auto layout", () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)",
+      platform: "MacIntel",
+    });
+    const onAutoLayout = vi.fn();
+    expect(
+      handleAutoLayoutShortcut(
+        modEvent("l"),
+        {
+          isCompareMode: false,
+          isPlaying: false,
+          isRecording: false,
+          isFlowPanelOpen: false,
+        },
+        onAutoLayout,
+      ),
+    ).toBe(false);
+    expect(
+      handleAutoLayoutShortcut(
+        modEvent("l", { altKey: true }),
+        {
+          isCompareMode: false,
+          isPlaying: false,
+          isRecording: false,
+          isFlowPanelOpen: false,
+        },
+        onAutoLayout,
+      ),
+    ).toBe(false);
+    expect(onAutoLayout).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 

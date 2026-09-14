@@ -3,6 +3,7 @@ import type { Diagram, DiagramModel, ResolvedSnapshot } from "@/features/diagram
 import { isApiGroupComponent, isPanelComponent, useDiagramActions } from "@/features/diagram";
 import NodeContextMenu from "./NodeContextMenu";
 import { getCenterOfNodes, getCopyableIds, getPlatform } from "../hooks/keyboard/helpers";
+import { duplicateSelection } from "../utils/duplicateSelection";
 
 interface CanvasContextMenuProps {
   contextMenu: { x: number; y: number; elementId: string };
@@ -70,11 +71,12 @@ export function CanvasContextMenu({
 
   const handleDuplicate = canEditCanvas
     ? () => {
-        const copyableIds = getCopyableIds(diagram, effectiveNodes);
-        if (copyableIds.length === 0) return;
-        actions.copyToClipboard(copyableIds);
-        const pasteCenter = getCenterOfNodes(diagram, copyableIds);
-        const newIds = actions.pasteFromClipboard(pasteCenter);
+        const newIds = duplicateSelection({
+          diagram,
+          nodes: effectiveNodes,
+          copyToClipboard: actions.copyToClipboard,
+          pasteFromClipboard: actions.pasteFromClipboard,
+        });
         selectPastedNodes(newIds);
       }
     : undefined;

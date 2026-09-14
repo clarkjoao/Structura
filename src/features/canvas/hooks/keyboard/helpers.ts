@@ -29,7 +29,14 @@ export function isModKeyPressed(e: KeyboardEvent): boolean {
   return platform === "mac" ? e.metaKey : e.ctrlKey;
 }
 
-export { KEY, keyIs, keyIsEnterOrSpace, keyIsOneOf, keyMatchesLetter } from "@/lib/core/keyboard";
+export {
+  KEY,
+  keyIs,
+  keyIsEnterOrSpace,
+  keyIsOneOf,
+  keyMatchesLetter,
+  keyMatchesLetterOrCode,
+} from "@/lib/core/keyboard";
 
 export function isInputFocused(target: EventTarget | null): boolean {
   const el = target as HTMLElement;
@@ -69,9 +76,10 @@ export function claimShortcutEvent(event: KeyboardEvent): void {
 
 /**
  * OS / field-editing chords that must stay with a focused input (copy text, undo
- * typing, select-all in a title field). Canvas tool chords (Cmd+Shift+E, Cmd+F, …)
+ * typing, select-all in a title field). Canvas tool chords with Cmd/Ctrl (Cmd+F, …)
  * are intentionally NOT listed — on `/model` those belong to the canvas even when
- * ElementPanel or chat holds focus.
+ * ElementPanel or chat holds focus. Plain Shift+E (Quick Insert) is not listed
+ * either so a focused field still receives capital E.
  */
 export function isOsTextEditingChord(event: KeyboardEvent): boolean {
   if (!isModKeyPressed(event)) return false;
@@ -90,7 +98,8 @@ export function isOsTextEditingChord(event: KeyboardEvent): boolean {
  *
  * Plain keys (letters, Delete, arrows) always yield to a focused field. Mod
  * chords yield only when they are OS text-editing shortcuts; tool chords like
- * Cmd+Shift+E keep running so an open side panel cannot swallow them.
+ * Cmd+F keep running so an open side panel cannot swallow them. Shift+E yields
+ * when a field is focused (it is typing), and runs on the canvas otherwise.
  */
 export function shouldYieldCanvasShortcutToFocusedField(event: KeyboardEvent): boolean {
   if (!isInputFocused(event.target)) return false;
