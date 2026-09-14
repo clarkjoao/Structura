@@ -7,7 +7,6 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { ReactFlowProvider, useReactFlow, type ReactFlowInstance } from "@xyflow/react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -26,7 +25,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Canvas, FlowPanel, FlowReadingRail, FlowRecorderPanel } from "@/features/canvas";
+import {
+  Canvas,
+  DiagramFlowProvider,
+  FlowPanel,
+  FlowReadingRail,
+  FlowRecorderPanel,
+  useDiagramFlow,
+  type DiagramFlowInstance,
+} from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
 import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
@@ -43,12 +50,12 @@ import { getViewportCenter } from "@/features/canvas/viewport-utils";
 /** Stable identity, so the progress memo is not rebuilt on every render. */
 const EMPTY_HISTORY: string[] = [];
 
-function ReactFlowInstanceBridge({
+function DiagramFlowInstanceBridge({
   onReady,
 }: {
-  onReady: (instance: ReactFlowInstance) => void;
+  onReady: (instance: DiagramFlowInstance) => void;
 }): null {
-  const reactFlowInstance = useReactFlow();
+  const reactFlowInstance = useDiagramFlow();
   useEffect(() => {
     onReady(reactFlowInstance);
   }, [onReady, reactFlowInstance]);
@@ -191,7 +198,7 @@ export function WorkspaceContent({
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const lastCursorAtRef = useRef(0);
-  const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const reactFlowInstanceRef = useRef<DiagramFlowInstance | null>(null);
 
   const handleCanvasPointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -363,7 +370,7 @@ export function WorkspaceContent({
           </>
         ) : null}
         <div className="flex flex-1 min-h-0 overflow-hidden">
-          <ReactFlowProvider>
+          <DiagramFlowProvider>
             {activeFlow && (
               <FlowReadingRail
                 flow={activeFlow}
@@ -397,7 +404,7 @@ export function WorkspaceContent({
               onPointerMove={handleCanvasPointerMove}
               onPointerLeave={handleCanvasPointerLeave}
             >
-              <ReactFlowInstanceBridge
+              <DiagramFlowInstanceBridge
                 onReady={(instance) => {
                   reactFlowInstanceRef.current = instance;
                 }}
@@ -434,7 +441,7 @@ export function WorkspaceContent({
                 />
               )}
             </div>
-          </ReactFlowProvider>
+          </DiagramFlowProvider>
           {isRecording && recordingState && (
             <FlowRecorderPanel
               flowId={recordingState.flowId}

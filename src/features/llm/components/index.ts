@@ -7,6 +7,5 @@ export { MentionPicker } from "./MentionPicker";
 export { MentionTag } from "./MentionTag";
 export { LLMSelector } from "./LLMSelector";
 export { FloatingChatButton } from "./FloatingChatButton";
-export { PendingNodeToolbar } from "./PendingNodeToolbar";
 export { ThreadRenameControl } from "./ThreadRenameControl";
 export { ThreadDrawer } from "./ThreadDrawer";

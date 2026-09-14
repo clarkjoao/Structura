@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import type { Node } from "@xyflow/react";
+import type { DiagramNode } from "@/features/canvas";
 import type { Component, NodeLayout } from "@/features/diagram";
 import { seedStressDiagram, getSnapshot, measureMs, type StressSeedResult } from "./stress-helpers";
 import {
@@ -26,7 +26,7 @@ import { resolveNodeDescriptor } from "@/features/canvas/nodes/node-types";
 function buildNodeStubs(
   components: Record<string, Component>,
   nodeLayouts: Record<string, NodeLayout>,
-): Node[] {
+): DiagramNode[] {
   return Object.values(components).map((comp) => {
     const layout = nodeLayouts[comp.id];
     return {
@@ -36,7 +36,7 @@ function buildNodeStubs(
       type: isPanelComponent(comp) ? "panel" : "c4",
       parentId: comp.parentId ?? undefined,
       style: layout?.width ? { width: layout.width, height: layout.height ?? 400 } : undefined,
-    } as Node;
+    } as DiagramNode;
   });
 }
 
