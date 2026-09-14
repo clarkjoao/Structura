@@ -171,6 +171,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   });
 
   const lastUndoRedoAt = useDiagramStore((s) => s._lastUndoRedoAt);
+  const lastLayoutWriteAt = useDiagramStore((s) => s._lastLayoutWriteAt);
 
   // `params` is a fresh object literal on every Canvas render, so depending on it
   // rebuilt this callback — and with it `onNodesChange`, which React Flow writes
@@ -223,6 +224,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     diagram,
     publishDragFrame,
     lastUndoRedoAt,
+    lastLayoutWriteAt,
   );
 
   const edges = useCanvasEdges({

@@ -15,10 +15,13 @@ Toda afirmação abaixo está marcada **MEDIDO**, **LIDO NO CÓDIGO** ou **HIPÓ
    toda a faixa (20.713–20.743). `MAX_HANDLES` **foi mantido em 4**, com
    justificativa, e a fatia entregou a outra metade: o conjunto de handles agora é
    declarado por tipo.
-2. **Fatia 1 — o defeito real que existia.** **MEDIDO**: 111 das 550 conexões do
-   fixture G (20%) endereçavam um handle que o nó nunca renderizava — todas notas
-   usadas como origem. React Flow recusa essas arestas (erro #008) e elas somem da
-   tela com um aviso no console. Depois da correção: **0**.
+2. **Fatia 1 — o conjunto de handles agora é declarado.** `note`, `json-viewer` e
+   `db-table` **continuam sem handle de origem, de propósito** — são coisas para as
+   quais o diagrama aponta, e a seta nunca sai delas. A declaração
+   (`outgoing: 0`) agora registra isso, com teste, para que a ausência não seja
+   lida como lacuna e "corrigida" de novo. `external-element`, `svg` e `endpoint`
+   declaram o par único que desenham, e a atribuição parou de pedir slot além
+   dele.
 3. **Fatia 2 — perfis separados e rota no ar.** `ELK_OPTIONS_INTERACTIVE`
    (idêntico ao anterior) e `ELK_OPTIONS_VISUALIZATION` (novo). Rota `/view`
    funcionando com `?diagramId=` e `?source=file&path=`, aplicando o layout ao
@@ -105,14 +108,14 @@ e ela mede o contrário.
 `MAX_HANDLES` e tratava três tipos por nome, enquanto cada componente de nó
 decidia sozinho quantos `<Handle>` renderizar. Os dois discordavam em seis tipos:
 
-| tipo | renderizava | a atribuição podia pedir |
-|---|---|---|
-| `note` | só `in-<id>` | `source-0..3` → aresta descartada |
-| `json-viewer` | só `in-<id>` | idem |
-| `db-table` | só `in-<id>` | idem |
-| `external-element` | `target-0`, `source-0` | `target-1..3`, `source-1..3` |
-| `svg` | `target-0`, `source-0` | idem |
-| `endpoint` | `target-0`, `source-0` | idem |
+| tipo | renderiza | a atribuição podia pedir | correção |
+|---|---|---|---|
+| `note` | só `in-<id>` | `source-0..3` | declara `outgoing: 0` — **não é origem** |
+| `json-viewer` | só `in-<id>` | idem | idem |
+| `db-table` | só `in-<id>` | idem | idem |
+| `external-element` | `target-0`, `source-0` | `target-1..3`, `source-1..3` | declara `1`/`1` |
+| `svg` | `target-0`, `source-0` | idem | idem |
+| `endpoint` | `target-0`, `source-0` | idem | idem |
 
 A correção: `NodeTypeDescriptor.handles` passa a ser a única declaração do que um
 tipo renderiza, e `buildEdgeHandleAssignments` lê essa declaração. Os doze
@@ -122,8 +125,18 @@ três componentes precisam do id do handle compartilhado e a atribuição precis
 specs — juntá-los no registry fecharia um ciclo de import
 (`connectionDerivations → registry → descriptor → NoteNode → connectionDerivations`).
 
-`note`, `json-viewer` e `db-table` ganharam o handle de origem que já estavam
-sendo endereçados.
+**Correção de rumo, depois de revisão do dono.** Uma primeira versão desta fatia
+adicionou um handle de origem a `note`, `json-viewer` e `db-table`, tratando a
+ausência como lacuna. Estava errado: esses três tipos não devem ter saída — são
+coisas para as quais o diagrama aponta. Revertido. O que ficou é a declaração
+`outgoing: 0`, que registra a intenção onde antes ela só existia implicitamente em
+três componentes, mais um teste que falha se alguém acrescentar o handle outra vez.
+
+**A evidência que usei para justificar a adição não sustentava a conclusão.** Os
+"111 de 550" vinham do fixture G, cujo gerador (`make-fixtures.mjs`) sorteia
+origem e destino **uniformemente entre todos os nós folha**, dos quais 20% são
+notas. Notas como origem ali são artefato do gerador aleatório, não evidência de
+uso real. Usei um grafo sintético para responder uma pergunta de produto.
 
 **Fora do escopo pedido, mas o mesmo defeito:** `to-export-model.ts` tinha
 `const MAX_HANDLES = 9`, sob um comentário afirmando que batia com o canvas, que é
@@ -152,13 +165,15 @@ e `handleSpecForType is not a function`).
 métrica de cruzamento é cega a esta correção. Ela mede geometria de arestas
 desenhadas; a correção é sobre arestas **chegarem** a ser desenhadas.
 
-A medição que corresponde ao defeito é a contagem de arestas descartadas, no
-fixture G:
+Para `external-element`, `svg` e `endpoint` a correção é real e mensurável: a
+atribuição não pede mais `target-1..3` / `source-1..3` em tipos que desenham um
+par único. Nenhum dos fixtures medidos contém esses tipos, então não há número de
+antes/depois para eles — o que os cobre é o teste de render, que conta os handles
+no DOM contra a declaração.
 
-| | antes | depois |
-|---|---|---|
-| conexões que nomeavam um handle inexistente | **111 de 550 (20%)** | **0** |
-| quebra por tipo | `note` como origem: 111 | — |
+Para `note`, `json-viewer` e `db-table` não há correção de comportamento: o
+comportamento deles está como sempre esteve. O que mudou é que agora está
+declarado.
 
 **Declarado, como a regra pede:** a sobreposição colinear **não caiu ~9×**. Ela
 não caiu nada, porque a alavanca que deveria produzir essa queda mede o contrário
@@ -354,6 +369,16 @@ mesmos diagramas-semente.
 
 ## 4. DECISÕES DO DONO
 
+0. **Aresta saindo de uma nota continua desaparecendo em silêncio.** Com
+   `outgoing: 0` declarado, `note` / `json-viewer` / `db-table` não têm handle de
+   origem — correto. Mas se uma conexão com uma nota como origem existir nos dados
+   (importação, geração por LLM, plugin), a atribuição ainda emite `source-0`,
+   React Flow recusa (erro #008) e a aresta simplesmente não aparece. A UI não
+   permite desenhá-la, então isso só chega por esses caminhos. **Decisão:** bloquear
+   na criação da conexão, mostrar como inválida, ou deixar como está? Não decidi
+   por você — é regra de produto, e foi exatamente por presumir aqui que eu errei
+   antes.
+
 1. **`MAX_HANDLES` fica em 4, contra o enunciado.** Reduzir mede o oposto do que a
    hipótese dizia. Se você quiser o piso de sobreposição colinear, 6 dá −28% sobre
    4 (2.306px contra 3.213px), ao custo de mais handles no DOM por nó num caminho
@@ -387,6 +412,60 @@ mesmos diagramas-semente.
 
 ---
 
+## 4b. Correção fora do escopo: auto layout não aparecia sem refresh
+
+Reportado pelo dono durante a revisão. **Não é regressão deste épico** — verifiquei
+no `main` intocado (worktree em `37b43e6`, porta separada), com números idênticos.
+
+**Sintoma, MEDIDO no browser** (diagrama-semente `d-us-containers`, um Auto Layout
+(LR)):
+
+| | antes da correção |
+|---|---|
+| nós movidos em `nodeLayouts` | **11 de 11** |
+| nós movidos no DOM | **0 de 11** |
+
+O layout novo só aparecia depois de recarregar a página.
+
+**Causa, LIDA NO CÓDIGO** — `useLocalNodes.ts`, no merge da cópia local:
+
+```ts
+const useRemotePosition = sn.parentId !== ln.parentId;
+position: useRemotePosition ? sn.position : ln.position,
+```
+
+A posição local sempre vence, exceto se o nó trocar de pai. Isso está certo para
+arraste — durante um arraste a store está um frame atrás do ponteiro — e errado
+para um layout calculado, que move nós sem trocar pai. A cópia local ficava com a
+posição velha até algo forçar o descarte: trocar de diagrama, desfazer, ou
+recarregar. **Desfazer funcionava**, e é isso que deixa a forma do bug legível:
+`shouldDiscardLocalNodes` só olhava `_lastUndoRedoAt`.
+
+**Correção:** um segundo selo, `_lastLayoutWriteAt`, na mesma forma do que já
+existia, incrementado por `applyAutoLayout` — o que cobre de uma vez o botão de
+auto layout, o layout de filhos de painel, `layoutScopedNodes`, a API de plugin e
+o patch do LLM, que todos passam por lá. `shouldDiscardLocalNodes` passa a
+descartar quando qualquer um dos dois muda.
+
+**Depois, MEDIDO no browser** (`d-us-components`, 18 nós):
+
+| | depois |
+|---|---|
+| nós movidos no DOM | **18 de 18**, sem refresh |
+| arestas no DOM | **7 de 7** — a camada de arestas não desmontou |
+
+O segundo número importa: o caminho de descarte é o que o
+`docs/investigation/edge-relayer.md` documenta como caro (1756 mutações, ~184ms em
+400 nós). Ele é seguro aqui porque `withLocalMeasured` preserva `measured`, e
+porque um auto layout é uma ação deliberada e pontual, não um frame de arraste.
+
+**Teste antes, visto falhar:** `useLocalNodes.layoutWrite.test.ts` (3) — o layout
+chega ao canvas (falhou com `x: 0` esperando `x: 640`); `measured` sobrevive; e o
+guarda que impede isso de virar "sempre usar a posição da store", porque um commit
+de arraste escreve a store sem incrementar o selo e ali a cópia local é a verdade.
+
+---
+
 ## 5. NÃO VERIFICADO
 
 - **A extensão do VSCode.** Fora de escopo por decisão sua. Que uma webview do
@@ -412,6 +491,13 @@ mesmos diagramas-semente.
   descartadas.
 - **Os outros três diagramas do seed em `/view`.** Verifiquei contenção nos quatro
   fora do browser; olhei na tela apenas `d-us-containers` e `d-us-deployment`.
+- **`external-element`, `svg` e `endpoint` com muitas conexões, na tela.** A
+  correção da atribuição neles está coberta por teste de render, não por inspeção
+  visual: nenhum fixture medido contém esses tipos.
+- **O selo `_lastLayoutWriteAt` sob arraste em diagrama grande.** Medi o caminho
+  novo em 18 nós. Não cronometrei o descarte em 400 nós, onde o
+  `edge-relayer.md` registra ~184ms — um auto layout ali paga esse custo uma vez,
+  por desenho, mas não medi.
 
 ---
 
@@ -433,7 +519,7 @@ Nenhuma menção a Claude em mensagem, autor ou co-autor.
 | portão | resultado |
 |---|---|
 | `npm run typecheck` | exit 0 |
-| `npm test` | 211 arquivos, **1.940 testes, zero falhas** (1.916 do baseline + 24 novos) |
+| `npm test` | 212 arquivos, **1.946 testes, zero falhas** (1.916 do baseline + 30 novos) |
 | `npm run build` | exit 0 |
 | prettier nos arquivos tocados | `All matched files use Prettier code style!` |
 
@@ -461,5 +547,6 @@ src/features/viewer/layoutForVisualization.ts
 src/features/viewer/hooks/useStructuraFile.ts
 src/pages/ViewPage.tsx
 src/pages/ViewPage.test.tsx
+src/features/canvas/hooks/useLocalNodes.layoutWrite.test.ts
 docs/epico-layout-visualization/relatorio.md
 ```

@@ -20,7 +20,10 @@ export interface NodeHandleSpec {
    * `singleIncomingTargetHandleId(nodeId)`.
    */
   incoming: "shared" | number;
-  /** Source slots: `source-0 .. source-(n-1)`. */
+  /**
+   * Source slots: `source-0 .. source-(n-1)`. **Zero means the type is not a
+   * source** — it renders no outgoing handle because nothing should leave it.
+   */
   outgoing: number;
 }
 
@@ -41,14 +44,21 @@ export const SPREAD_HANDLES: NodeHandleSpec = {
 };
 
 /**
- * One anchor in, one anchor out: `note`, `json-viewer` and `db-table`. Their
- * body is content the reader scans (a written note, a JSON tree, a column
- * list), and slots spread down the border would put anchors beside arbitrary
- * rows of it.
+ * Takes edges, never emits one: `note`, `json-viewer` and `db-table`.
+ *
+ * These are things a diagram points *at* — an annotation, a payload, a table —
+ * and the arrow runs from the thing being described to them, never back out.
+ * So there is one incoming anchor, shared by every edge that arrives, and no
+ * outgoing handle at all. That is the design, not a gap: an earlier pass here
+ * read the missing handle as an omission and added one, which is what this
+ * comment exists to stop happening again.
+ *
+ * One anchor rather than slots down the border because their body is content
+ * the reader scans, and spread anchors would sit beside arbitrary rows of it.
  */
 export const SINGLE_INCOMING_HANDLES: NodeHandleSpec = {
   incoming: "shared",
-  outgoing: 1,
+  outgoing: 0,
 };
 
 /**

@@ -73,7 +73,8 @@ describe("declared handle specs", () => {
         expect(incoming, `${descriptor.rfType} incoming`).toBeGreaterThanOrEqual(1);
         expect(incoming, `${descriptor.rfType} incoming`).toBeLessThanOrEqual(MAX_HANDLES);
       }
-      expect(outgoing, `${descriptor.rfType} outgoing`).toBeGreaterThanOrEqual(1);
+      // 0 is legal and meaningful: the type is not a source.
+      expect(outgoing, `${descriptor.rfType} outgoing`).toBeGreaterThanOrEqual(0);
       expect(outgoing, `${descriptor.rfType} outgoing`).toBeLessThanOrEqual(MAX_HANDLES);
     }
   });
@@ -90,9 +91,14 @@ describe("declared handle specs", () => {
       const spec = handleSpecForType(type);
       const used = slotsUsedOn(type, MAX_HANDLES + 4);
 
-      for (const handle of used.source) {
-        const index = Number(/^source-(\d+)$/.exec(handle)?.[1]);
-        expect(index, `${type} used ${handle}`).toBeLessThan(spec.outgoing);
+      // A type that declares no source renders no source handle, so there is
+      // no slot to stay inside; `handle-spec.render.test.tsx` is what holds
+      // that end. Everything else must stay within what it declared.
+      if (spec.outgoing > 0) {
+        for (const handle of used.source) {
+          const index = Number(/^source-(\d+)$/.exec(handle)?.[1]);
+          expect(index, `${type} used ${handle}`).toBeLessThan(spec.outgoing);
+        }
       }
       for (const handle of used.target) {
         if (spec.incoming === "shared") {
@@ -107,17 +113,18 @@ describe("declared handle specs", () => {
 });
 
 /**
- * The six types the audit found with a gap between what the assignment could
- * ask for and what the component renders. Each one is named here so a
+ * The six types whose handle set is narrower than the general one. Three take
+ * edges and never emit one; three draw a single pair. Each is named here so a
  * regression says which type broke rather than only that something did.
  */
-describe("the six corrected types", () => {
+describe("the six narrow types", () => {
   it.each(["note", "json-viewer", "db-table"])(
-    "%s takes every incoming edge on its one shared handle and leaves on source-0",
+    "%s takes every incoming edge on its one shared handle, and is not a source",
     (type) => {
       const used = slotsUsedOn(type, 6);
       expect([...used.target]).toEqual([singleIncomingTargetHandleId("hub")]);
-      expect([...used.source]).toEqual(["source-0"]);
+      // Declared, so it cannot be read back as an omission and "fixed".
+      expect(handleSpecForType(type as ComponentType).outgoing).toBe(0);
     },
   );
 

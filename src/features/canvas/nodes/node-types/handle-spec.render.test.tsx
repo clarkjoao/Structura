@@ -156,7 +156,7 @@ function renderTypeWithFan(type: string, fan: number): Set<string> {
   return rendered;
 }
 
-const CORRECTED_TYPES = [
+const NARROW_TYPES = [
   "note",
   "json-viewer",
   "db-table",
@@ -166,7 +166,7 @@ const CORRECTED_TYPES = [
 ] as const;
 
 describe("declared handles reach the DOM", () => {
-  it.each(CORRECTED_TYPES)("%s renders exactly the handles it declares", (type) => {
+  it.each(NARROW_TYPES)("%s renders exactly the handles it declares", (type) => {
     const spec = handleSpecForType(type);
     const rendered = renderTypeWithFan(type, MAX_HANDLES + 2);
 
@@ -186,8 +186,19 @@ describe("declared handles reach the DOM", () => {
     }
   });
 
+  /**
+   * The three types that take edges and never emit one must render no source
+   * handle at all. This is the assertion that stops the missing handle being
+   * read as an omission and "fixed" — which is what happened once.
+   */
+  it.each(["note", "json-viewer", "db-table"])("%s renders no source handle", (type) => {
+    const rendered = renderTypeWithFan(type, MAX_HANDLES + 2);
+    expect([...rendered].filter((id) => id.startsWith("source-"))).toEqual([]);
+    expect(handleSpecForType(type as never).outgoing).toBe(0);
+  });
+
   it("no node renders more handles than MAX_HANDLES on a side", () => {
-    for (const type of CORRECTED_TYPES) {
+    for (const type of NARROW_TYPES) {
       const rendered = renderTypeWithFan(type, MAX_HANDLES + 2);
       const sources = [...rendered].filter((id) => id.startsWith("source-"));
       const targets = [...rendered].filter((id) => !id.startsWith("source-"));

@@ -22,30 +22,22 @@ const noteIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
 /**
- * Both anchors this node offers, as `handle-spec.ts` declares them: one shared
- * incoming handle whatever the edge count, and one outgoing slot.
+ * The one anchor this node offers: an incoming handle, shared by every edge
+ * that arrives, and nothing on the right.
  *
- * The outgoing handle used to be missing. `buildEdgeHandleAssignments` still
- * addressed an edge leaving this node to `source-0`, so React Flow refused the
- * edge (error #008) and it vanished from the canvas with only a console
- * warning — an arrow the user drew, gone without a word.
+ * There is deliberately no source handle. This is a thing the diagram points
+ * at, so the arrow runs towards it and never back out — see
+ * `SINGLE_INCOMING_HANDLES` in `node-types/handle-spec.ts`, which declares the
+ * same and is what the edge handle assignment reads.
  */
 function NoteEdgeHandles({ elementId }: { elementId: string }) {
   return (
-    <>
-      <Handle
-        id={singleIncomingTargetHandleId(elementId)}
-        type="target"
-        position={Position.Left}
-        className={noteIncomingHandleClassName}
-      />
-      <Handle
-        id="source-0"
-        type="source"
-        position={Position.Right}
-        className={noteIncomingHandleClassName}
-      />
-    </>
+    <Handle
+      id={singleIncomingTargetHandleId(elementId)}
+      type="target"
+      position={Position.Left}
+      className={noteIncomingHandleClassName}
+    />
   );
 }
 

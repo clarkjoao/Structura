@@ -47,6 +47,20 @@ export interface AppState {
   _lastUndoRedoAt: number;
   _lastUndoRedoTimestamp: number;
   /**
+   * Bumped whenever the store repositions nodes itself rather than recording a
+   * move the user made with the pointer — `applyAutoLayout` and everything
+   * that goes through it.
+   *
+   * The canvas keeps a local copy of the nodes whose position outranks the
+   * store's, because during a drag the store is a frame behind the pointer
+   * (`useLocalNodes`). That is right for a drag and wrong for a layout: a
+   * computed layout moved every node and the canvas kept the old picture until
+   * the page was reloaded. This is the signal that tells the local copy it is
+   * stale, the same shape as `_lastUndoRedoAt` — which is why undo already
+   * showed up and auto layout did not.
+   */
+  _lastLayoutWriteAt: number;
+  /**
    * An open flow-editing session. While one is open the flow actions push no
    * checkpoints of their own: the session's is the undo unit. `undoMark` is
    * the length `past` had right after that checkpoint, so an abandoned
