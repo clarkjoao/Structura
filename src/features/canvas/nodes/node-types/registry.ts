@@ -1,12 +1,10 @@
 import type { NodeTypes } from "@xyflow/react";
 import { panelDescriptor } from "./panel.descriptor";
 import { swimlaneDescriptor } from "./swimlane.descriptor";
-import { noteDescriptor } from "./note.descriptor";
 import { apiGroupDescriptor } from "./apigroup.descriptor";
 import { endpointDescriptor } from "./endpoint.descriptor";
 import { svgDescriptor } from "./svg.descriptor";
 import { unknownDescriptor } from "./unknown.descriptor";
-import { dbTableDescriptor } from "./dbtable.descriptor";
 import { flowNodeDescriptor } from "./flownode.descriptor";
 import { externalElementDescriptor } from "./external-element.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
@@ -20,10 +18,8 @@ import type { ElementDescriptor } from "@/features/elements/element.types";
 export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   panelDescriptor,
   swimlaneDescriptor,
-  noteDescriptor,
   apiGroupDescriptor,
   endpointDescriptor,
-  dbTableDescriptor,
   svgDescriptor,
   unknownDescriptor,
   flowNodeDescriptor,
