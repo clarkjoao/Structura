@@ -6,6 +6,7 @@ import { BUILTIN_COMPONENT_TYPES, sanitizeComponentType } from "@/features/diagr
 import { buildCanvasPickerOptions } from "@/features/canvas/toolbar/element-picker/buildPickerOptions";
 import { isValidNodeType } from "@/features/llm/component-catalog";
 import { allElements, getElement, registeredElementIds } from "./element.registry";
+import { emptyNodeBuildContext } from "./node-build-context.fixture";
 import type { RegisteredElementTypeId } from "./element.types";
 
 /**
@@ -25,7 +26,13 @@ import type { RegisteredElementTypeId } from "./element.types";
 const registeredIds = registeredElementIds();
 
 /** The ids the type-level mirror claims, as runtime values. */
-const DECLARED_IDS: RegisteredElementTypeId[] = ["json-viewer", "note", "db-table"];
+const DECLARED_IDS: RegisteredElementTypeId[] = [
+  "json-viewer",
+  "note",
+  "db-table",
+  "api-group",
+  "endpoint",
+];
 
 describe("the registry and its type-level mirror agree", () => {
   it("registers exactly the ids RegisteredElementTypeId names", () => {
@@ -80,7 +87,46 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
     expect(descriptor.export.drawio.toExportNode).toBeTypeOf("function");
     expect(descriptor.canvas.handles).toBeDefined();
     expect(descriptor.model.defaultSize.width).toBeGreaterThan(0);
-    expect(descriptor.model.defaultSize.height).toBeGreaterThan(0);
+    // A height is optional — omitted means the node measures itself — but a
+    // declared one must be a real size.
+    const { height } = descriptor.model.defaultSize;
+    if (height !== undefined) expect(height).toBeGreaterThan(0);
+  });
+});
+
+describe("a fixed-size element paints at the size it was created at", () => {
+  /**
+   * The promise `derivesSize: false` makes.
+   *
+   * db-table shipped a `defaultSize` of 180 while the node painted at 76, and
+   * nothing noticed because nothing read the field. Now that it governs
+   * creation, a disagreement between the two is a node that jumps size the
+   * moment it is first painted — so the elements that claim a fixed size are
+   * held to it here.
+   */
+  const fixedSized = allElements().filter((element) => !element.canvas.derivesSize);
+
+  it("covers at least one element", () => {
+    // Guards against the check silently covering nothing.
+    expect(fixedSized.length).toBeGreaterThan(0);
+  });
+
+  it.each(fixedSized.map((element) => element.id))("%s", (id) => {
+    const element = getElement(id)!;
+    const component = element.model.createComponent({
+      id: "el-1",
+      name: "Name",
+      description: "",
+      parentId: null,
+    });
+
+    const style = element.canvas.buildStyle?.(component, emptyNodeBuildContext());
+    if (!style) return;
+
+    expect(style.width).toBe(element.model.defaultSize.width);
+    if (element.model.defaultSize.height !== undefined) {
+      expect(style.height).toBe(element.model.defaultSize.height);
+    }
   });
 });
 
