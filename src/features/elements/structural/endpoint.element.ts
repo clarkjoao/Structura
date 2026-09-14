@@ -136,7 +136,6 @@ export const endpointElement: ElementDescriptor = {
 
   export: {
     drawio: {
-      kind: "endpoint",
       toExportNode: (comp, base) => {
         if (!isEndpointComponent(comp)) {
           throw new Error(`[elements] endpoint export received a ${comp.type} component.`);

@@ -8,6 +8,8 @@ export {
   isRegisteredElementType,
   isRegisteredElementComponent,
   allElements,
+  resolveElementCanvas,
+  elementDefaultSize,
   registeredElementIds,
   subscribeElements,
 } from "./element.registry";
@@ -21,6 +23,9 @@ export type {
   ElementInspectorPanel,
   ElementCanvasSlice,
   ElementModelSlice,
+  ElementCreateOptions,
+  ElementCanvasVariant,
+  ElementSize,
   ElementComponentBase,
   ElementPaletteSlice,
   ElementExportSlice,

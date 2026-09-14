@@ -12,8 +12,7 @@ import {
   SquareStack,
   User,
 } from "lucide-react";
-import { PANEL_KINDS } from "@/lib/catalogs/panels";
-import { PanelKind, type ComponentType, type FlowNodeShape } from "@/features/diagram";
+import { type ComponentType, type FlowNodeShape } from "@/features/diagram";
 import type { CanvasPickerOption } from "./types";
 
 export type C4PickerOption = {
@@ -32,42 +31,9 @@ export function buildC4PickerOptions(t: (key: string) => string): C4PickerOption
 }
 
 export function buildCanvasPickerOptions(t: (key: string) => string): CanvasPickerOption[] {
-  const swim = PANEL_KINDS.find((p) => p.id === PanelKind.Swimlane);
-  const restPanels = PANEL_KINDS.filter(
-    (p) => p.id !== PanelKind.Default && p.id !== PanelKind.Swimlane,
-  );
-  const core: CanvasPickerOption[] = [
-    {
-      type: "panel",
-      label: t("canvasToolbar.panel"),
-      icon: Square,
-      panelKind: PanelKind.Default,
-    },
-  ];
-  if (swim) {
-    core.push({
-      type: "panel",
-      label: t("swimlane.title"),
-      icon: swim.icon,
-      panelKind: PanelKind.Swimlane,
-      awsIconName: swim.awsIconName,
-    });
-  }
-  core.push({
-    type: "external-element",
-    label: t("externalElement.nodeBadge"),
-    icon: ExternalLink,
-  });
-  for (const p of restPanels) {
-    core.push({
-      type: "panel",
-      label: p.label,
-      icon: p.icon,
-      panelKind: p.id as PanelKind,
-      awsIconName: p.awsIconName,
-    });
-  }
-  return core;
+  // Everything else in this category now comes from the element registry; only
+  // the types still on the legacy path are listed here.
+  return [{ type: "external-element", label: t("externalElement.nodeBadge"), icon: ExternalLink }];
 }
 
 export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasPickerOption[] {

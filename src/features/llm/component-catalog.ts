@@ -15,15 +15,7 @@ export interface ComponentTypeDefinition {
   example?: string;
 }
 
-export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [
-  {
-    nodeType: "panel",
-    displayName: "Panel / Group",
-    description:
-      "A visual grouping container. Use for bounded contexts, domains, or any logical grouping of nodes. Supports swimlane layout.",
-    example: '{ "nodeType": "panel", "name": "Payment Domain", "parentId": null }',
-  },
-];
+export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [];
 
 export const C4_TYPES: ComponentTypeDefinition[] = [
   {

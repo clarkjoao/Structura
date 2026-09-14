@@ -115,7 +115,6 @@ export const apiGroupElement: ElementDescriptor = {
 
   export: {
     drawio: {
-      kind: "apiGroup",
       toExportNode: (comp, base) => {
         if (!isApiGroupComponent(comp)) {
           throw new Error(`[elements] api-group export received a ${comp.type} component.`);

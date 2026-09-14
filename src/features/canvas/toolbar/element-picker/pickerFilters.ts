@@ -1,4 +1,4 @@
-import { getPanelKindDef } from "@/lib/catalogs/panels";
+import { panelKindDefaultName } from "@/lib/catalogs/panels";
 import { AWS_CATEGORIES } from "@/features/cloud/providers/aws/aws.catalog";
 import type { AwsCategory } from "@/features/cloud/providers/aws/aws.catalog";
 import type { CloudProviderAdapter, CloudService } from "@/features/cloud";
@@ -9,7 +9,7 @@ import type { C4PickerOption } from "./buildPickerOptions";
 export function canvasOptionMatchesQuery(opt: CanvasPickerOption, query: string): boolean {
   const fields: string[] = [opt.label.toLowerCase()];
   if (opt.panelKind) {
-    fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
+    fields.push(panelKindDefaultName(opt.panelKind).toLowerCase());
     fields.push(String(opt.panelKind).toLowerCase());
   }
   if (opt.searchKeys) fields.push(...opt.searchKeys);

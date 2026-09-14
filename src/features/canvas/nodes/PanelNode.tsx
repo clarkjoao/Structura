@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { getPanelKindDef } from "@/lib/catalogs/panels";
+import { getPanelKindDef, panelKindLabel } from "@/lib/catalogs/panels";
 import { AwsIcon } from "./CloudIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
@@ -169,7 +169,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           <span className="text-[8px] text-muted-foreground text-nowrap truncate">
             {buildPanelSubLabel(
               d.panelKind,
-              kindDef.label,
+              panelKindLabel(d.panelKind),
               d.name || t("panelNode.defaultName"),
               t("panelNode.childElements", { count: childCount }),
             )}
@@ -290,7 +290,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           )}
           <div className="min-w-0 flex-1">
             <span className="text-sm font-semibold text-foreground truncate block">
-              {buildPanelHeaderLabel(d.panelKind, kindDef.label, d.name)}
+              {buildPanelHeaderLabel(d.panelKind, panelKindLabel(d.panelKind), d.name)}
             </span>
             {d.description && (
               <span className="text-xs text-muted-foreground line-clamp-1 block">

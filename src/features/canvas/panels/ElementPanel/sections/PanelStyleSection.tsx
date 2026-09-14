@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ComponentPatch, PanelComponent, SwimlaneStyle } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
 import { SwimlaneOrientation } from "@/features/canvas/enums";
-import { PANEL_KINDS, getPanelKindDef } from "@/lib/catalogs/panels";
+import { PANEL_KINDS, getPanelKindDef, panelKindLabel } from "@/lib/catalogs/panels";
 import type { NodeLayout } from "@/features/diagram";
 import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/canvas.constants";
 import Field from "../components/Field";
@@ -123,7 +123,9 @@ export function PanelStyleSection({
         >
           {PANEL_KINDS.map((panelKind) => (
             <option key={panelKind.id} value={panelKind.id}>
-              {panelKind.id === PanelKind.Swimlane ? t("swimlane.title") : panelKind.label}
+              {panelKind.id === PanelKind.Swimlane
+                ? t("swimlane.title")
+                : panelKindLabel(panelKind.id)}
             </option>
           ))}
         </select>

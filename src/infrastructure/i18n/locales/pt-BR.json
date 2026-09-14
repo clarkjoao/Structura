@@ -875,6 +875,9 @@
     },
     "endpoint": {
       "description": "Um único endpoint HTTP ou de evento. Deve ser filho de um nó api-group."
+    },
+    "panel": {
+      "description": "Um contêiner de agrupamento visual. Use para bounded contexts, domínios ou qualquer agrupamento lógico de nós. Suporta layout de raias."
     }
   },
   "flowchart": {
@@ -1936,5 +1939,43 @@
     "importNoActiveDiagram": "Abra um diagrama antes de importar com um plugin.",
     "importSkippedConnections": "{{count}} conexões foram ignoradas (extremidades desconhecidas).",
     "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin."
+  },
+  "panelKinds": {
+    "default": {
+      "label": "Painel",
+      "defaultName": "Novo Painel"
+    },
+    "availability-zone": {
+      "label": "Zona de Disponibilidade",
+      "defaultName": "AZ-1"
+    },
+    "eks-cluster": {
+      "label": "Cluster EKS",
+      "defaultName": "Cluster EKS"
+    },
+    "ecs-cluster": {
+      "label": "Cluster ECS",
+      "defaultName": "Cluster ECS"
+    },
+    "auto-scaling-group": {
+      "label": "Auto Scaling Group",
+      "defaultName": "ASG"
+    },
+    "vpc": {
+      "label": "VPC",
+      "defaultName": "VPC"
+    },
+    "public-subnet": {
+      "label": "Sub-rede Pública",
+      "defaultName": "Sub-rede Pública"
+    },
+    "private-subnet": {
+      "label": "Sub-rede Privada",
+      "defaultName": "Sub-rede Privada"
+    },
+    "swimlane": {
+      "label": "Raia",
+      "defaultName": "Raia"
+    }
   }
 }

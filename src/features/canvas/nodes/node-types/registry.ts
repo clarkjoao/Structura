@@ -1,6 +1,4 @@
 import type { NodeTypes } from "@xyflow/react";
-import { panelDescriptor } from "./panel.descriptor";
-import { swimlaneDescriptor } from "./swimlane.descriptor";
 import { svgDescriptor } from "./svg.descriptor";
 import { unknownDescriptor } from "./unknown.descriptor";
 import { flowNodeDescriptor } from "./flownode.descriptor";
@@ -9,13 +7,17 @@ import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { NodeHandleSpec } from "./handle-spec";
 import type { Component, ComponentType } from "@/features/diagram";
-import { isPanelComponent, isPluginComponentType, PanelKind } from "@/features/diagram";
-import { allElements, getElement, subscribeElements } from "@/features/elements/element.registry";
-import type { ElementDescriptor } from "@/features/elements/element.types";
+import { isPluginComponentType } from "@/features/diagram";
+import {
+  allElements,
+  elementDefaultSize,
+  getElement,
+  resolveElementCanvas,
+  subscribeElements,
+} from "@/features/elements/element.registry";
+import type { ElementCanvasSlice, ElementDescriptor } from "@/features/elements/element.types";
 
 export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
-  panelDescriptor,
-  swimlaneDescriptor,
   svgDescriptor,
   unknownDescriptor,
   flowNodeDescriptor,
@@ -32,13 +34,12 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
  * keeps a stable identity across renders, which the `nodeTypes` map and the
  * node memoisation both depend on.
  */
-const adaptedDescriptors = new WeakMap<ElementDescriptor, NodeTypeDescriptor>();
+const adaptedDescriptors = new WeakMap<ElementCanvasSlice, NodeTypeDescriptor>();
 
-function adaptElement(element: ElementDescriptor): NodeTypeDescriptor {
-  const cached = adaptedDescriptors.get(element);
+function adaptElement(element: ElementDescriptor, canvas = element.canvas): NodeTypeDescriptor {
+  const cached = adaptedDescriptors.get(canvas);
   if (cached) return cached;
 
-  const { canvas } = element;
   const adapted: NodeTypeDescriptor = {
     rfType: canvas.rfType,
     component: canvas.component,
@@ -53,17 +54,17 @@ function adaptElement(element: ElementDescriptor): NodeTypeDescriptor {
     // NodeTypeDescriptor still wants both dimensions; an element that leaves
     // its height to the content has none to give, and the legacy field has no
     // reader that would use it anyway.
-    defaultSize:
-      element.model.defaultSize.height === undefined
-        ? undefined
-        : { width: element.model.defaultSize.width, height: element.model.defaultSize.height },
+    defaultSize: (() => {
+      const size = elementDefaultSize(element);
+      return size.height === undefined ? undefined : { width: size.width, height: size.height };
+    })(),
     draggable: canvas.draggable,
     selectable: canvas.selectable,
     focusable: canvas.focusable,
     dragHandle: canvas.dragHandle,
   };
 
-  adaptedDescriptors.set(element, adapted);
+  adaptedDescriptors.set(canvas, adapted);
   return adapted;
 }
 
@@ -95,8 +96,13 @@ export function handleSpecForType(type: ComponentType): NodeHandleSpec {
 }
 
 export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
-  if (isPanelComponent(comp) && comp.panelKind === PanelKind.Swimlane) {
-    return swimlaneDescriptor;
+  // A registered element may render more than one way for the same type — a
+  // panel that is a lane. The element says which; this used to be a hardcoded
+  // swimlane branch right here.
+  const element = getElement(comp.type);
+  if (element) {
+    const canvas = resolveElementCanvas(comp) ?? element.canvas;
+    return adaptElement(element, canvas);
   }
   return getDescriptor(comp.type);
 }
@@ -104,7 +110,12 @@ export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
 const listeners = new Set<() => void>();
 
 function buildNodeTypes(): NodeTypes {
-  const descriptors = [...allElements().map(adaptElement), ...NODE_TYPE_REGISTRY];
+  const registered = allElements().flatMap((element) => [
+    adaptElement(element),
+    // A variant renders under its own React Flow type, so the map needs it too.
+    ...(element.variants ?? []).map((variant) => adaptElement(element, variant.canvas)),
+  ]);
+  const descriptors = [...registered, ...NODE_TYPE_REGISTRY];
   return Object.fromEntries(
     descriptors
       .filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i)

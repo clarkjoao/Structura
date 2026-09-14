@@ -1,7 +1,14 @@
 import en from "@/infrastructure/i18n/locales/en.json";
 import ptBR from "@/infrastructure/i18n/locales/pt-BR.json";
 import type { Component } from "@/features/diagram/model/component.types";
-import type { ElementDescriptor, ElementTypeId, RegisteredElementTypeId } from "./element.types";
+import type {
+  ElementCanvasSlice,
+  ElementCreateOptions,
+  ElementDescriptor,
+  ElementSize,
+  ElementTypeId,
+  RegisteredElementTypeId,
+} from "./element.types";
 
 /**
  * The element registry.
@@ -132,6 +139,27 @@ export function isRegisteredElementComponent(
   comp: Component,
 ): comp is Extract<Component, { type: RegisteredElementTypeId }> {
   return registry.has(comp.type as ElementTypeId);
+}
+
+/**
+ * The canvas slice that renders `comp` — a variant when one matches, the base
+ * slice otherwise. This is what replaced the resolver's hardcoded swimlane
+ * branch.
+ */
+export function resolveElementCanvas(comp: Component): ElementCanvasSlice | undefined {
+  const descriptor = registry.get(comp.type as ElementTypeId);
+  if (!descriptor) return undefined;
+  const variant = descriptor.variants?.find((candidate) => candidate.matches(comp));
+  return variant ? variant.canvas : descriptor.canvas;
+}
+
+/** `model.defaultSize`, resolved against what the caller asked to create. */
+export function elementDefaultSize(
+  descriptor: ElementDescriptor,
+  options: ElementCreateOptions = {},
+): ElementSize {
+  const { defaultSize } = descriptor.model;
+  return typeof defaultSize === "function" ? defaultSize(options) : defaultSize;
 }
 
 export function allElements(): ElementDescriptor[] {

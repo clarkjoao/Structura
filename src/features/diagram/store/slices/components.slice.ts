@@ -32,7 +32,11 @@ import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
-import { getElement, isRegisteredElementType } from "@/features/elements/element.registry";
+import {
+  elementDefaultSize,
+  getElement,
+  isRegisteredElementType,
+} from "@/features/elements/element.registry";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -131,8 +135,10 @@ export function buildComponentForType(
   if (isRegisteredElementType(type)) {
     const descriptor = getElement(type)!;
     return {
-      component: descriptor.model.createComponent(base),
-      resolvedPanelKind: undefined,
+      component: descriptor.model.createComponent(base, { panelKind, flowShape }),
+      // Still reported, because the caller passes it on to the layout builder
+      // and a panel's size depends on which kind was asked for.
+      resolvedPanelKind: isPanelType(type) ? (panelKind ?? PanelKind.Default) : undefined,
     };
   }
 
@@ -238,7 +244,10 @@ function buildLayoutForComponent(
   // instead of a literal repeated here.
   const registered = getElement(type);
   if (registered) {
-    const { width, height } = registered.model.defaultSize;
+    const { width, height } = elementDefaultSize(registered, {
+      panelKind: resolvedPanelKind,
+      flowShape,
+    });
     return {
       elementId: componentId,
       x,

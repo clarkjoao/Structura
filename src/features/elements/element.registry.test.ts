@@ -45,7 +45,6 @@ function makeDescriptor(overrides: Partial<ElementDescriptor> = {}): ElementDesc
     inspector: {},
     export: {
       drawio: {
-        kind: "note",
         toExportNode: (comp: Component, base: ExportGeometry) => ({
           ...base,
           kind: "note" as const,

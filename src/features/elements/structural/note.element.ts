@@ -92,7 +92,6 @@ export const noteElement: ElementDescriptor = {
 
   export: {
     drawio: {
-      kind: "note",
       toExportNode: (comp, base) => ({
         ...base,
         kind: "note",

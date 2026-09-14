@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { Shapes } from "lucide-react";
 import i18n from "@/infrastructure/i18n";
 import { allElements } from "./element.registry";
-import type { ElementDescriptor, ElementTypeId } from "./element.types";
+import type { ElementCreateOptions, ElementDescriptor, ElementTypeId } from "./element.types";
 
 /**
  * Palette entries derived from the registry.
@@ -12,6 +12,8 @@ import type { ElementDescriptor, ElementTypeId } from "./element.types";
  * by exactly one of the two paths.
  */
 export interface ElementPaletteEntry {
+  /** Unique per entry, since one element may contribute several. */
+  key: string;
   type: ElementTypeId;
   label: string;
   icon: LucideIcon;
@@ -19,28 +21,56 @@ export interface ElementPaletteEntry {
   searchKeys: string[];
   categoryId: string;
   spotlight?: number;
+  /** What to create with when this entry is picked. */
+  createOptions: ElementCreateOptions;
+  /** Rendered instead of `icon` when present; see ElementPaletteVariant. */
+  awsIconName?: string;
 }
 
 /** Stand-in for an element whose icon its family resolves (F4+). */
 const FAMILY_ICON_PLACEHOLDER: LucideIcon = Shapes;
 
-function toEntry(element: ElementDescriptor): ElementPaletteEntry {
-  return {
-    type: element.id,
-    label: i18n.t(element.labelKey),
-    icon:
-      element.palette.icon.kind === "lucide" ? element.palette.icon.icon : FAMILY_ICON_PLACEHOLDER,
-    searchKeys: [...element.palette.searchKeys],
-    categoryId: element.palette.categoryId,
-    spotlight: element.palette.spotlight,
-  };
+function iconOf(icon: ElementDescriptor["palette"]["icon"]): LucideIcon {
+  return icon.kind === "lucide" ? icon.icon : FAMILY_ICON_PLACEHOLDER;
+}
+
+/** Every palette entry an element contributes: its variants, or itself. */
+function entriesFor(element: ElementDescriptor): ElementPaletteEntry[] {
+  const { palette } = element;
+
+  if (palette.variants && palette.variants.length > 0) {
+    return palette.variants.map((variant) => ({
+      key: `${element.id}:${variant.id}`,
+      type: element.id,
+      label: i18n.t(variant.labelKey),
+      icon: iconOf(variant.icon),
+      searchKeys: [...(variant.searchKeys ?? palette.searchKeys)],
+      categoryId: palette.categoryId,
+      spotlight: palette.spotlight,
+      createOptions: variant.createOptions,
+      awsIconName: variant.awsIconName,
+    }));
+  }
+
+  return [
+    {
+      key: element.id,
+      type: element.id,
+      label: i18n.t(element.labelKey),
+      icon: iconOf(palette.icon),
+      searchKeys: [...palette.searchKeys],
+      categoryId: palette.categoryId,
+      spotlight: palette.spotlight,
+      createOptions: {},
+    },
+  ];
 }
 
 /** Registered elements offered in `categoryId`, label-resolved in the active locale. */
 export function paletteEntriesForCategory(categoryId: string): ElementPaletteEntry[] {
   return allElements()
     .filter((element) => element.palette.categoryId === categoryId)
-    .map(toEntry)
+    .flatMap(entriesFor)
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 

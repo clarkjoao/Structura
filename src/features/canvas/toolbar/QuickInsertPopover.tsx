@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { User, Network, Server, Database, Square, ExternalLink } from "lucide-react";
+import { User, Network, Server, Database, ExternalLink } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import {
   PanelKind,
@@ -9,7 +9,7 @@ import {
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
 import { buildFlowchartPickerOptions } from "./element-picker/buildPickerOptions";
-import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import { getPanelKindForAwsService, panelKindDefaultName } from "@/lib/catalogs/panels";
 import { paletteEntriesForCategory } from "@/features/elements/element.palette";
 import { ElementCategory } from "../enums";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
@@ -66,7 +66,7 @@ function canvasOptionMatchesQuery(
   const fields: string[] = [opt.label.toLowerCase()];
   if (opt.searchKeys) fields.push(...opt.searchKeys);
   if (opt.panelKind) {
-    fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
+    fields.push(panelKindDefaultName(opt.panelKind).toLowerCase());
   }
   if (opt.type === COMPONENT_TYPE_PANEL) {
     fields.push(...synonyms.panel);
@@ -179,25 +179,16 @@ const QuickInsertPopover = ({
         label: entry.label,
         icon: entry.icon,
         searchKeys: entry.searchKeys,
+        panelKind: entry.createOptions.panelKind,
+        awsIconName: entry.awsIconName,
       })),
     [t],
   );
 
   const CANVAS_OPTIONS = useMemo(
+    // Only the types still on the legacy path; panels and the rest now arrive
+    // through REGISTRY_OPTIONS.
     (): CanvasInsertOption[] => [
-      {
-        type: COMPONENT_TYPE_PANEL,
-        label: t("canvasToolbar.panel"),
-        icon: Square,
-        panelKind: PanelKind.Default,
-      },
-      ...PANEL_KINDS.filter((p) => p.id !== PanelKind.Default).map((p) => ({
-        type: COMPONENT_TYPE_PANEL as ComponentType,
-        label: p.id === PanelKind.Swimlane ? t("swimlane.title") : p.label,
-        icon: p.icon,
-        panelKind: p.id,
-        awsIconName: p.awsIconName,
-      })),
       {
         type: COMPONENT_TYPE_EXTERNAL_ELEMENT as ComponentType,
         label: t("quickInsert.typeExternalElement"),
@@ -389,7 +380,7 @@ const QuickInsertPopover = ({
 
   const handleSelectCanvas = useCallback(
     (type: ComponentType, label: string, panelKind?: PanelKind, flowShape?: FlowNodeShape) => {
-      const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
+      const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
       const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
       const comp = addComponent(type, name, null, insertPos, undefined, panelKind, flowShape);
       finalizeInsertion(comp.id);
@@ -403,7 +394,7 @@ const QuickInsertPopover = ({
       const comp = panelKind
         ? addComponent(
             COMPONENT_TYPE_PANEL,
-            getPanelKindDef(panelKind).defaultName,
+            panelKindDefaultName(panelKind),
             null,
             insertPos,
             undefined,

@@ -5,7 +5,12 @@ import { buildComponentForType } from "@/features/diagram/store/slices/component
 import { BUILTIN_COMPONENT_TYPES, sanitizeComponentType } from "@/features/diagram";
 import { buildCanvasPickerOptions } from "@/features/canvas/toolbar/element-picker/buildPickerOptions";
 import { isValidNodeType } from "@/features/llm/component-catalog";
-import { allElements, getElement, registeredElementIds } from "./element.registry";
+import {
+  allElements,
+  elementDefaultSize,
+  getElement,
+  registeredElementIds,
+} from "./element.registry";
 import { emptyNodeBuildContext } from "./node-build-context.fixture";
 import type { RegisteredElementTypeId } from "./element.types";
 
@@ -32,6 +37,7 @@ const DECLARED_IDS: RegisteredElementTypeId[] = [
   "db-table",
   "api-group",
   "endpoint",
+  "panel",
 ];
 
 describe("the registry and its type-level mirror agree", () => {
@@ -55,15 +61,12 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
     const descriptor = getElement(type)!;
     const built = buildComponentForType("el-1", type, "Name", null, undefined, undefined);
 
-    const fromDescriptor = descriptor.model.createComponent({
-      id: "el-1",
-      name: "Name",
-      description: "",
-      parentId: null,
-    });
+    const fromDescriptor = descriptor.model.createComponent(
+      { id: "el-1", name: "Name", description: "", parentId: null },
+      {},
+    );
 
     expect(built.component).toEqual(fromDescriptor);
-    expect(built.resolvedPanelKind).toBeUndefined();
   });
 
   it("is not listed by the legacy canvas palette", () => {
@@ -86,11 +89,11 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
     const descriptor = getElement(type)!;
     expect(descriptor.export.drawio.toExportNode).toBeTypeOf("function");
     expect(descriptor.canvas.handles).toBeDefined();
-    expect(descriptor.model.defaultSize.width).toBeGreaterThan(0);
+    const size = elementDefaultSize(descriptor);
+    expect(size.width).toBeGreaterThan(0);
     // A height is optional — omitted means the node measures itself — but a
     // declared one must be a real size.
-    const { height } = descriptor.model.defaultSize;
-    if (height !== undefined) expect(height).toBeGreaterThan(0);
+    if (size.height !== undefined) expect(size.height).toBeGreaterThan(0);
   });
 });
 
@@ -113,20 +116,17 @@ describe("a fixed-size element paints at the size it was created at", () => {
 
   it.each(fixedSized.map((element) => element.id))("%s", (id) => {
     const element = getElement(id)!;
-    const component = element.model.createComponent({
-      id: "el-1",
-      name: "Name",
-      description: "",
-      parentId: null,
-    });
+    const component = element.model.createComponent(
+      { id: "el-1", name: "Name", description: "", parentId: null },
+      {},
+    );
 
     const style = element.canvas.buildStyle?.(component, emptyNodeBuildContext());
     if (!style) return;
 
-    expect(style.width).toBe(element.model.defaultSize.width);
-    if (element.model.defaultSize.height !== undefined) {
-      expect(style.height).toBe(element.model.defaultSize.height);
-    }
+    const size = elementDefaultSize(element);
+    expect(style.width).toBe(size.width);
+    if (size.height !== undefined) expect(style.height).toBe(size.height);
   });
 });
 

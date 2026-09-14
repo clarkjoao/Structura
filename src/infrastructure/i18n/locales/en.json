@@ -875,6 +875,9 @@
     },
     "endpoint": {
       "description": "A single HTTP or event endpoint. Must be a child of an api-group node."
+    },
+    "panel": {
+      "description": "A visual grouping container. Use for bounded contexts, domains, or any logical grouping of nodes. Supports swimlane layout."
     }
   },
   "flowchart": {
@@ -1936,5 +1939,43 @@
     "importNoActiveDiagram": "Open a diagram before importing with a plugin.",
     "importSkippedConnections": "{{count}} connections were skipped (unknown endpoints).",
     "importHint": "Import a file ({{extensions}}) into the current diagram via this plugin."
+  },
+  "panelKinds": {
+    "default": {
+      "label": "Panel",
+      "defaultName": "New Panel"
+    },
+    "availability-zone": {
+      "label": "Availability Zone",
+      "defaultName": "AZ-1"
+    },
+    "eks-cluster": {
+      "label": "EKS Cluster",
+      "defaultName": "EKS Cluster"
+    },
+    "ecs-cluster": {
+      "label": "ECS Cluster",
+      "defaultName": "ECS Cluster"
+    },
+    "auto-scaling-group": {
+      "label": "Auto Scaling Group",
+      "defaultName": "ASG"
+    },
+    "vpc": {
+      "label": "VPC",
+      "defaultName": "VPC"
+    },
+    "public-subnet": {
+      "label": "Public Subnet",
+      "defaultName": "Public Subnet"
+    },
+    "private-subnet": {
+      "label": "Private Subnet",
+      "defaultName": "Private Subnet"
+    },
+    "swimlane": {
+      "label": "Swim lane",
+      "defaultName": "Swim lane"
+    }
   }
 }

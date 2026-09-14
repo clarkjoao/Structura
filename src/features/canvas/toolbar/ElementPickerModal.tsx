@@ -7,7 +7,7 @@ import type { ComponentType } from "@/features/diagram";
 import type { CanvasPickerOption, ElementPickerModalProps } from "./element-picker/types";
 import { getUsageKeyForType, getDefaultNameForNewComponent } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategory } from "@/features/cloud/providers/aws/aws.catalog";
-import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import { getPanelKindForAwsService, panelKindDefaultName } from "@/lib/catalogs/panels";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { cloudRegistry } from "@/features/cloud";
@@ -79,6 +79,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         label: entry.label,
         icon: entry.icon,
         searchKeys: entry.searchKeys,
+        panelKind: entry.createOptions.panelKind,
+        awsIconName: entry.awsIconName,
       })),
     ],
     [t],
@@ -205,7 +207,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const handleAddElement = (type: ComponentType, label: string, panelKind?: PanelKind) => {
     trackUsage(getUsageKeyForType(type, panelKind));
-    const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
+    const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
     const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
     const comp = addComponent(type, name, null, getInsertPos(), undefined, panelKind);
     onInsert?.(comp.id);
@@ -216,8 +218,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     const panelKind = getPanelKindForAwsService(serviceId);
     if (panelKind) {
       trackUsage(`canvas:panel:${panelKind}`);
-      const def = getPanelKindDef(panelKind);
-      const name = def.defaultName;
+      const name = panelKindDefaultName(panelKind);
       const comp = addComponent("panel", name, null, getInsertPos(), undefined, panelKind);
       onInsert?.(comp.id);
     } else {

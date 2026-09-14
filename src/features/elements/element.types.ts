@@ -6,8 +6,11 @@ import type {
   ComponentPatch,
   ComponentType,
 } from "@/features/diagram/model/component.types";
-import type { NodeBuildContext, NodeHandleSpec } from "@/features/canvas/nodes/node-types";
-import type { ExportNode, ExportNodeKind } from "@/lib/export-core";
+import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
+import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
+import type { PanelKind } from "@/features/diagram/enums";
+import type { FlowNodeShape } from "@/features/diagram/model/component.types";
+import type { ExportNode } from "@/lib/export-core";
 
 /**
  * The id of a registered element — the same string that lives in
@@ -27,7 +30,7 @@ export type ElementTypeId = ComponentType;
  * list and the runtime registry to each other.
  */
 export type RegisteredElementTypeId =
-  "json-viewer" | "note" | "db-table" | "api-group" | "endpoint";
+  "json-viewer" | "note" | "db-table" | "api-group" | "endpoint" | "panel";
 
 /**
  * Which vocabulary an element belongs to. Only `"structural"` is used while F1
@@ -79,6 +82,25 @@ export interface ElementInspectorProps {
 
 export type ElementInspectorPanel = (props: ElementInspectorProps) => React.ReactNode;
 
+/**
+ * What the caller asked for beyond a name and a parent.
+ *
+ * `addComponent` has carried these as trailing positional arguments since
+ * before the registry existed; a descriptor that varies by them — a panel is
+ * the first — needs them by name.
+ */
+export interface ElementCreateOptions {
+  panelKind?: PanelKind;
+  flowShape?: FlowNodeShape;
+  serviceId?: string;
+}
+
+export interface ElementSize {
+  width: number;
+  /** Omitted means the node measures itself; see `ElementModelSlice.defaultSize`. */
+  height?: number;
+}
+
 /** The fields the store owns on every component, whatever its type. */
 export interface ElementComponentBase {
   id: string;
@@ -98,7 +120,7 @@ export interface ElementModelSlice {
    * `Record<string, unknown>` spread onto a base cannot be a `Component`
    * without one, and casts are not allowed here.
    */
-  createComponent: (base: ElementComponentBase) => Component;
+  createComponent: (base: ElementComponentBase, options: ElementCreateOptions) => Component;
 
   /**
    * Size a new node is created at. Unlike `NodeTypeDescriptor.defaultSize`,
@@ -109,8 +131,12 @@ export interface ElementModelSlice {
    * measures itself, and writing a height would pin it to a number the
    * content never agreed to. A standalone `endpoint` is the case — its
    * style sets `minHeight` and lets the content decide the rest.
+   *
+   * A function when the size depends on what was asked for: a swimlane is
+   * created at lane proportions and an ordinary panel is not, and both are
+   * the same `panel` type.
    */
-  defaultSize: { width: number; height?: number };
+  defaultSize: ElementSize | ((options: ElementCreateOptions) => ElementSize);
 
   /**
    * Stacking order written into the node's layout at creation.
@@ -180,6 +206,32 @@ export interface ElementCanvasSlice {
   focusable?: boolean;
 }
 
+/**
+ * One of several ways the same element is offered.
+ *
+ * `panel` is why this exists too: the palette shows a VPC, an EKS cluster, a
+ * swimlane and six more, and every one of them creates a `panel` — they differ
+ * only by the `panelKind` they are created with. One registry entry per type
+ * would have collapsed nine palette entries into one.
+ */
+export interface ElementPaletteVariant {
+  /** Stable key; also what usage tracking records. */
+  id: string;
+  labelKey: string;
+  icon: PaletteIcon;
+  /** Passed to `createComponent` when this entry is picked. */
+  createOptions: ElementCreateOptions;
+  searchKeys?: readonly string[];
+  /**
+   * An icon from the AWS pack, rendered instead of `icon` when present.
+   *
+   * Carried verbatim from the panel-kind catalog so the palette looks the same
+   * as before; families get their own icon resolution in F4 and this goes with
+   * it.
+   */
+  awsIconName?: string;
+}
+
 /** How the element is offered to the user. */
 export interface ElementPaletteSlice {
   categoryId: string;
@@ -189,6 +241,8 @@ export interface ElementPaletteSlice {
   searchKeys: readonly string[];
   /** Lower sorts earlier in "spotlight" strips; absent means not featured. */
   spotlight?: number;
+  /** One palette entry each, instead of a single entry for the element. */
+  variants?: readonly ElementPaletteVariant[];
 }
 
 /** How the element is edited when selected. */
@@ -204,10 +258,31 @@ export interface ElementInspectorSlice {
  */
 export interface ElementExportSlice {
   drawio: {
-    kind: ExportNodeKind;
+    /**
+     * The whole mapping. There is no separate `kind` field beside it: one
+     * element can map to more than one export kind — a `panel` emits the
+     * swimlane cell when it is a lane — so naming a single kind here would
+     * have been a value no reader could trust, and nothing read it.
+     */
     toExportNode: (comp: Component, base: ExportGeometry) => ExportNode;
     minSize?: { width: number; height: number };
   };
+}
+
+/**
+ * An alternative rendering of the same domain type, chosen per component.
+ *
+ * `panel` is why this exists. A swimlane is not a `ComponentType` — it is a
+ * `panelKind` on a panel — so the two cannot be two registry entries without
+ * breaking the rule that a type has exactly one owner. Before this, the canvas
+ * resolver carried a hardcoded `if (panelKind === Swimlane)` branch naming one
+ * descriptor; declaring the variant here is the same statement, made by the
+ * element that owns it instead of by the resolver.
+ */
+export interface ElementCanvasVariant {
+  /** Chosen for components this matches; evaluated before the base slice. */
+  matches: (comp: Component) => boolean;
+  canvas: ElementCanvasSlice;
 }
 
 export interface ElementDescriptor {
@@ -220,6 +295,8 @@ export interface ElementDescriptor {
 
   model: ElementModelSlice;
   canvas: ElementCanvasSlice;
+  /** Alternative renderings, tried in order before `canvas`. */
+  variants?: readonly ElementCanvasVariant[];
   palette: ElementPaletteSlice;
   inspector: ElementInspectorSlice;
   export: ElementExportSlice;

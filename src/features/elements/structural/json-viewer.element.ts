@@ -97,7 +97,6 @@ export const jsonViewerElement: ElementDescriptor = {
 
   export: {
     drawio: {
-      kind: "jsonViewer",
       toExportNode: (comp, base) => {
         if (!isJsonViewerComponent(comp)) {
           throw new Error(`[elements] json-viewer export received a ${comp.type} component.`);

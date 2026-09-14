@@ -138,7 +138,6 @@ export const dbTableElement: ElementDescriptor = {
 
   export: {
     drawio: {
-      kind: "dbTable",
       toExportNode: (comp, base) => {
         if (!isDbTableComponent(comp)) {
           throw new Error(`[elements] db-table export received a ${comp.type} component.`);
