@@ -5,7 +5,6 @@ import {
   Diamond,
   ExternalLink,
   GitBranch,
-  Globe,
   Hexagon,
   Network,
   Server,

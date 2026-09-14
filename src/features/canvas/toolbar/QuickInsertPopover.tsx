@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { User, Network, Server, Database, Square, Globe, ExternalLink } from "lucide-react";
+import { User, Network, Server, Database, Square, ExternalLink } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import {
   PanelKind,
   COMPONENT_TYPE_PANEL,
-  COMPONENT_TYPE_API_GROUP,
-  COMPONENT_TYPE_ENDPOINT,
   COMPONENT_TYPE_EXTERNAL_ELEMENT,
 } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";

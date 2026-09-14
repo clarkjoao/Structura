@@ -8,7 +8,6 @@ import {
   isAzureComponent,
   isC4Component,
   isDbTableComponent,
-  isEndpointComponent,
   isExternalElementComponent,
   isProcessNodeComponent,
   isGcpComponent,

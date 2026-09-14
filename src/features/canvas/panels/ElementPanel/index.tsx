@@ -6,7 +6,6 @@ import {
   useConnections,
   useComponents,
   useDiagramActions,
-  useFlows,
   isPanelComponent,
   isExternalElementComponent,
   type ExternalElementComponent,
@@ -40,7 +39,6 @@ const ElementPanel = ({
   const component = useComponent(selectedElementId ?? "");
   const resolvedComponents = useComponents();
   const connections = useConnections();
-  const flows = useFlows();
   const {
     updateComponent,
     removeComponent,
@@ -49,7 +47,6 @@ const ElementPanel = ({
     groupNodes,
     ungroupNodes,
   } = useDiagramActions();
-  const availableFlows = flows.map((f) => ({ id: f.id, name: f.name }));
 
   if (selectedNodes.length > 1) {
     return <MultiSelectPanel selectedNodes={selectedNodes} onClose={onClose} />;
