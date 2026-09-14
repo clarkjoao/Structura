@@ -40,6 +40,25 @@ function localesMissing(key: string): string[] {
 }
 
 const registry = new Map<ElementTypeId, ElementDescriptor>();
+const listeners = new Set<() => void>();
+
+/**
+ * Subscribe to registrations; returns unsubscribe.
+ *
+ * The canvas needs to rebuild its React Flow `nodeTypes` map when an element
+ * appears, and this module must not import the canvas to tell it so. Inverting
+ * the dependency is what keeps the registry a leaf.
+ */
+export function subscribeElements(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function notifyElementsChanged(): void {
+  for (const listener of listeners) listener();
+}
 
 function fail(id: string, reason: string): never {
   throw new Error(`[elements] Cannot register "${id}": ${reason}`);
@@ -79,6 +98,7 @@ export function registerElement(descriptor: ElementDescriptor): void {
   }
 
   registry.set(id, descriptor);
+  notifyElementsChanged();
 }
 
 export function getElement(type: string): ElementDescriptor | undefined {
@@ -110,5 +130,5 @@ export function registeredElementIds(): ElementTypeId[] {
 
 /** Test-only: drop a registration so a suite can re-register its own fixture. */
 export function unregisterElement(type: string): void {
-  registry.delete(type as ElementTypeId);
+  if (registry.delete(type as ElementTypeId)) notifyElementsChanged();
 }

@@ -8,6 +8,7 @@ export {
   isRegisteredElementType,
   allElements,
   registeredElementIds,
+  subscribeElements,
 } from "./element.registry";
 export type {
   ElementDescriptor,

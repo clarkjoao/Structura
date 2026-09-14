@@ -7,7 +7,6 @@ import { endpointDescriptor } from "./endpoint.descriptor";
 import { svgDescriptor } from "./svg.descriptor";
 import { unknownDescriptor } from "./unknown.descriptor";
 import { dbTableDescriptor } from "./dbtable.descriptor";
-import { jsonViewerDescriptor } from "./jsonviewer.descriptor";
 import { flowNodeDescriptor } from "./flownode.descriptor";
 import { externalElementDescriptor } from "./external-element.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
@@ -15,6 +14,8 @@ import type { NodeTypeDescriptor } from "./types";
 import type { NodeHandleSpec } from "./handle-spec";
 import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelComponent, isPluginComponentType, PanelKind } from "@/features/diagram";
+import { allElements, getElement, subscribeElements } from "@/features/elements/element.registry";
+import type { ElementDescriptor } from "@/features/elements/element.types";
 
 export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   panelDescriptor,
@@ -23,7 +24,6 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   apiGroupDescriptor,
   endpointDescriptor,
   dbTableDescriptor,
-  jsonViewerDescriptor,
   svgDescriptor,
   unknownDescriptor,
   flowNodeDescriptor,
@@ -31,7 +31,50 @@ export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   c4Descriptor,
 ];
 
+/**
+ * A registered element's canvas slice, seen as a `NodeTypeDescriptor`.
+ *
+ * Adapting rather than re-declaring keeps every existing reader — the node
+ * builder, the handle-slot assignment, the `nodeTypes` map — working while
+ * types move across one slice at a time. Cached by id so the adapted object
+ * keeps a stable identity across renders, which the `nodeTypes` map and the
+ * node memoisation both depend on.
+ */
+const adaptedDescriptors = new WeakMap<ElementDescriptor, NodeTypeDescriptor>();
+
+function adaptElement(element: ElementDescriptor): NodeTypeDescriptor {
+  const cached = adaptedDescriptors.get(element);
+  if (cached) return cached;
+
+  const { canvas } = element;
+  const adapted: NodeTypeDescriptor = {
+    rfType: canvas.rfType,
+    component: canvas.component,
+    matches: (type) => type === element.id,
+    zIndex: canvas.zIndex,
+    connectable: canvas.connectable,
+    handles: canvas.handles,
+    canHaveParent: canvas.canHaveParent,
+    canBeParent: canvas.canBeParent,
+    buildData: canvas.buildData,
+    buildStyle: canvas.buildStyle,
+    defaultSize: element.model.defaultSize,
+    draggable: canvas.draggable,
+    selectable: canvas.selectable,
+    focusable: canvas.focusable,
+    dragHandle: canvas.dragHandle,
+  };
+
+  adaptedDescriptors.set(element, adapted);
+  return adapted;
+}
+
 export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
+  // Registered elements answer first: during the migration a type is owned by
+  // the registry or by the legacy chain below, never by both.
+  const element = getElement(type);
+  if (element) return adaptElement(element);
+
   if (isPluginComponentType(type)) {
     // The C4 catch-all must not absorb plugin types: orphaned ones (plugin disabled or
     // uninstalled) degrade to `unknown`, so the data is visibly foreign, never corrupted.
@@ -63,14 +106,19 @@ export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
 const listeners = new Set<() => void>();
 
 function buildNodeTypes(): NodeTypes {
+  const descriptors = [...allElements().map(adaptElement), ...NODE_TYPE_REGISTRY];
   return Object.fromEntries(
-    NODE_TYPE_REGISTRY.filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i).map(
-      (d) => [d.rfType, d.component],
-    ),
+    descriptors
+      .filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i)
+      .map((d) => [d.rfType, d.component]),
   ) as NodeTypes;
 }
 
 let nodeTypesSnapshot: NodeTypes = buildNodeTypes();
+
+// Elements may register after this module is evaluated (bootstrap order is not
+// guaranteed), so the map is rebuilt when one appears.
+subscribeElements(() => notifyRegistryChanged());
 
 function notifyRegistryChanged(): void {
   nodeTypesSnapshot = buildNodeTypes();

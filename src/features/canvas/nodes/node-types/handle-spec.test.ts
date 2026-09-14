@@ -6,7 +6,8 @@ import {
   buildEdgeHandleAssignments,
 } from "../../edges/connectionDerivations";
 import { canBeConnectionSource } from "@/features/diagram/model/connection-rules";
-import { NODE_TYPE_REGISTRY, handleSpecForType } from "./registry";
+import { NODE_TYPE_REGISTRY, getDescriptor, handleSpecForType } from "./registry";
+import { registeredElementIds } from "@/features/elements/element.registry";
 import { singleIncomingTargetHandleId } from "./handle-spec";
 
 /**
@@ -60,9 +61,20 @@ function slotsUsedOn(type: string, count: number): { source: Set<string>; target
   return { source, target };
 }
 
+/**
+ * Every type with a descriptor, wherever it lives.
+ *
+ * Types are moving from `NODE_TYPE_REGISTRY` to the element registry one
+ * migration slice at a time; sweeping only the former would quietly stop
+ * covering each type as it moves.
+ */
+function allDescriptors() {
+  return [...NODE_TYPE_REGISTRY, ...registeredElementIds().map((id) => getDescriptor(id))];
+}
+
 describe("declared handle specs", () => {
   it("every registered descriptor declares its handle set", () => {
-    for (const descriptor of NODE_TYPE_REGISTRY) {
+    for (const descriptor of allDescriptors()) {
       expect(descriptor.handles, `${descriptor.rfType} declares no handle set`).toBeDefined();
     }
   });
@@ -75,7 +87,7 @@ describe("declared handle specs", () => {
    * ever use.
    */
   it("agrees with the domain rule on which types are a source", () => {
-    for (const descriptor of NODE_TYPE_REGISTRY) {
+    for (const descriptor of allDescriptors()) {
       const type = descriptor.rfType === "swimlane" ? "panel" : descriptor.rfType;
       const declaresOutgoing = descriptor.handles.outgoing > 0;
       expect(canBeConnectionSource(type), `${type}`).toBe(declaresOutgoing);
@@ -83,7 +95,7 @@ describe("declared handle specs", () => {
   });
 
   it("no declared handle set exceeds MAX_HANDLES", () => {
-    for (const descriptor of NODE_TYPE_REGISTRY) {
+    for (const descriptor of allDescriptors()) {
       const { incoming, outgoing } = descriptor.handles;
       if (incoming !== "shared") {
         expect(incoming, `${descriptor.rfType} incoming`).toBeGreaterThanOrEqual(1);
@@ -100,7 +112,7 @@ describe("declared handle specs", () => {
    * ever gets slots its type declared.
    */
   it("never assigns a slot the type did not declare", () => {
-    for (const descriptor of NODE_TYPE_REGISTRY) {
+    for (const descriptor of allDescriptors()) {
       const type = (
         descriptor.rfType === "swimlane" ? "panel" : descriptor.rfType
       ) as ComponentType;
