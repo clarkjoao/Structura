@@ -1,25 +1,12 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import {
-  User,
-  Network,
-  Server,
-  Database,
-  Square,
-  StickyNote,
-  Globe,
-  Table,
-  ExternalLink,
-} from "lucide-react";
+import { User, Network, Server, Database, Square, Globe, ExternalLink } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import {
   PanelKind,
   COMPONENT_TYPE_PANEL,
-  COMPONENT_TYPE_NOTE,
   COMPONENT_TYPE_API_GROUP,
   COMPONENT_TYPE_ENDPOINT,
-  COMPONENT_TYPE_DB_TABLE,
   COMPONENT_TYPE_EXTERNAL_ELEMENT,
-  isDbTableType,
 } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
@@ -57,10 +44,8 @@ type FlatOption =
 type SearchSynonyms = {
   panel: string[];
   swimlane: string[];
-  note: string[];
   apiGroup: string[];
   endpoint: string[];
-  dbTable: string[];
 };
 
 type AwsSearchRow = {
@@ -92,10 +77,6 @@ function canvasOptionMatchesQuery(
     if (opt.panelKind === PanelKind.Swimlane) {
       fields.push(...synonyms.swimlane);
     }
-  } else if (opt.type === COMPONENT_TYPE_NOTE) {
-    fields.push(...synonyms.note);
-  } else if (isDbTableType(opt.type)) {
-    fields.push(...synonyms.dbTable);
   } else if (opt.type === COMPONENT_TYPE_API_GROUP) {
     fields.push(...synonyms.apiGroup);
   } else if (opt.type === COMPONENT_TYPE_ENDPOINT) {
@@ -226,16 +207,6 @@ const QuickInsertPopover = ({
         awsIconName: p.awsIconName,
       })),
       {
-        type: COMPONENT_TYPE_NOTE as ComponentType,
-        label: t("canvasToolbar.note"),
-        icon: StickyNote,
-      },
-      {
-        type: COMPONENT_TYPE_DB_TABLE as ComponentType,
-        label: t("nodeTypes.db-table"),
-        icon: Table,
-      },
-      {
         type: COMPONENT_TYPE_API_GROUP as ComponentType,
         label: t("quickInsert.typeApiGroup"),
         icon: Globe,
@@ -286,8 +257,6 @@ const QuickInsertPopover = ({
     (): SearchSynonyms => ({
       panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
       swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
-      note: splitSearchHelp(t("quickInsert.searchHelpNote")),
-      dbTable: splitSearchHelp(t("quickInsert.searchHelpDbTable")),
       apiGroup: splitSearchHelp(t("quickInsert.searchHelpApiGroup")),
       endpoint: splitSearchHelp(t("quickInsert.searchHelpEndpoint")),
     }),

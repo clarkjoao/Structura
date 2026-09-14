@@ -11,8 +11,6 @@ import {
   Server,
   Square,
   SquareStack,
-  StickyNote,
-  Table,
   User,
 } from "lucide-react";
 import { PANEL_KINDS } from "@/lib/catalogs/panels";
@@ -57,10 +55,8 @@ export function buildCanvasPickerOptions(t: (key: string) => string): CanvasPick
     });
   }
   core.push(
-    { type: "note", label: t("canvasToolbar.note"), icon: StickyNote },
     { type: "api-group", label: t("quickInsert.typeApiGroup"), icon: Globe },
     { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
-    { type: "db-table", label: t("nodeTypes.db-table"), icon: Table },
     { type: "external-element", label: t("externalElement.nodeBadge"), icon: ExternalLink },
   );
   for (const p of restPanels) {
