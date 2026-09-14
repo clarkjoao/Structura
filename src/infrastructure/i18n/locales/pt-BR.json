@@ -1062,7 +1062,9 @@
     "typePanel": "panel",
     "typeNote": "nota",
     "resetWaypoints": "Resetar caminhos das conexões",
-    "resetWaypointsShortcut": "Cmd/Ctrl+Shift+W — reseta caminhos das conexões selecionadas, ou de todas se nenhuma estiver selecionada"
+    "resetWaypointsShortcut": "Cmd/Ctrl+Shift+W — reseta caminhos das conexões selecionadas, ou de todas se nenhuma estiver selecionada",
+    "autoLayoutSelection": "Auto layout da seleção",
+    "autoLayoutSelectionHint": "Organiza os elementos selecionados entre si; conexões com o resto do diagrama não são consideradas"
   },
   "saveTemplate": {
     "title": "Salvar seleção como template",
