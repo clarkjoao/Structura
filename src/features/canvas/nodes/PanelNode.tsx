@@ -8,7 +8,7 @@ import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { AwsIcon } from "./CloudIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
