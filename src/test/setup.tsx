@@ -1,6 +1,7 @@
 import { vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import "@/infrastructure/i18n";
+import "@/features/elements/bootstrap";
 
 /**
  * Monaco cannot run in jsdom — it measures glyphs against a real layout engine.
