@@ -4,6 +4,7 @@ import { useStoreApi, type Node } from "@xyflow/react";
 import type { Component } from "@/features/diagram";
 import type { DiagramSceneState } from "../nodes/useCanvasNodes";
 import type { Flow } from "@/features/diagram";
+import { useDiagramStore } from "@/features/diagram";
 import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
@@ -169,6 +170,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     updateComponent: actions.updateComponent,
   });
 
+  const lastUndoRedoAt = useDiagramStore((s) => s._lastUndoRedoAt);
+
   // `params` is a fresh object literal on every Canvas render, so depending on it
   // rebuilt this callback — and with it `onNodesChange`, which React Flow writes
   // into its store, notifying every node. The three setters it actually uses are
@@ -219,6 +222,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     onSelectionFromChanges,
     diagram,
     publishDragFrame,
+    lastUndoRedoAt,
   );
 
   const edges = useCanvasEdges({

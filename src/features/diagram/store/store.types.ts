@@ -45,6 +45,7 @@ export interface AppState {
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];
   _lastUndoRedoAt: number;
+  _lastUndoRedoTimestamp: number;
   /**
    * An open flow-editing session. While one is open the flow actions push no
    * checkpoints of their own: the session's is the undo unit. `undoMark` is

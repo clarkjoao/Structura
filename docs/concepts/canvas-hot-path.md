@@ -104,6 +104,14 @@ every call even when contents did not move.
 `useCanvasEdges.identity.test.ts` is the contract: moving one node must
 leave all edge objects (and the array) identical.
 
+> **Note:** keeping edge identity stable is not enough if nodes arrive without
+> `measured`. `adoptUserNodes` in `@xyflow/system` calls `parseHandles`, which
+> discards `handleBounds` when `userNode.measured` is absent. Without
+> `handleBounds`, `getEdgePosition` returns `null` and every edge unmounts.
+> The fix is in `useLocalNodes.ts` (`shouldDiscardLocalNodes` +
+> `withLocalMeasured`): `measured` must survive any node array replacement,
+> including the discard path for undo/redo.
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
