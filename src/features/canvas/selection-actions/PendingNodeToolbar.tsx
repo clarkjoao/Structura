@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
-import { NodeToolbar, Position } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { DiagramNodeToolbar, DiagramPosition } from "../core/DiagramFlowProvider";
 
 interface PendingNodeToolbarProps {
   nodeId: string;
@@ -10,6 +10,10 @@ interface PendingNodeToolbarProps {
   onDiscard: (suggestionId: string) => void;
 }
 
+/**
+ * Keep/discard chrome for an LLM-suggested node. Canvas-owned because it
+ * mounts inside React Flow via NodeToolbar (ADR-0001).
+ */
 export function PendingNodeToolbar({
   nodeId,
   suggestionId,
@@ -19,7 +23,7 @@ export function PendingNodeToolbar({
   const { t } = useTranslation();
 
   return (
-    <NodeToolbar nodeId={nodeId} isVisible position={Position.Top} offset={10}>
+    <DiagramNodeToolbar nodeId={nodeId} isVisible position={DiagramPosition.Top} offset={10}>
       <div className="flex items-center gap-2 rounded-md border border-border bg-card/95 p-1 shadow-md backdrop-blur-sm">
         <Button
           type="button"
@@ -41,6 +45,6 @@ export function PendingNodeToolbar({
           {t("llmChat.preview.discard")}
         </Button>
       </div>
-    </NodeToolbar>
+    </DiagramNodeToolbar>
   );
 }

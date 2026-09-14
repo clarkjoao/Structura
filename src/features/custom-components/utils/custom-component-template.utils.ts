@@ -1,7 +1,15 @@
-import type { Node } from "@xyflow/react";
 import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
 import { sanitizeComponentType } from "@/features/diagram";
 import type { CustomComponentTemplate } from "../types";
+
+/**
+ * Minimal node shape needed to seed a custom-component template.
+ * Intentionally not a React Flow `Node` — keeps this feature free of `@xyflow/react`.
+ */
+export interface TemplateSourceNode {
+  type?: string;
+  data?: unknown;
+}
 
 const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "name",
@@ -47,7 +55,10 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
-function resolveBaseType(node: Node, nodeData: Record<string, unknown>): ComponentType {
+function resolveBaseType(
+  node: TemplateSourceNode,
+  nodeData: Record<string, unknown>,
+): ComponentType {
   if (typeof node.type === "string" && node.type.length > 0) {
     return sanitizeComponentType(node.type);
   }
@@ -128,7 +139,7 @@ function templateRecordFromStrippedNodeData(
 }
 
 export function createTemplateDataFromNode(
-  node: Node,
+  node: TemplateSourceNode,
   domainComponent?: Component,
 ): {
   baseType: ComponentType;

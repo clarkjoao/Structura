@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { Component, Diagram, Flow, SceneDiff } from "@/features/diagram";
 import { generateShareUrl, decodeShareParam } from "@/lib/share-url";
-import { useDiagramToFlow } from "./hooks/useDiagramToFlow";
+import { useReadDiagramFlow } from "@/features/canvas/core";
 
 /**
  * The payload as a reader receives it: through `URLSearchParams`, which undoes
@@ -70,7 +70,7 @@ function diagramInScene(): Diagram {
 }
 
 function nodeNames(diagram: Diagram): string[] {
-  const { result } = renderHook(() => useDiagramToFlow(diagram));
+  const { result } = renderHook(() => useReadDiagramFlow(diagram));
   return result.current.nodes.map((node) => String(node.data.name)).sort();
 }
 

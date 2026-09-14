@@ -1,7 +1,5 @@
 import type { Component, Diagram, NodeLayout } from "@/features/diagram/model";
-import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
-import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
-import { layout } from "@/features/canvas/layout/layoutEngine";
+import { fromDiagram, layout, resizableIds, toAppliedLayouts } from "@/features/canvas/layout";
 
 /**
  * Arranges a diagram for reading, and hands back a copy.

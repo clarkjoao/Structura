@@ -2,9 +2,8 @@ import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent }
 import { Loader2, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { ReactFlowProvider } from "@xyflow/react";
 import { toast } from "sonner";
-import { Canvas, FlowModeProvider } from "@/features/canvas";
+import { Canvas, DiagramFlowProvider, FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, useCollab } from "./CollabProvider";
 import { CollabCursors } from "./CollabCursors";
 import { CollabJoinModal } from "./CollabJoinModal";
@@ -105,9 +104,9 @@ function CollabRoomInner() {
             onPointerLeave={handleCanvasPointerLeave}
           >
             <FlowModeProvider>
-              <ReactFlowProvider>
+              <DiagramFlowProvider>
                 <Canvas />
-              </ReactFlowProvider>
+              </DiagramFlowProvider>
             </FlowModeProvider>
             {session && <CollabCursors peers={session.peers} />}
           </div>

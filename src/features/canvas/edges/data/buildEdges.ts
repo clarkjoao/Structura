@@ -9,6 +9,7 @@ import {
   OPACITY_FLOW_PLAYBACK_PARTICIPANT,
   OPACITY_TAG_FILTER_EDGE_DIM,
 } from "../../canvas.constants";
+import { DIAGRAM_EDGE_RF_TYPE } from "../../core/reactFlowBaseConfig";
 
 /** Maps domain connections onto React Flow edges. Pure data — no geometry or React. */
 
@@ -122,7 +123,7 @@ export function buildEdge(
     target: conn.targetId,
     sourceHandle: assignment?.sourceHandle,
     targetHandle: assignment?.targetHandle,
-    type: "editable",
+    type: DIAGRAM_EDGE_RF_TYPE,
     data: {
       label: conn.label,
       technology: conn.technology,

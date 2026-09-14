@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import type { Component, Connection, Diagram } from "@/features/diagram";
 import "@/features/canvas/nodes/node-types/registry";
-import { useDiagramToFlow } from "./useDiagramToFlow";
+import { useReadDiagramFlow } from "./useReadDiagramFlow";
 
 function component(partial: Record<string, unknown>): Component {
   return { description: "", parentId: null, ...partial } as unknown as Component;
@@ -32,13 +32,13 @@ function diagramOf(components: Component[], connections: Connection[] = []): Dia
 }
 
 function nodeById(diagram: Diagram, id: string) {
-  const { result } = renderHook(() => useDiagramToFlow(diagram));
+  const { result } = renderHook(() => useReadDiagramFlow(diagram));
   const node = result.current.nodes.find((n) => n.id === id);
-  if (!node) throw new Error(`Expected node ${id} in the viewer graph`);
+  if (!node) throw new Error(`Expected node ${id} in the read projection`);
   return node;
 }
 
-describe("useDiagramToFlow — cloud service icons", () => {
+describe("useReadDiagramFlow — cloud service icons", () => {
   it("maps awsService onto cloudService the way CustomNode reads it", () => {
     const node = nodeById(
       diagramOf([component({ id: "n1", name: "Fn", type: "aws-compute", awsService: "lambda" })]),
@@ -70,7 +70,7 @@ describe("useDiagramToFlow — cloud service icons", () => {
   });
 });
 
-describe("useDiagramToFlow — descriptor types and colors", () => {
+describe("useReadDiagramFlow — descriptor types and colors", () => {
   it("uses the registry rfType for svg, process-node, and external-element", () => {
     const diagram = diagramOf([
       component({ id: "s1", name: "Mark", type: "svg", svgContent: "<svg />" }),
@@ -110,7 +110,7 @@ describe("useDiagramToFlow — descriptor types and colors", () => {
   });
 });
 
-describe("useDiagramToFlow — handle counts", () => {
+describe("useReadDiagramFlow — handle counts", () => {
   it("counts incoming and outgoing connections instead of hardcoding 1", () => {
     const diagram = diagramOf(
       [

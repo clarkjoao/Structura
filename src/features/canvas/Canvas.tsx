@@ -1,21 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ReactFlow,
-  useReactFlow,
-  Background,
-  BackgroundVariant,
-  Controls,
-  MiniMap,
-  Panel,
-  SelectionMode,
-} from "@xyflow/react";
+import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
-import { ElementsSelectableProvider } from "./contexts/ElementsSelectableContext";
-import { EdgeLabelPortalHost, EdgeLabelPortalProvider } from "./edges/EdgeLabelPortal";
 import { useNodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
@@ -36,15 +25,8 @@ import { useFlowSewNotices } from "./flow/useFlowSewNotices";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import {
-  CANVAS_MAX_ZOOM,
-  CANVAS_MIN_ZOOM,
-  CANVAS_STYLES,
-  GRID_SIZE,
-  isSnapToGridDisabledForE2E,
-} from "./canvas.constants";
+import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
-import EditableEdge from "./edges/EditableEdge";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
 import {
@@ -54,16 +36,14 @@ import {
   CUSTOM_COMPONENT_DRAG_MIME,
   useCustomComponentLibrary,
 } from "@/features/custom-components";
-import {
-  AssistantUIChatPanel,
-  FloatingChatButton,
-  PendingNodeToolbar,
-} from "@/features/llm/components";
+import { AssistantUIChatPanel, FloatingChatButton } from "@/features/llm/components";
 import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
 import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
+import { DiagramSurface, writePolicy } from "./core";
+import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
 
 /**
  * Phase 4 — selection epic.
@@ -104,23 +84,6 @@ import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
  * which forces `panOnDrag=false` and disables `selectionOnDrag`, breaking
  * Shift+drag-marquee.
  */
-const MULTI_SELECTION_KEY_CODES = ["Meta", "Control", "Shift"];
-const PAN_ACTIVATION_KEY = "Space";
-const SELECTION_KEY_CODE: string | null = null;
-const canvasEdgeTypes = { editable: EditableEdge };
-
-/**
- * Every prop React Flow tracks in `reactFlowFieldsToTrack` is written into its
- * zustand store whenever its *identity* changes, and each write runs the
- * selector of every subscriber — one per node on screen. An inline `[15, 15]`
- * or `{ padding: 0.3 }` is therefore a full store notification per Canvas
- * render: measured at 226 apiece over a single 6 s drag of 150 nodes.
- */
-const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
-const FIT_VIEW_OPTIONS = { padding: 0.3 };
-const PRO_OPTIONS = { hideAttribution: true };
-const PAN_ON_DRAG_MOUSE: [number, number] = [1, 2];
-
 const Canvas = (props: CanvasProps = {}) => {
   useFlowSewNotices();
   const nodeTypes = useNodeTypes();
@@ -386,150 +349,111 @@ const Canvas = (props: CanvasProps = {}) => {
                 </div>
               </div>
             )}
-            <ElementsSelectableProvider value={interactionMode.canEditCanvas}>
-              <EdgeLabelPortalProvider>
-                <ReactFlow
-                  nodes={nodes}
-                  edges={edges}
-                  nodeTypes={nodeTypes}
-                  edgeTypes={canvasEdgeTypes}
-                  onNodesChange={onNodesChange}
-                  onEdgesChange={eventHandlers.onEdgesChange}
-                  onConnect={eventHandlers.onConnect}
-                  onConnectEnd={eventHandlers.onConnectEnd}
-                  onReconnect={edgeReconnect.onReconnect}
-                  onReconnectStart={edgeReconnect.onReconnectStart}
-                  onReconnectEnd={edgeReconnect.onReconnectEnd}
-                  onNodeClick={eventHandlers.onNodeClick}
-                  onEdgeClick={eventHandlers.onEdgeClick}
-                  onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
-                  onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
-                  onPaneClick={eventHandlers.onPaneClick}
-                  onPaneContextMenu={eventHandlers.onPaneContextMenu}
-                  onNodeContextMenu={eventHandlers.onNodeContextMenu}
-                  onNodeDragStop={onNodeDragStop}
-                  onSelectionChange={eventHandlers.onSelectionChange}
-                  panOnDrag={inputProfile.prefersTouchCanvasUi ? true : PAN_ON_DRAG_MOUSE}
-                  panOnScroll={false}
-                  selectionOnDrag={!inputProfile.prefersTouchCanvasUi}
-                  panActivationKeyCode={
-                    inputProfile.prefersTouchCanvasUi ? null : PAN_ACTIVATION_KEY
-                  }
-                  selectionMode={SelectionMode.Partial}
-                  zoomOnScroll={false}
-                  // Custom wheel handler owns pinch too — leaving this on lets d3-zoom
-                  // fight setViewport on every trackpad pinch frame.
-                  zoomOnPinch={false}
-                  deleteKeyCode={null}
-                  zoomOnDoubleClick={false}
-                  minZoom={CANVAS_MIN_ZOOM}
-                  maxZoom={CANVAS_MAX_ZOOM}
-                  multiSelectionKeyCode={MULTI_SELECTION_KEY_CODES}
-                  selectionKeyCode={SELECTION_KEY_CODE}
-                  nodeDragThreshold={DRAG_THRESHOLD_PX}
-                  snapToGrid={!isSnapToGridDisabledForE2E()}
-                  snapGrid={SNAP_GRID}
-                  defaultViewport={initialViewport}
-                  fitView={!hasSavedViewport(initialViewport)}
-                  fitViewOptions={FIT_VIEW_OPTIONS}
-                  onMoveEnd={eventHandlers.onMoveEnd}
-                  nodesDraggable={interactionMode.canEditCanvas}
-                  nodesConnectable={interactionMode.canEditCanvas}
-                  elementsSelectable={interactionMode.canEditCanvas}
-                  proOptions={PRO_OPTIONS}
-                  className="bg-background"
-                >
-                  {/* The canvas mounts exactly one EdgeLabelRenderer; every edge portals
-                  into it. One per edge meant one document.querySelector per edge on
-                  every React Flow store notification, i.e. on every drag frame. */}
-                  <EdgeLabelPortalHost />
-                  <Background
-                    variant={BackgroundVariant.Lines}
-                    gap={10}
-                    lineWidth={1}
-                    color="hsl(var(--muted) / 0.6)"
+            <DiagramSurface
+              policy={writePolicy(interactionMode.canEditCanvas)}
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              inputProfile={inputProfile}
+              snapToGrid={!isSnapToGridDisabledForE2E()}
+              nodeDragThreshold={DRAG_THRESHOLD_PX}
+              onNodesChange={onNodesChange}
+              onEdgesChange={eventHandlers.onEdgesChange}
+              onConnect={eventHandlers.onConnect}
+              onConnectEnd={eventHandlers.onConnectEnd}
+              onReconnect={edgeReconnect.onReconnect}
+              onReconnectStart={edgeReconnect.onReconnectStart}
+              onReconnectEnd={edgeReconnect.onReconnectEnd}
+              onNodeClick={eventHandlers.onNodeClick}
+              onEdgeClick={eventHandlers.onEdgeClick}
+              onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
+              onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
+              onPaneClick={eventHandlers.onPaneClick}
+              onPaneContextMenu={eventHandlers.onPaneContextMenu}
+              onNodeContextMenu={eventHandlers.onNodeContextMenu}
+              onNodeDragStop={onNodeDragStop}
+              onSelectionChange={eventHandlers.onSelectionChange}
+              defaultViewport={initialViewport}
+              fitView={!hasSavedViewport(initialViewport)}
+              onMoveEnd={eventHandlers.onMoveEnd}
+            >
+              {pendingNodeIds.map((nodeId) => {
+                const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
+                if (!suggestionId) {
+                  return null;
+                }
+                return (
+                  <PendingNodeToolbar
+                    key={nodeId}
+                    nodeId={nodeId}
+                    suggestionId={suggestionId}
+                    onKeep={accept}
+                    onDiscard={rejectSuggestion}
                   />
-                  {pendingNodeIds.map((nodeId) => {
-                    const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
-                    if (!suggestionId) {
-                      return null;
+                );
+              })}
+              {/* QuickActions toolbar for single node selection. Gated on the same
+              flag as the element panel: the bar edits the element, so it has no
+              place in a reading or a comparison — and a selection made before
+              either began would otherwise carry it in. */}
+              {visualState.selectedNodeId &&
+                selectedNodes.length === 1 &&
+                interactionMode.canEditCanvas && (
+                  <NodeQuickActionsBar
+                    nodeId={visualState.selectedNodeId}
+                    diagramId={diagram?.id ?? ""}
+                    updateComponent={actions.updateComponent}
+                    onUngroup={
+                      (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren
+                        ? handleUngroup
+                        : undefined
                     }
-                    return (
-                      <PendingNodeToolbar
-                        key={nodeId}
-                        nodeId={nodeId}
-                        suggestionId={suggestionId}
-                        onKeep={accept}
-                        onDiscard={rejectSuggestion}
-                      />
-                    );
-                  })}
-                  {/* QuickActions toolbar for single node selection. Gated on the same
-                  flag as the element panel: the bar edits the element, so it has no
-                  place in a reading or a comparison — and a selection made before
-                  either began would otherwise carry it in. */}
-                  {visualState.selectedNodeId &&
-                    selectedNodes.length === 1 &&
-                    interactionMode.canEditCanvas && (
-                      <NodeQuickActionsBar
-                        nodeId={visualState.selectedNodeId}
-                        diagramId={diagram?.id ?? ""}
-                        updateComponent={actions.updateComponent}
-                        onUngroup={
-                          (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren
-                            ? handleUngroup
-                            : undefined
-                        }
-                        onFitToChildren={
-                          (isSelectedPanel || isSelectedApiGroup) &&
-                          hasPanelChildren &&
-                          !(selectedComponent as { collapsed?: boolean })?.collapsed
-                            ? handleFitToChildren
-                            : undefined
-                        }
-                        onOrganizeChildren={
-                          (isSelectedPanel || isSelectedApiGroup) &&
-                          hasPanelChildren &&
-                          !(selectedComponent as { collapsed?: boolean })?.collapsed &&
-                          !isPanelLayoutRunning
-                            ? handleOrganizeChildren
-                            : undefined
-                        }
-                        onRemoveFromGroup={
-                          isSelectedChildOfGroup ? handleRemoveFromGroup : undefined
-                        }
-                      />
-                    )}
-                  {/* Zoom, fit, view options and the minimap all move the viewport, and a
-                  reading moves it for you — every step frames its own element. Leaving
-                  them out keeps the two from fighting over the same viewport, and keeps
-                  the reading's canvas as clean as the rail beside it. Recording still
-                  needs them: that is where you go looking for the next element to click. */}
-                  {!interactionMode.isPlaying && (
-                    <>
-                      <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-                      <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
-                        <CanvasViewOptions />
-                      </Panel>
-                      {showMiniMap && (
-                        <MiniMap
-                          pannable
-                          zoomable
-                          position="bottom-right"
-                          nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
-                          /* Offset above the floating chat button, which also sits bottom-right. */
-                          className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
-                          maskColor="hsl(var(--muted) / 0.6)"
-                        />
-                      )}
-                    </>
+                    onFitToChildren={
+                      (isSelectedPanel || isSelectedApiGroup) &&
+                      hasPanelChildren &&
+                      !(selectedComponent as { collapsed?: boolean })?.collapsed
+                        ? handleFitToChildren
+                        : undefined
+                    }
+                    onOrganizeChildren={
+                      (isSelectedPanel || isSelectedApiGroup) &&
+                      hasPanelChildren &&
+                      !(selectedComponent as { collapsed?: boolean })?.collapsed &&
+                      !isPanelLayoutRunning
+                        ? handleOrganizeChildren
+                        : undefined
+                    }
+                    onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
+                  />
+                )}
+              {/* Zoom, fit, view options and the minimap all move the viewport, and a
+              reading moves it for you — every step frames its own element. Leaving
+              them out keeps the two from fighting over the same viewport, and keeps
+              the reading's canvas as clean as the rail beside it. Recording still
+              needs them: that is where you go looking for the next element to click. */}
+              {!interactionMode.isPlaying && (
+                <>
+                  <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+                  <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
+                    <CanvasViewOptions />
+                  </Panel>
+                  {showMiniMap && (
+                    <MiniMap
+                      pannable
+                      zoomable
+                      position="bottom-right"
+                      nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
+                      /* Offset above the floating chat button, which also sits bottom-right. */
+                      className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
+                      maskColor="hsl(var(--muted) / 0.6)"
+                    />
                   )}
-                  {occupancy.hasNodes && !occupancy.anyNodeVisible && (
-                    <NothingInViewCard elementCount={occupancy.nodeCount} />
-                  )}
-                </ReactFlow>
-              </EdgeLabelPortalProvider>
-            </ElementsSelectableProvider>
+                </>
+              )}
+              {occupancy.hasNodes && !occupancy.anyNodeVisible && (
+                <NothingInViewCard elementCount={occupancy.nodeCount} />
+              )}
+            </DiagramSurface>
           </div>
         </div>
 

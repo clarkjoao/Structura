@@ -1,37 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Background,
-  BackgroundVariant,
-  Controls,
-  PanOnScrollMode,
-  ReactFlow,
-  ReactFlowProvider,
-  useReactFlow,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
 import type { Diagram } from "@/features/diagram/model";
 import { buildFlowOutline } from "@/features/diagram";
-import FlowReadingRail from "@/features/canvas/flow/reading/FlowReadingRail";
-import { useFrameReadStep } from "@/features/canvas/flow/reading/useFrameReadStep";
-import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
-import { useFlowModePlayback } from "@/features/canvas/flow/useFlowModePlayback";
-import type { FlowMode } from "@/features/canvas/flow/flowMode.types";
 import {
+  DiagramControls,
+  DiagramFlowProvider,
+  DiagramSurface,
+  readPolicy,
+  useDiagramFlow,
+  useReadDiagramFlow,
+  type ReadDiagramRoutePlay,
+} from "@/features/canvas/core";
+import {
+  EMPTY_FLOW_HIGHLIGHT,
+  FlowReadingRail,
   buildFlowBadges,
   buildFlowHighlight,
-  EMPTY_FLOW_HIGHLIGHT,
-} from "@/features/canvas/flow/flowState";
+  useFlowModePlayback,
+  useFlowReadingKeys,
+  useFrameReadStep,
+  type FlowMode,
+} from "@/features/canvas/flow";
 import { useNodeTypes } from "@/features/canvas/nodes/node-types";
-import { ComponentIconLookupProvider } from "@/features/canvas/components/icons/ComponentIconLookupProvider";
-import { ElementsSelectableProvider } from "@/features/canvas/contexts/ElementsSelectableContext";
-import {
-  EdgeLabelPortalHost,
-  EdgeLabelPortalProvider,
-} from "@/features/canvas/edges/EdgeLabelPortal";
-import { EMBED_EDGE_TYPES } from "./embedNodeTypes";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
-import { useDiagramToFlow, type ViewerRoutePlay } from "../hooks/useDiagramToFlow";
 import { iconLookupForDiagram } from "../icons/diagramIconLookup";
 import "./ViewerCanvas.css";
 
@@ -111,7 +102,7 @@ const ViewerCanvasContent = ({
   const startFlow = useCallback((flowId: string) => startRef.current(flowId), []);
   const nodeTypes = useNodeTypes();
   const iconLookup = useMemo(() => iconLookupForDiagram(diagram), [diagram]);
-  const routePlay = useMemo<ViewerRoutePlay>(() => ({ onPlayFlow: startFlow }), [startFlow]);
+  const routePlay = useMemo<ReadDiagramRoutePlay>(() => ({ onPlayFlow: startFlow }), [startFlow]);
 
   /** The link's own choice, honoured once — a reader who closes it stays closed. */
   const openedInitial = useRef(false);
@@ -121,8 +112,8 @@ const ViewerCanvasContent = ({
     startFlow(initialFlowId);
   }, [initialFlowId, startFlow]);
 
-  const { nodes, edges } = useDiagramToFlow(diagram, reading, routePlay);
-  const reactFlowInstance = useReactFlow();
+  const { nodes, edges } = useReadDiagramFlow(diagram, reading, routePlay);
+  const reactFlowInstance = useDiagramFlow();
 
   /**
    * The canvas follows the reading. Without this a reader was told about a
@@ -206,48 +197,16 @@ const ViewerCanvasContent = ({
           boxSizing: "border-box",
         }}
       >
-        <ComponentIconLookupProvider lookup={iconLookup}>
-          {/*
-            The viewer renders the canvas' EditableEdge, and every edge label,
-            toolbar and overlay it draws goes through EdgeLabelPortal. Without
-            this provider and its single host they portal into nothing and the
-            viewer shows unlabelled edges.
-          */}
-          <ElementsSelectableProvider value={false}>
-            <EdgeLabelPortalProvider>
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                edgeTypes={EMBED_EDGE_TYPES}
-                fitView
-                fitViewOptions={{ padding: 0.12 }}
-                nodesDraggable={false}
-                nodesConnectable={false}
-                elementsSelectable={false}
-                panOnDrag
-                panOnScroll
-                panOnScrollMode={PanOnScrollMode.Free}
-                zoomOnScroll
-                zoomOnPinch
-                zoomOnDoubleClick={false}
-                minZoom={0.3}
-                maxZoom={1.5}
-                proOptions={{ hideAttribution: true }}
-                className="bg-background"
-              >
-                <EdgeLabelPortalHost />
-                <Background
-                  variant={BackgroundVariant.Lines}
-                  gap={10}
-                  lineWidth={1}
-                  color="hsl(var(--muted) / 0.6)"
-                />
-                <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-              </ReactFlow>
-            </EdgeLabelPortalProvider>
-          </ElementsSelectableProvider>
-        </ComponentIconLookupProvider>
+        <DiagramSurface
+          policy={readPolicy()}
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          iconLookup={iconLookup}
+          fitView
+        >
+          <DiagramControls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+        </DiagramSurface>
 
         {!readingFlow && <FlowInvite flows={flows} onSelect={startFlow} />}
 
@@ -263,12 +222,12 @@ export const ViewerCanvas = ({
   showOpenInStructuraButton = true,
   initialFlowId = null,
 }: ViewerCanvasProps) => (
-  <ReactFlowProvider>
+  <DiagramFlowProvider>
     <ViewerCanvasContent
       diagram={diagram}
       offsetTop={offsetTop}
       showOpenInStructuraButton={showOpenInStructuraButton}
       initialFlowId={initialFlowId}
     />
-  </ReactFlowProvider>
+  </DiagramFlowProvider>
 );

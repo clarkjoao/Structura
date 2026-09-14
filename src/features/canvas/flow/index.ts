@@ -30,3 +30,6 @@ export {
   buildCoverage,
   buildFlowBadges,
 } from "./flowState";
+export { useFlowModePlayback } from "./useFlowModePlayback";
+export { useFrameReadStep } from "./reading/useFrameReadStep";
+export { useFlowReadingKeys } from "./reading/useFlowReadingKeys";
