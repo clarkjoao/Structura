@@ -863,6 +863,12 @@
   "elements": {
     "json-viewer": {
       "description": "Displays a JSON payload or schema. Use for documenting request/response shapes."
+    },
+    "note": {
+      "description": "A free-text annotation or documentation block. Use for comments, ADRs, or design notes."
+    },
+    "db-table": {
+      "description": "Represents a relational database table with columns. Use for data modeling."
     }
   },
   "flowchart": {

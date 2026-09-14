@@ -4,7 +4,6 @@ import type {
   ComponentType,
   ApiGroupComponent,
   EndpointComponent,
-  DbTableComponent,
   UnknownComponent,
   SvgComponent,
   PanelComponent,
@@ -17,11 +16,9 @@ import { generateId } from "../../utils/generate-id";
 import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
 import {
   isPanelType,
-  isNoteType,
   isEndpointType,
   isApiGroupType,
   isC4Type,
-  isDbTableType,
   isUnknownType,
   isPluginComponentType,
   isSvgComponentType,
@@ -55,8 +52,6 @@ import {
   PANEL_DEFAULT_H,
   SWIMLANE_DEFAULT_W,
   SWIMLANE_DEFAULT_H,
-  NOTE_DEFAULT_W,
-  NOTE_DEFAULT_H,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
   API_GROUP_HEADER_H,
@@ -167,8 +162,6 @@ export function buildComponentForType(
           }
         : {}),
     } as PanelComponent;
-  } else if (isNoteType(type)) {
-    component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
   } else if (isEndpointType(type)) {
     component = {
       ...base,
@@ -185,15 +178,6 @@ export function buildComponentForType(
       basePath: "/api/v1",
       protocol: "REST",
     } as ApiGroupComponent;
-  } else if (isDbTableType(type)) {
-    const tableName = name.trim().length > 0 ? name : i18n.t("dbTable.unnamedTable");
-    component = {
-      ...base,
-      name: tableName,
-      type: "db-table",
-      tableName,
-      columns: [],
-    } as DbTableComponent;
   } else if (isC4Type(type)) {
     component = { ...base, type };
   } else if (isAwsType(type)) {
@@ -291,19 +275,6 @@ function buildLayoutForComponent(
       zIndex: -1,
       width: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
       height: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
-    };
-  }
-  if (isNoteType(type)) {
-    return { elementId: componentId, x, y, width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H };
-  }
-  if (isDbTableType(type)) {
-    const dbTableFixedH = 32 + 22 + 20 + 2;
-    return {
-      elementId: componentId,
-      x,
-      y,
-      width: 406,
-      height: dbTableFixedH,
     };
   }
   if (isFlowNodeType(type)) {

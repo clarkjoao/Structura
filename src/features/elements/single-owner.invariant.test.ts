@@ -25,7 +25,7 @@ import type { RegisteredElementTypeId } from "./element.types";
 const registeredIds = registeredElementIds();
 
 /** The ids the type-level mirror claims, as runtime values. */
-const DECLARED_IDS: RegisteredElementTypeId[] = ["json-viewer"];
+const DECLARED_IDS: RegisteredElementTypeId[] = ["json-viewer", "note", "db-table"];
 
 describe("the registry and its type-level mirror agree", () => {
   it("registers exactly the ids RegisteredElementTypeId names", () => {

@@ -863,6 +863,12 @@
   "elements": {
     "json-viewer": {
       "description": "Exibe um payload ou schema JSON. Use para documentar formatos de requisição/resposta."
+    },
+    "note": {
+      "description": "Um bloco de anotação ou documentação em texto livre. Use para comentários, ADRs ou notas de design."
+    },
+    "db-table": {
+      "description": "Representa uma tabela de banco de dados relacional com colunas. Use para modelagem de dados."
     }
   },
   "flowchart": {

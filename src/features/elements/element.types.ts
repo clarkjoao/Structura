@@ -22,7 +22,7 @@ export type ElementTypeId = ComponentType;
  * added per migration slice, and `single-owner.invariant.test.ts` holds this
  * list and the runtime registry to each other.
  */
-export type RegisteredElementTypeId = "json-viewer";
+export type RegisteredElementTypeId = "json-viewer" | "note" | "db-table";
 
 /**
  * Which vocabulary an element belongs to. Only `"structural"` is used while F1
@@ -129,6 +129,18 @@ export interface ElementCanvasSlice {
    * reader while types are still split between the two registries.
    */
   canBeConnectionSource: boolean;
+
+  /**
+   * Whether the painted size is computed from the component's own content.
+   *
+   * `model.defaultSize` is the size at creation; for most elements that is also
+   * what they keep painting at. A `db-table` is the counter-example: its height
+   * is its column count, so the two agree only while it is empty. Stating which
+   * it is here is what lets the single-owner test check the agreement for
+   * fixed-size elements — the drift it catches is exactly the one that left
+   * db-table's unused `defaultSize` at 180 while the node painted at 76.
+   */
+  derivesSizeFromContent: boolean;
 
   buildData: (comp: Component, ctx: NodeBuildContext) => Record<string, unknown>;
   buildStyle?: (comp: Component, ctx: NodeBuildContext) => CSSProperties | undefined;

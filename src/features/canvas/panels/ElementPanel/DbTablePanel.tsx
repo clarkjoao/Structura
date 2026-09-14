@@ -2,14 +2,19 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import debounce from "lodash.debounce";
 import { X, Trash2, Table, Plus, GripVertical, Key, Link } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { generateId, type DbTableComponent, type DbColumn } from "@/features/diagram";
+import {
+  generateId,
+  type ComponentPatch,
+  type DbTableComponent,
+  type DbColumn,
+} from "@/features/diagram";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import { cn } from "@/lib/utils";
 
 interface DbTablePanelProps {
   component: DbTableComponent;
   onClose: () => void;
-  updateComponent: (id: string, patch: Partial<Omit<DbTableComponent, "id">>) => void;
+  updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   focusTitleTrigger?: number;
 }
@@ -140,7 +145,7 @@ export default function DbTablePanel({
 
   const debouncedUpdate = useMemo(
     () =>
-      debounce((patch: Partial<Omit<DbTableComponent, "id">>) => {
+      debounce((patch: ComponentPatch) => {
         updateComponent(component.id, patch);
       }, FIELD_DEBOUNCE_MS),
     [component.id, updateComponent],

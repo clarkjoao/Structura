@@ -319,17 +319,6 @@ function mapNode(
       endpointDescription: c.endpointDescription,
     };
   }
-  if (isDbTableComponent(c)) {
-    return {
-      ...base,
-      kind: "dbTable",
-      tableName: c.tableName,
-      columns: c.columns.map((col) => ({ name: col.name, dataType: col.dataType })),
-    };
-  }
-  if (isNoteComponent(c)) {
-    return { ...base, kind: "note", name: c.name, description: c.description };
-  }
   if (isGcpComponent(c) || isAzureComponent(c)) {
     return c4Node(c, base, serviceCatalog);
   }

@@ -33,6 +33,7 @@ function makeDescriptor(overrides: Partial<ElementDescriptor> = {}): ElementDesc
       canHaveParent: true,
       canBeParent: false,
       canBeConnectionSource: true,
+      derivesSizeFromContent: false,
       buildData: () => ({}),
     },
     palette: {

@@ -48,6 +48,8 @@ export const jsonViewerElement: ElementDescriptor = {
     // A JSON payload is a thing the diagram points at; nothing leaves it.
     // `SINGLE_INCOMING_HANDLES` says the same on the canvas side.
     canBeConnectionSource: false,
+    // Size comes from the stored layout, never from the JSON it holds.
+    derivesSizeFromContent: false,
     dragHandle: ".drag-handle",
 
     buildData: (comp, ctx) => {
