@@ -1,5 +1,6 @@
 import en from "@/infrastructure/i18n/locales/en.json";
 import ptBR from "@/infrastructure/i18n/locales/pt-BR.json";
+import type { Component } from "@/features/diagram";
 import type { ElementDescriptor, ElementTypeId, RegisteredElementTypeId } from "./element.types";
 
 /**
@@ -118,6 +119,19 @@ export function hasElement(type: string): boolean {
  */
 export function isRegisteredElementType(type: string): type is RegisteredElementTypeId {
   return registry.has(type as ElementTypeId);
+}
+
+/**
+ * `isRegisteredElementType` for a whole component.
+ *
+ * Narrowing the component (not just its `type`) is what lets a guard chain over
+ * the `Component` union drop a migrated variant and keep its
+ * `const _exhaustive: never`.
+ */
+export function isRegisteredElementComponent(
+  comp: Component,
+): comp is Extract<Component, { type: RegisteredElementTypeId }> {
+  return registry.has(comp.type as ElementTypeId);
 }
 
 export function allElements(): ElementDescriptor[] {

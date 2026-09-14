@@ -6,6 +6,7 @@ export {
   getElement,
   hasElement,
   isRegisteredElementType,
+  isRegisteredElementComponent,
   allElements,
   registeredElementIds,
   subscribeElements,

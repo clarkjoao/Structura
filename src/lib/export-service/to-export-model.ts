@@ -12,8 +12,8 @@ import {
   isExternalElementComponent,
   isProcessNodeComponent,
   isGcpComponent,
-  isJsonViewerComponent,
   isNoteComponent,
+  isJsonViewerComponent,
   isPanelComponent,
   isPluginTypedComponent,
   isSvgComponent,
@@ -41,6 +41,7 @@ import type {
   ExportStrokeStyle,
 } from "../export-core";
 import { awsServiceCache } from "./aws-cache";
+import { getElement, isRegisteredElementComponent } from "@/features/elements/element.registry";
 import { validateDiagram } from "./validate-diagram";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
 import { resolveEdgeRouting } from "./edge-routing";
@@ -254,6 +255,12 @@ function mapNode(
     height: nl.height ?? 0,
   };
 
+  // Registered elements declare their own draw.io mapping (decision 6); the
+  // guard chain below still owns every type that has not migrated.
+  if (isRegisteredElementComponent(c)) {
+    return getElement(c.type)!.export.drawio.toExportNode(c, base);
+  }
+
   if (isPanelComponent(c)) {
     const kindDef = getPanelKindDef(c.panelKind);
     // Swimlanes get their own IR kind so the drawio cell builder emits the
@@ -318,15 +325,6 @@ function mapNode(
       kind: "dbTable",
       tableName: c.tableName,
       columns: c.columns.map((col) => ({ name: col.name, dataType: col.dataType })),
-    };
-  }
-  if (isJsonViewerComponent(c)) {
-    return {
-      ...base,
-      kind: "jsonViewer",
-      name: c.name,
-      jsonContent: c.jsonContent,
-      schemaRef: c.schemaRef,
     };
   }
   if (isNoteComponent(c)) {
