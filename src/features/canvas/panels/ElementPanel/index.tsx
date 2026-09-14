@@ -10,7 +10,6 @@ import {
   isEndpointComponent,
   isDbTableComponent,
   isApiGroupComponent,
-  isJsonViewerComponent,
   isPanelComponent,
   isExternalElementComponent,
   type DbTableComponent,
@@ -19,11 +18,11 @@ import {
 import type { Node } from "@xyflow/react";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { MultiSelectPanel } from "../MultiSelectPanel";
+import { getElement } from "@/features/elements/element.registry";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
 import EndpointPanel from "./EndpointPanel";
 import ApiGroupPanel from "./ApiGroupPanel";
-import JsonViewerPanel from "./JsonViewerPanel";
 import DbTablePanel from "./DbTablePanel";
 import ExternalElementPanel from "./ExternalElementPanel";
 
@@ -81,6 +80,24 @@ const ElementPanel = ({
   }
 
   if (selectedElementId && component) {
+    // Registered elements answer first; the guard chain below still owns every
+    // type that has not migrated.
+    const RegisteredPanel = getElement(component.type)?.inspector.panel;
+    if (RegisteredPanel) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
+          <RegisteredPanel
+            component={component}
+            onClose={onClose}
+            updateComponent={updateComponent}
+            removeComponent={removeComponent}
+            focusTitleTrigger={focusTitleTrigger}
+          />
+        </div>
+      );
+    }
+
     const canGroup = selectedNodeIds.length >= 2;
     const isPanelWithChildren =
       isPanelComponent(component) &&
@@ -111,21 +128,6 @@ const ElementPanel = ({
             updateComponent={
               updateComponent as (id: string, patch: Partial<Omit<DbTableComponent, "id">>) => void
             }
-            removeComponent={removeComponent}
-            focusTitleTrigger={focusTitleTrigger}
-          />
-        </div>
-      );
-    }
-
-    if (isJsonViewerComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <JsonViewerPanel
-            component={component}
-            onClose={onClose}
-            updateComponent={updateComponent}
             removeComponent={removeComponent}
             focusTitleTrigger={focusTitleTrigger}
           />
