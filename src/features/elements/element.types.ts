@@ -2,10 +2,7 @@ import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { NodeTypes } from "@xyflow/react";
 import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
-import type {
-  NodeBuildContext,
-  NodeHandleSpec,
-} from "@/features/canvas/nodes/node-types";
+import type { NodeBuildContext, NodeHandleSpec } from "@/features/canvas/nodes/node-types";
 import type { ExportNode, ExportNodeKind } from "@/lib/export-core";
 
 /**
@@ -14,6 +11,18 @@ import type { ExportNode, ExportNodeKind } from "@/lib/export-core";
  * the registry is what will let it open (see `plano-migracao-elementos.md`, F9).
  */
 export type ElementTypeId = ComponentType;
+
+/**
+ * The ids that have actually moved onto the registry.
+ *
+ * A type-level mirror of what `bootstrap.ts` registers, and the reason the
+ * legacy chains can drop a migrated branch without losing their
+ * `const _exhaustive: never` check: narrowing on `isRegisteredElementType`
+ * removes the id from the union the chain still has to cover. One literal is
+ * added per migration slice, and `single-owner.invariant.test.ts` holds this
+ * list and the runtime registry to each other.
+ */
+export type RegisteredElementTypeId = "json-viewer";
 
 /**
  * Which vocabulary an element belongs to. Only `"structural"` is used while F1
@@ -65,14 +74,26 @@ export interface ElementInspectorProps {
 
 export type ElementInspectorPanel = (props: ElementInspectorProps) => React.ReactNode;
 
+/** The fields the store owns on every component, whatever its type. */
+export interface ElementComponentBase {
+  id: string;
+  name: string;
+  description: string;
+  parentId: string | null;
+}
+
 /** What the element is, as data: fields, size and creation defaults. */
 export interface ElementModelSlice {
   /**
-   * Type-specific fields for a newly created component. The base fields
-   * (`id`, `name`, `description`, `parentId`) are supplied by the store —
-   * a descriptor never invents an id.
+   * Builds a new component of this type.
+   *
+   * Takes the base the store owns — a descriptor never invents an id — and
+   * returns a fully typed `Component`. It returns the component rather than a
+   * bag of extra fields precisely so the store needs no cast to assemble one:
+   * `Record<string, unknown>` spread onto a base cannot be a `Component`
+   * without one, and casts are not allowed here.
    */
-  defaultData: () => Record<string, unknown>;
+  createComponent: (base: ElementComponentBase) => Component;
 
   /**
    * Size a new node is created at. Unlike `NodeTypeDescriptor.defaultSize`,

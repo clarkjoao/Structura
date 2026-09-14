@@ -5,7 +5,6 @@ import type {
   ApiGroupComponent,
   EndpointComponent,
   DbTableComponent,
-  JsonViewerComponent,
   UnknownComponent,
   SvgComponent,
   PanelComponent,
@@ -23,7 +22,6 @@ import {
   isApiGroupType,
   isC4Type,
   isDbTableType,
-  isJsonViewerType,
   isUnknownType,
   isPluginComponentType,
   isSvgComponentType,
@@ -40,6 +38,7 @@ import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
+import { getElement, isRegisteredElementType } from "@/features/elements/element.registry";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -133,6 +132,18 @@ export function buildComponentForType(
   flowShape?: FlowNodeShape,
 ): { component: Component; resolvedPanelKind: PanelKind | undefined } {
   const base = { id, name, description: "", parentId };
+
+  // Registered elements build themselves from their descriptor. Narrowing here
+  // (rather than testing `hasElement`) is what lets the chain below drop a
+  // migrated branch and still be exhaustive: the id leaves the union.
+  if (isRegisteredElementType(type)) {
+    const descriptor = getElement(type)!;
+    return {
+      component: descriptor.model.createComponent(base),
+      resolvedPanelKind: undefined,
+    };
+  }
+
   let component: Component;
   const resolvedPanelKind: PanelKind | undefined = isPanelType(type)
     ? (panelKind ?? PanelKind.Default)
@@ -183,12 +194,6 @@ export function buildComponentForType(
       tableName,
       columns: [],
     } as DbTableComponent;
-  } else if (isJsonViewerType(type)) {
-    component = {
-      ...base,
-      type: "json-viewer",
-      jsonContent: "{}",
-    } as JsonViewerComponent;
   } else if (isC4Type(type)) {
     component = { ...base, type };
   } else if (isAwsType(type)) {
@@ -264,6 +269,13 @@ function buildLayoutForComponent(
   flowShape?: FlowNodeShape,
 ): NodeLayout {
   const { x, y } = resolvedPosition;
+  // Decision 3: for a registered element the descriptor's defaultSize governs,
+  // instead of a literal repeated here.
+  const registered = getElement(type);
+  if (registered) {
+    const { width, height } = registered.model.defaultSize;
+    return { elementId: componentId, x, y, width, height };
+  }
   if (isApiGroupType(type)) {
     const { width, height } = computeApiGroupSize(0);
     return { elementId: componentId, x, y, zIndex: -1, width, height };
@@ -293,9 +305,6 @@ function buildLayoutForComponent(
       width: 406,
       height: dbTableFixedH,
     };
-  }
-  if (isJsonViewerType(type)) {
-    return { elementId: componentId, x, y, width: 240, height: 88 };
   }
   if (isFlowNodeType(type)) {
     const circleSize = 80;

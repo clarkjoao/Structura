@@ -1,6 +1,6 @@
 import en from "@/infrastructure/i18n/locales/en.json";
 import ptBR from "@/infrastructure/i18n/locales/pt-BR.json";
-import type { ElementDescriptor, ElementTypeId } from "./element.types";
+import type { ElementDescriptor, ElementTypeId, RegisteredElementTypeId } from "./element.types";
 
 /**
  * The element registry.
@@ -86,6 +86,17 @@ export function getElement(type: string): ElementDescriptor | undefined {
 }
 
 export function hasElement(type: string): boolean {
+  return registry.has(type as ElementTypeId);
+}
+
+/**
+ * `hasElement` with the narrowing the legacy chains need.
+ *
+ * The predicate is a promise that what `bootstrap.ts` registers matches
+ * `RegisteredElementTypeId`; the single-owner invariant test is what keeps the
+ * promise honest, in both directions.
+ */
+export function isRegisteredElementType(type: string): type is RegisteredElementTypeId {
   return registry.has(type as ElementTypeId);
 }
 

@@ -19,7 +19,7 @@ function makeDescriptor(overrides: Partial<ElementDescriptor> = {}): ElementDesc
     labelKey: "nodeTypes.json-viewer",
     descriptionKey: "elements.json-viewer.description",
     model: {
-      defaultData: () => ({}),
+      createComponent: (base) => ({ ...base, type: "note" }),
       defaultSize: { width: 10, height: 10 },
       patchableKeys: [],
     },
@@ -101,9 +101,9 @@ describe("registerElement", () => {
   });
 
   it("refuses a label key that is missing from a locale", () => {
-    expect(() =>
-      registerElement(makeDescriptor({ labelKey: "nodeTypes.does-not-exist" })),
-    ).toThrow(/labelKey .* has no entry in locale\(s\): en, pt-BR/);
+    expect(() => registerElement(makeDescriptor({ labelKey: "nodeTypes.does-not-exist" }))).toThrow(
+      /labelKey .* has no entry in locale\(s\): en, pt-BR/,
+    );
   });
 
   it("refuses a description key that is missing from a locale", () => {

@@ -31,7 +31,7 @@ export const jsonViewerElement: ElementDescriptor = {
   descriptionKey: "elements.json-viewer.description",
 
   model: {
-    defaultData: () => ({ jsonContent: "{}" }),
+    createComponent: (base) => ({ ...base, type: COMPONENT_TYPE_JSON_VIEWER, jsonContent: "{}" }),
     defaultSize: { width: JSON_VIEWER_DEFAULT_W, height: JSON_VIEWER_DEFAULT_H },
     patchableKeys: ["jsonContent", "schemaRef"],
   },
