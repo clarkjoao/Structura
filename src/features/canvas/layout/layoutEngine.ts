@@ -48,7 +48,7 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
  * worse; this one runs where nobody arranged anything and the only thing being
  * optimised is how the picture reads. That buys room to spend space.
  *
- * **Measured against how `/view` actually draws**, which is the only comparison
+ * **Measured against how `/viewer` actually draws**, which is the only comparison
  * worth making and is not the obvious one. The viewer reads control points from
  * the store's active diagram, and a reading route has none — so `ViewerCanvas`
  * discards ELK's routed path and draws orthogonal steps between handles. An

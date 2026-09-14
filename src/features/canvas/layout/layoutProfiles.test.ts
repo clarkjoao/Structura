@@ -48,7 +48,7 @@ describe("layout profiles", () => {
 
   /**
    * The one option that moved the crossing count rather than the canvas size,
-   * measured the way `/view` actually draws — orthogonal steps between handles,
+   * measured the way `/viewer` actually draws — orthogonal steps between handles,
    * with ELK's routed path discarded. Over the four reference diagrams: 15
    * crossings with the interactive profile's BRANDES_KOEPF, 13 with this.
    *

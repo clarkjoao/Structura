@@ -7,7 +7,7 @@ import { layout } from "@/features/canvas/layout/layoutEngine";
  * Arranges a diagram for reading, and hands back a copy.
  *
  * Pure: the store is never touched and the diagram passed in is never
- * mutated. That is what makes it usable from `/view`, which shows diagrams it
+ * mutated. That is what makes it usable from `/viewer`, which shows diagrams it
  * does not own — one read from a file on disk has no store entry at all, and
  * one read from the store belongs to the user, who did not ask for their saved
  * positions to be rewritten by opening a link.

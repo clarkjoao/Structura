@@ -10,7 +10,6 @@ import { ModalOverlay } from "@/features/plugins/components/ModalOverlay";
 const ViewerPage = lazy(() =>
   import("@/pages/ViewerPage").then((m) => ({ default: m.ViewerPage })),
 );
-const ViewPage = lazy(() => import("@/pages/ViewPage").then((m) => ({ default: m.ViewPage })));
 const SharedDiagramView = lazy(() =>
   import("@/features/viewer/components/SharedDiagramView").then((m) => ({
     default: m.SharedDiagramView,
@@ -92,14 +91,13 @@ const App = () => {
       ) : (
         <Suspense fallback={<RouteFallback />}>
           <Routes>
-            <Route path="/viewer" element={<ViewerPage />} />
             {/*
-              The reading route. Outside `MainPages` with `/viewer`, not inside
-              it: both are whole-window surfaces with no app chrome, and a
-              webview pointed at one should not mount the toaster, the plugin
+              The reading route, and the only one. Outside `MainPages` on
+              purpose: it is a whole-window surface with no app chrome, and a
+              webview pointed at it should not mount the toaster, the plugin
               modal host or the preview sync.
             */}
-            <Route path="/view" element={<ViewPage />} />
+            <Route path="/viewer" element={<ViewerPage />} />
             <Route path="*" element={<MainPages />} />
           </Routes>
         </Suspense>
