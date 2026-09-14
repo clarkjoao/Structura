@@ -1,3 +1,4 @@
+import { hasElement } from "@/features/elements/element.registry";
 import type { ComponentType } from "./component.types";
 
 /**
@@ -52,6 +53,10 @@ const PLUGIN_COMPONENT_TYPE_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
  */
 export function sanitizeComponentType(value: unknown): ComponentType {
   if (typeof value !== "string" || value.length === 0) return "component";
+  // Additive while the migration runs: a registered element is valid, and the
+  // built-in list still answers for everything that has not migrated. The list
+  // stops being the source of truth in a later slice, not here.
+  if (hasElement(value)) return value as ComponentType;
   if (BUILTIN_COMPONENT_TYPES.has(value)) return value as ComponentType;
   if (PLUGIN_COMPONENT_TYPE_PATTERN.test(value)) return value as ComponentType;
   return "component";
