@@ -1,5 +1,10 @@
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
+import { allElements } from "@/features/elements/element.registry";
+import i18n from "@/infrastructure/i18n";
 import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
+
+/** The catalog is part of the system prompt, which is written in English. */
+const CATALOG_LOCALE = "en";
 
 export interface ComponentTypeDefinition {
   nodeType: string;
@@ -46,12 +51,6 @@ export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [
     displayName: "Database Table",
     description: "Represents a relational database table with columns. Use for data modeling.",
     example: '{ "nodeType": "db-table", "name": "users", "parentId": null }',
-  },
-  {
-    nodeType: "json-viewer",
-    displayName: "JSON Viewer",
-    description: "Displays a JSON payload or schema. Use for documenting request/response shapes.",
-    example: '{ "nodeType": "json-viewer", "name": "User Response", "parentId": null }',
   },
 ];
 
@@ -155,11 +154,27 @@ export const AWS_TYPES: ComponentTypeDefinition[] = AWS_CATEGORIES.flatMap((cate
   })),
 );
 
-export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
-  ...STRUCTURAL_TYPES,
-  ...C4_TYPES,
-  ...AWS_TYPES,
-];
+/**
+ * Registered elements, as catalog entries.
+ *
+ * Derived rather than curated (decision 7): an element that exists is an
+ * element the model can ask for, and its description is the one the palette
+ * shows. Resolved in English because the catalog is part of the system prompt,
+ * whatever locale the UI is in.
+ */
+export function registeredElementTypes(): ComponentTypeDefinition[] {
+  return allElements().map((element) => ({
+    nodeType: element.id,
+    displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+    description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+    requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : undefined,
+    example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
+  }));
+}
+
+export function allComponentTypes(): ComponentTypeDefinition[] {
+  return [...STRUCTURAL_TYPES, ...registeredElementTypes(), ...C4_TYPES, ...AWS_TYPES];
+}
 
 function formatTypeDef(def: ComponentTypeDefinition): string {
   const lines = [
@@ -188,7 +203,7 @@ export function buildComponentTypeCatalog(): string {
     "### Structural & Canvas Types",
   ];
 
-  for (const definition of STRUCTURAL_TYPES) {
+  for (const definition of [...STRUCTURAL_TYPES, ...registeredElementTypes()]) {
     sections.push(formatTypeDef(definition));
   }
 
@@ -240,7 +255,7 @@ export function buildPatternCatalogCompact(): string {
 }
 
 export function isValidNodeType(nodeType: string): boolean {
-  return ALL_COMPONENT_TYPES.some((definition) => definition.nodeType === nodeType);
+  return allComponentTypes().some((definition) => definition.nodeType === nodeType);
 }
 
 export function buildPatternCatalog(): string {
