@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types";
+import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { Component } from "@/features/diagram";
 import {
   allElements,

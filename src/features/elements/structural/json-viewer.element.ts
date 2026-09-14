@@ -2,7 +2,7 @@ import { Braces } from "lucide-react";
 import { createElement } from "react";
 import JsonViewerNode from "@/features/canvas/nodes/JsonViewerNode";
 import JsonViewerPanel from "@/features/canvas/panels/ElementPanel/JsonViewerPanel";
-import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types";
+import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_JSON_VIEWER, isJsonViewerComponent } from "@/features/diagram";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
