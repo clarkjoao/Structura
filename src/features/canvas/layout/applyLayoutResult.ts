@@ -23,6 +23,19 @@ export interface ApplyLayoutResultOptions {
    */
   waypointOffset?: { x: number; y: number };
   /**
+   * Leave the participating edges with no stored path at all.
+   *
+   * The default writes ELK's bend points back as control points, which is right
+   * for a generated graph: ELK routed those edges and its route is the best
+   * thing known about them. The auto-layout command opts out, because there the
+   * stored bend points are exactly what "Resetar caminhos das conexões" exists
+   * to remove, and the user was running it by hand after every layout.
+   *
+   * Handle order is unaffected — that is not a path. See
+   * `applyLayoutResult.resetPaths.test.ts`.
+   */
+  resetPaths?: boolean;
+  /**
    * Translates layout-graph ids into store ids.
    *
    * Four of the five consumers lay out a graph they built from the store, so
@@ -72,7 +85,7 @@ export function applyLayoutResultEdges(
   diagramId: string | null,
   options: ApplyLayoutResultOptions = {},
 ): void {
-  const { edgeIds = null, waypointOffset = { x: 0, y: 0 } } = options;
+  const { edgeIds = null, waypointOffset = { x: 0, y: 0 }, resetPaths = false } = options;
   const nodeIdOf = options.idMap?.node ?? identity;
   const edgeIdOf = options.idMap?.edge ?? identity;
 
@@ -110,6 +123,11 @@ export function applyLayoutResultEdges(
     const storeEdgeId = edgeIdOf(edge.id);
     if (storeEdgeId !== undefined) store.resetEdgeControlPoints(diagramId, storeEdgeId);
   }
+
+  // `resetPaths` stops here: the clear above is the whole job, and the edges go
+  // back to drawing as an untouched connection does — orthogonal steps between
+  // the handles ELK just ordered.
+  if (resetPaths) return;
 
   // Write waypoints for all (or filtered) edges from the graph.
   for (const edge of edgesToStyle) {
