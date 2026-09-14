@@ -1,5 +1,6 @@
 import SwimlaneNode from "../SwimlaneNode";
 import type { NodeTypeDescriptor } from "./types";
+import { SPREAD_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import type { ComponentType } from "@/features/diagram";
 import { isPanelComponent } from "@/features/diagram";
@@ -12,6 +13,7 @@ export const swimlaneDescriptor: NodeTypeDescriptor = {
   matches: (_type: ComponentType) => false,
   zIndex: -1,
   connectable: false,
+  handles: SPREAD_HANDLES,
   canHaveParent: true,
   canBeParent: true,
 

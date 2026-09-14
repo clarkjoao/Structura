@@ -13,6 +13,7 @@ import type {
   ServiceDefinition,
 } from "@/features/diagram";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
+import type { NodeHandleSpec } from "./handle-spec";
 
 export type { FlowHighlight, FlowBadges, CoverageInfo };
 
@@ -89,6 +90,17 @@ export interface NodeTypeDescriptor {
   matches: (type: ComponentType) => boolean;
   zIndex: number | ((comp: Component) => number);
   connectable: boolean;
+
+  /**
+   * The handles this type's component renders.
+   *
+   * Declared here rather than left to emerge from each component, because the
+   * slot `buildEdgeHandleAssignments` reaches for has to name a handle that
+   * exists: React Flow refuses an edge whose handle is missing (error #008) and
+   * drops it with nothing but a console warning. `handle-spec.test.ts` and
+   * `handle-spec.render.test.tsx` hold the declaration to both sides.
+   */
+  handles: NodeHandleSpec;
 
   canHaveParent: boolean;
 

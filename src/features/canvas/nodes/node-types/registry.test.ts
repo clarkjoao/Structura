@@ -10,6 +10,7 @@ import {
 } from "./registry";
 import { unknownDescriptor } from "./unknown.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
+import { SPREAD_HANDLES } from "./handle-spec";
 
 function makeDescriptor(rfType: string, componentType: string): NodeTypeDescriptor {
   return {
@@ -18,6 +19,7 @@ function makeDescriptor(rfType: string, componentType: string): NodeTypeDescript
     matches: (type) => type === componentType,
     zIndex: 1,
     connectable: true,
+    handles: SPREAD_HANDLES,
     canHaveParent: true,
     canBeParent: false,
     buildData: () => ({}),

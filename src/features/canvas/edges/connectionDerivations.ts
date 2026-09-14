@@ -1,12 +1,11 @@
 import type { Component, Connection } from "@/features/diagram";
+import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
+import { handleSpecForType } from "../nodes/node-types/registry";
 import {
-  isApiGroupComponent,
-  isDbTableType,
-  isJsonViewerType,
-  isNoteType,
-  isPanelComponent,
-} from "@/features/diagram";
-import { MAX_HANDLES } from "../canvas.constants";
+  singleIncomingTargetHandleId,
+  slotCountFor,
+  SPREAD_HANDLES,
+} from "../nodes/node-types/handle-spec";
 
 /**
  * Handle sides are fixed, by design.
@@ -24,9 +23,7 @@ import { MAX_HANDLES } from "../canvas.constants";
  * the connection owns its endpoints.
  */
 
-export function singleIncomingTargetHandleId(nodeId: string): string {
-  return `in-${nodeId}`;
-}
+export { singleIncomingTargetHandleId };
 
 export interface HandleAssignment {
   connId: string;
@@ -82,20 +79,25 @@ export function buildEdgeHandleAssignments(
   const targetUsage: Record<string, number> = {};
 
   return connections.map((conn) => {
-    const outCount = Math.min(
-      MAX_HANDLES,
-      Math.max(1, connectionCountPerNode[conn.sourceId]?.outgoing ?? 1),
-    );
+    // The slot has to name a handle the node will render, so the cap comes from
+    // what the type declares rather than from `MAX_HANDLES` for everybody. A
+    // component missing from the map is a dangling endpoint, not a new type, so
+    // it keeps the general spec.
+    const sourceComp = components[conn.sourceId];
     const targetComp = components[conn.targetId];
+    const sourceSpec = sourceComp ? handleSpecForType(sourceComp.type) : SPREAD_HANDLES;
+    const targetSpec = targetComp ? handleSpecForType(targetComp.type) : SPREAD_HANDLES;
 
-    const usesSingleIncomingHandle =
-      targetComp !== undefined &&
-      (isNoteType(targetComp.type) ||
-        isDbTableType(targetComp.type) ||
-        isJsonViewerType(targetComp.type));
-    const inCount = usesSingleIncomingHandle
-      ? 1
-      : Math.min(MAX_HANDLES, Math.max(1, connectionCountPerNode[conn.targetId]?.incoming ?? 1));
+    const outCount = slotCountFor(
+      sourceSpec.outgoing,
+      connectionCountPerNode[conn.sourceId]?.outgoing ?? 1,
+    );
+
+    const usesSingleIncomingHandle = targetSpec.incoming === "shared";
+    const inCount = slotCountFor(
+      targetSpec.incoming,
+      connectionCountPerNode[conn.targetId]?.incoming ?? 1,
+    );
 
     const srcOrder = components[conn.sourceId]?.handleOrder?.outgoing;
     const tgtOrder = components[conn.targetId]?.handleOrder?.incoming;

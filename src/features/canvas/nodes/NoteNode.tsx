@@ -16,19 +16,36 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
-import { singleIncomingTargetHandleId } from "../edges/connectionDerivations";
+import { singleIncomingTargetHandleId } from "./node-types/handle-spec";
 
 const noteIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
-function NoteIncomingHandle({ elementId }: { elementId: string }) {
+/**
+ * Both anchors this node offers, as `handle-spec.ts` declares them: one shared
+ * incoming handle whatever the edge count, and one outgoing slot.
+ *
+ * The outgoing handle used to be missing. `buildEdgeHandleAssignments` still
+ * addressed an edge leaving this node to `source-0`, so React Flow refused the
+ * edge (error #008) and it vanished from the canvas with only a console
+ * warning — an arrow the user drew, gone without a word.
+ */
+function NoteEdgeHandles({ elementId }: { elementId: string }) {
   return (
-    <Handle
-      id={singleIncomingTargetHandleId(elementId)}
-      type="target"
-      position={Position.Left}
-      className={noteIncomingHandleClassName}
-    />
+    <>
+      <Handle
+        id={singleIncomingTargetHandleId(elementId)}
+        type="target"
+        position={Position.Left}
+        className={noteIncomingHandleClassName}
+      />
+      <Handle
+        id="source-0"
+        type="source"
+        position={Position.Right}
+        className={noteIncomingHandleClassName}
+      />
+    </>
   );
 }
 
@@ -175,7 +192,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
-        <NoteIncomingHandle elementId={elementId} />
+        <NoteEdgeHandles elementId={elementId} />
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none rounded-lg z-10"
@@ -243,7 +260,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
-        <NoteIncomingHandle elementId={elementId} />
+        <NoteEdgeHandles elementId={elementId} />
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none z-10"

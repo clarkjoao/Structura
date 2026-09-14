@@ -2,6 +2,7 @@ import DbTableNode from "../DbTableNode";
 import type { DbColumn } from "@/features/diagram";
 import { isDbTableComponent, isDbTableType } from "@/features/diagram";
 import type { NodeTypeDescriptor } from "./types";
+import { SINGLE_INCOMING_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { DB_TABLE_COLLAPSED_H, DB_TABLE_COLLAPSED_W } from "../../canvas.constants";
 
@@ -16,6 +17,7 @@ export const dbTableDescriptor: NodeTypeDescriptor = {
   matches: isDbTableType,
   zIndex: 1,
   connectable: true,
+  handles: SINGLE_INCOMING_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: DB_TABLE_MAX_W, height: 180 },

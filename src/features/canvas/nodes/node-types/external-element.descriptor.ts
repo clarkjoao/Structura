@@ -1,5 +1,6 @@
 import ExternalElementNode from "../ExternalElementNode";
 import type { NodeTypeDescriptor } from "./types";
+import { SINGLE_PAIR_HANDLES } from "./handle-spec";
 import { isExternalElementType } from "@/features/diagram";
 import type { ExternalElementComponent } from "@/features/diagram";
 
@@ -12,6 +13,7 @@ export const externalElementDescriptor: NodeTypeDescriptor = {
   matches: isExternalElementType,
   zIndex: 1,
   connectable: true,
+  handles: SINGLE_PAIR_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: EXTERNAL_ELEMENT_W, height: EXTERNAL_ELEMENT_H },

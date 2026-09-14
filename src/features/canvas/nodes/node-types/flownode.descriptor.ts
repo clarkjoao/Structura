@@ -1,5 +1,6 @@
 import ProcessNode from "../ProcessNode";
 import type { NodeTypeDescriptor } from "./types";
+import { SPREAD_HANDLES } from "./handle-spec";
 import { isProcessNodeComponent, isFlowNodeType } from "@/features/diagram";
 
 export const flowNodeDescriptor: NodeTypeDescriptor = {
@@ -8,6 +9,7 @@ export const flowNodeDescriptor: NodeTypeDescriptor = {
   matches: isFlowNodeType,
   zIndex: 1,
   connectable: true,
+  handles: SPREAD_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: 160, height: 60 },

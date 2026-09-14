@@ -7,6 +7,7 @@ import {
 } from "@/features/diagram";
 import { computeApiGroupSize } from "../ApiGroupNode/useApiGroupSize";
 import type { NodeTypeDescriptor } from "./types";
+import { SPREAD_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 
 export const apiGroupDescriptor: NodeTypeDescriptor = {
@@ -15,6 +16,7 @@ export const apiGroupDescriptor: NodeTypeDescriptor = {
   matches: isApiGroupType,
   zIndex: -1,
   connectable: false,
+  handles: SPREAD_HANDLES,
   canHaveParent: true,
   canBeParent: true,
 

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import CustomNode from "../CustomNode";
 import type { NodeTypeDescriptor, NodeBuildContext } from "./types";
+import { SPREAD_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import {
   isAwsComponent,
@@ -33,6 +34,7 @@ export const c4Descriptor: NodeTypeDescriptor = {
   matches: () => true,
   zIndex: 1,
   connectable: true,
+  handles: SPREAD_HANDLES,
   canHaveParent: true,
   canBeParent: false,
 

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { useDiagramActions } from "@/features/diagram";
 import { useTheme } from "@/hooks/useTheme";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
-import { singleIncomingTargetHandleId } from "../../edges/connectionDerivations";
+import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { JsonViewerNodeData, JsonViewerMode } from "./JsonViewerNode.types";
 
 const COLLAPSED_W = 240;
@@ -26,14 +26,31 @@ const PREVIEW_LINES = 3;
 const jsonViewerIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
-function JsonViewerIncomingHandle({ elementId }: { elementId: string }) {
+/**
+ * Both anchors this node offers, as `handle-spec.ts` declares them: one shared
+ * incoming handle whatever the edge count, and one outgoing slot.
+ *
+ * The outgoing handle used to be missing. `buildEdgeHandleAssignments` still
+ * addressed an edge leaving this node to `source-0`, so React Flow refused the
+ * edge (error #008) and it vanished from the canvas with only a console
+ * warning — an arrow the user drew, gone without a word.
+ */
+function JsonViewerEdgeHandles({ elementId }: { elementId: string }) {
   return (
-    <Handle
-      id={singleIncomingTargetHandleId(elementId)}
-      type="target"
-      position={Position.Left}
-      className={jsonViewerIncomingHandleClassName}
-    />
+    <>
+      <Handle
+        id={singleIncomingTargetHandleId(elementId)}
+        type="target"
+        position={Position.Left}
+        className={jsonViewerIncomingHandleClassName}
+      />
+      <Handle
+        id="source-0"
+        type="source"
+        position={Position.Right}
+        className={jsonViewerIncomingHandleClassName}
+      />
+    </>
   );
 }
 
@@ -192,7 +209,7 @@ const JsonViewerNode = memo(
 
     return (
       <>
-        <JsonViewerIncomingHandle elementId={diagramNodeData.elementId} />
+        <JsonViewerEdgeHandles elementId={diagramNodeData.elementId} />
 
         <NodeResizer
           minWidth={EXPANDED_MIN_W}

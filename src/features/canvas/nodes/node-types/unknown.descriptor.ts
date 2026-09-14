@@ -1,5 +1,6 @@
 import UnknownNode from "../UnknownNode";
 import type { NodeTypeDescriptor } from "./types";
+import { SPREAD_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { isUnknownType, isUnknownComponent, isPluginTypedComponent } from "@/features/diagram";
 
@@ -9,6 +10,7 @@ export const unknownDescriptor: NodeTypeDescriptor = {
   matches: isUnknownType,
   zIndex: 1,
   connectable: true,
+  handles: SPREAD_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: 240, height: 140 },

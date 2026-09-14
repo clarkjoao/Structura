@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useCollabHighlight } from "@/features/collaboration";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
-import { singleIncomingTargetHandleId } from "../../edges/connectionDerivations";
+import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { DbColumnRow, DbTableColumnKey, DbTableNodeData } from "./DbTableNode.types";
 
 interface ColDef {
@@ -33,14 +33,31 @@ const ADD_BTN_SIZE = 20;
 const dbTableIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
-function DbTableIncomingHandle({ elementId }: { elementId: string }) {
+/**
+ * Both anchors this node offers, as `handle-spec.ts` declares them: one shared
+ * incoming handle whatever the edge count, and one outgoing slot.
+ *
+ * The outgoing handle used to be missing. `buildEdgeHandleAssignments` still
+ * addressed an edge leaving this node to `source-0`, so React Flow refused the
+ * edge (error #008) and it vanished from the canvas with only a console
+ * warning — an arrow the user drew, gone without a word.
+ */
+function DbTableEdgeHandles({ elementId }: { elementId: string }) {
   return (
-    <Handle
-      id={singleIncomingTargetHandleId(elementId)}
-      type="target"
-      position={Position.Left}
-      className={dbTableIncomingHandleClassName}
-    />
+    <>
+      <Handle
+        id={singleIncomingTargetHandleId(elementId)}
+        type="target"
+        position={Position.Left}
+        className={dbTableIncomingHandleClassName}
+      />
+      <Handle
+        id="source-0"
+        type="source"
+        position={Position.Right}
+        className={dbTableIncomingHandleClassName}
+      />
+    </>
   );
 }
 
@@ -222,7 +239,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
           isActive ? selectedRing : unselectedShadow,
         )}
       >
-        <DbTableIncomingHandle elementId={d.elementId} />
+        <DbTableEdgeHandles elementId={d.elementId} />
         {collabHighlight ? (
           <div
             className="absolute inset-0 pointer-events-none rounded-md z-10"
@@ -271,7 +288,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
       )}
       style={{ width: tableW, height: nodeH, minWidth: tableW }}
     >
-      <DbTableIncomingHandle elementId={d.elementId} />
+      <DbTableEdgeHandles elementId={d.elementId} />
       {collabHighlight ? (
         <div
           className="absolute inset-0 pointer-events-none rounded-md z-10"

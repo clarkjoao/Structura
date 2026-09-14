@@ -1,5 +1,6 @@
 import SvgNode from "../SvgNode";
 import type { NodeTypeDescriptor } from "./types";
+import { SINGLE_PAIR_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { isSvgComponentType, isSvgComponent } from "@/features/diagram";
 
@@ -9,6 +10,7 @@ export const svgDescriptor: NodeTypeDescriptor = {
   matches: isSvgComponentType,
   zIndex: 1,
   connectable: true,
+  handles: SINGLE_PAIR_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: 200, height: 200 },
