@@ -50,7 +50,7 @@ export const noteElement: ElementDescriptor = {
     canBeConnectionSource: false,
     // Collapsing swaps the whole box for a small one, but the size still comes
     // from the two constants below — nothing is measured from the text.
-    derivesSizeFromContent: false,
+    derivesSize: false,
 
     buildData: (comp, ctx) => ({
       elementId: comp.id,

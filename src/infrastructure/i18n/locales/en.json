@@ -869,6 +869,12 @@
     },
     "db-table": {
       "description": "Represents a relational database table with columns. Use for data modeling."
+    },
+    "api-group": {
+      "description": "Represents a REST/gRPC/GraphQL/WebSocket API surface. Use when defining a service API contract."
+    },
+    "endpoint": {
+      "description": "A single HTTP or event endpoint. Must be a child of an api-group node."
     }
   },
   "flowchart": {

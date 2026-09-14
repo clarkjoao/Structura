@@ -50,7 +50,7 @@ export const jsonViewerElement: ElementDescriptor = {
     // `SINGLE_INCOMING_HANDLES` says the same on the canvas side.
     canBeConnectionSource: false,
     // Size comes from the stored layout, never from the JSON it holds.
-    derivesSizeFromContent: false,
+    derivesSize: false,
     dragHandle: ".drag-handle",
 
     buildData: (comp, ctx) => {

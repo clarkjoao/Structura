@@ -49,7 +49,7 @@ export const dbTableElement: ElementDescriptor = {
     },
     // A new table has no columns, so this is `dbTableHeightFor(0)` — the size it
     // is created at and the size it paints at agree at creation, and diverge
-    // from there as columns are added. See `derivesSizeFromContent` below.
+    // from there as columns are added. See `derivesSize` below.
     defaultSize: { width: DB_TABLE_W, height: dbTableHeightFor(0) },
     patchableKeys: ["tableName", "columns", "collapsed", "collapsedWidth", "collapsedHeight"],
   },
@@ -71,7 +71,7 @@ export const dbTableElement: ElementDescriptor = {
      * therefore only the size at creation, and the two agree solely while the
      * table is empty.
      */
-    derivesSizeFromContent: true,
+    derivesSize: true,
 
     buildData: (comp, ctx) => {
       if (!isDbTableComponent(comp)) return {};

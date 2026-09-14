@@ -1,8 +1,6 @@
 import type { NodeTypes } from "@xyflow/react";
 import { panelDescriptor } from "./panel.descriptor";
 import { swimlaneDescriptor } from "./swimlane.descriptor";
-import { apiGroupDescriptor } from "./apigroup.descriptor";
-import { endpointDescriptor } from "./endpoint.descriptor";
 import { svgDescriptor } from "./svg.descriptor";
 import { unknownDescriptor } from "./unknown.descriptor";
 import { flowNodeDescriptor } from "./flownode.descriptor";
@@ -18,8 +16,6 @@ import type { ElementDescriptor } from "@/features/elements/element.types";
 export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
   panelDescriptor,
   swimlaneDescriptor,
-  apiGroupDescriptor,
-  endpointDescriptor,
   svgDescriptor,
   unknownDescriptor,
   flowNodeDescriptor,
@@ -54,7 +50,13 @@ function adaptElement(element: ElementDescriptor): NodeTypeDescriptor {
     canBeParent: canvas.canBeParent,
     buildData: canvas.buildData,
     buildStyle: canvas.buildStyle,
-    defaultSize: element.model.defaultSize,
+    // NodeTypeDescriptor still wants both dimensions; an element that leaves
+    // its height to the content has none to give, and the legacy field has no
+    // reader that would use it anyway.
+    defaultSize:
+      element.model.defaultSize.height === undefined
+        ? undefined
+        : { width: element.model.defaultSize.width, height: element.model.defaultSize.height },
     draggable: canvas.draggable,
     selectable: canvas.selectable,
     focusable: canvas.focusable,

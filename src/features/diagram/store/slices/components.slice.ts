@@ -2,8 +2,6 @@ import type {
   Component,
   ComponentPatch,
   ComponentType,
-  ApiGroupComponent,
-  EndpointComponent,
   UnknownComponent,
   SvgComponent,
   PanelComponent,
@@ -17,7 +15,6 @@ import { isPanelComponent, isApiGroupComponent } from "../../model/component.gua
 import {
   isPanelType,
   isEndpointType,
-  isApiGroupType,
   isC4Type,
   isUnknownType,
   isPluginComponentType,
@@ -162,22 +159,6 @@ export function buildComponentForType(
           }
         : {}),
     } as PanelComponent;
-  } else if (isEndpointType(type)) {
-    component = {
-      ...base,
-      type: "endpoint",
-      method: "GET",
-      path: i18n.t("canvas.defaultEndpointPath"),
-      handlers: [],
-    } as EndpointComponent;
-  } else if (isApiGroupType(type)) {
-    component = {
-      ...base,
-      type: "api-group",
-      serviceName: name,
-      basePath: "/api/v1",
-      protocol: "REST",
-    } as ApiGroupComponent;
   } else if (isC4Type(type)) {
     component = { ...base, type };
   } else if (isAwsType(type)) {
@@ -258,14 +239,19 @@ function buildLayoutForComponent(
   const registered = getElement(type);
   if (registered) {
     const { width, height } = registered.model.defaultSize;
-    return { elementId: componentId, x, y, width, height };
-  }
-  if (isApiGroupType(type)) {
-    const { width, height } = computeApiGroupSize(0);
-    return { elementId: componentId, x, y, zIndex: -1, width, height };
-  }
-  if (isEndpointType(type)) {
-    return { elementId: componentId, x, y, width: 260 };
+    return {
+      elementId: componentId,
+      x,
+      y,
+      width,
+      // Both omitted deliberately when the descriptor says nothing: a height
+      // the node measures itself must not be pinned here, and only a frame
+      // declares a stacking order.
+      ...(height === undefined ? {} : { height }),
+      ...(registered.model.defaultZIndex === undefined
+        ? {}
+        : { zIndex: registered.model.defaultZIndex }),
+    };
   }
   if (isPanelType(type)) {
     return {

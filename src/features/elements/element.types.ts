@@ -26,7 +26,8 @@ export type ElementTypeId = ComponentType;
  * added per migration slice, and `single-owner.invariant.test.ts` holds this
  * list and the runtime registry to each other.
  */
-export type RegisteredElementTypeId = "json-viewer" | "note" | "db-table";
+export type RegisteredElementTypeId =
+  "json-viewer" | "note" | "db-table" | "api-group" | "endpoint";
 
 /**
  * Which vocabulary an element belongs to. Only `"structural"` is used while F1
@@ -103,8 +104,22 @@ export interface ElementModelSlice {
    * Size a new node is created at. Unlike `NodeTypeDescriptor.defaultSize`,
    * which the creation path ignored, this one governs
    * (`proposta-arquitetura-elementos.md`, decision 3).
+   *
+   * `height` is optional because leaving it out is meaningful: the node
+   * measures itself, and writing a height would pin it to a number the
+   * content never agreed to. A standalone `endpoint` is the case — its
+   * style sets `minHeight` and lets the content decide the rest.
    */
-  defaultSize: { width: number; height: number };
+  defaultSize: { width: number; height?: number };
+
+  /**
+   * Stacking order written into the node's layout at creation.
+   *
+   * Distinct from `canvas.zIndex`, which is the render-time order: a frame
+   * like `api-group` is created behind its children and has to *stay* there
+   * in the stored layout, not only while it is being painted.
+   */
+  defaultZIndex?: number;
 
   /** i18n key for the default name of a new instance; blank name when absent. */
   defaultNameKey?: string;
@@ -135,16 +150,25 @@ export interface ElementCanvasSlice {
   canBeConnectionSource: boolean;
 
   /**
-   * Whether the painted size is computed from the component's own content.
+   * Whether the painted size is computed rather than being the stored one.
    *
    * `model.defaultSize` is the size at creation; for most elements that is also
-   * what they keep painting at. A `db-table` is the counter-example: its height
-   * is its column count, so the two agree only while it is empty. Stating which
-   * it is here is what lets the single-owner test check the agreement for
-   * fixed-size elements — the drift it catches is exactly the one that left
-   * db-table's unused `defaultSize` at 180 while the node painted at 76.
+   * what they keep painting at. Three kinds of element break that, and all
+   * three say the same thing to a reader of the stored layout:
+   *
+   * - `db-table` computes its height from its own column count;
+   * - `api-group` computes its height from how many endpoints it holds;
+   * - `endpoint` takes its size from where it sits — one row inside a group,
+   *   or its own content when standalone.
+   *
+   * Only the first of those is "content", which is why this is no longer
+   * called `derivesSizeFromContent`. What it states is that the stored size is
+   * not authoritative — and that is what the single-owner test checks the
+   * other elements against: a fixed-size element must still paint at the size
+   * it was created at. That is the drift that left db-table's unread
+   * `defaultSize` at 180 while the node painted at 76.
    */
-  derivesSizeFromContent: boolean;
+  derivesSize: boolean;
 
   buildData: (comp: Component, ctx: NodeBuildContext) => Record<string, unknown>;
   buildStyle?: (comp: Component, ctx: NodeBuildContext) => CSSProperties | undefined;
