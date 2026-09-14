@@ -237,7 +237,12 @@ const ViewerCanvasContent = ({
                 className="bg-background"
               >
                 <EdgeLabelPortalHost />
-                <Background variant={BackgroundVariant.Dots} gap={18} size={1.5} />
+                <Background
+                  variant={BackgroundVariant.Lines}
+                  gap={10}
+                  lineWidth={1}
+                  color="hsl(var(--muted) / 0.6)"
+                />
                 <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
               </ReactFlow>
             </EdgeLabelPortalProvider>
