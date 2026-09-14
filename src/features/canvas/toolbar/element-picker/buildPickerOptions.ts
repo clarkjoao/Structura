@@ -54,11 +54,11 @@ export function buildCanvasPickerOptions(t: (key: string) => string): CanvasPick
       awsIconName: swim.awsIconName,
     });
   }
-  core.push(
-    { type: "api-group", label: t("quickInsert.typeApiGroup"), icon: Globe },
-    { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
-    { type: "external-element", label: t("externalElement.nodeBadge"), icon: ExternalLink },
-  );
+  core.push({
+    type: "external-element",
+    label: t("externalElement.nodeBadge"),
+    icon: ExternalLink,
+  });
   for (const p of restPanels) {
     core.push({
       type: "panel",

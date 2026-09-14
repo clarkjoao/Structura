@@ -44,8 +44,6 @@ type FlatOption =
 type SearchSynonyms = {
   panel: string[];
   swimlane: string[];
-  apiGroup: string[];
-  endpoint: string[];
 };
 
 type AwsSearchRow = {
@@ -77,10 +75,6 @@ function canvasOptionMatchesQuery(
     if (opt.panelKind === PanelKind.Swimlane) {
       fields.push(...synonyms.swimlane);
     }
-  } else if (opt.type === COMPONENT_TYPE_API_GROUP) {
-    fields.push(...synonyms.apiGroup);
-  } else if (opt.type === COMPONENT_TYPE_ENDPOINT) {
-    fields.push(...synonyms.endpoint);
   }
   return fields.some((f) => f.includes(q));
 }
@@ -207,16 +201,6 @@ const QuickInsertPopover = ({
         awsIconName: p.awsIconName,
       })),
       {
-        type: COMPONENT_TYPE_API_GROUP as ComponentType,
-        label: t("quickInsert.typeApiGroup"),
-        icon: Globe,
-      },
-      {
-        type: COMPONENT_TYPE_ENDPOINT as ComponentType,
-        label: t("quickInsert.typeEndpoint"),
-        icon: Globe,
-      },
-      {
         type: COMPONENT_TYPE_EXTERNAL_ELEMENT as ComponentType,
         label: t("quickInsert.typeExternalElement"),
         icon: ExternalLink,
@@ -257,8 +241,6 @@ const QuickInsertPopover = ({
     (): SearchSynonyms => ({
       panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
       swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
-      apiGroup: splitSearchHelp(t("quickInsert.searchHelpApiGroup")),
-      endpoint: splitSearchHelp(t("quickInsert.searchHelpEndpoint")),
     }),
     [t],
   );
