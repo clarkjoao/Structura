@@ -188,10 +188,13 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
 
   // Get first few node names for preview
   const nodePreview = suggestion.patch.actions
-    .filter((a) => a.type === "ADD_NODE")
-    .slice(0, 3)
-    .map((a) => (a.type === "ADD_NODE" ? a.payload.name : null))
-    .filter(Boolean) as string[];
+    .map((action, actionIndex) =>
+      action.type === "ADD_NODE"
+        ? { actionIndex, name: action.payload.name }
+        : null,
+    )
+    .filter((entry): entry is { actionIndex: number; name: string } => entry !== null)
+    .slice(0, 3);
   const moreNodes = suggestion.patch.actions.filter((a) => a.type === "ADD_NODE").length - 3;
 
   return (
@@ -225,9 +228,9 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
             </span>
 
             {/* Node preview badges */}
-            {nodePreview.map((name) => (
+            {nodePreview.map(({ actionIndex, name }) => (
               <span
-                key={name}
+                key={`add-node-${actionIndex}`}
                 className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2 py-0.5 text-[11px] font-medium text-green-600 dark:text-green-400"
               >
                 <Plus className="h-2.5 w-2.5" />
