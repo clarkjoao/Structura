@@ -444,8 +444,11 @@ Nenhuma menção a Claude em mensagem, autor ou co-autor.
 `pkill`, `killall`, `killpg`, `kill -- -PID` ou `fuser -k`. Nenhum `git stash`.
 Uma única aba de browser, criada e fechada.
 
-**`lsof -i :8080`:** livre no início, livre no fim. (A 8080 nunca foi usada; o
-trabalho correu na 8097, também livre no fim.)
+**`lsof -i :8080`:** livre no início. **No fim, ocupada** — `node` PID 39084 em
+LISTEN, com uma conexão estabelecida do Chrome. **Não é meu**: nunca usei a 8080,
+todo o trabalho correu na 8097, e a 8080 estava comprovadamente livre quando
+comecei. Subiu durante a sessão, presumivelmente na janela ao lado. Deixei em paz.
+A 8097, que era minha, está livre e sem processo `vite` restante.
 
 **Arquivos novos:**
 
