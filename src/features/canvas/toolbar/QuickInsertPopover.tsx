@@ -8,7 +8,6 @@ import {
   StickyNote,
   Globe,
   Table,
-  Braces,
   ExternalLink,
 } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
@@ -19,15 +18,15 @@ import {
   COMPONENT_TYPE_API_GROUP,
   COMPONENT_TYPE_ENDPOINT,
   COMPONENT_TYPE_DB_TABLE,
-  COMPONENT_TYPE_JSON_VIEWER,
   COMPONENT_TYPE_EXTERNAL_ELEMENT,
   isDbTableType,
-  isJsonViewerType,
 } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
 import { buildFlowchartPickerOptions } from "./element-picker/buildPickerOptions";
 import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import { paletteEntriesForCategory } from "@/features/elements/element.palette";
+import { ElementCategory } from "../enums";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { AwsIcon } from "../nodes/CloudIcon";
@@ -43,6 +42,8 @@ type CanvasInsertOption = {
   panelKind?: PanelKind;
   awsIconName?: string;
   flowShape?: FlowNodeShape;
+  /** Search synonyms carried by the option itself (registry-derived entries). */
+  searchKeys?: string[];
 };
 
 type FlatOption =
@@ -60,7 +61,6 @@ type SearchSynonyms = {
   apiGroup: string[];
   endpoint: string[];
   dbTable: string[];
-  jsonViewer: string[];
 };
 
 type AwsSearchRow = {
@@ -83,6 +83,7 @@ function canvasOptionMatchesQuery(
   synonyms: SearchSynonyms,
 ): boolean {
   const fields: string[] = [opt.label.toLowerCase()];
+  if (opt.searchKeys) fields.push(...opt.searchKeys);
   if (opt.panelKind) {
     fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
   }
@@ -95,8 +96,6 @@ function canvasOptionMatchesQuery(
     fields.push(...synonyms.note);
   } else if (isDbTableType(opt.type)) {
     fields.push(...synonyms.dbTable);
-  } else if (isJsonViewerType(opt.type)) {
-    fields.push(...synonyms.jsonViewer);
   } else if (opt.type === COMPONENT_TYPE_API_GROUP) {
     fields.push(...synonyms.apiGroup);
   } else if (opt.type === COMPONENT_TYPE_ENDPOINT) {
@@ -198,6 +197,19 @@ const QuickInsertPopover = ({
     );
   }, [t]);
 
+  // Registry-derived entries join the legacy list, which no longer holds the
+  // types that have migrated -- each element is offered by exactly one path.
+  const REGISTRY_OPTIONS = useMemo(
+    (): CanvasInsertOption[] =>
+      paletteEntriesForCategory(ElementCategory.Canvas).map((entry) => ({
+        type: entry.type,
+        label: entry.label,
+        icon: entry.icon,
+        searchKeys: entry.searchKeys,
+      })),
+    [t],
+  );
+
   const CANVAS_OPTIONS = useMemo(
     (): CanvasInsertOption[] => [
       {
@@ -224,11 +236,6 @@ const QuickInsertPopover = ({
         icon: Table,
       },
       {
-        type: COMPONENT_TYPE_JSON_VIEWER as ComponentType,
-        label: t("nodeTypes.json-viewer"),
-        icon: Braces,
-      },
-      {
         type: COMPONENT_TYPE_API_GROUP as ComponentType,
         label: t("quickInsert.typeApiGroup"),
         icon: Globe,
@@ -245,6 +252,11 @@ const QuickInsertPopover = ({
       },
     ],
     [t],
+  );
+
+  const CANVAS_OPTIONS_ALL = useMemo(
+    (): CanvasInsertOption[] => [...CANVAS_OPTIONS, ...REGISTRY_OPTIONS],
+    [CANVAS_OPTIONS, REGISTRY_OPTIONS],
   );
 
   useEffect(() => {
@@ -276,7 +288,6 @@ const QuickInsertPopover = ({
       swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
       note: splitSearchHelp(t("quickInsert.searchHelpNote")),
       dbTable: splitSearchHelp(t("quickInsert.searchHelpDbTable")),
-      jsonViewer: splitSearchHelp(t("quickInsert.searchHelpJsonViewer")),
       apiGroup: splitSearchHelp(t("quickInsert.searchHelpApiGroup")),
       endpoint: splitSearchHelp(t("quickInsert.searchHelpEndpoint")),
     }),
@@ -290,8 +301,8 @@ const QuickInsertPopover = ({
 
   const filteredCanvas = useMemo(() => {
     if (!q) return [];
-    return CANVAS_OPTIONS.filter((o) => canvasOptionMatchesQuery(o, q, searchSynonyms));
-  }, [q, CANVAS_OPTIONS, searchSynonyms]);
+    return CANVAS_OPTIONS_ALL.filter((o) => canvasOptionMatchesQuery(o, q, searchSynonyms));
+  }, [q, CANVAS_OPTIONS_ALL, searchSynonyms]);
 
   const filteredFlowchart = useMemo(() => {
     if (!q) return [];

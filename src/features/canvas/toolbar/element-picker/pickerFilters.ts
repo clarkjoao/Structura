@@ -12,6 +12,7 @@ export function canvasOptionMatchesQuery(opt: CanvasPickerOption, query: string)
     fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
     fields.push(String(opt.panelKind).toLowerCase());
   }
+  if (opt.searchKeys) fields.push(...opt.searchKeys);
   return fields.some((f) => f.includes(query));
 }
 

@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Braces,
   Circle,
   Database,
   Diamond,
@@ -62,7 +61,6 @@ export function buildCanvasPickerOptions(t: (key: string) => string): CanvasPick
     { type: "api-group", label: t("quickInsert.typeApiGroup"), icon: Globe },
     { type: "endpoint", label: t("quickInsert.typeEndpoint"), icon: Globe },
     { type: "db-table", label: t("nodeTypes.db-table"), icon: Table },
-    { type: "json-viewer", label: t("nodeTypes.json-viewer"), icon: Braces },
     { type: "external-element", label: t("externalElement.nodeBadge"), icon: ExternalLink },
   );
   for (const p of restPanels) {

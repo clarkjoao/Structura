@@ -21,6 +21,7 @@ import {
   buildCanvasPickerOptions,
   buildFlowchartPickerOptions,
 } from "./element-picker/buildPickerOptions";
+import { paletteEntriesForCategory } from "@/features/elements/element.palette";
 import {
   filterC4ByQuery,
   filterCanvasByQuery,
@@ -68,7 +69,20 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const deleteTemplate = useCustomComponentStore((state) => state.deleteTemplate);
 
   const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
-  const CANVAS_OPTIONS = useMemo(() => buildCanvasPickerOptions(t), [t]);
+  // Registry-derived entries join the legacy list, which no longer holds the
+  // types that have migrated -- each element is offered by exactly one path.
+  const CANVAS_OPTIONS = useMemo(
+    (): CanvasPickerOption[] => [
+      ...buildCanvasPickerOptions(t),
+      ...paletteEntriesForCategory(ElementCategory.Canvas).map((entry) => ({
+        type: entry.type,
+        label: entry.label,
+        icon: entry.icon,
+        searchKeys: entry.searchKeys,
+      })),
+    ],
+    [t],
+  );
   const FLOWCHART_OPTIONS = useMemo(() => buildFlowchartPickerOptions(t), [t]);
 
   const onCanvasServiceIds = useMemo(
