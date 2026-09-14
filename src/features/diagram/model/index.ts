@@ -158,6 +158,7 @@ export {
   getDefaultNameForNewComponent,
 } from "./component-type-constants";
 export type { C4Type } from "./component-type-constants";
+export { canBeConnectionSource } from "./connection-rules";
 
 // ─── Component guards ────────────────────────────────────────────────────────
 export {

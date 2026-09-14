@@ -6,6 +6,7 @@ import {
   isGcpComponent,
 } from "../../model/component.guards";
 import { generateId } from "../../utils/generate-id";
+import { canBeConnectionSource } from "../../model/connection-rules";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -74,10 +75,19 @@ export const generatedGraphSlice = (
     for (const node of nodes) {
       componentIdByExternalId[node.externalId] = generateId("el");
     }
+    const typeByExternalId: Record<string, string> = {};
+    for (const node of nodes) typeByExternalId[node.externalId] = node.type;
+
     const resolvedEdges = edges.flatMap((edge) => {
       const sourceId = componentIdByExternalId[edge.sourceExternalId];
       const targetId = componentIdByExternalId[edge.targetExternalId];
       if (!sourceId || !targetId) return [];
+      // An edge out of a note, a JSON viewer or a db-table is one the canvas
+      // can never draw — it would be created and then silently dropped by
+      // React Flow. A generated graph is the path that produced these in
+      // practice, so it is dropped here with the unresolvable endpoints.
+      const sourceType = typeByExternalId[edge.sourceExternalId];
+      if (sourceType !== undefined && !canBeConnectionSource(sourceType)) return [];
       return [{ id: generateId("conn"), sourceId, targetId, label: edge.label }];
     });
 

@@ -18,6 +18,7 @@ import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
 import { resolveActiveScene } from "../helpers/scene-helpers";
 import i18n from "@/infrastructure/i18n";
+import { canBeConnectionSource } from "../../model/connection-rules";
 
 function ensureScenes(d: Diagram): Record<string, SceneDiff> {
   if (!d.scenes) d.scenes = {};
@@ -243,6 +244,12 @@ export const scenesSlice = (
       const d = getActiveDiagram(state);
       const sc = d?.scenes?.[sceneId];
       if (!sc) return;
+      // Same rule as `addConnection`: nothing leaves a note, a JSON viewer or
+      // a db-table, and a scene is not an exception to it.
+      const sourceType =
+        sc.addedComponents?.[connection.sourceId]?.type ??
+        d!.snapshot.components[connection.sourceId]?.type;
+      if (sourceType !== undefined && !canBeConnectionSource(sourceType)) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       sc.addedConnections[connection.id] = connection;
       touchDiagram(d);

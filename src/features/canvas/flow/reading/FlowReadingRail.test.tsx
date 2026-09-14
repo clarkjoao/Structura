@@ -31,7 +31,7 @@ function seed(build: (ids: Seeded) => Record<string, FlowStep>, entryStepId = "s
     .addComponent("system", "Antifraude", null, { x: 320, y: 0 });
   const connection = useDiagramStore
     .getState()
-    .addConnection(gateway.id, antifraud.id, "POST /v2/score");
+    .addConnection(gateway.id, antifraud.id, "POST /v2/score")!;
 
   const flow = useDiagramStore.getState().addFlow(diagram.id, "Checkout — pedido pago", "")!;
   useDiagramStore.getState().updateFlow(flow.id, {

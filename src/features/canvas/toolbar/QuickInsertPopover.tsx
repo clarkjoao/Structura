@@ -401,6 +401,11 @@ const QuickInsertPopover = ({
   const connectFromSource = useCallback(
     (targetNodeId: string) => {
       if (!sourceNodeId) return;
+      // The return is deliberately ignored. `addConnection` refuses a source
+      // nothing may leave (a note, a JSON viewer, a table), but `sourceNodeId`
+      // only ever comes from dragging off a source handle — which those types
+      // do not render — so the refusal is unreachable from here. Reporting it
+      // would be UI for a state the user cannot get into.
       addConnection(sourceNodeId, targetNodeId, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
     },
     [addConnection, sourceNodeId, t],

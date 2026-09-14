@@ -1,4 +1,4 @@
-import type { Connection } from "../../model/diagram.types";
+import type { Connection, Diagram } from "../../model/diagram.types";
 import type { EdgeStyle } from "../../model/connection.types";
 import { EdgeStyle as EdgeStyleEnum } from "../../enums";
 import { generateId } from "../../utils/generate-id";
@@ -10,17 +10,38 @@ import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
 import { resolveActiveScene } from "../helpers/scene-helpers";
 import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
+import { canBeConnectionSource } from "../../model/connection-rules";
+
+/**
+ * The source component's type, looked up where the active scene can see it: a
+ * node added by a scene lives in the scene, not in the base snapshot, and a
+ * connection drawn from it has to be judged by the same rule.
+ */
+function sourceTypeIn(diagram: Diagram, sourceId: string): string | undefined {
+  const scene = resolveActiveScene(diagram);
+  return scene?.addedComponents?.[sourceId]?.type ?? diagram.snapshot.components[sourceId]?.type;
+}
 
 export const connectionsSlice = (
   set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
+  get: () => AppState,
 ) => ({
+  /**
+   * Creates a connection, or returns `null` when the source is a type nothing
+   * may leave — see `canBeConnectionSource`. Refusing here rather than at the
+   * handles is what makes the rule hold for quick insert, generation, an LLM
+   * patch and a scene, none of which go through a handle.
+   */
   addConnection: (
     sourceId: string,
     targetId: string,
     label: string,
     edgeStyle: EdgeStyle = EdgeStyleEnum.EditableStep,
-  ): Connection => {
+  ): Connection | null => {
+    const state = get();
+    const active = state.diagrams[state.activeDiagramId ?? ""];
+    if (active && !canBeConnectionSource(sourceTypeIn(active, sourceId) ?? "")) return null;
+
     const connection: Connection = {
       id: generateId("conn"),
       sourceId,
@@ -49,6 +70,12 @@ export const connectionsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
+      // Repointing a source is another way to create what `addConnection`
+      // refuses, so the same rule applies to the patch.
+      if (patch.sourceId !== undefined) {
+        const sourceType = d.snapshot.components[patch.sourceId]?.type;
+        if (sourceType !== undefined && !canBeConnectionSource(sourceType)) return;
+      }
       const scene = resolveActiveScene(d);
       const inScene = !!(scene && scene.addedConnections[id]);
       if (!inScene) pushHistory(state);

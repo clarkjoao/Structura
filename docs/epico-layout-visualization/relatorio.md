@@ -369,15 +369,8 @@ mesmos diagramas-semente.
 
 ## 4. DECISÕES DO DONO
 
-0. **Aresta saindo de uma nota continua desaparecendo em silêncio.** Com
-   `outgoing: 0` declarado, `note` / `json-viewer` / `db-table` não têm handle de
-   origem — correto. Mas se uma conexão com uma nota como origem existir nos dados
-   (importação, geração por LLM, plugin), a atribuição ainda emite `source-0`,
-   React Flow recusa (erro #008) e a aresta simplesmente não aparece. A UI não
-   permite desenhá-la, então isso só chega por esses caminhos. **Decisão:** bloquear
-   na criação da conexão, mostrar como inválida, ou deixar como está? Não decidi
-   por você — é regra de produto, e foi exatamente por presumir aqui que eu errei
-   antes.
+0. ~~**Aresta saindo de uma nota continua desaparecendo em silêncio.**~~
+   **Decidido pelo dono: bloquear na criação.** Implementado — ver §4c.
 
 1. **`MAX_HANDLES` fica em 4, contra o enunciado.** Reduzir mede o oposto do que a
    hipótese dizia. Se você quiser o piso de sobreposição colinear, 6 dá −28% sobre
@@ -466,6 +459,70 @@ de arraste escreve a store sem incrementar o selo e ali a cópia local é a verd
 
 ---
 
+## 4c. Bloqueio na criação (decisão do dono)
+
+`note`, `json-viewer` e `db-table` não são origem de conexão. Antes, nada
+impedia que uma conexão fosse **criada** com um deles como origem: o canvas não
+conseguia desenhá-la (React Flow recusa aresta cujo handle não existe, erro
+#008), ela sumia com um aviso no console, e **ficava na store para sempre** — nos
+exports e em qualquer flow que a referenciasse.
+
+### Onde a regra vive
+
+`src/features/diagram/model/connection-rules.ts` — `canBeConnectionSource(type)`.
+
+Na camada de **domínio**, não junto das specs de handle do canvas, e a razão é
+que os handles não são o que impõe a regra: a UI não consegue desenhar essa
+conexão (sem handle de origem não há de onde arrastar), então **todo caminho que
+consegue criá-la passa por fora dos handles**. O `features/diagram` é a camada que
+todos eles atravessam, e o `AGENTS.md` a define como a camada de domínio, sem
+React.
+
+Um teste trava a declaração do canvas (`SINGLE_INCOMING_HANDLES`, `outgoing: 0`) à
+regra de domínio para os doze descritores, nos dois sentidos — um tipo sem handle
+de saída mas permitido como origem receberia conexões que o canvas descarta em
+silêncio; um tipo com handle de saída mas recusado teria um handle que nada pode
+usar.
+
+### Os quatro caminhos de criação, todos cobertos
+
+| caminho | onde | comportamento |
+|---|---|---|
+| `addConnection` | `connections.slice.ts` | retorna `null`, não cria nada |
+| `updateConnection` | `connections.slice.ts` | ignora um patch que reaponte `sourceId` para um tipo sem saída |
+| `insertGeneratedGraph` | `generated-graph.slice.ts` | descarta a aresta, junto das de endpoint irresolúvel |
+| `addConnectionToScene` | `scenes.slice.ts` | recusa; cena não é exceção |
+
+A busca do tipo é ciente de cena: um nó adicionado por uma cena vive na cena, não
+no snapshot base, e uma conexão saindo dele é julgada pela mesma regra.
+
+`addConnection` passou a devolver `Connection | null`. Isso atinge
+`actions.types.ts`, o patch do LLM e cinco arquivos de teste que agora usam `!` —
+todos conectam tipos válidos, então a asserção é correta ali.
+
+### O que *não* foi adicionado, e por quê
+
+**Nenhum aviso na UI.** Escrevi um toast no `QuickInsertPopover` e o removi depois
+de verificar: `sourceNodeId` só é preenchido em `onConnectEnd`
+(`useCanvasEventHandlers.ts:199`), isto é, ao arrastar de um handle de origem —
+que esses três tipos não renderizam. O toast era **inalcançável**. UI para um
+estado em que o usuário não consegue entrar é pior que nenhuma.
+
+**No caminho do LLM, um `console.warn`**, seguindo a convenção que já existe ali
+para ação pulada (`"[LLM] Unresolved @ref in ADD_EDGE - action skipped"` em
+`llm/store.ts`). A aresta recusada não entra em `previewEdgeIds`, então a
+sugestão não afirma uma seta que não existe.
+
+### Testes antes, vistos falhar
+
+`connection-source-rule.test.ts` (19) — o predicado; `addConnection` recusa os três
+tipos como origem e continua aceitando os três como **destino**; `updateConnection`
+recusa o reaponte e ainda aplica um patch que não mexe na origem; e a geração
+descarta só a aresta que sai da nota, mantendo a que entra nela e a que não a
+envolve. Falharam com `Failed to resolve import "../../model/connection-rules"`.
+
+---
+
 ## 5. NÃO VERIFICADO
 
 - **A extensão do VSCode.** Fora de escopo por decisão sua. Que uma webview do
@@ -498,6 +555,14 @@ de arraste escreve a store sem incrementar o selo e ali a cópia local é a verd
   novo em 18 nós. Não cronometrei o descarte em 400 nós, onde o
   `edge-relayer.md` registra ~184ms — um auto layout ali paga esse custo uma vez,
   por desenho, mas não medi.
+- **O bloqueio na criação, no browser.** Coberto por 19 testes nos quatro
+  caminhos. Tentei exercitá-lo na página e não consegui: a store não é exposta no
+  `window`, e a UI — por desenho — não tem como produzir essa conexão. Então a
+  verificação é de teste, não de inspeção visual.
+- **Importação de arquivo com uma conexão já inválida.** A importação substitui o
+  workspace inteiro, sem passar pelas slices, então uma conexão inválida que já
+  exista num arquivo continua entrando. Deliberado: filtrar ali apagaria dado de
+  um arquivo do usuário em silêncio, o que é outra decisão, não esta.
 
 ---
 

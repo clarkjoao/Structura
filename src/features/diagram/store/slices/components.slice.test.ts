@@ -43,8 +43,8 @@ describe("removeElements", () => {
     const b = store.getState().addComponent("system", "B", null, { x: 100, y: 0 });
     const c = store.getState().addComponent("system", "C", null, { x: 200, y: 0 });
     const d = store.getState().addComponent("system", "D", null, { x: 300, y: 0 });
-    const abConnection = store.getState().addConnection(a.id, b.id, "uses");
-    const cdConnection = store.getState().addConnection(c.id, d.id, "uses");
+    const abConnection = store.getState().addConnection(a.id, b.id, "uses")!;
+    const cdConnection = store.getState().addConnection(c.id, d.id, "uses")!;
 
     store.getState().removeElements([a.id], [cdConnection.id]);
 

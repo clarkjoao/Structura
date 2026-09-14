@@ -69,12 +69,13 @@ export interface AppActions {
   ) => void;
   removeExternalLink: (componentId: string, linkId: string) => void;
 
+  /** `null` when the source is a type nothing may leave — see `canBeConnectionSource`. */
   addConnection: (
     sourceId: string,
     targetId: string,
     label: string,
     edgeStyle?: EdgeStyle,
-  ) => Connection;
+  ) => Connection | null;
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
 

@@ -5,6 +5,7 @@ import {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
 } from "../../edges/connectionDerivations";
+import { canBeConnectionSource } from "@/features/diagram/model/connection-rules";
 import { NODE_TYPE_REGISTRY, handleSpecForType } from "./registry";
 import { singleIncomingTargetHandleId } from "./handle-spec";
 
@@ -63,6 +64,21 @@ describe("declared handle specs", () => {
   it("every registered descriptor declares its handle set", () => {
     for (const descriptor of NODE_TYPE_REGISTRY) {
       expect(descriptor.handles, `${descriptor.rfType} declares no handle set`).toBeDefined();
+    }
+  });
+
+  /**
+   * The canvas says what it draws; the domain says what may be created. If
+   * they drift, one of the two is lying: a type with no outgoing handle but
+   * allowed as a source gets connections the canvas silently drops, and a type
+   * with an outgoing handle but refused as a source gets a handle nothing can
+   * ever use.
+   */
+  it("agrees with the domain rule on which types are a source", () => {
+    for (const descriptor of NODE_TYPE_REGISTRY) {
+      const type = descriptor.rfType === "swimlane" ? "panel" : descriptor.rfType;
+      const declaresOutgoing = descriptor.handles.outgoing > 0;
+      expect(canBeConnectionSource(type), `${type}`).toBe(declaresOutgoing);
     }
   });
 
