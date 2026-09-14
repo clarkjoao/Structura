@@ -122,11 +122,36 @@ describe("applyLayoutResultEdges with resetPaths", () => {
     expect(fakeStore.updateHandleOrder).toHaveBeenCalledWith("b", "incoming", ["e1"]);
   });
 
-  /** Generation still gets ELK's route; only the auto-layout command opts out. */
+  /** Generation still gets ELK's route; only the layout commands opt out. */
   it("keeps writing bend points when the option is absent", () => {
     run();
 
     expect(fakeStore._resets).toEqual(["e1"]);
     expect(fakeStore._waypoints).toEqual(["e1"]);
+  });
+
+  /**
+   * The scoped case, which is what "Organize children (LR)" runs: only the
+   * edges the layout owns are touched, and those end with no path either.
+   */
+  it("resets only the edges in scope, and writes no bend points for them", () => {
+    const graph = {
+      nodes: [{ id: "a" }, { id: "b" }, { id: "c" }],
+      edges: [
+        { id: "e1", sourceId: "a", targetId: "b" },
+        { id: "outside", sourceId: "b", targetId: "c" },
+      ],
+    };
+    const result = makeResult(graph);
+
+    applyLayoutResultEdges(
+      graph as unknown as Parameters<typeof applyLayoutResultEdges>[0],
+      result,
+      diagramId,
+      { resetPaths: true, edgeIds: new Set(["e1"]) },
+    );
+
+    expect(fakeStore._resets).toEqual(["e1"]);
+    expect(fakeStore._waypoints).toEqual([]);
   });
 });
