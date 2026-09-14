@@ -860,6 +860,11 @@
     "json-viewer": "JSON Viewer",
     "processos": "Processes"
   },
+  "elements": {
+    "json-viewer": {
+      "description": "Displays a JSON payload or schema. Use for documenting request/response shapes."
+    }
+  },
   "flowchart": {
     "shapes": {
       "rectangle": "Process",
