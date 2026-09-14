@@ -22,7 +22,7 @@ function seed() {
   store.getState().openDiagram(diagram.id);
   const a = store.getState().addComponent("component", "A", null, { x: 0, y: 0 });
   const b = store.getState().addComponent("component", "B", null, { x: 200, y: 0 });
-  const conn = store.getState().addConnection(a.id, b.id, "uses");
+  const conn = store.getState().addConnection(a.id, b.id, "uses")!;
   settle();
   return { store, diagramId: diagram.id, connId: conn.id };
 }

@@ -1,5 +1,6 @@
 import PanelNode from "../PanelNode";
 import type { NodeTypeDescriptor } from "./types";
+import { SPREAD_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { isPanelComponent, isPanelType } from "@/features/diagram";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
@@ -11,6 +12,7 @@ export const panelDescriptor: NodeTypeDescriptor = {
   matches: isPanelType,
   zIndex: -1,
   connectable: false,
+  handles: SPREAD_HANDLES,
   canHaveParent: true,
   canBeParent: true,
   /**

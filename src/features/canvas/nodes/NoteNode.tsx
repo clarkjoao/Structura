@@ -16,12 +16,21 @@ import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration";
-import { singleIncomingTargetHandleId } from "../edges/connectionDerivations";
+import { singleIncomingTargetHandleId } from "./node-types/handle-spec";
 
 const noteIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
-function NoteIncomingHandle({ elementId }: { elementId: string }) {
+/**
+ * The one anchor this node offers: an incoming handle, shared by every edge
+ * that arrives, and nothing on the right.
+ *
+ * There is deliberately no source handle. This is a thing the diagram points
+ * at, so the arrow runs towards it and never back out — see
+ * `SINGLE_INCOMING_HANDLES` in `node-types/handle-spec.ts`, which declares the
+ * same and is what the edge handle assignment reads.
+ */
+function NoteEdgeHandles({ elementId }: { elementId: string }) {
   return (
     <Handle
       id={singleIncomingTargetHandleId(elementId)}
@@ -175,7 +184,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
-        <NoteIncomingHandle elementId={elementId} />
+        <NoteEdgeHandles elementId={elementId} />
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none rounded-lg z-10"
@@ -243,7 +252,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             : "0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
         }}
       >
-        <NoteIncomingHandle elementId={elementId} />
+        <NoteEdgeHandles elementId={elementId} />
         {collabHighlight && (
           <div
             className="absolute inset-0 pointer-events-none z-10"

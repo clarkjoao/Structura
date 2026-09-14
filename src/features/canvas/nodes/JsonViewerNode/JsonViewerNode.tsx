@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { useDiagramActions } from "@/features/diagram";
 import { useTheme } from "@/hooks/useTheme";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
-import { singleIncomingTargetHandleId } from "../../edges/connectionDerivations";
+import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { JsonViewerNodeData, JsonViewerMode } from "./JsonViewerNode.types";
 
 const COLLAPSED_W = 240;
@@ -26,7 +26,16 @@ const PREVIEW_LINES = 3;
 const jsonViewerIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
-function JsonViewerIncomingHandle({ elementId }: { elementId: string }) {
+/**
+ * The one anchor this node offers: an incoming handle, shared by every edge
+ * that arrives, and nothing on the right.
+ *
+ * There is deliberately no source handle. This is a thing the diagram points
+ * at, so the arrow runs towards it and never back out — see
+ * `SINGLE_INCOMING_HANDLES` in `node-types/handle-spec.ts`, which declares the
+ * same and is what the edge handle assignment reads.
+ */
+function JsonViewerEdgeHandles({ elementId }: { elementId: string }) {
   return (
     <Handle
       id={singleIncomingTargetHandleId(elementId)}
@@ -192,7 +201,7 @@ const JsonViewerNode = memo(
 
     return (
       <>
-        <JsonViewerIncomingHandle elementId={diagramNodeData.elementId} />
+        <JsonViewerEdgeHandles elementId={diagramNodeData.elementId} />
 
         <NodeResizer
           minWidth={EXPANDED_MIN_W}

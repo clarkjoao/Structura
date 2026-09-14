@@ -91,6 +91,12 @@ const App = () => {
       ) : (
         <Suspense fallback={<RouteFallback />}>
           <Routes>
+            {/*
+              The reading route, and the only one. Outside `MainPages` on
+              purpose: it is a whole-window surface with no app chrome, and a
+              webview pointed at it should not mount the toaster, the plugin
+              modal host or the preview sync.
+            */}
             <Route path="/viewer" element={<ViewerPage />} />
             <Route path="*" element={<MainPages />} />
           </Routes>

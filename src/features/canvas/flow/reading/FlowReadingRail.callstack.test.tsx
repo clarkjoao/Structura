@@ -46,7 +46,7 @@ function seed(build: (ids: Seeded) => Record<string, FlowStep>, entryStepId = "s
   const antifraud = add("system", "Antifraude", 900);
 
   const connect = (from: string, to: string, label: string) =>
-    useDiagramStore.getState().addConnection(from, to, label);
+    useDiagramStore.getState().addConnection(from, to, label)!;
 
   const c1 = connect(client.id, api.id, "POST /checkout");
   const c2 = connect(api.id, payments.id, "cobrar(pedido)");

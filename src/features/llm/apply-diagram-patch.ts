@@ -82,6 +82,18 @@ export function applyDiagramPatchAction(
         action.payload.label,
         action.payload.edgeStyle,
       );
+      // Refused: the source is a type nothing may leave (a note, a JSON
+      // viewer, a db-table). Reporting no edge is what keeps the suggestion
+      // preview honest — it lists the ids that exist, so the arrow is simply
+      // not claimed. Warned rather than surfaced, matching how an unresolved
+      // `@ref` in the same action is handled in `llm/store.ts`.
+      if (!connection) {
+        console.warn(
+          "[LLM] ADD_EDGE skipped - nothing connects out of this source type",
+          action.payload.sourceId,
+        );
+        return { addedNodeId: null, addedEdgeId: null };
+      }
       if (action.payload.patch) {
         diagramState.updateConnection(connection.id, action.payload.patch);
       }

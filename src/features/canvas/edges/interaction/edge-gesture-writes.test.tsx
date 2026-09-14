@@ -31,7 +31,7 @@ function seed() {
   useDiagramStore.getState().openDiagram(diagram.id);
   const a = useDiagramStore.getState().addComponent("component", "A", null, { x: 0, y: 0 });
   const b = useDiagramStore.getState().addComponent("component", "B", null, { x: 300, y: 0 });
-  const connection = useDiagramStore.getState().addConnection(a.id, b.id, "uses");
+  const connection = useDiagramStore.getState().addConnection(a.id, b.id, "uses")!;
   return { diagramId: diagram.id, connectionId: connection.id };
 }
 

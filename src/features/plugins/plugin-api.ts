@@ -1,6 +1,7 @@
 import React from "react";
 import type { IStoragePort } from "@/infrastructure/persistence";
 import type { NodeTypeDescriptor } from "@/features/canvas/nodes/node-types/types";
+import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import {
   registerDescriptor,
   unregisterDescriptor,
@@ -93,6 +94,10 @@ function toInternalDescriptor(descriptor: PluginNodeTypeDescriptor): NodeTypeDes
     matches: (type) => type === descriptor.componentType,
     zIndex: descriptor.zIndex ?? 1,
     connectable: descriptor.connectable ?? true,
+    // A plugin does not declare its handle set: the API hands it `NodeProps`
+    // and nothing else, so a plugin node renders whatever its own component
+    // renders. The general spec is the only safe assumption.
+    handles: SPREAD_HANDLES,
     canHaveParent: descriptor.canHaveParent ?? true,
     canBeParent: descriptor.canBeParent ?? false,
     // Plugins get the stable read-only snapshot, never the internal NodeBuildContext.

@@ -314,6 +314,12 @@ export const layoutSlice = (
 
       pushHistory(state);
 
+      // Tells the canvas's local node copy that these positions did not come
+      // from the pointer, so its own are stale. Without it the store moved
+      // every node and the picture did not change until a reload; see
+      // `useLocalNodes.layoutWrite.test.ts`.
+      state._lastLayoutWriteAt = (state._lastLayoutWriteAt ?? 0) + 1;
+
       const scene = resolveActiveScene(d);
 
       for (const { elementId, x, y, width, height } of layouts) {

@@ -68,7 +68,13 @@ export function useAutoLayout() {
 
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {
-          applyLayoutResultEdges(graph, result, diagramId);
+          // The layout leaves the connection paths reset, rather than replacing
+          // them with ELK's routed ones. ELK routes between node borders; the
+          // canvas draws between handles, so a stored route from ELK rarely
+          // matches the path the user ends up looking at — which is why
+          // "Resetar caminhos das conexões" was the next thing pressed after
+          // every auto layout. Handle order still comes from ELK.
+          applyLayoutResultEdges(graph, result, diagramId, { resetPaths: true });
         }
 
         requestAnimationFrame(() => {

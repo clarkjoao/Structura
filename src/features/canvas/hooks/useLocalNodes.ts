@@ -40,26 +40,35 @@ function filterNodeChangesForSceneMoveLock(
 }
 
 /**
- * True when the store jumped to another point in history, so the local node
- * copy describes a diagram that no longer exists and has to be dropped.
+ * True when the store, not the pointer, decided where the nodes are — so the
+ * local copy describes a picture that no longer exists and has to be dropped.
  *
  * Named for the decision, not for the signal: this used to compare
  * `nodeLayouts` by identity, which *every* store write changes — a plain drag
  * commit was indistinguishable from an undo, so every commit took the discard
  * path below and handed React Flow 400 nodes stripped of `measured`. The name
  * said "undo/redo" while the body said "something moved", and that gap cost
- * several investigations. `_lastUndoRedoAt` is stamped only by `undo` and
- * `redo` in `history.slice.ts`, which is the question actually being asked.
+ * several investigations.
+ *
+ * Two stamps answer it, and only these two, each bumped by the actions that
+ * mean it: `_lastUndoRedoAt` by `undo`/`redo` in `history.slice.ts`, and
+ * `_lastLayoutWriteAt` by `applyAutoLayout` in `layout.slice.ts`. The second
+ * was missing, and its absence was visible: auto layout moved every node in
+ * the store and none on screen, because the merge below keeps the local
+ * position unless a node changed parent. Undo worked, which is what made the
+ * shape of the bug legible — it had the stamp and layout did not.
  */
 function shouldDiscardLocalNodes(
   prevDiagram: Diagram | DiagramModel | null | undefined,
   nextDiagram: Diagram | DiagramModel | null | undefined,
   prevLastUndoRedoAt: number,
   lastUndoRedoAt: number,
+  prevLastLayoutWriteAt: number,
+  lastLayoutWriteAt: number,
 ): boolean {
   if (!prevDiagram || !nextDiagram) return false;
   if (prevDiagram.id !== nextDiagram.id) return false;
-  return prevLastUndoRedoAt !== lastUndoRedoAt;
+  return prevLastUndoRedoAt !== lastUndoRedoAt || prevLastLayoutWriteAt !== lastLayoutWriteAt;
 }
 
 /**
@@ -131,6 +140,7 @@ export function useLocalNodes(
    */
   publishDragFrame?: (nodes: Node[]) => void,
   lastUndoRedoAt = 0,
+  lastLayoutWriteAt = 0,
 ) {
   const [, setTick] = useState(0);
 
@@ -144,6 +154,7 @@ export function useLocalNodes(
   const localNodesStateRef = useRef<Node[]>([]);
 
   const prevLastUndoRedoAtRef = useRef(lastUndoRedoAt);
+  const prevLastLayoutWriteAtRef = useRef(lastLayoutWriteAt);
 
   const activeDiagramId = diagram?.id ?? null;
 
@@ -165,6 +176,7 @@ export function useLocalNodes(
       prevStoreNodesRef.current = storeNodes;
       prevDiagramRef.current = diagram;
       prevLastUndoRedoAtRef.current = lastUndoRedoAt;
+      prevLastLayoutWriteAtRef.current = lastLayoutWriteAt;
     } else if (storeNodes !== prevStoreNodesRef.current) {
       prevStoreNodesRef.current = storeNodes;
 
@@ -173,9 +185,12 @@ export function useLocalNodes(
         diagram,
         prevLastUndoRedoAtRef.current,
         lastUndoRedoAt,
+        prevLastLayoutWriteAtRef.current,
+        lastLayoutWriteAt,
       );
       prevDiagramRef.current = diagram;
       prevLastUndoRedoAtRef.current = lastUndoRedoAt;
+      prevLastLayoutWriteAtRef.current = lastLayoutWriteAt;
 
       const prev = localNodesStateRef.current;
 

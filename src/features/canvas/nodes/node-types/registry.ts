@@ -12,6 +12,7 @@ import { flowNodeDescriptor } from "./flownode.descriptor";
 import { externalElementDescriptor } from "./external-element.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
+import type { NodeHandleSpec } from "./handle-spec";
 import type { Component, ComponentType } from "@/features/diagram";
 import { isPanelComponent, isPluginComponentType, PanelKind } from "@/features/diagram";
 
@@ -39,6 +40,17 @@ export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
     );
   }
   return NODE_TYPE_REGISTRY.find((d) => d.matches(type)) ?? c4Descriptor;
+}
+
+/**
+ * The handle set a component type declares.
+ *
+ * The one reader that matters is `buildEdgeHandleAssignments`, which picks the
+ * slot an edge attaches to: asking the registry is what keeps the slot inside
+ * what the node will render, for plugin types as much as for the built-in ones.
+ */
+export function handleSpecForType(type: ComponentType): NodeHandleSpec {
+  return getDescriptor(type).handles;
 }
 
 export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {

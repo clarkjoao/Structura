@@ -42,10 +42,21 @@ import type {
 } from "../export-core";
 import { awsServiceCache } from "./aws-cache";
 import { validateDiagram } from "./validate-diagram";
+import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
 import { resolveEdgeRouting } from "./edge-routing";
 import type { HandleSlots } from "./edge-routing";
 
-const MAX_HANDLES = 9; // Must match the canvas MAX_HANDLES constant
+/**
+ * The canvas's own cap, imported rather than copied.
+ *
+ * It was a local `9` under a comment claiming it matched the canvas, which has
+ * been 4. The number decides the anchor height — slot `i` of `n` sits at
+ * `(i + 1) / (n + 1)` of the node — so a node with four outgoing edges put its
+ * anchors at 20/40/60/80% on screen and at 10/20/30/40% in every export.
+ *
+ * The leaf constants module, not `@/features/diagram`: the export service must
+ * not pull the store into its import graph.
+ */
 
 // --- source enum → neutral IR enum (exhaustive; a new enum value fails to compile) ---
 

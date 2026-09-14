@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { X, LayoutDashboard, Copy, Trash2, BookmarkPlus, RotateCcw } from "lucide-react";
+import {
+  X,
+  LayoutDashboard,
+  LayoutGrid,
+  Copy,
+  Trash2,
+  BookmarkPlus,
+  RotateCcw,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { Node } from "@xyflow/react";
 import {
@@ -10,6 +18,7 @@ import {
   resolveSceneSnapshot,
 } from "@/features/diagram";
 import {
+  collectBoundaryConnectionIds,
   collectConnectionIdsToResetWaypoints,
   resetWaypointsForConnections,
 } from "@/features/canvas/edges/reset-edge-waypoints";
@@ -18,6 +27,8 @@ import { isPanelType } from "@/features/diagram";
 import { captureSelectionAsTemplate } from "@/features/canvas/utils/capture-template";
 import { SaveTemplateModal } from "@/features/canvas/components/SaveTemplateModal";
 import { cn } from "@/lib/utils";
+import { layoutScopedNodes } from "@/features/canvas/layout/layoutScopedNodes";
+import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 
 function readTechnology(component: Component): string | undefined {
   if ("technology" in component && typeof component.technology === "string") {
@@ -61,6 +72,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     updateComponent,
     saveUserTemplate,
     resetEdgeControlPoints,
+    applyAutoLayout,
   } = useDiagramActions();
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
@@ -179,6 +191,59 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     resetWaypointsForConnections(activeDiagramId, connectionIds, resetEdgeControlPoints);
   };
 
+  /**
+   * Arrange just what is selected, where it already sits.
+   *
+   * The engine takes a subset as it stands: `fromDiagram` is handed only the
+   * selected components, and a `parentId` pointing outside the subset is
+   * treated as a root. What it cannot do is hold the rest of the diagram
+   * still while it works — `LayoutNode` carries no position, so there is no
+   * way to tell ELK "this neighbour is fixed at (x, y)". So the selection is
+   * arranged among itself, and connections to the rest are not considered.
+   *
+   * Those crossing connections are the one thing that needs cleaning up after.
+   * `fromDiagram` drops an edge unless both ends are in scope, so a crossing
+   * one never reaches the layout, and its stored path would go on describing a
+   * route to where the node used to be.
+   */
+  const handleAutoLayoutSelection = () => {
+    if (!activeDiagramId || !resolved || ids.length === 0) return;
+
+    const selected = new Set(ids);
+    const connectionValues = Object.values(resolved.connections);
+    const inside = connectionValues.filter(
+      (connection) => selected.has(connection.sourceId) && selected.has(connection.targetId),
+    );
+
+    // Where the selection sits now, so the result lands under the user's eyes
+    // rather than at the origin.
+    const boxes = ids.map((id) => resolved.nodeLayouts[id]).filter(Boolean);
+    if (boxes.length === 0) return;
+    const minX = Math.min(...boxes.map((b) => b.x));
+    const minY = Math.min(...boxes.map((b) => b.y));
+    const maxX = Math.max(...boxes.map((b) => b.x + (b.width ?? DEFAULT_NODE_W)));
+    const maxY = Math.max(...boxes.map((b) => b.y + (b.height ?? DEFAULT_NODE_H)));
+
+    void layoutScopedNodes({
+      nodeIds: ids,
+      connectionIds: inside.map((connection) => connection.id),
+      components: resolved.components,
+      connections: resolved.connections,
+      nodeLayouts: resolved.nodeLayouts,
+      anchor: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+      activeDiagramId,
+      applyAutoLayout,
+      resetPaths: true,
+    }).then((applied) => {
+      if (!applied) return;
+      resetWaypointsForConnections(
+        activeDiagramId,
+        collectBoundaryConnectionIds(connectionValues, selected),
+        resetEdgeControlPoints,
+      );
+    });
+  };
+
   const handleSaveTemplate = (name: string, description: string, category: string) => {
     if (!resolved) return;
     const template = captureSelectionAsTemplate(
@@ -243,6 +308,15 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
               {t("canvas.multiSelect.saveAsTemplate")}
             </button>
           )}
+          <button
+            type="button"
+            onClick={handleAutoLayoutSelection}
+            title={t("multiSelect.autoLayoutSelectionHint")}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            {t("multiSelect.autoLayoutSelection")}
+          </button>
           <button
             type="button"
             onClick={handleResetWaypoints}

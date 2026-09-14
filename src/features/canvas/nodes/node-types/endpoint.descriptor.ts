@@ -7,6 +7,7 @@ import {
 } from "@/features/diagram";
 import { ENDPOINT_H, FRAME_W } from "../ApiGroupNode/constants";
 import type { NodeTypeDescriptor } from "./types";
+import { SINGLE_PAIR_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 
 export const endpointDescriptor: NodeTypeDescriptor = {
@@ -15,6 +16,7 @@ export const endpointDescriptor: NodeTypeDescriptor = {
   matches: isEndpointType,
   zIndex: 1,
   connectable: true,
+  handles: SINGLE_PAIR_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: 260, height: 120 },

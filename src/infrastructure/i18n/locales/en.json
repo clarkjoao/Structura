@@ -1062,7 +1062,9 @@
     "typePanel": "panel",
     "typeNote": "note",
     "resetWaypoints": "Reset edge paths",
-    "resetWaypointsShortcut": "Cmd/Ctrl+Shift+W — resets selected edge paths, or all when none are selected"
+    "resetWaypointsShortcut": "Cmd/Ctrl+Shift+W — resets selected edge paths, or all when none are selected",
+    "autoLayoutSelection": "Auto layout selection",
+    "autoLayoutSelectionHint": "Arranges the selected elements among themselves; connections to the rest of the diagram are not considered"
   },
   "saveTemplate": {
     "title": "Save selection as template",
@@ -1320,6 +1322,19 @@
     "waiting": "Waiting for diagram...",
     "errors": {
       "invalidDiagram": "Invalid diagram"
+    }
+  },
+  "viewPage": {
+    "arranging": "Arranging diagram...",
+    "file": {
+      "open": "Choose the file",
+      "noPath": "No file named"
+    },
+    "errors": {
+      "noSource": "Nothing to show: pass ?diagramId= or ?source=file",
+      "notFound": "No diagram with id {{id}}",
+      "invalidFile": "That file is not a Structura diagram",
+      "noFilePicker": "This browser cannot open local files"
     }
   },
   "viewerFlows": {

@@ -1,6 +1,7 @@
 import JsonViewerNode from "../JsonViewerNode";
 import { isJsonViewerComponent, isJsonViewerType } from "@/features/diagram";
 import type { NodeTypeDescriptor } from "./types";
+import { SINGLE_INCOMING_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 
 const JSON_VIEWER_DEFAULT_W = 240;
@@ -12,6 +13,7 @@ export const jsonViewerDescriptor: NodeTypeDescriptor = {
   matches: isJsonViewerType,
   zIndex: 1,
   connectable: true,
+  handles: SINGLE_INCOMING_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: JSON_VIEWER_DEFAULT_W, height: JSON_VIEWER_DEFAULT_H },

@@ -11,7 +11,7 @@ import type {
 } from "./contract";
 
 /**
- * The project's only layout engine.
+ * The layout options the auto-layout button has always run.
  *
  * The option set is the one that was tuned against `layoutReadability`'s
  * counters, not the one that happened to be older. Three notes on it, all
@@ -29,7 +29,7 @@ import type {
  * `layered.wrapping.strategy` breaks a linear chain into rows, which contradicts
  * the reading-direction rule in AGENTS.md. Both are covered by tests.
  */
-const ELK_OPTIONS: Record<string, string> = {
+export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
   "elk.algorithm": "layered",
   "elk.direction": "RIGHT",
   "elk.edgeRouting": "ORTHOGONAL",
@@ -38,6 +38,70 @@ const ELK_OPTIONS: Record<string, string> = {
   "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
   "elk.padding": "[top=40,left=40,bottom=40,right=40]",
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+};
+
+/**
+ * The options the reading view runs.
+ *
+ * The difference from `ELK_OPTIONS_INTERACTIVE` is not taste. The interactive
+ * profile runs on a diagram the user arranged, so its job is to not make that
+ * worse; this one runs where nobody arranged anything and the only thing being
+ * optimised is how the picture reads. That buys room to spend space.
+ *
+ * **Measured against how `/viewer` actually draws**, which is the only comparison
+ * worth making and is not the obvious one. The viewer reads control points from
+ * the store's active diagram, and a reading route has none — so `ViewerCanvas`
+ * discards ELK's routed path and draws orthogonal steps between handles. An
+ * option tuned against ELK's own routing can therefore be worse on screen, and
+ * one was: `bk.fixedAlignment=BALANCED` measured 14 -> 12 crossings with ELK's
+ * routing and 15 -> 20 without it. It is not here for that reason.
+ *
+ * Over the four `reference-diagrams`, rendered as the viewer renders them.
+ * Baseline is the interactive profile: 15 crossings, 2 label overlaps, 1959px
+ * of collinear edge overlap. With this set: **13 crossings, 1 label overlap,
+ * 1772px** — better on all three. On the 400-node audit fixture, crossings are
+ * flat (20742 -> 20739), collinear overlap falls 22% (3213px -> 2517px), and
+ * the canvas is 11% shorter despite the wider spacings.
+ *
+ *   - `nodePlacement.strategy=NETWORK_SIMPLEX` is the option that moved the
+ *     crossing count: 15 -> 13 on its own. BRANDES_KOEPF, which the interactive
+ *     profile keeps, optimises for straight long edges; with the routing thrown
+ *     away, straightness stops being what the reader sees.
+ *   - `spacing.edgeNode` / `spacing.edgeEdge` are what take the last label
+ *     overlap out. Labels are drawn as a pill at the middle of the path and ELK
+ *     is never told about them, so room between paths is the only lever.
+ *   - `spacing.nodeNode` / `nodeNodeBetweenLayers` are the generous reading-view
+ *     values. The React Flow ELK example uses 80/100; the interactive profile
+ *     already exceeds that at 80/150, so these are not a correction of it.
+ *     140/260 was measured too and is worse on overlap (2060px) for more width.
+ *
+ * Measured and rejected: `layered.thoroughness`, `spacing.edgeLabel`,
+ * `spacing.labelNode` and `separateConnectedComponents` change nothing at all
+ * here — byte-identical to the control, the same result a deliberately invalid
+ * option key produces, which is how ELK reports an option it does not use.
+ * `nodePlacement.strategy` SIMPLE (31 crossings) and LINEAR_SEGMENTS (26) are
+ * far worse. `considerModelOrder.strategy` throws inside elkjs 0.12 on these
+ * graphs.
+ *
+ * Not here, because they are already true of the base set: left-to-right is
+ * `elk.direction=RIGHT`, which both profiles share, and user positions are
+ * ignored by construction — `LayoutNode` carries no x/y for ELK to read.
+ */
+export const ELK_OPTIONS_VISUALIZATION: Record<string, string> = {
+  ...ELK_OPTIONS_INTERACTIVE,
+  "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+  "elk.spacing.nodeNode": "110",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "220",
+  "elk.spacing.edgeNode": "40",
+  "elk.spacing.edgeEdge": "25",
+};
+
+/** Which of the two option sets a caller wants. */
+export type LayoutProfile = "interactive" | "visualization";
+
+const PROFILE_OPTIONS: Record<LayoutProfile, Record<string, string>> = {
+  interactive: ELK_OPTIONS_INTERACTIVE,
+  visualization: ELK_OPTIONS_VISUALIZATION,
 };
 
 const ELK_ROOT_ID = "__structura_layout_root__";
@@ -146,8 +210,9 @@ function emptyResult(): LayoutResult {
 export async function layoutElkGraph(
   graph: LayoutGraph,
   optionOverrides: Record<string, string> = {},
+  profile: LayoutProfile = "interactive",
 ): Promise<ElkNode> {
-  const options = { ...ELK_OPTIONS, ...optionOverrides };
+  const options = { ...PROFILE_OPTIONS[profile], ...optionOverrides };
 
   const nodes = sortById(graph.nodes);
   const present = new Set(nodes.map((node) => node.id));
@@ -182,10 +247,13 @@ export async function layoutElkGraph(
  * Lays out a graph. Pure and deterministic: no React, no store, no DOM, no
  * measurement of a rendered element. Everything that varies is in the graph.
  */
-export async function layout(graph: LayoutGraph): Promise<LayoutResult> {
+export async function layout(
+  graph: LayoutGraph,
+  profile: LayoutProfile = "interactive",
+): Promise<LayoutResult> {
   if (graph.nodes.length === 0) return emptyResult();
 
-  const laidOut = await layoutElkGraph(graph);
+  const laidOut = await layoutElkGraph(graph, {}, profile);
   if (!laidOut.children?.length) return emptyResult();
 
   const boxes = new Map<string, LayoutBox>();

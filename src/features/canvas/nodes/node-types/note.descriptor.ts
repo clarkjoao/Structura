@@ -1,5 +1,6 @@
 import NoteNode from "../NoteNode";
 import type { NodeTypeDescriptor } from "./types";
+import { SINGLE_INCOMING_HANDLES } from "./handle-spec";
 import { sceneBadgePropsForNode } from "./compare-node-badges";
 import { isNoteComponent, isNoteType } from "@/features/diagram";
 import {
@@ -15,6 +16,7 @@ export const noteDescriptor: NodeTypeDescriptor = {
   matches: isNoteType,
   zIndex: 1,
   connectable: true,
+  handles: SINGLE_INCOMING_HANDLES,
   canHaveParent: true,
   canBeParent: false,
   defaultSize: { width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H },
