@@ -1,7 +1,11 @@
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { NodeTypes } from "@xyflow/react";
-import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
+import type {
+  Component,
+  ComponentPatch,
+  ComponentType,
+} from "@/features/diagram/model/component.types";
 import type { NodeBuildContext, NodeHandleSpec } from "@/features/canvas/nodes/node-types";
 import type { ExportNode, ExportNodeKind } from "@/lib/export-core";
 

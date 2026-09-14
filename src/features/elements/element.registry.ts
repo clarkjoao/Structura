@@ -1,6 +1,6 @@
 import en from "@/infrastructure/i18n/locales/en.json";
 import ptBR from "@/infrastructure/i18n/locales/pt-BR.json";
-import type { Component } from "@/features/diagram";
+import type { Component } from "@/features/diagram/model/component.types";
 import type { ElementDescriptor, ElementTypeId, RegisteredElementTypeId } from "./element.types";
 
 /**

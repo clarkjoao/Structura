@@ -8,7 +8,8 @@ import {
   NOTE_DEFAULT_H,
   NOTE_DEFAULT_W,
 } from "@/features/canvas/canvas.constants";
-import { COMPONENT_TYPE_NOTE, isNoteComponent } from "@/features/diagram";
+import { COMPONENT_TYPE_NOTE } from "@/features/diagram/model/component-type-constants";
+import { isNoteComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
 
 /** The note's own light-mode paper colour when the user has not picked one. */

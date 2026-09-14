@@ -8,11 +8,9 @@ import {
   useDiagramActions,
   useFlows,
   isEndpointComponent,
-  isDbTableComponent,
   isApiGroupComponent,
   isPanelComponent,
   isExternalElementComponent,
-  type DbTableComponent,
   type ExternalElementComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
@@ -23,7 +21,6 @@ import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
 import EndpointPanel from "./EndpointPanel";
 import ApiGroupPanel from "./ApiGroupPanel";
-import DbTablePanel from "./DbTablePanel";
 import ExternalElementPanel from "./ExternalElementPanel";
 
 interface Props {
@@ -113,23 +110,6 @@ const ElementPanel = ({
             updateComponent={updateComponent}
             removeComponent={removeComponent}
             availableFlows={availableFlows}
-          />
-        </div>
-      );
-    }
-
-    if (isDbTableComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <DbTablePanel
-            component={component}
-            onClose={onClose}
-            updateComponent={
-              updateComponent as (id: string, patch: Partial<Omit<DbTableComponent, "id">>) => void
-            }
-            removeComponent={removeComponent}
-            focusTitleTrigger={focusTitleTrigger}
           />
         </div>
       );

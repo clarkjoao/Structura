@@ -5,8 +5,9 @@ import DbTablePanel from "@/features/canvas/panels/ElementPanel/DbTablePanel";
 import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { DB_TABLE_COLLAPSED_H, DB_TABLE_COLLAPSED_W } from "@/features/canvas/canvas.constants";
-import { COMPONENT_TYPE_DB_TABLE, isDbTableComponent } from "@/features/diagram";
-import type { DbColumn } from "@/features/diagram";
+import { COMPONENT_TYPE_DB_TABLE } from "@/features/diagram/model/component-type-constants";
+import { isDbTableComponent } from "@/features/diagram/model/component.guards";
+import type { DbColumn } from "@/features/diagram/model/component.types";
 import i18n from "@/infrastructure/i18n";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
 

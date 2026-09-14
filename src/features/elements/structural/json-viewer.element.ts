@@ -4,7 +4,8 @@ import JsonViewerNode from "@/features/canvas/nodes/JsonViewerNode";
 import JsonViewerPanel from "@/features/canvas/panels/ElementPanel/JsonViewerPanel";
 import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
-import { COMPONENT_TYPE_JSON_VIEWER, isJsonViewerComponent } from "@/features/diagram";
+import { COMPONENT_TYPE_JSON_VIEWER } from "@/features/diagram/model/component-type-constants";
+import { isJsonViewerComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
 
 const JSON_VIEWER_DEFAULT_W = 240;

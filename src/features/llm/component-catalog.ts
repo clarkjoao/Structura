@@ -24,13 +24,6 @@ export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [
     example: '{ "nodeType": "panel", "name": "Payment Domain", "parentId": null }',
   },
   {
-    nodeType: "note",
-    displayName: "Note",
-    description:
-      "A free-text annotation or documentation block. Use for comments, ADRs, or design notes.",
-    example: '{ "nodeType": "note", "name": "", "parentId": null }',
-  },
-  {
     nodeType: "api-group",
     displayName: "API Group",
     description:
@@ -45,12 +38,6 @@ export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [
       "A single HTTP or event endpoint. Must be a child of an api-group node. Requires method (GET/POST/PUT/PATCH/DELETE/EVENT) and path.",
     requiredFields: ["method", "path"],
     example: '{ "nodeType": "endpoint", "name": "Get Users", "parentId": "api-group-node-id" }',
-  },
-  {
-    nodeType: "db-table",
-    displayName: "Database Table",
-    description: "Represents a relational database table with columns. Use for data modeling.",
-    example: '{ "nodeType": "db-table", "name": "users", "parentId": null }',
   },
 ];
 

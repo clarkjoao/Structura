@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Database, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { DbColumnRow, DbTableColumnKey, DbTableNodeData } from "./DbTableNode.types";
