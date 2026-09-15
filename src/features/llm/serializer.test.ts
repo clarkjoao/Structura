@@ -187,7 +187,7 @@ describe("serializeDiagramContext", () => {
     });
     const out = serializeDiagramContext(diagram);
     expect(out).not.toContain('awsService="svc-pay"');
-    expect(out).toContain('id=lambda;');
+    expect(out).toContain("id=lambda;");
     expect(out).toContain('awsService="lambda"');
   });
 });

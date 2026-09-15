@@ -56,11 +56,7 @@ export const isK8sComponent = (c: Component): c is K8sComponent => isK8sCategory
 export const isOssComponent = (c: Component): c is OssComponent => isOssCategoryId(c.type);
 
 export type CloudProviderComponent =
-  | AwsComponent
-  | GcpComponent
-  | AzureComponent
-  | K8sComponent
-  | OssComponent;
+  AwsComponent | GcpComponent | AzureComponent | K8sComponent | OssComponent;
 
 export const isCloudComponent = (c: Component): c is CloudProviderComponent =>
   cloudRegistry.isCloudType(c.type);
