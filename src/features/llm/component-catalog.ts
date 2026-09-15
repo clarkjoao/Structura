@@ -140,10 +140,10 @@ export function registeredElementTypes(): ComponentTypeDefinition[] {
     }));
 }
 
-/** GCP categories registered on the element registry, as catalog entries. */
-export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
+/** Cloud family categories registered on the element registry, as catalog entries. */
+function cloudFamilyRegisteredTypes(familyId: "gcp" | "azure"): ComponentTypeDefinition[] {
   return allElements()
-    .filter((element) => element.family === "gcp")
+    .filter((element) => element.family === familyId)
     .flatMap((element) => {
       const variants = element.palette.variants;
       if (!variants || variants.length === 0) {
@@ -163,7 +163,7 @@ export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
       return variants.map((variant) => ({
         nodeType: element.id,
         // Reuses the tool's `awsService` parameter slot — addComponent maps it
-        // onto `gcpService` for gcp-* types (same positional path as the picker).
+        // onto gcpService / azureService for those families.
         awsService: variant.createOptions.serviceId,
         displayName: i18n.t(variant.labelKey, { lng: CATALOG_LOCALE }),
         description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
@@ -177,6 +177,14 @@ export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
     });
 }
 
+export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
+  return cloudFamilyRegisteredTypes("gcp");
+}
+
+export function azureRegisteredTypes(): ComponentTypeDefinition[] {
+  return cloudFamilyRegisteredTypes("azure");
+}
+
 export function allComponentTypes(): ComponentTypeDefinition[] {
   return [
     ...STRUCTURAL_TYPES,
@@ -184,6 +192,7 @@ export function allComponentTypes(): ComponentTypeDefinition[] {
     ...C4_TYPES,
     ...AWS_TYPES,
     ...gcpRegisteredTypes(),
+    ...azureRegisteredTypes(),
   ];
 }
 
@@ -228,6 +237,8 @@ export function buildComponentTypeCatalog(): string {
   sections.push(buildAwsCatalogCompact());
   sections.push("");
   sections.push(buildGcpCatalogCompact());
+  sections.push("");
+  sections.push(buildAzureCatalogCompact());
 
   return sections.join("\n");
 }
@@ -270,6 +281,34 @@ export function buildGcpCatalogCompact(): string {
       .filter((id): id is string => typeof id === "string" && id.length > 0)
       .join(", ");
     const label = element.id.replace("gcp-", "").toUpperCase();
+    lines.push(`${label}: ${serviceIds || "(no services)"}`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Compact Azure catalog derived from registered family descriptors.
+ *
+ * Same shape as the GCP compact block. The `awsService` tool parameter carries
+ * the Azure service id for azure-* nodeTypes (addComponent maps it onto
+ * `azureService`).
+ */
+export function buildAzureCatalogCompact(): string {
+  const lines: string[] = [
+    "### Azure Service Types",
+    "",
+    "For azure-* nodeTypes, pass the service id in awsService (same add_node parameter).",
+    "nodeType must be the category id (e.g. azure-compute).",
+    "",
+  ];
+
+  for (const element of allElements().filter((entry) => entry.family === "azure")) {
+    const serviceIds = (element.palette.variants ?? [])
+      .map((variant) => variant.createOptions.serviceId)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+      .join(", ");
+    const label = element.id.replace("azure-", "").toUpperCase();
     lines.push(`${label}: ${serviceIds || "(no services)"}`);
   }
 

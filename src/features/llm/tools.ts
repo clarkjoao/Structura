@@ -50,7 +50,7 @@ export const ALL_TOOLS: LLMTool[] = [
         awsService: {
           type: "string",
           description:
-            'Cloud service id for aws-* / gcp-* node types (e.g. "lambda", "cloudrun"). Mapped onto awsService or gcpService on the component.',
+            'Cloud service id for aws-* / gcp-* / azure-* node types (e.g. "lambda", "cloudrun", "functions"). Mapped onto awsService, gcpService or azureService on the component.',
         },
         position: {
           type: "object",
