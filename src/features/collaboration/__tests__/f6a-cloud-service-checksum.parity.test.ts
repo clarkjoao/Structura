@@ -61,5 +61,6 @@ describe("F6b checksum — unified write diverges from legacy (by design)", () =
     expect(resolveCloudServiceId({ cloudServiceId: "lambda", serviceId: "svc-pay" })).toBe(
       "lambda",
     );
+    expect(resolveCloudServiceId({ serviceId: "svc-pay" })).toBeUndefined();
   });
 });

@@ -29,11 +29,13 @@ registries. This ADR records the domain-level registry that closes that gap for
    descriptors; cloud provider adapters are derived from the same registration.
 4. **Unknown types resolve to `unknown`**, not to C4. Prefix recovery
    (`aws-` / `gcp-` / `azure-` → `*-general`) is the only soft fallback.
-5. **Persisted cloud service id is `cloudServiceId`.** Reads stay tolerant
-   (`resolveCloudServiceId`: `cloudServiceId ?? awsService ?? gcpService ??
-   azureService ?? serviceId`). Writes use `cloudServiceId` only
+5. **Persisted cloud service id is `cloudServiceId`.** Reads stay tolerant of
+   unmigrated payloads (`resolveCloudServiceId`: `cloudServiceId ?? awsService ??
+   gcpService ?? azureService`). Writes use `cloudServiceId` only
    (`PERSIST_SCHEMA_VERSION` 13). This is **not** the business-catalog
-   `BaseComponent.serviceId`.
+   `BaseComponent.serviceId` — that field is never a fallback for cloud
+   resolution (a lone catalog link used to leak into the LLM serializer as
+   `awsService="svc-pay"`).
 6. **Vendored icon packs keep an explicit license file** next to the assets
    (e.g. Kubernetes community unlabeled SVGs under Apache-2.0 — see
    `src/features/elements/families/k8s/ICONS_LICENSE.md`).

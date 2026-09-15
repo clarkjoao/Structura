@@ -60,8 +60,8 @@ Locked by `src/features/elements/single-owner.invariant.test.ts`.
 | Concern | Rule |
 | --- | --- |
 | Write | `cloudServiceIdWrite()` / `cloudServiceIdClearingPatch()` only — the single producer of `cloudServiceId` (persist schema **v13**) |
-| Read | `resolveCloudServiceId` — tolerant of legacy `awsService` / `gcpService` / `azureService` / catalog `serviceId` |
-| Business catalog link | Still `BaseComponent.serviceId` — **do not** overload it for cloud |
+| Read | `resolveCloudServiceId` — tolerant of legacy `awsService` / `gcpService` / `azureService` only (`cloudServiceId ?? awsService ?? gcpService ?? azureService`) |
+| Business catalog link | Still `BaseComponent.serviceId` — **never** a fallback for cloud resolution |
 
 ### Deploy gate (F6b)
 

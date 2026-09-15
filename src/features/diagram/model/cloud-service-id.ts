@@ -3,20 +3,25 @@
  *
  * F6b writes `cloudServiceId`. F6a-era and older payloads may still carry
  * `awsService` / `gcpService` / `azureService` until migrateUnifyCloudServiceId
- * runs. Catalog `serviceId` (business registry, v11) stays last so it never
- * shadows a real cloud icon id.
+ * runs.
  *
- * Order:
- * `cloudServiceId ?? awsService ?? gcpService ?? azureService ?? serviceId`
+ * **Never** falls through to `BaseComponent.serviceId` (business catalog, v11).
+ * F6a put catalog `serviceId` last so it would not shadow a legacy cloud field
+ * when both were present; that still treated a lone business link as a cloud
+ * icon id — exactly what leaks a C4 `system` linked to `svc-pay` into the LLM
+ * serializer as `awsService="svc-pay"`, and what made k8s/oss (no legacy field)
+ * resolve every business `serviceId` as a platform service.
+ *
+ * Order: `cloudServiceId ?? awsService ?? gcpService ?? azureService`
  *
  * @example
  * resolveCloudServiceId({ cloudServiceId: "lambda", serviceId: "svc-pay" }) // "lambda"
  * resolveCloudServiceId({ awsService: "lambda" }) // "lambda" (pre-migration)
+ * resolveCloudServiceId({ type: "system", serviceId: "svc-pay" }) // undefined
  */
 
 export type CloudServiceIdFields = {
   cloudServiceId?: string;
-  serviceId?: string;
   /** @deprecated F6b — kept for tolerant reads of unmigrated payloads */
   awsService?: string;
   /** @deprecated F6b */
@@ -30,8 +35,7 @@ export function resolveCloudServiceId(component: CloudServiceIdFields): string |
     nonEmpty(component.cloudServiceId) ??
     nonEmpty(component.awsService) ??
     nonEmpty(component.gcpService) ??
-    nonEmpty(component.azureService) ??
-    nonEmpty(component.serviceId)
+    nonEmpty(component.azureService)
   );
 }
 
