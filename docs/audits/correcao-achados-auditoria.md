@@ -12,9 +12,28 @@ Medido nesta branch, no fim da fatia:
 | --- | --- |
 | `npm run typecheck` | verde |
 | `npm test` | verde — 247 arquivos, 2534 testes (era 244 / 2506) |
-| `npx prettier --check .` | verde |
-| `npm run plugins:sync-check` | ver §Gates abaixo |
-| `npm run build` | **falha por desenho** sem `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true` (Item 1) |
+| `npm run plugins:sync-check` | verde (types e export-core em sincronia) |
+| `npm run build` | **falha por desenho** sem `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true`; verde com ela (Item 1) |
+| `npm run format:check` | **vermelho — e já estava** |
+| `npm run lint` | **2 erros — e já estavam** |
+
+### Os dois gates herdados vermelhos
+
+Verifiquei numa worktree limpa de `feat/element-registry` antes de atribuir culpa:
+
+- **`format:check`** já falhava na base, em 10 arquivos. Nesta branch são 7. Um deles
+  (`ComponentPanel.tsx`) era meu e foi corrigido; três outros
+  (`element-picker/utils.ts`, `k8s/ICONS_LICENSE.md`, `SuggestionCard.tsx`) foram
+  corrigidos de passagem por um `prettier --write` em diretórios que eu estava editando.
+  Os 7 restantes são de `canvas/hooks/*` e `ElementPanel/*` e **não toquei**.
+- **`lint`** tem 2 erros, ambos em arquivos que não estão no meu diff:
+  `canvas/edges/EdgeLabelPortal.test.tsx:99` (*Cannot reassign variables declared outside
+  of the component/hook*) e `ElementPanel/JsonViewerPanel.tsx:59` (*`activeDiagram` is
+  assigned a value but never used*). Mais 33 warnings.
+
+Não corrigi nenhum dos dois: estão fora dos 7 itens e misturá-los tornaria o diff desta
+fatia difícil de revisar. **Mas eles são gates de CI vermelhos**, então esta branch não
+passa num CI que os rode — independentemente do meu trabalho.
 
 ---
 

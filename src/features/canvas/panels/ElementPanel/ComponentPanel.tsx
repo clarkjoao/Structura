@@ -341,9 +341,7 @@ const ComponentPanel = ({
                       if (!nextProvider) setCloudService("");
                       updateComponent(component.id, {
                         type: nextType,
-                        ...cloudServiceIdClearingPatch(
-                          nextProvider ? cloudService : undefined,
-                        ),
+                        ...cloudServiceIdClearingPatch(nextProvider ? cloudService : undefined),
                       } as unknown as ComponentPatch);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
