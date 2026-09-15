@@ -3,12 +3,13 @@ import { snapshotChecksum } from "@/features/collaboration/utils/snapshotChecksu
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 
 /**
- * F6a proof: tolerant **reads** must not change what we **write**, or the
- * collaboration checksum diverges from a client still on main / pre-F6a.
+ * F6b cutover notes for collaboration.
  *
- * `snapshotChecksum` canonicalises key names. Writing `serviceId: "lambda"`
- * instead of `awsService: "lambda"` produces a different hash — that is why
- * F6b needs a release window after F6a.
+ * F6a proved that writing legacy fields keeps checksum parity with main.
+ * F6b writes `cloudServiceId` instead — checksums **diverge** from a peer that
+ * still writes `awsService`. That is expected and is why this branch must not
+ * deploy until F6a has had a release window in production (tolerant readers
+ * everywhere; no mixed write shapes in one room).
  */
 
 function diagramSurface(components: Record<string, unknown>) {
@@ -28,97 +29,37 @@ function diagramSurface(components: Record<string, unknown>) {
   };
 }
 
-const AWS_LEGACY = {
-  id: "n1",
-  name: "Orders Handler",
-  description: "",
-  parentId: null,
-  type: "aws-compute",
-  awsService: "lambda",
-};
-
-const GCP_LEGACY = {
-  id: "n2",
-  name: "API",
-  description: "",
-  parentId: null,
-  type: "gcp-compute",
-  gcpService: "cloudrun",
-};
-
-const AZURE_LEGACY = {
-  id: "n3",
-  name: "Fn",
-  description: "",
-  parentId: null,
-  type: "azure-compute",
-  azureService: "functions",
-};
-
-describe("F6a checksum parity — writes stay on legacy cloud fields", () => {
-  it("matches main/pre-F6a when an F6a client still writes awsService/gcpService/azureService", () => {
-    const asMainWould = diagramSurface({
-      n1: AWS_LEGACY,
-      n2: GCP_LEGACY,
-      n3: AZURE_LEGACY,
-    });
-
-    // F6a attachService / panel / create paths still emit the same keys.
-    const asF6aWrites = diagramSurface({
-      n1: { ...AWS_LEGACY },
-      n2: { ...GCP_LEGACY },
-      n3: { ...AZURE_LEGACY },
-    });
-
-    expect(snapshotChecksum(asF6aWrites)).toBe(snapshotChecksum(asMainWould));
-  });
-
-  it("diverges if cloud service were written under serviceId instead (F6b hazard)", () => {
+describe("F6b checksum — unified write diverges from legacy (by design)", () => {
+  it("diverges when cloud service is written as cloudServiceId vs awsService", () => {
     const legacyWrite = diagramSurface({
-      n1: AWS_LEGACY,
-    });
-    const unifiedWrite = diagramSurface({
       n1: {
         id: "n1",
         name: "Orders Handler",
         description: "",
         parentId: null,
         type: "aws-compute",
-        serviceId: "lambda",
+        awsService: "lambda",
+      },
+    });
+    const f6bWrite = diagramSurface({
+      n1: {
+        id: "n1",
+        name: "Orders Handler",
+        description: "",
+        parentId: null,
+        type: "aws-compute",
+        cloudServiceId: "lambda",
       },
     });
 
-    expect(snapshotChecksum(unifiedWrite)).not.toBe(snapshotChecksum(legacyWrite));
+    expect(snapshotChecksum(f6bWrite)).not.toBe(snapshotChecksum(legacyWrite));
   });
 
-  it("still resolves the cloud service when only the F6b-shaped field is present", () => {
-    expect(
-      resolveCloudServiceId({
-        type: "aws-compute",
-        serviceId: "lambda",
-      } as { serviceId?: string }),
-    ).toBe("lambda");
-  });
-
-  it("keeps catalog serviceId from shadowing a legacy cloud field on the same node", () => {
-    expect(
-      resolveCloudServiceId({
-        awsService: "lambda",
-        serviceId: "svc-pay",
-      }),
-    ).toBe("lambda");
-    expect(
-      snapshotChecksum(
-        diagramSurface({
-          n1: { ...AWS_LEGACY, serviceId: "svc-pay" },
-        }),
-      ),
-    ).toBe(
-      snapshotChecksum(
-        diagramSurface({
-          n1: { ...AWS_LEGACY, serviceId: "svc-pay" },
-        }),
-      ),
+  it("still resolves both shapes for icon/export via resolveCloudServiceId", () => {
+    expect(resolveCloudServiceId({ awsService: "lambda" })).toBe("lambda");
+    expect(resolveCloudServiceId({ cloudServiceId: "lambda" })).toBe("lambda");
+    expect(resolveCloudServiceId({ cloudServiceId: "lambda", serviceId: "svc-pay" })).toBe(
+      "lambda",
     );
   });
 });

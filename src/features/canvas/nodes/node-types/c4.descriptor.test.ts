@@ -54,7 +54,7 @@ describe("c4Descriptor — technology", () => {
     const data = dataFor({
       ...base,
       type: "aws-compute",
-      awsService: "fargate",
+      cloudServiceId: "fargate",
       technology: "Fargate",
     } as Component);
     expect(data.technology).toBe("Fargate");
@@ -73,7 +73,7 @@ describe("c4Descriptor — technology", () => {
   it("leaves technology undefined on an AWS node that has none", () => {
     // The canvas falls back to the category name in this case, which is what
     // keeps already-saved diagrams looking the way they did.
-    const data = dataFor({ ...base, type: "aws-database", awsService: "rds" } as Component);
+    const data = dataFor({ ...base, type: "aws-database", cloudServiceId: "rds" } as Component);
     expect(data.technology).toBeUndefined();
     expect(data.cloudService).toBe("rds");
   });

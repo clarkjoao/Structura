@@ -41,7 +41,9 @@ function nodeById(diagram: Diagram, id: string) {
 describe("useReadDiagramFlow — cloud service icons", () => {
   it("maps awsService onto cloudService the way CustomNode reads it", () => {
     const node = nodeById(
-      diagramOf([component({ id: "n1", name: "Fn", type: "aws-compute", awsService: "lambda" })]),
+      diagramOf([
+        component({ id: "n1", name: "Fn", type: "aws-compute", cloudServiceId: "lambda" }),
+      ]),
       "n1",
     );
     expect(node.data.cloudService).toBe("lambda");
@@ -50,7 +52,7 @@ describe("useReadDiagramFlow — cloud service icons", () => {
   it("maps GCP and Azure service ids the same way", () => {
     const gcp = nodeById(
       diagramOf([
-        component({ id: "g1", name: "Run", type: "gcp-compute", gcpService: "cloud-run" }),
+        component({ id: "g1", name: "Run", type: "gcp-compute", cloudServiceId: "cloud-run" }),
       ]),
       "g1",
     );
@@ -60,7 +62,7 @@ describe("useReadDiagramFlow — cloud service icons", () => {
           id: "a1",
           name: "App",
           type: "azure-compute",
-          azureService: "app-service",
+          cloudServiceId: "app-service",
         }),
       ]),
       "a1",

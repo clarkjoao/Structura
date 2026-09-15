@@ -1515,7 +1515,7 @@ function buildDiagrams(): Record<string, Diagram> {
               description:
                 "Executa nos POPs do CloudFront. Intercepta requests de redirect, resolve país por IP usando MaxMind embedded e injeta header X-Geo-Country antes de encaminhar ao ALB. Elimina a latência de rede do Analytics Worker para geolocalização.",
               parentId: "dp-public-subnet",
-              awsService: "AWS Lambda",
+              cloudServiceId: "AWS Lambda",
               tags: ["edge", "performance", "geolocation"],
             },
             "dp-note-tobe": {
@@ -1945,7 +1945,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "VPC isolada 10.0.0.0/16. Flow logs habilitados. NAT Gateway para egress das subnets privadas.",
             parentId: "dp-region",
-            awsService: "Amazon VPC",
+            cloudServiceId: "Amazon VPC",
           },
           "dp-public-subnet": {
             id: "dp-public-subnet",
@@ -1972,7 +1972,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "DNS gerenciado. Alias record de url.sh → CloudFront distribution. Health checks habilitados.",
             parentId: "dp-public-subnet",
-            awsService: "Amazon Route 53",
+            cloudServiceId: "Amazon Route 53",
             tags: ["dns", "networking"],
           },
           "dp-cloudfront": {
@@ -1982,7 +1982,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "CDN global com 450+ POPs. Serve o SPA React do S3 (cache longo). Proxy reverso para Redirect API e Management API via ALB. SSL/TLS termination.",
             parentId: "dp-public-subnet",
-            awsService: "Amazon CloudFront",
+            cloudServiceId: "Amazon CloudFront",
             tags: ["cdn", "edge", "ssl"],
           },
           "dp-waf": {
@@ -1992,7 +1992,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "WAF acoplado ao CloudFront. Regras: rate limit 1000 req/min por IP, AWS Managed Rules (SQLi, XSS), bloqueio de bots. Logs no CloudWatch.",
             parentId: "dp-public-subnet",
-            awsService: "AWS WAF",
+            cloudServiceId: "AWS WAF",
             tags: ["seguranca", "waf"],
           },
           "dp-s3-spa": {
@@ -2002,7 +2002,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "Bucket S3 com versionamento habilitado. Serve o build estático do React via CloudFront. Cache-Control: max-age=31536000 para assets com hash.",
             parentId: "dp-public-subnet",
-            awsService: "Amazon S3",
+            cloudServiceId: "Amazon S3",
             tags: ["storage", "frontend"],
           },
           "dp-alb": {
@@ -2012,7 +2012,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "ALB na subnet pública. Target groups: Redirect API (porta 8080) e Management API (porta 3000). Health check a cada 10s. Access logs no S3.",
             parentId: "dp-public-subnet",
-            awsService: "Elastic Load Balancing",
+            cloudServiceId: "Elastic Load Balancing",
             tags: ["loadbalancer", "networking"],
           },
 
@@ -2033,7 +2033,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "ECS Service: Management API. Fargate 0.5 vCPU / 1GB. Min 2 tasks, max 10. Scale por CPU > 70%. Secrets via Secrets Manager.",
             parentId: "dp-ecs-cluster",
-            awsService: "Amazon ECS",
+            cloudServiceId: "Amazon ECS",
             tags: ["ecs", "fargate", "management"],
           },
           "dp-ecs-redir": {
@@ -2043,7 +2043,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "ECS Service: Redirect API em Go. Fargate 0.25 vCPU / 512MB. Min 3 tasks, max 50. Scale por req/task > 1000. Crítico: sem zero-downtime deploy via blue/green.",
             parentId: "dp-ecs-cluster",
-            awsService: "Amazon ECS",
+            cloudServiceId: "Amazon ECS",
             tags: ["ecs", "fargate", "redirect", "critical"],
           },
           "dp-ecs-worker": {
@@ -2053,7 +2053,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "ECS Service: Analytics Worker. Fargate 0.5 vCPU / 1GB. Scale pela profundidade da fila SQS (ApproximateNumberOfMessages > 500).",
             parentId: "dp-ecs-cluster",
-            awsService: "Amazon ECS",
+            cloudServiceId: "Amazon ECS",
             tags: ["ecs", "fargate", "worker", "analytics"],
           },
 
@@ -2081,7 +2081,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "RDS PostgreSQL 16. Multi-AZ: Primary em us-east-1a, Standby em us-east-1b. Failover automático < 60s. Backups automáticos 7 dias. db.t3.medium.",
             parentId: "dp-az-a",
-            awsService: "Amazon RDS",
+            cloudServiceId: "Amazon RDS",
             tags: ["database", "postgres", "multi-az"],
           },
           "dp-rds-standby": {
@@ -2091,7 +2091,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "Standby síncrono do RDS Multi-AZ. Não serve leituras. Failover automático quando Primary falha.",
             parentId: "dp-az-b",
-            awsService: "Amazon RDS",
+            cloudServiceId: "Amazon RDS",
             tags: ["database", "standby", "ha"],
           },
           "dp-elasticache": {
@@ -2101,7 +2101,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "Redis 7 em modo cluster com 1 shard + 1 replica. cache.t3.micro. TTL 24h para slugs. Backups habilitados. Usado exclusivamente pelo Redirect API.",
             parentId: "dp-private-subnet",
-            awsService: "Amazon ElastiCache",
+            cloudServiceId: "Amazon ElastiCache",
             tags: ["cache", "redis"],
           },
 
@@ -2113,7 +2113,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "Fila SQS Standard para eventos de clique. Retenção 4 dias. Visibility timeout 30s. DLQ após 3 tentativas com alarme CloudWatch.",
             parentId: "dp-region",
-            awsService: "Amazon SQS",
+            cloudServiceId: "Amazon SQS",
             tags: ["queue", "async"],
           },
           "dp-cloudwatch": {
@@ -2123,7 +2123,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "Métricas, logs e alarmes. Dashboards: redirect latency P95/P99, cache hit rate, SQS queue depth, ECS CPU/mem. Alarmes no PagerDuty via SNS.",
             parentId: "dp-region",
-            awsService: "Amazon CloudWatch",
+            cloudServiceId: "Amazon CloudWatch",
             tags: ["observabilidade", "monitoramento"],
           },
           "dp-secrets": {
@@ -2133,7 +2133,7 @@ function buildDiagrams(): Record<string, Diagram> {
             description:
               "Armazena: DATABASE_URL, REDIS_URL, AUTH0_JWKS_URI, SENDGRID_API_KEY. Rotação automática para credenciais do RDS. Injetado nos containers via ECS task definition.",
             parentId: "dp-region",
-            awsService: "AWS Secrets Manager",
+            cloudServiceId: "AWS Secrets Manager",
             tags: ["seguranca", "secrets"],
           },
 
