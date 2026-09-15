@@ -15,6 +15,7 @@ import type {
   FlowNodeShape,
   ServiceDefinition,
 } from "@/features/diagram";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import {
   isPanelComponent,
   isNoteComponent,
@@ -116,12 +117,7 @@ const ComponentPanel = ({
   const [tags, setTags] = useState<string[]>(component.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [type, setType] = useState<ComponentType>(component.type);
-  const [cloudService, setCloudService] = useState(
-    (component as { awsService?: string }).awsService ??
-      (component as { gcpService?: string }).gcpService ??
-      (component as { azureService?: string }).azureService ??
-      "",
-  );
+  const [cloudService, setCloudService] = useState(resolveCloudServiceId(component) ?? "");
   const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPanel = isPanelComponent(component);
@@ -159,6 +155,10 @@ const ComponentPanel = ({
   useEffect(() => {
     setTab("details");
   }, [component.id]);
+
+  useEffect(() => {
+    setCloudService(resolveCloudServiceId(component) ?? "");
+  }, [component]);
 
   useEffect(() => {
     if (isProcessNodeComponent(component)) {

@@ -6,6 +6,7 @@ import {
 } from "@/features/canvas/nodes/CustomNode/buildCardNodeData";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isGcpComponent } from "@/features/diagram/model/component.guards";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import {
   GCP_CATEGORIES,
   GCP_SERVICE_MAP,
@@ -72,7 +73,8 @@ export const gcpFamily: CloudFamilyDefinition = {
         throw new Error(`[elements] gcp export received a ${comp.type} component.`);
       }
 
-      const service = comp.gcpService ? GCP_SERVICE_MAP.get(comp.gcpService) : undefined;
+      const cloudService = resolveCloudServiceId(comp);
+      const service = cloudService ? GCP_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? gcpIconDataUri(service.iconName) : null;
 
       if (dataUri) {

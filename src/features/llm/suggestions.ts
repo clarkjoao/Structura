@@ -1,4 +1,5 @@
 import type { Diagram, DiagramModel } from "@/features/diagram";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 
 export interface ChatSuggestion {
   id: string;
@@ -21,14 +22,12 @@ export function buildContextualSuggestions(
   const connections = Object.values(diagram.snapshot.connections);
 
   const hasAws = components.some(
-    (c) => c.type.startsWith("aws-") || (c as { awsService?: string }).awsService,
+    (c) => c.type.startsWith("aws-") || resolveCloudServiceId(c) !== undefined,
   );
   const hasSyncChain = connections.some((c) => c.transportPreset === "sync" || c.intent === "call");
-  const hasLambda = components.some((c) => (c as { awsService?: string }).awsService === "lambda");
-  const hasRds = components.some((c) => (c as { awsService?: string }).awsService === "rds");
-  const hasNoCache = !components.some(
-    (c) => (c as { awsService?: string }).awsService === "elasticache",
-  );
+  const hasLambda = components.some((c) => resolveCloudServiceId(c) === "lambda");
+  const hasRds = components.some((c) => resolveCloudServiceId(c) === "rds");
+  const hasNoCache = !components.some((c) => resolveCloudServiceId(c) === "elasticache");
   const nodeCount = components.filter((c) => !["panel", "note"].includes(c.type)).length;
 
   const contextual: ChatSuggestion[] = [];

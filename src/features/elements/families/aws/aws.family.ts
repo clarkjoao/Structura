@@ -6,6 +6,7 @@ import {
 } from "@/features/canvas/nodes/CustomNode/buildCardNodeData";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isAwsComponent } from "@/features/diagram/model/component.guards";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import {
   AWS_CATEGORIES,
   isAwsType,
@@ -105,7 +106,7 @@ export const awsFamily: CloudFamilyDefinition = {
         ...base,
         kind: "aws",
         name: comp.name,
-        awsIcon: awsServiceCache.getInfo(comp.awsService ?? "").icon,
+        awsIcon: awsServiceCache.getInfo(resolveCloudServiceId(comp) ?? "").icon,
       };
     },
   },

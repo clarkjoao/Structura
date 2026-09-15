@@ -6,6 +6,7 @@ import {
   isC4Component,
   isGcpComponent,
 } from "@/features/diagram/model/component.guards";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { flowPlaybackOpacity } from "@/features/canvas/flow/flowState";
@@ -48,13 +49,7 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
     customColor:
       (comp as { customColor?: string }).customColor ??
       (isC4Component(comp) ? comp.panelColor : undefined),
-    cloudService: isAwsComponent(comp)
-      ? comp.awsService
-      : isGcpComponent(comp)
-        ? comp.gcpService
-        : isAzureComponent(comp)
-          ? comp.azureService
-          : undefined,
+    cloudService: resolveCloudServiceId(comp),
     isSelected: isPlaying ? flowHighlight.activeNodeId === comp.id : ctx.selectedNodeId === comp.id,
     controlsDisabled:
       !isPlaying &&

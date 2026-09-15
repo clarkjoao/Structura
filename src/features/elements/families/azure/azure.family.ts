@@ -6,6 +6,7 @@ import {
 } from "@/features/canvas/nodes/CustomNode/buildCardNodeData";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isAzureComponent } from "@/features/diagram/model/component.guards";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import {
   AZURE_CATEGORIES,
   AZURE_SERVICE_MAP,
@@ -64,7 +65,8 @@ export const azureFamily: CloudFamilyDefinition = {
         throw new Error(`[elements] azure export received a ${comp.type} component.`);
       }
 
-      const service = comp.azureService ? AZURE_SERVICE_MAP.get(comp.azureService) : undefined;
+      const cloudService = resolveCloudServiceId(comp);
+      const service = cloudService ? AZURE_SERVICE_MAP.get(cloudService) : undefined;
 
       // azure-react-icons are React components, not SVGs we can embed as a
       // data URI in the same tick. Passthrough keeps the identity (F2 floor)

@@ -7,6 +7,7 @@ import { useIconById, isPanelKind, isC4Type, isPanelType, isNoteType } from "@/f
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
 import { AWS_SERVICE_MAP, isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import CloudIcon from "@/features/canvas/nodes/CloudIcon";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 
@@ -54,7 +55,14 @@ export function NodeTemplatePreviewCard({
       <CustomIconRenderer icon={customIconDefinition} size={20} className={iconClassName} />
     );
   } else if (isAwsType(resolvedTemplateType)) {
-    const awsServiceId = readNonEmptyString(template.data.awsService);
+    const awsServiceId = resolveCloudServiceId({
+      awsService: readNonEmptyString(template.data.awsService),
+      gcpService: readNonEmptyString(template.data.gcpService),
+      azureService: readNonEmptyString(template.data.azureService),
+      // Template data may carry a future unified id; catalog links use the same
+      // key on domain components — legacy cloud fields still win (see helper).
+      serviceId: readNonEmptyString(template.data.serviceId),
+    });
     const awsService = awsServiceId ? AWS_SERVICE_MAP.get(awsServiceId) : undefined;
     if (awsService?.iconName) {
       iconNode = (
