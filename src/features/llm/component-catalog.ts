@@ -1,4 +1,3 @@
-import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { allElements } from "@/features/elements/element.registry";
 import i18n from "@/infrastructure/i18n";
 import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
@@ -47,76 +46,6 @@ export const C4_TYPES: ComponentTypeDefinition[] = [
   },
 ];
 
-function getAwsServiceDescription(serviceId: string, categoryName: string): string {
-  if (serviceId === "api-gateway") {
-    return "AWS managed API Gateway. Use for REST/HTTP/WebSocket API management and routing.";
-  }
-  if (serviceId === "elb") {
-    return "AWS load balancer. Use for distributing traffic across services.";
-  }
-  if (serviceId === "rds") {
-    return "AWS managed relational database. Use for PostgreSQL, MySQL, SQL Server.";
-  }
-  if (serviceId === "aurora") {
-    return "AWS managed relational database (Aurora). Use for high-performance MySQL/PostgreSQL-compatible clusters.";
-  }
-  if (serviceId === "s3") {
-    return "AWS object storage. Use for blobs, file storage, and static assets.";
-  }
-  if (serviceId === "lambda") {
-    return "Serverless compute function. Use for event-driven workloads.";
-  }
-  if (serviceId === "sqs") {
-    return "Managed message queue. Use for async decoupling and buffering.";
-  }
-  if (serviceId === "sns") {
-    return "Managed pub/sub notifications. Use for fan-out events.";
-  }
-  if (serviceId === "eventbridge") {
-    return "Managed event bus. Use for routing domain events.";
-  }
-  if (serviceId === "ecs" || serviceId === "ecs-2") {
-    return "Container orchestration. Use for running containerized services.";
-  }
-  if (serviceId === "eks" || serviceId === "eks-2") {
-    return "Managed Kubernetes. Use for running containerized services on Kubernetes.";
-  }
-  if (serviceId === "cloudfront") {
-    return "CDN and edge caching. Use to serve content globally with low latency.";
-  }
-  if (serviceId === "vpc") {
-    return "Virtual private network. Use to isolate and connect AWS resources.";
-  }
-  if (serviceId === "dynamodb") {
-    return "Managed NoSQL database. Use for key-value / document workloads.";
-  }
-  if (serviceId === "elasticache") {
-    return "Managed in-memory cache. Use for Redis/Memcached caching.";
-  }
-  if (serviceId === "cognito") {
-    return "Managed user identity. Use for auth, user pools, and federation.";
-  }
-  if (serviceId === "iam") {
-    return "Identity and access management. Use for roles, policies, and permissions.";
-  }
-  return `AWS ${categoryName} service.`;
-}
-
-export const AWS_TYPES: ComponentTypeDefinition[] = AWS_CATEGORIES.flatMap((category) =>
-  category.services.map((service) => ({
-    nodeType: category.id as AwsCategoryId,
-    awsService: service.id,
-    displayName: service.name,
-    description: getAwsServiceDescription(service.id, category.name),
-    example: JSON.stringify({
-      nodeType: category.id,
-      awsService: service.id,
-      name: service.name,
-      parentId: null,
-    }),
-  })),
-);
-
 /**
  * Registered elements, as catalog entries.
  *
@@ -127,7 +56,7 @@ export const AWS_TYPES: ComponentTypeDefinition[] = AWS_CATEGORIES.flatMap((cate
  */
 export function registeredElementTypes(): ComponentTypeDefinition[] {
   // Cloud families publish a compact catalog of their own (see
-  // `buildGcpCatalogCompact`); listing every category here would duplicate
+  // `buildAwsCatalogCompact`); listing every category here would duplicate
   // them under "Structural & Canvas" without service ids.
   return allElements()
     .filter((element) => element.family === "structural")
@@ -141,7 +70,7 @@ export function registeredElementTypes(): ComponentTypeDefinition[] {
 }
 
 /** Cloud family categories registered on the element registry, as catalog entries. */
-function cloudFamilyRegisteredTypes(familyId: "gcp" | "azure"): ComponentTypeDefinition[] {
+function cloudFamilyRegisteredTypes(familyId: "aws" | "gcp" | "azure"): ComponentTypeDefinition[] {
   return allElements()
     .filter((element) => element.family === familyId)
     .flatMap((element) => {
@@ -162,8 +91,8 @@ function cloudFamilyRegisteredTypes(familyId: "gcp" | "azure"): ComponentTypeDef
       }
       return variants.map((variant) => ({
         nodeType: element.id,
-        // Reuses the tool's `awsService` parameter slot — addComponent maps it
-        // onto gcpService / azureService for those families.
+        // Tool parameter slot shared across cloud families; addComponent maps
+        // it onto awsService / gcpService / azureService as appropriate.
         awsService: variant.createOptions.serviceId,
         displayName: i18n.t(variant.labelKey, { lng: CATALOG_LOCALE }),
         description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
@@ -175,6 +104,10 @@ function cloudFamilyRegisteredTypes(familyId: "gcp" | "azure"): ComponentTypeDef
         }),
       }));
     });
+}
+
+export function awsRegisteredTypes(): ComponentTypeDefinition[] {
+  return cloudFamilyRegisteredTypes("aws");
 }
 
 export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
@@ -190,7 +123,7 @@ export function allComponentTypes(): ComponentTypeDefinition[] {
     ...STRUCTURAL_TYPES,
     ...registeredElementTypes(),
     ...C4_TYPES,
-    ...AWS_TYPES,
+    ...awsRegisteredTypes(),
     ...gcpRegisteredTypes(),
     ...azureRegisteredTypes(),
   ];
@@ -243,20 +176,15 @@ export function buildComponentTypeCatalog(): string {
   return sections.join("\n");
 }
 
+/**
+ * Compact AWS catalog derived from registered family descriptors.
+ *
+ * F5b drops the hand-curated per-service descriptions so all three cloud
+ * families share the same verbosity (category label + service id list). A
+ * later slice can re-level detail across families if needed — not ad-hoc here.
+ */
 export function buildAwsCatalogCompact(): string {
-  const lines: string[] = [
-    "### AWS Service Types",
-    "",
-    "Use awsService in add_node parameters. nodeType must match the category prefix.",
-    "",
-  ];
-
-  for (const category of AWS_CATEGORIES) {
-    const serviceIds = category.services.map((s) => s.id).join(", ");
-    lines.push(`${category.id.replace("aws-", "").toUpperCase()}: ${serviceIds}`);
-  }
-
-  return lines.join("\n");
+  return buildCloudFamilyCatalogCompact("aws", "AWS", "awsService");
 }
 
 /**
@@ -267,24 +195,11 @@ export function buildAwsCatalogCompact(): string {
  * (addComponent maps it onto `gcpService`).
  */
 export function buildGcpCatalogCompact(): string {
-  const lines: string[] = [
-    "### GCP Service Types",
-    "",
-    "For gcp-* nodeTypes, pass the service id in awsService (same add_node parameter).",
-    "nodeType must be the category id (e.g. gcp-compute).",
-    "",
-  ];
-
-  for (const element of allElements().filter((entry) => entry.family === "gcp")) {
-    const serviceIds = (element.palette.variants ?? [])
-      .map((variant) => variant.createOptions.serviceId)
-      .filter((id): id is string => typeof id === "string" && id.length > 0)
-      .join(", ");
-    const label = element.id.replace("gcp-", "").toUpperCase();
-    lines.push(`${label}: ${serviceIds || "(no services)"}`);
-  }
-
-  return lines.join("\n");
+  return buildCloudFamilyCatalogCompact(
+    "gcp",
+    "GCP",
+    "awsService (same add_node parameter; maps onto gcpService)",
+  );
 }
 
 /**
@@ -295,21 +210,35 @@ export function buildGcpCatalogCompact(): string {
  * `azureService`).
  */
 export function buildAzureCatalogCompact(): string {
+  return buildCloudFamilyCatalogCompact(
+    "azure",
+    "Azure",
+    "awsService (same add_node parameter; maps onto azureService)",
+  );
+}
+
+function buildCloudFamilyCatalogCompact(
+  familyId: "aws" | "gcp" | "azure",
+  label: string,
+  serviceParamHint: string,
+): string {
+  const prefix = `${familyId}-`;
   const lines: string[] = [
-    "### Azure Service Types",
+    `### ${label} Service Types`,
     "",
-    "For azure-* nodeTypes, pass the service id in awsService (same add_node parameter).",
-    "nodeType must be the category id (e.g. azure-compute).",
+    familyId === "aws"
+      ? `Use ${serviceParamHint} in add_node parameters. nodeType must match the category prefix.`
+      : `For ${familyId}-* nodeTypes, pass the service id in ${serviceParamHint}.\nnodeType must be the category id (e.g. ${familyId}-compute).`,
     "",
   ];
 
-  for (const element of allElements().filter((entry) => entry.family === "azure")) {
+  for (const element of allElements().filter((entry) => entry.family === familyId)) {
     const serviceIds = (element.palette.variants ?? [])
       .map((variant) => variant.createOptions.serviceId)
       .filter((id): id is string => typeof id === "string" && id.length > 0)
       .join(", ");
-    const label = element.id.replace("azure-", "").toUpperCase();
-    lines.push(`${label}: ${serviceIds || "(no services)"}`);
+    const categoryLabel = element.id.replace(prefix, "").toUpperCase();
+    lines.push(`${categoryLabel}: ${serviceIds || "(no services)"}`);
   }
 
   return lines.join("\n");
