@@ -114,6 +114,15 @@ const richComponents: Record<string, Component> = {
     description: "",
     parentId: null,
   },
+  // F5a: Azure golden — passthrough (npm React icons, no sync SVG embed).
+  azure: {
+    id: "azure",
+    name: "Azure Functions",
+    type: "azure-compute",
+    azureService: "functions",
+    description: "",
+    parentId: null,
+  },
   api: {
     id: "api",
     name: "Orders API",
@@ -216,6 +225,7 @@ const richLayouts: Record<string, NodeLayout> = {
   aws: { elementId: "aws", x: 0, y: 420 },
   awsApi: { elementId: "awsApi", x: 350, y: 420 },
   gcp: { elementId: "gcp", x: 0, y: 560, width: 180, height: 80 },
+  azure: { elementId: "azure", x: 220, y: 560, width: 180, height: 80 },
   api: { elementId: "api", x: 400, y: 440, width: 300, height: 160 },
   ep: { elementId: "ep", x: 0, y: 68, width: 300, height: 40 },
   db: { elementId: "db", x: 820, y: 440 },
