@@ -363,3 +363,61 @@ Coisas que encontrei trabalhando nos 7 itens e que **não** estavam no escopo:
 
 (1)–(3) são os que eu trataria a seguir, e (2)+(3) juntos são a resposta ao "há proteção
 em tempo de compilação entre `serviceId` e `cloudServiceId`?" — hoje não há.
+
+---
+
+## Fatia seguinte — achados colaterais 2+3
+
+**Branch:** `fix/k8s-oss-cloud-service-id-typing`, a partir de `fix/element-registry-audit`.
+
+### Tipagem k8s/oss ✅
+
+`K8sComponent` / `OssComponent` entraram na união `Component` (e em
+`ComponentPatch` / `TypedComponentPatch`), com `cloudServiceId?: string` tipado.
+`attachService` em `k8s.family.ts` / `oss.family.ts` não usa mais `as Component`.
+Os ids de categoria também entraram em `ComponentType` e
+`RegisteredElementTypeId` — sem isso as checagens de exaustividade em
+`buildComponentForType` / export tratavam k8s/oss como `never` assim que o
+componente tipado existia. Catálogos k8s/oss ficaram leaf modules (sem import de
+`element.types`) para o `component.types` poder importar os ids sem ciclo.
+
+### `resolveCloudServiceId` sem fallback de negócio ✅
+
+Removido `serviceId` da cadeia por completo:
+
+`cloudServiceId ?? awsService ?? gcpService ?? azureService`
+
+Nenhum consumidor dependia do fallback de forma legítima: era o vazamento
+descrito (C4 + catálogo de negócio → `awsService="svc-pay"` no serializer).
+Prova em `cloud-service-id.test.ts` e
+`serializer.test.ts` ("does not serialize business-catalog serviceId as
+awsService (svc-pay leak)"). ADR-0010 e `architecture/element-registry.md`
+atualizados.
+
+A alternativa "fallback só para AWS/GCP/Azure" foi rejeitada: exceção por
+família para um conceito que F6b já separou em campos distintos.
+
+### Guard do Item 1 vs k8s/oss — decisão
+
+Duas leituras possíveis:
+
+1. **Aplicar igualmente.** O gate é o corte do schema v13 / qualquer escrita de
+   `cloudServiceId` no artefato de produção. Não é “proteger dado legado
+   AWS”; é “não embarcar escritores do campo unificado até a decisão humana de
+   release”. k8s/oss já passam por `cloudServiceIdWrite()` — o mesmo produtor.
+   O gate de build é binário (`cloudServiceIdReleaseGate`); não há caminho
+   parcial por família sem redesenhar o mecanismo.
+2. **Isentar k8s/oss.** Eles nunca tiveram campo legado, nunca estiveram em
+   produção com `awsService`, e o risco de checksum misturado F6a/F6b que o
+   gate cobre é um problema de hyperscaler. Bloqueá-los é dano colateral de um
+   gate pensado para outra transição. Isentar de verdade exigiria um gate
+   runtime/por-família (a flag de build não distingue).
+
+**Decisão aplicada: (1).** Sem mudança de código no guard. Motivo: isentar
+sem redesenhar o gate seria só prosa — o build continua tudo-ou-nada, e
+k8s/oss já escrevem o mesmo campo. Documentar a isenção sem implementá-la
+mentiria sobre o que o binário faz. Se no futuro quiser liberar k8s/oss antes
+dos hyperscalers, isso é um redesign do gate (fora desta fatia), não um
+comentário.
+
+Os achados colaterais **1, 4, 5, 6, 7** continuam abertos.

@@ -78,6 +78,11 @@ registries. This ADR records the domain-level registry that closes that gap for
      aborts `npm run build` unless `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true` is
      set deliberately. `npm run dev` and `npm test` are unaffected.
 
+  The gate applies to **every** family that writes `cloudServiceId`, including
+  `k8s` / `oss` (which never had a legacy field). Exempting them would require
+  a per-family gate redesign; the build gate is all-or-nothing by design. See
+  `docs/audits/correcao-achados-auditoria.md` (fatia 2+3).
+
   A runtime flag that fell back to *writing* the legacy fields was considered
   and rejected: `migrateUnifyCloudServiceId` deletes those fields on every
   rehydrate, the three cloud component types no longer declare them, and `k8s` /
