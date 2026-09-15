@@ -5,8 +5,14 @@ import type { ElementTypeId } from "@/features/elements/element.types";
  *
  * Categories follow the resource groups architects draw most often. Namespace
  * and Cluster are intentionally omitted as categories: they are grouping
- * containers (closer to `panel` / PANEL_KINDS) than card services — deferred,
- * not forgotten (see F7 report).
+ * containers (closer to `panel` / PANEL_KINDS) than card services, and
+ * `CloudFamilyDefinition` can only produce cards — every category it builds is
+ * `role: "card"`, `canBeParent: false` (see `build-cloud-family-descriptors`).
+ *
+ * That is a known limit of the family contract, not an oversight in this
+ * catalog. The options for lifting it are weighed in
+ * `docs/audits/correcao-achados-auditoria.md` (item 6); it is an open decision,
+ * so nothing here should be changed to work around it in the meantime.
  */
 export type K8sCategoryId = "k8s-workloads" | "k8s-networking" | "k8s-storage" | "k8s-config";
 

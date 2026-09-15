@@ -79,7 +79,7 @@ export interface CloudFamilyCardCanvas {
 /**
  * How a cloud family leaves Structura.
  *
- * Adjustments vs `proposta-arquitetura-elementos.md` §2.3(a):
+ * Two things it deliberately does not do:
  * - No `kind: "cloudService"` on the export IR yet — export-core has `image`
  *   and `passthrough` (F2), which are the floor for families without an mxgraph
  *   pack. **Contract:** a new family that only supplies `toExportNode` returning

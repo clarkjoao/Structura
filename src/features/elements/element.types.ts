@@ -15,7 +15,7 @@ import type { ExportNode } from "@/lib/export-core";
 /**
  * The id of a registered element — the same string that lives in
  * `Component.type`. Kept as `ComponentType` while the union is still closed;
- * the registry is what will let it open (see `plano-migracao-elementos.md`, F9).
+ * the registry is what will let it open — see ADR-0010.
  */
 export type ElementTypeId = ComponentType;
 
@@ -96,8 +96,7 @@ export type ElementFamilyId = "structural" | "c4" | (string & {});
 
 /**
  * How the node is drawn, as a role rather than a shape. This is the narrow
- * union that keeps exhaustiveness once `ComponentType` opens up — see
- * `proposta-arquitetura-elementos.md` §1.6.
+ * union that keeps exhaustiveness once `ComponentType` opens up.
  */
 export type ElementRenderRole = "card" | "container" | "custom-shape";
 
@@ -180,8 +179,7 @@ export interface ElementModelSlice {
 
   /**
    * Size a new node is created at. Unlike `NodeTypeDescriptor.defaultSize`,
-   * which the creation path ignored, this one governs
-   * (`proposta-arquitetura-elementos.md`, decision 3).
+   * which the creation path ignored, this one governs.
    *
    * `height` is optional because leaving it out is meaningful: the node
    * measures itself, and writing a height would pin it to a number the
