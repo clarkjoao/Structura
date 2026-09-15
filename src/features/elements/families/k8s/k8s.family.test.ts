@@ -53,6 +53,7 @@ describe("k8s family", () => {
     expect(node.kind).toBe("image");
     if (node.kind === "image") {
       expect(node.dataUri.startsWith("data:image/svg+xml")).toBe(true);
+      expect(node.cloudServiceId).toBe("deployment");
     }
   });
 

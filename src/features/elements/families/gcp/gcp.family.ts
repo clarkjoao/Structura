@@ -80,6 +80,7 @@ export const gcpFamily: CloudFamilyDefinition = {
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? GCP_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? gcpIconDataUri(service.iconName) : null;
+      const cloudServiceIdField = cloudService ? { cloudServiceId: cloudService } : {};
 
       if (dataUri) {
         return {
@@ -88,6 +89,7 @@ export const gcpFamily: CloudFamilyDefinition = {
           name: comp.name,
           dataUri,
           preserveAspect: true,
+          ...cloudServiceIdField,
         };
       }
 
@@ -100,6 +102,7 @@ export const gcpFamily: CloudFamilyDefinition = {
         description: service?.name ?? comp.technology,
         originType: comp.type,
         originLabel: i18n.t("canvasToolbar.gcpServices"),
+        ...cloudServiceIdField,
       };
     },
   },

@@ -78,9 +78,23 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
 
     case "aws": {
       const style = buildAwsStyle(node.awsIcon);
+      const geometry =
+        `<mxGeometry height="${CONFIG.minDimensions.aws.height}" width="${CONFIG.minDimensions.aws.width}" x="${x}" y="${y}" as="geometry" />`;
+      // Promote to `<object>` when the domain service id is known so the XML
+      // carries identity beyond the mxgraph icon appearance.
+      if (node.cloudServiceId) {
+        return (
+          `<object placeholders="1" cloudServiceId="${escXml(node.cloudServiceId)}" ` +
+          `label="${escXml(node.name)}" id="${escXml(node.id)}">` +
+          `<mxCell style="${style}" vertex="1" parent="${escXml(parentId)}">` +
+          geometry +
+          `</mxCell>` +
+          `</object>`
+        );
+      }
       return (
         `<mxCell id="${escXml(node.id)}" parent="${escXml(parentId)}" style="${style}" value="${escXml(node.name)}" vertex="1">` +
-        `<mxGeometry height="${CONFIG.minDimensions.aws.height}" width="${CONFIG.minDimensions.aws.width}" x="${x}" y="${y}" as="geometry" />` +
+        geometry +
         `</mxCell>`
       );
     }
@@ -241,7 +255,13 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       // otherwise dominate it. The box that replaces it still names the node.
       if (node.dataUri.length > CONFIG.limits.imageDataUriChars) {
         return buildPassthroughCell(
-          { id: node.id, name: node.name, originType: "svg", originLabel: "SVG" },
+          {
+            id: node.id,
+            name: node.name,
+            originType: "svg",
+            originLabel: "SVG",
+            cloudServiceId: node.cloudServiceId,
+          },
           { x, y, width: w, height: h },
           parentId,
         );
@@ -251,10 +271,21 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       const style =
         `shape=image;verticalLabelPosition=bottom;verticalAlign=top;imageAspect=${aspect};` +
         `image=${escXml(node.dataUri)};`;
+      const geometry = `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>`;
+      if (node.cloudServiceId) {
+        return (
+          `<object placeholders="1" cloudServiceId="${escXml(node.cloudServiceId)}" ` +
+          `label="${escXml(node.name)}" id="${escXml(node.id)}">` +
+          `<mxCell style="${style}" vertex="1" parent="${escXml(parentId)}">` +
+          geometry +
+          `</mxCell>` +
+          `</object>`
+        );
+      }
       return (
         `<mxCell id="${escXml(node.id)}" value="${escXml(node.name)}" style="${style}" ` +
         `vertex="1" parent="${escXml(parentId)}">` +
-        `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
+        geometry +
         `</mxCell>`
       );
     }
@@ -292,6 +323,7 @@ function buildPassthroughCell(
     originType: string;
     originLabel: string;
     fillColor?: string;
+    cloudServiceId?: string;
   },
   geometry: { x: number; y: number; width: number; height: number },
   parentId: string,
@@ -305,14 +337,18 @@ function buildPassthroughCell(
   const style =
     `rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=${fill};` +
     `strokeColor=${CONFIG.defaults.passthroughStroke};`;
+  const cloudAttr = node.cloudServiceId
+    ? ` cloudServiceId="${escXml(node.cloudServiceId)}"`
+    : "";
 
   // `<object>` rather than a bare `<mxCell>`: draw.io keeps attributes it does
   // not understand, which is what lets a later import recover the exact type
   // instead of degrading everything shapeless into `unknown`. Same pattern the
-  // c4 and apiGroup cells already use.
+  // c4 and apiGroup cells already use. `cloudServiceId` (when set) is the
+  // domain service identity — distinct from `structuraType` (element type).
   return (
     `<object placeholders="1" structuraType="${escXml(node.originType)}" ` +
-    `structuraLabel="${escXml(node.originLabel)}" ` +
+    `structuraLabel="${escXml(node.originLabel)}"${cloudAttr} ` +
     `label="${escXml(label)}" id="${escXml(node.id)}">` +
     `<mxCell style="${style}" vertex="1" parent="${escXml(parentId)}">` +
     `<mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry"/>` +

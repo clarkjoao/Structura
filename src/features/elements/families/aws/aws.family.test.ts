@@ -30,6 +30,7 @@ describe("aws family", () => {
       kind: "aws",
       name: "Lambda",
       awsIcon: "lambda",
+      cloudServiceId: "lambda",
     });
   });
 
@@ -47,7 +48,7 @@ describe("aws family", () => {
       { id: "n1", parentId: null, x: 0, y: 0, width: 180, height: 80 },
     );
 
-    expect(node).toMatchObject({ kind: "aws", awsIcon: "general" });
+    expect(node).toMatchObject({ kind: "aws", awsIcon: "general", cloudServiceId: "q" });
   });
 
   it("writes cloudServiceId from ElementCreateOptions.serviceId", () => {

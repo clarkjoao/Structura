@@ -30,6 +30,7 @@ describe("azure family", () => {
       kind: "passthrough",
       originType: "azure-compute",
       name: "Functions",
+      cloudServiceId: "functions",
     });
   });
 

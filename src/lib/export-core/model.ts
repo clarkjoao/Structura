@@ -59,6 +59,12 @@ export interface AwsNode extends BaseNode {
   name: string;
   /** Pre-resolved mxgraph aws4 icon id (resolution lives in the adapter). */
   awsIcon: string;
+  /**
+   * Domain cloud-service identity (e.g. "lambda"). Distinct from `awsIcon`,
+   * which is only the mxgraph artwork id — written into the XML so the service
+   * remains identifiable beyond appearance.
+   */
+  cloudServiceId?: string;
 }
 
 export interface PanelNode extends BaseNode {
@@ -141,6 +147,8 @@ export interface ImageNode extends BaseNode {
   /** Already sanitised and base64-encoded by the adapter. */
   dataUri: string;
   preserveAspect?: boolean;
+  /** Domain cloud-service identity when this image represents a cloud service. */
+  cloudServiceId?: string;
 }
 
 /**
@@ -161,6 +169,8 @@ export interface PassthroughNode extends BaseNode {
   /** Human-readable name of that type, already localised by the adapter. */
   originLabel: string;
   fillColor?: string;
+  /** Domain cloud-service identity when this node represents a cloud service. */
+  cloudServiceId?: string;
 }
 
 /** The nine flowchart shapes a process node can take. */

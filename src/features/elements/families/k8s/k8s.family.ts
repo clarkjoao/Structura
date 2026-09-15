@@ -73,6 +73,7 @@ export const k8sFamily: CloudFamilyDefinition = {
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? K8S_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? k8sIconDataUri(service.iconName) : null;
+      const cloudServiceIdField = cloudService ? { cloudServiceId: cloudService } : {};
 
       if (dataUri) {
         return {
@@ -81,6 +82,7 @@ export const k8sFamily: CloudFamilyDefinition = {
           name: comp.name,
           dataUri,
           preserveAspect: true,
+          ...cloudServiceIdField,
         };
       }
 
@@ -91,6 +93,7 @@ export const k8sFamily: CloudFamilyDefinition = {
         description: service?.name ?? comp.technology,
         originType: comp.type,
         originLabel: i18n.t("canvasToolbar.kubernetesServices"),
+        ...cloudServiceIdField,
       };
     },
   },
