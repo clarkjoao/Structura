@@ -99,7 +99,9 @@ const richComponents: Record<string, Component> = {
     id: "awsApi",
     name: "API Gateway",
     type: "aws-networking",
-    awsService: "amazon-apigateway",
+    // Catalog id (RESICON → api_gateway). Pre-F5b used a non-catalog alias
+    // that always exported the generic "general" icon.
+    awsService: "api-gateway",
     description: "",
     parentId: null,
   },
