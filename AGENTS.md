@@ -45,13 +45,14 @@ runs both, and is the gate CI runs. The plugins under `plugins/` have their own
 ```
 src/
 ├── features/
-│   ├── diagram/            # domain layer — types, guards, Zustand store (slices/selectors), utils
-│   │                       # no React/JSX here
+│   ├── diagram/            # domain layer — types, guards, Zustand store (slices/selectors,
+│   │                       # custom icon store), utils. No React/JSX here
 │   ├── canvas/             # React Flow UI — nodes, edges, toolbar, panels, hooks, flow mode
-│   ├── cloud/              # cloud provider registry (AWS/GCP/Azure icons + catalogs)
+│   ├── elements/           # element registry — what canvas types exist (ElementDescriptor,
+│   │                       # CloudFamilyDefinition, families/, bootstrap). Single owner; see ADR-0010
+│   ├── cloud/              # derived view of the element families: icon resolvers + AWS/GCP/Azure catalogs
 │   ├── collaboration/      # WebSocket/Yjs collab, presence, patches
-│   ├── custom-components/  # user-defined reusable node templates
-│   ├── icons/              # custom icon store
+│   ├── element-presets/    # user-saved presets (an existing type + pre-filled data)
 │   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
 │   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
@@ -84,8 +85,19 @@ src/
   through i18n; seed/demo content may stay Portuguese.
 - **No `any` / no `as unknown as`**: strict mode is on; use guards or fix the types.
 - **Custom nodes are typed**: `NodeProps<Node<MyNodeData>>` where `MyNodeData` is a
-  `type` alias (interfaces don't satisfy React Flow's data constraint). Register new
-  node types via a `NodeTypeDescriptor` in `features/canvas/nodes/node-types/`.
+  `type` alias (interfaces don't satisfy React Flow's data constraint).
+- **New node types go on the element registry**, never on `NODE_TYPE_REGISTRY`: a
+  built-in shape is an `ElementDescriptor` under `features/elements/`, a catalog pack is
+  a `CloudFamilyDefinition` + `registerCloudFamily`, and both register from
+  `features/elements/bootstrap.ts`. `NodeTypeDescriptor` / `registerDescriptor` in
+  `features/canvas/nodes/node-types/` is for **plugin** render descriptors only.
+  See [ADR-0010](docs/adr/0010-element-registry.md) and
+  [docs/guides/adding-a-node-type.md](docs/guides/adding-a-node-type.md).
+- **Cloud service ids persist as `cloudServiceId`**, written only through
+  `cloudServiceIdWrite()` / `cloudServiceIdClearingPatch()` and read through
+  `resolveCloudServiceId`. It is **not** `BaseComponent.serviceId`, which is the business
+  service catalog. `npm run build` is gated on `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE`
+  (F6b release decision — see ADR-0010).
 - **Store changes go through slices** (`features/diagram/store/slices/*`); mutating
   actions that change structure must call `pushHistory` for undo/redo. Persisted
   schema changes need a migration in `persist.config.ts` (bump `PERSIST_SCHEMA_VERSION`).
@@ -113,7 +125,8 @@ src/
 The rationale behind these rules lives in `docs/` — start with
 `docs/architecture/vision.md` (platform direction) and
 `docs/architecture/overview.md` (current structure). Subsystem docs are in
-`docs/concepts/`, extension-point inventory in `docs/architecture/extension-points.md`.
+`docs/concepts/`, extension-point inventory in `docs/architecture/extension-points.md`,
+and the element/node-type system in `docs/architecture/element-registry.md`.
 When code and docs disagree, the code wins — fix the doc in the same PR.
 
 ## Known sharp edges
@@ -131,3 +144,7 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
 - The `@/features/diagram` and `@/features/canvas` barrels couple the bundle
   graph; route chunks stay small only if always-mounted code (App shell, LLM
   chat) imports leaf modules directly instead of the barrels.
+- The LLM feature is its own lazy chunk. Never snapshot `allElements()` at module
+  scope inside it — the registry is empty there at chunk load, which shipped a
+  production bug that every unit test passed. Read the static catalog instead
+  (`llm/ir/ir.types.ts`), or call the registry at use time.
