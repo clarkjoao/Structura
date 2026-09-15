@@ -21,6 +21,7 @@ import {
   buildComponentTypeCatalog,
   isValidNodeType,
 } from "@/features/llm/component-catalog";
+import { searchElements } from "@/features/llm/element-catalog-query";
 import type { Component } from "@/features/diagram/model/component.types";
 import type { ElementTypeId, ExportGeometry } from "@/features/elements/element.types";
 import { Cloud } from "lucide-react";
@@ -123,10 +124,17 @@ describe("cloud family contract (fictional family)", () => {
     expect(items.some((item) => item.id === TEST_FAMILY_ID)).toBe(true);
   });
 
-  it("appears in the LLM catalog without naming the family in component-catalog.ts", () => {
+  it("appears in the hierarchical LLM catalog without naming the family in component-catalog.ts", () => {
     expect(isValidNodeType(TEST_CATEGORY_ID)).toBe(true);
     expect(allComponentTypes().some((entry) => entry.nodeType === TEST_CATEGORY_ID)).toBe(true);
-    expect(buildComponentTypeCatalog()).toContain(TEST_SERVICE_ID);
+    // Static prompt lists families/categories only; services come from search_elements.
+    expect(buildComponentTypeCatalog()).toContain(TEST_CATEGORY_ID);
+    expect(buildComponentTypeCatalog()).not.toContain(TEST_SERVICE_ID);
+    expect(
+      searchElements({ query: TEST_SERVICE_ID, familyId: TEST_FAMILY_ID }).results.some(
+        (row) => row.serviceId === TEST_SERVICE_ID,
+      ),
+    ).toBe(true);
   });
 
   it("exports via the passthrough floor without a native export-core kind", () => {

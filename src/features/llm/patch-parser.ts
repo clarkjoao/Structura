@@ -1,4 +1,4 @@
-import { isWriteTool } from "./tools";
+import { isWriteTool, isCatalogReadTool } from "./tools";
 import { isValidNodeType, isValidPatternId } from "./component-catalog";
 import type {
   AnalysisFinding,
@@ -183,6 +183,34 @@ function mapToolCallToAction(toolCall: LLMToolCall): DiagramPatchAction | null {
         type: "GET_TAGS",
         payload: {},
       } as DiagramPatchAction;
+    case "list_element_families":
+      return {
+        type: "LIST_ELEMENT_FAMILIES",
+        payload: {},
+      };
+    case "search_elements": {
+      const query = toolCall.parameters.query;
+      if (typeof query !== "string" || query.trim().length === 0) {
+        console.warn("[LLM] search_elements missing query - action skipped");
+        return null;
+      }
+      return {
+        type: "SEARCH_ELEMENTS",
+        payload: {
+          query,
+          familyId:
+            typeof toolCall.parameters.familyId === "string"
+              ? toolCall.parameters.familyId
+              : undefined,
+          categoryId:
+            typeof toolCall.parameters.categoryId === "string"
+              ? toolCall.parameters.categoryId
+              : undefined,
+          limit:
+            typeof toolCall.parameters.limit === "number" ? toolCall.parameters.limit : undefined,
+        },
+      };
+    }
     default:
       return null;
   }
@@ -260,7 +288,7 @@ function tryParseEnvelope(candidate: string): ParsedLLMResponse | null {
         if (!isToolCall(rawToolCall)) {
           continue;
         }
-        if (!isWriteTool(rawToolCall.tool)) {
+        if (!isWriteTool(rawToolCall.tool) && !isCatalogReadTool(rawToolCall.tool)) {
           console.info("[LLM tool read]", rawToolCall.tool, rawToolCall.parameters);
           continue;
         }

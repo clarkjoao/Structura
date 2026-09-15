@@ -746,18 +746,44 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           });
         }
 
+        const catalogToolResults: unknown[] = [];
+        if (parsedResponse.kind === "patch" && parsedResponse.patch) {
+          for (const action of parsedResponse.patch.actions) {
+            if (action.type !== "LIST_ELEMENT_FAMILIES" && action.type !== "SEARCH_ELEMENTS") {
+              continue;
+            }
+            const applied = applyDiagramPatchAction(action);
+            if (applied.toolResult) {
+              catalogToolResults.push(applied.toolResult);
+            }
+          }
+        }
+
         const locale = getResolvedAppLanguage();
+        let assistantContent =
+          parsedResponse.kind === "patch"
+            ? buildPatchMessage(locale, parsedResponse.patch?.actions.length ?? 0)
+            : parsedResponse.kind === "text"
+              ? parsedResponse.message
+              : "";
+        if (catalogToolResults.length > 0) {
+          const catalogBlock = [
+            "Catalog tool results:",
+            "```json",
+            JSON.stringify(catalogToolResults, null, 2),
+            "```",
+          ].join("\n");
+          assistantContent = assistantContent
+            ? `${assistantContent}\n\n${catalogBlock}`
+            : catalogBlock;
+        }
+
         set({
           messages: get().messages.map((message) =>
             message.id === assistantMessageId
               ? {
                   ...message,
-                  content:
-                    parsedResponse.kind === "patch"
-                      ? buildPatchMessage(locale, parsedResponse.patch?.actions.length ?? 0)
-                      : parsedResponse.kind === "text"
-                        ? parsedResponse.message
-                        : "",
+                  content: assistantContent,
                 }
               : message,
           ),

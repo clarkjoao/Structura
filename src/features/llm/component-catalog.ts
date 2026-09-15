@@ -140,8 +140,12 @@ export function buildComponentTypeCatalog(): string {
   const sections: string[] = [
     "## Available Component Types",
     "",
-    "You MUST use the exact nodeType string when calling add_node.",
-    "Never invent nodeType values.",
+    "You MUST use exact nodeType (and awsService/serviceId) strings from this catalog or from search_elements.",
+    "Never invent nodeType or service id values.",
+    "",
+    "For cloud / Kubernetes / OSS services: call list_element_families (optional) then search_elements",
+    "to obtain elementType + serviceId, then pass them to add_node (serviceId → awsService parameter).",
+    'diagramFamilyMix from list_element_families tells you which families already appear on the diagram — prefer those when the request is ambiguous (e.g. "cache" could be Redis OSS or ElastiCache).',
     "",
     "### Structural & Canvas Types",
   ];
@@ -156,6 +160,8 @@ export function buildComponentTypeCatalog(): string {
     sections.push(formatTypeDef(definition));
   }
 
+  sections.push("");
+  sections.push("### Cloud & tech families (categories only — services via search_elements)");
   for (const family of allCloudFamilies()) {
     sections.push("");
     sections.push(buildCloudFamilyCatalogCompact(family.id));
@@ -165,36 +171,34 @@ export function buildComponentTypeCatalog(): string {
 }
 
 /**
- * Compact catalog block for one registered cloud family.
+ * Category-level catalog block for one registered cloud family (F8).
  *
- * Service ids ride the shared `awsService` tool parameter (addComponent maps
- * onto `cloudServiceId`). Label comes from the family's i18n key.
+ * Service ids are no longer dumped into the system prompt — use
+ * `search_elements` / `list_element_families` instead.
  */
 export function buildCloudFamilyCatalogCompact(familyId: string): string {
   const family = allCloudFamilies().find((entry) => entry.id === familyId);
   const label = family ? i18n.t(family.labelKey, { lng: CATALOG_LOCALE }) : familyId.toUpperCase();
-  const serviceParamHint =
-    familyId === "aws"
-      ? "awsService"
-      : `awsService (same add_node parameter; maps onto cloudServiceId for ${familyId})`;
 
-  const prefix = `${familyId}-`;
   const lines: string[] = [
-    `### ${label} Service Types`,
+    `### ${label} (family id: ${familyId})`,
     "",
-    familyId === "aws"
-      ? `Use ${serviceParamHint} in add_node parameters. nodeType must match the category prefix.`
-      : `For ${familyId}-* nodeTypes, pass the service id in ${serviceParamHint}.\nnodeType must be the category id (e.g. ${familyId}-compute).`,
-    "",
+    "Categories (nodeType = category id; resolve services with search_elements):",
   ];
 
-  for (const element of allElements().filter((entry) => entry.family === familyId)) {
-    const serviceIds = (element.palette.variants ?? [])
-      .map((variant) => variant.createOptions.serviceId)
-      .filter((id): id is string => typeof id === "string" && id.length > 0)
-      .join(", ");
-    const categoryLabel = element.id.replace(prefix, "").toUpperCase();
-    lines.push(`${categoryLabel}: ${serviceIds || "(no services)"}`);
+  if (!family) {
+    lines.push("(family not registered)");
+    return lines.join("\n");
+  }
+
+  for (const category of family.categories) {
+    const serviceCount = family.services.filter(
+      (service) => service.categoryId === category.id,
+    ).length;
+    const categoryLabel = i18n.t(category.labelKey, { lng: CATALOG_LOCALE });
+    lines.push(
+      `- ${category.id} — ${categoryLabel} (${serviceCount} service${serviceCount === 1 ? "" : "s"})`,
+    );
   }
 
   return lines.join("\n");

@@ -5,12 +5,14 @@ import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
 import { PATTERNS } from "@/lib/catalogs/patterns";
 import type { DiagramPatchAction } from "./types";
+import { listElementFamilies, searchElements } from "./element-catalog-query";
 
 export interface AppliedPatchResult {
   addedNodeId: string | null;
   addedEdgeId: string | null;
   toolResult?: {
-    type: "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS";
+    type:
+      "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS" | "LIST_ELEMENT_FAMILIES" | "SEARCH_ELEMENTS";
     data?: unknown;
   };
 }
@@ -151,6 +153,31 @@ export function applyDiagramPatchAction(
     case "GET_TAGS": {
       // GET_TAGS is a read-only operation handled separately
       return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "GET_TAGS" } };
+    }
+    case "LIST_ELEMENT_FAMILIES": {
+      const diagramId = diagramState.activeDiagramId;
+      const components =
+        diagramId && diagramState.diagrams[diagramId]
+          ? diagramState.diagrams[diagramId].snapshot.components
+          : {};
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        toolResult: {
+          type: "LIST_ELEMENT_FAMILIES",
+          data: listElementFamilies(components),
+        },
+      };
+    }
+    case "SEARCH_ELEMENTS": {
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        toolResult: {
+          type: "SEARCH_ELEMENTS",
+          data: searchElements(action.payload),
+        },
+      };
     }
     default:
       return { addedNodeId: null, addedEdgeId: null };
