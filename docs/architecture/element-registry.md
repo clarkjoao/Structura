@@ -40,7 +40,7 @@ Locked by `src/features/elements/single-owner.invariant.test.ts`.
 
 | Concern | Rule |
 | --- | --- |
-| Write | `cloudServiceId` only (persist schema **v13**) |
+| Write | `cloudServiceIdWrite()` / `cloudServiceIdClearingPatch()` only — the single producer of `cloudServiceId` (persist schema **v13**) |
 | Read | `resolveCloudServiceId` — tolerant of legacy `awsService` / `gcpService` / `azureService` / catalog `serviceId` |
 | Business catalog link | Still `BaseComponent.serviceId` — **do not** overload it for cloud |
 
@@ -51,6 +51,17 @@ tolerant reads have been live long enough for clients to upgrade. Collaboration
 checksums diverge between a client that still writes legacy cloud fields and one
 that writes `cloudServiceId`. That is expected of the cutover, not a bug to
 “fix” by merging early.
+
+Two mechanisms hold it, so the rule survives someone who has not read this page:
+
+| Where | What it does |
+| --- | --- |
+| `cloud-service-id.write-gate.test.ts` | Fails if any file outside the control point emits `cloudServiceId`, so the write sites stay countable |
+| `cloudServiceIdReleaseGate` (`vite.config.ts`) | Aborts `npm run build` unless `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true`; dev and tests unaffected |
+
+Turning the flag on is the release decision itself — see
+[ADR-0010](../adr/0010-element-registry.md) for why the gate is at the build
+rather than a runtime fallback to legacy writes.
 
 ## LLM / IR
 

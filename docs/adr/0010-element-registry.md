@@ -55,6 +55,24 @@ registries. This ADR records the domain-level registry that closes that gap for
   no component-schema version gate on the wire. Merge/deploy of this stack is a
   **human** release decision, not implied by a green branch.
 
+  The rule is enforced by code, not by this paragraph:
+
+  1. **One writer.** `cloudServiceIdWrite()` /
+     `cloudServiceIdClearingPatch()` in
+     `src/features/diagram/model/cloud-service-id.ts` are the only producers of
+     the field; `cloud-service-id.write-gate.test.ts` fails the suite if any
+     other source file emits it.
+  2. **The build refuses.** `cloudServiceIdReleaseGate` in `vite.config.ts`
+     aborts `npm run build` unless `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true` is
+     set deliberately. `npm run dev` and `npm test` are unaffected.
+
+  A runtime flag that fell back to *writing* the legacy fields was considered
+  and rejected: `migrateUnifyCloudServiceId` deletes those fields on every
+  rehydrate, the three cloud component types no longer declare them, and `k8s` /
+  `oss` never had one — so the fallback would be undone on the next page load
+  while looking like protection. The cutover is schema v13 as a whole, so the
+  gate sits at the build, where the artifact is produced.
+
 ## Related
 
 - System shape today: [architecture/element-registry.md](../architecture/element-registry.md)

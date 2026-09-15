@@ -3,6 +3,7 @@
 import { PanelKind } from "@/features/diagram/enums";
 import type { ComponentType } from "@/features/diagram/model/component.types";
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
+import { cloudServiceIdWrite } from "@/features/diagram/model/cloud-service-id";
 import { getPanelKindForAwsService } from "@/lib/catalogs/panels";
 import {
   IR_C4_SEMANTIC_TYPES,
@@ -88,6 +89,6 @@ export function mapNodeToComponent(
   }
   return {
     type: leafComponentType(semanticType),
-    ...(awsService !== undefined ? { cloudServiceId: awsService } : {}),
+    ...cloudServiceIdWrite(awsService),
   };
 }

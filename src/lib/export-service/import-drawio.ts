@@ -7,6 +7,7 @@ import type {
   UnknownComponent,
 } from "@/features/diagram";
 import { COMPONENT_TYPE_UNKNOWN, EdgeStyle, PanelKind, generateId } from "@/features/diagram";
+import { cloudServiceIdWrite } from "@/features/diagram/model/cloud-service-id";
 import {
   AWS_CATEGORY_ID_GENERAL,
   isAwsType,
@@ -520,7 +521,7 @@ export function parseDrawioXml(
         description: "",
         parentId,
         type: resolveAwsCategoryType(awsService),
-        ...(awsService ? { cloudServiceId: awsService } : {}),
+        ...cloudServiceIdWrite(awsService),
       };
       components.push(awsComponent);
       layouts.push({
@@ -594,7 +595,7 @@ export function parseDrawioXml(
           description: "",
           parentId,
           type: resolveAwsCategoryType(conversion.awsService),
-          ...(conversion.awsService ? { cloudServiceId: conversion.awsService } : {}),
+          ...cloudServiceIdWrite(conversion.awsService),
         };
         components.push(awsComponent);
         layouts.push({

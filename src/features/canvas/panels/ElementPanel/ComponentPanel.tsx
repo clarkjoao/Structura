@@ -15,7 +15,10 @@ import type {
   FlowNodeShape,
   ServiceDefinition,
 } from "@/features/diagram";
-import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import {
+  cloudServiceIdClearingPatch,
+  resolveCloudServiceId,
+} from "@/features/diagram/model/cloud-service-id";
 import {
   isPanelComponent,
   isNoteComponent,
@@ -338,7 +341,9 @@ const ComponentPanel = ({
                       if (!nextProvider) setCloudService("");
                       updateComponent(component.id, {
                         type: nextType,
-                        cloudServiceId: nextProvider && cloudService ? cloudService : undefined,
+                        ...cloudServiceIdClearingPatch(
+                          nextProvider ? cloudService : undefined,
+                        ),
                       } as unknown as ComponentPatch);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -384,7 +389,7 @@ const ComponentPanel = ({
                           name.startsWith(i18n.t("common.defaultNamePrefix")) ||
                           name === component.name);
                       updateComponent(component.id, {
-                        cloudServiceId: nextService || undefined,
+                        ...cloudServiceIdClearingPatch(nextService),
                         ...(shouldRename && serviceEntry ? { name: serviceEntry.name } : {}),
                       } as unknown as ComponentPatch);
                       if (shouldRename && serviceEntry) setName(serviceEntry.name);

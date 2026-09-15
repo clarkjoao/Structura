@@ -6,7 +6,10 @@ import {
 } from "@/features/canvas/nodes/CardNode/buildCardNodeData";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isGcpComponent } from "@/features/diagram/model/component.guards";
-import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import {
+  cloudServiceIdWrite,
+  resolveCloudServiceId,
+} from "@/features/diagram/model/cloud-service-id";
 import {
   GCP_CATEGORIES,
   GCP_SERVICE_MAP,
@@ -113,7 +116,7 @@ export const gcpFamily: CloudFamilyDefinition = {
     return {
       ...base,
       type: categoryId,
-      cloudServiceId: serviceId,
+      ...cloudServiceIdWrite(serviceId),
     };
   },
 };

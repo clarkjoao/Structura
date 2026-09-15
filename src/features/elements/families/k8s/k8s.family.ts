@@ -5,7 +5,10 @@ import {
   buildCardNodeStyle,
 } from "@/features/canvas/nodes/CardNode/buildCardNodeData";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
-import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import {
+  cloudServiceIdWrite,
+  resolveCloudServiceId,
+} from "@/features/diagram/model/cloud-service-id";
 import type { Component } from "@/features/diagram/model/component.types";
 import i18n from "@/infrastructure/i18n";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
@@ -105,7 +108,7 @@ export const k8sFamily: CloudFamilyDefinition = {
     return {
       ...base,
       type: asK8sCategoryType(categoryId),
-      cloudServiceId: serviceId,
+      ...cloudServiceIdWrite(serviceId),
     } as Component;
   },
 };

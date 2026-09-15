@@ -3,6 +3,7 @@ import {
   type GeneratedEdgeInput,
   type GeneratedNodeInput,
 } from "@/features/diagram";
+import { cloudServiceIdWrite } from "@/features/diagram/model/cloud-service-id";
 import { layout } from "@/features/canvas/layout/layoutEngine";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
 import type { LayoutBox } from "@/features/canvas/layout/contract";
@@ -67,7 +68,7 @@ export function buildGeneratedGraphInputs(
       name: node.name,
       parentExternalId: node.parentId,
       ...(mapped.panelKind !== undefined ? { panelKind: mapped.panelKind } : {}),
-      ...(mapped.cloudServiceId !== undefined ? { cloudServiceId: mapped.cloudServiceId } : {}),
+      ...cloudServiceIdWrite(mapped.cloudServiceId),
       ...(node.technology !== undefined ? { technology: node.technology } : {}),
       x,
       y,
