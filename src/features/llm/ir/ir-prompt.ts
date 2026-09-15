@@ -1,7 +1,7 @@
 import { AWS_CATEGORY_MAP } from "@/features/cloud/providers/aws/aws.catalog";
 import { buildAwsCatalogCompact } from "../component-catalog";
 import {
-  IR_AWS_SEMANTIC_TYPES,
+  getIrAwsSemanticTypes,
   IR_C4_SEMANTIC_TYPES,
   IR_DIAGRAM_TYPES,
   IR_TIERS,
@@ -111,7 +111,7 @@ function buildSemanticTypeSection(): string {
     ...IR_C4_SEMANTIC_TYPES.map(describe),
     "",
     "AWS:",
-    ...IR_AWS_SEMANTIC_TYPES.map(describe),
+    ...getIrAwsSemanticTypes().map(describe),
   ].join("\n");
 }
 
@@ -171,9 +171,9 @@ const TIER_NOTE: Partial<Record<SemanticType, string>> = {
  */
 function nonTierWords(): string[] {
   const invented = ["monitoring", "observability", "logging", "governance", "identity", "devops"];
-  const fromAwsVocabulary = IR_AWS_SEMANTIC_TYPES.filter(
-    (value) => !isBoundarySemanticType(value as SemanticType),
-  ).map((value) => categoryWord(value));
+  const fromAwsVocabulary = getIrAwsSemanticTypes()
+    .filter((value) => !isBoundarySemanticType(value as SemanticType))
+    .map((value) => categoryWord(value));
   return [...new Set([...fromAwsVocabulary, ...invented])].filter(
     (word) => !(IR_TIERS as readonly string[]).includes(word),
   );
@@ -226,7 +226,7 @@ function buildTierSection(): string {
     ...IR_C4_SEMANTIC_TYPES.map(buildTierLine),
     "",
     "AWS:",
-    ...IR_AWS_SEMANTIC_TYPES.map(buildTierLine),
+    ...getIrAwsSemanticTypes().map(buildTierLine),
   ].join("\n");
 }
 

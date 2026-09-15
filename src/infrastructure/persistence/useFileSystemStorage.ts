@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
-import { useElementPresetStore, type ElementPreset } from "@/features/element-presets";
+import { useElementPresetStore } from "@/features/element-presets";
 import { useIconStore } from "@/features/diagram/store";
 import {
   buildPersistStoragePayload,

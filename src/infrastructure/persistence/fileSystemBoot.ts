@@ -13,7 +13,7 @@ import {
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
-import { useElementPresetStore, type ElementPreset } from "@/features/element-presets";
+import { useElementPresetStore } from "@/features/element-presets";
 import { useIconStore } from "@/features/diagram/store";
 import { mergeElementPresets } from "./merge-element-presets";
 import { readElementPresetsField } from "./read-element-presets-field";

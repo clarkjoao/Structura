@@ -5,14 +5,23 @@
  * validator, layout, and canvas application. It is deliberately independent of
  * Structura's own component model — the translation happens in `ir-to-component`.
  *
- * AWS *category* semanticTypes are derived from the element registry (family
- * `"aws"` only — F5c). Boundary types and C4 remain IR concepts, not registry
- * categories. Expanding the IR vocabulary to GCP/Azure is a product decision,
- * not an automatic consequence of reading from the registry.
+ * AWS *category* semanticTypes are derived from the AWS catalog category list
+ * (same ids the element registry registers for family `"aws"` — F5c). Boundary
+ * types and C4 remain IR concepts, not registry categories. Expanding the IR
+ * vocabulary to GCP/Azure is a product decision, not an automatic consequence
+ * of reading from the registry.
+ *
+ * Category ids come from `AWS_CATEGORIES` (not `allElements()` at module load):
+ * the LLM feature is a separate Vite chunk, and a load-time registry snapshot
+ * there can miss the host's registrations and reject every `aws-compute` IR in
+ * production while vitest still passes.
  */
 
-import { isAwsType, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
-import { allElements } from "@/features/elements/element.registry";
+import {
+  AWS_CATEGORIES,
+  isAwsType,
+  type AwsCategoryId,
+} from "@/features/cloud/providers/aws/aws.catalog";
 
 export const IR_DIAGRAM_TYPES = [
   "c4-context",
@@ -48,33 +57,29 @@ export const IR_BOUNDARY_SEMANTIC_TYPES = [
 export type BoundarySemanticType = (typeof IR_BOUNDARY_SEMANTIC_TYPES)[number];
 
 /**
- * Registered AWS category ids, in registry order.
+ * AWS category ids that are also IR semanticTypes.
  *
- * The prompt hands the model every service id for these categories, so a
- * category with no semanticType here is a trap — locked by `ir.types.test.ts`.
- * Filtered to `family === "aws"` so GCP/Azure never enter the IR vocabulary.
+ * Sourced from `AWS_CATEGORIES` (static catalog) so the LLM chunk does not
+ * depend on element-registry bootstrap timing. `ir.types.test.ts` locks this
+ * list to the registered AWS family so the two cannot drift.
  */
 export function irAwsCategoryIdsFromRegistry(): readonly AwsCategoryId[] {
-  return allElements()
-    .filter((element) => element.family === "aws")
-    .map((element) => element.id)
-    .filter(isAwsType);
+  return AWS_CATEGORIES.map((category) => category.id).filter(isAwsType);
 }
 
 /**
- * Boundary types first, then one per registered AWS category.
+ * Boundary types first, then one per AWS catalog category.
  *
- * Built at module load (vitest/`main` import `elements/bootstrap` first).
+ * Built via `irAwsCategoryIdsFromRegistry()` on each call (cheap) so callers
+ * never hold a stale allowlist across hot reloads in tests.
  */
-export const IR_AWS_SEMANTIC_TYPES: readonly (BoundarySemanticType | AwsCategoryId)[] = [
-  ...IR_BOUNDARY_SEMANTIC_TYPES,
-  ...irAwsCategoryIdsFromRegistry(),
-];
+export function getIrAwsSemanticTypes(): readonly (BoundarySemanticType | AwsCategoryId)[] {
+  return [...IR_BOUNDARY_SEMANTIC_TYPES, ...irAwsCategoryIdsFromRegistry()];
+}
 
-export const IR_SEMANTIC_TYPES: readonly SemanticType[] = [
-  ...IR_C4_SEMANTIC_TYPES,
-  ...IR_AWS_SEMANTIC_TYPES,
-];
+export function getIrSemanticTypes(): readonly SemanticType[] {
+  return [...IR_C4_SEMANTIC_TYPES, ...getIrAwsSemanticTypes()];
+}
 
 export type SemanticType =
   (typeof IR_C4_SEMANTIC_TYPES)[number] | BoundarySemanticType | AwsCategoryId;
@@ -137,7 +142,7 @@ export function isIRDiagramType(value: unknown): value is IRDiagramType {
 }
 
 export function isSemanticType(value: unknown): value is SemanticType {
-  return typeof value === "string" && (IR_SEMANTIC_TYPES as readonly string[]).includes(value);
+  return typeof value === "string" && (getIrSemanticTypes() as readonly string[]).includes(value);
 }
 
 export function isTier(value: unknown): value is Tier {

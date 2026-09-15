@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AWS_CATEGORIES, AWS_SERVICE_MAP } from "@/features/cloud/providers/aws/aws.catalog";
 import { buildIRSystemPrompt } from "./ir-prompt";
 import { parseAndValidateIR } from "./ir-validator";
-import { IR_SEMANTIC_TYPES, IR_TIERS, TIER_BY_SEMANTIC_TYPE } from "./ir.types";
+import { getIrSemanticTypes, IR_TIERS, TIER_BY_SEMANTIC_TYPE } from "./ir.types";
 
 const prompt = buildIRSystemPrompt("en");
 
@@ -13,7 +13,7 @@ function exampleDocuments(): string[] {
 
 describe("buildIRSystemPrompt", () => {
   it("documents every semanticType and tier the validator accepts", () => {
-    for (const semanticType of IR_SEMANTIC_TYPES) {
+    for (const semanticType of getIrSemanticTypes()) {
       expect(prompt, `semanticType ${semanticType}`).toContain(`"${semanticType}"`);
     }
     for (const tier of IR_TIERS) {
@@ -22,7 +22,7 @@ describe("buildIRSystemPrompt", () => {
   });
 
   it("gives every semanticType a default tier, matching the one the validator coerces to", () => {
-    for (const semanticType of IR_SEMANTIC_TYPES) {
+    for (const semanticType of getIrSemanticTypes()) {
       const line = `"${semanticType}" → "${TIER_BY_SEMANTIC_TYPE[semanticType]}"`;
       expect(prompt, `default tier for ${semanticType}`).toContain(line);
     }

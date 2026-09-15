@@ -179,12 +179,16 @@ function visitWorkspace(errors: string[]): void {
 
 function openChat(): void {
   cy.get('button[aria-label="Open chat assistant"]', { timeout: 20000 }).click();
-  cy.contains("h3", "Diagram Assistant", { timeout: 20000 }).should("exist");
+  // Panel chrome — do not assert the h3 title string: ChatHeader uses
+  // llmChat.headerSubtitle ("Diagram assistant") or the thread title, while
+  // llmChat.title ("Diagram Assistant") only appears in the empty-state h4.
+  cy.get('button[aria-label="Close chat assistant"]', { timeout: 20000 }).should("exist");
+  cy.get('textarea[aria-label="Type your message..."]', { timeout: 20000 }).should("be.visible");
 }
 
 function sendPrompt(text: string): void {
-  cy.get('div[contenteditable="true"]').first().click().type(text, { delay: 0 });
-  cy.contains("button", "Send").click();
+  cy.get('textarea[aria-label="Type your message..."]').first().click().type(text, { delay: 0 });
+  cy.get('button[aria-label="Send"]').click();
 }
 
 /** Bounding box of the node whose rendered text contains `label`. */
@@ -364,7 +368,10 @@ describe("IR generation — accepted elements survive a batched delete + single 
       NESTED_IR.nodes.length,
     );
     cy.contains("button", "Accept").click();
-    cy.contains("button", "Accept").should("be.disabled");
+    // SuggestionCard only mounts while status === "pending"; after accept the
+    // card unmounts (no disabled Accept, no "Accepted" chip in this panel).
+    cy.contains("button", "Accept").should("not.exist");
+    cy.get(".react-flow__node").should("have.length.gte", NESTED_IR.nodes.length);
   });
 
   it("restores every deleted node with a single undo after a multi-select delete", () => {
@@ -419,7 +426,7 @@ describe("IR generation — invalid IR is reported, not crashed on", () => {
 
   it("leaves the canvas empty and the app usable", () => {
     cy.get(".react-flow__node").should("have.length", 0);
-    cy.get('div[contenteditable="true"]').first().should("not.be.disabled");
+    cy.get('textarea[aria-label="Type your message..."]').first().should("not.be.disabled");
   });
 
   it("logged no console errors", () => {
