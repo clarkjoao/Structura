@@ -42,8 +42,11 @@ export type RegisteredElementTypeId =
   | "unknown";
 
 /**
- * Which vocabulary an element belongs to. Only `"structural"` is used while F1
- * is the whole of the registry; cloud families arrive with F4.
+ * Which vocabulary an element belongs to.
+ *
+ * `"structural"` covers the hand-written shape-owning elements (F1–F3d).
+ * `"gcp" | "aws" | "azure"` are produced by `CloudFamilyDefinition` (F4+);
+ * `"c4"` stays on the catch-all until its own slice.
  */
 export type ElementFamilyId = "structural" | "c4" | "aws" | "gcp" | "azure";
 
