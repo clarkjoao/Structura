@@ -24,7 +24,12 @@ import {
   saveConnections,
   saveThreadsForDiagram,
 } from "./llm-storage";
-import { applyDiagramPatchAction, computeGridPositions, resolveRef } from "./apply-diagram-patch";
+import {
+  applyDiagramPatchAction,
+  computeGridPositions,
+  resolveRef,
+  runCatalogReadActions,
+} from "./apply-diagram-patch";
 import {
   applyIRToDiagram,
   buildIRSystemPrompt,
@@ -638,6 +643,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
         const nextSuggestions = [...get().pendingSuggestions];
         const nextPreviews = [...get().pendingPreviews];
+        const catalogToolResults: unknown[] = [];
         if (parsedResponse.kind === "patch" && parsedResponse.patch) {
           const suggestion: PendingSuggestion = {
             id: crypto.randomUUID(),
@@ -654,18 +660,25 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             (action) => action.type === "ADD_EDGE",
           );
 
+          // F8b: catalog reads first so search_elements hits can gate ADD_NODE
+          // in the same turn (no multi-turn model loop required).
+          const { catalogToolResults: earlyCatalogResults, confirmedCatalogHits } =
+            runCatalogReadActions(parsedResponse.patch.actions);
+          catalogToolResults.push(...earlyCatalogResults);
+
           const previewNodeIds: string[] = [];
           const previewEdgeIds: string[] = [];
 
           const nameToIdMap = new Map<string, string>();
           const nodesMissingPosition: string[] = [];
+          const addNodeOpts = confirmedCatalogHits != null ? { confirmedCatalogHits } : undefined;
 
           // Pass 1: Create root nodes (no parentId or null parentId)
           for (const action of addNodeActions) {
             const hasParentRef = action.payload.parentId?.startsWith("@ref:");
             if (hasParentRef) continue;
 
-            const applied = applyDiagramPatchAction(action, nameToIdMap);
+            const applied = applyDiagramPatchAction(action, nameToIdMap, addNodeOpts);
             if (applied.addedNodeId) {
               previewNodeIds.push(applied.addedNodeId);
               const name = action.payload.name?.trim();
@@ -683,7 +696,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             const hasParentRef = action.payload.parentId?.startsWith("@ref:");
             if (!hasParentRef) continue;
 
-            const applied = applyDiagramPatchAction(action, nameToIdMap);
+            const applied = applyDiagramPatchAction(action, nameToIdMap, addNodeOpts);
             if (applied.addedNodeId) {
               previewNodeIds.push(applied.addedNodeId);
               const name = action.payload.name?.trim();
@@ -744,19 +757,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             nodeIds: previewNodeIds,
             edgeIds: previewEdgeIds,
           });
-        }
-
-        const catalogToolResults: unknown[] = [];
-        if (parsedResponse.kind === "patch" && parsedResponse.patch) {
-          for (const action of parsedResponse.patch.actions) {
-            if (action.type !== "LIST_ELEMENT_FAMILIES" && action.type !== "SEARCH_ELEMENTS") {
-              continue;
-            }
-            const applied = applyDiagramPatchAction(action);
-            if (applied.toolResult) {
-              catalogToolResults.push(applied.toolResult);
-            }
-          }
         }
 
         const locale = getResolvedAppLanguage();
