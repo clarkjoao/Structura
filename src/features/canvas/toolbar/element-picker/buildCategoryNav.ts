@@ -1,6 +1,16 @@
 import type { LucideIcon } from "lucide-react";
-import { Cloud, GitFork, LayoutGrid, LayoutTemplate, Layers, Server, Bookmark } from "lucide-react";
+import {
+  Bookmark,
+  Cloud,
+  GitFork,
+  Layers,
+  LayoutGrid,
+  LayoutTemplate,
+  Server,
+  Shapes,
+} from "lucide-react";
 import { ElementCategory, type PickerCategoryId } from "../../enums";
+import { allElements } from "@/features/elements/element.registry";
 import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
 import i18n from "@/infrastructure/i18n";
 
@@ -9,6 +19,57 @@ export interface CategoryNavItem {
   label: string;
   icon: LucideIcon;
   count: number;
+}
+
+/**
+ * Palette categories that already have a tab: the fixed ones this file writes
+ * out, plus one per catalog family.
+ */
+function tabbedCategoryIds(): Set<string> {
+  return new Set<string>([
+    ElementCategory.All,
+    ElementCategory.C4,
+    ElementCategory.Canvas,
+    ElementCategory.Registry,
+    ElementCategory.NodeTemplate,
+    ElementCategory.Flowchart,
+    ...allCloudFamilies().map((family) => family.paletteCategoryId),
+  ]);
+}
+
+/**
+ * A tab for every other `palette.categoryId` the registry holds.
+ *
+ * Without this the picker only opened for catalog families, so a vocabulary
+ * registered through `registerElement` — a BPMN or UML set, say — rendered on
+ * the canvas with no way to insert it. The body for these tabs is the generic
+ * registry grid in `ElementPickerModal`.
+ *
+ * Labels follow the same `elements.families.<id>.label` convention the LLM
+ * catalog uses, falling back to the id so a new category is unlabelled rather
+ * than showing a raw i18n key.
+ */
+function registryCategoryItems(counts: Record<string, number>): CategoryNavItem[] {
+  const tabbed = tabbedCategoryIds();
+  const seen = new Set<string>();
+  const items: CategoryNavItem[] = [];
+
+  for (const element of allElements()) {
+    const id = element.palette.categoryId;
+    if (tabbed.has(id) || seen.has(id)) continue;
+    seen.add(id);
+
+    const key = `elements.families.${id}.label`;
+    const label = i18n.t(key);
+    items.push({
+      id,
+      label: label === key ? id : label,
+      icon: Shapes,
+      count: counts[id] ?? 0,
+    });
+  }
+
+  return items;
 }
 
 export function buildCategoryNavItems(
@@ -30,6 +91,8 @@ export function buildCategoryNavItems(
     icon: Cloud,
     count: counts.byFamily[family.paletteCategoryId] ?? 0,
   }));
+
+  const otherRegistryItems = registryCategoryItems(counts.byFamily);
 
   return [
     {
@@ -69,5 +132,6 @@ export function buildCategoryNavItems(
       icon: GitFork,
       count: counts.flowchart,
     },
+    ...otherRegistryItems,
   ];
 }

@@ -14,23 +14,26 @@ import type { ComponentType } from "./component.types";
 const PLUGIN_COMPONENT_TYPE_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
 
 /**
- * Recover a cloud category that no longer exists as a concrete id.
+ * Recover a family category that no longer exists as a concrete id.
  *
  * Scope is deliberately narrow (F9): if the persisted string still carries a
- * recognised provider prefix (`aws-` / `gcp-` / `azure-`) but the specific
- * category is gone, land on that family's `*-general` bucket when it is
- * registered. No fuzzy matching beyond the prefix.
+ * `<family>-` prefix whose family registered a `<family>-general` bucket, land
+ * there. No fuzzy matching beyond the prefix.
+ *
+ * The prefixes are not listed. They used to be — `aws-` / `gcp-` / `azure-`,
+ * hardcoded — which meant a family registered through `registerCloudFamily`
+ * still needed an edit here to get recovery, contradicting the "no per-family
+ * edit" promise. Asking the registry for `<prefix>-general` is the same
+ * question without the list: a family has that bucket only if it registered
+ * one, so `k8s` and `oss` (which have none) correctly fall through to
+ * `"unknown"`, and a future family gets recovery for free.
  */
 function recoverCloudCategoryPrefix(value: string): ComponentType | undefined {
-  const general =
-    value.startsWith("aws-") && value !== "aws-general"
-      ? "aws-general"
-      : value.startsWith("gcp-") && value !== "gcp-general"
-        ? "gcp-general"
-        : value.startsWith("azure-") && value !== "azure-general"
-          ? "azure-general"
-          : undefined;
-  if (general === undefined) return undefined;
+  const separator = value.indexOf("-");
+  if (separator <= 0) return undefined;
+
+  const general = `${value.slice(0, separator)}-general`;
+  if (value === general) return undefined;
   return hasElement(general) ? (general as ComponentType) : undefined;
 }
 

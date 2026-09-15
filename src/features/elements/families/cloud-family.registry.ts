@@ -4,7 +4,7 @@ import type {
   CloudService,
 } from "@/features/cloud/model/cloud.types";
 import { cloudRegistry } from "@/features/cloud/registry/cloud.registry";
-import { registerElement, hasElement, unregisterElement } from "../element.registry";
+import { registerElement, hasElement, unregisterElement, allElements } from "../element.registry";
 import type { CloudFamilyDefinition } from "./cloud-family.types";
 import { buildCloudFamilyDescriptors } from "./build-cloud-family-descriptors";
 import { forgetFamilyIconResolver } from "./family-icon-resolvers";
@@ -60,6 +60,25 @@ export function unregisterCloudFamily(familyId: CloudFamilyId): void {
 
 export function allCloudFamilies(): readonly CloudFamilyDefinition[] {
   return [...families.values()];
+}
+
+/**
+ * Family ids that are registered but are **not** `registerCloudFamily`
+ * catalogs — `structural`, `c4`, and any vocabulary a future descriptor set
+ * declares. In registry order.
+ *
+ * Consumers used to write `"structural"` and `"c4"` out as literals, which made
+ * anything else invisible: it rendered on the canvas but had no palette tab, no
+ * entry in the LLM family list, and no `add_node` validity. Ask here instead.
+ */
+export function nonCatalogFamilyIds(): string[] {
+  const catalogIds = new Set(families.keys());
+  const seen: string[] = [];
+  for (const element of allElements()) {
+    if (catalogIds.has(element.family) || seen.includes(element.family)) continue;
+    seen.push(element.family);
+  }
+  return seen;
 }
 
 export function getCloudFamily(familyId: string): CloudFamilyDefinition | undefined {

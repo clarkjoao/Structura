@@ -1122,6 +1122,14 @@
           "description": "Distributed event-streaming platform for high-throughput durable topics."
         }
       }
+    },
+    "families": {
+      "structural": {
+        "label": "Structural & Canvas"
+      },
+      "c4": {
+        "label": "C4 Model"
+      }
     }
   },
   "flowchart": {

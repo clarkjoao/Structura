@@ -189,9 +189,7 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
   // Get first few node names for preview
   const nodePreview = suggestion.patch.actions
     .map((action, actionIndex) =>
-      action.type === "ADD_NODE"
-        ? { actionIndex, name: action.payload.name }
-        : null,
+      action.type === "ADD_NODE" ? { actionIndex, name: action.payload.name } : null,
     )
     .filter((entry): entry is { actionIndex: number; name: string } => entry !== null)
     .slice(0, 3);

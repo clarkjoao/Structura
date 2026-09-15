@@ -1122,6 +1122,14 @@
           "description": "Plataforma distribuída de streaming de eventos para tópicos duráveis de alta vazão."
         }
       }
+    },
+    "families": {
+      "structural": {
+        "label": "Estruturais e Canvas"
+      },
+      "c4": {
+        "label": "Modelo C4"
+      }
     }
   },
   "flowchart": {

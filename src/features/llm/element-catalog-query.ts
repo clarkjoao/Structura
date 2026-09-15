@@ -1,5 +1,8 @@
 import { allElements, getElement } from "@/features/elements/element.registry";
-import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
+import {
+  allCloudFamilies,
+  nonCatalogFamilyIds,
+} from "@/features/elements/families/cloud-family.registry";
 import type { Component } from "@/features/diagram/model/component.types";
 import i18n from "@/infrastructure/i18n";
 
@@ -57,30 +60,40 @@ export function computeDiagramFamilyMix(
 }
 
 /**
+ * Display label for a family that is not catalog-shaped.
+ *
+ * Catalog families carry their own `labelKey`; `structural`, `c4` and anything
+ * a future vocabulary registers do not, so the key is a convention. i18next
+ * returns the key itself when there is no entry, which would put
+ * `elements.families.bpmn.label` in front of the model — fall back to the
+ * family id instead, so a new family is merely unlabelled, never broken.
+ */
+function familyLabel(familyId: string): string {
+  const key = `elements.families.${familyId}.label`;
+  const translated = t(key);
+  return translated === key ? familyId : translated;
+}
+
+/**
  * Families + categories for the hierarchical LLM catalog (decision 10).
  *
  * Services are intentionally omitted — callers must use `searchElements`.
+ *
+ * Both halves are derived. `"structural"` and `"c4"` used to be written out
+ * here as literals with English labels, so a family registered through
+ * `registerElement` with any other id — a BPMN or UML vocabulary, say — was
+ * invisible to the model: it rendered on the canvas and the assistant could
+ * not name it.
  */
 export function listElementFamilies(
   components: Record<string, Component> = {},
 ): ListElementFamiliesResult {
-  const structural = allElements().filter((element) => element.family === "structural");
-  const c4 = allElements().filter((element) => element.family === "c4");
-
-  const families: ElementFamilySummary[] = [
-    {
-      id: "structural",
-      label: "Structural & Canvas",
-      elementCount: structural.length,
-      categories: [],
-    },
-    {
-      id: "c4",
-      label: "C4 Model",
-      elementCount: c4.length,
-      categories: [],
-    },
-  ];
+  const families: ElementFamilySummary[] = nonCatalogFamilyIds().map((familyId) => ({
+    id: familyId,
+    label: familyLabel(familyId),
+    elementCount: allElements().filter((element) => element.family === familyId).length,
+    categories: [],
+  }));
 
   for (const family of allCloudFamilies()) {
     const categories = family.categories.map((category) => ({
@@ -126,7 +139,7 @@ export function searchElements(params: {
     return { results: [], truncated: false };
   }
 
-  const pushStructuralLike = (familyFilter: "structural" | "c4") => {
+  const pushNonCatalogFamily = (familyFilter: string) => {
     if (params.familyId && params.familyId !== familyFilter) return;
     if (params.categoryId) return;
     for (const element of allElements().filter((entry) => entry.family === familyFilter)) {
@@ -145,8 +158,11 @@ export function searchElements(params: {
     }
   };
 
-  pushStructuralLike("structural");
-  pushStructuralLike("c4");
+  // Every non-catalog family, not just the two that existed when this was
+  // written — a new vocabulary is searchable the moment it registers.
+  for (const familyId of nonCatalogFamilyIds()) {
+    pushNonCatalogFamily(familyId);
+  }
 
   for (const family of allCloudFamilies()) {
     if (params.familyId && params.familyId !== family.id) continue;

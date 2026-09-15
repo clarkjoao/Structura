@@ -1,5 +1,9 @@
 import { allElements } from "@/features/elements/element.registry";
-import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
+import type { ElementDescriptor } from "@/features/elements/element.types";
+import {
+  allCloudFamilies,
+  nonCatalogFamilyIds,
+} from "@/features/elements/families/cloud-family.registry";
 import i18n from "@/infrastructure/i18n";
 import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
 
@@ -31,31 +35,33 @@ export const C4_TYPES: ComponentTypeDefinition[] = [];
  * shows. Resolved in English because the catalog is part of the system prompt,
  * whatever locale the UI is in.
  */
+function toTypeDefinition(element: ElementDescriptor): ComponentTypeDefinition {
+  return {
+    nodeType: element.id,
+    displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+    description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+    requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : undefined,
+    example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
+  };
+}
+
+/** Every element of one non-catalog family, as prompt entries. */
+export function familyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
+  return allElements()
+    .filter((element) => element.family === familyId)
+    .map(toTypeDefinition);
+}
+
 export function registeredElementTypes(): ComponentTypeDefinition[] {
   // Cloud families publish a compact catalog of their own; listing every
   // category here would duplicate them under "Structural & Canvas" without
-  // service ids. C4 has its own section below (`c4RegisteredTypes`).
-  return allElements()
-    .filter((element) => element.family === "structural")
-    .map((element) => ({
-      nodeType: element.id,
-      displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
-      description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
-      requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : undefined,
-      example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
-    }));
+  // service ids.
+  return familyRegisteredTypes("structural");
 }
 
 /** C4 Model types from the registry (F9) — replaces the hand-curated `C4_TYPES` list. */
 export function c4RegisteredTypes(): ComponentTypeDefinition[] {
-  return allElements()
-    .filter((element) => element.family === "c4")
-    .map((element) => ({
-      nodeType: element.id,
-      displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
-      description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
-      example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
-    }));
+  return familyRegisteredTypes("c4");
 }
 
 /** Cloud family categories registered on the element registry, as catalog entries. */
@@ -113,8 +119,11 @@ export function azureRegisteredTypes(): ComponentTypeDefinition[] {
 export function allComponentTypes(): ComponentTypeDefinition[] {
   return [
     ...STRUCTURAL_TYPES,
-    ...registeredElementTypes(),
-    ...c4RegisteredTypes(),
+    // Every non-catalog family, not only `structural` and `c4`. Filtering to
+    // those two by name made `isValidNodeType` reject a vocabulary registered
+    // through `registerElement` under any other family id, and kept it out of
+    // the system prompt entirely.
+    ...nonCatalogFamilyIds().flatMap(familyRegisteredTypes),
     ...allCloudFamilies().flatMap((family) => cloudFamilyRegisteredTypes(family.id)),
   ];
 }
@@ -161,6 +170,18 @@ export function buildComponentTypeCatalog(): string {
   sections.push("### C4 Architecture Types");
   for (const definition of c4RegisteredTypes()) {
     sections.push(formatTypeDef(definition));
+  }
+
+  // Any other vocabulary that registered itself, under its own heading.
+  for (const familyId of nonCatalogFamilyIds()) {
+    if (familyId === "structural" || familyId === "c4") continue;
+    const definitions = familyRegisteredTypes(familyId);
+    if (definitions.length === 0) continue;
+    sections.push("");
+    sections.push(`### ${i18n.t(`elements.families.${familyId}.label`, { lng: CATALOG_LOCALE })}`);
+    for (const definition of definitions) {
+      sections.push(formatTypeDef(definition));
+    }
   }
 
   sections.push("");

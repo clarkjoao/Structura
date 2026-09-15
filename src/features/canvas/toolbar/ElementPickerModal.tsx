@@ -26,7 +26,10 @@ import {
   buildCanvasPickerOptions,
   buildFlowchartPickerOptions,
 } from "./element-picker/buildPickerOptions";
-import { paletteEntriesForCategory } from "@/features/elements/element.palette";
+import {
+  paletteEntriesForCategory,
+  type ElementPaletteEntry,
+} from "@/features/elements/element.palette";
 import {
   filterC4ByQuery,
   filterCanvasByQuery,
@@ -237,6 +240,23 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
     const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
     const comp = addComponent(type, name, null, getInsertPos(), undefined, panelKind);
+    onInsert?.(comp.id);
+    onClose();
+  };
+
+  /**
+   * Insert a palette entry straight from the registry, honouring whatever
+   * `createOptions` it declares. The fixed tabs each know which option their
+   * elements use; a tab built from the registry cannot assume.
+   */
+  const handleAddPaletteEntry = (entry: ElementPaletteEntry) => {
+    const { panelKind, serviceId } = entry.createOptions;
+    trackUsage(
+      serviceId ? `${entry.type}:${serviceId}` : getUsageKeyForType(entry.type, panelKind),
+    );
+    const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
+    const name = getDefaultNameForNewComponent(entry.type, entry.label, panelDefaultName);
+    const comp = addComponent(entry.type, name, null, getInsertPos(), serviceId, panelKind);
     onInsert?.(comp.id);
     onClose();
   };
@@ -480,11 +500,43 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             ))}
           </div>
         );
-      default:
+      default: {
         if (isRegisteredCloudFamily(activeCategory)) {
           return renderCloudFamilyBody(activeCategory);
         }
-        return null;
+
+        // Any other registered palette category — a vocabulary that is neither
+        // C4, canvas, flowchart nor a catalog family. It gets the same grid the
+        // fixed tabs use, built straight from the registry, so registering the
+        // elements is all a new family has to do to become insertable.
+        const entries = paletteEntriesForCategory(activeCategory);
+        if (entries.length === 0) return null;
+
+        return (
+          <div className="grid grid-cols-4 gap-3">
+            {entries.map((entry) => (
+              <button
+                key={entry.key}
+                type="button"
+                onClick={() => handleAddPaletteEntry(entry)}
+                className={PICKER_CARD_CLASS}
+              >
+                {entry.familyIcon ? (
+                  <CloudIcon
+                    providerId={entry.familyIcon.familyId}
+                    iconName={entry.familyIcon.iconName}
+                    size={40}
+                    className="text-muted-foreground"
+                  />
+                ) : (
+                  <entry.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
+                )}
+                <span className="mt-2 text-xs text-foreground">{entry.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+      }
     }
   };
 
