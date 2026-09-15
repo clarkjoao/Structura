@@ -29,7 +29,7 @@ const BOUNDARY_PANEL_KIND: Record<BoundarySemanticType, PanelKind> = {
  *
  * AWS category semanticTypes map to themselves via `isAwsType`: they are the
  * same ids the element registry owns (F5b), and the canvas picks the icon from
- * `awsService`.
+ * `cloudServiceId` (mapped from IR `awsService` at apply time).
  */
 const C4_LEAF_COMPONENT_TYPE: Record<(typeof IR_C4_SEMANTIC_TYPES)[number], ComponentType> = {
   person: "person",
@@ -51,8 +51,8 @@ function leafComponentType(
 export interface MappedComponentType {
   type: ComponentType;
   panelKind?: PanelKind;
-  /** Passed through to the component so the canvas can resolve its icon. */
-  awsService?: string;
+  /** Passed through so the canvas can resolve its icon (`cloudServiceId`). */
+  cloudServiceId?: string;
 }
 
 /**
@@ -77,7 +77,7 @@ function panelKindFor(semanticType: SemanticType, awsService: string | undefined
  * Boundaries become panels because React Flow only nests a node visually when
  * its parent is a panel (see `computeNodeVisibility`) — that is also how a C4
  * system boundary or an AWS VPC is drawn here. Leaf nodes keep their natural
- * type and carry `awsService` so the canvas can pick the service icon.
+ * type and carry `cloudServiceId` (from IR `awsService`) for the service icon.
  */
 export function mapNodeToComponent(
   node: Pick<IRNode, "semanticType" | "awsService" | "isBoundary">,
@@ -88,6 +88,6 @@ export function mapNodeToComponent(
   }
   return {
     type: leafComponentType(semanticType),
-    ...(awsService !== undefined ? { awsService } : {}),
+    ...(awsService !== undefined ? { cloudServiceId: awsService } : {}),
   };
 }

@@ -129,7 +129,8 @@ const ComponentPanel = ({
     isFlowchart ? component.flowShape : "rectangle",
   );
   const cloudProvider = cloudRegistry.forType(type);
-  const cloudServiceInfo = cloudProvider && cloudService ? cloudProvider.getService(cloudService) : null;
+  const cloudServiceInfo =
+    cloudProvider && cloudService ? cloudProvider.getService(cloudService) : null;
   const canCreateLinked =
     isSystemType(component.type) ||
     isContainerType(component.type) ||
@@ -337,9 +338,7 @@ const ComponentPanel = ({
                       if (!nextProvider) setCloudService("");
                       updateComponent(component.id, {
                         type: nextType,
-                        awsService: nextProvider?.id === "aws" && cloudService ? cloudService : undefined,
-                        gcpService: nextProvider?.id === "gcp" && cloudService ? cloudService : undefined,
-                        azureService: nextProvider?.id === "azure" && cloudService ? cloudService : undefined,
+                        cloudServiceId: nextProvider && cloudService ? cloudService : undefined,
                       } as unknown as ComponentPatch);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -385,9 +384,7 @@ const ComponentPanel = ({
                           name.startsWith(i18n.t("common.defaultNamePrefix")) ||
                           name === component.name);
                       updateComponent(component.id, {
-                        awsService: cloudProvider.id === "aws" ? nextService || undefined : undefined,
-                        gcpService: cloudProvider.id === "gcp" ? nextService || undefined : undefined,
-                        azureService: cloudProvider.id === "azure" ? nextService || undefined : undefined,
+                        cloudServiceId: nextService || undefined,
                         ...(shouldRename && serviceEntry ? { name: serviceEntry.name } : {}),
                       } as unknown as ComponentPatch);
                       if (shouldRename && serviceEntry) setName(serviceEntry.name);
@@ -395,11 +392,13 @@ const ComponentPanel = ({
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="">{t("endpointPanel.selectAwsService")}</option>
-                    {cloudProvider.services.filter((s) => s.categoryId === type).map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.name}
-                      </option>
-                    ))}
+                    {cloudProvider.services
+                      .filter((s) => s.categoryId === type)
+                      .map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               )}

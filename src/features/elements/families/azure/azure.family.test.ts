@@ -21,7 +21,7 @@ describe("azure family", () => {
         description: "",
         parentId: null,
         type: "azure-compute",
-        azureService: "functions",
+        cloudServiceId: "functions",
       },
       { id: "n1", parentId: null, x: 0, y: 0, width: 180, height: 80 },
     );
@@ -33,7 +33,7 @@ describe("azure family", () => {
     });
   });
 
-  it("writes azureService from ElementCreateOptions.serviceId", () => {
+  it("writes cloudServiceId from ElementCreateOptions.serviceId", () => {
     const [compute] = azureElements;
     const created = compute.model.createComponent(
       { id: "el-1", name: "Fn", description: "", parentId: null },
@@ -42,7 +42,7 @@ describe("azure family", () => {
 
     expect(created).toMatchObject({
       type: "azure-compute",
-      azureService: "functions",
+      cloudServiceId: "functions",
     });
   });
 });

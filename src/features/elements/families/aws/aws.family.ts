@@ -112,7 +112,7 @@ export const awsFamily: CloudFamilyDefinition = {
   },
 
   defaultSize: { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H },
-  patchableKeys: ["awsService", "technology", "customColor"],
+  patchableKeys: ["cloudServiceId", "technology", "customColor"],
 
   attachService: (base, categoryId, serviceId) => {
     if (!isAwsType(categoryId)) {
@@ -123,7 +123,7 @@ export const awsFamily: CloudFamilyDefinition = {
     return {
       ...base,
       type: categoryId,
-      awsService: serviceId,
+      cloudServiceId: serviceId,
     };
   },
 };

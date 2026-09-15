@@ -92,7 +92,7 @@ function buildCatalogPatternComponentAndLayout(
     description: raw.description ?? "",
     parentId: null,
     technology: raw.technology,
-    awsService: raw.awsService,
+    cloudServiceId: raw.cloudServiceId ?? raw.awsService,
   } as Component;
 
   const x = raw.x !== undefined ? position.x + raw.x : position.x + index * gridX;

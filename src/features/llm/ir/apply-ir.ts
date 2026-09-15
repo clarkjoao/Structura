@@ -67,7 +67,7 @@ export function buildGeneratedGraphInputs(
       name: node.name,
       parentExternalId: node.parentId,
       ...(mapped.panelKind !== undefined ? { panelKind: mapped.panelKind } : {}),
-      ...(mapped.awsService !== undefined ? { awsService: mapped.awsService } : {}),
+      ...(mapped.cloudServiceId !== undefined ? { cloudServiceId: mapped.cloudServiceId } : {}),
       ...(node.technology !== undefined ? { technology: node.technology } : {}),
       x,
       y,

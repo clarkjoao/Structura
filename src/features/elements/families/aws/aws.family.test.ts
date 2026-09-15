@@ -21,7 +21,7 @@ describe("aws family", () => {
         description: "",
         parentId: null,
         type: "aws-compute",
-        awsService: "lambda",
+        cloudServiceId: "lambda",
       },
       { id: "n1", parentId: null, x: 0, y: 0, width: 180, height: 80 },
     );
@@ -42,7 +42,7 @@ describe("aws family", () => {
         description: "",
         parentId: null,
         type: "aws-ml",
-        awsService: "q",
+        cloudServiceId: "q",
       },
       { id: "n1", parentId: null, x: 0, y: 0, width: 180, height: 80 },
     );
@@ -50,7 +50,7 @@ describe("aws family", () => {
     expect(node).toMatchObject({ kind: "aws", awsIcon: "general" });
   });
 
-  it("writes awsService from ElementCreateOptions.serviceId", () => {
+  it("writes cloudServiceId from ElementCreateOptions.serviceId", () => {
     const compute = awsElements.find((element) => element.id === "aws-compute")!;
     const created = compute.model.createComponent(
       { id: "el-1", name: "Fn", description: "", parentId: null },
@@ -59,7 +59,7 @@ describe("aws family", () => {
 
     expect(created).toMatchObject({
       type: "aws-compute",
-      awsService: "lambda",
+      cloudServiceId: "lambda",
     });
   });
 });

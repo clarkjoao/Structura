@@ -83,7 +83,7 @@ export const azureFamily: CloudFamilyDefinition = {
   },
 
   defaultSize: { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H },
-  patchableKeys: ["azureService", "technology", "customColor"],
+  patchableKeys: ["cloudServiceId", "technology", "customColor"],
 
   attachService: (base, categoryId, serviceId) => {
     if (!isAzureType(categoryId)) {
@@ -94,7 +94,7 @@ export const azureFamily: CloudFamilyDefinition = {
     return {
       ...base,
       type: categoryId,
-      azureService: serviceId,
+      cloudServiceId: serviceId,
     };
   },
 };

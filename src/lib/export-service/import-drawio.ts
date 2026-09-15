@@ -520,7 +520,7 @@ export function parseDrawioXml(
         description: "",
         parentId,
         type: resolveAwsCategoryType(awsService),
-        ...(awsService ? { awsService } : {}),
+        ...(awsService ? { cloudServiceId: awsService } : {}),
       };
       components.push(awsComponent);
       layouts.push({
@@ -594,7 +594,7 @@ export function parseDrawioXml(
           description: "",
           parentId,
           type: resolveAwsCategoryType(conversion.awsService),
-          ...(conversion.awsService ? { awsService: conversion.awsService } : {}),
+          ...(conversion.awsService ? { cloudServiceId: conversion.awsService } : {}),
         };
         components.push(awsComponent);
         layouts.push({

@@ -31,7 +31,7 @@ const ALLOWED_COMPONENT_PATCH_KEYS = new Set<string>([
   "collapsedWidth",
   "collapsedHeight",
   "swimlane",
-  "awsService",
+  "cloudServiceId",
   "serviceName",
   "basePath",
   "protocol",

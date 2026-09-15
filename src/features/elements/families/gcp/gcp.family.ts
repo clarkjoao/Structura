@@ -101,7 +101,7 @@ export const gcpFamily: CloudFamilyDefinition = {
   },
 
   defaultSize: { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H },
-  patchableKeys: ["gcpService", "technology", "customColor"],
+  patchableKeys: ["cloudServiceId", "technology", "customColor"],
 
   attachService: (base, categoryId, serviceId) => {
     if (!isGcpType(categoryId)) {
@@ -112,7 +112,7 @@ export const gcpFamily: CloudFamilyDefinition = {
     return {
       ...base,
       type: categoryId,
-      gcpService: serviceId,
+      cloudServiceId: serviceId,
     };
   },
 };

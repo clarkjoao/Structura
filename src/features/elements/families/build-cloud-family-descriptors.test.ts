@@ -69,14 +69,14 @@ function makeFixtureFamily(overrides: Partial<CloudFamilyDefinition> = {}): Clou
       }),
     },
     defaultSize: { width: 180, height: 80 },
-    patchableKeys: ["gcpService", "technology", "customColor"],
+    patchableKeys: ["cloudServiceId", "technology", "customColor"],
     attachService: (base, categoryId, serviceId) => {
       if (categoryId !== "gcp-compute" && categoryId !== "gcp-storage") {
         throw new Error(
           `fixture attachService got unexpected category "${categoryId}"; expected "gcp-compute" | "gcp-storage"`,
         );
       }
-      return { ...base, type: categoryId, gcpService: serviceId };
+      return { ...base, type: categoryId, cloudServiceId: serviceId };
     },
     ...overrides,
   };
@@ -142,7 +142,7 @@ describe("buildCloudFamilyDescriptors", () => {
     expect(created).toMatchObject({
       id: "el-1",
       type: "gcp-compute",
-      gcpService: "cloudrun",
+      cloudServiceId: "cloudrun",
     });
   });
 
