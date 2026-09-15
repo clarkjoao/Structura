@@ -1,4 +1,5 @@
 import { allElements } from "@/features/elements/element.registry";
+import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
 import i18n from "@/infrastructure/i18n";
 import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
 
@@ -31,10 +32,9 @@ export const C4_TYPES: ComponentTypeDefinition[] = [];
  * whatever locale the UI is in.
  */
 export function registeredElementTypes(): ComponentTypeDefinition[] {
-  // Cloud families publish a compact catalog of their own (see
-  // `buildAwsCatalogCompact`); listing every category here would duplicate
-  // them under "Structural & Canvas" without service ids. C4 has its own
-  // section below (`c4RegisteredTypes`).
+  // Cloud families publish a compact catalog of their own; listing every
+  // category here would duplicate them under "Structural & Canvas" without
+  // service ids. C4 has its own section below (`c4RegisteredTypes`).
   return allElements()
     .filter((element) => element.family === "structural")
     .map((element) => ({
@@ -59,7 +59,7 @@ export function c4RegisteredTypes(): ComponentTypeDefinition[] {
 }
 
 /** Cloud family categories registered on the element registry, as catalog entries. */
-function cloudFamilyRegisteredTypes(familyId: "aws" | "gcp" | "azure"): ComponentTypeDefinition[] {
+function cloudFamilyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
   return allElements()
     .filter((element) => element.family === familyId)
     .flatMap((element) => {
@@ -95,14 +95,17 @@ function cloudFamilyRegisteredTypes(familyId: "aws" | "gcp" | "azure"): Componen
     });
 }
 
+/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
 export function awsRegisteredTypes(): ComponentTypeDefinition[] {
   return cloudFamilyRegisteredTypes("aws");
 }
 
+/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
 export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
   return cloudFamilyRegisteredTypes("gcp");
 }
 
+/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
 export function azureRegisteredTypes(): ComponentTypeDefinition[] {
   return cloudFamilyRegisteredTypes("azure");
 }
@@ -112,9 +115,7 @@ export function allComponentTypes(): ComponentTypeDefinition[] {
     ...STRUCTURAL_TYPES,
     ...registeredElementTypes(),
     ...c4RegisteredTypes(),
-    ...awsRegisteredTypes(),
-    ...gcpRegisteredTypes(),
-    ...azureRegisteredTypes(),
+    ...allCloudFamilies().flatMap((family) => cloudFamilyRegisteredTypes(family.id)),
   ];
 }
 
@@ -155,62 +156,28 @@ export function buildComponentTypeCatalog(): string {
     sections.push(formatTypeDef(definition));
   }
 
-  sections.push("");
-  sections.push(buildAwsCatalogCompact());
-  sections.push("");
-  sections.push(buildGcpCatalogCompact());
-  sections.push("");
-  sections.push(buildAzureCatalogCompact());
+  for (const family of allCloudFamilies()) {
+    sections.push("");
+    sections.push(buildCloudFamilyCatalogCompact(family.id));
+  }
 
   return sections.join("\n");
 }
 
 /**
- * Compact AWS catalog derived from registered family descriptors.
+ * Compact catalog block for one registered cloud family.
  *
- * F5b drops the hand-curated per-service descriptions so all three cloud
- * families share the same verbosity (category label + service id list). A
- * later slice can re-level detail across families if needed — not ad-hoc here.
+ * Service ids ride the shared `awsService` tool parameter (addComponent maps
+ * onto `cloudServiceId`). Label comes from the family's i18n key.
  */
-export function buildAwsCatalogCompact(): string {
-  return buildCloudFamilyCatalogCompact("aws", "AWS", "awsService");
-}
+export function buildCloudFamilyCatalogCompact(familyId: string): string {
+  const family = allCloudFamilies().find((entry) => entry.id === familyId);
+  const label = family ? i18n.t(family.labelKey, { lng: CATALOG_LOCALE }) : familyId.toUpperCase();
+  const serviceParamHint =
+    familyId === "aws"
+      ? "awsService"
+      : `awsService (same add_node parameter; maps onto cloudServiceId for ${familyId})`;
 
-/**
- * Compact GCP catalog derived from registered family descriptors.
- *
- * Same shape as the AWS compact block: categories with service ids. The
- * `awsService` tool parameter carries the GCP service id for gcp-* nodeTypes
- * (addComponent maps it onto `gcpService`).
- */
-export function buildGcpCatalogCompact(): string {
-  return buildCloudFamilyCatalogCompact(
-    "gcp",
-    "GCP",
-    "awsService (same add_node parameter; maps onto gcpService)",
-  );
-}
-
-/**
- * Compact Azure catalog derived from registered family descriptors.
- *
- * Same shape as the GCP compact block. The `awsService` tool parameter carries
- * the Azure service id for azure-* nodeTypes (addComponent maps it onto
- * `azureService`).
- */
-export function buildAzureCatalogCompact(): string {
-  return buildCloudFamilyCatalogCompact(
-    "azure",
-    "Azure",
-    "awsService (same add_node parameter; maps onto azureService)",
-  );
-}
-
-function buildCloudFamilyCatalogCompact(
-  familyId: "aws" | "gcp" | "azure",
-  label: string,
-  serviceParamHint: string,
-): string {
   const prefix = `${familyId}-`;
   const lines: string[] = [
     `### ${label} Service Types`,
@@ -231,6 +198,21 @@ function buildCloudFamilyCatalogCompact(
   }
 
   return lines.join("\n");
+}
+
+/** @deprecated Use `buildCloudFamilyCatalogCompact("aws")`. */
+export function buildAwsCatalogCompact(): string {
+  return buildCloudFamilyCatalogCompact("aws");
+}
+
+/** @deprecated Use `buildCloudFamilyCatalogCompact("gcp")`. */
+export function buildGcpCatalogCompact(): string {
+  return buildCloudFamilyCatalogCompact("gcp");
+}
+
+/** @deprecated Use `buildCloudFamilyCatalogCompact("azure")`. */
+export function buildAzureCatalogCompact(): string {
+  return buildCloudFamilyCatalogCompact("azure");
 }
 
 export function buildPatternCatalogCompact(): string {
