@@ -1,39 +1,38 @@
 /**
  * Resolve the cloud-provider service id on a persisted component (lambda, rds, …).
  *
- * F6a — tolerant **read**. Writes still go to `awsService` / `gcpService` /
- * `azureService` until F6b.
+ * F6b writes `cloudServiceId`. F6a-era and older payloads may still carry
+ * `awsService` / `gcpService` / `azureService` until migrateUnifyCloudServiceId
+ * runs. Catalog `serviceId` (business registry, v11) stays last so it never
+ * shadows a real cloud icon id.
  *
- * Order is **legacy fields first**, then `serviceId`:
- *
- * `awsService ?? gcpService ?? azureService ?? serviceId`
- *
- * The plan’s written order (`serviceId` first) is unsafe today:
- * `BaseComponent.serviceId` already means the **business service catalog** link
- * (v11 `registryServiceId` → `serviceId`). Preferring it would treat `svc-pay`
- * as a cloud icon id whenever a cloud node is also linked to the catalog.
- * Putting `serviceId` last still accepts a future F6b peer that writes only the
- * unified field, once F6b has decided what happens to catalog links.
+ * Order:
+ * `cloudServiceId ?? awsService ?? gcpService ?? azureService ?? serviceId`
  *
  * @example
- * resolveCloudServiceId({ awsService: "lambda", serviceId: "svc-pay" }) // "lambda"
- * resolveCloudServiceId({ serviceId: "lambda" }) // "lambda" (F6b-shaped write)
+ * resolveCloudServiceId({ cloudServiceId: "lambda", serviceId: "svc-pay" }) // "lambda"
+ * resolveCloudServiceId({ awsService: "lambda" }) // "lambda" (pre-migration)
  */
 
 export type CloudServiceIdFields = {
+  cloudServiceId?: string;
   serviceId?: string;
+  /** @deprecated F6b — kept for tolerant reads of unmigrated payloads */
   awsService?: string;
+  /** @deprecated F6b */
   gcpService?: string;
+  /** @deprecated F6b */
   azureService?: string;
 };
 
 export function resolveCloudServiceId(component: CloudServiceIdFields): string | undefined {
-  const fromLegacy =
+  return (
+    nonEmpty(component.cloudServiceId) ??
     nonEmpty(component.awsService) ??
     nonEmpty(component.gcpService) ??
-    nonEmpty(component.azureService);
-  if (fromLegacy !== undefined) return fromLegacy;
-  return nonEmpty(component.serviceId);
+    nonEmpty(component.azureService) ??
+    nonEmpty(component.serviceId)
+  );
 }
 
 function nonEmpty(value: string | undefined): string | undefined {

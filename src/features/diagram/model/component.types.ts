@@ -104,21 +104,24 @@ export interface NoteComponent extends BaseComponent {
 
 export interface AwsComponent extends BaseComponent {
   type: AwsCategoryId;
-  awsService?: string;
+  /** Cloud provider service id (lambda, rds, …). Unified in F6b; was awsService. */
+  cloudServiceId?: string;
   technology?: string;
   customColor?: string;
 }
 
 export interface GcpComponent extends BaseComponent {
   type: GcpCategoryId;
-  gcpService?: string;
+  /** Cloud provider service id. Unified in F6b; was gcpService. */
+  cloudServiceId?: string;
   technology?: string;
   customColor?: string;
 }
 
 export interface AzureComponent extends BaseComponent {
   type: AzureCategoryId;
-  azureService?: string;
+  /** Cloud provider service id. Unified in F6b; was azureService. */
+  cloudServiceId?: string;
   technology?: string;
   customColor?: string;
 }

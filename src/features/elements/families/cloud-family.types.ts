@@ -88,9 +88,9 @@ export interface CloudFamilyExport {
  * Illustrative shape from the architecture proposal, corrected against the
  * live `ElementDescriptor` (same spirit as F1–F3d contract fixes):
  *
- * - Persisted service field stays family-specific until F6 (`attachService`
- *   writes `gcpService` / `awsService` / `azureService`).
- * - `ElementCreateOptions.serviceId` is the creation-time input.
+ * - Persisted service field is `cloudServiceId` (F6b). Creation still takes
+ *   `ElementCreateOptions.serviceId` as the create-time input; `attachService`
+ *   writes `cloudServiceId`. Catalog business links stay on `BaseComponent.serviceId`.
  * - One descriptor per category, not per service; services become palette
  *   variants.
  * - `icons` keeps the existing `IconResolver` — it already unifies npm packages
@@ -111,9 +111,8 @@ export interface CloudFamilyDefinition {
   /**
    * Builds the persisted component for a category.
    *
-   * Exists because the three service fields are still distinct on the schema
-   * (F6 unifies them). The factory never writes `awsService`/`gcpService`/
-   * `azureService` itself.
+   * Writes `cloudServiceId` (F6b). Creation input remains
+   * `ElementCreateOptions.serviceId`.
    */
   attachService: (
     base: ElementComponentBase,
