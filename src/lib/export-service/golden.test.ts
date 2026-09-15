@@ -103,6 +103,17 @@ const richComponents: Record<string, Component> = {
     description: "",
     parentId: null,
   },
+  // F4: first GCP golden — exports as kind:"image" with the catalog SVG when
+  // the icon pack resolves, otherwise passthrough. Documents the decision to
+  // add a fixture rather than only confirming an existing one.
+  gcp: {
+    id: "gcp",
+    name: "Cloud Run",
+    type: "gcp-compute",
+    gcpService: "cloudrun",
+    description: "",
+    parentId: null,
+  },
   api: {
     id: "api",
     name: "Orders API",
@@ -204,6 +215,7 @@ const richLayouts: Record<string, NodeLayout> = {
   note: { elementId: "note", x: 1300, y: 0, width: 336, height: 475 },
   aws: { elementId: "aws", x: 0, y: 420 },
   awsApi: { elementId: "awsApi", x: 350, y: 420 },
+  gcp: { elementId: "gcp", x: 0, y: 560, width: 180, height: 80 },
   api: { elementId: "api", x: 400, y: 440, width: 300, height: 160 },
   ep: { elementId: "ep", x: 0, y: 68, width: 300, height: 40 },
   db: { elementId: "db", x: 820, y: 440 },
