@@ -20,14 +20,13 @@ import type { ExportNode } from "@/lib/export-core";
 export type ElementTypeId = ComponentType;
 
 /**
- * The ids that have actually moved onto the registry.
+ * The ids that have a type-level mirror for exhaustiveness (`Extract` in
+ * `isRegisteredElementComponent`).
  *
- * A type-level mirror of what `bootstrap.ts` registers. After F9 this covers
- * every closed-union built-in `ComponentType` (C4 + structural + cloud
- * categories). `Exclude<ComponentType, PluginComponentType>` is equivalent but
- * drops the per-slice audit trail; keep the explicit list until plugins also
- * leave `NODE_TYPE_REGISTRY`. `single-owner.invariant.test.ts` holds this list
- * and the runtime registry to each other.
+ * Catalog families that exist today (aws/gcp/azure) stay listed so export
+ * exhaustiveness keeps working. A *new* family's category ids are validated
+ * only at runtime by the registry — they are not added here. See
+ * `OpenCatalogCategoryId` and `cloud-family-contract.test.ts`.
  */
 export type RegisteredElementTypeId =
   | "person"
@@ -44,7 +43,6 @@ export type RegisteredElementTypeId =
   | "external-element"
   | "svg"
   | "unknown"
-  // F4: one literal per GcpCategoryId (not per service — service lives in gcpService).
   | "gcp-compute"
   | "gcp-storage"
   | "gcp-database"
@@ -57,7 +55,6 @@ export type RegisteredElementTypeId =
   | "gcp-management"
   | "gcp-media"
   | "gcp-general"
-  // F5a: one literal per AzureCategoryId (not per service — service lives in azureService).
   | "azure-compute"
   | "azure-storage"
   | "azure-database"
@@ -71,7 +68,6 @@ export type RegisteredElementTypeId =
   | "azure-management"
   | "azure-media"
   | "azure-general"
-  // F5b: one literal per AwsCategoryId (not per service — service lives in awsService).
   | "aws-compute"
   | "aws-storage"
   | "aws-database"
@@ -92,11 +88,11 @@ export type RegisteredElementTypeId =
 /**
  * Which vocabulary an element belongs to.
  *
- * `"structural"` covers the hand-written shape-owning elements (F1–F3d).
- * `"c4"` is the fixed C4 Model quartet (F9). `"gcp" | "aws" | "azure"` are
- * produced by `CloudFamilyDefinition` (F4+).
+ * `"structural"` and `"c4"` are fixed. Catalog-shaped families use an open
+ * `CloudFamilyId` string (aws, gcp, azure, …) registered via
+ * `registerCloudFamily` — not a closed union that must grow per family.
  */
-export type ElementFamilyId = "structural" | "c4" | "aws" | "gcp" | "azure";
+export type ElementFamilyId = "structural" | "c4" | (string & {});
 
 /**
  * How the node is drawn, as a role rather than a shape. This is the narrow

@@ -30,6 +30,15 @@ export type ComponentType =
   | AzureCategoryId
   | PluginComponentType;
 
+/**
+ * Brand for category ids that exist only via `registerCloudFamily` (not yet
+ * on the closed `ComponentType` union). Cast at the family definition site —
+ * never grow `ComponentType` per family. See family-contract close report.
+ */
+export type OpenCatalogCategoryId = string & {
+  readonly __openCatalogCategory: "open";
+};
+
 export interface ExternalLink {
   id: string;
   label: string;

@@ -21,6 +21,11 @@ export function iconResolverForFamily(familyId: string): IconResolver | undefine
   return familyIconResolvers.get(familyId as CloudFamilyId);
 }
 
+/** Test-only / unregister: drop a family's remembered resolver. */
+export function forgetFamilyIconResolver(familyId: CloudFamilyId): void {
+  familyIconResolvers.delete(familyId);
+}
+
 /** Test-only: drop remembered resolvers between cases. */
 export function clearFamilyIconResolvers(): void {
   familyIconResolvers.clear();

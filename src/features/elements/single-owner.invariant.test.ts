@@ -11,22 +11,22 @@ import {
   registeredElementIds,
 } from "./element.registry";
 import { emptyNodeBuildContext } from "./node-build-context.fixture";
-import type { RegisteredElementTypeId } from "./element.types";
 import { C4_TYPES } from "@/features/diagram/model/component-type-constants";
+import { allCloudFamilies } from "./families/cloud-family.registry";
 
 /**
  * A type is owned by exactly one path.
  *
- * After F9 every built-in type lives on the element registry. The legacy
- * `NODE_TYPE_REGISTRY` array is plugin-only. Every check here is parameterised
- * over whatever is registered — if a type needs an edit to this file, the
- * migration left two owners behind.
+ * After the family-contract close, catalog category ids are open (registered
+ * via `registerCloudFamily`) and are not mirrored as type literals. Structural
+ * + C4 stay as the closed mirror; cloud coverage is asserted from the family
+ * registry instead.
  */
 
 const registeredIds = registeredElementIds();
 
-/** The ids the type-level mirror claims, as runtime values. */
-const DECLARED_IDS: RegisteredElementTypeId[] = [
+/** Closed structural + C4 ids — cloud categories are open / registry-owned. */
+const FIXED_REGISTERED_IDS = [
   "person",
   "system",
   "container",
@@ -41,52 +41,21 @@ const DECLARED_IDS: RegisteredElementTypeId[] = [
   "external-element",
   "svg",
   "unknown",
-  "gcp-compute",
-  "gcp-storage",
-  "gcp-database",
-  "gcp-networking",
-  "gcp-security",
-  "gcp-analytics",
-  "gcp-ai",
-  "gcp-devtools",
-  "gcp-integration",
-  "gcp-management",
-  "gcp-media",
-  "gcp-general",
-  "azure-compute",
-  "azure-storage",
-  "azure-database",
-  "azure-networking",
-  "azure-security",
-  "azure-analytics",
-  "azure-ai",
-  "azure-integration",
-  "azure-devtools",
-  "azure-iot",
-  "azure-management",
-  "azure-media",
-  "azure-general",
-  "aws-compute",
-  "aws-storage",
-  "aws-database",
-  "aws-networking",
-  "aws-security",
-  "aws-analytics",
-  "aws-ml",
-  "aws-integration",
-  "aws-management",
-  "aws-developer",
-  "aws-containers",
-  "aws-media",
-  "aws-migration",
-  "aws-iot",
-  "aws-end-user",
-  "aws-general",
-];
+] as const;
 
 describe("the registry and its type-level mirror agree", () => {
-  it("registers exactly the ids RegisteredElementTypeId names", () => {
-    expect([...registeredIds].sort()).toEqual([...DECLARED_IDS].sort());
+  it("registers every fixed structural + C4 id", () => {
+    for (const id of FIXED_REGISTERED_IDS) {
+      expect(registeredIds, id).toContain(id);
+    }
+  });
+
+  it("registers every category of every cloud family", () => {
+    for (const family of allCloudFamilies()) {
+      for (const category of family.categories) {
+        expect(registeredIds, category.id).toContain(category.id);
+      }
+    }
   });
 
   it("covers every C4 Model type", () => {
@@ -166,8 +135,12 @@ describe("what the legacy render registry still owns", () => {
     expect(NODE_TYPE_REGISTRY.map((descriptor) => descriptor.rfType)).toEqual([]);
   });
 
-  it("covers every closed-union built-in type on the element registry alone", () => {
-    expect(registeredIds.length).toBe(DECLARED_IDS.length);
+  it("covers fixed ids plus every registered cloud family category", () => {
+    const cloudCategoryCount = allCloudFamilies().reduce(
+      (n, family) => n + family.categories.length,
+      0,
+    );
+    expect(registeredIds.length).toBe(FIXED_REGISTERED_IDS.length + cloudCategoryCount);
   });
 });
 
