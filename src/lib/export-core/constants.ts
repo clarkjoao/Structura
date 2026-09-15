@@ -18,6 +18,21 @@ export const CONFIG = {
     noteHeight: 475,
     panelWidth: 400,
     panelHeight: 300,
+    passthroughWidth: 240,
+    passthroughHeight: 120,
+    passthroughFill: "#f5f5f5",
+    passthroughStroke: "#9e9e9e",
+  },
+  limits: {
+    /**
+     * Ceiling for an embedded image's data: URI, in characters.
+     *
+     * A data: URI is copied verbatim into the XML, so one large drawing can
+     * dominate the exported file. Past this the node falls back to a
+     * passthrough box carrying its name — the diagram still opens, and the
+     * picture is the only thing lost.
+     */
+    imageDataUriChars: 512 * 1024,
   },
 } as const;
 

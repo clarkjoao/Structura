@@ -26,7 +26,17 @@ export type ExportMarker = "none" | "arrow" | "arrow-closed";
 
 /** Node kinds that map 1:1 to a cell-builder. Panels and api-groups are containers. */
 export type ExportNodeKind =
-  "c4" | "aws" | "panel" | "swimlane" | "apiGroup" | "endpoint" | "dbTable" | "note" | "jsonViewer";
+  | "c4"
+  | "aws"
+  | "panel"
+  | "swimlane"
+  | "apiGroup"
+  | "endpoint"
+  | "dbTable"
+  | "note"
+  | "jsonViewer"
+  | "image"
+  | "passthrough";
 
 interface BaseNode {
   id: string;
@@ -123,7 +133,45 @@ export interface JsonViewerNode extends BaseNode {
   schemaRef?: string;
 }
 
+/**
+ * A node whose whole content is a picture.
+ *
+ * draw.io renders `shape=image` from a data: URI, so artwork survives the
+ * round trip instead of being flattened into a labelled box. The adapter is
+ * responsible for sanitising before building the URI — this layer never sees
+ * raw markup.
+ */
+export interface ImageNode extends BaseNode {
+  kind: "image";
+  name: string;
+  /** Already sanitised and base64-encoded by the adapter. */
+  dataUri: string;
+  preserveAspect?: boolean;
+}
+
+/**
+ * A node draw.io has no shape for, exported honestly rather than disguised.
+ *
+ * Drawn as a dashed neutral box and carrying `structuraType` in the XML, so a
+ * future import can recover the exact type instead of degrading it. Without
+ * that attribute, "every element exports" would be a data loss dressed up as
+ * compatibility.
+ */
+export interface PassthroughNode extends BaseNode {
+  kind: "passthrough";
+  name: string;
+  /** Second line, smaller and italic, when the element has one. */
+  description?: string;
+  /** The element id this came from; preserved in the XML. */
+  originType: string;
+  /** Human-readable name of that type, already localised by the adapter. */
+  originLabel: string;
+  fillColor?: string;
+}
+
 export type ExportNode =
+  | ImageNode
+  | PassthroughNode
   | C4Node
   | AwsNode
   | PanelNode

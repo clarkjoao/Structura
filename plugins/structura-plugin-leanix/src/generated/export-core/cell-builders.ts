@@ -224,9 +224,91 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       );
     }
 
+    case "image": {
+      const w = width || CONFIG.defaults.passthroughWidth;
+      const h = height || CONFIG.defaults.passthroughHeight;
+
+      // Over the ceiling the picture is dropped rather than the file: a data:
+      // URI is copied verbatim into the XML, and one large drawing would
+      // otherwise dominate it. The box that replaces it still names the node.
+      if (node.dataUri.length > CONFIG.limits.imageDataUriChars) {
+        return buildPassthroughCell(
+          { id: node.id, name: node.name, originType: "svg", originLabel: "SVG" },
+          { x, y, width: w, height: h },
+          parentId,
+        );
+      }
+
+      const aspect = node.preserveAspect === false ? "0" : "1";
+      const style =
+        `shape=image;verticalLabelPosition=bottom;verticalAlign=top;imageAspect=${aspect};` +
+        `image=${escXml(node.dataUri)};`;
+      return (
+        `<mxCell id="${escXml(node.id)}" value="${escXml(node.name)}" style="${style}" ` +
+        `vertex="1" parent="${escXml(parentId)}">` +
+        `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
+        `</mxCell>`
+      );
+    }
+
+    case "passthrough":
+      return buildPassthroughCell(
+        node,
+        {
+          x,
+          y,
+          width: width || CONFIG.defaults.passthroughWidth,
+          height: height || CONFIG.defaults.passthroughHeight,
+        },
+        parentId,
+      );
+
     default: {
       const _exhaustive: never = node;
       throw new Error(`Unsupported export node kind: ${JSON.stringify(_exhaustive)}`);
     }
   }
+}
+
+/**
+ * The dashed neutral box, and the one place `structuraType` is written.
+ *
+ * Shared by `passthrough` and by an `image` that exceeded the size ceiling, so
+ * both carry the same recoverable metadata.
+ */
+function buildPassthroughCell(
+  node: {
+    id: string;
+    name: string;
+    description?: string;
+    originType: string;
+    originLabel: string;
+    fillColor?: string;
+  },
+  geometry: { x: number; y: number; width: number; height: number },
+  parentId: string,
+): string {
+  const { x, y, width, height } = geometry;
+  const subtitle = node.description
+    ? `<br/><i>${escXml(node.description)}</i>`
+    : `<br/><i>${escXml(node.originLabel)}</i>`;
+  const label = `<b>${escXml(node.name)}</b>${subtitle}`;
+  const fill = node.fillColor ?? CONFIG.defaults.passthroughFill;
+  const style =
+    `rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=${fill};` +
+    `strokeColor=${CONFIG.defaults.passthroughStroke};`;
+
+  // `<object>` rather than a bare `<mxCell>`: draw.io keeps attributes it does
+  // not understand, which is what lets a later import recover the exact type
+  // instead of degrading everything shapeless into `unknown`. Same pattern the
+  // c4 and apiGroup cells already use.
+  return (
+    `<object placeholders="1" structuraType="${escXml(node.originType)}" ` +
+    `structuraLabel="${escXml(node.originLabel)}" ` +
+    `label="${escXml(label)}" id="${escXml(node.id)}">` +
+    `<mxCell style="${style}" vertex="1" parent="${escXml(parentId)}">` +
+    `<mxGeometry x="${x}" y="${y}" width="${width}" height="${height}" as="geometry"/>` +
+    `</mxCell>` +
+    `</object>`
+  );
 }
