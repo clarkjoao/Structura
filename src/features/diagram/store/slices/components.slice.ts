@@ -20,7 +20,6 @@ import {
 import type { FlowNodeShape } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
-import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import {
   elementDefaultSize,
@@ -125,7 +124,14 @@ export function buildComponentForType(
   if (isRegisteredElementType(type)) {
     const descriptor = getElement(type)!;
     return {
-      component: descriptor.model.createComponent(base, { panelKind, flowShape }),
+      // `awsService` is the historical positional slot for every cloud
+      // family's service id (picker and LLM both pass it here). Descriptors
+      // read it as `ElementCreateOptions.serviceId`.
+      component: descriptor.model.createComponent(base, {
+        panelKind,
+        flowShape,
+        serviceId: awsService,
+      }),
       // Still reported, because the caller passes it on to the layout builder
       // and a panel's size depends on which kind was asked for.
       resolvedPanelKind: isPanelType(type) ? (panelKind ?? PanelKind.Default) : undefined,
@@ -159,8 +165,6 @@ export function buildComponentForType(
     component = { ...base, type };
   } else if (isAwsType(type)) {
     component = { ...base, type, awsService: awsService ?? undefined };
-  } else if (isGcpType(type)) {
-    component = { ...base, type, gcpService: awsService ?? undefined };
   } else if (isAzureType(type)) {
     component = { ...base, type, azureService: awsService ?? undefined };
   } else if (isPluginComponentType(type)) {

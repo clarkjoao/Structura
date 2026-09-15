@@ -8,7 +8,6 @@ import {
   isAzureComponent,
   isC4Component,
   isDbTableComponent,
-  isGcpComponent,
   isNoteComponent,
   isPanelComponent,
   isJsonViewerComponent,
@@ -212,9 +211,8 @@ interface BaseGeometry {
   height: number;
 }
 
-// C4 / GCP / Azure all render through the C4 cell (GCP/Azure fall back to system
-// styling), so the mapper only needs this structural shape — not the named types
-// (GcpComponent/AzureComponent are not exported from the diagram barrel).
+// C4 and Azure still render through the C4 cell (Azure falls back to system
+// styling until F5). GCP maps through its registered descriptor (F4).
 function c4Node(
   c: { type: string; name: string; description: string; technology?: string; serviceId?: string },
   base: BaseGeometry,
@@ -264,7 +262,7 @@ function mapNode(
   if (isC4Component(c)) {
     return c4Node(c, base, serviceCatalog);
   }
-  if (isGcpComponent(c) || isAzureComponent(c)) {
+  if (isAzureComponent(c)) {
     return c4Node(c, base, serviceCatalog);
   }
   // Only plugin types can still reach this: every built-in element declares

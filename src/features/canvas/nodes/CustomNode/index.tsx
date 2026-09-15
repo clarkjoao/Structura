@@ -1,12 +1,14 @@
 import { memo } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Position, type Node, type NodeProps } from "@xyflow/react";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
+import { getElement } from "@/features/elements/element.registry";
+import { borderClassForAccent } from "@/features/elements/accent-border";
 import { MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { NodeData } from "./types";
@@ -19,7 +21,7 @@ import { EmbedButton } from "./EmbedButton";
 import { StepBadge } from "./StepBadge";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
-import { useCollab } from "@/features/collaboration";
+import { useCollab } from "@/features/collaboration/components/CollabProvider";
 
 function useNodeState(d: NodeData, selected: boolean | undefined) {
   const { highlightedNodeIds } = useHandleHighlight();
@@ -117,6 +119,9 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const activePeer = usePeerOnNode(d.elementId);
 
   const cloudProvider = cloudRegistry.forType(d.type);
+  const registered = getElement(d.type);
+  const accentBorder =
+    registered && !d.customColor ? borderClassForAccent(registered.palette.accent) : "";
 
   let borderClass: string;
   let borderStyle: CSSProperties | undefined;
@@ -130,7 +135,11 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       const svc = d.cloudService ? cloudProvider.getService(d.cloudService) : undefined;
       const cat = cloudProvider.getCategoryForType(d.type);
       const hasCustomColor = !!d.customColor;
-      borderClass = !hasCustomColor ? cloudProvider.getCategoryStyle(d.type).borderClass : "";
+      // Registered cloud categories own their accent; the provider map is the
+      // fallback for families that have not migrated yet (AWS, Azure).
+      borderClass = !hasCustomColor
+        ? accentBorder || cloudProvider.getCategoryStyle(d.type).borderClass
+        : "";
       borderStyle = hasCustomColor ? { borderLeftColor: d.customColor } : undefined;
       technologyLabel = d.technology ?? cat?.name ?? svc?.name;
       actionColorClass = hasCustomColor ? "" : "text-primary";
@@ -146,7 +155,9 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
     const svc = d.cloudService ? cloudProvider.getService(d.cloudService) : undefined;
     const cat = cloudProvider.getCategoryForType(d.type);
     const hasCustomColor = !!d.customColor;
-    borderClass = !hasCustomColor ? cloudProvider.getCategoryStyle(d.type).borderClass : "";
+    borderClass = !hasCustomColor
+      ? accentBorder || cloudProvider.getCategoryStyle(d.type).borderClass
+      : "";
     borderStyle = hasCustomColor ? { borderLeftColor: d.customColor } : undefined;
     icon = <CloudIcon componentType={d.type} serviceIconName={svc?.iconName} size={20} />;
     technologyLabel = d.technology ?? cat?.name ?? svc?.name;

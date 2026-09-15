@@ -13,6 +13,7 @@ import { panelElement } from "./structural/panel.element";
 import { processNodeElement } from "./structural/process-node.element";
 import { svgElement } from "./structural/svg.element";
 import { unknownElement } from "./structural/unknown.element";
+import { gcpElements } from "./families/gcp/gcp.family";
 
 const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   noteElement,
@@ -25,6 +26,7 @@ const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   externalElementElement,
   svgElement,
   unknownElement,
+  ...gcpElements,
 ];
 
 for (const element of BUILT_IN_ELEMENTS) {

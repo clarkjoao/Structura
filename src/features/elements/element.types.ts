@@ -39,7 +39,20 @@ export type RegisteredElementTypeId =
   | "process-node"
   | "external-element"
   | "svg"
-  | "unknown";
+  | "unknown"
+  // F4: one literal per GcpCategoryId (not per service — service lives in gcpService).
+  | "gcp-compute"
+  | "gcp-storage"
+  | "gcp-database"
+  | "gcp-networking"
+  | "gcp-security"
+  | "gcp-analytics"
+  | "gcp-ai"
+  | "gcp-devtools"
+  | "gcp-integration"
+  | "gcp-management"
+  | "gcp-media"
+  | "gcp-general";
 
 /**
  * Which vocabulary an element belongs to.

@@ -892,6 +892,58 @@
     },
     "external-element": {
       "description": "Um representante de um elemento que vive em outro diagrama. Use para referenciar entre diagramas sem duplicar."
+    },
+    "gcp": {
+      "categories": {
+        "gcp-compute": {
+          "label": "Compute",
+          "description": "Serviços de computação do GCP (VMs, containers, serverless)."
+        },
+        "gcp-storage": {
+          "label": "Storage",
+          "description": "Serviços de armazenamento do GCP (object storage, discos)."
+        },
+        "gcp-database": {
+          "label": "Databases",
+          "description": "Bancos gerenciados do GCP (SQL, Spanner, BigQuery)."
+        },
+        "gcp-networking": {
+          "label": "Networking",
+          "description": "Rede e conectividade do GCP."
+        },
+        "gcp-security": {
+          "label": "Security",
+          "description": "Serviços de segurança e identidade do GCP."
+        },
+        "gcp-analytics": {
+          "label": "Analytics",
+          "description": "Analítica de dados e observabilidade do GCP."
+        },
+        "gcp-ai": {
+          "label": "AI & Machine Learning",
+          "description": "Serviços de IA e machine learning do GCP."
+        },
+        "gcp-devtools": {
+          "label": "Developer Tools",
+          "description": "Ferramentas de desenvolvimento e DevOps do GCP."
+        },
+        "gcp-integration": {
+          "label": "Integration",
+          "description": "Serviços de integração e mensageria do GCP."
+        },
+        "gcp-management": {
+          "label": "Management",
+          "description": "Ferramentas de gestão e marketplace do GCP."
+        },
+        "gcp-media": {
+          "label": "Media",
+          "description": "Serviços de mídia do GCP."
+        },
+        "gcp-general": {
+          "label": "General",
+          "description": "Demais serviços do GCP."
+        }
+      }
     }
   },
   "flowchart": {

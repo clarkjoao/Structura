@@ -42,6 +42,18 @@ const DECLARED_IDS: RegisteredElementTypeId[] = [
   "external-element",
   "svg",
   "unknown",
+  "gcp-compute",
+  "gcp-storage",
+  "gcp-database",
+  "gcp-networking",
+  "gcp-security",
+  "gcp-analytics",
+  "gcp-ai",
+  "gcp-devtools",
+  "gcp-integration",
+  "gcp-management",
+  "gcp-media",
+  "gcp-general",
 ];
 
 describe("the registry and its type-level mirror agree", () => {
@@ -79,10 +91,13 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
   });
 
   it("is still accepted by the type sanitizer", () => {
-    // BUILTIN_COMPONENT_TYPES stays the floor until the registry becomes the
-    // only source of truth; until then both answers must agree.
+    // Registered ids are valid via `hasElement`. Structural ones also sit on
+    // BUILTIN_COMPONENT_TYPES until that list is retired; cloud categories
+    // never did, so the BUILTIN check only applies off the cloud prefixes.
     expect(sanitizeComponentType(type)).toBe(type);
-    expect(BUILTIN_COMPONENT_TYPES.has(type)).toBe(true);
+    if (!type.startsWith("gcp-") && !type.startsWith("aws-") && !type.startsWith("azure-")) {
+      expect(BUILTIN_COMPONENT_TYPES.has(type)).toBe(true);
+    }
   });
 
   it("is offered to the LLM", () => {
@@ -136,12 +151,11 @@ describe("a fixed-size element paints at the size it was created at", () => {
 
 describe("what the legacy render registry still owns", () => {
   /**
-   * The criterion that closes F3.
-   *
-   * Every built-in type except the four C4 ones is now a registered element;
-   * what remains in the old array is the catch-all, plus whatever a plugin
-   * splices in ahead of it at runtime. When C4 migrates (F4) and the catch-all
-   * goes (F9), this array empties.
+   * Every built-in type except the four C4 ones and the remaining cloud
+   * families (AWS, Azure) now lives on the element registry. What remains in
+   * the old array is the catch-all, plus whatever a plugin splices in ahead of
+   * it at runtime. GCP moved in F4; AWS/Azure follow in F5; C4 and the
+   * catch-all go later.
    */
   it("holds only the C4 catch-all", () => {
     expect(NODE_TYPE_REGISTRY.map((descriptor) => descriptor.rfType)).toEqual(["c4"]);
@@ -149,7 +163,8 @@ describe("what the legacy render registry still owns", () => {
 
   it("covers every built-in type between the two registries", () => {
     const owned = new Set<string>(registeredIds);
-    // The C4 four are the only built-ins the catch-all still answers for.
+    // The C4 four are the only BUILTIN entries the catch-all still answers for.
+    // Cloud categories were never on BUILTIN — they enter via the registry.
     const stillLegacy = [...BUILTIN_COMPONENT_TYPES].filter((type) => !owned.has(type));
     expect(stillLegacy.sort()).toEqual(["component", "container", "person", "system"]);
   });
