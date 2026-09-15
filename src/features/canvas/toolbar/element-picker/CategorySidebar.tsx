@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { CategoryNavItem } from "./buildCategoryNav";
-import { ElementCategory } from "../../enums";
+import type { PickerCategoryId } from "../../enums";
 
 export function CategorySidebar({
   items,
@@ -9,9 +9,9 @@ export function CategorySidebar({
   setCategory,
 }: {
   items: CategoryNavItem[];
-  activeCategory: ElementCategory;
+  activeCategory: PickerCategoryId;
   q: string;
-  setCategory: (c: ElementCategory) => void;
+  setCategory: (c: PickerCategoryId) => void;
 }) {
   return (
     <aside className="flex w-[160px] shrink-0 flex-col border-r border-border bg-muted/40 py-2">

@@ -211,7 +211,7 @@ function ComponentTypeIcon({ type, className }: { type: string; className?: stri
   if (isApiGroupType(type)) return <Globe className={className} />;
   if (hasElement(type)) {
     const family = getElement(type)?.family;
-    if (family === "aws" || family === "gcp" || family === "azure") {
+    if (family && family !== "structural" && family !== "c4") {
       return <Cloud className={className} />;
     }
   }

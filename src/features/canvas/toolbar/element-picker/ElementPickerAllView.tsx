@@ -9,7 +9,7 @@ import { PickerSectionHeader } from "./PickerSectionHeader";
 import { PICKER_CARD_CLASS, REGISTRY_PREVIEW_LIMIT } from "./constants";
 import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
-import { ElementCategory } from "../../enums";
+import { ElementCategory, type PickerCategoryId } from "../../enums";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
 
@@ -40,7 +40,7 @@ export function ElementPickerAllView({
   onAddAws: (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => void;
   onAddRegistry: (serviceId: string, name: string) => void;
   onClose: () => void;
-  setCategory: (c: ElementCategory) => void;
+  setCategory: (c: PickerCategoryId) => void;
 }) {
   const { t } = useTranslation();
 
@@ -113,7 +113,7 @@ export function ElementPickerAllView({
           sectionLabel={t("canvasToolbar.awsServices")}
           showViewAll
           viewAllLabel={t("elementPicker.viewAll")}
-          onViewAll={() => setCategory(ElementCategory.Aws)}
+          onViewAll={() => setCategory("aws")}
         />
         <div className="grid grid-cols-5 gap-2">
           {awsSpotlight.map(({ svc, categoryId }) => (

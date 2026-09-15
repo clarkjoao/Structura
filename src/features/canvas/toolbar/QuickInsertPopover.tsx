@@ -248,29 +248,23 @@ const QuickInsertPopover = ({
     return rows;
   }, [q]);
 
-  const gcpProvider = useMemo(() => cloudRegistry.forId("gcp"), []);
-  const azureProvider = useMemo(() => cloudRegistry.forId("azure"), []);
-
   const filteredCloud = useMemo((): CloudSearchRow[] => {
     if (!q) return [];
-    const gcpRows = gcpProvider
-      ? filterCloudServicesForQuery(q, gcpProvider).map((s) => ({
-          categoryId: s.categoryId,
-          serviceId: s.id,
-          serviceName: s.name,
-          iconName: s.iconName,
-        }))
-      : [];
-    const azureRows = azureProvider
-      ? filterCloudServicesForQuery(q, azureProvider).map((s) => ({
-          categoryId: s.categoryId,
-          serviceId: s.id,
-          serviceName: s.name,
-          iconName: s.iconName,
-        }))
-      : [];
-    return [...gcpRows, ...azureRows];
-  }, [q, gcpProvider, azureProvider]);
+    const rows: CloudSearchRow[] = [];
+    for (const provider of cloudRegistry.allProviders()) {
+      // AWS keeps its own filteredAws path (panel-kind remapping).
+      if (provider.id === "aws") continue;
+      for (const service of filterCloudServicesForQuery(q, provider)) {
+        rows.push({
+          categoryId: service.categoryId,
+          serviceId: service.id,
+          serviceName: service.name,
+          iconName: service.iconName,
+        });
+      }
+    }
+    return rows;
+  }, [q]);
 
   const filteredServices = useMemo(() => {
     if (!q) return [];

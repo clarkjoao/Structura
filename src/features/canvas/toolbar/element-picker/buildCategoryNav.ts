@@ -1,9 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import { Cloud, GitFork, LayoutGrid, LayoutTemplate, Layers, Server, Bookmark } from "lucide-react";
-import { ElementCategory } from "../../enums";
+import { ElementCategory, type PickerCategoryId } from "../../enums";
+import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
+import i18n from "@/infrastructure/i18n";
 
 export interface CategoryNavItem {
-  id: ElementCategory;
+  id: PickerCategoryId;
   label: string;
   icon: LucideIcon;
   count: number;
@@ -15,14 +17,20 @@ export function buildCategoryNavItems(
     all: number;
     c4: number;
     canvas: number;
-    aws: number;
-    gcp: number;
-    azure: number;
     registry: number;
     nodeTemplates: number;
     flowchart: number;
+    /** service counts keyed by family.paletteCategoryId */
+    byFamily: Record<string, number>;
   },
 ): CategoryNavItem[] {
+  const familyItems: CategoryNavItem[] = allCloudFamilies().map((family) => ({
+    id: family.paletteCategoryId,
+    label: i18n.t(family.labelKey),
+    icon: Cloud,
+    count: counts.byFamily[family.paletteCategoryId] ?? 0,
+  }));
+
   return [
     {
       id: ElementCategory.All,
@@ -42,24 +50,7 @@ export function buildCategoryNavItems(
       icon: LayoutTemplate,
       count: counts.canvas,
     },
-    {
-      id: ElementCategory.Aws,
-      label: t("canvasToolbar.awsServices"),
-      icon: Cloud,
-      count: counts.aws,
-    },
-    {
-      id: ElementCategory.Gcp,
-      label: t("canvasToolbar.gcpServices"),
-      icon: Cloud,
-      count: counts.gcp,
-    },
-    {
-      id: ElementCategory.Azure,
-      label: t("canvasToolbar.azureServices"),
-      icon: Cloud,
-      count: counts.azure,
-    },
+    ...familyItems,
     {
       id: ElementCategory.Registry,
       label: t("elementPicker.registry"),

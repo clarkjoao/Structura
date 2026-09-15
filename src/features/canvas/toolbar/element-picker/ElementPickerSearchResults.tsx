@@ -23,8 +23,7 @@ export function ElementPickerSearchResults({
   filteredCanvas,
   filteredFlowchart,
   filteredAwsFlat,
-  filteredGcpFlat,
-  filteredAzureFlat,
+  filteredCloudByFamily,
   filteredServices,
   filteredTemplates,
   onCanvasServiceIds,
@@ -47,8 +46,11 @@ export function ElementPickerSearchResults({
     name: string;
     iconName: string;
   }[];
-  filteredGcpFlat: (CloudService & { categoryId: string })[];
-  filteredAzureFlat: (CloudService & { categoryId: string })[];
+  filteredCloudByFamily: {
+    familyId: string;
+    labelKey: string;
+    services: (CloudService & { categoryId: string })[];
+  }[];
   filteredServices: import("@/features/diagram").ServiceDefinition[];
   filteredTemplates: ElementPreset[];
   onCanvasServiceIds: Set<string>;
@@ -164,57 +166,34 @@ export function ElementPickerSearchResults({
           </div>
         </section>
       )}
-      {filteredGcpFlat.length > 0 && (
-        <section>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("canvasToolbar.gcpServices")} · {filteredGcpFlat.length}
-          </h3>
-          <div className="grid grid-cols-5 gap-2">
-            {filteredGcpFlat.map((svc) => (
-              <button
-                key={`${svc.categoryId}-${svc.id}`}
-                type="button"
-                onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
-                className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
-              >
-                <CloudIcon
-                  componentType={svc.categoryId}
-                  serviceIconName={svc.iconName}
-                  size={40}
-                />
-                <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
-                  {svc.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      {filteredAzureFlat.length > 0 && (
-        <section>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("canvasToolbar.azureServices")} · {filteredAzureFlat.length}
-          </h3>
-          <div className="grid grid-cols-5 gap-2">
-            {filteredAzureFlat.map((svc) => (
-              <button
-                key={`${svc.categoryId}-${svc.id}`}
-                type="button"
-                onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
-                className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
-              >
-                <CloudIcon
-                  componentType={svc.categoryId}
-                  serviceIconName={svc.iconName}
-                  size={40}
-                />
-                <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
-                  {svc.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
+      {filteredCloudByFamily.map(
+        (familyRow) =>
+          familyRow.services.length > 0 && (
+            <section key={familyRow.familyId}>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t(familyRow.labelKey)} · {familyRow.services.length}
+              </h3>
+              <div className="grid grid-cols-5 gap-2">
+                {familyRow.services.map((svc) => (
+                  <button
+                    key={`${svc.categoryId}-${svc.id}`}
+                    type="button"
+                    onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
+                  >
+                    <CloudIcon
+                      componentType={svc.categoryId}
+                      serviceIconName={svc.iconName}
+                      size={40}
+                    />
+                    <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
+                      {svc.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ),
       )}
       {filteredTemplates.length > 0 && (
         <section>

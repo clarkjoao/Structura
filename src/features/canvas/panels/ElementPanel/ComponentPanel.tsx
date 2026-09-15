@@ -245,7 +245,7 @@ const ComponentPanel = ({
           {!isSimple && cloudProvider && cloudServiceInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
               <CloudIcon
-                providerId={cloudProvider.id as "aws" | "gcp" | "azure"}
+                providerId={cloudProvider.id}
                 iconName={cloudServiceInfo.iconName}
                 size={32}
               />
