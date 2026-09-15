@@ -33,6 +33,13 @@ export const azureFamily: CloudFamilyDefinition = {
   id: "azure",
   labelKey: "canvasToolbar.azureServices",
   paletteCategoryId: "azure",
+  primaryCategoryIds: [
+    "azure-compute",
+    "azure-database",
+    "azure-storage",
+    "azure-networking",
+    "azure-security",
+  ],
 
   categories: AZURE_CATEGORIES.map((category) => ({
     id: category.id,

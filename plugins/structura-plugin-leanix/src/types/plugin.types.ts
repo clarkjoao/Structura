@@ -7,7 +7,7 @@
  */
 
 import type { ComponentType as ReactComponentType } from "react";
-import type { NodeTypes } from "@xyflow/react";
+import type { DiagramNodeComponent } from "@/features/canvas";
 
 /**
  * Public surface of the Structura plugin system (RFC:
@@ -270,8 +270,8 @@ export interface PluginNodeTypeDescriptor {
    * so plugin types can never collide with built-ins or other plugins.
    */
   rfType: string;
-  /** React component rendered for the node (same contract as NodeTypes[string]). */
-  component: NodeTypes[string];
+  /** React component rendered for the node (canvas node-type contract). */
+  component: DiagramNodeComponent;
   /** Domain component type this descriptor matches, namespaced the same way. */
   componentType: string;
   zIndex?: number;

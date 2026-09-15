@@ -41,6 +41,7 @@ export const gcpFamily: CloudFamilyDefinition = {
   id: "gcp",
   labelKey: "canvasToolbar.gcpServices",
   paletteCategoryId: "gcp",
+  primaryCategoryIds: ["gcp-compute", "gcp-database", "gcp-storage", "gcp-networking", "gcp-ai"],
 
   categories: GCP_CATEGORIES.map((category) => ({
     id: category.id,

@@ -64,6 +64,7 @@ export const awsFamily: CloudFamilyDefinition = {
   id: "aws",
   labelKey: "canvasToolbar.awsServices",
   paletteCategoryId: "aws",
+  primaryCategoryIds: AWS_FAMILY_PRIMARY_CATEGORY_IDS,
 
   categories: AWS_CATEGORIES.map((category) => {
     const id = category.id as AwsCategoryId;
