@@ -77,6 +77,8 @@ export const ossFamily: CloudFamilyDefinition = {
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? OSS_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? ossIconDataUri(service.iconName) : null;
+      // Same control point as domain writes — projects onto ExportNode only.
+      const cloudServiceIdField = cloudServiceIdWrite(cloudService);
 
       if (dataUri) {
         return {
@@ -85,6 +87,7 @@ export const ossFamily: CloudFamilyDefinition = {
           name: comp.name,
           dataUri,
           preserveAspect: true,
+          ...cloudServiceIdField,
         };
       }
 
@@ -95,6 +98,7 @@ export const ossFamily: CloudFamilyDefinition = {
         description: service?.name ?? comp.technology,
         originType: comp.type,
         originLabel: i18n.t("canvasToolbar.ossServices"),
+        ...cloudServiceIdField,
       };
     },
   },

@@ -14,10 +14,12 @@ import {
 import { exportDrawio } from "./export-drawio";
 
 /**
- * GOLDEN FREEZE — captures the app draw.io XML byte-for-byte before the
- * export-core refactor. The snapshot MUST NOT change when export-drawio.ts is
- * rewritten to go through the shared core; a diff here means the refactor
- * altered app output.
+ * GOLDEN FREEZE — captures the app draw.io XML byte-for-byte.
+ *
+ * Expected drift when cloudServiceId starts appearing on aws/image/passthrough
+ * cells: those nodes wrap in `<object cloudServiceId="…">` so domain service
+ * identity survives beyond icon appearance. Update the snapshot deliberately
+ * when that content changes; do not paper over accidental diffs.
  */
 
 const catalog: Record<string, ServiceDefinition> = {

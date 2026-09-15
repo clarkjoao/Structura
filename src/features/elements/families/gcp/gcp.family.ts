@@ -80,6 +80,8 @@ export const gcpFamily: CloudFamilyDefinition = {
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? GCP_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? gcpIconDataUri(service.iconName) : null;
+      // Same control point as domain writes — projects onto ExportNode only.
+      const cloudServiceIdField = cloudServiceIdWrite(cloudService);
 
       if (dataUri) {
         return {
@@ -88,6 +90,7 @@ export const gcpFamily: CloudFamilyDefinition = {
           name: comp.name,
           dataUri,
           preserveAspect: true,
+          ...cloudServiceIdField,
         };
       }
 
@@ -100,6 +103,7 @@ export const gcpFamily: CloudFamilyDefinition = {
         description: service?.name ?? comp.technology,
         originType: comp.type,
         originLabel: i18n.t("canvasToolbar.gcpServices"),
+        ...cloudServiceIdField,
       };
     },
   },

@@ -44,6 +44,9 @@ describe("oss family", () => {
       height: 80,
     });
     expect(node.kind).toBe("image");
+    if (node.kind === "image") {
+      expect(node.cloudServiceId).toBe("redis");
+    }
   });
 
   it("writes cloudServiceId from ElementCreateOptions.serviceId without casting", () => {

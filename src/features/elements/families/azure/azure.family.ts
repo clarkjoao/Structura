@@ -88,6 +88,8 @@ export const azureFamily: CloudFamilyDefinition = {
         description: service?.name ?? comp.technology,
         originType: comp.type,
         originLabel: i18n.t("canvasToolbar.azureServices"),
+        // Same control point as domain writes — projects onto ExportNode only.
+        ...cloudServiceIdWrite(cloudService),
       };
     },
   },

@@ -106,11 +106,14 @@ export const awsFamily: CloudFamilyDefinition = {
       // Preserves AWS_RESICON: cache returns `"general"` when the service has
       // no dedicated mxgraph id (parity with main, not a silent downgrade to
       // passthrough).
+      const cloudServiceId = resolveCloudServiceId(comp);
       return {
         ...base,
         kind: "aws",
         name: comp.name,
-        awsIcon: awsServiceCache.getInfo(resolveCloudServiceId(comp) ?? "").icon,
+        awsIcon: awsServiceCache.getInfo(cloudServiceId ?? "").icon,
+        // Same control point as domain writes — projects onto ExportNode only.
+        ...cloudServiceIdWrite(cloudServiceId),
       };
     },
   },
