@@ -25,6 +25,13 @@ export interface ElementPaletteEntry {
   createOptions: ElementCreateOptions;
   /** Rendered instead of `icon` when present; see ElementPaletteVariant. */
   awsIconName?: string;
+  /**
+   * Family icon for `palette.icon: { kind: "family" }`.
+   *
+   * Pickers render this through the unified `CloudIcon` instead of the lucide
+   * placeholder. Absent for lucide-backed entries.
+   */
+  familyIcon?: { familyId: string; iconName: string };
 }
 
 /** Stand-in for an element whose icon its family resolves (F4+). */
@@ -49,6 +56,10 @@ function entriesFor(element: ElementDescriptor): ElementPaletteEntry[] {
       spotlight: palette.spotlight,
       createOptions: variant.createOptions,
       awsIconName: variant.awsIconName,
+      familyIcon:
+        variant.icon.kind === "family"
+          ? { familyId: element.family, iconName: variant.icon.iconName }
+          : undefined,
     }));
   }
 
@@ -62,6 +73,10 @@ function entriesFor(element: ElementDescriptor): ElementPaletteEntry[] {
       categoryId: palette.categoryId,
       spotlight: palette.spotlight,
       createOptions: {},
+      familyIcon:
+        palette.icon.kind === "family"
+          ? { familyId: element.family, iconName: palette.icon.iconName }
+          : undefined,
     },
   ];
 }
