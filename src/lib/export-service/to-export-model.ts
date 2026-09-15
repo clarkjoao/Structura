@@ -5,7 +5,6 @@ import {
   getEffectiveConnectionStyle,
   isApiGroupComponent,
   isAwsComponent,
-  isAzureComponent,
   isC4Component,
   isDbTableComponent,
   isNoteComponent,
@@ -211,8 +210,8 @@ interface BaseGeometry {
   height: number;
 }
 
-// C4 and Azure still render through the C4 cell (Azure falls back to system
-// styling until F5). GCP maps through its registered descriptor (F4).
+// C4 still renders through the C4 cell. GCP and Azure map through their
+// registered descriptors (F4 / F5a).
 function c4Node(
   c: { type: string; name: string; description: string; technology?: string; serviceId?: string },
   base: BaseGeometry,
@@ -260,9 +259,6 @@ function mapNode(
     };
   }
   if (isC4Component(c)) {
-    return c4Node(c, base, serviceCatalog);
-  }
-  if (isAzureComponent(c)) {
     return c4Node(c, base, serviceCatalog);
   }
   // Only plugin types can still reach this: every built-in element declares

@@ -944,6 +944,62 @@
           "description": "Other GCP services."
         }
       }
+    },
+    "azure": {
+      "categories": {
+        "azure-compute": {
+          "label": "Compute",
+          "description": "Azure compute services (VMs, App Service, Functions)."
+        },
+        "azure-storage": {
+          "label": "Storage",
+          "description": "Azure storage services (Blob, Files, Queues)."
+        },
+        "azure-database": {
+          "label": "Databases",
+          "description": "Azure managed databases (SQL, Cosmos DB, Redis)."
+        },
+        "azure-networking": {
+          "label": "Networking",
+          "description": "Azure networking and connectivity."
+        },
+        "azure-security": {
+          "label": "Security",
+          "description": "Azure security and identity services."
+        },
+        "azure-analytics": {
+          "label": "Analytics",
+          "description": "Azure data analytics services."
+        },
+        "azure-ai": {
+          "label": "AI & Machine Learning",
+          "description": "Azure AI and machine-learning services."
+        },
+        "azure-integration": {
+          "label": "Integration",
+          "description": "Azure integration and messaging services."
+        },
+        "azure-devtools": {
+          "label": "Developer Tools",
+          "description": "Azure developer and DevOps tooling."
+        },
+        "azure-iot": {
+          "label": "IoT",
+          "description": "Azure Internet of Things services."
+        },
+        "azure-management": {
+          "label": "Management",
+          "description": "Azure management and monitoring tools."
+        },
+        "azure-media": {
+          "label": "Media",
+          "description": "Azure media services."
+        },
+        "azure-general": {
+          "label": "General",
+          "description": "Other Azure services."
+        }
+      }
     }
   },
   "flowchart": {

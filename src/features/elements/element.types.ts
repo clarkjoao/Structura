@@ -52,7 +52,21 @@ export type RegisteredElementTypeId =
   | "gcp-integration"
   | "gcp-management"
   | "gcp-media"
-  | "gcp-general";
+  | "gcp-general"
+  // F5a: one literal per AzureCategoryId (not per service — service lives in azureService).
+  | "azure-compute"
+  | "azure-storage"
+  | "azure-database"
+  | "azure-networking"
+  | "azure-security"
+  | "azure-analytics"
+  | "azure-ai"
+  | "azure-integration"
+  | "azure-devtools"
+  | "azure-iot"
+  | "azure-management"
+  | "azure-media"
+  | "azure-general";
 
 /**
  * Which vocabulary an element belongs to.

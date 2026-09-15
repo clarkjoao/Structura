@@ -20,7 +20,6 @@ import {
 import type { FlowNodeShape } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
-import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
 import {
   elementDefaultSize,
   getElement,
@@ -165,8 +164,6 @@ export function buildComponentForType(
     component = { ...base, type };
   } else if (isAwsType(type)) {
     component = { ...base, type, awsService: awsService ?? undefined };
-  } else if (isAzureType(type)) {
-    component = { ...base, type, azureService: awsService ?? undefined };
   } else if (isPluginComponentType(type)) {
     component = { ...base, type };
   } else {

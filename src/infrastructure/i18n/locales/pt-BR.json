@@ -944,6 +944,62 @@
           "description": "Demais serviços do GCP."
         }
       }
+    },
+    "azure": {
+      "categories": {
+        "azure-compute": {
+          "label": "Compute",
+          "description": "Serviços de computação do Azure (VMs, App Service, Functions)."
+        },
+        "azure-storage": {
+          "label": "Storage",
+          "description": "Serviços de armazenamento do Azure (Blob, Files, Queues)."
+        },
+        "azure-database": {
+          "label": "Databases",
+          "description": "Bancos gerenciados do Azure (SQL, Cosmos DB, Redis)."
+        },
+        "azure-networking": {
+          "label": "Networking",
+          "description": "Rede e conectividade do Azure."
+        },
+        "azure-security": {
+          "label": "Security",
+          "description": "Serviços de segurança e identidade do Azure."
+        },
+        "azure-analytics": {
+          "label": "Analytics",
+          "description": "Serviços de analítica de dados do Azure."
+        },
+        "azure-ai": {
+          "label": "AI & Machine Learning",
+          "description": "Serviços de IA e machine learning do Azure."
+        },
+        "azure-integration": {
+          "label": "Integration",
+          "description": "Serviços de integração e mensageria do Azure."
+        },
+        "azure-devtools": {
+          "label": "Developer Tools",
+          "description": "Ferramentas de desenvolvimento e DevOps do Azure."
+        },
+        "azure-iot": {
+          "label": "IoT",
+          "description": "Serviços de Internet das Coisas do Azure."
+        },
+        "azure-management": {
+          "label": "Management",
+          "description": "Ferramentas de gestão e monitoramento do Azure."
+        },
+        "azure-media": {
+          "label": "Media",
+          "description": "Serviços de mídia do Azure."
+        },
+        "azure-general": {
+          "label": "General",
+          "description": "Demais serviços do Azure."
+        }
+      }
     }
   },
   "flowchart": {

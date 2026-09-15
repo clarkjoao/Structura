@@ -54,6 +54,19 @@ const DECLARED_IDS: RegisteredElementTypeId[] = [
   "gcp-management",
   "gcp-media",
   "gcp-general",
+  "azure-compute",
+  "azure-storage",
+  "azure-database",
+  "azure-networking",
+  "azure-security",
+  "azure-analytics",
+  "azure-ai",
+  "azure-integration",
+  "azure-devtools",
+  "azure-iot",
+  "azure-management",
+  "azure-media",
+  "azure-general",
 ];
 
 describe("the registry and its type-level mirror agree", () => {
@@ -154,7 +167,7 @@ describe("what the legacy render registry still owns", () => {
    * Every built-in type except the four C4 ones and the remaining cloud
    * families (AWS, Azure) now lives on the element registry. What remains in
    * the old array is the catch-all, plus whatever a plugin splices in ahead of
-   * it at runtime. GCP moved in F4; AWS/Azure follow in F5; C4 and the
+   * it at runtime. GCP moved in F4; Azure in F5a; AWS follows in F5b; C4 and the
    * catch-all go later.
    */
   it("holds only the C4 catch-all", () => {

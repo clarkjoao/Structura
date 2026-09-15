@@ -14,6 +14,7 @@ import { processNodeElement } from "./structural/process-node.element";
 import { svgElement } from "./structural/svg.element";
 import { unknownElement } from "./structural/unknown.element";
 import { gcpElements } from "./families/gcp/gcp.family";
+import { azureElements } from "./families/azure/azure.family";
 
 const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   noteElement,
@@ -27,6 +28,7 @@ const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   svgElement,
   unknownElement,
   ...gcpElements,
+  ...azureElements,
 ];
 
 for (const element of BUILT_IN_ELEMENTS) {
