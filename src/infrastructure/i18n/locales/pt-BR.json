@@ -478,6 +478,7 @@
     "awsServices": "AWS Services",
     "gcpServices": "GCP Services",
     "azureServices": "Azure Services",
+    "kubernetesServices": "Kubernetes",
     "levelContext": "Nível 1",
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3",
@@ -1078,6 +1079,26 @@
         "aws-general": {
           "label": "General",
           "description": "Demais serviços e agrupamentos da AWS."
+        }
+      }
+    },
+    "k8s": {
+      "categories": {
+        "k8s-workloads": {
+          "label": "Workloads",
+          "description": "Workloads do Kubernetes (Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod)."
+        },
+        "k8s-networking": {
+          "label": "Networking",
+          "description": "Rede do Kubernetes (Service, Ingress, NetworkPolicy)."
+        },
+        "k8s-storage": {
+          "label": "Storage",
+          "description": "Armazenamento do Kubernetes (PersistentVolume, PVC, StorageClass)."
+        },
+        "k8s-config": {
+          "label": "Config",
+          "description": "Objetos de configuração do Kubernetes (ConfigMap, Secret)."
         }
       }
     }

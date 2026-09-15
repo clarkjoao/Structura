@@ -17,6 +17,7 @@ import { unknownElement } from "./structural/unknown.element";
 import { gcpFamily } from "./families/gcp/gcp.family";
 import { azureFamily } from "./families/azure/azure.family";
 import { awsFamily } from "./families/aws/aws.family";
+import { k8sFamily } from "./families/k8s/k8s.family";
 import { c4Elements } from "./families/c4/c4.family";
 
 const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
@@ -40,6 +41,6 @@ for (const element of BUILT_IN_ELEMENTS) {
 
 // Catalog families: one call each. Descriptors + cloudRegistry adapters land
 // together — no per-family edit of cloud/bootstrap or ComponentType unions.
-for (const family of [awsFamily, gcpFamily, azureFamily]) {
+for (const family of [awsFamily, gcpFamily, azureFamily, k8sFamily]) {
   if (!isRegisteredCloudFamily(family.id)) registerCloudFamily(family);
 }

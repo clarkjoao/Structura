@@ -132,6 +132,10 @@ export default {
         "azure-management": "hsl(var(--azure-management))",
         "azure-media": "hsl(var(--azure-media))",
         "azure-general": "hsl(var(--azure-general))",
+        "k8s-workloads": "hsl(var(--k8s-workloads))",
+        "k8s-networking": "hsl(var(--k8s-networking))",
+        "k8s-storage": "hsl(var(--k8s-storage))",
+        "k8s-config": "hsl(var(--k8s-config))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

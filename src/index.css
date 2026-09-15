@@ -119,6 +119,11 @@
     --azure-media: 330 65% 48%;
     --azure-general: 214 90% 50%;
 
+    --k8s-workloads: 214 85% 48%;
+    --k8s-networking: 199 78% 44%;
+    --k8s-storage: 142 52% 38%;
+    --k8s-config: 270 45% 48%;
+
     --chart-1: 27 95% 55%;
     --chart-2: 43 96% 50%;
     --chart-3: 47 95% 48%;
@@ -254,6 +259,11 @@
     --azure-management: 220 18% 55%;
     --azure-media: 330 65% 55%;
     --azure-general: 214 90% 58%;
+
+    --k8s-workloads: 214 85% 55%;
+    --k8s-networking: 199 78% 50%;
+    --k8s-storage: 142 52% 44%;
+    --k8s-config: 270 45% 55%;
 
     --chart-1: 27 95% 60%;
     --chart-2: 43 96% 56%;
