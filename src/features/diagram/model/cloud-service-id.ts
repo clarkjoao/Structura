@@ -87,7 +87,10 @@ export function isCloudServiceIdWriteEnabled(): boolean {
  *    legacy fields at all, so the "off" branch could not type-check without
  *    re-opening the union that F6b closed.
  * 3. `k8s` and `oss` never had a legacy field. There is no F6a behaviour for
- *    them to fall back to.
+ *    them to fall back to. They still share this build gate: the cutover is
+ *    "any `cloudServiceId` writer in the production bundle", not
+ *    "hyperscaler legacy only". Exempting them needs a per-family gate
+ *    redesign — see `docs/audits/correcao-achados-auditoria.md` (fatia 2+3).
  *
  * The cutover is schema v13 as a whole — migration included — not a choice of
  * field name at the write sites. So the gate lives where the cutover actually
