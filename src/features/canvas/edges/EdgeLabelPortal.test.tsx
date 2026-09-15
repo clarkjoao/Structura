@@ -94,9 +94,9 @@ describe("EdgeLabelPortal", () => {
   });
 
   it("attaches a portal that rendered before the mount node existed", () => {
-    let sharedContainer: HTMLElement | null = null;
+    const captured = { container: null as HTMLElement | null };
     function CaptureContainer() {
-      sharedContainer = useEdgeLabelPortalContainer();
+      captured.container = useEdgeLabelPortalContainer();
       return null;
     }
 
@@ -111,15 +111,15 @@ describe("EdgeLabelPortal", () => {
 
     // Content already rendered into the detached container, but not in the document —
     // the failure mode that hid EdgeToolbar after the single-renderer change.
-    expect(sharedContainer).not.toBeNull();
-    expect(sharedContainer!.querySelector("[data-testid='toolbar']")).not.toBeNull();
-    expect(document.body.contains(sharedContainer)).toBe(false);
+    expect(captured.container).not.toBeNull();
+    expect(captured.container!.querySelector("[data-testid='toolbar']")).not.toBeNull();
+    expect(document.body.contains(captured.container)).toBe(false);
     expect(screen.queryByTestId("toolbar")).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "ready" }));
 
     const toolbar = screen.getByTestId("toolbar");
-    expect(document.body.contains(sharedContainer)).toBe(true);
+    expect(document.body.contains(captured.container)).toBe(true);
     expect(screen.getByTestId("host").contains(toolbar)).toBe(true);
   });
 
