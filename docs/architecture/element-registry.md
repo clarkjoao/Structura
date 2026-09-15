@@ -1,0 +1,72 @@
+# Element registry
+
+How canvas elements are owned in Structura today. Long-term decisions live in
+[ADR-0010](../adr/0010-element-registry.md).
+
+## Layout
+
+| Path | Role |
+| --- | --- |
+| `src/features/elements/element.types.ts` | `ElementDescriptor` contract |
+| `src/features/elements/element.registry.ts` | Map registry + lookups |
+| `src/features/elements/bootstrap.ts` | Registers built-ins at app load |
+| `src/features/elements/families/` | C4 factory + `CloudFamilyDefinition` families |
+| `src/features/canvas/nodes/node-types/registry.ts` | Legacy **plugin** render registry only |
+
+Boot side-effect (from `main.tsx`): `import "./features/elements/bootstrap"`.
+
+## What is registered
+
+- **Structural:** note, db-table, json-viewer, api-group, endpoint, panel,
+  process-node, external-element, svg, unknown
+- **C4:** person, system, container, component (declared family, not a catch-all)
+- **Cloud families** via `registerCloudFamily`: `aws`, `gcp`, `azure`, `k8s`, `oss`
+
+Category ids (e.g. `aws-compute`) are element types; concrete services attach
+through `cloudServiceId` on the component.
+
+## Ownership rules
+
+For every registered id:
+
+1. No legacy `NODE_TYPE_REGISTRY` descriptor matches it.
+2. `buildComponentForType` equals `descriptor.model.createComponent`.
+3. The type is accepted by `sanitizeComponentType` and offered to the LLM.
+4. Export / handles / default size are declared on the descriptor.
+
+Locked by `src/features/elements/single-owner.invariant.test.ts`.
+
+## Cloud schema
+
+| Concern | Rule |
+| --- | --- |
+| Write | `cloudServiceId` only (persist schema **v13**) |
+| Read | `resolveCloudServiceId` — tolerant of legacy `awsService` / `gcpService` / `azureService` / catalog `serviceId` |
+| Business catalog link | Still `BaseComponent.serviceId` — **do not** overload it for cloud |
+
+### Deploy gate (F6b)
+
+Code that **writes** `cloudServiceId` must not go to production until F6a
+tolerant reads have been live long enough for clients to upgrade. Collaboration
+checksums diverge between a client that still writes legacy cloud fields and one
+that writes `cloudServiceId`. That is expected of the cutover, not a bug to
+“fix” by merging early.
+
+## LLM / IR
+
+- Palette and tools: hierarchical `list_element_families` + `search_elements`.
+- Same-turn patches: catalog reads run before `ADD_NODE` so a `search_elements`
+  hit can gate cloud writes in one model turn (F8b).
+- Diagram IR AWS category vocabulary: `getIrSemanticTypes()` / `AWS_CATEGORIES`
+  — never a load-time snapshot of `allElements()` inside the LLM chunk.
+
+## Adding a family or type
+
+1. Prefer `CloudFamilyDefinition` + `registerCloudFamily` for catalog packs.
+2. Prefer a dedicated `ElementDescriptor` for a new structural shape.
+3. Register from `bootstrap.ts` (or the family’s module imported there).
+4. Do **not** add built-ins to `NODE_TYPE_REGISTRY`.
+5. Vendor icons with an explicit license note beside the assets.
+6. Extend i18n (`en` + `pt-BR`) and accent tokens as needed.
+
+Plugins still use `registerDescriptor` on the canvas node-type registry.
