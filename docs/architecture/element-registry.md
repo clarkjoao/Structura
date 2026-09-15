@@ -94,8 +94,13 @@ rather than a runtime fallback to legacy writes.
   patch's own search results; that dropped valid nodes — `search_elements("redis")`
   plus `add_node("aws-compute", "lambda")` lost the Lambda — so it was retired.
   See the rationale block in `llm/add-node-validation.ts`.
-- Diagram IR AWS category vocabulary: `getIrSemanticTypes()` / `AWS_CATEGORIES`
-  — never a load-time snapshot of `allElements()` inside the LLM chunk.
+- Diagram IR AWS category vocabulary: `getIrSemanticTypes()` /
+  `irAwsCategoryIdsFromCatalog()`, reading the static `AWS_CATEGORIES` —
+  **never** `allElements()`. Deriving it from the registry was tried (F5c) and
+  reverted after it shipped broken; see
+  [ADR-0010](../adr/0010-element-registry.md). Catalog↔registry parity is locked
+  by `ir.types.test.ts`; the chunk boundary itself is only reachable end to end,
+  by `cypress/e2e/ir-generation-smoke.cy.ts`.
 
 ## Adding a family or type
 

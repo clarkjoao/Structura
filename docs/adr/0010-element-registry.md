@@ -46,9 +46,19 @@ registries. This ADR records the domain-level registry that closes that gap for
   rewrite for corrupted types.
 - (+) New cloud families can call `registerCloudFamily` without widening closed
   unions for every category id (open family ids after the contract-close work).
-- (−) IR AWS category allowlist must not snapshot `allElements()` inside the
-  lazy LLM chunk — use `AWS_CATEGORIES` / `getIrSemanticTypes()` (see
-  `src/features/llm/ir/ir.types.ts`).
+- (−) **The IR does not read the element registry, by decision.** F5c derived
+  the AWS category semanticTypes from `allElements()`; that shipped broken. The
+  LLM feature is its own Vite chunk, the registry snapshot taken at chunk load
+  was empty there, and the allowlist came out boundaries-only — so production
+  rejected every `aws-compute` IR while vitest stayed green. `42ec226` reverted
+  it to the static `AWS_CATEGORIES` catalog.
+
+  Treat that as the standing decision, not as an accident to tidy up: the IR
+  vocabulary is deliberately independent of bootstrap timing. `ir.types.test.ts`
+  compares the catalog against the live registry so the two cannot drift, and
+  `cypress/e2e/ir-generation-smoke.cy.ts` is what covers the chunk boundary —
+  no unit test can, because it runs in one module graph where bootstrap has
+  always run.
 - (−) **F6b deploy gate:** schema v13 / `cloudServiceId` writes must not ship
   until F6a tolerant reads have been live long enough. Mixed collab rooms
   (legacy field writers vs `cloudServiceId` writers) diverge checksums; there is

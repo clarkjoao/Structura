@@ -5,16 +5,12 @@
  * validator, layout, and canvas application. It is deliberately independent of
  * Structura's own component model — the translation happens in `ir-to-component`.
  *
- * AWS *category* semanticTypes are derived from the AWS catalog category list
- * (same ids the element registry registers for family `"aws"` — F5c). Boundary
+ * AWS *category* semanticTypes come from `AWS_CATEGORIES`, the static catalog —
+ * **not** from `allElements()`. F5c tried the registry and it failed in
+ * production; see `irAwsCategoryIdsFromCatalog` for the full account. Boundary
  * types and C4 remain IR concepts, not registry categories. Expanding the IR
  * vocabulary to GCP/Azure is a product decision, not an automatic consequence
- * of reading from the registry.
- *
- * Category ids come from `AWS_CATEGORIES` (not `allElements()` at module load):
- * the LLM feature is a separate Vite chunk, and a load-time registry snapshot
- * there can miss the host's registrations and reject every `aws-compute` IR in
- * production while vitest still passes.
+ * of where the AWS ids are read from.
  */
 
 import {
@@ -57,24 +53,36 @@ export const IR_BOUNDARY_SEMANTIC_TYPES = [
 export type BoundarySemanticType = (typeof IR_BOUNDARY_SEMANTIC_TYPES)[number];
 
 /**
- * AWS category ids that are also IR semanticTypes.
+ * AWS category ids that are also IR semanticTypes, read from the **static
+ * catalog** — deliberately not from the element registry.
  *
- * Sourced from `AWS_CATEGORIES` (static catalog) so the LLM chunk does not
- * depend on element-registry bootstrap timing. `ir.types.test.ts` locks this
- * list to the registered AWS family so the two cannot drift.
+ * F5c moved this to `allElements()` and it broke in production: the LLM feature
+ * is its own Vite chunk, the registry snapshot taken at chunk load was empty
+ * there, and the allowlist came out boundaries-only, so every `aws-compute` IR
+ * was rejected while vitest stayed green. `42ec226` reverted it. That revert is
+ * the decision, not an accident to undo — reading `AWS_CATEGORIES` is what
+ * keeps the vocabulary independent of bootstrap timing.
+ *
+ * The catalog and the registry cannot disagree today (`awsFamily.categories` is
+ * built from `AWS_CATEGORIES`), and `ir.types.test.ts` compares them against
+ * the live registry so they cannot start to. Note what that test *cannot* do:
+ * the original failure was a bundling boundary, not a logic error, and a unit
+ * test runs in one module graph where bootstrap has always run. Only an
+ * end-to-end run reproduces it — `cypress/e2e/ir-generation-smoke.cy.ts`, which
+ * is what caught it the first time.
  */
-export function irAwsCategoryIdsFromRegistry(): readonly AwsCategoryId[] {
+export function irAwsCategoryIdsFromCatalog(): readonly AwsCategoryId[] {
   return AWS_CATEGORIES.map((category) => category.id).filter(isAwsType);
 }
 
 /**
  * Boundary types first, then one per AWS catalog category.
  *
- * Built via `irAwsCategoryIdsFromRegistry()` on each call (cheap) so callers
+ * Built via `irAwsCategoryIdsFromCatalog()` on each call (cheap) so callers
  * never hold a stale allowlist across hot reloads in tests.
  */
 export function getIrAwsSemanticTypes(): readonly (BoundarySemanticType | AwsCategoryId)[] {
-  return [...IR_BOUNDARY_SEMANTIC_TYPES, ...irAwsCategoryIdsFromRegistry()];
+  return [...IR_BOUNDARY_SEMANTIC_TYPES, ...irAwsCategoryIdsFromCatalog()];
 }
 
 export function getIrSemanticTypes(): readonly SemanticType[] {
