@@ -156,10 +156,18 @@ export function searchElements(params: {
       const categoryDescription = t(category.descriptionKey);
       const services = family.services.filter((service) => service.categoryId === category.id);
       for (const service of services) {
+        // A service may describe itself; otherwise it inherits the category's
+        // line. Without this the model saw the same sentence for every service
+        // in a category — "AWS compute services (EC2, Lambda, …)" as the
+        // description of both EC2 and Lambda.
+        const description = service.descriptionKey
+          ? t(service.descriptionKey)
+          : categoryDescription;
         const keys = [
           service.id,
           service.name,
           service.iconName,
+          description,
           category.id,
           categoryLabel,
           categoryDescription,
@@ -171,7 +179,7 @@ export function searchElements(params: {
           serviceId: service.id,
           familyId: family.id,
           label: service.name,
-          description: categoryDescription,
+          description,
           requiredFields: [],
         });
       }

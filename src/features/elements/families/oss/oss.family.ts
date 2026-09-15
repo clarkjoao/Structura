@@ -53,6 +53,10 @@ export const ossFamily: CloudFamilyDefinition = {
       name: service.name,
       iconName: service.iconName,
       categoryId: asOssCategoryType(category.id),
+      // Per-service line for the LLM catalog. The hyperscaler families have
+      // hundreds of services and still inherit their category's description;
+      // `oss` has two, so it is where the field earns its keep first.
+      descriptionKey: `elements.oss.services.${service.id}.description`,
     })),
   ),
 

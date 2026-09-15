@@ -1113,6 +1113,14 @@
           "label": "Messaging",
           "description": "Mensageria e streaming open source (Apache Kafka, …)."
         }
+      },
+      "services": {
+        "redis": {
+          "description": "Armazenamento chave-valor em memória usado como cache, sessão ou broker de mensagens."
+        },
+        "kafka": {
+          "description": "Plataforma distribuída de streaming de eventos para tópicos duráveis de alta vazão."
+        }
       }
     }
   },

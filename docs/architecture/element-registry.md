@@ -25,6 +25,25 @@ Boot side-effect (from `main.tsx`): `import "./features/elements/bootstrap"`.
 Category ids (e.g. `aws-compute`) are element types; concrete services attach
 through `cloudServiceId` on the component.
 
+## Descriptor fields have readers
+
+Every field on `ElementDescriptor` / `CloudFamilyDefinition` must have a
+consumer. A declared-but-unread field is not neutral: `model.patchableKeys`
+sat unread while `element-presets` kept its own hand-written copy of the same
+list, the two drifted, and saving a preset of an `svg` or `process-node` threw
+away the field the element cannot render without.
+
+Current readers for the non-obvious ones:
+
+| Field | Reader |
+| --- | --- |
+| `model.patchableKeys` | `element-presets/utils/element-preset.utils.ts` — what a preset may carry |
+| `model.defaultZIndex` | `components.slice.ts` — stacking order at creation |
+| `model.requiredFields` | LLM catalog + `search_elements` |
+| `palette.spotlight` / `searchKeys` | `element.palette.ts`, both pickers |
+| `CloudFamilyService.descriptionKey` | `searchElements` — per-service line, falling back to the category's |
+| `canvas.derivesSize` / `canvas.canBeConnectionSource` | `single-owner.invariant.test.ts` only — they gate invariants, not behaviour |
+
 ## Ownership rules
 
 For every registered id:

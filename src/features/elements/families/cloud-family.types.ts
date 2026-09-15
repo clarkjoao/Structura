@@ -37,7 +37,13 @@ export interface CloudFamilyService {
   /** Key the family's `IconResolver` understands. */
   iconName: string;
   categoryId: string;
-  /** Optional one-line description for the LLM catalog. */
+  /**
+   * i18n key for a one-line description of *this service*, for the LLM catalog.
+   *
+   * Absent falls back to the category's description, which is what every
+   * service used to get: the model saw "AWS compute services (EC2, Lambda, …)"
+   * as the description of both EC2 and Lambda. Read by `searchElements`.
+   */
   descriptionKey?: string;
 }
 
@@ -131,8 +137,6 @@ export interface CloudFamilyDefinition {
   ) => Component;
   /** Optional inspector override; absent → generic `ComponentPanel`. */
   inspector?: ElementInspectorSlice;
-  /** i18n key for a blank new node's name; blank when absent. */
-  defaultNameKey?: string;
 }
 
 /** Re-export so callers building `attachService` see the create-options shape. */

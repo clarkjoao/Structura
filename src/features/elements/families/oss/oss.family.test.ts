@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { cloudRegistry } from "@/features/cloud";
 import { getElement, isRegisteredElementType } from "@/features/elements/element.registry";
 import { isValidNodeType } from "@/features/llm/component-catalog";
+import { searchElements } from "@/features/llm/element-catalog-query";
+import i18n from "@/infrastructure/i18n";
 import { isRegisteredCloudFamily } from "../cloud-family.registry";
 import { ossElements, ossFamily } from "./oss.family";
 import { OSS_CATEGORIES, OSS_SERVICE_MAP } from "./oss.catalog";
@@ -48,5 +50,40 @@ describe("oss family", () => {
     for (const service of OSS_SERVICE_MAP.values()) {
       expect(ossIconDataUri(service.iconName), service.iconName).toBeTruthy();
     }
+  });
+});
+
+describe("service-level descriptions reach the LLM catalog", () => {
+  it("gives Redis its own description instead of the category line", () => {
+    const hit = searchElements({ query: "redis", familyId: "oss" }).results.find(
+      (row) => row.serviceId === "redis",
+    );
+
+    expect(hit).toBeDefined();
+    expect(hit!.description).toContain("In-memory key-value store");
+    // The regression this guards: every service used to inherit the category's
+    // sentence, so Redis and Kafka read identically to the model.
+    expect(hit!.description).not.toBe(i18n.t("elements.oss.categories.oss-datastore.description"));
+  });
+
+  it("gives Kafka a different description from Redis", () => {
+    const rows = searchElements({ query: "oss", familyId: "oss" }).results;
+    const redis = rows.find((row) => row.serviceId === "redis");
+    const kafka = rows.find((row) => row.serviceId === "kafka");
+
+    expect(redis?.description).toBeTruthy();
+    expect(kafka?.description).toBeTruthy();
+    expect(redis!.description).not.toBe(kafka!.description);
+  });
+
+  it("falls back to the category description when a service declares none", () => {
+    // AWS declares no per-service keys, so it still inherits — proving the
+    // fallback path, not just the populated one.
+    const hit = searchElements({ query: "lambda", familyId: "aws" }).results.find(
+      (row) => row.serviceId === "lambda",
+    );
+
+    expect(hit).toBeDefined();
+    expect(hit!.description).toBe(i18n.t("elements.aws.categories.aws-compute.description"));
   });
 });

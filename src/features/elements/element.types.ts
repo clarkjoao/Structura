@@ -203,9 +203,6 @@ export interface ElementModelSlice {
    */
   defaultZIndex?: number;
 
-  /** i18n key for the default name of a new instance; blank name when absent. */
-  defaultNameKey?: string;
-
   /** Fields the element cannot do without; surfaced to the LLM catalog too. */
   requiredFields?: readonly string[];
 
@@ -305,7 +302,6 @@ export interface ElementPaletteSlice {
 export interface ElementInspectorSlice {
   /** Absent means the generic `ComponentPanel`. */
   panel?: ElementInspectorPanel;
-  sections?: readonly string[];
 }
 
 /**
@@ -321,7 +317,6 @@ export interface ElementExportSlice {
      * have been a value no reader could trust, and nothing read it.
      */
     toExportNode: (comp: Component, base: ExportGeometry) => ExportNode;
-    minSize?: { width: number; height: number };
   };
 }
 

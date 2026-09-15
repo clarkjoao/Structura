@@ -80,7 +80,6 @@ export function buildCloudFamilyDescriptors(family: CloudFamilyDefinition): Elem
           family.attachService(base, category.id, options.serviceId),
         defaultSize: family.defaultSize,
         patchableKeys: family.patchableKeys,
-        ...(family.defaultNameKey === undefined ? {} : { defaultNameKey: family.defaultNameKey }),
       },
 
       canvas: {

@@ -1113,6 +1113,14 @@
           "label": "Messaging",
           "description": "Open-source messaging and streaming (Apache Kafka, …)."
         }
+      },
+      "services": {
+        "redis": {
+          "description": "In-memory key-value store used as a cache, session store or message broker."
+        },
+        "kafka": {
+          "description": "Distributed event-streaming platform for high-throughput durable topics."
+        }
       }
     }
   },
