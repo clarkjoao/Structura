@@ -1000,6 +1000,74 @@
           "description": "Demais serviços do Azure."
         }
       }
+    },
+    "aws": {
+      "categories": {
+        "aws-compute": {
+          "label": "Compute",
+          "description": "Serviços de computação da AWS (EC2, Lambda, …)."
+        },
+        "aws-storage": {
+          "label": "Storage",
+          "description": "Serviços de armazenamento da AWS (S3, EBS, EFS, …)."
+        },
+        "aws-database": {
+          "label": "Databases",
+          "description": "Bancos gerenciados da AWS (RDS, DynamoDB, …)."
+        },
+        "aws-networking": {
+          "label": "Networking",
+          "description": "Rede e entrega de conteúdo da AWS."
+        },
+        "aws-security": {
+          "label": "Security",
+          "description": "Serviços de segurança e identidade da AWS."
+        },
+        "aws-analytics": {
+          "label": "Analytics",
+          "description": "Serviços de analítica de dados da AWS."
+        },
+        "aws-ml": {
+          "label": "Machine Learning",
+          "description": "Serviços de machine learning e IA da AWS."
+        },
+        "aws-integration": {
+          "label": "Application Integration",
+          "description": "Serviços de mensageria e integração da AWS."
+        },
+        "aws-management": {
+          "label": "Management",
+          "description": "Ferramentas de gestão e governança da AWS."
+        },
+        "aws-developer": {
+          "label": "Developer Tools",
+          "description": "Ferramentas de desenvolvimento da AWS."
+        },
+        "aws-containers": {
+          "label": "Containers",
+          "description": "Serviços de containers da AWS (ECS, EKS, …)."
+        },
+        "aws-media": {
+          "label": "Media",
+          "description": "Serviços de mídia da AWS."
+        },
+        "aws-migration": {
+          "label": "Migration",
+          "description": "Serviços de migração e transferência da AWS."
+        },
+        "aws-iot": {
+          "label": "Internet of Things",
+          "description": "Serviços de IoT da AWS."
+        },
+        "aws-end-user": {
+          "label": "End User Computing",
+          "description": "Serviços de computação para usuário final da AWS."
+        },
+        "aws-general": {
+          "label": "General",
+          "description": "Demais serviços e agrupamentos da AWS."
+        }
+      }
     }
   },
   "flowchart": {

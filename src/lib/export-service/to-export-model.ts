@@ -4,7 +4,6 @@ import {
   EdgeStyle,
   getEffectiveConnectionStyle,
   isApiGroupComponent,
-  isAwsComponent,
   isC4Component,
   isDbTableComponent,
   isNoteComponent,
@@ -30,7 +29,6 @@ import type {
   ExportNode,
   ExportStrokeStyle,
 } from "../export-core";
-import { awsServiceCache } from "./aws-cache";
 import { getElement, isRegisteredElementComponent } from "@/features/elements/element.registry";
 import { validateDiagram } from "./validate-diagram";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
@@ -250,14 +248,6 @@ function mapNode(
     return getElement(c.type)!.export.drawio.toExportNode(c, base);
   }
 
-  if (isAwsComponent(c)) {
-    return {
-      ...base,
-      kind: "aws",
-      name: c.name,
-      awsIcon: awsServiceCache.getInfo(c.awsService ?? "").icon,
-    };
-  }
   if (isC4Component(c)) {
     return c4Node(c, base, serviceCatalog);
   }

@@ -67,6 +67,22 @@ const DECLARED_IDS: RegisteredElementTypeId[] = [
   "azure-management",
   "azure-media",
   "azure-general",
+  "aws-compute",
+  "aws-storage",
+  "aws-database",
+  "aws-networking",
+  "aws-security",
+  "aws-analytics",
+  "aws-ml",
+  "aws-integration",
+  "aws-management",
+  "aws-developer",
+  "aws-containers",
+  "aws-media",
+  "aws-migration",
+  "aws-iot",
+  "aws-end-user",
+  "aws-general",
 ];
 
 describe("the registry and its type-level mirror agree", () => {
@@ -164,11 +180,10 @@ describe("a fixed-size element paints at the size it was created at", () => {
 
 describe("what the legacy render registry still owns", () => {
   /**
-   * Every built-in type except the four C4 ones and the remaining cloud
-   * families (AWS, Azure) now lives on the element registry. What remains in
-   * the old array is the catch-all, plus whatever a plugin splices in ahead of
-   * it at runtime. GCP moved in F4; Azure in F5a; AWS follows in F5b; C4 and the
-   * catch-all go later.
+   * Every built-in type except the four C4 ones now lives on the element
+   * registry. What remains in the old array is the catch-all, plus whatever a
+   * plugin splices in ahead of it at runtime. GCP/Azure/AWS moved in F4–F5b;
+   * C4 and the catch-all go later.
    */
   it("holds only the C4 catch-all", () => {
     expect(NODE_TYPE_REGISTRY.map((descriptor) => descriptor.rfType)).toEqual(["c4"]);

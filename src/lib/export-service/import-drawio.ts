@@ -1,4 +1,5 @@
 import type {
+  AwsComponent,
   C4Type,
   Component,
   Connection,
@@ -6,7 +7,12 @@ import type {
   UnknownComponent,
 } from "@/features/diagram";
 import { COMPONENT_TYPE_UNKNOWN, EdgeStyle, PanelKind, generateId } from "@/features/diagram";
-import { AWS_CATEGORY_ID_GENERAL } from "@/features/cloud/providers/aws/aws.catalog";
+import {
+  AWS_CATEGORY_ID_GENERAL,
+  isAwsType,
+  type AwsCategoryId,
+} from "@/features/cloud/providers/aws/aws.catalog";
+import { allElements } from "@/features/elements/element.registry";
 
 export interface DrawioImportResult {
   components: Component[];
@@ -197,6 +203,24 @@ function styleHasAwsProductIcon(style: string): boolean {
 function extractAwsServiceFromStyle(style: string): string | undefined {
   const match = /prIcon=mxgraph\.aws4\.(\w+)/.exec(style);
   return match ? match[1] : undefined;
+}
+
+/**
+ * Resolve the AWS category type for an imported service via the element registry.
+ *
+ * Falls back to `aws-general` when the service id is missing or not owned by any
+ * registered AWS category (mxgraph icon names that are not catalog service ids).
+ */
+function resolveAwsCategoryType(awsService: string | undefined): AwsCategoryId {
+  if (!awsService) return AWS_CATEGORY_ID_GENERAL;
+  for (const element of allElements()) {
+    if (element.family !== "aws") continue;
+    const hit = element.palette.variants?.some(
+      (variant) => variant.createOptions.serviceId === awsService,
+    );
+    if (hit && isAwsType(element.id)) return element.id;
+  }
+  return AWS_CATEGORY_ID_GENERAL;
 }
 
 function isEdgeMxCell(mxCell: Element): boolean {
@@ -490,14 +514,15 @@ export function parseDrawioXml(
       const awsService = extractAwsServiceFromStyle(style);
       const name = getAttr(mxCellEl, "value") || (awsService ?? "AWS");
 
-      components.push({
+      const awsComponent: AwsComponent = {
         id: newId,
         name,
         description: "",
         parentId,
-        type: AWS_CATEGORY_ID_GENERAL,
+        type: resolveAwsCategoryType(awsService),
         ...(awsService ? { awsService } : {}),
-      });
+      };
+      components.push(awsComponent);
       layouts.push({
         elementId: newId,
         x: positioned.x,
@@ -563,14 +588,15 @@ export function parseDrawioXml(
           height: positioned.height || undefined,
         });
       } else if (conversion.kind === "aws") {
-        components.push({
+        const awsComponent: AwsComponent = {
           id: newId,
           name: conversion.name,
           description: "",
           parentId,
-          type: AWS_CATEGORY_ID_GENERAL,
+          type: resolveAwsCategoryType(conversion.awsService),
           ...(conversion.awsService ? { awsService: conversion.awsService } : {}),
-        });
+        };
+        components.push(awsComponent);
         layouts.push({
           elementId: newId,
           x: positioned.x,

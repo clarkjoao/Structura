@@ -66,7 +66,24 @@ export type RegisteredElementTypeId =
   | "azure-iot"
   | "azure-management"
   | "azure-media"
-  | "azure-general";
+  | "azure-general"
+  // F5b: one literal per AwsCategoryId (not per service — service lives in awsService).
+  | "aws-compute"
+  | "aws-storage"
+  | "aws-database"
+  | "aws-networking"
+  | "aws-security"
+  | "aws-analytics"
+  | "aws-ml"
+  | "aws-integration"
+  | "aws-management"
+  | "aws-developer"
+  | "aws-containers"
+  | "aws-media"
+  | "aws-migration"
+  | "aws-iot"
+  | "aws-end-user"
+  | "aws-general";
 
 /**
  * Which vocabulary an element belongs to.

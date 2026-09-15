@@ -1000,6 +1000,74 @@
           "description": "Other Azure services."
         }
       }
+    },
+    "aws": {
+      "categories": {
+        "aws-compute": {
+          "label": "Compute",
+          "description": "AWS compute services (EC2, Lambda, …)."
+        },
+        "aws-storage": {
+          "label": "Storage",
+          "description": "AWS storage services (S3, EBS, EFS, …)."
+        },
+        "aws-database": {
+          "label": "Databases",
+          "description": "AWS managed databases (RDS, DynamoDB, …)."
+        },
+        "aws-networking": {
+          "label": "Networking",
+          "description": "AWS networking and content delivery."
+        },
+        "aws-security": {
+          "label": "Security",
+          "description": "AWS security and identity services."
+        },
+        "aws-analytics": {
+          "label": "Analytics",
+          "description": "AWS data analytics services."
+        },
+        "aws-ml": {
+          "label": "Machine Learning",
+          "description": "AWS machine-learning and AI services."
+        },
+        "aws-integration": {
+          "label": "Application Integration",
+          "description": "AWS messaging and integration services."
+        },
+        "aws-management": {
+          "label": "Management",
+          "description": "AWS management and governance tools."
+        },
+        "aws-developer": {
+          "label": "Developer Tools",
+          "description": "AWS developer tools."
+        },
+        "aws-containers": {
+          "label": "Containers",
+          "description": "AWS container services (ECS, EKS, …)."
+        },
+        "aws-media": {
+          "label": "Media",
+          "description": "AWS media services."
+        },
+        "aws-migration": {
+          "label": "Migration",
+          "description": "AWS migration and transfer services."
+        },
+        "aws-iot": {
+          "label": "Internet of Things",
+          "description": "AWS IoT services."
+        },
+        "aws-end-user": {
+          "label": "End User Computing",
+          "description": "AWS end-user computing services."
+        },
+        "aws-general": {
+          "label": "General",
+          "description": "Other AWS services and groupings."
+        }
+      }
     }
   },
   "flowchart": {
