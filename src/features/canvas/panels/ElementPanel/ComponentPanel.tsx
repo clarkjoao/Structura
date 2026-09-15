@@ -16,6 +16,10 @@ import type {
   ServiceDefinition,
 } from "@/features/diagram";
 import {
+  cloudServiceIdClearingPatch,
+  resolveCloudServiceId,
+} from "@/features/diagram/model/cloud-service-id";
+import {
   isPanelComponent,
   isNoteComponent,
   isDbTableComponent,
@@ -116,12 +120,7 @@ const ComponentPanel = ({
   const [tags, setTags] = useState<string[]>(component.tags ?? []);
   const [tagInput, setTagInput] = useState("");
   const [type, setType] = useState<ComponentType>(component.type);
-  const [cloudService, setCloudService] = useState(
-    (component as { awsService?: string }).awsService ??
-      (component as { gcpService?: string }).gcpService ??
-      (component as { azureService?: string }).azureService ??
-      "",
-  );
+  const [cloudService, setCloudService] = useState(resolveCloudServiceId(component) ?? "");
   const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPanel = isPanelComponent(component);
@@ -133,7 +132,8 @@ const ComponentPanel = ({
     isFlowchart ? component.flowShape : "rectangle",
   );
   const cloudProvider = cloudRegistry.forType(type);
-  const cloudServiceInfo = cloudProvider && cloudService ? cloudProvider.getService(cloudService) : null;
+  const cloudServiceInfo =
+    cloudProvider && cloudService ? cloudProvider.getService(cloudService) : null;
   const canCreateLinked =
     isSystemType(component.type) ||
     isContainerType(component.type) ||
@@ -159,6 +159,10 @@ const ComponentPanel = ({
   useEffect(() => {
     setTab("details");
   }, [component.id]);
+
+  useEffect(() => {
+    setCloudService(resolveCloudServiceId(component) ?? "");
+  }, [component]);
 
   useEffect(() => {
     if (isProcessNodeComponent(component)) {
@@ -244,7 +248,7 @@ const ComponentPanel = ({
           {!isSimple && cloudProvider && cloudServiceInfo && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
               <CloudIcon
-                providerId={cloudProvider.id as "aws" | "gcp" | "azure"}
+                providerId={cloudProvider.id}
                 iconName={cloudServiceInfo.iconName}
                 size={32}
               />
@@ -337,9 +341,7 @@ const ComponentPanel = ({
                       if (!nextProvider) setCloudService("");
                       updateComponent(component.id, {
                         type: nextType,
-                        awsService: nextProvider?.id === "aws" && cloudService ? cloudService : undefined,
-                        gcpService: nextProvider?.id === "gcp" && cloudService ? cloudService : undefined,
-                        azureService: nextProvider?.id === "azure" && cloudService ? cloudService : undefined,
+                        ...cloudServiceIdClearingPatch(nextProvider ? cloudService : undefined),
                       } as unknown as ComponentPatch);
                     }}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -385,9 +387,7 @@ const ComponentPanel = ({
                           name.startsWith(i18n.t("common.defaultNamePrefix")) ||
                           name === component.name);
                       updateComponent(component.id, {
-                        awsService: cloudProvider.id === "aws" ? nextService || undefined : undefined,
-                        gcpService: cloudProvider.id === "gcp" ? nextService || undefined : undefined,
-                        azureService: cloudProvider.id === "azure" ? nextService || undefined : undefined,
+                        ...cloudServiceIdClearingPatch(nextService),
                         ...(shouldRename && serviceEntry ? { name: serviceEntry.name } : {}),
                       } as unknown as ComponentPatch);
                       if (shouldRename && serviceEntry) setName(serviceEntry.name);
@@ -395,11 +395,13 @@ const ComponentPanel = ({
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="">{t("endpointPanel.selectAwsService")}</option>
-                    {cloudProvider.services.filter((s) => s.categoryId === type).map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.name}
-                      </option>
-                    ))}
+                    {cloudProvider.services
+                      .filter((s) => s.categoryId === type)
+                      .map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
               )}

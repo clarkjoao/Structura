@@ -3,7 +3,7 @@ import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflo
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export type SvgNodeData = {
   elementId: string;

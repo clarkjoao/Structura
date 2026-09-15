@@ -1,29 +1,5 @@
+import { hasElement } from "@/features/elements/element.registry";
 import type { ComponentType } from "./component.types";
-
-/**
- * Built-in component types that can be the base of a template AND a
- * component's `type` field. Anything outside this list (and not a
- * plugin namespaced type) is sanitised to "component" so corrupted
- * `type` values don't slip through and trigger the unknown descriptor.
- * Keep in sync with the non-Aws/Gcp/Azure/Plugin members of the
- * ComponentType union in component.types.ts.
- */
-export const BUILTIN_COMPONENT_TYPES: ReadonlySet<string> = new Set<string>([
-  "person",
-  "system",
-  "container",
-  "component",
-  "panel",
-  "note",
-  "api-group",
-  "endpoint",
-  "unknown",
-  "svg",
-  "db-table",
-  "json-viewer",
-  "process-node",
-  "external-element",
-]);
 
 /**
  * Plugin namespaced ComponentType pattern: `<pluginId>/<name>` where both
@@ -38,21 +14,48 @@ export const BUILTIN_COMPONENT_TYPES: ReadonlySet<string> = new Set<string>([
 const PLUGIN_COMPONENT_TYPE_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
 
 /**
- * Sanitize a `type` value (string from raw JSON) into a `ComponentType`.
- * - Built-in types are returned as-is.
- * - Plugin namespaced types matching `<pluginId>/<name>` are returned
- *   as-is (they degrade to the unknown descriptor at render time when
- *   the plugin is missing).
- * - Anything else falls back to "component" so the rest of the app
- *   can keep working without branch-specific knowledge of the
- *   corruption.
+ * Recover a family category that no longer exists as a concrete id.
  *
- * Use this whenever a `type` string is read from persisted state or
- * from an external source (template save, JSON import, drawio import).
+ * Scope is deliberately narrow (F9): if the persisted string still carries a
+ * `<family>-` prefix whose family registered a `<family>-general` bucket, land
+ * there. No fuzzy matching beyond the prefix.
+ *
+ * The prefixes are not listed. They used to be — `aws-` / `gcp-` / `azure-`,
+ * hardcoded — which meant a family registered through `registerCloudFamily`
+ * still needed an edit here to get recovery, contradicting the "no per-family
+ * edit" promise. Asking the registry for `<prefix>-general` is the same
+ * question without the list: a family has that bucket only if it registered
+ * one, so `k8s` and `oss` (which have none) correctly fall through to
+ * `"unknown"`, and a future family gets recovery for free.
+ */
+function recoverCloudCategoryPrefix(value: string): ComponentType | undefined {
+  const separator = value.indexOf("-");
+  if (separator <= 0) return undefined;
+
+  const general = `${value.slice(0, separator)}-general`;
+  if (value === general) return undefined;
+  return hasElement(general) ? (general as ComponentType) : undefined;
+}
+
+/**
+ * Sanitize a `type` value (string from raw JSON) into a `ComponentType`.
+ *
+ * - Registered element ids are returned as-is.
+ * - Plugin namespaced types matching `<pluginId>/<name>` are returned as-is
+ *   (they degrade to the unknown descriptor at render time when the plugin
+ *   is missing).
+ * - Cloud-shaped unknowns recover to `*-general` when the prefix is clear.
+ * - Anything else falls back to `"unknown"` (F9 / decision 4 — was
+ *   `"component"` via the catch-all).
+ *
+ * Use this whenever a `type` string is read from persisted state or from an
+ * external source (template save, JSON import, drawio import).
  */
 export function sanitizeComponentType(value: unknown): ComponentType {
-  if (typeof value !== "string" || value.length === 0) return "component";
-  if (BUILTIN_COMPONENT_TYPES.has(value)) return value as ComponentType;
+  if (typeof value !== "string" || value.length === 0) return "unknown";
+  if (hasElement(value)) return value as ComponentType;
   if (PLUGIN_COMPONENT_TYPE_PATTERN.test(value)) return value as ComponentType;
-  return "component";
+  const recovered = recoverCloudCategoryPrefix(value);
+  if (recovered !== undefined) return recovered;
+  return "unknown";
 }

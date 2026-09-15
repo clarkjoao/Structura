@@ -4,25 +4,13 @@ import {
   EdgeStyle,
   getEffectiveConnectionStyle,
   isApiGroupComponent,
-  isAwsComponent,
-  isAzureComponent,
-  isC4Component,
   isDbTableComponent,
-  isEndpointComponent,
-  isExternalElementComponent,
-  isProcessNodeComponent,
-  isGcpComponent,
-  isJsonViewerComponent,
   isNoteComponent,
   isPanelComponent,
+  isJsonViewerComponent,
   isPluginTypedComponent,
-  isSvgComponent,
-  isUnknownComponent,
-  PanelKind,
   StrokeStyle,
 } from "@/features/diagram";
-import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { DEFAULT_PANEL_OPACITY } from "@/features/canvas/constants/panel.constants";
 import type {
   Component,
   Connection,
@@ -40,7 +28,7 @@ import type {
   ExportNode,
   ExportStrokeStyle,
 } from "../export-core";
-import { awsServiceCache } from "./aws-cache";
+import { getElement, isRegisteredElementComponent } from "@/features/elements/element.registry";
 import { validateDiagram } from "./validate-diagram";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
 import { resolveEdgeRouting } from "./edge-routing";
@@ -219,27 +207,6 @@ interface BaseGeometry {
   height: number;
 }
 
-// C4 / GCP / Azure all render through the C4 cell (GCP/Azure fall back to system
-// styling), so the mapper only needs this structural shape — not the named types
-// (GcpComponent/AzureComponent are not exported from the diagram barrel).
-function c4Node(
-  c: { type: string; name: string; description: string; technology?: string; serviceId?: string },
-  base: BaseGeometry,
-  serviceCatalog: Record<string, ServiceDefinition>,
-): ExportNode {
-  const serviceName = c.serviceId ? serviceCatalog[c.serviceId]?.name : undefined;
-  return {
-    ...base,
-    kind: "c4",
-    subtype: c.type,
-    name: c.name,
-    description: c.description,
-    technology: c.technology,
-    serviceId: c.serviceId,
-    serviceName,
-  };
-}
-
 function mapNode(
   c: Component,
   nl: NodeLayout,
@@ -254,94 +221,25 @@ function mapNode(
     height: nl.height ?? 0,
   };
 
-  if (isPanelComponent(c)) {
-    const kindDef = getPanelKindDef(c.panelKind);
-    // Swimlanes get their own IR kind so the drawio cell builder emits the
-    // `swimlane;horizontal=N` shape instead of a generic panel rectangle.
-    if (c.panelKind === PanelKind.Swimlane) {
-      const sl = c.swimlane;
-      const orientation = sl?.orientation ?? "horizontal";
-      const laneColor = sl?.laneColor ?? c.panelColor ?? kindDef.defaultColor ?? "#6366f1";
-      const laneLabel = sl?.laneLabel ?? c.name;
+  // Registered elements declare their own draw.io mapping (decision 6); the
+  // guard chain below still owns every type that has not migrated.
+  if (isRegisteredElementComponent(c)) {
+    const node = getElement(c.type)!.export.drawio.toExportNode(c, base);
+    // Business-catalog service names live outside the descriptor contract; the
+    // adapter fills them in for C4 cards the way the legacy branch did.
+    if (node.kind === "c4" && node.serviceId) {
       return {
-        ...base,
-        kind: "swimlane",
-        name: c.name,
-        laneColor,
-        laneLabel,
-        orientation,
-        opacity: sl?.opacity ?? c.panelOpacity ?? DEFAULT_PANEL_OPACITY,
+        ...node,
+        serviceName: serviceCatalog[node.serviceId]?.name,
       };
     }
-    return {
-      ...base,
-      kind: "panel",
-      name: c.name,
-      panelColor: c.panelColor,
-      panelKindDefaultColor: kindDef.defaultColor,
-      panelOpacity: c.panelOpacity ?? DEFAULT_PANEL_OPACITY,
-      borderStyle: c.borderStyle ?? "solid",
-    };
+    return node;
   }
-  if (isApiGroupComponent(c)) {
-    return {
-      ...base,
-      kind: "apiGroup",
-      serviceName: c.serviceName,
-      basePath: c.basePath,
-      protocol: c.protocol,
-    };
-  }
-  if (isAwsComponent(c)) {
-    return {
-      ...base,
-      kind: "aws",
-      name: c.name,
-      awsIcon: awsServiceCache.getInfo(c.awsService ?? "").icon,
-    };
-  }
-  if (isC4Component(c)) {
-    return c4Node(c, base, serviceCatalog);
-  }
-  if (isEndpointComponent(c)) {
-    return {
-      ...base,
-      kind: "endpoint",
-      method: c.method,
-      path: c.path,
-      endpointDescription: c.endpointDescription,
-    };
-  }
-  if (isDbTableComponent(c)) {
-    return {
-      ...base,
-      kind: "dbTable",
-      tableName: c.tableName,
-      columns: c.columns.map((col) => ({ name: col.name, dataType: col.dataType })),
-    };
-  }
-  if (isJsonViewerComponent(c)) {
-    return {
-      ...base,
-      kind: "jsonViewer",
-      name: c.name,
-      jsonContent: c.jsonContent,
-      schemaRef: c.schemaRef,
-    };
-  }
-  if (isNoteComponent(c)) {
-    return { ...base, kind: "note", name: c.name, description: c.description };
-  }
-  if (isGcpComponent(c) || isAzureComponent(c)) {
-    return c4Node(c, base, serviceCatalog);
-  }
-  if (
-    isUnknownComponent(c) ||
-    isSvgComponent(c) ||
-    isProcessNodeComponent(c) ||
-    isExternalElementComponent(c) ||
-    isPluginTypedComponent(c)
-  ) {
+
+  // Only plugin types can still reach this: every built-in element declares
+  // its own draw.io mapping on the registry. A plugin contributing an exporter
+  // is its own extension point (`registerExporter`), not this switch.
+  if (isPluginTypedComponent(c)) {
     throw new Error(`Unsupported component for draw.io export: ${c.type}`);
   }
   const _exhaustive: never = c;

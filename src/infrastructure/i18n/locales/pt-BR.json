@@ -478,6 +478,8 @@
     "awsServices": "AWS Services",
     "gcpServices": "GCP Services",
     "azureServices": "Azure Services",
+    "kubernetesServices": "Kubernetes",
+    "ossServices": "Open source",
     "levelContext": "Nível 1",
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3",
@@ -860,6 +862,276 @@
     "json-viewer": "JSON Viewer",
     "processos": "Processos"
   },
+  "elements": {
+    "json-viewer": {
+      "description": "Exibe um payload ou schema JSON. Use para documentar formatos de requisição/resposta."
+    },
+    "note": {
+      "description": "Um bloco de anotação ou documentação em texto livre. Use para comentários, ADRs ou notas de design."
+    },
+    "db-table": {
+      "description": "Representa uma tabela de banco de dados relacional com colunas. Use para modelagem de dados."
+    },
+    "api-group": {
+      "description": "Representa uma superfície de API REST/gRPC/GraphQL/WebSocket. Use ao definir o contrato de API de um serviço."
+    },
+    "endpoint": {
+      "description": "Um único endpoint HTTP ou de evento. Deve ser filho de um nó api-group."
+    },
+    "panel": {
+      "description": "Um contêiner de agrupamento visual. Use para bounded contexts, domínios ou qualquer agrupamento lógico de nós. Suporta layout de raias."
+    },
+    "svg": {
+      "label": "SVG",
+      "description": "Arte vetorial importada. Use para logos, diagramas ou qualquer imagem que os outros shapes não expressam."
+    },
+    "unknown": {
+      "label": "Desconhecido",
+      "description": "Conteúdo que o Structura não interpreta, mantido na íntegra. Também é o destino de um componente cujo plugin está ausente."
+    },
+    "process-node": {
+      "description": "Um passo de fluxograma. Use para processos, decisões e terminadores em um diagrama de fluxo."
+    },
+    "external-element": {
+      "description": "Um representante de um elemento que vive em outro diagrama. Use para referenciar entre diagramas sem duplicar."
+    },
+    "person": {
+      "description": "Um usuário humano ou ator externo que interage com o sistema. Use em diagramas de contexto C4."
+    },
+    "system": {
+      "description": "Um sistema de software de alto nível. Use para sistemas externos ou o sistema descrito no nível de contexto."
+    },
+    "container": {
+      "description": "Uma unidade implantável: web app, microsserviço, banco, app mobile, etc. Use no nível de container C4."
+    },
+    "component": {
+      "description": "Um módulo ou componente dentro de um container. Use no nível de componente C4."
+    },
+    "gcp": {
+      "categories": {
+        "gcp-compute": {
+          "label": "Compute",
+          "description": "Serviços de computação do GCP (VMs, containers, serverless)."
+        },
+        "gcp-storage": {
+          "label": "Storage",
+          "description": "Serviços de armazenamento do GCP (object storage, discos)."
+        },
+        "gcp-database": {
+          "label": "Databases",
+          "description": "Bancos gerenciados do GCP (SQL, Spanner, BigQuery)."
+        },
+        "gcp-networking": {
+          "label": "Networking",
+          "description": "Rede e conectividade do GCP."
+        },
+        "gcp-security": {
+          "label": "Security",
+          "description": "Serviços de segurança e identidade do GCP."
+        },
+        "gcp-analytics": {
+          "label": "Analytics",
+          "description": "Analítica de dados e observabilidade do GCP."
+        },
+        "gcp-ai": {
+          "label": "AI & Machine Learning",
+          "description": "Serviços de IA e machine learning do GCP."
+        },
+        "gcp-devtools": {
+          "label": "Developer Tools",
+          "description": "Ferramentas de desenvolvimento e DevOps do GCP."
+        },
+        "gcp-integration": {
+          "label": "Integration",
+          "description": "Serviços de integração e mensageria do GCP."
+        },
+        "gcp-management": {
+          "label": "Management",
+          "description": "Ferramentas de gestão e marketplace do GCP."
+        },
+        "gcp-media": {
+          "label": "Media",
+          "description": "Serviços de mídia do GCP."
+        },
+        "gcp-general": {
+          "label": "General",
+          "description": "Demais serviços do GCP."
+        }
+      }
+    },
+    "azure": {
+      "categories": {
+        "azure-compute": {
+          "label": "Compute",
+          "description": "Serviços de computação do Azure (VMs, App Service, Functions)."
+        },
+        "azure-storage": {
+          "label": "Storage",
+          "description": "Serviços de armazenamento do Azure (Blob, Files, Queues)."
+        },
+        "azure-database": {
+          "label": "Databases",
+          "description": "Bancos gerenciados do Azure (SQL, Cosmos DB, Redis)."
+        },
+        "azure-networking": {
+          "label": "Networking",
+          "description": "Rede e conectividade do Azure."
+        },
+        "azure-security": {
+          "label": "Security",
+          "description": "Serviços de segurança e identidade do Azure."
+        },
+        "azure-analytics": {
+          "label": "Analytics",
+          "description": "Serviços de analítica de dados do Azure."
+        },
+        "azure-ai": {
+          "label": "AI & Machine Learning",
+          "description": "Serviços de IA e machine learning do Azure."
+        },
+        "azure-integration": {
+          "label": "Integration",
+          "description": "Serviços de integração e mensageria do Azure."
+        },
+        "azure-devtools": {
+          "label": "Developer Tools",
+          "description": "Ferramentas de desenvolvimento e DevOps do Azure."
+        },
+        "azure-iot": {
+          "label": "IoT",
+          "description": "Serviços de Internet das Coisas do Azure."
+        },
+        "azure-management": {
+          "label": "Management",
+          "description": "Ferramentas de gestão e monitoramento do Azure."
+        },
+        "azure-media": {
+          "label": "Media",
+          "description": "Serviços de mídia do Azure."
+        },
+        "azure-general": {
+          "label": "General",
+          "description": "Demais serviços do Azure."
+        }
+      }
+    },
+    "aws": {
+      "categories": {
+        "aws-compute": {
+          "label": "Compute",
+          "description": "Serviços de computação da AWS (EC2, Lambda, …)."
+        },
+        "aws-storage": {
+          "label": "Storage",
+          "description": "Serviços de armazenamento da AWS (S3, EBS, EFS, …)."
+        },
+        "aws-database": {
+          "label": "Databases",
+          "description": "Bancos gerenciados da AWS (RDS, DynamoDB, …)."
+        },
+        "aws-networking": {
+          "label": "Networking",
+          "description": "Rede e entrega de conteúdo da AWS."
+        },
+        "aws-security": {
+          "label": "Security",
+          "description": "Serviços de segurança e identidade da AWS."
+        },
+        "aws-analytics": {
+          "label": "Analytics",
+          "description": "Serviços de analítica de dados da AWS."
+        },
+        "aws-ml": {
+          "label": "Machine Learning",
+          "description": "Serviços de machine learning e IA da AWS."
+        },
+        "aws-integration": {
+          "label": "Application Integration",
+          "description": "Serviços de mensageria e integração da AWS."
+        },
+        "aws-management": {
+          "label": "Management",
+          "description": "Ferramentas de gestão e governança da AWS."
+        },
+        "aws-developer": {
+          "label": "Developer Tools",
+          "description": "Ferramentas de desenvolvimento da AWS."
+        },
+        "aws-containers": {
+          "label": "Containers",
+          "description": "Serviços de containers da AWS (ECS, EKS, …)."
+        },
+        "aws-media": {
+          "label": "Media",
+          "description": "Serviços de mídia da AWS."
+        },
+        "aws-migration": {
+          "label": "Migration",
+          "description": "Serviços de migração e transferência da AWS."
+        },
+        "aws-iot": {
+          "label": "Internet of Things",
+          "description": "Serviços de IoT da AWS."
+        },
+        "aws-end-user": {
+          "label": "End User Computing",
+          "description": "Serviços de computação para usuário final da AWS."
+        },
+        "aws-general": {
+          "label": "General",
+          "description": "Demais serviços e agrupamentos da AWS."
+        }
+      }
+    },
+    "k8s": {
+      "categories": {
+        "k8s-workloads": {
+          "label": "Workloads",
+          "description": "Workloads do Kubernetes (Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod)."
+        },
+        "k8s-networking": {
+          "label": "Networking",
+          "description": "Rede do Kubernetes (Service, Ingress, NetworkPolicy)."
+        },
+        "k8s-storage": {
+          "label": "Storage",
+          "description": "Armazenamento do Kubernetes (PersistentVolume, PVC, StorageClass)."
+        },
+        "k8s-config": {
+          "label": "Config",
+          "description": "Objetos de configuração do Kubernetes (ConfigMap, Secret)."
+        }
+      }
+    },
+    "oss": {
+      "categories": {
+        "oss-datastore": {
+          "label": "Datastore",
+          "description": "Datastores open source (Redis, …)."
+        },
+        "oss-messaging": {
+          "label": "Messaging",
+          "description": "Mensageria e streaming open source (Apache Kafka, …)."
+        }
+      },
+      "services": {
+        "redis": {
+          "description": "Armazenamento chave-valor em memória usado como cache, sessão ou broker de mensagens."
+        },
+        "kafka": {
+          "description": "Plataforma distribuída de streaming de eventos para tópicos duráveis de alta vazão."
+        }
+      }
+    },
+    "families": {
+      "structural": {
+        "label": "Estruturais e Canvas"
+      },
+      "c4": {
+        "label": "Modelo C4"
+      }
+    }
+  },
   "flowchart": {
     "shapes": {
       "rectangle": "Processo",
@@ -1137,9 +1409,9 @@
       "closed": "Encerrado"
     }
   },
-  "customComponents": {
-    "customComponents": "Componentes salvos",
-    "saveAsTemplate": "Salvar como template"
+  "elementPresets": {
+    "myPresets": "Meus presets",
+    "saveAsPreset": "Salvar como preset"
   },
   "nodeContextMenu": {
     "sectionEdit": "Editar",
@@ -1189,7 +1461,7 @@
     "aria": "Elemento SVG: {{name}}",
     "defaultName": "SVG"
   },
-  "customNode": {
+  "cardNode": {
     "drillAria": "Explorar interior do elemento {{id}}",
     "ariaNamed": "{{name}} ({{type}})",
     "drillExplore": "Explorar interior",
@@ -1919,5 +2191,43 @@
     "importNoActiveDiagram": "Abra um diagrama antes de importar com um plugin.",
     "importSkippedConnections": "{{count}} conexões foram ignoradas (extremidades desconhecidas).",
     "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin."
+  },
+  "panelKinds": {
+    "default": {
+      "label": "Painel",
+      "defaultName": "Novo Painel"
+    },
+    "availability-zone": {
+      "label": "Zona de Disponibilidade",
+      "defaultName": "AZ-1"
+    },
+    "eks-cluster": {
+      "label": "Cluster EKS",
+      "defaultName": "Cluster EKS"
+    },
+    "ecs-cluster": {
+      "label": "Cluster ECS",
+      "defaultName": "Cluster ECS"
+    },
+    "auto-scaling-group": {
+      "label": "Auto Scaling Group",
+      "defaultName": "ASG"
+    },
+    "vpc": {
+      "label": "VPC",
+      "defaultName": "VPC"
+    },
+    "public-subnet": {
+      "label": "Sub-rede Pública",
+      "defaultName": "Sub-rede Pública"
+    },
+    "private-subnet": {
+      "label": "Sub-rede Privada",
+      "defaultName": "Sub-rede Privada"
+    },
+    "swimlane": {
+      "label": "Raia",
+      "defaultName": "Raia"
+    }
   }
 }

@@ -13,12 +13,10 @@ import {
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
-import {
-  useCustomComponentStore,
-  type CustomComponentTemplate,
-} from "@/features/custom-components";
+import { useElementPresetStore } from "@/features/element-presets";
 import { useIconStore } from "@/features/diagram/store";
-import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
+import { mergeElementPresets } from "./merge-element-presets";
+import { readElementPresetsField } from "./read-element-presets-field";
 import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";
 import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
 import { WORKSPACE_SCHEMA_VERSION } from "./versions";
@@ -101,7 +99,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   );
   if (diagramWrites.some((ok) => !ok)) return false;
 
-  const customComponentTemplates = useCustomComponentStore.getState().templates;
+  const elementPresets = useElementPresetStore.getState().presets;
 
   const iconLibrary = useIconStore.getState().icons;
 
@@ -113,7 +111,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
-    customComponentTemplates,
+    elementPresets,
     iconLibrary,
   });
   if (!manifestOk) return false;
@@ -123,7 +121,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
-    customComponentTemplates,
+    elementPresets,
     iconLibrary,
   });
 
@@ -206,11 +204,10 @@ async function doReconnect(): Promise<boolean> {
       }));
       fileSystemAdapter.setFolders(workspace.folders as unknown as DiagramStoreState["folders"]);
 
-      const workspaceTemplates: Record<string, CustomComponentTemplate> | undefined =
-        workspace.customComponentTemplates;
+      const workspaceTemplates = readElementPresetsField(workspace);
       if (workspaceTemplates) {
-        useCustomComponentStore.setState((state) => ({
-          templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
+        useElementPresetStore.setState((state) => ({
+          presets: mergeElementPresets(state.presets, workspaceTemplates),
         }));
       }
     }
@@ -335,7 +332,7 @@ export function startFileSystemSync(): void {
             wroteSomething = true;
           }
 
-          const customComponentTemplates = useCustomComponentStore.getState().templates;
+          const elementPresets = useElementPresetStore.getState().presets;
           const iconLibrary = useIconStore.getState().icons;
 
           const manifestFp = manifestSemanticFingerprint({
@@ -343,7 +340,7 @@ export function startFileSystemSync(): void {
             serviceCatalog: diagramState.serviceCatalog,
             folders: diagramState.folders,
             activeDiagramId: diagramState.activeDiagramId,
-            customComponentTemplates,
+            elementPresets,
             iconLibrary,
           });
 
@@ -356,7 +353,7 @@ export function startFileSystemSync(): void {
               serviceCatalog: diagramState.serviceCatalog,
               folders: diagramState.folders,
               activeDiagramId: diagramState.activeDiagramId,
-              customComponentTemplates,
+              elementPresets,
               iconLibrary,
             });
             lastSyncedManifestFingerprint = manifestFp;
@@ -384,7 +381,7 @@ export function startFileSystemSync(): void {
     runDebouncedFlush();
   });
 
-  const customComponentUnsubscribe = useCustomComponentStore.subscribe(() => {
+  const customComponentUnsubscribe = useElementPresetStore.subscribe(() => {
     runDebouncedFlush();
   });
 

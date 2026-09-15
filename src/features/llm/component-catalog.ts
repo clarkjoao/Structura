@@ -1,5 +1,14 @@
-import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
+import { allElements } from "@/features/elements/element.registry";
+import type { ElementDescriptor } from "@/features/elements/element.types";
+import {
+  allCloudFamilies,
+  nonCatalogFamilyIds,
+} from "@/features/elements/families/cloud-family.registry";
+import i18n from "@/infrastructure/i18n";
 import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
+
+/** The catalog is part of the system prompt, which is written in English. */
+const CATALOG_LOCALE = "en";
 
 export interface ComponentTypeDefinition {
   nodeType: string;
@@ -10,156 +19,114 @@ export interface ComponentTypeDefinition {
   example?: string;
 }
 
-export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [
-  {
-    nodeType: "panel",
-    displayName: "Panel / Group",
-    description:
-      "A visual grouping container. Use for bounded contexts, domains, or any logical grouping of nodes. Supports swimlane layout.",
-    example: '{ "nodeType": "panel", "name": "Payment Domain", "parentId": null }',
-  },
-  {
-    nodeType: "note",
-    displayName: "Note",
-    description:
-      "A free-text annotation or documentation block. Use for comments, ADRs, or design notes.",
-    example: '{ "nodeType": "note", "name": "", "parentId": null }',
-  },
-  {
-    nodeType: "api-group",
-    displayName: "API Group",
-    description:
-      "Represents a REST/gRPC/GraphQL/WebSocket API surface. Use when defining a service API contract. Must have a basePath and protocol.",
-    requiredFields: ["serviceName", "basePath", "protocol"],
-    example: '{ "nodeType": "api-group", "name": "User API", "parentId": "service-node-id" }',
-  },
-  {
-    nodeType: "endpoint",
-    displayName: "API Endpoint",
-    description:
-      "A single HTTP or event endpoint. Must be a child of an api-group node. Requires method (GET/POST/PUT/PATCH/DELETE/EVENT) and path.",
-    requiredFields: ["method", "path"],
-    example: '{ "nodeType": "endpoint", "name": "Get Users", "parentId": "api-group-node-id" }',
-  },
-  {
-    nodeType: "db-table",
-    displayName: "Database Table",
-    description: "Represents a relational database table with columns. Use for data modeling.",
-    example: '{ "nodeType": "db-table", "name": "users", "parentId": null }',
-  },
-  {
-    nodeType: "json-viewer",
-    displayName: "JSON Viewer",
-    description: "Displays a JSON payload or schema. Use for documenting request/response shapes.",
-    example: '{ "nodeType": "json-viewer", "name": "User Response", "parentId": null }',
-  },
-];
+export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [];
 
-export const C4_TYPES: ComponentTypeDefinition[] = [
-  {
-    nodeType: "person",
-    displayName: "Person / Actor",
-    description:
-      "A human user or external actor that interacts with the system. Use in C4 context diagrams.",
-    example: '{ "nodeType": "person", "name": "Customer", "parentId": null }',
-  },
-  {
-    nodeType: "system",
-    displayName: "Software System",
-    description:
-      "A top-level software system. Use for external systems or the system being described at context level.",
-    example: '{ "nodeType": "system", "name": "Payment System", "parentId": null }',
-  },
-  {
-    nodeType: "container",
-    displayName: "Container",
-    description:
-      "A deployable unit: web app, microservice, database, mobile app, etc. Use at C4 container level.",
-    example: '{ "nodeType": "container", "name": "BFF Service", "parentId": null }',
-  },
-  {
-    nodeType: "component",
-    displayName: "Component",
-    description: "A module or component inside a container. Use at C4 component level.",
-    example: '{ "nodeType": "component", "name": "AuthController", "parentId": "container-id" }',
-  },
-];
+/**
+ * @deprecated F9 — C4 lives on the element registry (`c4RegisteredTypes`).
+ * Kept as an empty array so older imports that spread it stay safe.
+ */
+export const C4_TYPES: ComponentTypeDefinition[] = [];
 
-function getAwsServiceDescription(serviceId: string, categoryName: string): string {
-  if (serviceId === "api-gateway") {
-    return "AWS managed API Gateway. Use for REST/HTTP/WebSocket API management and routing.";
-  }
-  if (serviceId === "elb") {
-    return "AWS load balancer. Use for distributing traffic across services.";
-  }
-  if (serviceId === "rds") {
-    return "AWS managed relational database. Use for PostgreSQL, MySQL, SQL Server.";
-  }
-  if (serviceId === "aurora") {
-    return "AWS managed relational database (Aurora). Use for high-performance MySQL/PostgreSQL-compatible clusters.";
-  }
-  if (serviceId === "s3") {
-    return "AWS object storage. Use for blobs, file storage, and static assets.";
-  }
-  if (serviceId === "lambda") {
-    return "Serverless compute function. Use for event-driven workloads.";
-  }
-  if (serviceId === "sqs") {
-    return "Managed message queue. Use for async decoupling and buffering.";
-  }
-  if (serviceId === "sns") {
-    return "Managed pub/sub notifications. Use for fan-out events.";
-  }
-  if (serviceId === "eventbridge") {
-    return "Managed event bus. Use for routing domain events.";
-  }
-  if (serviceId === "ecs" || serviceId === "ecs-2") {
-    return "Container orchestration. Use for running containerized services.";
-  }
-  if (serviceId === "eks" || serviceId === "eks-2") {
-    return "Managed Kubernetes. Use for running containerized services on Kubernetes.";
-  }
-  if (serviceId === "cloudfront") {
-    return "CDN and edge caching. Use to serve content globally with low latency.";
-  }
-  if (serviceId === "vpc") {
-    return "Virtual private network. Use to isolate and connect AWS resources.";
-  }
-  if (serviceId === "dynamodb") {
-    return "Managed NoSQL database. Use for key-value / document workloads.";
-  }
-  if (serviceId === "elasticache") {
-    return "Managed in-memory cache. Use for Redis/Memcached caching.";
-  }
-  if (serviceId === "cognito") {
-    return "Managed user identity. Use for auth, user pools, and federation.";
-  }
-  if (serviceId === "iam") {
-    return "Identity and access management. Use for roles, policies, and permissions.";
-  }
-  return `AWS ${categoryName} service.`;
+/**
+ * Registered elements, as catalog entries.
+ *
+ * Derived rather than curated (decision 7): an element that exists is an
+ * element the model can ask for, and its description is the one the palette
+ * shows. Resolved in English because the catalog is part of the system prompt,
+ * whatever locale the UI is in.
+ */
+function toTypeDefinition(element: ElementDescriptor): ComponentTypeDefinition {
+  return {
+    nodeType: element.id,
+    displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+    description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+    requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : undefined,
+    example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
+  };
 }
 
-export const AWS_TYPES: ComponentTypeDefinition[] = AWS_CATEGORIES.flatMap((category) =>
-  category.services.map((service) => ({
-    nodeType: category.id as AwsCategoryId,
-    awsService: service.id,
-    displayName: service.name,
-    description: getAwsServiceDescription(service.id, category.name),
-    example: JSON.stringify({
-      nodeType: category.id,
-      awsService: service.id,
-      name: service.name,
-      parentId: null,
-    }),
-  })),
-);
+/** Every element of one non-catalog family, as prompt entries. */
+export function familyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
+  return allElements()
+    .filter((element) => element.family === familyId)
+    .map(toTypeDefinition);
+}
 
-export const ALL_COMPONENT_TYPES: ComponentTypeDefinition[] = [
-  ...STRUCTURAL_TYPES,
-  ...C4_TYPES,
-  ...AWS_TYPES,
-];
+export function registeredElementTypes(): ComponentTypeDefinition[] {
+  // Cloud families publish a compact catalog of their own; listing every
+  // category here would duplicate them under "Structural & Canvas" without
+  // service ids.
+  return familyRegisteredTypes("structural");
+}
+
+/** C4 Model types from the registry (F9) — replaces the hand-curated `C4_TYPES` list. */
+export function c4RegisteredTypes(): ComponentTypeDefinition[] {
+  return familyRegisteredTypes("c4");
+}
+
+/** Cloud family categories registered on the element registry, as catalog entries. */
+function cloudFamilyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
+  return allElements()
+    .filter((element) => element.family === familyId)
+    .flatMap((element) => {
+      const variants = element.palette.variants;
+      if (!variants || variants.length === 0) {
+        return [
+          {
+            nodeType: element.id,
+            displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+            description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+            example: JSON.stringify({
+              nodeType: element.id,
+              name: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+              parentId: null,
+            }),
+          },
+        ];
+      }
+      return variants.map((variant) => ({
+        nodeType: element.id,
+        // Tool parameter slot shared across cloud families; addComponent maps
+        // it onto awsService / gcpService / azureService as appropriate.
+        awsService: variant.createOptions.serviceId,
+        displayName: i18n.t(variant.labelKey, { lng: CATALOG_LOCALE }),
+        description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+        example: JSON.stringify({
+          nodeType: element.id,
+          awsService: variant.createOptions.serviceId,
+          name: i18n.t(variant.labelKey, { lng: CATALOG_LOCALE }),
+          parentId: null,
+        }),
+      }));
+    });
+}
+
+/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
+export function awsRegisteredTypes(): ComponentTypeDefinition[] {
+  return cloudFamilyRegisteredTypes("aws");
+}
+
+/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
+export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
+  return cloudFamilyRegisteredTypes("gcp");
+}
+
+/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
+export function azureRegisteredTypes(): ComponentTypeDefinition[] {
+  return cloudFamilyRegisteredTypes("azure");
+}
+
+export function allComponentTypes(): ComponentTypeDefinition[] {
+  return [
+    ...STRUCTURAL_TYPES,
+    // Every non-catalog family, not only `structural` and `c4`. Filtering to
+    // those two by name made `isValidNodeType` reject a vocabulary registered
+    // through `registerElement` under any other family id, and kept it out of
+    // the system prompt entirely.
+    ...nonCatalogFamilyIds().flatMap(familyRegisteredTypes),
+    ...allCloudFamilies().flatMap((family) => cloudFamilyRegisteredTypes(family.id)),
+  ];
+}
 
 function formatTypeDef(def: ComponentTypeDefinition): string {
   const lines = [
@@ -182,42 +149,98 @@ export function buildComponentTypeCatalog(): string {
   const sections: string[] = [
     "## Available Component Types",
     "",
-    "You MUST use the exact nodeType string when calling add_node.",
-    "Never invent nodeType values.",
+    "You MUST use exact nodeType (and awsService/serviceId) strings from this catalog or from search_elements.",
+    "Never invent nodeType or service id values.",
+    "",
+    "For cloud / Kubernetes / OSS services: call list_element_families (optional) then search_elements",
+    "to obtain elementType + serviceId, then pass them to add_node (serviceId → awsService parameter).",
+    "search_elements and add_node may go in the same response: catalog reads run first, so you can act",
+    "on the results in one turn. An add_node whose elementType or serviceId is not registered is skipped,",
+    "whether or not you searched for it — so look up anything you are unsure of.",
+    'diagramFamilyMix from list_element_families tells you which families already appear on the diagram — prefer those when the request is ambiguous (e.g. "cache" could be Redis OSS or ElastiCache).',
     "",
     "### Structural & Canvas Types",
   ];
 
-  for (const definition of STRUCTURAL_TYPES) {
+  for (const definition of [...STRUCTURAL_TYPES, ...registeredElementTypes()]) {
     sections.push(formatTypeDef(definition));
   }
 
   sections.push("");
   sections.push("### C4 Architecture Types");
-  for (const definition of C4_TYPES) {
+  for (const definition of c4RegisteredTypes()) {
     sections.push(formatTypeDef(definition));
   }
 
+  // Any other vocabulary that registered itself, under its own heading.
+  for (const familyId of nonCatalogFamilyIds()) {
+    if (familyId === "structural" || familyId === "c4") continue;
+    const definitions = familyRegisteredTypes(familyId);
+    if (definitions.length === 0) continue;
+    sections.push("");
+    sections.push(`### ${i18n.t(`elements.families.${familyId}.label`, { lng: CATALOG_LOCALE })}`);
+    for (const definition of definitions) {
+      sections.push(formatTypeDef(definition));
+    }
+  }
+
   sections.push("");
-  sections.push(buildAwsCatalogCompact());
+  sections.push("### Cloud & tech families (categories only — services via search_elements)");
+  for (const family of allCloudFamilies()) {
+    sections.push("");
+    sections.push(buildCloudFamilyCatalogCompact(family.id));
+  }
 
   return sections.join("\n");
 }
 
-export function buildAwsCatalogCompact(): string {
+/**
+ * Category-level catalog block for one registered cloud family (F8).
+ *
+ * Service ids are no longer dumped into the system prompt — use
+ * `search_elements` / `list_element_families` instead.
+ */
+export function buildCloudFamilyCatalogCompact(familyId: string): string {
+  const family = allCloudFamilies().find((entry) => entry.id === familyId);
+  const label = family ? i18n.t(family.labelKey, { lng: CATALOG_LOCALE }) : familyId.toUpperCase();
+
   const lines: string[] = [
-    "### AWS Service Types",
+    `### ${label} (family id: ${familyId})`,
     "",
-    "Use awsService in add_node parameters. nodeType must match the category prefix.",
-    "",
+    "Categories (nodeType = category id; resolve services with search_elements):",
   ];
 
-  for (const category of AWS_CATEGORIES) {
-    const serviceIds = category.services.map((s) => s.id).join(", ");
-    lines.push(`${category.id.replace("aws-", "").toUpperCase()}: ${serviceIds}`);
+  if (!family) {
+    lines.push("(family not registered)");
+    return lines.join("\n");
+  }
+
+  for (const category of family.categories) {
+    const serviceCount = family.services.filter(
+      (service) => service.categoryId === category.id,
+    ).length;
+    const categoryLabel = i18n.t(category.labelKey, { lng: CATALOG_LOCALE });
+    lines.push(
+      `- ${category.id} — ${categoryLabel} (${serviceCount} service${serviceCount === 1 ? "" : "s"})`,
+    );
   }
 
   return lines.join("\n");
+}
+
+/** @deprecated Use `buildCloudFamilyCatalogCompact("aws")`. */
+export function buildAwsCatalogCompact(): string {
+  return buildCloudFamilyCatalogCompact("aws");
+}
+
+/** @deprecated Use `buildCloudFamilyCatalogCompact("gcp")`. */
+export function buildGcpCatalogCompact(): string {
+  return buildCloudFamilyCatalogCompact("gcp");
+}
+
+/** @deprecated Use `buildCloudFamilyCatalogCompact("azure")`. */
+export function buildAzureCatalogCompact(): string {
+  return buildCloudFamilyCatalogCompact("azure");
 }
 
 export function buildPatternCatalogCompact(): string {
@@ -240,7 +263,7 @@ export function buildPatternCatalogCompact(): string {
 }
 
 export function isValidNodeType(nodeType: string): boolean {
-  return ALL_COMPONENT_TYPES.some((definition) => definition.nodeType === nodeType);
+  return allComponentTypes().some((definition) => definition.nodeType === nodeType);
 }
 
 export function buildPatternCatalog(): string {

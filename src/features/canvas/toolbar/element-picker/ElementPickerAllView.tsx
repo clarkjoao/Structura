@@ -4,12 +4,12 @@ import type { ComponentType } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
-import { AwsIcon } from "../../nodes/CloudIcon";
+import CloudIcon from "../../nodes/CloudIcon";
 import { PickerSectionHeader } from "./PickerSectionHeader";
 import { PICKER_CARD_CLASS, REGISTRY_PREVIEW_LIMIT } from "./constants";
 import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
-import { ElementCategory } from "../../enums";
+import { ElementCategory, type PickerCategoryId } from "../../enums";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
 
@@ -40,7 +40,7 @@ export function ElementPickerAllView({
   onAddAws: (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => void;
   onAddRegistry: (serviceId: string, name: string) => void;
   onClose: () => void;
-  setCategory: (c: ElementCategory) => void;
+  setCategory: (c: PickerCategoryId) => void;
 }) {
   const { t } = useTranslation();
 
@@ -64,7 +64,12 @@ export function ElementPickerAllView({
       className={PICKER_CARD_CLASS}
     >
       {opt.awsIconName ? (
-        <AwsIcon iconName={opt.awsIconName} size={40} className="text-muted-foreground" />
+        <CloudIcon
+          providerId="aws"
+          iconName={opt.awsIconName}
+          size={40}
+          className="text-muted-foreground"
+        />
       ) : (
         <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
       )}
@@ -108,7 +113,7 @@ export function ElementPickerAllView({
           sectionLabel={t("canvasToolbar.awsServices")}
           showViewAll
           viewAllLabel={t("elementPicker.viewAll")}
-          onViewAll={() => setCategory(ElementCategory.Aws)}
+          onViewAll={() => setCategory("aws")}
         />
         <div className="grid grid-cols-5 gap-2">
           {awsSpotlight.map(({ svc, categoryId }) => (
@@ -118,7 +123,7 @@ export function ElementPickerAllView({
               onClick={() => onAddAws(categoryId as AwsCategoryId, svc.id, svc.name)}
               className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
             >
-              <AwsIcon iconName={svc.iconName} size={40} />
+              <CloudIcon providerId="aws" iconName={svc.iconName} size={40} />
               <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                 {shortAwsName(svc.name)}
               </span>

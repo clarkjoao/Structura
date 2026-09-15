@@ -26,8 +26,8 @@ export interface GeneratedNodeInput {
   parentExternalId: string | null;
   panelKind?: PanelKind;
   technology?: string;
-  /** Cloud service id, resolved by the canvas against the provider catalog. */
-  awsService?: string;
+  /** Cloud provider service id (`cloudServiceId` on the component after F6b). */
+  cloudServiceId?: string;
   /** Position is relative to the parent, like React Flow child nodes. */
   x: number;
   y: number;
@@ -114,7 +114,7 @@ export const generatedGraphSlice = (
           node.name,
           parentId,
           node.panelKind,
-          node.awsService,
+          node.cloudServiceId,
         );
 
         // Type-based guards, not `isCloudComponent`: that one asks the cloud

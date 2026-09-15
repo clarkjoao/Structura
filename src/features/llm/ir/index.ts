@@ -8,11 +8,11 @@ export type {
   Tier,
 } from "./ir.types";
 export {
-  IR_AWS_SEMANTIC_TYPES,
+  getIrAwsSemanticTypes,
+  getIrSemanticTypes,
   IR_BOUNDARY_SEMANTIC_TYPES,
   IR_C4_SEMANTIC_TYPES,
   IR_DIAGRAM_TYPES,
-  IR_SEMANTIC_TYPES,
   IR_TIERS,
   isBoundaryNode,
   isBoundarySemanticType,

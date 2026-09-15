@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Position } from "@xyflow/react";
 import type { Component, Connection } from "@/features/diagram";
 import { buildConnectionCountPerNode, buildEdgeHandleAssignments } from "./connectionDerivations";
-import { buildPanelHandles, handleSlotCount, handleTopPercent } from "../nodes/CustomNode/Handles";
+import { buildPanelHandles, handleSlotCount, handleTopPercent } from "../nodes/CardNode/Handles";
 import { handleAnchor } from "../layout/renderedEdgePath";
 
 /**

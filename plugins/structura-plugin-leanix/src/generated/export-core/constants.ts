@@ -25,8 +25,42 @@ export const CONFIG = {
     noteHeight: 475,
     panelWidth: 400,
     panelHeight: 300,
+    passthroughWidth: 240,
+    passthroughHeight: 120,
+    passthroughFill: "#f5f5f5",
+    passthroughStroke: "#9e9e9e",
+  },
+  limits: {
+    /**
+     * Ceiling for an embedded image's data: URI, in characters.
+     *
+     * A data: URI is copied verbatim into the XML, so one large drawing can
+     * dominate the exported file. Past this the node falls back to a
+     * passthrough box carrying its name — the diagram still opens, and the
+     * picture is the only thing lost.
+     */
+    imageDataUriChars: 512 * 1024,
   },
 } as const;
+
+/**
+ * Native draw.io styles for the nine flowchart shapes.
+ *
+ * All standard mxGraph, so the exported file opens without any shape library:
+ * the two exceptions are `cylinder` and `subroutine`, which use the built-in
+ * `shape=` forms rather than a stencil.
+ */
+export const FLOW_SHAPE_STYLES: Record<string, string> = {
+  rectangle: "rounded=0;",
+  rounded: "rounded=1;arcSize=12;",
+  stadium: "rounded=1;arcSize=50;",
+  diamond: "rhombus;",
+  hexagon: "shape=hexagon;perimeter=hexagonPerimeter2;",
+  parallelogram: "shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;",
+  cylinder: "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=8;",
+  circle: "ellipse;",
+  subroutine: "shape=process;whiteSpace=wrap;backgroundOutline=1;",
+};
 
 export const THEME = {
   colors: {
@@ -242,7 +276,7 @@ export const AWS_RESICON: Record<string, string> = {
 // descriptions so a 5-paragraph description doesn't push neighbours apart.
 export const C4_META: Record<string, C4MetaInfo> = {
   // Per-subtype canonical boxes sized to match the canvas rendering of each C4
-  // node (see src/features/canvas/nodes/CustomNode/index.tsx — min-w-[200px]
+  // node (see src/features/canvas/nodes/CardNode/index.tsx — min-w-[200px]
   // max-w-[260px], content-driven height). The previous uniform 240×120 made
   // Person boxes 2× taller than the canvas and pushed adjacent roots apart
   // unnecessarily.

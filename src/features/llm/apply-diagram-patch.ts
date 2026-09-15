@@ -5,12 +5,17 @@ import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
 import { PATTERNS } from "@/lib/catalogs/patterns";
 import type { DiagramPatchAction } from "./types";
+import { listElementFamilies, searchElements } from "./element-catalog-query";
+import { validateAddNodeAgainstRegistry } from "./add-node-validation";
 
 export interface AppliedPatchResult {
   addedNodeId: string | null;
   addedEdgeId: string | null;
+  skipped?: boolean;
+  skipReason?: string;
   toolResult?: {
-    type: "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS";
+    type:
+      "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS" | "LIST_ELEMENT_FAMILIES" | "SEARCH_ELEMENTS";
     data?: unknown;
   };
 }
@@ -57,6 +62,20 @@ export function applyDiagramPatchAction(
 
   switch (action.type) {
     case "ADD_NODE": {
+      const registryCheck = validateAddNodeAgainstRegistry(
+        action.payload.nodeType,
+        action.payload.awsService,
+      );
+      if (!registryCheck.ok) {
+        console.warn(`[LLM] ADD_NODE skipped — ${registryCheck.reason}`);
+        return {
+          addedNodeId: null,
+          addedEdgeId: null,
+          skipped: true,
+          skipReason: registryCheck.reason,
+        };
+      }
+
       const resolvedParentId = resolveParentRef(action.payload.parentId, nameToIdMap ?? new Map());
       return {
         addedNodeId: diagramState.addComponent(
@@ -152,7 +171,61 @@ export function applyDiagramPatchAction(
       // GET_TAGS is a read-only operation handled separately
       return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "GET_TAGS" } };
     }
+    case "LIST_ELEMENT_FAMILIES": {
+      const diagramId = diagramState.activeDiagramId;
+      const components =
+        diagramId && diagramState.diagrams[diagramId]
+          ? diagramState.diagrams[diagramId].snapshot.components
+          : {};
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        toolResult: {
+          type: "LIST_ELEMENT_FAMILIES",
+          data: listElementFamilies(components),
+        },
+      };
+    }
+    case "SEARCH_ELEMENTS": {
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        toolResult: {
+          type: "SEARCH_ELEMENTS",
+          data: searchElements(action.payload),
+        },
+      };
+    }
     default:
       return { addedNodeId: null, addedEdgeId: null };
   }
+}
+
+/**
+ * Run a patch's catalog-read actions and return their tool results.
+ *
+ * Call this *before* ADD_NODE. Ordering the reads first is what lets a model
+ * emit `search_elements` and `add_node` in one response and still have the
+ * results available in that same turn (F8b) — the useful half of that slice.
+ *
+ * It deliberately does **not** compute a set of "confirmed" pairs to validate
+ * the writes against; see `add-node-validation.ts` for why that gate was
+ * retired.
+ */
+export function runCatalogReadActions(actions: DiagramPatchAction[]): {
+  catalogToolResults: NonNullable<AppliedPatchResult["toolResult"]>[];
+} {
+  const catalogToolResults: NonNullable<AppliedPatchResult["toolResult"]>[] = [];
+
+  for (const action of actions) {
+    if (action.type !== "LIST_ELEMENT_FAMILIES" && action.type !== "SEARCH_ELEMENTS") {
+      continue;
+    }
+    const applied = applyDiagramPatchAction(action);
+    if (applied.toolResult) {
+      catalogToolResults.push(applied.toolResult);
+    }
+  }
+
+  return { catalogToolResults };
 }

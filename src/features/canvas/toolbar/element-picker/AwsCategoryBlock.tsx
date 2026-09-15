@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { AwsCategory, AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
-import { AwsIcon } from "../../nodes/CloudIcon";
+import CloudIcon from "../../nodes/CloudIcon";
 import { shortAwsName } from "./utils";
 
 export function AwsCategoryBlock({
@@ -49,7 +49,7 @@ export function AwsCategoryBlock({
               onClick={() => onPickAws(cat.id as AwsCategoryId, svc.id, svc.name)}
               className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
             >
-              <AwsIcon iconName={svc.iconName} size={40} />
+              <CloudIcon providerId="aws" iconName={svc.iconName} size={40} />
               <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                 {shortAwsName(svc.name)}
               </span>

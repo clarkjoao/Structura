@@ -488,7 +488,7 @@ describe("exportDrawio — edge anchors", () => {
             id: s3Id,
             name: "Amazon S3",
             type: "aws-storage",
-            awsService: "s3",
+            cloudServiceId: "s3",
             description: "",
             parentId: null,
           },
@@ -496,7 +496,7 @@ describe("exportDrawio — edge anchors", () => {
             id: glueId,
             name: "AWS Glue",
             type: "aws-analytics",
-            awsService: "glue",
+            cloudServiceId: "glue",
             description: "",
             parentId: null,
           },
@@ -660,7 +660,7 @@ describe("exportDrawio — edge anchors", () => {
             id: childId,
             name: "AWS Glue",
             type: "aws-analytics",
-            awsService: "glue",
+            cloudServiceId: "glue",
             description: "",
             parentId: panelId,
           },
@@ -762,4 +762,52 @@ describe("exportDrawio — edge anchors", () => {
       expect(x).toBeLessThanOrEqual(1);
     }
   });
+});
+
+/**
+ * Acceptance: every cloud family with a resolved cloudServiceId must emit that
+ * id as a readable XML attribute — not only the icon appearance.
+ *
+ * LeanIX finding (not fixed in this change): the plugin adapter still omits
+ * cloudServiceId on the ExportNodes it builds (AWS has icon only; gcp/azure/
+ * k8s/oss become notes). Optional IR field → no compile break; divergence
+ * unchanged until the adapter converges.
+ */
+describe("exportDrawio — cloudServiceId identity per family", () => {
+  const families = [
+    { id: "aws1", type: "aws-compute", cloudServiceId: "lambda", name: "Lambda" },
+    { id: "gcp1", type: "gcp-compute", cloudServiceId: "cloudrun", name: "Cloud Run" },
+    { id: "azure1", type: "azure-compute", cloudServiceId: "functions", name: "Functions" },
+    { id: "k8s1", type: "k8s-workloads", cloudServiceId: "deployment", name: "Deployment" },
+    { id: "oss1", type: "oss-datastore", cloudServiceId: "redis", name: "Redis" },
+  ] as const;
+
+  it.each(families)(
+    "$type with cloudServiceId=$cloudServiceId emits cloudServiceId in XML",
+    ({ id, type, cloudServiceId, name }) => {
+      const diagram = minimalDiagram({
+        snapshot: {
+          components: {
+            [id]: {
+              id,
+              name,
+              type,
+              cloudServiceId,
+              description: "",
+              parentId: null,
+            },
+          },
+          connections: {},
+          flows: {},
+          iconLibrary: {},
+        },
+        nodeLayouts: {
+          [id]: { elementId: id, x: 0, y: 0, width: 80, height: 80 },
+        },
+      });
+
+      const xml = exportDrawio(diagram, {});
+      expect(xml).toContain(`cloudServiceId="${cloudServiceId}"`);
+    },
+  );
 });

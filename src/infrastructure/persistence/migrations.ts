@@ -19,8 +19,8 @@ export function migrateDiagram(diagram: Diagram, fromVersion: number): Diagram {
   // Always-run sanitisation: repair corrupted `type` strings that
   // slipped into stored components via earlier template-save cycles
   // (e.g. "API Endpoints /api/v1 · REST"). These don't belong to any
-  // built-in type or plugin namespace, so they degraded every node to
-  // the unknown descriptor. The string here acts as a *floor* — older
+  // registered element or plugin namespace, so they land on `"unknown"`
+  // (F9 / decision 4). The string here acts as a *floor* — older
   // diagrams still pass through, and the sanitiser is a no-op for
   // diagrams that already have valid types.
   current = sanitizeCorruptedComponentTypes(current);

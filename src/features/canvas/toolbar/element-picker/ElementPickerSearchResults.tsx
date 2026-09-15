@@ -4,7 +4,6 @@ import { PanelKind } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import type { CloudService } from "@/features/cloud";
-import { AwsIcon } from "../../nodes/CloudIcon";
 import { CloudIcon } from "@/features/cloud";
 import { PICKER_CARD_CLASS } from "./constants";
 import { shortAwsName } from "./utils";
@@ -12,10 +11,10 @@ import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
 import {
-  useCustomComponentStore,
-  NodeTemplatePreviewCard,
-  type CustomComponentTemplate,
-} from "@/features/custom-components";
+  useElementPresetStore,
+  ElementPresetPreviewCard,
+  type ElementPreset,
+} from "@/features/element-presets";
 
 export function ElementPickerSearchResults({
   searchTrimmed,
@@ -24,8 +23,7 @@ export function ElementPickerSearchResults({
   filteredCanvas,
   filteredFlowchart,
   filteredAwsFlat,
-  filteredGcpFlat,
-  filteredAzureFlat,
+  filteredCloudByFamily,
   filteredServices,
   filteredTemplates,
   onCanvasServiceIds,
@@ -48,10 +46,13 @@ export function ElementPickerSearchResults({
     name: string;
     iconName: string;
   }[];
-  filteredGcpFlat: (CloudService & { categoryId: string })[];
-  filteredAzureFlat: (CloudService & { categoryId: string })[];
+  filteredCloudByFamily: {
+    familyId: string;
+    labelKey: string;
+    services: (CloudService & { categoryId: string })[];
+  }[];
   filteredServices: import("@/features/diagram").ServiceDefinition[];
-  filteredTemplates: CustomComponentTemplate[];
+  filteredTemplates: ElementPreset[];
   onCanvasServiceIds: Set<string>;
   onAddC4: (type: ComponentType, label: string) => void;
   onAddCanvas: (opt: CanvasPickerOption) => void;
@@ -62,7 +63,7 @@ export function ElementPickerSearchResults({
   onAddTemplate: (templateId: string) => void;
 }) {
   const { t } = useTranslation();
-  const deleteTemplate = useCustomComponentStore((state) => state.deleteTemplate);
+  const deletePreset = useElementPresetStore((state) => state.deletePreset);
 
   if (showSearchEmpty) {
     return (
@@ -92,7 +93,12 @@ export function ElementPickerSearchResults({
       className={PICKER_CARD_CLASS}
     >
       {opt.awsIconName ? (
-        <AwsIcon iconName={opt.awsIconName} size={40} className="text-muted-foreground" />
+        <CloudIcon
+          familyId="aws"
+          iconName={opt.awsIconName}
+          size={40}
+          className="text-muted-foreground"
+        />
       ) : (
         <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
       )}
@@ -151,7 +157,7 @@ export function ElementPickerSearchResults({
                 onClick={() => onAddAws(svc.categoryId as AwsCategoryId, svc.id, svc.name)}
                 className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
               >
-                <AwsIcon iconName={svc.iconName} size={40} />
+                <CloudIcon familyId="aws" iconName={svc.iconName} size={40} />
                 <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                   {shortAwsName(svc.name)}
                 </span>
@@ -160,70 +166,47 @@ export function ElementPickerSearchResults({
           </div>
         </section>
       )}
-      {filteredGcpFlat.length > 0 && (
-        <section>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("canvasToolbar.gcpServices")} · {filteredGcpFlat.length}
-          </h3>
-          <div className="grid grid-cols-5 gap-2">
-            {filteredGcpFlat.map((svc) => (
-              <button
-                key={`${svc.categoryId}-${svc.id}`}
-                type="button"
-                onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
-                className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
-              >
-                <CloudIcon
-                  componentType={svc.categoryId}
-                  serviceIconName={svc.iconName}
-                  size={40}
-                />
-                <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
-                  {svc.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-      {filteredAzureFlat.length > 0 && (
-        <section>
-          <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("canvasToolbar.azureServices")} · {filteredAzureFlat.length}
-          </h3>
-          <div className="grid grid-cols-5 gap-2">
-            {filteredAzureFlat.map((svc) => (
-              <button
-                key={`${svc.categoryId}-${svc.id}`}
-                type="button"
-                onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
-                className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
-              >
-                <CloudIcon
-                  componentType={svc.categoryId}
-                  serviceIconName={svc.iconName}
-                  size={40}
-                />
-                <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
-                  {svc.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
+      {filteredCloudByFamily.map(
+        (familyRow) =>
+          familyRow.services.length > 0 && (
+            <section key={familyRow.familyId}>
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {t(familyRow.labelKey)} · {familyRow.services.length}
+              </h3>
+              <div className="grid grid-cols-5 gap-2">
+                {familyRow.services.map((svc) => (
+                  <button
+                    key={`${svc.categoryId}-${svc.id}`}
+                    type="button"
+                    onClick={() => onAddCloud(svc.categoryId, svc.id, svc.name)}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
+                  >
+                    <CloudIcon
+                      componentType={svc.categoryId}
+                      serviceIconName={svc.iconName}
+                      size={40}
+                    />
+                    <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
+                      {svc.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ),
       )}
       {filteredTemplates.length > 0 && (
         <section>
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("customComponents.customComponents")} · {filteredTemplates.length}
+            {t("elementPresets.myPresets")} · {filteredTemplates.length}
           </h3>
           <div className="grid grid-cols-3 gap-2">
             {filteredTemplates.map((template) => (
-              <NodeTemplatePreviewCard
+              <ElementPresetPreviewCard
                 key={template.id}
                 template={template}
                 onClick={() => onAddTemplate(template.id)}
-                onDelete={() => deleteTemplate(template.id)}
+                onDelete={() => deletePreset(template.id)}
               />
             ))}
           </div>

@@ -1,40 +1,21 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import {
-  User,
-  Network,
-  Server,
-  Database,
-  Square,
-  StickyNote,
-  Globe,
-  Table,
-  Braces,
-  ExternalLink,
-} from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
-import {
-  PanelKind,
-  COMPONENT_TYPE_PANEL,
-  COMPONENT_TYPE_NOTE,
-  COMPONENT_TYPE_API_GROUP,
-  COMPONENT_TYPE_ENDPOINT,
-  COMPONENT_TYPE_DB_TABLE,
-  COMPONENT_TYPE_JSON_VIEWER,
-  COMPONENT_TYPE_EXTERNAL_ELEMENT,
-  isDbTableType,
-  isJsonViewerType,
-} from "@/features/diagram";
+import { PanelKind, COMPONENT_TYPE_PANEL } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
-import { buildFlowchartPickerOptions } from "./element-picker/buildPickerOptions";
-import { PANEL_KINDS, getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import {
+  buildC4PickerOptions,
+  buildFlowchartPickerOptions,
+} from "./element-picker/buildPickerOptions";
+import { getPanelKindForAwsService, panelKindDefaultName } from "@/lib/catalogs/panels";
+import { paletteEntriesForCategory } from "@/features/elements/element.palette";
+import { ElementCategory } from "../enums";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import { AwsIcon } from "../nodes/CloudIcon";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
 import { filterCloudServicesForQuery } from "./element-picker/pickerFilters";
 import { useTranslation } from "react-i18next";
-import { useCustomComponentLibrary } from "@/features/custom-components";
+import { useElementPresetLibrary } from "@/features/element-presets";
 
 type CanvasInsertOption = {
   type: ComponentType;
@@ -43,6 +24,8 @@ type CanvasInsertOption = {
   panelKind?: PanelKind;
   awsIconName?: string;
   flowShape?: FlowNodeShape;
+  /** Search synonyms carried by the option itself (registry-derived entries). */
+  searchKeys?: string[];
 };
 
 type FlatOption =
@@ -56,11 +39,6 @@ type FlatOption =
 type SearchSynonyms = {
   panel: string[];
   swimlane: string[];
-  note: string[];
-  apiGroup: string[];
-  endpoint: string[];
-  dbTable: string[];
-  jsonViewer: string[];
 };
 
 type AwsSearchRow = {
@@ -83,24 +61,15 @@ function canvasOptionMatchesQuery(
   synonyms: SearchSynonyms,
 ): boolean {
   const fields: string[] = [opt.label.toLowerCase()];
+  if (opt.searchKeys) fields.push(...opt.searchKeys);
   if (opt.panelKind) {
-    fields.push(getPanelKindDef(opt.panelKind).defaultName.toLowerCase());
+    fields.push(panelKindDefaultName(opt.panelKind).toLowerCase());
   }
   if (opt.type === COMPONENT_TYPE_PANEL) {
     fields.push(...synonyms.panel);
     if (opt.panelKind === PanelKind.Swimlane) {
       fields.push(...synonyms.swimlane);
     }
-  } else if (opt.type === COMPONENT_TYPE_NOTE) {
-    fields.push(...synonyms.note);
-  } else if (isDbTableType(opt.type)) {
-    fields.push(...synonyms.dbTable);
-  } else if (isJsonViewerType(opt.type)) {
-    fields.push(...synonyms.jsonViewer);
-  } else if (opt.type === COMPONENT_TYPE_API_GROUP) {
-    fields.push(...synonyms.apiGroup);
-  } else if (opt.type === COMPONENT_TYPE_ENDPOINT) {
-    fields.push(...synonyms.endpoint);
   }
   return fields.some((f) => f.includes(q));
 }
@@ -179,17 +148,9 @@ const QuickInsertPopover = ({
   const listRef = useRef<HTMLDivElement>(null);
   const { addComponent, addConnection, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
-  const { templates, instantiateTemplate } = useCustomComponentLibrary();
+  const { presets, instantiatePreset } = useElementPresetLibrary();
 
-  const C4_OPTIONS = useMemo(
-    () => [
-      { type: "person" as const, label: t("quickInsert.typePerson"), icon: User },
-      { type: "system" as const, label: t("quickInsert.typeSystem"), icon: Network },
-      { type: "container" as const, label: t("quickInsert.typeContainer"), icon: Server },
-      { type: "component" as const, label: t("quickInsert.typeComponent"), icon: Database },
-    ],
-    [t],
-  );
+  const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
 
   const FLOWCHART_QUICK_OPTIONS = useMemo(() => {
     const shapes = new Set<FlowNodeShape>(["rectangle", "rounded", "diamond"]);
@@ -198,53 +159,27 @@ const QuickInsertPopover = ({
     );
   }, [t]);
 
-  const CANVAS_OPTIONS = useMemo(
-    (): CanvasInsertOption[] => [
-      {
-        type: COMPONENT_TYPE_PANEL,
-        label: t("canvasToolbar.panel"),
-        icon: Square,
-        panelKind: PanelKind.Default,
-      },
-      ...PANEL_KINDS.filter((p) => p.id !== PanelKind.Default).map((p) => ({
-        type: COMPONENT_TYPE_PANEL as ComponentType,
-        label: p.id === PanelKind.Swimlane ? t("swimlane.title") : p.label,
-        icon: p.icon,
-        panelKind: p.id,
-        awsIconName: p.awsIconName,
+  // Registry-derived entries join the legacy list, which no longer holds the
+  // types that have migrated -- each element is offered by exactly one path.
+  const REGISTRY_OPTIONS = useMemo(
+    (): CanvasInsertOption[] =>
+      paletteEntriesForCategory(ElementCategory.Canvas).map((entry) => ({
+        type: entry.type,
+        label: entry.label,
+        icon: entry.icon,
+        searchKeys: entry.searchKeys,
+        panelKind: entry.createOptions.panelKind,
+        awsIconName: entry.awsIconName,
       })),
-      {
-        type: COMPONENT_TYPE_NOTE as ComponentType,
-        label: t("canvasToolbar.note"),
-        icon: StickyNote,
-      },
-      {
-        type: COMPONENT_TYPE_DB_TABLE as ComponentType,
-        label: t("nodeTypes.db-table"),
-        icon: Table,
-      },
-      {
-        type: COMPONENT_TYPE_JSON_VIEWER as ComponentType,
-        label: t("nodeTypes.json-viewer"),
-        icon: Braces,
-      },
-      {
-        type: COMPONENT_TYPE_API_GROUP as ComponentType,
-        label: t("quickInsert.typeApiGroup"),
-        icon: Globe,
-      },
-      {
-        type: COMPONENT_TYPE_ENDPOINT as ComponentType,
-        label: t("quickInsert.typeEndpoint"),
-        icon: Globe,
-      },
-      {
-        type: COMPONENT_TYPE_EXTERNAL_ELEMENT as ComponentType,
-        label: t("quickInsert.typeExternalElement"),
-        icon: ExternalLink,
-      },
-    ],
     [t],
+  );
+
+  // Empty: every canvas type now arrives through REGISTRY_OPTIONS.
+  const CANVAS_OPTIONS = useMemo((): CanvasInsertOption[] => [], [t]);
+
+  const CANVAS_OPTIONS_ALL = useMemo(
+    (): CanvasInsertOption[] => [...CANVAS_OPTIONS, ...REGISTRY_OPTIONS],
+    [CANVAS_OPTIONS, REGISTRY_OPTIONS],
   );
 
   useEffect(() => {
@@ -274,11 +209,6 @@ const QuickInsertPopover = ({
     (): SearchSynonyms => ({
       panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
       swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
-      note: splitSearchHelp(t("quickInsert.searchHelpNote")),
-      dbTable: splitSearchHelp(t("quickInsert.searchHelpDbTable")),
-      jsonViewer: splitSearchHelp(t("quickInsert.searchHelpJsonViewer")),
-      apiGroup: splitSearchHelp(t("quickInsert.searchHelpApiGroup")),
-      endpoint: splitSearchHelp(t("quickInsert.searchHelpEndpoint")),
     }),
     [t],
   );
@@ -290,8 +220,8 @@ const QuickInsertPopover = ({
 
   const filteredCanvas = useMemo(() => {
     if (!q) return [];
-    return CANVAS_OPTIONS.filter((o) => canvasOptionMatchesQuery(o, q, searchSynonyms));
-  }, [q, CANVAS_OPTIONS, searchSynonyms]);
+    return CANVAS_OPTIONS_ALL.filter((o) => canvasOptionMatchesQuery(o, q, searchSynonyms));
+  }, [q, CANVAS_OPTIONS_ALL, searchSynonyms]);
 
   const filteredFlowchart = useMemo(() => {
     if (!q) return [];
@@ -318,29 +248,23 @@ const QuickInsertPopover = ({
     return rows;
   }, [q]);
 
-  const gcpProvider = useMemo(() => cloudRegistry.forId("gcp"), []);
-  const azureProvider = useMemo(() => cloudRegistry.forId("azure"), []);
-
   const filteredCloud = useMemo((): CloudSearchRow[] => {
     if (!q) return [];
-    const gcpRows = gcpProvider
-      ? filterCloudServicesForQuery(q, gcpProvider).map((s) => ({
-          categoryId: s.categoryId,
-          serviceId: s.id,
-          serviceName: s.name,
-          iconName: s.iconName,
-        }))
-      : [];
-    const azureRows = azureProvider
-      ? filterCloudServicesForQuery(q, azureProvider).map((s) => ({
-          categoryId: s.categoryId,
-          serviceId: s.id,
-          serviceName: s.name,
-          iconName: s.iconName,
-        }))
-      : [];
-    return [...gcpRows, ...azureRows];
-  }, [q, gcpProvider, azureProvider]);
+    const rows: CloudSearchRow[] = [];
+    for (const provider of cloudRegistry.allProviders()) {
+      // AWS keeps its own filteredAws path (panel-kind remapping).
+      if (provider.id === "aws") continue;
+      for (const service of filterCloudServicesForQuery(q, provider)) {
+        rows.push({
+          categoryId: service.categoryId,
+          serviceId: service.id,
+          serviceName: service.name,
+          iconName: service.iconName,
+        });
+      }
+    }
+    return rows;
+  }, [q]);
 
   const filteredServices = useMemo(() => {
     if (!q) return [];
@@ -354,7 +278,7 @@ const QuickInsertPopover = ({
 
   const filteredTemplates = useMemo(() => {
     if (!q) return [];
-    return templates.filter((template) => {
+    return presets.filter((template) => {
       const normalizedBaseType = String(template.baseType).toLowerCase();
       return (
         template.name.toLowerCase().includes(q) ||
@@ -362,7 +286,7 @@ const QuickInsertPopover = ({
         normalizedBaseType.includes(q)
       );
     });
-  }, [q, templates]);
+  }, [q, presets]);
 
   const flatOptions = useMemo((): FlatOption[] => {
     const flowchartAsCanvas: CanvasInsertOption[] = filteredFlowchart.map((opt) => ({
@@ -429,7 +353,7 @@ const QuickInsertPopover = ({
 
   const handleSelectCanvas = useCallback(
     (type: ComponentType, label: string, panelKind?: PanelKind, flowShape?: FlowNodeShape) => {
-      const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
+      const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
       const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
       const comp = addComponent(type, name, null, insertPos, undefined, panelKind, flowShape);
       finalizeInsertion(comp.id);
@@ -443,7 +367,7 @@ const QuickInsertPopover = ({
       const comp = panelKind
         ? addComponent(
             COMPONENT_TYPE_PANEL,
-            getPanelKindDef(panelKind).defaultName,
+            panelKindDefaultName(panelKind),
             null,
             insertPos,
             undefined,
@@ -479,15 +403,15 @@ const QuickInsertPopover = ({
   );
 
   const handleSelectTemplate = useCallback(
-    (templateId: string) => {
-      const insertedNodeId = instantiateTemplate({
-        templateId,
+    (presetId: string) => {
+      const insertedNodeId = instantiatePreset({
+        presetId,
         position: insertPos,
       });
       if (!insertedNodeId) return;
       finalizeInsertion(insertedNodeId);
     },
-    [instantiateTemplate, insertPos, finalizeInsertion],
+    [instantiatePreset, insertPos, finalizeInsertion],
   );
 
   const selectOption = useCallback(
@@ -640,7 +564,8 @@ const QuickInsertPopover = ({
                 }`}
               >
                 {opt.awsIconName ? (
-                  <AwsIcon
+                  <CloudIcon
+                    familyId="aws"
                     iconName={opt.awsIconName}
                     size={14}
                     className="shrink-0 text-muted-foreground"
@@ -674,7 +599,7 @@ const QuickInsertPopover = ({
                     : "hover:bg-surface-hover"
                 }`}
               >
-                <AwsIcon iconName={row.iconName} size={14} className="shrink-0" />
+                <CloudIcon familyId="aws" iconName={row.iconName} size={14} className="shrink-0" />
                 <span className="truncate text-foreground">{row.serviceName}</span>
               </button>
             ))}
@@ -751,7 +676,7 @@ const QuickInsertPopover = ({
               filteredServices.length > 0) && <div className="border-t border-border my-1" />}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("customComponents.customComponents")}
+                {t("elementPresets.myPresets")}
               </span>
             </div>
             {filteredTemplates.map((template, index) => (

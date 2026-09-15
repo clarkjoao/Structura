@@ -2,21 +2,6 @@ import { GCP_CATEGORIES, GCP_CATEGORY_MAP, GCP_SERVICE_MAP, isGcpType } from "./
 import type { CloudCategory, CloudProviderAdapter, CloudService } from "../../model/cloud.types";
 import { gcpIconResolver } from "./gcp.icon-resolver";
 
-const GCP_CATEGORY_BORDERS: Record<string, string> = {
-  "gcp-compute": "border-l-gcp-compute",
-  "gcp-storage": "border-l-gcp-storage",
-  "gcp-database": "border-l-gcp-database",
-  "gcp-networking": "border-l-gcp-networking",
-  "gcp-security": "border-l-gcp-security",
-  "gcp-analytics": "border-l-gcp-analytics",
-  "gcp-ai": "border-l-gcp-ai",
-  "gcp-devtools": "border-l-gcp-devtools",
-  "gcp-integration": "border-l-gcp-integration",
-  "gcp-management": "border-l-gcp-management",
-  "gcp-media": "border-l-gcp-media",
-  "gcp-general": "border-l-gcp-general",
-};
-
 const categories: CloudCategory[] = GCP_CATEGORIES.map((cat) => ({
   id: cat.id,
   providerId: "gcp",
@@ -59,7 +44,9 @@ export const gcpProvider: CloudProviderAdapter = {
     };
   },
 
+  // No dedicated border map: the class name is the category id, same formula
+  // `borderClassForAccent` derives from `palette.accent` on the descriptor.
   getCategoryStyle: (categoryId) => ({
-    borderClass: GCP_CATEGORY_BORDERS[categoryId] ?? "border-l-gcp-general",
+    borderClass: `border-l-${categoryId}`,
   }),
 };

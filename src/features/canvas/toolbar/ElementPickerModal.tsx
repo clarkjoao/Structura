@@ -2,15 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useDiagramActions, useAllServices, useAllComponents, PanelKind } from "@/features/diagram";
-import { ElementCategory } from "../enums";
+import { ElementCategory, type PickerCategoryId } from "../enums";
 import type { ComponentType } from "@/features/diagram";
 import type { CanvasPickerOption, ElementPickerModalProps } from "./element-picker/types";
 import { getUsageKeyForType, getDefaultNameForNewComponent } from "@/features/diagram";
 import { AWS_CATEGORIES, type AwsCategory } from "@/features/cloud/providers/aws/aws.catalog";
-import { getPanelKindForAwsService, getPanelKindDef } from "@/lib/catalogs/panels";
+import { getPanelKindForAwsService, panelKindDefaultName } from "@/lib/catalogs/panels";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { cloudRegistry } from "@/features/cloud";
+import {
+  allCloudFamilies,
+  getCloudFamily,
+  isRegisteredCloudFamily,
+} from "@/features/elements/families/cloud-family.registry";
 import { trackUsage } from "./element-usage-tracker";
 import { useTranslation } from "react-i18next";
 import { AWS_PRIMARY_CATEGORY_IDS, PICKER_CARD_CLASS } from "./element-picker/constants";
@@ -21,6 +26,10 @@ import {
   buildCanvasPickerOptions,
   buildFlowchartPickerOptions,
 } from "./element-picker/buildPickerOptions";
+import {
+  paletteEntriesForCategory,
+  type ElementPaletteEntry,
+} from "@/features/elements/element.palette";
 import {
   filterC4ByQuery,
   filterCanvasByQuery,
@@ -38,37 +47,58 @@ import { ElementPickerSearchResults } from "./element-picker/ElementPickerSearch
 import { AwsBrowseView } from "./element-picker/AwsBrowseView";
 import { CloudBrowseView } from "./element-picker/CloudBrowseView";
 import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
-import { AwsIcon } from "../nodes/CloudIcon";
+import CloudIcon from "../nodes/CloudIcon";
 import { isPanelType } from "@/features/diagram";
 import {
-  useCustomComponentLibrary,
-  NodeTemplatePreviewCard,
-  useCustomComponentStore,
-} from "@/features/custom-components";
+  useElementPresetLibrary,
+  ElementPresetPreviewCard,
+  useElementPresetStore,
+} from "@/features/element-presets";
+
+function defaultExpandedForFamily(familyId: string): Set<string> {
+  const family = getCloudFamily(familyId);
+  const first = family?.primaryCategoryIds?.[0] ?? family?.categories[0]?.id;
+  return new Set(first ? [first] : []);
+}
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState<ElementCategory>(() => readStoredCategory());
-  const [expandedAwsSubcats, setExpandedAwsSubcats] = useState<Set<string>>(
-    () => new Set(["aws-compute"]),
+  const [activeCategory, setActiveCategory] = useState<PickerCategoryId>(() =>
+    readStoredCategory(),
   );
-  const [expandedGcpSubcats, setExpandedGcpSubcats] = useState<Set<string>>(
-    () => new Set(["gcp-compute"]),
-  );
-  const [expandedAzureSubcats, setExpandedAzureSubcats] = useState<Set<string>>(
-    () => new Set(["azure-compute"]),
-  );
+  const [expandedByFamily, setExpandedByFamily] = useState<Record<string, Set<string>>>(() => {
+    const initial: Record<string, Set<string>> = {};
+    for (const family of allCloudFamilies()) {
+      initial[family.id] = defaultExpandedForFamily(family.id);
+    }
+    return initial;
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const rfInstance = useReactFlow();
   const { addComponent, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
   const allComponents = useAllComponents();
-  const { templates, instantiateTemplate } = useCustomComponentLibrary();
-  const deleteTemplate = useCustomComponentStore((state) => state.deleteTemplate);
+  const { presets, instantiatePreset } = useElementPresetLibrary();
+  const deletePreset = useElementPresetStore((state) => state.deletePreset);
 
   const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
-  const CANVAS_OPTIONS = useMemo(() => buildCanvasPickerOptions(t), [t]);
+  // Registry-derived entries join the legacy list, which no longer holds the
+  // types that have migrated -- each element is offered by exactly one path.
+  const CANVAS_OPTIONS = useMemo(
+    (): CanvasPickerOption[] => [
+      ...buildCanvasPickerOptions(),
+      ...paletteEntriesForCategory(ElementCategory.Canvas).map((entry) => ({
+        type: entry.type,
+        label: entry.label,
+        icon: entry.icon,
+        searchKeys: entry.searchKeys,
+        panelKind: entry.createOptions.panelKind,
+        awsIconName: entry.awsIconName,
+      })),
+    ],
+    [t],
+  );
   const FLOWCHART_OPTIONS = useMemo(() => buildFlowchartPickerOptions(t), [t]);
 
   const onCanvasServiceIds = useMemo(
@@ -76,15 +106,20 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     [allComponents],
   );
 
-  const awsServiceCount = useMemo(
-    () => AWS_CATEGORIES.reduce((n, c) => n + c.services.length, 0),
-    [],
-  );
+  const cloudProviders = useMemo(() => cloudRegistry.allProviders(), []);
 
-  const gcpProvider = useMemo(() => cloudRegistry.forId("gcp"), []);
-  const azureProvider = useMemo(() => cloudRegistry.forId("azure"), []);
-  const gcpServiceCount = useMemo(() => gcpProvider?.services.length ?? 0, [gcpProvider]);
-  const azureServiceCount = useMemo(() => azureProvider?.services.length ?? 0, [azureProvider]);
+  const byFamilyCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const provider of cloudProviders) {
+      counts[provider.id] = provider.services.length;
+    }
+    return counts;
+  }, [cloudProviders]);
+
+  const cloudServiceTotal = useMemo(
+    () => Object.values(byFamilyCounts).reduce((n, c) => n + c, 0),
+    [byFamilyCounts],
+  );
 
   const awsSpotlight = useMemo(() => resolveAwsSpotlight(), []);
 
@@ -93,20 +128,16 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       C4_OPTIONS.length +
       CANVAS_OPTIONS.length +
       FLOWCHART_OPTIONS.length +
-      awsServiceCount +
-      gcpServiceCount +
-      azureServiceCount +
+      cloudServiceTotal +
       services.length +
-      templates.length,
+      presets.length,
     [
       C4_OPTIONS.length,
       CANVAS_OPTIONS.length,
       FLOWCHART_OPTIONS.length,
-      awsServiceCount,
-      gcpServiceCount,
-      azureServiceCount,
+      cloudServiceTotal,
       services.length,
-      templates.length,
+      presets.length,
     ],
   );
 
@@ -161,20 +192,35 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     [filteredAwsCategories],
   );
 
-  const filteredGcpFlat = useMemo(
-    () => (gcpProvider ? filterCloudServicesForQuery(q, gcpProvider) : []),
-    [q, gcpProvider],
-  );
+  const filteredCloudByFamily = useMemo(() => {
+    const rows: {
+      familyId: string;
+      labelKey: string;
+      services: ReturnType<typeof filterCloudServicesForQuery>;
+    }[] = [];
+    for (const family of allCloudFamilies()) {
+      // AWS keeps its own search section (panel-kind remapping).
+      if (family.id === "aws") continue;
+      const provider = cloudRegistry.forId(family.id);
+      if (!provider) continue;
+      rows.push({
+        familyId: family.id,
+        labelKey: family.labelKey,
+        services: filterCloudServicesForQuery(q, provider),
+      });
+    }
+    return rows;
+  }, [q]);
 
-  const filteredAzureFlat = useMemo(
-    () => (azureProvider ? filterCloudServicesForQuery(q, azureProvider) : []),
-    [q, azureProvider],
+  const filteredCloudFlatCount = useMemo(
+    () => filteredCloudByFamily.reduce((n, row) => n + row.services.length, 0),
+    [filteredCloudByFamily],
   );
 
   const filteredServices = useMemo(() => filterServicesByQuery(q, services), [q, services]);
   const filteredTemplates = useMemo(() => {
-    if (!q) return templates;
-    return templates.filter((template) => {
+    if (!q) return presets;
+    return presets.filter((template) => {
       const normalizedBaseType = String(template.baseType).toLowerCase();
       return (
         template.name.toLowerCase().includes(q) ||
@@ -182,7 +228,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         normalizedBaseType.includes(q)
       );
     });
-  }, [q, templates]);
+  }, [q, presets]);
 
   const getInsertPos = useCallback(
     () => rfInstance.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }),
@@ -191,9 +237,26 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const handleAddElement = (type: ComponentType, label: string, panelKind?: PanelKind) => {
     trackUsage(getUsageKeyForType(type, panelKind));
-    const panelDefaultName = panelKind ? getPanelKindDef(panelKind).defaultName : undefined;
+    const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
     const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
     const comp = addComponent(type, name, null, getInsertPos(), undefined, panelKind);
+    onInsert?.(comp.id);
+    onClose();
+  };
+
+  /**
+   * Insert a palette entry straight from the registry, honouring whatever
+   * `createOptions` it declares. The fixed tabs each know which option their
+   * elements use; a tab built from the registry cannot assume.
+   */
+  const handleAddPaletteEntry = (entry: ElementPaletteEntry) => {
+    const { panelKind, serviceId } = entry.createOptions;
+    trackUsage(
+      serviceId ? `${entry.type}:${serviceId}` : getUsageKeyForType(entry.type, panelKind),
+    );
+    const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
+    const name = getDefaultNameForNewComponent(entry.type, entry.label, panelDefaultName);
+    const comp = addComponent(entry.type, name, null, getInsertPos(), serviceId, panelKind);
     onInsert?.(comp.id);
     onClose();
   };
@@ -202,8 +265,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     const panelKind = getPanelKindForAwsService(serviceId);
     if (panelKind) {
       trackUsage(`canvas:panel:${panelKind}`);
-      const def = getPanelKindDef(panelKind);
-      const name = def.defaultName;
+      const name = panelKindDefaultName(panelKind);
       const comp = addComponent("panel", name, null, getInsertPos(), undefined, panelKind);
       onInsert?.(comp.id);
     } else {
@@ -222,12 +284,13 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     onClose();
   };
 
-  const toggleAwsSubcat = (catId: string) => {
-    setExpandedAwsSubcats((prev) => {
-      const next = new Set(prev);
+  const toggleFamilySubcat = (familyId: string, catId: string) => {
+    setExpandedByFamily((prev) => {
+      const current = prev[familyId] ?? defaultExpandedForFamily(familyId);
+      const next = new Set(current);
       if (next.has(catId)) next.delete(catId);
       else next.add(catId);
-      return next;
+      return { ...prev, [familyId]: next };
     });
   };
 
@@ -245,24 +308,6 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     onClose();
   };
 
-  const toggleGcpSubcat = (catId: string) => {
-    setExpandedGcpSubcats((prev) => {
-      const next = new Set(prev);
-      if (next.has(catId)) next.delete(catId);
-      else next.add(catId);
-      return next;
-    });
-  };
-
-  const toggleAzureSubcat = (catId: string) => {
-    setExpandedAzureSubcats((prev) => {
-      const next = new Set(prev);
-      if (next.has(catId)) next.delete(catId);
-      else next.add(catId);
-      return next;
-    });
-  };
-
   const categoryItems = useMemo(
     () =>
       buildCategoryNavItems(t, {
@@ -270,11 +315,9 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         c4: C4_OPTIONS.length,
         canvas: CANVAS_OPTIONS.length,
         flowchart: FLOWCHART_OPTIONS.length,
-        aws: awsServiceCount,
-        gcp: gcpServiceCount,
-        azure: azureServiceCount,
+        byFamily: byFamilyCounts,
         registry: services.length,
-        nodeTemplates: templates.length,
+        nodeTemplates: presets.length,
       }),
     [
       t,
@@ -282,15 +325,13 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       C4_OPTIONS.length,
       CANVAS_OPTIONS.length,
       FLOWCHART_OPTIONS.length,
-      awsServiceCount,
-      gcpServiceCount,
-      azureServiceCount,
+      byFamilyCounts,
       services.length,
-      templates.length,
+      presets.length,
     ],
   );
 
-  const setCategory = (cat: ElementCategory) => {
+  const setCategory = (cat: PickerCategoryId) => {
     setActiveCategory(cat);
     setSearch("");
   };
@@ -301,8 +342,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     filteredCanvas.length === 0 &&
     filteredFlowchart.length === 0 &&
     filteredAwsFlat.length === 0 &&
-    filteredGcpFlat.length === 0 &&
-    filteredAzureFlat.length === 0 &&
+    filteredCloudFlatCount === 0 &&
     filteredServices.length === 0 &&
     filteredTemplates.length === 0;
 
@@ -329,6 +369,37 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
     },
     [addComponent, getInsertPos, onClose, onInsert],
   );
+
+  const renderCloudFamilyBody = (familyId: string) => {
+    const family = getCloudFamily(familyId);
+    const provider = cloudRegistry.forId(familyId);
+    if (!family || !provider) return null;
+
+    // AWS keeps AwsBrowseView for panel-kind remapping (VPC → swimlane, …).
+    if (familyId === "aws") {
+      return (
+        <AwsBrowseView
+          awsPrimaryCategories={awsPrimaryCategories}
+          awsOtherCategories={awsOtherCategories}
+          expandedAwsSubcats={expandedByFamily.aws ?? defaultExpandedForFamily("aws")}
+          q={q}
+          toggleAwsSubcat={(catId) => toggleFamilySubcat("aws", catId)}
+          onPickAws={handleAddAws}
+        />
+      );
+    }
+
+    return (
+      <CloudBrowseView
+        provider={provider}
+        primaryCategoryIds={[...(family.primaryCategoryIds ?? [])]}
+        expandedSubcats={expandedByFamily[familyId] ?? defaultExpandedForFamily(familyId)}
+        q={q}
+        toggleSubcat={(catId) => toggleFamilySubcat(familyId, catId)}
+        onPick={handleAddCloudService}
+      />
+    );
+  };
 
   const renderCategoryBody = () => {
     switch (activeCategory) {
@@ -379,7 +450,12 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                 className={PICKER_CARD_CLASS}
               >
                 {opt.awsIconName ? (
-                  <AwsIcon iconName={opt.awsIconName} size={40} className="text-muted-foreground" />
+                  <CloudIcon
+                    providerId="aws"
+                    iconName={opt.awsIconName}
+                    size={40}
+                    className="text-muted-foreground"
+                  />
                 ) : (
                   <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
                 )}
@@ -388,51 +464,6 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
             ))}
           </div>
         );
-      case ElementCategory.Aws:
-        return (
-          <AwsBrowseView
-            awsPrimaryCategories={awsPrimaryCategories}
-            awsOtherCategories={awsOtherCategories}
-            expandedAwsSubcats={expandedAwsSubcats}
-            q={q}
-            toggleAwsSubcat={toggleAwsSubcat}
-            onPickAws={handleAddAws}
-          />
-        );
-      case ElementCategory.Gcp:
-        return gcpProvider ? (
-          <CloudBrowseView
-            provider={gcpProvider}
-            primaryCategoryIds={[
-              "gcp-compute",
-              "gcp-database",
-              "gcp-storage",
-              "gcp-networking",
-              "gcp-ai",
-            ]}
-            expandedSubcats={expandedGcpSubcats}
-            q={q}
-            toggleSubcat={toggleGcpSubcat}
-            onPick={handleAddCloudService}
-          />
-        ) : null;
-      case ElementCategory.Azure:
-        return azureProvider ? (
-          <CloudBrowseView
-            provider={azureProvider}
-            primaryCategoryIds={[
-              "azure-compute",
-              "azure-database",
-              "azure-storage",
-              "azure-networking",
-              "azure-security",
-            ]}
-            expandedSubcats={expandedAzureSubcats}
-            q={q}
-            toggleSubcat={toggleAzureSubcat}
-            onPick={handleAddCloudService}
-          />
-        ) : null;
       case ElementCategory.Registry:
         return (
           <RegistryCategoryPanel
@@ -451,11 +482,11 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         ) : (
           <div className="grid grid-cols-3 gap-2">
             {filteredTemplates.map((template) => (
-              <NodeTemplatePreviewCard
+              <ElementPresetPreviewCard
                 key={template.id}
                 onClick={() => {
-                  const insertedNodeId = instantiateTemplate({
-                    templateId: template.id,
+                  const insertedNodeId = instantiatePreset({
+                    presetId: template.id,
                     position: getInsertPos(),
                   });
                   if (insertedNodeId) {
@@ -463,14 +494,49 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                     onClose();
                   }
                 }}
-                onDelete={() => deleteTemplate(template.id)}
+                onDelete={() => deletePreset(template.id)}
                 template={template}
               />
             ))}
           </div>
         );
-      default:
-        return null;
+      default: {
+        if (isRegisteredCloudFamily(activeCategory)) {
+          return renderCloudFamilyBody(activeCategory);
+        }
+
+        // Any other registered palette category — a vocabulary that is neither
+        // C4, canvas, flowchart nor a catalog family. It gets the same grid the
+        // fixed tabs use, built straight from the registry, so registering the
+        // elements is all a new family has to do to become insertable.
+        const entries = paletteEntriesForCategory(activeCategory);
+        if (entries.length === 0) return null;
+
+        return (
+          <div className="grid grid-cols-4 gap-3">
+            {entries.map((entry) => (
+              <button
+                key={entry.key}
+                type="button"
+                onClick={() => handleAddPaletteEntry(entry)}
+                className={PICKER_CARD_CLASS}
+              >
+                {entry.familyIcon ? (
+                  <CloudIcon
+                    providerId={entry.familyIcon.familyId}
+                    iconName={entry.familyIcon.iconName}
+                    size={40}
+                    className="text-muted-foreground"
+                  />
+                ) : (
+                  <entry.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
+                )}
+                <span className="mt-2 text-xs text-foreground">{entry.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+      }
     }
   };
 
@@ -527,8 +593,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                   filteredCanvas={filteredCanvas}
                   filteredFlowchart={filteredFlowchart}
                   filteredAwsFlat={filteredAwsFlat}
-                  filteredGcpFlat={filteredGcpFlat}
-                  filteredAzureFlat={filteredAzureFlat}
+                  filteredCloudByFamily={filteredCloudByFamily}
                   filteredServices={filteredServices}
                   filteredTemplates={filteredTemplates}
                   onCanvasServiceIds={onCanvasServiceIds}
@@ -538,9 +603,9 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                   onAddAws={handleAddAws}
                   onAddCloud={handleAddCloudService}
                   onAddRegistry={handleAddService}
-                  onAddTemplate={(templateId) => {
-                    const insertedNodeId = instantiateTemplate({
-                      templateId,
+                  onAddTemplate={(id) => {
+                    const insertedNodeId = instantiatePreset({
+                      presetId: id,
                       position: getInsertPos(),
                     });
                     if (insertedNodeId) {

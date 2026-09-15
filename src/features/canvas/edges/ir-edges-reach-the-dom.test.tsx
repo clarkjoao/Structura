@@ -9,7 +9,7 @@ import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { buildGeneratedGraphInputs } from "@/features/llm/ir/apply-ir";
 import { REFERENCE_DIAGRAMS } from "../layout/reference-diagrams";
 import { GENERATED_DIAGRAMS } from "../layout/generated-diagrams";
-import { NODE_TYPE_REGISTRY, resolveNodeDescriptor } from "../nodes/node-types";
+import { getNodeTypesSnapshot, resolveNodeDescriptor } from "../nodes/node-types";
 import type { NodeBuildContext } from "../nodes/node-types/types";
 import {
   buildConnectionCountPerNode,
@@ -214,7 +214,12 @@ async function renderIR(ir: DiagramIR): Promise<RenderedDiagram> {
   const warnSpy = vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
     warnings.push(args.map(String).join(" "));
   });
-  const nodeTypes = Object.fromEntries(NODE_TYPE_REGISTRY.map((d) => [d.rfType, d.component]));
+  // The map the canvas actually renders with: elements on the registry plus
+  // whatever is still on the legacy array. Building it from the legacy array
+  // alone silently drops every migrated type, and a node React Flow has no
+  // component for renders as a default node with no handles -- which is the
+  // very failure this file exists to catch.
+  const nodeTypes = getNodeTypesSnapshot();
   const { container } = render(
     <MemoryRouter>
       <ReactFlowProvider>

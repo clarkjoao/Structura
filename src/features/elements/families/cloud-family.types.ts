@@ -1,0 +1,143 @@
+import type { NodeTypes } from "@xyflow/react";
+import type { IconResolver } from "@/features/cloud/model/cloud.types";
+import type { Component } from "@/features/diagram/model/component.types";
+import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
+import type {
+  AccentToken,
+  ElementCanvasSlice,
+  ElementComponentBase,
+  ElementCreateOptions,
+  ElementInspectorSlice,
+  ElementSize,
+  ElementTypeId,
+  ExportGeometry,
+} from "../element.types";
+import type { ExportNode } from "@/lib/export-core";
+
+/**
+ * Catalog-shaped family id (`aws`, `gcp`, `azure`, …).
+ *
+ * Open string set — not a closed hyperscaler union. `registerCloudFamily`
+ * validates uniqueness at runtime. Adding Kubernetes (or any new family) must
+ * not require editing this type.
+ */
+export type CloudFamilyId = string;
+
+/** One catalog row — the unit the palette offers inside a category. */
+export interface CloudFamilyService {
+  id: string;
+  /**
+   * Proper-noun display name (Compute Engine, S3, …).
+   *
+   * Used as the palette variant `labelKey`: cloud service names are not
+   * translated today (`CloudBrowseView` renders `svc.name` raw), and i18n
+   * returns the key when no entry exists, so the visible label stays the name.
+   */
+  name: string;
+  /** Key the family's `IconResolver` understands. */
+  iconName: string;
+  categoryId: string;
+  /**
+   * i18n key for a one-line description of *this service*, for the LLM catalog.
+   *
+   * Absent falls back to the category's description, which is what every
+   * service used to get: the model saw "AWS compute services (EC2, Lambda, …)"
+   * as the description of both EC2 and Lambda. Read by `searchElements`.
+   */
+  descriptionKey?: string;
+}
+
+/** One category — becomes one `ElementDescriptor` (the type is the category id). */
+export interface CloudFamilyCategory {
+  /**
+   * Category id written to `Component.type`. Known families use their closed
+   * catalog ids; new families cast an `OpenCatalogCategoryId` at the
+   * definition site (do not grow `ComponentType` per family).
+   */
+  id: ElementTypeId;
+  labelKey: string;
+  descriptionKey: string;
+  /** Declared once here; kills the per-provider `*_CATEGORY_BORDERS` maps. */
+  accent: AccentToken;
+}
+
+/**
+ * Shared card canvas every category of the family paints with.
+ *
+ * Kept on the family (not hardcoded in the factory) so the factory stays free
+ * of a CardNode import and tests can inject a stub. `rfType` is filled per
+ * category as the category id — React Flow needs a distinct key, even when the
+ * component is the same.
+ */
+export interface CloudFamilyCardCanvas {
+  component: NodeTypes[string];
+  handles: NodeHandleSpec;
+  buildData: ElementCanvasSlice["buildData"];
+  buildStyle?: ElementCanvasSlice["buildStyle"];
+}
+
+/**
+ * How a cloud family leaves Structura.
+ *
+ * Two things it deliberately does not do:
+ * - No `kind: "cloudService"` on the export IR yet — export-core has `image`
+ *   and `passthrough` (F2), which are the floor for families without an mxgraph
+ *   pack. **Contract:** a new family that only supplies `toExportNode` returning
+ *   `{ kind: "image" | "passthrough", ... }` needs no edit to
+ *   `export-core/model.ts` or `cell-builders.ts`. Native kinds (e.g. `aws`) are
+ *   optional upgrades, not a registration requirement.
+ * - `import` is omitted until a consumer reads it. GCP has no draw.io import
+ *   today; adding a dead field would violate the migration rule.
+ */
+export interface CloudFamilyExport {
+  toExportNode: (comp: Component, base: ExportGeometry) => ExportNode;
+}
+
+/**
+ * Contract that generates one `ElementDescriptor` per category from a catalog.
+ *
+ * Illustrative shape from the architecture proposal, corrected against the
+ * live `ElementDescriptor` (same spirit as F1–F3d contract fixes):
+ *
+ * - Persisted service field is `cloudServiceId` (F6b). Creation still takes
+ *   `ElementCreateOptions.serviceId` as the create-time input; `attachService`
+ *   writes `cloudServiceId`. Catalog business links stay on `BaseComponent.serviceId`.
+ * - One descriptor per category, not per service; services become palette
+ *   variants.
+ * - `icons` keeps the existing `IconResolver` — it already unifies npm packages
+ *   (AWS/Azure) and `import.meta.glob` SVGs (GCP).
+ */
+export interface CloudFamilyDefinition {
+  id: CloudFamilyId;
+  labelKey: string;
+  /** Palette nav id (usually same as `id`). */
+  paletteCategoryId: string;
+  /**
+   * Category ids shown first in the browse view. When absent, every category
+   * is listed in order with no "Other" split.
+   */
+  primaryCategoryIds?: readonly string[];
+  categories: readonly CloudFamilyCategory[];
+  services: readonly CloudFamilyService[];
+  icons: IconResolver;
+  card: CloudFamilyCardCanvas;
+  export: CloudFamilyExport;
+  defaultSize: ElementSize;
+  patchableKeys: readonly string[];
+  /**
+   * Builds the persisted component for a category.
+   *
+   * Writes `cloudServiceId` (F6b). Creation input remains
+   * `ElementCreateOptions.serviceId`.
+   */
+  attachService: (
+    base: ElementComponentBase,
+    categoryId: ElementTypeId,
+    serviceId: string | undefined,
+  ) => Component;
+  /** Optional inspector override; absent → generic `ComponentPanel`. */
+  inspector?: ElementInspectorSlice;
+}
+
+/** Re-export so callers building `attachService` see the create-options shape. */
+export type { ElementCreateOptions };

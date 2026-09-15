@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SEED_US_DIAGRAMS } from "@/fixtures/seeds/urlshort-example";
+import { SEED_PL_DIAGRAMS } from "@/fixtures/seeds/pixledger";
 import type { Flow } from "../model/flow.types";
 import { buildFlowOutline } from "./flow-outline";
 import { buildCallStack } from "./flow-call-stack";
@@ -14,7 +14,7 @@ import { buildCallStack } from "./flow-call-stack";
  */
 
 function seedFlows(): Flow[] {
-  return Object.values(SEED_US_DIAGRAMS).flatMap((diagram) =>
+  return Object.values(SEED_PL_DIAGRAMS).flatMap((diagram) =>
     Object.values(diagram.snapshot.flows ?? {}),
   );
 }

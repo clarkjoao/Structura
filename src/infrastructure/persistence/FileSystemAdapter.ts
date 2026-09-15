@@ -1,12 +1,13 @@
 import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
 import { FileSystemEntryKind } from "@/features/diagram";
-import type { CustomComponentTemplate } from "@/features/custom-components";
+import type { ElementPreset } from "@/features/element-presets";
 import i18n from "@/infrastructure/i18n";
 import {
   isDiagramTombstoneJson,
   validateDiagramFile,
   validateManifest,
 } from "./validateWorkspaceFile";
+import { readElementPresetsField } from "./read-element-presets-field";
 
 const MAX_DIRECTORY_SCAN_DEPTH = 64;
 
@@ -141,7 +142,9 @@ export interface WorkspaceManifest {
   serviceCatalog: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
-  customComponentTemplates?: Record<string, CustomComponentTemplate>;
+  elementPresets?: Record<string, ElementPreset>;
+  /** @deprecated F10 — read via `readElementPresetsField`; rewritten as `elementPresets`. */
+  customComponentTemplates?: Record<string, ElementPreset>;
   iconLibrary?: Record<string, IconDefinition>;
 }
 
@@ -152,7 +155,9 @@ export type WorkspacePayload = {
   activeDiagramId: string | null;
   /** ISO timestamp from manifest; used for merge/reconnect conflict resolution. */
   manifestUpdatedAt?: string;
-  customComponentTemplates?: Record<string, CustomComponentTemplate>;
+  elementPresets?: Record<string, ElementPreset>;
+  /** @deprecated F10 — read via `readElementPresetsField`. */
+  customComponentTemplates?: Record<string, ElementPreset>;
   iconLibrary?: Record<string, IconDefinition>;
 };
 
@@ -404,7 +409,7 @@ export class FileSystemAdapter {
       folders: manifest.folders,
       activeDiagramId,
       manifestUpdatedAt: manifest.updatedAt,
-      customComponentTemplates: manifest.customComponentTemplates,
+      elementPresets: readElementPresetsField(manifest),
       iconLibrary: manifest.iconLibrary,
     };
   }

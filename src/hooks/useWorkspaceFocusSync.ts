@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { fileSystemAdapter } from "@/infrastructure/persistence/FileSystemAdapter";
 import { hydrateIconStoreFromWorkspace } from "@/infrastructure/persistence/fileSystemBoot";
 import { useDiagramStore } from "@/features/diagram";
-import { useCustomComponentStore } from "@/features/custom-components";
-import { mergeCustomComponentTemplates } from "@/infrastructure/persistence/merge-custom-component-templates";
+import { useElementPresetStore } from "@/features/element-presets";
+import { mergeElementPresets } from "@/infrastructure/persistence/merge-element-presets";
+import { readElementPresetsField } from "@/infrastructure/persistence/read-element-presets-field";
 import {
   LAST_FOLDER_SYNC_STORAGE_KEY,
   recordFolderSyncSuccess,
@@ -89,12 +90,10 @@ export function useWorkspaceFocusSync(): { isSyncing: boolean } {
           workspace.folders as unknown as ReturnType<typeof useDiagramStore.getState>["folders"],
         );
 
-        if (workspace.customComponentTemplates) {
-          useCustomComponentStore.setState((s) => ({
-            templates: mergeCustomComponentTemplates(
-              s.templates,
-              workspace.customComponentTemplates!,
-            ),
+        const workspacePresets = readElementPresetsField(workspace);
+        if (workspacePresets) {
+          useElementPresetStore.setState((s) => ({
+            presets: mergeElementPresets(s.presets, workspacePresets),
           }));
         }
 

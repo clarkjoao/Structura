@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { SEED_US_DIAGRAMS } from "@/fixtures/seeds/urlshort-example";
+import { SEED_PL_DIAGRAMS } from "@/fixtures/seeds/pixledger";
+import { D_CT_HUB } from "@/fixtures/seeds/pixledger/ids";
 import type { Flow } from "../model/flow.types";
 import { repairFlowsAfterRemovingDiagramElements } from "./flow-repair";
 import { condition, makeFlow } from "@/test/flow-graph-helpers";
@@ -14,29 +15,35 @@ import { checkFlowInvariants } from "./flow-graph";
  */
 describe("deleting a component that a flow step references", () => {
   function seedFlow(): { flows: Record<string, Flow> } {
-    const diagram = structuredClone(SEED_US_DIAGRAMS["d-us-components"]!);
+    const diagram = structuredClone(SEED_PL_DIAGRAMS[D_CT_HUB]!);
     return { flows: diagram.snapshot.flows };
   }
 
   it("starts from a five-step chain", () => {
     const { flows } = seedFlow();
-    const flow = flows["flow-cp-create"]!;
+    const flow = flows["flow-hub-internal-create"]!;
 
-    expect(flow.entryStepId).toBe("cp-f1");
-    expect(getOrderedStepIds(flow)).toEqual(["cp-f1", "cp-f2", "cp-f3", "cp-f4", "cp-f5"]);
-    expect(flow.steps["cp-f2"]!.componentId).toBe("us-cp-auth-guard");
+    expect(flow.entryStepId).toBe("hub-cp-f1");
+    expect(getOrderedStepIds(flow)).toEqual([
+      "hub-cp-f1",
+      "hub-cp-f2",
+      "hub-cp-f3",
+      "hub-cp-f4",
+      "hub-cp-f5",
+    ]);
+    expect(flow.steps["hub-cp-f2"]!.componentId).toBe("pl-hub-auth-guard");
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
   it("keeps the chain continuous when the middle step's component is deleted", () => {
     const { flows } = seedFlow();
 
-    repairFlowsAfterRemovingDiagramElements(flows, new Set(["us-cp-auth-guard"]), new Set());
+    repairFlowsAfterRemovingDiagramElements(flows, new Set(["pl-hub-auth-guard"]), new Set());
 
-    const flow = flows["flow-cp-create"]!;
-    expect(flow.steps["cp-f2"]).toBeUndefined();
-    expect(flow.steps["cp-f1"]!.next).toBe("cp-f3");
-    expect(getOrderedStepIds(flow)).toEqual(["cp-f1", "cp-f3", "cp-f4", "cp-f5"]);
+    const flow = flows["flow-hub-internal-create"]!;
+    expect(flow.steps["hub-cp-f2"]).toBeUndefined();
+    expect(flow.steps["hub-cp-f1"]!.next).toBe("hub-cp-f3");
+    expect(getOrderedStepIds(flow)).toEqual(["hub-cp-f1", "hub-cp-f3", "hub-cp-f4", "hub-cp-f5"]);
     expect(getStepCount(flow)).toBe(4);
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
@@ -61,8 +68,6 @@ describe("repairFlowsAfterRemovingDiagramElements", () => {
       {
         flowId: flow.id,
         flowName: flow.name,
-        // Nothing was sewn: the only step that referenced the removed element
-        // is the branch point, and that removal was held back.
         joins: [],
         blocked: [
           {

@@ -14,7 +14,19 @@ import {
   buildRunningContext,
   checkContract,
 } from "@/features/canvas/flow/reading/readingVariables";
-import { SEED_US_DIAGRAMS } from "./urlshort-example";
+import { SEED_PL_DIAGRAMS } from "./pixledger";
+import {
+  D_CONTEXT,
+  D_CT_HUB,
+  D_CT_LEDGER,
+  D_CT_MERCHANT,
+  D_CT_RISK,
+  D_DP_HUB,
+  D_DP_LEDGER,
+  D_DP_MERCHANT,
+  D_DP_RISK,
+  D_CATALOG,
+} from "./pixledger/ids";
 
 /**
  * What a fresh install can be read for.
@@ -36,7 +48,7 @@ interface Seeded {
   stack: ReturnType<typeof buildCallStack>;
 }
 
-const SEEDED: Seeded[] = Object.values(SEED_US_DIAGRAMS).flatMap((diagram) =>
+const SEEDED: Seeded[] = Object.values(SEED_PL_DIAGRAMS).flatMap((diagram) =>
   Object.values(diagram.snapshot.flows ?? {}).map((flow) => {
     const outline = buildFlowOutline(flow);
     return { flow, outline, stack: buildCallStack(flow, outline) };
@@ -47,6 +59,8 @@ const everyStep = () =>
   SEEDED.flatMap(({ flow }) => Object.values(flow.steps).map((step) => ({ flow, step })));
 
 const some = (predicate: (entry: Seeded) => boolean) => SEEDED.some(predicate);
+
+const LEGACY_CLOUD_KEYS = ["awsService", "gcpService", "azureService"] as const;
 
 describe("the seeded scripts hold together", () => {
   it("seeds more than one script, so the rail has somewhere to switch to", () => {
@@ -172,8 +186,6 @@ describe("the seeded scripts exercise the variables panel", () => {
       Object.keys(flow.steps).some((stepId) => {
         const info = stack.byStep.get(stepId);
         if (!info?.closesFrameId || !flow.steps[stepId]?.context?.sets) return false;
-        // A value introduced by the closing step is the one thing a frame does
-        // not take with it: read one step later, it is still there.
         const after = flow.steps[stepId]?.next;
         if (!after) return false;
         const context = buildRunningContext(flow, stack, getPathToStep(flow, after));
@@ -187,8 +199,7 @@ describe("the seeded scripts exercise the variables panel", () => {
 });
 
 describe("the seeded scripts survive being exported", () => {
-  /** The diagram each flow belongs to, since the exporter names participants. */
-  const withDiagram = Object.values(SEED_US_DIAGRAMS).flatMap((diagram) =>
+  const withDiagram = Object.values(SEED_PL_DIAGRAMS).flatMap((diagram) =>
     Object.values(diagram.snapshot.flows ?? {}).map((flow) => ({ diagram, flow })),
   );
 
@@ -219,5 +230,81 @@ describe("the seeded scripts survive being exported", () => {
         { separator, present: true },
       );
     }
+  });
+});
+
+describe("PixLedger seed contract", () => {
+  it("ships the ten demo diagrams", () => {
+    expect(Object.keys(SEED_PL_DIAGRAMS).sort()).toEqual(
+      [
+        D_CATALOG,
+        D_CONTEXT,
+        D_CT_HUB,
+        D_CT_LEDGER,
+        D_CT_MERCHANT,
+        D_CT_RISK,
+        D_DP_HUB,
+        D_DP_LEDGER,
+        D_DP_MERCHANT,
+        D_DP_RISK,
+      ].sort(),
+    );
+  });
+
+  it("links context systems to container diagrams and containers to deployments", () => {
+    const context = SEED_PL_DIAGRAMS[D_CONTEXT]!;
+    expect(context.snapshot.components["pl-ctx-hub"]?.linkedDiagramId).toBe(D_CT_HUB);
+    expect(context.snapshot.components["pl-ctx-ledger"]?.linkedDiagramId).toBe(D_CT_LEDGER);
+    expect(context.snapshot.components["pl-ctx-risk"]?.linkedDiagramId).toBe(D_CT_RISK);
+    expect(context.snapshot.components["pl-ctx-platform"]?.linkedDiagramId).toBe(D_CT_MERCHANT);
+
+    expect(SEED_PL_DIAGRAMS[D_CT_HUB]!.snapshot.components["pl-hub-cob-api"]?.linkedDiagramId).toBe(
+      D_DP_HUB,
+    );
+    expect(
+      SEED_PL_DIAGRAMS[D_CT_LEDGER]!.snapshot.components["pl-led-engine"]?.linkedDiagramId,
+    ).toBe(D_DP_LEDGER);
+    expect(
+      SEED_PL_DIAGRAMS[D_CT_RISK]!.snapshot.components["pl-risk-engine"]?.linkedDiagramId,
+    ).toBe(D_DP_RISK);
+    expect(
+      SEED_PL_DIAGRAMS[D_CT_MERCHANT]!.snapshot.components["pl-mer-api"]?.linkedDiagramId,
+    ).toBe(D_DP_MERCHANT);
+  });
+
+  it("never uses legacy cloud service fields; cloud cards carry cloudServiceId", () => {
+    const cloudType = (type: string) =>
+      type.startsWith("aws-") ||
+      type.startsWith("gcp-") ||
+      type.startsWith("azure-") ||
+      type.startsWith("k8s-") ||
+      type.startsWith("oss-");
+
+    for (const diagram of Object.values(SEED_PL_DIAGRAMS)) {
+      for (const component of Object.values(diagram.snapshot.components)) {
+        const record = component as unknown as Record<string, unknown>;
+        for (const key of LEGACY_CLOUD_KEYS) {
+          expect(record[key], `${diagram.id}/${component.id}.${key}`).toBeUndefined();
+        }
+        if (cloudType(component.type)) {
+          expect(
+            typeof record.cloudServiceId,
+            `${diagram.id}/${component.id} missing cloudServiceId`,
+          ).toBe("string");
+          expect(String(record.cloudServiceId).length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it("catalog diagram covers the seven family sections", () => {
+    const catalog = SEED_PL_DIAGRAMS[D_CATALOG]!;
+    const names = Object.values(catalog.snapshot.components)
+      .filter((component) => component.type === "panel" && component.parentId === null)
+      .map((component) => component.name)
+      .sort();
+    expect(names).toEqual(
+      ["AWS", "Azure", "C4", "GCP", "Kubernetes", "OSS", "Tipos estruturais"].sort(),
+    );
   });
 });

@@ -1,6 +1,6 @@
 import { Suspense, type CSSProperties } from "react";
 import { isAwsIcon, isLucideIcon, isSvgIcon, type IconDefinition } from "@/features/diagram";
-import { AwsIcon } from "@/features/canvas/nodes/CloudIcon";
+import CloudIcon from "@/features/canvas/nodes/CloudIcon";
 import { cn } from "@/lib/utils";
 import { getLazyLucideIcon, resolveLucideDynamicImportKey } from "./lucideDynamicIcon";
 
@@ -39,7 +39,7 @@ export function CustomIconRenderer({ icon, size = 32, className }: CustomIconRen
   if (isAwsIcon(icon)) {
     return (
       <div className={cn(className)} style={{ width: size, height: size, pointerEvents: "none" }}>
-        <AwsIcon iconName={icon.source.serviceName} size={size} />
+        <CloudIcon providerId="aws" iconName={icon.source.serviceName} size={size} />
       </div>
     );
   }

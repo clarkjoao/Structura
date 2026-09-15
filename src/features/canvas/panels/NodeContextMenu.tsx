@@ -362,7 +362,7 @@ const NodeContextMenu = ({
           <Divider />
           <MenuItem
             icon={BookmarkPlus}
-            label={t("customComponents.saveAsTemplate")}
+            label={t("elementPresets.saveAsPreset")}
             platform={platform}
             onClick={() => {
               onSaveAsTemplate(elementId);

@@ -30,4 +30,6 @@ review like code.
 | [0005](0005-extension-philosophy.md) | Registries + descriptors as the extension mechanism | Accepted |
 | [0006](0006-interchange-strategy.md) | Import/export as pure boundary converters | Accepted |
 | [0007](0007-local-first-persistence.md) | Local-first persistence behind a storage port | Accepted |
+| [0008](0008-product-positioning.md) | Product positioning | Accepted |
 | [0009](0009-export-core-sharing.md) | Shared draw.io export core with a neutral IR | Accepted |
+| [0010](0010-element-registry.md) | Element registry as the single owner of canvas types | Accepted |

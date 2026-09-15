@@ -63,7 +63,7 @@ const awsComponent: AwsComponent = {
   description: "",
   parentId: null,
   type: "ecs-cluster" as AwsComponent["type"],
-  awsService: "ecs-cluster",
+  cloudServiceId: "ecs-cluster",
   customColor: "#ff69b4",
   customIconId: "icon_pink_ecs",
 };

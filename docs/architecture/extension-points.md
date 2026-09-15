@@ -10,23 +10,23 @@ sequencing live in
 
 | Extension point | Status | Where today | Notes |
 | --- | --- | --- | --- |
-| Node types (canvas) | 🟢 | `canvas/nodes/node-types/registry.ts` (`registerDescriptor`) | The template registry. Ordered matching, catch-all last. |
-| Node types (domain) | 🔴 | `ComponentType` union in `diagram/model` | **Top priority.** Blocks every new diagram vocabulary. Needs domain component descriptors. |
+| Node types (canvas) | 🟢 | `canvas/nodes/node-types/registry.ts` (`registerDescriptor`) | Plugin render descriptors only. Built-ins resolve through the element registry ([ADR-0010](../adr/0010-element-registry.md)). |
+| Node types (domain) | 🟢 | `features/elements` (`ElementDescriptor` / `elementRegistry`, `CloudFamilyDefinition`) | **Resolved.** Single owner for structural, C4, and cloud families. See [element-registry.md](element-registry.md). `NODE_TYPE_REGISTRY` is plugins-only; unknown types → `unknown`. |
 | Edge types | 🔴 | single `CustomEdge` renderer | Blocked on edge redesign; design `EdgeTypeDescriptor` there. |
-| Cloud providers / catalogs | 🟢 | `features/cloud/registry` | AWS/GCP/Azure today; catalog shape is reusable for other icon/service packs. |
+| Cloud providers / catalogs | 🟢 | `features/cloud/registry` + `registerCloudFamily` | AWS/GCP/Azure/Kubernetes/OSS; adapters derived from family registration. |
 | Storage backends | 🟢 | `IStoragePort` adapters | Add adapters, never bypass the port. |
 | AI providers | 🟡 | `features/llm/providers/*` | Common call shape exists; needs a formal provider registry + capability flags. |
 | Importers / Exporters | 🟢 | Plugin capability `io:importers`, `io:exporters` | Registry via `registerImporter`/`registerExporter`. |
-| Export cell builders | 🔴 | `lib/export-core` (neutral IR + `cell-builders.ts` `kind` switch), shared with the LeanIX plugin via **versioned sync, not direct import** | Single source of truth for draw.io generation across app + plugins ([ADR-0009](../adr/0009-export-core-sharing.md)). The plugin cannot import the host (no path mapping, no workspaces, IIFE bundle isolates it), so `plugins/.../scripts/sync-shared.mjs` copies `export-core/**` into `plugins/.../src/generated/export-core/` and `npm run plugins:sync-check` guards drift in CI. Still a `kind` switch; should become per-node-type contributions paired with node descriptors. |
+| Export cell builders | 🔴 | `lib/export-core` (neutral IR + `cell-builders.ts` `kind` switch), shared with the LeanIX plugin via **versioned sync, not direct import** | Single source of truth for draw.io generation across app + plugins ([ADR-0009](../adr/0009-export-core-sharing.md)). The plugin cannot import the host (no path mapping, no workspaces, IIFE bundle isolates it), so `plugins/.../scripts/sync-shared.mjs` copies `export-core/**` into `plugins/.../src/generated/export-core/` and `npm run plugins:sync-check` guards drift in CI. Still a `kind` switch; should become per-node-type contributions paired with element descriptors. |
 | Commands | 🔴 | ad-hoc store action calls from UI | Prerequisite for toolbar/menu/shortcut/palette/MCP extensibility. Needs its own spec. |
 | Toolbar actions | 🟢 | Plugin `canvas-toolbar` slot | Plugins register buttons via `ui:panels` capability with `slot: "canvas-toolbar"`. |
 | Context menus | 🔴 | hardcoded menus | Same: command contributions with context predicates. |
 | Inspector panels / property editors | 🟢 | Plugin `element-inspector` slot | Plugins add sections to element inspector via `ui:panels` capability. |
 | Toast notifications | 🟢 | Plugin `ui:overlays` capability | Plugins call `api.overlay.showToast()` to display toasts. |
 | Modal dialogs | 🟢 | Plugin `ui:overlays` capability | Plugins call `api.overlay.openModal()` to open modals. |
-| Element picker / palette entries | 🔴 | `canvas/toolbar/element-picker` + `lib/catalogs` | Catalog data is close to contribution-shaped already. |
+| Element picker / palette entries | 🟡 | `features/elements` palette + family tabs | Largely derived from the element / cloud-family registries; remaining hardcoded chrome can become contributions. |
 | Validators | 🔴 | `validate-diagram.ts` (interchange only) | Model-level validation rules (per diagram profile) don't exist yet. |
-| Templates / patterns | 🟡 | `UserTemplate` store, `lib/catalogs/patterns.ts` | User templates are runtime data; built-in patterns should become contributions. |
+| Templates / patterns | 🟡 | `ElementPreset` store, `lib/catalogs/patterns.ts` | User presets are runtime data; built-in patterns should become contributions. |
 | Diagram types (profiles) | 🔴 | `Diagram.level` is a free string | A profile = bundle of node/edge types, palette, validators, defaults. Late-stage. |
 | Layout providers | 🔴 | `layout/layoutEngine.ts` (`layout()`) + `layout/applyLayoutResult.ts` | One engine and one applicator, shared by all five consumers: `hooks/useAutoLayout` (toolbar button), `hooks/usePanelChildLayout` ("Organize children"), `llm/ir/apply-ir.ts`, `llm/apply-diagram-patch.ts` and `layout/layoutScopedNodes.ts` (mermaid/draw.io import, via `FlowPanel`). The contract is single; what is still missing is a *registry* — `layout()` hardcodes ELK, so an alternative algorithm per selection or diagram profile has nowhere to register. |
 | Themes | 🔴 | Tailwind + CSS vars | Low priority; CSS-variable theming is nearly sufficient. |

@@ -15,7 +15,7 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { singleIncomingTargetHandleId } from "./node-types/handle-spec";
 
 const noteIncomingHandleClassName =

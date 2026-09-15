@@ -86,7 +86,9 @@ Cypress.Commands.add("waitForCanvas", (minNodes = 1) => {
 });
 
 Cypress.Commands.add("getNode", (componentId: string) =>
-  cy.get(`[data-id="${componentId}"]`, { timeout: 20000 }),
+  // Scope to the RF node wrapper — bare `[data-id=…]` can match more than one
+  // element once overlays / measuring nodes share the attribute.
+  cy.get(`.react-flow__node[data-id="${componentId}"]`, { timeout: 20000 }),
 );
 
 Cypress.Commands.add("getPane", () => cy.get(".react-flow__pane", { timeout: 15000 }));
