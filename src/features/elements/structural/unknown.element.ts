@@ -18,8 +18,8 @@ const UNKNOWN_DEFAULT_H = 140;
  *
  * Also the degradation target the canvas falls back to for a plugin-typed
  * component whose plugin is absent — which is why it keeps rendering opaque
- * payloads rather than refusing them. It is *not* the catch-all: an
- * unrecognised type still lands on the C4 descriptor until F9 changes that.
+ * payloads rather than refusing them. After F9 it is also the landing type for
+ * any unrecognised built-in-shaped `Component.type` (the catch-all is gone).
  */
 export const unknownElement: ElementDescriptor = {
   id: COMPONENT_TYPE_UNKNOWN,

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Component } from "@/features/diagram";
-// `./registry` first on purpose: importing the descriptor on its own re-enters
-// the registry mid-initialisation and it builds an incomplete node-type map.
-// `registry.test.ts` relies on the same ordering.
+// `./registry` first on purpose: importing card builders alone can re-enter
+// the registry mid-initialisation. Same ordering as registry.test.ts.
 import "./registry";
-import { c4Descriptor } from "./c4.descriptor";
+import { buildCardNodeData } from "../CustomNode/buildCardNodeData";
 import type { NodeBuildContext } from "./types";
 
 /** Minimal context: `buildData` only reads these for a plain node. */
@@ -39,12 +38,12 @@ function buildContext(): NodeBuildContext {
 }
 
 function dataFor(component: Component): Record<string, unknown> {
-  return c4Descriptor.buildData(component, buildContext()) as Record<string, unknown>;
+  return buildCardNodeData(component, buildContext());
 }
 
 const base = { id: "n1", name: "Node", description: "", parentId: null };
 
-describe("c4Descriptor — technology", () => {
+describe("buildCardNodeData — technology (C4 + cloud)", () => {
   it("passes technology through for a C4 container", () => {
     const data = dataFor({ ...base, type: "container", technology: "Node.js" } as Component);
     expect(data.technology).toBe("Node.js");

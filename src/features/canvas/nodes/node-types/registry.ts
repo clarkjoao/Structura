@@ -1,5 +1,4 @@
 import type { NodeTypes } from "@xyflow/react";
-import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { NodeHandleSpec } from "./handle-spec";
 import type { Component, ComponentType } from "@/features/diagram";
@@ -14,13 +13,13 @@ import {
 import type { ElementCanvasSlice, ElementDescriptor } from "@/features/elements/element.types";
 
 /**
- * What the canvas still resolves the old way.
+ * Plugin-contributed React Flow descriptors only.
  *
- * Down to the catch-all: every built-in type except the four C4 ones now lives
- * on the element registry, and plugin descriptors are spliced in ahead of the
- * catch-all at runtime. C4 and the cloud families follow in F4.
+ * Every built-in type lives on the element registry (F9). Plugins still splice
+ * descriptors in here via `registerDescriptor` until they migrate onto
+ * `elementRegistry` themselves.
  */
-export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [c4Descriptor];
+export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [];
 
 /**
  * A registered element's canvas slice, seen as a `NodeTypeDescriptor`.
@@ -65,22 +64,29 @@ function adaptElement(element: ElementDescriptor, canvas = element.canvas): Node
   return adapted;
 }
 
+function unknownDescriptor(): NodeTypeDescriptor {
+  const fallback = getElement(COMPONENT_TYPE_UNKNOWN);
+  if (!fallback) {
+    throw new Error(
+      `[node-types] The "unknown" element is not registered; cannot degrade an unmatched type.`,
+    );
+  }
+  return adaptElement(fallback);
+}
+
 export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
-  // Registered elements answer first: during the migration a type is owned by
-  // the registry or by the legacy chain below, never by both.
   const element = getElement(type);
   if (element) return adaptElement(element);
 
   if (isPluginComponentType(type)) {
-    // The C4 catch-all must not absorb plugin types: orphaned ones (plugin disabled or
-    // uninstalled) degrade to `unknown`, so the data is visibly foreign, never corrupted.
-    const contributed = NODE_TYPE_REGISTRY.find((d) => d !== c4Descriptor && d.matches(type));
+    const contributed = NODE_TYPE_REGISTRY.find((d) => d.matches(type));
     if (contributed) return contributed;
-    // `unknown` is a registered element now, so the fallback comes from there.
-    const fallback = getElement(COMPONENT_TYPE_UNKNOWN);
-    return fallback ? adaptElement(fallback) : c4Descriptor;
+    return unknownDescriptor();
   }
-  return NODE_TYPE_REGISTRY.find((d) => d.matches(type)) ?? c4Descriptor;
+
+  // F9 / decision 4: an unrecognised built-in-shaped type is `unknown`, never
+  // silently promoted to a C4 card.
+  return unknownDescriptor();
 }
 
 /**
@@ -140,8 +146,7 @@ export function registerDescriptor(descriptor: NodeTypeDescriptor): void {
     );
   }
 
-  // Keep the catch-all (c4Descriptor) last so it always matches after everything else.
-  NODE_TYPE_REGISTRY.splice(NODE_TYPE_REGISTRY.length - 1, 0, descriptor);
+  NODE_TYPE_REGISTRY.push(descriptor);
   notifyRegistryChanged();
 }
 
