@@ -126,17 +126,65 @@ export const AWS_TYPES: ComponentTypeDefinition[] = AWS_CATEGORIES.flatMap((cate
  * whatever locale the UI is in.
  */
 export function registeredElementTypes(): ComponentTypeDefinition[] {
-  return allElements().map((element) => ({
-    nodeType: element.id,
-    displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
-    description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
-    requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : undefined,
-    example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
-  }));
+  // Cloud families publish a compact catalog of their own (see
+  // `buildGcpCatalogCompact`); listing every category here would duplicate
+  // them under "Structural & Canvas" without service ids.
+  return allElements()
+    .filter((element) => element.family === "structural")
+    .map((element) => ({
+      nodeType: element.id,
+      displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+      description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+      requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : undefined,
+      example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
+    }));
+}
+
+/** GCP categories registered on the element registry, as catalog entries. */
+export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
+  return allElements()
+    .filter((element) => element.family === "gcp")
+    .flatMap((element) => {
+      const variants = element.palette.variants;
+      if (!variants || variants.length === 0) {
+        return [
+          {
+            nodeType: element.id,
+            displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+            description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+            example: JSON.stringify({
+              nodeType: element.id,
+              name: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+              parentId: null,
+            }),
+          },
+        ];
+      }
+      return variants.map((variant) => ({
+        nodeType: element.id,
+        // Reuses the tool's `awsService` parameter slot — addComponent maps it
+        // onto `gcpService` for gcp-* types (same positional path as the picker).
+        awsService: variant.createOptions.serviceId,
+        displayName: i18n.t(variant.labelKey, { lng: CATALOG_LOCALE }),
+        description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
+        example: JSON.stringify({
+          nodeType: element.id,
+          awsService: variant.createOptions.serviceId,
+          name: i18n.t(variant.labelKey, { lng: CATALOG_LOCALE }),
+          parentId: null,
+        }),
+      }));
+    });
 }
 
 export function allComponentTypes(): ComponentTypeDefinition[] {
-  return [...STRUCTURAL_TYPES, ...registeredElementTypes(), ...C4_TYPES, ...AWS_TYPES];
+  return [
+    ...STRUCTURAL_TYPES,
+    ...registeredElementTypes(),
+    ...C4_TYPES,
+    ...AWS_TYPES,
+    ...gcpRegisteredTypes(),
+  ];
 }
 
 function formatTypeDef(def: ComponentTypeDefinition): string {
@@ -178,6 +226,8 @@ export function buildComponentTypeCatalog(): string {
 
   sections.push("");
   sections.push(buildAwsCatalogCompact());
+  sections.push("");
+  sections.push(buildGcpCatalogCompact());
 
   return sections.join("\n");
 }
@@ -193,6 +243,34 @@ export function buildAwsCatalogCompact(): string {
   for (const category of AWS_CATEGORIES) {
     const serviceIds = category.services.map((s) => s.id).join(", ");
     lines.push(`${category.id.replace("aws-", "").toUpperCase()}: ${serviceIds}`);
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Compact GCP catalog derived from registered family descriptors.
+ *
+ * Same shape as the AWS compact block: categories with service ids. The
+ * `awsService` tool parameter carries the GCP service id for gcp-* nodeTypes
+ * (addComponent maps it onto `gcpService`).
+ */
+export function buildGcpCatalogCompact(): string {
+  const lines: string[] = [
+    "### GCP Service Types",
+    "",
+    "For gcp-* nodeTypes, pass the service id in awsService (same add_node parameter).",
+    "nodeType must be the category id (e.g. gcp-compute).",
+    "",
+  ];
+
+  for (const element of allElements().filter((entry) => entry.family === "gcp")) {
+    const serviceIds = (element.palette.variants ?? [])
+      .map((variant) => variant.createOptions.serviceId)
+      .filter((id): id is string => typeof id === "string" && id.length > 0)
+      .join(", ");
+    const label = element.id.replace("gcp-", "").toUpperCase();
+    lines.push(`${label}: ${serviceIds || "(no services)"}`);
   }
 
   return lines.join("\n");
