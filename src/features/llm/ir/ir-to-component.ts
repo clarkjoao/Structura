@@ -2,8 +2,10 @@
 // mapping, and going through the barrel would drag the whole store in with it.
 import { PanelKind } from "@/features/diagram/enums";
 import type { ComponentType } from "@/features/diagram/model/component.types";
+import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { getPanelKindForAwsService } from "@/lib/catalogs/panels";
 import {
+  IR_C4_SEMANTIC_TYPES,
   isBoundarySemanticType,
   type BoundarySemanticType,
   type IRNode,
@@ -22,36 +24,29 @@ const BOUNDARY_PANEL_KIND: Record<BoundarySemanticType, PanelKind> = {
 };
 
 /**
- * Leaf mapping. Note "database": Structura's C4 model has no database type, so
- * it degrades to a container — the technology field carries the engine name.
+ * Leaf mapping for C4. Note "database": Structura's C4 model has no database
+ * type, so it degrades to a container — the technology field carries the engine.
  *
- * Every `aws-*` semanticType is also an `AwsCategoryId`, so it maps to itself:
- * the canvas already treats those node types generically (`isAwsType`) and picks
- * the icon from `awsService`.
+ * AWS category semanticTypes map to themselves via `isAwsType`: they are the
+ * same ids the element registry owns (F5b), and the canvas picks the icon from
+ * `awsService`.
  */
-const LEAF_COMPONENT_TYPE: Record<Exclude<SemanticType, BoundarySemanticType>, ComponentType> = {
+const C4_LEAF_COMPONENT_TYPE: Record<(typeof IR_C4_SEMANTIC_TYPES)[number], ComponentType> = {
   person: "person",
   "external-system": "system",
   container: "container",
   database: "container",
   component: "component",
-  "aws-compute": "aws-compute",
-  "aws-storage": "aws-storage",
-  "aws-database": "aws-database",
-  "aws-networking": "aws-networking",
-  "aws-security": "aws-security",
-  "aws-analytics": "aws-analytics",
-  "aws-ml": "aws-ml",
-  "aws-integration": "aws-integration",
-  "aws-management": "aws-management",
-  "aws-developer": "aws-developer",
-  "aws-containers": "aws-containers",
-  "aws-media": "aws-media",
-  "aws-migration": "aws-migration",
-  "aws-iot": "aws-iot",
-  "aws-end-user": "aws-end-user",
-  "aws-general": "aws-general",
 };
+
+function leafComponentType(
+  semanticType: Exclude<SemanticType, BoundarySemanticType>,
+): ComponentType {
+  if (isAwsType(semanticType)) {
+    return semanticType;
+  }
+  return C4_LEAF_COMPONENT_TYPE[semanticType];
+}
 
 export interface MappedComponentType {
   type: ComponentType;
@@ -92,7 +87,7 @@ export function mapNodeToComponent(
     return { type: "panel", panelKind: panelKindFor(semanticType, awsService) };
   }
   return {
-    type: LEAF_COMPONENT_TYPE[semanticType],
+    type: leafComponentType(semanticType),
     ...(awsService !== undefined ? { awsService } : {}),
   };
 }

@@ -1,10 +1,11 @@
-import { AWS_CATEGORIES, AWS_CATEGORY_MAP } from "@/features/cloud/providers/aws/aws.catalog";
+import { AWS_CATEGORY_MAP } from "@/features/cloud/providers/aws/aws.catalog";
 import { buildAwsCatalogCompact } from "../component-catalog";
 import {
   IR_AWS_SEMANTIC_TYPES,
   IR_C4_SEMANTIC_TYPES,
   IR_DIAGRAM_TYPES,
   IR_TIERS,
+  isBoundarySemanticType,
   TIER_BY_SEMANTIC_TYPE,
   type SemanticType,
 } from "./ir.types";
@@ -164,13 +165,16 @@ const TIER_NOTE: Partial<Record<SemanticType, string>> = {
 
 /**
  * Words models reach for as a tier because the IR taught them as categories.
- * Derived from the catalog so a new AWS category is named the day it lands, minus
- * the two that are legitimately both ("compute", "integration").
+ * Derived from the registry-backed AWS vocabulary so a new AWS category is
+ * named the day it lands, minus the two that are legitimately both
+ * ("compute", "integration").
  */
 function nonTierWords(): string[] {
   const invented = ["monitoring", "observability", "logging", "governance", "identity", "devops"];
-  const fromCatalog = AWS_CATEGORIES.map((category) => categoryWord(category.id));
-  return [...new Set([...fromCatalog, ...invented])].filter(
+  const fromAwsVocabulary = IR_AWS_SEMANTIC_TYPES.filter(
+    (value) => !isBoundarySemanticType(value as SemanticType),
+  ).map((value) => categoryWord(value));
+  return [...new Set([...fromAwsVocabulary, ...invented])].filter(
     (word) => !(IR_TIERS as readonly string[]).includes(word),
   );
 }

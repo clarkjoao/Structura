@@ -4,7 +4,15 @@
  * The IR is the contract between the generator prompt and everything downstream:
  * validator, layout, and canvas application. It is deliberately independent of
  * Structura's own component model — the translation happens in `ir-to-component`.
+ *
+ * AWS *category* semanticTypes are derived from the element registry (family
+ * `"aws"` only — F5c). Boundary types and C4 remain IR concepts, not registry
+ * categories. Expanding the IR vocabulary to GCP/Azure is a product decision,
+ * not an automatic consequence of reading from the registry.
  */
+
+import { isAwsType, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
+import { allElements } from "@/features/elements/element.registry";
 
 export const IR_DIAGRAM_TYPES = [
   "c4-context",
@@ -24,53 +32,10 @@ export const IR_C4_SEMANTIC_TYPES = [
 ] as const;
 
 /**
- * Boundary types first, then one per AWS catalog category, in catalog order.
- *
- * The category half must stay complete: the prompt hands the model every service
- * id in `AWS_CATEGORIES`, so a category with no semanticType here is a trap — the
- * model is invited to draw Athena or SageMaker and then has nothing legal to type
- * it as, and `nodeInvalidSemanticType` throws away the whole diagram. Locked by
- * `ir.types.test.ts`.
- */
-export const IR_AWS_SEMANTIC_TYPES = [
-  "aws-vpc",
-  "aws-az",
-  "aws-subnet",
-  "aws-public-subnet",
-  "aws-private-subnet",
-  "aws-compute",
-  "aws-storage",
-  "aws-database",
-  "aws-networking",
-  "aws-security",
-  "aws-analytics",
-  "aws-ml",
-  "aws-integration",
-  "aws-management",
-  "aws-developer",
-  "aws-containers",
-  "aws-media",
-  "aws-migration",
-  "aws-iot",
-  "aws-end-user",
-  "aws-general",
-] as const;
-
-export const IR_SEMANTIC_TYPES = [...IR_C4_SEMANTIC_TYPES, ...IR_AWS_SEMANTIC_TYPES] as const;
-
-export type SemanticType = (typeof IR_SEMANTIC_TYPES)[number];
-
-/**
- * Semantic position of a node. Carried through the pipeline but not acted upon:
- * the tier-ordering mechanism is an open decision (spec §8, Fatia 4).
- */
-export const IR_TIERS = ["external", "edge", "ingress", "compute", "data", "integration"] as const;
-
-export type Tier = (typeof IR_TIERS)[number];
-
-/**
  * Semantic types that are boundaries by definition — the type itself already
  * declares the node is a container, so `isBoundary` is implied for them.
+ *
+ * These are IR concepts, not AWS catalog / registry category ids.
  */
 export const IR_BOUNDARY_SEMANTIC_TYPES = [
   "aws-vpc",
@@ -81,6 +46,46 @@ export const IR_BOUNDARY_SEMANTIC_TYPES = [
 ] as const;
 
 export type BoundarySemanticType = (typeof IR_BOUNDARY_SEMANTIC_TYPES)[number];
+
+/**
+ * Registered AWS category ids, in registry order.
+ *
+ * The prompt hands the model every service id for these categories, so a
+ * category with no semanticType here is a trap — locked by `ir.types.test.ts`.
+ * Filtered to `family === "aws"` so GCP/Azure never enter the IR vocabulary.
+ */
+export function irAwsCategoryIdsFromRegistry(): readonly AwsCategoryId[] {
+  return allElements()
+    .filter((element) => element.family === "aws")
+    .map((element) => element.id)
+    .filter(isAwsType);
+}
+
+/**
+ * Boundary types first, then one per registered AWS category.
+ *
+ * Built at module load (vitest/`main` import `elements/bootstrap` first).
+ */
+export const IR_AWS_SEMANTIC_TYPES: readonly (BoundarySemanticType | AwsCategoryId)[] = [
+  ...IR_BOUNDARY_SEMANTIC_TYPES,
+  ...irAwsCategoryIdsFromRegistry(),
+];
+
+export const IR_SEMANTIC_TYPES: readonly SemanticType[] = [
+  ...IR_C4_SEMANTIC_TYPES,
+  ...IR_AWS_SEMANTIC_TYPES,
+];
+
+export type SemanticType =
+  (typeof IR_C4_SEMANTIC_TYPES)[number] | BoundarySemanticType | AwsCategoryId;
+
+/**
+ * Semantic position of a node. Carried through the pipeline but not acted upon:
+ * the tier-ordering mechanism is an open decision (spec §8, Fatia 4).
+ */
+export const IR_TIERS = ["external", "edge", "ingress", "compute", "data", "integration"] as const;
+
+export type Tier = (typeof IR_TIERS)[number];
 
 export function isBoundarySemanticType(value: SemanticType): value is BoundarySemanticType {
   return (IR_BOUNDARY_SEMANTIC_TYPES as readonly string[]).includes(value);

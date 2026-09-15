@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { AWS_CATEGORIES } from "@/features/cloud/providers/aws/aws.catalog";
+import { allElements } from "@/features/elements/element.registry";
 import {
   coerceTier,
+  irAwsCategoryIdsFromRegistry,
   isBoundarySemanticType,
   isTier,
   IR_SEMANTIC_TYPES,
@@ -9,23 +10,39 @@ import {
   type SemanticType,
 } from "./ir.types";
 
-const awsCategoryIds = AWS_CATEGORIES.map((category) => category.id);
+const registeredAwsCategoryIds = irAwsCategoryIdsFromRegistry();
 
 /** `aws-*` semanticTypes that are IR concepts rather than catalog categories. */
 const boundaryTypes = IR_SEMANTIC_TYPES.filter(isBoundarySemanticType);
 
-describe("IR_SEMANTIC_TYPES", () => {
-  // The prompt hands the model every service id in the catalog. A category with
-  // no semanticType invites it to draw Athena and then rejects the whole diagram
-  // over `nodeInvalidSemanticType`.
-  it("has a semanticType for every AWS catalog category", () => {
-    for (const categoryId of awsCategoryIds) {
+describe("IR_SEMANTIC_TYPES (registry-backed AWS categories)", () => {
+  // The prompt hands the model every service id for registered AWS categories.
+  // A category with no semanticType invites it to draw Athena and then rejects
+  // the whole diagram over `nodeInvalidSemanticType`.
+  it("has a semanticType for every registered AWS category", () => {
+    expect(registeredAwsCategoryIds.length).toBeGreaterThan(0);
+    for (const categoryId of registeredAwsCategoryIds) {
       expect(IR_SEMANTIC_TYPES, `category ${categoryId}`).toContain(categoryId);
     }
   });
 
+  it("AWS category half equals the registered AWS family only", () => {
+    const awsCategoriesInIr = IR_SEMANTIC_TYPES.filter(
+      (value) => value.startsWith("aws-") && !isBoundarySemanticType(value),
+    );
+    expect([...awsCategoriesInIr].sort()).toEqual([...registeredAwsCategoryIds].sort());
+  });
+
+  it("does not admit GCP or Azure categories into the IR vocabulary", () => {
+    const leaked = allElements()
+      .filter((element) => element.family === "gcp" || element.family === "azure")
+      .map((element) => element.id)
+      .filter((id) => (IR_SEMANTIC_TYPES as readonly string[]).includes(id));
+    expect(leaked).toEqual([]);
+  });
+
   it("has no aws semanticType that is neither a category nor a boundary", () => {
-    const known = new Set<string>([...awsCategoryIds, ...boundaryTypes]);
+    const known = new Set<string>([...registeredAwsCategoryIds, ...boundaryTypes]);
     const orphans = IR_SEMANTIC_TYPES.filter(
       (value) => value.startsWith("aws-") && !known.has(value),
     );
