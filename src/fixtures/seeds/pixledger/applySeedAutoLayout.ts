@@ -13,7 +13,7 @@ import { computeApiGroupSize } from "@/features/diagram/utils/api-group-size";
 import { fromDiagram, layout, resizableIds, toAppliedLayouts } from "@/features/canvas/layout";
 
 /**
- * Same core path as `useAutoLayout` / the canvas toolbar button:
+ * Same core path as `useAutoLayout` / Cmd+Shift+L:
  * `fromDiagram` → `layout(graph)` (interactive profile) → `toAppliedLayouts`.
  *
  * No DOM measurements (seeds run offline), so sizes are normalised to the same
@@ -28,7 +28,7 @@ export async function applySeedAutoLayout(diagram: Diagram): Promise<Diagram> {
   const graph = fromDiagram(components, connections, nodeLayouts);
   if (graph.nodes.length === 0) return diagram;
 
-  // Default profile is "interactive" — same call as useAutoLayout (`layout(graph)`).
+  // Interactive profile — same call as useAutoLayout (`layout(graph)`).
   const result = await layout(graph);
   if (result.boxes.size === 0) return diagram;
 

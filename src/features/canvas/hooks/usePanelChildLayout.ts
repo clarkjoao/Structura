@@ -57,10 +57,9 @@ export function usePanelChildLayout() {
 
         applyAutoLayout(applied);
 
-        // Write handle order for the edges that belong to this layout, and
-        // leave their paths reset — same as the whole-diagram command, for the
-        // same reason: ELK routes border to border and the canvas draws handle
-        // to handle, so its bend points describe a path the edge never takes.
+        // Write handle order + ELK bend points for edges inside this panel.
+        // Same contract as whole-diagram auto-layout: keep interior waypoints
+        // so routes do not collapse to mid-X Zs that cross or run through nodes.
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {
           const panelNodeIds = new Set(graph.nodes.map((n) => n.id));
@@ -69,7 +68,6 @@ export function usePanelChildLayout() {
           );
           applyLayoutResultEdges(graph, result, diagramId, {
             edgeIds: new Set(scopedEdges.map((e) => e.id)),
-            resetPaths: true,
           });
         }
 

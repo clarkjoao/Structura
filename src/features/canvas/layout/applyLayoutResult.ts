@@ -25,14 +25,14 @@ export interface ApplyLayoutResultOptions {
   /**
    * Leave the participating edges with no stored path at all.
    *
-   * The default writes ELK's bend points back as control points, which is right
-   * for a generated graph: ELK routed those edges and its route is the best
-   * thing known about them. The auto-layout command opts out, because there the
-   * stored bend points are exactly what "Resetar caminhos das conexões" exists
-   * to remove, and the user was running it by hand after every layout.
+   * The default writes ELK's bend points back as control points — that is what
+   * Cmd/Ctrl+Shift+L / the Auto-layout button and the LLM apply path use, so
+   * the canvas keeps the obstacle-aware orthogonal route instead of falling
+   * back to mid-X Z steps between handles.
    *
-   * Handle order is unaffected — that is not a path. See
-   * `applyLayoutResult.resetPaths.test.ts`.
+   * Opt in with `resetPaths: true` only when a caller wants an untouched
+   * connection look. Handle order is unaffected either way — that is not a
+   * path. See `applyLayoutResult.resetPaths.test.ts`.
    */
   resetPaths?: boolean;
   /**

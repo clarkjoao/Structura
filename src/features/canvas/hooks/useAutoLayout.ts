@@ -68,13 +68,12 @@ export function useAutoLayout() {
 
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {
-          // The layout leaves the connection paths reset, rather than replacing
-          // them with ELK's routed ones. ELK routes between node borders; the
-          // canvas draws between handles, so a stored route from ELK rarely
-          // matches the path the user ends up looking at — which is why
-          // "Resetar caminhos das conexões" was the next thing pressed after
-          // every auto layout. Handle order still comes from ELK.
-          applyLayoutResultEdges(graph, result, diagramId, { resetPaths: true });
+          // Write ELK bend points as control points (same as LLM apply-ir).
+          // Interior waypoints only — first/last route points sit on node borders;
+          // the canvas draws those legs from the fixed L/R handles. Discarding
+          // the route used to force mid-X orthogonal Zs that crossed and ran
+          // through nodes (Merchant Notify→Provedor vs DB→PixHub).
+          applyLayoutResultEdges(graph, result, diagramId);
         }
 
         requestAnimationFrame(() => {

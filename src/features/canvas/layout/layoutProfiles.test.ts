@@ -4,11 +4,10 @@ import { ELK_OPTIONS_INTERACTIVE, ELK_OPTIONS_VISUALIZATION } from "./layoutEngi
 /**
  * Two contexts, two option sets.
  *
- * `interactive` is what the auto-layout button has always run and is not
- * allowed to drift here: the user pressed a button on a diagram they had
- * already arranged, and the job is to not make it worse. `visualization` is
- * the reading view — nobody arranged anything, so it can spend space on
- * clarity.
+ * `interactive` is what Cmd/Ctrl+Shift+L / the Auto-layout button runs.
+ * Spacing is shared with the reading view (wide L→R layers); placement is
+ * BRANDES_KOEPF so editor waypoints stay straight. `visualization` only swaps
+ * placement to NETWORK_SIMPLEX for `/viewer`.
  */
 
 describe("layout profiles", () => {
@@ -20,28 +19,32 @@ describe("layout profiles", () => {
     expect(ELK_OPTIONS_VISUALIZATION["elk.direction"]).toBe("RIGHT");
   });
 
-  it("the interactive profile is unchanged by the split", () => {
+  it("the interactive profile spends space on L→R layers", () => {
     expect(ELK_OPTIONS_INTERACTIVE).toEqual({
       "elk.algorithm": "layered",
       "elk.direction": "RIGHT",
       "elk.edgeRouting": "ORTHOGONAL",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "150",
-      "elk.spacing.nodeNode": "80",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "220",
+      "elk.spacing.nodeNode": "110",
+      "elk.spacing.edgeNode": "40",
+      "elk.spacing.edgeEdge": "25",
       "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
       "elk.padding": "[top=40,left=40,bottom=40,right=40]",
       "elk.hierarchyHandling": "INCLUDE_CHILDREN",
     });
   });
 
-  it("the visualization profile keeps the hierarchy and spends more space", () => {
+  it("the visualization profile keeps the hierarchy and at least the interactive spacing", () => {
     expect(ELK_OPTIONS_VISUALIZATION["elk.hierarchyHandling"]).toBe("INCLUDE_CHILDREN");
 
     const nodeNode = Number(ELK_OPTIONS_VISUALIZATION["elk.spacing.nodeNode"]);
     const betweenLayers = Number(
       ELK_OPTIONS_VISUALIZATION["elk.layered.spacing.nodeNodeBetweenLayers"],
     );
-    expect(nodeNode).toBeGreaterThan(Number(ELK_OPTIONS_INTERACTIVE["elk.spacing.nodeNode"]));
-    expect(betweenLayers).toBeGreaterThan(
+    expect(nodeNode).toBeGreaterThanOrEqual(
+      Number(ELK_OPTIONS_INTERACTIVE["elk.spacing.nodeNode"]),
+    );
+    expect(betweenLayers).toBeGreaterThanOrEqual(
       Number(ELK_OPTIONS_INTERACTIVE["elk.layered.spacing.nodeNodeBetweenLayers"]),
     );
   });
@@ -52,10 +55,10 @@ describe("layout profiles", () => {
    * with ELK's routed path discarded. Over the four reference diagrams: 15
    * crossings with the interactive profile's BRANDES_KOEPF, 13 with this.
    *
-   * The profiles differ here on purpose. The interactive profile keeps
-   * BRANDES_KOEPF, whose straight long edges are what the editor renders from
-   * ELK's waypoints; with those thrown away, straightness is not what reaches
-   * the reader.
+   * The profiles still differ on purpose. Interactive keeps BRANDES_KOEPF so
+   * long edges stay straight for the editor's stored ELK waypoints
+   * (Cmd/Ctrl+Shift+L now writes those CPs). Visualization uses NETWORK_SIMPLEX
+   * because `/viewer` still discards routed paths.
    */
   it("the two profiles place nodes differently, on purpose", () => {
     expect(ELK_OPTIONS_INTERACTIVE["elk.layered.nodePlacement.strategy"]).toBe("BRANDES_KOEPF");
