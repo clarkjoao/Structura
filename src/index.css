@@ -124,6 +124,9 @@
     --k8s-storage: 142 52% 38%;
     --k8s-config: 270 45% 48%;
 
+    --oss-datastore: 0 72% 48%;
+    --oss-messaging: 220 70% 42%;
+
     --chart-1: 27 95% 55%;
     --chart-2: 43 96% 50%;
     --chart-3: 47 95% 48%;
@@ -264,6 +267,9 @@
     --k8s-networking: 199 78% 50%;
     --k8s-storage: 142 52% 44%;
     --k8s-config: 270 45% 55%;
+
+    --oss-datastore: 0 72% 55%;
+    --oss-messaging: 220 70% 50%;
 
     --chart-1: 27 95% 60%;
     --chart-2: 43 96% 56%;

@@ -479,6 +479,7 @@
     "gcpServices": "GCP Services",
     "azureServices": "Azure Services",
     "kubernetesServices": "Kubernetes",
+    "ossServices": "Open source",
     "levelContext": "Nível 1",
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3",
@@ -1099,6 +1100,18 @@
         "k8s-config": {
           "label": "Config",
           "description": "Objetos de configuração do Kubernetes (ConfigMap, Secret)."
+        }
+      }
+    },
+    "oss": {
+      "categories": {
+        "oss-datastore": {
+          "label": "Datastore",
+          "description": "Datastores open source (Redis, …)."
+        },
+        "oss-messaging": {
+          "label": "Messaging",
+          "description": "Mensageria e streaming open source (Apache Kafka, …)."
         }
       }
     }

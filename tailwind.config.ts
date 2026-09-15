@@ -136,6 +136,8 @@ export default {
         "k8s-networking": "hsl(var(--k8s-networking))",
         "k8s-storage": "hsl(var(--k8s-storage))",
         "k8s-config": "hsl(var(--k8s-config))",
+        "oss-datastore": "hsl(var(--oss-datastore))",
+        "oss-messaging": "hsl(var(--oss-messaging))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
