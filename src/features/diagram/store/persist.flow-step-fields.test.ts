@@ -181,7 +181,7 @@ describe("a new optional field on a step needs no migration", () => {
     expect(readStep(reloaded).context).toEqual({ sets: { score: "0.12" } });
   });
 
-  it("is still schema 12, because nothing about the shape changed", () => {
-    expect(PERSIST_SCHEMA_VERSION).toBe(12);
+  it("is schema 13 after the cloudServiceId cutover (F6b)", () => {
+    expect(PERSIST_SCHEMA_VERSION).toBe(13);
   });
 });

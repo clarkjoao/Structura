@@ -28,7 +28,7 @@ export const PERSIST_KEY = "diagram-store";
 /** localStorage persist debounce; folder sync uses VIEWPORT_DEBOUNCE_MS — they are independent by design. */
 const PERSIST_DEBOUNCE_MS = 1000;
 
-export const PERSIST_SCHEMA_VERSION = 12;
+export const PERSIST_SCHEMA_VERSION = 13;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -353,6 +353,49 @@ function migrateUnifyRegistryServiceId(state: Partial<DiagramStore>): void {
   }
 }
 
+/**
+ * Schema v13: unify `awsService` / `gcpService` / `azureService` into
+ * `cloudServiceId`.
+ *
+ * Not `serviceId` — that name already means the business service catalog
+ * (v11). F6a documented the collision; F6b picks a distinct field.
+ *
+ * Idempotent: an already-v13 state has no legacy cloud fields.
+ */
+export function migrateUnifyCloudServiceId(state: Partial<DiagramStore>): void {
+  const migrate = (components: Record<string, Component> | undefined): void => {
+    if (!components) return;
+    for (const comp of Object.values(components)) {
+      const ext = comp as unknown as Record<string, unknown>;
+      const legacy =
+        nonEmptyString(ext.awsService) ??
+        nonEmptyString(ext.gcpService) ??
+        nonEmptyString(ext.azureService);
+      if (legacy !== undefined) {
+        if (ext.cloudServiceId === undefined || ext.cloudServiceId === "") {
+          ext.cloudServiceId = legacy;
+        }
+      }
+      delete ext.awsService;
+      delete ext.gcpService;
+      delete ext.azureService;
+    }
+  };
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    migrate(d.snapshot?.components);
+    for (const scene of Object.values(d.scenes ?? {})) {
+      migrate(scene.addedComponents);
+    }
+  }
+}
+
+function nonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 /** Schema v12: drop `Diagram.folderId` values that point at a folder the workspace does
  * not have. An imported diagram carries the `folderId` of the workspace it was exported
  * from; pointing at a folder that does not exist makes it invisible, because the dashboard
@@ -484,6 +527,7 @@ export function mergePersistedState(
   migrateServiceRegistryToServiceCatalog(next as unknown as Record<string, unknown>);
   migrateExternalElementLinkedDiagramId(next);
   migrateUnifyRegistryServiceId(next);
+  migrateUnifyCloudServiceId(next);
   migrateReparentOrphanDiagrams(next);
   if (hasEmbeddedIconLibraryInDiagrams(next)) {
     migrateIconLibraryToGlobalStore(next);
