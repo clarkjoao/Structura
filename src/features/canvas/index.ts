@@ -10,7 +10,7 @@ export { default as FlowReadingRail } from "./flow/reading/FlowReadingRail";
 export { default as FlowRecorderPanel } from "./flow/FlowRecorderPanel";
 export { default as ElementPanel } from "./panels/ElementPanel/index";
 export { default as CanvasToolbar } from "./toolbar/CanvasToolbar";
-export { default as CustomNode } from "./nodes/CustomNode";
+export { default as CardNode } from "./nodes/CardNode";
 export { default as EditableEdge } from "./edges/EditableEdge";
 export { default as PanelNode } from "./nodes/PanelNode";
 export { default as NoteNode } from "./nodes/NoteNode";

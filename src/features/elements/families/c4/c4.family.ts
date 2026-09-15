@@ -1,9 +1,9 @@
 import { Database, Network, Server, User, type LucideIcon } from "lucide-react";
-import CustomNode from "@/features/canvas/nodes/CustomNode";
+import CardNode from "@/features/canvas/nodes/CardNode";
 import {
   buildCardNodeData,
   buildCardNodeStyle,
-} from "@/features/canvas/nodes/CustomNode/buildCardNodeData";
+} from "@/features/canvas/nodes/CardNode/buildCardNodeData";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { isC4Component } from "@/features/diagram/model/component.guards";
 import type { C4Type } from "@/features/diagram/model/component-type-constants";
@@ -66,7 +66,7 @@ const C4_SPECS: readonly C4TypeSpec[] = [
 /**
  * Materialises the four C4 descriptors.
  *
- * Shared card canvas (`CustomNode` + `buildCardNodeData`); distinct `rfType`
+ * Shared card canvas (`CardNode` + `buildCardNodeData`); distinct `rfType`
  * per id so React Flow's map and the single-owner rfType invariant stay honest.
  *
  * @example
@@ -90,7 +90,7 @@ export function buildC4Descriptors(): ElementDescriptor[] {
 
       canvas: {
         rfType: spec.id,
-        component: CustomNode,
+        component: CardNode,
         handles: SPREAD_HANDLES,
         role: "card",
         zIndex: 1,

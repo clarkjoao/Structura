@@ -10,7 +10,7 @@ type IconComponent = ComponentType<{ size?: number | string }>;
  * Unified cloud icon.
  *
  * Driven by a family id + icon name (what `palette.icon: { kind: "family" }`
- * carries), or by a component type + service icon (what CustomNode already
+ * carries), or by a component type + service icon (what CardNode already
  * had). Both paths end at an `IconResolver` — the same contract AWS/Azure
  * (npm packages) and GCP (`import.meta.glob` SVGs) already implement.
  */

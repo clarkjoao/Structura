@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { C4_TYPES } from "@/features/diagram/model/component-type-constants";
-import { buildCardNodeData } from "@/features/canvas/nodes/CustomNode/buildCardNodeData";
+import { buildCardNodeData } from "@/features/canvas/nodes/CardNode/buildCardNodeData";
 import { emptyNodeBuildContext } from "../../node-build-context.fixture";
 import { buildC4Descriptors, c4Elements } from "./c4.family";
 

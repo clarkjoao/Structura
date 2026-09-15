@@ -39,7 +39,7 @@ function nodeById(diagram: Diagram, id: string) {
 }
 
 describe("useReadDiagramFlow — cloud service icons", () => {
-  it("maps awsService onto cloudService the way CustomNode reads it", () => {
+  it("maps awsService onto cloudService the way CardNode reads it", () => {
     const node = nodeById(
       diagramOf([
         component({ id: "n1", name: "Fn", type: "aws-compute", cloudServiceId: "lambda" }),

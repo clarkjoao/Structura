@@ -56,7 +56,7 @@ export interface CloudFamilyCategory {
  * Shared card canvas every category of the family paints with.
  *
  * Kept on the family (not hardcoded in the factory) so the factory stays free
- * of a CustomNode import and tests can inject a stub. `rfType` is filled per
+ * of a CardNode import and tests can inject a stub. `rfType` is filled per
  * category as the category id — React Flow needs a distinct key, even when the
  * component is the same.
  */

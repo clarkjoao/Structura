@@ -276,7 +276,7 @@ export const AWS_RESICON: Record<string, string> = {
 // descriptions so a 5-paragraph description doesn't push neighbours apart.
 export const C4_META: Record<string, C4MetaInfo> = {
   // Per-subtype canonical boxes sized to match the canvas rendering of each C4
-  // node (see src/features/canvas/nodes/CustomNode/index.tsx — min-w-[200px]
+  // node (see src/features/canvas/nodes/CardNode/index.tsx — min-w-[200px]
   // max-w-[260px], content-driven height). The previous uniform 240×120 made
   // Person boxes 2× taller than the canvas and pushed adjacent roots apart
   // unnecessarily.

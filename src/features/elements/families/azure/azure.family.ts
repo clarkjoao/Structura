@@ -1,9 +1,9 @@
-import CustomNode from "@/features/canvas/nodes/CustomNode";
+import CardNode from "@/features/canvas/nodes/CardNode";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import {
   buildCardNodeData,
   buildCardNodeStyle,
-} from "@/features/canvas/nodes/CustomNode/buildCardNodeData";
+} from "@/features/canvas/nodes/CardNode/buildCardNodeData";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isAzureComponent } from "@/features/diagram/model/component.guards";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
@@ -53,7 +53,7 @@ export const azureFamily: CloudFamilyDefinition = {
   icons: azureIconResolver,
 
   card: {
-    component: CustomNode,
+    component: CardNode,
     handles: SPREAD_HANDLES,
     buildData: buildCardNodeData,
     buildStyle: buildCardNodeStyle,
