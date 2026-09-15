@@ -5,7 +5,7 @@ import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIco
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { getPanelKindDef, panelKindLabel } from "@/lib/catalogs/panels";
-import { AwsIcon } from "./CloudIcon";
+import CloudIcon from "./CloudIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
@@ -157,7 +157,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           </div>
         ) : useAwsIcon ? (
           <div className="shrink-0 opacity-80" style={{ color }}>
-            <AwsIcon iconName={useAwsIcon} size={18} />
+            <CloudIcon providerId="aws" iconName={useAwsIcon} size={18} />
           </div>
         ) : (
           <Icon className="h-4 w-4 shrink-0 opacity-80" style={{ color }} />
@@ -283,7 +283,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             </div>
           ) : useAwsIcon ? (
             <div className="shrink-0 mt-0.5" style={{ color }}>
-              <AwsIcon iconName={useAwsIcon} size={18} />
+              <CloudIcon providerId="aws" iconName={useAwsIcon} size={18} />
             </div>
           ) : (
             <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color }} />

@@ -10,7 +10,6 @@ import { paletteEntriesForCategory } from "@/features/elements/element.palette";
 import { ElementCategory } from "../enums";
 import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import { AwsIcon } from "../nodes/CloudIcon";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
 import { filterCloudServicesForQuery } from "./element-picker/pickerFilters";
 import { useTranslation } from "react-i18next";
@@ -577,7 +576,8 @@ const QuickInsertPopover = ({
                 }`}
               >
                 {opt.awsIconName ? (
-                  <AwsIcon
+                  <CloudIcon
+                    familyId="aws"
                     iconName={opt.awsIconName}
                     size={14}
                     className="shrink-0 text-muted-foreground"
@@ -611,7 +611,7 @@ const QuickInsertPopover = ({
                     : "hover:bg-surface-hover"
                 }`}
               >
-                <AwsIcon iconName={row.iconName} size={14} className="shrink-0" />
+                <CloudIcon familyId="aws" iconName={row.iconName} size={14} className="shrink-0" />
                 <span className="truncate text-foreground">{row.serviceName}</span>
               </button>
             ))}

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import type { Component } from "@/features/diagram";
 import { isPanelType, isNoteType, isApiGroupType } from "@/features/diagram";
-import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
+import { getElement, hasElement } from "@/features/elements/element.registry";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useTranslation } from "react-i18next";
@@ -209,6 +209,11 @@ function ComponentTypeIcon({ type, className }: { type: string; className?: stri
   if (type === "callout") return <MessageSquare className={className} />;
   if (type === "table") return <Table2 className={className} />;
   if (isApiGroupType(type)) return <Globe className={className} />;
-  if (isAwsType(type)) return <Cloud className={className} />;
+  if (hasElement(type)) {
+    const family = getElement(type)?.family;
+    if (family === "aws" || family === "gcp" || family === "azure") {
+      return <Cloud className={className} />;
+    }
+  }
   return <Box className={className} />;
 }

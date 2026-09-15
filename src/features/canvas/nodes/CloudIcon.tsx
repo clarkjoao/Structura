@@ -4,9 +4,8 @@ import CloudIconBase from "@/features/cloud/components/CloudIcon";
 /**
  * Canvas-facing alias of the unified `CloudIcon`.
  *
- * Kept so existing `providerId` call sites (and `AwsIcon`) keep compiling;
- * both resolve through the same family `IconResolver` path. F5 retires the
- * AWS-only wrapper once every importer has moved.
+ * Call sites that previously used the AWS-only `AwsIcon` wrapper now pass
+ * `providerId="aws"` here — same resolver path as GCP/Azure.
  */
 interface CloudIconProps {
   providerId: "aws" | "gcp" | "azure";
@@ -22,16 +21,3 @@ const CloudIcon = memo(({ providerId, iconName, size = 24, className }: CloudIco
 CloudIcon.displayName = "CloudIcon";
 
 export default CloudIcon;
-
-interface AwsIconProps {
-  iconName: string;
-  size?: number;
-  className?: string;
-}
-
-/** @deprecated Thin AWS wrapper — F5 removes the remaining call sites. */
-export const AwsIcon = memo(({ iconName, size = 24, className }: AwsIconProps) => (
-  <CloudIcon providerId="aws" iconName={iconName} size={size} className={className} />
-));
-
-AwsIcon.displayName = "AwsIcon";

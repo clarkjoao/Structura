@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useIconById, isPanelKind, isC4Type, isPanelType, isNoteType } from "@/features/diagram";
 import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
 import { AWS_SERVICE_MAP, isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
-import { AwsIcon } from "@/features/canvas/nodes/CloudIcon";
+import CloudIcon from "@/features/canvas/nodes/CloudIcon";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 
@@ -57,7 +57,14 @@ export function NodeTemplatePreviewCard({
     const awsServiceId = readNonEmptyString(template.data.awsService);
     const awsService = awsServiceId ? AWS_SERVICE_MAP.get(awsServiceId) : undefined;
     if (awsService?.iconName) {
-      iconNode = <AwsIcon iconName={awsService.iconName} size={20} className={iconClassName} />;
+      iconNode = (
+        <CloudIcon
+          providerId="aws"
+          iconName={awsService.iconName}
+          size={20}
+          className={iconClassName}
+        />
+      );
     }
   } else if (isC4Type(resolvedTemplateType)) {
     const c4Cfg = TypeConfig[resolvedTemplateType];
@@ -71,7 +78,9 @@ export function NodeTemplatePreviewCard({
     const awsIconName = awsIconNameFromTemplate ?? panelKindDef.awsIconName;
 
     if (awsIconName) {
-      iconNode = <AwsIcon iconName={awsIconName} size={20} className={iconClassName} />;
+      iconNode = (
+        <CloudIcon providerId="aws" iconName={awsIconName} size={20} className={iconClassName} />
+      );
     } else {
       const PanelIcon = panelKindDef.icon;
       iconNode = <PanelIcon className={iconClassName} />;

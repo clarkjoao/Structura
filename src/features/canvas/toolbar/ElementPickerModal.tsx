@@ -39,7 +39,7 @@ import { ElementPickerSearchResults } from "./element-picker/ElementPickerSearch
 import { AwsBrowseView } from "./element-picker/AwsBrowseView";
 import { CloudBrowseView } from "./element-picker/CloudBrowseView";
 import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
-import { AwsIcon } from "../nodes/CloudIcon";
+import CloudIcon from "../nodes/CloudIcon";
 import { isPanelType } from "@/features/diagram";
 import {
   useCustomComponentLibrary,
@@ -394,7 +394,12 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                 className={PICKER_CARD_CLASS}
               >
                 {opt.awsIconName ? (
-                  <AwsIcon iconName={opt.awsIconName} size={40} className="text-muted-foreground" />
+                  <CloudIcon
+                    providerId="aws"
+                    iconName={opt.awsIconName}
+                    size={40}
+                    className="text-muted-foreground"
+                  />
                 ) : (
                   <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
                 )}

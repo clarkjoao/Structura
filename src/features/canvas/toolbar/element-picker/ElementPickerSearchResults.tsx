@@ -4,7 +4,6 @@ import { PanelKind } from "@/features/diagram";
 import { isPanelType } from "@/features/diagram";
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import type { CloudService } from "@/features/cloud";
-import { AwsIcon } from "../../nodes/CloudIcon";
 import { CloudIcon } from "@/features/cloud";
 import { PICKER_CARD_CLASS } from "./constants";
 import { shortAwsName } from "./utils";
@@ -92,7 +91,12 @@ export function ElementPickerSearchResults({
       className={PICKER_CARD_CLASS}
     >
       {opt.awsIconName ? (
-        <AwsIcon iconName={opt.awsIconName} size={40} className="text-muted-foreground" />
+        <CloudIcon
+          familyId="aws"
+          iconName={opt.awsIconName}
+          size={40}
+          className="text-muted-foreground"
+        />
       ) : (
         <opt.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
       )}
@@ -151,7 +155,7 @@ export function ElementPickerSearchResults({
                 onClick={() => onAddAws(svc.categoryId as AwsCategoryId, svc.id, svc.name)}
                 className="flex flex-col items-center gap-1 rounded-lg border border-border/40 bg-muted/40 p-2 transition-colors hover:bg-muted"
               >
-                <AwsIcon iconName={svc.iconName} size={40} />
+                <CloudIcon familyId="aws" iconName={svc.iconName} size={40} />
                 <span className="line-clamp-2 text-center text-[10px] leading-tight text-foreground">
                   {shortAwsName(svc.name)}
                 </span>
