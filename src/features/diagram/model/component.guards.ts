@@ -1,6 +1,8 @@
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
+import { isK8sCategoryId } from "@/features/elements/families/k8s/k8s.catalog";
+import { isOssCategoryId } from "@/features/elements/families/oss/oss.catalog";
 import { cloudRegistry } from "@/features/cloud";
 import type {
   Component,
@@ -10,6 +12,8 @@ import type {
   AwsComponent,
   GcpComponent,
   AzureComponent,
+  K8sComponent,
+  OssComponent,
   ApiGroupComponent,
   EndpointComponent,
   UnknownComponent,
@@ -47,7 +51,18 @@ export const isGcpComponent = (c: Component): c is GcpComponent => isGcpType(c.t
 
 export const isAzureComponent = (c: Component): c is AzureComponent => isAzureType(c.type);
 
-export const isCloudComponent = (c: Component): c is AwsComponent | GcpComponent | AzureComponent =>
+export const isK8sComponent = (c: Component): c is K8sComponent => isK8sCategoryId(c.type);
+
+export const isOssComponent = (c: Component): c is OssComponent => isOssCategoryId(c.type);
+
+export type CloudProviderComponent =
+  | AwsComponent
+  | GcpComponent
+  | AzureComponent
+  | K8sComponent
+  | OssComponent;
+
+export const isCloudComponent = (c: Component): c is CloudProviderComponent =>
   cloudRegistry.isCloudType(c.type);
 
 export const isApiGroupComponent = (c: Component): c is ApiGroupComponent => isApiGroupType(c.type);

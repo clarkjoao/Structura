@@ -1,10 +1,12 @@
-import type { ElementTypeId } from "@/features/elements/element.types";
-
 /**
  * Flat OSS family: one category per nature of software, few services each.
  *
  * Same `CloudFamilyDefinition` shape as hyperscalers/K8s — categories still
  * become descriptors; services become palette variants. No contract change.
+ *
+ * Category ids live on `ComponentType` / `OssComponent` (same shape as AWS).
+ * This module stays a leaf so `component.types.ts` can import the id union
+ * without a cycle through `element.types`.
  */
 export type OssCategoryId = "oss-datastore" | "oss-messaging";
 
@@ -21,8 +23,9 @@ export interface OssCategory {
   services: readonly OssService[];
 }
 
-export function asOssCategoryType(id: OssCategoryId): ElementTypeId {
-  return id as ElementTypeId;
+/** Identity helper kept for call sites that already name the catalog boundary. */
+export function asOssCategoryType(id: OssCategoryId): OssCategoryId {
+  return id;
 }
 
 export const OSS_CATEGORIES: readonly OssCategory[] = [

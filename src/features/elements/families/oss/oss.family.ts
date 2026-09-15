@@ -9,7 +9,7 @@ import {
   cloudServiceIdWrite,
   resolveCloudServiceId,
 } from "@/features/diagram/model/cloud-service-id";
-import type { Component } from "@/features/diagram/model/component.types";
+import { isOssComponent } from "@/features/diagram/model/component.guards";
 import i18n from "@/infrastructure/i18n";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
@@ -71,6 +71,9 @@ export const ossFamily: CloudFamilyDefinition = {
 
   export: {
     toExportNode: (comp, base) => {
+      if (!isOssComponent(comp)) {
+        throw new Error(`[elements] oss export received a ${comp.type} component.`);
+      }
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? OSS_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? ossIconDataUri(service.iconName) : null;
@@ -89,11 +92,7 @@ export const ossFamily: CloudFamilyDefinition = {
         ...base,
         kind: "passthrough",
         name: comp.name,
-        description:
-          service?.name ??
-          ("technology" in comp && typeof comp.technology === "string"
-            ? comp.technology
-            : undefined),
+        description: service?.name ?? comp.technology,
         originType: comp.type,
         originLabel: i18n.t("canvasToolbar.ossServices"),
       };
@@ -111,9 +110,9 @@ export const ossFamily: CloudFamilyDefinition = {
     }
     return {
       ...base,
-      type: asOssCategoryType(categoryId),
+      type: categoryId,
       ...cloudServiceIdWrite(serviceId),
-    } as Component;
+    };
   },
 };
 

@@ -46,6 +46,19 @@ describe("oss family", () => {
     expect(node.kind).toBe("image");
   });
 
+  it("writes cloudServiceId from ElementCreateOptions.serviceId without casting", () => {
+    const datastore = getElement("oss-datastore")!;
+    const component = datastore.model.createComponent(
+      { id: "el-1", name: "cache", description: "", parentId: null },
+      { serviceId: "redis" },
+    );
+    expect(component).toMatchObject({
+      type: "oss-datastore",
+      cloudServiceId: "redis",
+    });
+    expect("serviceId" in component ? component.serviceId : undefined).toBeUndefined();
+  });
+
   it("has a data URI for every catalog icon", () => {
     for (const service of OSS_SERVICE_MAP.values()) {
       expect(ossIconDataUri(service.iconName), service.iconName).toBeTruthy();

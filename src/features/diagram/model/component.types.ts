@@ -1,6 +1,8 @@
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import type { GcpCategoryId } from "@/features/cloud/providers/gcp/gcp.catalog";
 import type { AzureCategoryId } from "@/features/cloud/providers/azure/azure.catalog";
+import type { K8sCategoryId } from "@/features/elements/families/k8s/k8s.catalog";
+import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog";
 import type { ExternalLinkType, PanelKind } from "../enums";
 
 /**
@@ -28,12 +30,16 @@ export type ComponentType =
   | AwsCategoryId
   | GcpCategoryId
   | AzureCategoryId
+  | K8sCategoryId
+  | OssCategoryId
   | PluginComponentType;
 
 /**
  * Brand for category ids that exist only via `registerCloudFamily` (not yet
  * on the closed `ComponentType` union). Cast at the family definition site —
- * never grow `ComponentType` per family. See family-contract close report.
+ * never grow `ComponentType` per *future* family. k8s/oss shipped without a
+ * typed component and are listed above so `cloudServiceId` is reachable
+ * without `as Component`.
  */
 export type OpenCatalogCategoryId = string & {
   readonly __openCatalogCategory: "open";
@@ -130,6 +136,22 @@ export interface GcpComponent extends BaseComponent {
 export interface AzureComponent extends BaseComponent {
   type: AzureCategoryId;
   /** Cloud provider service id. Unified in F6b; was azureService. */
+  cloudServiceId?: string;
+  technology?: string;
+  customColor?: string;
+}
+
+export interface K8sComponent extends BaseComponent {
+  type: K8sCategoryId;
+  /** Cloud / platform service id (deployment, ingress, …). */
+  cloudServiceId?: string;
+  technology?: string;
+  customColor?: string;
+}
+
+export interface OssComponent extends BaseComponent {
+  type: OssCategoryId;
+  /** Cloud / platform service id (redis, kafka, …). */
   cloudServiceId?: string;
   technology?: string;
   customColor?: string;
@@ -247,6 +269,8 @@ export type Component =
   | AwsComponent
   | GcpComponent
   | AzureComponent
+  | K8sComponent
+  | OssComponent
   | ApiGroupComponent
   | EndpointComponent
   | UnknownComponent
@@ -263,6 +287,8 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<AwsComponent, "id">> &
   Partial<Omit<GcpComponent, "id">> &
   Partial<Omit<AzureComponent, "id">> &
+  Partial<Omit<K8sComponent, "id">> &
+  Partial<Omit<OssComponent, "id">> &
   Partial<Omit<ApiGroupComponent, "id">> &
   Partial<Omit<EndpointComponent, "id">> &
   Partial<Omit<UnknownComponent, "id">> &
@@ -279,6 +305,8 @@ export type TypedComponentPatch =
   | (Partial<Omit<AwsComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<GcpComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<AzureComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<OssComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ApiGroupComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<EndpointComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<UnknownComponent, "id">> & { width?: number; height?: number })

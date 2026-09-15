@@ -6,6 +6,8 @@ import type {
   ComponentPatch,
   ComponentType,
 } from "@/features/diagram/model/component.types";
+import type { K8sCategoryId } from "@/features/elements/families/k8s/k8s.catalog";
+import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog";
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { PanelKind } from "@/features/diagram/enums";
@@ -23,10 +25,11 @@ export type ElementTypeId = ComponentType;
  * The ids that have a type-level mirror for exhaustiveness (`Extract` in
  * `isRegisteredElementComponent`).
  *
- * Catalog families that exist today (aws/gcp/azure) stay listed so export
- * exhaustiveness keeps working. A *new* family's category ids are validated
- * only at runtime by the registry — they are not added here. See
- * `OpenCatalogCategoryId` and `cloud-family-contract.test.ts`.
+ * Catalog families with typed `*Component` interfaces (aws/gcp/azure/k8s/oss)
+ * stay listed so export / create exhaustiveness keeps working. A *future*
+ * family's category ids are validated only at runtime by the registry — they
+ * are not added here. See `OpenCatalogCategoryId` and
+ * `cloud-family-contract.test.ts`.
  */
 export type RegisteredElementTypeId =
   | "person"
@@ -83,7 +86,9 @@ export type RegisteredElementTypeId =
   | "aws-migration"
   | "aws-iot"
   | "aws-end-user"
-  | "aws-general";
+  | "aws-general"
+  | K8sCategoryId
+  | OssCategoryId;
 
 /**
  * Which vocabulary an element belongs to.

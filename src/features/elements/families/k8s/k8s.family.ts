@@ -9,7 +9,7 @@ import {
   cloudServiceIdWrite,
   resolveCloudServiceId,
 } from "@/features/diagram/model/cloud-service-id";
-import type { Component } from "@/features/diagram/model/component.types";
+import { isK8sComponent } from "@/features/diagram/model/component.guards";
 import i18n from "@/infrastructure/i18n";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
@@ -67,6 +67,9 @@ export const k8sFamily: CloudFamilyDefinition = {
 
   export: {
     toExportNode: (comp, base) => {
+      if (!isK8sComponent(comp)) {
+        throw new Error(`[elements] k8s export received a ${comp.type} component.`);
+      }
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? K8S_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? k8sIconDataUri(service.iconName) : null;
@@ -85,11 +88,7 @@ export const k8sFamily: CloudFamilyDefinition = {
         ...base,
         kind: "passthrough",
         name: comp.name,
-        description:
-          service?.name ??
-          ("technology" in comp && typeof comp.technology === "string"
-            ? comp.technology
-            : undefined),
+        description: service?.name ?? comp.technology,
         originType: comp.type,
         originLabel: i18n.t("canvasToolbar.kubernetesServices"),
       };
@@ -107,9 +106,9 @@ export const k8sFamily: CloudFamilyDefinition = {
     }
     return {
       ...base,
-      type: asK8sCategoryType(categoryId),
+      type: categoryId,
       ...cloudServiceIdWrite(serviceId),
-    } as Component;
+    };
   },
 };
 

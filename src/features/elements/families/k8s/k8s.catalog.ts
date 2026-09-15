@@ -1,5 +1,3 @@
-import type { ElementTypeId } from "@/features/elements/element.types";
-
 /**
  * Kubernetes catalog-shaped family data.
  *
@@ -13,6 +11,10 @@ import type { ElementTypeId } from "@/features/elements/element.types";
  * catalog. The options for lifting it are weighed in
  * `docs/audits/correcao-achados-auditoria.md` (item 6); it is an open decision,
  * so nothing here should be changed to work around it in the meantime.
+ *
+ * Category ids live on `ComponentType` / `K8sComponent` (same shape as AWS).
+ * This module stays a leaf so `component.types.ts` can import the id union
+ * without a cycle through `element.types`.
  */
 export type K8sCategoryId = "k8s-workloads" | "k8s-networking" | "k8s-storage" | "k8s-config";
 
@@ -30,9 +32,9 @@ export interface K8sCategory {
   services: readonly K8sService[];
 }
 
-/** Cast once at the catalog boundary — do not grow `ComponentType` per family. */
-export function asK8sCategoryType(id: K8sCategoryId): ElementTypeId {
-  return id as ElementTypeId;
+/** Identity helper kept for call sites that already name the catalog boundary. */
+export function asK8sCategoryType(id: K8sCategoryId): K8sCategoryId {
+  return id;
 }
 
 export const K8S_CATEGORIES: readonly K8sCategory[] = [

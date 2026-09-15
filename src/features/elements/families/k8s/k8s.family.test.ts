@@ -56,6 +56,19 @@ describe("k8s family", () => {
     }
   });
 
+  it("writes cloudServiceId from ElementCreateOptions.serviceId without casting", () => {
+    const workloads = getElement("k8s-workloads")!;
+    const component = workloads.model.createComponent(
+      { id: "el-1", name: "api", description: "", parentId: null },
+      { serviceId: "deployment" },
+    );
+    expect(component).toMatchObject({
+      type: "k8s-workloads",
+      cloudServiceId: "deployment",
+    });
+    expect("serviceId" in component ? component.serviceId : undefined).toBeUndefined();
+  });
+
   it("has a data URI for every catalog icon", () => {
     for (const service of K8S_SERVICE_MAP.values()) {
       expect(k8sIconDataUri(service.iconName), service.iconName).toBeTruthy();
