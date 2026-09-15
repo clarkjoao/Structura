@@ -22,14 +22,18 @@ export type ElementTypeId = ComponentType;
 /**
  * The ids that have actually moved onto the registry.
  *
- * A type-level mirror of what `bootstrap.ts` registers, and the reason the
- * legacy chains can drop a migrated branch without losing their
- * `const _exhaustive: never` check: narrowing on `isRegisteredElementType`
- * removes the id from the union the chain still has to cover. One literal is
- * added per migration slice, and `single-owner.invariant.test.ts` holds this
- * list and the runtime registry to each other.
+ * A type-level mirror of what `bootstrap.ts` registers. After F9 this covers
+ * every closed-union built-in `ComponentType` (C4 + structural + cloud
+ * categories). `Exclude<ComponentType, PluginComponentType>` is equivalent but
+ * drops the per-slice audit trail; keep the explicit list until plugins also
+ * leave `NODE_TYPE_REGISTRY`. `single-owner.invariant.test.ts` holds this list
+ * and the runtime registry to each other.
  */
 export type RegisteredElementTypeId =
+  | "person"
+  | "system"
+  | "container"
+  | "component"
   | "json-viewer"
   | "note"
   | "db-table"
@@ -89,8 +93,8 @@ export type RegisteredElementTypeId =
  * Which vocabulary an element belongs to.
  *
  * `"structural"` covers the hand-written shape-owning elements (F1–F3d).
- * `"gcp" | "aws" | "azure"` are produced by `CloudFamilyDefinition` (F4+);
- * `"c4"` stays on the catch-all until its own slice.
+ * `"c4"` is the fixed C4 Model quartet (F9). `"gcp" | "aws" | "azure"` are
+ * produced by `CloudFamilyDefinition` (F4+).
  */
 export type ElementFamilyId = "structural" | "c4" | "aws" | "gcp" | "azure";
 

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { User, Network, Server, Database } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import { PanelKind, COMPONENT_TYPE_PANEL } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
-import { buildFlowchartPickerOptions } from "./element-picker/buildPickerOptions";
+import {
+  buildC4PickerOptions,
+  buildFlowchartPickerOptions,
+} from "./element-picker/buildPickerOptions";
 import { getPanelKindForAwsService, panelKindDefaultName } from "@/lib/catalogs/panels";
 import { paletteEntriesForCategory } from "@/features/elements/element.palette";
 import { ElementCategory } from "../enums";
@@ -148,15 +150,7 @@ const QuickInsertPopover = ({
   const services = useAllServices();
   const { templates, instantiateTemplate } = useCustomComponentLibrary();
 
-  const C4_OPTIONS = useMemo(
-    () => [
-      { type: "person" as const, label: t("quickInsert.typePerson"), icon: User },
-      { type: "system" as const, label: t("quickInsert.typeSystem"), icon: Network },
-      { type: "container" as const, label: t("quickInsert.typeContainer"), icon: Server },
-      { type: "component" as const, label: t("quickInsert.typeComponent"), icon: Database },
-    ],
-    [t],
-  );
+  const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
 
   const FLOWCHART_QUICK_OPTIONS = useMemo(() => {
     const shapes = new Set<FlowNodeShape>(["rectangle", "rounded", "diamond"]);

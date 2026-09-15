@@ -893,6 +893,18 @@
     "external-element": {
       "description": "A stand-in for an element that lives in another diagram. Use to reference across diagrams without duplicating."
     },
+    "person": {
+      "description": "A human user or external actor that interacts with the system. Use in C4 context diagrams."
+    },
+    "system": {
+      "description": "A top-level software system. Use for external systems or the system being described at context level."
+    },
+    "container": {
+      "description": "A deployable unit: web app, microservice, database, mobile app, etc. Use at C4 container level."
+    },
+    "component": {
+      "description": "A module or component inside a container. Use at C4 component level."
+    },
     "gcp": {
       "categories": {
         "gcp-compute": {

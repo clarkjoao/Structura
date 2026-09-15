@@ -1,17 +1,7 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  Circle,
-  Database,
-  Diamond,
-  GitBranch,
-  Hexagon,
-  Network,
-  Server,
-  Square,
-  SquareStack,
-  User,
-} from "lucide-react";
+import { Circle, Database, Diamond, GitBranch, Hexagon, Square, SquareStack } from "lucide-react";
 import { type ComponentType, type FlowNodeShape } from "@/features/diagram";
+import { paletteEntriesForCategory } from "@/features/elements/element.palette";
 import type { CanvasPickerOption } from "./types";
 
 export type C4PickerOption = {
@@ -20,19 +10,18 @@ export type C4PickerOption = {
   icon: LucideIcon;
 };
 
-export function buildC4PickerOptions(t: (key: string) => string): C4PickerOption[] {
-  return [
-    { type: "person", label: t("quickInsert.typePerson"), icon: User },
-    { type: "system", label: t("quickInsert.typeSystem"), icon: Network },
-    { type: "container", label: t("quickInsert.typeContainer"), icon: Server },
-    { type: "component", label: t("quickInsert.typeComponent"), icon: Database },
-  ];
+/** C4 options from the element registry (F9) — replaces the hand-curated list. */
+export function buildC4PickerOptions(_t?: (key: string) => string): C4PickerOption[] {
+  return paletteEntriesForCategory("c4").map((entry) => ({
+    type: entry.type as C4PickerOption["type"],
+    label: entry.label,
+    icon: entry.icon,
+  }));
 }
 
 export function buildCanvasPickerOptions(): CanvasPickerOption[] {
   // Empty: every canvas type is on the element registry now, and the picker
-  // reads them from there. Kept as the seam for types that have not migrated —
-  // C4 and the cloud families still have builders of their own.
+  // reads them from there.
   return [];
 }
 

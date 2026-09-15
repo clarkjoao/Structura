@@ -16,8 +16,10 @@ import { unknownElement } from "./structural/unknown.element";
 import { gcpElements } from "./families/gcp/gcp.family";
 import { azureElements } from "./families/azure/azure.family";
 import { awsElements } from "./families/aws/aws.family";
+import { c4Elements } from "./families/c4/c4.family";
 
 const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
+  ...c4Elements,
   noteElement,
   dbTableElement,
   jsonViewerElement,

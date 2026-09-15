@@ -16,35 +16,11 @@ export interface ComponentTypeDefinition {
 
 export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [];
 
-export const C4_TYPES: ComponentTypeDefinition[] = [
-  {
-    nodeType: "person",
-    displayName: "Person / Actor",
-    description:
-      "A human user or external actor that interacts with the system. Use in C4 context diagrams.",
-    example: '{ "nodeType": "person", "name": "Customer", "parentId": null }',
-  },
-  {
-    nodeType: "system",
-    displayName: "Software System",
-    description:
-      "A top-level software system. Use for external systems or the system being described at context level.",
-    example: '{ "nodeType": "system", "name": "Payment System", "parentId": null }',
-  },
-  {
-    nodeType: "container",
-    displayName: "Container",
-    description:
-      "A deployable unit: web app, microservice, database, mobile app, etc. Use at C4 container level.",
-    example: '{ "nodeType": "container", "name": "BFF Service", "parentId": null }',
-  },
-  {
-    nodeType: "component",
-    displayName: "Component",
-    description: "A module or component inside a container. Use at C4 component level.",
-    example: '{ "nodeType": "component", "name": "AuthController", "parentId": "container-id" }',
-  },
-];
+/**
+ * @deprecated F9 — C4 lives on the element registry (`c4RegisteredTypes`).
+ * Kept as an empty array so older imports that spread it stay safe.
+ */
+export const C4_TYPES: ComponentTypeDefinition[] = [];
 
 /**
  * Registered elements, as catalog entries.
@@ -57,7 +33,8 @@ export const C4_TYPES: ComponentTypeDefinition[] = [
 export function registeredElementTypes(): ComponentTypeDefinition[] {
   // Cloud families publish a compact catalog of their own (see
   // `buildAwsCatalogCompact`); listing every category here would duplicate
-  // them under "Structural & Canvas" without service ids.
+  // them under "Structural & Canvas" without service ids. C4 has its own
+  // section below (`c4RegisteredTypes`).
   return allElements()
     .filter((element) => element.family === "structural")
     .map((element) => ({
@@ -65,6 +42,18 @@ export function registeredElementTypes(): ComponentTypeDefinition[] {
       displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
       description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
       requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : undefined,
+      example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
+    }));
+}
+
+/** C4 Model types from the registry (F9) — replaces the hand-curated `C4_TYPES` list. */
+export function c4RegisteredTypes(): ComponentTypeDefinition[] {
+  return allElements()
+    .filter((element) => element.family === "c4")
+    .map((element) => ({
+      nodeType: element.id,
+      displayName: i18n.t(element.labelKey, { lng: CATALOG_LOCALE }),
+      description: i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE }),
       example: JSON.stringify({ nodeType: element.id, name: "New", parentId: null }),
     }));
 }
@@ -122,7 +111,7 @@ export function allComponentTypes(): ComponentTypeDefinition[] {
   return [
     ...STRUCTURAL_TYPES,
     ...registeredElementTypes(),
-    ...C4_TYPES,
+    ...c4RegisteredTypes(),
     ...awsRegisteredTypes(),
     ...gcpRegisteredTypes(),
     ...azureRegisteredTypes(),
@@ -162,7 +151,7 @@ export function buildComponentTypeCatalog(): string {
 
   sections.push("");
   sections.push("### C4 Architecture Types");
-  for (const definition of C4_TYPES) {
+  for (const definition of c4RegisteredTypes()) {
     sections.push(formatTypeDef(definition));
   }
 

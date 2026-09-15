@@ -13,7 +13,6 @@ import { isPanelComponent, isApiGroupComponent } from "../../model/component.gua
 import {
   isPanelType,
   isEndpointType,
-  isC4Type,
   isPluginComponentType,
   COMPONENT_TYPE_UNKNOWN,
 } from "../../model/component-type-constants";
@@ -159,8 +158,6 @@ export function buildComponentForType(
           }
         : {}),
     } as PanelComponent;
-  } else if (isC4Type(type)) {
-    component = { ...base, type };
   } else if (isPluginComponentType(type)) {
     component = { ...base, type };
   } else {

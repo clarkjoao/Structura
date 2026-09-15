@@ -893,6 +893,18 @@
     "external-element": {
       "description": "Um representante de um elemento que vive em outro diagrama. Use para referenciar entre diagramas sem duplicar."
     },
+    "person": {
+      "description": "Um usuário humano ou ator externo que interage com o sistema. Use em diagramas de contexto C4."
+    },
+    "system": {
+      "description": "Um sistema de software de alto nível. Use para sistemas externos ou o sistema descrito no nível de contexto."
+    },
+    "container": {
+      "description": "Uma unidade implantável: web app, microsserviço, banco, app mobile, etc. Use no nível de container C4."
+    },
+    "component": {
+      "description": "Um módulo ou componente dentro de um container. Use no nível de componente C4."
+    },
     "gcp": {
       "categories": {
         "gcp-compute": {

@@ -4,7 +4,6 @@ import {
   EdgeStyle,
   getEffectiveConnectionStyle,
   isApiGroupComponent,
-  isC4Component,
   isDbTableComponent,
   isNoteComponent,
   isPanelComponent,
@@ -208,26 +207,6 @@ interface BaseGeometry {
   height: number;
 }
 
-// C4 still renders through the C4 cell. GCP and Azure map through their
-// registered descriptors (F4 / F5a).
-function c4Node(
-  c: { type: string; name: string; description: string; technology?: string; serviceId?: string },
-  base: BaseGeometry,
-  serviceCatalog: Record<string, ServiceDefinition>,
-): ExportNode {
-  const serviceName = c.serviceId ? serviceCatalog[c.serviceId]?.name : undefined;
-  return {
-    ...base,
-    kind: "c4",
-    subtype: c.type,
-    name: c.name,
-    description: c.description,
-    technology: c.technology,
-    serviceId: c.serviceId,
-    serviceName,
-  };
-}
-
 function mapNode(
   c: Component,
   nl: NodeLayout,
@@ -245,12 +224,18 @@ function mapNode(
   // Registered elements declare their own draw.io mapping (decision 6); the
   // guard chain below still owns every type that has not migrated.
   if (isRegisteredElementComponent(c)) {
-    return getElement(c.type)!.export.drawio.toExportNode(c, base);
+    const node = getElement(c.type)!.export.drawio.toExportNode(c, base);
+    // Business-catalog service names live outside the descriptor contract; the
+    // adapter fills them in for C4 cards the way the legacy branch did.
+    if (node.kind === "c4" && node.serviceId) {
+      return {
+        ...node,
+        serviceName: serviceCatalog[node.serviceId]?.name,
+      };
+    }
+    return node;
   }
 
-  if (isC4Component(c)) {
-    return c4Node(c, base, serviceCatalog);
-  }
   // Only plugin types can still reach this: every built-in element declares
   // its own draw.io mapping on the registry. A plugin contributing an exporter
   // is its own extension point (`registerExporter`), not this switch.

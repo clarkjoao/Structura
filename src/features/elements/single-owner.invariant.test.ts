@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NODE_TYPE_REGISTRY } from "@/features/canvas/nodes/node-types/registry";
-import { c4Descriptor } from "@/features/canvas/nodes/node-types/c4.descriptor";
 import { buildComponentForType } from "@/features/diagram/store/slices/components.slice";
-import { BUILTIN_COMPONENT_TYPES, sanitizeComponentType } from "@/features/diagram";
+import { sanitizeComponentType } from "@/features/diagram";
 import { buildCanvasPickerOptions } from "@/features/canvas/toolbar/element-picker/buildPickerOptions";
 import { isValidNodeType } from "@/features/llm/component-catalog";
 import {
@@ -13,25 +12,25 @@ import {
 } from "./element.registry";
 import { emptyNodeBuildContext } from "./node-build-context.fixture";
 import type { RegisteredElementTypeId } from "./element.types";
+import { C4_TYPES } from "@/features/diagram/model/component-type-constants";
 
 /**
  * A type is owned by exactly one path.
  *
- * The migration moves elements onto the registry one slice at a time, and the
- * way transition bugs get in is a type answered by both paths at once: the new
- * descriptor builds it while a legacy branch still lists it, and which one wins
- * depends on the order a chain happens to run in.
- *
- * So every check here is parameterised over whatever is registered. Migrating
- * the next type means adding it to the registry and deleting its legacy branch;
- * this file then covers it with no edit. If it does need an edit, the migration
- * left two owners behind.
+ * After F9 every built-in type lives on the element registry. The legacy
+ * `NODE_TYPE_REGISTRY` array is plugin-only. Every check here is parameterised
+ * over whatever is registered — if a type needs an edit to this file, the
+ * migration left two owners behind.
  */
 
 const registeredIds = registeredElementIds();
 
 /** The ids the type-level mirror claims, as runtime values. */
 const DECLARED_IDS: RegisteredElementTypeId[] = [
+  "person",
+  "system",
+  "container",
+  "component",
   "json-viewer",
   "note",
   "db-table",
@@ -87,17 +86,19 @@ const DECLARED_IDS: RegisteredElementTypeId[] = [
 
 describe("the registry and its type-level mirror agree", () => {
   it("registers exactly the ids RegisteredElementTypeId names", () => {
-    // The narrowing predicate is a promise that these two lists match; the
-    // legacy chains drop their `never` coverage for an id on the strength of it.
     expect([...registeredIds].sort()).toEqual([...DECLARED_IDS].sort());
+  });
+
+  it("covers every C4 Model type", () => {
+    expect(C4_TYPES.every((id) => registeredIds.includes(id))).toBe(true);
   });
 });
 
 describe.each(registeredIds)("%s has a single owner", (type) => {
   it("is not matched by any legacy render descriptor", () => {
-    const legacyOwners = NODE_TYPE_REGISTRY.filter(
-      (descriptor) => descriptor !== c4Descriptor && descriptor.matches(type),
-    ).map((descriptor) => descriptor.rfType);
+    const legacyOwners = NODE_TYPE_REGISTRY.filter((descriptor) => descriptor.matches(type)).map(
+      (descriptor) => descriptor.rfType,
+    );
 
     expect(legacyOwners).toEqual([]);
   });
@@ -120,13 +121,7 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
   });
 
   it("is still accepted by the type sanitizer", () => {
-    // Registered ids are valid via `hasElement`. Structural ones also sit on
-    // BUILTIN_COMPONENT_TYPES until that list is retired; cloud categories
-    // never did, so the BUILTIN check only applies off the cloud prefixes.
     expect(sanitizeComponentType(type)).toBe(type);
-    if (!type.startsWith("gcp-") && !type.startsWith("aws-") && !type.startsWith("azure-")) {
-      expect(BUILTIN_COMPONENT_TYPES.has(type)).toBe(true);
-    }
   });
 
   it("is offered to the LLM", () => {
@@ -139,26 +134,14 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
     expect(descriptor.canvas.handles).toBeDefined();
     const size = elementDefaultSize(descriptor);
     expect(size.width).toBeGreaterThan(0);
-    // A height is optional — omitted means the node measures itself — but a
-    // declared one must be a real size.
     if (size.height !== undefined) expect(size.height).toBeGreaterThan(0);
   });
 });
 
 describe("a fixed-size element paints at the size it was created at", () => {
-  /**
-   * The promise `derivesSize: false` makes.
-   *
-   * db-table shipped a `defaultSize` of 180 while the node painted at 76, and
-   * nothing noticed because nothing read the field. Now that it governs
-   * creation, a disagreement between the two is a node that jumps size the
-   * moment it is first painted — so the elements that claim a fixed size are
-   * held to it here.
-   */
   const fixedSized = allElements().filter((element) => !element.canvas.derivesSize);
 
   it("covers at least one element", () => {
-    // Guards against the check silently covering nothing.
     expect(fixedSized.length).toBeGreaterThan(0);
   });
 
@@ -179,22 +162,12 @@ describe("a fixed-size element paints at the size it was created at", () => {
 });
 
 describe("what the legacy render registry still owns", () => {
-  /**
-   * Every built-in type except the four C4 ones now lives on the element
-   * registry. What remains in the old array is the catch-all, plus whatever a
-   * plugin splices in ahead of it at runtime. GCP/Azure/AWS moved in F4–F5b;
-   * C4 and the catch-all go later.
-   */
-  it("holds only the C4 catch-all", () => {
-    expect(NODE_TYPE_REGISTRY.map((descriptor) => descriptor.rfType)).toEqual(["c4"]);
+  it("holds no built-in catch-all (plugins only)", () => {
+    expect(NODE_TYPE_REGISTRY.map((descriptor) => descriptor.rfType)).toEqual([]);
   });
 
-  it("covers every built-in type between the two registries", () => {
-    const owned = new Set<string>(registeredIds);
-    // The C4 four are the only BUILTIN entries the catch-all still answers for.
-    // Cloud categories were never on BUILTIN — they enter via the registry.
-    const stillLegacy = [...BUILTIN_COMPONENT_TYPES].filter((type) => !owned.has(type));
-    expect(stillLegacy.sort()).toEqual(["component", "container", "person", "system"]);
+  it("covers every closed-union built-in type on the element registry alone", () => {
+    expect(registeredIds.length).toBe(DECLARED_IDS.length);
   });
 });
 
