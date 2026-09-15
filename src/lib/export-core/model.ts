@@ -29,7 +29,8 @@ export type ExportNodeKind =
   | "note"
   | "jsonViewer"
   | "image"
-  | "passthrough";
+  | "passthrough"
+  | "flowNode";
 
 interface BaseNode {
   id: string;
@@ -162,7 +163,37 @@ export interface PassthroughNode extends BaseNode {
   fillColor?: string;
 }
 
+/** The nine flowchart shapes a process node can take. */
+export type ExportFlowShape =
+  | "rectangle"
+  | "rounded"
+  | "stadium"
+  | "diamond"
+  | "hexagon"
+  | "parallelogram"
+  | "cylinder"
+  | "circle"
+  | "subroutine";
+
+/**
+ * A flowchart box.
+ *
+ * Its own kind rather than a passthrough, because the shape *is* the meaning
+ * here — a diamond is a decision — and draw.io has a native style for every
+ * one of the nine. Exporting them all as dashed boxes would have thrown away
+ * the only thing a flowchart says.
+ */
+export interface FlowNode extends BaseNode {
+  kind: "flowNode";
+  name: string;
+  description?: string;
+  shape: ExportFlowShape;
+  /** Raw colour from the snapshot, when the user picked one. */
+  nodeColor?: string;
+}
+
 export type ExportNode =
+  | FlowNode
   | ImageNode
   | PassthroughNode
   | C4Node

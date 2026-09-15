@@ -7,8 +7,6 @@ import {
   useComponents,
   useDiagramActions,
   isPanelComponent,
-  isExternalElementComponent,
-  type ExternalElementComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
@@ -16,7 +14,6 @@ import { MultiSelectPanel } from "../MultiSelectPanel";
 import { getElement } from "@/features/elements/element.registry";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
-import ExternalElementPanel from "./ExternalElementPanel";
 
 interface Props {
   selectedElementId: string | null;
@@ -92,20 +89,6 @@ const ElementPanel = ({
     const isPanelWithChildren =
       isPanelComponent(component) &&
       Object.values(resolvedComponents).some((c) => c.parentId === component.id);
-
-    if (isExternalElementComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <ExternalElementPanel
-            component={component as ExternalElementComponent}
-            onClose={onClose}
-            updateComponent={updateComponent}
-            removeComponent={removeComponent}
-          />
-        </div>
-      );
-    }
 
     return (
       <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">

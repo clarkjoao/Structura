@@ -30,7 +30,16 @@ export type ElementTypeId = ComponentType;
  * list and the runtime registry to each other.
  */
 export type RegisteredElementTypeId =
-  "json-viewer" | "note" | "db-table" | "api-group" | "endpoint" | "panel";
+  | "json-viewer"
+  | "note"
+  | "db-table"
+  | "api-group"
+  | "endpoint"
+  | "panel"
+  | "process-node"
+  | "external-element"
+  | "svg"
+  | "unknown";
 
 /**
  * Which vocabulary an element belongs to. Only `"structural"` is used while F1

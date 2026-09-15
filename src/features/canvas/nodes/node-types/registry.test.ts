@@ -8,7 +8,7 @@ import {
   subscribeNodeTypes,
   unregisterDescriptor,
 } from "./registry";
-import { unknownDescriptor } from "./unknown.descriptor";
+import { COMPONENT_TYPE_UNKNOWN } from "@/features/diagram";
 import { c4Descriptor } from "./c4.descriptor";
 import { SPREAD_HANDLES } from "./handle-spec";
 
@@ -64,12 +64,15 @@ describe("registerDescriptor / unregisterDescriptor", () => {
 });
 
 describe("getDescriptor degradation", () => {
+  // `unknown` is a registered element now, so the fallback is identified by the
+  // React Flow type it renders under rather than by descriptor identity.
   it("falls back to the unknown descriptor for orphaned plugin types", () => {
-    expect(getDescriptor(PLUGIN_COMPONENT_TYPE)).toBe(unknownDescriptor);
+    expect(getDescriptor(PLUGIN_COMPONENT_TYPE).rfType).toBe(COMPONENT_TYPE_UNKNOWN);
   });
 
   it("keeps the c4 catch-all for unmatched built-in-shaped types", () => {
-    expect(getDescriptor("person")).not.toBe(unknownDescriptor);
+    expect(getDescriptor("person").rfType).not.toBe(COMPONENT_TYPE_UNKNOWN);
+    expect(getDescriptor("person")).toBe(c4Descriptor);
   });
 });
 

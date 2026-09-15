@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from "react";
-import { User, Network, Server, Database, ExternalLink } from "lucide-react";
+import { User, Network, Server, Database } from "lucide-react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
-import {
-  PanelKind,
-  COMPONENT_TYPE_PANEL,
-  COMPONENT_TYPE_EXTERNAL_ELEMENT,
-} from "@/features/diagram";
+import { PanelKind, COMPONENT_TYPE_PANEL } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
 import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
 import { buildFlowchartPickerOptions } from "./element-picker/buildPickerOptions";
@@ -185,18 +181,8 @@ const QuickInsertPopover = ({
     [t],
   );
 
-  const CANVAS_OPTIONS = useMemo(
-    // Only the types still on the legacy path; panels and the rest now arrive
-    // through REGISTRY_OPTIONS.
-    (): CanvasInsertOption[] => [
-      {
-        type: COMPONENT_TYPE_EXTERNAL_ELEMENT as ComponentType,
-        label: t("quickInsert.typeExternalElement"),
-        icon: ExternalLink,
-      },
-    ],
-    [t],
-  );
+  // Empty: every canvas type now arrives through REGISTRY_OPTIONS.
+  const CANVAS_OPTIONS = useMemo((): CanvasInsertOption[] => [], [t]);
 
   const CANVAS_OPTIONS_ALL = useMemo(
     (): CanvasInsertOption[] => [...CANVAS_OPTIONS, ...REGISTRY_OPTIONS],

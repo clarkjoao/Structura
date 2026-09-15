@@ -38,6 +38,10 @@ const DECLARED_IDS: RegisteredElementTypeId[] = [
   "api-group",
   "endpoint",
   "panel",
+  "process-node",
+  "external-element",
+  "svg",
+  "unknown",
 ];
 
 describe("the registry and its type-level mirror agree", () => {
@@ -70,7 +74,7 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
   });
 
   it("is not listed by the legacy canvas palette", () => {
-    const legacyOptions = buildCanvasPickerOptions((key) => key);
+    const legacyOptions = buildCanvasPickerOptions();
     expect(legacyOptions.map((option) => option.type)).not.toContain(type);
   });
 
@@ -127,6 +131,27 @@ describe("a fixed-size element paints at the size it was created at", () => {
     const size = elementDefaultSize(element);
     expect(style.width).toBe(size.width);
     if (size.height !== undefined) expect(style.height).toBe(size.height);
+  });
+});
+
+describe("what the legacy render registry still owns", () => {
+  /**
+   * The criterion that closes F3.
+   *
+   * Every built-in type except the four C4 ones is now a registered element;
+   * what remains in the old array is the catch-all, plus whatever a plugin
+   * splices in ahead of it at runtime. When C4 migrates (F4) and the catch-all
+   * goes (F9), this array empties.
+   */
+  it("holds only the C4 catch-all", () => {
+    expect(NODE_TYPE_REGISTRY.map((descriptor) => descriptor.rfType)).toEqual(["c4"]);
+  });
+
+  it("covers every built-in type between the two registries", () => {
+    const owned = new Set<string>(registeredIds);
+    // The C4 four are the only built-ins the catch-all still answers for.
+    const stillLegacy = [...BUILTIN_COMPONENT_TYPES].filter((type) => !owned.has(type));
+    expect(stillLegacy.sort()).toEqual(["component", "container", "person", "system"]);
   });
 });
 

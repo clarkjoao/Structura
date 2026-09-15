@@ -878,6 +878,20 @@
     },
     "panel": {
       "description": "A visual grouping container. Use for bounded contexts, domains, or any logical grouping of nodes. Supports swimlane layout."
+    },
+    "svg": {
+      "label": "SVG",
+      "description": "Imported vector artwork. Use for logos, diagrams, or any picture the other shapes cannot express."
+    },
+    "unknown": {
+      "label": "Unknown",
+      "description": "Content Structura cannot interpret, kept verbatim. Also what a component falls back to when its plugin is absent."
+    },
+    "process-node": {
+      "description": "A flowchart step. Use for processes, decisions, and terminators in a flow diagram."
+    },
+    "external-element": {
+      "description": "A stand-in for an element that lives in another diagram. Use to reference across diagrams without duplicating."
     }
   },
   "flowchart": {

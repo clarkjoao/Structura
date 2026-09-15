@@ -8,7 +8,11 @@ import { dbTableElement } from "./structural/db-table.element";
 import { endpointElement } from "./structural/endpoint.element";
 import { jsonViewerElement } from "./structural/json-viewer.element";
 import { noteElement } from "./structural/note.element";
+import { externalElementElement } from "./structural/external-element.element";
 import { panelElement } from "./structural/panel.element";
+import { processNodeElement } from "./structural/process-node.element";
+import { svgElement } from "./structural/svg.element";
+import { unknownElement } from "./structural/unknown.element";
 
 const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   noteElement,
@@ -17,6 +21,10 @@ const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   apiGroupElement,
   endpointElement,
   panelElement,
+  processNodeElement,
+  externalElementElement,
+  svgElement,
+  unknownElement,
 ];
 
 for (const element of BUILT_IN_ELEMENTS) {

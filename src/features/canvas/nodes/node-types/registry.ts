@@ -1,13 +1,9 @@
 import type { NodeTypes } from "@xyflow/react";
-import { svgDescriptor } from "./svg.descriptor";
-import { unknownDescriptor } from "./unknown.descriptor";
-import { flowNodeDescriptor } from "./flownode.descriptor";
-import { externalElementDescriptor } from "./external-element.descriptor";
 import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { NodeHandleSpec } from "./handle-spec";
 import type { Component, ComponentType } from "@/features/diagram";
-import { isPluginComponentType } from "@/features/diagram";
+import { COMPONENT_TYPE_UNKNOWN, isPluginComponentType } from "@/features/diagram";
 import {
   allElements,
   elementDefaultSize,
@@ -17,13 +13,14 @@ import {
 } from "@/features/elements/element.registry";
 import type { ElementCanvasSlice, ElementDescriptor } from "@/features/elements/element.types";
 
-export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
-  svgDescriptor,
-  unknownDescriptor,
-  flowNodeDescriptor,
-  externalElementDescriptor,
-  c4Descriptor,
-];
+/**
+ * What the canvas still resolves the old way.
+ *
+ * Down to the catch-all: every built-in type except the four C4 ones now lives
+ * on the element registry, and plugin descriptors are spliced in ahead of the
+ * catch-all at runtime. C4 and the cloud families follow in F4.
+ */
+export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [c4Descriptor];
 
 /**
  * A registered element's canvas slice, seen as a `NodeTypeDescriptor`.
@@ -77,9 +74,11 @@ export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
   if (isPluginComponentType(type)) {
     // The C4 catch-all must not absorb plugin types: orphaned ones (plugin disabled or
     // uninstalled) degrade to `unknown`, so the data is visibly foreign, never corrupted.
-    return (
-      NODE_TYPE_REGISTRY.find((d) => d !== c4Descriptor && d.matches(type)) ?? unknownDescriptor
-    );
+    const contributed = NODE_TYPE_REGISTRY.find((d) => d !== c4Descriptor && d.matches(type));
+    if (contributed) return contributed;
+    // `unknown` is a registered element now, so the fallback comes from there.
+    const fallback = getElement(COMPONENT_TYPE_UNKNOWN);
+    return fallback ? adaptElement(fallback) : c4Descriptor;
   }
   return NODE_TYPE_REGISTRY.find((d) => d.matches(type)) ?? c4Descriptor;
 }

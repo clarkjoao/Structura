@@ -8,15 +8,11 @@ import {
   isAzureComponent,
   isC4Component,
   isDbTableComponent,
-  isExternalElementComponent,
-  isProcessNodeComponent,
   isGcpComponent,
   isNoteComponent,
   isPanelComponent,
   isJsonViewerComponent,
   isPluginTypedComponent,
-  isSvgComponent,
-  isUnknownComponent,
   StrokeStyle,
 } from "@/features/diagram";
 import type {
@@ -271,13 +267,10 @@ function mapNode(
   if (isGcpComponent(c) || isAzureComponent(c)) {
     return c4Node(c, base, serviceCatalog);
   }
-  if (
-    isUnknownComponent(c) ||
-    isSvgComponent(c) ||
-    isProcessNodeComponent(c) ||
-    isExternalElementComponent(c) ||
-    isPluginTypedComponent(c)
-  ) {
+  // Only plugin types can still reach this: every built-in element declares
+  // its own draw.io mapping on the registry. A plugin contributing an exporter
+  // is its own extension point (`registerExporter`), not this switch.
+  if (isPluginTypedComponent(c)) {
     throw new Error(`Unsupported component for draw.io export: ${c.type}`);
   }
   const _exhaustive: never = c;

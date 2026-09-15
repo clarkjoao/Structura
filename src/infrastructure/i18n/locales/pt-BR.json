@@ -878,6 +878,20 @@
     },
     "panel": {
       "description": "Um contêiner de agrupamento visual. Use para bounded contexts, domínios ou qualquer agrupamento lógico de nós. Suporta layout de raias."
+    },
+    "svg": {
+      "label": "SVG",
+      "description": "Arte vetorial importada. Use para logos, diagramas ou qualquer imagem que os outros shapes não expressam."
+    },
+    "unknown": {
+      "label": "Desconhecido",
+      "description": "Conteúdo que o Structura não interpreta, mantido na íntegra. Também é o destino de um componente cujo plugin está ausente."
+    },
+    "process-node": {
+      "description": "Um passo de fluxograma. Use para processos, decisões e terminadores em um diagrama de fluxo."
+    },
+    "external-element": {
+      "description": "Um representante de um elemento que vive em outro diagrama. Use para referenciar entre diagramas sem duplicar."
     }
   },
   "flowchart": {

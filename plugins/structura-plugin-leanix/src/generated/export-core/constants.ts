@@ -43,6 +43,25 @@ export const CONFIG = {
   },
 } as const;
 
+/**
+ * Native draw.io styles for the nine flowchart shapes.
+ *
+ * All standard mxGraph, so the exported file opens without any shape library:
+ * the two exceptions are `cylinder` and `subroutine`, which use the built-in
+ * `shape=` forms rather than a stencil.
+ */
+export const FLOW_SHAPE_STYLES: Record<string, string> = {
+  rectangle: "rounded=0;",
+  rounded: "rounded=1;arcSize=12;",
+  stadium: "rounded=1;arcSize=50;",
+  diamond: "rhombus;",
+  hexagon: "shape=hexagon;perimeter=hexagonPerimeter2;",
+  parallelogram: "shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;",
+  cylinder: "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=8;",
+  circle: "ellipse;",
+  subroutine: "shape=process;whiteSpace=wrap;backgroundOutline=1;",
+};
+
 export const THEME = {
   colors: {
     c4: {

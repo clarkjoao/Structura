@@ -3,7 +3,6 @@ import {
   Circle,
   Database,
   Diamond,
-  ExternalLink,
   GitBranch,
   Hexagon,
   Network,
@@ -30,10 +29,11 @@ export function buildC4PickerOptions(t: (key: string) => string): C4PickerOption
   ];
 }
 
-export function buildCanvasPickerOptions(t: (key: string) => string): CanvasPickerOption[] {
-  // Everything else in this category now comes from the element registry; only
-  // the types still on the legacy path are listed here.
-  return [{ type: "external-element", label: t("externalElement.nodeBadge"), icon: ExternalLink }];
+export function buildCanvasPickerOptions(): CanvasPickerOption[] {
+  // Empty: every canvas type is on the element registry now, and the picker
+  // reads them from there. Kept as the seam for types that have not migrated —
+  // C4 and the cloud families still have builders of their own.
+  return [];
 }
 
 export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasPickerOption[] {

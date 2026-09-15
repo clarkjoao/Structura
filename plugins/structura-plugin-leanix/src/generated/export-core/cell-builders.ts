@@ -5,7 +5,7 @@
  * generation shared by the app and this plugin; edit the host files and re-sync.
  */
 
-import { C4_LABEL_TEMPLATE, C4_META, CONFIG, THEME } from "./constants";
+import { C4_LABEL_TEMPLATE, C4_META, CONFIG, FLOW_SHAPE_STYLES, THEME } from "./constants";
 import type { ExportNode } from "./model";
 import { logger } from "@/lib/core/logger";
 import {
@@ -220,6 +220,21 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
         `<mxCell id="${escXml(node.id)}" value="${escXml(value)}" style="${style}" ` +
         `vertex="1" parent="${escXml(parentId)}">` +
         `<mxGeometry x="${x}" y="${y}" width="${finalW}" height="${finalH}" as="geometry"/>` +
+        `</mxCell>`
+      );
+    }
+
+    case "flowNode": {
+      const w = width || 160;
+      const h = height || 60;
+      const shapeStyle = FLOW_SHAPE_STYLES[node.shape] ?? FLOW_SHAPE_STYLES.rectangle;
+      const fill = node.nodeColor ? `fillColor=${node.nodeColor};` : "";
+      const style = `${shapeStyle}whiteSpace=wrap;html=1;align=center;fontSize=11;${fill}`;
+      const value = node.description ? `${node.name}\n${node.description}` : node.name;
+      return (
+        `<mxCell id="${escXml(node.id)}" value="${escXml(value)}" style="${style}" ` +
+        `vertex="1" parent="${escXml(parentId)}">` +
+        `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
         `</mxCell>`
       );
     }

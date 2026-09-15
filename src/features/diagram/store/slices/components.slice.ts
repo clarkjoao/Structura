@@ -2,8 +2,6 @@ import type {
   Component,
   ComponentPatch,
   ComponentType,
-  UnknownComponent,
-  SvgComponent,
   PanelComponent,
   NodeLayout,
   Diagram,
@@ -16,18 +14,10 @@ import {
   isPanelType,
   isEndpointType,
   isC4Type,
-  isUnknownType,
   isPluginComponentType,
-  isSvgComponentType,
-  isFlowNodeType,
-  isExternalElementType,
-  COMPONENT_TYPE_PROCESS_NODE,
+  COMPONENT_TYPE_UNKNOWN,
 } from "../../model/component-type-constants";
-import type {
-  ProcessNodeComponent,
-  FlowNodeShape,
-  ExternalElementComponent,
-} from "../../model/component.types";
+import type { FlowNodeShape } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
@@ -173,27 +163,6 @@ export function buildComponentForType(
     component = { ...base, type, gcpService: awsService ?? undefined };
   } else if (isAzureType(type)) {
     component = { ...base, type, azureService: awsService ?? undefined };
-  } else if (isUnknownType(type)) {
-    component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
-  } else if (isSvgComponentType(type)) {
-    component = {
-      ...base,
-      type: "svg",
-      svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
-    } as SvgComponent;
-  } else if (isFlowNodeType(type)) {
-    component = {
-      ...base,
-      type: COMPONENT_TYPE_PROCESS_NODE,
-      flowShape: flowShape ?? "rectangle",
-    } as ProcessNodeComponent;
-  } else if (isExternalElementType(type)) {
-    component = {
-      ...base,
-      type: "external-element",
-      referenceDiagramId: "",
-      tags: ["external"],
-    } as ExternalElementComponent;
   } else if (isPluginComponentType(type)) {
     component = { ...base, type };
   } else {
@@ -201,7 +170,9 @@ export function buildComponentForType(
     // signals that the corresponding branch needs to be added.
     const _exhaustive: never = type;
     void _exhaustive;
-    component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
+    // Unreachable while the union is exhaustive; `unknown` is the safe landing
+    // for a type that slipped past it, and the registry owns how to build one.
+    component = getElement(COMPONENT_TYPE_UNKNOWN)!.model.createComponent(base, {});
   }
   return { component, resolvedPanelKind };
 }
@@ -270,16 +241,6 @@ function buildLayoutForComponent(
       zIndex: -1,
       width: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
       height: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
-    };
-  }
-  if (isFlowNodeType(type)) {
-    const circleSize = 80;
-    return {
-      elementId: componentId,
-      x,
-      y,
-      width: flowShape === "circle" ? circleSize : 160,
-      height: flowShape === "circle" ? circleSize : 60,
     };
   }
   return { elementId: componentId, x, y };

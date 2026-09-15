@@ -73,7 +73,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   // types that have migrated -- each element is offered by exactly one path.
   const CANVAS_OPTIONS = useMemo(
     (): CanvasPickerOption[] => [
-      ...buildCanvasPickerOptions(t),
+      ...buildCanvasPickerOptions(),
       ...paletteEntriesForCategory(ElementCategory.Canvas).map((entry) => ({
         type: entry.type,
         label: entry.label,

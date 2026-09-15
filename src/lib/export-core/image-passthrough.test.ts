@@ -94,7 +94,7 @@ describe("passthrough cells", () => {
   it("carries the origin type so a later import can recover it", () => {
     const xml = buildCell(passthroughNode(), geometry, "1");
 
-    expect(xml).toContain("<object placeholders=\"1\"");
+    expect(xml).toContain('<object placeholders="1"');
     expect(xml).toContain('structuraType="unknown"');
     expect(xml).toContain('structuraLabel="Unknown"');
   });
