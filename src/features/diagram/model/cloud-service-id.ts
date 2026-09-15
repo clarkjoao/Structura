@@ -22,6 +22,12 @@
 
 export type CloudServiceIdFields = {
   cloudServiceId?: string;
+  /**
+   * Business-catalog link (`BaseComponent.serviceId`). Present so a full
+   * `Component` stays assignable to this reader; **never** read by
+   * `resolveCloudServiceId`.
+   */
+  serviceId?: string;
   /** @deprecated F6b — kept for tolerant reads of unmigrated payloads */
   awsService?: string;
   /** @deprecated F6b */
