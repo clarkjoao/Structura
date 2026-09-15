@@ -85,8 +85,7 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
 
     case "aws": {
       const style = buildAwsStyle(node.awsIcon);
-      const geometry =
-        `<mxGeometry height="${CONFIG.minDimensions.aws.height}" width="${CONFIG.minDimensions.aws.width}" x="${x}" y="${y}" as="geometry" />`;
+      const geometry = `<mxGeometry height="${CONFIG.minDimensions.aws.height}" width="${CONFIG.minDimensions.aws.width}" x="${x}" y="${y}" as="geometry" />`;
       // Promote to `<object>` when the domain service id is known so the XML
       // carries identity beyond the mxgraph icon appearance.
       if (node.cloudServiceId) {
@@ -344,9 +343,7 @@ function buildPassthroughCell(
   const style =
     `rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=${fill};` +
     `strokeColor=${CONFIG.defaults.passthroughStroke};`;
-  const cloudAttr = node.cloudServiceId
-    ? ` cloudServiceId="${escXml(node.cloudServiceId)}"`
-    : "";
+  const cloudAttr = node.cloudServiceId ? ` cloudServiceId="${escXml(node.cloudServiceId)}"` : "";
 
   // `<object>` rather than a bare `<mxCell>`: draw.io keeps attributes it does
   // not understand, which is what lets a later import recover the exact type

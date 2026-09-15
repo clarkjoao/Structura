@@ -29,7 +29,7 @@ describe("cloudServiceId on export cells", () => {
     };
     const xml = buildCell(node, geometry, "1");
     expect(xml).toContain('cloudServiceId="lambda"');
-    expect(xml).toContain("<object placeholders=\"1\"");
+    expect(xml).toContain('<object placeholders="1"');
     expect(xml).toContain("prIcon=mxgraph.aws4.lambda");
   });
 
