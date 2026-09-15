@@ -10,7 +10,7 @@ export {
 } from "../enums";
 
 // ─── Component Model ──────────────────────────────────────────────────────────
-export { sanitizeComponentType, BUILTIN_COMPONENT_TYPES } from "./sanitize-component-type";
+export { sanitizeComponentType } from "./sanitize-component-type";
 
 export type {
   ComponentType,

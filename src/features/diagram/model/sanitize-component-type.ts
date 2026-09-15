@@ -2,31 +2,6 @@ import { hasElement } from "@/features/elements/element.registry";
 import type { ComponentType } from "./component.types";
 
 /**
- * Built-in component types that can be the base of a template AND a
- * component's `type` field. Anything outside this list (and not a
- * plugin namespaced type) is sanitised to "component" so corrupted
- * `type` values don't slip through and trigger the unknown descriptor.
- * Keep in sync with the non-Aws/Gcp/Azure/Plugin members of the
- * ComponentType union in component.types.ts.
- */
-export const BUILTIN_COMPONENT_TYPES: ReadonlySet<string> = new Set<string>([
-  "person",
-  "system",
-  "container",
-  "component",
-  "panel",
-  "note",
-  "api-group",
-  "endpoint",
-  "unknown",
-  "svg",
-  "db-table",
-  "json-viewer",
-  "process-node",
-  "external-element",
-]);
-
-/**
  * Plugin namespaced ComponentType pattern: `<pluginId>/<name>` where both
  * segments are alphanumeric (plus `_`, `-`, `.`). Plugin ids come from
  * the plugin registry's manifests and never contain spaces, slashes,
@@ -39,25 +14,45 @@ export const BUILTIN_COMPONENT_TYPES: ReadonlySet<string> = new Set<string>([
 const PLUGIN_COMPONENT_TYPE_PATTERN = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/;
 
 /**
- * Sanitize a `type` value (string from raw JSON) into a `ComponentType`.
- * - Built-in types are returned as-is.
- * - Plugin namespaced types matching `<pluginId>/<name>` are returned
- *   as-is (they degrade to the unknown descriptor at render time when
- *   the plugin is missing).
- * - Anything else falls back to "component" so the rest of the app
- *   can keep working without branch-specific knowledge of the
- *   corruption.
+ * Recover a cloud category that no longer exists as a concrete id.
  *
- * Use this whenever a `type` string is read from persisted state or
- * from an external source (template save, JSON import, drawio import).
+ * Scope is deliberately narrow (F9): if the persisted string still carries a
+ * recognised provider prefix (`aws-` / `gcp-` / `azure-`) but the specific
+ * category is gone, land on that family's `*-general` bucket when it is
+ * registered. No fuzzy matching beyond the prefix.
+ */
+function recoverCloudCategoryPrefix(value: string): ComponentType | undefined {
+  const general =
+    value.startsWith("aws-") && value !== "aws-general"
+      ? "aws-general"
+      : value.startsWith("gcp-") && value !== "gcp-general"
+        ? "gcp-general"
+        : value.startsWith("azure-") && value !== "azure-general"
+          ? "azure-general"
+          : undefined;
+  if (general === undefined) return undefined;
+  return hasElement(general) ? (general as ComponentType) : undefined;
+}
+
+/**
+ * Sanitize a `type` value (string from raw JSON) into a `ComponentType`.
+ *
+ * - Registered element ids are returned as-is.
+ * - Plugin namespaced types matching `<pluginId>/<name>` are returned as-is
+ *   (they degrade to the unknown descriptor at render time when the plugin
+ *   is missing).
+ * - Cloud-shaped unknowns recover to `*-general` when the prefix is clear.
+ * - Anything else falls back to `"unknown"` (F9 / decision 4 — was
+ *   `"component"` via the catch-all).
+ *
+ * Use this whenever a `type` string is read from persisted state or from an
+ * external source (template save, JSON import, drawio import).
  */
 export function sanitizeComponentType(value: unknown): ComponentType {
-  if (typeof value !== "string" || value.length === 0) return "component";
-  // Additive while the migration runs: a registered element is valid, and the
-  // built-in list still answers for everything that has not migrated. The list
-  // stops being the source of truth in a later slice, not here.
+  if (typeof value !== "string" || value.length === 0) return "unknown";
   if (hasElement(value)) return value as ComponentType;
-  if (BUILTIN_COMPONENT_TYPES.has(value)) return value as ComponentType;
   if (PLUGIN_COMPONENT_TYPE_PATTERN.test(value)) return value as ComponentType;
-  return "component";
+  const recovered = recoverCloudCategoryPrefix(value);
+  if (recovered !== undefined) return recovered;
+  return "unknown";
 }
