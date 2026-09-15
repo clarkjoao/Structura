@@ -3,7 +3,7 @@ import type { Component } from "@/features/diagram";
 // `./registry` first on purpose: importing card builders alone can re-enter
 // the registry mid-initialisation. Same ordering as registry.test.ts.
 import "./registry";
-import { buildCardNodeData } from "../CustomNode/buildCardNodeData";
+import { buildCardNodeData } from "../CardNode/buildCardNodeData";
 import type { NodeBuildContext } from "./types";
 
 /** Minimal context: `buildData` only reads these for a plain node. */

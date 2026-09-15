@@ -13,7 +13,7 @@ import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPrese
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
-import { buildPanelHandles } from "./CustomNode/Handles";
+import { buildPanelHandles } from "./CardNode/Handles";
 
 export type PanelNodeData = {
   elementId: string;

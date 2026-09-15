@@ -30,7 +30,7 @@ export const EmbedButton = memo(function EmbedButton({
       }`}
       tabIndex={disabled ? -1 : 0}
     >
-      <Eye className="h-3 w-3" /> {t("customNode.embedDiagram")}
+      <Eye className="h-3 w-3" /> {t("cardNode.embedDiagram")}
     </button>
   );
 });

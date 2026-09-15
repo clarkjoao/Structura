@@ -7,7 +7,7 @@ export function manifestSemanticFingerprint(args: {
   serviceCatalog: unknown;
   folders: unknown;
   activeDiagramId: string | null;
-  customComponentTemplates: unknown;
+  elementPresets: unknown;
   iconLibrary: unknown;
 }): string {
   return JSON.stringify({
@@ -15,7 +15,7 @@ export function manifestSemanticFingerprint(args: {
     serviceCatalog: args.serviceCatalog,
     folders: args.folders,
     activeDiagramId: args.activeDiagramId,
-    customComponentTemplates: args.customComponentTemplates,
+    elementPresets: args.elementPresets,
     iconLibrary: args.iconLibrary,
   });
 }

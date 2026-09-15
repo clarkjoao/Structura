@@ -17,7 +17,7 @@ const CARD_RECORDING_DIM_OPACITY = 0.35;
  * Shared card `buildData` for C4 and every cloud family.
  *
  * Extracted from the C4 catch-all so a registered cloud category can paint
- * through the same CustomNode contract without going back through the
+ * through the same CardNode contract without going back through the
  * catch-all descriptor.
  */
 export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Record<string, unknown> {

@@ -42,10 +42,10 @@ import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
 import CloudIcon from "../nodes/CloudIcon";
 import { isPanelType } from "@/features/diagram";
 import {
-  useCustomComponentLibrary,
-  NodeTemplatePreviewCard,
-  useCustomComponentStore,
-} from "@/features/custom-components";
+  useElementPresetLibrary,
+  ElementPresetPreviewCard,
+  useElementPresetStore,
+} from "@/features/element-presets";
 
 const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { t } = useTranslation();
@@ -65,8 +65,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
   const { addComponent, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
   const allComponents = useAllComponents();
-  const { templates, instantiateTemplate } = useCustomComponentLibrary();
-  const deleteTemplate = useCustomComponentStore((state) => state.deleteTemplate);
+  const { presets, instantiatePreset } = useElementPresetLibrary();
+  const deletePreset = useElementPresetStore((state) => state.deletePreset);
 
   const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
   // Registry-derived entries join the legacy list, which no longer holds the
@@ -113,7 +113,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       gcpServiceCount +
       azureServiceCount +
       services.length +
-      templates.length,
+      presets.length,
     [
       C4_OPTIONS.length,
       CANVAS_OPTIONS.length,
@@ -122,7 +122,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       gcpServiceCount,
       azureServiceCount,
       services.length,
-      templates.length,
+      presets.length,
     ],
   );
 
@@ -189,8 +189,8 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
 
   const filteredServices = useMemo(() => filterServicesByQuery(q, services), [q, services]);
   const filteredTemplates = useMemo(() => {
-    if (!q) return templates;
-    return templates.filter((template) => {
+    if (!q) return presets;
+    return presets.filter((template) => {
       const normalizedBaseType = String(template.baseType).toLowerCase();
       return (
         template.name.toLowerCase().includes(q) ||
@@ -198,7 +198,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         normalizedBaseType.includes(q)
       );
     });
-  }, [q, templates]);
+  }, [q, presets]);
 
   const getInsertPos = useCallback(
     () => rfInstance.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }),
@@ -289,7 +289,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         gcp: gcpServiceCount,
         azure: azureServiceCount,
         registry: services.length,
-        nodeTemplates: templates.length,
+        nodeTemplates: presets.length,
       }),
     [
       t,
@@ -301,7 +301,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       gcpServiceCount,
       azureServiceCount,
       services.length,
-      templates.length,
+      presets.length,
     ],
   );
 
@@ -471,11 +471,11 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
         ) : (
           <div className="grid grid-cols-3 gap-2">
             {filteredTemplates.map((template) => (
-              <NodeTemplatePreviewCard
+              <ElementPresetPreviewCard
                 key={template.id}
                 onClick={() => {
-                  const insertedNodeId = instantiateTemplate({
-                    templateId: template.id,
+                  const insertedNodeId = instantiatePreset({
+                    presetId: template.id,
                     position: getInsertPos(),
                   });
                   if (insertedNodeId) {
@@ -483,7 +483,7 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                     onClose();
                   }
                 }}
-                onDelete={() => deleteTemplate(template.id)}
+                onDelete={() => deletePreset(template.id)}
                 template={template}
               />
             ))}
@@ -558,9 +558,9 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
                   onAddAws={handleAddAws}
                   onAddCloud={handleAddCloudService}
                   onAddRegistry={handleAddService}
-                  onAddTemplate={(templateId) => {
-                    const insertedNodeId = instantiateTemplate({
-                      templateId,
+                  onAddTemplate={(id) => {
+                    const insertedNodeId = instantiatePreset({
+                      presetId: id,
                       position: getInsertPos(),
                     });
                     if (insertedNodeId) {

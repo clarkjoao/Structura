@@ -11,10 +11,10 @@ import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
 import { RegistryServiceRow } from "./RegistryServiceRow";
 import {
-  useCustomComponentStore,
-  NodeTemplatePreviewCard,
-  type CustomComponentTemplate,
-} from "@/features/custom-components";
+  useElementPresetStore,
+  ElementPresetPreviewCard,
+  type ElementPreset,
+} from "@/features/element-presets";
 
 export function ElementPickerSearchResults({
   searchTrimmed,
@@ -50,7 +50,7 @@ export function ElementPickerSearchResults({
   filteredGcpFlat: (CloudService & { categoryId: string })[];
   filteredAzureFlat: (CloudService & { categoryId: string })[];
   filteredServices: import("@/features/diagram").ServiceDefinition[];
-  filteredTemplates: CustomComponentTemplate[];
+  filteredTemplates: ElementPreset[];
   onCanvasServiceIds: Set<string>;
   onAddC4: (type: ComponentType, label: string) => void;
   onAddCanvas: (opt: CanvasPickerOption) => void;
@@ -61,7 +61,7 @@ export function ElementPickerSearchResults({
   onAddTemplate: (templateId: string) => void;
 }) {
   const { t } = useTranslation();
-  const deleteTemplate = useCustomComponentStore((state) => state.deleteTemplate);
+  const deletePreset = useElementPresetStore((state) => state.deletePreset);
 
   if (showSearchEmpty) {
     return (
@@ -219,15 +219,15 @@ export function ElementPickerSearchResults({
       {filteredTemplates.length > 0 && (
         <section>
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("customComponents.customComponents")} · {filteredTemplates.length}
+            {t("elementPresets.myPresets")} · {filteredTemplates.length}
           </h3>
           <div className="grid grid-cols-3 gap-2">
             {filteredTemplates.map((template) => (
-              <NodeTemplatePreviewCard
+              <ElementPresetPreviewCard
                 key={template.id}
                 template={template}
                 onClick={() => onAddTemplate(template.id)}
-                onDelete={() => deleteTemplate(template.id)}
+                onDelete={() => deletePreset(template.id)}
               />
             ))}
           </div>

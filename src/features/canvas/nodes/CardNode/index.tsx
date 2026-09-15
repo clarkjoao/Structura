@@ -180,7 +180,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
 
   return (
     <div
-      aria-label={t("customNode.ariaNamed", { name: d.name, type: d.type })}
+      aria-label={t("cardNode.ariaNamed", { name: d.name, type: d.type })}
       className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${
         isActive
           ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"

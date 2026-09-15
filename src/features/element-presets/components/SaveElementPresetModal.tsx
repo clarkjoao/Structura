@@ -11,19 +11,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-interface SaveCustomComponentModalProps {
+interface SaveElementPresetModalProps {
   defaultName: string;
   defaultDescription?: string;
   onSave: (name: string, description?: string) => void;
   onClose: () => void;
 }
 
-export function SaveCustomComponentModal({
+export function SaveElementPresetModal({
   defaultName,
   defaultDescription,
   onSave,
   onClose,
-}: SaveCustomComponentModalProps) {
+}: SaveElementPresetModalProps) {
   const { t } = useTranslation();
   const [name, setName] = useState(defaultName);
   const [description, setDescription] = useState(defaultDescription ?? "");
@@ -40,21 +40,21 @@ export function SaveCustomComponentModal({
       <DialogContent className="max-w-md">
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
-            <DialogTitle>{t("customComponents.saveAsTemplate")}</DialogTitle>
+            <DialogTitle>{t("elementPresets.saveAsPreset")}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-2">
-            <Label htmlFor="custom-component-name">{t("common.name")}</Label>
+            <Label htmlFor="element-preset-name">{t("common.name")}</Label>
             <Input
-              id="custom-component-name"
+              id="element-preset-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
               autoFocus
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="custom-component-description">{t("common.description")}</Label>
+            <Label htmlFor="element-preset-description">{t("common.description")}</Label>
             <Input
-              id="custom-component-description"
+              id="element-preset-description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
             />

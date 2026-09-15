@@ -1,12 +1,12 @@
 import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
 import { sanitizeComponentType } from "@/features/diagram";
-import type { CustomComponentTemplate } from "../types";
+import type { ElementPreset } from "../types";
 
 /**
- * Minimal node shape needed to seed a custom-component template.
+ * Minimal node shape needed to seed an element preset.
  * Intentionally not a React Flow `Node` — keeps this feature free of `@xyflow/react`.
  */
-export interface TemplateSourceNode {
+export interface PresetSourceNode {
   type?: string;
   data?: unknown;
 }
@@ -55,10 +55,7 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
-function resolveBaseType(
-  node: TemplateSourceNode,
-  nodeData: Record<string, unknown>,
-): ComponentType {
+function resolveBaseType(node: PresetSourceNode, nodeData: Record<string, unknown>): ComponentType {
   if (typeof node.type === "string" && node.type.length > 0) {
     return sanitizeComponentType(node.type);
   }
@@ -97,7 +94,7 @@ function removeUndefinedEntries(record: Record<string, unknown>): Record<string,
   return Object.fromEntries(Object.entries(record).filter(([, value]) => value !== undefined));
 }
 
-function templateRecordFromDomainComponent(component: Component): Record<string, unknown> {
+function presetRecordFromDomainComponent(component: Component): Record<string, unknown> {
   const skipKeys = new Set<string>(["id", "templateId"]);
   const next: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(component)) {
@@ -112,13 +109,13 @@ function templateRecordFromDomainComponent(component: Component): Record<string,
     }
   }
   // Sanitize the type so a corrupted component.type (e.g. "API Endpoints
-  // /api/v1 · REST" from a previous template-replication cycle) doesn't
-  // get persisted as the template's baseType.
+  // /api/v1 · REST" from a previous preset-replication cycle) doesn't
+  // get persisted as the preset's baseType.
   next.type = sanitizeComponentType(component.type);
   return removeUndefinedEntries(next);
 }
 
-function templateRecordFromStrippedNodeData(
+function presetRecordFromStrippedNodeData(
   nodeData: Record<string, unknown>,
   baseType: ComponentType,
 ): Record<string, unknown> {
@@ -138,8 +135,8 @@ function templateRecordFromStrippedNodeData(
   return removeUndefinedEntries(next);
 }
 
-export function createTemplateDataFromNode(
-  node: TemplateSourceNode,
+export function createPresetDataFromNode(
+  node: PresetSourceNode,
   domainComponent?: Component,
 ): {
   baseType: ComponentType;
@@ -153,8 +150,8 @@ export function createTemplateDataFromNode(
     (typeof nodeData.serviceId === "string" ? nodeData.serviceId : undefined);
 
   const data = domainComponent
-    ? templateRecordFromDomainComponent(domainComponent)
-    : templateRecordFromStrippedNodeData(nodeData, baseType);
+    ? presetRecordFromDomainComponent(domainComponent)
+    : presetRecordFromStrippedNodeData(nodeData, baseType);
 
   return {
     baseType,
@@ -163,18 +160,18 @@ export function createTemplateDataFromNode(
   };
 }
 
-export function buildComponentPatchFromTemplate(
-  template: CustomComponentTemplate,
+export function buildComponentPatchFromPreset(
+  preset: ElementPreset,
   hasRegistryService: boolean,
 ): ComponentPatch {
   const patch: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(template.data)) {
+  for (const [key, value] of Object.entries(preset.data)) {
     if (!ALLOWED_COMPONENT_PATCH_KEYS.has(key)) continue;
     patch[key] = value;
   }
-  patch.templateId = template.id;
-  if (template.serviceId && hasRegistryService) {
-    patch.serviceId = template.serviceId;
+  patch.templateId = preset.id;
+  if (preset.serviceId && hasRegistryService) {
+    patch.serviceId = preset.serviceId;
   } else {
     patch.serviceId = undefined;
   }

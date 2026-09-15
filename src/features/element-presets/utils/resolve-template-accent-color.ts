@@ -1,6 +1,6 @@
-import type { CustomComponentTemplate } from "../types";
+import type { ElementPreset } from "../types";
 
-type NodeTemplate = CustomComponentTemplate;
+type NodeTemplate = ElementPreset;
 
 export function resolveTemplateAccentColor(baseType: NodeTemplate["baseType"]): string {
   if (baseType === "panel") return "border-l-[3px] border-muted-foreground";

@@ -1,6 +1,6 @@
 export type { IStoragePort } from "./IStoragePort";
 export { isQuotaExceededError } from "./storageQuota";
-export { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
+export { mergeElementPresets } from "./merge-element-presets";
 export { LocalStorageAdapter, defaultStorage } from "./LocalStorageAdapter";
 export { InMemoryAdapter } from "./InMemoryAdapter";
 export { SyncStorageAdapter } from "./SyncStorageAdapter";
@@ -22,7 +22,4 @@ export {
 export type { ForceSaveToFolderResult } from "./fileSystemBoot";
 export { validateDiagramFile, validateManifest } from "./validateWorkspaceFile";
 export type { ValidationResult, ManifestValidationResult } from "./validateWorkspaceFile";
-export {
-  CustomComponentTemplateStore,
-  customComponentTemplateStore,
-} from "./customComponentTemplateStore";
+export { ElementPresetStore, elementPresetStore } from "./elementPresetStore";

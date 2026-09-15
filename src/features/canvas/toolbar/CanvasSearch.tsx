@@ -13,7 +13,7 @@ import {
 import type { Component } from "@/features/diagram";
 import { isPanelType, isNoteType, isApiGroupType } from "@/features/diagram";
 import { getElement, hasElement } from "@/features/elements/element.registry";
-import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
+import { TypeConfig } from "@/features/canvas/nodes/CardNode/TypeConfig";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useTranslation } from "react-i18next";
 

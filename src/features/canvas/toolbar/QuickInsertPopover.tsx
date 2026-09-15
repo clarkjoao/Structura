@@ -15,7 +15,7 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
 import { filterCloudServicesForQuery } from "./element-picker/pickerFilters";
 import { useTranslation } from "react-i18next";
-import { useCustomComponentLibrary } from "@/features/custom-components";
+import { useElementPresetLibrary } from "@/features/element-presets";
 
 type CanvasInsertOption = {
   type: ComponentType;
@@ -148,7 +148,7 @@ const QuickInsertPopover = ({
   const listRef = useRef<HTMLDivElement>(null);
   const { addComponent, addConnection, linkComponentToService } = useDiagramActions();
   const services = useAllServices();
-  const { templates, instantiateTemplate } = useCustomComponentLibrary();
+  const { presets, instantiatePreset } = useElementPresetLibrary();
 
   const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
 
@@ -284,7 +284,7 @@ const QuickInsertPopover = ({
 
   const filteredTemplates = useMemo(() => {
     if (!q) return [];
-    return templates.filter((template) => {
+    return presets.filter((template) => {
       const normalizedBaseType = String(template.baseType).toLowerCase();
       return (
         template.name.toLowerCase().includes(q) ||
@@ -292,7 +292,7 @@ const QuickInsertPopover = ({
         normalizedBaseType.includes(q)
       );
     });
-  }, [q, templates]);
+  }, [q, presets]);
 
   const flatOptions = useMemo((): FlatOption[] => {
     const flowchartAsCanvas: CanvasInsertOption[] = filteredFlowchart.map((opt) => ({
@@ -409,15 +409,15 @@ const QuickInsertPopover = ({
   );
 
   const handleSelectTemplate = useCallback(
-    (templateId: string) => {
-      const insertedNodeId = instantiateTemplate({
-        templateId,
+    (presetId: string) => {
+      const insertedNodeId = instantiatePreset({
+        presetId,
         position: insertPos,
       });
       if (!insertedNodeId) return;
       finalizeInsertion(insertedNodeId);
     },
-    [instantiateTemplate, insertPos, finalizeInsertion],
+    [instantiatePreset, insertPos, finalizeInsertion],
   );
 
   const selectOption = useCallback(
@@ -682,7 +682,7 @@ const QuickInsertPopover = ({
               filteredServices.length > 0) && <div className="border-t border-border my-1" />}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("customComponents.customComponents")}
+                {t("elementPresets.myPresets")}
               </span>
             </div>
             {filteredTemplates.map((template, index) => (

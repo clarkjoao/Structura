@@ -68,7 +68,7 @@ export function buildCategoryNavItems(
     },
     {
       id: ElementCategory.NodeTemplate,
-      label: t("customComponents.customComponents"),
+      label: t("elementPresets.myPresets"),
       icon: Bookmark,
       count: counts.nodeTemplates,
     },

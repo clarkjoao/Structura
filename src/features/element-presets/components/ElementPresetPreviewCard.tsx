@@ -1,20 +1,18 @@
 import type { ReactNode } from "react";
 import { Box, FileText, X } from "lucide-react";
-import type { CustomComponentTemplate } from "../types";
+import type { ElementPreset } from "../types";
 import { resolveTemplateAccentColor } from "../utils/resolve-template-accent-color";
 import { cn } from "@/lib/utils";
 import { useIconById, isPanelKind, isC4Type, isPanelType, isNoteType } from "@/features/diagram";
-import { TypeConfig } from "@/features/canvas/nodes/CustomNode/TypeConfig";
+import { TypeConfig } from "@/features/canvas/nodes/CardNode/TypeConfig";
 import { AWS_SERVICE_MAP, isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import CloudIcon from "@/features/canvas/nodes/CloudIcon";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 
-type NodeTemplate = CustomComponentTemplate;
-
-export interface NodeTemplatePreviewCardProps {
-  template: NodeTemplate;
+export interface ElementPresetPreviewCardProps {
+  template: ElementPreset;
   onClick: () => void;
   onDelete?: () => void;
 }
@@ -26,11 +24,11 @@ function readNonEmptyString(value: unknown): string | undefined {
   return trimmed;
 }
 
-export function NodeTemplatePreviewCard({
+export function ElementPresetPreviewCard({
   template,
   onClick,
   onDelete,
-}: NodeTemplatePreviewCardProps) {
+}: ElementPresetPreviewCardProps) {
   const customIconIdFromData = readNonEmptyString(template.data.customIconId) ?? "";
   const customIconDefinition = useIconById(customIconIdFromData);
 

@@ -30,12 +30,12 @@ import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
 import {
-  SaveCustomComponentModal,
-  useCustomComponentStore,
-  createTemplateDataFromNode,
-  CUSTOM_COMPONENT_DRAG_MIME,
-  useCustomComponentLibrary,
-} from "@/features/custom-components";
+  SaveElementPresetModal,
+  useElementPresetStore,
+  createPresetDataFromNode,
+  ELEMENT_PRESET_DRAG_MIME,
+  useElementPresetLibrary,
+} from "@/features/element-presets";
 import { AssistantUIChatPanel, FloatingChatButton } from "@/features/llm/components";
 import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
@@ -96,8 +96,8 @@ const Canvas = (props: CanvasProps = {}) => {
   const inputProfile = useCanvasInputProfile();
   const reactFlowInstance = useReactFlow();
   const edgeReconnect = useEdgeReconnect();
-  const addTemplate = useCustomComponentStore((state) => state.addTemplate);
-  const { instantiateTemplate } = useCustomComponentLibrary();
+  const addPreset = useElementPresetStore((state) => state.addPreset);
+  const { instantiatePreset } = useElementPresetLibrary();
   const {
     t,
     diagram,
@@ -309,21 +309,21 @@ const Canvas = (props: CanvasProps = {}) => {
             onContextMenu={(e) => e.preventDefault()}
             onDragOver={(event) => {
               if (!interactionMode.canEditCanvas) return;
-              if (event.dataTransfer.types.includes(CUSTOM_COMPONENT_DRAG_MIME)) {
+              if (event.dataTransfer.types.includes(ELEMENT_PRESET_DRAG_MIME)) {
                 event.preventDefault();
                 event.dataTransfer.dropEffect = "copy";
               }
             }}
             onDrop={(event) => {
               if (!interactionMode.canEditCanvas) return;
-              const templateId = event.dataTransfer.getData(CUSTOM_COMPONENT_DRAG_MIME);
-              if (!templateId) return;
+              const presetId = event.dataTransfer.getData(ELEMENT_PRESET_DRAG_MIME);
+              if (!presetId) return;
               event.preventDefault();
               const position = reactFlowInstance.screenToFlowPosition({
                 x: event.clientX,
                 y: event.clientY,
               });
-              instantiateTemplate({ templateId, position });
+              instantiatePreset({ presetId, position });
             }}
             className="w-full h-full"
           >
@@ -489,7 +489,7 @@ const Canvas = (props: CanvasProps = {}) => {
         )}
 
         {templateSourceNode ? (
-          <SaveCustomComponentModal
+          <SaveElementPresetModal
             defaultName={String(
               resolvedSnapshot.components[templateSourceNode.id]?.name ??
                 templateSourceNode.data?.name ??
@@ -504,8 +504,8 @@ const Canvas = (props: CanvasProps = {}) => {
             onClose={() => setTemplateNodeId(null)}
             onSave={(name, description) => {
               const domainComponent = resolvedSnapshot.components[templateSourceNode.id];
-              const templateData = createTemplateDataFromNode(templateSourceNode, domainComponent);
-              addTemplate({
+              const templateData = createPresetDataFromNode(templateSourceNode, domainComponent);
+              addPreset({
                 id: crypto.randomUUID(),
                 name,
                 description,

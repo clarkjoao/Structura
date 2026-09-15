@@ -1359,9 +1359,9 @@
       "closed": "Encerrado"
     }
   },
-  "customComponents": {
-    "customComponents": "Componentes salvos",
-    "saveAsTemplate": "Salvar como template"
+  "elementPresets": {
+    "myPresets": "Meus presets",
+    "saveAsPreset": "Salvar como preset"
   },
   "nodeContextMenu": {
     "sectionEdit": "Editar",
@@ -1411,7 +1411,7 @@
     "aria": "Elemento SVG: {{name}}",
     "defaultName": "SVG"
   },
-  "customNode": {
+  "cardNode": {
     "drillAria": "Explorar interior do elemento {{id}}",
     "ariaNamed": "{{name}} ({{type}})",
     "drillExplore": "Explorar interior",
