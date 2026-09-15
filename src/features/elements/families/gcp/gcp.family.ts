@@ -80,7 +80,8 @@ export const gcpFamily: CloudFamilyDefinition = {
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? GCP_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? gcpIconDataUri(service.iconName) : null;
-      const cloudServiceIdField = cloudService ? { cloudServiceId: cloudService } : {};
+      // Same control point as domain writes — projects onto ExportNode only.
+      const cloudServiceIdField = cloudServiceIdWrite(cloudService);
 
       if (dataUri) {
         return {

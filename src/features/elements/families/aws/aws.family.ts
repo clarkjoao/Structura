@@ -112,7 +112,8 @@ export const awsFamily: CloudFamilyDefinition = {
         kind: "aws",
         name: comp.name,
         awsIcon: awsServiceCache.getInfo(cloudServiceId ?? "").icon,
-        ...(cloudServiceId ? { cloudServiceId } : {}),
+        // Same control point as domain writes — projects onto ExportNode only.
+        ...cloudServiceIdWrite(cloudServiceId),
       };
     },
   },

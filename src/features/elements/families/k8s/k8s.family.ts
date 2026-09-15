@@ -73,7 +73,8 @@ export const k8sFamily: CloudFamilyDefinition = {
       const cloudService = resolveCloudServiceId(comp);
       const service = cloudService ? K8S_SERVICE_MAP.get(cloudService) : undefined;
       const dataUri = service ? k8sIconDataUri(service.iconName) : null;
-      const cloudServiceIdField = cloudService ? { cloudServiceId: cloudService } : {};
+      // Same control point as domain writes — projects onto ExportNode only.
+      const cloudServiceIdField = cloudServiceIdWrite(cloudService);
 
       if (dataUri) {
         return {
