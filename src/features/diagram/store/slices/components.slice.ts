@@ -111,7 +111,7 @@ export function buildComponentForType(
   name: string,
   parentId: string | null,
   panelKind: PanelKind | undefined,
-  awsService: string | undefined,
+  cloudServiceId: string | undefined,
   flowShape?: FlowNodeShape,
 ): { component: Component; resolvedPanelKind: PanelKind | undefined } {
   const base = { id, name, description: "", parentId };
@@ -122,13 +122,13 @@ export function buildComponentForType(
   if (isRegisteredElementType(type)) {
     const descriptor = getElement(type)!;
     return {
-      // `awsService` is the historical positional slot for every cloud
-      // family's service id (picker and LLM both pass it here). Descriptors
-      // read it as `ElementCreateOptions.serviceId`.
+      // 5th positional arg is cloudServiceId (F6b; was named awsService).
+      // Descriptors read it as `ElementCreateOptions.serviceId` → attachService
+      // writes `cloudServiceId` on the component.
       component: descriptor.model.createComponent(base, {
         panelKind,
         flowShape,
-        serviceId: awsService,
+        serviceId: cloudServiceId,
       }),
       // Still reported, because the caller passes it on to the layout builder
       // and a panel's size depends on which kind was asked for.
@@ -346,7 +346,7 @@ export const componentsSlice = (
     name: string,
     parentId: string | null,
     position?: { x: number; y: number },
-    awsService?: string,
+    cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: FlowNodeShape,
   ): Component => {
@@ -357,7 +357,7 @@ export const componentsSlice = (
       name,
       parentId,
       panelKind,
-      awsService,
+      cloudServiceId,
       flowShape,
     );
 
