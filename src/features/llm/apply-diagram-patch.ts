@@ -6,12 +6,7 @@ import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResu
 import { PATTERNS } from "@/lib/catalogs/patterns";
 import type { DiagramPatchAction } from "./types";
 import { listElementFamilies, searchElements } from "./element-catalog-query";
-import type { SearchElementsResult } from "./element-catalog-query";
-import {
-  collectConfirmedCatalogHits,
-  validateAddNodeAgainstConfirmedHits,
-  validateAddNodeAgainstRegistry,
-} from "./add-node-validation";
+import { validateAddNodeAgainstRegistry } from "./add-node-validation";
 
 export interface AppliedPatchResult {
   addedNodeId: string | null;
@@ -23,11 +18,6 @@ export interface AppliedPatchResult {
       "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS" | "LIST_ELEMENT_FAMILIES" | "SEARCH_ELEMENTS";
     data?: unknown;
   };
-}
-
-export interface ApplyAddNodeOptions {
-  /** Hits from search_elements already run in this same patch (F8b). */
-  confirmedCatalogHits?: Set<string> | null;
 }
 
 export function resolveRef(value: string, nameToIdMap: Map<string, string>): string {
@@ -67,7 +57,6 @@ export function resolveParentRef(
 export function applyDiagramPatchAction(
   action: DiagramPatchAction,
   nameToIdMap?: Map<string, string>,
-  addNodeOptions?: ApplyAddNodeOptions,
 ): AppliedPatchResult {
   const diagramState = useDiagramStore.getState();
 
@@ -85,24 +74,6 @@ export function applyDiagramPatchAction(
           skipped: true,
           skipReason: registryCheck.reason,
         };
-      }
-
-      const confirmed = addNodeOptions?.confirmedCatalogHits;
-      if (confirmed != null) {
-        const hitCheck = validateAddNodeAgainstConfirmedHits(
-          action.payload.nodeType,
-          action.payload.awsService,
-          confirmed,
-        );
-        if (!hitCheck.ok) {
-          console.warn(`[LLM] ADD_NODE skipped — ${hitCheck.reason}`);
-          return {
-            addedNodeId: null,
-            addedEdgeId: null,
-            skipped: true,
-            skipReason: hitCheck.reason,
-          };
-        }
       }
 
       const resolvedParentId = resolveParentRef(action.payload.parentId, nameToIdMap ?? new Map());
@@ -231,37 +202,30 @@ export function applyDiagramPatchAction(
 }
 
 /**
- * Run catalog-read actions for a patch and collect confirmed search hits.
+ * Run a patch's catalog-read actions and return their tool results.
  *
- * Call this *before* ADD_NODE so same-turn search_elements can gate cloud writes
- * without a multi-turn model loop (F8b).
+ * Call this *before* ADD_NODE. Ordering the reads first is what lets a model
+ * emit `search_elements` and `add_node` in one response and still have the
+ * results available in that same turn (F8b) — the useful half of that slice.
+ *
+ * It deliberately does **not** compute a set of "confirmed" pairs to validate
+ * the writes against; see `add-node-validation.ts` for why that gate was
+ * retired.
  */
 export function runCatalogReadActions(actions: DiagramPatchAction[]): {
   catalogToolResults: NonNullable<AppliedPatchResult["toolResult"]>[];
-  confirmedCatalogHits: Set<string> | null;
 } {
   const catalogToolResults: NonNullable<AppliedPatchResult["toolResult"]>[] = [];
-  const searchBatches: SearchElementsResult[] = [];
-  let sawSearch = false;
 
   for (const action of actions) {
     if (action.type !== "LIST_ELEMENT_FAMILIES" && action.type !== "SEARCH_ELEMENTS") {
       continue;
     }
-    if (action.type === "SEARCH_ELEMENTS") {
-      sawSearch = true;
-    }
     const applied = applyDiagramPatchAction(action);
     if (applied.toolResult) {
       catalogToolResults.push(applied.toolResult);
-      if (applied.toolResult.type === "SEARCH_ELEMENTS" && applied.toolResult.data) {
-        searchBatches.push(applied.toolResult.data as SearchElementsResult);
-      }
     }
   }
 
-  return {
-    catalogToolResults,
-    confirmedCatalogHits: sawSearch ? collectConfirmedCatalogHits(searchBatches) : null,
-  };
+  return { catalogToolResults };
 }

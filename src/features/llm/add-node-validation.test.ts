@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Component } from "@/features/diagram/model/component.types";
-import {
-  collectConfirmedCatalogHits,
-  validateAddNodeAgainstConfirmedHits,
-  validateAddNodeAgainstRegistry,
-} from "./add-node-validation";
+import { validateAddNodeAgainstRegistry } from "./add-node-validation";
 import { applyDiagramPatchAction, runCatalogReadActions } from "./apply-diagram-patch";
-import { searchElements } from "./element-catalog-query";
 import { buildComponentTypeCatalog } from "./component-catalog";
 
 const addComponent = vi.fn(
@@ -86,13 +81,24 @@ describe("F8b add_node validation", () => {
   });
 });
 
-describe("F8b same-turn search_elements gating", () => {
+describe("a catalog read in the same patch does not narrow what may be added", () => {
   beforeEach(() => {
     addComponent.mockClear();
   });
 
-  it("runs catalog reads and collects confirmed hits before writes", () => {
-    const { confirmedCatalogHits, catalogToolResults } = runCatalogReadActions([
+  const addNode = (nodeType: string, awsService?: string) =>
+    applyDiagramPatchAction({
+      type: "ADD_NODE",
+      payload: {
+        nodeType: nodeType as Component["type"],
+        name: "Node",
+        parentId: null,
+        ...(awsService === undefined ? {} : { awsService }),
+      },
+    });
+
+  it("still runs catalog reads before writes, so the model sees results in one turn", () => {
+    const { catalogToolResults } = runCatalogReadActions([
       { type: "SEARCH_ELEMENTS", payload: { query: "redis", familyId: "oss" } },
       {
         type: "ADD_NODE",
@@ -105,61 +111,52 @@ describe("F8b same-turn search_elements gating", () => {
       },
     ]);
     expect(catalogToolResults.some((row) => row.type === "SEARCH_ELEMENTS")).toBe(true);
-    expect(confirmedCatalogHits).not.toBeNull();
-    expect(
-      validateAddNodeAgainstConfirmedHits("oss-datastore", "redis", confirmedCatalogHits!).ok,
-    ).toBe(true);
   });
 
-  it("does not apply hallucinated add_node when search_elements is in the same patch", () => {
-    const { confirmedCatalogHits } = runCatalogReadActions([
+  it("applies an add_node that matches what was searched", () => {
+    runCatalogReadActions([
       { type: "SEARCH_ELEMENTS", payload: { query: "redis", familyId: "oss" } },
     ]);
-    expect(confirmedCatalogHits).not.toBeNull();
 
-    const hallucinated = applyDiagramPatchAction(
-      {
-        type: "ADD_NODE",
-        payload: {
-          nodeType: "aws-compute" as Component["type"],
-          name: "Invented",
-          parentId: null,
-          awsService: "lambda",
-        },
-      },
-      undefined,
-      { confirmedCatalogHits: confirmedCatalogHits! },
-    );
-    expect(hallucinated.skipped).toBe(true);
-    expect(hallucinated.addedNodeId).toBeNull();
+    const applied = addNode("oss-datastore", "redis");
+
+    expect(applied.skipped).toBeFalsy();
+    expect(applied.addedNodeId).toBeTruthy();
+    expect(addComponent).toHaveBeenCalledWith("oss-datastore", "Node", null, undefined, "redis");
+  });
+
+  it("applies a valid add_node unrelated to the search in the same patch", () => {
+    // The regression this replaces: searching for Redis used to drop every
+    // cloud node that was not in those results, so `lambda` — a registered
+    // service the model knew from the prompt catalog — was discarded as a
+    // "hallucination". Searching must not cost the model the rest of its work.
+    runCatalogReadActions([
+      { type: "SEARCH_ELEMENTS", payload: { query: "redis", familyId: "oss" } },
+    ]);
+
+    const applied = addNode("aws-compute", "lambda");
+
+    expect(applied.skipped).toBeFalsy();
+    expect(applied.addedNodeId).toBeTruthy();
+    expect(addComponent).toHaveBeenCalledWith("aws-compute", "Node", null, undefined, "lambda");
+  });
+
+  it("still rejects an invented pair, searched or not", () => {
+    runCatalogReadActions([
+      { type: "SEARCH_ELEMENTS", payload: { query: "redis", familyId: "oss" } },
+    ]);
+    expect(addNode("aws-compute", "not-a-service").skipped).toBe(true);
+    expect(addNode("aws-invented", "lambda").skipped).toBe(true);
+    expect(addNode("oss-datastore", "lambda").skipped).toBe(true);
+
+    addComponent.mockClear();
+    expect(addNode("aws-compute", "not-a-service").skipped).toBe(true);
     expect(addComponent).not.toHaveBeenCalled();
   });
 
-  it("applies add_node when it matches a same-patch search hit", () => {
-    const search = searchElements({ query: "redis", familyId: "oss" });
-    const hits = collectConfirmedCatalogHits([search]);
-
-    const applied = applyDiagramPatchAction(
-      {
-        type: "ADD_NODE",
-        payload: {
-          nodeType: "oss-datastore" as Component["type"],
-          name: "Cache",
-          parentId: null,
-          awsService: "redis",
-        },
-      },
-      undefined,
-      { confirmedCatalogHits: hits },
-    );
-    expect(applied.skipped).toBeFalsy();
-    expect(applied.addedNodeId).toBeTruthy();
-    expect(addComponent).toHaveBeenCalledWith("oss-datastore", "Cache", null, undefined, "redis");
-  });
-
-  it("documents the preferred search-then-add_node prompt contract", () => {
+  it("tells the model to search without threatening to drop unmatched writes", () => {
     const catalog = buildComponentTypeCatalog();
-    expect(catalog).toContain("Prefer a search-only response first");
-    expect(catalog).toContain("unmatched add_node calls are skipped");
+    expect(catalog).toContain("search_elements");
+    expect(catalog).not.toContain("unmatched add_node calls are skipped");
   });
 });

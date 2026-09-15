@@ -662,8 +662,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
           // F8b: catalog reads first so search_elements hits can gate ADD_NODE
           // in the same turn (no multi-turn model loop required).
-          const { catalogToolResults: earlyCatalogResults, confirmedCatalogHits } =
-            runCatalogReadActions(parsedResponse.patch.actions);
+          const { catalogToolResults: earlyCatalogResults } = runCatalogReadActions(
+            parsedResponse.patch.actions,
+          );
           catalogToolResults.push(...earlyCatalogResults);
 
           const previewNodeIds: string[] = [];
@@ -671,14 +672,13 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
           const nameToIdMap = new Map<string, string>();
           const nodesMissingPosition: string[] = [];
-          const addNodeOpts = confirmedCatalogHits != null ? { confirmedCatalogHits } : undefined;
 
           // Pass 1: Create root nodes (no parentId or null parentId)
           for (const action of addNodeActions) {
             const hasParentRef = action.payload.parentId?.startsWith("@ref:");
             if (hasParentRef) continue;
 
-            const applied = applyDiagramPatchAction(action, nameToIdMap, addNodeOpts);
+            const applied = applyDiagramPatchAction(action, nameToIdMap);
             if (applied.addedNodeId) {
               previewNodeIds.push(applied.addedNodeId);
               const name = action.payload.name?.trim();
@@ -696,7 +696,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             const hasParentRef = action.payload.parentId?.startsWith("@ref:");
             if (!hasParentRef) continue;
 
-            const applied = applyDiagramPatchAction(action, nameToIdMap, addNodeOpts);
+            const applied = applyDiagramPatchAction(action, nameToIdMap);
             if (applied.addedNodeId) {
               previewNodeIds.push(applied.addedNodeId);
               const name = action.payload.name?.trim();

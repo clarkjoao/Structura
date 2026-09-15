@@ -2,13 +2,8 @@ import { cloudRegistry } from "@/features/cloud";
 import { hasElement } from "@/features/elements/element.registry";
 import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
 import type { DiagramPatchAction } from "./types";
-import type { SearchElementsResult } from "./element-catalog-query";
 
 export type AddNodeValidation = { ok: true } | { ok: false; reason: string };
-
-function catalogHitKey(elementType: string, serviceId: string | null): string {
-  return `${elementType}\0${serviceId ?? ""}`;
-}
 
 /**
  * True when `nodeType` is a cloud/tech category that carries service variants.
@@ -81,41 +76,32 @@ export function validateAddNodeAgainstRegistry(
   return { ok: true };
 }
 
-/** Collect (elementType, serviceId) pairs returned by search_elements in this patch. */
-export function collectConfirmedCatalogHits(searchResults: SearchElementsResult[]): Set<string> {
-  const hits = new Set<string>();
-  for (const batch of searchResults) {
-    for (const row of batch.results) {
-      hits.add(catalogHitKey(row.elementType, row.serviceId));
-    }
-  }
-  return hits;
-}
-
 /**
- * When this patch already ran search_elements, cloud add_node targets must
- * appear in those results (same-turn dependency resolution without a model loop).
+ * Why there is no same-turn "must appear in this patch's search results" gate.
+ *
+ * F8b added one: when a patch contained `search_elements`, every cloud
+ * `add_node` in that patch had to be an exact `(elementType, serviceId)` pair
+ * returned by those searches. It rejected valid nodes. `search_elements("redis")`
+ * followed by `add_node("aws-compute", "lambda")` dropped the Lambda — a real,
+ * registered service — because the model had searched for something else in the
+ * same response. Searching made the model *more* constrained, so the better it
+ * behaved (look one thing up, compose the rest from the prompt catalog) the more
+ * work was silently discarded.
+ *
+ * The gate cannot be narrowed to "only the add_nodes the searches covered"
+ * either: a search's scope is a text query, not a namespace, so
+ * `search_elements("redis", family "oss")` does not cover `(oss-messaging,
+ * kafka)` any more than it covers Lambda. Deciding whether a pair was "in
+ * scope" is the same computation as re-running the search, which is what the
+ * rejected gate already did.
+ *
+ * `validateAddNodeAgainstRegistry` is sound and sufficient for the property
+ * that actually matters: the pair exists. An invented type or an invented
+ * service id is rejected whether or not a search ran; a registered pair is
+ * valid whether or not the model looked it up this turn. Catalog reads still
+ * run before writes (`runCatalogReadActions`) so the model can act on results
+ * in one turn — that ordering was the useful half of F8b and it stays.
  */
-export function validateAddNodeAgainstConfirmedHits(
-  nodeType: string,
-  serviceId: string | null | undefined,
-  confirmedHits: Set<string>,
-): AddNodeValidation {
-  if (!isCloudCatalogType(nodeType)) {
-    return { ok: true };
-  }
-  const key = catalogHitKey(nodeType, serviceId ?? null);
-  if (!confirmedHits.has(key)) {
-    return {
-      ok: false,
-      reason:
-        `Cloud add_node (${nodeType}, serviceId=${serviceId ?? "null"}) was not ` +
-        `returned by search_elements in this same patch. Call search_elements first ` +
-        `and only add_node with an exact hit (or wait for the next turn).`,
-    };
-  }
-  return { ok: true };
-}
 
 export function patchContainsSearchElements(actions: DiagramPatchAction[]): boolean {
   return actions.some((action) => action.type === "SEARCH_ELEMENTS");

@@ -66,8 +66,15 @@ rather than a runtime fallback to legacy writes.
 ## LLM / IR
 
 - Palette and tools: hierarchical `list_element_families` + `search_elements`.
-- Same-turn patches: catalog reads run before `ADD_NODE` so a `search_elements`
-  hit can gate cloud writes in one model turn (F8b).
+- Same-turn patches: catalog reads run before `ADD_NODE`, so a model that emits
+  `search_elements` and `add_node` in one response acts on the results in that
+  same turn (F8b).
+- **Validity is the registry, not the search.** `validateAddNodeAgainstRegistry`
+  is the only thing that rejects an `ADD_NODE`: the `(elementType, serviceId)`
+  pair must exist. F8b additionally required cloud writes to appear in that
+  patch's own search results; that dropped valid nodes — `search_elements("redis")`
+  plus `add_node("aws-compute", "lambda")` lost the Lambda — so it was retired.
+  See the rationale block in `llm/add-node-validation.ts`.
 - Diagram IR AWS category vocabulary: `getIrSemanticTypes()` / `AWS_CATEGORIES`
   — never a load-time snapshot of `allElements()` inside the LLM chunk.
 
