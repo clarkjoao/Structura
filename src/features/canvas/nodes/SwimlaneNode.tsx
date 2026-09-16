@@ -44,8 +44,7 @@ export function withAlpha(color: string, opacityPct: number): string {
  * in between we use a soft off-white that reads on either side.
  *
  * Supports `#rgb` / `#rrggbb` and `hsl(h s% l%)` inputs (HSL is converted
- * inline; we don't pull in the ColorSwatches helpers to keep this component
- * dependency-light).
+ * inline to keep this component dependency-light).
  */
 function pickLabelColor(laneColor: string, opacityPct: number): string {
   const alpha = Math.max(0, Math.min(1, opacityPct / 100));
