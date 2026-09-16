@@ -1,7 +1,11 @@
 // Leaf imports, not the `@/features/diagram` barrel: that barrel re-exports the
 // Zustand store, and nothing on the layout path should drag the store into its
 // import graph.
-import { isPanelType, isDbTableType } from "@/features/diagram/model/component-type-constants";
+import {
+  isPanelType,
+  isDbTableType,
+  isEndpointType,
+} from "@/features/diagram/model/component-type-constants";
 import {
   DEFAULT_NODE_H,
   DEFAULT_NODE_W,
@@ -11,6 +15,7 @@ import {
 import type { Component } from "@/features/diagram/model/component.types";
 import type { Connection } from "@/features/diagram/model/connection.types";
 import type { NodeLayout } from "@/features/diagram/model/layout.types";
+import { computeApiGroupSize } from "@/features/diagram/utils/api-group-size";
 import type { LayoutGraph, LayoutNode } from "./contract";
 import { isApiGroupComponent } from "@/features/diagram/model/component.guards";
 
@@ -42,10 +47,37 @@ function dbTableHeight(columns: Array<{ id: string }>): number {
   return DB_TABLE_FIXED_H + columns.length * DB_TABLE_ROW_H;
 }
 
+function countEndpointChildren(
+  groupId: string,
+  components: Record<string, Component>,
+): number {
+  let count = 0;
+  for (const child of Object.values(components)) {
+    if (child.parentId === groupId && isEndpointType(child.type)) count += 1;
+  }
+  return count;
+}
+
+/**
+ * Layout node id for a connection end: grouped endpoints collapse onto their
+ * api-group so ELK sees the relationships the canvas draws to route rows.
+ */
+function layoutEndpointId(
+  componentId: string,
+  components: Record<string, Component>,
+  apiGroupIds: ReadonlySet<string>,
+): string {
+  const component = components[componentId];
+  if (!component?.parentId) return componentId;
+  if (apiGroupIds.has(component.parentId)) return component.parentId;
+  return componentId;
+}
+
 function sizeOf(
   component: Component,
   nodeLayouts: Record<string, NodeLayout>,
   measured: FromDiagramOptions["measured"],
+  components: Record<string, Component>,
 ): { width: number; height: number } {
   const stored = nodeLayouts[component.id];
   if (
@@ -64,6 +96,9 @@ function sizeOf(
 
   if (isPanelType(component.type)) {
     return { width: PANEL_DEFAULT_W, height: PANEL_DEFAULT_H };
+  }
+  if (isApiGroupComponent(component)) {
+    return computeApiGroupSize(countEndpointChildren(component.id, components));
   }
   if (isDbTableType(component.type)) {
     // db-table's height is derived from its column count; the canvas computes this
@@ -146,17 +181,24 @@ export function fromDiagram(
   for (const id of included) {
     const component = components[id];
     if (component === undefined) continue;
-    const { width, height } = sizeOf(component, nodeLayouts, options.measured);
+    const { width, height } = sizeOf(component, nodeLayouts, options.measured, components);
     nodes.push({ id, parentId: component.parentId ?? null, width, height });
   }
 
-  const edges = connections
-    .filter((connection) => included.has(connection.sourceId) && included.has(connection.targetId))
-    .map((connection) => ({
-      id: connection.id,
-      sourceId: connection.sourceId,
-      targetId: connection.targetId,
-    }));
+  // Remap ends that sit on grouped endpoints onto the api-group, then drop
+  // self-loops and duplicate peer pairs so ELK sees one relationship per pair.
+  const seenPairs = new Set<string>();
+  const edges: LayoutGraph["edges"] = [];
+  for (const connection of connections) {
+    const sourceId = layoutEndpointId(connection.sourceId, components, apiGroupIds);
+    const targetId = layoutEndpointId(connection.targetId, components, apiGroupIds);
+    if (!included.has(sourceId) || !included.has(targetId)) continue;
+    if (sourceId === targetId) continue;
+    const pairKey = `${sourceId}->${targetId}`;
+    if (seenPairs.has(pairKey)) continue;
+    seenPairs.add(pairKey);
+    edges.push({ id: connection.id, sourceId, targetId });
+  }
 
   return { nodes, edges };
 }
