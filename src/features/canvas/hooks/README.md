@@ -131,7 +131,6 @@ of edge and menu state must not.
 | Hook              | Goal                                                                                                                                                                                                                               |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useCanvasNodes`  | Translates resolved diagram components and layouts into React Flow nodes. It layers in selection, compare diffs, flow overlays, drag-parenting affordances, tag filtering, pending LLM previews, and node-type-specific callbacks. |
-| `useApiGroupSize` | Re-exports API group sizing constants and computation from the diagram feature so the canvas node implementation can stay aligned with the shared model logic.                                                                     |
 
 ## Flow hooks
 
@@ -149,7 +148,6 @@ of edge and menu state must not.
 | `useLLMChat`        | Presents the canvas chat UI with diagram-aware context. It syncs chat history to the active diagram and enriches outgoing prompts with both diagram context and structured mentions. |
 | `useDiagramContext` | Serializes the active diagram, resolved snapshot, active scene, metadata, and external links into a text block suitable for LLM prompts.                                             |
 | `useMentionSearch`  | Builds and searches the list of mentionable nodes and edges from the active diagram snapshot.                                                                                        |
-| `useMentionInput`   | Manages the mention-aware text input model, including picker visibility, parsed mention segments, active mention extraction, and insert/remove behavior.                             |
 
 ## Navigation hooks
 

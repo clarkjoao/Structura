@@ -1312,11 +1312,7 @@
     "useCustom": "Use “{{custom}}”"
   },
   "colorSwatches": {
-    "default": "Default",
-    "moreColors": "More colors",
-    "customColor": "Custom color",
-    "showLess": "Show less",
-    "hexPlaceholder": "ffffff"
+    "default": "Default"
   },
   "multiSelect": {
     "title": "Multi-selection",
@@ -1468,10 +1464,6 @@
     "ariaNamed": "{{name}} ({{type}})",
     "drillExplore": "Explore inside",
     "embedDiagram": "Embed diagram"
-  },
-  "reorderHandles": {
-    "moveUp": "Move handle {{index}} up",
-    "moveDown": "Move handle {{index}} down"
   },
   "customEdge": {
     "coveredBy": "Covered by: {{names}}",

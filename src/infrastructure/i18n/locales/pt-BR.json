@@ -1312,11 +1312,7 @@
     "useCustom": "Usar “{{custom}}”"
   },
   "colorSwatches": {
-    "default": "Padrão",
-    "moreColors": "Mais cores",
-    "customColor": "Cor customizada",
-    "showLess": "Ver menos",
-    "hexPlaceholder": "ffffff"
+    "default": "Padrão"
   },
   "multiSelect": {
     "title": "Seleção múltipla",
@@ -1468,10 +1464,6 @@
     "ariaNamed": "{{name}} ({{type}})",
     "drillExplore": "Explorar interior",
     "embedDiagram": "Incorporar diagrama"
-  },
-  "reorderHandles": {
-    "moveUp": "Mover handle {{index}} para cima",
-    "moveDown": "Mover handle {{index}} para baixo"
   },
   "customEdge": {
     "coveredBy": "Coberto por: {{names}}",
