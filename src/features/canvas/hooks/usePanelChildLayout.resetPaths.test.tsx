@@ -5,19 +5,15 @@ import type { ReactNode } from "react";
 import { useDiagramStore } from "@/features/diagram";
 
 /**
- * "Organize children (LR)" leaves the connection paths reset, same as
- * "Auto Layout (LR)".
+ * "Organize children (LR)" keeps ELK bend points, same as whole-diagram
+ * Auto Layout (Cmd/Ctrl+Shift+L).
  *
- * The two are the same gesture on different scopes, and they hit the same
- * mismatch: ELK routes border to border while the canvas draws handle to
- * handle, so the bend points ELK produces describe a path for endpoints the
- * edge never uses. Half a rule — one command clearing the paths and its sibling
- * writing them back — is worse than either answer on its own.
+ * Mid-X orthogonal Zs after a path reset crossed and ran through nodes; the
+ * call site therefore omits `resetPaths` so `applyLayoutResultEdges` writes
+ * interior waypoints. Scope (`edgeIds`) is still this panel's edges only.
  *
  * `applyLayoutResultEdges` is mocked so this asserts what the call site asks
- * for. What the helper then does with `resetPaths` is held by
- * `layout/applyLayoutResult.resetPaths.test.ts`; proving it twice here would
- * test the helper again and this call site not at all.
+ * for. Waypoint writing itself is covered by `applyLayoutResult.test.ts`.
  */
 
 vi.mock("sonner", () => ({
@@ -54,7 +50,7 @@ describe("panel child layout", () => {
     applyLayoutResultEdges.mockClear();
   });
 
-  it("asks for the connection paths to be reset", async () => {
+  it("keeps ELK waypoints (does not ask to reset paths)", async () => {
     const panelId = seedDiagram();
     const { result } = renderHook(() => usePanelChildLayout(), { wrapper });
 
@@ -64,12 +60,12 @@ describe("panel child layout", () => {
 
     expect(applyLayoutResultEdges).toHaveBeenCalled();
     const options = applyLayoutResultEdges.mock.calls[0]![3] as { resetPaths?: boolean };
-    expect(options.resetPaths).toBe(true);
+    expect(options.resetPaths).toBeUndefined();
   });
 
   /**
    * The scope is the other half of what this call site owns: it lays out one
-   * panel, so it must not clear paths on edges elsewhere in the diagram.
+   * panel, so it must not rewrite paths on edges elsewhere in the diagram.
    */
   it("still limits itself to the edges it laid out", async () => {
     const panelId = seedDiagram();

@@ -5,7 +5,7 @@ import { Play } from "lucide-react";
 import type { EndpointHandler, FlowRef, HttpMethod } from "@/features/diagram";
 import { ENDPOINT_H, METHOD_COLORS } from "./ApiGroupNode/constants";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export { METHOD_COLORS } from "./ApiGroupNode/constants";
 

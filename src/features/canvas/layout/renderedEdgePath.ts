@@ -22,9 +22,10 @@ import type { ElkNode } from "elkjs";
  */
 
 /**
- * Handle anchor, matching `buildHandles`: `n` handles clamped to [1, 4], handle
- * `i` at `(i + 1) / (n + 1)` of the node height. A single handle sits at the
- * default 50%, which the same formula yields for n = 1.
+ * Handle anchor, matching `buildHandles`: `n` handles clamped to
+ * `[MIN_HANDLES, MAX_HANDLES]`, handle `i` at `(i + 1) / (n + 1)` of the node
+ * height. A single handle sits at the default 50%, which the same formula
+ * yields for n = 1.
  *
  * The side is fixed — sources leave on the right, targets arrive on the left,
  * whatever the geometry — because that is what the canvas draws. See the module

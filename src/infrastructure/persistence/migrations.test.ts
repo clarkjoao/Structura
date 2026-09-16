@@ -23,7 +23,7 @@ function makeDiagram(components: Record<string, Component>): Diagram {
 }
 
 describe("migrateDiagram sanitises corrupted component types", () => {
-  it("repairs a known corrupted type by falling back to 'component'", () => {
+  it("repairs a known corrupted type by falling back to 'unknown'", () => {
     const corrupted = {
       id: "el-1",
       type: "API Endpoints /api/v1 · REST",
@@ -33,7 +33,7 @@ describe("migrateDiagram sanitises corrupted component types", () => {
     } as unknown as Component;
     const diagram = makeDiagram({ "el-1": corrupted });
     const migrated = migrateDiagram(diagram, 1);
-    expect(migrated.snapshot.components["el-1"].type).toBe("component");
+    expect(migrated.snapshot.components["el-1"].type).toBe("unknown");
   });
 
   it("preserves built-in types", () => {
@@ -47,6 +47,19 @@ describe("migrateDiagram sanitises corrupted component types", () => {
     const diagram = makeDiagram({ "el-1": apiGroup });
     const migrated = migrateDiagram(diagram, 1);
     expect(migrated.snapshot.components["el-1"].type).toBe("api-group");
+  });
+
+  it("preserves cloud category types (the §4.2 bug)", () => {
+    const aws = {
+      id: "el-1",
+      type: "aws-compute",
+      name: "Compute",
+      description: "",
+      parentId: null,
+    } as unknown as Component;
+    const diagram = makeDiagram({ "el-1": aws });
+    const migrated = migrateDiagram(diagram, 1);
+    expect(migrated.snapshot.components["el-1"].type).toBe("aws-compute");
   });
 
   it("preserves plugin namespaced types", () => {
@@ -88,6 +101,6 @@ describe("migrateDiagram sanitises corrupted component types", () => {
     diagram.activeSceneId = "s1";
 
     const migrated = migrateDiagram(diagram, 1);
-    expect(migrated.scenes?.s1.addedComponents["el-1"].type).toBe("component");
+    expect(migrated.scenes?.s1.addedComponents["el-1"].type).toBe("unknown");
   });
 });

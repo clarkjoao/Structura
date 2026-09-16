@@ -4,7 +4,6 @@ import { X, Trash2, Braces } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LazyMonacoEditor as Editor, type EditorProps } from "@/lib/monaco/LazyMonacoEditor";
 import type { JsonViewerComponent, ComponentPatch } from "@/features/diagram";
-import { useActiveDiagram } from "@/features/diagram";
 import TabBar, { type Tab } from "./components/TabBar";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import { cn } from "@/lib/utils";
@@ -56,7 +55,6 @@ export default function JsonViewerPanel({
   focusTitleTrigger = 0,
 }: JsonViewerPanelProps) {
   const { t } = useTranslation();
-  const activeDiagram = useActiveDiagram();
   const { theme } = useTheme();
   const titleInputRef = useRef<HTMLInputElement>(null);
   const editorTheme = theme === "dark" ? "vs-dark" : "light";
@@ -285,7 +283,6 @@ export default function JsonViewerPanel({
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

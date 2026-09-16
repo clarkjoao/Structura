@@ -108,7 +108,7 @@ describe("buildMxGraphXml — 1:1 positioning", () => {
 describe("buildMxGraphXml — per-kind cells", () => {
   it("uses the C4 default box for a node with unknown size (0)", () => {
     const xml = buildMxGraphXml(model([c4("a", 0, 0)]), { wrapper: "mxfile" });
-    // c4() helper uses subtype="system" → 200×80 (matches canvas CustomNode).
+    // c4() helper uses subtype="system" → 200×80 (matches canvas CardNode).
     expect(xml).toContain(`width="200" height="80"`);
     expect(xml).toContain(`c4Type="Software System"`);
   });
@@ -196,7 +196,7 @@ describe("buildMxGraphXml — per-kind cells", () => {
   });
 
   it("emits per-subtype C4 boxes that match the canvas (180×70, 200×80)", () => {
-    // Pins C4_META so a future drift between the canvas CustomNode and the
+    // Pins C4_META so a future drift between the canvas CardNode and the
     // export surfaces as a test failure instead of a proportion regression.
     const persons: ExportNode[] = [
       { ...c4("a", 0, 0), subtype: "person" } as ExportNode,

@@ -95,7 +95,7 @@ describe("parseLLMResponse", () => {
     }
   });
 
-  it("logs read toolCalls and does not append them as actions", () => {
+  it("logs non-catalog read toolCalls and does not append them as actions", () => {
     const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
     const raw = JSON.stringify({
       message: "Read only",
@@ -118,6 +118,27 @@ describe("parseLLMResponse", () => {
     }
     expect(infoSpy).toHaveBeenCalled();
     infoSpy.mockRestore();
+  });
+
+  it("converts catalog read toolCalls into actions", () => {
+    const raw = JSON.stringify({
+      message: "Looking up",
+      patch: {
+        id: "p1",
+        description: "d",
+        actions: [],
+        toolCalls: [
+          { tool: "list_element_families", parameters: {} },
+          { tool: "search_elements", parameters: { query: "redis", familyId: "oss" } },
+        ],
+      },
+    });
+    const result = parseLLMResponse(raw);
+    expect(result.kind).toBe("patch");
+    if (result.kind === "patch") {
+      expect(result.patch?.actions.some((a) => a.type === "LIST_ELEMENT_FAMILIES")).toBe(true);
+      expect(result.patch?.actions.some((a) => a.type === "SEARCH_ELEMENTS")).toBe(true);
+    }
   });
 
   it("uses fallback message for malformed JSON that looks like an object", () => {

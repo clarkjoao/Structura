@@ -149,6 +149,47 @@ describe("serializeDiagramContext", () => {
     const out = serializeDiagramContext(diagram);
     expect(out).toContain('name="x"');
   });
+
+  it("does not serialize business-catalog serviceId as awsService (svc-pay leak)", () => {
+    const diagram = minimalDiagram({
+      snapshot: {
+        components: {
+          pay: {
+            id: "pay",
+            name: "Payments",
+            type: "system",
+            description: "",
+            parentId: null,
+            serviceId: "svc-pay",
+          },
+          bare: {
+            id: "bare",
+            name: "Workload",
+            type: "k8s-workloads",
+            description: "",
+            parentId: null,
+            serviceId: "svc-pay",
+          },
+          lambda: {
+            id: "lambda",
+            name: "Orders Fn",
+            type: "aws-compute",
+            description: "",
+            parentId: null,
+            cloudServiceId: "lambda",
+            serviceId: "svc-pay",
+          },
+        },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+    });
+    const out = serializeDiagramContext(diagram);
+    expect(out).not.toContain('awsService="svc-pay"');
+    expect(out).toContain("id=lambda;");
+    expect(out).toContain('awsService="lambda"');
+  });
 });
 
 describe("serializeDiagramContext with activeScene", () => {

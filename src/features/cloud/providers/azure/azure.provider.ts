@@ -7,22 +7,6 @@ import {
 import type { CloudCategory, CloudProviderAdapter, CloudService } from "../../model/cloud.types";
 import { azureIconResolver } from "./azure.icon-resolver";
 
-const AZURE_CATEGORY_BORDERS: Record<string, string> = {
-  "azure-compute": "border-l-azure-compute",
-  "azure-storage": "border-l-azure-storage",
-  "azure-database": "border-l-azure-database",
-  "azure-networking": "border-l-azure-networking",
-  "azure-security": "border-l-azure-security",
-  "azure-analytics": "border-l-azure-analytics",
-  "azure-ai": "border-l-azure-ai",
-  "azure-integration": "border-l-azure-integration",
-  "azure-devtools": "border-l-azure-devtools",
-  "azure-iot": "border-l-azure-iot",
-  "azure-management": "border-l-azure-management",
-  "azure-media": "border-l-azure-media",
-  "azure-general": "border-l-azure-general",
-};
-
 const categories: CloudCategory[] = AZURE_CATEGORIES.map((cat) => ({
   id: cat.id,
   providerId: "azure",
@@ -65,7 +49,8 @@ export const azureProvider: CloudProviderAdapter = {
     };
   },
 
+  // No dedicated border map: same formula as `borderClassForAccent` / GCP.
   getCategoryStyle: (categoryId) => ({
-    borderClass: AZURE_CATEGORY_BORDERS[categoryId] ?? "border-l-azure-general",
+    borderClass: `border-l-${categoryId}`,
   }),
 };

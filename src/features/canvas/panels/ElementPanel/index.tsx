@@ -6,26 +6,14 @@ import {
   useConnections,
   useComponents,
   useDiagramActions,
-  useFlows,
-  isEndpointComponent,
-  isDbTableComponent,
-  isApiGroupComponent,
-  isJsonViewerComponent,
   isPanelComponent,
-  isExternalElementComponent,
-  type DbTableComponent,
-  type ExternalElementComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { MultiSelectPanel } from "../MultiSelectPanel";
+import { getElement } from "@/features/elements/element.registry";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
-import EndpointPanel from "./EndpointPanel";
-import ApiGroupPanel from "./ApiGroupPanel";
-import JsonViewerPanel from "./JsonViewerPanel";
-import DbTablePanel from "./DbTablePanel";
-import ExternalElementPanel from "./ExternalElementPanel";
 
 interface Props {
   selectedElementId: string | null;
@@ -48,7 +36,6 @@ const ElementPanel = ({
   const component = useComponent(selectedElementId ?? "");
   const resolvedComponents = useComponents();
   const connections = useConnections();
-  const flows = useFlows();
   const {
     updateComponent,
     removeComponent,
@@ -57,7 +44,6 @@ const ElementPanel = ({
     groupNodes,
     ungroupNodes,
   } = useDiagramActions();
-  const availableFlows = flows.map((f) => ({ id: f.id, name: f.name }));
 
   if (selectedNodes.length > 1) {
     return <MultiSelectPanel selectedNodes={selectedNodes} onClose={onClose} />;
@@ -81,85 +67,28 @@ const ElementPanel = ({
   }
 
   if (selectedElementId && component) {
+    // Registered elements answer first; the guard chain below still owns every
+    // type that has not migrated.
+    const RegisteredPanel = getElement(component.type)?.inspector.panel;
+    if (RegisteredPanel) {
+      return (
+        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+          <CollabEditingWarning elementId={selectedElementId} />
+          <RegisteredPanel
+            component={component}
+            onClose={onClose}
+            updateComponent={updateComponent}
+            removeComponent={removeComponent}
+            focusTitleTrigger={focusTitleTrigger}
+          />
+        </div>
+      );
+    }
+
     const canGroup = selectedNodeIds.length >= 2;
     const isPanelWithChildren =
       isPanelComponent(component) &&
       Object.values(resolvedComponents).some((c) => c.parentId === component.id);
-
-    if (isEndpointComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <EndpointPanel
-            component={component}
-            onClose={onClose}
-            updateComponent={updateComponent}
-            removeComponent={removeComponent}
-            availableFlows={availableFlows}
-          />
-        </div>
-      );
-    }
-
-    if (isDbTableComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <DbTablePanel
-            component={component}
-            onClose={onClose}
-            updateComponent={
-              updateComponent as (id: string, patch: Partial<Omit<DbTableComponent, "id">>) => void
-            }
-            removeComponent={removeComponent}
-            focusTitleTrigger={focusTitleTrigger}
-          />
-        </div>
-      );
-    }
-
-    if (isJsonViewerComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <JsonViewerPanel
-            component={component}
-            onClose={onClose}
-            updateComponent={updateComponent}
-            removeComponent={removeComponent}
-            focusTitleTrigger={focusTitleTrigger}
-          />
-        </div>
-      );
-    }
-
-    if (isApiGroupComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <ApiGroupPanel
-            component={component}
-            onClose={onClose}
-            updateComponent={updateComponent}
-            removeComponent={removeComponent}
-          />
-        </div>
-      );
-    }
-
-    if (isExternalElementComponent(component)) {
-      return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-          <CollabEditingWarning elementId={selectedElementId} />
-          <ExternalElementPanel
-            component={component as ExternalElementComponent}
-            onClose={onClose}
-            updateComponent={updateComponent}
-            removeComponent={removeComponent}
-          />
-        </div>
-      );
-    }
 
     return (
       <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">

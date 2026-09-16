@@ -3,24 +3,17 @@ import { applyLayoutResultEdges } from "./applyLayoutResult";
 import { useDiagramStore } from "@/features/diagram";
 
 /**
- * Auto layout leaves the connection paths reset.
+ * `resetPaths` clears every participating edge's control points and stops
+ * before writing bend points — for callers that want an untouched mid-X Z.
  *
- * `applyLayoutResultEdges` clears every participating edge's control points and
- * then writes ELK's bend points back as new ones. For a generated graph that is
- * what you want: ELK routed those edges and the route is the best thing known
- * about them. For the auto-layout command it is not — it is the same thing
- * "Resetar caminhos das conexões" exists to undo, and the user has to run that
- * by hand after every layout.
- *
- * So the command asks for the reset to be the final state. The edges then draw
- * the way an untouched connection draws: orthogonal steps between the handles
- * ELK ordered, with no stored bend points of their own.
+ * The default (option absent) writes handle-aligned ELK corridors instead.
+ * Auto-layout / panel-child layout use that default; this file only locks the
+ * opt-out behaviour.
  *
  * Expressed as an option rather than by calling the reset helper afterwards,
  * because writing every waypoint and deleting it again is two store writes per
  * edge — and every `set()` serialises the whole workspace for the persist
- * middleware (see AGENTS.md). On a 550-edge diagram that is 1100 writes to end
- * up where this ends up with none.
+ * middleware (see AGENTS.md).
  */
 
 function makeResult(graph: {
@@ -122,7 +115,7 @@ describe("applyLayoutResultEdges with resetPaths", () => {
     expect(fakeStore.updateHandleOrder).toHaveBeenCalledWith("b", "incoming", ["e1"]);
   });
 
-  /** Generation still gets ELK's route; only the layout commands opt out. */
+  /** Default path: handle-aligned corridors are written. */
   it("keeps writing bend points when the option is absent", () => {
     run();
 

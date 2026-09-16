@@ -4,7 +4,7 @@ import { CircleHelp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export type UnknownNodeData = {
   elementId: string;

@@ -1,4 +1,5 @@
 import { useCallback, type MutableRefObject } from "react";
+import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import {
   useDiagramStore,
@@ -22,12 +23,13 @@ import {
 import { duplicateSelection } from "../../utils/duplicateSelection";
 import {
   readDrawioFromClipboard,
+  readRasterImageBlobFromClipboard,
   readStructuraClipboard,
   readSvgFromClipboard,
   writeDrawioToClipboard,
 } from "@/lib/clipboard";
 import { parseDrawioXml } from "@/lib/export-service/import-drawio";
-import { generateIconId, normalizeSvgForStorage } from "@/features/canvas/utils/svg.utils";
+import { rasterBlobToSvgMarkup } from "@/features/canvas/utils/wrapRasterAsSvg";
 
 interface UseCopyPasteShortcutsParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -46,12 +48,12 @@ interface UseCopyPasteShortcutsParams {
   ) => string[];
   hydrateClipboard: (entry: ClipboardEntry) => void;
   pasteSvgAsCanvasNode: (svgContent: string, position: { x: number; y: number }) => string | null;
-  importSvgForIconLibrary: (svgContent: string) => string | null;
   serviceCatalog: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
-  pastedSvgDefaultName: string;
   lastPointerScreenRef: MutableRefObject<{ x: number; y: number } | null>;
+  mediaPasteConsumedRef: MutableRefObject<boolean>;
+  translate: (key: string) => string;
 }
 
 export function useCopyPasteShortcuts({
@@ -64,12 +66,12 @@ export function useCopyPasteShortcuts({
   importDrawioResult,
   hydrateClipboard,
   pasteSvgAsCanvasNode,
-  importSvgForIconLibrary,
   serviceCatalog,
   exportDrawioXml,
   setSelectedNodeIds,
-  pastedSvgDefaultName,
   lastPointerScreenRef,
+  mediaPasteConsumedRef,
+  translate,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
     async (event: KeyboardEvent): Promise<boolean> => {
@@ -85,9 +87,6 @@ export function useCopyPasteShortcuts({
           copyToClipboard(ids);
           try {
             const xml = exportDrawioXml(ids);
-            // Embed the just-copied full-fidelity entry alongside the draw.io XML so
-            // pasting into a different browser tab/window (a separate in-memory store,
-            // where the rich clipboard below isn't shared) can still be lossless.
             const entry = useDiagramStore.getState().clipboard;
             void writeDrawioToClipboard(xml, entry ?? undefined);
           } catch {
@@ -100,14 +99,24 @@ export function useCopyPasteShortcuts({
       if (keyMatchesLetter(event, KEY.V)) {
         event.preventDefault();
 
-        const svgContent = await readSvgFromClipboard();
-        if (svgContent) {
-          const pastePos = getPasteFlowPosition(
-            reactFlowInstance,
-            reactFlowWrapperRef,
-            lastPointerScreenRef.current,
-          );
-          const newId = pasteSvgAsCanvasNode(svgContent, pastePos);
+        // Let the capture-phase `paste` listener claim Finder files / text SVG first.
+        await Promise.resolve();
+        if (mediaPasteConsumedRef.current) {
+          mediaPasteConsumedRef.current = false;
+          return true;
+        }
+
+        const pastePos = getPasteFlowPosition(
+          reactFlowInstance,
+          reactFlowWrapperRef,
+          lastPointerScreenRef.current,
+        );
+
+        // Fallback: Clipboard API (screenshots / image/svg+xml) when paste
+        // event had no files or plain-text SVG.
+        const svgMarkup = await readSvgFromClipboard();
+        if (svgMarkup) {
+          const newId = pasteSvgAsCanvasNode(svgMarkup, pastePos);
           if (newId) {
             reactFlowInstance.setNodes((nodes) =>
               nodes.map((n) => ({ ...n, selected: n.id === newId })),
@@ -117,12 +126,23 @@ export function useCopyPasteShortcuts({
           return true;
         }
 
-        // A hidden marker embedded by our own writeDrawioToClipboard carries the
-        // full-fidelity entry (styles, AWS type/icon, custom colors) alongside the
-        // draw.io XML. It survives across browser tabs/windows via the OS clipboard,
-        // unlike the in-memory Zustand clipboard below — so prefer it whenever
-        // present, and only fall back to the lossy XML import for genuinely
-        // external draw.io content (a real draw.io app, or an older Structura tab).
+        const rasterBlob = await readRasterImageBlobFromClipboard();
+        if (rasterBlob) {
+          const wrapped = await rasterBlobToSvgMarkup(rasterBlob, rasterBlob.type);
+          if (!wrapped) {
+            toast.error(translate("icons.svgTooLarge"));
+            return true;
+          }
+          const newId = pasteSvgAsCanvasNode(wrapped, pastePos);
+          if (newId) {
+            reactFlowInstance.setNodes((nodes) =>
+              nodes.map((n) => ({ ...n, selected: n.id === newId })),
+            );
+            setSelectedNodeIds(new Set([newId]));
+          }
+          return true;
+        }
+
         const structuraEntry = await readStructuraClipboard();
         if (structuraEntry) {
           hydrateClipboard(structuraEntry);
@@ -152,35 +172,6 @@ export function useCopyPasteShortcuts({
           }
         }
 
-        let clipboardPlain: string | null = null;
-        try {
-          clipboardPlain = await navigator.clipboard.readText();
-        } catch {
-          // clipboard read may fail in non-secure contexts
-        }
-        if (clipboardPlain && /<svg(\s|>)/i.test(clipboardPlain)) {
-          const cleanedMarkup = importSvgForIconLibrary(clipboardPlain);
-          if (cleanedMarkup === null) {
-            return true;
-          }
-          const store = useDiagramStore.getState();
-          const activeDiagramId = store.activeDiagramId;
-          if (activeDiagramId) {
-            const newIconId = generateIconId();
-            store.addIcon(activeDiagramId, {
-              id: newIconId,
-              name: pastedSvgDefaultName,
-              source: {
-                kind: "svg",
-                svgContent: normalizeSvgForStorage(cleanedMarkup),
-              },
-              createdAt: Date.now(),
-              usageCount: 0,
-            });
-          }
-          return true;
-        }
-
         const clipboardIds =
           useDiagramStore.getState().clipboard?.components.map((component) => component.id) ?? [];
 
@@ -189,14 +180,8 @@ export function useCopyPasteShortcuts({
             ? getOffsetPositionOfNodes(diagram, clipboardIds)
             : null;
 
-        const pastePos =
-          offsetPos ??
-          getPasteFlowPosition(
-            reactFlowInstance,
-            reactFlowWrapperRef,
-            lastPointerScreenRef.current,
-          );
-        const newIds = pasteFromClipboard(pastePos);
+        const elementPastePos = offsetPos ?? pastePos;
+        const newIds = pasteFromClipboard(elementPastePos);
         if (newIds.length > 0) {
           reactFlowInstance.setNodes((nodes) =>
             nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
@@ -236,12 +221,12 @@ export function useCopyPasteShortcuts({
       importDrawioResult,
       hydrateClipboard,
       pasteSvgAsCanvasNode,
-      importSvgForIconLibrary,
       serviceCatalog,
       exportDrawioXml,
       setSelectedNodeIds,
-      pastedSvgDefaultName,
       lastPointerScreenRef,
+      mediaPasteConsumedRef,
+      translate,
     ],
   );
 }

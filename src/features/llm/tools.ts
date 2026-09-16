@@ -35,6 +35,45 @@ export const ALL_TOOLS: LLMTool[] = [
     parametersSchema: { type: "object", properties: {}, required: [] },
   },
   {
+    name: "list_element_families",
+    description:
+      "Returns the element families available in this workspace (C4, structural shapes, " +
+      "and cloud/tech families such as AWS, GCP, Azure, Kubernetes, OSS) with their " +
+      "categories. Call this first when you are not sure which family fits the request. " +
+      "Services inside a category are NOT returned here — use search_elements for those. " +
+      "Also returns diagramFamilyMix (node counts per family on the active diagram) for provider disambiguation.",
+    parametersSchema: { type: "object", properties: {}, required: [] },
+  },
+  {
+    name: "search_elements",
+    description:
+      "Searches the element catalog for services/shapes matching a query, optionally " +
+      "restricted to one family or category. Returns the exact elementType and serviceId " +
+      "strings required by add_node (pass serviceId as awsService). Never invent these values — always obtain them here.",
+    parametersSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: 'Free text, e.g. "cache", "kubernetes deployment", "postgres"',
+        },
+        familyId: {
+          type: "string",
+          description: "Optional: restrict to one family id from list_element_families",
+        },
+        categoryId: {
+          type: "string",
+          description: "Optional: restrict to one category id",
+        },
+        limit: {
+          type: "number",
+          description: "Max results, default 15, max 50",
+        },
+      },
+      required: ["query"],
+    },
+  },
+  {
     name: "add_node",
     description: "Add a new node to the diagram.",
     parametersSchema: {
@@ -43,14 +82,14 @@ export const ALL_TOOLS: LLMTool[] = [
         nodeType: {
           type: "string",
           description:
-            'Must be one of the exact nodeType strings from the Component Types catalog in the system prompt. Examples: "person", "system", "container", "component", "panel", "note", "api-group", "endpoint", "db-table", "json-viewer" or an AWS category type like "aws-networking".',
+            "Exact nodeType from the Component Types catalog (structural/C4) or from search_elements.elementType for cloud/OSS services.",
         },
         name: { type: "string" },
         parentId: { type: ["string", "null"] },
         awsService: {
           type: "string",
           description:
-            'Required for AWS node types. The specific AWS service id (e.g. "api-gateway", "rds", "elb", "s3"). Must match a service id from the AWS catalog.',
+            'Cloud/OSS service id from search_elements.serviceId (e.g. "lambda", "redis", "deployment"). Mapped onto cloudServiceId on the component.',
         },
         position: {
           type: "object",
@@ -147,6 +186,13 @@ export const WRITE_TOOL_NAMES: string[] = [
   "auto_layout",
 ];
 
+/** Catalog discovery tools — executable reads, never confirmation-gated writes. */
+export const CATALOG_READ_TOOL_NAMES: string[] = ["list_element_families", "search_elements"];
+
 export function isWriteTool(toolName: string): boolean {
   return WRITE_TOOL_NAMES.includes(toolName);
+}
+
+export function isCatalogReadTool(toolName: string): boolean {
+  return CATALOG_READ_TOOL_NAMES.includes(toolName);
 }

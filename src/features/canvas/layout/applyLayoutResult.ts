@@ -1,5 +1,9 @@
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { generateId, useDiagramStore } from "@/features/diagram";
+import { MAX_HANDLES, MIN_HANDLES } from "../canvas.constants";
+import { absoluteBoxesFromLayout } from "./absoluteBoxesFromLayout";
+import { alignElkRouteToHandles } from "./alignElkRouteToHandles";
+import { handleAnchor } from "./renderedEdgePath";
 
 /**
  * Parameters for the unified layout applicator.
@@ -13,7 +17,8 @@ export interface ApplyLayoutResultOptions {
   /**
    * Override a node's x/y with where it currently sits.
    * Used by `usePanelChildLayout` to preserve a panel's dragged position while
-   * adopting its computed size.
+   * adopting its computed size — absolute handle anchors must use the same
+   * origin as the stored layout or ELK corridors land offset from the panel.
    */
   positionOverrides?: Map<string, { x: number; y: number }>;
   /**
@@ -25,13 +30,13 @@ export interface ApplyLayoutResultOptions {
   /**
    * Leave the participating edges with no stored path at all.
    *
-   * The default writes ELK's bend points back as control points, which is right
-   * for a generated graph: ELK routed those edges and its route is the best
-   * thing known about them. The auto-layout command opts out, because there the
-   * stored bend points are exactly what "Resetar caminhos das conexões" exists
-   * to remove, and the user was running it by hand after every layout.
+   * The default writes handle-aligned ELK corridors as control points — what
+   * Cmd/Ctrl+Shift+L and the LLM apply path use. Raw ELK bends attach to node
+   * borders; Structura draws from discrete L/R handles, so bends are adapted
+   * with `alignElkRouteToHandles` before writing.
    *
-   * Handle order is unaffected — that is not a path. See
+   * Opt in with `resetPaths: true` only when a caller wants an untouched
+   * mid-X Z. Handle order is unaffected either way. See
    * `applyLayoutResult.resetPaths.test.ts`.
    */
   resetPaths?: boolean;
@@ -65,7 +70,7 @@ const identity = (id: string): string | undefined => id;
  *
  *   1. write positions via `applyAutoLayout`  ← the caller owns the `toAppliedLayouts` call
  *   2. write ELK's handle ordering into every node's `handleOrder`
- *   3. write ELK's bend points as edge control points
+ *   3. write handle-aligned ELK corridors as edge control points
  *
  * Separating positions from (2) and (3) allows the caller to pass their own
  * offset (`toAppliedLayouts(graph, result, resizable, offset)`) without
@@ -73,11 +78,6 @@ const identity = (id: string): string | undefined => id;
  *
  * This function does NOT call `applyAutoLayout` — the caller already does that.
  * It only handles the edge effects.
- *
- * @param graph       The layout graph that produced `result`.
- * @param result      The layout result from `layout()`.
- * @param diagramId   The active diagram ID, or null to skip edge effects.
- * @param options     Optional edge-id filter, position overrides, waypoint offset.
  */
 export function applyLayoutResultEdges(
   graph: LayoutGraph,
@@ -85,7 +85,12 @@ export function applyLayoutResultEdges(
   diagramId: string | null,
   options: ApplyLayoutResultOptions = {},
 ): void {
-  const { edgeIds = null, waypointOffset = { x: 0, y: 0 }, resetPaths = false } = options;
+  const {
+    edgeIds = null,
+    waypointOffset = { x: 0, y: 0 },
+    resetPaths = false,
+    positionOverrides,
+  } = options;
   const nodeIdOf = options.idMap?.node ?? identity;
   const edgeIdOf = options.idMap?.edge ?? identity;
 
@@ -93,15 +98,9 @@ export function applyLayoutResultEdges(
 
   const store = useDiagramStore.getState();
 
-  // Determine which edge ids actually get waypoints.
-  // By default, every edge from the graph participates.
   const edgesToStyle =
     edgeIds === null ? graph.edges : graph.edges.filter((e) => edgeIds.has(e.id));
 
-  // Handle order — written unconditionally for all nodes in the graph.
-  // The ordering's *values* are edge ids, so they need translating too; an
-  // ordering that survives translation empty is not written, because an empty
-  // `handleOrder` would read as "no preference" and undo ELK's work.
   for (const node of graph.nodes) {
     const storeNodeId = nodeIdOf(node.id);
     if (storeNodeId === undefined) continue;
@@ -114,39 +113,70 @@ export function applyLayoutResultEdges(
     }
   }
 
-  // Clear existing waypoints for every edge that participated in this layout, then
-  // write the new ones.  Edges that were previously routed but are no longer in the
-  // graph are left untouched — this function only owns the edges it knows about.
-  // On a freshly inserted graph this is a no-op: `resetEdgeControlPoints` returns
-  // before touching history when the connection has no points.
   for (const edge of edgesToStyle) {
     const storeEdgeId = edgeIdOf(edge.id);
     if (storeEdgeId !== undefined) store.resetEdgeControlPoints(diagramId, storeEdgeId);
   }
 
-  // `resetPaths` stops here: the clear above is the whole job, and the edges go
-  // back to drawing as an untouched connection does — orthogonal steps between
-  // the handles ELK just ordered.
   if (resetPaths) return;
 
-  // Write waypoints for all (or filtered) edges from the graph.
+  const absBoxes = absoluteBoxesFromLayout(graph, result, positionOverrides);
+  const outgoingCount = new Map<string, number>();
+  const incomingCount = new Map<string, number>();
+  for (const edge of graph.edges) {
+    outgoingCount.set(edge.sourceId, (outgoingCount.get(edge.sourceId) ?? 0) + 1);
+    incomingCount.set(edge.targetId, (incomingCount.get(edge.targetId) ?? 0) + 1);
+  }
+
   for (const edge of edgesToStyle) {
     const storeEdgeId = edgeIdOf(edge.id);
     if (storeEdgeId === undefined) continue;
+
+    const sourceBox = absBoxes.get(edge.sourceId);
+    const targetBox = absBoxes.get(edge.targetId);
+    if (!sourceBox || !targetBox) continue;
+
+    const sourceCount = clampHandleCount(outgoingCount.get(edge.sourceId) ?? 1);
+    const targetCount = clampHandleCount(incomingCount.get(edge.targetId) ?? 1);
+    const sourceSlot = resolveSlot(
+      edge.id,
+      result.handleOrder.outgoing.get(edge.sourceId),
+      sourceCount,
+    );
+    const targetSlot = resolveSlot(
+      edge.id,
+      result.handleOrder.incoming.get(edge.targetId),
+      targetCount,
+    );
+
+    const source = handleAnchor(sourceBox, "source", sourceSlot, sourceCount);
+    const target = handleAnchor(targetBox, "target", targetSlot, targetCount);
     const route = result.edgeRoutes.get(edge.id);
-    if (route === undefined || route.length <= 2) continue;
+    const corners = alignElkRouteToHandles(route, source, target);
 
-    // Convert ELK's canvas-absolute route into control points.
-    // The first and last route entries sit on the node borders; the canvas draws
-    // those legs from the handles, so only the slice between them becomes CPs.
-    const waypoints = route.slice(1, -1).map((pt) => ({
-      id: generateId("cp"),
-      x: pt.x + waypointOffset.x,
-      y: pt.y + waypointOffset.y,
-    }));
+    if (corners.length === 0) continue;
 
-    if (waypoints.length > 0) {
-      store.setEdgeControlPoints(diagramId, storeEdgeId, waypoints, { history: false });
-    }
+    store.setEdgeControlPoints(
+      diagramId,
+      storeEdgeId,
+      corners.map((point) => ({
+        id: generateId("cp"),
+        x: point.x + waypointOffset.x,
+        y: point.y + waypointOffset.y,
+      })),
+      { history: false },
+    );
   }
+}
+
+function clampHandleCount(count: number): number {
+  return Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, count));
+}
+
+function resolveSlot(edgeId: string, order: string[] | undefined, slotCount: number): number {
+  if (order?.length) {
+    const index = order.indexOf(edgeId);
+    if (index !== -1) return Math.min(index, slotCount - 1);
+  }
+  return 0;
 }

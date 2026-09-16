@@ -258,7 +258,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
       anchor: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
       activeDiagramId,
       applyAutoLayout,
-      resetPaths: true,
+      resetPaths: false,
     }).then((applied) => {
       if (!applied) return;
       resetWaypointsForConnections(

@@ -163,17 +163,22 @@ describe("applyLayoutResultEdges", () => {
     expect(fakeStore._waypoints[0].connectionId).toBe("e1");
   });
 
-  it("does not write waypoints for edges with two or fewer route points", () => {
+  it("writes default handle-aligned corners when the ELK route has no interior", () => {
     const graph = {
-      nodes: [{ id: "a" }, { id: "b" }],
+      nodes: [
+        { id: "a", parentId: null, width: 180, height: 80 },
+        { id: "b", parentId: null, width: 180, height: 80 },
+      ],
       edges: [{ id: "e1", sourceId: "a", targetId: "b" }],
     };
     const result = makeResult(graph);
-    // Two-point route: no interior waypoints
+    // Two-point route: no ELK interior — still get a mid-X Z between handles.
     result.edgeRoutes.set("e1", [
       { x: 0, y: 0 },
       { x: 100, y: 100 },
     ]);
+    result.boxes.set("a", { x: 0, y: 0, width: 180, height: 80 });
+    result.boxes.set("b", { x: 400, y: 0, width: 180, height: 80 });
 
     applyLayoutResultEdges(
       graph as unknown as Parameters<typeof applyLayoutResultEdges>[0],
@@ -181,16 +186,23 @@ describe("applyLayoutResultEdges", () => {
       diagramId,
     );
 
-    expect(fakeStore._resets).toContain("e1"); // reset happens
-    expect(fakeStore._waypoints.find((w) => w.connectionId === "e1")).toBeUndefined(); // no new waypoints written
+    expect(fakeStore._resets).toContain("e1");
+    const wp = fakeStore._waypoints.find((w) => w.connectionId === "e1");
+    expect(wp).toBeDefined();
+    expect(wp!.points.length).toBeGreaterThan(0);
   });
 
   it("applies waypointOffset to the written coordinates", () => {
     const graph = {
-      nodes: [{ id: "a" }, { id: "b" }],
+      nodes: [
+        { id: "a", parentId: null, width: 180, height: 80 },
+        { id: "b", parentId: null, width: 180, height: 80 },
+      ],
       edges: [{ id: "e1", sourceId: "a", targetId: "b" }],
     };
     const result = makeResult(graph);
+    result.boxes.set("a", { x: 0, y: 0, width: 180, height: 80 });
+    result.boxes.set("b", { x: 400, y: 0, width: 180, height: 80 });
     const OFFSET = { x: 500, y: 300 };
 
     applyLayoutResultEdges(
@@ -201,9 +213,12 @@ describe("applyLayoutResultEdges", () => {
     );
 
     const wp = fakeStore._waypoints.find((w) => w.connectionId === "e1")!;
-    // The single interior point (200,200) is shifted by the offset
-    expect(wp.points[0].x).toBe(200 + OFFSET.x);
-    expect(wp.points[0].y).toBe(200 + OFFSET.y);
+    expect(wp.points.length).toBeGreaterThan(0);
+    for (const point of wp.points) {
+      // Every written corner is in offset space (handles sit near x=180..400, y=40).
+      expect(point.x).toBeGreaterThanOrEqual(OFFSET.x);
+      expect(point.y).toBeGreaterThanOrEqual(OFFSET.y);
+    }
   });
 
   it("only writes waypoints for edges in the edgeIds filter", () => {

@@ -17,8 +17,7 @@ export interface WheelIntentInput {
 }
 
 export type WheelIntent =
-  | { kind: "pan"; dx: number; dy: number }
-  | { kind: "zoom"; factor: number };
+  { kind: "pan"; dx: number; dy: number } | { kind: "zoom"; factor: number };
 
 /** `WheelEvent.DOM_DELTA_*` are instance constants, unavailable when the event is a plain object. */
 const DOM_DELTA_PIXEL = 0;

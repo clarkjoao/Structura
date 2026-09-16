@@ -2,12 +2,6 @@ import type {
   Component,
   ComponentPatch,
   ComponentType,
-  ApiGroupComponent,
-  EndpointComponent,
-  DbTableComponent,
-  JsonViewerComponent,
-  UnknownComponent,
-  SvgComponent,
   PanelComponent,
   NodeLayout,
   Diagram,
@@ -18,28 +12,17 @@ import { generateId } from "../../utils/generate-id";
 import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
 import {
   isPanelType,
-  isNoteType,
   isEndpointType,
-  isApiGroupType,
-  isC4Type,
-  isDbTableType,
-  isJsonViewerType,
-  isUnknownType,
   isPluginComponentType,
-  isSvgComponentType,
-  isFlowNodeType,
-  isExternalElementType,
-  COMPONENT_TYPE_PROCESS_NODE,
+  COMPONENT_TYPE_UNKNOWN,
 } from "../../model/component-type-constants";
-import type {
-  ProcessNodeComponent,
-  FlowNodeShape,
-  ExternalElementComponent,
-} from "../../model/component.types";
+import type { FlowNodeShape } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
-import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
-import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
+import {
+  elementDefaultSize,
+  getElement,
+  isRegisteredElementType,
+} from "@/features/elements/element.registry";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -56,8 +39,6 @@ import {
   PANEL_DEFAULT_H,
   SWIMLANE_DEFAULT_W,
   SWIMLANE_DEFAULT_H,
-  NOTE_DEFAULT_W,
-  NOTE_DEFAULT_H,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
   API_GROUP_HEADER_H,
@@ -129,10 +110,31 @@ export function buildComponentForType(
   name: string,
   parentId: string | null,
   panelKind: PanelKind | undefined,
-  awsService: string | undefined,
+  cloudServiceId: string | undefined,
   flowShape?: FlowNodeShape,
 ): { component: Component; resolvedPanelKind: PanelKind | undefined } {
   const base = { id, name, description: "", parentId };
+
+  // Registered elements build themselves from their descriptor. Narrowing here
+  // (rather than testing `hasElement`) is what lets the chain below drop a
+  // migrated branch and still be exhaustive: the id leaves the union.
+  if (isRegisteredElementType(type)) {
+    const descriptor = getElement(type)!;
+    return {
+      // 5th positional arg is cloudServiceId (F6b; was named awsService).
+      // Descriptors read it as `ElementCreateOptions.serviceId` → attachService
+      // writes `cloudServiceId` on the component.
+      component: descriptor.model.createComponent(base, {
+        panelKind,
+        flowShape,
+        serviceId: cloudServiceId,
+      }),
+      // Still reported, because the caller passes it on to the layout builder
+      // and a panel's size depends on which kind was asked for.
+      resolvedPanelKind: isPanelType(type) ? (panelKind ?? PanelKind.Default) : undefined,
+    };
+  }
+
   let component: Component;
   const resolvedPanelKind: PanelKind | undefined = isPanelType(type)
     ? (panelKind ?? PanelKind.Default)
@@ -156,68 +158,6 @@ export function buildComponentForType(
           }
         : {}),
     } as PanelComponent;
-  } else if (isNoteType(type)) {
-    component = { ...base, type: "note", panelColor: "hsl(45 25% 97%)" };
-  } else if (isEndpointType(type)) {
-    component = {
-      ...base,
-      type: "endpoint",
-      method: "GET",
-      path: i18n.t("canvas.defaultEndpointPath"),
-      handlers: [],
-    } as EndpointComponent;
-  } else if (isApiGroupType(type)) {
-    component = {
-      ...base,
-      type: "api-group",
-      serviceName: name,
-      basePath: "/api/v1",
-      protocol: "REST",
-    } as ApiGroupComponent;
-  } else if (isDbTableType(type)) {
-    const tableName = name.trim().length > 0 ? name : i18n.t("dbTable.unnamedTable");
-    component = {
-      ...base,
-      name: tableName,
-      type: "db-table",
-      tableName,
-      columns: [],
-    } as DbTableComponent;
-  } else if (isJsonViewerType(type)) {
-    component = {
-      ...base,
-      type: "json-viewer",
-      jsonContent: "{}",
-    } as JsonViewerComponent;
-  } else if (isC4Type(type)) {
-    component = { ...base, type };
-  } else if (isAwsType(type)) {
-    component = { ...base, type, awsService: awsService ?? undefined };
-  } else if (isGcpType(type)) {
-    component = { ...base, type, gcpService: awsService ?? undefined };
-  } else if (isAzureType(type)) {
-    component = { ...base, type, azureService: awsService ?? undefined };
-  } else if (isUnknownType(type)) {
-    component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
-  } else if (isSvgComponentType(type)) {
-    component = {
-      ...base,
-      type: "svg",
-      svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
-    } as SvgComponent;
-  } else if (isFlowNodeType(type)) {
-    component = {
-      ...base,
-      type: COMPONENT_TYPE_PROCESS_NODE,
-      flowShape: flowShape ?? "rectangle",
-    } as ProcessNodeComponent;
-  } else if (isExternalElementType(type)) {
-    component = {
-      ...base,
-      type: "external-element",
-      referenceDiagramId: "",
-      tags: ["external"],
-    } as ExternalElementComponent;
   } else if (isPluginComponentType(type)) {
     component = { ...base, type };
   } else {
@@ -225,7 +165,9 @@ export function buildComponentForType(
     // signals that the corresponding branch needs to be added.
     const _exhaustive: never = type;
     void _exhaustive;
-    component = { ...base, type: "unknown", rawContent: "" } as UnknownComponent;
+    // Unreachable while the union is exhaustive; `unknown` is the safe landing
+    // for a type that slipped past it, and the registry owns how to build one.
+    component = getElement(COMPONENT_TYPE_UNKNOWN)!.model.createComponent(base, {});
   }
   return { component, resolvedPanelKind };
 }
@@ -264,12 +206,27 @@ function buildLayoutForComponent(
   flowShape?: FlowNodeShape,
 ): NodeLayout {
   const { x, y } = resolvedPosition;
-  if (isApiGroupType(type)) {
-    const { width, height } = computeApiGroupSize(0);
-    return { elementId: componentId, x, y, zIndex: -1, width, height };
-  }
-  if (isEndpointType(type)) {
-    return { elementId: componentId, x, y, width: 260 };
+  // Decision 3: for a registered element the descriptor's defaultSize governs,
+  // instead of a literal repeated here.
+  const registered = getElement(type);
+  if (registered) {
+    const { width, height } = elementDefaultSize(registered, {
+      panelKind: resolvedPanelKind,
+      flowShape,
+    });
+    return {
+      elementId: componentId,
+      x,
+      y,
+      width,
+      // Both omitted deliberately when the descriptor says nothing: a height
+      // the node measures itself must not be pinned here, and only a frame
+      // declares a stacking order.
+      ...(height === undefined ? {} : { height }),
+      ...(registered.model.defaultZIndex === undefined
+        ? {}
+        : { zIndex: registered.model.defaultZIndex }),
+    };
   }
   if (isPanelType(type)) {
     return {
@@ -279,32 +236,6 @@ function buildLayoutForComponent(
       zIndex: -1,
       width: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_W : PANEL_DEFAULT_W,
       height: resolvedPanelKind === PanelKind.Swimlane ? SWIMLANE_DEFAULT_H : PANEL_DEFAULT_H,
-    };
-  }
-  if (isNoteType(type)) {
-    return { elementId: componentId, x, y, width: NOTE_DEFAULT_W, height: NOTE_DEFAULT_H };
-  }
-  if (isDbTableType(type)) {
-    const dbTableFixedH = 32 + 22 + 20 + 2;
-    return {
-      elementId: componentId,
-      x,
-      y,
-      width: 406,
-      height: dbTableFixedH,
-    };
-  }
-  if (isJsonViewerType(type)) {
-    return { elementId: componentId, x, y, width: 240, height: 88 };
-  }
-  if (isFlowNodeType(type)) {
-    const circleSize = 80;
-    return {
-      elementId: componentId,
-      x,
-      y,
-      width: flowShape === "circle" ? circleSize : 160,
-      height: flowShape === "circle" ? circleSize : 60,
     };
   }
   return { elementId: componentId, x, y };
@@ -412,7 +343,7 @@ export const componentsSlice = (
     name: string,
     parentId: string | null,
     position?: { x: number; y: number },
-    awsService?: string,
+    cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: FlowNodeShape,
   ): Component => {
@@ -423,7 +354,7 @@ export const componentsSlice = (
       name,
       parentId,
       panelKind,
-      awsService,
+      cloudServiceId,
       flowShape,
     );
 

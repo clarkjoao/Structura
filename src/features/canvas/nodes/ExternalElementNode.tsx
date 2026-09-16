@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export type ExternalElementNodeData = {
   elementId: string;

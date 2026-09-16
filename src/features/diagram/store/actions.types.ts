@@ -48,7 +48,7 @@ export interface AppActions {
     name: string,
     parentId: string | null,
     position?: { x: number; y: number },
-    awsService?: string,
+    cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: import("../model/diagram.types").FlowNodeShape,
   ) => Component;
@@ -83,6 +83,7 @@ export interface AppActions {
     elementId: string,
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
+    options?: { syncCanvas?: boolean },
   ) => void;
   batchUpdateNodeLayouts: (
     entries: Array<{

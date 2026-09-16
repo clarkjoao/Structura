@@ -10,9 +10,7 @@ export interface TabBarProps {
 
 const TabBar = ({ active, onChange, showConnections }: TabBarProps) => {
   const { t } = useTranslation();
-  const tabs = showConnections
-    ? (["details", "connections"] as const)
-    : (["details"] as const);
+  const tabs = showConnections ? (["details", "connections"] as const) : (["details"] as const);
 
   const labelFor = (tab: (typeof tabs)[number]) => {
     if (tab === "details") return t("elementPanelTab.details");

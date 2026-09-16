@@ -1,6 +1,7 @@
 import type { PatternComponent, PatternTemplate } from "@/lib/catalogs/patterns";
 import type { Connection } from "../../model/connection.types";
 import type { Component, UserTemplate, UserTemplateComponent } from "../../model/diagram.types";
+import { cloudServiceIdWrite } from "../../model/cloud-service-id";
 import { generateId } from "../../utils/generate-id";
 import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert-layout";
 import type { AppState } from "../store.types";
@@ -92,7 +93,7 @@ function buildCatalogPatternComponentAndLayout(
     description: raw.description ?? "",
     parentId: null,
     technology: raw.technology,
-    awsService: raw.awsService,
+    ...cloudServiceIdWrite(raw.cloudServiceId ?? raw.awsService),
   } as Component;
 
   const x = raw.x !== undefined ? position.x + raw.x : position.x + index * gridX;

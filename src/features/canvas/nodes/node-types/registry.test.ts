@@ -8,8 +8,7 @@ import {
   subscribeNodeTypes,
   unregisterDescriptor,
 } from "./registry";
-import { unknownDescriptor } from "./unknown.descriptor";
-import { c4Descriptor } from "./c4.descriptor";
+import { COMPONENT_TYPE_UNKNOWN } from "@/features/diagram";
 import { SPREAD_HANDLES } from "./handle-spec";
 
 function makeDescriptor(rfType: string, componentType: string): NodeTypeDescriptor {
@@ -34,17 +33,16 @@ afterEach(() => {
 });
 
 describe("registerDescriptor / unregisterDescriptor", () => {
-  it("registers before the catch-all and unregisters cleanly", () => {
+  it("registers and unregisters cleanly on the plugin-only registry", () => {
     const descriptor = makeDescriptor(PLUGIN_RF_TYPE, PLUGIN_COMPONENT_TYPE);
     const sizeBefore = NODE_TYPE_REGISTRY.length;
 
     registerDescriptor(descriptor);
-    expect(NODE_TYPE_REGISTRY[NODE_TYPE_REGISTRY.length - 1]).toBe(c4Descriptor);
+    expect(NODE_TYPE_REGISTRY).toContain(descriptor);
     expect(getDescriptor(PLUGIN_COMPONENT_TYPE)).toBe(descriptor);
 
     unregisterDescriptor(PLUGIN_RF_TYPE);
     expect(NODE_TYPE_REGISTRY.length).toBe(sizeBefore);
-    expect(NODE_TYPE_REGISTRY[NODE_TYPE_REGISTRY.length - 1]).toBe(c4Descriptor);
   });
 
   it("throws on duplicate rfType and leaves the registry unchanged", () => {
@@ -65,11 +63,18 @@ describe("registerDescriptor / unregisterDescriptor", () => {
 
 describe("getDescriptor degradation", () => {
   it("falls back to the unknown descriptor for orphaned plugin types", () => {
-    expect(getDescriptor(PLUGIN_COMPONENT_TYPE)).toBe(unknownDescriptor);
+    expect(getDescriptor(PLUGIN_COMPONENT_TYPE).rfType).toBe(COMPONENT_TYPE_UNKNOWN);
   });
 
-  it("keeps the c4 catch-all for unmatched built-in-shaped types", () => {
-    expect(getDescriptor("person")).not.toBe(unknownDescriptor);
+  it("resolves C4 types from the element registry, not a catch-all", () => {
+    expect(getDescriptor("person").rfType).toBe("person");
+    expect(getDescriptor("system").rfType).toBe("system");
+    expect(getDescriptor("container").rfType).toBe("container");
+    expect(getDescriptor("component").rfType).toBe("component");
+  });
+
+  it("falls back to unknown for unmatched built-in-shaped types (F9)", () => {
+    expect(getDescriptor("not-a-real-type" as never).rfType).toBe(COMPONENT_TYPE_UNKNOWN);
   });
 });
 

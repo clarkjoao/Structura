@@ -14,10 +14,12 @@ import {
 import { exportDrawio } from "./export-drawio";
 
 /**
- * GOLDEN FREEZE — captures the app draw.io XML byte-for-byte before the
- * export-core refactor. The snapshot MUST NOT change when export-drawio.ts is
- * rewritten to go through the shared core; a diff here means the refactor
- * altered app output.
+ * GOLDEN FREEZE — captures the app draw.io XML byte-for-byte.
+ *
+ * Expected drift when cloudServiceId starts appearing on aws/image/passthrough
+ * cells: those nodes wrap in `<object cloudServiceId="…">` so domain service
+ * identity survives beyond icon appearance. Update the snapshot deliberately
+ * when that content changes; do not paper over accidental diffs.
  */
 
 const catalog: Record<string, ServiceDefinition> = {
@@ -91,7 +93,7 @@ const richComponents: Record<string, Component> = {
     id: "aws",
     name: "Lambda",
     type: "aws-compute",
-    awsService: "lambda",
+    cloudServiceId: "lambda",
     description: "",
     parentId: null,
   },
@@ -99,7 +101,29 @@ const richComponents: Record<string, Component> = {
     id: "awsApi",
     name: "API Gateway",
     type: "aws-networking",
-    awsService: "amazon-apigateway",
+    // Catalog id (RESICON → api_gateway). Pre-F5b used a non-catalog alias
+    // that always exported the generic "general" icon.
+    cloudServiceId: "api-gateway",
+    description: "",
+    parentId: null,
+  },
+  // F4: first GCP golden — exports as kind:"image" with the catalog SVG when
+  // the icon pack resolves, otherwise passthrough. Documents the decision to
+  // add a fixture rather than only confirming an existing one.
+  gcp: {
+    id: "gcp",
+    name: "Cloud Run",
+    type: "gcp-compute",
+    cloudServiceId: "cloudrun",
+    description: "",
+    parentId: null,
+  },
+  // F5a: Azure golden — passthrough (npm React icons, no sync SVG embed).
+  azure: {
+    id: "azure",
+    name: "Azure Functions",
+    type: "azure-compute",
+    cloudServiceId: "functions",
     description: "",
     parentId: null,
   },
@@ -204,6 +228,8 @@ const richLayouts: Record<string, NodeLayout> = {
   note: { elementId: "note", x: 1300, y: 0, width: 336, height: 475 },
   aws: { elementId: "aws", x: 0, y: 420 },
   awsApi: { elementId: "awsApi", x: 350, y: 420 },
+  gcp: { elementId: "gcp", x: 0, y: 560, width: 180, height: 80 },
+  azure: { elementId: "azure", x: 220, y: 560, width: 180, height: 80 },
   api: { elementId: "api", x: 400, y: 440, width: 300, height: 160 },
   ep: { elementId: "ep", x: 0, y: 68, width: 300, height: 40 },
   db: { elementId: "db", x: 820, y: 440 },

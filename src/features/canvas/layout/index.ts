@@ -1,3 +1,5 @@
+export * from "./alignElkRouteToHandles";
+export * from "./absoluteBoxesFromLayout";
 export * from "./applyLayout";
 export * from "./applyLayoutResult";
 export * from "./contract";

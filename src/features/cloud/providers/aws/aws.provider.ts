@@ -2,25 +2,6 @@ import { AWS_CATEGORIES, AWS_CATEGORY_MAP, AWS_SERVICE_MAP, isAwsType } from "./
 import type { CloudCategory, CloudProviderAdapter, CloudService } from "../../model/cloud.types";
 import { awsIconResolver } from "./aws.icon-resolver";
 
-const AWS_CATEGORY_BORDERS: Record<string, string> = {
-  "aws-compute": "border-l-aws-compute",
-  "aws-storage": "border-l-aws-storage",
-  "aws-database": "border-l-aws-database",
-  "aws-networking": "border-l-aws-networking",
-  "aws-security": "border-l-aws-security",
-  "aws-analytics": "border-l-aws-analytics",
-  "aws-ml": "border-l-aws-ml",
-  "aws-integration": "border-l-aws-integration",
-  "aws-management": "border-l-aws-management",
-  "aws-developer": "border-l-aws-developer",
-  "aws-containers": "border-l-aws-containers",
-  "aws-media": "border-l-aws-media",
-  "aws-migration": "border-l-aws-migration",
-  "aws-iot": "border-l-aws-iot",
-  "aws-end-user": "border-l-aws-end-user",
-  "aws-general": "border-l-aws-general",
-};
-
 const categories: CloudCategory[] = AWS_CATEGORIES.map((cat) => ({
   id: cat.id,
   providerId: "aws",
@@ -63,7 +44,8 @@ export const awsProvider: CloudProviderAdapter = {
     };
   },
 
+  // No dedicated border map: same formula as GCP/Azure and borderClassForAccent.
   getCategoryStyle: (categoryId) => ({
-    borderClass: AWS_CATEGORY_BORDERS[categoryId] ?? "border-l-aws-general",
+    borderClass: `border-l-${categoryId}`,
   }),
 };

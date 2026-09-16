@@ -4,10 +4,7 @@ import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
 import { useDiagramStore } from "@/features/diagram";
-import {
-  useCustomComponentStore,
-  type CustomComponentTemplate,
-} from "@/features/custom-components";
+import { useElementPresetStore } from "@/features/element-presets";
 import { useIconStore } from "@/features/diagram/store";
 import {
   buildPersistStoragePayload,
@@ -27,7 +24,8 @@ import {
   resetBootState,
   startFileSystemSync,
 } from "./fileSystemBoot";
-import { mergeCustomComponentTemplates } from "./merge-custom-component-templates";
+import { mergeElementPresets } from "./merge-element-presets";
+import { readElementPresetsField } from "./read-element-presets-field";
 import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { WORKSPACE_SCHEMA_VERSION as WORKSPACE_VERSION } from "./versions";
 
@@ -41,7 +39,7 @@ export type FsStatus = "disconnected" | "connecting" | "connected" | "error" | "
 export const isFileSystemSupported = "showDirectoryPicker" in globalThis;
 
 function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
-  const customComponentTemplates = useCustomComponentStore.getState().templates;
+  const elementPresets = useElementPresetStore.getState().presets;
   const iconLibrary = useIconStore.getState().icons;
   return {
     version: WORKSPACE_VERSION as 1 | 2,
@@ -51,7 +49,7 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
     serviceCatalog: state.serviceCatalog,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
-    customComponentTemplates,
+    elementPresets,
     iconLibrary,
   };
 }
@@ -84,7 +82,7 @@ export function useFileSystemStorage() {
       _lastUndoRedoTimestamp: 0,
       clipboard: null,
     });
-    useCustomComponentStore.setState({ templates: {} });
+    useElementPresetStore.setState({ presets: {} });
   }, []);
 
   useEffect(() => {
@@ -176,10 +174,10 @@ export function useFileSystemStorage() {
       fileSystemAdapter.setFolders(
         workspace.folders as unknown as ReturnType<typeof useDiagramStore.getState>["folders"],
       );
-      const workspaceTemplates = workspace.customComponentTemplates;
+      const workspaceTemplates = readElementPresetsField(workspace);
       if (workspaceTemplates) {
-        useCustomComponentStore.setState((state) => ({
-          templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
+        useElementPresetStore.setState((state) => ({
+          presets: mergeElementPresets(state.presets, workspaceTemplates),
         }));
       }
     }
@@ -303,11 +301,10 @@ export function useFileSystemStorage() {
         }
       });
 
-      const manifestTemplates = manifest?.customComponentTemplates as
-        Record<string, CustomComponentTemplate> | undefined;
+      const manifestTemplates = readElementPresetsField(manifest ?? {});
       if (manifestTemplates) {
-        useCustomComponentStore.setState((state) => ({
-          templates: mergeCustomComponentTemplates(state.templates, manifestTemplates),
+        useElementPresetStore.setState((state) => ({
+          presets: mergeElementPresets(state.presets, manifestTemplates),
         }));
       }
 
@@ -367,10 +364,9 @@ export function useFileSystemStorage() {
         }
       });
 
-      const manifestTemplates = manifest?.customComponentTemplates as
-        Record<string, CustomComponentTemplate> | undefined;
+      const manifestTemplates = readElementPresetsField(manifest ?? {});
       if (manifestTemplates) {
-        useCustomComponentStore.setState({ templates: manifestTemplates });
+        useElementPresetStore.setState({ presets: manifestTemplates });
       }
 
       const hydratedOverwrite = hydrateIconStoreFromWorkspace({
@@ -435,7 +431,7 @@ export function useFileSystemStorage() {
     try {
       // buildPersistStoragePayload / partialize omit clipboard; custom templates use a separate storage key.
       const state = useDiagramStore.getState();
-      const customComponentTemplates = useCustomComponentStore.getState().templates;
+      const elementPresets = useElementPresetStore.getState().presets;
       let payload: ReturnType<typeof buildPersistStoragePayload>;
       try {
         payload = buildPersistStoragePayload(state);
@@ -494,7 +490,7 @@ export function useFileSystemStorage() {
         toast.error(t("filesystem.backupFailedQuota"));
       }
 
-      await defaultStorage.forceSave("custom_components", customComponentTemplates);
+      await defaultStorage.forceSave("element_presets", elementPresets);
     } catch {
       toast.error(t("filesystem.backupFailedGeneric"));
       setStatus("error");
@@ -531,21 +527,20 @@ export function useFileSystemStorage() {
           workspace.folders as unknown as ReturnType<typeof useDiagramStore.getState>["folders"],
         );
 
-        const workspaceTemplates = workspace.customComponentTemplates;
+        const workspaceTemplates = readElementPresetsField(workspace);
         if (workspaceTemplates) {
-          useCustomComponentStore.setState((state) => ({
-            templates: mergeCustomComponentTemplates(state.templates, workspaceTemplates),
+          useElementPresetStore.setState((state) => ({
+            presets: mergeElementPresets(state.presets, workspaceTemplates),
           }));
         }
       } else {
         const scan = await fileSystemAdapter.scanWorkspace();
         const validDiagrams = Object.fromEntries(scan.valid.map((d) => [d.id, d]));
 
-        const scannedManifestTemplates = scan.manifest?.customComponentTemplates as
-          Record<string, CustomComponentTemplate> | undefined;
+        const scannedManifestTemplates = readElementPresetsField(scan.manifest ?? {});
         if (scannedManifestTemplates) {
-          useCustomComponentStore.setState((state) => ({
-            templates: mergeCustomComponentTemplates(state.templates, scannedManifestTemplates),
+          useElementPresetStore.setState((state) => ({
+            presets: mergeElementPresets(state.presets, scannedManifestTemplates),
           }));
         }
 

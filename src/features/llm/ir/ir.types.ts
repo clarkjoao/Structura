@@ -4,7 +4,20 @@
  * The IR is the contract between the generator prompt and everything downstream:
  * validator, layout, and canvas application. It is deliberately independent of
  * Structura's own component model — the translation happens in `ir-to-component`.
+ *
+ * AWS *category* semanticTypes come from `AWS_CATEGORIES`, the static catalog —
+ * **not** from `allElements()`. F5c tried the registry and it failed in
+ * production; see `irAwsCategoryIdsFromCatalog` for the full account. Boundary
+ * types and C4 remain IR concepts, not registry categories. Expanding the IR
+ * vocabulary to GCP/Azure is a product decision, not an automatic consequence
+ * of where the AWS ids are read from.
  */
+
+import {
+  AWS_CATEGORIES,
+  isAwsType,
+  type AwsCategoryId,
+} from "@/features/cloud/providers/aws/aws.catalog";
 
 export const IR_DIAGRAM_TYPES = [
   "c4-context",
@@ -24,53 +37,10 @@ export const IR_C4_SEMANTIC_TYPES = [
 ] as const;
 
 /**
- * Boundary types first, then one per AWS catalog category, in catalog order.
- *
- * The category half must stay complete: the prompt hands the model every service
- * id in `AWS_CATEGORIES`, so a category with no semanticType here is a trap — the
- * model is invited to draw Athena or SageMaker and then has nothing legal to type
- * it as, and `nodeInvalidSemanticType` throws away the whole diagram. Locked by
- * `ir.types.test.ts`.
- */
-export const IR_AWS_SEMANTIC_TYPES = [
-  "aws-vpc",
-  "aws-az",
-  "aws-subnet",
-  "aws-public-subnet",
-  "aws-private-subnet",
-  "aws-compute",
-  "aws-storage",
-  "aws-database",
-  "aws-networking",
-  "aws-security",
-  "aws-analytics",
-  "aws-ml",
-  "aws-integration",
-  "aws-management",
-  "aws-developer",
-  "aws-containers",
-  "aws-media",
-  "aws-migration",
-  "aws-iot",
-  "aws-end-user",
-  "aws-general",
-] as const;
-
-export const IR_SEMANTIC_TYPES = [...IR_C4_SEMANTIC_TYPES, ...IR_AWS_SEMANTIC_TYPES] as const;
-
-export type SemanticType = (typeof IR_SEMANTIC_TYPES)[number];
-
-/**
- * Semantic position of a node. Carried through the pipeline but not acted upon:
- * the tier-ordering mechanism is an open decision (spec §8, Fatia 4).
- */
-export const IR_TIERS = ["external", "edge", "ingress", "compute", "data", "integration"] as const;
-
-export type Tier = (typeof IR_TIERS)[number];
-
-/**
  * Semantic types that are boundaries by definition — the type itself already
  * declares the node is a container, so `isBoundary` is implied for them.
+ *
+ * These are IR concepts, not AWS catalog / registry category ids.
  */
 export const IR_BOUNDARY_SEMANTIC_TYPES = [
   "aws-vpc",
@@ -81,6 +51,54 @@ export const IR_BOUNDARY_SEMANTIC_TYPES = [
 ] as const;
 
 export type BoundarySemanticType = (typeof IR_BOUNDARY_SEMANTIC_TYPES)[number];
+
+/**
+ * AWS category ids that are also IR semanticTypes, read from the **static
+ * catalog** — deliberately not from the element registry.
+ *
+ * F5c moved this to `allElements()` and it broke in production: the LLM feature
+ * is its own Vite chunk, the registry snapshot taken at chunk load was empty
+ * there, and the allowlist came out boundaries-only, so every `aws-compute` IR
+ * was rejected while vitest stayed green. `42ec226` reverted it. That revert is
+ * the decision, not an accident to undo — reading `AWS_CATEGORIES` is what
+ * keeps the vocabulary independent of bootstrap timing.
+ *
+ * The catalog and the registry cannot disagree today (`awsFamily.categories` is
+ * built from `AWS_CATEGORIES`), and `ir.types.test.ts` compares them against
+ * the live registry so they cannot start to. Note what that test *cannot* do:
+ * the original failure was a bundling boundary, not a logic error, and a unit
+ * test runs in one module graph where bootstrap has always run. Only an
+ * end-to-end run reproduces it — `cypress/e2e/ir-generation-smoke.cy.ts`, which
+ * is what caught it the first time.
+ */
+export function irAwsCategoryIdsFromCatalog(): readonly AwsCategoryId[] {
+  return AWS_CATEGORIES.map((category) => category.id).filter(isAwsType);
+}
+
+/**
+ * Boundary types first, then one per AWS catalog category.
+ *
+ * Built via `irAwsCategoryIdsFromCatalog()` on each call (cheap) so callers
+ * never hold a stale allowlist across hot reloads in tests.
+ */
+export function getIrAwsSemanticTypes(): readonly (BoundarySemanticType | AwsCategoryId)[] {
+  return [...IR_BOUNDARY_SEMANTIC_TYPES, ...irAwsCategoryIdsFromCatalog()];
+}
+
+export function getIrSemanticTypes(): readonly SemanticType[] {
+  return [...IR_C4_SEMANTIC_TYPES, ...getIrAwsSemanticTypes()];
+}
+
+export type SemanticType =
+  (typeof IR_C4_SEMANTIC_TYPES)[number] | BoundarySemanticType | AwsCategoryId;
+
+/**
+ * Semantic position of a node. Carried through the pipeline but not acted upon:
+ * the tier-ordering mechanism is an open decision (spec §8, Fatia 4).
+ */
+export const IR_TIERS = ["external", "edge", "ingress", "compute", "data", "integration"] as const;
+
+export type Tier = (typeof IR_TIERS)[number];
 
 export function isBoundarySemanticType(value: SemanticType): value is BoundarySemanticType {
   return (IR_BOUNDARY_SEMANTIC_TYPES as readonly string[]).includes(value);
@@ -132,7 +150,7 @@ export function isIRDiagramType(value: unknown): value is IRDiagramType {
 }
 
 export function isSemanticType(value: unknown): value is SemanticType {
-  return typeof value === "string" && (IR_SEMANTIC_TYPES as readonly string[]).includes(value);
+  return typeof value === "string" && (getIrSemanticTypes() as readonly string[]).includes(value);
 }
 
 export function isTier(value: unknown): value is Tier {

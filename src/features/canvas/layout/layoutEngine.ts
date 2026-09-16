@@ -11,11 +11,11 @@ import type {
 } from "./contract";
 
 /**
- * The layout options the auto-layout button has always run.
+ * The layout options the auto-layout button (Cmd/Ctrl+Shift+L) has always run.
  *
- * The option set is the one that was tuned against `layoutReadability`'s
- * counters, not the one that happened to be older. Three notes on it, all
- * verified against elkjs rather than assumed:
+ * The option set is tuned against `layoutReadability`'s counters, not the one
+ * that happened to be older. Three notes on it, all verified against elkjs
+ * rather than assumed:
  *   - `elk.direction` is "RIGHT". ELK has no "LEFT_TO_RIGHT" token; it ignores
  *     the value and falls back to a default that happens to flow rightwards, so
  *     the mistake is invisible.
@@ -23,6 +23,12 @@ import type {
  *     and silently applies its 12px default.
  *   - There is no `elk.resize`. Containers sized to fit their children is ELK's
  *     default for compound nodes, which is what this relies on.
+ *
+ * Spacing (110 / 220 + edgeNode/edgeEdge) was promoted from the visualization
+ * profile after C4 panels with many same-layer siblings still read as a tall
+ * stack at 80/150. Between-layer gap is the L→R lever; node/edge gaps keep
+ * labels and orthogonal paths from collapsing. Placement stays BRANDES_KOEPF
+ * so long edges stay straight for the editor's ELK waypoints.
  *
  * Options that are *not* here were removed on measurement, not on taste:
  * `layering.strategy=LONGEST_PATH` measured worse (11 crossings against 9), and
@@ -33,8 +39,10 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
   "elk.algorithm": "layered",
   "elk.direction": "RIGHT",
   "elk.edgeRouting": "ORTHOGONAL",
-  "elk.layered.spacing.nodeNodeBetweenLayers": "150",
-  "elk.spacing.nodeNode": "80",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "220",
+  "elk.spacing.nodeNode": "110",
+  "elk.spacing.edgeNode": "40",
+  "elk.spacing.edgeEdge": "25",
   "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
   "elk.padding": "[top=40,left=40,bottom=40,right=40]",
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
@@ -45,8 +53,9 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
  *
  * The difference from `ELK_OPTIONS_INTERACTIVE` is not taste. The interactive
  * profile runs on a diagram the user arranged, so its job is to not make that
- * worse; this one runs where nobody arranged anything and the only thing being
- * optimised is how the picture reads. That buys room to spend space.
+ * worse while still reading L→R; this one runs where nobody arranged anything
+ * and the only thing being optimised is how the picture reads. Placement is
+ * the remaining lever: NETWORK_SIMPLEX vs BRANDES_KOEPF.
  *
  * **Measured against how `/viewer` actually draws**, which is the only comparison
  * worth making and is not the obvious one. The viewer reads control points from
@@ -67,13 +76,10 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
  *     crossing count: 15 -> 13 on its own. BRANDES_KOEPF, which the interactive
  *     profile keeps, optimises for straight long edges; with the routing thrown
  *     away, straightness stops being what the reader sees.
- *   - `spacing.edgeNode` / `spacing.edgeEdge` are what take the last label
- *     overlap out. Labels are drawn as a pill at the middle of the path and ELK
- *     is never told about them, so room between paths is the only lever.
- *   - `spacing.nodeNode` / `nodeNodeBetweenLayers` are the generous reading-view
- *     values. The React Flow ELK example uses 80/100; the interactive profile
- *     already exceeds that at 80/150, so these are not a correction of it.
- *     140/260 was measured too and is worse on overlap (2060px) for more width.
+ *   - Interactive already carries the generous spacing + edge gaps; this
+ *     profile only swaps placement. 140/260 was measured too and is worse on
+ *     overlap (2060px) for more width — do not re-widen here without a new
+ *     table.
  *
  * Measured and rejected: `layered.thoroughness`, `spacing.edgeLabel`,
  * `spacing.labelNode` and `separateConnectedComponents` change nothing at all
@@ -90,10 +96,6 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
 export const ELK_OPTIONS_VISUALIZATION: Record<string, string> = {
   ...ELK_OPTIONS_INTERACTIVE,
   "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
-  "elk.spacing.nodeNode": "110",
-  "elk.layered.spacing.nodeNodeBetweenLayers": "220",
-  "elk.spacing.edgeNode": "40",
-  "elk.spacing.edgeEdge": "25",
 };
 
 /** Which of the two option sets a caller wants. */

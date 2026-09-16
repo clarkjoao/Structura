@@ -12,8 +12,14 @@ export interface PositionSectionProps {
     elementId: string,
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
+    options?: { syncCanvas?: boolean },
   ) => void;
+  /** When true, also expose width/height fields (panels, notes, svg, …). */
   isPanel: boolean;
+  /** Floor for width when `isPanel`; defaults to panel min (200). */
+  minWidth?: number;
+  /** Floor for height when `isPanel`; defaults to panel min (150). */
+  minHeight?: number;
 }
 
 export function PositionSection({
@@ -21,6 +27,8 @@ export function PositionSection({
   nodeLayout,
   updateNodeLayout,
   isPanel,
+  minWidth = MIN_PANEL_WIDTH,
+  minHeight = MIN_PANEL_HEIGHT,
 }: PositionSectionProps) {
   const { t } = useTranslation();
   const [xInput, setXInput] = useState("");
@@ -72,8 +80,8 @@ export function PositionSection({
       const parsedH = Number(trimmedH);
       if (!Number.isFinite(parsedW) || !Number.isFinite(parsedH)) return;
 
-      const nextW = Math.max(MIN_PANEL_WIDTH, Math.round(parsedW));
-      const nextH = Math.max(MIN_PANEL_HEIGHT, Math.round(parsedH));
+      const nextW = Math.max(minWidth, Math.round(parsedW));
+      const nextH = Math.max(minHeight, Math.round(parsedH));
 
       if (
         nextX === nodeLayout.x &&
@@ -84,14 +92,30 @@ export function PositionSection({
         return;
       }
 
-      updateNodeLayout(componentId, { x: nextX, y: nextY }, { width: nextW, height: nextH });
+      updateNodeLayout(
+        componentId,
+        { x: nextX, y: nextY },
+        { width: nextW, height: nextH },
+        { syncCanvas: true },
+      );
       return;
     }
 
     if (nextX === nodeLayout.x && nextY === nodeLayout.y) return;
 
-    updateNodeLayout(componentId, { x: nextX, y: nextY });
-  }, [componentId, heightInput, isPanel, nodeLayout, updateNodeLayout, widthInput, xInput, yInput]);
+    updateNodeLayout(componentId, { x: nextX, y: nextY }, undefined, { syncCanvas: true });
+  }, [
+    componentId,
+    heightInput,
+    isPanel,
+    minHeight,
+    minWidth,
+    nodeLayout,
+    updateNodeLayout,
+    widthInput,
+    xInput,
+    yInput,
+  ]);
 
   /**
    * Position is committed only from a real edit -- blur or Enter. This used to run
@@ -168,7 +192,7 @@ export function PositionSection({
             </label>
             <input
               type="number"
-              min={MIN_PANEL_WIDTH}
+              min={minWidth}
               value={widthInput}
               onChange={(event) => setWidthInput(event.target.value)}
               onFocus={handleFocus}
@@ -183,7 +207,7 @@ export function PositionSection({
             </label>
             <input
               type="number"
-              min={MIN_PANEL_HEIGHT}
+              min={minHeight}
               value={heightInput}
               onChange={(event) => setHeightInput(event.target.value)}
               onFocus={handleFocus}

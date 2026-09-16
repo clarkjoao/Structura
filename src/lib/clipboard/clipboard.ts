@@ -127,6 +127,22 @@ export async function readStructuraClipboard(): Promise<ClipboardEntry | null> {
   return null;
 }
 
+/**
+ * Pull the first `<svg…</svg>` block out of plain text or HTML clipboard
+ * payloads. Returns null for draw.io graphs and for text with no svg root.
+ *
+ * @example
+ * extractSvgMarkup('<meta><svg viewBox="0 0 1 1"></svg>') // → '<svg …>'
+ */
+export function extractSvgMarkup(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  if (trimmed.includes("<mxGraphModel") || trimmed.includes("<mxfile")) return null;
+
+  const match = trimmed.match(/<svg\b[^>]*>[\s\S]*?<\/svg>/i);
+  return match?.[0] ?? null;
+}
+
 export async function readSvgFromClipboard(): Promise<string | null> {
   try {
     if (navigator.clipboard?.read) {
@@ -134,25 +150,41 @@ export async function readSvgFromClipboard(): Promise<string | null> {
       for (const item of items) {
         if (item.types.includes("image/svg+xml")) {
           const blob = await item.getType("image/svg+xml");
-          return await blob.text();
+          const markup = extractSvgMarkup(await blob.text());
+          if (markup) return markup;
         }
 
-        if (item.types.includes("text/plain")) {
-          const blob = await item.getType("text/plain");
-          const text = await blob.text();
-          const trimmed = text.trim();
-
-          if (trimmed.includes("<mxGraphModel") || trimmed.includes("<mxfile")) {
-            continue;
-          }
-          if (trimmed.startsWith("<svg") || trimmed.startsWith("<?xml")) {
-            return trimmed;
-          }
+        for (const mime of ["text/plain", "text/html"] as const) {
+          if (!item.types.includes(mime)) continue;
+          const blob = await item.getType(mime);
+          const markup = extractSvgMarkup(await blob.text());
+          if (markup) return markup;
         }
       }
     }
+
+    // Permission may allow readText when clipboard.read is denied.
+    const plain = await navigator.clipboard.readText();
+    return extractSvgMarkup(plain);
   } catch (err) {
     logger.warn("[Clipboard]", "Failed to read SVG from clipboard:", err);
+  }
+  return null;
+}
+
+/** PNG/JPEG clipboard blobs for canvas import (caller wraps as SVG). */
+export async function readRasterImageBlobFromClipboard(): Promise<Blob | null> {
+  try {
+    if (!navigator.clipboard?.read) return null;
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      for (const mime of ["image/png", "image/jpeg"] as const) {
+        if (!item.types.includes(mime)) continue;
+        return await item.getType(mime);
+      }
+    }
+  } catch (err) {
+    logger.warn("[Clipboard]", "Failed to read raster image from clipboard:", err);
   }
   return null;
 }

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type {
   Diagram,
@@ -11,9 +10,8 @@ import type {
   Connection,
   NodeLayout,
   ServiceDefinition,
-  SvgComponent,
 } from "@/features/diagram";
-import { COMPONENT_TYPE_SVG, generateId, getCachedCanvasSnapshot } from "@/features/diagram";
+import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
 import { KEY, type KeyHandler } from "./keyboard/helpers";
@@ -28,59 +26,8 @@ import {
   dispatchCanvasKeydown,
   type CanvasKeydownDispatch,
 } from "./keyboard/dispatchCanvasKeydown";
-import { validateSvgSize } from "../utils/svg.utils";
-import { sanitizeSvg } from "../utils/svg.sanitizer";
-
-function prepareImportedSvgMarkup(
-  svgContent: string,
-  translate: (key: string) => string,
-): string | null {
-  const validation = validateSvgSize(svgContent);
-  if (!validation.valid) {
-    if (validation.reason === "too_large") {
-      toast.error(translate("icons.svgTooLarge"));
-    } else {
-      toast.error(translate("icons.svgDimensionExceeded"));
-    }
-    return null;
-  }
-  const sanitized = sanitizeSvg(svgContent);
-  if (sanitized === null) {
-    toast.error(translate("icons.invalidSvg"));
-    return null;
-  }
-  return sanitized;
-}
-
-function readSvgDisplaySize(svgMarkup: string): { width: number; height: number } {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgMarkup, "image/svg+xml");
-  const svgEl = doc.querySelector("svg");
-  let width = 200;
-  let height = 200;
-  if (!svgEl) return { width, height };
-
-  const viewBox = svgEl.getAttribute("viewBox")?.trim().split(/[\s,]+/);
-  if (viewBox && viewBox.length === 4) {
-    const viewWidth = parseFloat(viewBox[2] ?? "");
-    const viewHeight = parseFloat(viewBox[3] ?? "");
-    if (viewWidth > 0) width = Math.round(viewWidth);
-    if (viewHeight > 0) height = Math.round(viewHeight);
-  } else {
-    const attrWidth = parseFloat(svgEl.getAttribute("width") ?? "");
-    const attrHeight = parseFloat(svgEl.getAttribute("height") ?? "");
-    if (attrWidth > 0) width = Math.round(attrWidth);
-    if (attrHeight > 0) height = Math.round(attrHeight);
-  }
-
-  const maxEdge = 800;
-  if (width > maxEdge || height > maxEdge) {
-    const ratio = Math.min(maxEdge / width, maxEdge / height);
-    width = Math.round(width * ratio);
-    height = Math.round(height * ratio);
-  }
-  return { width, height };
-}
+import { importSvgMarkupToCanvas } from "../utils/importSvgToCanvas";
+import { useCanvasMediaPaste } from "./useCanvasMediaPaste";
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -158,6 +105,7 @@ function useStableHandlerRef(handler: KeyHandler): MutableRefObject<KeyHandler> 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();
   const lastPointerScreenRef = useRef<{ x: number; y: number } | null>(null);
+  const mediaPasteConsumedRef = useRef(false);
   const c4ShortcutMap = useMemo<Record<string, { type: ComponentType; name: string } | undefined>>(
     () => ({
       [KEY.DIGIT_1]: { type: "person", name: t("keyboard.newPerson") },
@@ -232,33 +180,26 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const pasteSvgAsCanvasNode = useCallback(
     (rawSvg: string, position: { x: number; y: number }): string | null => {
       if (!diagram) return null;
-      const clean = prepareImportedSvgMarkup(rawSvg, t);
-      if (!clean) return null;
-
-      const { width, height } = readSvgDisplaySize(clean);
-      const id = generateId("el");
-      const comp: SvgComponent = {
-        id,
-        name: "SVG",
-        description: "",
-        parentId: null,
-        type: COMPONENT_TYPE_SVG,
-        svgContent: clean,
-      };
-      const newIds = importDrawioResult(
-        [comp],
-        [],
-        [{ elementId: id, x: position.x, y: position.y, width, height }],
-      );
-      return newIds[0] ?? null;
+      return importSvgMarkupToCanvas({
+        rawSvg,
+        position,
+        showBorder: false,
+        importDrawioResult,
+        translate: t,
+      });
     },
     [diagram, importDrawioResult, t],
   );
 
-  const importSvgForIconLibrary = useCallback(
-    (svgContent: string) => prepareImportedSvgMarkup(svgContent, t),
-    [t],
-  );
+  useCanvasMediaPaste({
+    enabled: Boolean(diagram),
+    mediaPasteConsumedRef,
+    reactFlowInstance,
+    reactFlowWrapperRef,
+    lastPointerScreenRef,
+    importDrawioResult,
+    setSelectedNodeIds,
+  });
 
   const handleCopyPaste = useCopyPasteShortcuts({
     diagram,
@@ -270,12 +211,12 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     importDrawioResult,
     hydrateClipboard,
     pasteSvgAsCanvasNode,
-    importSvgForIconLibrary,
     serviceCatalog,
     exportDrawioXml,
     setSelectedNodeIds,
-    pastedSvgDefaultName: t("icons.pastedSvgDefaultName"),
     lastPointerScreenRef,
+    mediaPasteConsumedRef,
+    translate: t,
   });
 
   const recordingHandler = useRecordingShortcuts();

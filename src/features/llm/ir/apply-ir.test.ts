@@ -48,7 +48,7 @@ describe("buildGeneratedGraphInputs — type mapping", () => {
     expect(byId.get("ecs")).toMatchObject({ type: "aws-compute" });
   });
 
-  it("carries awsService through to leaf components", () => {
+  it("carries cloudServiceId through to leaf components", () => {
     const ir: DiagramIR = {
       type: "aws-deployment",
       nodes: [
@@ -68,7 +68,7 @@ describe("buildGeneratedGraphInputs — type mapping", () => {
       boxesFrom({ fn: { x: 0, y: 0, width: 180, height: 80 } }),
       NO_ORIGIN,
     );
-    expect(nodes[0]).toMatchObject({ type: "aws-compute", awsService: "lambda" });
+    expect(nodes[0]).toMatchObject({ type: "aws-compute", cloudServiceId: "lambda" });
   });
 
   it("lets a known service pick the boundary's panel kind", () => {
@@ -127,7 +127,7 @@ describe("buildGeneratedGraphInputs — type mapping", () => {
       NO_ORIGIN,
     );
     // Kept verbatim: the canvas falls back to the category icon on its own.
-    expect(nodes[0]).toMatchObject({ type: "aws-compute", awsService: "not-a-real-service" });
+    expect(nodes[0]).toMatchObject({ type: "aws-compute", cloudServiceId: "not-a-real-service" });
   });
 
   it("renders an empty boundary as a panel", () => {

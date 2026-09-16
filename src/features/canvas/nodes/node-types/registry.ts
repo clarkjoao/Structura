@@ -1,45 +1,92 @@
 import type { NodeTypes } from "@xyflow/react";
-import { panelDescriptor } from "./panel.descriptor";
-import { swimlaneDescriptor } from "./swimlane.descriptor";
-import { noteDescriptor } from "./note.descriptor";
-import { apiGroupDescriptor } from "./apigroup.descriptor";
-import { endpointDescriptor } from "./endpoint.descriptor";
-import { svgDescriptor } from "./svg.descriptor";
-import { unknownDescriptor } from "./unknown.descriptor";
-import { dbTableDescriptor } from "./dbtable.descriptor";
-import { jsonViewerDescriptor } from "./jsonviewer.descriptor";
-import { flowNodeDescriptor } from "./flownode.descriptor";
-import { externalElementDescriptor } from "./external-element.descriptor";
-import { c4Descriptor } from "./c4.descriptor";
 import type { NodeTypeDescriptor } from "./types";
 import type { NodeHandleSpec } from "./handle-spec";
 import type { Component, ComponentType } from "@/features/diagram";
-import { isPanelComponent, isPluginComponentType, PanelKind } from "@/features/diagram";
+import { COMPONENT_TYPE_UNKNOWN, isPluginComponentType } from "@/features/diagram";
+import {
+  allElements,
+  elementDefaultSize,
+  getElement,
+  resolveElementCanvas,
+  subscribeElements,
+} from "@/features/elements/element.registry";
+import type { ElementCanvasSlice, ElementDescriptor } from "@/features/elements/element.types";
 
-export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [
-  panelDescriptor,
-  swimlaneDescriptor,
-  noteDescriptor,
-  apiGroupDescriptor,
-  endpointDescriptor,
-  dbTableDescriptor,
-  jsonViewerDescriptor,
-  svgDescriptor,
-  unknownDescriptor,
-  flowNodeDescriptor,
-  externalElementDescriptor,
-  c4Descriptor,
-];
+/**
+ * Plugin-contributed React Flow descriptors only.
+ *
+ * Every built-in type lives on the element registry (F9). Plugins still splice
+ * descriptors in here via `registerDescriptor` until they migrate onto
+ * `elementRegistry` themselves.
+ */
+export const NODE_TYPE_REGISTRY: NodeTypeDescriptor[] = [];
 
-export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
-  if (isPluginComponentType(type)) {
-    // The C4 catch-all must not absorb plugin types: orphaned ones (plugin disabled or
-    // uninstalled) degrade to `unknown`, so the data is visibly foreign, never corrupted.
-    return (
-      NODE_TYPE_REGISTRY.find((d) => d !== c4Descriptor && d.matches(type)) ?? unknownDescriptor
+/**
+ * A registered element's canvas slice, seen as a `NodeTypeDescriptor`.
+ *
+ * Adapting rather than re-declaring keeps every existing reader — the node
+ * builder, the handle-slot assignment, the `nodeTypes` map — working while
+ * types move across one slice at a time. Cached by id so the adapted object
+ * keeps a stable identity across renders, which the `nodeTypes` map and the
+ * node memoisation both depend on.
+ */
+const adaptedDescriptors = new WeakMap<ElementCanvasSlice, NodeTypeDescriptor>();
+
+function adaptElement(element: ElementDescriptor, canvas = element.canvas): NodeTypeDescriptor {
+  const cached = adaptedDescriptors.get(canvas);
+  if (cached) return cached;
+
+  const adapted: NodeTypeDescriptor = {
+    rfType: canvas.rfType,
+    component: canvas.component,
+    matches: (type) => type === element.id,
+    zIndex: canvas.zIndex,
+    connectable: canvas.connectable,
+    handles: canvas.handles,
+    canHaveParent: canvas.canHaveParent,
+    canBeParent: canvas.canBeParent,
+    buildData: canvas.buildData,
+    buildStyle: canvas.buildStyle,
+    // NodeTypeDescriptor still wants both dimensions; an element that leaves
+    // its height to the content has none to give, and the legacy field has no
+    // reader that would use it anyway.
+    defaultSize: (() => {
+      const size = elementDefaultSize(element);
+      return size.height === undefined ? undefined : { width: size.width, height: size.height };
+    })(),
+    draggable: canvas.draggable,
+    selectable: canvas.selectable,
+    focusable: canvas.focusable,
+    dragHandle: canvas.dragHandle,
+  };
+
+  adaptedDescriptors.set(canvas, adapted);
+  return adapted;
+}
+
+function unknownDescriptor(): NodeTypeDescriptor {
+  const fallback = getElement(COMPONENT_TYPE_UNKNOWN);
+  if (!fallback) {
+    throw new Error(
+      `[node-types] The "unknown" element is not registered; cannot degrade an unmatched type.`,
     );
   }
-  return NODE_TYPE_REGISTRY.find((d) => d.matches(type)) ?? c4Descriptor;
+  return adaptElement(fallback);
+}
+
+export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
+  const element = getElement(type);
+  if (element) return adaptElement(element);
+
+  if (isPluginComponentType(type)) {
+    const contributed = NODE_TYPE_REGISTRY.find((d) => d.matches(type));
+    if (contributed) return contributed;
+    return unknownDescriptor();
+  }
+
+  // F9 / decision 4: an unrecognised built-in-shaped type is `unknown`, never
+  // silently promoted to a C4 card.
+  return unknownDescriptor();
 }
 
 /**
@@ -54,8 +101,13 @@ export function handleSpecForType(type: ComponentType): NodeHandleSpec {
 }
 
 export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
-  if (isPanelComponent(comp) && comp.panelKind === PanelKind.Swimlane) {
-    return swimlaneDescriptor;
+  // A registered element may render more than one way for the same type — a
+  // panel that is a lane. The element says which; this used to be a hardcoded
+  // swimlane branch right here.
+  const element = getElement(comp.type);
+  if (element) {
+    const canvas = resolveElementCanvas(comp) ?? element.canvas;
+    return adaptElement(element, canvas);
   }
   return getDescriptor(comp.type);
 }
@@ -63,14 +115,24 @@ export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
 const listeners = new Set<() => void>();
 
 function buildNodeTypes(): NodeTypes {
+  const registered = allElements().flatMap((element) => [
+    adaptElement(element),
+    // A variant renders under its own React Flow type, so the map needs it too.
+    ...(element.variants ?? []).map((variant) => adaptElement(element, variant.canvas)),
+  ]);
+  const descriptors = [...registered, ...NODE_TYPE_REGISTRY];
   return Object.fromEntries(
-    NODE_TYPE_REGISTRY.filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i).map(
-      (d) => [d.rfType, d.component],
-    ),
+    descriptors
+      .filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i)
+      .map((d) => [d.rfType, d.component]),
   ) as NodeTypes;
 }
 
 let nodeTypesSnapshot: NodeTypes = buildNodeTypes();
+
+// Elements may register after this module is evaluated (bootstrap order is not
+// guaranteed), so the map is rebuilt when one appears.
+subscribeElements(() => notifyRegistryChanged());
 
 function notifyRegistryChanged(): void {
   nodeTypesSnapshot = buildNodeTypes();
@@ -84,8 +146,7 @@ export function registerDescriptor(descriptor: NodeTypeDescriptor): void {
     );
   }
 
-  // Keep the catch-all (c4Descriptor) last so it always matches after everything else.
-  NODE_TYPE_REGISTRY.splice(NODE_TYPE_REGISTRY.length - 1, 0, descriptor);
+  NODE_TYPE_REGISTRY.push(descriptor);
   notifyRegistryChanged();
 }
 

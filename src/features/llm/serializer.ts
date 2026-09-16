@@ -1,4 +1,5 @@
 import type { Connection, Diagram, SceneDiff } from "@/features/diagram";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 
 function sortConnections(connectionA: Connection, connectionB: Connection): number {
   return connectionA.id.localeCompare(connectionB.id);
@@ -51,8 +52,10 @@ export function serializeDiagramContext(
     if (Array.isArray(comp.tags) && comp.tags.length > 0) {
       parts.push(`tags=[${(comp.tags as string[]).join(", ")}]`);
     }
-    if (typeof comp.awsService === "string" && comp.awsService) {
-      parts.push(`awsService="${comp.awsService}"`);
+    const cloudService = resolveCloudServiceId(component);
+    if (cloudService) {
+      // Keep the LLM-facing key name stable; the value may come from any field.
+      parts.push(`awsService="${cloudService}"`);
     }
     if (component.type === "api-group") {
       const ag = comp as { basePath?: string; protocol?: string; sla?: string };

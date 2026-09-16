@@ -4,16 +4,16 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { getPanelKindDef } from "@/lib/catalogs/panels";
-import { AwsIcon } from "./CloudIcon";
+import { getPanelKindDef, panelKindLabel } from "@/lib/catalogs/panels";
+import CloudIcon from "./CloudIcon";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
-import { useCollabHighlight } from "@/features/collaboration";
+import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
-import { buildPanelHandles } from "./CustomNode/Handles";
+import { buildPanelHandles } from "./CardNode/Handles";
 
 export type PanelNodeData = {
   elementId: string;
@@ -157,7 +157,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           </div>
         ) : useAwsIcon ? (
           <div className="shrink-0 opacity-80" style={{ color }}>
-            <AwsIcon iconName={useAwsIcon} size={18} />
+            <CloudIcon providerId="aws" iconName={useAwsIcon} size={18} />
           </div>
         ) : (
           <Icon className="h-4 w-4 shrink-0 opacity-80" style={{ color }} />
@@ -169,7 +169,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           <span className="text-[8px] text-muted-foreground text-nowrap truncate">
             {buildPanelSubLabel(
               d.panelKind,
-              kindDef.label,
+              panelKindLabel(d.panelKind),
               d.name || t("panelNode.defaultName"),
               t("panelNode.childElements", { count: childCount }),
             )}
@@ -283,14 +283,14 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             </div>
           ) : useAwsIcon ? (
             <div className="shrink-0 mt-0.5" style={{ color }}>
-              <AwsIcon iconName={useAwsIcon} size={18} />
+              <CloudIcon providerId="aws" iconName={useAwsIcon} size={18} />
             </div>
           ) : (
             <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color }} />
           )}
           <div className="min-w-0 flex-1">
             <span className="text-sm font-semibold text-foreground truncate block">
-              {buildPanelHeaderLabel(d.panelKind, kindDef.label, d.name)}
+              {buildPanelHeaderLabel(d.panelKind, panelKindLabel(d.panelKind), d.name)}
             </span>
             {d.description && (
               <span className="text-xs text-muted-foreground line-clamp-1 block">

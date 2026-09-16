@@ -1,5 +1,5 @@
-import { useCollabStore } from "@/features/collaboration";
-import type { PeerState } from "@/features/collaboration";
+import { useCollabStore } from "@/features/collaboration/store/collab.store";
+import type { PeerState } from "@/features/collaboration/types";
 
 export function usePeerOnNode(nodeId: string): PeerState | null {
   return useCollabStore((state) => {

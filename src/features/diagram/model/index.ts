@@ -10,7 +10,7 @@ export {
 } from "../enums";
 
 // ─── Component Model ──────────────────────────────────────────────────────────
-export { sanitizeComponentType, BUILTIN_COMPONENT_TYPES } from "./sanitize-component-type";
+export { sanitizeComponentType } from "./sanitize-component-type";
 
 export type {
   ComponentType,
@@ -24,6 +24,10 @@ export type {
   SwimlaneStyle,
   NoteComponent,
   AwsComponent,
+  GcpComponent,
+  AzureComponent,
+  K8sComponent,
+  OssComponent,
   ApiGroupComponent,
   ApiProtocol,
   EndpointComponent,
@@ -168,6 +172,8 @@ export {
   isAwsComponent,
   isGcpComponent,
   isAzureComponent,
+  isK8sComponent,
+  isOssComponent,
   isCloudComponent,
   isApiGroupComponent,
   isEndpointComponent,

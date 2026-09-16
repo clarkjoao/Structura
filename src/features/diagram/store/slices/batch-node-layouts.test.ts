@@ -77,4 +77,15 @@ describe("batchUpdateNodeLayouts", () => {
     const { elementId: _b, ...viaSingle } = layout(one.store, one.aId);
     expect(viaBatch).toEqual(viaSingle);
   });
+
+  it("bumps _lastLayoutWriteAt only when syncCanvas is set", () => {
+    const { store, aId } = seed();
+    const before = store.getState()._lastLayoutWriteAt;
+
+    store.getState().updateNodeLayout(aId, { x: 1, y: 2 });
+    expect(store.getState()._lastLayoutWriteAt).toBe(before);
+
+    store.getState().updateNodeLayout(aId, { x: 3, y: 4 }, undefined, { syncCanvas: true });
+    expect(store.getState()._lastLayoutWriteAt).toBe(before + 1);
+  });
 });

@@ -1,7 +1,4 @@
-import {
-  claimShortcutEvent,
-  type KeyHandler,
-} from "./helpers";
+import { claimShortcutEvent, type KeyHandler } from "./helpers";
 
 /**
  * Run shortcut handlers in order. The first that returns true claims the event

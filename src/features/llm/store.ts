@@ -24,7 +24,12 @@ import {
   saveConnections,
   saveThreadsForDiagram,
 } from "./llm-storage";
-import { applyDiagramPatchAction, computeGridPositions, resolveRef } from "./apply-diagram-patch";
+import {
+  applyDiagramPatchAction,
+  computeGridPositions,
+  resolveRef,
+  runCatalogReadActions,
+} from "./apply-diagram-patch";
 import {
   applyIRToDiagram,
   buildIRSystemPrompt,
@@ -638,6 +643,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
         const nextSuggestions = [...get().pendingSuggestions];
         const nextPreviews = [...get().pendingPreviews];
+        const catalogToolResults: unknown[] = [];
         if (parsedResponse.kind === "patch" && parsedResponse.patch) {
           const suggestion: PendingSuggestion = {
             id: crypto.randomUUID(),
@@ -653,6 +659,13 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           const addEdgeActions = parsedResponse.patch.actions.filter(
             (action) => action.type === "ADD_EDGE",
           );
+
+          // F8b: catalog reads first so search_elements hits can gate ADD_NODE
+          // in the same turn (no multi-turn model loop required).
+          const { catalogToolResults: earlyCatalogResults } = runCatalogReadActions(
+            parsedResponse.patch.actions,
+          );
+          catalogToolResults.push(...earlyCatalogResults);
 
           const previewNodeIds: string[] = [];
           const previewEdgeIds: string[] = [];
@@ -747,17 +760,30 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         }
 
         const locale = getResolvedAppLanguage();
+        let assistantContent =
+          parsedResponse.kind === "patch"
+            ? buildPatchMessage(locale, parsedResponse.patch?.actions.length ?? 0)
+            : parsedResponse.kind === "text"
+              ? parsedResponse.message
+              : "";
+        if (catalogToolResults.length > 0) {
+          const catalogBlock = [
+            "Catalog tool results:",
+            "```json",
+            JSON.stringify(catalogToolResults, null, 2),
+            "```",
+          ].join("\n");
+          assistantContent = assistantContent
+            ? `${assistantContent}\n\n${catalogBlock}`
+            : catalogBlock;
+        }
+
         set({
           messages: get().messages.map((message) =>
             message.id === assistantMessageId
               ? {
                   ...message,
-                  content:
-                    parsedResponse.kind === "patch"
-                      ? buildPatchMessage(locale, parsedResponse.patch?.actions.length ?? 0)
-                      : parsedResponse.kind === "text"
-                        ? parsedResponse.message
-                        : "",
+                  content: assistantContent,
                 }
               : message,
           ),

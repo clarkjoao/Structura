@@ -3,11 +3,14 @@ import { Square, MapPin, LayoutList } from "lucide-react";
 // Leaf import: this catalog only needs the enum, and going through the
 // `@/features/diagram` barrel would pull the store in behind it.
 import { PanelKind } from "@/features/diagram/enums";
+import i18n from "@/infrastructure/i18n";
 
 export interface PanelKindDef {
   id: PanelKind;
-  label: string;
-  defaultName: string;
+  /** i18n key for the kind's display name; resolve with `panelKindLabel`. */
+  labelKey: string;
+  /** i18n key for the name a new panel of this kind gets. */
+  defaultNameKey: string;
   defaultColor: string;
 
   icon: LucideIcon;
@@ -18,71 +21,71 @@ export interface PanelKindDef {
 export const PANEL_KINDS: PanelKindDef[] = [
   {
     id: PanelKind.Default,
-    label: "Painel",
-    defaultName: "Novo Painel",
+    labelKey: "panelKinds.default.label",
+    defaultNameKey: "panelKinds.default.defaultName",
     defaultColor: "hsl(220 20% 20%)",
     icon: Square,
   },
   {
     id: PanelKind.AvailabilityZone,
-    label: "Availability Zone",
-    defaultName: "AZ-1",
+    labelKey: "panelKinds.availability-zone.label",
+    defaultNameKey: "panelKinds.availability-zone.defaultName",
     defaultColor: "hsl(45 60% 45%)",
     icon: MapPin,
     awsIconName: "ArchitectureGroupRegion",
   },
   {
     id: PanelKind.EksCluster,
-    label: "EKS Cluster",
-    defaultName: "EKS Cluster",
+    labelKey: "panelKinds.eks-cluster.label",
+    defaultNameKey: "panelKinds.eks-cluster.defaultName",
     defaultColor: "hsl(260 60% 45%)",
     icon: Square,
     awsIconName: "ArchitectureServiceAmazonElasticKubernetesService",
   },
   {
     id: PanelKind.EcsCluster,
-    label: "ECS Cluster",
-    defaultName: "ECS Cluster",
+    labelKey: "panelKinds.ecs-cluster.label",
+    defaultNameKey: "panelKinds.ecs-cluster.defaultName",
     defaultColor: "hsl(200 70% 45%)",
     icon: Square,
     awsIconName: "ArchitectureServiceAmazonElasticContainerService",
   },
   {
     id: PanelKind.AutoScalingGroup,
-    label: "Auto Scaling Group",
-    defaultName: "ASG",
+    labelKey: "panelKinds.auto-scaling-group.label",
+    defaultNameKey: "panelKinds.auto-scaling-group.defaultName",
     defaultColor: "hsl(25 80% 48%)",
     icon: Square,
     awsIconName: "ArchitectureServiceAWSAutoScaling",
   },
   {
     id: PanelKind.Vpc,
-    label: "VPC",
-    defaultName: "VPC",
+    labelKey: "panelKinds.vpc.label",
+    defaultNameKey: "panelKinds.vpc.defaultName",
     defaultColor: "hsl(220 50% 35%)",
     icon: Square,
     awsIconName: "ArchitectureGroupVirtualprivatecloudVPC",
   },
   {
     id: PanelKind.PublicSubnet,
-    label: "Public Subnet",
-    defaultName: "Public Subnet",
+    labelKey: "panelKinds.public-subnet.label",
+    defaultNameKey: "panelKinds.public-subnet.defaultName",
     defaultColor: "hsl(150 50% 35%)",
     icon: Square,
     awsIconName: "ArchitectureGroupPublicsubnet",
   },
   {
     id: PanelKind.PrivateSubnet,
-    label: "Private Subnet",
-    defaultName: "Private Subnet",
+    labelKey: "panelKinds.private-subnet.label",
+    defaultNameKey: "panelKinds.private-subnet.defaultName",
     defaultColor: "hsl(0 50% 38%)",
     icon: Square,
     awsIconName: "ArchitectureGroupPrivatesubnet",
   },
   {
     id: PanelKind.Swimlane,
-    label: "Swim lane",
-    defaultName: "Swim lane",
+    labelKey: "panelKinds.swimlane.label",
+    defaultNameKey: "panelKinds.swimlane.defaultName",
     defaultColor: "#6366f1",
     icon: LayoutList,
   },
@@ -109,4 +112,25 @@ export function getPanelKindForAwsService(serviceId: string): PanelKind | undefi
 
 export function getPanelKindDef(kind: PanelKind | undefined): PanelKindDef {
   return PANEL_KIND_MAP.get(kind ?? PanelKind.Default) ?? PANEL_KINDS[0];
+}
+
+/**
+ * The definition for a kind that may arrive as a bare string.
+ *
+ * Node data carries `panelKind` as a plain string — React Flow data is not the
+ * domain model — so the label helpers take the wider type rather than making
+ * every caller cast back into the enum.
+ */
+function defFor(kind: PanelKind | string | undefined): PanelKindDef {
+  return PANEL_KIND_MAP.get((kind ?? PanelKind.Default) as PanelKind) ?? PANEL_KINDS[0];
+}
+
+/** The kind's display name in the active locale. */
+export function panelKindLabel(kind: PanelKind | string | undefined): string {
+  return i18n.t(defFor(kind).labelKey);
+}
+
+/** The name a new panel of this kind is created with, in the active locale. */
+export function panelKindDefaultName(kind: PanelKind | string | undefined): string {
+  return i18n.t(defFor(kind).defaultNameKey);
 }

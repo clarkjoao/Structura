@@ -22,6 +22,7 @@ type PositionSectionUpdate = (
   elementId: string,
   position: { x: number; y: number },
   dimensions?: { width: number; height: number },
+  options?: { syncCanvas?: boolean },
 ) => void;
 
 const inputs = () => screen.getAllByRole("spinbutton") as HTMLInputElement[];
@@ -79,7 +80,9 @@ describe("PositionSection", () => {
     fireEvent.blur(xField());
 
     expect(updateNodeLayout).toHaveBeenCalledTimes(1);
-    expect(updateNodeLayout).toHaveBeenCalledWith("c1", { x: 1500, y: 380 });
+    expect(updateNodeLayout).toHaveBeenCalledWith("c1", { x: 1500, y: 380 }, undefined, {
+      syncCanvas: true,
+    });
   });
 
   it("commits on Enter", () => {
@@ -90,7 +93,33 @@ describe("PositionSection", () => {
     fireEvent.keyDown(yField(), { key: "Enter" });
 
     expect(updateNodeLayout).toHaveBeenCalledTimes(1);
-    expect(updateNodeLayout).toHaveBeenCalledWith("c1", { x: 1400, y: 420 });
+    expect(updateNodeLayout).toHaveBeenCalledWith("c1", { x: 1400, y: 420 }, undefined, {
+      syncCanvas: true,
+    });
+  });
+
+  it("asks the canvas to drop its local position on size edits too", () => {
+    const updateNodeLayout = vi.fn();
+    render(
+      <PositionSection
+        componentId="c1"
+        nodeLayout={{ elementId: "c1", x: 10, y: 20, width: 200, height: 150 }}
+        updateNodeLayout={updateNodeLayout}
+        isPanel
+      />,
+    );
+
+    const [x, , w] = inputs();
+    fireEvent.change(x, { target: { value: "40" } });
+    fireEvent.change(w, { target: { value: "300" } });
+    fireEvent.blur(w);
+
+    expect(updateNodeLayout).toHaveBeenCalledWith(
+      "c1",
+      { x: 40, y: 20 },
+      { width: 300, height: 150 },
+      { syncCanvas: true },
+    );
   });
 
   it("does not overwrite a field the user is editing", () => {

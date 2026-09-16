@@ -1,30 +1,17 @@
+import {
+  AWS_FAMILY_PRIMARY_CATEGORY_IDS,
+  AWS_FAMILY_SPOTLIGHT_SERVICE_IDS,
+} from "@/features/elements/families/aws/aws.family";
+
 export const LAST_CATEGORY_KEY = "structura:lastElementCategory";
 
-export const AWS_SPOTLIGHT_IDS: string[] = [
-  "ec2",
-  "lambda",
-  "s3",
-  "rds",
-  "elb",
-  "ecs",
-  "eks",
-  "vpc",
-  "cloudfront",
-  "dynamodb",
-  "sqs",
-  "api-gateway",
-];
+/** Spotlight services — owned by the AWS family; re-exported for picker call sites. */
+export const AWS_SPOTLIGHT_IDS: string[] = [...AWS_FAMILY_SPOTLIGHT_SERVICE_IDS];
 
 export const REGISTRY_PREVIEW_LIMIT = 5;
 
-export const AWS_PRIMARY_CATEGORY_IDS: string[] = [
-  "aws-compute",
-  "aws-networking",
-  "aws-storage",
-  "aws-database",
-  "aws-security",
-  "aws-containers",
-];
+/** Primary browse categories — owned by the AWS family. */
+export const AWS_PRIMARY_CATEGORY_IDS: string[] = [...AWS_FAMILY_PRIMARY_CATEGORY_IDS];
 
 export const OTHER_AWS_SECTION_KEY = "__aws_other__";
 
