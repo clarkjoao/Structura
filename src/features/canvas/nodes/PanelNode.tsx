@@ -293,7 +293,11 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
               {buildPanelHeaderLabel(d.panelKind, panelKindLabel(d.panelKind), d.name)}
             </span>
             {d.description && (
-              <span className="text-xs text-muted-foreground line-clamp-1 block">
+              <span
+                className={`text-xs text-muted-foreground block ${
+                  isActive ? "whitespace-pre-wrap break-words" : "line-clamp-1"
+                }`}
+              >
                 {d.description}
               </span>
             )}

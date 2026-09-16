@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import type { Edge, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
 import { buildFlowOutline } from "@/features/diagram";
 import {
@@ -10,6 +11,8 @@ import {
   useReadDiagramFlow,
   type ReadDiagramRoutePlay,
 } from "@/features/canvas/core";
+import { HandleHighlightProvider } from "@/features/canvas/contexts/HandleHighlightContext";
+import { useCanvasHighlight } from "@/features/canvas/hooks/useCanvasHighlight";
 import {
   EMPTY_FLOW_HIGHLIGHT,
   FlowReadingRail,
@@ -104,6 +107,53 @@ const ViewerCanvasContent = ({
   const iconLookup = useMemo(() => iconLookupForDiagram(diagram), [diagram]);
   const routePlay = useMemo<ReadDiagramRoutePlay>(() => ({ onPlayFlow: startFlow }), [startFlow]);
 
+  /**
+   * Click-to-focus on the shared canvas: expand a node's description, or
+   * highlight an edge and its ends — same HandleHighlight path as the editor.
+   */
+  const {
+    highlightedConnectionId,
+    highlightedNodeIds,
+    setHighlight,
+    clearHighlight,
+  } = useCanvasHighlight();
+  const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
+
+  const handleNodeClick = useCallback(
+    (_: MouseEvent, node: Node) => {
+      clearHighlight();
+      setFocusedNodeId((prev) => (prev === node.id ? null : node.id));
+    },
+    [clearHighlight],
+  );
+
+  const handleEdgeClick = useCallback(
+    (_: MouseEvent, edge: Edge) => {
+      setFocusedNodeId(null);
+      if (highlightedConnectionId === edge.id) {
+        clearHighlight();
+        return;
+      }
+      setHighlight(edge.id, [edge.source, edge.target]);
+    },
+    [highlightedConnectionId, setHighlight, clearHighlight],
+  );
+
+  const handlePaneClick = useCallback(() => {
+    setFocusedNodeId(null);
+    clearHighlight();
+  }, [clearHighlight]);
+
+  const handleHighlightValue = useMemo(
+    () => ({
+      highlightedConnectionId,
+      highlightedNodeIds,
+      setHighlight,
+      clearHighlight,
+    }),
+    [highlightedConnectionId, highlightedNodeIds, setHighlight, clearHighlight],
+  );
+
   /** The link's own choice, honoured once — a reader who closes it stays closed. */
   const openedInitial = useRef(false);
   useEffect(() => {
@@ -112,7 +162,7 @@ const ViewerCanvasContent = ({
     startFlow(initialFlowId);
   }, [initialFlowId, startFlow]);
 
-  const { nodes, edges } = useReadDiagramFlow(diagram, reading, routePlay);
+  const { nodes, edges } = useReadDiagramFlow(diagram, reading, routePlay, focusedNodeId);
   const reactFlowInstance = useDiagramFlow();
 
   /**
@@ -197,16 +247,21 @@ const ViewerCanvasContent = ({
           boxSizing: "border-box",
         }}
       >
-        <DiagramSurface
-          policy={readPolicy()}
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          iconLookup={iconLookup}
-          fitView
-        >
-          <DiagramControls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-        </DiagramSurface>
+        <HandleHighlightProvider value={handleHighlightValue}>
+          <DiagramSurface
+            policy={readPolicy()}
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            iconLookup={iconLookup}
+            fitView
+            onNodeClick={handleNodeClick}
+            onEdgeClick={handleEdgeClick}
+            onPaneClick={handlePaneClick}
+          >
+            <DiagramControls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+          </DiagramSurface>
+        </HandleHighlightProvider>
 
         {!readingFlow && <FlowInvite flows={flows} onSelect={startFlow} />}
 

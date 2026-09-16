@@ -12,7 +12,7 @@ import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types"
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { flowPlaybackOpacity } from "@/features/canvas/flow/flowState";
 
-const CARD_RECORDING_DIM_OPACITY = 0.35;
+import { CARD_RECORDING_DIM_OPACITY } from "./constants";
 
 /**
  * Shared card `buildData` for C4 and every cloud family.

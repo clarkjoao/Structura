@@ -86,6 +86,7 @@ export function projectReadDiagram(
   diagram: Diagram,
   reading: ReadDiagramReading | null = null,
   routePlay: ReadDiagramRoutePlay | null = null,
+  focusedNodeId: string | null = null,
 ): { nodes: Node[]; edges: Edge[] } {
   const resolvedSnapshot = resolveSceneSnapshot(diagram, null);
   const visibleComponents = Object.values(resolvedSnapshot.components).filter(
@@ -99,6 +100,7 @@ export function projectReadDiagram(
     connections,
     reading,
     routePlay?.onPlayFlow,
+    focusedNodeId,
   );
   const nodes = sortComponentsTopologically(visibleComponents).map((component) =>
     buildReadNode(component, ctx),

@@ -58,6 +58,7 @@ export function useCanvasEventHandlers({
     setQuickInsert,
     setPaneContextMenu,
     clearHighlight,
+    setHighlight,
     clearCanvasSelection,
   } = visualState;
 
@@ -289,14 +290,15 @@ export function useCanvasEventHandlers({
       }
       if (isCompareMode) return;
       if (isFlowPanelOpen) return;
-      clearHighlight();
+      // Same focus as ElementPanel → Connections: edge + both ends.
+      setHighlight(edge.id, [edge.source, edge.target]);
       setSelectedEdgeId(edge.id);
       setSelectedNodeId(null);
       setSelectedNodeIds((prev) => (prev.size === 0 ? prev : new Set()));
       setContextMenu(null);
     },
     [
-      clearHighlight,
+      setHighlight,
       isCompareMode,
       isFlowPanelOpen,
       isRecording,
