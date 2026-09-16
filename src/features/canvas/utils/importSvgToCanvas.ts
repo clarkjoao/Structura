@@ -10,8 +10,10 @@ import {
   type SvgComponent,
 } from "@/features/diagram";
 import { extractSvgMarkup } from "@/lib/clipboard";
+import { readFileAsText } from "./read-file-as-text";
 import { sanitizeSvg } from "./svg.sanitizer";
 import { validateSvgSize } from "./svg.utils";
+import { isRasterImageFile, rasterBlobToSvgMarkup } from "./wrapRasterAsSvg";
 
 /** Longest edge after import — keeps huge artwork from swallowing the canvas. */
 const SVG_MAX_EDGE = 800;
@@ -101,9 +103,31 @@ export function isSvgFile(file: File): boolean {
   return file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
 }
 
+export function isImportableCanvasImageFile(file: File): boolean {
+  return isSvgFile(file) || isRasterImageFile(file);
+}
+
 export function svgNodeNameFromFile(file: File): string {
-  const base = file.name.replace(/\.svg$/i, "").trim();
+  const base = file.name.replace(/\.(svg|png|jpe?g)$/i, "").trim();
   return base || "SVG";
+}
+
+/**
+ * Read a dropped File into SVG markup (native SVG text, or PNG/JPG wrapped
+ * with a base64 `<image>`).
+ */
+export async function fileToSvgMarkup(file: File): Promise<string | null> {
+  if (isSvgFile(file)) {
+    try {
+      return await readFileAsText(file);
+    } catch {
+      return null;
+    }
+  }
+  if (isRasterImageFile(file)) {
+    return rasterBlobToSvgMarkup(file, file.type || undefined);
+  }
+  return null;
 }
 
 /**

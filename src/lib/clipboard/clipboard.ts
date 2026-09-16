@@ -171,3 +171,20 @@ export async function readSvgFromClipboard(): Promise<string | null> {
   }
   return null;
 }
+
+/** PNG/JPEG clipboard blobs for canvas import (caller wraps as SVG). */
+export async function readRasterImageBlobFromClipboard(): Promise<Blob | null> {
+  try {
+    if (!navigator.clipboard?.read) return null;
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      for (const mime of ["image/png", "image/jpeg"] as const) {
+        if (!item.types.includes(mime)) continue;
+        return await item.getType(mime);
+      }
+    }
+  } catch (err) {
+    logger.warn("[Clipboard]", "Failed to read raster image from clipboard:", err);
+  }
+  return null;
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildSvgCanvasImport,
+  isImportableCanvasImageFile,
   isSvgFile,
   prepareImportedSvgMarkup,
   readSvgDisplaySize,
@@ -11,15 +12,26 @@ vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
-describe("isSvgFile / svgNodeNameFromFile", () => {
+describe("isSvgFile / isImportableCanvasImageFile / svgNodeNameFromFile", () => {
   it("recognises svg by type or extension", () => {
     expect(isSvgFile(new File(["<svg/>"], "a.svg", { type: "image/svg+xml" }))).toBe(true);
     expect(isSvgFile(new File(["<svg/>"], "logo.SVG", { type: "" }))).toBe(true);
     expect(isSvgFile(new File(["x"], "a.png", { type: "image/png" }))).toBe(false);
   });
 
-  it("strips the extension for the node name", () => {
+  it("treats png/jpeg as importable canvas images", () => {
+    expect(isImportableCanvasImageFile(new File([], "shot.png", { type: "image/png" }))).toBe(
+      true,
+    );
+    expect(isImportableCanvasImageFile(new File([], "photo.jpg", { type: "image/jpeg" }))).toBe(
+      true,
+    );
+  });
+
+  it("strips image extensions for the node name", () => {
     expect(svgNodeNameFromFile(new File([""], "brand-mark.svg"))).toBe("brand-mark");
+    expect(svgNodeNameFromFile(new File([""], "hero.PNG"))).toBe("hero");
+    expect(svgNodeNameFromFile(new File([""], "pic.jpeg"))).toBe("pic");
   });
 });
 

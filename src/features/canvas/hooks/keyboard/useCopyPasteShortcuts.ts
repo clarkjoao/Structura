@@ -1,4 +1,5 @@
 import { useCallback, type MutableRefObject } from "react";
+import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import {
   useDiagramStore,
@@ -22,11 +23,13 @@ import {
 import { duplicateSelection } from "../../utils/duplicateSelection";
 import {
   readDrawioFromClipboard,
+  readRasterImageBlobFromClipboard,
   readStructuraClipboard,
   readSvgFromClipboard,
   writeDrawioToClipboard,
 } from "@/lib/clipboard";
 import { parseDrawioXml } from "@/lib/export-service/import-drawio";
+import { rasterBlobToSvgMarkup } from "@/features/canvas/utils/wrapRasterAsSvg";
 
 interface UseCopyPasteShortcutsParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -49,6 +52,7 @@ interface UseCopyPasteShortcutsParams {
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
   lastPointerScreenRef: MutableRefObject<{ x: number; y: number } | null>;
+  translate: (key: string) => string;
 }
 
 export function useCopyPasteShortcuts({
@@ -65,6 +69,7 @@ export function useCopyPasteShortcuts({
   exportDrawioXml,
   setSelectedNodeIds,
   lastPointerScreenRef,
+  translate,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
     async (event: KeyboardEvent): Promise<boolean> => {
@@ -95,14 +100,32 @@ export function useCopyPasteShortcuts({
       if (keyMatchesLetter(event, KEY.V)) {
         event.preventDefault();
 
-        const svgContent = await readSvgFromClipboard();
-        if (svgContent) {
-          const pastePos = getPasteFlowPosition(
-            reactFlowInstance,
-            reactFlowWrapperRef,
-            lastPointerScreenRef.current,
-          );
-          const newId = pasteSvgAsCanvasNode(svgContent, pastePos);
+        const pastePos = getPasteFlowPosition(
+          reactFlowInstance,
+          reactFlowWrapperRef,
+          lastPointerScreenRef.current,
+        );
+
+        const svgMarkup = await readSvgFromClipboard();
+        if (svgMarkup) {
+          const newId = pasteSvgAsCanvasNode(svgMarkup, pastePos);
+          if (newId) {
+            reactFlowInstance.setNodes((nodes) =>
+              nodes.map((n) => ({ ...n, selected: n.id === newId })),
+            );
+            setSelectedNodeIds(new Set([newId]));
+          }
+          return true;
+        }
+
+        const rasterBlob = await readRasterImageBlobFromClipboard();
+        if (rasterBlob) {
+          const wrapped = await rasterBlobToSvgMarkup(rasterBlob, rasterBlob.type);
+          if (!wrapped) {
+            toast.error(translate("icons.svgTooLarge"));
+            return true;
+          }
+          const newId = pasteSvgAsCanvasNode(wrapped, pastePos);
           if (newId) {
             reactFlowInstance.setNodes((nodes) =>
               nodes.map((n) => ({ ...n, selected: n.id === newId })),
@@ -155,14 +178,8 @@ export function useCopyPasteShortcuts({
             ? getOffsetPositionOfNodes(diagram, clipboardIds)
             : null;
 
-        const pastePos =
-          offsetPos ??
-          getPasteFlowPosition(
-            reactFlowInstance,
-            reactFlowWrapperRef,
-            lastPointerScreenRef.current,
-          );
-        const newIds = pasteFromClipboard(pastePos);
+        const elementPastePos = offsetPos ?? pastePos;
+        const newIds = pasteFromClipboard(elementPastePos);
         if (newIds.length > 0) {
           reactFlowInstance.setNodes((nodes) =>
             nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
@@ -206,6 +223,7 @@ export function useCopyPasteShortcuts({
       exportDrawioXml,
       setSelectedNodeIds,
       lastPointerScreenRef,
+      translate,
     ],
   );
 }

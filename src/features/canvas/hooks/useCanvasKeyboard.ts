@@ -202,6 +202,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     exportDrawioXml,
     setSelectedNodeIds,
     lastPointerScreenRef,
+    translate: t,
   });
 
   const recordingHandler = useRecordingShortcuts();

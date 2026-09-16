@@ -52,4 +52,14 @@ describe("sanitizeSvg", () => {
     expect(result).not.toBeNull();
     expect(result).not.toContain("javascript:");
   });
+
+  it("keeps data:image hrefs on embedded raster images", () => {
+    const dataUri = "data:image/png;base64,abc";
+    const input =
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">` +
+      `<image href="${dataUri}" width="10" height="10"/></svg>`;
+    const result = sanitizeSvg(input);
+    expect(result).not.toBeNull();
+    expect(result).toContain(dataUri);
+  });
 });
