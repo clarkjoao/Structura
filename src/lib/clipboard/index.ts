@@ -6,4 +6,5 @@ export {
   readDrawioFromClipboard,
   readStructuraClipboard,
   readSvgFromClipboard,
+  extractSvgMarkup,
 } from "./clipboard";

@@ -3,11 +3,13 @@ import SvgNode from "@/features/canvas/nodes/SvgNode";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_SVG } from "@/features/diagram/model/component-type-constants";
+import { DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isSvgComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
 
-const SVG_DEFAULT_W = 200;
-const SVG_DEFAULT_H = 200;
+/** Square card-width default — same floor paste/drop uses for tiny icons. */
+const SVG_DEFAULT_W = DEFAULT_NODE_W;
+const SVG_DEFAULT_H = DEFAULT_NODE_W;
 
 /**
  * The artwork as a data: URI draw.io can render.

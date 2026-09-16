@@ -43,6 +43,7 @@ import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
 import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
 import { DiagramSurface, writePolicy } from "./core";
+import { useCanvasSvgFileDrop } from "./hooks/useCanvasSvgFileDrop";
 import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
 
 /**
@@ -130,6 +131,12 @@ const Canvas = (props: CanvasProps = {}) => {
     isAutoLayoutRunning,
     actions,
   } = useCanvasController(props);
+  const { onDragOver: onSvgDragOver, onDropFiles: onSvgDropFiles } = useCanvasSvgFileDrop({
+    canEdit: interactionMode.canEditCanvas,
+    reactFlowInstance,
+    importDrawioResult: actions.importDrawioResult,
+    setSelectedNodeIds: visualState.setSelectedNodeIds,
+  });
   const {
     pendingPreviews,
     accept: acceptSuggestion,
@@ -308,6 +315,7 @@ const Canvas = (props: CanvasProps = {}) => {
           <div
             onContextMenu={(e) => e.preventDefault()}
             onDragOver={(event) => {
+              onSvgDragOver(event);
               if (!interactionMode.canEditCanvas) return;
               if (event.dataTransfer.types.includes(ELEMENT_PRESET_DRAG_MIME)) {
                 event.preventDefault();
@@ -315,15 +323,18 @@ const Canvas = (props: CanvasProps = {}) => {
               }
             }}
             onDrop={(event) => {
-              if (!interactionMode.canEditCanvas) return;
-              const presetId = event.dataTransfer.getData(ELEMENT_PRESET_DRAG_MIME);
-              if (!presetId) return;
-              event.preventDefault();
-              const position = reactFlowInstance.screenToFlowPosition({
-                x: event.clientX,
-                y: event.clientY,
-              });
-              instantiatePreset({ presetId, position });
+              void (async () => {
+                if (await onSvgDropFiles(event)) return;
+                if (!interactionMode.canEditCanvas) return;
+                const presetId = event.dataTransfer.getData(ELEMENT_PRESET_DRAG_MIME);
+                if (!presetId) return;
+                event.preventDefault();
+                const position = reactFlowInstance.screenToFlowPosition({
+                  x: event.clientX,
+                  y: event.clientY,
+                });
+                instantiatePreset({ presetId, position });
+              })();
             }}
             className="w-full h-full"
           >

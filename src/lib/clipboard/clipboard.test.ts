@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { readStructuraClipboard, writeDrawioToClipboard } from "./clipboard";
+import {
+  extractSvgMarkup,
+  readStructuraClipboard,
+  readSvgFromClipboard,
+  writeDrawioToClipboard,
+} from "./clipboard";
 import type { ClipboardEntry } from "@/features/diagram/store/store.types";
 import type { AwsComponent } from "@/features/diagram/model/component.types";
 
@@ -30,6 +35,7 @@ class FakeClipboardItem {
 function stubClipboard(overrides: {
   write?: (items: unknown[]) => Promise<void>;
   read?: () => Promise<unknown[]>;
+  readText?: () => Promise<string>;
   supportsCustomFormat?: boolean;
 }): void {
   class Item extends FakeClipboardItem {
@@ -44,7 +50,7 @@ function stubClipboard(overrides: {
     clipboard: {
       write: overrides.write ?? vi.fn().mockResolvedValue(undefined),
       read: overrides.read ?? vi.fn().mockResolvedValue([]),
-      readText: vi.fn().mockResolvedValue(""),
+      readText: overrides.readText ?? vi.fn().mockResolvedValue(""),
       writeText: vi.fn().mockResolvedValue(undefined),
     },
   });
@@ -201,5 +207,75 @@ describe("writeDrawioToClipboard + readStructuraClipboard round-trip", () => {
 
     const result = await readStructuraClipboard();
     expect(result).toBeNull();
+  });
+});
+
+describe("extractSvgMarkup", () => {
+  it("returns a bare svg root", () => {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect/></svg>';
+    expect(extractSvgMarkup(svg)).toBe(svg);
+  });
+
+  it("extracts svg from an HTML wrapper", () => {
+    const svg = '<svg viewBox="0 0 1 1"><circle r="1"/></svg>';
+    expect(extractSvgMarkup(`<meta charset="utf-8"><div>${svg}</div>`)).toBe(svg);
+  });
+
+  it("is case-insensitive on the svg tag", () => {
+    expect(extractSvgMarkup("<SVG WIDTH='8'></SVG>")).toBe("<SVG WIDTH='8'></SVG>");
+  });
+
+  it("returns null for draw.io payloads even if they mention svg elsewhere", () => {
+    expect(extractSvgMarkup(`${sampleDrawioXml}\n<!-- <svg></svg> -->`)).toBeNull();
+  });
+
+  it("returns null when there is no svg root", () => {
+    expect(extractSvgMarkup("hello")).toBeNull();
+    expect(extractSvgMarkup("")).toBeNull();
+  });
+});
+
+describe("readSvgFromClipboard", () => {
+  const sampleSvg = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';
+
+  it("reads image/svg+xml", async () => {
+    stubClipboard({
+      read: async () => [
+        new FakeClipboardItem({
+          "image/svg+xml": new Blob([sampleSvg], { type: "image/svg+xml" }),
+        }),
+      ],
+    });
+    expect(await readSvgFromClipboard()).toBe(sampleSvg);
+  });
+
+  it("extracts svg from text/html", async () => {
+    stubClipboard({
+      read: async () => [
+        new FakeClipboardItem({
+          "text/html": new Blob([`<meta charset="utf-8">${sampleSvg}`], { type: "text/html" }),
+        }),
+      ],
+    });
+    expect(await readSvgFromClipboard()).toBe(sampleSvg);
+  });
+
+  it("falls back to readText when clipboard.read is empty", async () => {
+    stubClipboard({
+      read: async () => [],
+      readText: async () => `prefix\n${sampleSvg}`,
+    });
+    expect(await readSvgFromClipboard()).toBe(sampleSvg);
+  });
+
+  it("returns null for draw.io text/plain", async () => {
+    stubClipboard({
+      read: async () => [
+        new FakeClipboardItem({
+          "text/plain": new Blob([sampleDrawioXml], { type: "text/plain" }),
+        }),
+      ],
+    });
+    expect(await readSvgFromClipboard()).toBeNull();
   });
 });
