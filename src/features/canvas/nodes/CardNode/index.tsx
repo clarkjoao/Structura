@@ -13,7 +13,6 @@ import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { NodeData } from "./types";
 import { TypeConfig } from "./TypeConfig";
 import { buildHandles } from "./Handles";
-import { buildReorderControls } from "./ReorderControls";
 import { Badges } from "./Badges";
 import { DrillDownButton } from "./DrillDownButton";
 import { EmbedButton } from "./EmbedButton";
@@ -68,28 +67,14 @@ interface NodeHandlesProps {
   incomingCount: number;
   outgoingCount: number;
   handlePointer: CSSProperties | undefined;
-  controlsDisabled: boolean;
 }
 
-const NodeHandles = ({
-  d,
-  incomingCount,
-  outgoingCount,
-  handlePointer,
-  controlsDisabled,
-}: NodeHandlesProps) => {
-  const incomingIds = d.handleOrder?.incoming ?? [];
-  const outgoingIds = d.handleOrder?.outgoing ?? [];
-
+const NodeHandles = ({ d, incomingCount, outgoingCount, handlePointer }: NodeHandlesProps) => {
   return (
     <>
       {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
-      {d.onReorderHandle &&
-        buildReorderControls(incomingIds, "incoming", controlsDisabled, d.onReorderHandle)}
       {/* Left is input only, right is output only — never mirrored by position. */}
       {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
-      {d.onReorderHandle &&
-        buildReorderControls(outgoingIds, "outgoing", controlsDisabled, d.onReorderHandle)}
     </>
   );
 };
@@ -237,7 +222,6 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
         incomingCount={incomingCount}
         outgoingCount={outgoingCount}
         handlePointer={handlePointer}
-        controlsDisabled={controlsDisabled}
       />
       <div
         className={`px-3 py-2.5 flex flex-col min-h-0 ${isActive ? "flex-1 overflow-hidden" : ""}`}
