@@ -44,7 +44,8 @@ export function buildServiceRegistry(): Record<string, ServiceDefinition> {
     "svc-pl-webhook-ingress": {
       id: "svc-pl-webhook-ingress",
       name: "webhook-ingress",
-      description: "Ingresso de webhooks SPI: valida assinatura, deduplica e publica eventos de pagamento.",
+      description:
+        "Ingresso de webhooks SPI: valida assinatura, deduplica e publica eventos de pagamento.",
       repositoryUrl: "https://github.com/pixledger/webhook-ingress",
       technology: ["Node.js", "TypeScript", "SQS"],
       owner: "squad-pix-hub",
@@ -75,7 +76,8 @@ export function buildServiceRegistry(): Record<string, ServiceDefinition> {
     "svc-pl-risk-engine": {
       id: "svc-pl-risk-engine",
       name: "risk-engine",
-      description: "Motor de limites, scoring AML e bloqueios em tempo real para cobranças e pagamentos.",
+      description:
+        "Motor de limites, scoring AML e bloqueios em tempo real para cobranças e pagamentos.",
       repositoryUrl: "https://github.com/pixledger/risk-engine",
       technology: ["Python", "Redis", "gRPC"],
       owner: "squad-risk",
@@ -85,7 +87,8 @@ export function buildServiceRegistry(): Record<string, ServiceDefinition> {
     "svc-pl-merchant-api": {
       id: "svc-pl-merchant-api",
       name: "merchant-api",
-      description: "API e dashboard do lojista: cobranças, webhooks outbound, extrato e conciliação.",
+      description:
+        "API e dashboard do lojista: cobranças, webhooks outbound, extrato e conciliação.",
       repositoryUrl: "https://github.com/pixledger/merchant-api",
       technology: ["TypeScript", "NestJS", "PostgreSQL"],
       owner: "squad-merchant",

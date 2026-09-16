@@ -55,10 +55,7 @@ function encodeCanvas(canvas: HTMLCanvasElement, mime: "image/png" | "image/jpeg
  * with a base64 data-URI `<image>`. Returns null when the bitmap cannot be
  * decoded or the encoded payload still exceeds `SVG_MAX_BYTES`.
  */
-export async function rasterBlobToSvgMarkup(
-  blob: Blob,
-  mimeHint?: string,
-): Promise<string | null> {
+export async function rasterBlobToSvgMarkup(blob: Blob, mimeHint?: string): Promise<string | null> {
   const mimeRaw = (mimeHint || blob.type || "").toLowerCase();
   const preferredMime: "image/png" | "image/jpeg" =
     mimeRaw.includes("jpeg") || mimeRaw.includes("jpg") ? "image/jpeg" : "image/png";

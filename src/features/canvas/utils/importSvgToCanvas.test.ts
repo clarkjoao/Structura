@@ -20,9 +20,7 @@ describe("isSvgFile / isImportableCanvasImageFile / svgNodeNameFromFile", () => 
   });
 
   it("treats png/jpeg as importable canvas images", () => {
-    expect(isImportableCanvasImageFile(new File([], "shot.png", { type: "image/png" }))).toBe(
-      true,
-    );
+    expect(isImportableCanvasImageFile(new File([], "shot.png", { type: "image/png" }))).toBe(true);
     expect(isImportableCanvasImageFile(new File([], "photo.jpg", { type: "image/jpeg" }))).toBe(
       true,
     );

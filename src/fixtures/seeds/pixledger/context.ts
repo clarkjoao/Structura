@@ -1,13 +1,6 @@
 import { ExternalLinkType, StrokeStyle, type Diagram } from "@/features/diagram";
 import { layout, SEED_TS, steps } from "./helpers";
-import {
-  D_CONTEXT,
-  D_CT_HUB,
-  D_CT_LEDGER,
-  D_CT_MERCHANT,
-  D_CT_RISK,
-  FOLDER_ROOT,
-} from "./ids";
+import { D_CONTEXT, D_CT_HUB, D_CT_LEDGER, D_CT_MERCHANT, D_CT_RISK, FOLDER_ROOT } from "./ids";
 
 /** C4 System Context — four PixLedger systems and external actors. */
 export function buildContextDiagram(): Diagram {

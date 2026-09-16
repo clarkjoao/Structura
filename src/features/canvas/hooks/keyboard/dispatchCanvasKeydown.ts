@@ -1,7 +1,4 @@
-import {
-  shouldYieldCanvasShortcutToFocusedField,
-  type KeyHandler,
-} from "./helpers";
+import { shouldYieldCanvasShortcutToFocusedField, type KeyHandler } from "./helpers";
 import { runClaimingChain } from "./runClaimingChain";
 import {
   handleAutoLayoutShortcut,

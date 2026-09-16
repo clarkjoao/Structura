@@ -31,13 +31,7 @@ export function buildCatalogDiagram(): Diagram {
 
   const placeIn = (panelId: string, localId: string, colIndex: number, row: number) => {
     const panel = panels[panelId]!;
-    nodeLayouts[localId] = layout(
-      localId,
-      col(colIndex),
-      56 + row * ROW_H,
-      COL_W,
-      ROW_H - 16,
-    );
+    nodeLayouts[localId] = layout(localId, col(colIndex), 56 + row * ROW_H, COL_W, ROW_H - 16);
     void panel;
   };
 

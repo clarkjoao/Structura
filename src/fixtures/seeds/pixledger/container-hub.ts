@@ -184,8 +184,7 @@ export function buildHubContainerDiagram(): Diagram {
               payloadDirection: "request",
               context: {
                 reads: ["txid_hint"],
-                expects:
-                  '{\n  "txid": "PL9f2a1c",\n  "brcode": "00020126",\n  "expiraEm": null\n}',
+                expects: '{\n  "txid": "PL9f2a1c",\n  "brcode": "00020126",\n  "expiraEm": null\n}',
               },
             },
             {
@@ -344,8 +343,7 @@ export function buildHubContainerDiagram(): Diagram {
           id: "flow-hub-batch",
           name: "Lote noturno — repetição, opcional e aborto",
           diagramId: D_CT_HUB,
-          description:
-            "Reconciliação noturna de webhooks: loop, opt, critical e break.",
+          description: "Reconciliação noturna de webhooks: loop, opt, critical e break.",
           tags: ["batch", "loop", "opcional"],
           mermaid: "sequenceDiagram",
           entryStepId: "hub-bt-1",

@@ -70,9 +70,7 @@ export function usePanelChildLayout() {
             edgeIds: new Set(scopedEdges.map((e) => e.id)),
             ...(panelLayout
               ? {
-                  positionOverrides: new Map([
-                    [panelId, { x: panelLayout.x, y: panelLayout.y }],
-                  ]),
+                  positionOverrides: new Map([[panelId, { x: panelLayout.x, y: panelLayout.y }]]),
                 }
               : {}),
           });

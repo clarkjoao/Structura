@@ -3,10 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import { ELEMENT_PRESET_DRAG_MIME } from "@/features/element-presets";
-import {
-  importImageFilesToCanvas,
-  isImportableCanvasImageFile,
-} from "../utils/importSvgToCanvas";
+import { importImageFilesToCanvas, isImportableCanvasImageFile } from "../utils/importSvgToCanvas";
 
 interface UseCanvasSvgFileDropParams {
   canEdit: boolean;
