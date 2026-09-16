@@ -1459,7 +1459,9 @@
   },
   "svgNode": {
     "aria": "Elemento SVG: {{name}}",
-    "defaultName": "SVG"
+    "defaultName": "SVG",
+    "showBorder": "Mostrar borda",
+    "showBorderHint": "Moldura de card em volta da arte. Desligado mostra só o SVG."
   },
   "cardNode": {
     "drillAria": "Explorar interior do elemento {{id}}",

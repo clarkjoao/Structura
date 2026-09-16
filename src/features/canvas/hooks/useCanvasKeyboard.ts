@@ -27,6 +27,7 @@ import {
   type CanvasKeydownDispatch,
 } from "./keyboard/dispatchCanvasKeydown";
 import { importSvgMarkupToCanvas } from "../utils/importSvgToCanvas";
+import { useCanvasMediaPaste } from "./useCanvasMediaPaste";
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -104,6 +105,7 @@ function useStableHandlerRef(handler: KeyHandler): MutableRefObject<KeyHandler> 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();
   const lastPointerScreenRef = useRef<{ x: number; y: number } | null>(null);
+  const mediaPasteConsumedRef = useRef(false);
   const c4ShortcutMap = useMemo<Record<string, { type: ComponentType; name: string } | undefined>>(
     () => ({
       [KEY.DIGIT_1]: { type: "person", name: t("keyboard.newPerson") },
@@ -181,12 +183,23 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       return importSvgMarkupToCanvas({
         rawSvg,
         position,
+        showBorder: false,
         importDrawioResult,
         translate: t,
       });
     },
     [diagram, importDrawioResult, t],
   );
+
+  useCanvasMediaPaste({
+    enabled: Boolean(diagram),
+    mediaPasteConsumedRef,
+    reactFlowInstance,
+    reactFlowWrapperRef,
+    lastPointerScreenRef,
+    importDrawioResult,
+    setSelectedNodeIds,
+  });
 
   const handleCopyPaste = useCopyPasteShortcuts({
     diagram,
@@ -202,6 +215,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     exportDrawioXml,
     setSelectedNodeIds,
     lastPointerScreenRef,
+    mediaPasteConsumedRef,
     translate: t,
   });
 

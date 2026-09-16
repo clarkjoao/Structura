@@ -52,6 +52,7 @@ interface UseCopyPasteShortcutsParams {
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
   lastPointerScreenRef: MutableRefObject<{ x: number; y: number } | null>;
+  mediaPasteConsumedRef: MutableRefObject<boolean>;
   translate: (key: string) => string;
 }
 
@@ -69,6 +70,7 @@ export function useCopyPasteShortcuts({
   exportDrawioXml,
   setSelectedNodeIds,
   lastPointerScreenRef,
+  mediaPasteConsumedRef,
   translate,
 }: UseCopyPasteShortcutsParams): KeyHandler {
   return useCallback(
@@ -85,9 +87,6 @@ export function useCopyPasteShortcuts({
           copyToClipboard(ids);
           try {
             const xml = exportDrawioXml(ids);
-            // Embed the just-copied full-fidelity entry alongside the draw.io XML so
-            // pasting into a different browser tab/window (a separate in-memory store,
-            // where the rich clipboard below isn't shared) can still be lossless.
             const entry = useDiagramStore.getState().clipboard;
             void writeDrawioToClipboard(xml, entry ?? undefined);
           } catch {
@@ -100,12 +99,21 @@ export function useCopyPasteShortcuts({
       if (keyMatchesLetter(event, KEY.V)) {
         event.preventDefault();
 
+        // Let the capture-phase `paste` listener claim Finder files / text SVG first.
+        await Promise.resolve();
+        if (mediaPasteConsumedRef.current) {
+          mediaPasteConsumedRef.current = false;
+          return true;
+        }
+
         const pastePos = getPasteFlowPosition(
           reactFlowInstance,
           reactFlowWrapperRef,
           lastPointerScreenRef.current,
         );
 
+        // Fallback: Clipboard API (screenshots / image/svg+xml) when paste
+        // event had no files or plain-text SVG.
         const svgMarkup = await readSvgFromClipboard();
         if (svgMarkup) {
           const newId = pasteSvgAsCanvasNode(svgMarkup, pastePos);
@@ -135,12 +143,6 @@ export function useCopyPasteShortcuts({
           return true;
         }
 
-        // A hidden marker embedded by our own writeDrawioToClipboard carries the
-        // full-fidelity entry (styles, AWS type/icon, custom colors) alongside the
-        // draw.io XML. It survives across browser tabs/windows via the OS clipboard,
-        // unlike the in-memory Zustand clipboard below — so prefer it whenever
-        // present, and only fall back to the lossy XML import for genuinely
-        // external draw.io content (a real draw.io app, or an older Structura tab).
         const structuraEntry = await readStructuraClipboard();
         if (structuraEntry) {
           hydrateClipboard(structuraEntry);
@@ -223,6 +225,7 @@ export function useCopyPasteShortcuts({
       exportDrawioXml,
       setSelectedNodeIds,
       lastPointerScreenRef,
+      mediaPasteConsumedRef,
       translate,
     ],
   );

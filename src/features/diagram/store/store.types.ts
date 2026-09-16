@@ -48,8 +48,9 @@ export interface AppState {
   _lastUndoRedoTimestamp: number;
   /**
    * Bumped whenever the store repositions nodes itself rather than recording a
-   * move the user made with the pointer — `applyAutoLayout` and everything
-   * that goes through it.
+   * move the user made with the pointer — `applyAutoLayout`, inspector
+   * `updateNodeLayout(..., { syncCanvas: true })`, and anything else that
+   * authors a new position without the drag funnel.
    *
    * The canvas keeps a local copy of the nodes whose position outranks the
    * store's, because during a drag the store is a frame behind the pointer

@@ -83,6 +83,7 @@ export interface AppActions {
     elementId: string,
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
+    options?: { syncCanvas?: boolean },
   ) => void;
   batchUpdateNodeLayouts: (
     entries: Array<{

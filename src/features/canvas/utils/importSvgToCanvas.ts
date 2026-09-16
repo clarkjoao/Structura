@@ -83,7 +83,10 @@ export function readSvgDisplaySize(svgMarkup: string): { width: number; height: 
   let height = DEFAULT_NODE_W;
   if (!svgEl) return clampSvgDisplaySize(width, height);
 
-  const viewBox = svgEl.getAttribute("viewBox")?.trim().split(/[\s,]+/);
+  const viewBox = svgEl
+    .getAttribute("viewBox")
+    ?.trim()
+    .split(/[\s,]+/);
   if (viewBox && viewBox.length === 4) {
     const viewWidth = parseFloat(viewBox[2] ?? "");
     const viewHeight = parseFloat(viewBox[3] ?? "");
@@ -132,11 +135,13 @@ export async function fileToSvgMarkup(file: File): Promise<string | null> {
 
 /**
  * Build a canvas `svg` component + layout box ready for `importDrawioResult`.
+ * Paste/drop imports default to `showBorder: false` (artwork only).
  */
 export function buildSvgCanvasImport(
   cleanMarkup: string,
   position: { x: number; y: number },
   name = "SVG",
+  showBorder = false,
 ): { component: SvgComponent; layout: NodeLayout } {
   const id = generateId("el");
   const { width, height } = readSvgDisplaySize(cleanMarkup);
@@ -147,6 +152,7 @@ export function buildSvgCanvasImport(
     parentId: null,
     type: COMPONENT_TYPE_SVG,
     svgContent: cleanMarkup,
+    showBorder,
   };
   return {
     component,
@@ -165,12 +171,46 @@ export function importSvgMarkupToCanvas(params: {
   rawSvg: string;
   position: { x: number; y: number };
   name?: string;
+  showBorder?: boolean;
   importDrawioResult: ImportDrawioResultFn;
   translate: (key: string) => string;
 }): string | null {
   const clean = prepareImportedSvgMarkup(params.rawSvg, params.translate);
   if (!clean) return null;
-  const { component, layout } = buildSvgCanvasImport(clean, params.position, params.name);
+  const { component, layout } = buildSvgCanvasImport(
+    clean,
+    params.position,
+    params.name,
+    params.showBorder ?? false,
+  );
   const newIds = params.importDrawioResult([component], [], [layout]);
   return newIds[0] ?? null;
+}
+
+/** Import one or more dropped/pasted image files as svg nodes. */
+export async function importImageFilesToCanvas(params: {
+  files: File[];
+  origin: { x: number; y: number };
+  importDrawioResult: ImportDrawioResultFn;
+  translate: (key: string) => string;
+}): Promise<string[]> {
+  const newIds: string[] = [];
+  for (let index = 0; index < params.files.length; index++) {
+    const file = params.files[index]!;
+    const markup = await fileToSvgMarkup(file);
+    if (!markup) {
+      toast.error(params.translate("icons.invalidSvg"));
+      continue;
+    }
+    const id = importSvgMarkupToCanvas({
+      rawSvg: markup,
+      position: { x: params.origin.x + index * 24, y: params.origin.y + index * 24 },
+      name: svgNodeNameFromFile(file),
+      showBorder: false,
+      importDrawioResult: params.importDrawioResult,
+      translate: params.translate,
+    });
+    if (id) newIds.push(id);
+  }
+  return newIds;
 }

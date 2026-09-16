@@ -52,11 +52,12 @@ function filterNodeChangesForSceneMoveLock(
  *
  * Two stamps answer it, and only these two, each bumped by the actions that
  * mean it: `_lastUndoRedoAt` by `undo`/`redo` in `history.slice.ts`, and
- * `_lastLayoutWriteAt` by `applyAutoLayout` in `layout.slice.ts`. The second
- * was missing, and its absence was visible: auto layout moved every node in
- * the store and none on screen, because the merge below keeps the local
- * position unless a node changed parent. Undo worked, which is what made the
- * shape of the bug legible — it had the stamp and layout did not.
+ * `_lastLayoutWriteAt` by `applyAutoLayout` and by `updateNodeLayout` when
+ * called with `{ syncCanvas: true }` (inspector position edits). The second
+ * was missing for auto layout, and its absence was visible: auto layout moved
+ * every node in the store and none on screen, because the merge below keeps
+ * the local position unless a node changed parent. Undo worked, which is what
+ * made the shape of the bug legible — it had the stamp and layout did not.
  */
 function shouldDiscardLocalNodes(
   prevDiagram: Diagram | DiagramModel | null | undefined,

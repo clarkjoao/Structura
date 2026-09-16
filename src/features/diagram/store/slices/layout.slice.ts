@@ -18,11 +18,19 @@ export const layoutSlice = (
     elementId: string,
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
+    /**
+     * Panel / keyboard / LLM writes that move a node without going through the
+     * pointer. Bumps `_lastLayoutWriteAt` so `useLocalNodes` drops its stale
+     * local position. Drag commits must omit this — the local copy is the
+     * truth there (see `useLocalNodes.layoutWrite.test.ts`).
+     */
+    options?: { syncCanvas?: boolean },
   ) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveScene(d);
+      let wrote = false;
       if (scene && scene.addedComponents[elementId]) {
         const layout = scene.nodeLayouts[elementId];
         if (layout) {
@@ -32,17 +40,25 @@ export const layoutSlice = (
             layout.width = dimensions.width;
             layout.height = dimensions.height;
           }
+          wrote = true;
         }
-        return;
+      } else {
+        const layout = d.nodeLayouts[elementId];
+        if (layout) {
+          layout.x = position.x;
+          layout.y = position.y;
+          if (dimensions) {
+            layout.width = dimensions.width;
+            layout.height = dimensions.height;
+          }
+          wrote = true;
+        }
       }
-      const layout = d.nodeLayouts[elementId];
-      if (layout) {
-        layout.x = position.x;
-        layout.y = position.y;
-        if (dimensions) {
-          layout.width = dimensions.width;
-          layout.height = dimensions.height;
-        }
+      // Inspector X/Y (and siblings) write the store while the canvas still
+      // holds the pre-edit local position. Without the stamp, useLocalNodes
+      // keeps the local copy and the node never moves on screen.
+      if (wrote && options?.syncCanvas) {
+        state._lastLayoutWriteAt = (state._lastLayoutWriteAt ?? 0) + 1;
       }
     });
   },

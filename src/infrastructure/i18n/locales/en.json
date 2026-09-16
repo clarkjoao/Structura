@@ -1459,7 +1459,9 @@
   },
   "svgNode": {
     "aria": "SVG element: {{name}}",
-    "defaultName": "SVG"
+    "defaultName": "SVG",
+    "showBorder": "Show border",
+    "showBorderHint": "Card frame around the artwork. Off shows only the SVG."
   },
   "cardNode": {
     "drillAria": "Drill into element {{id}}",

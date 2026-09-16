@@ -1,11 +1,13 @@
 import { Shapes } from "lucide-react";
+import { createElement } from "react";
 import SvgNode from "@/features/canvas/nodes/SvgNode";
+import SvgPanel from "@/features/canvas/panels/ElementPanel/SvgPanel";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_SVG } from "@/features/diagram/model/component-type-constants";
 import { DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isSvgComponent } from "@/features/diagram/model/component.guards";
-import type { ElementDescriptor } from "../element.types";
+import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
 
 /** Square card-width default — same floor paste/drop uses for tiny icons. */
 const SVG_DEFAULT_W = DEFAULT_NODE_W;
@@ -26,6 +28,12 @@ function toSvgDataUri(svgContent: string): string {
   return `data:image/svg+xml;base64,${btoa(binary)}`;
 }
 
+function SvgInspector(props: ElementInspectorProps) {
+  const { component, ...rest } = props;
+  if (!isSvgComponent(component)) return null;
+  return createElement(SvgPanel, { component, ...rest });
+}
+
 export const svgElement: ElementDescriptor = {
   id: COMPONENT_TYPE_SVG,
   family: "structural",
@@ -37,9 +45,10 @@ export const svgElement: ElementDescriptor = {
       ...base,
       type: COMPONENT_TYPE_SVG,
       svgContent: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"></svg>',
+      showBorder: true,
     }),
     defaultSize: { width: SVG_DEFAULT_W, height: SVG_DEFAULT_H },
-    patchableKeys: ["svgContent"],
+    patchableKeys: ["svgContent", "showBorder", "customColor"],
   },
 
   canvas: {
@@ -60,6 +69,8 @@ export const svgElement: ElementDescriptor = {
         elementId: comp.id,
         name: comp.name,
         svgContent: comp.svgContent,
+        showBorder: comp.showBorder,
+        customColor: comp.customColor,
         isSelected: ctx.selectedNodeId === comp.id,
         ...sceneBadgePropsForNode(ctx, comp.id),
       };
@@ -78,10 +89,12 @@ export const svgElement: ElementDescriptor = {
     categoryId: "canvas",
     icon: { kind: "lucide", icon: Shapes },
     accent: { kind: "neutral" },
-    searchKeys: ["svg", "image", "imagem", "vector", "vetor", "art", "arte"],
+    searchKeys: ["svg", "image", "imagem", "vector", "vetor", "art", "arte", "png", "jpg"],
   },
 
-  inspector: {},
+  inspector: {
+    panel: SvgInspector,
+  },
 
   export: {
     drawio: {
@@ -89,8 +102,6 @@ export const svgElement: ElementDescriptor = {
         if (!isSvgComponent(comp)) {
           throw new Error(`[elements] svg export received a ${comp.type} component.`);
         }
-        // The picture is the whole content, so it travels with the file rather
-        // than being flattened into a labelled box.
         return {
           ...base,
           kind: "image",

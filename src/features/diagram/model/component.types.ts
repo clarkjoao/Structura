@@ -195,6 +195,10 @@ export interface SvgComponent extends BaseComponent {
   type: "svg";
 
   svgContent: string;
+  /** When false, render artwork only (no card chrome). Default true. */
+  showBorder?: boolean;
+  /** Accent color (left border / frame), same contract as cloud cards. */
+  customColor?: string;
 }
 
 export interface DbColumn {

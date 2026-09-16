@@ -1,14 +1,11 @@
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import { ELEMENT_PRESET_DRAG_MIME } from "@/features/element-presets";
 import {
-  fileToSvgMarkup,
-  importSvgMarkupToCanvas,
+  importImageFilesToCanvas,
   isImportableCanvasImageFile,
-  svgNodeNameFromFile,
 } from "../utils/importSvgToCanvas";
 
 interface UseCanvasSvgFileDropParams {
@@ -23,9 +20,8 @@ interface UseCanvasSvgFileDropParams {
 }
 
 /**
- * Drop SVG / PNG / JPG onto the canvas → create `svg` nodes (rasters are
- * wrapped as base64 `<image>` inside an SVG root). Preset MIME drops are left
- * for the caller.
+ * Drop SVG / PNG / JPG onto the canvas → create `svg` nodes (rasters wrapped
+ * as base64 `<image>`). Preset MIME drops are left for the caller.
  */
 export function useCanvasSvgFileDrop({
   canEdit,
@@ -64,23 +60,12 @@ export function useCanvasSvgFileDrop({
         y: event.clientY,
       });
 
-      const newIds: string[] = [];
-      for (let index = 0; index < files.length; index++) {
-        const file = files[index]!;
-        const markup = await fileToSvgMarkup(file);
-        if (!markup) {
-          toast.error(t("icons.invalidSvg"));
-          continue;
-        }
-        const id = importSvgMarkupToCanvas({
-          rawSvg: markup,
-          position: { x: origin.x + index * 24, y: origin.y + index * 24 },
-          name: svgNodeNameFromFile(file),
-          importDrawioResult,
-          translate: t,
-        });
-        if (id) newIds.push(id);
-      }
+      const newIds = await importImageFilesToCanvas({
+        files,
+        origin,
+        importDrawioResult,
+        translate: t,
+      });
 
       if (newIds.length > 0) {
         reactFlowInstance.setNodes((nodes) =>

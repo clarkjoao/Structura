@@ -76,6 +76,7 @@ describe("prepareImportedSvgMarkup + buildSvgCanvasImport", () => {
     const { component, layout } = buildSvgCanvasImport(clean!, { x: 12, y: 34 }, "logo");
     expect(component.type).toBe("svg");
     expect(component.name).toBe("logo");
+    expect(component.showBorder).toBe(false);
     expect(component.svgContent).toBe(clean);
     expect(layout).toMatchObject({ x: 12, y: 34, elementId: component.id });
   });

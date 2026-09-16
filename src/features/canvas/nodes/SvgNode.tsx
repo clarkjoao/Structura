@@ -9,6 +9,9 @@ export type SvgNodeData = {
   elementId: string;
   name: string;
   svgContent: string;
+  /** False = artwork only; true/undefined = card chrome. */
+  showBorder?: boolean;
+  customColor?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
   sceneBadge?: { name: string; color: string };
@@ -18,7 +21,7 @@ export type SvgNodeData = {
   };
 };
 
-const SVG_ACCENT = "#f97316";
+const SVG_ACCENT_DEFAULT = "#f97316";
 
 const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
   const { t } = useTranslation();
@@ -27,6 +30,8 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
   const collabHighlight = useCollabHighlight(d.elementId);
+  const showBorder = d.showBorder !== false;
+  const accentColor = d.customColor || SVG_ACCENT_DEFAULT;
 
   return (
     <>
@@ -51,39 +56,70 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
         className="!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground"
       />
 
-      <div
-        aria-label={t("svgNode.aria", { name: d.name })}
-        className={`group relative w-full h-full rounded-lg bg-card border border-border border-l-[3px] transition-shadow duration-200 flex flex-col overflow-hidden ${
-          isActive
-            ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
-            : "opacity-90"
-        }`}
-        style={{ borderLeftColor: SVG_ACCENT }}
-      >
-        {collabHighlight && (
-          <div
-            className="absolute inset-0 pointer-events-none rounded-lg z-10"
-            style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
-          />
-        )}
-        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-        {!d.compareBadges && d.sceneBadge && (
-          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
-        )}
-
-        <div className="px-3 pt-2.5 pb-1 shrink-0">
-          <span className="text-sm font-bold text-foreground leading-tight truncate block">
-            {d.name || t("svgNode.defaultName")}
-          </span>
-        </div>
-
+      {showBorder ? (
         <div
-          className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
-          style={{ pointerEvents: "none" }}
+          aria-label={t("svgNode.aria", { name: d.name })}
+          className={`group relative w-full h-full rounded-lg bg-card border border-border border-l-[3px] transition-shadow duration-200 flex flex-col overflow-hidden ${
+            isActive
+              ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
+              : "opacity-90"
+          }`}
+          style={{ borderLeftColor: accentColor }}
+        >
+          {collabHighlight && (
+            <div
+              className="absolute inset-0 pointer-events-none rounded-lg z-10"
+              style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
+            />
+          )}
+          {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+          {!d.compareBadges && d.sceneBadge && (
+            <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+          )}
 
-          dangerouslySetInnerHTML={{ __html: d.svgContent }}
-        />
-      </div>
+          <div className="px-3 pt-2.5 pb-1 shrink-0 flex items-center gap-2">
+            {d.customColor && (
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: d.customColor }}
+              />
+            )}
+            <span className="text-sm font-bold text-foreground leading-tight truncate block min-w-0">
+              {d.name || t("svgNode.defaultName")}
+            </span>
+          </div>
+
+          <div
+            className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
+            style={{ pointerEvents: "none" }}
+            dangerouslySetInnerHTML={{ __html: d.svgContent }}
+          />
+        </div>
+      ) : (
+        <div
+          aria-label={t("svgNode.aria", { name: d.name })}
+          className={`relative w-full h-full overflow-hidden ${
+            isActive ? "ring-2 ring-primary rounded-sm" : ""
+          }`}
+          style={d.customColor ? { boxShadow: `inset 0 0 0 2px ${d.customColor}` } : undefined}
+        >
+          {collabHighlight && (
+            <div
+              className="absolute inset-0 pointer-events-none z-10"
+              style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
+            />
+          )}
+          {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+          {!d.compareBadges && d.sceneBadge && (
+            <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+          )}
+          <div
+            className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-full [&>svg]:h-full"
+            style={{ pointerEvents: "none" }}
+            dangerouslySetInnerHTML={{ __html: d.svgContent }}
+          />
+        </div>
+      )}
     </>
   );
 });
