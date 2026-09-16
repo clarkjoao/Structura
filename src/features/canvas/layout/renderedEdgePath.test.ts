@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Position } from "@xyflow/react";
 import type { Point } from "@/features/diagram";
+import { MAX_HANDLES } from "../canvas.constants";
 import { buildStepPath, defaultOrthogonalCorners } from "../edges/geometry/orthogonal";
 import { buildRenderedPolylines, handleAnchor, stepPolyline } from "./renderedEdgePath";
 
@@ -113,8 +114,12 @@ describe("handleAnchor", () => {
     expect(handleAnchor(box, "source", 2, 3).y).toBeCloseTo(200 + 80 * 0.75);
   });
 
-  it("clamps beyond the four available handles", () => {
-    expect(handleAnchor(box, "source", 9, 9).y).toBe(handleAnchor(box, "source", 3, 4).y);
+  it("clamps beyond MAX_HANDLES on a side", () => {
+    const over = MAX_HANDLES + 5;
+    const last = MAX_HANDLES - 1;
+    expect(handleAnchor(box, "source", over, over).y).toBe(
+      handleAnchor(box, "source", last, MAX_HANDLES).y,
+    );
   });
 });
 

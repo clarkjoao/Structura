@@ -15,7 +15,15 @@ export const DB_TABLE_COLLAPSED_W = 200;
 export const DB_TABLE_COLLAPSED_H = 60;
 
 export const MIN_HANDLES = 1;
-export const MAX_HANDLES = 4;
+/**
+ * Visual handle slots per node side (source-N / target-N dots on the card).
+ *
+ * This is **not** a cap on how many edges a node may have. Connections beyond
+ * this count still exist; they share/clamp onto the available slots via
+ * `buildEdgeHandleAssignments` / `handleOrder`. Raising the number only spreads
+ * more distinct ports along the side for denser fans.
+ */
+export const MAX_HANDLES = 8;
 export const NODE_DRAG_PADDING = 40;
 export const DEFAULT_NODE_W = 180;
 export const DEFAULT_NODE_H = 80;

@@ -68,11 +68,9 @@ export function useAutoLayout() {
 
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {
-          // Write ELK bend points as control points (same as LLM apply-ir).
-          // Interior waypoints only — first/last route points sit on node borders;
-          // the canvas draws those legs from the fixed L/R handles. Discarding
-          // the route used to force mid-X orthogonal Zs that crossed and ran
-          // through nodes (Merchant Notify→Provedor vs DB→PixHub).
+          // Handle-aligned ELK corridors: adapt border→border routes onto the
+          // discrete L/R handle slots so Cmd+Shift+L keeps obstacle clearance
+          // without the port jogs that forced "Resetar caminhos" after every run.
           applyLayoutResultEdges(graph, result, diagramId);
         }
 

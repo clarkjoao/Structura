@@ -7,6 +7,7 @@ import {
   isGcpComponent,
 } from "@/features/diagram/model/component.guards";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.constants";
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { flowPlaybackOpacity } from "@/features/canvas/flow/flowState";
@@ -75,8 +76,8 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
       isPlaying && flowHighlight.activeNodeId === comp.id
         ? (activeStep?.handleId ?? undefined)
         : undefined,
-    incomingCount: Math.min(4, Math.max(1, counts.incoming)),
-    outgoingCount: Math.min(4, Math.max(1, counts.outgoing)),
+    incomingCount: Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, counts.incoming)),
+    outgoingCount: Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, counts.outgoing)),
     handleOrder: ctx.effectiveHandleOrder[comp.id],
     onReorderHandle:
       isRecording || isPlaying
