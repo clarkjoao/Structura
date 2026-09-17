@@ -1,5 +1,11 @@
 import type { Component, Diagram, NodeLayout } from "@/features/diagram/model";
-import { fromDiagram, layout, resizableIds, toAppliedLayouts } from "@/features/canvas/layout";
+import {
+  fromDiagram,
+  layout,
+  resizableIds,
+  toAppliedLayouts,
+  edgeLayoutsFromLayoutResult,
+} from "@/features/canvas/layout";
 
 /**
  * Arranges a diagram for reading, and hands back a copy.
@@ -15,6 +21,10 @@ import { fromDiagram, layout, resizableIds, toAppliedLayouts } from "@/features/
  * positions, React Flow re-renders at them, and nothing interpolates. The
  * editor's transition lives in the canvas's own drag path, which the viewer
  * does not mount.
+ *
+ * Node positions, handle order, and handle-aligned ELK edge corridors are all
+ * written onto the copy so `EditableEdge` can stamp the same waypoints the
+ * editor would after Cmd/Ctrl+Shift+L.
  */
 export async function layoutForVisualization(diagram: Diagram): Promise<Diagram> {
   const components = diagram.snapshot.components;
@@ -63,9 +73,12 @@ export async function layoutForVisualization(diagram: Diagram): Promise<Diagram>
     };
   }
 
+  const edgeLayouts = edgeLayoutsFromLayoutResult(graph, result);
+
   return {
     ...diagram,
     snapshot: { ...diagram.snapshot, components: orderedComponents },
     nodeLayouts,
+    edgeLayouts,
   };
 }

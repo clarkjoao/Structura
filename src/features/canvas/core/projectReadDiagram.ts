@@ -123,6 +123,7 @@ export function projectReadDiagram(
       flowHighlight: reading?.highlight ?? EMPTY_FLOW_HIGHLIGHT,
       flowBadges: reading?.badges ?? null,
       coverage: null,
+      edgeLayouts: diagram.edgeLayouts,
     });
     return { ...edge, selectable: false };
   });

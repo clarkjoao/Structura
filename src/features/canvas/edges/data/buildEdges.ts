@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { MarkerType, type Edge } from "@xyflow/react";
-import type { Connection, Diagram, DiagramModel, FlowStep } from "@/features/diagram";
+import type { Connection, Diagram, DiagramModel, EdgeLayout, FlowStep } from "@/features/diagram";
 import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
 import {
@@ -27,6 +27,11 @@ export interface EdgeBuildParams {
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
 
   tagFilterEdgeDimmed?: boolean;
+  /**
+   * When set (read projection), stamp `layoutPoints` / `layoutLabelOffset` onto edge data
+   * so EditableEdge can draw without an active store diagram. Editor omits this.
+   */
+  edgeLayouts?: Record<string, EdgeLayout>;
 }
 
 export function toMarkerType(
@@ -117,6 +122,8 @@ export function buildEdge(
       }
     : stylePayload;
 
+  const edgeLayout = params.edgeLayouts?.[conn.id];
+
   return {
     id: conn.id,
     source: conn.sourceId,
@@ -141,6 +148,10 @@ export function buildEdge(
       strokeWidth: effective.strokeWidth,
       labelPosition: conn.style?.labelPosition,
       connectionStyle: conn.style,
+      ...(edgeLayout?.points !== undefined ? { layoutPoints: edgeLayout.points } : {}),
+      ...(edgeLayout?.labelOffset !== undefined
+        ? { layoutLabelOffset: edgeLayout.labelOffset }
+        : {}),
     },
     selected: params.selectedEdgeId === conn.id,
     animated: isActiveConn || (effective.animated && !params.isPlaying),

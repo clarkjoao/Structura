@@ -1,4 +1,4 @@
-import type { EdgeStyle, StrokeStyle, ConnectionStyle } from "@/features/diagram";
+import type { EdgeStyle, StrokeStyle, ConnectionStyle, EdgeControlPoint } from "@/features/diagram";
 
 /**
  * Pure styling + identity data the editable-edge core needs to render and edit.
@@ -14,6 +14,14 @@ export type EdgeStyleData = {
   strokeWidth?: number;
   labelPosition?: number;
   connectionStyle?: ConnectionStyle;
+  /**
+   * Author / visualization waypoints stamped by the read projection.
+   * When defined, EditableEdge prefers these over the store (viewer has no active diagram).
+   * Omitted on the editor path so live store edits stay the single source of truth.
+   */
+  layoutPoints?: EdgeControlPoint[];
+  /** Label offset from `diagram.edgeLayouts`, same stamp contract as `layoutPoints`. */
+  layoutLabelOffset?: number;
 };
 
 /**

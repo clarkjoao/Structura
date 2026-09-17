@@ -2,6 +2,7 @@ export * from "./alignElkRouteToHandles";
 export * from "./absoluteBoxesFromLayout";
 export * from "./applyLayout";
 export * from "./applyLayoutResult";
+export * from "./edgeLayoutsFromLayoutResult";
 export * from "./contract";
 export * from "./elkHandleOrder";
 export * from "./fromDiagram";

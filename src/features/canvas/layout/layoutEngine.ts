@@ -58,12 +58,13 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
  * the remaining lever: NETWORK_SIMPLEX vs BRANDES_KOEPF.
  *
  * **Measured against how `/viewer` actually draws**, which is the only comparison
- * worth making and is not the obvious one. The viewer reads control points from
- * the store's active diagram, and a reading route has none — so `ViewerCanvas`
- * discards ELK's routed path and draws orthogonal steps between handles. An
- * option tuned against ELK's own routing can therefore be worse on screen, and
- * one was: `bk.fixedAlignment=BALANCED` measured 14 -> 12 crossings with ELK's
- * routing and 15 -> 20 without it. It is not here for that reason.
+ * worth making. The viewer stamps handle-aligned ELK corridors from
+ * `layoutForVisualization` onto edge data (`layoutPoints`), so the reading
+ * surface draws the same orthogonal paths as the editor after auto-layout. An
+ * option tuned only against ELK's raw border routes can still disagree with
+ * handle-aligned corridors — `bk.fixedAlignment=BALANCED` measured 14 -> 12
+ * crossings with ELK's routing and 15 -> 20 without it. It is not here for that
+ * reason.
  *
  * Over the four `reference-diagrams`, rendered as the viewer renders them.
  * Baseline is the interactive profile: 15 crossings, 2 label overlaps, 1959px
@@ -74,8 +75,8 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
  *
  *   - `nodePlacement.strategy=NETWORK_SIMPLEX` is the option that moved the
  *     crossing count: 15 -> 13 on its own. BRANDES_KOEPF, which the interactive
- *     profile keeps, optimises for straight long edges; with the routing thrown
- *     away, straightness stops being what the reader sees.
+ *     profile keeps, optimises for straight long edges; NETWORK_SIMPLEX reads
+ *     better once corridors are handle-aligned on the canvas.
  *   - Interactive already carries the generous spacing + edge gaps; this
  *     profile only swaps placement. 140/260 was measured too and is worse on
  *     overlap (2060px) for more width — do not re-widen here without a new
