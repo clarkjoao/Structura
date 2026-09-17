@@ -27,6 +27,8 @@ export type { FlowchartImportPlan } from "./import-mermaid-flowchart";
 export {
   getStepById,
   getNextSteps,
+  getFlowOutEdges,
+  getReachableStepIds,
   isConditionStep,
   getEntryStep,
   walkFlow,
@@ -36,11 +38,9 @@ export {
   getPathToStep,
   canReachStep,
   getStepCount,
+  checkFlowInvariants,
 } from "./flow-traversal";
-export type { BrokenStep } from "./flow-traversal";
-
-export { getFlowOutEdges, getReachableStepIds, checkFlowInvariants } from "./flow-graph";
-export type { FlowEdge, FlowInvariantCode, FlowInvariantViolation } from "./flow-graph";
+export type { BrokenStep, FlowEdge, FlowInvariantCode, FlowInvariantViolation } from "./flow-traversal";
 
 export { computeFlowStepLabels, compareFlowStepLabels, branchLetter } from "./flow-labels";
 export type { FlowLabelResult, FlowLabelAmbiguity } from "./flow-labels";

@@ -11,6 +11,14 @@ import { type ShareUrlResult, generateShareUrl, generateViewerUrl } from "@/lib/
 /** Nothing chosen. A value rather than an empty string, so the select says it. */
 const NO_FLOW = "";
 
+const EMPTY_SHARE_RESULT: ShareUrlResult = {
+  url: "",
+  compressedLength: 0,
+  originalLength: 0,
+  compressionRatio: 0,
+  isSafeForAllEnvs: true,
+};
+
 interface ShareModalProps {
   diagram: Diagram;
   open: boolean;
@@ -18,16 +26,6 @@ interface ShareModalProps {
 }
 
 type CopiedState = "share" | "embed" | null;
-
-/** Creates a content-based key to detect diagram changes for memoization. */
-function getSnapshotVersionKey(snapshot: Diagram["snapshot"]): string {
-  if (!snapshot) return "";
-  return JSON.stringify({
-    components: Object.keys(snapshot.components ?? {}).length,
-    connections: Object.keys(snapshot.connections ?? {}).length,
-    flows: Object.keys(snapshot.flows ?? {}).length,
-  });
-}
 
 export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   const { t } = useTranslation();
@@ -40,20 +38,21 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
 
   const flows = useMemo(() => Object.values(diagram.snapshot?.flows ?? {}), [diagram.snapshot]);
 
-  // Depend on content key so URL regenerates when components are added/removed
-  const snapshotVersion = getSnapshotVersionKey(diagram.snapshot);
-
-  const shareResult: ShareUrlResult = useMemo(
-    () => generateShareUrl(diagram, { flowId: flowId || null }),
-    [diagram.id, snapshotVersion, flowId],
-  );
+  // Only while open: lz-compresses the whole diagram. Keying on counts alone
+  // (components/connections/flows) left stale URLs after renames, moves, or
+  // layout edits in the same session — regenerate from the live diagram whenever
+  // the dialog opens or the diagram/flow choice changes while open.
+  const shareResult: ShareUrlResult = useMemo(() => {
+    if (!open) return EMPTY_SHARE_RESULT;
+    return generateShareUrl(diagram, { flowId: flowId || null });
+  }, [open, diagram, flowId]);
 
   const shareUrl = shareResult.url;
 
-  const embedUrl = useMemo(
-    () => generateViewerUrl(diagram, flowId ? { flowId } : {}),
-    [diagram.id, snapshotVersion, flowId],
-  );
+  const embedUrl = useMemo(() => {
+    if (!open) return "";
+    return generateViewerUrl(diagram, flowId ? { flowId } : {});
+  }, [open, diagram, flowId]);
 
   const formattedLinkSize = useMemo(
     () => new Intl.NumberFormat().format(shareResult.compressedLength),

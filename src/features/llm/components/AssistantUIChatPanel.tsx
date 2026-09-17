@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -67,7 +67,7 @@ function SkeletonLoader() {
 }
 /* ───────────────────────────────────────────────────────────────────────── */
 
-export function AssistantUIChatPanel({
+export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   onClose,
   selectedNodeIds = new Set(),
   selectedNodeId = null,
@@ -331,7 +331,7 @@ export function AssistantUIChatPanel({
       </div>
     </AssistantRuntimeProvider>
   );
-}
+});
 
 /* --- Sub-components --- */
 

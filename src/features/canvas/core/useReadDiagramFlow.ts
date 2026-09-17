@@ -19,9 +19,10 @@ export function useReadDiagramFlow(
   diagram: Diagram,
   reading: ReadDiagramReading | null = null,
   routePlay: ReadDiagramRoutePlay | null = null,
+  focusedNodeId: string | null = null,
 ): { nodes: Node[]; edges: Edge[] } {
   return useMemo(
-    () => projectReadDiagram(diagram, reading, routePlay),
-    [diagram, reading, routePlay],
+    () => projectReadDiagram(diagram, reading, routePlay, focusedNodeId),
+    [diagram, reading, routePlay, focusedNodeId],
   );
 }

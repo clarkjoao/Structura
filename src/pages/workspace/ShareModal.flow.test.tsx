@@ -89,4 +89,55 @@ describe("the share dialog names a script", () => {
 
     expect(screen.queryByTestId("share-flow")).not.toBeInTheDocument();
   });
+
+  it("regenerates the share payload when the diagram changes without changing counts", () => {
+    const first = diagram([]);
+    first.snapshot.components = {
+      a: {
+        id: "a",
+        type: "system",
+        name: "Old",
+        description: "",
+        parentId: null,
+      } as never,
+    };
+    const { rerender } = render(<ShareModal diagram={first} open onOpenChange={() => {}} />);
+    const urlBefore = shareLink();
+
+    const second: Diagram = {
+      ...first,
+      updatedAt: first.updatedAt + 1,
+      snapshot: {
+        ...first.snapshot,
+        components: {
+          a: {
+            id: "a",
+            type: "system",
+            name: "NewName",
+            description: "moved",
+            parentId: null,
+          } as never,
+        },
+      },
+      nodeLayouts: { a: { elementId: "a", x: 99, y: 42 } },
+    };
+    rerender(<ShareModal diagram={second} open onOpenChange={() => {}} />);
+
+    expect(shareLink()).not.toBe(urlBefore);
+  });
+
+  it("rebuilds the URL when reopening after an edit while closed", () => {
+    const first = diagram([]);
+    first.name = "Before";
+    const { rerender } = render(
+      <ShareModal diagram={first} open={false} onOpenChange={() => {}} />,
+    );
+
+    const edited: Diagram = { ...first, name: "After", updatedAt: first.updatedAt + 1 };
+    rerender(<ShareModal diagram={edited} open={false} onOpenChange={() => {}} />);
+    rerender(<ShareModal diagram={edited} open onOpenChange={() => {}} />);
+
+    expect(shareLink()).toContain("#share=");
+    expect(shareLink().length).toBeGreaterThan(20);
+  });
 });

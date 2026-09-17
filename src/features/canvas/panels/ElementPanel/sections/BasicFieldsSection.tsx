@@ -10,7 +10,6 @@ export interface BasicFieldsSectionProps {
   tags: string[];
   tagInput: string;
   isNote: boolean;
-  isPanel: boolean;
 
   showName?: boolean;
 

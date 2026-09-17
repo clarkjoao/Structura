@@ -40,7 +40,9 @@ function flowRefs(flows: Record<string, Flow>): { id: string; name: string }[] {
   return Object.values(flows).map((flow) => ({ id: flow.id, name: flow.name }));
 }
 
-function readIdleChrome(): Pick<
+function readIdleChrome(
+  focusedNodeId: string | null,
+): Pick<
   NodeBuildContext,
   | "sceneBadgeByComponentId"
   | "serviceCatalog"
@@ -54,8 +56,8 @@ function readIdleChrome(): Pick<
     sceneBadgeByComponentId: {},
     serviceCatalog: {},
     allDiagrams: {},
-    selectedNodeId: null,
-    selectedNodeIds: new Set(),
+    selectedNodeId: focusedNodeId,
+    selectedNodeIds: focusedNodeId ? new Set([focusedNodeId]) : new Set(),
     dragTargetPanelId: null,
     unparentCandidatePanelId: null,
   };
@@ -64,8 +66,9 @@ function readIdleChrome(): Pick<
 /**
  * Read-only descriptor context for a shared/embed diagram.
  *
- * Same `buildData` / `buildStyle` the editor runs, without selection, catalog,
- * or edit callbacks. A missing `onPlayFlow` leaves route/group play inert.
+ * Same `buildData` / `buildStyle` the editor runs, without catalog or edit
+ * callbacks. Optional `focusedNodeId` marks a node as selected so CardNode can
+ * expand its description on click (viewer has no RF selection).
  *
  * @example
  * const ctx = buildReadNodeContext(diagram, components, layouts, connections, reading, play);
@@ -78,6 +81,7 @@ export function buildReadNodeContext(
   connections: Connection[],
   reading: ReadDiagramReading | null,
   onPlayFlow: ((flowId: string) => void) | undefined,
+  focusedNodeId: string | null = null,
 ): NodeBuildContext {
   const flows = diagram.snapshot.flows ?? {};
   return {
@@ -86,7 +90,7 @@ export function buildReadNodeContext(
     endpointCallsByRoute: endpointCallersByRoute(Object.values(flows)),
     resolvedComponents: components,
     resolvedNodeLayouts: layouts,
-    ...readIdleChrome(),
+    ...readIdleChrome(focusedNodeId),
     panelIds: buildPanelIds(Object.values(components)),
     ...readHandleState(connections, components),
     childrenIndex: buildChildrenIndex(components),

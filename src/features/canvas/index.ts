@@ -8,13 +8,6 @@ export { default as Canvas } from "./Canvas";
 export { default as FlowPanel } from "./flow/FlowPanel";
 export { default as FlowReadingRail } from "./flow/reading/FlowReadingRail";
 export { default as FlowRecorderPanel } from "./flow/FlowRecorderPanel";
-export { default as ElementPanel } from "./panels/ElementPanel/index";
-export { default as CanvasToolbar } from "./toolbar/CanvasToolbar";
-export { default as CardNode } from "./nodes/CardNode";
-export { default as EditableEdge } from "./edges/EditableEdge";
-export { default as PanelNode } from "./nodes/PanelNode";
-export { default as NoteNode } from "./nodes/NoteNode";
-export { default as NodeContextMenu } from "./panels/NodeContextMenu";
 export {
   nodeTypes,
   NODE_TYPE_REGISTRY,
@@ -47,7 +40,7 @@ export { useFlowReadingKeys } from "./flow/reading/useFlowReadingKeys";
 export { EmbedModal } from "./components/EmbedModal";
 export { useInteractionMode } from "./hooks/useInteractionMode";
 export type { InteractionMode } from "./hooks/useInteractionMode";
-export { AnalysisPanel, useDiagramContext, useLLMChat } from "./chat";
+export { AnalysisPanel, useLLMChat } from "./chat";
 
 /** Canvas Core — shared surface for Write / Reader / future Plugin hosts. */
 export {

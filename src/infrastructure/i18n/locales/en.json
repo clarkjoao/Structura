@@ -218,13 +218,20 @@
   },
   "import": {
     "title": "Import",
-    "description": "Import a diagram from a JSON file exported from Structura.",
+    "description": "Import one or more diagrams from JSON files exported from Structura. You can also pick a folder to preserve its structure.",
     "format": "Format",
     "json": "JSON",
-    "hint": "Select a .json file exported from Structura.",
-    "dropzone": "Drag and drop a file here, or choose a file.",
+    "hint": "Select .json files, or a folder whose relative paths will recreate the folder tree.",
+    "dropzone": "Drag and drop files here, or choose files.",
+    "chooseFiles": "Choose files",
+    "chooseFolder": "Choose folder",
     "chooseFile": "Choose file",
-    "jsonErrorWithReason": "Could not import the diagram JSON: {{reason}}"
+    "jsonErrorWithReason": "Could not import the diagram JSON: {{reason}}",
+    "jsonErrorNamed": "Could not import {{name}}: {{reason}}",
+    "noJsonFiles": "No importable .json diagram files found.",
+    "successOne": "Diagram imported",
+    "successMany": "{{count}} diagrams imported",
+    "successPartial": "{{imported}} imported; {{pending}} need service reconnect"
   },
   "serviceRelink": {
     "title": "Reconnect services",
@@ -1312,11 +1319,7 @@
     "useCustom": "Use “{{custom}}”"
   },
   "colorSwatches": {
-    "default": "Default",
-    "moreColors": "More colors",
-    "customColor": "Custom color",
-    "showLess": "Show less",
-    "hexPlaceholder": "ffffff"
+    "default": "Default"
   },
   "multiSelect": {
     "title": "Multi-selection",
@@ -1468,10 +1471,6 @@
     "ariaNamed": "{{name}} ({{type}})",
     "drillExplore": "Explore inside",
     "embedDiagram": "Embed diagram"
-  },
-  "reorderHandles": {
-    "moveUp": "Move handle {{index}} up",
-    "moveDown": "Move handle {{index}} down"
   },
   "customEdge": {
     "coveredBy": "Covered by: {{names}}",
@@ -2078,7 +2077,8 @@
   },
   "elementPanelTab": {
     "details": "Details",
-    "connections": "Connections"
+    "connections": "Connections",
+    "services": "Services"
   },
   "flowPanel": {
     "copyPrefix": "Copy of {{name}}",

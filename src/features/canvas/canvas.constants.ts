@@ -54,7 +54,8 @@ export const WHEEL_LINE_HEIGHT_PX = 16;
 // Re-exported for internal use in canvas features
 export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram";
 
-export const FIELD_DEBOUNCE_MS = 300;
+// Re-export timing constants for consumers of this module
+export { FIELD_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 export const FLOW_PARTICLE_DURATION_MS = 1200;
 

@@ -338,6 +338,21 @@ describe("layout — ApiGroup children are not in the layout graph", () => {
     // The ApiGroup itself is in the graph (its size comes from its endpoints).
     expect(graph.nodes.find((n) => n.id === "get")).toBeUndefined(); // excluded
     expect(graph.nodes.find((n) => n.id === "post")).toBeUndefined(); // excluded
+    // Edges to routes remap onto the group and dedupe to one peer relationship.
+    expect(graph.edges).toEqual([{ id: "e1", sourceId: "svc", targetId: "group" }]);
+  });
+
+  it("sizes an api-group from its endpoint count when no layout is stored", () => {
+    const components = componentsOf([
+      component("group", null, "api-group"),
+      component("get", "group", "endpoint"),
+      component("post", "group", "endpoint"),
+    ]);
+    const graph = fromDiagram(components, [], {});
+    const group = graph.nodes.find((n) => n.id === "group")!;
+    // HEADER 68 + 2 * ENDPOINT 40 + FOOTER 40 = 188; width 300.
+    expect(group.width).toBe(300);
+    expect(group.height).toBe(188);
   });
 
   it("still lays out the ApiGroup's siblings correctly", async () => {
@@ -354,11 +369,21 @@ describe("layout — ApiGroup children are not in the layout graph", () => {
       connection("e3", "ep2", "svc2"),
     ];
 
-    const result = await layout(fromDiagram(components, connections, {}));
+    const graph = fromDiagram(components, connections, {});
+    expect(graph.edges.map((e) => `${e.sourceId}->${e.targetId}`).sort()).toEqual([
+      "group->svc2",
+      "svc1->group",
+      "svc1->svc2",
+    ]);
+
+    const result = await layout(graph);
     // svc1 and svc2 are laid out; endpoints are absent from the graph.
     expect([...result.boxes.keys()].sort()).toEqual(["group", "svc1", "svc2"]);
     // Siblings of the ApiGroup are positioned correctly.
     expect(result.boxes.get("svc1")!.x).toBeLessThan(result.boxes.get("svc2")!.x);
+    // Remapped edges keep the group in the left-to-right chain with its peers.
+    expect(result.boxes.get("svc1")!.x).toBeLessThan(result.boxes.get("group")!.x);
+    expect(result.boxes.get("group")!.x).toBeLessThan(result.boxes.get("svc2")!.x);
   });
 });
 

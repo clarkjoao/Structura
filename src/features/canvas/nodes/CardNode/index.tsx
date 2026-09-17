@@ -1,5 +1,4 @@
-import { memo } from "react";
-import type { CSSProperties, ReactNode } from "react";
+import { memo, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
@@ -14,7 +13,6 @@ import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { NodeData } from "./types";
 import { TypeConfig } from "./TypeConfig";
 import { buildHandles } from "./Handles";
-import { buildReorderControls } from "./ReorderControls";
 import { Badges } from "./Badges";
 import { DrillDownButton } from "./DrillDownButton";
 import { EmbedButton } from "./EmbedButton";
@@ -22,6 +20,29 @@ import { StepBadge } from "./StepBadge";
 import { useTranslation } from "react-i18next";
 import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
 import { useCollab } from "@/features/collaboration/components/CollabProvider";
+import { CARD_MAX_W, CARD_MIN_W } from "./constants";
+
+/**
+ * Remembers the collapsed height and, while active, caps vertical growth at
+ * twice that so a long description scrolls instead of stretching the card.
+ * Width stays at {@link CARD_MAX_W}.
+ */
+function useExpandMaxHeight(
+  isActive: boolean,
+  rootRef: { readonly current: HTMLDivElement | null },
+): CSSProperties | undefined {
+  const collapsedHeightRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el || isActive) return;
+    collapsedHeightRef.current = el.offsetHeight;
+  });
+
+  const collapsedHeight = collapsedHeightRef.current;
+  if (!isActive || collapsedHeight === null) return undefined;
+  return { maxHeight: Math.max(collapsedHeight * 2, 1) };
+}
 
 function useNodeState(d: NodeData, selected: boolean | undefined) {
   const { highlightedNodeIds } = useHandleHighlight();
@@ -46,28 +67,14 @@ interface NodeHandlesProps {
   incomingCount: number;
   outgoingCount: number;
   handlePointer: CSSProperties | undefined;
-  controlsDisabled: boolean;
 }
 
-const NodeHandles = ({
-  d,
-  incomingCount,
-  outgoingCount,
-  handlePointer,
-  controlsDisabled,
-}: NodeHandlesProps) => {
-  const incomingIds = d.handleOrder?.incoming ?? [];
-  const outgoingIds = d.handleOrder?.outgoing ?? [];
-
+const NodeHandles = ({ d, incomingCount, outgoingCount, handlePointer }: NodeHandlesProps) => {
   return (
     <>
       {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
-      {d.onReorderHandle &&
-        buildReorderControls(incomingIds, "incoming", controlsDisabled, d.onReorderHandle)}
       {/* Left is input only, right is output only — never mirrored by position. */}
       {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
-      {d.onReorderHandle &&
-        buildReorderControls(outgoingIds, "outgoing", controlsDisabled, d.onReorderHandle)}
     </>
   );
 };
@@ -113,6 +120,8 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
   const { isGuest } = useCollab();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const expandStyle = useExpandMaxHeight(isActive, rootRef);
 
   const customDiagramIcon = useResolvedComponentIcon(d.elementId);
   const collabHighlight = useCollabHighlight(d.elementId);
@@ -180,14 +189,18 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
 
   return (
     <div
+      ref={rootRef}
       aria-label={t("cardNode.ariaNamed", { name: d.name, type: d.type })}
-      className={`group relative min-w-[200px] max-w-[260px] rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 ${
+      className={`group relative rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 flex flex-col ${
         isActive
-          ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
+          ? "overflow-hidden ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
           : "opacity-90"
       }`}
       style={{
+        minWidth: CARD_MIN_W,
+        maxWidth: CARD_MAX_W,
         ...borderStyle,
+        ...expandStyle,
       }}
     >
       {collabHighlight && (
@@ -209,29 +222,44 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
         incomingCount={incomingCount}
         outgoingCount={outgoingCount}
         handlePointer={handlePointer}
-        controlsDisabled={controlsDisabled}
       />
-      <div className="px-3 py-2.5">
-        <div className="flex items-center gap-2 mb-1.5">
+      <div
+        className={`px-3 py-2.5 flex flex-col min-h-0 ${isActive ? "flex-1 overflow-hidden" : ""}`}
+      >
+        <div className="flex items-center gap-2 mb-1.5 shrink-0">
           {icon}
-          <span className="text-sm font-bold text-foreground leading-tight truncate">{d.name}</span>
+          <span
+            className={`text-sm font-bold text-foreground leading-tight ${
+              isActive ? "whitespace-normal break-words" : "truncate"
+            }`}
+          >
+            {d.name}
+          </span>
         </div>
         {d.description && (
-          <p className="text-xs text-muted-foreground leading-snug line-clamp-2 mb-1.5">
+          <p
+            className={`text-xs text-muted-foreground leading-snug mb-1.5 ${
+              isActive
+                ? "min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words nowheel nodrag"
+                : "line-clamp-2"
+            }`}
+          >
             {d.description}
           </p>
         )}
         {technologyLabel && (
-          <span className="inline-block text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground">
+          <span className="inline-block self-start text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground shrink-0">
             {technologyLabel}
           </span>
         )}
-        <NodeActions
-          d={d}
-          controlsDisabled={controlsDisabled || isGuest}
-          colorClass={actionColorClass}
-          customColor={d.customColor}
-        />
+        <div className="shrink-0">
+          <NodeActions
+            d={d}
+            controlsDisabled={controlsDisabled || isGuest}
+            colorClass={actionColorClass}
+            customColor={d.customColor}
+          />
+        </div>
       </div>
     </div>
   );

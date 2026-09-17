@@ -142,7 +142,7 @@ export default function JsonViewerPanel({
         </button>
       </div>
 
-      <TabBar active={tab} onChange={setTab} showConnections={false} />
+      <TabBar active={tab} onChange={setTab} showConnections={false} showServices={false} />
 
       <div className="flex-1 overflow-y-auto min-h-0">
         {tab === "details" && (

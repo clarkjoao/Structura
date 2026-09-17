@@ -73,21 +73,6 @@ export const VIBRANT_PRESETS: ColorPreset[] = [
   { nameKey: "colors.sky", color: "hsl(200 75% 50%)" },
 ];
 
-export const PAPER_PRESETS: ColorPreset[] = [
-  { nameKey: "colors.white", color: "hsl(0 0% 98%)" },
-  { nameKey: "colors.ivory", color: "hsl(45 25% 97%)" },
-  { nameKey: "colors.cream", color: "hsl(40 30% 95%)" },
-  { nameKey: "colors.sand", color: "hsl(35 25% 92%)" },
-  { nameKey: "colors.parchment", color: "hsl(38 20% 90%)" },
-  { nameKey: "colors.lightBeige", color: "hsl(30 25% 88%)" },
-  { nameKey: "colors.paleYellow", color: "hsl(50 60% 94%)" },
-  { nameKey: "colors.softMint", color: "hsl(160 30% 94%)" },
-  { nameKey: "colors.lightBlue", color: "hsl(210 40% 95%)" },
-  { nameKey: "colors.lavender", color: "hsl(260 30% 94%)" },
-  { nameKey: "colors.palePink", color: "hsl(340 40% 95%)" },
-  { nameKey: "colors.lightGray", color: "hsl(220 15% 92%)" },
-];
-
 export const C4_PRESETS: ColorPreset[] = [
   { nameKey: "colors.c4Person", color: "hsl(38 92% 50%)" },
   { nameKey: "colors.c4System", color: "hsl(187 72% 51%)" },

@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { checkStorageHealth } from "./storage-monitor";
-
-const CHECK_INTERVAL_MS = 30_000;
+import { CHECK_INTERVAL_MS } from "@/lib/timing.constants";
 
 /**
  * Mount at the canvas / model explorer layout level.

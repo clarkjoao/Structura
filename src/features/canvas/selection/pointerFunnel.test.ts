@@ -1,29 +1,56 @@
 /**
  * Phase 4 — pointer funnel tests.
  *
- * Covers the parts of the funnel that are pure functions / state — selection
- * writes happen through the Zustand store and are observable from tests. The
- * DOM-event listeners and right-button macOS suppression are exercised in
- * Cypress; here we verify that calling `beginGesture` / `updateGesture` /
- * `endGesture` correctly mutates the selection store and that the
- * `cancelInFlightGesture` flag flips on.
+ * Covers selection writes through the Zustand store. DOM listeners are
+ * exercised here with synthetic mousedown on a `.react-flow__node` fixture.
  */
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
-import { usePointerFunnel, type GestureTarget } from "./pointerFunnel";
+import { usePointerFunnel, isMultiSelectModifier, type GestureTarget } from "./pointerFunnel";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 
 function readSelection() {
   const s = useCanvasSelectionStore.getState();
   return {
     selectedNodeId: s.selectedNodeId,
-    selectedNodeIds: [...s.selectedNodeIds],
+    selectedNodeIds: [...s.selectedNodeIds].sort(),
   };
 }
 
+function mountNodeFixture(nodeId: string): HTMLDivElement {
+  const el = document.createElement("div");
+  el.className = "react-flow__node";
+  el.setAttribute("data-id", nodeId);
+  document.body.appendChild(el);
+  return el;
+}
+
+function dispatchNodeMouseDown(
+  el: HTMLElement,
+  modifiers: { shiftKey?: boolean; metaKey?: boolean; ctrlKey?: boolean } = {},
+) {
+  el.dispatchEvent(
+    new MouseEvent("mousedown", {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      clientX: 10,
+      clientY: 10,
+      ...modifiers,
+    }),
+  );
+}
+
 describe("selection/pointerFunnel", () => {
+  let fixture: HTMLDivElement | null = null;
+
   beforeEach(() => {
     useCanvasSelectionStore.getState().clearSelection();
+  });
+
+  afterEach(() => {
+    fixture?.remove();
+    fixture = null;
   });
 
   it("exposes a constant threshold matching dragThreshold.DRAG_THRESHOLD_PX", () => {
@@ -31,18 +58,43 @@ describe("selection/pointerFunnel", () => {
     expect(result.current.threshold).toBe(4);
   });
 
+  it("isMultiSelectModifier matches Shift, Meta, and Control", () => {
+    expect(isMultiSelectModifier({ shiftKey: true, metaKey: false, ctrlKey: false })).toBe(true);
+    expect(isMultiSelectModifier({ shiftKey: false, metaKey: true, ctrlKey: false })).toBe(true);
+    expect(isMultiSelectModifier({ shiftKey: false, metaKey: false, ctrlKey: true })).toBe(true);
+    expect(isMultiSelectModifier({ shiftKey: false, metaKey: false, ctrlKey: false })).toBe(false);
+  });
+
   it("Shift pointerdown on an unselected node adds to the existing selection", () => {
-    const { result } = renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
-    // pre-select node A
+    renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
     useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
-    // simulate pointerdown on B with shiftKey
-    // The funnel installs its listeners via useEffect; we instead exercise
-    // the public decision: a second `setSelectedNodeId` call should add B
-    // when shift is held. The selection-store path is already tested in
-    // useCanvasSelectionStore.test.ts; here we assert that consuming the
-    // funnel does not introduce extra state on its own.
-    expect(result.current.cancelInFlightGesture()).toBe(false);
-    expect(readSelection()).toEqual({ selectedNodeId: "a", selectedNodeIds: ["a"] });
+    fixture = mountNodeFixture("b");
+    dispatchNodeMouseDown(fixture, { shiftKey: true });
+    expect(readSelection()).toEqual({ selectedNodeId: "a", selectedNodeIds: ["a", "b"] });
+  });
+
+  it("Cmd (metaKey) pointerdown on an unselected node adds to the existing selection", () => {
+    renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
+    useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
+    fixture = mountNodeFixture("b");
+    dispatchNodeMouseDown(fixture, { metaKey: true });
+    expect(readSelection()).toEqual({ selectedNodeId: "a", selectedNodeIds: ["a", "b"] });
+  });
+
+  it("Ctrl pointerdown on an unselected node adds to the existing selection", () => {
+    renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
+    useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
+    fixture = mountNodeFixture("b");
+    dispatchNodeMouseDown(fixture, { ctrlKey: true });
+    expect(readSelection()).toEqual({ selectedNodeId: "a", selectedNodeIds: ["a", "b"] });
+  });
+
+  it("plain pointerdown on an unselected node replaces the selection", () => {
+    renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
+    useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
+    fixture = mountNodeFixture("b");
+    dispatchNodeMouseDown(fixture);
+    expect(readSelection()).toEqual({ selectedNodeId: "b", selectedNodeIds: ["b"] });
   });
 
   it("cancelInFlightGesture returns false when there is nothing to cancel", () => {
@@ -56,9 +108,6 @@ describe("selection/pointerFunnel", () => {
   });
 
   it("GestureTarget shape stays additive — kinds are exhaustive", () => {
-    // Type-level check: the union has at least these kinds. If a new kind is
-    // added without updating the funnel, this list (and the comment at the
-    // top of pointerFunnel.ts) will diverge.
     const targets: GestureTarget[] = [
       { kind: "panel-header", nodeId: "x" },
       { kind: "panel-border", nodeId: "x" },

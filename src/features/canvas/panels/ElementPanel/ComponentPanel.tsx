@@ -32,12 +32,12 @@ import { cloudRegistry } from "@/features/cloud/registry/cloud.registry";
 import CloudIcon from "../../nodes/CloudIcon";
 import TabBar, { type Tab } from "./components/TabBar";
 import ConnectionsTab from "./components/ConnectionsTab";
+import { ServicesTab } from "./components/ServicesTab";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import {
   BasicFieldsSection,
-  ServiceLinkSection,
   LinkedDiagramSection,
   PanelStyleSection,
   ExternalLinksSection,
@@ -45,6 +45,7 @@ import {
   PositionSection,
 } from "./sections";
 import { isComponentType } from "@/features/diagram";
+import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
 
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
@@ -60,16 +61,11 @@ function buildComponentSyncPatch(service: ServiceDefinition, component: Componen
   return patch;
 }
 
-function shouldPreserveContent(name: string, description: string) {
-  return name.trim().length > 0 && description.trim().length > 0;
-}
-
 interface ComponentPanelProps {
   component: Component;
   onClose: () => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
-  onUngroup?: () => void;
   focusTitleTrigger?: number;
 }
 
@@ -78,7 +74,6 @@ const ComponentPanel = ({
   onClose,
   updateComponent,
   removeComponent,
-  onUngroup: _onUngroup,
   focusTitleTrigger = 0,
 }: ComponentPanelProps) => {
   const { t } = useTranslation();
@@ -234,9 +229,26 @@ const ComponentPanel = ({
           </button>
         </div>
       </div>
-      <TabBar active={tab} onChange={setTab} showConnections={!isSimple} />
+      <TabBar
+        active={tab}
+        onChange={setTab}
+        showConnections={!isSimple}
+        showServices={!isSimple && !isFlowchart}
+      />
       {tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
+      ) : tab === "services" ? (
+        <ServicesTab
+          componentId={component.id}
+          serviceId={component.serviceId}
+          linkedService={linkedService}
+          onSync={() => linkedService && syncFromService(linkedService)}
+          onServiceChange={(serviceId) => {
+            linkComponentToService(component.id, serviceId ?? undefined);
+            const service = allServices.find((item) => item.id === serviceId);
+            if (service) syncFromService(service, { persist: false });
+          }}
+        />
       ) : (
         <div className="p-4 space-y-4 overflow-auto flex-1">
           <PositionSection
@@ -268,7 +280,6 @@ const ComponentPanel = ({
               tags={tags}
               tagInput={tagInput}
               isNote={isNote}
-              isPanel={isPanel}
               showTechnology={false}
               showTags={false}
               titleInputRef={titleInputRef}
@@ -297,7 +308,6 @@ const ComponentPanel = ({
                 tags={tags}
                 tagInput={tagInput}
                 isNote={isNote}
-                isPanel={isPanel}
                 showDescription={false}
                 showTechnology={false}
                 showTags={false}
@@ -379,13 +389,12 @@ const ComponentPanel = ({
                       const nextService = event.target.value;
                       setCloudService(nextService);
                       const serviceEntry = cloudProvider.getService(nextService);
-                      const preserveContent = shouldPreserveContent(name, desc);
-                      const shouldRename =
-                        !!serviceEntry &&
-                        !preserveContent &&
-                        (name.trim() === "" ||
-                          name.startsWith(i18n.t("common.defaultNamePrefix")) ||
-                          name === component.name);
+                      const shouldRename = shouldRenameForCloudIcon({
+                        hasCloudCatalogEntry: !!serviceEntry,
+                        businessServiceId: component.serviceId,
+                        currentName: name,
+                        defaultNamePrefix: i18n.t("common.defaultNamePrefix"),
+                      });
                       updateComponent(component.id, {
                         ...cloudServiceIdClearingPatch(nextService),
                         ...(shouldRename && serviceEntry ? { name: serviceEntry.name } : {}),
@@ -412,7 +421,6 @@ const ComponentPanel = ({
                 tags={tags}
                 tagInput={tagInput}
                 isNote={isNote}
-                isPanel={isPanel}
                 showName={false}
                 showTechnology
                 showTags
@@ -440,19 +448,6 @@ const ComponentPanel = ({
               updateComponent={updateComponent}
               updateNodeLayout={updateNodeLayout}
               componentNodeLayout={resolved?.nodeLayouts[component.id]}
-            />
-          )}
-          {!isSimple && !isFlowchart && (
-            <ServiceLinkSection
-              componentId={component.id}
-              serviceId={component.serviceId}
-              linkedService={linkedService}
-              onSync={() => linkedService && syncFromService(linkedService)}
-              onServiceChange={(serviceId) => {
-                linkComponentToService(component.id, serviceId ?? undefined);
-                const service = allServices.find((item) => item.id === serviceId);
-                if (service) syncFromService(service, { persist: false });
-              }}
             />
           )}
           {!isSimple && !isFlowchart && (

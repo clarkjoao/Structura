@@ -4,9 +4,7 @@ import { CollabEditingWarning } from "@/features/collaboration";
 import {
   useComponent,
   useConnections,
-  useComponents,
   useDiagramActions,
-  isPanelComponent,
 } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
@@ -34,7 +32,6 @@ const ElementPanel = ({
 }: Props) => {
   const { t } = useTranslation();
   const component = useComponent(selectedElementId ?? "");
-  const resolvedComponents = useComponents();
   const connections = useConnections();
   const {
     updateComponent,
@@ -42,7 +39,6 @@ const ElementPanel = ({
     updateConnection,
     removeConnection,
     groupNodes,
-    ungroupNodes,
   } = useDiagramActions();
 
   if (selectedNodes.length > 1) {
@@ -86,9 +82,6 @@ const ElementPanel = ({
     }
 
     const canGroup = selectedNodeIds.length >= 2;
-    const isPanelWithChildren =
-      isPanelComponent(component) &&
-      Object.values(resolvedComponents).some((c) => c.parentId === component.id);
 
     return (
       <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
@@ -113,14 +106,6 @@ const ElementPanel = ({
           onClose={onClose}
           updateComponent={updateComponent}
           removeComponent={removeComponent}
-          onUngroup={
-            isPanelWithChildren
-              ? () => {
-                  ungroupNodes(component.id);
-                  onClose();
-                }
-              : undefined
-          }
           focusTitleTrigger={focusTitleTrigger}
         />
         <div className="shrink-0 overflow-y-auto p-2 empty:hidden">
