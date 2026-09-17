@@ -62,3 +62,25 @@ describe("addImportedDiagram", () => {
     expect(imported.id).toBe("from-file");
   });
 });
+
+describe("moveDiagram", () => {
+  it("clears folderId when the destination folder does not exist", () => {
+    const store = createTestDiagramStore();
+    const folder = store.getState().addFolder("Team", null);
+    const imported = store.getState().importDiagram(importable(folder.id));
+
+    store.getState().moveDiagram(imported.id, "missing-folder");
+
+    expect(store.getState().diagrams[imported.id]!.folderId).toBeUndefined();
+  });
+
+  it("moves into an existing folder", () => {
+    const store = createTestDiagramStore();
+    const folder = store.getState().addFolder("Team", null);
+    const imported = store.getState().importDiagram(importable());
+
+    store.getState().moveDiagram(imported.id, folder.id);
+
+    expect(store.getState().diagrams[imported.id]!.folderId).toBe(folder.id);
+  });
+});

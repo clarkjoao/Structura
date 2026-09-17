@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Upload, FileJson } from "lucide-react";
+import { Upload, FileJson, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +12,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useWorkspaceImport } from "@/pages/useWorkspaceImport";
+import { useWorkspaceImport, type ImportJsonSource } from "@/pages/useWorkspaceImport";
 import { ServiceRelinkDialog } from "@/pages/ServiceRelinkDialog";
 import type { ImporterContribution } from "@/features/plugins/plugin.types";
 import { usePluginIoContributions } from "@/features/plugins/use-plugin-contributions";
 import { resolveLocalizedText } from "@/features/plugins/localized-text";
 import { runPluginImport } from "@/features/plugins/run-plugin-import";
+import { isImportableDiagramFileName } from "@/pages/import-folder-path";
 
 interface ImportModalProps {
   open: boolean;
@@ -30,6 +31,22 @@ interface ImportModalProps {
   allowPluginImporters?: boolean;
 }
 
+async function sourcesFromFileList(fileList: FileList | File[]): Promise<ImportJsonSource[]> {
+  // Copy before the caller clears `input.value` — FileList is live and becomes empty.
+  const files = Array.from(fileList);
+  const sources: ImportJsonSource[] = [];
+  for (const file of files) {
+    if (!isImportableDiagramFileName(file.name)) continue;
+    const relativePath = file.webkitRelativePath || undefined;
+    sources.push({
+      name: file.name,
+      text: await file.text(),
+      relativePath: relativePath && relativePath.length > 0 ? relativePath : undefined,
+    });
+  }
+  return sources;
+}
+
 export function ImportModal({
   open,
   onOpenChange,
@@ -37,19 +54,28 @@ export function ImportModal({
   allowPluginImporters = false,
 }: ImportModalProps) {
   const { t, i18n } = useTranslation();
-  const { importJsonText, pendingRelinkPlan, confirmRelink, cancelRelink } = useWorkspaceImport({
-    targetFolderId,
-  });
+  const { importJsonText, importJsonSources, pendingRelinkPlan, confirmRelink, cancelRelink } =
+    useWorkspaceImport({
+      targetFolderId,
+    });
   const { importers } = usePluginIoContributions();
   const pluginImporters = allowPluginImporters ? importers : [];
   const [activeImporter, setActiveImporter] = useState<ImporterContribution | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setActiveImporter(null);
     setIsDragging(false);
+  }, [open]);
+
+  useEffect(() => {
+    const input = folderInputRef.current;
+    if (!input) return;
+    input.setAttribute("webkitdirectory", "");
+    input.setAttribute("directory", "");
   }, [open]);
 
   const runImporterForFile = useCallback(
@@ -80,6 +106,19 @@ export function ImportModal({
     [t],
   );
 
+  const handleJsonSources = useCallback(
+    async (fileList: FileList | File[]) => {
+      const sources = await sourcesFromFileList(fileList);
+      if (sources.length === 0) {
+        toast.error(t("import.noJsonFiles"));
+        return false;
+      }
+      const result = importJsonSources(sources);
+      return result.imported > 0 || result.pendingRelink > 0;
+    },
+    [importJsonSources, t],
+  );
+
   const handleFile = useCallback(
     async (file: File) => {
       let ok: boolean;
@@ -96,25 +135,49 @@ export function ImportModal({
     [activeImporter, importJsonText, onOpenChange, runImporterForFile],
   );
 
-  const handleFileChange = useCallback(
+  const handleFilesChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
+      const list = event.target.files;
+      if (!list || list.length === 0) {
+        event.target.value = "";
+        return;
+      }
+      // Snapshot Files before resetting the input — FileList is a live view.
+      const files = Array.from(list);
       event.target.value = "";
-      if (!file) return;
-      void handleFile(file);
+
+      if (activeImporter) {
+        const file = files[0];
+        if (file) void handleFile(file);
+        return;
+      }
+
+      void handleJsonSources(files).then((ok) => {
+        if (ok) onOpenChange(false);
+      });
     },
-    [handleFile],
+    [activeImporter, handleFile, handleJsonSources, onOpenChange],
   );
 
   const handleDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
       setIsDragging(false);
-      const file = event.dataTransfer.files?.[0];
-      if (!file) return;
-      void handleFile(file);
+      const list = event.dataTransfer.files;
+      if (!list || list.length === 0) return;
+      const files = Array.from(list);
+
+      if (activeImporter) {
+        const file = files[0];
+        if (file) void handleFile(file);
+        return;
+      }
+
+      void handleJsonSources(files).then((ok) => {
+        if (ok) onOpenChange(false);
+      });
     },
-    [handleFile],
+    [activeImporter, handleFile, handleJsonSources, onOpenChange],
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -136,6 +199,7 @@ export function ImportModal({
     : t("import.hint");
 
   const hasPlugins = pluginImporters.length > 0;
+  const jsonMode = !activeImporter;
 
   return (
     <>
@@ -239,19 +303,43 @@ export function ImportModal({
             <Upload className="h-8 w-8 text-muted-foreground" aria-hidden />
             <p className="text-sm text-muted-foreground">{t("import.dropzone")}</p>
             <span className="mt-1 rounded-md bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-              {t("import.chooseFile")}
+              {t("import.chooseFiles")}
             </span>
           </button>
+
+          {jsonMode && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => folderInputRef.current?.click()}
+            >
+              <FolderOpen className="mr-2 h-4 w-4" />
+              {t("import.chooseFolder")}
+            </Button>
+          )}
 
           <input
             ref={fileInputRef}
             type="file"
             accept={acceptTypes}
+            multiple={jsonMode}
             className="hidden"
             tabIndex={-1}
-            aria-label={t("import.chooseFile")}
-            onChange={handleFileChange}
+            aria-label={t("import.chooseFiles")}
+            onChange={handleFilesChange}
           />
+          {jsonMode && (
+            <input
+              ref={folderInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              tabIndex={-1}
+              aria-label={t("import.chooseFolder")}
+              onChange={handleFilesChange}
+            />
+          )}
 
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>

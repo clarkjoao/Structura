@@ -48,6 +48,13 @@ export function foldersSlice(set: (fn: (state: AppState) => void) => void, _get:
         const diagram = state.diagrams[diagramId];
         if (!diagram) return;
 
+        // A missing folder would hide the diagram from every list (exact folderId
+        // match). Land at the root instead — same rule as import orphan reparent.
+        if (folderId !== null && state.folders[folderId] === undefined) {
+          diagram.folderId = undefined;
+          return;
+        }
+
         diagram.folderId = folderId ?? undefined;
       });
     },

@@ -218,13 +218,20 @@
   },
   "import": {
     "title": "Importar",
-    "description": "Importe um diagrama a partir de um arquivo JSON exportado do Structura.",
+    "description": "Importe um ou mais diagramas a partir de JSON exportado do Structura. Também pode escolher uma pasta para preservar a estrutura.",
     "format": "Formato",
     "json": "JSON",
-    "hint": "Selecione um arquivo .json exportado do Structura.",
-    "dropzone": "Arraste um ficheiro para aqui ou escolha um ficheiro.",
+    "hint": "Selecione ficheiros .json, ou uma pasta cujos caminhos relativos recriam a árvore de pastas.",
+    "dropzone": "Arraste ficheiros para aqui ou escolha ficheiros.",
+    "chooseFiles": "Escolher ficheiros",
+    "chooseFolder": "Escolher pasta",
     "chooseFile": "Escolher ficheiro",
-    "jsonErrorWithReason": "Não foi possível importar o JSON do diagrama: {{reason}}"
+    "jsonErrorWithReason": "Não foi possível importar o JSON do diagrama: {{reason}}",
+    "jsonErrorNamed": "Não foi possível importar {{name}}: {{reason}}",
+    "noJsonFiles": "Nenhum ficheiro .json de diagrama importável encontrado.",
+    "successOne": "Diagrama importado",
+    "successMany": "{{count}} diagramas importados",
+    "successPartial": "{{imported}} importados; {{pending}} precisam reconectar serviços"
   },
   "serviceRelink": {
     "title": "Reconectar serviços",
