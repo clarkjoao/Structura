@@ -10,6 +10,7 @@ import {
   Database,
   RefreshCw,
   KeyRound,
+  AlertTriangle,
 } from "lucide-react";
 import { useLastFolderSync } from "@/hooks/useLastFolderSync";
 import { useLastLocalStorageSync } from "@/hooks/useLastLocalStorageSync";
@@ -275,6 +276,43 @@ export function FileSystemStatus({
             {folderName
               ? t("filesystem.needsPermissionFolder", { name: folderName })
               : t("filesystem.needsPermissionLabel")}
+          </button>
+        ))}
+
+      {!hideActions &&
+        status === "error" &&
+        (compact ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={reconnectWithPermission}
+                className="flex h-8 w-8 items-center justify-center rounded-md
+                  border border-destructive/40 bg-destructive/10 text-destructive
+                  hover:bg-destructive/20 hover:border-destructive/60 transition-all"
+                aria-label={t("filesystem.permissionLost")}
+              >
+                <AlertTriangle className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="end">
+              {folderName
+                ? t("filesystem.permissionLostFolder", { name: folderName })
+                : t("filesystem.permissionLost")}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <button
+            onClick={reconnectWithPermission}
+            className="flex items-center gap-1.5 rounded-md border border-destructive/40
+            bg-destructive/10 px-2.5 py-1.5 text-[11px] font-medium text-destructive
+            hover:bg-destructive/20 hover:border-destructive/60 transition-all"
+            title={t("filesystem.permissionLost")}
+          >
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            {folderName
+              ? t("filesystem.permissionLostFolder", { name: folderName })
+              : t("filesystem.permissionLost")}
           </button>
         ))}
 

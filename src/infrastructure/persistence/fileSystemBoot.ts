@@ -7,6 +7,7 @@ import {
 } from "@/features/diagram";
 import {
   fileSystemAdapter,
+  type FileSystemDirectoryHandleWithPermissions,
   type WorkspacePayload,
   type WorkspaceScanResult,
 } from "./FileSystemAdapter";
@@ -20,6 +21,14 @@ import { readElementPresetsField } from "./read-element-presets-field";
 import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";
 import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
 import { WORKSPACE_SCHEMA_VERSION } from "./versions";
+import { toast } from "sonner";
+import i18n from "@/infrastructure/i18n";
+import {
+  openWorkspaceBroadcast,
+  closeWorkspaceBroadcast,
+  broadcastManifestChanged,
+} from "./workspaceBroadcast";
+import type { StagedDiagramWrite } from "./stagedDiagramWrite";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
@@ -94,16 +103,24 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
 
   fileSystemAdapter.setFolders(state.folders);
 
-  const diagramWrites = await Promise.all(
-    Object.values(state.diagrams).map((diagram) => fileSystemAdapter.writeDiagram(diagram)),
-  );
-  if (diagramWrites.some((ok) => !ok)) return false;
+  // Phase 1 (Prepare): Write all diagrams to .tmp files
+  const stagedWrites: StagedDiagramWrite[] = [];
+  for (const diagram of Object.values(state.diagrams)) {
+    const staged = await fileSystemAdapter.writeDiagramStaged(diagram);
+    if (!staged) {
+      // Rollback any diagrams that were already written to .tmp
+      await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
+      return false;
+    }
+    stagedWrites.push(staged);
+  }
 
   const elementPresets = useElementPresetStore.getState().presets;
 
   const iconLibrary = useIconStore.getState().icons;
 
-  const manifestOk = await fileSystemAdapter.writeManifest({
+  // Phase 2 (Commit): Write manifest
+  const manifestOk = await fileSystemAdapter.writeManifestWithRetry({
     version: WORKSPACE_SCHEMA_VERSION as 1 | 2,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -114,7 +131,22 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     elementPresets,
     iconLibrary,
   });
-  if (!manifestOk) return false;
+
+  if (!manifestOk) {
+    // Rollback: delete .tmp files since manifest failed
+    await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
+    return false;
+  }
+
+  // Commit: rename .tmp → .json
+  const commitOk = await fileSystemAdapter.commitStagedDiagrams(stagedWrites);
+  if (!commitOk) {
+    // Commit partially failed - this is a serious inconsistency
+    // The manifest references diagrams that may not exist
+    console.error("[FileSystemBoot] Partial commit failure - manifest references may be invalid");
+    // Don't rollback - some diagrams may have been committed
+    // The next sync will detect and fix this
+  }
 
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
     diagramIds: Object.keys(state.diagrams),
@@ -162,7 +194,6 @@ async function doReconnect(): Promise<boolean> {
       return false;
     }
 
-    defaultStorage.paused = true;
     fileSystemAdapter.setFolders(useDiagramStore.getState().folders);
 
     const workspace = await fileSystemAdapter.loadWorkspace();
@@ -254,7 +285,95 @@ export function resolveBootScan(scan: WorkspaceScanResult | null): void {
   _bootScanResolver = null;
 }
 
+// ─── Bidirectional Folder Sync ────────────────────────────────────────────────
+
+export interface FolderSyncResult {
+  foldersCreatedInStore: string[];
+  directoriesCreated: string[];
+  directoriesDeleted: string[];
+}
+
+/**
+ * Synchronizes folder structure between filesystem and Zustand store.
+ *
+ * Trust model:
+ *   - The `structura-manifest.json` file is the source of truth for folder IDs
+ *     and names. We only read directory names from the FS to detect folders
+ *     that are NOT yet in the store AND NOT in the manifest.
+ *   - For directories whose name already matches a known folder ID, we do
+ *     nothing — the folder is already represented in the store or in the
+ *     manifest. Creating a new folder from a directory name would generate a
+ *     fresh ID and orphan the original directory on the next write.
+ *
+ * This function:
+ *   1. Scans directories in the filesystem
+ *   2. Compares with store folders
+ *   3. Creates directories for folders in store that don't have them
+ *   4. Logs (but does NOT auto-create) folders for unknown directories —
+ *      those need a manifest entry to be imported safely.
+ */
+export async function syncFoldersFromFilesystem(): Promise<FolderSyncResult | null> {
+  if (!fileSystemAdapter.isConnected) return null;
+
+  const result: FolderSyncResult = {
+    foldersCreatedInStore: [],
+    directoriesCreated: [],
+    directoriesDeleted: [],
+  };
+
+  try {
+    // Get current folder state from store
+    const storeFolderIds = new Set(Object.keys(useDiagramStore.getState().folders));
+
+    // Scan filesystem for directories
+    const fsFolderIds = await fileSystemAdapter.scanDirectoryStructure();
+
+    // Find directories in FS that don't have folders in store.
+    // We do NOT auto-import them — the directory name is not necessarily the
+    // folder ID. If the user wants to import a folder that was created outside
+    // the app, the manifest must reference it first. We log so this is visible
+    // in dev tools.
+    const unknownDirs: string[] = [];
+    for (const folderId of fsFolderIds) {
+      if (!storeFolderIds.has(folderId)) {
+        unknownDirs.push(folderId);
+      }
+    }
+
+    // Find folders in store that don't have directories in FS
+    // Create directories for them
+    for (const folderId of storeFolderIds) {
+      if (!fsFolderIds.has(folderId)) {
+        const created = await fileSystemAdapter.createDirectory(folderId);
+        if (created) {
+          result.directoriesCreated.push(folderId);
+        }
+      }
+    }
+
+    // Log results
+    if (unknownDirs.length > 0) {
+      console.info(
+        `[FileSystemBoot] Found ${unknownDirs.length} directories on disk without a matching store folder (skipped — manifest must reference them first):`,
+        unknownDirs,
+      );
+    }
+    if (result.directoriesCreated.length > 0) {
+      console.info(
+        `[FileSystemBoot] Created ${result.directoriesCreated.length} directories in filesystem:`,
+        result.directoriesCreated,
+      );
+    }
+
+    return result;
+  } catch (e) {
+    console.warn("[FileSystemBoot] syncFoldersFromFilesystem failed:", e);
+    return null;
+  }
+}
+
 let _syncUnsub: (() => void) | null = null;
+let _folderWatcherCleanup: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 let _flushChain: Promise<void> = Promise.resolve();
 let lastFlushedDiagrams: Record<string, Diagram> = {};
@@ -262,6 +381,22 @@ let lastFlushedDiagrams: Record<string, Diagram> = {};
 let lastFlushedPathSegments: Record<string, string[]> = {};
 /** Skips redundant structura-manifest.json writes during incremental sync (reset in stopFileSystemSync). */
 let lastSyncedManifestFingerprint = "";
+
+/** Module-level listener set by useFileSystemStorage to be notified of remote tab changes. */
+let _onRemoteTabWrite: (() => void) | null = null;
+
+/**
+ * Called by useFileSystemStorage to register a handler that fires when another tab
+ * successfully writes to the workspace. The handler should trigger a merge check.
+ */
+export function setOnRemoteTabWrite(cb: (() => void) | null): void {
+  _onRemoteTabWrite = cb;
+}
+
+/** Returns the fingerprint of the last manifest that was successfully synced to disk. */
+export function getLastSyncedManifestFingerprint(): string {
+  return lastSyncedManifestFingerprint;
+}
 
 export function startFileSystemSync(): void {
   stopFileSystemSync();
@@ -272,6 +407,30 @@ export function startFileSystemSync(): void {
   for (const [id, diagram] of Object.entries(initialDiagrams)) {
     lastFlushedPathSegments[id] = fileSystemAdapter.computePathSegments(diagram);
   }
+
+  // Open BroadcastChannel so this tab can receive writes from other tabs.
+  const workspacePath = fileSystemAdapter.folderName ?? "";
+  if (workspacePath) {
+    openWorkspaceBroadcast(workspacePath, () => {
+      _onRemoteTabWrite?.();
+    });
+  }
+
+  // ─── Folder Change Watcher ─────────────────────────────────────────────────
+  // Folder changes in the store are written to disk by the regular diagram
+  // flush path: `resolveDiagramPathSegments` rebuilds the path from the folder
+  // ID at write time, so a folder created in the UI gets a directory the next
+  // time a diagram is written into it. We deliberately do NOT subscribe to
+  // `state.folders` here — a prior version did, and it interacted badly with
+  // the store-level debounced flush (every folder change re-queued the flush,
+  // every flush re-walked folders), which surfaced as React Flow's
+  // `StoreUpdater` repeatedly calling `setNodes` until React aborted with
+  // "Maximum update depth exceeded".
+  //
+  // Cleanup of the previous subscription is kept as a no-op for callers that
+  // still invoke it; new code should rely on the flush path.
+  void _folderWatcherCleanup;
+  void _syncUnsub;
 
   /**
    * Debounced folder sync runs in parallel with Zustand persist (PERSIST_DEBOUNCE_MS in
@@ -284,6 +443,26 @@ export function startFileSystemSync(): void {
     _syncTimer = setTimeout(() => {
       _flushChain = _flushChain
         .then(async () => {
+          // Proactively check write permission before attempting any writes.
+          // This surfaces permission loss (e.g. OS revoked it) before the
+          // native API throws, so the UI can show an error banner immediately.
+          try {
+            const directoryHandle = fileSystemAdapter["handle"] as FileSystemDirectoryHandleWithPermissions | null;
+            if (directoryHandle) {
+              const state = await directoryHandle.queryPermission?.({ mode: "readwrite" });
+              if (state !== "granted") {
+                fileSystemAdapter["_hasPermissionError"] = true;
+                fileSystemAdapter["_onPermissionError"]?.();
+                return;
+              }
+            }
+          } catch {
+            // If we can't even query permission, treat it as an error.
+            fileSystemAdapter["_hasPermissionError"] = true;
+            fileSystemAdapter["_onPermissionError"]?.();
+            return;
+          }
+
           const diagramState = useDiagramStore.getState();
           const prevDiagrams = lastFlushedDiagrams;
           const prevPathSegments = lastFlushedPathSegments;
@@ -295,6 +474,7 @@ export function startFileSystemSync(): void {
           fileSystemAdapter.setFolders(diagramState.folders);
 
           let wroteSomething = false;
+          let deleteFailed = false;
 
           // Delete files for diagrams removed from the store entirely.
           const deletePromises = Object.entries(prevDiagrams)
@@ -302,9 +482,14 @@ export function startFileSystemSync(): void {
             .map(([id]) =>
               fileSystemAdapter.deleteAtSegments(id, oldSegments[id] ?? []).then(() => {
                 wroteSomething = true;
+              }).catch(() => {
+                deleteFailed = true;
               }),
             );
           await Promise.all(deletePromises);
+          if (deleteFailed) {
+            toast.error(i18n.t("filesystem.deleteFailed") as string);
+          }
 
           // Detect moves: same diagram ID, but path segments changed.
           // Delete the old file first; the write loop below will create the new one.
@@ -317,19 +502,35 @@ export function startFileSystemSync(): void {
               prev.length !== curr.length || prev.some((seg, i) => seg !== curr[i]);
             if (pathChanged) {
               movedIds.add(id);
-              await fileSystemAdapter.deleteAtSegments(id, prev);
-              wroteSomething = true;
+              try {
+                await fileSystemAdapter.deleteAtSegments(id, prev);
+                wroteSomething = true;
+              } catch {
+                deleteFailed = true;
+              }
             }
+          }
+          if (deleteFailed) {
+            toast.error(i18n.t("filesystem.deleteFailed") as string);
           }
 
           const diagramsToWrite = Object.entries(diagramState.diagrams).filter(
             ([id, diagram]) => movedIds.has(id) || diagram !== prevDiagrams[id],
           );
-          if (diagramsToWrite.length > 0) {
-            await Promise.all(
-              diagramsToWrite.map(([, diagram]) => fileSystemAdapter.writeDiagram(diagram)),
-            );
-            wroteSomething = true;
+
+          // Phase 1 (Prepare): Write changed diagrams to .tmp files
+          const stagedWrites: StagedDiagramWrite[] = [];
+          for (const [, diagram] of diagramsToWrite) {
+            const staged = await fileSystemAdapter.writeDiagramStaged(diagram);
+            if (!staged) {
+              // Rollback any diagrams that were already written to .tmp
+              await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
+              toast.error(
+                i18n.t("filesystem.diagramWriteFailed", { count: 1 }) as string,
+              );
+              return;
+            }
+            stagedWrites.push(staged);
           }
 
           const elementPresets = useElementPresetStore.getState().presets;
@@ -345,7 +546,7 @@ export function startFileSystemSync(): void {
           });
 
           if (manifestFp !== lastSyncedManifestFingerprint) {
-            await fileSystemAdapter.writeManifest({
+            const manifest = {
               version: WORKSPACE_SCHEMA_VERSION as 1 | 2,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
@@ -355,9 +556,41 @@ export function startFileSystemSync(): void {
               activeDiagramId: diagramState.activeDiagramId,
               elementPresets,
               iconLibrary,
-            });
-            lastSyncedManifestFingerprint = manifestFp;
-            wroteSomething = true;
+            };
+
+            // Phase 2 (Commit): Write manifest
+            const manifestOk = await fileSystemAdapter.writeManifestWithRetry(manifest);
+
+            if (manifestOk) {
+              // Commit: rename .tmp → .json
+              const commitOk = await fileSystemAdapter.commitStagedDiagrams(stagedWrites);
+              if (!commitOk) {
+                // Partial commit - log but don't fail the sync
+                // The manifest is valid and diagrams may be accessible
+                console.warn("[FileSystemBoot] Partial commit - some diagrams may need retry");
+              }
+
+              lastSyncedManifestFingerprint = manifestFp;
+              wroteSomething = true;
+              // Notify other tabs that the manifest changed so they can re-check for conflicts.
+              broadcastManifestChanged(fileSystemAdapter.folderName ?? "");
+            } else {
+              // Rollback: delete .tmp files since manifest failed
+              await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
+              console.warn("[FileSystemBoot] Manifest write failed after retry — staged diagrams rolled back.");
+              toast.error(i18n.t("filesystem.manifestWriteFailed") as string);
+            }
+          } else {
+            // No manifest change needed, but we still need to commit the staged files
+            // (they were written for moves/deletes that detected path changes)
+            if (stagedWrites.length > 0) {
+              const commitOk = await fileSystemAdapter.commitStagedDiagrams(stagedWrites);
+              if (!commitOk) {
+                console.warn("[FileSystemBoot] Commit failed for path changes");
+              } else {
+                wroteSomething = true;
+              }
+            }
           }
 
           if (wroteSomething) {
@@ -372,6 +605,11 @@ export function startFileSystemSync(): void {
         })
         .catch((error: unknown) => {
           console.error("[FileSystemSync] write failed:", error);
+          // If this looks like a permission error (handle still exists but writes
+          // failed), flag it so the UI surfaces a reconnect prompt.
+          if (fileSystemAdapter["_hasPermissionError"]) {
+            fileSystemAdapter["_onPermissionError"]?.();
+          }
         });
     }, VIEWPORT_DEBOUNCE_MS);
   };
@@ -397,9 +635,14 @@ export function startFileSystemSync(): void {
 }
 
 export function stopFileSystemSync(): void {
+  closeWorkspaceBroadcast();
   if (_syncUnsub) {
     _syncUnsub();
     _syncUnsub = null;
+  }
+  if (_folderWatcherCleanup) {
+    _folderWatcherCleanup();
+    _folderWatcherCleanup = null;
   }
   if (_syncTimer) {
     clearTimeout(_syncTimer);

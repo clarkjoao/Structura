@@ -320,7 +320,10 @@
     "pushFailedGeneric": "Erro inesperado ao enviar diagramas para a pasta. Tente novamente.",
     "needsPermissionLabel": "Reconectar workspace",
     "needsPermissionTitle": "Clique para restaurar o acesso à pasta anteriormente conectada",
-    "needsPermissionFolder": "Reconectar \"{{name}}\""
+    "needsPermissionFolder": "Reconectar \"{{name}}\"",
+    "permissionLost": "Acesso à pasta foi perdido — clique para reconectar",
+    "permissionLostFolder": "Acesso à \"{{name}}\" foi perdido — clique para reconectar",
+    "foldersImported": "Importadas {{count}} pastas do filesystem"
   },
   "workspaceMerge": {
     "title": "Pasta com arquivos existentes",
@@ -371,7 +374,10 @@
     "keepCopyHintNoCopy": "Salva uma cópia de todos os diagramas no navegador e desconecta a pasta. Recomendado.",
     "keepCopyTitle": "Salvar estado atual no navegador e depois desconectar a pasta",
     "keepCopy": "Salvar no navegador e desconectar",
-    "disconnectOnly": "Desconectar sem salvar"
+    "disconnectOnly": "Desconectar sem salvar",
+    "manifestWriteFailed": "Falha ao gravar manifest — diagramas salvos, mas metadados podem estar fora de sincronia. Tentativa na próxima edição.",
+    "deleteFailed": "Falha ao excluir um ou mais arquivos da pasta — seu workspace pode conter cópias desatualizadas.",
+    "diagramWriteFailed": "{{count}} diagrama(s) falhou ao salvar na pasta — suas alterações ainda estão no navegador."
   },
   "bulkDelete": {
     "title": "Excluir itens selecionados",

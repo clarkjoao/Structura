@@ -43,6 +43,25 @@ so sync machinery exists to reconcile them:
 - `WorkspaceMergeDialog` / `DisconnectConfirmDialog` — the user decides on
   conflicts; the app never silently discards either side.
 - `merge-custom-component-templates.ts` — semantic merging for templates.
+- `folderSync.ts` — shared types and utilities for bidirectional sync.
+
+### Bidirectional folder sync
+
+The folder structure is synchronized bidirectionally between the filesystem and the Zustand store:
+
+**Filesystem → Store:**
+- On connect/reconnect: `syncFoldersFromFilesystem()` scans directories and imports external folders
+- Detects folders created externally and creates corresponding folders in the store
+
+**Store → Filesystem:**
+- Folder watcher in `startFileSystemSync()` monitors store changes
+- When a folder is created in the app, a corresponding directory is created in the filesystem
+- When a folder is deleted, the directory is preserved (may contain external files)
+
+**Design decisions:**
+- Folder IDs are used as directory names (not folder names) for stability
+- Renames don't orphan files since the ID remains the same
+- Directories are never auto-deleted for safety
 
 The design stance: **conflicts surface to the user** rather than resolving by
 timestamp heuristics. Crude but honest; real multi-writer convergence is

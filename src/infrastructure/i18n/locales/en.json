@@ -320,7 +320,10 @@
     "pushFailedGeneric": "Unexpected error while pushing diagrams to the folder. Try again.",
     "needsPermissionLabel": "Reconnect workspace",
     "needsPermissionTitle": "Click to restore access to the previously connected folder",
-    "needsPermissionFolder": "Reconnect \"{{name}}\""
+    "needsPermissionFolder": "Reconnect \"{{name}}\"",
+    "permissionLost": "Access to the folder was lost — click to reconnect",
+    "permissionLostFolder": "Access to \"{{name}}\" was lost — click to reconnect",
+    "foldersImported": "Imported {{count}} folder from filesystem"
   },
   "workspaceMerge": {
     "title": "Folder with existing files",
@@ -371,7 +374,10 @@
     "keepCopyHintNoCopy": "Saves a copy of all diagrams in the browser and disconnects the folder. Recommended.",
     "keepCopyTitle": "Save current state in the browser, then disconnect the folder",
     "keepCopy": "Save in browser and disconnect",
-    "disconnectOnly": "Disconnect without saving"
+    "disconnectOnly": "Disconnect without saving",
+    "manifestWriteFailed": "Failed to write manifest — diagrams saved but metadata may be out of sync. Retry on next edit.",
+    "deleteFailed": "Failed to delete one or more files from the folder — your workspace may contain outdated copies.",
+    "diagramWriteFailed": "{{count}} diagram(s) failed to save to the folder — your changes are still in the browser."
   },
   "bulkDelete": {
     "title": "Delete selected items",

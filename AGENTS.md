@@ -58,7 +58,7 @@ src/
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
 │   └── viewer/             # read-only shared-diagram viewer
 ├── infrastructure/
-│   ├── persistence/        # IStoragePort, LocalStorage/FileSystem/InMemory adapters, sync
+│   ├── persistence/        # IStoragePort, LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
 │   └── i18n/               # i18next setup + locales
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
