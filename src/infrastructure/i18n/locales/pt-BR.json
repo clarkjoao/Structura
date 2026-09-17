@@ -1598,7 +1598,6 @@
     }
   },
   "viewPage": {
-    "arranging": "Organizando o diagrama...",
     "file": {
       "open": "Escolher o arquivo",
       "noPath": "Nenhum arquivo indicado"

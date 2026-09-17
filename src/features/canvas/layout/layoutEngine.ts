@@ -48,63 +48,11 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
 };
 
-/**
- * The options the reading view runs.
- *
- * The difference from `ELK_OPTIONS_INTERACTIVE` is not taste. The interactive
- * profile runs on a diagram the user arranged, so its job is to not make that
- * worse while still reading L→R; this one runs where nobody arranged anything
- * and the only thing being optimised is how the picture reads. Placement is
- * the remaining lever: NETWORK_SIMPLEX vs BRANDES_KOEPF.
- *
- * **Measured against how `/viewer` actually draws**, which is the only comparison
- * worth making. The viewer stamps handle-aligned ELK corridors from
- * `layoutForVisualization` onto edge data (`layoutPoints`), so the reading
- * surface draws the same orthogonal paths as the editor after auto-layout. An
- * option tuned only against ELK's raw border routes can still disagree with
- * handle-aligned corridors — `bk.fixedAlignment=BALANCED` measured 14 -> 12
- * crossings with ELK's routing and 15 -> 20 without it. It is not here for that
- * reason.
- *
- * Over the four `reference-diagrams`, rendered as the viewer renders them.
- * Baseline is the interactive profile: 15 crossings, 2 label overlaps, 1959px
- * of collinear edge overlap. With this set: **13 crossings, 1 label overlap,
- * 1772px** — better on all three. On the 400-node audit fixture, crossings are
- * flat (20742 -> 20739), collinear overlap falls 22% (3213px -> 2517px), and
- * the canvas is 11% shorter despite the wider spacings.
- *
- *   - `nodePlacement.strategy=NETWORK_SIMPLEX` is the option that moved the
- *     crossing count: 15 -> 13 on its own. BRANDES_KOEPF, which the interactive
- *     profile keeps, optimises for straight long edges; NETWORK_SIMPLEX reads
- *     better once corridors are handle-aligned on the canvas.
- *   - Interactive already carries the generous spacing + edge gaps; this
- *     profile only swaps placement. 140/260 was measured too and is worse on
- *     overlap (2060px) for more width — do not re-widen here without a new
- *     table.
- *
- * Measured and rejected: `layered.thoroughness`, `spacing.edgeLabel`,
- * `spacing.labelNode` and `separateConnectedComponents` change nothing at all
- * here — byte-identical to the control, the same result a deliberately invalid
- * option key produces, which is how ELK reports an option it does not use.
- * `nodePlacement.strategy` SIMPLE (31 crossings) and LINEAR_SEGMENTS (26) are
- * far worse. `considerModelOrder.strategy` throws inside elkjs 0.12 on these
- * graphs.
- *
- * Not here, because they are already true of the base set: left-to-right is
- * `elk.direction=RIGHT`, which both profiles share, and user positions are
- * ignored by construction — `LayoutNode` carries no x/y for ELK to read.
- */
-export const ELK_OPTIONS_VISUALIZATION: Record<string, string> = {
-  ...ELK_OPTIONS_INTERACTIVE,
-  "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
-};
-
-/** Which of the two option sets a caller wants. */
-export type LayoutProfile = "interactive" | "visualization";
+/** The layout profile used by all callers. */
+export type LayoutProfile = "interactive";
 
 const PROFILE_OPTIONS: Record<LayoutProfile, Record<string, string>> = {
   interactive: ELK_OPTIONS_INTERACTIVE,
-  visualization: ELK_OPTIONS_VISUALIZATION,
 };
 
 const ELK_ROOT_ID = "__structura_layout_root__";

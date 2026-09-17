@@ -1598,7 +1598,6 @@
     }
   },
   "viewPage": {
-    "arranging": "Arranging diagram...",
     "file": {
       "open": "Choose the file",
       "noPath": "No file named"
