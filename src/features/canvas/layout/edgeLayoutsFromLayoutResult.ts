@@ -24,8 +24,11 @@ const identity = (id: string): string | undefined => id;
 /**
  * Pure handle-aligned ELK corridors as `EdgeLayout` records.
  *
- * Used by `applyLayoutResultEdges` to write edge waypoints back into the store,
- * and by the editor's auto-layout (Cmd/Ctrl+Shift+L).
+ * Used by store-backed `applyLayoutResultEdges` and by `layoutForVisualization`
+ * (immutable diagram copy — no Zustand write).
+ *
+ * @example
+ * const edgeLayouts = edgeLayoutsFromLayoutResult(graph, result);
  */
 export function edgeLayoutsFromLayoutResult(
   graph: LayoutGraph,

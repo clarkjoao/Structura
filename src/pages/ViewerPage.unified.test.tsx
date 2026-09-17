@@ -7,12 +7,19 @@ import { generateViewerUrl } from "@/lib/share-url";
 import { ViewerPage } from "./ViewerPage";
 
 /**
- * Diagrams render as authored — no layout runs on any path.
+ * One reading route.
  *
- * A diagram that arrives with its positions was arranged by whoever is sharing
- * it, and re-arranging it would replace the picture they are sharing with a
- * different one. All paths — hash, `postMessage`, `?diagramId`, and
- * `?source=file` — render what they were given.
+ * `/viewer` and `/view` were two routes with near-identical names and
+ * overlapping jobs. `/viewer` keeps the name — it is the one already written
+ * into shared links (`generateViewerUrl` emits `/viewer#data=`) and into the
+ * iframe snippets `EmbedModal` hands out, so it is the name that is already
+ * out in the world — and it absorbs what `/view` could do.
+ *
+ * The line this file holds is which sources get a layout. A diagram that
+ * arrives with its positions — a share link, an embed handing one over by
+ * `postMessage` — is rendered as it was authored. Re-arranging it would throw
+ * away the layout the author is sharing. A diagram named by id or read off
+ * disk carries no arrangement anyone chose, so ELK arranges it.
  */
 
 beforeAll(() => {
@@ -152,7 +159,7 @@ describe("the postMessage protocol still works", () => {
   });
 });
 
-describe("the ?diagramId= and ?source=file sources", () => {
+describe("the sources /view used to own", () => {
   it("loads the diagram ?diagramId= names, and not the other one", async () => {
     renderAt("?diagramId=beta");
 
@@ -167,15 +174,17 @@ describe("the ?diagramId= and ?source=file sources", () => {
   });
 
   /**
-   * The diagram is rendered as stored. Both nodes were stored at (0, 0); no
-   * layout runs, so both stay there.
+   * Both nodes are stored at (0, 0). Two distinct transforms means a layout
+   * ran, and nothing in this test clicks anything.
    */
-  it("renders a diagram named by id as authored, with no layout run", async () => {
+  it("arranges a diagram named by id, with no user interaction", async () => {
     const { container } = renderAt("?diagramId=alpha");
     await screen.findByText("Alpha A");
 
-    await waitFor(() => expect(placements(container)).toHaveLength(2));
-    expect(new Set(placements(container)).size).toBe(1);
+    await waitFor(() => {
+      expect(placements(container)).toHaveLength(2);
+      expect(new Set(placements(container)).size).toBe(2);
+    });
   });
 
   it("leaves the stored diagram alone", async () => {
