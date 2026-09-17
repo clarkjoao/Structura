@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from "react";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import { PanelKind, COMPONENT_TYPE_PANEL } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
@@ -133,13 +133,13 @@ interface QuickInsertPopoverProps {
   onClose: () => void;
 }
 
-const QuickInsertPopover = ({
+const QuickInsertPopover = memo(function QuickInsertPopover({
   screenPos,
   flowPos,
   sourceNodeId,
   onInsert,
   onClose,
-}: QuickInsertPopoverProps) => {
+}: QuickInsertPopoverProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -708,6 +708,6 @@ const QuickInsertPopover = ({
       </div>
     </div>
   );
-};
+});
 
-export default QuickInsertPopover;
+export default memo(QuickInsertPopover);

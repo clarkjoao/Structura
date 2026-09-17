@@ -247,11 +247,9 @@ export function useCanvasEventHandlers({
       setSelectedEdgeId(null);
       setContextMenu(null);
       if (e.metaKey || e.ctrlKey || e.shiftKey) {
-        // The pointer funnel (decision #3) writes selection on pointerdown —
-        // by the time `onClick` runs, the round-trip has already settled.
-        // Toggling again here would undo the funnel's write, and since
-        // `selected` flows store -> nodes -> React Flow, the two sides
-        // would keep correcting each other.
+        // Pointer funnel (decision #3) already toggle-wrote on pointerdown for
+        // Shift/Cmd/Ctrl. Toggling again here would undo that write against
+        // controlled `selected` flowing store → nodes → React Flow.
         return;
       }
       if (funnel.consumedClick(node.id)) {

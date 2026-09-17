@@ -2,14 +2,13 @@ import type { Diagram } from "@/features/diagram";
 // Leaf import: this module is loaded at app boot; the barrel would drag the whole
 // diagram feature into the entry chunk (see AGENTS.md "Known sharp edges").
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { DIAGRAM_CHANGE_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 /**
  * Host-side source for `StructuraPlugin.onDiagramChange`: watches committed diagram-store
  * state by reference and notifies on a trailing debounce, so plugins observe consistent
  * states, not intermediate drag frames.
  */
-
-const DIAGRAM_CHANGE_DEBOUNCE_MS = 300;
 
 type DiagramChangeCallback = (diagramId: string) => void;
 

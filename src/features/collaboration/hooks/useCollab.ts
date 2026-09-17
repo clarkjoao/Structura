@@ -3,6 +3,11 @@ import type { CollabSession, CollabStatus, CollabUser, PeerState } from "../type
 import { randomColor } from "../utils/collab-colors";
 import { readPrefs } from "../utils/collab-preferences";
 import { useCollabStore } from "../store/collab.store";
+import {
+  CLIENT_PING_INTERVAL_MS,
+  CLIENT_PONG_TIMEOUT_MS,
+  BATCH_INTERVAL_MS,
+} from "@/lib/timing.constants";
 
 export interface CollabSnapshot {
   diagramId: string;
@@ -58,8 +63,6 @@ export interface UseCollabReturn {
 
 const RECONNECT_DELAYS_MS = [2000, 4000, 8000, 15000, 30000];
 const ROOM_NOT_FOUND_RETRY_MS = 3000;
-const CLIENT_PING_INTERVAL_MS = 25_000;
-const CLIENT_PONG_TIMEOUT_MS = 10_000;
 const MAX_PENDING_OPS = 100; // Max pending operations before forcing resync
 /** Never ask for a full repair more often than this, whatever the checksums say. */
 const CHECKSUM_RESYNC_COOLDOWN_MS = 10_000;
@@ -75,7 +78,6 @@ const CHECKSUM_RESYNC_COOLDOWN_MS = 10_000;
 export const COLLAB_PROTOCOL_VERSION = 2;
 
 // Coalescing and batching configuration
-const BATCH_INTERVAL_MS = 50; // Send batched patches every 50ms
 const MAX_BATCH_SIZE = 10; // Max patches per batch
 
 interface PendingOperation {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { Search, X } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
 import { useDiagramActions, useAllServices, useAllComponents, PanelKind } from "@/features/diagram";
@@ -61,7 +61,7 @@ function defaultExpandedForFamily(familyId: string): Set<string> {
   return new Set(first ? [first] : []);
 }
 
-const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
+const ElementPickerModal = memo(function ElementPickerModal({ onClose, onInsert }: ElementPickerModalProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<PickerCategoryId>(() =>
@@ -623,6 +623,6 @@ const ElementPickerModal = ({ onClose, onInsert }: ElementPickerModalProps) => {
       </div>
     </div>
   );
-};
+});
 
-export default ElementPickerModal;
+export default memo(ElementPickerModal);

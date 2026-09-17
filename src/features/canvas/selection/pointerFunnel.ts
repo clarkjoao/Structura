@@ -48,7 +48,7 @@
  *      - Panel body  →  background. The press is forwarded to the pane by
  *        `PanelNode` so React Flow arms its marquee; a release under the
  *        threshold clears the selection through `onBackgroundClick` below.
- *      - Node (non-panel)  →  `click` + drag-replace / shift-add.
+ *      - Node (non-panel)  →  `click` + drag-replace / Shift|Cmd|Ctrl-add.
  *
  *   4. Space-held `pointerdown` on the pane  →  `pan`.
  *
@@ -62,6 +62,13 @@ import { useEffect, useRef } from "react";
 import { DRAG_THRESHOLD_PX, DRAG_THRESHOLD_PX_SQUARED } from "./dragThreshold";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { dragSelectionRef } from "../hooks/useLocalNodes";
+
+/** Matches React Flow `multiSelectionKeyCode` (Meta / Control / Shift). */
+export function isMultiSelectModifier(
+  event: Pick<MouseEvent, "shiftKey" | "metaKey" | "ctrlKey">,
+): boolean {
+  return event.shiftKey || event.metaKey || event.ctrlKey;
+}
 
 /** Target resolution for a pointer event. */
 export type GestureTarget =
@@ -183,7 +190,7 @@ export function usePointerFunnel(params: {
   /** Called when the funnel decides a right-button press should open a menu. */
   openContextMenu?: (target: GestureTarget, atScreen: { x: number; y: number }) => void;
   /** Called when a left-button press on a node writes selection on pointerdown. */
-  onNodePointerDown?: (nodeId: string, shiftKey: boolean) => void;
+  onNodePointerDown?: (nodeId: string, multiSelect: boolean) => void;
   /**
    * Decision #1, second half — called on the release of a sub-threshold
    * left click on a panel BODY, which is a background click by definition.
@@ -236,8 +243,8 @@ export function usePointerFunnel(params: {
       };
 
       // Decision #3 — left-button pointerdown on a node writes selection
-      // BEFORE React Flow's `onClick` round-trip. Shift adds; unselected
-      // while others are selected replaces the selection with just this node.
+      // BEFORE React Flow's `onClick` round-trip. Shift/Cmd/Ctrl toggle-add;
+      // plain click on an unselected node while others are selected replaces.
       //
       // Decision #1 — left-button pointerdown on a panel BODY does NOT write
       // selection. We still mark the click as consumed so React Flow's
@@ -261,13 +268,10 @@ export function usePointerFunnel(params: {
           const selectedNodeIds = store.selectedNodeIds;
           const nodeId = target.nodeId;
 
-          if (event.shiftKey) {
-            // Shift adds (toggle if already present). We also keep the
-            // mark so React Flow's mousedown path can be aware — but the
-            // primary effect here is that on a real Shift+keydown
-            // (multiSelectionActive=true in RF), RF's `handleNodeClick`
-            // does the toggle correctly. The synthetic Cypress path uses
-            // a keydown before the mousedown to reach the same state.
+          if (isMultiSelectModifier(event)) {
+            // Additive toggle — same contract as RF multiSelectionKeyCode.
+            // onNodeClick early-returns for these modifiers so it does not
+            // undo this write against controlled `selected` from the store.
             const next = new Set(selectedNodeIds);
             if (next.has(nodeId)) next.delete(nodeId);
             else next.add(nodeId);

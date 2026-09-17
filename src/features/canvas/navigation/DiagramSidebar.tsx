@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
@@ -64,7 +64,7 @@ export interface DiagramSidebarProps {
   onSelectDiagram: (id: string) => void;
 }
 
-export function DiagramSidebar({
+export const DiagramSidebar = memo(function DiagramSidebar({
   isOpen,
   onClose,
   currentDiagramId,
@@ -300,7 +300,7 @@ export function DiagramSidebar({
       </div>
     </div>
   );
-}
+});
 
 interface SidebarFolderTreeProps {
   folders: FolderRecord;

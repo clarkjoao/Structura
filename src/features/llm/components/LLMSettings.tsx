@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,12 +22,6 @@ interface ValidationResult {
 }
 
 interface LLMSettingsProps {
-  /**
-   * @deprecated The overlay always opens in "create" mode; users pick a
-   * connection to edit from the list. Kept in the type so existing call
-   * sites keep compiling while we phase it out.
-   */
-  selectedConnectionId?: string | null;
   onClose: () => void;
 }
 
@@ -98,8 +92,7 @@ function tryParseJson(text: string): { value: unknown } | { error: true } {
   }
 }
 
-export function LLMSettings({
-  selectedConnectionId: _selectedConnectionId = null,
+export const LLMSettings = memo(function LLMSettings({
   onClose,
 }: LLMSettingsProps) {
   const { t } = useTranslation();
@@ -666,4 +659,4 @@ export function LLMSettings({
       </div>
     </div>
   );
-}
+});

@@ -2077,7 +2077,8 @@
   },
   "elementPanelTab": {
     "details": "Detalhes",
-    "connections": "Conexões"
+    "connections": "Conexões",
+    "services": "Serviços"
   },
   "flowPanel": {
     "copyPrefix": "Cópia de {{name}}",
