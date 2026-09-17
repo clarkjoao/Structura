@@ -45,6 +45,7 @@ import {
   PositionSection,
 } from "./sections";
 import { isComponentType } from "@/features/diagram";
+import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
 
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
@@ -58,10 +59,6 @@ function buildComponentSyncPatch(service: ServiceDefinition, component: Componen
   }
 
   return patch;
-}
-
-function shouldPreserveContent(name: string, description: string) {
-  return name.trim().length > 0 && description.trim().length > 0;
 }
 
 interface ComponentPanelProps {
@@ -392,13 +389,12 @@ const ComponentPanel = ({
                       const nextService = event.target.value;
                       setCloudService(nextService);
                       const serviceEntry = cloudProvider.getService(nextService);
-                      const preserveContent = shouldPreserveContent(name, desc);
-                      const shouldRename =
-                        !!serviceEntry &&
-                        !preserveContent &&
-                        (name.trim() === "" ||
-                          name.startsWith(i18n.t("common.defaultNamePrefix")) ||
-                          name === component.name);
+                      const shouldRename = shouldRenameForCloudIcon({
+                        hasCloudCatalogEntry: !!serviceEntry,
+                        businessServiceId: component.serviceId,
+                        currentName: name,
+                        defaultNamePrefix: i18n.t("common.defaultNamePrefix"),
+                      });
                       updateComponent(component.id, {
                         ...cloudServiceIdClearingPatch(nextService),
                         ...(shouldRename && serviceEntry ? { name: serviceEntry.name } : {}),
