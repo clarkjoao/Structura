@@ -8,6 +8,8 @@ import { FlowModeProvider, useFlowMode } from "../flow/FlowModeContext";
 import type { FlowModeState } from "../flow/flowMode.types";
 import { EMPTY_FLOW_HIGHLIGHT } from "../flow/flowState";
 import { useCanvasNodes } from "./useCanvasNodes";
+import { resolveViewSnapshot } from "../core/resolveViewSnapshot";
+import { resolveNodeDescriptor } from "./node-types";
 
 vi.mock("sonner", () => ({
   toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() },
@@ -47,9 +49,10 @@ function Harness({ isPlaying }: { isPlaying: boolean }) {
     diagramSceneState: null,
     flows: [],
     resolvedComponents: resolved,
-    resolvedNodeLayouts: {},
+    resolvedNodeLayouts: diagram.nodeLayouts,
     sceneBadgeByComponentId: {},
-    visibleComponents: Object.values(resolved),
+    // On the canvas means placed: the view is built as the canvas builds it.
+    view: resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor),
     panelIds: new Set(),
     selectedNodeId: null,
     selectedNodeIds: new Set(),
@@ -91,6 +94,7 @@ function canvas(options: { isPlaying?: boolean } = {}) {
           ...state.diagrams[diagram.id]!.snapshot,
           components: { a: component("a") },
         },
+        nodeLayouts: { a: { elementId: "a", x: 0, y: 0 } },
       },
     },
   }));

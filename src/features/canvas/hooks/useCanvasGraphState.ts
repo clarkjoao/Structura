@@ -177,7 +177,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     sceneBadgeByComponentId: compareState.sceneBadgeByComponentId,
     compareVisualByComponentId: compareState.compareVisualByComponentId,
     isCompareMode: compareState.isCompareMode,
-    visibleComponents,
+    view,
     panelIds,
     selectedNodeId,
     selectedNodeIds,

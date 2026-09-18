@@ -137,7 +137,7 @@ function WriteProjection() {
     resolvedComponents,
     resolvedNodeLayouts,
     sceneBadgeByComponentId: {},
-    visibleComponents,
+    view,
     panelIds,
     selectedNodeId: null,
     selectedNodeIds: NO_IDS,
