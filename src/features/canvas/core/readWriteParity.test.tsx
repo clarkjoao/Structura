@@ -124,6 +124,12 @@ function WriteProjection() {
   const resolvedNodeLayouts = useResolvedNodeLayouts();
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({ visibleComponents, visibleConnections, resolvedComponents });
+  // As useCanvasGraphState builds it: the diagram's own scenes.
+  const view = resolveViewSnapshot(
+    diagram,
+    { sceneId: diagram.activeSceneId ?? null, compareSceneId: diagram.compareSceneId ?? null },
+    resolveNodeDescriptor,
+  );
   written.nodes = useCanvasNodes({
     diagram,
     diagramSceneState: null,
@@ -155,7 +161,7 @@ function WriteProjection() {
   });
   written.edges = useCanvasEdges({
     diagram,
-    visibleConnections,
+    view,
     edgeHandleAssignments,
     selectedEdgeId: null,
     isPlaying: false,

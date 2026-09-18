@@ -2,6 +2,8 @@ import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import type { Connection, Diagram } from "@/features/diagram";
 import { useCanvasEdges } from "./useCanvasEdges";
+import { resolveViewSnapshot } from "../core/resolveViewSnapshot";
+import { resolveNodeDescriptor } from "../nodes/node-types";
 
 /**
  * useCanvasNodes keeps a per-node identity cache so a store change that touches
@@ -67,15 +69,19 @@ const EMPTY_HIGHLIGHT = {
   openFrameConnIds: new Set<string>(),
 };
 
+/**
+ * The hook's input as the canvas builds it: the view comes from the diagram
+ * (`resolveViewSnapshot`), so a fixture that changes the diagram has to change
+ * it the way the store does — see the two tests that do.
+ */
 function params(
   diagram: Diagram,
-  connections: Connection[],
   assignments: { connId: string; sourceHandle: string; targetHandle: string }[],
   selectedEdgeId: string | null = null,
 ) {
   return {
     diagram,
-    visibleConnections: connections,
+    view: resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor),
     edgeHandleAssignments: assignments,
     selectedEdgeId,
     isPlaying: false,
@@ -94,15 +100,18 @@ describe("useCanvasEdges identity", () => {
   it("keeps every edge object when a node moves", () => {
     const first = buildDiagram(0);
     const { result, rerender } = renderHook((p: ReturnType<typeof params>) => useCanvasEdges(p), {
-      initialProps: params(first.diagram, first.connections, first.assignments),
+      initialProps: params(first.diagram, first.assignments),
     });
     const before = result.current;
     expect(before).toHaveLength(EDGE_COUNT);
 
-    // a node moved: new diagram object, new nodeLayouts, same connections
+    // a node moved: new diagram object, new nodeLayouts, same connections.
+    // The store writes nodeLayouts only and shares every other record (immer),
+    // so the moved diagram keeps the first one's snapshot object.
     const second = buildDiagram(999);
     second.diagram.id = first.diagram.id;
-    rerender(params(second.diagram, first.connections, first.assignments));
+    second.diagram.snapshot = first.diagram.snapshot;
+    rerender(params(second.diagram, first.assignments));
 
     const after = result.current;
     expect(after).toHaveLength(EDGE_COUNT);
@@ -115,11 +124,11 @@ describe("useCanvasEdges identity", () => {
   it("replaces only the edge whose selection changed", () => {
     const first = buildDiagram(0);
     const { result, rerender } = renderHook((p: ReturnType<typeof params>) => useCanvasEdges(p), {
-      initialProps: params(first.diagram, first.connections, first.assignments),
+      initialProps: params(first.diagram, first.assignments),
     });
     const before = [...result.current];
 
-    rerender(params(first.diagram, first.connections, first.assignments, "c-7"));
+    rerender(params(first.diagram, first.assignments, "c-7"));
 
     const after = result.current;
     const changed = after.filter((edge, i) => edge !== before[i]).map((e) => e.id);
@@ -130,12 +139,20 @@ describe("useCanvasEdges identity", () => {
   it("replaces the array when an edge disappears", () => {
     const first = buildDiagram(0);
     const { result, rerender } = renderHook((p: ReturnType<typeof params>) => useCanvasEdges(p), {
-      initialProps: params(first.diagram, first.connections, first.assignments),
+      initialProps: params(first.diagram, first.assignments),
     });
     const before = result.current;
 
-    const fewer = first.connections.slice(0, EDGE_COUNT - 1);
-    rerender(params(first.diagram, fewer, first.assignments));
+    // The last connection is deleted from the diagram; the rest keep their records.
+    const lastId = `c-${EDGE_COUNT - 1}`;
+    const fewer = Object.fromEntries(
+      Object.entries(first.diagram.snapshot.connections).filter(([id]) => id !== lastId),
+    );
+    const withoutLast = {
+      ...first.diagram,
+      snapshot: { ...first.diagram.snapshot, connections: fewer },
+    } as Diagram;
+    rerender(params(withoutLast, first.assignments));
 
     expect(result.current).toHaveLength(EDGE_COUNT - 1);
     expect(result.current).not.toBe(before);

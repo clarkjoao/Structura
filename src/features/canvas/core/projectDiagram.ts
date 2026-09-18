@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import { isApiGroupComponent } from "@/features/diagram/model/component.guards";
 import { isEndpointType } from "@/features/diagram/model/component-type-constants";
-import { buildEdge } from "../edges/data/buildEdges";
+import { buildEdge, type EdgeBuildParams } from "../edges/data/buildEdges";
 import type { NodeBuildContext, NodeTypeDescriptor } from "../nodes/node-types/types";
 import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 import type { ViewNode, ViewSnapshot } from "./resolveViewSnapshot";
@@ -41,7 +41,7 @@ export interface EdgeHandleAssignment {
 
 /** What `buildEdge` reads of a canvas: the diagram and the reading being played, if any. */
 export type EdgeProjectionContext = Pick<
-  NodeBuildContext,
+  EdgeBuildParams,
   | "diagram"
   | "isPlaying"
   | "isRecording"

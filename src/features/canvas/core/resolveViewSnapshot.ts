@@ -67,6 +67,18 @@ export interface ViewSnapshot {
   shownConnections: Connection[];
 }
 
+/** What a canvas with no diagram shows. One shared object, so memos stay put. */
+export const EMPTY_VIEW_SNAPSHOT: ViewSnapshot = Object.freeze({
+  components: {},
+  connections: {},
+  nodeLayouts: {},
+  panelIds: new Set<string>(),
+  collapsedPanelIds: new Set<string>(),
+  nodes: [],
+  placedConnections: [],
+  shownConnections: [],
+});
+
 /**
  * The scene the view shows.
  *

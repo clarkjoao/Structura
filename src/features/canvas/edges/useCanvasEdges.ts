@@ -1,15 +1,21 @@
 import { useMemo, useRef, type CSSProperties } from "react";
 import type { Edge } from "@xyflow/react";
-import type { Connection, Diagram, DiagramModel, FlowStep } from "@/features/diagram";
-import { getCachedCanvasSnapshot } from "@/features/diagram";
+import type { Diagram, DiagramModel, FlowStep } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
-import { buildEdge, filterVisibleConnections } from "./data/buildEdges";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
 import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
+import { writePolicy } from "../core/canvasInteractionPolicy";
+import { projectEdges } from "../core/projectDiagram";
+import type { ViewSnapshot } from "../core/resolveViewSnapshot";
+import { applyEditorEdgeOverlays } from "./edgeOverlays";
+
+/** The projection's policy on the editor path; interactivity is React Flow's, per canvas. */
+const EDITOR_PROJECTION = writePolicy(true);
 
 interface UseCanvasEdgesParams {
   diagram: Diagram | DiagramModel | null | undefined;
-  visibleConnections: Connection[];
+  /** What is shown — `resolveViewSnapshot` for the diagram's own scenes. */
+  view: ViewSnapshot;
   edgeHandleAssignments: { connId: string; sourceHandle: string; targetHandle: string }[];
   selectedEdgeId: string | null;
   isPlaying: boolean;
@@ -66,7 +72,7 @@ function isSameBuiltEdge(a: Edge, b: Edge): boolean {
 
 export function useCanvasEdges({
   diagram,
-  visibleConnections,
+  view,
   edgeHandleAssignments,
   selectedEdgeId,
   isPlaying,
@@ -117,19 +123,23 @@ export function useCanvasEdges({
       return EMPTY_EDGE_LIST;
     }
 
-    const r = getCachedCanvasSnapshot(diagram);
-    const visible = filterVisibleConnections(visibleConnections, r.components);
-    const assignmentMap = new Map(edgeHandleAssignments.map((a) => [a.connId, a]));
+    // The base every surface draws; everything below it is the editor's overlay.
+    const projected = projectEdges(
+      view,
+      { diagram, isPlaying, isRecording, activeStep, flowHighlight, flowBadges, coverage },
+      EDITOR_PROJECTION,
+      edgeHandleAssignments,
+    );
     const isEndpointHiddenByTag = (componentId: string): boolean => {
       if (!visibleTagsSet) return false;
-      const component = r.components[componentId];
+      const component = view.components[componentId];
       if (!component?.tags?.length) {
         return false;
       }
       return component.tags.some((tag) => visibleTagsSet.has(tag));
     };
 
-    const visibleIds = new Set(visible.map((conn) => conn.id));
+    const visibleIds = new Set(projected.map((edge) => edge.id));
     for (const cachedId of prevPartsRef.current.keys()) {
       if (!visibleIds.has(cachedId)) prevPartsRef.current.delete(cachedId);
     }
@@ -139,27 +149,15 @@ export function useCanvasEdges({
 
     const pendingEdgeIds = getPendingEdgeIds(pendingPreviews);
 
-    const nextEdges = visible.map((conn) => {
-      const assignment = assignmentMap.get(conn.id);
-      const sourceHidden = isEndpointHiddenByTag(conn.sourceId);
-      const targetHidden = isEndpointHiddenByTag(conn.targetId);
-      let edge = buildEdge(conn, assignment, {
-        diagram,
+    const nextEdges = projected.map((base) => {
+      const conn = { id: base.id };
+      const edge = applyEditorEdgeOverlays(base, {
         selectedEdgeId,
-        isPlaying,
-        isRecording,
-        isCompareMode,
+        isCompareMode: isCompareMode ?? false,
         compareConnectionOpacity,
-        activeStep,
-        flowHighlight,
-        flowBadges,
-        coverage,
-        tagFilterEdgeDimmed: sourceHidden || targetHidden,
+        dimmedByTag: isEndpointHiddenByTag(base.source) || isEndpointHiddenByTag(base.target),
+        pending: pendingEdgeIds.has(base.id),
       });
-      // Inline check — avoids a separate useMemo + Set lookup for the whole array.
-      if (pendingEdgeIds.has(conn.id)) {
-        edge = { ...edge, className: `${edge.className ?? ""} edge-pending`.trim() };
-      }
 
       // Reuse the previous nested objects when their contents did not move, so
       // the identity comparison below can be a plain reference check.
@@ -227,7 +225,7 @@ export function useCanvasEdges({
     return nextEdges;
   }, [
     diagram,
-    visibleConnections,
+    view,
     edgeHandleAssignments,
     selectedEdgeId,
     isPlaying,
