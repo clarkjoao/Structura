@@ -176,12 +176,13 @@ function writeProjection(diagram: Diagram) {
   return written;
 }
 
-/** What the reader sees of a node: where, how big, nested in what, and whether at all. */
+/** What the reader sees of a node: where, how big, how stacked, nested in what, and whether at all. */
 function nodeShape(node: Node) {
   const style = (node.style ?? {}) as { width?: unknown; height?: unknown };
   const data = node.data as { incomingCount?: unknown; outgoingCount?: unknown };
   return {
     position: node.position,
+    zIndex: node.zIndex,
     parentId: node.parentId,
     extent: node.extent,
     hidden: Boolean(node.hidden),
@@ -256,6 +257,12 @@ describe("editor and viewer project one diagram the same way", () => {
     expect(read.q1?.hidden).toBe(false);
     expect(read.h?.hidden).toBe(true);
     expect(read.n).toBeUndefined();
+  });
+
+  it("stacks nodes in the order the author chose", () => {
+    // `Q` was brought to front in the editor (`nodeLayouts.Q.zIndex = 3`).
+    const read = byId(projectReadDiagram(parityDiagram()).nodes);
+    expect(read.Q?.zIndex).toBe(3);
   });
 
   it("builds the same edges, on the same handles, along the same route", () => {

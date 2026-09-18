@@ -31,13 +31,6 @@ function lockForReading(data: Record<string, unknown>): Record<string, unknown> 
   };
 }
 
-function descriptorZIndex(
-  component: Component,
-  zIndex: number | ((comp: Component) => number),
-): number {
-  return typeof zIndex === "function" ? zIndex(component) : zIndex;
-}
-
 const NO_IDS: Set<string> = new Set();
 
 function buildReadNode(
@@ -65,7 +58,9 @@ function buildReadNode(
     id: component.id,
     type: descriptor.rfType,
     position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-    zIndex: descriptorZIndex(component, descriptor.zIndex),
+    // The stacking order the author set (bring to front / send to back) wins over
+    // the descriptor's default, as in the editor.
+    zIndex: vis.zIndex,
     ...(vis.isChild ? { parentId: component.parentId!, extent: "parent" as const } : {}),
     hidden: vis.isHidden,
     draggable: false,
