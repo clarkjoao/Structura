@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
@@ -85,6 +85,43 @@ import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
  * which forces `panOnDrag=false` and disables `selectionOnDrag`, breaking
  * Shift+drag-marquee.
  */
+
+/* ── Memoized sub-component ─────────────────────────────────────────────── */
+import type { PendingNodePreview } from "@/features/llm";
+
+interface PendingNodeToolbarsProps {
+  pendingNodeIds: string[];
+  pendingPreviews: PendingNodePreview[];
+  onKeep: (suggestionId: string) => void;
+  onDiscard: (suggestionId: string) => void;
+}
+
+const PendingNodeToolbars = React.memo(function PendingNodeToolbars({
+  pendingNodeIds,
+  pendingPreviews,
+  onKeep,
+  onDiscard,
+}: PendingNodeToolbarsProps) {
+  return (
+    <>
+      {pendingNodeIds.map((nodeId) => {
+        const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
+        if (!suggestionId) return null;
+        return (
+          <PendingNodeToolbar
+            key={nodeId}
+            nodeId={nodeId}
+            suggestionId={suggestionId}
+            onKeep={onKeep}
+            onDiscard={onDiscard}
+          />
+        );
+      })}
+    </>
+  );
+});
+/* ───────────────────────────────────────────────────────────────────────── */
+
 const Canvas = (props: CanvasProps = {}) => {
   useFlowSewNotices();
   const nodeTypes = useNodeTypes();
@@ -388,21 +425,12 @@ const Canvas = (props: CanvasProps = {}) => {
               fitView={!hasSavedViewport(initialViewport)}
               onMoveEnd={eventHandlers.onMoveEnd}
             >
-              {pendingNodeIds.map((nodeId) => {
-                const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
-                if (!suggestionId) {
-                  return null;
-                }
-                return (
-                  <PendingNodeToolbar
-                    key={nodeId}
-                    nodeId={nodeId}
-                    suggestionId={suggestionId}
-                    onKeep={accept}
-                    onDiscard={rejectSuggestion}
-                  />
-                );
-              })}
+              <PendingNodeToolbars
+                pendingNodeIds={pendingNodeIds}
+                pendingPreviews={pendingPreviews}
+                onKeep={accept}
+                onDiscard={rejectSuggestion}
+              />
               {/* QuickActions toolbar for single node selection. Gated on the same
               flag as the element panel: the bar edits the element, so it has no
               place in a reading or a comparison — and a selection made before

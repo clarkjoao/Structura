@@ -23,16 +23,15 @@ import {
   awaitBootScan,
   resetBootState,
   startFileSystemSync,
+  setOnRemoteTabWrite,
+  getLastSyncedManifestFingerprint,
+  syncFoldersFromFilesystem,
 } from "./fileSystemBoot";
 import { mergeElementPresets } from "./merge-element-presets";
 import { readElementPresetsField } from "./read-element-presets-field";
+import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
 import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { WORKSPACE_SCHEMA_VERSION as WORKSPACE_VERSION } from "./versions";
-
-async function clearLocalCache(): Promise<void> {
-  await defaultStorage.delete(PERSIST_KEY);
-  clearLocalStorageDiagramSyncTimestamp();
-}
 
 export type FsStatus = "disconnected" | "connecting" | "connected" | "error" | "needs_permission";
 
@@ -70,6 +69,39 @@ export function useFileSystemStorage() {
   // Guard against double boot in React StrictMode
   const bootStartedRef = useRef(false);
 
+  // State set by the BroadcastChannel handler (called outside React lifecycle).
+  const [pendingRemoteMerge, setPendingRemoteMerge] = useState<WorkspaceScanResult | null>(null);
+
+  // Handle a remote tab write detected via BroadcastChannel.
+  // Reads the manifest from disk and compares fingerprints. If the remote manifest
+  // differs from what this tab last synced, a merge dialog is surfaced so the user
+  // can decide how to reconcile.
+  const handleRemoteTabWrite = useCallback(async () => {
+    if (fileSystemAdapter.isConnected) {
+      const lastFp = getLastSyncedManifestFingerprint();
+      const workspace = await fileSystemAdapter.loadWorkspace();
+      if (workspace) {
+        const fp = manifestSemanticFingerprint({
+          diagramIds: Object.keys(workspace.diagrams),
+          serviceCatalog: workspace.serviceCatalog,
+          folders: workspace.folders,
+          activeDiagramId: workspace.activeDiagramId,
+          elementPresets: workspace.elementPresets ?? {},
+          iconLibrary: workspace.iconLibrary ?? {},
+        });
+        if (fp !== lastFp) {
+          // Remote manifest changed — surface the conflict via the merge dialog.
+          try {
+            const scan = await fileSystemAdapter.scanWorkspace();
+            setPendingRemoteMerge(scan);
+          } catch (error) {
+            console.warn("[Structura] remote merge scan failed:", error);
+          }
+        }
+      }
+    }
+  }, []);
+
   const clearStore = useCallback(() => {
     useDiagramStore.setState({
       diagrams: {},
@@ -91,10 +123,22 @@ export function useFileSystemStorage() {
     if (bootStartedRef.current) return;
     bootStartedRef.current = true;
 
+    // Escalate to 'error' whenever a held handle loses write access (including
+    // re-checks on tab focus). Leave boot `needs_permission` / disconnected alone.
+    fileSystemAdapter.setPermissionErrorCallback(() => {
+      setStatus((prev) => {
+        if (prev === "disconnected" || prev === "needs_permission") return prev;
+        return "error";
+      });
+    });
+
     if (fileSystemAdapter.isConnected) {
-      defaultStorage.paused = true;
+      // localStorage remains active while the folder is connected (no
+      // `defaultStorage.paused = true`) — silent backup for two-phase commit
+      // failures. See doReconnect in fileSystemBoot.ts / bug3 §P0.1.
       setStatus("connected");
       setFolderName(fileSystemAdapter.folderName);
+      setOnRemoteTabWrite(handleRemoteTabWrite);
       return;
     }
 
@@ -102,6 +146,7 @@ export function useFileSystemStorage() {
       if (ok) {
         setStatus("connected");
         setFolderName(fileSystemAdapter.folderName);
+        setOnRemoteTabWrite(handleRemoteTabWrite);
         startFileSystemSync();
         return;
       }
@@ -152,11 +197,10 @@ export function useFileSystemStorage() {
     setStatus("connecting");
     const granted = await fileSystemAdapter.requestReconnectPermission();
     if (!granted) {
-      setStatus("needs_permission");
+      setStatus(fileSystemAdapter.hasPermissionError ? "error" : "needs_permission");
       return;
     }
 
-    defaultStorage.paused = true;
     fileSystemAdapter.setFolders(useDiagramStore.getState().folders);
 
     const workspace = await fileSystemAdapter.loadWorkspace();
@@ -182,8 +226,11 @@ export function useFileSystemStorage() {
       }
     }
 
-    await defaultStorage.delete(PERSIST_KEY);
-    clearLocalStorageDiagramSyncTimestamp();
+    // Sync folder structure between filesystem and store (bidirectional).
+    // Currently this only creates missing directories for known store folders;
+    // unknown directories are logged but not imported — see the comment in
+    // syncFoldersFromFilesystem for the trust model.
+    await syncFoldersFromFilesystem();
 
     setStatus("connected");
     setFolderName(fileSystemAdapter.folderName);
@@ -207,13 +254,13 @@ export function useFileSystemStorage() {
       if (diagramCount === 0) {
         const state = useDiagramStore.getState();
         fileSystemAdapter.setFolders(state.folders);
+        // Sync folder structure to filesystem (create directories for existing folders)
+        await syncFoldersFromFilesystem();
         for (const diagram of Object.values(state.diagrams)) {
           await fileSystemAdapter.writeDiagram(diagram);
         }
         await fileSystemAdapter.writeManifest(buildManifest(state));
         recordFolderSyncSuccess();
-        defaultStorage.paused = true;
-        await clearLocalCache();
         startFileSystemSync();
         setStatus("connected");
         return;
@@ -225,8 +272,6 @@ export function useFileSystemStorage() {
     }
 
     if (scan.valid.length === 0) {
-      defaultStorage.paused = true;
-      await clearLocalCache();
       startFileSystemSync();
       setStatus("connected");
       return;
@@ -236,6 +281,17 @@ export function useFileSystemStorage() {
     setPendingMerge(true);
     setStatus("connected");
   }, []);
+
+  // Watch for remote-merge scans triggered by the BroadcastChannel handler (called outside
+  // React lifecycle). When pendingRemoteMerge is set, surface the merge dialog.
+  useEffect(() => {
+    if (!pendingRemoteMerge) return;
+    const scan = pendingRemoteMerge;
+    setPendingRemoteMerge(null);
+    setScanResult(scan);
+    setPendingMerge(true);
+    setStatus("connected");
+  }, [pendingRemoteMerge]);
 
   const confirmPushToEmptyFolder = useCallback(async () => {
     if (!scanResult || pushInProgress) return;
@@ -250,7 +306,6 @@ export function useFileSystemStorage() {
         return;
       }
 
-      defaultStorage.paused = true;
       const state = useDiagramStore.getState();
       fileSystemAdapter.setFolders(state.folders);
       for (const diagram of Object.values(state.diagrams)) {
@@ -258,7 +313,6 @@ export function useFileSystemStorage() {
       }
       await fileSystemAdapter.writeManifest(buildManifest(state));
       recordFolderSyncSuccess();
-      await clearLocalCache();
       startFileSystemSync();
       setScanResult(null);
       setPendingMerge(false);
@@ -284,7 +338,6 @@ export function useFileSystemStorage() {
         return;
       }
 
-      defaultStorage.paused = true;
       const validDiagrams = Object.fromEntries(scanResult.valid.map((d) => [d.id, d]));
       const manifest = scanResult.manifest;
       useDiagramStore.setState((draft) => {
@@ -326,7 +379,9 @@ export function useFileSystemStorage() {
         return;
       }
 
-      await clearLocalCache();
+      // Sync folder structure after merge
+      await syncFoldersFromFilesystem();
+
       startFileSystemSync();
       setScanResult(null);
       setPendingMerge(false);
@@ -352,7 +407,6 @@ export function useFileSystemStorage() {
         return;
       }
 
-      defaultStorage.paused = true;
       const validDiagrams = Object.fromEntries(scanResult.valid.map((d) => [d.id, d]));
       const manifest = scanResult.manifest;
       useDiagramStore.setState((draft) => {
@@ -388,7 +442,9 @@ export function useFileSystemStorage() {
         return;
       }
 
-      await clearLocalCache();
+      // Sync folder structure after overwrite
+      await syncFoldersFromFilesystem();
+
       startFileSystemSync();
       setScanResult(null);
       setPendingMerge(false);

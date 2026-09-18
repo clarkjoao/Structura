@@ -43,6 +43,53 @@ so sync machinery exists to reconcile them:
 - `WorkspaceMergeDialog` / `DisconnectConfirmDialog` — the user decides on
   conflicts; the app never silently discards either side.
 - `merge-custom-component-templates.ts` — semantic merging for templates.
+- `folderSync.ts` — shared `FolderSyncResult` + `isValidFolderId` (skips
+  reserved names like `node_modules` / `dist` during root scans).
+
+### localStorage stays active while a folder is connected
+
+`defaultStorage.paused` is **not** set when the user connects a folder.
+localStorage continues to receive Zustand persist writes in parallel with
+the folder. That is intentional: pausing localStorage was a root cause of
+filesystem instability (no browser-side fallback if a folder write failed
+mid two-phase commit). Merge/overwrite/push still force-flush a localStorage
+backup before mutating the folder. See
+`docs/discovery/bug3-filesystem-instability.md` §P0.1.
+
+### Two-phase diagram writes
+
+Folder diagram writes use a prepare/commit protocol (`stagedDiagramWrite.ts`):
+
+1. **Prepare** — write each diagram to `{id}.json.tmp`.
+2. **Manifest** — `writeManifestWithRetry` (exponential backoff).
+3. **Commit** — rename `.tmp` → `.json`. Prefer `FileSystemFileHandle.move()`
+   when available (atomic same-directory rename); otherwise copy+delete.
+4. **Rollback** — if the manifest fails, delete staged `.tmp` files. A
+   *partial* commit (some renames succeed, others fail) does **not** roll
+   back the successes — that would discard the only good copy.
+5. **Orphan cleanup** — on connect/reconnect, `cleanupOrphanedTempFiles`
+   removes `*.json.tmp` older than five minutes (covers crashes on the
+   non-atomic fallback path).
+
+### Bidirectional folder sync
+
+The folder structure is synchronized between the filesystem and the Zustand
+store:
+
+**Filesystem → Store:**
+- `syncFoldersFromFilesystem()` scans root directories (filtered by
+  `isValidFolderId`) and creates missing directories for known store folder IDs.
+- Unknown directories are logged, not auto-imported (manifest is source of truth).
+
+**Store → Filesystem:**
+- Directory creation for new folders happens on the diagram flush path
+  (`resolveDiagramPathSegments` / `getOrCreateDirectory`), not via a separate
+  folder watcher (a prior watcher caused React update-depth loops).
+
+**Design decisions:**
+- Folder IDs are used as directory names (not folder names) for stability
+- Renames don't orphan files since the ID remains the same
+- Directories are never auto-deleted for safety
 
 The design stance: **conflicts surface to the user** rather than resolving by
 timestamp heuristics. Crude but honest; real multi-writer convergence is
