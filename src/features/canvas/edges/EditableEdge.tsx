@@ -12,7 +12,6 @@ import {
   EdgeStyle,
   StrokeStyle,
   useActiveDiagramId,
-  useConnection,
   useDiagramActions,
   type ConnectionStyle,
   type EdgeControlPoint,
@@ -78,7 +77,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
   const { resetEdgeControlPoints, removeConnection, updateConnection } = useDiagramActions();
-  const connection = useConnection(connectionId);
+  // The connection's style, as the projection read it: the toolbar edits it,
+  // and nothing on the read path needs the store's record.
+  const connectionStyle = edgeData.connectionStyle;
   const { highlightedConnectionId } = useHandleHighlight();
 
   const source = useMemo<Point>(() => ({ x: sourceX, y: sourceY }), [sourceX, sourceY]);
@@ -346,12 +347,12 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           onReset={() => activeDiagramId && resetEdgeControlPoints(activeDiagramId, connectionId)}
           onDelete={() => removeConnection(connectionId)}
           edgeStyle={edgeStyle}
-          edgeColor={connection?.style?.color}
-          markerStart={connection?.style?.markerStart}
-          markerEnd={connection?.style?.markerEnd}
+          edgeColor={connectionStyle?.color}
+          markerStart={connectionStyle?.markerStart}
+          markerEnd={connectionStyle?.markerEnd}
           onStyleChange={(style) => {
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), edgeStyle: style } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), edgeStyle: style } as ConnectionStyle,
             });
             // Reset any existing control points so the new style starts clean.
             if (
@@ -363,17 +364,17 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           }}
           onColorChange={(color) =>
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), color } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), color } as ConnectionStyle,
             })
           }
           onMarkerStartChange={(cap) =>
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), markerStart: cap } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), markerStart: cap } as ConnectionStyle,
             })
           }
           onMarkerEndChange={(cap) =>
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), markerEnd: cap } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), markerEnd: cap } as ConnectionStyle,
             })
           }
         />
