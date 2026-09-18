@@ -141,14 +141,16 @@ const CanvasToolbar = ({
             <button
               type="button"
               onClick={onDrillUp}
+              aria-label={t("canvasToolbar.drillUp")}
               className="flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors"
             >
-              <ChevronUp className="h-3.5 w-3.5" /> {t("canvasToolbar.drillUp")}
+              <ChevronUp className="h-3.5 w-3.5" aria-hidden /> {t("canvasToolbar.drillUp")}
             </button>
           )}
 
           <button
             type="button"
+            aria-label={t("canvasToolbar.patterns")}
             onClick={() => {
               if (toolbarEditLocked || isFlowActive) return;
               onClearSelection?.();
@@ -161,7 +163,7 @@ const CanvasToolbar = ({
                 "opacity-40 pointer-events-none cursor-not-allowed",
             )}
           >
-            <Puzzle className="h-3.5 w-3.5" /> {t("canvasToolbar.patterns")}
+            <Puzzle className="h-3.5 w-3.5" aria-hidden /> {t("canvasToolbar.patterns")}
           </button>
 
           {/* Plugin toolbar slot */}

@@ -43,7 +43,7 @@ export function DiagramCard({
   const folders = useFolders();
   const { updateDiagram, updateDiagramDescription, duplicateDiagram, moveDiagram, deleteDiagram } =
     useDiagramActions();
-  const [preview, setPreview] = useState<string | null>(() => getPreview(diagram.id));
+  const [preview, setPreview] = useState<string | null>(null);
   const [isPreviewHovered, setIsPreviewHovered] = useState(false);
   const [moveFolderOpen, setMoveFolderOpen] = useState(false);
   const [renamingDiagram, setRenamingDiagram] = useState<Diagram | null>(null);
@@ -61,7 +61,7 @@ export function DiagramCard({
 
   useEffect(() => {
     setPreview(getPreview(diagram.id));
-  }, [diagram.updatedAt, diagram.id]);
+  }, [diagram.id]);
 
   const handleRename = (event: ReactMouseEvent) => {
     event.stopPropagation();
