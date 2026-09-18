@@ -1,15 +1,14 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { Component, Connection, Diagram } from "@/features/diagram/model";
-import { resolveSceneSnapshot } from "@/features/diagram/utils";
-import { buildEdge, filterVisibleConnections } from "../edges/data/buildEdges";
+import type { Connection, Diagram } from "@/features/diagram/model";
+import { buildEdge } from "../edges/data/buildEdges";
 import {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
 } from "../edges/connectionDerivations";
 import { EMPTY_FLOW_HIGHLIGHT } from "../flow/flowState";
 import { resolveNodeDescriptor, type NodeBuildContext } from "../nodes/node-types";
-import { buildCollapsedPanelIds, computeNodeVisibility } from "../nodes/nodeVisibility";
 import { buildReadNodeContext, type ReadDiagramReading } from "./buildReadNodeContext";
+import { resolveViewSnapshot, type ViewNode } from "./resolveViewSnapshot";
 
 export type { ReadDiagramReading };
 
@@ -31,38 +30,16 @@ function lockForReading(data: Record<string, unknown>): Record<string, unknown> 
   };
 }
 
-const NO_IDS: Set<string> = new Set();
-
-function buildReadNode(
-  component: Component,
-  ctx: NodeBuildContext,
-  collapsedPanelIds: Set<string>,
-): Node {
+function buildReadNode(view: ViewNode, ctx: NodeBuildContext): Node {
+  const { component, layout } = view;
   const descriptor = resolveNodeDescriptor(component);
-  const layout = ctx.resolvedNodeLayouts[component.id];
-  // The editor's own rule for who is shown and who is nested: a node under a
-  // collapsed or hidden panel is hidden, and only a panel child is a child.
-  const vis = computeNodeVisibility(
-    component,
-    descriptor,
-    layout,
-    ctx.panelIds,
-    NO_IDS,
-    NO_IDS,
-    collapsedPanelIds,
-    false,
-    null,
-    ctx.resolvedComponents,
-  );
   return {
     id: component.id,
     type: descriptor.rfType,
     position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-    // The stacking order the author set (bring to front / send to back) wins over
-    // the descriptor's default, as in the editor.
-    zIndex: vis.zIndex,
-    ...(vis.isChild ? { parentId: component.parentId!, extent: "parent" as const } : {}),
-    hidden: vis.isHidden,
+    zIndex: view.zIndex,
+    ...(view.isChild ? { parentId: component.parentId!, extent: "parent" as const } : {}),
+    hidden: view.isHidden,
     draggable: false,
     selectable: false,
     connectable: false,
@@ -71,30 +48,13 @@ function buildReadNode(
   };
 }
 
-function sortComponentsTopologically(components: Component[]): Component[] {
-  const idToComponent = new Map<string, Component>(components.map((c) => [c.id, c]));
-  const visited = new Set<string>();
-  const sorted: Component[] = [];
-
-  function visit(component: Component): void {
-    if (visited.has(component.id)) return;
-    visited.add(component.id);
-    if (component.parentId) {
-      const parent = idToComponent.get(component.parentId);
-      if (parent) visit(parent);
-    }
-    sorted.push(component);
-  }
-
-  for (const component of components) visit(component);
-  return sorted;
-}
-
 /**
  * Pure Diagram → React Flow projection for Reader hosts.
  *
  * Always uses the base scene (`activeSceneId` ignored): a shared link must not
- * hide nodes a script may walk through.
+ * hide nodes a script may walk through. Everything else about what is shown —
+ * placement, nesting, stacking, hiding, order — is `resolveViewSnapshot`, the
+ * same rule the editor runs, so a link draws what the author drew.
  *
  * @example
  * const { nodes, edges } = projectReadDiagram(diagram, reading, { onPlayFlow });
@@ -105,43 +65,31 @@ export function projectReadDiagram(
   routePlay: ReadDiagramRoutePlay | null = null,
   focusedNodeId: string | null = null,
 ): { nodes: Node[]; edges: Edge[] } {
-  const resolvedSnapshot = resolveSceneSnapshot(diagram, null);
-  // Same sets the editor builds (`useVisibleComponents` / `useVisibleConnections`):
-  // a component with no layout is not on the canvas, nor is a connection to one.
-  // Handle counts come from these connections — hidden ends included, as in the
-  // editor — so every node renders the handles its edges are assigned to.
-  const placedIds = new Set(Object.keys(resolvedSnapshot.nodeLayouts));
-  const placedComponents = Object.values(resolvedSnapshot.components).filter((component) =>
-    placedIds.has(component.id),
-  );
-  const connections = Object.values(resolvedSnapshot.connections).filter(
-    (connection) => placedIds.has(connection.sourceId) && placedIds.has(connection.targetId),
-  );
+  const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
   const ctx = buildReadNodeContext(
     diagram,
-    resolvedSnapshot.components,
-    resolvedSnapshot.nodeLayouts,
-    connections,
+    view.components,
+    view.nodeLayouts,
+    view.placedConnections,
     reading,
     routePlay?.onPlayFlow,
     focusedNodeId,
   );
-  const collapsedPanelIds = buildCollapsedPanelIds(resolvedSnapshot.components);
-  const nodes = sortComponentsTopologically(placedComponents).map((component) =>
-    buildReadNode(component, ctx, collapsedPanelIds),
-  );
+  const nodes = view.nodes.map((node) => buildReadNode(node, ctx));
 
-  const connectionCounts = buildConnectionCountPerNode(connections);
+  // Handle counts and assignments come from every placed connection — hidden
+  // ends included, as in the editor — so each node renders the handles its
+  // edges are assigned to; only the shown ones become edges.
+  const connectionCounts = buildConnectionCountPerNode(view.placedConnections);
   const assignments = buildEdgeHandleAssignments(
-    connections,
+    view.placedConnections,
     connectionCounts,
-    resolvedSnapshot.components,
+    view.components,
   );
   const assignmentById = new Map(assignments.map((entry) => [entry.connId, entry]));
   // An edge to a hidden component is dropped; one into a collapsed panel stays
   // and React Flow hides it with its node — the editor's split exactly.
-  const shownConnections = filterVisibleConnections(connections, resolvedSnapshot.components);
-  const edges = shownConnections.map((connection: Connection) => {
+  const edges = view.shownConnections.map((connection: Connection) => {
     const edge = buildEdge(connection, assignmentById.get(connection.id), {
       diagram,
       selectedEdgeId: null,
