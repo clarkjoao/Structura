@@ -465,11 +465,14 @@ export function startFileSystemSync(): void {
           const deletePromises = Object.entries(prevDiagrams)
             .filter(([id]) => !diagramState.diagrams[id])
             .map(([id]) =>
-              fileSystemAdapter.deleteAtSegments(id, oldSegments[id] ?? []).then(() => {
-                wroteSomething = true;
-              }).catch(() => {
-                deleteFailed = true;
-              }),
+              fileSystemAdapter
+                .deleteAtSegments(id, oldSegments[id] ?? [])
+                .then(() => {
+                  wroteSomething = true;
+                })
+                .catch(() => {
+                  deleteFailed = true;
+                }),
             );
           await Promise.all(deletePromises);
           if (deleteFailed) {
@@ -510,9 +513,7 @@ export function startFileSystemSync(): void {
             if (!staged) {
               // Rollback any diagrams that were already written to .tmp
               await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
-              toast.error(
-                i18n.t("filesystem.diagramWriteFailed", { count: 1 }) as string,
-              );
+              toast.error(i18n.t("filesystem.diagramWriteFailed", { count: 1 }) as string);
               return;
             }
             stagedWrites.push(staged);
@@ -562,7 +563,9 @@ export function startFileSystemSync(): void {
             } else {
               // Rollback: delete .tmp files since manifest failed
               await fileSystemAdapter.rollbackStagedDiagrams(stagedWrites);
-              console.warn("[FileSystemBoot] Manifest write failed after retry — staged diagrams rolled back.");
+              console.warn(
+                "[FileSystemBoot] Manifest write failed after retry — staged diagrams rolled back.",
+              );
               toast.error(i18n.t("filesystem.manifestWriteFailed") as string);
             }
           } else {

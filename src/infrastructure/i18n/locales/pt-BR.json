@@ -323,6 +323,19 @@
     "needsPermissionFolder": "Reconectar \"{{name}}\"",
     "permissionLost": "Acesso à pasta foi perdido — clique para reconectar",
     "permissionLostFolder": "Acesso à \"{{name}}\" foi perdido — clique para reconectar",
+    "permissionModal": {
+      "titleBoot": "Acesso à pasta necessário",
+      "titleLost": "Acesso à pasta foi revogado",
+      "messageNamed": "\"{{name}}\" estava conectada, mas o navegador precisa de permissão de novo para o sync com a pasta funcionar.",
+      "messageGeneric": "Uma pasta estava conectada, mas o navegador precisa de permissão de novo para o sync com a pasta funcionar.",
+      "syncDisabledWarning": "O sync com a pasta está desligado agora. As edições ficam só no navegador até você reconectar.",
+      "reconnect": "Reconectar",
+      "reconnectHint": "Pede ao navegador acesso de leitura/escrita à pasta (necessário para sync).",
+      "continueBrowser": "Continuar só no navegador",
+      "continueBrowserHint": "Fecha este diálogo. O sync continua desligado; você pode reconectar pela barra.",
+      "disconnect": "Desconectar pasta",
+      "disconnectHint": "Esquece esta conexão de pasta e continua só no navegador."
+    },
     "foldersImported": "Importadas {{count}} pastas do filesystem"
   },
   "workspaceMerge": {

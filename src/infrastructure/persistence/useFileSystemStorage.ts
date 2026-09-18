@@ -123,11 +123,13 @@ export function useFileSystemStorage() {
     if (bootStartedRef.current) return;
     bootStartedRef.current = true;
 
-    // Register a callback so the adapter can tell us when permission is lost mid-session.
-    // We only escalate to 'error' when the FS was previously 'connected' — other states
-    // (disconnected, needs_permission) are handled separately by their own code paths.
+    // Escalate to 'error' whenever a held handle loses write access (including
+    // re-checks on tab focus). Leave boot `needs_permission` / disconnected alone.
     fileSystemAdapter.setPermissionErrorCallback(() => {
-      setStatus((prev) => (prev === "connected" ? "error" : prev));
+      setStatus((prev) => {
+        if (prev === "disconnected" || prev === "needs_permission") return prev;
+        return "error";
+      });
     });
 
     if (fileSystemAdapter.isConnected) {
@@ -195,7 +197,7 @@ export function useFileSystemStorage() {
     setStatus("connecting");
     const granted = await fileSystemAdapter.requestReconnectPermission();
     if (!granted) {
-      setStatus("needs_permission");
+      setStatus(fileSystemAdapter.hasPermissionError ? "error" : "needs_permission");
       return;
     }
 

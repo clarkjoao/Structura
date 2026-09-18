@@ -8,11 +8,7 @@ import {
   validateManifest,
 } from "./validateWorkspaceFile";
 import { readElementPresetsField } from "./read-element-presets-field";
-import {
-  type StagedDiagramWrite,
-  getTempFileName,
-  isTempFile,
-} from "./stagedDiagramWrite";
+import { type StagedDiagramWrite, getTempFileName, isTempFile } from "./stagedDiagramWrite";
 import { isValidFolderId } from "./folderSync";
 
 const MAX_DIRECTORY_SCAN_DEPTH = 64;
@@ -25,10 +21,7 @@ const ORPHAN_TEMP_MAX_AGE_MS = 5 * 60 * 1000;
  * we feature-detect and try both forms before falling back to copy+delete.
  */
 type FileSystemFileHandleWithMove = FileSystemFileHandle & {
-  move?: (
-    destinationOrName: FileSystemDirectoryHandle | string,
-    name?: string,
-  ) => Promise<void>;
+  move?: (destinationOrName: FileSystemDirectoryHandle | string, name?: string) => Promise<void>;
 };
 
 const DB_NAME = "structura-fs";
@@ -206,8 +199,9 @@ export class FileSystemAdapter {
 
   /**
    * Queries readwrite permission on the connected handle.
-   * On denial or query failure, sets `_hasPermissionError` and fires the
-   * permission-error callback. Prefer this over reaching into private fields.
+   * On denial or query failure, sets `_hasPermissionError` and always fires the
+   * permission-error callback so the UI can re-open the modal on tab focus.
+   * On grant, clears a previous permission-error flag.
    *
    * @example
    * if (!(await fileSystemAdapter.checkPermission())) return;
@@ -217,17 +211,16 @@ export class FileSystemAdapter {
     try {
       const directoryHandle = this.handle as FileSystemDirectoryHandleWithPermissions;
       const state = await directoryHandle.queryPermission?.({ mode: "readwrite" });
-      if (state === "granted") return true;
-      if (!this._hasPermissionError) {
-        this._hasPermissionError = true;
-        this._onPermissionError?.();
+      if (state === "granted") {
+        this._hasPermissionError = false;
+        return true;
       }
+      this._hasPermissionError = true;
+      this._onPermissionError?.();
       return false;
     } catch {
-      if (!this._hasPermissionError) {
-        this._hasPermissionError = true;
-        this._onPermissionError?.();
-      }
+      this._hasPermissionError = true;
+      this._onPermissionError?.();
       return false;
     }
   }
@@ -245,19 +238,9 @@ export class FileSystemAdapter {
 
     const check = async () => {
       if (!this.handle) return;
-      try {
-        const directoryHandle = this.handle as FileSystemDirectoryHandleWithPermissions;
-        const state = await directoryHandle.queryPermission?.({ mode: "readwrite" });
-        if (state !== "granted" && !this._hasPermissionError) {
-          this._hasPermissionError = true;
-          this._onPermissionError?.();
-        }
-      } catch {
-        if (!this._hasPermissionError) {
-          this._hasPermissionError = true;
-          this._onPermissionError?.();
-        }
-      }
+      // Shared path with tab-focus revalidation — always notifies the UI callback
+      // when access is missing so the permission modal can re-open.
+      await this.checkPermission();
     };
 
     const onVisibilityChange = () => {
@@ -331,11 +314,9 @@ export class FileSystemAdapter {
         return true;
       }
 
-      if (state === "prompt") {
-        // Store for user-gesture-triggered permission request; don't attempt requestPermission here.
-        this._pendingHandle = handle;
-      }
-
+      // prompt / denied / missing queryPermission — keep the handle for a
+      // user-gesture reconnect (requestPermission requires a click).
+      this._pendingHandle = handle;
       return false;
     } catch {
       return false;
@@ -344,15 +325,17 @@ export class FileSystemAdapter {
 
   /**
    * Must be called from a user gesture (click handler).
-   * Requests readwrite permission for the pending handle and, if granted, activates the connection.
+   * Requests readwrite permission for the pending handle (boot) or the still-
+   * held handle after a mid-session revocation, then activates the connection.
    */
   async requestReconnectPermission(): Promise<boolean> {
-    if (!this._pendingHandle) return false;
+    const target = this._pendingHandle ?? this.handle;
+    if (!target) return false;
     try {
-      const directoryHandle = this._pendingHandle as FileSystemDirectoryHandleWithPermissions;
+      const directoryHandle = target as FileSystemDirectoryHandleWithPermissions;
       const state = await directoryHandle.requestPermission?.({ mode: "readwrite" });
       if (state === "granted") {
-        this.handle = this._pendingHandle;
+        this.handle = target;
         this._pendingHandle = null;
         this._hasPermissionError = false;
         this._startPermissionMonitor();
@@ -514,9 +497,7 @@ export class FileSystemAdapter {
       try {
         const tempFileName = tempSegments[tempSegments.length - 1];
         if (!tempFileName) {
-          errors.push(
-            `Failed to commit staged diagram ${diagramId}: empty tempSegments`,
-          );
+          errors.push(`Failed to commit staged diagram ${diagramId}: empty tempSegments`);
           continue;
         }
         const parentSegments = tempSegments.slice(0, -1);
@@ -526,7 +507,13 @@ export class FileSystemAdapter {
 
         const renamed = await this._tryAtomicRename(tempFile, finalDir, finalFileName);
         if (!renamed) {
-          await this._copyThenRemoveTemp(tempFile, parentDir, tempFileName, finalDir, finalFileName);
+          await this._copyThenRemoveTemp(
+            tempFile,
+            parentDir,
+            tempFileName,
+            finalDir,
+            finalFileName,
+          );
         }
       } catch (e) {
         errors.push(
@@ -840,7 +827,6 @@ export class FileSystemAdapter {
     }
     return false;
   }
-
 
   async readManifest(): Promise<WorkspaceManifest | null> {
     if (!this.handle) return null;

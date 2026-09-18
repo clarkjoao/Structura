@@ -18,9 +18,14 @@ import {
   useFileSystemStorage,
   isFileSystemSupported,
 } from "@/infrastructure/persistence/useFileSystemStorage";
+import { fileSystemAdapter } from "@/infrastructure/persistence/FileSystemAdapter";
 import { registerConnectFolderRequestHandler } from "@/infrastructure/persistence/requestConnectFolder";
 import { WorkspaceMergeDialog } from "@/infrastructure/persistence/WorkspaceMergeDialog";
 import { DisconnectConfirmDialog } from "@/infrastructure/persistence/DisconnectConfirmDialog";
+import {
+  PermissionRequiredDialog,
+  type PermissionRequiredReason,
+} from "@/infrastructure/persistence/PermissionRequiredDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
@@ -133,6 +138,73 @@ export function FileSystemStatus({
   } = useFileSystemStorage();
 
   const isMergeDialogProcessing = mergeInProgress || overwriteInProgress || pushInProgress;
+
+  // Permission modal: open once per blocked episode (boot needs_permission or
+  // mid-session error). Dismissing keeps the toolbar chip; leaving for
+  // connected/disconnected resets so the next revocation shows the modal again.
+  const [permissionModalDismissed, setPermissionModalDismissed] = useState(false);
+  const [permissionModalReason, setPermissionModalReason] =
+    useState<PermissionRequiredReason | null>(null);
+
+  useEffect(() => {
+    if (status === "needs_permission" || status === "error") {
+      setPermissionModalReason(status);
+      return;
+    }
+    if (status === "connected" || status === "disconnected") {
+      setPermissionModalReason(null);
+      setPermissionModalDismissed(false);
+    }
+  }, [status]);
+
+  // On tab/window focus: re-query folder access. If missing, force the modal
+  // open again — dismissing must not let the user keep editing while sync is off.
+  useEffect(() => {
+    if (hideActions || !isFileSystemSupported) return;
+
+    let inFlight = false;
+
+    const revalidateFolderAccess = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        if (status === "connected") {
+          const ok = await fileSystemAdapter.checkPermission();
+          if (!ok) {
+            setPermissionModalDismissed(false);
+          }
+          return;
+        }
+        if (status === "needs_permission" || status === "error") {
+          setPermissionModalDismissed(false);
+        }
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void revalidateFolderAccess();
+    };
+    const onFocus = () => {
+      void revalidateFolderAccess();
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("pageshow", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("pageshow", onFocus);
+    };
+  }, [status, hideActions]);
+
+  const showPermissionModal =
+    !hideActions &&
+    permissionModalReason !== null &&
+    !permissionModalDismissed &&
+    (status === "needs_permission" || status === "error" || status === "connecting");
 
   useEffect(() => {
     registerConnectFolderRequestHandler(() => {
@@ -403,6 +475,24 @@ export function FileSystemStatus({
           onOverwriteLocal={confirmOverwrite}
           onConfirmEmptyFolderPush={confirmPushToEmptyFolder}
           onCancel={cancelMerge}
+        />
+      )}
+
+      {showPermissionModal && permissionModalReason && (
+        <PermissionRequiredDialog
+          folderName={folderName}
+          reason={permissionModalReason}
+          isProcessing={status === "connecting"}
+          onReconnect={() => {
+            void reconnectWithPermission();
+          }}
+          onContinueInBrowser={() => {
+            setPermissionModalDismissed(true);
+          }}
+          onDisconnect={() => {
+            setPermissionModalDismissed(true);
+            requestDisconnect();
+          }}
         />
       )}
 

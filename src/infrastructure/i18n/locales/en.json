@@ -323,7 +323,33 @@
     "needsPermissionFolder": "Reconnect \"{{name}}\"",
     "permissionLost": "Access to the folder was lost — click to reconnect",
     "permissionLostFolder": "Access to \"{{name}}\" was lost — click to reconnect",
-    "foldersImported": "Imported {{count}} folder from filesystem"
+    "permissionModal": {
+      "titleBoot": "Folder access required",
+      "titleLost": "Folder access was revoked",
+      "messageNamed": "\"{{name}}\" was connected before, but the browser needs permission again before folder sync can run.",
+      "messageGeneric": "A folder was connected before, but the browser needs permission again before folder sync can run.",
+      "syncDisabledWarning": "Folder sync is off right now. Edits stay in the browser until you reconnect.",
+      "reconnect": "Reconnect",
+      "reconnectHint": "Ask the browser for read/write access to the folder (required for sync).",
+      "continueBrowser": "Continue in browser only",
+      "continueBrowserHint": "Dismiss this dialog. Sync stays off; you can reconnect from the toolbar.",
+      "disconnect": "Disconnect folder",
+      "disconnectHint": "Forget this folder connection and keep working in the browser."
+    },
+    "foldersImported": "Imported {{count}} folder from filesystem",
+    "permissionModal": {
+      "titleBoot": "Folder access required",
+      "titleLost": "Folder access was revoked",
+      "messageNamed": "The folder \"{{name}}\" was connected before, but the browser needs permission again before sync can run.",
+      "messageGeneric": "A folder was connected before, but the browser needs permission again before sync can run.",
+      "syncDisabledWarning": "Folder sync is off right now. Edits stay in the browser only until you reconnect.",
+      "reconnect": "Reconnect",
+      "reconnectHint": "Ask the browser for access to the folder (required click).",
+      "continueBrowser": "Continue in browser only",
+      "continueBrowserHint": "Close this dialog. Sync stays off; you can reconnect later from the toolbar.",
+      "disconnect": "Disconnect folder",
+      "disconnectHint": "Forget this folder connection and keep working in the browser."
+    }
   },
   "workspaceMerge": {
     "title": "Folder with existing files",

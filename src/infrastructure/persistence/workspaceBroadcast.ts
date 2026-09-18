@@ -25,10 +25,7 @@ let _onRemoteChange: (() => void) | null = null;
  * Opens the broadcast channel and registers a handler for incoming messages.
  * Subsequent calls replace the handler. Safe to call multiple times.
  */
-export function openWorkspaceBroadcast(
-  workspacePath: string,
-  onRemoteChange: () => void,
-): void {
+export function openWorkspaceBroadcast(workspacePath: string, onRemoteChange: () => void): void {
   _onRemoteChange = onRemoteChange;
 
   if (typeof BroadcastChannel === "undefined") return;
