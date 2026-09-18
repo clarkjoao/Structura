@@ -10,8 +10,8 @@ import {
 } from "./resolveViewSnapshot";
 
 /**
- * `resolveViewSnapshot` is the one rule for what the canvas shows, and it has
- * to stay usable anywhere — a headless test, the viewer's lazy chunk, a future
+ * `resolveViewSnapshot` is the one rule for what the canvas shows, and
+ * `projectDiagram` the one projection of it; both have to stay usable anywhere — a headless test, the viewer's lazy chunk, a future
  * plugin host. The element registry is passed in for that reason; these tests
  * keep the module from growing a path back to the store.
  */
@@ -93,11 +93,14 @@ function diagram(extra: Partial<Diagram> = {}): Diagram {
 }
 
 describe("resolveViewSnapshot is pure", () => {
-  it("reaches no store, LLM, collaboration or React Flow module", () => {
-    const reached = runtimeImportsOf("src/features/canvas/core/resolveViewSnapshot.ts");
-    expect(reached.length).toBeGreaterThan(1);
-    expect(reached.filter((file) => FORBIDDEN.test(file))).toEqual([]);
-  });
+  // The view rule (slice 4) and the projection built on it (slice 5).
+  for (const module of ["resolveViewSnapshot.ts", "projectDiagram.ts"]) {
+    it(`${module} reaches no store, LLM, collaboration or React Flow module`, () => {
+      const reached = runtimeImportsOf(`src/features/canvas/core/${module}`);
+      expect(reached.length).toBeGreaterThan(1);
+      expect(reached.filter((file) => FORBIDDEN.test(file))).toEqual([]);
+    });
+  }
 
   it("would notice a path to the store: the viewer's projection, which uses the registry, has one", () => {
     const reached = runtimeImportsOf("src/features/canvas/core/projectReadDiagram.ts");

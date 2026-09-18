@@ -9,9 +9,11 @@ import {
   useVisibleConnections,
   type Component,
   type Connection,
+  type CompareElementVisual,
   type Diagram,
   type SceneDiff,
 } from "@/features/diagram";
+import { useLLMStore, type PendingNodePreview } from "@/features/llm";
 import "@/features/canvas/nodes/node-types/registry";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { FlowModeProvider } from "../flow/FlowModeContext";
@@ -115,6 +117,30 @@ function parityDiagram(): Diagram {
 const written: { nodes: Node[]; edges: Edge[] } = { nodes: [], edges: [] };
 const NO_IDS = new Set<string>();
 
+/**
+ * What only the editor has, off by default. The slice-5 block below turns all
+ * of it on and checks the base the editor draws does not move.
+ */
+interface EditorModes {
+  selectedNodeIds: Set<string>;
+  highlightedNodeIds: Set<string>;
+  selectedEdgeId: string | null;
+  isCompareMode: boolean;
+  compareVisualByComponentId: Record<string, CompareElementVisual> | undefined;
+  compareConnectionOpacity: Record<string, number> | undefined;
+  hiddenByTag: (component: Component) => boolean;
+}
+const EDITOR_MODES_OFF: EditorModes = {
+  selectedNodeIds: NO_IDS,
+  highlightedNodeIds: NO_IDS,
+  selectedEdgeId: null,
+  isCompareMode: false,
+  compareVisualByComponentId: undefined,
+  compareConnectionOpacity: undefined,
+  hiddenByTag: () => false,
+};
+let editorModes: EditorModes = EDITOR_MODES_OFF;
+
 function WriteProjection() {
   const store = useDiagramStore();
   const diagram = store.diagrams[store.activeDiagramId!] as Diagram;
@@ -139,9 +165,11 @@ function WriteProjection() {
     sceneBadgeByComponentId: {},
     view,
     panelIds,
-    selectedNodeId: null,
-    selectedNodeIds: NO_IDS,
-    highlightedNodeIds: NO_IDS,
+    selectedNodeId: [...editorModes.selectedNodeIds][0] ?? null,
+    selectedNodeIds: editorModes.selectedNodeIds,
+    highlightedNodeIds: editorModes.highlightedNodeIds,
+    isCompareMode: editorModes.isCompareMode,
+    compareVisualByComponentId: editorModes.compareVisualByComponentId,
     serviceCatalog: {},
     allDiagrams: store.diagrams as Record<string, Diagram>,
     handleDrillDown: () => {},
@@ -156,14 +184,16 @@ function WriteProjection() {
     flowBadges: null,
     coverage: null,
     isViewingCoverage: false,
-    isNodeHiddenByTagFilter: () => false,
+    isNodeHiddenByTagFilter: editorModes.hiddenByTag,
     updateComponent: () => {},
   });
   written.edges = useCanvasEdges({
     diagram,
     view,
     edgeHandleAssignments,
-    selectedEdgeId: null,
+    selectedEdgeId: editorModes.selectedEdgeId,
+    isCompareMode: editorModes.isCompareMode,
+    compareConnectionOpacity: editorModes.compareConnectionOpacity,
     isPlaying: false,
     activeStep: null,
     flowHighlight: EMPTY_FLOW_HIGHLIGHT,
@@ -556,4 +586,59 @@ describe("slice 4: editor and viewer hand React Flow the same arrays", () => {
     expect(read.nodes.map(drawnNode)).toEqual(writeBase.nodes.map(drawnNode));
     expect(read.edges.map(drawnEdge)).toEqual(writeBase.edges.map(drawnEdge));
   });
+});
+
+/*
+ * Slice 5: what only the editor has is an overlay, and an overlay cannot move
+ * the base. With every editor-only mode on at once — a selection, a highlight,
+ * a selected edge, scene comparison on every node and edge, the tag filter and
+ * pending LLM previews — the editor still draws the same base as the viewer:
+ * same nodes in the same order, same places, stacking, nesting, visibility and
+ * size, same edges on the same handles along the same route.
+ */
+describe("slice 5: editor-only modes leave the base alone", () => {
+  beforeEach(() => {
+    useDiagramStore.setState({ diagrams: {}, activeDiagramId: null });
+    useCanvasSelectionStore.getState().clearSelection();
+    editorModes = EDITOR_MODES_OFF;
+    useLLMStore.setState({ pendingPreviews: [] });
+  });
+
+  for (const [name, diagram] of Object.entries(BASE_CASES)) {
+    it(`${name}: every overlay on, same base as the viewer`, () => {
+      const read = projectReadDiagram(diagram);
+      const nodeIds = read.nodes.map((node) => node.id);
+      const edgeIds = read.edges.map((edge) => edge.id);
+      editorModes = {
+        selectedNodeIds: new Set(nodeIds.slice(0, 1)),
+        highlightedNodeIds: new Set(nodeIds.slice(1, 2)),
+        selectedEdgeId: edgeIds[0] ?? null,
+        isCompareMode: true,
+        compareVisualByComponentId: Object.fromEntries(
+          nodeIds.map((id) => [id, { opacity: 0.5, badgeA: { name: "A", color: "#f00" } }]),
+        ) as Record<string, CompareElementVisual>,
+        compareConnectionOpacity: Object.fromEntries(edgeIds.map((id) => [id, 0.5])),
+        hiddenByTag: (component) => component.id === nodeIds[nodeIds.length - 1],
+      };
+      useLLMStore.setState({
+        pendingPreviews: [{ suggestionId: "s", nodeIds, edgeIds } as unknown as PendingNodePreview],
+      });
+
+      const write = writeProjection(diagram);
+
+      // The overlays did act, so the equalities below are not vacuous.
+      expect(write.nodes.some((node) => node.className?.includes("node-pending"))).toBe(true);
+      expect(write.nodes.every((node) => node.draggable === false)).toBe(true);
+      if (edgeIds.length > 0) {
+        expect(write.edges.some((edge) => edge.selected)).toBe(true);
+        expect(write.edges.every((edge) => edge.className?.includes("edge-pending"))).toBe(true);
+      }
+
+      expect(write.nodes.map(drawnNode)).toEqual(read.nodes.map(drawnNode));
+      expect(write.edges.map(drawnEdge)).toEqual(read.edges.map(drawnEdge));
+      expect(write.edges.map((edge) => writeGeometry(diagram, edge))).toEqual(
+        read.edges.map(readGeometry),
+      );
+    });
+  }
 });
