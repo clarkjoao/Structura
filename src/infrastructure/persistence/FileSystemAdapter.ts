@@ -11,9 +11,25 @@ import { readElementPresetsField } from "./read-element-presets-field";
 import {
   type StagedDiagramWrite,
   getTempFileName,
+  isTempFile,
 } from "./stagedDiagramWrite";
+import { isValidFolderId } from "./folderSync";
 
 const MAX_DIRECTORY_SCAN_DEPTH = 64;
+/** Orphan `.json.tmp` files older than this are removed on reconnect/connect. */
+const ORPHAN_TEMP_MAX_AGE_MS = 5 * 60 * 1000;
+
+/**
+ * `FileSystemFileHandle.move` is available in Chromium (local FS + OPFS) and
+ * Safari/Firefox (primarily the two-arg form). Signature differs by engine, so
+ * we feature-detect and try both forms before falling back to copy+delete.
+ */
+type FileSystemFileHandleWithMove = FileSystemFileHandle & {
+  move?: (
+    destinationOrName: FileSystemDirectoryHandle | string,
+    name?: string,
+  ) => Promise<void>;
+};
 
 const DB_NAME = "structura-fs";
 const DB_STORE = "handles";
@@ -189,6 +205,34 @@ export class FileSystemAdapter {
   }
 
   /**
+   * Queries readwrite permission on the connected handle.
+   * On denial or query failure, sets `_hasPermissionError` and fires the
+   * permission-error callback. Prefer this over reaching into private fields.
+   *
+   * @example
+   * if (!(await fileSystemAdapter.checkPermission())) return;
+   */
+  async checkPermission(): Promise<boolean> {
+    if (!this.handle) return false;
+    try {
+      const directoryHandle = this.handle as FileSystemDirectoryHandleWithPermissions;
+      const state = await directoryHandle.queryPermission?.({ mode: "readwrite" });
+      if (state === "granted") return true;
+      if (!this._hasPermissionError) {
+        this._hasPermissionError = true;
+        this._onPermissionError?.();
+      }
+      return false;
+    } catch {
+      if (!this._hasPermissionError) {
+        this._hasPermissionError = true;
+        this._onPermissionError?.();
+      }
+      return false;
+    }
+  }
+
+  /**
    * Starts monitoring permission state while a folder is connected.
    * Checks permission each time the tab becomes visible (handles OS/browser revocation
    * that happens while the tab is backgrounded) and periodically every 60 s.
@@ -282,6 +326,8 @@ export class FileSystemAdapter {
         this._pendingHandle = null;
         this._hasPermissionError = false;
         this._startPermissionMonitor();
+        // Best-effort: remove leftover .json.tmp from interrupted two-phase commits.
+        void this.cleanupOrphanedTempFiles();
         return true;
       }
 
@@ -309,6 +355,8 @@ export class FileSystemAdapter {
         this.handle = this._pendingHandle;
         this._pendingHandle = null;
         this._hasPermissionError = false;
+        this._startPermissionMonitor();
+        void this.cleanupOrphanedTempFiles();
         return true;
       }
       return false;
@@ -332,6 +380,8 @@ export class FileSystemAdapter {
       this.handle = handle;
       await saveHandleToIDB(handle);
       this._startPermissionMonitor();
+      // Best-effort: remove leftover .json.tmp from interrupted two-phase commits.
+      void this.cleanupOrphanedTempFiles();
       return true;
     } catch {
       return false;
@@ -431,8 +481,20 @@ export class FileSystemAdapter {
   }
 
   /**
-   * Phase 2 (commit): atomically renames all staged .tmp files to their final .json names.
-   * Returns true only if ALL renames succeed.
+   * Phase 2 (commit): renames all staged `.tmp` files to their final `.json` names.
+   *
+   * Atomicity strategy:
+   * 1. Prefer `FileSystemFileHandle.move()` when present — a same-directory
+   *    rename is atomic on supporting engines (Chromium local FS / OPFS,
+   *    Safari/Firefox two-arg form). Feature-detect; never assume availability.
+   * 2. Fallback: copy content into the final file then `removeEntry` the `.tmp`.
+   *    That path is NOT crash-atomic (a crash between write and remove leaves an
+   *    orphan `.tmp`). `cleanupOrphanedTempFiles()` on connect/reconnect removes
+   *    orphans older than {@link ORPHAN_TEMP_MAX_AGE_MS}.
+   *
+   * Partial failure is intentional: already-committed renames are kept; callers
+   * must not roll those back (would delete the only good copy). Returns false if
+   * any rename failed.
    */
   async commitStagedDiagrams(staged: StagedDiagramWrite[]): Promise<boolean> {
     if (!this.handle) return false;
@@ -440,33 +502,35 @@ export class FileSystemAdapter {
 
     const errors: string[] = [];
 
-    for (const { tempSegments, finalSegments } of staged) {
+    for (const { diagramId, tempSegments, finalSegments } of staged) {
+      if (!diagramId) {
+        errors.push(
+          `Failed to commit staged diagram at ${finalSegments.join("/")}: missing diagramId`,
+        );
+        continue;
+      }
+      const finalFileName = `${diagramId}.json`;
+
       try {
-        // Get parent directory and filename from segments
         const tempFileName = tempSegments[tempSegments.length - 1];
+        if (!tempFileName) {
+          errors.push(
+            `Failed to commit staged diagram ${diagramId}: empty tempSegments`,
+          );
+          continue;
+        }
         const parentSegments = tempSegments.slice(0, -1);
-        const finalFileName = `${staged.find(s => s.tempSegments.join("/") === tempSegments.join("/"))?.diagramId ?? "unknown"}.json`;
-
         const parentDir = await getOrCreateDirectory(this.handle, parentSegments);
-
-        // Get the temp file handle
+        const finalDir = await getOrCreateDirectory(this.handle, finalSegments);
         const tempFile = await parentDir.getFileHandle(tempFileName);
 
-        // Move/rename: get the final directory and create the file there
-        const finalDir = await getOrCreateDirectory(this.handle, finalSegments);
-
-        // Write the same content to the final location
-        const finalFile = await finalDir.getFileHandle(finalFileName, { create: true });
-        const writable = await finalFile.createWritable();
-        const content = await (await tempFile.getFile()).text();
-        await writable.write(content);
-        await writable.close();
-
-        // Remove the temp file
-        await parentDir.removeEntry(tempFileName);
+        const renamed = await this._tryAtomicRename(tempFile, finalDir, finalFileName);
+        if (!renamed) {
+          await this._copyThenRemoveTemp(tempFile, parentDir, tempFileName, finalDir, finalFileName);
+        }
       } catch (e) {
         errors.push(
-          `Failed to commit staged diagram ${finalSegments.join("/")}: ${e instanceof Error ? e.message : e}`,
+          `Failed to commit staged diagram ${diagramId} (${finalSegments.join("/")}): ${e instanceof Error ? e.message : e}`,
         );
       }
     }
@@ -476,6 +540,100 @@ export class FileSystemAdapter {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Attempts an atomic rename via `move()`. Returns true on success, false if
+   * `move` is unavailable or both call forms threw (caller should copy-delete).
+   */
+  private async _tryAtomicRename(
+    tempFile: FileSystemFileHandle,
+    finalDir: FileSystemDirectoryHandle,
+    finalFileName: string,
+  ): Promise<boolean> {
+    const movable = tempFile as FileSystemFileHandleWithMove;
+    if (typeof movable.move !== "function") return false;
+
+    // Existing final must go first — move() does not overwrite in all engines.
+    try {
+      await finalDir.removeEntry(finalFileName);
+    } catch {
+      // NotFoundError is fine — no prior final file.
+    }
+
+    try {
+      // Two-arg form: Safari + Chromium (directory + new name).
+      await movable.move(finalDir, finalFileName);
+      return true;
+    } catch {
+      try {
+        // One-arg form: Chromium same-directory rename by name alone.
+        await movable.move(finalFileName);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  /** Non-atomic fallback used when `move()` is missing or failed. */
+  private async _copyThenRemoveTemp(
+    tempFile: FileSystemFileHandle,
+    parentDir: FileSystemDirectoryHandle,
+    tempFileName: string,
+    finalDir: FileSystemDirectoryHandle,
+    finalFileName: string,
+  ): Promise<void> {
+    const finalFile = await finalDir.getFileHandle(finalFileName, { create: true });
+    const writable = await finalFile.createWritable();
+    const content = await (await tempFile.getFile()).text();
+    await writable.write(content);
+    await writable.close();
+    await parentDir.removeEntry(tempFileName);
+  }
+
+  /**
+   * Removes orphaned `*.json.tmp` files older than `maxAgeMs` under the connected
+   * root. Called on connect/reconnect so a crash mid-commit (copy-delete path)
+   * does not leave staging files forever. Returns the number of files removed.
+   */
+  async cleanupOrphanedTempFiles(maxAgeMs = ORPHAN_TEMP_MAX_AGE_MS): Promise<number> {
+    if (!this.handle) return 0;
+    const cutoff = Date.now() - maxAgeMs;
+    return this._cleanupOrphanedTempInDir(this.handle, cutoff);
+  }
+
+  private async _cleanupOrphanedTempInDir(
+    dir: FileSystemDirectoryHandle,
+    cutoffMs: number,
+    depth = 0,
+  ): Promise<number> {
+    if (depth > MAX_DIRECTORY_SCAN_DEPTH) return 0;
+    let removed = 0;
+
+    for await (const [name, entry] of directoryEntries(dir)) {
+      if (entry.kind === FileSystemEntryKind.File && isTempFile(name)) {
+        try {
+          const file = await (entry as FileSystemFileHandle).getFile();
+          if (file.lastModified < cutoffMs) {
+            await dir.removeEntry(name);
+            removed += 1;
+          }
+        } catch (e) {
+          console.warn("[FileSystemAdapter] orphan temp cleanup skipped", name, e);
+        }
+        continue;
+      }
+      if (entry.kind === FileSystemEntryKind.Directory) {
+        removed += await this._cleanupOrphanedTempInDir(
+          entry as FileSystemDirectoryHandle,
+          cutoffMs,
+          depth + 1,
+        );
+      }
+    }
+
+    return removed;
   }
 
   /**
@@ -510,11 +668,8 @@ export class FileSystemAdapter {
 
     try {
       for await (const [name, entry] of directoryEntries(this.handle)) {
-        if (entry.kind === FileSystemEntryKind.Directory) {
-          // Skip hidden directories
-          if (!name.startsWith(".")) {
-            folderIds.add(name);
-          }
+        if (entry.kind === FileSystemEntryKind.Directory && isValidFolderId(name)) {
+          folderIds.add(name);
         }
       }
     } catch (e) {

@@ -407,8 +407,10 @@ Fase 2 (Commit):
 
 **Arquivos de staging (.tmp):**
 - São criados no mesmo diretório dos diagramas finais
-- Nunca são visíveis ao usuário final (commit ou rollback sempre ocorre)
-- Se o app fechar durante Fase 2, os .tmp ficam órfãos → próximo sync os limpa
+- Commit preferencialmente via `FileSystemFileHandle.move()` (rename atômico);
+  fallback copy+delete quando `move` não está disponível
+- Se o app fechar durante o fallback copy+delete, os `.tmp` órfãos são
+  removidos em connect/reconnect por `cleanupOrphanedTempFiles` (idade > 5 min)
 
 ---
 
@@ -433,8 +435,9 @@ FS → Store (Leitura):
   - Cria pastas correspondentes no store
 
 Store → FS (Escrita):
-  - Folder watcher detecta adições de pastas no store
-  - Cria diretórios correspondentes no filesystem
+  - Diretórios são criados no flush de diagramas (`getOrCreateDirectory`),
+    não por um folder watcher separado (o watcher anterior causava
+    "Maximum update depth exceeded" no React Flow)
   - Não deleta diretórios automaticamente (segurança)
 ```
 

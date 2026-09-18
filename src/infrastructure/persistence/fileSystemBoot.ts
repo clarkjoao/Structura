@@ -7,7 +7,6 @@ import {
 } from "@/features/diagram";
 import {
   fileSystemAdapter,
-  type FileSystemDirectoryHandleWithPermissions,
   type WorkspacePayload,
   type WorkspaceScanResult,
 } from "./FileSystemAdapter";
@@ -29,6 +28,9 @@ import {
   broadcastManifestChanged,
 } from "./workspaceBroadcast";
 import type { StagedDiagramWrite } from "./stagedDiagramWrite";
+import type { FolderSyncResult } from "./folderSync";
+
+export type { FolderSyncResult } from "./folderSync";
 
 type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
 
@@ -141,11 +143,12 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   // Commit: rename .tmp → .json
   const commitOk = await fileSystemAdapter.commitStagedDiagrams(stagedWrites);
   if (!commitOk) {
-    // Commit partially failed - this is a serious inconsistency
-    // The manifest references diagrams that may not exist
+    // Intentional: do NOT roll back diagrams that already committed. A partial
+    // rename leaves some finals on disk; deleting them would discard the only
+    // good copy. Manifest already points at the intended set; the next flush
+    // retries the remaining .tmp files (and cleanupOrphanedTempFiles handles
+    // true orphans after a crash).
     console.error("[FileSystemBoot] Partial commit failure - manifest references may be invalid");
-    // Don't rollback - some diagrams may have been committed
-    // The next sync will detect and fix this
   }
 
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
@@ -194,6 +197,12 @@ async function doReconnect(): Promise<boolean> {
       return false;
     }
 
+    // Deliberately do NOT set `defaultStorage.paused = true` here.
+    // When a folder is connected, localStorage stays writable in parallel as a
+    // silent backup (Zustand persist + forced flushes before merge/overwrite).
+    // Pausing it was a root cause of filesystem instability: if the folder write
+    // failed mid two-phase commit, there was no browser-side copy to recover from.
+    // See docs/discovery/bug3-filesystem-instability.md §P0.1.
     fileSystemAdapter.setFolders(useDiagramStore.getState().folders);
 
     const workspace = await fileSystemAdapter.loadWorkspace();
@@ -287,12 +296,6 @@ export function resolveBootScan(scan: WorkspaceScanResult | null): void {
 
 // ─── Bidirectional Folder Sync ────────────────────────────────────────────────
 
-export interface FolderSyncResult {
-  foldersCreatedInStore: string[];
-  directoriesCreated: string[];
-  directoriesDeleted: string[];
-}
-
 /**
  * Synchronizes folder structure between filesystem and Zustand store.
  *
@@ -306,7 +309,7 @@ export interface FolderSyncResult {
  *     fresh ID and orphan the original directory on the next write.
  *
  * This function:
- *   1. Scans directories in the filesystem
+ *   1. Scans directories in the filesystem (via `isValidFolderId` filter)
  *   2. Compares with store folders
  *   3. Creates directories for folders in store that don't have them
  *   4. Logs (but does NOT auto-create) folders for unknown directories —
@@ -373,7 +376,6 @@ export async function syncFoldersFromFilesystem(): Promise<FolderSyncResult | nu
 }
 
 let _syncUnsub: (() => void) | null = null;
-let _folderWatcherCleanup: (() => void) | null = null;
 let _syncTimer: ReturnType<typeof setTimeout> | null = null;
 let _flushChain: Promise<void> = Promise.resolve();
 let lastFlushedDiagrams: Record<string, Diagram> = {};
@@ -416,25 +418,21 @@ export function startFileSystemSync(): void {
     });
   }
 
-  // ─── Folder Change Watcher ─────────────────────────────────────────────────
-  // Folder changes in the store are written to disk by the regular diagram
-  // flush path: `resolveDiagramPathSegments` rebuilds the path from the folder
-  // ID at write time, so a folder created in the UI gets a directory the next
-  // time a diagram is written into it. We deliberately do NOT subscribe to
-  // `state.folders` here — a prior version did, and it interacted badly with
-  // the store-level debounced flush (every folder change re-queued the flush,
+  // Folder changes in the store reach disk via the diagram flush path:
+  // `resolveDiagramPathSegments` rebuilds the path from the folder ID at write
+  // time, so a folder created in the UI gets a directory the next time a
+  // diagram is written into it. We deliberately do NOT subscribe to
+  // `state.folders` — a prior version did, and it interacted badly with the
+  // store-level debounced flush (every folder change re-queued the flush,
   // every flush re-walked folders), which surfaced as React Flow's
   // `StoreUpdater` repeatedly calling `setNodes` until React aborted with
   // "Maximum update depth exceeded".
-  //
-  // Cleanup of the previous subscription is kept as a no-op for callers that
-  // still invoke it; new code should rely on the flush path.
-  void _folderWatcherCleanup;
-  void _syncUnsub;
 
   /**
    * Debounced folder sync runs in parallel with Zustand persist (PERSIST_DEBOUNCE_MS in
    * persist.config.ts). Both are best-effort; ordering is not guaranteed by design.
+   * localStorage is intentionally NOT paused while the folder is connected — see
+   * the comment in {@link doReconnect}.
    */
   const runDebouncedFlush = (): void => {
     if (!fileSystemAdapter.isConnected) return;
@@ -446,20 +444,7 @@ export function startFileSystemSync(): void {
           // Proactively check write permission before attempting any writes.
           // This surfaces permission loss (e.g. OS revoked it) before the
           // native API throws, so the UI can show an error banner immediately.
-          try {
-            const directoryHandle = fileSystemAdapter["handle"] as FileSystemDirectoryHandleWithPermissions | null;
-            if (directoryHandle) {
-              const state = await directoryHandle.queryPermission?.({ mode: "readwrite" });
-              if (state !== "granted") {
-                fileSystemAdapter["_hasPermissionError"] = true;
-                fileSystemAdapter["_onPermissionError"]?.();
-                return;
-              }
-            }
-          } catch {
-            // If we can't even query permission, treat it as an error.
-            fileSystemAdapter["_hasPermissionError"] = true;
-            fileSystemAdapter["_onPermissionError"]?.();
+          if (!(await fileSystemAdapter.checkPermission())) {
             return;
           }
 
@@ -565,8 +550,8 @@ export function startFileSystemSync(): void {
               // Commit: rename .tmp → .json
               const commitOk = await fileSystemAdapter.commitStagedDiagrams(stagedWrites);
               if (!commitOk) {
-                // Partial commit - log but don't fail the sync
-                // The manifest is valid and diagrams may be accessible
+                // Partial commit is intentional — already-renamed finals are kept;
+                // see flushWorkspaceToConnectedFolder / commitStagedDiagrams docs.
                 console.warn("[FileSystemBoot] Partial commit - some diagrams may need retry");
               }
 
@@ -603,13 +588,10 @@ export function startFileSystemSync(): void {
             lastFlushedPathSegments[id] = fileSystemAdapter.computePathSegments(diagram);
           }
         })
-        .catch((error: unknown) => {
+        .catch(async (error: unknown) => {
           console.error("[FileSystemSync] write failed:", error);
-          // If this looks like a permission error (handle still exists but writes
-          // failed), flag it so the UI surfaces a reconnect prompt.
-          if (fileSystemAdapter["_hasPermissionError"]) {
-            fileSystemAdapter["_onPermissionError"]?.();
-          }
+          // Re-query permission so the UI callback fires if the OS revoked access.
+          await fileSystemAdapter.checkPermission();
         });
     }, VIEWPORT_DEBOUNCE_MS);
   };
@@ -639,10 +621,6 @@ export function stopFileSystemSync(): void {
   if (_syncUnsub) {
     _syncUnsub();
     _syncUnsub = null;
-  }
-  if (_folderWatcherCleanup) {
-    _folderWatcherCleanup();
-    _folderWatcherCleanup = null;
   }
   if (_syncTimer) {
     clearTimeout(_syncTimer);

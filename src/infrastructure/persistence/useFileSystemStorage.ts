@@ -131,6 +131,9 @@ export function useFileSystemStorage() {
     });
 
     if (fileSystemAdapter.isConnected) {
+      // localStorage remains active while the folder is connected (no
+      // `defaultStorage.paused = true`) — silent backup for two-phase commit
+      // failures. See doReconnect in fileSystemBoot.ts / bug3 §P0.1.
       setStatus("connected");
       setFolderName(fileSystemAdapter.folderName);
       setOnRemoteTabWrite(handleRemoteTabWrite);

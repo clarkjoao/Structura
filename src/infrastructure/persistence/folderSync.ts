@@ -1,47 +1,48 @@
 /**
  * Bidirectional folder synchronization helpers.
  *
- * Note: The core folder sync logic has been integrated into:
- * - FileSystemAdapter: scanDirectoryStructure(), createDirectory(), deleteDirectory()
- * - fileSystemBoot: syncFoldersFromFilesystem(), folder watcher in startFileSystemSync()
+ * Core sync lives in:
+ * - `FileSystemAdapter.scanDirectoryStructure` / `createDirectory` / `deleteDirectory`
+ * - `fileSystemBoot.syncFoldersFromFilesystem` (and the diagram flush path for
+ *   store → FS directory creation — there is no separate folder watcher)
  *
- * This file provides shared types and utilities used by the folder sync implementation.
+ * This module owns the shared result type and the reserved-name filter used
+ * when scanning the workspace root.
  */
 
 /**
  * Result of a folder synchronization operation.
+ * Only fields that {@link syncFoldersFromFilesystem} actually populates today.
  */
 export interface FolderSyncResult {
-  /** IDs of folders created in store (from external directories) */
+  /** Reserved for FS→store imports; currently always empty (trust model skips auto-import). */
   foldersCreatedInStore: string[];
-  /** IDs of folders removed from store (directories deleted externally) */
-  foldersRemovedFromStore: string[];
-  /** IDs of directories that were created in filesystem */
+  /** Folder IDs for which a directory was created on disk. */
   directoriesCreated: string[];
-  /** IDs of directories that were deleted from filesystem */
+  /** Folder IDs for which an empty directory was removed; currently unused. */
   directoriesDeleted: string[];
-  /** IDs of diagrams that were orphaned (folder no longer exists) */
-  orphanedDiagrams: string[];
 }
 
+const SKIP_DIRECTORY_NAMES = new Set([
+  "node_modules",
+  ".git",
+  "__pycache__",
+  "dist",
+  "build",
+  "target",
+]);
+
 /**
- * Checks if a directory name looks like a valid folder ID.
- * Folder IDs are typically generated with a prefix like "folder_" or are UUIDs.
+ * Whether a directory name may be treated as a Structura folder ID.
+ * Skips hidden dirs and common tooling folders that should not become
+ * "unknown dirs" noise on every sync.
+ *
+ * @example
+ * isValidFolderId("folder_abc") // true
+ * isValidFolderId("node_modules") // false
  */
 export function isValidFolderId(name: string): boolean {
-  // Skip hidden directories
   if (name.startsWith(".")) return false;
-
-  // Skip common non-folder files
-  const SKIP_NAMES = [
-    "node_modules",
-    ".git",
-    "__pycache__",
-    "dist",
-    "build",
-    "target",
-  ];
-  if (SKIP_NAMES.includes(name)) return false;
-
+  if (SKIP_DIRECTORY_NAMES.has(name)) return false;
   return true;
 }
