@@ -1,5 +1,4 @@
 import type { Component, Connection } from "@/features/diagram";
-import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import { handleSpecForType } from "../nodes/node-types/registry";
 import {
   singleIncomingTargetHandleId,
@@ -36,13 +35,9 @@ export interface ConnectionCounts {
   outgoing: number;
 }
 
-export function buildPanelIds(components: Component[]): Set<string> {
-  const ids = new Set<string>();
-  for (const c of components) {
-    if (isPanelComponent(c) || isApiGroupComponent(c)) ids.add(c.id);
-  }
-  return ids;
-}
+// Lives with the rest of what the canvas shows, in the pure view module; kept
+// exported here for the editor's existing imports.
+export { buildPanelIds } from "../core/resolveViewSnapshot";
 
 export function buildConnectionCountPerNode(
   connections: Connection[],

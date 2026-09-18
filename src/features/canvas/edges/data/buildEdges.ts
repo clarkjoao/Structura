@@ -169,13 +169,6 @@ export function buildEdge(
   };
 }
 
-export function filterVisibleConnections(
-  connections: Connection[],
-  components: Record<string, { hidden?: boolean }>,
-): Connection[] {
-  return connections.filter((conn) => {
-    const src = components[conn.sourceId];
-    const tgt = components[conn.targetId];
-    return !src?.hidden && !tgt?.hidden;
-  });
-}
+// Lives with the rest of what the canvas shows, in the pure view module; kept
+// exported here for the editor's existing imports.
+export { filterVisibleConnections } from "../../core/resolveViewSnapshot";
