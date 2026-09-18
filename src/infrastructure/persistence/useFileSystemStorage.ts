@@ -26,12 +26,14 @@ import {
   setOnRemoteTabWrite,
   getLastSyncedManifestFingerprint,
   syncFoldersFromFilesystem,
+  migrateConnectedFolderLayout,
 } from "./fileSystemBoot";
 import { mergeElementPresets } from "./merge-element-presets";
 import { readElementPresetsField } from "./read-element-presets-field";
 import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
 import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { WORKSPACE_SCHEMA_VERSION as WORKSPACE_VERSION } from "./versions";
+import { FOLDER_LAYOUT_VERSION } from "./migrateLegacyFolderLayout";
 
 export type FsStatus = "disconnected" | "connecting" | "connected" | "error" | "needs_permission";
 
@@ -50,6 +52,7 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
     activeDiagramId: state.activeDiagramId,
     elementPresets,
     iconLibrary,
+    folderLayoutVersion: FOLDER_LAYOUT_VERSION,
   };
 }
 
@@ -225,6 +228,8 @@ export function useFileSystemStorage() {
         }));
       }
     }
+
+    await migrateConnectedFolderLayout();
 
     // Sync folder structure between filesystem and store (bidirectional).
     // Currently this only creates missing directories for known store folders;

@@ -91,6 +91,23 @@ store:
 - Renames don't orphan files since the ID remains the same
 - Directories are never auto-deleted for safety
 
+### Legacy folder layout migration (slug → ID)
+
+Older workspaces stored diagrams under **slugified folder names** (and an
+optional domain segment), e.g. `pix-ledger/billing/d1.json`. The current
+layout uses **folder IDs**: `folder-abc…/d1.json`.
+
+On connect / reconnect / first flush, `migrateConnectedFolderLayout()` runs
+once (silent, no modal):
+
+1. Rebuilds missing `folders` map entries from diagram `folderId`s (so the
+   sidebar shows again when the manifest omitted folders).
+2. Moves diagram files from legacy slug(+domain) paths to ID paths.
+3. Stamps `folderLayoutVersion: 1` on `structura-manifest.json` so later
+   boots are no-ops.
+
+See `migrateLegacyFolderLayout.ts` / `FileSystemAdapter.migrateLegacyFolderLayout`.
+
 The design stance: **conflicts surface to the user** rather than resolving by
 timestamp heuristics. Crude but honest; real multi-writer convergence is
 collaboration's job (Yjs), not file sync's.

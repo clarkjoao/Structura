@@ -10,6 +10,11 @@ import {
 import { readElementPresetsField } from "./read-element-presets-field";
 import { type StagedDiagramWrite, getTempFileName, isTempFile } from "./stagedDiagramWrite";
 import { isValidFolderId } from "./folderSync";
+import {
+  FOLDER_LAYOUT_VERSION,
+  coerceFoldersRecord,
+  planLegacyFolderMigration,
+} from "./migrateLegacyFolderLayout";
 
 const MAX_DIRECTORY_SCAN_DEPTH = 64;
 /** Orphan `.json.tmp` files older than this are removed on reconnect/connect. */
@@ -150,6 +155,11 @@ export interface WorkspaceManifest {
   /** @deprecated F10 — read via `readElementPresetsField`; rewritten as `elementPresets`. */
   customComponentTemplates?: Record<string, ElementPreset>;
   iconLibrary?: Record<string, IconDefinition>;
+  /**
+   * Set to {@link FOLDER_LAYOUT_VERSION} after the one-shot slug→ID path migration.
+   * When present and >= current version, migration is a no-op.
+   */
+  folderLayoutVersion?: number;
 }
 
 export type WorkspacePayload = {
@@ -163,7 +173,21 @@ export type WorkspacePayload = {
   /** @deprecated F10 — read via `readElementPresetsField`. */
   customComponentTemplates?: Record<string, ElementPreset>;
   iconLibrary?: Record<string, IconDefinition>;
+  folderLayoutVersion?: number;
 };
+
+export interface DiagramLocationScan {
+  diagrams: Record<string, Diagram>;
+  /** Parent directory segments for each diagram file (empty = workspace root). */
+  pathByDiagramId: Record<string, string[]>;
+}
+
+export interface LegacyFolderLayoutMigrationResult {
+  skipped: boolean;
+  folders: Record<string, Folder>;
+  foldersRepaired: number;
+  filesMoved: number;
+}
 
 export interface WorkspaceScanResult {
   valid: Diagram[];
@@ -843,7 +867,7 @@ export class FileSystemAdapter {
     const manifest = await this.readManifest();
     if (!manifest) return null;
 
-    const diagrams = await this._scanAllDiagrams(this.handle!);
+    const { diagrams } = await this.scanDiagramLocations();
 
     let activeDiagramId = manifest.activeDiagramId;
     if (activeDiagramId && !diagrams[activeDiagramId]) {
@@ -858,7 +882,169 @@ export class FileSystemAdapter {
       manifestUpdatedAt: manifest.updatedAt,
       elementPresets: readElementPresetsField(manifest),
       iconLibrary: manifest.iconLibrary,
+      folderLayoutVersion: manifest.folderLayoutVersion,
     };
+  }
+
+  /**
+   * Recursively finds every diagram JSON and the directory segments where it lives.
+   */
+  async scanDiagramLocations(): Promise<DiagramLocationScan> {
+    if (!this.handle) {
+      return { diagrams: {}, pathByDiagramId: {} };
+    }
+    return this._scanAllDiagramsWithPaths(this.handle);
+  }
+
+  /**
+   * One-shot migration: repair missing Folder map entries and move diagram files
+   * from legacy slug(+domain) paths to folder-ID paths. Stamps `folderLayoutVersion`
+   * on the manifest so subsequent boots are no-ops.
+   */
+  async migrateLegacyFolderLayout(
+    foldersHint?: Record<string, Folder>,
+  ): Promise<LegacyFolderLayoutMigrationResult> {
+    const empty: LegacyFolderLayoutMigrationResult = {
+      skipped: true,
+      folders: foldersHint ?? this.folders,
+      foldersRepaired: 0,
+      filesMoved: 0,
+    };
+    if (!this.handle) return empty;
+
+    const manifest = await this.readManifest();
+    if (
+      manifest?.folderLayoutVersion !== undefined &&
+      manifest.folderLayoutVersion >= FOLDER_LAYOUT_VERSION
+    ) {
+      return empty;
+    }
+
+    const { diagrams, pathByDiagramId } = await this.scanDiagramLocations();
+    const baseFolders =
+      foldersHint ??
+      coerceFoldersRecord(
+        (manifest?.folders as Record<string, unknown> | undefined) ??
+          (this.folders as unknown as Record<string, unknown>),
+      );
+
+    const plan = planLegacyFolderMigration(baseFolders, diagrams, pathByDiagramId);
+    this.setFolders(plan.folders);
+
+    let filesMoved = 0;
+    for (const move of plan.moves) {
+      const ok = await this.moveDiagramFile(
+        move.fromSegments,
+        move.toSegments,
+        move.diagramId,
+      );
+      if (ok) {
+        filesMoved += 1;
+        await this._removeEmptyDirectoryChain(move.fromSegments);
+      }
+    }
+
+    const now = new Date().toISOString();
+    const nextManifest: WorkspaceManifest = {
+      version: (manifest?.version ?? 2) as 1 | 2,
+      createdAt: manifest?.createdAt ?? now,
+      updatedAt: now,
+      diagramIds: Object.keys(diagrams),
+      serviceCatalog: manifest?.serviceCatalog ?? {},
+      folders: plan.folders,
+      activeDiagramId: manifest?.activeDiagramId ?? Object.keys(diagrams)[0] ?? null,
+      elementPresets: readElementPresetsField(manifest ?? {}),
+      iconLibrary: manifest?.iconLibrary,
+      folderLayoutVersion: FOLDER_LAYOUT_VERSION,
+    };
+
+    const written = await this.writeManifest(nextManifest);
+    if (!written) {
+      console.warn(
+        "[FileSystemAdapter] migrateLegacyFolderLayout: could not stamp folderLayoutVersion",
+      );
+    }
+
+    if (plan.foldersRepaired > 0 || filesMoved > 0) {
+      console.info(
+        `[FileSystemAdapter] Legacy folder layout migration: repaired ${plan.foldersRepaired} folder(s), moved ${filesMoved} file(s)`,
+      );
+    }
+
+    return {
+      skipped: false,
+      folders: plan.folders,
+      foldersRepaired: plan.foldersRepaired,
+      filesMoved,
+    };
+  }
+
+  /**
+   * Copies a diagram JSON from one directory path to another and removes the source.
+   * No-op (returns true) when from and to are the same.
+   */
+  async moveDiagramFile(
+    fromSegments: string[],
+    toSegments: string[],
+    diagramId: string,
+  ): Promise<boolean> {
+    if (!this.handle) return false;
+    const fileName = `${diagramId}.json`;
+    const samePath =
+      fromSegments.length === toSegments.length &&
+      fromSegments.every((segment, index) => segment === toSegments[index]);
+    if (samePath) return true;
+
+    try {
+      const fromDir = await getOrCreateDirectory(this.handle, fromSegments);
+      const source = await fromDir.getFileHandle(fileName);
+      const content = await (await source.getFile()).text();
+
+      const toDir = await getOrCreateDirectory(this.handle, toSegments);
+      const dest = await toDir.getFileHandle(fileName, { create: true });
+      const writable = await dest.createWritable();
+      await writable.write(content);
+      await writable.close();
+
+      await fromDir.removeEntry(fileName);
+      return true;
+    } catch (e) {
+      console.warn(
+        `[FileSystemAdapter] moveDiagramFile failed for ${diagramId}:`,
+        fromSegments.join("/"),
+        "→",
+        toSegments.join("/"),
+        e,
+      );
+      return false;
+    }
+  }
+
+  /** Best-effort: remove empty dirs from the deepest segment up to the root. */
+  private async _removeEmptyDirectoryChain(segments: string[]): Promise<void> {
+    if (!this.handle || segments.length === 0) return;
+
+    for (let length = segments.length; length >= 1; length -= 1) {
+      const parentSegments = segments.slice(0, length - 1);
+      const dirName = segments[length - 1];
+      if (!dirName) continue;
+      try {
+        const parent =
+          parentSegments.length === 0
+            ? this.handle
+            : await getOrCreateDirectory(this.handle, parentSegments);
+        const dir = await parent.getDirectoryHandle(dirName);
+        let isEmpty = true;
+        for await (const _ of directoryEntries(dir)) {
+          isEmpty = false;
+          break;
+        }
+        if (!isEmpty) return;
+        await parent.removeEntry(dirName);
+      } catch {
+        return;
+      }
+    }
   }
 
   async scanWorkspace(): Promise<WorkspaceScanResult> {
@@ -933,14 +1119,18 @@ export class FileSystemAdapter {
     }
   }
 
-  private async _scanAllDiagrams(
+  private async _scanAllDiagramsWithPaths(
     dir: FileSystemDirectoryHandle,
+    pathPrefix: string[] = [],
     depth = 0,
-  ): Promise<Record<string, Diagram>> {
+  ): Promise<DiagramLocationScan> {
     if (depth > MAX_DIRECTORY_SCAN_DEPTH) {
-      return {};
+      return { diagrams: {}, pathByDiagramId: {} };
     }
-    const result: Record<string, Diagram> = {};
+
+    const diagrams: Record<string, Diagram> = {};
+    const pathByDiagramId: Record<string, string[]> = {};
+
     for await (const [name, entry] of directoryEntries(dir)) {
       if (
         entry.kind === FileSystemEntryKind.File &&
@@ -953,7 +1143,8 @@ export class FileSystemAdapter {
           if (isDiagramTombstoneJson(rawUnknown)) continue;
           const validation = validateDiagramFile(rawUnknown);
           if (validation.valid && validation.diagram.id) {
-            result[validation.diagram.id] = validation.diagram;
+            diagrams[validation.diagram.id] = validation.diagram;
+            pathByDiagramId[validation.diagram.id] = [...pathPrefix];
           }
         } catch (error) {
           console.warn(
@@ -964,11 +1155,17 @@ export class FileSystemAdapter {
         }
       }
       if (entry.kind === FileSystemEntryKind.Directory) {
-        const nested = await this._scanAllDiagrams(entry as FileSystemDirectoryHandle, depth + 1);
-        Object.assign(result, nested);
+        const nested = await this._scanAllDiagramsWithPaths(
+          entry as FileSystemDirectoryHandle,
+          [...pathPrefix, name],
+          depth + 1,
+        );
+        Object.assign(diagrams, nested.diagrams);
+        Object.assign(pathByDiagramId, nested.pathByDiagramId);
       }
     }
-    return result;
+
+    return { diagrams, pathByDiagramId };
   }
 }
 

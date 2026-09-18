@@ -29,6 +29,7 @@ import {
 } from "./workspaceBroadcast";
 import type { StagedDiagramWrite } from "./stagedDiagramWrite";
 import type { FolderSyncResult } from "./folderSync";
+import { FOLDER_LAYOUT_VERSION } from "./migrateLegacyFolderLayout";
 
 export type { FolderSyncResult } from "./folderSync";
 
@@ -100,14 +101,37 @@ export function hydrateIconStoreFromWorkspace(workspace: WorkspaceIconSource): W
   }
 }
 
-export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState): Promise<boolean> {
+/**
+ * Silent one-shot: repair missing Folder map entries and move diagram files
+ * from legacy slug(+domain) paths to folder-ID paths. Updates the Zustand
+ * store when folders were reconstructed. Safe to call repeatedly (no-op once
+ * `folderLayoutVersion` is stamped on the manifest).
+ */
+export async function migrateConnectedFolderLayout(): Promise<void> {
+  if (!fileSystemAdapter.isConnected) return;
+
+  const storeFolders = useDiagramStore.getState().folders;
+  const result = await fileSystemAdapter.migrateLegacyFolderLayout(storeFolders);
+  if (result.skipped) return;
+
+  useDiagramStore.setState((state) => ({
+    ...state,
+    folders: result.folders as typeof state.folders,
+  }));
+  fileSystemAdapter.setFolders(result.folders);
+}
+
+export async function flushWorkspaceToConnectedFolder(_state: DiagramStoreState): Promise<boolean> {
   if (!fileSystemAdapter.isConnected) return false;
 
-  fileSystemAdapter.setFolders(state.folders);
+  await migrateConnectedFolderLayout();
+
+  const latest = useDiagramStore.getState();
+  fileSystemAdapter.setFolders(latest.folders);
 
   // Phase 1 (Prepare): Write all diagrams to .tmp files
   const stagedWrites: StagedDiagramWrite[] = [];
-  for (const diagram of Object.values(state.diagrams)) {
+  for (const diagram of Object.values(latest.diagrams)) {
     const staged = await fileSystemAdapter.writeDiagramStaged(diagram);
     if (!staged) {
       // Rollback any diagrams that were already written to .tmp
@@ -126,12 +150,13 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     version: WORKSPACE_SCHEMA_VERSION as 1 | 2,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    diagramIds: Object.keys(state.diagrams),
-    serviceCatalog: state.serviceCatalog,
-    folders: state.folders,
-    activeDiagramId: state.activeDiagramId,
+    diagramIds: Object.keys(latest.diagrams),
+    serviceCatalog: latest.serviceCatalog,
+    folders: latest.folders,
+    activeDiagramId: latest.activeDiagramId,
     elementPresets,
     iconLibrary,
+    folderLayoutVersion: FOLDER_LAYOUT_VERSION,
   });
 
   if (!manifestOk) {
@@ -152,10 +177,10 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
   }
 
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
-    diagramIds: Object.keys(state.diagrams),
-    serviceCatalog: state.serviceCatalog,
-    folders: state.folders,
-    activeDiagramId: state.activeDiagramId,
+    diagramIds: Object.keys(latest.diagrams),
+    serviceCatalog: latest.serviceCatalog,
+    folders: latest.folders,
+    activeDiagramId: latest.activeDiagramId,
     elementPresets,
     iconLibrary,
   });
@@ -250,6 +275,9 @@ async function doReconnect(): Promise<boolean> {
           presets: mergeElementPresets(state.presets, workspaceTemplates),
         }));
       }
+
+      // Repair folder map + move legacy slug paths before sync starts.
+      await migrateConnectedFolderLayout();
     }
     await clearLocalCache();
 
@@ -403,6 +431,16 @@ export function getLastSyncedManifestFingerprint(): string {
 export function startFileSystemSync(): void {
   stopFileSystemSync();
 
+  // Best-effort silent migration before subscriptions start flushing.
+  void migrateConnectedFolderLayout().then(() => {
+    const afterMigrate = useDiagramStore.getState().diagrams;
+    lastFlushedDiagrams = { ...afterMigrate };
+    lastFlushedPathSegments = {};
+    for (const [id, diagram] of Object.entries(afterMigrate)) {
+      lastFlushedPathSegments[id] = fileSystemAdapter.computePathSegments(diagram);
+    }
+  });
+
   const initialDiagrams = useDiagramStore.getState().diagrams;
   lastFlushedDiagrams = { ...initialDiagrams };
   lastFlushedPathSegments = {};
@@ -542,6 +580,7 @@ export function startFileSystemSync(): void {
               activeDiagramId: diagramState.activeDiagramId,
               elementPresets,
               iconLibrary,
+              folderLayoutVersion: FOLDER_LAYOUT_VERSION,
             };
 
             // Phase 2 (Commit): Write manifest

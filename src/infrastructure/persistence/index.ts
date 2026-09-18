@@ -18,6 +18,7 @@ export {
   startFileSystemSync,
   stopFileSystemSync,
   resetBootState,
+  migrateConnectedFolderLayout,
 } from "./fileSystemBoot";
 export type { ForceSaveToFolderResult } from "./fileSystemBoot";
 export { validateDiagramFile, validateManifest } from "./validateWorkspaceFile";
