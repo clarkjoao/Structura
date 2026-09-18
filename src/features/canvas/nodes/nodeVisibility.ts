@@ -37,25 +37,52 @@ export function computeNodeVisibility(
     collapsedPanelIds,
     components,
   );
+  const focus = resolveSelectionFocus(comp, isChild, isHidden, selectedNodeIds, highlightedNodeIds);
+  return {
+    isChild,
+    zIndex,
+    isHidden,
+    isSelected: focus.isSelected,
+    isHighlighted: focus.isHighlighted,
+    dimmed: focus.dimmedBySelection || isDimmedByCoverage(comp, isViewingCoverage, coverage),
+  };
+}
+
+/**
+ * What the selection makes of one node: selected, highlighted, or dimmed
+ * because something else has the focus. A node under a selected panel, or one
+ * already hidden, is never dimmed by it.
+ *
+ * Shared by `computeNodeVisibility` and the editor's focus overlay
+ * (`nodeOverlays.ts`), so the two cannot drift.
+ */
+export function resolveSelectionFocus(
+  comp: Component,
+  isChild: boolean,
+  isHidden: boolean,
+  selectedNodeIds: Set<string>,
+  highlightedNodeIds: Set<string>,
+): { isSelected: boolean; isHighlighted: boolean; dimmedBySelection: boolean } {
   const isSelected = selectedNodeIds.has(comp.id);
   const isHighlighted = highlightedNodeIds.has(comp.id);
   const hasFocusedNodes = selectedNodeIds.size > 0 || highlightedNodeIds.size > 0;
   const isChildOfSelectedPanel =
     isChild && comp.parentId !== null && selectedNodeIds.has(comp.parentId);
-
-  const dimWhenSelectionActive =
-    hasFocusedNodes && !isSelected && !isHighlighted && !isHidden && !isChildOfSelectedPanel;
-  const dimWhenCoverage =
-    isViewingCoverage && !!coverage && !coverage.nodeFlows.get(comp.id)?.length;
-
   return {
-    isChild,
-    zIndex,
-    isHidden,
     isSelected,
     isHighlighted,
-    dimmed: dimWhenSelectionActive || dimWhenCoverage,
+    dimmedBySelection:
+      hasFocusedNodes && !isSelected && !isHighlighted && !isHidden && !isChildOfSelectedPanel,
   };
+}
+
+/** Coverage view: a node no flow walks through is dimmed. */
+export function isDimmedByCoverage(
+  comp: Component,
+  isViewingCoverage: boolean,
+  coverage: CoverageInfo | null,
+): boolean {
+  return isViewingCoverage && !!coverage && !coverage.nodeFlows.get(comp.id)?.length;
 }
 
 /**
