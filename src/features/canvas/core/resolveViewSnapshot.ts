@@ -1,4 +1,10 @@
-import type { Component, Connection, Diagram, NodeLayout } from "@/features/diagram/model";
+import type {
+  Component,
+  Connection,
+  Diagram,
+  DiagramModel,
+  NodeLayout,
+} from "@/features/diagram/model";
 import { isApiGroupComponent, isPanelComponent } from "@/features/diagram/model/component.guards";
 import { placedComponents, placedConnections } from "@/features/diagram/utils/placement";
 import { resolveCanvasSnapshot } from "@/features/diagram/utils/scene.utils";
@@ -69,7 +75,10 @@ export interface ViewSnapshot {
  * keeps the object identity its memos depend on. Any other request (a link
  * asking for the base while the author had a scene open) resolves fresh.
  */
-export function resolveViewScene(diagram: Diagram, options: ViewSnapshotOptions): ResolvedSnapshot {
+export function resolveViewScene(
+  diagram: Diagram | DiagramModel,
+  options: ViewSnapshotOptions,
+): ResolvedSnapshot {
   const sceneId = options.sceneId;
   const compareSceneId = options.compareSceneId ?? null;
   if (
@@ -220,7 +229,7 @@ export function sortForRender(
  * view.nodes.map((node) => node.component.id); // render order
  */
 export function resolveViewSnapshot(
-  diagram: Diagram,
+  diagram: Diagram | DiagramModel,
   options: ViewSnapshotOptions,
   describe: DescribeNode,
 ): ViewSnapshot {

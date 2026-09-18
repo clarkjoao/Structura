@@ -11,8 +11,7 @@ import {
 import type { CanvasInputProfile } from "../hooks/useCanvasInputProfile";
 import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 
-/** Single React Flow edge type key for editor and viewer. */
-export const DIAGRAM_EDGE_RF_TYPE = "editable" as const;
+export { DIAGRAM_EDGE_RF_TYPE } from "./edgeTypeKey";
 
 export const PRO_OPTIONS = { hideAttribution: true } as const;
 

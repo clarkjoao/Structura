@@ -1,15 +1,26 @@
 import type { CSSProperties } from "react";
-import { MarkerType, type Edge } from "@xyflow/react";
+import type { Edge, MarkerType } from "@xyflow/react";
 import type { Connection, Diagram, DiagramModel, EdgeLayout, FlowStep } from "@/features/diagram";
-import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
+import { EdgeMarker, EdgeStyle } from "@/features/diagram/enums";
+import { getEffectiveConnectionStyle } from "@/features/diagram/model/connection-defaults";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
 import {
   OPACITY_FLOW_PLAYBACK_EDGE_DIM,
   OPACITY_FLOW_PLAYBACK_IN_FLIGHT,
   OPACITY_FLOW_PLAYBACK_PARTICIPANT,
   OPACITY_TAG_FILTER_EDGE_DIM,
-} from "../../canvas.constants";
-import { DIAGRAM_EDGE_RF_TYPE } from "../../core/reactFlowBaseConfig";
+} from "../../constants/opacity";
+import { DIAGRAM_EDGE_RF_TYPE } from "../../core/edgeTypeKey";
+
+/*
+ * Leaf imports only: this module is part of the pure projection
+ * (`core/projectDiagram.ts`), so it reads the domain enums and helpers
+ * directly instead of the `@/features/diagram` barrel, and names React Flow's
+ * marker values instead of importing its runtime enum. The values are
+ * `MarkerType.Arrow` / `MarkerType.ArrowClosed` from `@xyflow/system`.
+ */
+const MARKER_ARROW = "arrow" as MarkerType.Arrow;
+const MARKER_ARROW_CLOSED = "arrowclosed" as MarkerType.ArrowClosed;
 
 /** Maps domain connections onto React Flow edges. Pure data — no geometry or React. */
 
@@ -37,9 +48,9 @@ export interface EdgeBuildParams {
 
 export function toMarkerType(
   marker: string | undefined,
-): typeof MarkerType.Arrow | typeof MarkerType.ArrowClosed | undefined {
+): MarkerType.Arrow | MarkerType.ArrowClosed | undefined {
   if (!marker || marker === EdgeMarker.None) return undefined;
-  return marker === EdgeMarker.ArrowClosed ? MarkerType.ArrowClosed : MarkerType.Arrow;
+  return marker === EdgeMarker.ArrowClosed ? MARKER_ARROW_CLOSED : MARKER_ARROW;
 }
 
 /**
