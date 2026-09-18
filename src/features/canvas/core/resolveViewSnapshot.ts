@@ -10,10 +10,10 @@ import type { NodeTypeDescriptor } from "../nodes/node-types/types";
 
 /*
  * Pure by construction: this module imports the diagram model and utils only —
- * no store, LLM, collaboration, React or React Flow. The one thing it needs
- * from the element registry, a node's descriptor, is handed in (`describe`),
- * because the registry is what reaches the store. `resolveViewSnapshot.test.ts`
- * walks the imports to keep it that way.
+ * no store, LLM, collaboration or React Flow. The one thing it needs from the
+ * element registry, a node's descriptor, is handed in (`describe`), because
+ * the registry is what reaches the store. `resolveViewSnapshot.test.ts` walks
+ * the imports to keep it that way.
  */
 
 /** What the view needs to know of a node's type: whether it nests, and its default z. */
