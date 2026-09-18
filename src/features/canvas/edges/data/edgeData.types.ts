@@ -15,11 +15,10 @@ export type EdgeStyleData = {
   labelPosition?: number;
   connectionStyle?: ConnectionStyle;
   /**
-   * Author / visualization waypoints stamped by the read projection.
-   * When defined, EditableEdge draws these and never reads the store — `[]` when
-   * the diagram has no entry for the edge, so a reader never picks up waypoints
-   * from whatever diagram is active in their own workspace.
-   * Omitted on the editor path so live store edits stay the single source of truth.
+   * The edge's resting waypoints, stamped by the projection from
+   * `diagram.edgeLayouts` on both surfaces (`[]` when the diagram has none).
+   * EditableEdge draws these, or the local draft of a gesture in progress —
+   * never the store, which it only writes to when a gesture ends.
    */
   layoutPoints?: EdgeControlPoint[];
   /**

@@ -4,7 +4,6 @@ import { useReactFlow } from "@xyflow/react";
 import {
   useActiveDiagramId,
   useDiagramActions,
-  useEdgeControlPoints,
   generateId,
   type EdgeControlPoint,
 } from "@/features/diagram";
@@ -33,12 +32,16 @@ export interface UseControlPointsResult {
  * stay free-form otherwise. Add, remove, and keyboard nudge are discrete
  * history entries.
  */
-export function useControlPoints(connectionId: string): UseControlPointsResult {
+export function useControlPoints(
+  connectionId: string,
+  /** Where the points rest — the edge's `data.layoutPoints`. The store is only written. */
+  restingPoints: EdgeControlPoint[],
+): UseControlPointsResult {
   const activeDiagramId = useActiveDiagramId();
   const { screenToFlowPosition } = useReactFlow();
   const { setEdgeControlPoints, addEdgeControlPoint, removeEdgeControlPoint } = useDiagramActions();
   const { capture } = useEdgeSnapping();
-  const points = useEdgeControlPoints(connectionId);
+  const points = restingPoints;
   const pointsRef = useRef(points);
   const cleanupRef = useRef<(() => void) | null>(null);
   const [activePointId, setActivePointId] = useState<string | null>(null);

@@ -4,8 +4,8 @@ import { useReactFlow, type Position } from "@xyflow/react";
 import {
   useActiveDiagramId,
   useDiagramActions,
-  useEdgeControlPoints,
   generateId,
+  type EdgeControlPoint,
   type Point,
 } from "@/features/diagram";
 import {
@@ -56,12 +56,14 @@ export function useSegmentDrag(
   source: Point,
   target: Point,
   sourcePosition: Position | undefined,
+  /** Where the corners rest — the edge's `data.layoutPoints`. The store is only written. */
+  restingPoints: EdgeControlPoint[],
 ): UseSegmentDragResult {
   const activeDiagramId = useActiveDiagramId();
   const { screenToFlowPosition } = useReactFlow();
   const { setEdgeControlPoints } = useDiagramActions();
   const { capture } = useEdgeSnapping();
-  const points = useEdgeControlPoints(connectionId);
+  const points = restingPoints;
 
   /** The in-progress gesture's corners: what the edge draws until release. */
   const [draftCorners, setDraftCorners] = useState<Point[] | null>(null);

@@ -35,15 +35,18 @@ non-editable presets via React Flow's built-in path helpers.
 | `overlays/`                                                                                  | Non-editing overlays rendered independently: `EdgeParticle`, `EdgePayloadOverlay`, `CollabEdgeHighlight`.                                                          |
 | `data/`                                                                                      | `buildEdges.ts` (connection→edge mapper) and `edgeData.types.ts` (`EdgeStyleData` vs `EdgeOverlayData`).                                                           |
 | `connectionDerivations.ts`, `useCanvasHandleReorder.ts`, `useCanvasConnectionDerivations.ts` | Handle-slot assignment for node endpoints.                                                                                                                         |
-| `useCanvasEdges.ts`                                                                          | Maps visible connections to edges with flow/compare/coverage visuals.                                                                                              |
+| `useCanvasEdges.ts`                                                                          | Editor edges: `projectEdges` plus the editor's overlays (`edgeOverlays.ts`), behind a per-edge identity cache.                                                     |
 
 ## Data & state
 
 Control points live in the persisted per-edge layout,
 `diagram.edgeLayouts[connectionId] = { points?: EdgeControlPoint[]; pathType?; labelOffset? }`
-(see `features/diagram`). Reads go through `useEdgeControlPoints` /
-`useEdgeLabelOffset`; writes go through the `setEdgeControlPoints` /
-`add`/`remove`/`resetEdgeControlPoints` / `setEdgeLabelOffset` store actions.
+(see `features/diagram`). `EditableEdge` does not read them from the store: the
+projection (`projectEdges`) stamps each edge's resting points and label offset
+onto its `data` (`layoutPoints` / `layoutLabelOffset`), on the editor and the
+viewer alike, and a gesture in progress draws its own local draft. Writes go
+through the `setEdgeControlPoints` / `add`/`remove`/`resetEdgeControlPoints` /
+`setEdgeLabelOffset` store actions, when a gesture ends.
 
 Editing mutations record undo history (`edgeLayouts` are captured in history
 snapshots). A drag streams position updates with `{ history: false }` after

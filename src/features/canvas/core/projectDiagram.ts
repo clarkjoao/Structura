@@ -123,9 +123,10 @@ export function projectNodes(
 }
 
 /**
- * Every shown edge, in connection order. The viewer (`read`) stamps each edge
- * with its waypoints from `diagram.edgeLayouts`; the editor reads them from
- * the store (until slice 6).
+ * Every shown edge, in connection order, each stamped with its resting
+ * waypoints and label offset from `diagram.edgeLayouts` — on both surfaces, so
+ * `EditableEdge` never reads geometry from the store (slice 6). The viewer's
+ * edges are also not selectable.
  */
 export function projectEdges(
   view: ViewSnapshot,
@@ -148,8 +149,8 @@ export function projectEdges(
       coverage: ctx.coverage,
       tagFilterEdgeDimmed: false,
       // Links shared before `edgeLayouts` existed arrive without it; an empty
-      // map still stamps every edge, so none falls back to the store.
-      ...(reading ? { edgeLayouts: ctx.diagram.edgeLayouts ?? {} } : {}),
+      // map still stamps every edge.
+      edgeLayouts: ctx.diagram.edgeLayouts ?? {},
     });
     return reading ? { ...edge, selectable: false } : edge;
   });

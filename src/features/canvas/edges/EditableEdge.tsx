@@ -14,8 +14,8 @@ import {
   useActiveDiagramId,
   useConnection,
   useDiagramActions,
-  useEdgeLabelOffset,
   type ConnectionStyle,
+  type EdgeControlPoint,
   type Point,
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
@@ -27,11 +27,7 @@ import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/pro
 import { useControlPoints } from "./interaction/useControlPoints";
 import { useSegmentDrag } from "./interaction/useSegmentDrag";
 import { useEdgeLabelDrag } from "./interaction/useEdgeLabelDrag";
-import {
-  resolveCurvePoints,
-  resolveLabelOffset,
-  resolveStepCorners,
-} from "./resolveEditableEdgeGeometry";
+import { resolveLabelOffset } from "./resolveEditableEdgeGeometry";
 import { ControlPoint, GhostControlPoint } from "./components/ControlPoint";
 import { EdgeSegmentHandles } from "./components/EdgeSegmentHandles";
 import { CornerHandles, GhostCorner } from "./components/CornerHandles";
@@ -49,6 +45,9 @@ export type { EdgeData };
 const DEFAULT_STROKE = "hsl(220 20% 30%)";
 const HIGHLIGHT_STROKE = "hsl(187 72% 51%)";
 const ALIGN_STROKE = "hsl(316 80% 63%)";
+
+/** Resting points for an edge whose data carries none (a harness, a legacy caller). */
+const NO_RESTING_POINTS: EdgeControlPoint[] = [];
 
 const strokeDasharrayByStyle: Record<StrokeStyle, string | undefined> = {
   [StrokeStyle.Solid]: undefined,
@@ -95,36 +94,16 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const isCurve = edgeStyle === EdgeStyle.Editable;
   const isEditable = (isCurve || isStep) && elementsSelectable;
 
-  const {
-    points: storePoints,
-    activePointId,
-    snapGuides,
-    addPoint,
-    removePoint,
-    startPointDrag,
-    nudgePoint,
-  } = useControlPoints(connectionId);
-  const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition);
-
-  const points = useMemo(
-    () =>
-      resolveCurvePoints({
-        layoutPoints: edgeData.layoutPoints,
-        storePoints,
-      }),
-    [edgeData.layoutPoints, storePoints],
-  );
-  const stepCorners = useMemo(
-    () =>
-      resolveStepCorners({
-        layoutPoints: edgeData.layoutPoints,
-        storeCorners: segmentDrag.corners,
-        source,
-        target,
-        sourcePosition,
-      }),
-    [edgeData.layoutPoints, segmentDrag.corners, source, target, sourcePosition],
-  );
+  // Where the edge rests comes from its data — stamped by the projection from
+  // `diagram.edgeLayouts`, the same on both surfaces. A gesture in progress
+  // draws its own local draft on top; the store is only written when it ends.
+  const restingPoints = edgeData.layoutPoints ?? NO_RESTING_POINTS;
+  const { points, activePointId, snapGuides, addPoint, removePoint, startPointDrag, nudgePoint } =
+    useControlPoints(connectionId, restingPoints);
+  const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition, restingPoints);
+  // The draft while a segment or corner is dragged; otherwise the resting
+  // corners, or the default route when there are none.
+  const stepCorners = segmentDrag.corners;
 
   // Label placement polyline:
   //  - EditableStep / Editable: same knots the path traces (store or stamped).
@@ -168,12 +147,10 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     pointsRef: projectionRef,
   });
 
-  const storedLabelOffset = useEdgeLabelOffset(connectionId);
   const labelOffset = clampOffset(
     labelDrag.offset ??
       resolveLabelOffset({
         layoutLabelOffset: edgeData.layoutLabelOffset,
-        storeLabelOffset: storedLabelOffset,
         legacyLabelPosition: edgeData.labelPosition,
       }),
   );

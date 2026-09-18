@@ -2,7 +2,7 @@ import { act, render } from "@testing-library/react";
 import { useRef, type PointerEvent as ReactPointerEvent } from "react";
 import { Position, ReactFlowProvider } from "@xyflow/react";
 import { beforeEach, describe, expect, it } from "vitest";
-import { useDiagramStore, type Point } from "@/features/diagram";
+import { useDiagramStore, useEdgeControlPoints, type Point } from "@/features/diagram";
 import { useControlPoints } from "./useControlPoints";
 import { useEdgeLabelDrag } from "./useEdgeLabelDrag";
 import { useSegmentDrag } from "./useSegmentDrag";
@@ -58,7 +58,13 @@ const move = (x: number, y: number) =>
   window.dispatchEvent(new MouseEvent("pointermove", { clientX: x, clientY: y, altKey: true }));
 const release = () => window.dispatchEvent(new MouseEvent("pointerup"));
 
-/** Renders a hook inside a React Flow provider and hands back its latest result. */
+/**
+ * Renders a hook inside a React Flow provider and hands back its latest result.
+ *
+ * The gesture hooks take their resting points from the edge's data, which the
+ * projection stamps from `diagram.edgeLayouts`; reading the store's selector
+ * here stands in for that, so a write is seen at rest on the next render.
+ */
 function mount<T>(useHook: () => T) {
   const held: { current: T | null } = { current: null };
   function Harness() {
@@ -93,7 +99,7 @@ describe("dragging an edge control point", () => {
       .getState()
       .setEdgeControlPoints(diagramId, connectionId, [{ id: "p1", x: 10, y: 10 }]);
 
-    const points = mount(() => useControlPoints(connectionId));
+    const points = mount(() => useControlPoints(connectionId, useEdgeControlPoints(connectionId)));
     const writes = countWrites();
 
     act(() => points().startPointDrag("p1", pointerDownEvent(10, 10)));
@@ -111,7 +117,7 @@ describe("dragging an edge control point", () => {
       .getState()
       .setEdgeControlPoints(diagramId, connectionId, [{ id: "p1", x: 10, y: 10 }]);
 
-    const points = mount(() => useControlPoints(connectionId));
+    const points = mount(() => useControlPoints(connectionId, useEdgeControlPoints(connectionId)));
 
     act(() => points().startPointDrag("p1", pointerDownEvent(10, 10)));
     act(() => void move(120, 45));
@@ -124,7 +130,15 @@ describe("dragging an edge control point", () => {
 describe("dragging an edge segment", () => {
   it("writes the store once, with the corners the gesture ended on", () => {
     const { diagramId, connectionId } = seed();
-    const segmentDrag = mount(() => useSegmentDrag(connectionId, SOURCE, TARGET, Position.Right));
+    const segmentDrag = mount(() =>
+      useSegmentDrag(
+        connectionId,
+        SOURCE,
+        TARGET,
+        Position.Right,
+        useEdgeControlPoints(connectionId),
+      ),
+    );
     const writes = countWrites();
 
     const segment = segmentDrag().segments[0];

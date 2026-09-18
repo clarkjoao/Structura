@@ -237,21 +237,16 @@ function byId<T extends { id: string }>(items: T[]): Record<string, T> {
 }
 
 /**
- * The route and label placement `EditableEdge` will draw. The editor's comes
- * from the store's active diagram — here, the same diagram — and the reader's
- * from the stamp on the edge.
+ * The route and label placement `EditableEdge` will draw at rest. Since slice 6
+ * both surfaces draw it from the edge's data; the editor's must also be what
+ * the diagram holds (`edgeLayouts`), which `writeGeometry` checks on the way.
  */
 function writeGeometry(diagram: Diagram, edge: Edge) {
-  const data = edge.data as EdgeData;
+  const drawn = readGeometry(edge);
   const stored = diagram.edgeLayouts[edge.id];
-  return {
-    points: stored?.points ?? [],
-    labelOffset: resolveLabelOffset({
-      layoutLabelOffset: data.layoutLabelOffset,
-      storeLabelOffset: stored?.labelOffset,
-      legacyLabelPosition: data.labelPosition,
-    }),
-  };
+  expect(drawn.points).toEqual(stored?.points ?? []);
+  expect(drawn.labelOffset).toBe(stored?.labelOffset ?? (edge.data as EdgeData).labelPosition);
+  return drawn;
 }
 
 function readGeometry(edge: Edge) {
@@ -260,7 +255,6 @@ function readGeometry(edge: Edge) {
     points: data.layoutPoints,
     labelOffset: resolveLabelOffset({
       layoutLabelOffset: data.layoutLabelOffset,
-      storeLabelOffset: undefined,
       legacyLabelPosition: data.labelPosition,
     }),
   };

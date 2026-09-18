@@ -1,6 +1,13 @@
 import type { CSSProperties } from "react";
 import type { Edge, MarkerType } from "@xyflow/react";
-import type { Connection, Diagram, DiagramModel, EdgeLayout, FlowStep } from "@/features/diagram";
+import type {
+  Connection,
+  Diagram,
+  DiagramModel,
+  EdgeControlPoint,
+  EdgeLayout,
+  FlowStep,
+} from "@/features/diagram";
 import { EdgeMarker, EdgeStyle } from "@/features/diagram/enums";
 import { getEffectiveConnectionStyle } from "@/features/diagram/model/connection-defaults";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
@@ -19,6 +26,13 @@ import { DIAGRAM_EDGE_RF_TYPE } from "../../core/edgeTypeKey";
  * marker values instead of importing its runtime enum. The values are
  * `MarkerType.Arrow` / `MarkerType.ArrowClosed` from `@xyflow/system`.
  */
+/**
+ * The stamp for an edge with no waypoints. One shared array, never mutated:
+ * a fresh `[]` per build would give every such edge new `data` on every store
+ * write, and the editor's per-edge identity cache compares by reference.
+ */
+const NO_LAYOUT_POINTS: EdgeControlPoint[] = [];
+
 const MARKER_ARROW = "arrow" as MarkerType.Arrow;
 const MARKER_ARROW_CLOSED = "arrowclosed" as MarkerType.ArrowClosed;
 
@@ -39,9 +53,10 @@ export interface EdgeBuildParams {
 
   tagFilterEdgeDimmed?: boolean;
   /**
-   * When set (read projection), stamp `layoutPoints` / `layoutLabelOffset` onto every
-   * edge — neutral values for an edge with no entry — so EditableEdge draws from the
-   * diagram it was handed and never from the store's active diagram. Editor omits this.
+   * When set, stamp `layoutPoints` / `layoutLabelOffset` onto every edge — neutral
+   * values for an edge with no entry — so EditableEdge draws its resting geometry
+   * from the diagram it was handed, never from the store. Both surfaces set it
+   * (`projectEdges`); a gesture in progress draws its own local draft instead.
    */
   edgeLayouts?: Record<string, EdgeLayout>;
 }
@@ -139,7 +154,7 @@ export function buildEdge(
   // when the store has nothing for it.
   const layoutStamp = params.edgeLayouts
     ? {
-        layoutPoints: params.edgeLayouts[conn.id]?.points ?? [],
+        layoutPoints: params.edgeLayouts[conn.id]?.points ?? NO_LAYOUT_POINTS,
         layoutLabelOffset: params.edgeLayouts[conn.id]?.labelOffset ?? null,
       }
     : {};
