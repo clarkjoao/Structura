@@ -1,14 +1,14 @@
 import type { Edge, Node } from "@xyflow/react";
-import type { Connection, Diagram } from "@/features/diagram/model";
-import { buildEdge } from "../edges/data/buildEdges";
+import type { Diagram } from "@/features/diagram/model";
 import {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
 } from "../edges/connectionDerivations";
-import { EMPTY_FLOW_HIGHLIGHT } from "../flow/flowState";
-import { resolveNodeDescriptor, type NodeBuildContext } from "../nodes/node-types";
+import { resolveNodeDescriptor } from "../nodes/node-types";
 import { buildReadNodeContext, type ReadDiagramReading } from "./buildReadNodeContext";
-import { resolveViewSnapshot, type ViewNode } from "./resolveViewSnapshot";
+import { readPolicy } from "./canvasInteractionPolicy";
+import { projectDiagram } from "./projectDiagram";
+import { resolveViewSnapshot } from "./resolveViewSnapshot";
 
 export type { ReadDiagramReading };
 
@@ -30,31 +30,14 @@ function lockForReading(data: Record<string, unknown>): Record<string, unknown> 
   };
 }
 
-function buildReadNode(view: ViewNode, ctx: NodeBuildContext): Node {
-  const { component, layout } = view;
-  const descriptor = resolveNodeDescriptor(component);
-  return {
-    id: component.id,
-    type: descriptor.rfType,
-    position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
-    zIndex: view.zIndex,
-    ...(view.isChild ? { parentId: component.parentId!, extent: "parent" as const } : {}),
-    hidden: view.isHidden,
-    draggable: false,
-    selectable: false,
-    connectable: false,
-    data: lockForReading(descriptor.buildData(component, ctx)),
-    style: descriptor.buildStyle?.(component, ctx),
-  };
-}
-
 /**
  * Pure Diagram → React Flow projection for Reader hosts.
  *
  * Always uses the base scene (`activeSceneId` ignored): a shared link must not
- * hide nodes a script may walk through. Everything else about what is shown —
- * placement, nesting, stacking, hiding, order — is `resolveViewSnapshot`, the
- * same rule the editor runs, so a link draws what the author drew.
+ * hide nodes a script may walk through. Everything else — what is shown
+ * (`resolveViewSnapshot`) and how it is drawn (`projectDiagram`) — is the
+ * projection the editor runs, without the editor's overlays, so a link draws
+ * what the author drew.
  *
  * @example
  * const { nodes, edges } = projectReadDiagram(diagram, reading, { onPlayFlow });
@@ -75,36 +58,19 @@ export function projectReadDiagram(
     routePlay?.onPlayFlow,
     focusedNodeId,
   );
-  const nodes = view.nodes.map((node) => buildReadNode(node, ctx));
-
   // Handle counts and assignments come from every placed connection — hidden
   // ends included, as in the editor — so each node renders the handles its
-  // edges are assigned to; only the shown ones become edges.
-  const connectionCounts = buildConnectionCountPerNode(view.placedConnections);
-  const assignments = buildEdgeHandleAssignments(
+  // edges are assigned to.
+  const handleAssignments = buildEdgeHandleAssignments(
     view.placedConnections,
-    connectionCounts,
+    buildConnectionCountPerNode(view.placedConnections),
     view.components,
   );
-  const assignmentById = new Map(assignments.map((entry) => [entry.connId, entry]));
-  // An edge to a hidden component is dropped; one into a collapsed panel stays
-  // and React Flow hides it with its node — the editor's split exactly.
-  const edges = view.shownConnections.map((connection: Connection) => {
-    const edge = buildEdge(connection, assignmentById.get(connection.id), {
-      diagram,
-      selectedEdgeId: null,
-      isPlaying: Boolean(reading),
-      isRecording: false,
-      activeStep: null,
-      flowHighlight: reading?.highlight ?? EMPTY_FLOW_HIGHLIGHT,
-      flowBadges: reading?.badges ?? null,
-      coverage: null,
-      // Links shared before `edgeLayouts` existed arrive without it; an empty map
-      // still stamps every edge, so none falls back to the store.
-      edgeLayouts: diagram.edgeLayouts ?? {},
-    });
-    return { ...edge, selectable: false };
+  const { nodes, edges } = projectDiagram(view, ctx, readPolicy(), {
+    describe: resolveNodeDescriptor,
+    handleAssignments,
   });
-
-  return { nodes, edges };
+  // The reader's only addition: node controls that would edit are switched off
+  // (slice 7 folds this into the read policy).
+  return { nodes: nodes.map((node) => ({ ...node, data: lockForReading(node.data) })), edges };
 }
