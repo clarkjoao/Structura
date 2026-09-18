@@ -1,9 +1,10 @@
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { Component, Connection, Diagram } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import { generateViewerUrl } from "@/lib/share-url";
+import type { FileSourceState } from "@/features/viewer/hooks/useStructuraFile";
 import { ViewerPage } from "./ViewerPage";
 
 /**
@@ -15,12 +16,31 @@ import { ViewerPage } from "./ViewerPage";
  * iframe snippets `EmbedModal` hands out, so it is the name that is already
  * out in the world — and it absorbs what `/view` could do.
  *
- * The line this file holds is which sources get a layout. A diagram that
- * arrives with its positions — a share link, an embed handing one over by
- * `postMessage` — is rendered as it was authored. Re-arranging it would throw
- * away the layout the author is sharing. A diagram named by id or read off
- * disk carries no arrangement anyone chose, so ELK arranges it.
+ * The line this file holds: no source is re-arranged. A share link, an embed
+ * handing a diagram over by `postMessage`, a diagram named by id and one read
+ * off disk all render at the positions they carry. The viewer used to run ELK
+ * on the last two, which threw away the author's positions and waypoints and
+ * drew a different picture from the editor's
+ * (docs/investigation/divergencia-edicao-visualizacao.md §3.5). An author who
+ * wants an arranged diagram runs auto layout in the editor and saves it.
  */
+
+/**
+ * A file the test hands the route, or `null` for the real hook. The picker
+ * tests below need the real one: they assert what it offers without the API.
+ */
+const fileOverride: { current: FileSourceState | null } = { current: null };
+
+vi.mock("@/features/viewer/hooks/useStructuraFile", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/viewer/hooks/useStructuraFile")>();
+  return {
+    ...actual,
+    useStructuraFile: () =>
+      fileOverride.current
+        ? { state: fileOverride.current, pick: async () => {}, supported: true }
+        : actual.useStructuraFile(),
+  };
+});
 
 beforeAll(() => {
   (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = class {
@@ -87,6 +107,26 @@ function renderAt(search = "") {
   );
 }
 
+/**
+ * A diagram saved with its nodes somewhere no layout engine would put them: an
+ * arrangement that survives rendering was not re-arranged.
+ */
+function savedAt(id: string, name: string): Diagram {
+  const diagram = diagramOf(id, name);
+  return {
+    ...diagram,
+    nodeLayouts: {
+      [`${id}-a`]: { elementId: `${id}-a`, x: 37, y: 411, width: 180, height: 80 },
+      [`${id}-b`]: { elementId: `${id}-b`, x: 653, y: 29, width: 180, height: 80 },
+    },
+  };
+}
+
+const SAVED_PLACEMENTS = ["translate(37px,411px)", "translate(653px,29px)"];
+
+/** Long enough for an async layout (ELK is a dynamic import) to land if one ran. */
+const settle = () => act(() => new Promise<void>((resolve) => setTimeout(resolve, 400)));
+
 /** Node positions as React Flow wrote them to the DOM. */
 function placements(container: HTMLElement): string[] {
   return [...container.querySelectorAll<HTMLElement>(".react-flow__node")].map(
@@ -98,8 +138,12 @@ beforeEach(() => {
   window.location.hash = "";
   useDiagramStore.setState((state) => ({
     ...state,
-    diagrams: { alpha: diagramOf("alpha", "Alpha"), beta: diagramOf("beta", "Beta") },
+    diagrams: { alpha: savedAt("alpha", "Alpha"), beta: diagramOf("beta", "Beta") },
   }));
+});
+
+afterEach(() => {
+  fileOverride.current = null;
 });
 
 describe("the share link still works", () => {
@@ -174,17 +218,15 @@ describe("the sources /view used to own", () => {
   });
 
   /**
-   * Both nodes are stored at (0, 0). Two distinct transforms means a layout
-   * ran, and nothing in this test clicks anything.
+   * The editor draws a stored diagram at its saved positions; so does the
+   * viewer. Before this, ELK re-arranged it on load and the two disagreed.
    */
-  it("arranges a diagram named by id, with no user interaction", async () => {
+  it("renders a diagram named by id where it was saved, with no layout run", async () => {
     const { container } = renderAt("?diagramId=alpha");
     await screen.findByText("Alpha A");
+    await settle();
 
-    await waitFor(() => {
-      expect(placements(container)).toHaveLength(2);
-      expect(new Set(placements(container)).size).toBe(2);
-    });
+    expect(placements(container).sort()).toEqual(SAVED_PLACEMENTS);
   });
 
   it("leaves the stored diagram alone", async () => {
@@ -194,8 +236,8 @@ describe("the sources /view used to own", () => {
     await waitFor(() => {
       expect(useDiagramStore.getState().diagrams["alpha"]!.nodeLayouts["alpha-a"]).toEqual({
         elementId: "alpha-a",
-        x: 0,
-        y: 0,
+        x: 37,
+        y: 411,
         width: 180,
         height: 80,
       });
@@ -217,6 +259,16 @@ describe("the sources /view used to own", () => {
     } finally {
       delete withPicker.showOpenFilePicker;
     }
+  });
+
+  it("renders a diagram read off disk where it was saved, with no layout run", async () => {
+    fileOverride.current = { status: "ready", diagram: savedAt("disk", "Disk"), readAt: 0 };
+
+    const { container } = renderAt("?source=file&path=/tmp/arch.structura.json");
+    await screen.findByText("Disk A");
+    await settle();
+
+    expect(placements(container).sort()).toEqual(SAVED_PLACEMENTS);
   });
 
   it("says so when the browser cannot open local files", async () => {
