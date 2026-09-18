@@ -1592,6 +1592,7 @@
     "flowLabel": "Roteiro de abertura",
     "flowDescription": "Quem abrir o link chega com este roteiro já rodando.",
     "flowNone": "nenhum roteiro",
+    "baseSceneNotice": "Os dois links sempre mostram a cena base, mesmo que você esteja com outra cena aberta agora.",
     "linkLabel": "Link de visualização",
     "linkDescription": "Abre o diagrama em modo preview com opção de importar",
     "embedLabel": "Link de embed (iframe)",
@@ -1617,7 +1618,6 @@
     }
   },
   "viewPage": {
-    "arranging": "Organizando o diagrama...",
     "file": {
       "open": "Escolher o arquivo",
       "noPath": "Nenhum arquivo indicado"

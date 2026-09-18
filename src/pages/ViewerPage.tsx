@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import type { Diagram } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import { ViewerCanvas } from "@/features/viewer";
-import { layoutForVisualization } from "@/features/viewer/layoutForVisualization";
 import { useStructuraFile } from "@/features/viewer/hooks/useStructuraFile";
 import { getFlowParamFromUrl, getViewerDataFromHash } from "@/lib/share-url";
 
@@ -20,15 +19,14 @@ import { getFlowParamFromUrl, getViewerDataFromHash } from "@/lib/share-url";
  * into every shared link, and `EmbedModal` writes `/viewer` into every iframe
  * snippet it hands out.
  *
- * **Which sources get a layout, and why only those.** A diagram that arrives
- * with its positions was arranged by whoever is sharing it, and re-arranging
- * it would replace the picture they are sharing with a different one. So the
- * hash and `postMessage` paths render what they were given. A diagram named by
- * `?diagramId` or read from a file carries no arrangement anyone chose for
- * this view, so ELK arranges it — on load, with nothing to press.
+ * **No source is re-arranged.** Every way in renders the positions and edge
+ * waypoints the diagram carries — the same picture the editor draws. The
+ * `?diagramId` and file sources used to run ELK on load, which replaced the
+ * author's layout with a different one
+ * (docs/investigation/divergencia-edicao-visualizacao.md §3.5). A diagram that
+ * should read arranged is arranged in the editor, with auto layout, and saved.
  *
- * Nothing here writes. `layoutForVisualization` returns a copy, so opening a
- * link never rewrites the positions the user saved.
+ * Nothing here writes: the route only reads the store and the file.
  *
  * `#share=` is not handled here at all: `useSharedDiagram` reads it in `App`,
  * above the router, so it works on any path.
@@ -84,45 +82,10 @@ function namedFlowIn(diagram: Diagram, flowId: string | null): string | null {
   return flowId && diagram.snapshot.flows?.[flowId] ? flowId : null;
 }
 
-/**
- * The diagram, arranged, or null while that is still running.
- *
- * The layout is async — ELK is a dynamic import and a big graph takes a moment
- * — so the arranged diagram arrives after the first render. Nothing waits on a
- * click: this runs on mount, and again whenever the source changes, which is
- * what makes a file save show up rearranged.
- */
-function useVisualizationLayout(source: Diagram | null): Diagram | null {
-  const [diagram, setDiagram] = useState<Diagram | null>(null);
-
-  useEffect(() => {
-    if (!source) {
-      setDiagram(null);
-      return;
-    }
-    let current = true;
-    void layoutForVisualization(source)
-      .then((arranged) => {
-        if (current) setDiagram(arranged);
-      })
-      .catch(() => {
-        // A layout that throws must not leave a blank page: the diagram is
-        // still readable at the positions it arrived with.
-        if (current) setDiagram(source);
-      });
-    return () => {
-      current = false;
-    };
-  }, [source]);
-
-  return diagram;
-}
-
 /** `?source=file&path=` — a `.structura.json` the reader picks, watched for changes. */
 function FileSource({ path }: { path: string | null }) {
   const { t } = useTranslation();
   const { state, pick, supported } = useStructuraFile();
-  const diagram = useVisualizationLayout(state.status === "ready" ? state.diagram : null);
 
   if (!supported) return <ViewerError message={t("viewPage.errors.noFilePicker")} />;
   if (state.status === "error") return <ViewerError message={t("viewPage.errors.invalidFile")} />;
@@ -143,19 +106,17 @@ function FileSource({ path }: { path: string | null }) {
     );
   }
 
-  if (!diagram) return <ViewerLoading label={t("viewPage.arranging")} />;
-  return <ViewerCanvas diagram={diagram} showOpenInStructuraButton={false} />;
+  if (state.status === "reading") return <ViewerLoading label={t("embedPage.loading")} />;
+  return <ViewerCanvas diagram={state.diagram} showOpenInStructuraButton={false} />;
 }
 
-/** `?diagramId=` — one of the reader's own diagrams, arranged for reading. */
+/** `?diagramId=` — one of the reader's own diagrams, at its saved positions. */
 function StoreSource({ diagramId }: { diagramId: string }) {
   const { t } = useTranslation();
   const stored = useDiagramStore((state) => state.diagrams[diagramId]);
-  const diagram = useVisualizationLayout(stored ?? null);
 
   if (!stored) return <ViewerError message={t("viewPage.errors.notFound", { id: diagramId })} />;
-  if (!diagram) return <ViewerLoading label={t("viewPage.arranging")} />;
-  return <ViewerCanvas diagram={diagram} showOpenInStructuraButton={false} />;
+  return <ViewerCanvas diagram={stored} showOpenInStructuraButton={false} />;
 }
 
 type HandedOverState =

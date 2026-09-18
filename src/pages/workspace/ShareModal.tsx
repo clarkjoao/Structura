@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, AlertTriangle, Check, Copy } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, Copy, Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { Diagram } from "@/features/diagram";
@@ -80,6 +80,22 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4">
+          {/*
+            Always shown, before anything is copied. A link opens on the base
+            scene whatever the author has open (the #share= payload drops
+            `activeSceneId`, and the viewer resolves the base regardless), so an
+            author in a scene would otherwise send a picture they are not
+            looking at.
+          */}
+          <p
+            role="note"
+            data-testid="share-base-scene-notice"
+            className="flex items-start gap-2 rounded-md border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground"
+          >
+            <Info size={14} className="mt-px shrink-0" aria-hidden />
+            <span>{t("share.baseSceneNotice")}</span>
+          </p>
+
           {flows.length > 0 && (
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium" htmlFor="share-flow">

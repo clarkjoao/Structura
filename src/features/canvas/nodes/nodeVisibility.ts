@@ -1,8 +1,8 @@
 import type { Component } from "@/features/diagram";
-import { isPanelComponent } from "@/features/diagram";
 import type { NodeTypeDescriptor } from "./node-types/types";
 import type { CoverageInfo } from "../flow/flowState";
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM } from "../canvas.constants";
+import { resolveNodeView } from "../core/resolveViewSnapshot";
 
 export interface NodeVisibilityState {
   isChild: boolean;
@@ -13,29 +13,9 @@ export interface NodeVisibilityState {
   dimmed: boolean;
 }
 
-export function buildCollapsedPanelIds(components: Record<string, Component>): Set<string> {
-  return new Set(
-    Object.values(components)
-      .filter((c) => isPanelComponent(c) && c.collapsed)
-      .map((c) => c.id),
-  );
-}
-
-function hasCollapsedOrHiddenAncestor(
-  comp: Component,
-  components: Record<string, Component>,
-  collapsedPanelIds: Set<string>,
-): boolean {
-  let currentParentId = comp.parentId;
-  while (currentParentId !== null && currentParentId !== undefined) {
-    const parent = components[currentParentId];
-    if (!parent) break;
-    if (collapsedPanelIds.has(currentParentId)) return true;
-    if (parent.hidden === true) return true;
-    currentParentId = parent.parentId;
-  }
-  return false;
-}
+// Nesting, stacking and hiding are the view's rule, shared with the viewer;
+// this module adds what only the editor has on top: the selection.
+export { buildCollapsedPanelIds } from "../core/resolveViewSnapshot";
 
 export function computeNodeVisibility(
   comp: Component,
@@ -49,31 +29,60 @@ export function computeNodeVisibility(
   coverage: CoverageInfo | null,
   components: Record<string, Component>,
 ): NodeVisibilityState {
-  const isChild = descriptor.canHaveParent && comp.parentId !== null && panelIds.has(comp.parentId);
-  const zIndex =
-    layout?.zIndex ??
-    (typeof descriptor.zIndex === "function" ? descriptor.zIndex(comp) : descriptor.zIndex);
-  const isHidden =
-    comp.hidden === true || hasCollapsedOrHiddenAncestor(comp, components, collapsedPanelIds);
+  const { isChild, zIndex, isHidden } = resolveNodeView(
+    comp,
+    descriptor,
+    layout,
+    panelIds,
+    collapsedPanelIds,
+    components,
+  );
+  const focus = resolveSelectionFocus(comp, isChild, isHidden, selectedNodeIds, highlightedNodeIds);
+  return {
+    isChild,
+    zIndex,
+    isHidden,
+    isSelected: focus.isSelected,
+    isHighlighted: focus.isHighlighted,
+    dimmed: focus.dimmedBySelection || isDimmedByCoverage(comp, isViewingCoverage, coverage),
+  };
+}
+
+/**
+ * What the selection makes of one node: selected, highlighted, or dimmed
+ * because something else has the focus. A node under a selected panel, or one
+ * already hidden, is never dimmed by it.
+ *
+ * Shared by `computeNodeVisibility` and the editor's focus overlay
+ * (`nodeOverlays.ts`), so the two cannot drift.
+ */
+export function resolveSelectionFocus(
+  comp: Component,
+  isChild: boolean,
+  isHidden: boolean,
+  selectedNodeIds: Set<string>,
+  highlightedNodeIds: Set<string>,
+): { isSelected: boolean; isHighlighted: boolean; dimmedBySelection: boolean } {
   const isSelected = selectedNodeIds.has(comp.id);
   const isHighlighted = highlightedNodeIds.has(comp.id);
   const hasFocusedNodes = selectedNodeIds.size > 0 || highlightedNodeIds.size > 0;
   const isChildOfSelectedPanel =
     isChild && comp.parentId !== null && selectedNodeIds.has(comp.parentId);
-
-  const dimWhenSelectionActive =
-    hasFocusedNodes && !isSelected && !isHighlighted && !isHidden && !isChildOfSelectedPanel;
-  const dimWhenCoverage =
-    isViewingCoverage && !!coverage && !coverage.nodeFlows.get(comp.id)?.length;
-
   return {
-    isChild,
-    zIndex,
-    isHidden,
     isSelected,
     isHighlighted,
-    dimmed: dimWhenSelectionActive || dimWhenCoverage,
+    dimmedBySelection:
+      hasFocusedNodes && !isSelected && !isHighlighted && !isHidden && !isChildOfSelectedPanel,
   };
+}
+
+/** Coverage view: a node no flow walks through is dimmed. */
+export function isDimmedByCoverage(
+  comp: Component,
+  isViewingCoverage: boolean,
+  coverage: CoverageInfo | null,
+): boolean {
+  return isViewingCoverage && !!coverage && !coverage.nodeFlows.get(comp.id)?.length;
 }
 
 /**

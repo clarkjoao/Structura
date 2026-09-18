@@ -9,6 +9,8 @@ import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useCanvasNodes } from "../nodes/useCanvasNodes";
+import { resolveNodeDescriptor } from "../nodes/node-types";
+import { EMPTY_VIEW_SNAPSHOT, resolveViewSnapshot } from "../core/resolveViewSnapshot";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
 
@@ -113,6 +115,40 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
 
   const effectiveFlowHighlight = flowState.flowHighlight;
 
+  /*
+   * What the canvas shows — the rule the viewer uses too (slice 5 of
+   * docs/investigation/divergencia-edicao-visualizacao.md). Keyed on exactly
+   * the resolved-snapshot references the store selectors already hand out
+   * (`getCachedCanvasSnapshot`), so it is rebuilt when components, layouts or
+   * connections change and never on an unrelated store write.
+   */
+  const resolvedComponentsRef = resolved?.components;
+  const resolvedNodeLayoutsRef = resolved?.nodeLayouts;
+  const resolvedConnectionsRef = resolved?.connections;
+  const view = useMemo(
+    () =>
+      diagram
+        ? resolveViewSnapshot(
+            diagram,
+            {
+              sceneId: diagram.activeSceneId ?? null,
+              compareSceneId: diagram.compareSceneId ?? null,
+            },
+            resolveNodeDescriptor,
+          )
+        : EMPTY_VIEW_SNAPSHOT,
+    // `diagram` is read for its scene ids and cache key only; the snapshot
+    // references below are what the view depends on.
+    [
+      diagram?.id,
+      diagram?.activeSceneId,
+      diagram?.compareSceneId,
+      resolvedComponentsRef,
+      resolvedNodeLayoutsRef,
+      resolvedConnectionsRef,
+    ],
+  );
+
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({
       visibleComponents,
@@ -141,7 +177,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     sceneBadgeByComponentId: compareState.sceneBadgeByComponentId,
     compareVisualByComponentId: compareState.compareVisualByComponentId,
     isCompareMode: compareState.isCompareMode,
-    visibleComponents,
+    view,
     panelIds,
     selectedNodeId,
     selectedNodeIds,
@@ -229,7 +265,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
 
   const edges = useCanvasEdges({
     diagram,
-    visibleConnections,
+    view,
     edgeHandleAssignments,
     selectedEdgeId,
     isPlaying: flowState.isPlayingEffective,

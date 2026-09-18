@@ -125,6 +125,7 @@ export { buildChildrenIndex, getDescendantIdsFromIndex } from "./children-index"
 
 // ─── Snapshot cache ──────────────────────────────────────────────────────────
 export { getCachedCanvasSnapshot } from "./snapshot-cache";
+export { placedComponents, placedConnections } from "./placement";
 export type { ResolvedSnapshot } from "./snapshot-cache";
 
 // ─── Component lock ──────────────────────────────────────────────────────────

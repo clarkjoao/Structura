@@ -1,5 +1,9 @@
 import type { Component, Connection, Diagram, Flow } from "@/features/diagram/model";
-import { buildChildrenIndex, endpointCallersByRoute } from "@/features/diagram/utils";
+import {
+  buildChildrenIndex,
+  endpointCallersByRoute,
+  placedComponents,
+} from "@/features/diagram/utils";
 import type { NodeBuildContext } from "../nodes/node-types";
 import {
   buildConnectionCountPerNode,
@@ -91,7 +95,9 @@ export function buildReadNodeContext(
     resolvedComponents: components,
     resolvedNodeLayouts: layouts,
     ...readIdleChrome(focusedNodeId),
-    panelIds: buildPanelIds(Object.values(components)),
+    // From placed components only, as the editor builds it: a child of a panel
+    // that has no layout is not nested inside a node that does not exist.
+    panelIds: buildPanelIds(placedComponents(components, layouts)),
     ...readHandleState(connections, components),
     childrenIndex: buildChildrenIndex(components),
     isPlaying: Boolean(reading),

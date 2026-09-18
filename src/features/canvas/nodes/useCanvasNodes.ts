@@ -12,23 +12,21 @@ import type {
 } from "@/features/diagram";
 import {
   endpointCallersByRoute,
-  isPanelComponent,
-  isApiGroupComponent,
-  isEndpointType,
   isComponentAddedInActiveScene,
   isAncestorLocked,
   buildChildrenIndex,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
+import { writePolicy } from "../core/canvasInteractionPolicy";
+import { projectNodes } from "../core/projectDiagram";
+import type { ViewSnapshot } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
-import {
-  buildCollapsedPanelIds,
-  computeNodeVisibility,
-  selectionDimOpacity,
-} from "./nodeVisibility";
+import { applyEditorNodeOverlays } from "./nodeOverlays";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
-import { OPACITY_TAG_FILTER_DIM, OPACITY_TAG_FILTER_TRANSITION } from "../canvas.constants";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
+
+/** The projection's policy on the editor path; interactivity is React Flow's, per canvas. */
+const EDITOR_PROJECTION = writePolicy(true);
 import { useStableSetByContent } from "../hooks/useStableSetByContent";
 
 export type DiagramSceneState = {
@@ -44,7 +42,8 @@ interface UseCanvasNodesParams {
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;
   sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
-  visibleComponents: Component[];
+  /** What is shown, in render order — `resolveViewSnapshot` for the diagram's own scenes. */
+  view: ViewSnapshot;
   panelIds: Set<string>;
   selectedNodeId: string | null;
   selectedNodeIds: Set<string>;
@@ -129,16 +128,6 @@ function isSameBuiltFlowNode(a: Node, b: Node): boolean {
   );
 }
 
-function compareDiffOutlineClass(visual: CompareElementVisual | undefined): string {
-  if (!visual) return "";
-  const hasA = visual.badgeA !== undefined;
-  const hasB = visual.badgeB !== undefined;
-  if (hasA && hasB) return "node-diff-modified";
-  if (hasA && !hasB) return "node-diff-removed";
-  if (!hasA && hasB) return "node-diff-added";
-  return "";
-}
-
 function shallowEqualIgnoringFunctions(
   a: Record<string, unknown> | undefined,
   b: Record<string, unknown> | undefined,
@@ -172,7 +161,7 @@ export function useCanvasNodes({
   resolvedComponents,
   resolvedNodeLayouts,
   sceneBadgeByComponentId,
-  visibleComponents,
+  view,
   panelIds,
   selectedNodeId,
   selectedNodeIds,
@@ -336,15 +325,6 @@ export function useCanvasNodes({
       ...nodeCtxPlayback,
     };
 
-    const collapsedPanelIds = buildCollapsedPanelIds(dataCtx.resolvedComponents);
-
-    const lockedNodeIds = new Set<string>();
-    for (const comp of Object.values(dataCtx.resolvedComponents)) {
-      if (comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents)) {
-        lockedNodeIds.add(comp.id);
-      }
-    }
-
     const compareVisual = dataCtx.compareVisualByComponentId;
     const isCmp = dataCtx.isCompareMode ?? false;
     /**
@@ -358,8 +338,9 @@ export function useCanvasNodes({
      * a new position — and saved it.
      */
     const isReading = ctx.isPlaying;
+    const flowModeActive = ctx.isPlaying || ctx.isRecording;
 
-    const visibleIds = new Set(visibleComponents.map((c) => c.id));
+    const visibleIds = new Set(view.nodes.map((viewNode) => viewNode.component.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
       if (!visibleIds.has(cachedId)) prevNodeDataRef.current.delete(cachedId);
     }
@@ -367,136 +348,64 @@ export function useCanvasNodes({
       if (!visibleIds.has(cachedId)) prevRfNodesByIdRef.current.delete(cachedId);
     }
 
-    function getParentDepth(comp: Component, comps: Record<string, Component>): number {
-      let depth = 0;
-      let currentId = comp.parentId;
-      const visited = new Set<string>();
-      while (currentId && comps[currentId] && !visited.has(currentId)) {
-        visited.add(currentId);
-        depth++;
-        currentId = comps[currentId].parentId;
-      }
-      return depth;
-    }
+    // The base every surface draws (placement, nesting, z-index, order,
+    // visibility, data and size) — the viewer runs the same projection. What
+    // follows only the editor has, as overlays that cannot move anything.
+    const projected = projectNodes(view, ctx, EDITOR_PROJECTION, resolveNodeDescriptor);
 
-    const componentsById = dataCtx.resolvedComponents;
-    const depthCache = new Map<string, number>();
-    function getDepth(comp: Component): number {
-      if (depthCache.has(comp.id)) return depthCache.get(comp.id)!;
-      const d = getParentDepth(comp, componentsById);
-      depthCache.set(comp.id, d);
-      return d;
-    }
-
-    const nextNodes = [...visibleComponents]
-      .sort((a, b) => {
-        const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
-        const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
-        if (aIsGroup && !bIsGroup) return -1;
-        if (!aIsGroup && bIsGroup) return 1;
-        const depthA = getDepth(a);
-        const depthB = getDepth(b);
-        if (depthA !== depthB) return depthA - depthB;
-        return 0;
-      })
-      .map((comp): Node => {
-        const d = resolveNodeDescriptor(comp);
-        const layout = dataCtx.resolvedNodeLayouts[comp.id];
-        const vis = computeNodeVisibility(
-          comp,
-          d,
-          layout,
-          dataCtx.panelIds,
-          dataCtx.selectedNodeIds,
-          hIds,
-          collapsedPanelIds,
-          viewingCov,
-          nodeCtxPlayback.coverage,
-          dataCtx.resolvedComponents,
-        );
-        const selectionDim = selectionDimOpacity(vis, ctx.isPlaying || ctx.isRecording);
-        const style: Record<string, unknown> = {
-          ...d.buildStyle?.(comp, ctx),
-          ...(selectionDim !== undefined ? { opacity: selectionDim } : {}),
-        };
-        const cmpVis = compareVisual?.[comp.id];
-        if (cmpVis !== undefined) {
-          const baseOp = typeof style.opacity === "number" ? style.opacity : 1;
-          style.opacity = baseOp * cmpVis.opacity;
-        }
-        const tagFilteredHidden = isNodeHiddenByTagFilter(comp);
-        if (tagFilteredHidden) {
-          style.opacity = OPACITY_TAG_FILTER_DIM;
-          style.pointerEvents = "none";
-          style.transition = OPACITY_TAG_FILTER_TRANSITION;
-        }
-        const lockedInGroup =
-          isEndpointType(comp.type) &&
-          comp.parentId != null &&
-          isApiGroupComponent(dataCtx.resolvedComponents[comp.parentId]);
-        const sceneLocksBase = sceneActive && !isComponentAddedInActiveScene(diagram, comp.id);
-        const isLockedBySelfOrAncestor = lockedNodeIds.has(comp.id);
-        const diffOutline = isCmp && cmpVis !== undefined ? compareDiffOutlineClass(cmpVis) : "";
-        const nodeClassNames = [
-          isCmp ? "cursor-default" : "",
-          isLockedBySelfOrAncestor ? "cursor-not-allowed" : "",
-          pendingNodeIds.has(comp.id) ? "node-pending" : "",
-          diffOutline,
-        ]
-          .filter(Boolean)
-          .join(" ");
-
-        const newData = d.buildData(comp, ctx) as Record<string, unknown>;
-        const newStyle = style as CSSProperties;
-        const newPosX = layout?.x ?? 0;
-        const newPosY = layout?.y ?? 0;
-        const cached = prevNodeDataRef.current.get(comp.id);
-        const stableData =
-          cached && shallowEqualIgnoringFunctions(cached.data, newData) ? cached.data : newData;
-        const stableStyle =
-          cached && shallowEqualStyle(cached.style, newStyle) ? cached.style : newStyle;
-        const stablePosition =
-          cached && cached.position.x === newPosX && cached.position.y === newPosY
-            ? cached.position
-            : { x: newPosX, y: newPosY };
-        prevNodeDataRef.current.set(comp.id, {
-          data: stableData,
-          style: stableStyle,
-          position: stablePosition,
-        });
-
-        const built: Node = {
-          id: comp.id,
-          type: d.rfType,
-          position: stablePosition,
-          zIndex: vis.zIndex,
-          connectable: d.connectable && !isCmp && !isReading && !tagFilteredHidden,
-          selected: vis.isSelected,
-          draggable:
-            !isLockedBySelfOrAncestor &&
-            (d.draggable ?? !lockedInGroup) &&
-            !sceneLocksBase &&
-            !isCmp &&
-            !isReading &&
-            !tagFilteredHidden,
-          selectable:
-            (d.selectable ?? !lockedInGroup) && !isCmp && !isReading && !tagFilteredHidden,
-          focusable: (d.focusable ?? !lockedInGroup) && !isCmp && !isReading && !tagFilteredHidden,
-          className: nodeClassNames || undefined,
-          ...(d.dragHandle ? { dragHandle: d.dragHandle } : {}),
-          ...(vis.isChild ? { parentId: comp.parentId!, extent: "parent" as const } : {}),
-          hidden: vis.isHidden,
-          style: stableStyle,
-          data: stableData,
-        };
-
-        const prevRf = prevRfNodesByIdRef.current.get(comp.id);
-        const nodeToUse = prevRf && isSameBuiltFlowNode(prevRf, built) ? prevRf : built;
-        if (nodeToUse === built) {
-          prevRfNodesByIdRef.current.set(comp.id, built);
-        }
-        return nodeToUse;
+    const nextNodes = projected.map((base, index): Node => {
+      const viewNode = view.nodes[index]!;
+      const comp = viewNode.component;
+      const node = applyEditorNodeOverlays(base, viewNode, {
+        selectedNodeIds: dataCtx.selectedNodeIds,
+        highlightedNodeIds: hIds,
+        flowModeActive,
+        isViewingCoverage: viewingCov,
+        coverage: nodeCtxPlayback.coverage,
+        isCompareMode: isCmp,
+        compareVisual: compareVisual?.[comp.id],
+        hiddenByTag: isNodeHiddenByTagFilter(comp),
+        isReading,
+        locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
+        lockedByScene: sceneActive && !isComponentAddedInActiveScene(diagram, comp.id),
+        pending: pendingNodeIds.has(comp.id),
       });
+
+      // Identity cache, unchanged: React Flow keeps the previous object unless
+      // what it draws actually moved.
+      const newData = node.data as Record<string, unknown>;
+      const newStyle = node.style as CSSProperties;
+      const newPosX = node.position.x;
+      const newPosY = node.position.y;
+      const cached = prevNodeDataRef.current.get(comp.id);
+      const stableData =
+        cached && shallowEqualIgnoringFunctions(cached.data, newData) ? cached.data : newData;
+      const stableStyle =
+        cached && shallowEqualStyle(cached.style, newStyle) ? cached.style : newStyle;
+      const stablePosition =
+        cached && cached.position.x === newPosX && cached.position.y === newPosY
+          ? cached.position
+          : { x: newPosX, y: newPosY };
+      prevNodeDataRef.current.set(comp.id, {
+        data: stableData,
+        style: stableStyle,
+        position: stablePosition,
+      });
+
+      const built: Node = {
+        ...node,
+        position: stablePosition,
+        style: stableStyle,
+        data: stableData,
+      };
+
+      const prevRf = prevRfNodesByIdRef.current.get(comp.id);
+      const nodeToUse = prevRf && isSameBuiltFlowNode(prevRf, built) ? prevRf : built;
+      if (nodeToUse === built) {
+        prevRfNodesByIdRef.current.set(comp.id, built);
+      }
+      return nodeToUse;
+    });
 
     const prevArr = prevNodesArrayRef.current;
     if (
@@ -512,12 +421,5 @@ export function useCanvasNodes({
     }
     prevNodesArrayRef.current = nextNodes;
     return nextNodes;
-  }, [
-    diagramSceneState,
-    dataCtx,
-    nodeCtxPlayback,
-    visibleComponents,
-    isNodeHiddenByTagFilter,
-    pendingNodeIds,
-  ]);
+  }, [diagramSceneState, dataCtx, nodeCtxPlayback, view, isNodeHiddenByTagFilter, pendingNodeIds]);
 }

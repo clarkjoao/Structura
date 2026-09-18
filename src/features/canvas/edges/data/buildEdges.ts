@@ -1,15 +1,40 @@
 import type { CSSProperties } from "react";
-import { MarkerType, type Edge } from "@xyflow/react";
-import type { Connection, Diagram, DiagramModel, EdgeLayout, FlowStep } from "@/features/diagram";
-import { getEffectiveConnectionStyle, EdgeMarker, EdgeStyle } from "@/features/diagram";
+import type { Edge, MarkerType } from "@xyflow/react";
+import type {
+  Connection,
+  Diagram,
+  DiagramModel,
+  EdgeControlPoint,
+  EdgeLayout,
+  FlowStep,
+} from "@/features/diagram";
+import { EdgeMarker, EdgeStyle } from "@/features/diagram/enums";
+import { getEffectiveConnectionStyle } from "@/features/diagram/model/connection-defaults";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
 import {
   OPACITY_FLOW_PLAYBACK_EDGE_DIM,
   OPACITY_FLOW_PLAYBACK_IN_FLIGHT,
   OPACITY_FLOW_PLAYBACK_PARTICIPANT,
   OPACITY_TAG_FILTER_EDGE_DIM,
-} from "../../canvas.constants";
-import { DIAGRAM_EDGE_RF_TYPE } from "../../core/reactFlowBaseConfig";
+} from "../../constants/opacity";
+import { DIAGRAM_EDGE_RF_TYPE } from "../../core/edgeTypeKey";
+
+/*
+ * Leaf imports only: this module is part of the pure projection
+ * (`core/projectDiagram.ts`), so it reads the domain enums and helpers
+ * directly instead of the `@/features/diagram` barrel, and names React Flow's
+ * marker values instead of importing its runtime enum. The values are
+ * `MarkerType.Arrow` / `MarkerType.ArrowClosed` from `@xyflow/system`.
+ */
+/**
+ * The stamp for an edge with no waypoints. One shared array, never mutated:
+ * a fresh `[]` per build would give every such edge new `data` on every store
+ * write, and the editor's per-edge identity cache compares by reference.
+ */
+const NO_LAYOUT_POINTS: EdgeControlPoint[] = [];
+
+const MARKER_ARROW = "arrow" as MarkerType.Arrow;
+const MARKER_ARROW_CLOSED = "arrowclosed" as MarkerType.ArrowClosed;
 
 /** Maps domain connections onto React Flow edges. Pure data — no geometry or React. */
 
@@ -28,17 +53,19 @@ export interface EdgeBuildParams {
 
   tagFilterEdgeDimmed?: boolean;
   /**
-   * When set (read projection), stamp `layoutPoints` / `layoutLabelOffset` onto edge data
-   * so EditableEdge can draw without an active store diagram. Editor omits this.
+   * When set, stamp `layoutPoints` / `layoutLabelOffset` onto every edge — neutral
+   * values for an edge with no entry — so EditableEdge draws its resting geometry
+   * from the diagram it was handed, never from the store. Both surfaces set it
+   * (`projectEdges`); a gesture in progress draws its own local draft instead.
    */
   edgeLayouts?: Record<string, EdgeLayout>;
 }
 
 export function toMarkerType(
   marker: string | undefined,
-): typeof MarkerType.Arrow | typeof MarkerType.ArrowClosed | undefined {
+): MarkerType.Arrow | MarkerType.ArrowClosed | undefined {
   if (!marker || marker === EdgeMarker.None) return undefined;
-  return marker === EdgeMarker.ArrowClosed ? MarkerType.ArrowClosed : MarkerType.Arrow;
+  return marker === EdgeMarker.ArrowClosed ? MARKER_ARROW_CLOSED : MARKER_ARROW;
 }
 
 /**
@@ -122,7 +149,15 @@ export function buildEdge(
       }
     : stylePayload;
 
-  const edgeLayout = params.edgeLayouts?.[conn.id];
+  // Read projection: stamp every edge. An edge with no entry gets `[]` / `null`,
+  // which resolve to the same default route and label position the editor draws
+  // when the store has nothing for it.
+  const layoutStamp = params.edgeLayouts
+    ? {
+        layoutPoints: params.edgeLayouts[conn.id]?.points ?? NO_LAYOUT_POINTS,
+        layoutLabelOffset: params.edgeLayouts[conn.id]?.labelOffset ?? null,
+      }
+    : {};
 
   return {
     id: conn.id,
@@ -148,10 +183,7 @@ export function buildEdge(
       strokeWidth: effective.strokeWidth,
       labelPosition: conn.style?.labelPosition,
       connectionStyle: conn.style,
-      ...(edgeLayout?.points !== undefined ? { layoutPoints: edgeLayout.points } : {}),
-      ...(edgeLayout?.labelOffset !== undefined
-        ? { layoutLabelOffset: edgeLayout.labelOffset }
-        : {}),
+      ...layoutStamp,
     },
     selected: params.selectedEdgeId === conn.id,
     animated: isActiveConn || (effective.animated && !params.isPlaying),
@@ -163,13 +195,6 @@ export function buildEdge(
   };
 }
 
-export function filterVisibleConnections(
-  connections: Connection[],
-  components: Record<string, { hidden?: boolean }>,
-): Connection[] {
-  return connections.filter((conn) => {
-    const src = components[conn.sourceId];
-    const tgt = components[conn.targetId];
-    return !src?.hidden && !tgt?.hidden;
-  });
-}
+// Lives with the rest of what the canvas shows, in the pure view module; kept
+// exported here for the editor's existing imports.
+export { filterVisibleConnections } from "../../core/resolveViewSnapshot";

@@ -12,10 +12,9 @@ import {
   EdgeStyle,
   StrokeStyle,
   useActiveDiagramId,
-  useConnection,
   useDiagramActions,
-  useEdgeLabelOffset,
   type ConnectionStyle,
+  type EdgeControlPoint,
   type Point,
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
@@ -27,11 +26,7 @@ import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/pro
 import { useControlPoints } from "./interaction/useControlPoints";
 import { useSegmentDrag } from "./interaction/useSegmentDrag";
 import { useEdgeLabelDrag } from "./interaction/useEdgeLabelDrag";
-import {
-  resolveCurvePoints,
-  resolveLabelOffset,
-  resolveStepCorners,
-} from "./resolveEditableEdgeGeometry";
+import { resolveLabelOffset } from "./resolveEditableEdgeGeometry";
 import { ControlPoint, GhostControlPoint } from "./components/ControlPoint";
 import { EdgeSegmentHandles } from "./components/EdgeSegmentHandles";
 import { CornerHandles, GhostCorner } from "./components/CornerHandles";
@@ -49,6 +44,9 @@ export type { EdgeData };
 const DEFAULT_STROKE = "hsl(220 20% 30%)";
 const HIGHLIGHT_STROKE = "hsl(187 72% 51%)";
 const ALIGN_STROKE = "hsl(316 80% 63%)";
+
+/** Resting points for an edge whose data carries none (a harness, a legacy caller). */
+const NO_RESTING_POINTS: EdgeControlPoint[] = [];
 
 const strokeDasharrayByStyle: Record<StrokeStyle, string | undefined> = {
   [StrokeStyle.Solid]: undefined,
@@ -79,7 +77,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
   const { resetEdgeControlPoints, removeConnection, updateConnection } = useDiagramActions();
-  const connection = useConnection(connectionId);
+  // The connection's style, as the projection read it: the toolbar edits it,
+  // and nothing on the read path needs the store's record.
+  const connectionStyle = edgeData.connectionStyle;
   const { highlightedConnectionId } = useHandleHighlight();
 
   const source = useMemo<Point>(() => ({ x: sourceX, y: sourceY }), [sourceX, sourceY]);
@@ -95,36 +95,16 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const isCurve = edgeStyle === EdgeStyle.Editable;
   const isEditable = (isCurve || isStep) && elementsSelectable;
 
-  const {
-    points: storePoints,
-    activePointId,
-    snapGuides,
-    addPoint,
-    removePoint,
-    startPointDrag,
-    nudgePoint,
-  } = useControlPoints(connectionId);
-  const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition);
-
-  const points = useMemo(
-    () =>
-      resolveCurvePoints({
-        layoutPoints: edgeData.layoutPoints,
-        storePoints,
-      }),
-    [edgeData.layoutPoints, storePoints],
-  );
-  const stepCorners = useMemo(
-    () =>
-      resolveStepCorners({
-        layoutPoints: edgeData.layoutPoints,
-        storeCorners: segmentDrag.corners,
-        source,
-        target,
-        sourcePosition,
-      }),
-    [edgeData.layoutPoints, segmentDrag.corners, source, target, sourcePosition],
-  );
+  // Where the edge rests comes from its data — stamped by the projection from
+  // `diagram.edgeLayouts`, the same on both surfaces. A gesture in progress
+  // draws its own local draft on top; the store is only written when it ends.
+  const restingPoints = edgeData.layoutPoints ?? NO_RESTING_POINTS;
+  const { points, activePointId, snapGuides, addPoint, removePoint, startPointDrag, nudgePoint } =
+    useControlPoints(connectionId, restingPoints);
+  const segmentDrag = useSegmentDrag(connectionId, source, target, sourcePosition, restingPoints);
+  // The draft while a segment or corner is dragged; otherwise the resting
+  // corners, or the default route when there are none.
+  const stepCorners = segmentDrag.corners;
 
   // Label placement polyline:
   //  - EditableStep / Editable: same knots the path traces (store or stamped).
@@ -154,7 +134,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     projectionRef.current = projectionPoints;
   }, [projectionPoints]);
 
-  const canDragLabel = Boolean(edgeData.label && activeDiagramId);
+  // A read-only surface must not move labels: the drag writes to the store's
+  // active diagram, which on the viewer is the reader's own, not the one shown.
+  const canDragLabel = Boolean(edgeData.label && activeDiagramId && elementsSelectable);
   // Declared here because `labelOffset` -- and so every anchor derived from it
   // -- has to follow the pointer during a drag. The gesture keeps its offset
   // local and writes the store once, on release.
@@ -166,12 +148,10 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     pointsRef: projectionRef,
   });
 
-  const storedLabelOffset = useEdgeLabelOffset(connectionId);
   const labelOffset = clampOffset(
     labelDrag.offset ??
       resolveLabelOffset({
         layoutLabelOffset: edgeData.layoutLabelOffset,
-        storeLabelOffset: storedLabelOffset,
         legacyLabelPosition: edgeData.labelPosition,
       }),
   );
@@ -367,12 +347,12 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           onReset={() => activeDiagramId && resetEdgeControlPoints(activeDiagramId, connectionId)}
           onDelete={() => removeConnection(connectionId)}
           edgeStyle={edgeStyle}
-          edgeColor={connection?.style?.color}
-          markerStart={connection?.style?.markerStart}
-          markerEnd={connection?.style?.markerEnd}
+          edgeColor={connectionStyle?.color}
+          markerStart={connectionStyle?.markerStart}
+          markerEnd={connectionStyle?.markerEnd}
           onStyleChange={(style) => {
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), edgeStyle: style } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), edgeStyle: style } as ConnectionStyle,
             });
             // Reset any existing control points so the new style starts clean.
             if (
@@ -384,17 +364,17 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           }}
           onColorChange={(color) =>
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), color } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), color } as ConnectionStyle,
             })
           }
           onMarkerStartChange={(cap) =>
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), markerStart: cap } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), markerStart: cap } as ConnectionStyle,
             })
           }
           onMarkerEndChange={(cap) =>
             updateConnection(connectionId, {
-              style: { ...(connection?.style ?? {}), markerEnd: cap } as ConnectionStyle,
+              style: { ...(connectionStyle ?? {}), markerEnd: cap } as ConnectionStyle,
             })
           }
         />

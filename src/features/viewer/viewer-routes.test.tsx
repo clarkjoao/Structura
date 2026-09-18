@@ -81,7 +81,9 @@ function diagramWith(components: Component[], flows: Flow[]): Diagram {
       flows: Object.fromEntries(flows.map((f) => [f.id, f])),
       iconLibrary: {},
     },
-    nodeLayouts: {},
+    nodeLayouts: Object.fromEntries(
+      components.map((c, i) => [c.id, { elementId: c.id, x: i * 300, y: 0 }]),
+    ),
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
     scenes: {},
