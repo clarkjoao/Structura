@@ -91,7 +91,9 @@ export function buildReadNodeContext(
     resolvedComponents: components,
     resolvedNodeLayouts: layouts,
     ...readIdleChrome(focusedNodeId),
-    panelIds: buildPanelIds(Object.values(components)),
+    // From placed components only, as the editor builds it: a child of a panel
+    // that has no layout is not nested inside a node that does not exist.
+    panelIds: buildPanelIds(Object.values(components).filter((c) => layouts[c.id] !== undefined)),
     ...readHandleState(connections, components),
     childrenIndex: buildChildrenIndex(components),
     isPlaying: Boolean(reading),

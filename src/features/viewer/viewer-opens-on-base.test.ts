@@ -61,7 +61,10 @@ function diagramInScene(): Diagram {
       flows: { f1: flow("f1", "Checkout"), f2: flow("f2", "Refund") },
       iconLibrary: {},
     },
-    nodeLayouts: {},
+    nodeLayouts: {
+      c1: { elementId: "c1", x: 0, y: 0 },
+      c2: { elementId: "c2", x: 300, y: 0 },
+    },
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
     scenes: { sc1: scene("sc1", "Sem ledger", ["c2"]) },

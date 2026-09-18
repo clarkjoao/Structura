@@ -13,6 +13,11 @@ function connection(id: string, sourceId: string, targetId: string): Connection 
   return { id, sourceId, targetId, label: "" };
 }
 
+/** Every fixture component is placed: the canvas shows only what has a layout. */
+function placed(ids: string[]): Diagram["nodeLayouts"] {
+  return Object.fromEntries(ids.map((id, i) => [id, { elementId: id, x: i * 300, y: 0 }]));
+}
+
 function diagramOf(
   components: Component[],
   connections: Connection[] = [],
@@ -30,7 +35,7 @@ function diagramOf(
       flows: {},
       iconLibrary: {},
     },
-    nodeLayouts: {},
+    nodeLayouts: placed(components.map((c) => c.id)),
     edgeLayouts,
     viewport: { x: 0, y: 0, zoom: 1 },
   };
