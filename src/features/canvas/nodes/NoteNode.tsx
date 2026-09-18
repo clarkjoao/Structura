@@ -55,6 +55,8 @@ export type NoteNodeData = {
   onInlineEditingChange?: (editing: boolean) => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  /** Read surfaces: the note is read, not written — a click focuses it. */
+  controlsDisabled?: boolean;
   sceneBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
@@ -300,7 +302,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
         <div
           className="flex-1 min-h-0 overflow-hidden"
           onClick={(e) => {
-            if (isEditing) return;
+            if (isEditing || d.controlsDisabled) return;
             e.stopPropagation();
             handleStartEdit();
           }}

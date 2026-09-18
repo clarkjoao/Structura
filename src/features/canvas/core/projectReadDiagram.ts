@@ -8,7 +8,7 @@ import { resolveNodeDescriptor } from "../nodes/node-types";
 import { buildReadNodeContext, type ReadDiagramReading } from "./buildReadNodeContext";
 import { readPolicy } from "./canvasInteractionPolicy";
 import { projectDiagram } from "./projectDiagram";
-import { resolveViewSnapshot } from "./resolveViewSnapshot";
+import { resolveViewSnapshot, type ViewSnapshot } from "./resolveViewSnapshot";
 
 export type { ReadDiagramReading };
 
@@ -35,6 +35,21 @@ export function projectReadDiagram(
   routePlay: ReadDiagramRoutePlay | null = null,
   focusedNodeId: string | null = null,
 ): { nodes: Node[]; edges: Edge[] } {
+  const { nodes, edges } = projectReadDiagramView(diagram, reading, routePlay, focusedNodeId);
+  return { nodes, edges };
+}
+
+/**
+ * {@link projectReadDiagram}, handing back the view it projected as well:
+ * `view.nodes[i]` is what `nodes[i]` was drawn from, for a host that lays its
+ * own focus on top (see `withReaderFocus`).
+ */
+export function projectReadDiagramView(
+  diagram: Diagram,
+  reading: ReadDiagramReading | null = null,
+  routePlay: ReadDiagramRoutePlay | null = null,
+  focusedNodeId: string | null = null,
+): { nodes: Node[]; edges: Edge[]; view: ViewSnapshot } {
   const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
   const ctx = buildReadNodeContext(
     diagram,
@@ -54,8 +69,9 @@ export function projectReadDiagram(
     view.components,
   );
   // The read policy locks the nodes — interaction flags and editing controls.
-  return projectDiagram(view, ctx, readPolicy(), {
+  const { nodes, edges } = projectDiagram(view, ctx, readPolicy(), {
     describe: resolveNodeDescriptor,
     handleAssignments,
   });
+  return { nodes, edges, view };
 }

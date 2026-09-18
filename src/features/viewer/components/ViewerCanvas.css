@@ -38,3 +38,31 @@
 .react-flow__node .flow-play-control {
   pointer-events: auto;
 }
+
+/*
+ * A reader can click every node (it takes the focus) and every edge (it
+ * highlights its ends), so both say so. React Flow only gives the pointer to
+ * nodes and edges that are selectable, and nothing in a shared diagram is.
+ */
+.viewer-canvas .react-flow__node,
+.viewer-canvas .react-flow__edge {
+  cursor: pointer;
+}
+
+/*
+ * A panel's interior is canvas background, as in the editor (PanelNode,
+ * decision #1): a click there drops the focus instead of taking it, so it
+ * shows the pane's cursor. The header and the border focus the panel.
+ */
+.viewer-canvas .react-flow__node .panel-body {
+  cursor: grab;
+}
+
+/*
+ * The focused node is drawn `selected`, and a selected panel, note, swimlane
+ * or process node shows its resize handles in the editor. Nothing is resized
+ * in a shared diagram.
+ */
+.viewer-canvas .react-flow__resize-control {
+  display: none;
+}

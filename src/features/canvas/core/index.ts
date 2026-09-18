@@ -32,3 +32,4 @@ export type { ReadDiagramReading } from "./buildReadNodeContext";
 export { projectReadDiagram } from "./projectReadDiagram";
 export type { ReadDiagramRoutePlay } from "./projectReadDiagram";
 export { useReadDiagramFlow } from "./useReadDiagramFlow";
+export { withReaderFocus } from "./readerFocus";

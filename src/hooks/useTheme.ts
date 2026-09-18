@@ -4,14 +4,13 @@ type Theme = "light" | "dark";
 
 const STORAGE_KEY = "structura_theme";
 
-function getSystemTheme(): Theme {
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
+/** Light unless the user chose otherwise — the OS preference is not followed on its own. */
+const DEFAULT_THEME: Theme = "light";
 
 function getStoredTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
-  return getSystemTheme();
+  return DEFAULT_THEME;
 }
 
 function applyTheme(theme: Theme) {

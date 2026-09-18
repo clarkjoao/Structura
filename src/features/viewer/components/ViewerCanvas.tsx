@@ -9,6 +9,7 @@ import {
   readPolicy,
   useDiagramFlow,
   useReadDiagramFlow,
+  withReaderFocus,
   type ReadDiagramRoutePlay,
 } from "@/features/canvas/core";
 import { HandleHighlightProvider } from "@/features/canvas/contexts/HandleHighlightContext";
@@ -31,6 +32,7 @@ import "./ViewerCanvas.css";
 
 /** Stable identity, so the reading memo is not rebuilt on every render. */
 const EMPTY_HISTORY: string[] = [];
+const NO_NODE_IDS: Set<string> = new Set();
 
 /** The rail's own width, which the canvas beside it has to leave room for. */
 const RAIL_W = 392;
@@ -111,12 +113,8 @@ const ViewerCanvasContent = ({
    * Click-to-focus on the shared canvas: expand a node's description, or
    * highlight an edge and its ends — same HandleHighlight path as the editor.
    */
-  const {
-    highlightedConnectionId,
-    highlightedNodeIds,
-    setHighlight,
-    clearHighlight,
-  } = useCanvasHighlight();
+  const { highlightedConnectionId, highlightedNodeIds, setHighlight, clearHighlight } =
+    useCanvasHighlight();
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
   const handleNodeClick = useCallback(
@@ -144,6 +142,20 @@ const ViewerCanvasContent = ({
     clearHighlight();
   }, [clearHighlight]);
 
+  /**
+   * A panel's interior is canvas background (PanelNode, decision #1): it keeps
+   * its click from React Flow, so a click there never reaches the pane. Seen
+   * on the way down, it drops the focus as a click on the pane does.
+   */
+  const handleClickCapture = useCallback(
+    (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest(".panel-body")) {
+        handlePaneClick();
+      }
+    },
+    [handlePaneClick],
+  );
+
   const handleHighlightValue = useMemo(
     () => ({
       highlightedConnectionId,
@@ -162,8 +174,29 @@ const ViewerCanvasContent = ({
     startFlow(initialFlowId);
   }, [initialFlowId, startFlow]);
 
-  const { nodes, edges } = useReadDiagramFlow(diagram, reading, routePlay, focusedNodeId);
+  const {
+    nodes: projectedNodes,
+    edges,
+    view,
+  } = useReadDiagramFlow(diagram, reading, routePlay, focusedNodeId);
   const reactFlowInstance = useDiagramFlow();
+  const focusedNodeIds = useMemo(
+    () => (focusedNodeId ? new Set([focusedNodeId]) : NO_NODE_IDS),
+    [focusedNodeId],
+  );
+  /** A focused node, or a highlighted edge's ends, keep the light; the rest dims, as in the editor. */
+  const nodes = useMemo(
+    () =>
+      withReaderFocus(
+        projectedNodes,
+        view,
+        focusedNodeIds,
+        highlightedNodeIds,
+        Boolean(readingFlow),
+        (id) => reactFlowInstance.getInternalNode(id)?.measured,
+      ),
+    [projectedNodes, view, focusedNodeIds, highlightedNodeIds, readingFlow, reactFlowInstance],
+  );
 
   /**
    * The canvas follows the reading. Without this a reader was told about a
@@ -239,6 +272,8 @@ const ViewerCanvasContent = ({
         never fits, and neither the reading nor the fit button can move it.
       */}
       <div
+        className="viewer-canvas"
+        onClickCapture={handleClickCapture}
         style={{
           position: "relative",
           width: "100%",
