@@ -17,19 +17,6 @@ export interface ReadDiagramRoutePlay {
   onPlayFlow: (flowId: string) => void;
 }
 
-function lockForReading(data: Record<string, unknown>): Record<string, unknown> {
-  return {
-    ...data,
-    controlsDisabled: true,
-    onDrillDown: undefined,
-    onEmbed: undefined,
-    onReorderHandle: undefined,
-    onAddEndpoint: undefined,
-    onOpenInCanvas: undefined,
-    onInlineEditingChange: undefined,
-  };
-}
-
 /**
  * Pure Diagram → React Flow projection for Reader hosts.
  *
@@ -66,11 +53,9 @@ export function projectReadDiagram(
     buildConnectionCountPerNode(view.placedConnections),
     view.components,
   );
-  const { nodes, edges } = projectDiagram(view, ctx, readPolicy(), {
+  // The read policy locks the nodes — interaction flags and editing controls.
+  return projectDiagram(view, ctx, readPolicy(), {
     describe: resolveNodeDescriptor,
     handleAssignments,
   });
-  // The reader's only addition: node controls that would edit are switched off
-  // (slice 7 folds this into the read policy).
-  return { nodes: nodes.map((node) => ({ ...node, data: lockForReading(node.data) })), edges };
 }

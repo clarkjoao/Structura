@@ -57,6 +57,23 @@ export interface ProjectionDeps {
 }
 
 /**
+ * What a reader's node data cannot do: every control that would edit the
+ * diagram is off (`controlsDisabled`), and the callbacks that open, edit or
+ * reorder are gone. Part of the read policy, like the interaction flags —
+ * a constant of the `read` branch, not a step the viewer runs afterwards.
+ * Playing a flow (`onPlayFlow`, the `.flow-play-control` buttons) stays.
+ */
+const READ_ONLY_DATA = {
+  controlsDisabled: true,
+  onDrillDown: undefined,
+  onEmbed: undefined,
+  onReorderHandle: undefined,
+  onAddEndpoint: undefined,
+  onOpenInCanvas: undefined,
+  onInlineEditingChange: undefined,
+} as const;
+
+/**
  * An endpoint inside an API group is laid out by its group; the author moves
  * the group, not the endpoint. A structural rule of the editor's base, not a
  * mode — which is why it is here and not an overlay.
@@ -90,6 +107,7 @@ function projectNode(
   if (policy.kind === "read") {
     return {
       ...common,
+      data: { ...common.data, ...READ_ONLY_DATA },
       draggable: false,
       selectable: false,
       connectable: false,
