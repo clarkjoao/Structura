@@ -41,12 +41,15 @@ export function resolveCurvePoints(params: {
 
 /**
  * Label offset: stamp → store → legacy Connection.style.labelPosition.
+ * A `null` stamp means the read projection had no offset for the edge: skip the
+ * store (it belongs to another diagram) and use the legacy position.
  */
 export function resolveLabelOffset(params: {
-  layoutLabelOffset: number | undefined;
+  layoutLabelOffset: number | null | undefined;
   storeLabelOffset: number | undefined;
   legacyLabelPosition: number | undefined;
 }): number | undefined {
+  if (params.layoutLabelOffset === null) return params.legacyLabelPosition;
   if (params.layoutLabelOffset !== undefined) return params.layoutLabelOffset;
   if (params.storeLabelOffset !== undefined) return params.storeLabelOffset;
   return params.legacyLabelPosition;

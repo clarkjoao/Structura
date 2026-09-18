@@ -16,12 +16,18 @@ export type EdgeStyleData = {
   connectionStyle?: ConnectionStyle;
   /**
    * Author / visualization waypoints stamped by the read projection.
-   * When defined, EditableEdge prefers these over the store (viewer has no active diagram).
+   * When defined, EditableEdge draws these and never reads the store — `[]` when
+   * the diagram has no entry for the edge, so a reader never picks up waypoints
+   * from whatever diagram is active in their own workspace.
    * Omitted on the editor path so live store edits stay the single source of truth.
    */
   layoutPoints?: EdgeControlPoint[];
-  /** Label offset from `diagram.edgeLayouts`, same stamp contract as `layoutPoints`. */
-  layoutLabelOffset?: number;
+  /**
+   * Label offset from `diagram.edgeLayouts`, same stamp contract as `layoutPoints`.
+   * `null` means stamped with no offset: fall back to the legacy label position,
+   * not to the store.
+   */
+  layoutLabelOffset?: number | null;
 };
 
 /**

@@ -28,8 +28,9 @@ export interface EdgeBuildParams {
 
   tagFilterEdgeDimmed?: boolean;
   /**
-   * When set (read projection), stamp `layoutPoints` / `layoutLabelOffset` onto edge data
-   * so EditableEdge can draw without an active store diagram. Editor omits this.
+   * When set (read projection), stamp `layoutPoints` / `layoutLabelOffset` onto every
+   * edge — neutral values for an edge with no entry — so EditableEdge draws from the
+   * diagram it was handed and never from the store's active diagram. Editor omits this.
    */
   edgeLayouts?: Record<string, EdgeLayout>;
 }
@@ -122,7 +123,15 @@ export function buildEdge(
       }
     : stylePayload;
 
-  const edgeLayout = params.edgeLayouts?.[conn.id];
+  // Read projection: stamp every edge. An edge with no entry gets `[]` / `null`,
+  // which resolve to the same default route and label position the editor draws
+  // when the store has nothing for it.
+  const layoutStamp = params.edgeLayouts
+    ? {
+        layoutPoints: params.edgeLayouts[conn.id]?.points ?? [],
+        layoutLabelOffset: params.edgeLayouts[conn.id]?.labelOffset ?? null,
+      }
+    : {};
 
   return {
     id: conn.id,
@@ -148,10 +157,7 @@ export function buildEdge(
       strokeWidth: effective.strokeWidth,
       labelPosition: conn.style?.labelPosition,
       connectionStyle: conn.style,
-      ...(edgeLayout?.points !== undefined ? { layoutPoints: edgeLayout.points } : {}),
-      ...(edgeLayout?.labelOffset !== undefined
-        ? { layoutLabelOffset: edgeLayout.labelOffset }
-        : {}),
+      ...layoutStamp,
     },
     selected: params.selectedEdgeId === conn.id,
     animated: isActiveConn || (effective.animated && !params.isPlaying),

@@ -80,7 +80,9 @@ describe("projectReadDiagram", () => {
     expect(data.layoutLabelOffset).toBe(0.35);
   });
 
-  it("omits layout stamps when the connection has no edgeLayouts entry", () => {
+  it("stamps neutral values when the connection has no edgeLayouts entry", () => {
+    // An unstamped edge fell back to the store's active diagram — the reader's
+    // own workspace, not the shared one.
     const diagram = diagramOf(
       [
         component({ id: "a", name: "A", type: "system" }),
@@ -90,7 +92,21 @@ describe("projectReadDiagram", () => {
     );
     const { edges } = projectReadDiagram(diagram);
     const data = edges[0]?.data as EdgeData;
-    expect(data.layoutPoints).toBeUndefined();
-    expect(data.layoutLabelOffset).toBeUndefined();
+    expect(data.layoutPoints).toEqual([]);
+    expect(data.layoutLabelOffset).toBeNull();
+  });
+
+  it("stamps every edge even when the payload has no edgeLayouts at all", () => {
+    const diagram = diagramOf(
+      [
+        component({ id: "a", name: "A", type: "system" }),
+        component({ id: "b", name: "B", type: "system" }),
+      ],
+      [connection("e1", "a", "b")],
+    );
+    const legacy = { ...diagram, edgeLayouts: undefined } as unknown as Diagram;
+    const data = projectReadDiagram(legacy).edges[0]?.data as EdgeData;
+    expect(data.layoutPoints).toEqual([]);
+    expect(data.layoutLabelOffset).toBeNull();
   });
 });

@@ -154,7 +154,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     projectionRef.current = projectionPoints;
   }, [projectionPoints]);
 
-  const canDragLabel = Boolean(edgeData.label && activeDiagramId);
+  // A read-only surface must not move labels: the drag writes to the store's
+  // active diagram, which on the viewer is the reader's own, not the one shown.
+  const canDragLabel = Boolean(edgeData.label && activeDiagramId && elementsSelectable);
   // Declared here because `labelOffset` -- and so every anchor derived from it
   // -- has to follow the pointer during a drag. The gesture keeps its offset
   // local and writes the store once, on release.

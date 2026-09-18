@@ -92,6 +92,23 @@ describe("resolveEditableEdgeGeometry", () => {
     ).toBe(0.8);
   });
 
+  it("a null stamp skips the store and uses the legacy label position", () => {
+    expect(
+      resolveLabelOffset({
+        layoutLabelOffset: null,
+        storeLabelOffset: 0.5,
+        legacyLabelPosition: 0.8,
+      }),
+    ).toBe(0.8);
+    expect(
+      resolveLabelOffset({
+        layoutLabelOffset: null,
+        storeLabelOffset: 0.5,
+        legacyLabelPosition: undefined,
+      }),
+    ).toBeUndefined();
+  });
+
   it("builds the step path from stamped corners when selection is off", () => {
     const corners = resolveStepCorners({
       layoutPoints: [

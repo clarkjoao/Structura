@@ -123,7 +123,9 @@ export function projectReadDiagram(
       flowHighlight: reading?.highlight ?? EMPTY_FLOW_HIGHLIGHT,
       flowBadges: reading?.badges ?? null,
       coverage: null,
-      edgeLayouts: diagram.edgeLayouts,
+      // Links shared before `edgeLayouts` existed arrive without it; an empty map
+      // still stamps every edge, so none falls back to the store.
+      edgeLayouts: diagram.edgeLayouts ?? {},
     });
     return { ...edge, selectable: false };
   });
