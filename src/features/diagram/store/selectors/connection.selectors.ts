@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useDiagramStore } from "../diagram.store";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
+import { placedComponents, placedConnections } from "../../utils/placement";
 
 export const useConnectionIds = () =>
   useDiagramStore(
@@ -39,10 +40,10 @@ export const useVisibleComponents = () => {
     const d = s.diagrams[s.activeDiagramId];
     return getCachedCanvasSnapshot(d).nodeLayouts;
   });
+  // The placement rule the viewer's `resolveViewSnapshot` uses too.
   return useMemo(() => {
     if (!components || !nodeLayouts) return [];
-    const visibleIds = new Set(Object.keys(nodeLayouts));
-    return Object.values(components).filter((c) => visibleIds.has(c.id));
+    return placedComponents(components, nodeLayouts);
   }, [components, nodeLayouts]);
 };
 
@@ -59,10 +60,7 @@ export const useVisibleConnections = () => {
   });
   return useMemo(() => {
     if (!connections || !nodeLayouts) return [];
-    const visibleIds = new Set(Object.keys(nodeLayouts));
-    return Object.values(connections).filter(
-      (conn) => visibleIds.has(conn.sourceId) && visibleIds.has(conn.targetId),
-    );
+    return placedConnections(connections, nodeLayouts);
   }, [connections, nodeLayouts]);
 };
 

@@ -12,7 +12,6 @@ import type {
 } from "@/features/diagram";
 import {
   endpointCallersByRoute,
-  isPanelComponent,
   isApiGroupComponent,
   isEndpointType,
   isComponentAddedInActiveScene,
@@ -20,6 +19,7 @@ import {
   buildChildrenIndex,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
+import { sortForRender } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
 import {
   buildCollapsedPanelIds,
@@ -367,39 +367,10 @@ export function useCanvasNodes({
       if (!visibleIds.has(cachedId)) prevRfNodesByIdRef.current.delete(cachedId);
     }
 
-    function getParentDepth(comp: Component, comps: Record<string, Component>): number {
-      let depth = 0;
-      let currentId = comp.parentId;
-      const visited = new Set<string>();
-      while (currentId && comps[currentId] && !visited.has(currentId)) {
-        visited.add(currentId);
-        depth++;
-        currentId = comps[currentId].parentId;
-      }
-      return depth;
-    }
-
-    const componentsById = dataCtx.resolvedComponents;
-    const depthCache = new Map<string, number>();
-    function getDepth(comp: Component): number {
-      if (depthCache.has(comp.id)) return depthCache.get(comp.id)!;
-      const d = getParentDepth(comp, componentsById);
-      depthCache.set(comp.id, d);
-      return d;
-    }
-
-    const nextNodes = [...visibleComponents]
-      .sort((a, b) => {
-        const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
-        const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
-        if (aIsGroup && !bIsGroup) return -1;
-        if (!aIsGroup && bIsGroup) return 1;
-        const depthA = getDepth(a);
-        const depthB = getDepth(b);
-        if (depthA !== depthB) return depthA - depthB;
-        return 0;
-      })
-      .map((comp): Node => {
+    // Render order is the view's rule, shared with the viewer: React Flow
+    // stacks equal-z nodes in array order, so both must hand it the same one.
+    const nextNodes = sortForRender(visibleComponents, dataCtx.resolvedComponents).map(
+      (comp): Node => {
         const d = resolveNodeDescriptor(comp);
         const layout = dataCtx.resolvedNodeLayouts[comp.id];
         const vis = computeNodeVisibility(
@@ -496,7 +467,8 @@ export function useCanvasNodes({
           prevRfNodesByIdRef.current.set(comp.id, built);
         }
         return nodeToUse;
-      });
+      },
+    );
 
     const prevArr = prevNodesArrayRef.current;
     if (
