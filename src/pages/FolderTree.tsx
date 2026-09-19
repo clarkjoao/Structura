@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -8,11 +8,7 @@ import {
   Plus,
   Home,
   Search,
-  FileText,
-  Clock,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
-import { enUS, ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,11 +21,10 @@ import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import type { Folder as FolderType, Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
-import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
+import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
 import { useTranslation } from "react-i18next";
 
 const ADD_AT_ROOT = "__add_at_root__";
-const RECENT_PREVIEW_LIMIT = 4;
 
 type FolderRecord = Record<string, FolderType>;
 
@@ -50,13 +45,6 @@ function countAllDescendantDiagrams(
   return count;
 }
 
-export interface FolderTreeRecentItem {
-  id: string;
-  openedAt: number;
-  name: string;
-  folderId: string | null;
-}
-
 interface FolderTreeProps {
   folders: FolderRecord;
   diagrams: Diagram[];
@@ -67,12 +55,6 @@ interface FolderTreeProps {
   onDragLeave: () => void;
   onDropOnFolder: (folderId: string | null, diagramId: string) => void;
   triggerAddFolderAtRoot?: number;
-  recentDiagrams?: FolderTreeRecentItem[];
-  recentCount?: number;
-  recentViewActive?: boolean;
-  locale?: string;
-  onSelectRecentView?: () => void;
-  onOpenRecent?: (diagramId: string) => void;
 }
 
 export function FolderTree({
@@ -85,12 +67,6 @@ export function FolderTree({
   onDragLeave,
   onDropOnFolder,
   triggerAddFolderAtRoot = 0,
-  recentDiagrams = [],
-  recentCount = 0,
-  recentViewActive = false,
-  locale,
-  onSelectRecentView,
-  onOpenRecent,
 }: FolderTreeProps) {
   const { t } = useTranslation();
   const { addFolder, renameFolder, deleteFolder } = useDiagramActions();
@@ -212,22 +188,11 @@ export function FolderTree({
       </div>
 
       <div className="flex-1 overflow-y-auto px-1.5 py-1 space-y-0.5">
-        {onSelectRecentView && (
-          <RecentSection
-            recentDiagrams={recentDiagrams}
-            recentCount={recentCount}
-            recentViewActive={recentViewActive}
-            folders={folders}
-            locale={locale ?? "en"}
-            onSelectRecentView={onSelectRecentView}
-            onOpenRecent={onOpenRecent ?? noop}
-          />
-        )}
         <div
           className={cn(
             "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
             selectedFolderId === null
-              ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+              ? "bg-accent text-accent-foreground font-semibold"
               : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
             dropTargetFolderId === null && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
           )}
@@ -236,7 +201,7 @@ export function FolderTree({
           onDragLeave={onDragLeave}
           onDrop={(e) => handleDrop(e, null)}
         >
-          <Home className="h-4 w-4 shrink-0 opacity-60" />
+          <Home className="h-4 w-4 shrink-0 opacity-60" strokeWidth={1.75} />
           <span className="flex-1 truncate">{t("folderTree.allDiagrams")}</span>
           <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">
             {totalDiagrams}
@@ -286,93 +251,12 @@ export function FolderTree({
         ))}
 
         {filteredRootFolders.length === 0 && searchQuery && (
-          <p className="px-3 py-4 text-xs text-sidebar-foreground/40 text-center">
+          <p className="px-3 py-4 text-xs text-muted-foreground text-center">
             {t("folderTree.noFoldersFound")}
           </p>
         )}
       </div>
-    </div>
-  );
-}
-
-function noop() {
-  // Placeholder open handler when caller doesn't provide one — keeps Recently
-  // items unclickable rather than throwing.
-}
-
-function RecentSection({
-  recentDiagrams,
-  recentCount,
-  recentViewActive,
-  folders,
-  locale,
-  onSelectRecentView,
-  onOpenRecent,
-}: {
-  recentDiagrams: FolderTreeRecentItem[];
-  recentCount: number;
-  recentViewActive: boolean;
-  folders: FolderRecord;
-  locale: string;
-  onSelectRecentView: () => void;
-  onOpenRecent: (diagramId: string) => void;
-}) {
-  const { t } = useTranslation();
-  const dateLocale = locale.startsWith("pt") ? ptBR : enUS;
-  const preview = useMemo(() => recentDiagrams.slice(0, RECENT_PREVIEW_LIMIT), [recentDiagrams]);
-
-  return (
-    <div className="mb-1">
-      <button
-        type="button"
-        onClick={onSelectRecentView}
-        className={cn(
-          "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
-          recentViewActive
-            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-        )}
-        aria-pressed={recentViewActive}
-      >
-        <Clock className="h-4 w-4 shrink-0 opacity-60" />
-        <span className="flex-1 truncate text-left">{t("folderTree.recentLabel")}</span>
-        <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">{recentCount}</span>
-      </button>
-
-      <div className="mt-0.5 ml-3 space-y-0.5">
-        {preview.length === 0 ? (
-          <p className="px-2 py-1 text-xs text-sidebar-foreground/40">
-            {t("diagramNav.emptyRecent")}
-          </p>
-        ) : (
-          preview.map((entry) => {
-            const path = buildBreadcrumbPath(folders, entry.folderId);
-            const pathLabel = path.map((crumb) => crumb.name).join(" / ");
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                onClick={() => onOpenRecent(entry.id)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-[12px] transition-colors text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                title={entry.name}
-              >
-                <FileText className="h-3 w-3 shrink-0 opacity-70" />
-                <span className="min-w-0 flex-1 truncate">{entry.name}</span>
-                {pathLabel && (
-                  <span className="hidden lg:inline shrink-0 text-[10px] text-sidebar-foreground/40 truncate max-w-[80px]">
-                    {pathLabel}
-                  </span>
-                )}
-                <span className="shrink-0 text-[10px] tabular-nums text-sidebar-foreground/40">
-                  {formatDistanceToNow(entry.openedAt, { addSuffix: true, locale: dateLocale })}
-                </span>
-              </button>
-            );
-          })
-        )}
-      </div>
-
-      <div className="h-px bg-sidebar-border mx-1 my-1.5" />
+      <ConnectedFolderCard />
     </div>
   );
 }
@@ -499,11 +383,11 @@ function FolderTreeItem({
         className={cn(
           "group flex cursor-pointer items-center gap-1 rounded-md py-[5px] pr-1 text-[13px] transition-all",
           isSelected
-            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+            ? "bg-accent text-accent-foreground font-semibold"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
           isDropTarget && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
         )}
-        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        style={{ paddingLeft: `${20 + depth * 14}px` }}
         onClick={() => !isEditing && onSelectFolder(folder.id)}
         onDoubleClick={(e) => {
           e.stopPropagation();
@@ -524,18 +408,18 @@ function FolderTreeItem({
         >
           {hasChildren ? (
             isExpanded ? (
-              <ChevronDown className="h-3 w-3 text-sidebar-foreground/50" />
+              <ChevronDown className="h-3 w-3 text-sidebar-foreground/50" strokeWidth={1.75} />
             ) : (
-              <ChevronRight className="h-3 w-3 text-sidebar-foreground/50" />
+              <ChevronRight className="h-3 w-3 text-sidebar-foreground/50" strokeWidth={1.75} />
             )
           ) : (
             <span className="w-3" />
           )}
         </button>
         {isExpanded ? (
-          <FolderOpen className="h-4 w-4 shrink-0 text-amber-500/80" />
+          <FolderOpen className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
         ) : (
-          <Folder className="h-4 w-4 shrink-0 text-amber-500/80" />
+          <Folder className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
         )}
         {isEditing ? (
           <Input

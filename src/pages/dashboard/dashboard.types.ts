@@ -3,6 +3,7 @@ import type { Component, Diagram, Level } from "@/features/diagram";
 
 export type SortKey = "name" | "domain" | "level" | "updatedAt";
 export type ViewMode = "grid" | "list";
+export type ContentFilter = "all" | "recent" | "favorites";
 
 export interface DiagramGridProps {
   diagrams: Diagram[];
@@ -10,6 +11,10 @@ export interface DiagramGridProps {
   isDiagramSelected: (id: string) => boolean;
   onDragStart: (e: DragEvent, id: string) => void;
   levelLabels: Record<string, string>;
+  showNewDiagramTile?: boolean;
+  onNewDiagram?: () => void;
+  favoriteIds?: ReadonlySet<string>;
+  onToggleFavorite?: (diagramId: string) => void;
 }
 
 export interface DiagramListProps {

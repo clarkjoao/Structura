@@ -29,6 +29,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
+import { cn } from "@/lib/utils";
+import { navIconButtonClass } from "@/components/navIconButtonClass";
 
 export interface FileSystemStatusProps {
   compact?: boolean;
@@ -218,19 +220,17 @@ export function FileSystemStatus({
   return (
     <>
       {isFileSystemSupported && status === "connected" && !pendingMerge && (
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center", compact ? "gap-0" : "gap-2")}>
           {compact ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   disabled
-                  className="flex h-8 w-8 items-center justify-center rounded-md
-                    border border-emerald-500/30 bg-emerald-500/10 text-emerald-400
-                    cursor-default"
+                  className={navIconButtonClass}
                   aria-label={t("filesystem.localFolder")}
                 >
-                  <HardDrive className="h-4 w-4" />
+                  <HardDrive className="h-4 w-4" strokeWidth={1.75} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" align="end">
@@ -272,12 +272,13 @@ export function FileSystemStatus({
                     type="button"
                     onClick={syncFromFolder}
                     disabled={syncing}
-                    className="flex h-8 w-8 items-center justify-center rounded-md
-                      text-muted-foreground hover:text-foreground hover:bg-muted/50
-                      transition-colors disabled:opacity-50"
+                    className={cn(navIconButtonClass, syncing && "opacity-50")}
                     aria-label={t("filesystem.syncPullTitle")}
                   >
-                    <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+                    <RefreshCw
+                      className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`}
+                      strokeWidth={1.75}
+                    />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end">
@@ -289,12 +290,10 @@ export function FileSystemStatus({
                   <button
                     type="button"
                     onClick={requestDisconnect}
-                    className="flex h-8 w-8 items-center justify-center rounded-md
-                      text-muted-foreground hover:text-foreground hover:bg-muted/50
-                      transition-colors"
+                    className={navIconButtonClass}
                     aria-label={t("filesystem.disconnectTitle")}
                   >
-                    <FolderX className="h-4 w-4" />
+                    <FolderX className="h-4 w-4" strokeWidth={1.75} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end">
@@ -322,12 +321,10 @@ export function FileSystemStatus({
               <button
                 type="button"
                 onClick={reconnectWithPermission}
-                className="flex h-8 w-8 items-center justify-center rounded-md
-                  border border-amber-500/40 bg-amber-500/10 text-amber-400
-                  hover:bg-amber-500/20 hover:border-amber-500/60 transition-all"
+                className={navIconButtonClass}
                 aria-label={t("filesystem.needsPermissionTitle")}
               >
-                <KeyRound className="h-4 w-4" />
+                <KeyRound className="h-4 w-4" strokeWidth={1.75} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" align="end">
@@ -359,12 +356,10 @@ export function FileSystemStatus({
               <button
                 type="button"
                 onClick={reconnectWithPermission}
-                className="flex h-8 w-8 items-center justify-center rounded-md
-                  border border-destructive/40 bg-destructive/10 text-destructive
-                  hover:bg-destructive/20 hover:border-destructive/60 transition-all"
+                className={navIconButtonClass}
                 aria-label={t("filesystem.permissionLost")}
               >
-                <AlertTriangle className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" strokeWidth={1.75} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" align="end">
@@ -389,19 +384,17 @@ export function FileSystemStatus({
         ))}
 
       {status === "disconnected" && (
-        <div className="flex items-center gap-2">
+        <div className={cn("flex items-center", compact ? "gap-0" : "gap-2")}>
           {compact ? (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   disabled
-                  className="flex h-8 w-8 items-center justify-center rounded-md
-                    border border-amber-500/30 bg-amber-500/10 text-amber-400
-                    cursor-default"
+                  className={navIconButtonClass}
                   aria-label={t("filesystem.localStorageTitle")}
                 >
-                  <Database className="h-4 w-4" />
+                  <Database className="h-4 w-4" strokeWidth={1.75} />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" align="end">
@@ -434,12 +427,11 @@ export function FileSystemStatus({
                   <button
                     type="button"
                     onClick={connect}
-                    className="flex h-8 w-8 items-center justify-center rounded-md border border-border
-                      text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
+                    className={navIconButtonClass}
                     aria-label={t("filesystem.connectFolderTitle")}
                     title={t("filesystem.connectFolderTitle")}
                   >
-                    <FolderOpen className="h-4 w-4" />
+                    <FolderOpen className="h-4 w-4" strokeWidth={1.75} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" align="end">
