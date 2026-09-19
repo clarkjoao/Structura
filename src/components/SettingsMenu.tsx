@@ -25,11 +25,11 @@ export function SettingsMenu() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 border border-border text-muted-foreground hover:text-foreground hover:bg-surface-hover"
+          className="h-8 w-8 text-muted-foreground hover:bg-accent/60 hover:text-foreground"
           aria-label={t("settings.menuLabel")}
           title={t("settings.menuLabel")}
         >
-          <SettingsIcon className="h-4 w-4" />
+          <SettingsIcon className="h-4 w-4" strokeWidth={1.75} />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={6} className="w-64 p-0">
