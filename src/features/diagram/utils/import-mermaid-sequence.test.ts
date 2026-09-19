@@ -605,4 +605,110 @@ describe("parseMermaidSequence", () => {
     expect(step.connectionId).toBe("conn1");
     expect(step.payloadDirection).toBe("response");
   });
+
+  describe("sequenceDiagram box → panel", () => {
+    it("imports box rgb() with accented title and parents the participant", () => {
+      let sequence = 0;
+      generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
+      const input = [
+        "sequenceDiagram",
+        "box rgb(190, 169, 221) Prevenção a Fraudes",
+        "  participant caronte as Caronte",
+        "end",
+      ].join("\n");
+
+      const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
+      const panel = result.newComponents.find((c) => c.type === "panel");
+      const caronte = result.newComponents.find((c) => c.name === "Caronte");
+
+      expect(panel).toMatchObject({
+        type: "panel",
+        name: "Prevenção a Fraudes",
+        panelColor: "#bea9dd",
+      });
+      expect(caronte?.parentId).toBe(panel?.id);
+      expect(result.errors).toEqual([]);
+    });
+
+    it("supports two boxes and leaves an outside participant unparented", () => {
+      let sequence = 0;
+      generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
+      const input = [
+        "sequenceDiagram",
+        "participant gateway as Gateway",
+        "box rgb(190, 169, 221) Prevenção a Fraudes",
+        "  participant caronte as Caronte",
+        "end",
+        "box rgb(100, 149, 237) Payments",
+        "  participant ledger as Ledger",
+        "end",
+      ].join("\n");
+
+      const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
+      const panels = result.newComponents.filter((c) => c.type === "panel");
+      const gateway = result.newComponents.find((c) => c.name === "Gateway");
+      const caronte = result.newComponents.find((c) => c.name === "Caronte");
+      const ledger = result.newComponents.find((c) => c.name === "Ledger");
+
+      expect(panels).toHaveLength(2);
+      expect(panels.map((p) => p.name).sort()).toEqual(["Payments", "Prevenção a Fraudes"]);
+      expect(gateway?.parentId).toBeNull();
+      expect(caronte?.parentId).toBe(panels.find((p) => p.name === "Prevenção a Fraudes")?.id);
+      expect(ledger?.parentId).toBe(panels.find((p) => p.name === "Payments")?.id);
+    });
+
+    it("keeps end scoped so a nested alt end does not close the box early", () => {
+      let sequence = 0;
+      generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
+      const input = [
+        "sequenceDiagram",
+        "box rgb(10, 20, 30) Nest",
+        "  participant a as A",
+        "  participant b as B",
+        "  alt choice",
+        "    a->>b: one",
+        "  else other",
+        "    a->>b: two",
+        "  end",
+        "  participant c as C",
+        "end",
+      ].join("\n");
+
+      const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
+      const panel = result.newComponents.find((c) => c.type === "panel");
+      const children = result.newComponents.filter((c) => c.parentId === panel?.id);
+
+      expect(panel?.name).toBe("Nest");
+      expect(children.map((c) => c.name).sort()).toEqual(["A", "B", "C"]);
+      expect(Object.keys(result.steps).length).toBeGreaterThan(0);
+    });
+
+    it("uses default panel colour for unrecognized or missing colour without failing", () => {
+      let sequence = 0;
+      generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
+      const input = [
+        "sequenceDiagram",
+        "box #ff0000 Hex Title",
+        "  participant a as Alpha",
+        "end",
+        "box transparent Ghost",
+        "  participant b as Beta",
+        "end",
+        "box NoColor",
+        "  participant c as Gamma",
+        "end",
+      ].join("\n");
+
+      const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
+      const panels = result.newComponents.filter((c) => c.type === "panel");
+
+      expect(result.errors).toEqual([]);
+      expect(panels).toHaveLength(3);
+      expect(panels.every((p) => "panelColor" in p && p.panelColor === "hsl(220 20% 20%)")).toBe(
+        true,
+      );
+      expect(panels.map((p) => p.name).sort()).toEqual(["Ghost", "Hex Title", "NoColor"]);
+      expect(result.newComponents.filter((c) => c.type === "component")).toHaveLength(3);
+    });
+  });
 });
