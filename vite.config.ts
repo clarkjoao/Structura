@@ -99,6 +99,11 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
     },
+    // Force a single React across transitive deps (@assistant-ui,
+    // @radix-ui, etc. each ship their own copy otherwise). Without this,
+    // hooks called inside a sub-dependency's component can resolve to a
+    // second React instance whose dispatcher is null, crashing the page.
+    dedupe: ["react", "react-dom"],
   },
   optimizeDeps: {
     include: ["aws-react-icons", "azure-react-icons"],
