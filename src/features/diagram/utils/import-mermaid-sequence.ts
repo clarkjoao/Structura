@@ -5,8 +5,12 @@ import type {
   FlowConditionKind,
   FlowStep,
   NodeLayout,
+  PanelComponent,
 } from "../model/diagram.types";
+import { PanelKind } from "../enums";
+import { NODE_DRAG_PADDING } from "../model/layout.constants";
 import { generateId } from "./generate-id";
+import { parseCssColorToRgb, rgbToHex } from "./labelContrast";
 
 interface ParseContext {
   lines: string[];
@@ -44,11 +48,26 @@ export interface MermaidImportPlan {
   errors: string[];
 }
 
+interface SequenceBoxSpec {
+  title: string;
+  /** `#rrggbb` when `rgb()`/`rgba()` parsed; otherwise null → catalog default. */
+  colorHex: string | null;
+  memberAliases: string[];
+}
+
+type BoxFrame = { kind: "box"; box: SequenceBoxSpec } | { kind: "block" };
+
 const GRID_COLUMNS = 3;
 const GRID_H_GAP = 200;
 const GRID_V_GAP = 120;
 const NODE_W = 160;
 const NODE_H = 60;
+/** Matches `PanelKind.Default` catalog defaultColor — keep local to avoid catalog/i18n coupling. */
+const DEFAULT_BOX_PANEL_COLOR = "hsl(220 20% 20%)";
+const BOX_RGB_RE =
+  /^(rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+(?:\s*,\s*[\d.]+%?)?\s*\))\s*(.*)$/i;
+const BOX_HEX_RE = /^(#[0-9a-fA-F]{3,8})\s*(.*)$/;
+const BOX_TRANSPARENT_RE = /^transparent\s+(.*)$/i;
 const ARROW_RE =
   /^([A-Za-z0-9_]+)\s*(-->>|--[x)]|-->|->>|-[x)]|->)\s*[+-]?\s*([A-Za-z0-9_]+)\s*[+-]?\s*:\s*(.+)$/;
 
@@ -73,6 +92,163 @@ function isSkippableLine(line: string): boolean {
   if (/^box\b/i.test(line)) return true;
   if (/^link\s+\S+\s*:/i.test(line)) return true;
   return false;
+}
+
+/** Parse `box [rgb()/rgba()|#hex|transparent] [title]` — only rgb/rgba set colour (D2). */
+export function parseSequenceBoxHeader(
+  line: string,
+): { title: string; colorHex: string | null } | null {
+  if (!/^box\b/i.test(line)) return null;
+  const rest = line.replace(/^box\b/i, "").trim();
+
+  const rgbMatch = rest.match(BOX_RGB_RE);
+  if (rgbMatch) {
+    const rgb = parseCssColorToRgb(rgbMatch[1]);
+    return {
+      title: rgbMatch[2].trim(),
+      colorHex: rgb ? rgbToHex(rgb) : null,
+    };
+  }
+
+  const hexMatch = rest.match(BOX_HEX_RE);
+  if (hexMatch) {
+    return { title: hexMatch[2].trim(), colorHex: null };
+  }
+
+  const transparentMatch = rest.match(BOX_TRANSPARENT_RE);
+  if (transparentMatch) {
+    return { title: transparentMatch[1].trim(), colorHex: null };
+  }
+
+  return { title: rest, colorHex: null };
+}
+
+/**
+ * Walk the sequence source and collect Mermaid `box` … `end` groups.
+ * Nested alt/opt/loop/par/critical/break `end`s do not close the box.
+ */
+export function collectSequenceBoxes(lines: readonly string[]): SequenceBoxSpec[] {
+  const boxes: SequenceBoxSpec[] = [];
+  const stack: BoxFrame[] = [];
+
+  for (const line of lines) {
+    if (/^box\b/i.test(line)) {
+      const header = parseSequenceBoxHeader(line) ?? { title: "", colorHex: null };
+      stack.push({
+        kind: "box",
+        box: {
+          title: header.title,
+          colorHex: header.colorHex,
+          memberAliases: [],
+        },
+      });
+      continue;
+    }
+
+    if (/^(alt|opt|loop|par|critical|break)\b/i.test(line)) {
+      stack.push({ kind: "block" });
+      continue;
+    }
+
+    if (/^end\b/i.test(line)) {
+      const frame = stack.pop();
+      if (frame?.kind === "box") boxes.push(frame.box);
+      continue;
+    }
+
+    const aliasWithName = line.match(/^(?:participant|actor)\s+([A-Za-z0-9_]+)\s+as\s+(.+)$/i);
+    const aliasOnly = line.match(/^(?:participant|actor)\s+([A-Za-z0-9_]+)$/i);
+    const alias = aliasWithName?.[1] ?? aliasOnly?.[1];
+    if (!alias) continue;
+
+    for (let i = stack.length - 1; i >= 0; i -= 1) {
+      const frame = stack[i];
+      if (frame.kind === "box") {
+        frame.box.memberAliases.push(alias);
+        break;
+      }
+    }
+  }
+
+  return boxes;
+}
+
+function wrapParticipantsInBoxes(
+  boxes: SequenceBoxSpec[],
+  participantToComponentId: Map<string, string>,
+  newComponents: Component[],
+  layouts: NodeLayout[],
+): void {
+  const layoutById = new Map(layouts.map((layout) => [layout.elementId, layout]));
+
+  for (const box of boxes) {
+    const childIds = box.memberAliases
+      .map((alias) => participantToComponentId.get(alias))
+      .filter((id): id is string => Boolean(id));
+    // Deduplicate while preserving declaration order.
+    const uniqueChildIds = [...new Set(childIds)];
+
+    const childLayouts = uniqueChildIds
+      .map((id) => layoutById.get(id))
+      .filter((layout): layout is NodeLayout => Boolean(layout));
+
+    let panelX: number;
+    let panelY: number;
+    let panelW: number;
+    let panelH: number;
+
+    if (childLayouts.length === 0) {
+      panelX = 0;
+      panelY = 0;
+      panelW = NODE_W + NODE_DRAG_PADDING * 2;
+      panelH = NODE_H + NODE_DRAG_PADDING * 3;
+    } else {
+      const minX = Math.min(...childLayouts.map((layout) => layout.x)) - NODE_DRAG_PADDING;
+      const minY = Math.min(...childLayouts.map((layout) => layout.y)) - NODE_DRAG_PADDING;
+      const maxX =
+        Math.max(...childLayouts.map((layout) => layout.x + (layout.width ?? NODE_W))) +
+        NODE_DRAG_PADDING;
+      const maxY =
+        Math.max(...childLayouts.map((layout) => layout.y + (layout.height ?? NODE_H))) +
+        NODE_DRAG_PADDING * 2;
+      panelX = minX;
+      panelY = minY;
+      panelW = maxX - minX;
+      panelH = maxY - minY;
+    }
+
+    const panelId = generateId("comp");
+    const panel: PanelComponent = {
+      id: panelId,
+      name: box.title || "Box",
+      description: "",
+      parentId: null,
+      type: "panel",
+      panelKind: PanelKind.Default,
+      panelColor: box.colorHex ?? DEFAULT_BOX_PANEL_COLOR,
+    };
+    newComponents.push(panel);
+    const panelLayout: NodeLayout = {
+      elementId: panelId,
+      x: panelX,
+      y: panelY,
+      zIndex: -1,
+      width: panelW,
+      height: panelH,
+    };
+    layouts.push(panelLayout);
+    layoutById.set(panelId, panelLayout);
+
+    for (const childId of uniqueChildIds) {
+      const child = newComponents.find((component) => component.id === childId);
+      if (child) child.parentId = panelId;
+      const childLayout = layoutById.get(childId);
+      if (childLayout) {
+        childLayout.x = childLayout.x - panelX;
+        childLayout.y = childLayout.y - panelY;
+      }
+    }
+  }
 }
 
 function findConnectionByEndpoints(
@@ -457,6 +633,13 @@ export function parseMermaidSequence(
     });
     participantToComponentId.set(alias, id);
   }
+
+  wrapParticipantsInBoxes(
+    collectSequenceBoxes(lines),
+    participantToComponentId,
+    newComponents,
+    layouts,
+  );
 
   const ctx: ParseContext = {
     lines,

@@ -11,9 +11,9 @@ export interface CanvasVisualState {
   setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   selectedEdgeId: string | null;
   setSelectedEdgeId: (id: string | null) => void;
-  highlightedConnectionId: string | null;
+  highlightedConnectionIds: Set<string>;
   highlightedNodeIds: Set<string>;
-  setHighlight: (connectionId: string, nodeIds: string[]) => void;
+  setHighlight: (connectionIds: string | readonly string[], nodeIds: readonly string[]) => void;
   clearHighlight: () => void;
   contextMenu: { x: number; y: number; elementId: string } | null;
   setContextMenu: (menu: { x: number; y: number; elementId: string } | null) => void;
@@ -131,7 +131,7 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
     selectedNodeId: selection.selectedNodeId,
     selectedNodeIds: selection.selectedNodeIds,
     selectedEdgeId: selection.selectedEdgeId,
-    highlightedConnectionId: highlight.highlightedConnectionId,
+    highlightedConnectionIds: highlight.highlightedConnectionIds,
     highlightedNodeIds: highlight.highlightedNodeIds,
     contextMenu: menus.contextMenu,
     quickInsert: menus.quickInsert,

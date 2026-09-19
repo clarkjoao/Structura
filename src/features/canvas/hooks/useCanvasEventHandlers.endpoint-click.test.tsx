@@ -29,7 +29,7 @@ function visualState(): CanvasVisualState {
     setSelectedNodeIds,
     selectedEdgeId: null,
     setSelectedEdgeId: vi.fn(),
-    highlightedConnectionId: null,
+    highlightedConnectionIds: new Set(),
     highlightedNodeIds: new Set(),
     setHighlight: vi.fn(),
     clearHighlight: vi.fn(),

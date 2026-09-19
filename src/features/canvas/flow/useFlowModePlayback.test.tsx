@@ -238,3 +238,93 @@ describe("following a key across a reading", () => {
     expect(result.current.mode).toEqual({ kind: "idle" });
   });
 });
+
+const FORKED: Flow = {
+  id: "f-fork",
+  name: "Fork",
+  mermaid: "",
+  diagramId: "d1",
+  entryStepId: "s1",
+  steps: {
+    s1: { id: "s1", type: "action", next: "c" },
+    c: {
+      id: "c",
+      type: "condition",
+      conditionKind: "alt",
+      branches: [
+        { label: "a", nextId: "a1" },
+        { label: "b", nextId: "b1" },
+      ],
+    },
+    a1: { id: "a1", type: "action", next: "join" },
+    b1: { id: "b1", type: "action", next: "join" },
+    join: { id: "join", type: "action" },
+  },
+};
+
+describe("goToStep jumps along the entry path", () => {
+  it("jumps forward and rebuilds history", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+
+    act(() => result.current.goToStep("s1b"));
+
+    expect(result.current.mode).toMatchObject({
+      currentStepId: "s1b",
+      history: ["s1"],
+      seen: ["s1", "s1b"],
+    });
+  });
+
+  it("jumps backward and shortens history", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.goNext());
+
+    act(() => result.current.goToStep("s1"));
+
+    expect(result.current.mode).toMatchObject({
+      currentStepId: "s1",
+      history: [],
+      seen: ["s1", "s1b"],
+    });
+  });
+
+  it("jumps into a branch via the first DFS path", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(FORKED));
+
+    act(() => result.current.goToStep("b1"));
+
+    expect(result.current.mode).toMatchObject({
+      currentStepId: "b1",
+      history: ["s1", "c"],
+      seen: ["s1", "c", "b1"],
+    });
+  });
+
+  it("lets Back and Next work after a jump", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(FORKED));
+    act(() => result.current.goToStep("b1"));
+
+    act(() => result.current.goBack());
+    expect(result.current.mode).toMatchObject({ currentStepId: "c", history: ["s1"] });
+
+    act(() => result.current.chooseBranch(0));
+    expect(result.current.mode).toMatchObject({ currentStepId: "a1", history: ["s1", "c"] });
+  });
+
+  it("no-ops for an unreachable step", () => {
+    const { result } = renderHook(() => usePlayback());
+    act(() => result.current.play(CHECKOUT));
+    act(() => result.current.goNext());
+
+    act(() => result.current.goToStep("nope"));
+
+    expect(result.current.mode).toMatchObject({
+      currentStepId: "s1b",
+      history: ["s1"],
+    });
+  });
+});

@@ -1,15 +1,17 @@
 import { createContext, useContext, type ReactNode } from "react";
 
 interface HandleHighlightState {
-  highlightedConnectionId: string | null;
+  highlightedConnectionIds: Set<string>;
   highlightedNodeIds: Set<string>;
-  setHighlight: (connectionId: string, nodeIds: string[]) => void;
+  setHighlight: (connectionIds: string | readonly string[], nodeIds: readonly string[]) => void;
   clearHighlight: () => void;
 }
 
+const EMPTY_IDS: Set<string> = new Set();
+
 const HandleHighlightContext = createContext<HandleHighlightState>({
-  highlightedConnectionId: null,
-  highlightedNodeIds: new Set(),
+  highlightedConnectionIds: EMPTY_IDS,
+  highlightedNodeIds: EMPTY_IDS,
   setHighlight: () => {},
   clearHighlight: () => {},
 });

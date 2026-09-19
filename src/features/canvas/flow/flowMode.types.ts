@@ -79,6 +79,8 @@ export interface FlowModeState {
   exitPlay: () => void;
   goNext: () => void;
   goBack: () => void;
+  /** Rebuilds history via the entry→step path and stands on that step. */
+  goToStep: (stepId: string) => void;
   chooseBranch: (branchIndex: number) => void;
   /** Reads a call's result without reading its interior. */
   stepOver: () => void;

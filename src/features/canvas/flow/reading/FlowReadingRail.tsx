@@ -66,6 +66,8 @@ interface Props {
   canGoForward: boolean;
   onGoNext: () => void;
   onGoBack: () => void;
+  /** Jump to a spine step by rebuilding the reading path. */
+  onGoToStep?: (stepId: string) => void;
   onChooseBranch: (branchIndex: number) => void;
   onExit: () => void;
   /** The calls in the air, or null when the reading has none paired. */
@@ -105,6 +107,7 @@ const FlowReadingRail = ({
   canGoForward,
   onGoNext,
   onGoBack,
+  onGoToStep,
   onChooseBranch,
   onExit,
   callStack = null,
@@ -358,7 +361,7 @@ const FlowReadingRail = ({
         )}
 
         {spine.past.map((row) => (
-          <SpineRow key={row.stepId} row={row} walked callerOf={callerOf} />
+          <SpineRow key={row.stepId} row={row} walked callerOf={callerOf} onGoToStep={onGoToStep} />
         ))}
 
         {spine.current && currentStep && (
@@ -370,7 +373,7 @@ const FlowReadingRail = ({
                 caller={callerOf(entry.connectionId)}
               />
             ))}
-            <div ref={sceneRef} className="my-1.5 flex items-start gap-3">
+            <div ref={sceneRef} className="my-1.5 flex items-start gap-3" aria-current="step">
               <span
                 className={`w-[34px] shrink-0 pt-3.5 text-right font-mono text-[15px] font-bold ${
                   isCondition ? conditionGlyphClass(spine.current.conditionKind) : "text-primary"
@@ -396,7 +399,13 @@ const FlowReadingRail = ({
         )}
 
         {spine.upcoming.map((row) => (
-          <SpineRow key={row.stepId} row={row} walked={false} callerOf={callerOf} />
+          <SpineRow
+            key={row.stepId}
+            row={row}
+            walked={false}
+            callerOf={callerOf}
+            onGoToStep={onGoToStep}
+          />
         ))}
 
         {!isCondition &&
@@ -429,6 +438,7 @@ const FlowReadingRail = ({
         pinnedKeys={pinnedKeys}
         onTogglePin={onTogglePin}
         lifeOf={lifeOf}
+        onGoToStep={onGoToStep}
       />
 
       <div className="flex shrink-0 items-center gap-2.5 border-t border-border px-5 py-3">
@@ -530,9 +540,10 @@ interface SpineRowProps {
   walked: boolean;
   /** Names the component a call returns to, for the rows the script omits. */
   callerOf: (connectionId: string) => string;
+  onGoToStep?: (stepId: string) => void;
 }
 
-const SpineRow = ({ row, walked, callerOf }: SpineRowProps) => {
+const SpineRow = ({ row, walked, callerOf, onGoToStep }: SpineRowProps) => {
   const { t } = useTranslation();
 
   return (
@@ -544,9 +555,15 @@ const SpineRow = ({ row, walked, callerOf }: SpineRowProps) => {
           caller={callerOf(entry.connectionId)}
         />
       ))}
-      <div
+      <button
+        type="button"
         data-testid="flow-reading-step"
-        className={`flex items-start gap-3 py-[7px] ${walked ? "opacity-75" : ""}`}
+        data-step-id={row.stepId}
+        aria-label={t("flowReading.jumpToStep", { number: row.number, heading: row.heading })}
+        onClick={() => onGoToStep?.(row.stepId)}
+        className={`flex w-full items-start gap-3 py-[7px] text-left transition-colors hover:bg-secondary/60 ${
+          walked ? "opacity-75" : ""
+        }`}
       >
         <span className="w-[34px] shrink-0 pt-px text-right font-mono text-xs font-semibold text-muted-foreground">
           {row.number}
@@ -577,7 +594,7 @@ const SpineRow = ({ row, walked, callerOf }: SpineRowProps) => {
             </span>
           )}
         </span>
-      </div>
+      </button>
     </>
   );
 };

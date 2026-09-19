@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Search, ArrowRight, GripVertical } from "lucide-react";
 import {
@@ -37,8 +37,8 @@ interface GroupProps {
   componentId: string;
   dragState: DragState | null;
   dragOverId: string | null;
-  highlightedConnId: string | null;
-  hasHighlight: boolean;
+  /** null = all connections highlighted (default). */
+  focusedConnId: string | null;
   onDragStart: (connId: string, side: "incoming" | "outgoing") => void;
   onDragOver: (e: React.DragEvent, connId: string, side: "incoming" | "outgoing") => void;
   onDrop: (e: React.DragEvent, targetConnId: string, side: "incoming" | "outgoing") => void;
@@ -53,8 +53,7 @@ function ConnectionGroup({
   componentId,
   dragState,
   dragOverId,
-  highlightedConnId,
-  hasHighlight,
+  focusedConnId,
   onDragStart,
   onDragOver,
   onDrop,
@@ -63,6 +62,7 @@ function ConnectionGroup({
 }: GroupProps) {
   const components = useComponents();
   const self = components[componentId];
+  const narrowing = focusedConnId !== null;
 
   if (conns.length === 0) return null;
 
@@ -81,8 +81,8 @@ function ConnectionGroup({
         const isOver =
           dragOverId === conn.id && dragState?.side === side && dragState.connId !== conn.id;
 
-        const isHighlighted = highlightedConnId === conn.id;
-        const dimmed = hasHighlight && !isHighlighted;
+        const isHighlighted = !narrowing || focusedConnId === conn.id;
+        const dimmed = narrowing && focusedConnId !== conn.id;
 
         return (
           <div
@@ -120,6 +120,20 @@ function ConnectionGroup({
   );
 }
 
+function nodeIdsForConnections(
+  connectionIds: readonly string[],
+  connections: Record<string, Connection>,
+): string[] {
+  const nodeIds = new Set<string>();
+  for (const id of connectionIds) {
+    const connection = connections[id];
+    if (!connection) continue;
+    nodeIds.add(connection.sourceId);
+    nodeIds.add(connection.targetId);
+  }
+  return [...nodeIds];
+}
+
 const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   const { t } = useTranslation();
   const connections = useConnections();
@@ -128,8 +142,9 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   const [search, setSearch] = useState("");
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [highlightedConnId, setHighlightedConnId] = useState<string | null>(null);
-  const { highlightedConnectionId, setHighlight, clearHighlight } = useHandleHighlight();
+  /** null = all connections of this node are highlighted. */
+  const [focusedConnId, setFocusedConnId] = useState<string | null>(null);
+  const { highlightedConnectionIds, setHighlight, clearHighlight } = useHandleHighlight();
 
   const { incoming, outgoing } = useMemo(() => {
     const allConns = Object.values(connections);
@@ -145,6 +160,26 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
     };
   }, [connections, componentId, component?.handleOrder]);
 
+  const allConnectionIds = useMemo(
+    () => [...incoming, ...outgoing].map((connection) => connection.id),
+    [incoming, outgoing],
+  );
+  const allConnectionIdsKey = allConnectionIds.join("\0");
+  const connectionsRef = useRef(connections);
+  connectionsRef.current = connections;
+  const allConnectionIdsRef = useRef(allConnectionIds);
+  allConnectionIdsRef.current = allConnectionIds;
+
+  const highlightAll = useCallback(() => {
+    setFocusedConnId(null);
+    const ids = allConnectionIdsRef.current;
+    if (ids.length === 0) {
+      clearHighlight();
+      return;
+    }
+    setHighlight(ids, nodeIdsForConnections(ids, connectionsRef.current));
+  }, [clearHighlight, setHighlight]);
+
   const filteredIncoming = useMemo(() => {
     if (!search) return incoming;
     const q = search.toLowerCase();
@@ -157,30 +192,29 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
     return outgoing.filter((conn) => conn.label.toLowerCase().includes(q));
   }, [outgoing, search]);
 
+  // Default: all connections highlighted. Re-run when the node or its I/O set changes.
   useEffect(() => {
-    setHighlightedConnId(null);
-    clearHighlight();
-  }, [componentId, clearHighlight]);
-
-  useEffect(() => {
-    return () => clearHighlight();
-  }, [clearHighlight]);
-
-  useEffect(() => {
-    if (highlightedConnectionId === null) {
-      setHighlightedConnId(null);
-    }
-  }, [highlightedConnectionId]);
-
-  const handleConnClick = (connId: string) => {
-    if (highlightedConnId === connId) {
-      setHighlightedConnId(null);
+    setFocusedConnId(null);
+    const ids = allConnectionIdsRef.current;
+    if (ids.length === 0) {
       clearHighlight();
     } else {
-      setHighlightedConnId(connId);
-      const nodeIds = [connections[connId].sourceId, connections[connId].targetId];
-      setHighlight(connId, nodeIds);
+      setHighlight(ids, nodeIdsForConnections(ids, connectionsRef.current));
     }
+    return () => clearHighlight();
+  }, [allConnectionIdsKey, clearHighlight, componentId, setHighlight]);
+
+  useEffect(() => {
+    if (highlightedConnectionIds.size === 0 && focusedConnId !== null) {
+      setFocusedConnId(null);
+    }
+  }, [focusedConnId, highlightedConnectionIds]);
+
+  const handleConnClick = (connId: string) => {
+    setFocusedConnId(connId);
+    const connection = connectionsRef.current[connId];
+    if (!connection) return;
+    setHighlight(connId, [connection.sourceId, connection.targetId]);
   };
 
   const handleDragStart = (connId: string, side: "incoming" | "outgoing") => {
@@ -219,6 +253,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
   };
 
   const totalCount = incoming.length + outgoing.length;
+  const selectAllPressed = focusedConnId === null && totalCount > 0;
 
   if (totalCount === 0) {
     return (
@@ -241,6 +276,19 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           className="w-full rounded-md border border-border bg-secondary pl-8 pr-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
+      {totalCount > 1 && (
+        <button
+          type="button"
+          data-testid="connections-select-all"
+          aria-pressed={selectAllPressed}
+          aria-label={t("connectionsTab.selectAll")}
+          disabled={selectAllPressed}
+          onClick={highlightAll}
+          className="rounded-md border border-border bg-card px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+        >
+          {t("connectionsTab.selectAll")}
+        </button>
+      )}
       {!isSearching && (
         <p className="text-[10px] text-muted-foreground/60 italic">
           {t("connectionsTab.dragReorderHint")}
@@ -254,8 +302,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           componentId={componentId}
           dragState={isSearching ? null : dragState}
           dragOverId={isSearching ? null : dragOverId}
-          highlightedConnId={highlightedConnId}
-          hasHighlight={highlightedConnId !== null}
+          focusedConnId={focusedConnId}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}
@@ -269,8 +316,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           componentId={componentId}
           dragState={isSearching ? null : dragState}
           dragOverId={isSearching ? null : dragOverId}
-          highlightedConnId={highlightedConnId}
-          hasHighlight={highlightedConnId !== null}
+          focusedConnId={focusedConnId}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDrop={handleDrop}

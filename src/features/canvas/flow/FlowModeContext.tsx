@@ -18,6 +18,7 @@ function createDefaultFlowModeState(): FlowModeState {
     exitPlay: noop,
     goNext: noop,
     goBack: noop,
+    goToStep: noop,
     chooseBranch: noop,
     stepOver: noop,
     stepOut: noop,

@@ -1,30 +1,39 @@
 import { useCallback, useRef, useState } from "react";
 
 export interface UseCanvasHighlightResult {
-  highlightedConnectionId: string | null;
+  highlightedConnectionIds: Set<string>;
   highlightedNodeIds: Set<string>;
-  setHighlight: (connectionId: string, nodeIds: string[]) => void;
+  setHighlight: (connectionIds: string | readonly string[], nodeIds: readonly string[]) => void;
   clearHighlight: () => void;
 }
 
-/** Encapsulates hover/flow-step highlight state. */
+function toIdSet(connectionIds: string | readonly string[]): Set<string> {
+  return new Set(typeof connectionIds === "string" ? [connectionIds] : connectionIds);
+}
+
+/** Encapsulates hover/flow-step highlight state (one or many connections). */
 export function useCanvasHighlight(): UseCanvasHighlightResult {
-  const [highlightedConnectionId, setHighlightedConnectionId] = useState<string | null>(null);
-  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(new Set());
+  const [highlightedConnectionIds, setHighlightedConnectionIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [highlightedNodeIds, setHighlightedNodeIds] = useState<Set<string>>(() => new Set());
   const emptySet = useRef(new Set<string>()).current;
 
-  const setHighlight = useCallback((connectionId: string, nodeIds: string[]) => {
-    setHighlightedConnectionId(connectionId);
-    setHighlightedNodeIds(new Set(nodeIds));
-  }, []);
+  const setHighlight = useCallback(
+    (connectionIds: string | readonly string[], nodeIds: readonly string[]) => {
+      setHighlightedConnectionIds(toIdSet(connectionIds));
+      setHighlightedNodeIds(new Set(nodeIds));
+    },
+    [],
+  );
 
   const clearHighlight = useCallback(() => {
-    setHighlightedConnectionId(null);
+    setHighlightedConnectionIds((prev) => (prev.size === 0 ? prev : emptySet));
     setHighlightedNodeIds((prev) => (prev.size === 0 ? prev : emptySet));
   }, [emptySet]);
 
   return {
-    highlightedConnectionId,
+    highlightedConnectionIds,
     highlightedNodeIds,
     setHighlight,
     clearHighlight,

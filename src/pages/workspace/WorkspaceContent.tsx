@@ -115,6 +115,7 @@ export function WorkspaceContent({
     exitPlay,
     goBack,
     goNext,
+    goToStep,
     chooseBranch,
     stepOver,
     stepOut,
@@ -388,6 +389,7 @@ export function WorkspaceContent({
                 canGoForward={canGoForward}
                 onGoNext={goNext}
                 onGoBack={goBack}
+                onGoToStep={goToStep}
                 onChooseBranch={chooseBranch}
                 onExit={exitPlay}
                 callStack={callStack}

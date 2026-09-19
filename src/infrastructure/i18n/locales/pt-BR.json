@@ -1317,7 +1317,8 @@
     "noResultsFor": "Nenhum resultado para “{{query}}”.",
     "incoming": "Entradas",
     "outgoing": "Saídas",
-    "dragReorderHint": "Arraste as linhas para reordenar os handles."
+    "dragReorderHint": "Arraste as linhas para reordenar os handles.",
+    "selectAll": "Selecionar todas"
   },
   "serviceCombobox": {
     "unlinkAria": "Desvincular serviço",
@@ -1824,6 +1825,7 @@
     "keys_other": "{{count}} chaves",
     "stepOverKey": "Pular a chamada · F10",
     "stepOutKey": "Sair para {{name}} · ⇧F11",
+    "jumpToStep": "Ir para o passo {{number}}: {{heading}}",
     "parallelAll": "Todos estes acontecem ao mesmo tempo — seguir um não descarta os outros.",
     "chooseThread": "siga uma linha — todas acontecem",
     "threadWalked": "já lida",

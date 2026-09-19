@@ -6,6 +6,7 @@ import {
   buildFlowOutline,
   findFrameExit,
   getEntryStep,
+  getPathToStep,
   getStepById,
   isConditionStep,
 } from "@/features/diagram";
@@ -18,6 +19,7 @@ export type FlowModePlaybackSlice = Pick<
   | "exitPlay"
   | "goNext"
   | "goBack"
+  | "goToStep"
   | "chooseBranch"
   | "stepOver"
   | "stepOut"
@@ -166,6 +168,28 @@ export function useFlowModePlayback(
   }, [setMode]);
 
   /**
+   * Jumps to a step by rebuilding the path from the entry (first DFS).
+   * Back then reverses that path; seen accumulates and never shortens.
+   */
+  const goToStep = useCallback(
+    (stepId: string) => {
+      setMode((prevMode) => {
+        if (prevMode.kind !== "playing") return prevMode;
+        const path = getPathToStep(prevMode.flow, stepId);
+        if (path.length === 0) return prevMode;
+        const targetId = path[path.length - 1];
+        return {
+          ...prevMode,
+          currentStepId: targetId,
+          history: path.slice(0, -1),
+          seen: withSeen(prevMode.seen, ...path),
+        };
+      });
+    },
+    [setMode],
+  );
+
+  /**
    * The calls in the air, for the script being read.
    *
    * Keyed on the flow alone: the pairing is a property of the script, not of
@@ -250,6 +274,7 @@ export function useFlowModePlayback(
       exitPlay,
       goNext,
       goBack,
+      goToStep,
       chooseBranch,
       stepOver,
       stepOut,
@@ -269,6 +294,7 @@ export function useFlowModePlayback(
       exitPlay,
       goNext,
       goBack,
+      goToStep,
       chooseBranch,
       stepOver,
       stepOut,

@@ -57,6 +57,7 @@ function renderRail(
     flows?: Flow[];
     onSelectFlow?: (id: string) => void;
     onGoNext?: () => void;
+    onGoToStep?: (stepId: string) => void;
     onChooseBranch?: (index: number) => void;
     onExit?: () => void;
     seen?: string[];
@@ -77,6 +78,7 @@ function renderRail(
       canGoForward={Boolean(step?.next)}
       onGoNext={extra.onGoNext ?? vi.fn()}
       onGoBack={vi.fn()}
+      onGoToStep={extra.onGoToStep}
       onChooseBranch={extra.onChooseBranch ?? vi.fn()}
       onExit={extra.onExit ?? vi.fn()}
     />,
@@ -477,5 +479,50 @@ describe("a fork into threads is not a fork in the road", () => {
     renderRail(read(), "c", ["s1"]);
 
     expect(screen.getByText("choose a branch to carry on")).toBeTruthy();
+  });
+});
+
+describe("jumping to a spine step", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  it("calls onGoToStep when a past spine row is clicked", () => {
+    const { read } = seed(CALL);
+    const onGoToStep = vi.fn();
+
+    renderRail(read(), "s2", ["s1"], { onGoToStep });
+    fireEvent.click(screen.getByTestId("flow-reading-step"));
+
+    expect(onGoToStep).toHaveBeenCalledWith("s1");
+  });
+
+  it("calls onGoToStep when an upcoming spine row is activated with the keyboard", () => {
+    const { read } = seed(CALL);
+    const onGoToStep = vi.fn();
+
+    renderRail(read(), "s1", [], { onGoToStep });
+    const upcoming = screen.getByTestId("flow-reading-step");
+    upcoming.focus();
+    fireEvent.keyDown(upcoming, { key: "Enter", code: "Enter" });
+    fireEvent.click(upcoming);
+
+    expect(onGoToStep).toHaveBeenCalledWith("s2");
+  });
+
+  it("marks the current scene with aria-current", () => {
+    const { read } = seed(CALL);
+
+    renderRail(read(), "s1");
+
+    expect(document.querySelector('[aria-current="step"]')).toBeTruthy();
+  });
+
+  it("exposes an accessible name on spine jump buttons", () => {
+    const { read } = seed(CALL);
+
+    renderRail(read(), "s2", ["s1"]);
+
+    expect(screen.getByRole("button", { name: /Go to step 1:/ })).toBeInTheDocument();
   });
 });

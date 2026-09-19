@@ -40,7 +40,12 @@ export {
   getStepCount,
   checkFlowInvariants,
 } from "./flow-traversal";
-export type { BrokenStep, FlowEdge, FlowInvariantCode, FlowInvariantViolation } from "./flow-traversal";
+export type {
+  BrokenStep,
+  FlowEdge,
+  FlowInvariantCode,
+  FlowInvariantViolation,
+} from "./flow-traversal";
 
 export { computeFlowStepLabels, compareFlowStepLabels, branchLetter } from "./flow-labels";
 export type { FlowLabelResult, FlowLabelAmbiguity } from "./flow-labels";
@@ -139,6 +144,16 @@ export {
   appendRecentRef,
 } from "./recent-diagrams";
 export type { RecentDiagramRef } from "./recent-diagrams";
+
+// ─── Colour / contrast ─────────────────────────────────────────────────────────
+export {
+  contrastLabelColor,
+  contrastRatio,
+  parseCssColorToRgb,
+  relativeLuminance,
+  rgbToHex,
+} from "./labelContrast";
+export type { RgbColor } from "./labelContrast";
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
 export { computeApiGroupSize } from "./api-group-size";
