@@ -1,12 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
-import { Network } from "lucide-react";
+import { Network, Clapperboard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FileSystemStatus } from "./FileSystemStatus";
 import { useFileSystemSync } from "@/infrastructure/persistence";
 import { SettingsMenu } from "./SettingsMenu";
 import { cn } from "@/lib/utils";
 
-const Navbar = () => {
+interface NavbarProps {
+  showWalkthroughs?: boolean;
+}
+
+const Navbar = ({ showWalkthroughs = false }: NavbarProps) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   useFileSystemSync();
@@ -44,6 +48,13 @@ const Navbar = () => {
               label={t("nav.plugins")}
               active={pathname.startsWith("/plugins")}
             />
+            {showWalkthroughs && (
+              <NavItem
+                to="/walkthroughs"
+                label={t("nav.walkthroughs")}
+                active={pathname.startsWith("/walkthrough")}
+              />
+            )}
           </div>
         </div>
 
