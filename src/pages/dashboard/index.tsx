@@ -2,17 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  Plus,
-  Network,
-  FolderOpen,
-  LayoutGrid,
-  List,
-  ArrowUpDown,
-  Search,
-  Upload,
-  Clock,
-} from "lucide-react";
+import { Plus, Network, FolderOpen, Upload, Clock, Star } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
@@ -27,12 +17,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,7 +36,20 @@ import { cn } from "@/lib/utils";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
 import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";
-import type { GlobalSearchHit, SortKey, ViewMode } from "@/pages/dashboard/dashboard.types";
+import { WorkspaceFilterToolbar } from "@/pages/dashboard/WorkspaceFilterToolbar";
+import { WorkspaceStatStrip } from "@/pages/dashboard/WorkspaceStatStrip";
+import {
+  readFavoriteIds,
+  toggleFavoriteDiagram,
+  writeFavoriteIds,
+} from "@/pages/dashboard/favoriteDiagrams";
+import { sumWorkspaceStats } from "@/pages/dashboard/workspaceStats";
+import type {
+  ContentFilter,
+  GlobalSearchHit,
+  SortKey,
+  ViewMode,
+} from "@/pages/dashboard/dashboard.types";
 import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
 import { useWorkspaceFocusSync } from "@/hooks/useWorkspaceFocusSync";
 
@@ -76,7 +73,13 @@ export default function DashboardPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedFolderId = searchParams.get("f");
-  const view = searchParams.get("view") === "recent" && !selectedFolderId ? "recent" : "all";
+  const viewParam = searchParams.get("view");
+  const contentFilter: ContentFilter =
+    !selectedFolderId && viewParam === "recent"
+      ? "recent"
+      : !selectedFolderId && viewParam === "favorites"
+        ? "favorites"
+        : "all";
 
   const setSelectedFolderId = useCallback(
     (folderId: string | null) => {
@@ -86,13 +89,25 @@ export default function DashboardPage() {
     [setSearchParams],
   );
 
-  const setView = useCallback(
-    (nextView: "recent" | "all") => {
-      if (nextView === "recent") setSearchParams({ view: "recent" }, { replace: true });
+  const setContentFilter = useCallback(
+    (nextFilter: ContentFilter) => {
+      if (nextFilter === "recent") setSearchParams({ view: "recent" }, { replace: true });
+      else if (nextFilter === "favorites")
+        setSearchParams({ view: "favorites" }, { replace: true });
       else setSearchParams({}, { replace: true });
     },
     [setSearchParams],
   );
+
+  const setView = useCallback(
+    (nextView: "recent" | "all") => {
+      setContentFilter(nextView === "recent" ? "recent" : "all");
+    },
+    [setContentFilter],
+  );
+
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => readFavoriteIds());
+  const favoriteIdSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 
   useEffect(() => {
     const f = searchParams.get("f");
@@ -235,10 +250,40 @@ export default function DashboardPage() {
     [recent, diagramsById],
   );
 
-  const effectiveList: Diagram[] = view === "recent" ? recentDiagramObjects : domainFiltered;
-  const showFolderCards = view === "all" && childFolders.length > 0;
-  const showDomainChips = view === "all" && globalSearchResults === null && allDomains.length > 0;
-  const showMutationActions = view === "all";
+  const favoriteDiagramObjects = useMemo(
+    () =>
+      favoriteIds
+        .map((id) => diagramsById[id])
+        .filter((diagram): diagram is Diagram => Boolean(diagram)),
+    [favoriteIds, diagramsById],
+  );
+
+  const effectiveList: Diagram[] =
+    contentFilter === "recent"
+      ? recentDiagramObjects
+      : contentFilter === "favorites"
+        ? favoriteDiagramObjects
+        : domainFiltered;
+  const showFolderCards = contentFilter === "all" && childFolders.length > 0;
+  const showDomainChips =
+    contentFilter === "all" && globalSearchResults === null && allDomains.length > 0;
+  const showMutationActions = contentFilter === "all";
+  const showNewDiagramTile =
+    showMutationActions && globalSearchResults === null && viewMode === "grid";
+
+  const workspaceStats = useMemo(() => {
+    const scope =
+      contentFilter === "recent"
+        ? recentDiagramObjects
+        : contentFilter === "favorites"
+          ? favoriteDiagramObjects
+          : folderDiagrams;
+    return sumWorkspaceStats(scope);
+  }, [contentFilter, recentDiagramObjects, favoriteDiagramObjects, folderDiagrams]);
+
+  const handleToggleFavorite = useCallback((diagramId: string) => {
+    setFavoriteIds(toggleFavoriteDiagram(diagramId));
+  }, []);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -305,6 +350,11 @@ export default function DashboardPage() {
       deleteDiagram(id);
       removeRecentRef(id);
     }
+    if (diagramIds.length > 0) {
+      const remaining = readFavoriteIds().filter((id) => !diagramIds.includes(id));
+      writeFavoriteIds(remaining);
+      setFavoriteIds(remaining);
+    }
     for (const id of folderIds) {
       deleteFolder(id);
     }
@@ -346,9 +396,11 @@ export default function DashboardPage() {
 
   const currentFolderName = selectedFolderId
     ? (folders[selectedFolderId]?.name ?? t("common.emDash"))
-    : view === "recent"
+    : contentFilter === "recent"
       ? t("dashboard.recentViewHeading")
-      : t("dashboard.allDiagrams");
+      : contentFilter === "favorites"
+        ? t("dashboard.favoritesViewHeading")
+        : t("dashboard.allDiagrams");
 
   return (
     <div className="min-h-screen pt-16">
@@ -369,7 +421,7 @@ export default function DashboardPage() {
             }}
             recentDiagrams={recentResolved}
             recentCount={recentResolved.length}
-            recentViewActive={view === "recent"}
+            recentViewActive={contentFilter === "recent"}
             locale={i18n.language}
             onSelectRecentView={handleSelectRecentView}
             onOpenRecent={handleOpenRecent}
@@ -421,124 +473,80 @@ export default function DashboardPage() {
               </BreadcrumbList>
             </Breadcrumb>
 
-            <div className="flex items-center gap-1.5">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <input
-                  type="search"
-                  placeholder={t("dashboard.searchComponentPlaceholder")}
-                  value={globalSearch}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  className="h-7 w-48 rounded-md border border-border bg-secondary/50 pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-
-              <div className="flex items-center rounded-md border border-border bg-secondary/50 p-0.5">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={cn(
-                    "rounded p-1 transition-colors",
-                    viewMode === "grid"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
+            {showMutationActions && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => setImportModalOpen(true)}
                 >
-                  <LayoutGrid className="h-3.5 w-3.5" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={cn(
-                    "rounded p-1 transition-colors",
-                    viewMode === "list"
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <List className="h-3.5 w-3.5" />
-                </button>
+                  <Upload className="h-3.5 w-3.5" />
+                </Button>
+                <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
+                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
+                </Button>
               </div>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 gap-1 text-xs text-muted-foreground"
-                  >
-                    <ArrowUpDown className="h-3 w-3" />
-                    {t("common.sort")}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleSort("name")}>
-                    {t("common.name")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSort("updatedAt")}>
-                    {t("common.lastEdited")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSort("level")}>
-                    {t("common.c4Level")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleSort("domain")}>
-                    {t("common.domain")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-5">
-            <div className="mb-5 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-foreground">{currentFolderName}</h2>
-                {view === "recent" ? (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("dashboard.diagramCount", {
-                      count: effectiveList.length,
-                      diagrams: t(
-                        effectiveList.length === 1 ? "common.diagram_one" : "common.diagram_other",
-                      ),
-                      folders: "",
-                    })}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t("dashboard.diagramCount", {
-                      count: folderDiagrams.length,
-                      diagrams: t(
-                        folderDiagrams.length === 1 ? "common.diagram_one" : "common.diagram_other",
-                      ),
-                      folders:
-                        childFolders.length > 0
-                          ? t("dashboard.foldersSuffix", {
-                              count: childFolders.length,
-                              folders: t(
-                                childFolders.length === 1
-                                  ? "common.folder_one"
-                                  : "common.folder_other",
-                              ),
-                            })
-                          : "",
-                    })}
-                  </p>
-                )}
-              </div>
-              {showMutationActions && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => setImportModalOpen(true)}
-                  >
-                    <Upload className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
-                    <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
-                  </Button>
-                </div>
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-foreground">{currentFolderName}</h2>
+              {contentFilter === "recent" ? (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("dashboard.diagramCount", {
+                    count: effectiveList.length,
+                    diagrams: t(
+                      effectiveList.length === 1 ? "common.diagram_one" : "common.diagram_other",
+                    ),
+                    folders: "",
+                  })}
+                </p>
+              ) : contentFilter === "favorites" ? (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("dashboard.diagramCount", {
+                    count: effectiveList.length,
+                    diagrams: t(
+                      effectiveList.length === 1 ? "common.diagram_one" : "common.diagram_other",
+                    ),
+                    folders: "",
+                  })}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t("dashboard.diagramCount", {
+                    count: folderDiagrams.length,
+                    diagrams: t(
+                      folderDiagrams.length === 1 ? "common.diagram_one" : "common.diagram_other",
+                    ),
+                    folders:
+                      childFolders.length > 0
+                        ? t("dashboard.foldersSuffix", {
+                            count: childFolders.length,
+                            folders: t(
+                              childFolders.length === 1
+                                ? "common.folder_one"
+                                : "common.folder_other",
+                            ),
+                          })
+                        : "",
+                  })}
+                </p>
               )}
             </div>
+
+            <WorkspaceStatStrip stats={workspaceStats} />
+
+            <WorkspaceFilterToolbar
+              contentFilter={contentFilter}
+              onContentFilterChange={setContentFilter}
+              globalSearch={globalSearch}
+              onGlobalSearchChange={setGlobalSearch}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onSort={handleSort}
+            />
 
             {globalSearchResults !== null && (
               <div className="mb-4">
@@ -620,7 +628,7 @@ export default function DashboardPage() {
             )}
 
             {globalSearchResults === null && showFolderCards && (
-              <div className="mb-5">
+              <div className="mb-4">
                 <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {childFolders.map((folder) => {
                     const subCount = Object.values(folders).filter(
@@ -635,18 +643,18 @@ export default function DashboardPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={(event) => handleFolderCardClick(folder.id, event)}
                         className={cn(
-                          "flex cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted/40 hover:border-border/80",
+                          "flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 transition-colors hover:bg-muted/40 hover:border-border/80",
                           isBulkIdSelected(folder.id) && "ring-2 ring-primary",
                         )}
                       >
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-500/10">
-                          <FolderOpen className="h-4 w-4 text-amber-500" />
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-amber-500/10">
+                          <FolderOpen className="h-3.5 w-3.5 text-amber-500" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate text-foreground">
+                          <p className="text-[13px] font-medium truncate text-foreground">
                             {folder.name}
                           </p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="text-[10px] text-muted-foreground">
                             {total} {t(total === 1 ? "common.item_one" : "common.item_other")}
                           </p>
                         </div>
@@ -657,7 +665,7 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {view === "recent" &&
+            {contentFilter === "recent" &&
               globalSearchResults === null &&
               recentDiagramObjects.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -681,6 +689,30 @@ export default function DashboardPage() {
                 </div>
               )}
 
+            {contentFilter === "favorites" &&
+              globalSearchResults === null &&
+              favoriteDiagramObjects.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
+                    <Star className="h-7 w-7 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {t("dashboard.favoritesEmptyTitle")}
+                  </p>
+                  <p className="text-xs text-muted-foreground/60 mb-4 max-w-xs">
+                    {t("dashboard.favoritesEmptyHint")}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setContentFilter("all")}
+                    className="gap-1.5"
+                  >
+                    {t("folderTree.allDiagrams")}
+                  </Button>
+                </div>
+              )}
+
             {globalSearchResults === null &&
               (viewMode === "grid" ? (
                 <DiagramGrid
@@ -689,6 +721,10 @@ export default function DashboardPage() {
                   isDiagramSelected={isBulkIdSelected}
                   onDragStart={handleDragStart}
                   levelLabels={levelLabels}
+                  showNewDiagramTile={showNewDiagramTile}
+                  onNewDiagram={() => setShowAdd(true)}
+                  favoriteIds={favoriteIdSet}
+                  onToggleFavorite={handleToggleFavorite}
                 />
               ) : (
                 <DiagramList
@@ -701,9 +737,10 @@ export default function DashboardPage() {
               ))}
 
             {globalSearchResults === null &&
-              view === "all" &&
+              contentFilter === "all" &&
               domainFiltered.length === 0 &&
-              childFolders.length === 0 && (
+              childFolders.length === 0 &&
+              !showNewDiagramTile && (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/50 mb-4">
                     <Network className="h-7 w-7 text-muted-foreground/60" />
@@ -801,6 +838,9 @@ export default function DashboardPage() {
                 deletePreview(pendingDeleteId);
                 deleteDiagram(pendingDeleteId);
                 removeRecentRef(pendingDeleteId);
+                const remaining = readFavoriteIds().filter((id) => id !== pendingDeleteId);
+                writeFavoriteIds(remaining);
+                setFavoriteIds(remaining);
                 setPendingDeleteId(null);
               }}
             >
