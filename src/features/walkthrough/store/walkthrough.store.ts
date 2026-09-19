@@ -65,6 +65,7 @@ export function createBlankPresentation(): WalkthroughPresentation {
   return {
     id: `wt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     title: "Untitled Walkthrough",
+    folderId: null,
     steps: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),

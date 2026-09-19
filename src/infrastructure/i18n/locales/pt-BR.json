@@ -2270,6 +2270,22 @@
   },
   "walkthrough": {
     "library": "Walkthroughs",
+    "librarySubtitle": "Um walkthrough é uma sequência de passos que atravessa vários diagramas — pegue o leitor em um diagrama e leve ao próximo, com cada passo apontando para um fluxo.",
+    "tabs": {
+      "all": "Todos",
+      "mine": "Meus",
+      "shared": "Compartilhados"
+    },
+    "sharedEmpty": "Nenhum walkthrough compartilhado ainda",
+    "noFolderSection": "Sem pasta",
+    "newTile": {
+      "title": "Novo walkthrough",
+      "subtitle": "Escolha o primeiro diagrama e o primeiro passo"
+    },
+    "folderSelector": {
+      "label": "Pasta",
+      "noFolder": "Sem pasta"
+    },
     "newWalkthrough": "Novo walkthrough",
     "emptyLibraryTitle": "Nenhum walkthrough ainda",
     "emptyLibraryMessage": "Crie seu primeiro walkthrough para guiar os leitores pelos seus diagramas.",

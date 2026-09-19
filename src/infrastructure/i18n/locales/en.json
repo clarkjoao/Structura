@@ -2270,6 +2270,22 @@
   },
   "walkthrough": {
     "library": "Walkthroughs",
+    "librarySubtitle": "A walkthrough is a sequence of steps that spans multiple diagrams — pick the reader up at one diagram and drop them into the next, with each step pointing to a flow.",
+    "tabs": {
+      "all": "All",
+      "mine": "Mine",
+      "shared": "Shared"
+    },
+    "sharedEmpty": "No walkthroughs shared yet",
+    "noFolderSection": "Unfiled",
+    "newTile": {
+      "title": "New walkthrough",
+      "subtitle": "Pick the first diagram and the first step"
+    },
+    "folderSelector": {
+      "label": "Folder",
+      "noFolder": "No folder"
+    },
     "newWalkthrough": "New Walkthrough",
     "emptyLibraryTitle": "No walkthroughs yet",
     "emptyLibraryMessage": "Create your first walkthrough to guide readers through your diagrams.",

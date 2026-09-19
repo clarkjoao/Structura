@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Plus, Clapperboard, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Plus, FolderOpen } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,19 +16,74 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useWalkthroughStore, createBlankPresentation } from "../hooks/useWalkthroughStore";
 import { WalkthroughCard } from "../components/WalkthroughCard";
+import { useAllFolders } from "@/features/diagram";
+import type { Folder } from "@/features/diagram";
+import type { WalkthroughPresentation } from "../model/walkthrough.types";
+
+type SortablePresentation = WalkthroughPresentation;
+type FolderBucket = { folder: Folder | null; items: SortablePresentation[] };
+
+function groupByFolder(
+  presentations: SortablePresentation[],
+  folders: Folder[],
+): FolderBucket[] {
+  const byId = new Map<string | null, SortablePresentation[]>();
+  for (const p of presentations) {
+    const key = p.folderId ?? null;
+    const list = byId.get(key);
+    if (list) list.push(p);
+    else byId.set(key, [p]);
+  }
+  const buckets: FolderBucket[] = [];
+  // Folder sections first, in name order
+  const sortedFolders = [...folders].sort((a, b) => a.name.localeCompare(b.name));
+  for (const folder of sortedFolders) {
+    const items = byId.get(folder.id) ?? [];
+    buckets.push({ folder, items });
+  }
+  // Unfiled section last, if anything
+  const unfiled = byId.get(null) ?? [];
+  if (unfiled.length > 0) {
+    buckets.push({ folder: null, items: unfiled });
+  }
+  return buckets;
+}
 
 export default function WalkthroughLibraryPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { presentations, hydrated, hydrate, save, delete: deletePresentation } = useWalkthroughStore();
+  const {
+    presentations,
+    hydrated,
+    hydrate,
+    save,
+    delete: deletePresentation,
+  } = useWalkthroughStore();
+  const folders = useAllFolders();
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"all" | "mine" | "shared">("all");
 
   useEffect(() => {
     if (!hydrated) void hydrate();
   }, [hydrated, hydrate]);
 
-  const sorted = Object.values(presentations).sort(
-    (a, b) => b.updatedAt - a.updatedAt,
+  const sortedAll = useMemo(
+    () =>
+      Object.values(presentations).sort(
+        (a, b) => b.updatedAt - a.updatedAt,
+      ),
+    [presentations],
+  );
+
+  // Single-user app today: "mine" mirrors "all". "shared" is always empty.
+  const listForTab = useMemo(() => {
+    if (tab === "shared") return [];
+    return sortedAll;
+  }, [sortedAll, tab]);
+
+  const buckets = useMemo(
+    () => groupByFolder(listForTab, folders),
+    [listForTab, folders],
   );
 
   const handleCreateNew = useCallback(async () => {
@@ -58,71 +113,74 @@ export default function WalkthroughLibraryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center gap-4 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0"
-          onClick={() => navigate("/workspace")}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex items-center gap-2">
-          <Clapperboard className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">
-            {t("walkthrough.library", "Walkthrough Library")}
-          </h1>
-        </div>
-        <div className="ml-auto">
-          <Button onClick={handleCreateNew} size="sm" className="gap-1.5">
-            <Plus className="h-3.5 w-3.5" />
-            {t("walkthrough.newWalkthrough", "New Walkthrough")}
-          </Button>
-        </div>
-      </div>
+      <Navbar showWalkthroughs />
 
-      {/* Content */}
-      <div className="mx-auto max-w-6xl px-6 py-6">
-        {!hydrated ? (
-          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-            {t("common.loading", "Loading…")}
+      {/* Page header */}
+      <header className="mx-auto max-w-6xl px-6 pt-8 pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {t("walkthrough.library", "Walkthroughs")}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {t(
+                "walkthrough.librarySubtitle",
+                "A walkthrough is a sequence of steps that spans multiple diagrams — pick the reader up at one diagram and drop them into the next, with each step pointing to a flow.",
+              )}
+            </p>
           </div>
-        ) : sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-border py-20 text-center">
-            <Clapperboard className="h-12 w-12 text-muted-foreground/50" />
-            <div>
-              <p className="text-sm font-medium text-foreground">
-                {t("walkthrough.emptyLibraryTitle", "No walkthroughs yet")}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t(
-                  "walkthrough.emptyLibraryMessage",
-                  "Create your first walkthrough to guide readers through your diagrams.",
-                )}
-              </p>
-            </div>
-            <Button onClick={handleCreateNew} size="sm" className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" />
-              {t("walkthrough.newWalkthrough", "New Walkthrough")}
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {sorted.map((p) => (
-              <WalkthroughCard
-                key={p.id}
-                presentation={p}
+        </div>
+
+        <div className="mt-6">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+            <TabsList>
+              <TabsTrigger value="all">
+                {t("walkthrough.tabs.all", "All")}
+              </TabsTrigger>
+              <TabsTrigger value="mine">
+                {t("walkthrough.tabs.mine", "Mine")}
+              </TabsTrigger>
+              <TabsTrigger value="shared">
+                {t("walkthrough.tabs.shared", "Shared")}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="mt-6 space-y-8">
+              <LibraryBody
+                hydrated={hydrated}
+                buckets={buckets}
+                hasAnyPresentations={sortedAll.length > 0}
+                onCreate={handleCreateNew}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
-            ))}
-          </div>
-        )}
-      </div>
+            </TabsContent>
+
+            <TabsContent value="mine" className="mt-6 space-y-8">
+              <LibraryBody
+                hydrated={hydrated}
+                buckets={buckets}
+                hasAnyPresentations={sortedAll.length > 0}
+                onCreate={handleCreateNew}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            </TabsContent>
+
+            <TabsContent value="shared" className="mt-6">
+              <EmptySharedState />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </header>
 
       {/* Delete confirmation dialog */}
-      <AlertDialog open={!!deleteTargetId} onOpenChange={() => setDeleteTargetId(null)}>
+      <AlertDialog
+        open={!!deleteTargetId}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -148,6 +206,135 @@ export default function WalkthroughLibraryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+interface LibraryBodyProps {
+  hydrated: boolean;
+  buckets: FolderBucket[];
+  hasAnyPresentations: boolean;
+  onCreate: () => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function LibraryBody({
+  hydrated,
+  buckets,
+  hasAnyPresentations,
+  onCreate,
+  onEdit,
+  onDelete,
+}: LibraryBodyProps) {
+  const { t } = useTranslation();
+
+  if (!hydrated) {
+    return (
+      <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+        {t("common.loading", "Loading…")}
+      </div>
+    );
+  }
+
+  // First-run empty state: nothing at all yet.
+  if (!hasAnyPresentations && buckets.length === 0) {
+    return (
+      <button
+        type="button"
+        onClick={onCreate}
+        className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-16 text-center transition-colors hover:border-primary/40 hover:bg-muted/30"
+      >
+        <Plus className="h-8 w-8 text-muted-foreground/70" />
+        <div>
+          <p className="text-sm font-medium text-foreground">
+            {t("walkthrough.newTile.title", "New walkthrough")}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {t(
+              "walkthrough.newTile.subtitle",
+              "Pick the first diagram and the first step",
+            )}
+          </p>
+        </div>
+      </button>
+    );
+  }
+
+  // Otherwise: a "New walkthrough" tile at the top, then folder groups.
+  return (
+    <div className="space-y-8">
+      <button
+        type="button"
+        onClick={onCreate}
+        className="flex w-full max-w-xs flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-10 text-center transition-colors hover:border-primary/40 hover:bg-muted/30"
+      >
+        <Plus className="h-6 w-6 text-muted-foreground/70" />
+        <div>
+          <p className="text-sm font-medium text-foreground">
+            {t("walkthrough.newTile.title", "New walkthrough")}
+          </p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {t(
+              "walkthrough.newTile.subtitle",
+              "Pick the first diagram and the first step",
+            )}
+          </p>
+        </div>
+      </button>
+
+      {buckets.map((bucket) => (
+        <FolderBucketSection
+          key={bucket.folder?.id ?? "__unfiled__"}
+          bucket={bucket}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface FolderBucketSectionProps {
+  bucket: FolderBucket;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+function FolderBucketSection({ bucket, onEdit, onDelete }: FolderBucketSectionProps) {
+  const { t } = useTranslation();
+
+  if (bucket.items.length === 0) return null;
+
+  return (
+    <section>
+      <header className="mb-3 flex items-center gap-2">
+        <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
+        <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {bucket.folder?.name ?? t("walkthrough.noFolderSection", "Unfiled")}
+        </h2>
+      </header>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {bucket.items.map((p) => (
+          <WalkthroughCard
+            key={p.id}
+            presentation={p}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function EmptySharedState() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex h-48 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-center">
+      <p className="text-sm text-muted-foreground">
+        {t("walkthrough.sharedEmpty", "No walkthroughs shared yet")}
+      </p>
     </div>
   );
 }

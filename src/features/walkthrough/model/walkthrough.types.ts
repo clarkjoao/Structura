@@ -21,6 +21,12 @@ export interface WalkthroughPresentation {
   description?: string;
   /** Notes visible only to the author in the editor; not shown to readers */
   authorNotes?: string;
+  /**
+   * Optional reference to an existing Workspace folder. The walkthrough store
+   * only holds the id — the folder itself lives in the diagram store. Read-only
+   * across the boundary: walkthroughs never write to the diagram store.
+   */
+  folderId?: string | null;
   steps: WalkthroughStepRef[];
   createdAt: number;
   updatedAt: number;
