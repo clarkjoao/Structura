@@ -333,20 +333,6 @@
     "permissionModal": {
       "titleBoot": "Folder access required",
       "titleLost": "Folder access was revoked",
-      "messageNamed": "\"{{name}}\" was connected before, but the browser needs permission again before folder sync can run.",
-      "messageGeneric": "A folder was connected before, but the browser needs permission again before folder sync can run.",
-      "syncDisabledWarning": "Folder sync is off right now. Edits stay in the browser until you reconnect.",
-      "reconnect": "Reconnect",
-      "reconnectHint": "Ask the browser for read/write access to the folder (required for sync).",
-      "continueBrowser": "Continue in browser only",
-      "continueBrowserHint": "Dismiss this dialog. Sync stays off; you can reconnect from the toolbar.",
-      "disconnect": "Disconnect folder",
-      "disconnectHint": "Forget this folder connection and keep working in the browser."
-    },
-    "foldersImported": "Imported {{count}} folder from filesystem",
-    "permissionModal": {
-      "titleBoot": "Folder access required",
-      "titleLost": "Folder access was revoked",
       "messageNamed": "The folder \"{{name}}\" was connected before, but the browser needs permission again before sync can run.",
       "messageGeneric": "A folder was connected before, but the browser needs permission again before sync can run.",
       "syncDisabledWarning": "Folder sync is off right now. Edits stay in the browser only until you reconnect.",
@@ -356,7 +342,8 @@
       "continueBrowserHint": "Close this dialog. Sync stays off; you can reconnect later from the toolbar.",
       "disconnect": "Disconnect folder",
       "disconnectHint": "Forget this folder connection and keep working in the browser."
-    }
+    },
+    "foldersImported": "Imported {{count}} folder from filesystem"
   },
   "workspaceMerge": {
     "title": "Folder with existing files",
@@ -1276,7 +1263,12 @@
     "opacityLabel": "Opacity — {{value}}%",
     "tabs": {
       "icon": "Icon"
-    }
+    },
+    "positionXHint": "Horizontal position in pixels",
+    "positionYHint": "Vertical position in pixels",
+    "positionWidthHint": "Width in pixels, minimum {{min}}",
+    "positionHeightHint": "Height in pixels, minimum {{min}}",
+    "typeSelectHint": "Change the type of this element"
   },
   "apiGroup": {
     "panelTitle": "API group",
@@ -1331,7 +1323,8 @@
     "incoming": "Incoming",
     "outgoing": "Outgoing",
     "dragReorderHint": "Drag rows to reorder handles.",
-    "selectAll": "Select all"
+    "selectAll": "Select all",
+    "filterAriaLabel": "Filter connections by label"
   },
   "serviceCombobox": {
     "unlinkAria": "Unlink service",
@@ -2110,9 +2103,7 @@
     "gray": "Gray"
   },
   "elementPanelTab": {
-    "details": "Details",
-    "connections": "Connections",
-    "services": "Services"
+    "listLabel": "Element panel tabs"
   },
   "flowPanel": {
     "copyPrefix": "Copy of {{name}}",
@@ -2265,5 +2256,16 @@
       "label": "Swim lane",
       "defaultName": "Swim lane"
     }
+  },
+  "diagramOutline": {
+    "title": "Diagram outline",
+    "close": "Close diagram outline",
+    "treeLabel": "Elements in {{name}}"
+  },
+  "accessibility": {
+    "selectedElement": "Selected {{name}}, {{type}}",
+    "panelExpanded": "{{name}} panel expanded, {{count}} elements inside",
+    "panelCollapsed": "{{name}} panel collapsed",
+    "connectionSelected": "Connection from {{source}} to {{target}}"
   }
 }

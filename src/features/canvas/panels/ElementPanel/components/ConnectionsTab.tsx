@@ -273,6 +273,8 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t("connectionsTab.filterPlaceholder")}
+          aria-label={t("connectionsTab.filterAriaLabel")}
+          aria-controls="connections-list"
           className="w-full rounded-md border border-border bg-secondary pl-8 pr-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
@@ -294,7 +296,7 @@ const ConnectionsTab = ({ componentId }: { componentId: string }) => {
           {t("connectionsTab.dragReorderHint")}
         </p>
       )}
-      <div className="space-y-3">
+      <div id="connections-list" className="space-y-3">
         <ConnectionGroup
           label={t("connectionsTab.incoming")}
           conns={isSearching ? filteredIncoming : incoming}

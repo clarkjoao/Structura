@@ -149,6 +149,12 @@ export function PositionSection({
   const inputClassName =
     "w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring [appearance:textfield]";
 
+  // Generate stable IDs for label-input associations
+  const xInputId = `position-x-${componentId}`;
+  const yInputId = `position-y-${componentId}`;
+  const widthInputId = `position-width-${componentId}`;
+  const heightInputId = `position-height-${componentId}`;
+
   return (
     <div className="space-y-2">
       <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
@@ -156,41 +162,52 @@ export function PositionSection({
       </label>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+          <label htmlFor={xInputId} className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("elementPanel.positionX")}
           </label>
           <input
+            id={xInputId}
             type="number"
             value={xInput}
             onChange={(event) => setXInput(event.target.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
+            aria-describedby={`${xInputId}-hint`}
             className={inputClassName}
           />
+          <span id={`${xInputId}-hint`} className="sr-only">
+            {t("elementPanel.positionXHint")}
+          </span>
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+          <label htmlFor={yInputId} className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
             {t("elementPanel.positionY")}
           </label>
           <input
+            id={yInputId}
             type="number"
             value={yInput}
             onChange={(event) => setYInput(event.target.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
+            aria-describedby={`${yInputId}-hint`}
             className={inputClassName}
           />
+          <span id={`${yInputId}-hint`} className="sr-only">
+            {t("elementPanel.positionYHint")}
+          </span>
         </div>
       </div>
       {isPanel && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+            <label htmlFor={widthInputId} className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
               {t("elementPanel.positionW")}
             </label>
             <input
+              id={widthInputId}
               type="number"
               min={minWidth}
               value={widthInput}
@@ -198,14 +215,19 @@ export function PositionSection({
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
+              aria-describedby={`${widthInputId}-hint`}
               className={inputClassName}
             />
+            <span id={`${widthInputId}-hint`} className="sr-only">
+              {t("elementPanel.positionWidthHint", { min: minWidth })}
+            </span>
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+            <label htmlFor={heightInputId} className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
               {t("elementPanel.positionH")}
             </label>
             <input
+              id={heightInputId}
               type="number"
               min={minHeight}
               value={heightInput}
@@ -213,8 +235,12 @@ export function PositionSection({
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
+              aria-describedby={`${heightInputId}-hint`}
               className={inputClassName}
             />
+            <span id={`${heightInputId}-hint`} className="sr-only">
+              {t("elementPanel.positionHeightHint", { min: minHeight })}
+            </span>
           </div>
         </div>
       )}

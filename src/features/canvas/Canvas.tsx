@@ -45,6 +45,8 @@ import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
 import { DiagramSurface, writePolicy } from "./core";
 import { useCanvasSvgFileDrop } from "./hooks/useCanvasSvgFileDrop";
 import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
+import { useAnnouncer } from "@/hooks/useAnnouncer";
+import { AnnouncerRegions } from "@/components/AnnouncerRegions";
 
 /**
  * Phase 4 — selection epic.
@@ -263,6 +265,21 @@ const Canvas = (props: CanvasProps = {}) => {
     Object.values(resolvedComponents).some((c) => c.parentId === selectedSingleId);
 
   const { runPanelChildLayout, isRunning: isPanelLayoutRunning } = usePanelChildLayout();
+
+  // Accessibility: announce selection changes to screen readers
+  const { announce, politeRef, assertiveRef } = useAnnouncer();
+  useEffect(() => {
+    if (visualState.selectedNodeId) {
+      const component = resolvedComponents[visualState.selectedNodeId];
+      if (component) {
+        announce(t("accessibility.selectedElement", {
+          name: component.name,
+          type: component.type,
+        }));
+      }
+    }
+  }, [visualState.selectedNodeId, resolvedComponents, announce, t]);
+
   const handleUngroup = useCallback(() => {
     if (!selectedSingleId) return;
     actions.ungroupNodes(selectedSingleId);
@@ -613,6 +630,9 @@ const Canvas = (props: CanvasProps = {}) => {
               selectedNodeId={visualState.selectedNodeId}
             />
           ) : null}
+
+        {/* Screen reader live regions for accessibility announcements */}
+        <AnnouncerRegions politeRef={politeRef} assertiveRef={assertiveRef} />
         </div>
       </div>
     </HandleHighlightProvider>

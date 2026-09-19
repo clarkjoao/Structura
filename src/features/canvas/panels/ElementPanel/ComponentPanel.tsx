@@ -236,21 +236,38 @@ const ComponentPanel = ({
         showServices={!isSimple && !isFlowchart}
       />
       {tab === "connections" ? (
-        <ConnectionsTab componentId={component.id} />
+        <div
+          role="tabpanel"
+          id="tabpanel-connections"
+          aria-labelledby="tab-connections"
+        >
+          <ConnectionsTab componentId={component.id} />
+        </div>
       ) : tab === "services" ? (
-        <ServicesTab
-          componentId={component.id}
-          serviceId={component.serviceId}
-          linkedService={linkedService}
-          onSync={() => linkedService && syncFromService(linkedService)}
-          onServiceChange={(serviceId) => {
-            linkComponentToService(component.id, serviceId ?? undefined);
-            const service = allServices.find((item) => item.id === serviceId);
-            if (service) syncFromService(service, { persist: false });
-          }}
-        />
+        <div
+          role="tabpanel"
+          id="tabpanel-services"
+          aria-labelledby="tab-services"
+        >
+          <ServicesTab
+            componentId={component.id}
+            serviceId={component.serviceId}
+            linkedService={linkedService}
+            onSync={() => linkedService && syncFromService(linkedService)}
+            onServiceChange={(serviceId) => {
+              linkComponentToService(component.id, serviceId ?? undefined);
+              const service = allServices.find((item) => item.id === serviceId);
+              if (service) syncFromService(service, { persist: false });
+            }}
+          />
+        </div>
       ) : (
-        <div className="p-4 space-y-4 overflow-auto flex-1">
+        <div
+          role="tabpanel"
+          id="tabpanel-details"
+          aria-labelledby="tab-details"
+          className="p-4 space-y-4 overflow-auto flex-1"
+        >
           <PositionSection
             componentId={component.id}
             nodeLayout={resolved?.nodeLayouts[component.id]}
@@ -339,10 +356,11 @@ const ComponentPanel = ({
               )}
               {!isDbTable && !isFlowchart && (
                 <div>
-                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                  <label htmlFor="component-type" className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                     {t("endpointPanel.type")}
                   </label>
                   <select
+                    id="component-type"
                     value={type}
                     onChange={(event) => {
                       const nextType = event.target.value as ComponentType;
@@ -354,6 +372,7 @@ const ComponentPanel = ({
                         ...cloudServiceIdClearingPatch(nextProvider ? cloudService : undefined),
                       } as unknown as ComponentPatch);
                     }}
+                    aria-describedby="component-type-desc"
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <optgroup label={t("elementPanel.c4ModelGroup")}>
@@ -376,6 +395,9 @@ const ComponentPanel = ({
                       )),
                     )}
                   </select>
+                  <span id="component-type-desc" className="sr-only">
+                    {t("elementPanel.typeSelectHint")}
+                  </span>
                 </div>
               )}
               {cloudProvider && (

@@ -1263,7 +1263,12 @@
     "opacityLabel": "Opacidade — {{value}}%",
     "tabs": {
       "icon": "Ícone"
-    }
+    },
+    "positionXHint": "Posição horizontal em pixels",
+    "positionYHint": "Posição vertical em pixels",
+    "positionWidthHint": "Largura em pixels, mínimo {{min}}",
+    "positionHeightHint": "Altura em pixels, mínimo {{min}}",
+    "typeSelectHint": "Alterar o tipo deste elemento"
   },
   "apiGroup": {
     "panelTitle": "API Group",
@@ -1318,7 +1323,8 @@
     "incoming": "Entradas",
     "outgoing": "Saídas",
     "dragReorderHint": "Arraste as linhas para reordenar os handles.",
-    "selectAll": "Selecionar todas"
+    "selectAll": "Selecionar todas",
+    "filterAriaLabel": "Filtrar conexões por label"
   },
   "serviceCombobox": {
     "unlinkAria": "Desvincular serviço",
@@ -2097,9 +2103,7 @@
     "gray": "Cinza"
   },
   "elementPanelTab": {
-    "details": "Detalhes",
-    "connections": "Conexões",
-    "services": "Serviços"
+    "listLabel": "Abas do painel de elementos"
   },
   "flowPanel": {
     "copyPrefix": "Cópia de {{name}}",
@@ -2252,5 +2256,16 @@
       "label": "Raia",
       "defaultName": "Raia"
     }
+  },
+  "diagramOutline": {
+    "title": "Esboço do diagrama",
+    "close": "Fechar esboço do diagrama",
+    "treeLabel": "Elementos em {{name}}"
+  },
+  "accessibility": {
+    "selectedElement": "{{name}} selecionado, {{type}}",
+    "panelExpanded": "Painel {{name}} expandido, {{count}} elementos dentro",
+    "panelCollapsed": "Painel {{name}} colapsado",
+    "connectionSelected": "Conexão de {{source}} para {{target}}"
   }
 }
