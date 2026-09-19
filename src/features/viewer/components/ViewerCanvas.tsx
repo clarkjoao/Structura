@@ -252,6 +252,7 @@ const ViewerCanvasContent = ({
             canGoForward={playback.canGoForward}
             onGoNext={playback.goNext}
             onGoBack={playback.goBack}
+            onGoToStep={playback.goToStep}
             onChooseBranch={playback.chooseBranch}
             onExit={playback.exitPlay}
             callStack={playback.callStack}
