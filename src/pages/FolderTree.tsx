@@ -26,6 +26,7 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import type { Folder as FolderType, Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { buildBreadcrumbPath } from "@/pages/dashboard/dashboard.utils";
+import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
 import { useTranslation } from "react-i18next";
 
 const ADD_AT_ROOT = "__add_at_root__";
@@ -226,8 +227,8 @@ export function FolderTree({
         <div
           className={cn(
             "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
-            selectedFolderId === null
-              ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+            selectedFolderId === null && !recentViewActive
+              ? "bg-accent text-accent-foreground font-semibold"
               : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
             dropTargetFolderId === null && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
           )}
@@ -236,7 +237,7 @@ export function FolderTree({
           onDragLeave={onDragLeave}
           onDrop={(e) => handleDrop(e, null)}
         >
-          <Home className="h-4 w-4 shrink-0 opacity-60" />
+          <Home className="h-4 w-4 shrink-0 opacity-60" strokeWidth={1.75} />
           <span className="flex-1 truncate">{t("folderTree.allDiagrams")}</span>
           <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">
             {totalDiagrams}
@@ -286,11 +287,12 @@ export function FolderTree({
         ))}
 
         {filteredRootFolders.length === 0 && searchQuery && (
-          <p className="px-3 py-4 text-xs text-sidebar-foreground/40 text-center">
+          <p className="px-3 py-4 text-xs text-muted-foreground text-center">
             {t("folderTree.noFoldersFound")}
           </p>
         )}
       </div>
+      <ConnectedFolderCard />
     </div>
   );
 }
@@ -329,21 +331,19 @@ function RecentSection({
         className={cn(
           "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition-colors",
           recentViewActive
-            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+            ? "bg-accent text-accent-foreground font-semibold"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
         )}
         aria-pressed={recentViewActive}
       >
-        <Clock className="h-4 w-4 shrink-0 opacity-60" />
+        <Clock className="h-4 w-4 shrink-0 opacity-60" strokeWidth={1.75} />
         <span className="flex-1 truncate text-left">{t("folderTree.recentLabel")}</span>
         <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">{recentCount}</span>
       </button>
 
       <div className="mt-0.5 ml-3 space-y-0.5">
         {preview.length === 0 ? (
-          <p className="px-2 py-1 text-xs text-sidebar-foreground/40">
-            {t("diagramNav.emptyRecent")}
-          </p>
+          <p className="px-2 py-1 text-xs text-muted-foreground">{t("diagramNav.emptyRecent")}</p>
         ) : (
           preview.map((entry) => {
             const path = buildBreadcrumbPath(folders, entry.folderId);
@@ -499,11 +499,11 @@ function FolderTreeItem({
         className={cn(
           "group flex cursor-pointer items-center gap-1 rounded-md py-[5px] pr-1 text-[13px] transition-all",
           isSelected
-            ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+            ? "bg-accent text-accent-foreground font-semibold"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
           isDropTarget && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
         )}
-        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        style={{ paddingLeft: `${20 + depth * 14}px` }}
         onClick={() => !isEditing && onSelectFolder(folder.id)}
         onDoubleClick={(e) => {
           e.stopPropagation();
@@ -524,18 +524,18 @@ function FolderTreeItem({
         >
           {hasChildren ? (
             isExpanded ? (
-              <ChevronDown className="h-3 w-3 text-sidebar-foreground/50" />
+              <ChevronDown className="h-3 w-3 text-sidebar-foreground/50" strokeWidth={1.75} />
             ) : (
-              <ChevronRight className="h-3 w-3 text-sidebar-foreground/50" />
+              <ChevronRight className="h-3 w-3 text-sidebar-foreground/50" strokeWidth={1.75} />
             )
           ) : (
             <span className="w-3" />
           )}
         </button>
         {isExpanded ? (
-          <FolderOpen className="h-4 w-4 shrink-0 text-amber-500/80" />
+          <FolderOpen className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
         ) : (
-          <Folder className="h-4 w-4 shrink-0 text-amber-500/80" />
+          <Folder className="h-4 w-4 shrink-0 text-primary" strokeWidth={1.75} />
         )}
         {isEditing ? (
           <Input
