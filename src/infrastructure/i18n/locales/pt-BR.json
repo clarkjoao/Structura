@@ -204,6 +204,20 @@
     "levelComponentShort": "L3 · Componente",
     "levelDeploymentShort": "L4 · Deployment",
     "diagramPreviewAlt": "Pré-visualização de {{name}}",
+    "filterRecent": "Recentes",
+    "filterFavorites": "Favoritos",
+    "favoritesViewHeading": "Favoritos",
+    "favoritesEmptyTitle": "Nenhum diagrama favorito ainda",
+    "favoritesEmptyHint": "Marque a estrela em um card para fixá-lo aqui",
+    "favoriteDiagram": "Adicionar aos favoritos",
+    "unfavoriteDiagram": "Remover dos favoritos",
+    "viewGrid": "Visualização em grade",
+    "viewList": "Visualização em lista",
+    "stats": {
+      "diagrams": "Diagramas",
+      "components": "Componentes mapeados",
+      "flows": "Fluxos gravados"
+    },
     "card": {
       "rename": "Renomear",
       "duplicate": "Duplicar",

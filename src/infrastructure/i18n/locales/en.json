@@ -204,6 +204,20 @@
     "levelComponentShort": "L3 · Component",
     "levelDeploymentShort": "L4 · Deployment",
     "diagramPreviewAlt": "Preview of {{name}}",
+    "filterRecent": "Recent",
+    "filterFavorites": "Favorites",
+    "favoritesViewHeading": "Favorites",
+    "favoritesEmptyTitle": "No favorite diagrams yet",
+    "favoritesEmptyHint": "Star a diagram card to pin it here",
+    "favoriteDiagram": "Add to favorites",
+    "unfavoriteDiagram": "Remove from favorites",
+    "viewGrid": "Grid view",
+    "viewList": "List view",
+    "stats": {
+      "diagrams": "Diagrams",
+      "components": "Mapped components",
+      "flows": "Recorded flows"
+    },
     "card": {
       "rename": "Rename",
       "duplicate": "Duplicate",
