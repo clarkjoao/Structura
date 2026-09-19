@@ -112,7 +112,7 @@ export default function WalkthroughLibraryPage() {
   const targetPresentation = deleteTargetId ? presentations[deleteTargetId] : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-14">
       <Navbar showWalkthroughs />
 
       {/* Page header */}
@@ -262,36 +262,61 @@ function LibraryBody({
   }
 
   // Otherwise: a "New walkthrough" tile at the top, then folder groups.
+  // The tile lives in the same grid as the first folder's cards so it stays
+  // aligned with them.
+  const bucketsWithTile = insertLeadingTile(buckets);
+
   return (
     <div className="space-y-8">
-      <button
-        type="button"
-        onClick={onCreate}
-        className="flex w-full max-w-xs flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-10 text-center transition-colors hover:border-primary/40 hover:bg-muted/30"
-      >
-        <Plus className="h-6 w-6 text-muted-foreground/70" />
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            {t("walkthrough.newTile.title", "New walkthrough")}
-          </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            {t(
-              "walkthrough.newTile.subtitle",
-              "Pick the first diagram and the first step",
-            )}
-          </p>
-        </div>
-      </button>
-
-      {buckets.map((bucket) => (
+      {bucketsWithTile.map((bucket, idx) => (
         <FolderBucketSection
           key={bucket.folder?.id ?? "__unfiled__"}
           bucket={bucket}
           onEdit={onEdit}
           onDelete={onDelete}
+          leadingTile={
+            idx === 0 ? (
+              <NewWalkthroughTile onCreate={onCreate} />
+            ) : undefined
+          }
         />
       ))}
     </div>
+  );
+}
+
+/**
+ * Splits the bucket list so the first non-empty bucket shows the new-walkthrough
+ * tile at the top of its grid, and any subsequent buckets render alone.
+ * Empty buckets are dropped — they were only placeholders for the structure.
+ */
+function insertLeadingTile(buckets: FolderBucket[]): FolderBucket[] {
+  const firstWithItems = buckets.findIndex((b) => b.items.length > 0);
+  if (firstWithItems < 0) return [];
+  return buckets.filter((b) => b.items.length > 0);
+}
+
+function NewWalkthroughTile({ onCreate }: { onCreate: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={onCreate}
+      className="flex h-full min-h-[140px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border py-8 text-center transition-colors hover:border-primary/40 hover:bg-muted/30"
+    >
+      <Plus className="h-6 w-6 text-muted-foreground/70" />
+      <div>
+        <p className="text-sm font-medium text-foreground">
+          {t("walkthrough.newTile.title", "New walkthrough")}
+        </p>
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {t(
+            "walkthrough.newTile.subtitle",
+            "Pick the first diagram and the first step",
+          )}
+        </p>
+      </div>
+    </button>
   );
 }
 
@@ -299,12 +324,11 @@ interface FolderBucketSectionProps {
   bucket: FolderBucket;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  leadingTile?: React.ReactNode;
 }
 
-function FolderBucketSection({ bucket, onEdit, onDelete }: FolderBucketSectionProps) {
+function FolderBucketSection({ bucket, onEdit, onDelete, leadingTile }: FolderBucketSectionProps) {
   const { t } = useTranslation();
-
-  if (bucket.items.length === 0) return null;
 
   return (
     <section>
@@ -315,6 +339,7 @@ function FolderBucketSection({ bucket, onEdit, onDelete }: FolderBucketSectionPr
         </h2>
       </header>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {leadingTile}
         {bucket.items.map((p) => (
           <WalkthroughCard
             key={p.id}
