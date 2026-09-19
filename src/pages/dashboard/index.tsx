@@ -277,9 +277,18 @@ export default function DashboardPage() {
         ? recentDiagramObjects
         : contentFilter === "favorites"
           ? favoriteDiagramObjects
-          : folderDiagrams;
+          : selectedFolderId === null
+            ? diagrams
+            : folderDiagrams;
     return sumWorkspaceStats(scope);
-  }, [contentFilter, recentDiagramObjects, favoriteDiagramObjects, folderDiagrams]);
+  }, [
+    contentFilter,
+    recentDiagramObjects,
+    favoriteDiagramObjects,
+    selectedFolderId,
+    diagrams,
+    folderDiagrams,
+  ]);
 
   const handleToggleFavorite = useCallback((diagramId: string) => {
     setFavoriteIds(toggleFavoriteDiagram(diagramId));
