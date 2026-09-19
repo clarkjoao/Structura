@@ -104,7 +104,7 @@ export default function PluginsPage() {
   };
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-14">
       <Navbar />
       <div className="container mx-auto max-w-3xl px-5 py-8">
         <div className="mb-2 flex items-center justify-between gap-4">

@@ -30,10 +30,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useDiagramStore } from "@/features/diagram";
 import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
-
-/** Shared compact navbar icon chrome — stroke icons, no filled tint by default. */
-const compactIconButtonClass =
-  "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-muted-foreground";
+import { navIconButtonClass } from "@/components/navIconButtonClass";
 
 export interface FileSystemStatusProps {
   compact?: boolean;
@@ -230,7 +227,7 @@ export function FileSystemStatus({
                 <button
                   type="button"
                   disabled
-                  className={compactIconButtonClass}
+                  className={navIconButtonClass}
                   aria-label={t("filesystem.localFolder")}
                 >
                   <HardDrive className="h-4 w-4" strokeWidth={1.75} />
@@ -275,7 +272,7 @@ export function FileSystemStatus({
                     type="button"
                     onClick={syncFromFolder}
                     disabled={syncing}
-                    className={cn(compactIconButtonClass, "disabled:opacity-50")}
+                    className={cn(navIconButtonClass, "disabled:opacity-50")}
                     aria-label={t("filesystem.syncPullTitle")}
                   >
                     <RefreshCw
@@ -293,7 +290,7 @@ export function FileSystemStatus({
                   <button
                     type="button"
                     onClick={requestDisconnect}
-                    className={compactIconButtonClass}
+                    className={navIconButtonClass}
                     aria-label={t("filesystem.disconnectTitle")}
                   >
                     <FolderX className="h-4 w-4" strokeWidth={1.75} />
@@ -324,7 +321,7 @@ export function FileSystemStatus({
               <button
                 type="button"
                 onClick={reconnectWithPermission}
-                className={compactIconButtonClass}
+                className={navIconButtonClass}
                 aria-label={t("filesystem.needsPermissionTitle")}
               >
                 <KeyRound className="h-4 w-4" strokeWidth={1.75} />
@@ -359,7 +356,7 @@ export function FileSystemStatus({
               <button
                 type="button"
                 onClick={reconnectWithPermission}
-                className={compactIconButtonClass}
+                className={navIconButtonClass}
                 aria-label={t("filesystem.permissionLost")}
               >
                 <AlertTriangle className="h-4 w-4" strokeWidth={1.75} />
@@ -394,7 +391,7 @@ export function FileSystemStatus({
                 <button
                   type="button"
                   disabled
-                  className={compactIconButtonClass}
+                  className={navIconButtonClass}
                   aria-label={t("filesystem.localStorageTitle")}
                 >
                   <Database className="h-4 w-4" strokeWidth={1.75} />
@@ -430,7 +427,7 @@ export function FileSystemStatus({
                   <button
                     type="button"
                     onClick={connect}
-                    className={compactIconButtonClass}
+                    className={navIconButtonClass}
                     aria-label={t("filesystem.connectFolderTitle")}
                     title={t("filesystem.connectFolderTitle")}
                   >

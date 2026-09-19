@@ -177,7 +177,7 @@ export default function ServiceCatalogPage() {
   ];
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-14">
       <Navbar />
       <div className="px-6 py-8">
         <div className="mx-auto max-w-[1600px]">

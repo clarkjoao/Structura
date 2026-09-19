@@ -412,9 +412,9 @@ export default function DashboardPage() {
         : t("dashboard.allDiagrams");
 
   return (
-    <div className="min-h-screen pt-16">
+    <div className="min-h-screen pt-14">
       <Navbar />
-      <div className="flex h-[calc(100vh-4rem)]">
+      <div className="flex h-[calc(100vh-3.5rem)]">
         <div ref={folderTreeRef} className="w-56 shrink-0 overflow-hidden border-r border-border">
           <FolderTree
             folders={folders}

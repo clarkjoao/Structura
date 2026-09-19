@@ -2,10 +2,10 @@ import { useTranslation } from "react-i18next";
 import { Moon, Sun, Monitor, Check, Settings as SettingsIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { I18N_STORAGE_KEY } from "@/infrastructure/i18n";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
+import { navIconButtonClass } from "@/components/navIconButtonClass";
 
 const LANGS = [
   { code: "pt-BR", labelKey: "language.ptBR" as const },
@@ -22,15 +22,14 @@ export function SettingsMenu() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+        <button
+          type="button"
+          className={navIconButtonClass}
           aria-label={t("settings.menuLabel")}
           title={t("settings.menuLabel")}
         >
           <SettingsIcon className="h-4 w-4" strokeWidth={1.75} />
-        </Button>
+        </button>
       </PopoverTrigger>
       <PopoverContent align="end" sideOffset={6} className="w-64 p-0">
         <div className="p-3">
