@@ -107,7 +107,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
   );
 
   return (
-    <div className="flex h-full gap-0">
+    <div className="flex h-full w-full gap-0">
       {/* Left: Scene list */}
       <div className="flex w-64 shrink-0 flex-col border-r border-border">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
