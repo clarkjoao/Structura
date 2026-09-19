@@ -28,9 +28,7 @@ const Navbar = () => {
             to="/"
             label={t("nav.workspaces")}
             active={
-              pathname === "/" ||
-              pathname.startsWith("/workspace") ||
-              pathname.startsWith("/model")
+              pathname === "/" || pathname.startsWith("/workspace") || pathname.startsWith("/model")
             }
           />
           <NavItem
@@ -45,7 +43,7 @@ const Navbar = () => {
           />
         </div>
 
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex shrink-0 items-center gap-0">
           <FileSystemStatus compact />
           <SettingsMenu />
         </div>

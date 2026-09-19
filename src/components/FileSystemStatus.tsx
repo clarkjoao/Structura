@@ -220,7 +220,7 @@ export function FileSystemStatus({
   return (
     <>
       {isFileSystemSupported && status === "connected" && !pendingMerge && (
-        <div className={cn("flex items-center", compact ? "gap-1" : "gap-2")}>
+        <div className={cn("flex items-center", compact ? "gap-0" : "gap-2")}>
           {compact ? (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -272,7 +272,7 @@ export function FileSystemStatus({
                     type="button"
                     onClick={syncFromFolder}
                     disabled={syncing}
-                    className={cn(navIconButtonClass, "disabled:opacity-50")}
+                    className={cn(navIconButtonClass, syncing && "opacity-50")}
                     aria-label={t("filesystem.syncPullTitle")}
                   >
                     <RefreshCw
@@ -384,7 +384,7 @@ export function FileSystemStatus({
         ))}
 
       {status === "disconnected" && (
-        <div className={cn("flex items-center", compact ? "gap-1" : "gap-2")}>
+        <div className={cn("flex items-center", compact ? "gap-0" : "gap-2")}>
           {compact ? (
             <Tooltip>
               <TooltipTrigger asChild>

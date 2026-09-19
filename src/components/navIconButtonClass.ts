@@ -1,3 +1,6 @@
-/** Shared chrome for compact navbar action icons (storage, settings, …). */
+/**
+ * Shared chrome for compact navbar action icons (storage, sync, folder, settings).
+ * 32×32 hit target, rounded-md, no default fill; hover matches sidebar accent rows.
+ */
 export const navIconButtonClass =
-  "flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-muted-foreground";
+  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-auto disabled:opacity-100";
