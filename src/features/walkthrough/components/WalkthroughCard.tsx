@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Play, Pencil, Trash2, FolderOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { WalkthroughPresentation } from "../model/walkthrough.types";
-import { useDiagramStore, useFolder } from "@/features/diagram";
+import { useDiagramStore, useAllFolders } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,10 @@ export function WalkthroughCard({ presentation, onEdit, onDelete }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const diagrams = useDiagramStore((s) => s.diagrams);
-  const folder = useFolder(presentation.folderId ?? "");
+  const folders = useAllFolders();
+  const folder = presentation.folderId
+    ? folders.find((f) => f.id === presentation.folderId)
+    : undefined;
 
   // Collect unique diagram ids across steps
   const diagramIds = [...new Set(presentation.steps.map((s) => s.diagramId))];

@@ -6,10 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useWalkthroughStore } from "../hooks/useWalkthroughStore";
 import type { WalkthroughPresentation } from "../model/walkthrough.types";
 import { SceneEditor } from "../components/SceneEditor";
+import { useAllFolders } from "@/features/diagram";
 import { toast } from "sonner";
+
+const NO_FOLDER_VALUE = "__no_folder__";
 
 export default function WalkthroughEditorPage() {
   const { t } = useTranslation();
@@ -150,12 +160,53 @@ export default function WalkthroughEditorPage() {
             placeholder={t("walkthrough.authorNotesPlaceholder", "Private notes for yourself")}
           />
         </div>
+        <FolderSelector
+          value={local.folderId ?? null}
+          onChange={(folderId) => setLocal({ ...local, folderId })}
+        />
       </div>
 
       {/* Scene editor (takes remaining height) */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <SceneEditor presentation={local} onUpdate={updateLocal} />
       </div>
+    </div>
+  );
+}
+
+interface FolderSelectorProps {
+  value: string | null;
+  onChange: (folderId: string | null) => void;
+}
+
+function FolderSelector({ value, onChange }: FolderSelectorProps) {
+  const { t } = useTranslation();
+  const folders = useAllFolders();
+  const sorted = [...folders].sort((a, b) => a.name.localeCompare(b.name));
+
+  return (
+    <div className="flex w-56 shrink-0 flex-col gap-1">
+      <Label className="text-[11px] text-muted-foreground">
+        {t("walkthrough.folderSelector.label", "Folder")}
+      </Label>
+      <Select
+        value={value ?? NO_FOLDER_VALUE}
+        onValueChange={(v) => onChange(v === NO_FOLDER_VALUE ? null : v)}
+      >
+        <SelectTrigger className="h-7 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={NO_FOLDER_VALUE}>
+            {t("walkthrough.folderSelector.noFolder", "No folder")}
+          </SelectItem>
+          {sorted.map((folder) => (
+            <SelectItem key={folder.id} value={folder.id}>
+              {folder.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
