@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, type ReactNode } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, type FutureConfig } from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -38,14 +38,6 @@ const WalkthroughEditorPage = lazy(
 const WalkthroughPlayerPage = lazy(
   () => import("@/features/walkthrough/pages/WalkthroughPlayerPage"),
 );
-
-// Wrapper that renders children only when the feature flag is enabled.
-// At build time, when VITE_ENABLE_WALKTHROUGHS is not "true", Vite eliminates
-// the entire <WalkthroughGate> block including the lazy() calls above.
-function WalkthroughGate({ children }: { children: ReactNode }) {
-  if (import.meta.env.VITE_ENABLE_WALKTHROUGHS !== "true") return null;
-  return <>{children}</>;
-}
 
 const ROUTER_FUTURE: Partial<FutureConfig> = {
   v7_relativeSplatPath: true,
@@ -93,11 +85,11 @@ function MainPages() {
         <Route path="/catalog" element={<Navigate to="/services" replace />} />
         <Route path="/plugins" element={<PluginsPage />} />
         {import.meta.env.VITE_ENABLE_WALKTHROUGHS === "true" && (
-          <WalkthroughGate>
+          <>
             <Route path="/walkthroughs" element={<WalkthroughLibraryPage />} />
             <Route path="/walkthrough/:id/edit" element={<WalkthroughEditorPage />} />
             <Route path="/walkthrough/:id/step/:step" element={<WalkthroughPlayerPage />} />
-          </WalkthroughGate>
+          </>
         )}
         <Route path="*" element={<NotFound />} />
       </Routes>
