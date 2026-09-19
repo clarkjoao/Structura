@@ -11,8 +11,8 @@ export interface CanvasVisualState {
   setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   selectedEdgeId: string | null;
   setSelectedEdgeId: (id: string | null) => void;
-  highlightedConnectionIds: ReadonlySet<string>;
-  highlightedNodeIds: ReadonlySet<string>;
+  highlightedConnectionIds: Set<string>;
+  highlightedNodeIds: Set<string>;
   setHighlight: (connectionIds: string | readonly string[], nodeIds: readonly string[]) => void;
   clearHighlight: () => void;
   contextMenu: { x: number; y: number; elementId: string } | null;

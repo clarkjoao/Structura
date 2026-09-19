@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 
 export interface UseCanvasHighlightResult {
-  highlightedConnectionIds: ReadonlySet<string>;
-  highlightedNodeIds: ReadonlySet<string>;
+  highlightedConnectionIds: Set<string>;
+  highlightedNodeIds: Set<string>;
   setHighlight: (connectionIds: string | readonly string[], nodeIds: readonly string[]) => void;
   clearHighlight: () => void;
 }
