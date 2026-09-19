@@ -1330,7 +1330,8 @@
     "noResultsFor": "No results for “{{query}}”.",
     "incoming": "Incoming",
     "outgoing": "Outgoing",
-    "dragReorderHint": "Drag rows to reorder handles."
+    "dragReorderHint": "Drag rows to reorder handles.",
+    "selectAll": "Select all"
   },
   "serviceCombobox": {
     "unlinkAria": "Unlink service",

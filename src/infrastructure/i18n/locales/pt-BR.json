@@ -1317,7 +1317,8 @@
     "noResultsFor": "Nenhum resultado para “{{query}}”.",
     "incoming": "Entradas",
     "outgoing": "Saídas",
-    "dragReorderHint": "Arraste as linhas para reordenar os handles."
+    "dragReorderHint": "Arraste as linhas para reordenar os handles.",
+    "selectAll": "Selecionar todas"
   },
   "serviceCombobox": {
     "unlinkAria": "Desvincular serviço",

@@ -288,13 +288,13 @@ const Canvas = (props: CanvasProps = {}) => {
    */
   const handleHighlightValue = useMemo(
     () => ({
-      highlightedConnectionId: visualState.highlightedConnectionId,
+      highlightedConnectionIds: visualState.highlightedConnectionIds,
       highlightedNodeIds: visualState.highlightedNodeIds,
       setHighlight: visualState.setHighlight,
       clearHighlight: visualState.clearHighlight,
     }),
     [
-      visualState.highlightedConnectionId,
+      visualState.highlightedConnectionIds,
       visualState.highlightedNodeIds,
       visualState.setHighlight,
       visualState.clearHighlight,

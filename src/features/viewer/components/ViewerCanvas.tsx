@@ -113,7 +113,7 @@ const ViewerCanvasContent = ({
    * Click-to-focus on the shared canvas: expand a node's description, or
    * highlight an edge and its ends — same HandleHighlight path as the editor.
    */
-  const { highlightedConnectionId, highlightedNodeIds, setHighlight, clearHighlight } =
+  const { highlightedConnectionIds, highlightedNodeIds, setHighlight, clearHighlight } =
     useCanvasHighlight();
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
 
@@ -128,13 +128,13 @@ const ViewerCanvasContent = ({
   const handleEdgeClick = useCallback(
     (_: MouseEvent, edge: Edge) => {
       setFocusedNodeId(null);
-      if (highlightedConnectionId === edge.id) {
+      if (highlightedConnectionIds.size === 1 && highlightedConnectionIds.has(edge.id)) {
         clearHighlight();
         return;
       }
       setHighlight(edge.id, [edge.source, edge.target]);
     },
-    [highlightedConnectionId, setHighlight, clearHighlight],
+    [highlightedConnectionIds, setHighlight, clearHighlight],
   );
 
   const handlePaneClick = useCallback(() => {
@@ -158,12 +158,12 @@ const ViewerCanvasContent = ({
 
   const handleHighlightValue = useMemo(
     () => ({
-      highlightedConnectionId,
+      highlightedConnectionIds,
       highlightedNodeIds,
       setHighlight,
       clearHighlight,
     }),
-    [highlightedConnectionId, highlightedNodeIds, setHighlight, clearHighlight],
+    [highlightedConnectionIds, highlightedNodeIds, setHighlight, clearHighlight],
   );
 
   /** The link's own choice, honoured once — a reader who closes it stays closed. */

@@ -80,7 +80,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   // The connection's style, as the projection read it: the toolbar edits it,
   // and nothing on the read path needs the store's record.
   const connectionStyle = edgeData.connectionStyle;
-  const { highlightedConnectionId } = useHandleHighlight();
+  const { highlightedConnectionIds } = useHandleHighlight();
 
   const source = useMemo<Point>(() => ({ x: sourceX, y: sourceY }), [sourceX, sourceY]);
   const target = useMemo<Point>(() => ({ x: targetX, y: targetY }), [targetX, targetY]);
@@ -197,7 +197,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     [source, target, projectionPoints, labelOffset],
   );
 
-  const isHighlighted = Boolean(selected) || highlightedConnectionId === connectionId;
+  const isHighlighted = Boolean(selected) || highlightedConnectionIds.has(connectionId);
   const strokeStyle = edgeData.strokeStyle ?? StrokeStyle.Solid;
   const strokeWidth = edgeData.strokeWidth ?? 1;
   const baseStroke = edgeData.color ?? DEFAULT_STROKE;
