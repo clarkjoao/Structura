@@ -47,8 +47,22 @@ interface ViewerCanvasProps {
    * Checked against the diagram that arrived rather than trusted: a link kept
    * after its script was deleted names something that is not there, and the
    * honest outcome is the diagram with its own list, not a reading of nothing.
+   *
+   * Skipped entirely under `previewMode` — the editor preview shows the
+   * diagram framed on the script's first step, not the rail that reads it,
+   * because the rail belongs to the reader, not the author.
    */
   initialFlowId?: string | null;
+  /**
+   * Editor preview: show the diagram framed on the named flow's first step,
+   * with the flow's numbering on the canvas — but no reader rail, no advance
+   * controls. The author is choosing which flow this scene points at, not
+   * playing through it. The rail belongs to the player; here it would be in
+   * the way of the diagram it is supposed to explain.
+   */
+  previewMode?: boolean;
+  /** When `previewMode` is on, the flow to frame the preview on. */
+  previewFlowId?: string | null;
 }
 
 const ViewerCanvasContent = ({
@@ -56,12 +70,18 @@ const ViewerCanvasContent = ({
   offsetTop = 0,
   showOpenInStructuraButton = true,
   initialFlowId = null,
+  previewMode = false,
+  previewFlowId = null,
 }: ViewerCanvasProps) => {
   const flows = useMemo(() => Object.values(diagram.snapshot.flows ?? {}), [diagram]);
 
   /**
    * The reading, held here rather than in the editor's store: the viewer has
    * no store, and this is the same state machine the editor drives.
+   *
+   * Under `previewMode` there is no reading at all — the diagram is shown in
+   * bulk, framed on the entry step, the way a share link that has not picked
+   * a flow yet shows it.
    */
   const [mode, setMode] = useState<FlowMode>({ kind: "idle" });
   const playback = useFlowModePlayback(mode, setMode);
@@ -72,8 +92,31 @@ const ViewerCanvasContent = ({
    * What the canvas shows of the reading: the numbers, and where the reader
    * is. Null while nothing is open, and then the canvas carries no numbers —
    * the open script is what numbers it.
+   *
+   * Under `previewMode`, the entry step of the previewed flow gets the badge
+   * set so the author can see which flow this scene names.
    */
+  const previewFlow = useMemo(() => {
+    if (!previewMode || !previewFlowId) return null;
+    return flows.find((f) => f.id === previewFlowId) ?? null;
+  }, [previewMode, previewFlowId, flows]);
+  const previewEntryStepId = useMemo(() => {
+    if (!previewFlow) return null;
+    if (previewFlow.entryStepId) return previewFlow.entryStepId;
+    const firstStep = Object.values(previewFlow.steps ?? {})[0];
+    return firstStep?.id ?? null;
+  }, [previewFlow]);
+
   const reading = useMemo(() => {
+    if (previewMode && previewFlow) {
+      // Show the previewed flow's numbering with the entry step active, but
+      // no advance state — the author is selecting, not playing.
+      if (!previewEntryStepId) return null;
+      return {
+        badges: buildFlowBadges(previewFlow, buildFlowOutline(previewFlow).rows),
+        highlight: buildFlowHighlight(previewFlow, previewEntryStepId, []),
+      };
+    }
     if (!readingFlow) return null;
     const rows = buildFlowOutline(readingFlow).rows;
     return {
@@ -82,7 +125,7 @@ const ViewerCanvasContent = ({
         ? buildFlowHighlight(readingFlow, playing.currentStepId, playing.history)
         : EMPTY_FLOW_HIGHLIGHT,
     };
-  }, [readingFlow, playing?.currentStepId, playing?.history]);
+  }, [previewMode, previewFlow, previewEntryStepId, readingFlow, playing?.currentStepId, playing?.history]);
 
   /**
    * Starting a script from whatever the reader clicked.
@@ -166,13 +209,19 @@ const ViewerCanvasContent = ({
     [highlightedConnectionIds, highlightedNodeIds, setHighlight, clearHighlight],
   );
 
-  /** The link's own choice, honoured once — a reader who closes it stays closed. */
+  /** The link's own choice, honoured once — a reader who closes it stays closed.
+   *
+   * Skipped under `previewMode`: the editor preview is selecting, not
+   * playing, and skipping the auto-open is what keeps the rail off the
+   * page the author is editing in.
+   */
   const openedInitial = useRef(false);
   useEffect(() => {
+    if (previewMode) return;
     if (openedInitial.current || !initialFlowId) return;
     openedInitial.current = true;
     startFlow(initialFlowId);
-  }, [initialFlowId, startFlow]);
+  }, [previewMode, initialFlowId, startFlow]);
 
   const {
     nodes: projectedNodes,
@@ -202,17 +251,23 @@ const ViewerCanvasContent = ({
    * The canvas follows the reading. Without this a reader was told about a
    * node and left to find it — the rail said "Redirect API" and the diagram
    * stayed where it was, often with that node off-screen.
+   *
+   * Under `previewMode`, "reading" means the editor is previewing a flow:
+   * the entry step is the only step, and the canvas frames it instead of
+   * the whole diagram, so the author sees what a reader will start on.
    */
   useFrameReadStep({
     reactFlowInstance,
-    isReading: Boolean(readingFlow),
-    flow: readingFlow,
-    currentStepId: playing?.currentStepId ?? null,
+    isReading: Boolean(readingFlow) || Boolean(previewFlow && previewEntryStepId),
+    flow: previewFlow ?? readingFlow,
+    currentStepId: previewEntryStepId ?? playing?.currentStepId ?? null,
   });
 
-  /** The same keys the editor's reading answers to. */
+  /** The same keys the editor's reading answers to. Skipped under `previewMode`:
+   * there is no rail, and the keys would step through state the author never
+   * opened. */
   useFlowReadingKeys({
-    isReading: Boolean(readingFlow),
+    isReading: Boolean(readingFlow) && !previewMode,
     isCondition: playback.isCondition,
     onGoNext: playback.goNext,
     onGoBack: playback.goBack,
@@ -226,7 +281,7 @@ const ViewerCanvasContent = ({
       style={{
         position: "relative",
         width: "100%",
-        height: "100vh",
+        height: "100%",
         paddingTop: offsetTop,
         boxSizing: "border-box",
       }}
@@ -299,7 +354,7 @@ const ViewerCanvasContent = ({
           </DiagramSurface>
         </HandleHighlightProvider>
 
-        {!readingFlow && <FlowInvite flows={flows} onSelect={startFlow} />}
+        {!readingFlow && !previewMode && <FlowInvite flows={flows} onSelect={startFlow} />}
 
         {showOpenInStructuraButton && <OpenInStructuraButton diagram={diagram} />}
       </div>
@@ -312,6 +367,8 @@ export const ViewerCanvas = ({
   offsetTop = 0,
   showOpenInStructuraButton = true,
   initialFlowId = null,
+  previewMode = false,
+  previewFlowId = null,
 }: ViewerCanvasProps) => (
   <DiagramFlowProvider>
     <ViewerCanvasContent
@@ -319,6 +376,8 @@ export const ViewerCanvas = ({
       offsetTop={offsetTop}
       showOpenInStructuraButton={showOpenInStructuraButton}
       initialFlowId={initialFlowId}
+      previewMode={previewMode}
+      previewFlowId={previewFlowId}
     />
   </DiagramFlowProvider>
 );

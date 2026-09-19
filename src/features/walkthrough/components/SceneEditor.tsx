@@ -344,7 +344,9 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                 {selectedDiagram ? (
                   <ViewerCanvas
                     diagram={selectedDiagram}
-                    initialFlowId={selectedStep.flowId || null}
+                    initialFlowId={null}
+                    previewMode
+                    previewFlowId={selectedStep.flowId || null}
                     showOpenInStructuraButton={false}
                   />
                 ) : selectedStep.diagramId ? (
