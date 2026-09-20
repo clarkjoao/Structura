@@ -7,7 +7,14 @@ export interface WalkthroughStepRef {
   flowId: string;
   /** Override title shown for this step in the player/editor; undefined = use the flow's name */
   label?: string;
-  /** Author note visible only during editing, not shown to readers */
+  /**
+   * A note the author attaches to this scene, shown to the reader while the
+   * scene plays — beside the diagram, not inside it.
+   *
+   * It used to be editor-only, which is why it was called an author note. It
+   * is the author's note *about* the scene, not a note kept from the reader;
+   * `WalkthroughPresentation.authorNotes` is the one that stays private.
+   */
   note?: string;
 }
 

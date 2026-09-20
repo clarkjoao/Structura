@@ -63,8 +63,6 @@ agree with it, in particular with its "A branch point is a choice, not a key" re
 
 ## Non-Goals
 
-- **Presenter view.** A per-scene `note` stays editor-only. Showing speaker notes to the
-  person driving the walkthrough is a separate feature with its own layout question.
 - **Repairing broken scene references.** A scene pointing at a deleted diagram keeps showing
   the "some diagrams missing" badge and the skip affordance it has today. Offering to re-point
   it at another diagram is out of scope.

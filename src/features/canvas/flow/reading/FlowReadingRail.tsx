@@ -54,6 +54,14 @@ interface Props {
   flows: readonly Flow[];
   onSelectFlow: (flowId: string) => void;
   /**
+   * Whether the reader may move to another script.
+   *
+   * False where something outside the diagram decides which script is being
+   * read — a walkthrough scene names its flow, and letting the reader swap it
+   * would leave the walkthrough tracking a script nobody is on.
+   */
+  canSwitchFlow?: boolean;
+  /**
    * The diagram the steps are read against.
    *
    * The editor takes it from the store, which is where the diagram being
@@ -101,6 +109,7 @@ const FlowReadingRail = ({
   seen = history,
   flows,
   onSelectFlow,
+  canSwitchFlow = true,
   diagram: diagramProp,
   isCondition,
   canGoBack,
@@ -122,7 +131,7 @@ const FlowReadingRail = ({
   const storeDiagram = useActiveDiagram();
   const diagram = diagramProp ?? storeDiagram;
   const [showFlowList, setShowFlowList] = useState(false);
-  const canSwitch = flows.length > 1;
+  const canSwitch = canSwitchFlow && flows.length > 1;
 
   const view = useMemo(
     () => (diagram ? resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null) : null),

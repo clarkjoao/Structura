@@ -1,7 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronRight, RefreshCcw, Clapperboard, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  RefreshCcw,
+  Clapperboard,
+  AlertTriangle,
+  StickyNote,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useWalkthroughStore } from "../hooks/useWalkthroughStore";
 import { useDiagramStore } from "@/features/diagram";
@@ -118,6 +126,44 @@ function SceneEndOverlay({
   );
 }
 
+/**
+ * The author's note for the scene in hand.
+ *
+ * Top right, clear of the reading rail on the left and of the change-of-diagram
+ * notice in the middle. Over the canvas rather than in a column of its own,
+ * because it is a remark about the scene and should cost the diagram nothing
+ * when a scene carries none.
+ *
+ * Dismissable for the scene being read; crossing into the next one brings its
+ * own note back, since closing this is "I have read it", not a preference.
+ */
+function SceneNote({ note, onDismiss }: { note: string; onDismiss: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      data-testid="scene-note"
+      className="absolute right-4 top-4 z-20 max-w-xs rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur"
+    >
+      <div className="mb-1 flex items-center gap-1.5">
+        <StickyNote className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        <span className="flex-1 text-[11px] font-medium text-muted-foreground">
+          {t("walkthrough.sceneNote")}
+        </span>
+        <button
+          type="button"
+          onClick={onDismiss}
+          title={t("walkthrough.hideNote")}
+          aria-label={t("walkthrough.hideNote")}
+          className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <p className="text-[13px] leading-relaxed text-foreground [text-wrap:pretty]">{note}</p>
+    </div>
+  );
+}
+
 export default function WalkthroughPlayerPage() {
   const { t } = useTranslation();
   const { id, step: stepParam } = useParams<{ id: string; step: string }>();
@@ -126,6 +172,7 @@ export default function WalkthroughPlayerPage() {
   const diagrams = useDiagramStore((s) => s.diagrams);
 
   const [showEndOverlay, setShowEndOverlay] = useState(false);
+  const [noteDismissed, setNoteDismissed] = useState(false);
   const [showDiagramTransition, setShowDiagramTransition] = useState(false);
   const [transitionTarget, setTransitionTarget] = useState<string | null>(null);
   const prevDiagramIdRef = useRef<string | null>(null);
@@ -162,6 +209,7 @@ export default function WalkthroughPlayerPage() {
       if (index < 0 || !presentation || index >= presentation.steps.length) return;
       navigate(`/workflow/${id}/step/${index}`);
       setShowEndOverlay(false);
+      setNoteDismissed(false);
     },
     [id, presentation, navigate],
   );
@@ -342,7 +390,12 @@ export default function WalkthroughPlayerPage() {
           showOpenInStructuraButton={false}
           onReachedFlowEnd={handleReachedFlowEnd}
           onReachedFlowStart={handleReachedFlowStart}
+          lockedToInitialFlow
         />
+
+        {step.note && !noteDismissed && (
+          <SceneNote note={step.note} onDismiss={() => setNoteDismissed(true)} />
+        )}
 
         {/* Scene end overlay */}
         {showEndOverlay && (

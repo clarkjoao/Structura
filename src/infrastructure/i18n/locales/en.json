@@ -2270,8 +2270,8 @@
   },
   "walkthrough": {
     "addScene": "Add scene",
-    "authorNote": "Author note",
-    "authorNotePlaceholder": "Not shown to readers",
+    "authorNote": "Note",
+    "authorNotePlaceholder": "Shown to the reader while this scene plays",
     "authorNotes": "Author notes",
     "authorNotesPlaceholder": "Private notes for yourself",
     "backToEditor": "Back to editor",
@@ -2318,6 +2318,7 @@
       "title": "Walkthroughs",
       "all": "All walkthroughs"
     },
+    "hideNote": "Hide note",
     "library": "Walkthroughs",
     "librarySubtitle": "A walkthrough is a sequence of steps that spans multiple diagrams — pick the reader up at one diagram and drop them into the next, with each step pointing to a flow.",
     "missingId": "Missing walkthrough id",
@@ -2348,6 +2349,7 @@
     "sceneComplete": "Scene complete",
     "sceneInspector": "Scene {{current}} of {{total}}",
     "sceneNotFound": "Scene not found",
+    "sceneNote": "Note",
     "sceneNumber": "Scene {{number}}",
     "sceneProgress": "Scene {{current}} of {{total}}",
     "scene_one": "scene",

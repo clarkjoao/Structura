@@ -163,3 +163,52 @@ depend on an inline fallback for its text.
 
 - **WHEN** the translation catalogues are checked for the keys the player reads
 - **THEN** every such key is present in both `en` and `pt-BR`
+
+### Requirement: A scene's note is shown while the scene plays
+
+A note the author attached to a scene SHALL be shown to the reader while that scene is
+playing, beside the diagram rather than over the part of it being read. A scene carrying no
+note SHALL cost the diagram nothing.
+
+The reader SHALL be able to dismiss it. Dismissing SHALL apply to the scene in hand, not
+stand as a preference: crossing into another scene that carries a note SHALL show that note.
+
+#### Scenario: A scene with a note
+
+- **GIVEN** a walkthrough whose first scene carries a note
+- **WHEN** that scene plays
+- **THEN** the note is shown to the reader
+
+#### Scenario: A scene without one
+
+- **GIVEN** a scene carrying no note
+- **WHEN** it plays
+- **THEN** nothing is shown in the note's place
+
+#### Scenario: Dismissing, then moving on
+
+- **GIVEN** a reader who dismissed the note on the scene they are reading
+- **WHEN** they reach a later scene that carries its own note
+- **THEN** that note is shown
+
+### Requirement: The reading stays on the scene's own flow
+
+While a walkthrough is playing, the reader SHALL NOT be offered a way to move the reading to
+another flow of the diagram. The scene names the flow; substituting it would leave the
+walkthrough tracking a reading nobody is on, and reaching the end of the substituted flow
+would announce the end of a scene the reader never finished.
+
+This restriction SHALL apply only where a host decides which flow is read. A shared diagram,
+where the reader chooses, SHALL keep offering its other flows.
+
+#### Scenario: Playing a scene on a diagram with several flows
+
+- **GIVEN** a walkthrough scene reading one flow of a diagram that has several
+- **WHEN** the reader looks at the reading's controls
+- **THEN** no control offers another flow
+
+#### Scenario: A shared diagram is unaffected
+
+- **GIVEN** a shared diagram with several flows, read outside any walkthrough
+- **WHEN** the reader looks at the reading's controls
+- **THEN** another flow can still be chosen

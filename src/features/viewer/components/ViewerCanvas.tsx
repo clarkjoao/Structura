@@ -77,6 +77,16 @@ interface ViewerCanvasProps {
   onReachedFlowEnd?: () => void;
   /** Back was pressed at the entry step. Same contract as above, mirrored. */
   onReachedFlowStart?: () => void;
+  /**
+   * The reading stays on the flow the link named, and the rail offers no way
+   * to another one.
+   *
+   * For a host that decides which flow is being read — a walkthrough scene
+   * names one — because swapping underneath it would leave the host tracking a
+   * reading nobody is on, and reaching the end of the substituted flow would
+   * report an ending for a scene the reader never finished.
+   */
+  lockedToInitialFlow?: boolean;
 }
 
 const ViewerCanvasContent = ({
@@ -88,6 +98,7 @@ const ViewerCanvasContent = ({
   previewFlowId = null,
   onReachedFlowEnd,
   onReachedFlowStart,
+  lockedToInitialFlow = false,
 }: ViewerCanvasProps) => {
   const flows = useMemo(() => Object.values(diagram.snapshot.flows ?? {}), [diagram]);
 
@@ -406,6 +417,7 @@ const ViewerCanvasContent = ({
             seen={playing?.seen ?? EMPTY_HISTORY}
             flows={flows}
             onSelectFlow={startFlow}
+            canSwitchFlow={!lockedToInitialFlow}
             isCondition={playback.isCondition}
             canGoBack={playback.canGoBack}
             canGoForward={playback.canGoForward}
@@ -475,6 +487,7 @@ export const ViewerCanvas = ({
   previewFlowId = null,
   onReachedFlowEnd,
   onReachedFlowStart,
+  lockedToInitialFlow = false,
 }: ViewerCanvasProps) => (
   <DiagramFlowProvider>
     <ViewerCanvasContent
@@ -484,6 +497,7 @@ export const ViewerCanvas = ({
       initialFlowId={initialFlowId}
       onReachedFlowEnd={onReachedFlowEnd}
       onReachedFlowStart={onReachedFlowStart}
+      lockedToInitialFlow={lockedToInitialFlow}
       previewMode={previewMode}
       previewFlowId={previewFlowId}
     />

@@ -2270,8 +2270,8 @@
   },
   "walkthrough": {
     "addScene": "Adicionar cena",
-    "authorNote": "Nota do autor",
-    "authorNotePlaceholder": "Não mostrado aos leitores",
+    "authorNote": "Nota",
+    "authorNotePlaceholder": "Mostrada ao leitor durante esta cena",
     "authorNotes": "Notas do autor",
     "authorNotesPlaceholder": "Notas privadas para você",
     "backToEditor": "Voltar ao editor",
@@ -2318,6 +2318,7 @@
       "title": "Workflows",
       "all": "Todos os workflows"
     },
+    "hideNote": "Ocultar nota",
     "library": "Workflows",
     "librarySubtitle": "Um workflow é uma sequência de passos que atravessa vários diagramas — pegue o leitor em um diagrama e leve ao próximo, com cada passo apontando para um fluxo.",
     "missingId": "ID do workflow ausente",
@@ -2348,6 +2349,7 @@
     "sceneComplete": "Cena concluída",
     "sceneInspector": "Cena {{current}} de {{total}}",
     "sceneNotFound": "Cena não encontrada",
+    "sceneNote": "Nota",
     "sceneNumber": "Cena {{number}}",
     "sceneProgress": "Cena {{current}} de {{total}}",
     "scene_one": "cena",

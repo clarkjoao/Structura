@@ -296,3 +296,61 @@ describe("crossing into another diagram", () => {
     spy.mockRestore();
   });
 });
+
+describe("the scene's note", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  const WITH_NOTE = presentation([
+    { diagramId: "d1", flowId: "fa", note: "Mention the retry budget here" },
+    { diagramId: "d1", flowId: "fb" },
+    { diagramId: "d1", flowId: "fa", note: "And the settlement window" },
+  ]);
+
+  it("is shown to the reader while the scene plays", () => {
+    mount(WITH_NOTE);
+
+    expect(screen.getByText("Mention the retry budget here")).toBeTruthy();
+  });
+
+  it("is absent on a scene that carries none", () => {
+    mount(WITH_NOTE, 1);
+
+    expect(screen.queryByTestId("scene-note")).toBeNull();
+  });
+
+  it("can be dismissed", () => {
+    mount(WITH_NOTE);
+
+    fireEvent.click(screen.getByLabelText("Hide note"));
+
+    expect(screen.queryByTestId("scene-note")).toBeNull();
+  });
+
+  it("comes back on the next scene that has one", () => {
+    mount(WITH_NOTE);
+    fireEvent.click(screen.getByLabelText("Hide note"));
+
+    skipForward(); // scene 2, no note
+    skipForward(); // scene 3, its own note
+
+    // Dismissing is "I have read this one", not a standing preference.
+    expect(screen.getByText("And the settlement window")).toBeTruthy();
+  });
+});
+
+describe("the reading stays on the scene's flow", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  it("offers no way to switch to another flow", () => {
+    // The diagram has two flows, so the rail would normally offer the switch.
+    mount(TWO_SCENES);
+
+    // Swapping underneath the player would leave it tracking a reading nobody
+    // is on, and the substituted flow's end would report a scene ending.
+    expect(screen.queryByText("Switch flow")).toBeNull();
+  });
+});

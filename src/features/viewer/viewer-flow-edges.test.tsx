@@ -95,17 +95,18 @@ function diagramWith(flows: Flow[]): Diagram {
   } as unknown as Diagram;
 }
 
-function open(flow: Flow) {
+function open(flow: Flow, extra: { lockedToInitialFlow?: boolean; flows?: Flow[] } = {}) {
   const onReachedFlowEnd = vi.fn();
   const onReachedFlowStart = vi.fn();
   render(
     <MemoryRouter>
       <ViewerCanvas
-        diagram={diagramWith([flow])}
+        diagram={diagramWith(extra.flows ?? [flow])}
         showOpenInStructuraButton={false}
         initialFlowId={flow.id}
         onReachedFlowEnd={onReachedFlowEnd}
         onReachedFlowStart={onReachedFlowStart}
+        lockedToInitialFlow={extra.lockedToInitialFlow}
       />
     </MemoryRouter>,
   );
@@ -209,5 +210,24 @@ describe("keys yield to text entry", () => {
 
     expect(onReachedFlowEnd).not.toHaveBeenCalled();
     input.remove();
+  });
+});
+
+describe("moving to another flow", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  it("is offered when the reader is the one choosing", () => {
+    open(TWO_STEPS, { flows: [TWO_STEPS, BRANCHING] });
+
+    // A shared diagram: nothing outside it decides what is being read.
+    expect(screen.getByText("Switch flow")).toBeTruthy();
+  });
+
+  it("is withheld when a host has named the flow", () => {
+    open(TWO_STEPS, { flows: [TWO_STEPS, BRANCHING], lockedToInitialFlow: true });
+
+    expect(screen.queryByText("Switch flow")).toBeNull();
   });
 });
