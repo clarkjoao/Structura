@@ -129,6 +129,45 @@ export default function WalkthroughPlayerPage() {
     goNextScene();
   }, [goNextScene]);
 
+  // Keyboard shortcuts:
+  //   ↓ / →           advance one step in the current flow (handled inside
+  //                   ViewerCanvas — playback state lives there).
+  //   ⌘ + → / ↓      next scene
+  //   ⌘ + ← / ↑      previous scene
+  //
+  // ⌘ is Meta on macOS (the user's OS per the env). We don't bind Ctrl to
+  // scene navigation, so we never clash with browser history (⌘[ / ⌘]) or
+  // the editor's Ctrl+arrow hotkeys.
+  //
+  // Skipped when focus is in an input / textarea / select / contenteditable,
+  // and when an extra modifier (Alt or Shift) is held, so it never fights
+  // a text field or a native shortcut.
+  useEffect(() => {
+    function isEditableTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (target.isContentEditable) return true;
+      return false;
+    }
+
+    function onKey(e: KeyboardEvent) {
+      if (!e.metaKey) return;
+      if (e.altKey || e.shiftKey || e.ctrlKey) return;
+      if (isEditableTarget(e.target)) return;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        goNextScene();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        goPrevScene();
+      }
+    }
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goNextScene, goPrevScene]);
+
   // If step is null or the referenced diagram doesn't exist, show error
   if (!presentation) {
     return (
@@ -201,6 +240,15 @@ export default function WalkthroughPlayerPage() {
           <h1 className="truncate text-sm font-medium">
             {step.label || diagram.snapshot.flows?.[step.flowId]?.name || presentation.title}
           </h1>
+          <span
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+            title={t("walkthrough.diagram", "Diagram")}
+          >
+            <span className="uppercase tracking-wider opacity-70">
+              {t("walkthrough.diagram", "Diagram")}
+            </span>
+            <span className="text-foreground">{diagram.name}</span>
+          </span>
           <span className="shrink-0 text-xs text-muted-foreground">
             {stepIndex + 1} / {presentation.steps.length}
           </span>
