@@ -82,8 +82,13 @@ agree with it, in particular with its "A branch point is a choice, not a key" re
 ## Impact
 
 **New**
-- `src/components/folders/FolderTree.tsx` — generic, parameterised by `countFor`,
-  `onDropItem`, `dragMimeType`, `canDeleteFolder`.
+
+- `src/components/folders/FolderTree.tsx` — generic, parameterised by `countFor`, the
+  labels, and an optional drag bundle carrying the library's own mime type.
+- `src/components/folders/dragTypes.ts` — one drag mime type per library.
+- `src/features/walkthrough/walkthroughFiltering.ts` — the listing query (search, chips,
+  sort, orphaned-folder-as-root) held apart from the page so it can be tested directly.
+- `src/features/walkthrough/components/WalkthroughList.tsx` — the list presentation.
 - `src/components/filters/LibraryFilterToolbar.tsx` — generic search / chips / sort / view toggle.
 - `src/infrastructure/persistence/sidecarFiles.ts` — the known sidecar suffixes, and the
   skip predicate the diagram scanner uses.
@@ -95,6 +100,7 @@ agree with it, in particular with its "A branch point is a choice, not a key" re
 - `src/features/walkthrough/favoriteWalkthroughs.ts` — mirrors `favoriteDiagrams.ts`.
 
 **Changed**
+
 - `src/infrastructure/persistence/FileSystemAdapter.ts` — `resolveDiagramPathSegments` is
   refactored onto a new `resolveFolderPathSegments(folderId)`; `writeSidecar`,
   `deleteSidecarAtSegments` and `scanSidecars` are added; `_scanDirectory` and
@@ -112,6 +118,7 @@ agree with it, in particular with its "A branch point is a choice, not a key" re
   that are referenced in code but exist in neither locale, plus the new strings.
 
 **Deleted**
+
 - `src/features/walkthrough/components/WalkthroughFolderTree.tsx` (470 lines).
 - `src/pages/FolderTree.tsx` (absorbed into the shared component).
 

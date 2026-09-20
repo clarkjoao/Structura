@@ -31,12 +31,14 @@ import { BulkDeleteConfirmDialog } from "@/components/BulkDeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
-import { FolderTree } from "@/pages/FolderTree";
+import { FolderTree } from "@/components/folders/FolderTree";
+import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
+import { DIAGRAM_DRAG_MIME } from "@/components/folders/dragTypes";
 import { cn } from "@/lib/utils";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
 import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";
-import { WorkspaceFilterToolbar } from "@/pages/dashboard/WorkspaceFilterToolbar";
+import { LibraryFilterToolbar } from "@/components/filters/LibraryFilterToolbar";
 import {
   readFavoriteIds,
   toggleFavoriteDiagram,
@@ -268,6 +270,25 @@ export default function DashboardPage() {
     setFavoriteIds(toggleFavoriteDiagram(diagramId));
   }, []);
 
+  const diagramFilterChips = useMemo(
+    () => [
+      { value: "all" as const, label: t("common.all") },
+      { value: "recent" as const, label: t("dashboard.filterRecent") },
+      { value: "favorites" as const, label: t("dashboard.filterFavorites") },
+    ],
+    [t],
+  );
+
+  const diagramSortOptions = useMemo(
+    () => [
+      { key: "name" as const, label: t("common.name") },
+      { key: "updatedAt" as const, label: t("common.lastEdited") },
+      { key: "level" as const, label: t("common.c4Level") },
+      { key: "domain" as const, label: t("common.domain") },
+    ],
+    [t],
+  );
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
     else {
@@ -353,7 +374,7 @@ export default function DashboardPage() {
   );
 
   const handleDragStart = useCallback((e: React.DragEvent, diagramId: string) => {
-    e.dataTransfer.setData("application/x-structura-diagram-id", diagramId);
+    e.dataTransfer.setData(DIAGRAM_DRAG_MIME, diagramId);
     e.dataTransfer.effectAllowed = "move";
   }, []);
 
@@ -373,6 +394,35 @@ export default function DashboardPage() {
     [moveDiagram],
   );
 
+  /**
+   * Diagrams filed *directly* in a folder. `FolderTree` adds up the descendants
+   * itself, so this stays a flat tally.
+   */
+  const diagramCountByFolderId = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const diagram of diagrams) {
+      if (!diagram.folderId) continue;
+      counts.set(diagram.folderId, (counts.get(diagram.folderId) ?? 0) + 1);
+    }
+    return counts;
+  }, [diagrams]);
+
+  const countDiagramsInFolder = useCallback(
+    (folderId: string) => diagramCountByFolderId.get(folderId) ?? 0,
+    [diagramCountByFolderId],
+  );
+
+  const diagramDrag = useMemo(
+    () => ({
+      mimeType: DIAGRAM_DRAG_MIME,
+      dropTargetFolderId,
+      onDragOverFolder: handleDragOverFolder,
+      onDragLeave: handleDragLeave,
+      onDropItem: handleDropOnFolder,
+    }),
+    [dropTargetFolderId, handleDragOverFolder, handleDragLeave, handleDropOnFolder],
+  );
+
   const handleFolderCardDragOver = useCallback(
     (event: React.DragEvent, folderId: string) => {
       event.preventDefault();
@@ -386,7 +436,7 @@ export default function DashboardPage() {
     (event: React.DragEvent, folderId: string) => {
       event.preventDefault();
       event.stopPropagation();
-      const diagramId = event.dataTransfer.getData("application/x-structura-diagram-id");
+      const diagramId = event.dataTransfer.getData(DIAGRAM_DRAG_MIME);
       if (diagramId) handleDropOnFolder(folderId, diagramId);
       else handleDragLeave();
     },
@@ -407,13 +457,14 @@ export default function DashboardPage() {
         <div ref={folderTreeRef} className="w-56 shrink-0 overflow-hidden border-r border-border">
           <FolderTree
             folders={folders}
-            diagrams={diagrams}
             selectedFolderId={selectedFolderId}
             onSelectFolder={setSelectedFolderId}
-            dropTargetFolderId={dropTargetFolderId}
-            onDragOverFolder={handleDragOverFolder}
-            onDragLeave={handleDragLeave}
-            onDropOnFolder={handleDropOnFolder}
+            countFor={countDiagramsInFolder}
+            rootCount={diagrams.length}
+            headerLabel={t("common.workspace")}
+            allLabel={t("folderTree.allDiagrams")}
+            drag={diagramDrag}
+            footer={<ConnectedFolderCard />}
           />
         </div>
 
@@ -484,13 +535,16 @@ export default function DashboardPage() {
               <h2 className="text-xl font-bold text-foreground">{currentFolderName}</h2>
             </div>
 
-            <WorkspaceFilterToolbar
-              contentFilter={contentFilter}
-              onContentFilterChange={setContentFilter}
-              globalSearch={globalSearch}
-              onGlobalSearchChange={setGlobalSearch}
+            <LibraryFilterToolbar
+              chips={diagramFilterChips}
+              activeChip={contentFilter}
+              onChipChange={setContentFilter}
+              search={globalSearch}
+              onSearchChange={setGlobalSearch}
+              searchPlaceholder={t("dashboard.searchComponentPlaceholder")}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
+              sortOptions={diagramSortOptions}
               onSort={handleSort}
             />
 

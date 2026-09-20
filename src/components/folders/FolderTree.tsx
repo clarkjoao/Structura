@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import type { ReactNode } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -19,9 +20,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import type { Folder as FolderType, Diagram } from "@/features/diagram";
+import type { Folder as FolderType } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
-import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
 import { useTranslation } from "react-i18next";
 
 const ADD_AT_ROOT = "__add_at_root__";
@@ -32,40 +32,93 @@ function getChildFolders(folders: FolderRecord, parentId: string | null): Folder
   return Object.values(folders).filter((f) => f.parentId === parentId);
 }
 
-function countAllDescendantDiagrams(
+/**
+ * Items filed in each folder, counting everything filed below it.
+ *
+ * Done here rather than in each host because a collapsed folder that holds
+ * nothing itself must not read as empty when its children are not — and both
+ * libraries owe their readers the same answer. Hosts supply only the direct
+ * tally; the tree already knows the shape of the graph.
+ *
+ * One bottom-up pass over the folders, so a deep tree costs no more than a
+ * flat one.
+ */
+function buildDescendantTotals(
   folders: FolderRecord,
-  diagrams: Diagram[],
-  folderId: string,
-): number {
-  let count = diagrams.filter((d) => d.folderId === folderId).length;
-  const children = getChildFolders(folders, folderId);
-  for (const child of children) {
-    count += countAllDescendantDiagrams(folders, diagrams, child.id);
-  }
-  return count;
+  countFor: (folderId: string) => number,
+): Map<string, number> {
+  const totals = new Map<string, number>();
+
+  const visit = (folderId: string): number => {
+    const cached = totals.get(folderId);
+    if (cached !== undefined) return cached;
+    // Guard against a cycle in malformed folder data: claim the slot before
+    // recursing, so a parentId loop terminates instead of blowing the stack.
+    totals.set(folderId, 0);
+    let total = countFor(folderId);
+    for (const child of getChildFolders(folders, folderId)) {
+      total += visit(child.id);
+    }
+    totals.set(folderId, total);
+    return total;
+  };
+
+  for (const folderId of Object.keys(folders)) visit(folderId);
+  return totals;
 }
 
-interface FolderTreeProps {
-  folders: FolderRecord;
-  diagrams: Diagram[];
-  selectedFolderId: string | null;
-  onSelectFolder: (folderId: string | null) => void;
+/**
+ * Filing by dragging. Omit it and the tree accepts no drops at all.
+ *
+ * `mimeType` is what keeps the two libraries from accepting each other's
+ * cards: a diagram dragged onto the walkthrough tree carries a type the
+ * walkthrough tree never reads, so the drop yields no id and nothing moves.
+ */
+export interface FolderTreeDrag {
+  /** The `dataTransfer` type carrying the dragged item's id. */
+  mimeType: string;
   dropTargetFolderId: string | null | undefined;
   onDragOverFolder: (folderId: string | null) => void;
   onDragLeave: () => void;
-  onDropOnFolder: (folderId: string | null, diagramId: string) => void;
+  onDropItem: (folderId: string | null, itemId: string) => void;
+}
+
+export interface FolderTreeProps {
+  folders: FolderRecord;
+  selectedFolderId: string | null;
+  onSelectFolder: (folderId: string | null) => void;
+  /** Items filed *directly* in this folder. The tree adds up the descendants. */
+  countFor: (folderId: string) => number;
+  /** The tally beside the "everything" row. */
+  rootCount: number;
+  /** Heading above the search box. */
+  headerLabel: string;
+  /** Label of the "everything" row at the top of the tree. */
+  allLabel: string;
+  drag?: FolderTreeDrag;
+  /** Rendered under the tree — the workspace puts its connected-folder card here. */
+  footer?: ReactNode;
   triggerAddFolderAtRoot?: number;
 }
 
+/**
+ * The folder rail, shared by the diagram workspace and the walkthrough library.
+ *
+ * Both file into the *same* folders — the ones that live in the diagram store —
+ * so folder CRUD goes through `useDiagramActions` here rather than being handed
+ * in. What differs between the two libraries is only what is being counted and
+ * what may be dropped, and those arrive as props.
+ */
 export function FolderTree({
   folders,
-  diagrams,
   selectedFolderId,
   onSelectFolder,
-  dropTargetFolderId,
-  onDragOverFolder,
-  onDragLeave,
-  onDropOnFolder,
+  countFor,
+  rootCount,
+  headerLabel,
+  allLabel,
+  drag,
+  footer,
   triggerAddFolderAtRoot = 0,
 }: FolderTreeProps) {
   const { t } = useTranslation();
@@ -76,6 +129,11 @@ export function FolderTree({
   const [addingUnderParent, setAddingUnderParent] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const descendantTotals = useMemo(
+    () => buildDescendantTotals(folders, countFor),
+    [folders, countFor],
+  );
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedIds((prev) => {
@@ -138,19 +196,20 @@ export function FolderTree({
   );
 
   const rootFolders = getChildFolders(folders, null);
-  const totalDiagrams = diagrams.length;
 
   const handleDragOver = (e: React.DragEvent, folderId: string | null) => {
+    if (!drag) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    onDragOverFolder(folderId);
+    drag.onDragOverFolder(folderId);
   };
 
   const handleDrop = (e: React.DragEvent, folderId: string | null) => {
+    if (!drag) return;
     e.preventDefault();
-    const diagramId = e.dataTransfer.getData("application/x-structura-diagram-id");
-    if (diagramId) onDropOnFolder(folderId, diagramId);
-    onDragLeave();
+    const itemId = e.dataTransfer.getData(drag.mimeType);
+    if (itemId) drag.onDropItem(folderId, itemId);
+    drag.onDragLeave();
   };
 
   const filteredRootFolders = searchQuery.trim()
@@ -161,7 +220,7 @@ export function FolderTree({
     <div className="flex h-full flex-col bg-sidebar">
       <div className="flex items-center px-3 pt-3 pb-1">
         <span className="text-[11px] font-semibold text-sidebar-foreground/60 uppercase tracking-widest">
-          {t("common.workspace")}
+          {headerLabel}
         </span>
       </div>
 
@@ -194,18 +253,16 @@ export function FolderTree({
             selectedFolderId === null
               ? "bg-accent text-accent-foreground font-semibold"
               : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
-            dropTargetFolderId === null && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
+            drag?.dropTargetFolderId === null && "ring-1 ring-sidebar-ring/50 bg-sidebar-accent/60",
           )}
           onClick={() => onSelectFolder(null)}
           onDragOver={(e) => handleDragOver(e, null)}
-          onDragLeave={onDragLeave}
+          onDragLeave={drag?.onDragLeave}
           onDrop={(e) => handleDrop(e, null)}
         >
           <Home className="h-4 w-4 shrink-0 opacity-60" strokeWidth={1.75} />
-          <span className="flex-1 truncate">{t("folderTree.allDiagrams")}</span>
-          <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">
-            {totalDiagrams}
-          </span>
+          <span className="flex-1 truncate">{allLabel}</span>
+          <span className="text-[11px] text-sidebar-foreground/40 tabular-nums">{rootCount}</span>
         </div>
         <div className="h-px bg-sidebar-border mx-1 my-1.5" />
 
@@ -224,16 +281,13 @@ export function FolderTree({
             key={folder.id}
             folder={folder}
             folders={folders}
-            diagrams={diagrams}
+            descendantTotals={descendantTotals}
             depth={0}
             expandedIds={expandedIds}
             toggleExpand={toggleExpand}
             selectedFolderId={selectedFolderId}
             onSelectFolder={onSelectFolder}
-            dropTargetFolderId={dropTargetFolderId}
-            onDragOverFolder={onDragOverFolder}
-            onDragLeave={onDragLeave}
-            onDropOnFolder={onDropOnFolder}
+            drag={drag}
             editingId={editingId}
             editName={editName}
             setEditName={setEditName}
@@ -256,7 +310,7 @@ export function FolderTree({
           </p>
         )}
       </div>
-      <ConnectedFolderCard />
+      {footer}
     </div>
   );
 }
@@ -303,16 +357,13 @@ function NewFolderInput({
 interface FolderTreeItemProps {
   folder: FolderType;
   folders: FolderRecord;
-  diagrams: Diagram[];
+  descendantTotals: Map<string, number>;
   depth: number;
   expandedIds: Set<string>;
   toggleExpand: (id: string) => void;
   selectedFolderId: string | null;
   onSelectFolder: (folderId: string | null) => void;
-  dropTargetFolderId: string | null | undefined;
-  onDragOverFolder: (folderId: string | null) => void;
-  onDragLeave: () => void;
-  onDropOnFolder: (folderId: string | null, diagramId: string) => void;
+  drag: FolderTreeDrag | undefined;
   editingId: string | null;
   editName: string;
   setEditName: (v: string) => void;
@@ -331,16 +382,13 @@ interface FolderTreeItemProps {
 function FolderTreeItem({
   folder,
   folders,
-  diagrams,
+  descendantTotals,
   depth,
   expandedIds,
   toggleExpand,
   selectedFolderId,
   onSelectFolder,
-  dropTargetFolderId,
-  onDragOverFolder,
-  onDragLeave,
-  onDropOnFolder,
+  drag,
   editingId,
   editName,
   setEditName,
@@ -357,24 +405,26 @@ function FolderTreeItem({
 }: FolderTreeItemProps) {
   const { t } = useTranslation();
   const children = getChildFolders(folders, folder.id);
-  const totalCount = countAllDescendantDiagrams(folders, diagrams, folder.id);
+  const totalCount = descendantTotals.get(folder.id) ?? 0;
   const hasChildren = children.length > 0;
   const isExpanded = expandedIds.has(folder.id);
   const isSelected = selectedFolderId === folder.id;
-  const isDropTarget = dropTargetFolderId === folder.id;
+  const isDropTarget = drag?.dropTargetFolderId === folder.id;
   const isEditing = editingId === folder.id;
 
   const handleDragOver = (e: React.DragEvent) => {
+    if (!drag) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    onDragOverFolder(folder.id);
+    drag.onDragOverFolder(folder.id);
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    if (!drag) return;
     e.preventDefault();
-    const diagramId = e.dataTransfer.getData("application/x-structura-diagram-id");
-    if (diagramId) onDropOnFolder(folder.id, diagramId);
-    onDragLeave();
+    const itemId = e.dataTransfer.getData(drag.mimeType);
+    if (itemId) drag.onDropItem(folder.id, itemId);
+    drag.onDragLeave();
   };
 
   return (
@@ -394,7 +444,7 @@ function FolderTreeItem({
           if (!isEditing) startRename(folder);
         }}
         onDragOver={handleDragOver}
-        onDragLeave={onDragLeave}
+        onDragLeave={drag?.onDragLeave}
         onDrop={handleDrop}
       >
         {}
@@ -499,16 +549,13 @@ function FolderTreeItem({
               key={child.id}
               folder={child}
               folders={folders}
-              diagrams={diagrams}
+              descendantTotals={descendantTotals}
               depth={depth + 1}
               expandedIds={expandedIds}
               toggleExpand={toggleExpand}
               selectedFolderId={selectedFolderId}
               onSelectFolder={onSelectFolder}
-              dropTargetFolderId={dropTargetFolderId}
-              onDragOverFolder={onDragOverFolder}
-              onDragLeave={onDragLeave}
-              onDropOnFolder={onDropOnFolder}
+              drag={drag}
               editingId={editingId}
               editName={editName}
               setEditName={setEditName}

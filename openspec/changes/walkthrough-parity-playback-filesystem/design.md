@@ -28,12 +28,14 @@ becomes an entry in the invalid list, which is what the merge dialog shows the u
 ## Goals / Non-Goals
 
 **Goals**
+
 - Infrastructure that never learns the word "walkthrough", so the lazy chunk stays lazy.
 - One forward key, with the viewer reporting its edges and never navigating on its own.
 - Deleting the files on disk is a real removal.
 - One folder tree and one filter toolbar in the repository, not two.
 
 **Non-Goals** (beyond `proposal.md — Non-Goals`)
+
 - No change to the diagram file format, the manifest, or the two-phase commit path used for
   diagram writes. Walkthroughs are small and independent; they do not need staged writes.
 - No new persistence for the reading itself. Where a reader got to is not saved.
@@ -45,11 +47,11 @@ becomes an entry in the invalid list, which is what the merge dialog shows the u
 `ViewerCanvas` gains two optional callbacks, `onReachedFlowEnd` and `onReachedFlowStart`, and
 its keyboard handler becomes three-branch on the forward key:
 
-| Condition | Action |
-|---|---|
-| `playback.canGoForward` | `playback.goNext()` |
-| `playback.isCondition` | nothing — a branch point is a choice, not an ending |
-| otherwise | `onReachedFlowEnd?.()` |
+| Condition               | Action                                              |
+| ----------------------- | --------------------------------------------------- |
+| `playback.canGoForward` | `playback.goNext()`                                 |
+| `playback.isCondition`  | nothing — a branch point is a choice, not an ending |
+| otherwise               | `onReachedFlowEnd?.()`                              |
 
 The middle branch is the one that matters. `canGoForward` is already false at a branch point
 (`useFlowModePlayback` computes it as `!!currentStep?.next && !isCondition`), so without the
@@ -61,12 +63,12 @@ The player answers `onReachedFlowEnd` by setting `showEndOverlay`, which revives
 `SceneEndOverlay` — a component that exists, renders correctly, and has never appeared,
 because `showEndOverlay` is only ever set to `false`.
 
-*Alternative considered: lift `FlowMode` out of `ViewerCanvas` into a context or a store so
-the player can read the reading directly.* Rejected: it would touch the shared-diagram viewer
+_Alternative considered: lift `FlowMode` out of `ViewerCanvas` into a context or a store so
+the player can read the reading directly._ Rejected: it would touch the shared-diagram viewer
 and the editor's reading path for a need only the walkthrough player has, and `ViewerCanvas`
 would stop being self-contained. A callback at the edge is the smaller contract.
 
-*Alternative considered: let `ViewerCanvas` advance the scene itself.* Rejected: the viewer is
+_Alternative considered: let `ViewerCanvas` advance the scene itself._ Rejected: the viewer is
 used by the share route, where there is no next scene. It must not know about walkthroughs.
 
 ### The feature drives its own file sync; infrastructure lends the machinery
@@ -96,8 +98,8 @@ walkthrough module instantiates it when its chunk loads.
 `resolveDiagramPathSegments` is refactored to call `resolveFolderPathSegments(diagram.folderId
 ?? null, folders)`; a walkthrough uses the same function with its own `folderId`.
 
-*Alternative considered: a participant registry on `fileSystemBoot`, so one flush loop covers
-diagrams and walkthroughs.* Rejected after discussion with the maintainer: one loop is
+_Alternative considered: a participant registry on `fileSystemBoot`, so one flush loop covers
+diagrams and walkthroughs._ Rejected after discussion with the maintainer: one loop is
 tidier, but registration only happens once the lazy chunk has loaded, and it puts a new
 always-loaded extension point in infrastructure to serve one flagged feature. The chosen
 shape costs a second, smaller debounce and keeps the dependency arrow pointing one way.
@@ -114,12 +116,12 @@ anything can read it. **This list must outlive the feature:** if `.walkthrough.j
 removed from it, leftover files start appearing as invalid diagrams in the merge dialog. That
 goes in a comment on the constant.
 
-*Alternative considered: a generic pattern — any `<base>.<type>.json` is a sidecar.* Rejected:
+_Alternative considered: a generic pattern — any `<base>.<type>.json` is a sidecar._ Rejected:
 diagram ids are `d-<hex>` and never contain a dot, so the pattern would work for generated
 files, but a user who named an imported diagram `my.diagram.json` would watch it vanish from
 the scan. An explicit list cannot misfire.
 
-*Alternative considered: a runtime `registerSidecarSuffix` called by the feature.* Rejected:
+_Alternative considered: a runtime `registerSidecarSuffix` called by the feature._ Rejected:
 the boot scan runs before any lazy chunk loads, so the suffix would not yet be registered and
 the first scan of every session would report the files as invalid.
 
@@ -128,16 +130,16 @@ the first scan of every session would report the files as invalid.
 `createSidecarSync` persists, per workspace, the set of ids it has written there (through
 `IStoragePort`, keyed by the workspace). Hydration then reads three cases:
 
-| On disk | Previously synced here | Reading |
-|---|---|---|
-| yes | — | adopt; merge with local by `updatedAt` |
-| no | no | new local content → write it to disk |
-| no | yes | the user deleted it → delete locally too |
+| On disk | Previously synced here | Reading                                  |
+| ------- | ---------------------- | ---------------------------------------- |
+| yes     | —                      | adopt; merge with local by `updatedAt`   |
+| no      | no                     | new local content → write it to disk     |
+| no      | yes                    | the user deleted it → delete locally too |
 
 The third row is the requirement. Without the synced-id set, the second and third rows are
 indistinguishable, and the only available behaviours are "never delete" (files resurrect
 themselves, which is what a naive merge does) or "disk is truth" (connecting a fresh folder
-wipes the library). Keying the set by workspace is what keeps connecting a *different* folder
+wipes the library). Keying the set by workspace is what keeps connecting a _different_ folder
 from reading as a mass deletion.
 
 Note this is strictly better than the diagram path's current behaviour: `startFileSystemSync`
@@ -161,11 +163,22 @@ disk — and never as a side effect of connecting a folder.
 `src/components/folders/FolderTree.tsx` takes what differs between the two hosts as props:
 
 ```ts
-countFor: (folderId: string) => number;      // host counts, including descendants
-onDropItem?: (folderId: string | null, itemId: string) => void;
-dragMimeType?: string;                        // so a diagram cannot be dropped as a walkthrough
-canDeleteFolder?: (folderId: string) => boolean;
+countFor: (folderId: string) => number;  // items filed *directly* here
+rootCount: number;                       // the tally beside the "everything" row
+headerLabel: string;
+allLabel: string;
+drag?: FolderTreeDrag;                   // { mimeType, dropTargetFolderId, … }
+footer?: ReactNode;                      // the workspace's connected-folder card
 ```
+
+`countFor` reports only a folder's own items and the tree sums the descendants itself, in
+one bottom-up pass. Putting the recursion in the tree rather than in each host is what makes
+"a collapsed folder does not read as empty" a property of the component instead of something
+both libraries have to remember.
+
+The drag bundle is optional and carries its own `mimeType`, which is what keeps the two
+libraries from accepting each other's cards: a diagram dropped on the walkthrough rail
+carries a type that rail never reads, so the drop yields no id and nothing moves.
 
 Folder CRUD stays on `useDiagramActions` — both hosts already use it, and the folders are the
 diagram store's folders by design. `src/pages/FolderTree.tsx` and
@@ -173,7 +186,7 @@ diagram store's folders by design. `src/pages/FolderTree.tsx` and
 `WorkspaceFilterToolbar` becomes a thin configuration of the shared
 `LibraryFilterToolbar` (sort keys and chip set are props).
 
-*Alternative considered: keep the fork and add what it lacks.* Rejected by the maintainer:
+_Alternative considered: keep the fork and add what it lacks._ Rejected by the maintainer:
 it is ~600 duplicated lines that have already drifted once.
 
 ### An orphaned folder reads as root

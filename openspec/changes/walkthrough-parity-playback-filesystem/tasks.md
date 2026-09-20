@@ -5,19 +5,19 @@ green on its own. See `design.md — Migration Plan` for why this order.
 
 ## 1. Shared folder tree and filter toolbar
 
-- [ ] 1.1 Create `src/components/folders/FolderTree.tsx` from `src/pages/FolderTree.tsx`, taking `countFor(folderId)`, `onDropItem`, `dragMimeType` and `canDeleteFolder` as props instead of `diagrams`; verify by rendering it in a unit test with a stub `countFor` and asserting the count shown on a parent folder includes its descendants
-- [ ] 1.2 Move `/workspace` onto the shared tree, passing a `countFor` that wraps the existing `countAllDescendantDiagrams`; verify `npm run test` passes with the existing dashboard/workspace tests untouched
-- [ ] 1.3 Create `src/components/filters/LibraryFilterToolbar.tsx` from `WorkspaceFilterToolbar`, taking the chip set and the sort keys as props; verify by unit test that a caller-supplied sort key list renders and fires `onSort` with that key
-- [ ] 1.4 Move `/workspace` onto `LibraryFilterToolbar` and delete `src/pages/dashboard/WorkspaceFilterToolbar.tsx` and `src/pages/FolderTree.tsx`; verify `rg "pages/FolderTree|WorkspaceFilterToolbar" src` returns nothing and the workspace tests pass
-- [ ] 1.5 Move the walkthrough library onto both shared components and delete `src/features/walkthrough/components/WalkthroughFolderTree.tsx`; verify the library lists, selects folders and shows recursive counts, and that `rg "WalkthroughFolderTree" src` returns nothing
+- [x] 1.1 Create `src/components/folders/FolderTree.tsx` from `src/pages/FolderTree.tsx`, taking `countFor(folderId)`, `onDropItem`, `dragMimeType` and `canDeleteFolder` as props instead of `diagrams`; verify by rendering it in a unit test with a stub `countFor` and asserting the count shown on a parent folder includes its descendants
+- [x] 1.2 Move `/workspace` onto the shared tree, passing a `countFor` that wraps the existing `countAllDescendantDiagrams`; verify `npm run test` passes with the existing dashboard/workspace tests untouched
+- [x] 1.3 Create `src/components/filters/LibraryFilterToolbar.tsx` from `WorkspaceFilterToolbar`, taking the chip set and the sort keys as props; verify by unit test that a caller-supplied sort key list renders and fires `onSort` with that key
+- [x] 1.4 Move `/workspace` onto `LibraryFilterToolbar` and delete `src/pages/dashboard/WorkspaceFilterToolbar.tsx` and `src/pages/FolderTree.tsx`; verify `rg "pages/FolderTree|WorkspaceFilterToolbar" src` returns nothing and the workspace tests pass
+- [x] 1.5 Move the walkthrough library onto both shared components and delete `src/features/walkthrough/components/WalkthroughFolderTree.tsx`; verify the library lists, selects folders and shows recursive counts, and that `rg "WalkthroughFolderTree" src` returns nothing
 
 ## 2. Walkthrough library parity
 
-- [ ] 2.1 Wire search, the all/recent chips, sort (name / last edited / scene count) and grid-list into `WalkthroughLibraryPage`, composing with the selected folder; verify by unit test that a term matching only a description lists that walkthrough, and that searching inside a selected folder does not list matches from other folders
-- [ ] 2.2 Add a list presentation for walkthroughs alongside the existing card grid; verify switching the view shows the same walkthroughs in both
-- [ ] 2.3 Add `src/features/walkthrough/favoriteWalkthroughs.ts` mirroring `favoriteDiagrams.ts`, a star on `WalkthroughCard`, and the favorites chip; verify by unit test that marking then reading back returns the id, and that diagram favorites do not affect the walkthrough listing
-- [ ] 2.4 Make walkthrough cards draggable onto folders via `onDropItem` with a walkthrough-specific `dragMimeType`; verify a dropped card changes `folderId` and that a dragged diagram is not accepted by the walkthrough tree
-- [ ] 2.5 Treat a `folderId` naming a missing folder as root in the library's listing and counts; verify by unit test that a walkthrough whose folder was deleted is listed under "All"
+- [x] 2.1 Wire search, the all/recent chips, sort (name / last edited / scene count) and grid-list into `WalkthroughLibraryPage`, composing with the selected folder; verify by unit test that a term matching only a description lists that walkthrough, and that searching inside a selected folder does not list matches from other folders
+- [x] 2.2 Add a list presentation for walkthroughs alongside the existing card grid; verify switching the view shows the same walkthroughs in both
+- [x] 2.3 Add `src/features/walkthrough/favoriteWalkthroughs.ts` mirroring `favoriteDiagrams.ts`, a star on `WalkthroughCard`, and the favorites chip; verify by unit test that marking then reading back returns the id, and that diagram favorites do not affect the walkthrough listing
+- [x] 2.4 Make walkthrough cards draggable onto folders via `onDropItem` with a walkthrough-specific `dragMimeType`; verify a dropped card changes `folderId` and that a dragged diagram is not accepted by the walkthrough tree
+- [x] 2.5 Treat a `folderId` naming a missing folder as root in the library's listing and counts; verify by unit test that a walkthrough whose folder was deleted is listed under "All"
 
 ## 3. Viewer edge callbacks and the scene boundary
 
@@ -52,11 +52,18 @@ green on its own. See `design.md — Migration Plan` for why this order.
 
 ## 7. Editing surfaces
 
-- [ ] 7.1 Add a description field to `AddWalkthroughDialog`; verify a walkthrough created with a description shows it on its card
+- [x] 7.1 Add a description field to `AddWalkthroughDialog`; verify a walkthrough created with a description shows it on its card
 - [ ] 7.2 Add description and author-notes editing to `WalkthroughEditorPage`; verify an edited description reaches the library, and that author notes are never rendered by the player
 - [ ] 7.3 Replace the manual Save button with debounced autosave; verify by test that a title change followed by an unmount is present when the walkthrough is read back
 
 ## 8. i18n and gates
 
 - [ ] 8.1 Add the missing `walkthrough.*` keys (`create.*`, `folderTree.*`, `empty.*`, `delete`) plus every string added by groups 1–7 to `en.json` and `pt-BR.json`, and strip the inline `t(key, "English default")` fallbacks across the module; verify by a script that every `walkthrough.*` key referenced in `src/features/walkthrough` resolves in both locales
-- [ ] 8.2 Run `npm run typecheck && npm run lint && npm run format:check && npm run test` and report the output; verify all four are green before the change is considered complete
+- [ ] 8.2 Run `npm run typecheck && npm run lint && npm run format:check && npm run test` and report the output against the recorded baseline; verify typecheck is green, that every file this change touches is lint- and format-clean, and that no test fails which passed at baseline
+
+> **Baseline, measured at `d1b8efc` before any source change.** `typecheck` green.
+> `test`: 13 files / 35 tests failing, all under `features/canvas/*` and `features/llm/*`.
+> `lint`: 7 errors (`Navbar`, `SceneEditor`, `WalkthroughEditorPage`, `WalkthroughPlayerPage`).
+> `format:check`: 15 files drifted. Lint and format are therefore **not** a green gate this
+> change can reach on its own — several drifted files are unrelated to it. The gate above is
+> what it can honestly promise; the rest is pre-existing and stays out of this diff.

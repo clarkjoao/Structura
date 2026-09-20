@@ -7,6 +7,7 @@ import { useFolders } from "@/features/diagram";
 
 export interface NewWalkthroughDraft {
   title: string;
+  description?: string;
   folderId: string | null;
 }
 
@@ -19,14 +20,11 @@ interface AddWalkthroughDialogProps {
   folderId: string | null;
 }
 
-export function AddWalkthroughDialog({
-  onClose,
-  onCreate,
-  folderId,
-}: AddWalkthroughDialogProps) {
+export function AddWalkthroughDialog({ onClose, onCreate, folderId }: AddWalkthroughDialogProps) {
   const { t } = useTranslation();
   const folders = useFolders();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
   // Escape closes the dialog
   useEffect(() => {
@@ -44,7 +42,11 @@ export function AddWalkthroughDialog({
 
   const submit = () => {
     if (!title.trim()) return;
-    onCreate({ title: title.trim(), folderId });
+    onCreate({
+      title: title.trim(),
+      description: description.trim() || undefined,
+      folderId,
+    });
   };
 
   return (
@@ -70,10 +72,7 @@ export function AddWalkthroughDialog({
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={t(
-                "walkthrough.create.namePlaceholder",
-                "e.g. Onboarding flow",
-              )}
+              placeholder={t("walkthrough.create.namePlaceholder", "e.g. Onboarding flow")}
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               autoFocus
               onKeyDown={(e) => {
@@ -82,6 +81,29 @@ export function AddWalkthroughDialog({
                   submit();
                 }
               }}
+            />
+          </div>
+
+          <div>
+            <label
+              className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+              htmlFor="walkthrough-description"
+            >
+              {t("walkthrough.description", "Description")}{" "}
+              <span className="font-normal normal-case tracking-normal">
+                {t("walkthrough.optional", "(optional)")}
+              </span>
+            </label>
+            <textarea
+              id="walkthrough-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t(
+                "walkthrough.descriptionPlaceholder",
+                "What a reader will understand after following it",
+              )}
+              rows={2}
+              className="w-full resize-none rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
 
@@ -94,11 +116,9 @@ export function AddWalkthroughDialog({
               <Home className="h-3.5 w-3.5 shrink-0" />
             )}
             <span className="truncate">
-              {t(
-                "walkthrough.create.creatingIn",
-                `Creating in ${targetLabel}`,
-                { folder: targetLabel },
-              )}
+              {t("walkthrough.create.creatingIn", `Creating in ${targetLabel}`, {
+                folder: targetLabel,
+              })}
             </span>
           </div>
         </div>

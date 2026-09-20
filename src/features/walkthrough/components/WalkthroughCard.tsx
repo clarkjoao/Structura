@@ -1,19 +1,28 @@
 import { useNavigate } from "react-router-dom";
-import { Play, Pencil, Trash2, FolderOpen } from "lucide-react";
+import { Play, Pencil, Trash2, FolderOpen, Star } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { WalkthroughPresentation } from "../model/walkthrough.types";
 import { useDiagramStore, useAllFolders } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { WALKTHROUGH_DRAG_MIME } from "@/components/folders/dragTypes";
 
 interface Props {
   presentation: WalkthroughPresentation;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
 }
 
-export function WalkthroughCard({ presentation, onEdit, onDelete }: Props) {
+export function WalkthroughCard({
+  presentation,
+  onEdit,
+  onDelete,
+  isFavorite,
+  onToggleFavorite,
+}: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const diagrams = useDiagramStore((s) => s.diagrams);
@@ -60,6 +69,12 @@ export function WalkthroughCard({ presentation, onEdit, onDelete }: Props) {
     <div
       role="button"
       tabIndex={0}
+      draggable
+      onDragStart={(e) => {
+        // The walkthrough's own type, so the diagram rail never accepts this card.
+        e.dataTransfer.setData(WALKTHROUGH_DRAG_MIME, presentation.id);
+        e.dataTransfer.effectAllowed = "move";
+      }}
       onClick={handleCardOpen}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -84,6 +99,25 @@ export function WalkthroughCard({ presentation, onEdit, onDelete }: Props) {
             </p>
           )}
         </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0"
+          aria-pressed={isFavorite}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(presentation.id);
+          }}
+          title={t("walkthrough.favorite", "Favorite")}
+        >
+          <Star
+            className={cn(
+              "h-3.5 w-3.5",
+              isFavorite ? "fill-amber-400 text-amber-400" : "text-muted-foreground",
+            )}
+          />
+        </Button>
 
         {/* Secondary actions (visible on hover) */}
         <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
