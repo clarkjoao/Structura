@@ -47,7 +47,7 @@ export function WalkthroughCard({
 
   const handleOpenPlayer = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/walkthrough/${presentation.id}/step/0`);
+    navigate(`/workflow/${presentation.id}/step/0`);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {

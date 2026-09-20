@@ -1,16 +1,23 @@
 import { Link, useLocation } from "react-router-dom";
-import { Network, Clapperboard } from "lucide-react";
+import { Network } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FileSystemStatus } from "./FileSystemStatus";
 import { useFileSystemSync } from "@/infrastructure/persistence";
 import { SettingsMenu } from "./SettingsMenu";
 import { cn } from "@/lib/utils";
+import { WALKTHROUGH_ENABLED } from "@/features/walkthrough/config";
 
-interface NavbarProps {
-  showWalkthroughs?: boolean;
-}
-
-const Navbar = ({ showWalkthroughs = false }: NavbarProps) => {
+/**
+ * The workflows entry is decided here, from the feature flag, rather than
+ * handed in by each page.
+ *
+ * It used to be a `showWalkthroughs` prop, so the entry appeared only on the
+ * two pages that remembered to pass it and vanished on /catalog and /plugins —
+ * navigation that comes and goes by page is a bug, not a setting. Importing the
+ * flag is free: `config.ts` reads an env var and pulls in none of the feature,
+ * so the lazy chunk stays lazy.
+ */
+const Navbar = () => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   useFileSystemSync();
@@ -38,6 +45,15 @@ const Navbar = ({ showWalkthroughs = false }: NavbarProps) => {
                 pathname.startsWith("/model")
               }
             />
+            {/* Next to Workspaces: both are content the user authors, where
+                Registry and Plugins are tooling. */}
+            {WALKTHROUGH_ENABLED && (
+              <NavItem
+                to="/workflows"
+                label={t("nav.walkthroughs")}
+                active={pathname.startsWith("/workflow")}
+              />
+            )}
             <NavItem
               to="/services"
               label={t("nav.services")}
@@ -48,13 +64,6 @@ const Navbar = ({ showWalkthroughs = false }: NavbarProps) => {
               label={t("nav.plugins")}
               active={pathname.startsWith("/plugins")}
             />
-            {showWalkthroughs && (
-              <NavItem
-                to="/walkthroughs"
-                label={t("nav.walkthroughs")}
-                active={pathname.startsWith("/walkthrough")}
-              />
-            )}
           </div>
         </div>
 

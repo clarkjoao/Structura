@@ -86,9 +86,9 @@ function MainPages() {
         <Route path="/plugins" element={<PluginsPage />} />
         {import.meta.env.VITE_ENABLE_WALKTHROUGHS === "true" && (
           <>
-            <Route path="/walkthroughs" element={<WalkthroughLibraryPage />} />
-            <Route path="/walkthrough/:id/edit" element={<WalkthroughEditorPage />} />
-            <Route path="/walkthrough/:id/step/:step" element={<WalkthroughPlayerPage />} />
+            <Route path="/workflows" element={<WalkthroughLibraryPage />} />
+            <Route path="/workflow/:id/edit" element={<WalkthroughEditorPage />} />
+            <Route path="/workflow/:id/step/:step" element={<WalkthroughPlayerPage />} />
           </>
         )}
         <Route path="*" element={<NotFound />} />

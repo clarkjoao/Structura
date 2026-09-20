@@ -92,10 +92,10 @@ function mount(pres: WalkthroughPresentation, atStep = 0) {
   useDiagramStore.setState({ diagrams: { d1: D1, d2: D2 } } as never);
 
   return render(
-    <MemoryRouter initialEntries={[`/walkthrough/${pres.id}/step/${atStep}`]}>
+    <MemoryRouter initialEntries={[`/workflow/${pres.id}/step/${atStep}`]}>
       <Routes>
-        <Route path="/walkthrough/:id/step/:step" element={<WalkthroughPlayerPage />} />
-        <Route path="/walkthroughs" element={<div data-testid="library">library</div>} />
+        <Route path="/workflow/:id/step/:step" element={<WalkthroughPlayerPage />} />
+        <Route path="/workflows" element={<div data-testid="library">library</div>} />
       </Routes>
     </MemoryRouter>,
   );

@@ -36,7 +36,7 @@ export function WalkthroughDiagramNotFound({ diagramId, onSkip, skipLabel }: Pro
             {skipLabel ?? t("walkthrough.skipScene")}
           </Button>
         ) : null}
-        <Button onClick={() => navigate("/walkthroughs")}>{t("walkthrough.backToLibrary")}</Button>
+        <Button onClick={() => navigate("/workflows")}>{t("walkthrough.backToLibrary")}</Button>
       </div>
     </div>
   );

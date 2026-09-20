@@ -183,12 +183,12 @@ export default function WalkthroughLibraryPage() {
       const blank = createBlankPresentation(draft.title, draft.folderId);
       await save({ ...blank, description: draft.description });
       setCreateOpen(false);
-      navigate(`/walkthrough/${blank.id}/edit`);
+      navigate(`/workflow/${blank.id}/edit`);
     },
     [save, navigate],
   );
 
-  const handleEdit = useCallback((id: string) => navigate(`/walkthrough/${id}/edit`), [navigate]);
+  const handleEdit = useCallback((id: string) => navigate(`/workflow/${id}/edit`), [navigate]);
 
   const handleDelete = useCallback((id: string) => setDeleteTargetId(id), []);
 
@@ -207,7 +207,7 @@ export default function WalkthroughLibraryPage() {
 
   return (
     <div className="min-h-screen pt-14">
-      <Navbar showWalkthroughs />
+      <Navbar />
 
       <div className="flex h-[calc(100vh-3.5rem)]">
         {/* Folder tree (left rail) — the workspace's own folders. */}

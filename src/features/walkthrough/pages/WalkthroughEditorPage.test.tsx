@@ -33,10 +33,10 @@ function mount(presentation = wt()) {
   useDiagramStore.setState({ diagrams: {} } as never);
 
   return render(
-    <MemoryRouter initialEntries={[`/walkthrough/${presentation.id}/edit`]}>
+    <MemoryRouter initialEntries={[`/workflow/${presentation.id}/edit`]}>
       <Routes>
-        <Route path="/walkthrough/:id/edit" element={<WalkthroughEditorPage />} />
-        <Route path="/walkthroughs" element={<div data-testid="library">library</div>} />
+        <Route path="/workflow/:id/edit" element={<WalkthroughEditorPage />} />
+        <Route path="/workflows" element={<div data-testid="library">library</div>} />
       </Routes>
     </MemoryRouter>,
   );

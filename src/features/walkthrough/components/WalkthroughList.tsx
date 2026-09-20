@@ -107,7 +107,7 @@ export function WalkthroughList({
                 disabled={stepCount === 0}
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/walkthrough/${presentation.id}/step/0`);
+                  navigate(`/workflow/${presentation.id}/step/0`);
                 }}
                 title={t("walkthrough.play")}
               >

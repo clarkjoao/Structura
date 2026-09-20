@@ -108,7 +108,7 @@
     "brandSuffix": "Architecture",
     "plugins": "Plugins",
     "services": "Serviços",
-    "walkthroughs": "Walkthroughs"
+    "walkthroughs": "Workflows"
   },
   "theme": {
     "lightMode": "Modo claro",
@@ -2278,18 +2278,18 @@
     "backToLibrary": "Voltar à Biblioteca",
     "boundaryHint": "Pressione → para continuar, Esc para ficar",
     "create": {
-      "title": "Novo walkthrough",
+      "title": "Novo workflow",
       "nameLabel": "Título",
       "namePlaceholder": "ex. Fluxo de onboarding",
       "creatingIn": "Criando em {{folder}}",
       "noFolder": "Sem pasta",
-      "submit": "Criar walkthrough"
+      "submit": "Criar workflow"
     },
     "delete": "Excluir",
     "deleteConfirmMessage": "\"{{title}}\" e todas as suas cenas serão excluídas permanentemente. Esta ação não pode ser desfeita.",
-    "deleteConfirmTitle": "Eliminar walkthrough?",
+    "deleteConfirmTitle": "Eliminar workflow?",
     "description": "Descrição",
-    "descriptionPlaceholder": "Sobre o que é este walkthrough?",
+    "descriptionPlaceholder": "Sobre o que é este workflow?",
     "diagram": "Diagrama",
     "diagramChanged": "Agora lendo de um diagrama diferente",
     "diagramNotFound": "Diagrama não encontrado",
@@ -2299,14 +2299,14 @@
     "diagram_other": "diagramas",
     "edit": "Editar",
     "empty": {
-      "title": "Nenhum walkthrough ainda",
-      "subtitle": "Crie seu primeiro walkthrough para guiar leitores pelos diagramas.",
-      "filtered": "Nenhum walkthrough em {{name}}",
-      "filteredSubtitle": "Escolha outra pasta ou crie um novo walkthrough dentro desta."
+      "title": "Nenhum workflow ainda",
+      "subtitle": "Crie seu primeiro workflow para guiar leitores pelos diagramas.",
+      "filtered": "Nenhum workflow em {{name}}",
+      "filteredSubtitle": "Escolha outra pasta ou crie um novo workflow dentro desta."
     },
-    "emptyLibraryMessage": "Crie seu primeiro walkthrough para guiar os leitores pelos seus diagramas.",
-    "emptyLibraryTitle": "Nenhum walkthrough ainda",
-    "endOfWalkthrough": "Fim do walkthrough",
+    "emptyLibraryMessage": "Crie seu primeiro workflow para guiar os leitores pelos seus diagramas.",
+    "emptyLibraryTitle": "Nenhum workflow ainda",
+    "endOfWalkthrough": "Fim do workflow",
     "favorite": "Favorito",
     "finish": "Finalizar",
     "flow": "Fluxo",
@@ -2315,25 +2315,25 @@
       "noFolder": "Sem pasta"
     },
     "folderTree": {
-      "title": "Walkthroughs",
-      "all": "Todos os walkthroughs"
+      "title": "Workflows",
+      "all": "Todos os workflows"
     },
-    "library": "Walkthroughs",
-    "librarySubtitle": "Um walkthrough é uma sequência de passos que atravessa vários diagramas — pegue o leitor em um diagrama e leve ao próximo, com cada passo apontando para um fluxo.",
-    "missingId": "ID do walkthrough ausente",
+    "library": "Workflows",
+    "librarySubtitle": "Um workflow é uma sequência de passos que atravessa vários diagramas — pegue o leitor em um diagrama e leve ao próximo, com cada passo apontando para um fluxo.",
+    "missingId": "ID do workflow ausente",
     "moveDown": "Mover para baixo",
     "moveUp": "Mover para cima",
     "newTile": {
-      "title": "Novo walkthrough",
+      "title": "Novo workflow",
       "subtitle": "Escolha o primeiro diagrama e o primeiro passo"
     },
-    "newWalkthrough": "Novo walkthrough",
+    "newWalkthrough": "Novo workflow",
     "next": "Próximo",
     "nextScene": "Próxima cena",
     "noFlowsInDiagram": "Nenhum fluxo neste diagrama",
     "noFolderSection": "Sem pasta",
     "noScenes": "Nenhuma cena ainda. Adicione uma para começar.",
-    "notFound": "Walkthrough não encontrado",
+    "notFound": "Workflow não encontrado",
     "notShownToReaders": "não mostrado aos leitores",
     "optional": "opcional",
     "play": "Reproduzir",
@@ -2341,8 +2341,8 @@
     "previous": "Anterior",
     "previousScene": "Anterior",
     "removeScene": "Remover cena",
-    "saveFailed": "Falha ao salvar walkthrough",
-    "saved": "Walkthrough salvo",
+    "saveFailed": "Falha ao salvar workflow",
+    "saved": "Workflow salvo",
     "sceneComplete": "Cena concluída",
     "sceneNotFound": "Cena não encontrada",
     "sceneNumber": "Cena {{number}}",
@@ -2350,12 +2350,12 @@
     "scene_one": "cena",
     "scene_other": "cenas",
     "scenes": "Cenas",
-    "searchPlaceholder": "Buscar walkthroughs",
+    "searchPlaceholder": "Buscar workflows",
     "selectDiagram": "Selecionar diagrama",
     "selectDiagramFirst": "Selecione um diagrama para visualizar",
     "selectFlow": "Selecionar fluxo",
     "selectSceneToEdit": "Selecione uma cena para editar",
-    "sharedEmpty": "Nenhum walkthrough compartilhado ainda",
+    "sharedEmpty": "Nenhum workflow compartilhado ainda",
     "skipScene": "Pular esta cena",
     "skipSceneShortcut": "⌘→ pula uma cena",
     "someDiagramsMissing": "alguns diagramas ausentes",
@@ -2368,8 +2368,8 @@
       "shared": "Compartilhados"
     },
     "unnamedScene": "Cena",
-    "untitled": "Walkthrough sem título",
-    "untitledPlaceholder": "Walkthrough sem título",
+    "untitled": "Workflow sem título",
+    "untitledPlaceholder": "Workflow sem título",
     "upNext": "A seguir:"
   }
 }

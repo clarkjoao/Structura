@@ -452,7 +452,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen pt-14">
-      <Navbar showWalkthroughs={import.meta.env.VITE_ENABLE_WALKTHROUGHS === "true"} />
+      <Navbar />
       <div className="flex h-[calc(100vh-3.5rem)]">
         <div ref={folderTreeRef} className="w-56 shrink-0 overflow-hidden border-r border-border">
           <FolderTree

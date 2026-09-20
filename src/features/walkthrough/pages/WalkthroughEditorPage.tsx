@@ -113,7 +113,7 @@ export default function WalkthroughEditorPage() {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4">
         <p className="text-sm text-muted-foreground">{t("walkthrough.notFound")}</p>
-        <Button variant="outline" onClick={() => navigate("/walkthroughs")}>
+        <Button variant="outline" onClick={() => navigate("/workflows")}>
           {t("walkthrough.backToLibrary")}
         </Button>
       </div>
@@ -128,7 +128,7 @@ export default function WalkthroughEditorPage() {
           variant="ghost"
           size="icon"
           className="shrink-0"
-          onClick={() => navigate("/walkthroughs")}
+          onClick={() => navigate("/workflows")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -172,7 +172,7 @@ export default function WalkthroughEditorPage() {
               variant="outline"
               size="sm"
               className="gap-1.5"
-              onClick={() => navigate(`/walkthrough/${local.id}/step/0`)}
+              onClick={() => navigate(`/workflow/${local.id}/step/0`)}
             >
               <Eye className="h-3.5 w-3.5" />
               {t("walkthrough.preview")}

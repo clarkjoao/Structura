@@ -160,7 +160,7 @@ export default function WalkthroughPlayerPage() {
     (index: number) => {
       if (!id) return;
       if (index < 0 || !presentation || index >= presentation.steps.length) return;
-      navigate(`/walkthrough/${id}/step/${index}`);
+      navigate(`/workflow/${id}/step/${index}`);
       setShowEndOverlay(false);
     },
     [id, presentation, navigate],
@@ -177,7 +177,7 @@ export default function WalkthroughPlayerPage() {
   const leaveToLibrary = useCallback(() => {
     // In-application routing: a document load here would throw away the loaded
     // workspace and the connected folder handle with it.
-    navigate("/walkthroughs");
+    navigate("/workflows");
   }, [navigate]);
 
   const handleSkipScene = useCallback(() => {
@@ -246,11 +246,7 @@ export default function WalkthroughPlayerPage() {
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <p className="text-sm text-muted-foreground">{t("walkthrough.sceneNotFound")}</p>
-          <Button
-            variant="link"
-            className="mt-2"
-            onClick={() => navigate(`/walkthrough/${id}/edit`)}
-          >
+          <Button variant="link" className="mt-2" onClick={() => navigate(`/workflow/${id}/edit`)}>
             {t("walkthrough.backToEditor")}
           </Button>
         </div>
@@ -309,7 +305,7 @@ export default function WalkthroughPlayerPage() {
           variant="outline"
           size="sm"
           className="shrink-0 gap-1.5 text-xs"
-          onClick={() => navigate(`/walkthrough/${id}/edit`)}
+          onClick={() => navigate(`/workflow/${id}/edit`)}
         >
           <RefreshCcw className="h-3 w-3" />
           {t("walkthrough.edit")}
