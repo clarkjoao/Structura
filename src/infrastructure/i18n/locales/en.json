@@ -1561,9 +1561,9 @@
   "share": {
     "button": "Share",
     "modalTitle": "Share diagram",
-    "flowLabel": "Script to open on",
-    "flowDescription": "The reader arrives with this script already playing.",
-    "flowNone": "no script",
+    "flowLabel": "Flow to open on",
+    "flowDescription": "The reader arrives with this flow already playing.",
+    "flowNone": "no flow",
     "baseSceneNotice": "Both links always show the base scene, even if you have another scene open right now.",
     "linkLabel": "View link",
     "linkDescription": "Opens the diagram in preview mode with import option",
@@ -1706,7 +1706,7 @@
     "routeElsewhere": "this call arrives at {{arrivesAt}}, and the route belongs to {{belongsTo}}",
     "objectLabel": "Object",
     "objectAtStep": "at step {{number}}",
-    "objectAtEnd": "at the end of the script",
+    "objectAtEnd": "at the end of the flow",
     "objectAddKey": "key",
     "objectWriteHere": "Write this key from this step",
     "objectStopWriting": "Stop writing it here",
@@ -1729,7 +1729,7 @@
     "branch_point_removal": "A condition cannot be removed on its own — its branches would be left hanging. Remove the branches first."
   },
   "flowSew": {
-    "sewn": "\"{{element}}\" left the diagram. The script of \"{{flow}}\" was sewn shut: {{from}} → {{to}}.",
+    "sewn": "\"{{element}}\" left the diagram. The \"{{flow}}\" flow was sewn shut: {{from}} → {{to}}.",
     "removed": "\"{{element}}\" left the diagram, and with it a step of \"{{flow}}\".",
     "unnamedElement": "An element",
     "undo": "Undo"
@@ -1750,7 +1750,7 @@
     "cancel": "Cancel"
   },
   "flowStepNav": {
-    "switchFlow": "Read another script",
+    "switchFlow": "Read another flow",
     "elementHidden": "This step points at an element the scene “{{scene}}” is hiding, so the canvas has nothing to show for it.",
     "elementElsewhere": "This step points at an element that only exists in the scene “{{scene}}”.",
     "elementGone": "This step points at an element the diagram no longer has.",
@@ -1760,8 +1760,8 @@
     "endpointRemoved": "route removed"
   },
   "flowReading": {
-    "eyebrow": "Script",
-    "switchFlow": "Switch script",
+    "eyebrow": "Flow",
+    "switchFlow": "Switch flow",
     "request": "request",
     "response": "response",
     "at": "at",
@@ -1804,7 +1804,7 @@
     "threads_other": "— {{count}} threads in parallel",
     "loopRepeats": "This part repeats — what follows is one pass through it.",
     "optionalSkippable": "This part may not happen at all.",
-    "breakStops": "If this happens, the reading stops here.",
+    "breakStops": "If this happens, the flow stops here.",
     "deltaNew_one": "{{count}} new",
     "deltaNew_other": "{{count}} new",
     "deltaChanged_one": "{{count}} replaced",

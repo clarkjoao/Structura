@@ -10,14 +10,14 @@ interface Props {
 /**
  * What tells a reader the diagram has something to be read.
  *
- * It names the scripts rather than counting them: "3 roteiros" asks the reader
+ * It names the flows rather than counting them: "3 fluxos" asks the reader
  * to go looking, where "Checkout, Refund, Chargeback" is already the answer.
  * It sits over the canvas instead of in front of it — a diagram is worth
  * looking at on its own, and a reader who wants only the picture should not
  * have to dismiss anything to get it.
  *
- * Nothing is numbered until one is chosen: the open script is what numbers the
- * canvas, and before the choice there is no open script.
+ * Nothing is numbered until one is chosen: the open flow is what numbers the
+ * canvas, and before the choice there is no open flow.
  */
 export function FlowInvite({ flows, onSelect }: Props) {
   const { t } = useTranslation();
