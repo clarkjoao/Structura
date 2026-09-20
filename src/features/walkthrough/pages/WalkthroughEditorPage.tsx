@@ -37,9 +37,9 @@ export default function WalkthroughEditorPage() {
     setIsSaving(true);
     try {
       await save(local);
-      toast.success(t("walkthrough.saved", "Walkthrough saved"));
+      toast.success(t("walkthrough.saved"));
     } catch {
-      toast.error(t("walkthrough.saveFailed", "Failed to save walkthrough"));
+      toast.error(t("walkthrough.saveFailed"));
     } finally {
       setIsSaving(false);
     }
@@ -56,7 +56,7 @@ export default function WalkthroughEditorPage() {
   if (!id) {
     return (
       <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
-        {t("walkthrough.missingId", "Missing walkthrough id")}
+        {t("walkthrough.missingId")}
       </div>
     );
   }
@@ -64,11 +64,9 @@ export default function WalkthroughEditorPage() {
   if (!local) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4">
-        <p className="text-sm text-muted-foreground">
-          {t("walkthrough.notFound", "Walkthrough not found")}
-        </p>
+        <p className="text-sm text-muted-foreground">{t("walkthrough.notFound")}</p>
         <Button variant="outline" onClick={() => navigate("/walkthroughs")}>
-          {t("walkthrough.backToLibrary", "Back to Library")}
+          {t("walkthrough.backToLibrary")}
         </Button>
       </div>
     );
@@ -92,7 +90,7 @@ export default function WalkthroughEditorPage() {
             className="h-auto border-0 bg-transparent px-0 py-0 text-base font-semibold shadow-none focus-visible:ring-0"
             value={local.title}
             onChange={(e) => setLocal({ ...local, title: e.target.value })}
-            placeholder={t("walkthrough.untitledPlaceholder", "Untitled Walkthrough")}
+            placeholder={t("walkthrough.untitledPlaceholder")}
           />
           {local.description && (
             <p className="truncate text-xs text-muted-foreground">{local.description}</p>
@@ -108,15 +106,10 @@ export default function WalkthroughEditorPage() {
               onClick={() => navigate(`/walkthrough/${local.id}/step/0`)}
             >
               <Eye className="h-3.5 w-3.5" />
-              {t("walkthrough.preview", "Preview")}
+              {t("walkthrough.preview")}
             </Button>
           )}
-          <Button
-            size="sm"
-            className="gap-1.5"
-            onClick={handleSave}
-            disabled={isSaving}
-          >
+          <Button size="sm" className="gap-1.5" onClick={handleSave} disabled={isSaving}>
             <Save className="h-3.5 w-3.5" />
             {isSaving ? t("common.saving", "Saving…") : t("common.save", "Save")}
           </Button>

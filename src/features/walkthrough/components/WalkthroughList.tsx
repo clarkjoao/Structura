@@ -63,7 +63,7 @@ export function WalkthroughList({
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-foreground">
-                {presentation.title || t("walkthrough.untitled", "Untitled Walkthrough")}
+                {presentation.title || t("walkthrough.untitled")}
               </p>
               {presentation.description && (
                 <p className="truncate text-xs text-muted-foreground">{presentation.description}</p>
@@ -78,9 +78,7 @@ export function WalkthroughList({
 
             <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
               {stepCount}{" "}
-              {stepCount === 1
-                ? t("walkthrough.scene_one", "scene")
-                : t("walkthrough.scene_other", "scenes")}
+              {stepCount === 1 ? t("walkthrough.scene_one") : t("walkthrough.scene_other")}
             </span>
 
             <div className="flex shrink-0 items-center gap-0.5">
@@ -93,7 +91,7 @@ export function WalkthroughList({
                   e.stopPropagation();
                   onToggleFavorite(presentation.id);
                 }}
-                title={t("walkthrough.favorite", "Favorite")}
+                title={t("walkthrough.favorite")}
               >
                 <Star
                   className={cn(
@@ -111,7 +109,7 @@ export function WalkthroughList({
                   e.stopPropagation();
                   navigate(`/walkthrough/${presentation.id}/step/0`);
                 }}
-                title={t("walkthrough.play", "Play")}
+                title={t("walkthrough.play")}
               >
                 <Play className="h-3.5 w-3.5" />
               </Button>
@@ -123,7 +121,7 @@ export function WalkthroughList({
                   e.stopPropagation();
                   onEdit(presentation.id);
                 }}
-                title={t("walkthrough.edit", "Edit")}
+                title={t("walkthrough.edit")}
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -135,7 +133,7 @@ export function WalkthroughList({
                   e.stopPropagation();
                   onDelete(presentation.id);
                 }}
-                title={t("walkthrough.delete", "Delete")}
+                title={t("walkthrough.delete")}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>

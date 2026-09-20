@@ -6,5 +6,4 @@
  *
  * Set VITE_ENABLE_WALKTHROUGHS=true in your .env.local to develop this feature.
  */
-export const WALKTHROUGH_ENABLED =
-  import.meta.env.VITE_ENABLE_WALKTHROUGHS === "true";
+export const WALKTHROUGH_ENABLED = import.meta.env.VITE_ENABLE_WALKTHROUGHS === "true";

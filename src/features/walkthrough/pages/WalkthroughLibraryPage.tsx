@@ -141,7 +141,7 @@ export default function WalkthroughLibraryPage() {
     () => [
       { key: "name" as const, label: t("common.name") },
       { key: "updatedAt" as const, label: t("common.lastEdited") },
-      { key: "sceneCount" as const, label: t("walkthrough.sortByScenes", "Scenes") },
+      { key: "sceneCount" as const, label: t("walkthrough.sortByScenes") },
     ],
     [t],
   );
@@ -193,7 +193,7 @@ export default function WalkthroughLibraryPage() {
   const targetPresentation = deleteTargetId ? presentations[deleteTargetId] : null;
   const currentFolderName =
     selectedFolderId === null
-      ? t("walkthrough.folderTree.all", "All walkthroughs")
+      ? t("walkthrough.folderTree.all")
       : (foldersRecord[selectedFolderId]?.name ?? "");
 
   return (
@@ -209,8 +209,8 @@ export default function WalkthroughLibraryPage() {
             onSelectFolder={setSelectedFolderId}
             countFor={countFor}
             rootCount={allPresentations.length}
-            headerLabel={t("walkthrough.library", "Walkthroughs")}
-            allLabel={t("walkthrough.folderTree.all", "All walkthroughs")}
+            headerLabel={t("walkthrough.library")}
+            allLabel={t("walkthrough.folderTree.all")}
             drag={walkthroughDrag}
           />
         </div>
@@ -229,7 +229,7 @@ export default function WalkthroughLibraryPage() {
                     : "text-muted-foreground transition-colors hover:text-foreground"
                 }
               >
-                {t("walkthrough.folderTree.all", "All walkthroughs")}
+                {t("walkthrough.folderTree.all")}
               </button>
               {breadcrumbPath.map((folder) => (
                 <span key={folder.id} className="flex min-w-0 items-center gap-1">
@@ -249,7 +249,7 @@ export default function WalkthroughLibraryPage() {
 
             <Button size="sm" className="h-8 gap-1.5" onClick={() => setCreateOpen(true)}>
               <Plus className="h-3.5 w-3.5" />
-              {t("walkthrough.newTile.title", "New walkthrough")}
+              {t("walkthrough.newTile.title")}
             </Button>
           </div>
 
@@ -261,7 +261,7 @@ export default function WalkthroughLibraryPage() {
               onChipChange={setChip}
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder={t("walkthrough.searchPlaceholder", "Search walkthroughs")}
+              searchPlaceholder={t("walkthrough.searchPlaceholder")}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
               sortOptions={sortOptions}
@@ -318,12 +318,9 @@ export default function WalkthroughLibraryPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t("walkthrough.deleteConfirmTitle", "Delete walkthrough?")}
-            </AlertDialogTitle>
+            <AlertDialogTitle>{t("walkthrough.deleteConfirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {t("walkthrough.deleteConfirmMessage", {
-                defaultValue: `"${targetPresentation?.title ?? ""}" and all its scenes will be permanently deleted. This cannot be undone.`,
                 title: targetPresentation?.title ?? "",
               })}
             </AlertDialogDescription>
@@ -359,26 +356,17 @@ function EmptyState({ hasAnyPresentation, folderName, onCreate }: EmptyStateProp
         </div>
         <p className="text-sm font-medium text-foreground">
           {hasAnyPresentation
-            ? t("walkthrough.empty.filtered", {
-                defaultValue: `No walkthroughs in ${folderName}`,
-                name: folderName,
-              })
-            : t("walkthrough.empty.title", "No walkthroughs yet")}
+            ? t("walkthrough.empty.filtered", { name: folderName })
+            : t("walkthrough.empty.title")}
         </p>
         <p className="text-xs text-muted-foreground">
           {hasAnyPresentation
-            ? t(
-                "walkthrough.empty.filteredSubtitle",
-                "Pick a different folder, or create a new walkthrough inside this one.",
-              )
-            : t(
-                "walkthrough.empty.subtitle",
-                "Create your first walkthrough to start guiding readers across diagrams.",
-              )}
+            ? t("walkthrough.empty.filteredSubtitle")
+            : t("walkthrough.empty.subtitle")}
         </p>
         <Button size="sm" className="mt-2 gap-1.5" onClick={onCreate}>
           <Plus className="h-3.5 w-3.5" />
-          {t("walkthrough.newTile.title", "New walkthrough")}
+          {t("walkthrough.newTile.title")}
         </Button>
       </div>
     </div>

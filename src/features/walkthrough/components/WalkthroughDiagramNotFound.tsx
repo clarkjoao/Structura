@@ -10,11 +10,7 @@ interface Props {
   skipLabel?: string;
 }
 
-export function WalkthroughDiagramNotFound({
-  diagramId,
-  onSkip,
-  skipLabel,
-}: Props) {
+export function WalkthroughDiagramNotFound({ diagramId, onSkip, skipLabel }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -25,7 +21,7 @@ export function WalkthroughDiagramNotFound({
       </div>
       <div className="max-w-sm">
         <h2 className="text-lg font-semibold text-foreground">
-          {t("walkthrough.diagramNotFoundTitle", "Diagram not found")}
+          {t("walkthrough.diagramNotFoundTitle")}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {t(
@@ -37,12 +33,10 @@ export function WalkthroughDiagramNotFound({
       <div className="flex gap-3">
         {onSkip ? (
           <Button variant="outline" onClick={onSkip}>
-            {skipLabel ?? t("walkthrough.skipScene", "Skip this scene")}
+            {skipLabel ?? t("walkthrough.skipScene")}
           </Button>
         ) : null}
-        <Button onClick={() => navigate("/walkthroughs")}>
-          {t("walkthrough.backToLibrary", "Back to Library")}
-        </Button>
+        <Button onClick={() => navigate("/walkthroughs")}>{t("walkthrough.backToLibrary")}</Button>
       </div>
     </div>
   );

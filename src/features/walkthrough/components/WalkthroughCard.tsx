@@ -91,7 +91,7 @@ export function WalkthroughCard({
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-foreground">
-            {presentation.title || t("walkthrough.untitled", "Untitled Walkthrough")}
+            {presentation.title || t("walkthrough.untitled")}
           </h3>
           {presentation.description && (
             <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
@@ -109,7 +109,7 @@ export function WalkthroughCard({
             e.stopPropagation();
             onToggleFavorite(presentation.id);
           }}
-          title={t("walkthrough.favorite", "Favorite")}
+          title={t("walkthrough.favorite")}
         >
           <Star
             className={cn(
@@ -127,7 +127,7 @@ export function WalkthroughCard({
             className="h-7 w-7"
             onClick={handleOpenPlayer}
             disabled={stepCount === 0}
-            title={t("walkthrough.play", "Play")}
+            title={t("walkthrough.play")}
           >
             <Play className="h-3.5 w-3.5" />
           </Button>
@@ -136,7 +136,7 @@ export function WalkthroughCard({
             size="icon"
             className="h-7 w-7"
             onClick={handleEditClick}
-            title={t("walkthrough.edit", "Edit")}
+            title={t("walkthrough.edit")}
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
@@ -145,7 +145,7 @@ export function WalkthroughCard({
             size="icon"
             className="h-7 w-7 text-destructive hover:text-destructive"
             onClick={handleDeleteClick}
-            title={t("walkthrough.delete", "Delete")}
+            title={t("walkthrough.delete")}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
@@ -165,20 +165,16 @@ export function WalkthroughCard({
         <span className="flex items-center gap-1.5">
           <span>
             {stepCount}{" "}
-            {stepCount === 1
-              ? t("walkthrough.scene_one", "scene")
-              : t("walkthrough.scene_other", "scenes")}
+            {stepCount === 1 ? t("walkthrough.scene_one") : t("walkthrough.scene_other")}
           </span>
           <span aria-hidden>·</span>
           <span>
             {diagramCount}{" "}
-            {diagramCount === 1
-              ? t("walkthrough.diagram_one", "diagram")
-              : t("walkthrough.diagram_other", "diagrams")}
+            {diagramCount === 1 ? t("walkthrough.diagram_one") : t("walkthrough.diagram_other")}
           </span>
           {hasInvalidDiagrams && (
             <Badge variant="destructive" className="ml-1 text-[10px] font-normal">
-              {t("walkthrough.someDiagramsMissing", "some diagrams missing")}
+              {t("walkthrough.someDiagramsMissing")}
             </Badge>
           )}
         </span>

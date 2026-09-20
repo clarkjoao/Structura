@@ -39,7 +39,10 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
     for (const diagram of diagramList) {
       const flows = Object.values(diagram.snapshot.flows ?? {});
       if (flows.length > 0) {
-        map[diagram.id] = flows.map((f: { id: string; name: string }) => ({ id: f.id, name: f.name }));
+        map[diagram.id] = flows.map((f: { id: string; name: string }) => ({
+          id: f.id,
+          name: f.name,
+        }));
       }
     }
     return map;
@@ -48,23 +51,18 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
   const selectedStep = selectedIndex !== null ? presentation.steps[selectedIndex] : null;
   const selectedDiagram = selectedStep ? diagramStore[selectedStep.diagramId] : null;
 
-  const toggleExpand = useCallback(
-    (index: number) => {
-      setExpandedSteps((prev) => {
-        const next = new Set(prev);
-        if (next.has(index)) next.delete(index);
-        else next.add(index);
-        return next;
-      });
-    },
-    [],
-  );
+  const toggleExpand = useCallback((index: number) => {
+    setExpandedSteps((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
 
   const updateStep = useCallback(
     (index: number, patch: Partial<WalkthroughStepRef>) => {
-      const steps = presentation.steps.map((s, i) =>
-        i === index ? { ...s, ...patch } : s,
-      );
+      const steps = presentation.steps.map((s, i) => (i === index ? { ...s, ...patch } : s));
       onUpdate({ ...presentation, steps });
     },
     [presentation, onUpdate],
@@ -112,14 +110,14 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
       <div className="flex w-64 shrink-0 flex-col border-r border-border">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <span className="text-xs font-medium text-muted-foreground">
-            {t("walkthrough.scenes", "Scenes")} ({presentation.steps.length})
+            {t("walkthrough.scenes")} ({presentation.steps.length})
           </span>
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6"
             onClick={addStep}
-            title={t("walkthrough.addScene", "Add scene")}
+            title={t("walkthrough.addScene")}
           >
             <Plus className="h-3.5 w-3.5" />
           </Button>
@@ -127,9 +125,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
         <div className="flex-1 overflow-y-auto">
           {presentation.steps.length === 0 ? (
             <div className="p-3">
-              <p className="text-xs text-muted-foreground">
-                {t("walkthrough.noScenes", "No scenes yet. Add one to get started.")}
-              </p>
+              <p className="text-xs text-muted-foreground">{t("walkthrough.noScenes")}</p>
             </div>
           ) : (
             <ul className="divide-y divide-border">
@@ -168,8 +164,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                         )}
                       </button>
                       <span className="truncate flex-1">
-                        {step.label ||
-                          (flow ? flow.name : t("walkthrough.unnamedScene", "Scene"))}
+                        {step.label || (flow ? flow.name : t("walkthrough.unnamedScene"))}
                       </span>
                       <span className="shrink-0 text-[10px] text-muted-foreground">
                         #{index + 1}
@@ -196,7 +191,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                             className="h-6 w-6 shrink-0"
                             onClick={() => moveStep(index, "up")}
                             disabled={index === 0}
-                            title={t("walkthrough.moveUp", "Move up")}
+                            title={t("walkthrough.moveUp")}
                           >
                             <ChevronDown className="h-3 w-3 rotate-180" />
                           </Button>
@@ -206,7 +201,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                             className="h-6 w-6 shrink-0"
                             onClick={() => moveStep(index, "down")}
                             disabled={index === presentation.steps.length - 1}
-                            title={t("walkthrough.moveDown", "Move down")}
+                            title={t("walkthrough.moveDown")}
                           >
                             <ChevronDown className="h-3 w-3" />
                           </Button>
@@ -215,7 +210,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                             size="icon"
                             className="h-6 w-6 shrink-0 text-destructive hover:text-destructive ml-auto"
                             onClick={() => removeStep(index)}
-                            title={t("walkthrough.removeScene", "Remove scene")}
+                            title={t("walkthrough.removeScene")}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -234,7 +229,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
       <div className="flex flex-1 flex-col min-w-0">
         {selectedStep === null ? (
           <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-            {t("walkthrough.selectSceneToEdit", "Select a scene to edit")}
+            {t("walkthrough.selectSceneToEdit")}
           </div>
         ) : (
           <div className="flex flex-1 flex-col min-h-0">
@@ -243,9 +238,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
               <div className="grid grid-cols-2 gap-4">
                 {/* Diagram selector */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs">
-                    {t("walkthrough.diagram", "Diagram")}
-                  </Label>
+                  <Label className="text-xs">{t("walkthrough.diagram")}</Label>
                   <Select
                     value={selectedStep.diagramId}
                     onValueChange={(diagramId) => {
@@ -256,7 +249,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                     }}
                   >
                     <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder={t("walkthrough.selectDiagram", "Select diagram")} />
+                      <SelectValue placeholder={t("walkthrough.selectDiagram")} />
                     </SelectTrigger>
                     <SelectContent>
                       {diagramList.map((d) => (
@@ -270,18 +263,17 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
 
                 {/* Flow selector */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs">
-                    {t("walkthrough.flow", "Flow")}
-                  </Label>
+                  <Label className="text-xs">{t("walkthrough.flow")}</Label>
                   <Select
                     value={selectedStep.flowId}
                     onValueChange={(flowId) => updateStep(selectedIndex!, { flowId })}
-                    disabled={!selectedStep.diagramId || (flowsByDiagram[selectedStep.diagramId] ?? []).length === 0}
+                    disabled={
+                      !selectedStep.diagramId ||
+                      (flowsByDiagram[selectedStep.diagramId] ?? []).length === 0
+                    }
                   >
                     <SelectTrigger className="h-8 text-xs">
-                      <SelectValue
-                        placeholder={t("walkthrough.selectFlow", "Select flow")}
-                      />
+                      <SelectValue placeholder={t("walkthrough.selectFlow")} />
                     </SelectTrigger>
                     <SelectContent>
                       {(flowsByDiagram[selectedStep.diagramId] ?? []).map((f) => (
@@ -294,7 +286,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                   {(flowsByDiagram[selectedStep.diagramId] ?? []).length === 0 &&
                     selectedStep.diagramId && (
                       <p className="text-[10px] text-muted-foreground">
-                        {t("walkthrough.noFlowsInDiagram", "No flows in this diagram")}
+                        {t("walkthrough.noFlowsInDiagram")}
                       </p>
                     )}
                 </div>
@@ -302,32 +294,32 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                 {/* Label override */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">
-                    {t("walkthrough.stepLabel", "Step label")}{" "}
+                    {t("walkthrough.stepLabel")}{" "}
                     <span className="font-normal text-muted-foreground">
-                      ({t("walkthrough.optional", "optional")})
+                      ({t("walkthrough.optional")})
                     </span>
                   </Label>
                   <Input
                     className="h-8 text-xs"
                     value={selectedStep.label ?? ""}
                     onChange={(e) => updateStep(selectedIndex!, { label: e.target.value })}
-                    placeholder={t("walkthrough.stepLabelPlaceholder", "Uses the flow name by default")}
+                    placeholder={t("walkthrough.stepLabelPlaceholder")}
                   />
                 </div>
 
                 {/* Author note */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">
-                    {t("walkthrough.authorNote", "Author note")}{" "}
+                    {t("walkthrough.authorNote")}{" "}
                     <span className="font-normal text-muted-foreground">
-                      ({t("walkthrough.optional", "optional")})
+                      ({t("walkthrough.optional")})
                     </span>
                   </Label>
                   <Input
                     className="h-8 text-xs"
                     value={selectedStep.note ?? ""}
                     onChange={(e) => updateStep(selectedIndex!, { note: e.target.value })}
-                    placeholder={t("walkthrough.authorNotePlaceholder", "Not shown to readers")}
+                    placeholder={t("walkthrough.authorNotePlaceholder")}
                   />
                 </div>
               </div>
@@ -337,7 +329,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
             <div className="flex flex-1 flex-col min-h-0">
               <div className="border-b border-border bg-muted/10 px-4 py-1.5">
                 <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                  {t("walkthrough.preview", "Preview")}
+                  {t("walkthrough.preview")}
                 </span>
               </div>
               <div className="flex-1 min-h-0">
@@ -351,11 +343,11 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                   />
                 ) : selectedStep.diagramId ? (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    {t("walkthrough.diagramNotFound", "Diagram not found")}
+                    {t("walkthrough.diagramNotFound")}
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    {t("walkthrough.selectDiagramFirst", "Select a diagram to preview")}
+                    {t("walkthrough.selectDiagramFirst")}
                   </div>
                 )}
               </div>

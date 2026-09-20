@@ -36,9 +36,7 @@ export function AddWalkthroughDialog({ onClose, onCreate, folderId }: AddWalkthr
   }, [onClose]);
 
   const targetFolder = folderId ? folders[folderId] : null;
-  const targetLabel = targetFolder
-    ? targetFolder.name
-    : t("walkthrough.create.noFolder", "No folder");
+  const targetLabel = targetFolder ? targetFolder.name : t("walkthrough.create.noFolder");
 
   const submit = () => {
     if (!title.trim()) return;
@@ -60,19 +58,17 @@ export function AddWalkthroughDialog({ onClose, onCreate, folderId }: AddWalkthr
         className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="mb-4 text-lg font-bold">
-          {t("walkthrough.create.title", "New walkthrough")}
-        </h3>
+        <h3 className="mb-4 text-lg font-bold">{t("walkthrough.create.title")}</h3>
 
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("walkthrough.create.nameLabel", "Title")}
+              {t("walkthrough.create.nameLabel")}
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={t("walkthrough.create.namePlaceholder", "e.g. Onboarding flow")}
+              placeholder={t("walkthrough.create.namePlaceholder")}
               className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               autoFocus
               onKeyDown={(e) => {
@@ -89,19 +85,16 @@ export function AddWalkthroughDialog({ onClose, onCreate, folderId }: AddWalkthr
               className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
               htmlFor="walkthrough-description"
             >
-              {t("walkthrough.description", "Description")}{" "}
+              {t("walkthrough.description")}{" "}
               <span className="font-normal normal-case tracking-normal">
-                {t("walkthrough.optional", "(optional)")}
+                {t("walkthrough.optional")}
               </span>
             </label>
             <textarea
               id="walkthrough-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={t(
-                "walkthrough.descriptionPlaceholder",
-                "What a reader will understand after following it",
-              )}
+              placeholder={t("walkthrough.descriptionPlaceholder")}
               rows={2}
               className="w-full resize-none rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -128,7 +121,7 @@ export function AddWalkthroughDialog({ onClose, onCreate, folderId }: AddWalkthr
             {t("common.cancel", "Cancel")}
           </Button>
           <Button onClick={submit} disabled={!title.trim()} size="sm">
-            {t("walkthrough.create.submit", "Create walkthrough")}
+            {t("walkthrough.create.submit")}
           </Button>
         </div>
       </motion.div>

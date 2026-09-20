@@ -63,6 +63,20 @@ interface ViewerCanvasProps {
   previewMode?: boolean;
   /** When `previewMode` is on, the flow to frame the preview on. */
   previewFlowId?: string | null;
+  /**
+   * Forward was pressed with nowhere left to go inside this diagram.
+   *
+   * The viewer reports its edge and does nothing else — it is used by the
+   * share route, where there is no "next", as well as by the walkthrough
+   * player, where there is. Deciding what lies beyond the end of a script is
+   * the host's business, never the canvas's.
+   *
+   * Not fired at a branch point: a step waiting on a choice also has no next
+   * step, but it is a choice the reader has not made, not an ending.
+   */
+  onReachedFlowEnd?: () => void;
+  /** Back was pressed at the entry step. Same contract as above, mirrored. */
+  onReachedFlowStart?: () => void;
 }
 
 const ViewerCanvasContent = ({
@@ -72,6 +86,8 @@ const ViewerCanvasContent = ({
   initialFlowId = null,
   previewMode = false,
   previewFlowId = null,
+  onReachedFlowEnd,
+  onReachedFlowStart,
 }: ViewerCanvasProps) => {
   const flows = useMemo(() => Object.values(diagram.snapshot.flows ?? {}), [diagram]);
 
@@ -125,7 +141,14 @@ const ViewerCanvasContent = ({
         ? buildFlowHighlight(readingFlow, playing.currentStepId, playing.history)
         : EMPTY_FLOW_HIGHLIGHT,
     };
-  }, [previewMode, previewFlow, previewEntryStepId, readingFlow, playing?.currentStepId, playing?.history]);
+  }, [
+    previewMode,
+    previewFlow,
+    previewEntryStepId,
+    readingFlow,
+    playing?.currentStepId,
+    playing?.history,
+  ]);
 
   /**
    * Starting a script from whatever the reader clicked.
@@ -224,8 +247,8 @@ const ViewerCanvasContent = ({
   }, [previewMode, initialFlowId, startFlow]);
 
   // Arrow keys drive the flow playback when the reader is playing a script.
-  //   → / ↓  advance to the next step (if not blocked by a condition)
-  //   ← / ↑  go back one step
+  //   → / ↓  advance to the next step, or report the end of the script
+  //   ← / ↑  go back one step, or report its start
   //
   // Skipped under `previewMode` (the editor preview is selecting, not
   // playing) and when focus is in a text field, contenteditable, or any
@@ -249,17 +272,31 @@ const ViewerCanvasContent = ({
         if (playback.canGoForward) {
           e.preventDefault();
           playback.goNext();
+          return;
+        }
+        // A branch point also has no next step. It is a choice the reader has
+        // not made, so forward takes no way and reports no ending — without
+        // this, pressing forward twice would step past the choice entirely.
+        if (playback.isCondition) return;
+        if (onReachedFlowEnd) {
+          e.preventDefault();
+          onReachedFlowEnd();
         }
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         if (playback.canGoBack) {
           e.preventDefault();
           playback.goBack();
+          return;
+        }
+        if (onReachedFlowStart) {
+          e.preventDefault();
+          onReachedFlowStart();
         }
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [previewMode, mode.kind, playback]);
+  }, [previewMode, mode.kind, playback, onReachedFlowEnd, onReachedFlowStart]);
 
   const {
     nodes: projectedNodes,
@@ -407,6 +444,8 @@ export const ViewerCanvas = ({
   initialFlowId = null,
   previewMode = false,
   previewFlowId = null,
+  onReachedFlowEnd,
+  onReachedFlowStart,
 }: ViewerCanvasProps) => (
   <DiagramFlowProvider>
     <ViewerCanvasContent
@@ -414,6 +453,8 @@ export const ViewerCanvas = ({
       offsetTop={offsetTop}
       showOpenInStructuraButton={showOpenInStructuraButton}
       initialFlowId={initialFlowId}
+      onReachedFlowEnd={onReachedFlowEnd}
+      onReachedFlowStart={onReachedFlowStart}
       previewMode={previewMode}
       previewFlowId={previewFlowId}
     />

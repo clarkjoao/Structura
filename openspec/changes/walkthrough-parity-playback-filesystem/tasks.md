@@ -21,11 +21,11 @@ green on its own. See `design.md — Migration Plan` for why this order.
 
 ## 3. Viewer edge callbacks and the scene boundary
 
-- [ ] 3.1 Add `onReachedFlowEnd` / `onReachedFlowStart` to `ViewerCanvas` and make the forward key three-branch (advance / branch point does nothing / report the end); verify by test that forward at a branch point neither takes a branch nor fires `onReachedFlowEnd`, and that forward on the last step fires it exactly once
-- [ ] 3.2 Wire `onReachedFlowEnd` in `WalkthroughPlayerPage` to raise `SceneEndOverlay`, and give the overlay its own forward / back / dismiss keys; verify by test that forward on the last step of scene 1 raises the boundary and a second forward lands on scene 2 at its first step
-- [ ] 3.3 Have the boundary name the next scene, report "scene N of M", and on the last scene offer the library via `navigate` instead of `window.location.href`; verify by test that the last scene's boundary offers the library and that no full document load occurs
-- [ ] 3.4 Clear the diagram-transition `setTimeout` on unmount in `WalkthroughPlayerPage`; verify by test that unmounting before it expires produces no update warning
-- [ ] 3.5 Surface the skip-a-scene shortcut in the player footer, keeping `⌘`+arrow working; verify the footer names the shortcut and that it still jumps a whole scene from mid-flow
+- [x] 3.1 Add `onReachedFlowEnd` / `onReachedFlowStart` to `ViewerCanvas` and make the forward key three-branch (advance / branch point does nothing / report the end); verify by test that forward at a branch point neither takes a branch nor fires `onReachedFlowEnd`, and that forward on the last step fires it exactly once
+- [x] 3.2 Wire `onReachedFlowEnd` in `WalkthroughPlayerPage` to raise `SceneEndOverlay`, and give the overlay its own forward / back / dismiss keys; verify by test that forward on the last step of scene 1 raises the boundary and a second forward lands on scene 2 at its first step
+- [x] 3.3 Have the boundary name the next scene, report "scene N of M", and on the last scene offer the library via `navigate` instead of `window.location.href`; verify by test that the last scene's boundary offers the library and that no full document load occurs
+- [x] 3.4 Clear the diagram-transition `setTimeout` on unmount in `WalkthroughPlayerPage`; verify by test that unmounting before it expires produces no update warning
+- [x] 3.5 Surface the skip-a-scene shortcut in the player footer, keeping `⌘`+arrow working; verify the footer names the shortcut and that it still jumps a whole scene from mid-flow
 
 ## 4. Sidecar persistence primitives
 
@@ -58,7 +58,7 @@ green on its own. See `design.md — Migration Plan` for why this order.
 
 ## 8. i18n and gates
 
-- [ ] 8.1 Add the missing `walkthrough.*` keys (`create.*`, `folderTree.*`, `empty.*`, `delete`) plus every string added by groups 1–7 to `en.json` and `pt-BR.json`, and strip the inline `t(key, "English default")` fallbacks across the module; verify by a script that every `walkthrough.*` key referenced in `src/features/walkthrough` resolves in both locales
+- [x] 8.1 Add the missing `walkthrough.*` keys (`create.*`, `folderTree.*`, `empty.*`, `delete`) plus every string added by groups 1–7 to `en.json` and `pt-BR.json`, and strip the inline `t(key, "English default")` fallbacks across the module; verify by a script that every `walkthrough.*` key referenced in `src/features/walkthrough` resolves in both locales
 - [ ] 8.2 Run `npm run typecheck && npm run lint && npm run format:check && npm run test` and report the output against the recorded baseline; verify typecheck is green, that every file this change touches is lint- and format-clean, and that no test fails which passed at baseline
 
 > **Baseline, measured at `d1b8efc` before any source change.** `typecheck` green.
