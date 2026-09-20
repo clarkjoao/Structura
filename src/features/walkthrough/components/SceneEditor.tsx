@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Trash2, ChevronDown, ChevronRight, Play, MapPin } from "lucide-react";
+import { Plus, Trash2, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,8 @@ import {
 import { useDiagramStore, useDiagrams } from "@/features/diagram";
 import type { WalkthroughPresentation, WalkthroughStepRef } from "../model/walkthrough.types";
 import { ViewerCanvas } from "@/features/viewer";
+import { cn } from "@/lib/utils";
+import { WALKTHROUGH_SCENE_DRAG_MIME } from "@/components/folders/dragTypes";
 
 interface Props {
   presentation: WalkthroughPresentation;
@@ -25,7 +27,9 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(
     presentation.steps.length > 0 ? 0 : null,
   );
-  const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([0]));
+  /** Where the dragged scene came from, and the gap it would land in. */
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
 
   const diagramsRecord = useDiagrams();
   const diagramList = Object.values(diagramsRecord);
@@ -49,15 +53,6 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
   const selectedStep = selectedIndex !== null ? presentation.steps[selectedIndex] : null;
   const selectedDiagram = selectedStep ? diagramStore[selectedStep.diagramId] : null;
 
-  const toggleExpand = useCallback((index: number) => {
-    setExpandedSteps((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
-  }, []);
-
   const updateStep = useCallback(
     (index: number, patch: Partial<WalkthroughStepRef>) => {
       const steps = presentation.steps.map((s, i) => (i === index ? { ...s, ...patch } : s));
@@ -72,10 +67,8 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
         ? { diagramId: diagramList[0].id, flowId: Object.values(flowsByDiagram)[0][0].id }
         : { diagramId: "", flowId: "" };
     const steps = [...presentation.steps, newStep];
-    const newIndex = steps.length - 1;
     onUpdate({ ...presentation, steps });
-    setSelectedIndex(newIndex);
-    setExpandedSteps((prev) => new Set([...prev, newIndex]));
+    setSelectedIndex(steps.length - 1);
   }, [presentation, onUpdate, diagramList, flowsByDiagram]);
 
   const removeStep = useCallback(
@@ -88,6 +81,25 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
       }
     },
     [presentation, onUpdate, selectedIndex],
+  );
+
+  /**
+   * Moves a scene into the gap at `insertAt`, counted between scenes: 0 is
+   * before the first, `steps.length` after the last. Dropping into either gap
+   * beside where the scene already sits does nothing, so a short drag reads as
+   * cancelled rather than as a one-place shuffle nobody asked for.
+   */
+  const reorderStep = useCallback(
+    (from: number, insertAt: number) => {
+      if (insertAt === from || insertAt === from + 1) return;
+      const steps = [...presentation.steps];
+      const [moved] = steps.splice(from, 1);
+      const target = insertAt > from ? insertAt - 1 : insertAt;
+      steps.splice(target, 0, moved);
+      onUpdate({ ...presentation, steps });
+      setSelectedIndex(target);
+    },
+    [presentation, onUpdate],
   );
 
   const moveStep = useCallback(
@@ -129,112 +141,182 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
             <ul className="divide-y divide-border">
               {presentation.steps.map((step, index) => {
                 const diagram = diagramStore[step.diagramId];
-                const diagramName = diagram?.name ?? step.diagramId ?? "—";
                 const flow = diagram?.snapshot.flows?.[step.flowId];
                 const isSelected = index === selectedIndex;
-                const isExpanded = expandedSteps.has(index);
+                const isLast = index === presentation.steps.length - 1;
+                const isDragging = dragIndex === index;
 
                 return (
-                  <li key={index}>
+                  <li
+                    key={index}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(WALKTHROUGH_SCENE_DRAG_MIME, String(index));
+                      e.dataTransfer.effectAllowed = "move";
+                      setDragIndex(index);
+                    }}
+                    onDragEnd={() => {
+                      setDragIndex(null);
+                      setDropIndex(null);
+                    }}
+                    onDragOver={(e) => {
+                      if (dragIndex === null) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      // Above the midpoint lands before this scene, below it after.
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setDropIndex(e.clientY < rect.top + rect.height / 2 ? index : index + 1);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (dragIndex !== null && dropIndex !== null) {
+                        reorderStep(dragIndex, dropIndex);
+                      }
+                      setDragIndex(null);
+                      setDropIndex(null);
+                    }}
+                    className={cn("relative", isDragging && "opacity-40")}
+                  >
+                    {/* Where the scene would land, drawn in the gap itself. */}
+                    {dropIndex === index && (
+                      <div className="absolute inset-x-0 top-0 z-10 h-0.5 bg-primary" />
+                    )}
+                    {isLast && dropIndex === index + 1 && (
+                      <div className="absolute inset-x-0 bottom-0 z-10 h-0.5 bg-primary" />
+                    )}
+
                     <div
-                      className={`flex items-center gap-1 px-2 py-2 text-xs cursor-pointer transition-colors ${
-                        isSelected
-                          ? "bg-primary/10 text-primary"
-                          : "hover:bg-muted/50 text-foreground"
-                      }`}
-                      onClick={() => {
-                        setSelectedIndex(index);
-                        if (!expandedSteps.has(index)) toggleExpand(index);
-                      }}
+                      className={cn(
+                        "group flex cursor-pointer items-start gap-2 px-2 py-2 transition-colors",
+                        isSelected ? "bg-primary/10" : "hover:bg-muted/50",
+                      )}
+                      onClick={() => setSelectedIndex(index)}
                     >
+                      {/* The order is the whole point of a walkthrough, so the
+                          number holds a column of its own and the scenes read
+                          1-2-3 down the rail. The grip takes its place on
+                          hover: the same gutter, one job at a time. */}
                       <button
                         type="button"
-                        className="shrink-0 text-muted-foreground hover:text-foreground"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleExpand(index);
+                        className="mt-px flex h-4 w-4 shrink-0 cursor-grab items-center justify-center rounded text-[11px] tabular-nums text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:cursor-grabbing"
+                        aria-label={t("walkthrough.reorderScene", { number: index + 1 })}
+                        title={`${t("walkthrough.moveUp")} / ${t("walkthrough.moveDown")}`}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          // Reordering stays reachable without a pointer.
+                          if (e.key === "ArrowUp") {
+                            e.preventDefault();
+                            moveStep(index, "up");
+                          } else if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            moveStep(index, "down");
+                          }
                         }}
                       >
-                        {isExpanded ? (
-                          <ChevronDown className="h-3 w-3" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3" />
-                        )}
+                        <span className="group-hover:hidden">{index + 1}</span>
+                        <GripVertical className="hidden h-3 w-3 group-hover:block" />
                       </button>
-                      <span className="truncate flex-1">
-                        {step.label || (flow ? flow.name : t("walkthrough.unnamedScene"))}
-                      </span>
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
-                        #{index + 1}
-                      </span>
-                    </div>
-                    {isExpanded && isSelected && (
-                      <div className="border-t border-border px-3 py-2">
-                        <div className="flex flex-col gap-1 text-[11px] text-muted-foreground mb-2">
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{diagramName}</span>
-                          </div>
-                          {flow && (
-                            <div className="flex items-center gap-1">
-                              <Play className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{flow.name}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6 shrink-0"
-                            onClick={() => moveStep(index, "up")}
-                            disabled={index === 0}
-                            title={t("walkthrough.moveUp")}
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={cn(
+                              "min-w-0 flex-1 truncate text-xs",
+                              isSelected ? "font-medium text-primary" : "text-foreground",
+                            )}
                           >
-                            <ChevronDown className="h-3 w-3 rotate-180" />
-                          </Button>
+                            {step.label || (flow ? flow.name : t("walkthrough.unnamedScene"))}
+                          </span>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
-                            className="h-6 w-6 shrink-0"
-                            onClick={() => moveStep(index, "down")}
-                            disabled={index === presentation.steps.length - 1}
-                            title={t("walkthrough.moveDown")}
-                          >
-                            <ChevronDown className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6 shrink-0 text-destructive hover:text-destructive ml-auto"
-                            onClick={() => removeStep(index)}
+                            className="h-5 w-5 shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100 group-focus-within:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeStep(index);
+                            }}
                             title={t("walkthrough.removeScene")}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
+                        {/* Which diagram this scene reads from — the one thing
+                            the title does not already say, since it is the
+                            flow's own name unless the author overrode it. */}
+                        <p
+                          className={cn(
+                            "truncate text-[11px]",
+                            diagram ? "text-muted-foreground" : "text-destructive",
+                          )}
+                        >
+                          {diagram ? diagram.name : t("walkthrough.diagramNotFound")}
+                        </p>
                       </div>
-                    )}
+                    </div>
                   </li>
                 );
               })}
             </ul>
           )}
+
+          {presentation.steps.length > 0 && (
+            <button
+              type="button"
+              onClick={addStep}
+              className="flex w-full items-center gap-2 border-t border-dashed border-border px-2 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5 shrink-0" />
+              {t("walkthrough.addScene")}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Right: Form + Preview */}
-      <div className="flex flex-1 flex-col min-w-0">
-        {selectedStep === null ? (
+      {/* Middle: the diagram. Right: the selected scene's settings.
+          Below xl the inspector stacks above the diagram instead, so the three
+          columns never squeeze each other — one instance, placed by `order`,
+          rather than two copies of the same fields. */}
+      <div className="flex min-w-0 flex-1 flex-col xl:flex-row">
+        {selectedStep === null || selectedIndex === null ? (
           <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
             {t("walkthrough.selectSceneToEdit")}
           </div>
         ) : (
-          <div className="flex flex-1 flex-col min-h-0">
-            {/* Form */}
-            <div className="border-b border-border bg-muted/20 px-6 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Diagram selector */}
+          <>
+            <main className="order-2 flex min-h-0 min-w-0 flex-1 flex-col xl:order-1">
+              {selectedDiagram ? (
+                <ViewerCanvas
+                  key={`${selectedStep.diagramId}:${selectedStep.flowId}`}
+                  diagram={selectedDiagram}
+                  initialFlowId={null}
+                  previewMode
+                  previewFlowId={selectedStep.flowId || null}
+                  showOpenInStructuraButton={false}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center px-6 text-center text-sm text-muted-foreground">
+                  {selectedStep.diagramId
+                    ? t("walkthrough.diagramNotFound")
+                    : t("walkthrough.selectDiagramFirst")}
+                </div>
+              )}
+            </main>
+
+            <aside className="order-1 shrink-0 overflow-y-auto border-b border-border bg-muted/20 xl:order-2 xl:w-80 xl:border-b-0 xl:border-l">
+              <div className="border-b border-border px-4 py-2.5">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t("walkthrough.sceneInspector", {
+                    current: selectedIndex + 1,
+                    total: presentation.steps.length,
+                  })}
+                </span>
+              </div>
+
+              {/* Two-up while the inspector lies across the top, one column once
+                  it stands on the right. */}
+              <div className="grid grid-cols-2 gap-4 px-4 py-3 xl:grid-cols-1">
+                {/* What the scene points at — change either and the scene reads
+                    somewhere else, which is why they lead. */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">{t("walkthrough.diagram")}</Label>
                   <Select
@@ -242,8 +324,10 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                     onValueChange={(diagramId) => {
                       // Reset flow when diagram changes
                       const flows = flowsByDiagram[diagramId] ?? [];
-                      const newFlowId = flows.length > 0 ? flows[0].id : "";
-                      updateStep(selectedIndex!, { diagramId, flowId: newFlowId });
+                      updateStep(selectedIndex, {
+                        diagramId,
+                        flowId: flows.length > 0 ? flows[0].id : "",
+                      });
                     }}
                   >
                     <SelectTrigger className="h-8 text-xs">
@@ -257,14 +341,18 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedStep.diagramId && !selectedDiagram && (
+                    <p className="text-[11px] text-destructive">
+                      {t("walkthrough.diagramNotFound")}
+                    </p>
+                  )}
                 </div>
 
-                {/* Flow selector */}
                 <div className="space-y-1.5">
                   <Label className="text-xs">{t("walkthrough.flow")}</Label>
                   <Select
                     value={selectedStep.flowId}
-                    onValueChange={(flowId) => updateStep(selectedIndex!, { flowId })}
+                    onValueChange={(flowId) => updateStep(selectedIndex, { flowId })}
                     disabled={
                       !selectedStep.diagramId ||
                       (flowsByDiagram[selectedStep.diagramId] ?? []).length === 0
@@ -281,76 +369,43 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
                       ))}
                     </SelectContent>
                   </Select>
-                  {(flowsByDiagram[selectedStep.diagramId] ?? []).length === 0 &&
-                    selectedStep.diagramId && (
-                      <p className="text-[10px] text-muted-foreground">
-                        {t("walkthrough.noFlowsInDiagram")}
+                  {/* A scene whose diagram has no flows cannot play at all, so
+                      it is stated as plainly here as the rail states it. */}
+                  {selectedDiagram &&
+                    (flowsByDiagram[selectedStep.diagramId] ?? []).length === 0 && (
+                      <p className="text-[11px] text-destructive">
+                        {t("walkthrough.noFlowsWarning")}
                       </p>
                     )}
                 </div>
 
-                {/* Label override */}
-                <div className="space-y-1.5">
-                  <Label className="text-xs">
-                    {t("walkthrough.stepLabel")}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      ({t("walkthrough.optional")})
-                    </span>
+                {/* Annotations. Optional, and weighted as such. */}
+                <div className="space-y-1.5 xl:border-t xl:border-border xl:pt-3">
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    {t("walkthrough.stepLabel")} ({t("walkthrough.optional")})
                   </Label>
                   <Input
                     className="h-8 text-xs"
                     value={selectedStep.label ?? ""}
-                    onChange={(e) => updateStep(selectedIndex!, { label: e.target.value })}
+                    onChange={(e) => updateStep(selectedIndex, { label: e.target.value })}
                     placeholder={t("walkthrough.stepLabelPlaceholder")}
                   />
                 </div>
 
-                {/* Author note */}
                 <div className="space-y-1.5">
-                  <Label className="text-xs">
-                    {t("walkthrough.authorNote")}{" "}
-                    <span className="font-normal text-muted-foreground">
-                      ({t("walkthrough.optional")})
-                    </span>
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    {t("walkthrough.authorNote")} ({t("walkthrough.optional")})
                   </Label>
                   <Input
                     className="h-8 text-xs"
                     value={selectedStep.note ?? ""}
-                    onChange={(e) => updateStep(selectedIndex!, { note: e.target.value })}
+                    onChange={(e) => updateStep(selectedIndex, { note: e.target.value })}
                     placeholder={t("walkthrough.authorNotePlaceholder")}
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Live preview */}
-            <div className="flex flex-1 flex-col min-h-0">
-              <div className="border-b border-border bg-muted/10 px-4 py-1.5">
-                <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                  {t("walkthrough.preview")}
-                </span>
-              </div>
-              <div className="flex-1 min-h-0">
-                {selectedDiagram ? (
-                  <ViewerCanvas
-                    diagram={selectedDiagram}
-                    initialFlowId={null}
-                    previewMode
-                    previewFlowId={selectedStep.flowId || null}
-                    showOpenInStructuraButton={false}
-                  />
-                ) : selectedStep.diagramId ? (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    {t("walkthrough.diagramNotFound")}
-                  </div>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    {t("walkthrough.selectDiagramFirst")}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+            </aside>
+          </>
         )}
       </div>
     </div>

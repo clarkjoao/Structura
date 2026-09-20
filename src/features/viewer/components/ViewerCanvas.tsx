@@ -331,12 +331,41 @@ const ViewerCanvasContent = ({
    * the entry step is the only step, and the canvas frames it instead of
    * the whole diagram, so the author sees what a reader will start on.
    */
+  /**
+   * Whether this render is framing a previewed flow's entry step rather than
+   * the diagram as a whole.
+   *
+   * It decides `fitView` below, because the two cannot both have the canvas:
+   * the framing runs on a double rAF, React Flow's own `fitView` waits for the
+   * nodes to be measured, and measurement lands later — so the whole diagram
+   * always won and the author was shown forty nodes instead of the one their
+   * scene starts on.
+   */
+  const framesPreviewEntry = Boolean(previewFlow && previewEntryStepId);
+
   useFrameReadStep({
     reactFlowInstance,
-    isReading: Boolean(readingFlow) || Boolean(previewFlow && previewEntryStepId),
+    isReading: Boolean(readingFlow) || framesPreviewEntry,
     flow: previewFlow ?? readingFlow,
     currentStepId: previewEntryStepId ?? playing?.currentStepId ?? null,
   });
+
+  /**
+   * The whole diagram, when the entry step points at nothing that is on the
+   * canvas — a step with no component, or one naming a component since
+   * deleted. Without this, turning `fitView` off would leave such a preview
+   * parked at the default viewport, showing empty space.
+   */
+  useEffect(() => {
+    if (!framesPreviewEntry || !previewFlow || !previewEntryStepId) return;
+    const step = previewFlow.steps?.[previewEntryStepId];
+    const componentId = step?.componentId;
+    const connectionId = step?.connectionId;
+    if (componentId && reactFlowInstance.getNode(componentId)) return;
+    if (connectionId && reactFlowInstance.getEdge(connectionId)) return;
+    const id = requestAnimationFrame(() => void reactFlowInstance.fitView());
+    return () => cancelAnimationFrame(id);
+  }, [framesPreviewEntry, previewFlow, previewEntryStepId, reactFlowInstance]);
 
   /** The same keys the editor's reading answers to. Skipped under `previewMode`:
    * there is no rail, and the keys would step through state the author never
@@ -420,7 +449,7 @@ const ViewerCanvasContent = ({
             edges={edges}
             nodeTypes={nodeTypes}
             iconLookup={iconLookup}
-            fitView
+            fitView={!framesPreviewEntry}
             onNodeClick={handleNodeClick}
             onEdgeClick={handleEdgeClick}
             onPaneClick={handlePaneClick}
