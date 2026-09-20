@@ -129,35 +129,6 @@ export default function WalkthroughPlayerPage() {
     goNextScene();
   }, [goNextScene]);
 
-  // Keyboard shortcuts: ↓ / → next scene, ↑ / ← previous scene.
-  // Skipped when focus is in a text field, contenteditable, or the user is
-  // already on the first/last scene (matching the disabled state of the
-  // navigation buttons).
-  useEffect(() => {
-    function isEditableTarget(target: EventTarget | null): boolean {
-      if (!(target instanceof HTMLElement)) return false;
-      const tag = target.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
-      if (target.isContentEditable) return true;
-      return false;
-    }
-
-    function onKey(e: KeyboardEvent) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isEditableTarget(e.target)) return;
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-        e.preventDefault();
-        goNextScene();
-      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        e.preventDefault();
-        goPrevScene();
-      }
-    }
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [goNextScene, goPrevScene]);
-
   // If step is null or the referenced diagram doesn't exist, show error
   if (!presentation) {
     return (

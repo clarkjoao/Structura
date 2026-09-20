@@ -223,6 +223,44 @@ const ViewerCanvasContent = ({
     startFlow(initialFlowId);
   }, [previewMode, initialFlowId, startFlow]);
 
+  // Arrow keys drive the flow playback when the reader is playing a script.
+  //   → / ↓  advance to the next step (if not blocked by a condition)
+  //   ← / ↑  go back one step
+  //
+  // Skipped under `previewMode` (the editor preview is selecting, not
+  // playing) and when focus is in a text field, contenteditable, or the
+  // canvas is mid-drag (so it never fights the diagram editor or any
+  // input). Cmd/Ctrl/Alt are also required to be unmodified.
+  useEffect(() => {
+    if (previewMode) return;
+    function isEditableTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (target.isContentEditable) return true;
+      return false;
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.shiftKey) return;
+      if (isEditableTarget(e.target)) return;
+      if (mode.kind !== "playing") return;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        if (playback.canGoForward) {
+          e.preventDefault();
+          playback.goNext();
+        }
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        if (playback.canGoBack) {
+          e.preventDefault();
+          playback.goBack();
+        }
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [previewMode, mode.kind, playback]);
+
   const {
     nodes: projectedNodes,
     edges,
