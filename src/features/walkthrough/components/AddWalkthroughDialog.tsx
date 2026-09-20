@@ -1,42 +1,32 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Folder as FolderIcon, Home } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useAllFolders } from "@/features/diagram";
+import { useFolders } from "@/features/diagram";
 
 export interface NewWalkthroughDraft {
   title: string;
-  description: string;
   folderId: string | null;
 }
 
 interface AddWalkthroughDialogProps {
   onClose: () => void;
   onCreate: (draft: NewWalkthroughDraft) => void;
-  /** Folder to pre-select when the dialog opens. */
-  defaultFolderId?: string | null;
+  /** Folder the new walkthrough will be created in. Required — the dialog
+   *  doesn't let the user choose a folder, it inherits the one currently
+   *  selected in the library's folder tree. `null` means "no folder" (root). */
+  folderId: string | null;
 }
-
-const NO_FOLDER_VALUE = "__no_folder__";
 
 export function AddWalkthroughDialog({
   onClose,
   onCreate,
-  defaultFolderId = null,
+  folderId,
 }: AddWalkthroughDialogProps) {
   const { t } = useTranslation();
-  const folders = useAllFolders();
+  const folders = useFolders();
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [folderId, setFolderId] = useState<string | null>(defaultFolderId);
-  const sortedFolders = [...folders].sort((a, b) => a.name.localeCompare(b.name));
 
   // Escape closes the dialog
   useEffect(() => {
@@ -47,13 +37,14 @@ export function AddWalkthroughDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const targetFolder = folderId ? folders[folderId] : null;
+  const targetLabel = targetFolder
+    ? targetFolder.name
+    : t("walkthrough.create.noFolder", "No folder");
+
   const submit = () => {
     if (!title.trim()) return;
-    onCreate({
-      title: title.trim(),
-      description: description.trim(),
-      folderId,
-    });
+    onCreate({ title: title.trim(), folderId });
   };
 
   return (
@@ -94,43 +85,21 @@ export function AddWalkthroughDialog({
             />
           </div>
 
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("walkthrough.create.folderLabel", "Folder")}
-            </label>
-            <Select
-              value={folderId ?? NO_FOLDER_VALUE}
-              onValueChange={(v) => setFolderId(v === NO_FOLDER_VALUE ? null : v)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NO_FOLDER_VALUE}>
-                  {t("walkthrough.create.noFolder", "No folder")}
-                </SelectItem>
-                {sortedFolders.map((folder) => (
-                  <SelectItem key={folder.id} value={folder.id}>
-                    {folder.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("walkthrough.create.descriptionLabel", "Description")}
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t(
-                "walkthrough.create.descriptionPlaceholder",
-                "What is this walkthrough about?",
+          {/* Read-only "creating in" hint — folder is determined by what's
+              currently selected in the library's folder tree. */}
+          <div className="flex items-center gap-2 rounded-md border border-border bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
+            {targetFolder ? (
+              <FolderIcon className="h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <Home className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <span className="truncate">
+              {t(
+                "walkthrough.create.creatingIn",
+                `Creating in ${targetLabel}`,
+                { folder: targetLabel },
               )}
-              className="min-h-20 w-full resize-none rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            />
+            </span>
           </div>
         </div>
 

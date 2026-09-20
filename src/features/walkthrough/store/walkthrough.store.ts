@@ -63,13 +63,11 @@ export const useWalkthroughStore = create<WalkthroughStore>((set, get) => ({
 /** Create a new blank presentation with a generated id. */
 export function createBlankPresentation(
   title = "Untitled Walkthrough",
-  description = "",
   folderId: string | null = null,
 ): WalkthroughPresentation {
   return {
     id: `wt_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     title,
-    description: description || undefined,
     folderId,
     steps: [],
     createdAt: Date.now(),

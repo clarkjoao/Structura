@@ -83,7 +83,7 @@ export default function WalkthroughLibraryPage() {
 
   const handleCreateNew = useCallback(
     async (draft: NewWalkthroughDraft) => {
-      const blank = createBlankPresentation(draft.title, draft.description, draft.folderId);
+      const blank = createBlankPresentation(draft.title, draft.folderId);
       await save(blank);
       setCreateOpen(false);
       navigate(`/walkthrough/${blank.id}/edit`);
@@ -199,7 +199,7 @@ export default function WalkthroughLibraryPage() {
         <AddWalkthroughDialog
           onClose={() => setCreateOpen(false)}
           onCreate={handleCreateNew}
-          defaultFolderId={selectedFolderId}
+          folderId={selectedFolderId}
         />
       )}
 
