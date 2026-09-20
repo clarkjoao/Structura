@@ -307,8 +307,8 @@ func (r *Room) TombstoneAt(collection, entityID string) (int, bool) {
 // anything that cannot be synced (ids, level, viewport) would report drift that
 // no resync can fix.
 var syncedKeys = []string{
-	"activeSceneId",
-	"compareSceneId",
+	"activeVersionId",
+	"compareVersionId",
 	"components",
 	"connections",
 	"description",
@@ -318,7 +318,7 @@ var syncedKeys = []string{
 	"flows",
 	"iconLibrary",
 	"nodeLayouts",
-	"scenes",
+	"versions",
 }
 
 // lessUTF16 orders like JavaScript's `<` on strings, which compares UTF-16 code

@@ -39,7 +39,7 @@ function stateWithStep(step: Record<string, unknown>): Partial<DiagramStore> {
             },
           },
         },
-        scenes: {},
+        versions: {},
       } as never,
     },
   } as Partial<DiagramStore>;
@@ -181,7 +181,7 @@ describe("a new optional field on a step needs no migration", () => {
     expect(readStep(reloaded).context).toEqual({ sets: { score: "0.12" } });
   });
 
-  it("is schema 14 after the Services rename (serviceCatalog → services)", () => {
-    expect(PERSIST_SCHEMA_VERSION).toBe(14);
+  it("is schema 15 after the Versions rename (scenes → versions)", () => {
+    expect(PERSIST_SCHEMA_VERSION).toBe(15);
   });
 });

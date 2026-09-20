@@ -35,7 +35,7 @@ export interface NodeBuildContext {
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;
 
-  sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
+  versionBadgeByComponentId: Record<string, { name: string; color: string }>;
 
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
   isCompareMode?: boolean;

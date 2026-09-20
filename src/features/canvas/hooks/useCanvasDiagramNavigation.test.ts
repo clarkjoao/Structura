@@ -35,7 +35,7 @@ describe("useCanvasDiagramNavigation", () => {
           clearCanvasSelection: vi.fn(),
           actions: { openDiagram: vi.fn() },
           navigate: vi.fn(),
-          setShowScenes: vi.fn(),
+          setShowVersions: vi.fn(),
         }),
       { initialProps: { diagram: createDiagram("d1") } },
     );
@@ -59,7 +59,7 @@ describe("useCanvasDiagramNavigation", () => {
           clearCanvasSelection: vi.fn(),
           actions: { openDiagram: vi.fn() },
           navigate: vi.fn(),
-          setShowScenes: vi.fn(),
+          setShowVersions: vi.fn(),
         }),
       { initialProps: { diagram: createDiagram("d1") } },
     );
@@ -86,7 +86,7 @@ describe("useCanvasDiagramNavigation", () => {
         clearCanvasSelection,
         actions: { openDiagram },
         navigate,
-        setShowScenes: vi.fn(),
+        setShowVersions: vi.fn(),
       }),
     );
 
@@ -111,7 +111,7 @@ describe("useCanvasDiagramNavigation", () => {
         clearCanvasSelection,
         actions: { openDiagram },
         navigate,
-        setShowScenes: vi.fn(),
+        setShowVersions: vi.fn(),
       }),
     );
 
@@ -137,7 +137,7 @@ describe("useCanvasDiagramNavigation", () => {
         clearCanvasSelection,
         actions: { openDiagram },
         navigate,
-        setShowScenes: vi.fn(),
+        setShowVersions: vi.fn(),
       }),
     );
 

@@ -183,7 +183,7 @@ export function projectEdges(
  * selection change and every node on an edge selection.
  *
  * @example
- * const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+ * const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
  * const { nodes, edges } = projectDiagram(view, ctx, readPolicy(), {
  *   describe: resolveNodeDescriptor,
  *   handleAssignments,

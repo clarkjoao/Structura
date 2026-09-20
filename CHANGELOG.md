@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `service-registry-import` accepted). draw.io XML attrs
   (`registryService`, `registryId`, `c4RegistryBadge`) unchanged for
   round-trip compatibility.
+- **`Scene` → `Version`** (`PERSIST_SCHEMA_VERSION` 14 → 15). Product name
+  **Version** / **Versão** for AS-IS/TO-BE diffs. Persist fields
+  `scenes` / `activeSceneId` / `compareSceneId` → `versions` /
+  `activeVersionId` / `compareVersionId`; diagram JSON dual-read via
+  `normalizeDiagramVersionFields`; i18n namespace `versions.*`.
+  `FlowReadingScene` (Flow UI) unchanged.
 
 ### Added
 

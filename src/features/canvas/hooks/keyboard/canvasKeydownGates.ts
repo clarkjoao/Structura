@@ -15,7 +15,7 @@ export interface CanvasKeydownModeFlags {
   isFlowPanelOpen: boolean;
   isSearchOpen?: boolean;
   isCommandPaletteOpen?: boolean;
-  isScenesDrawerOpen?: boolean;
+  isVersionsDrawerOpen?: boolean;
 }
 
 /** True when edit/tool shortcuts must not run (flow, playback, compare, record). */
@@ -28,15 +28,15 @@ export function isCanvasOverlayOpen(flags: CanvasKeydownModeFlags): boolean {
   return Boolean(flags.isSearchOpen || flags.isCommandPaletteOpen);
 }
 
-export function handleScenesDrawerKey(
+export function handleVersionsDrawerKey(
   event: KeyboardEvent,
   flags: CanvasKeydownModeFlags,
-  onCloseScenesDrawer?: () => void,
+  onCloseVersionsDrawer?: () => void,
 ): boolean {
-  if (!flags.isScenesDrawerOpen) return false;
+  if (!flags.isVersionsDrawerOpen) return false;
   if (keyIs(event, KEY.ESCAPE)) {
     claimShortcutEvent(event);
-    onCloseScenesDrawer?.();
+    onCloseVersionsDrawer?.();
   }
   return true;
 }
@@ -80,13 +80,13 @@ export function handleAutoLayoutShortcut(
 export function handleCompareModeKeys(
   event: KeyboardEvent,
   flags: CanvasKeydownModeFlags,
-  setCompareScene: (sceneId: string | null) => void,
+  setCompareVersion: (versionId: string | null) => void,
 ): boolean {
   if (!flags.isCompareMode) return false;
 
   if (keyIs(event, KEY.ESCAPE)) {
     claimShortcutEvent(event);
-    if (!flags.isPlaying) setCompareScene(null);
+    if (!flags.isPlaying) setCompareVersion(null);
     return true;
   }
 

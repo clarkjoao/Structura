@@ -1,4 +1,4 @@
-import type { Diagram, PanelComponent, SceneDiff } from "../../model/diagram.types";
+import type { Diagram, PanelComponent, VersionDiff } from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
 import { isApiGroupComponent, isPanelComponent } from "../../model/component.guards";
@@ -17,14 +17,14 @@ import { pushHistory } from "./history.slice";
 import {
   getActiveComponents,
   getActiveNodeLayouts,
-  resolveActiveScene,
+  resolveActiveVersion,
   resolveComponent,
   resolveNodeLayout,
-} from "../helpers/scene-helpers";
+} from "../helpers/version-helpers";
 
 function applySingleNodeDrag(
   d: Diagram,
-  scene: SceneDiff | null,
+  scene: VersionDiff | null,
   nodeId: string,
   newParentId: string | null,
   newPosition: { x: number; y: number },
@@ -48,7 +48,7 @@ export const componentParentingSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       if (scene && !scene.addedComponents[childId]) return;
       // Always push history (even when the parentId is unchanged) so the
       // user can undo a reparent.
@@ -114,7 +114,7 @@ export const componentParentingSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
 
       const willApply = entries.some(({ nodeId }) => {
         if (scene && !scene.addedComponents[nodeId]) return false;
@@ -137,7 +137,7 @@ export const componentParentingSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      if (d.activeSceneId && d.scenes?.[d.activeSceneId]) return;
+      if (d.activeVersionId && d.versions?.[d.activeVersionId]) return;
       const comps = d.snapshot.components;
       const ids = componentIds.filter((id) => comps[id] && !isApiGroupComponent(comps[id]));
       if (ids.length < 2) return;
@@ -210,7 +210,7 @@ export const componentParentingSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const activeComponents = getActiveComponents(d, scene);
       const activeNodeLayouts = getActiveNodeLayouts(d, scene);
 

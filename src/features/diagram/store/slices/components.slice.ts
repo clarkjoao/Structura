@@ -5,7 +5,7 @@ import type {
   PanelComponent,
   NodeLayout,
   Diagram,
-  SceneDiff,
+  VersionDiff,
 } from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
@@ -29,11 +29,11 @@ import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
 import {
-  resolveActiveScene,
+  resolveActiveVersion,
   resolveComponent,
   resolveNodeLayout,
   writeComponentAndLayout,
-} from "../helpers/scene-helpers";
+} from "../helpers/version-helpers";
 import {
   PANEL_DEFAULT_W,
   PANEL_DEFAULT_H,
@@ -49,9 +49,9 @@ import i18n from "@/infrastructure/i18n";
 import { computeApiGroupSize } from "../../utils/api-group-size";
 import { buildChildrenIndex, getDescendantIdsFromIndex } from "../../utils/children-index";
 import {
-  mutateRemoveComponentInScene,
-  mutateRemoveConnectionInScene,
-} from "../../utils/scene-mutations";
+  mutateRemoveComponentInVersion,
+  mutateRemoveConnectionInVersion,
+} from "../../utils/version-mutations";
 import {
   repairFlowsAfterRemovingDiagramElements,
   toFlowSewNotices,
@@ -61,7 +61,7 @@ import {
 function handleEndpointInsertion(
   state: AppState,
   d: Diagram,
-  scene: SceneDiff | null,
+  scene: VersionDiff | null,
   component: Component,
   parentId: string,
 ): boolean {
@@ -361,7 +361,7 @@ export const componentsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
 
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
@@ -428,7 +428,7 @@ export const componentsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const inSceneAdds = !!(scene && scene.addedComponents[id]);
       if (!isDimensionOnly) {
         if (!scene || !inSceneAdds) pushHistory(state);
@@ -471,10 +471,10 @@ export const componentsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       if (scene) {
         pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-        publishSewNotices(state, mutateRemoveComponentInScene(d, scene.id, id));
+        publishSewNotices(state, mutateRemoveComponentInVersion(d, scene.id, id));
         touchDiagram(d);
         return;
       }
@@ -496,12 +496,12 @@ export const componentsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       if (scene) {
         pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         publishSewNotices(state, [
-          ...nodeIds.flatMap((id) => mutateRemoveComponentInScene(d, scene.id, id)),
-          ...edgeIds.flatMap((id) => mutateRemoveConnectionInScene(d, scene.id, id)),
+          ...nodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
+          ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
         ]);
         touchDiagram(d);
         return;

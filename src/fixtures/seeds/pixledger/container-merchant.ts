@@ -14,8 +14,8 @@ export function buildMerchantContainerDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 40, y: 40, zoom: 0.75 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-mer-user": layout("pl-mer-user", 40, 200, 220, 90),
       "pl-mer-boundary": layout("pl-mer-boundary", 320, 40, 760, 560),

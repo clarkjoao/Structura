@@ -7,11 +7,11 @@ import { pushHistory } from "./history.slice";
 import {
   getActiveComponents,
   getActiveNodeLayouts,
-  resolveActiveScene,
+  resolveActiveVersion,
   writeComponentAndLayout,
-} from "../helpers/scene-helpers";
+} from "../helpers/version-helpers";
 import { touchDiagram } from "../helpers/get-active-diagram";
-import { resolveSceneSnapshot } from "../../utils/scene.utils";
+import { resolveVersionSnapshot } from "../../utils/version.utils";
 
 function resolveAbsoluteLayoutPosition(
   id: string,
@@ -42,7 +42,7 @@ export const clipboardSlice = (
       const d = state.diagrams[state.activeDiagramId];
       if (!d) return;
       const idSet = new Set(componentIds);
-      const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+      const r = resolveVersionSnapshot(d, d.activeVersionId ?? null);
 
       const components: Component[] = [];
       const absPositions: { x: number; y: number }[] = [];
@@ -85,14 +85,14 @@ export const clipboardSlice = (
       const d = state.diagrams[state.activeDiagramId];
       if (!d) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const idMap: Record<string, string> = {};
       const baseX = position?.x ?? 300;
       const baseY = position?.y ?? 300;
       const pasteOffsets = state.clipboard.relativeOffsets;
       const pastedSourceIds = new Set(state.clipboard.components.map((component) => component.id));
       const availableComponents = scene
-        ? resolveSceneSnapshot(d, d.activeSceneId ?? null).components
+        ? resolveVersionSnapshot(d, d.activeVersionId ?? null).components
         : getActiveComponents(d, scene);
       const activeComponents = getActiveComponents(d, scene);
       const activeNodeLayouts = getActiveNodeLayouts(d, scene);

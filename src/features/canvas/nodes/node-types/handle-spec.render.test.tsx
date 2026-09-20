@@ -72,7 +72,7 @@ function buildContext(
     endpointCallsByRoute: new Map(),
     resolvedComponents: components,
     resolvedNodeLayouts: {},
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     services: {},
     allDiagrams: {},
     selectedNodeId: null,

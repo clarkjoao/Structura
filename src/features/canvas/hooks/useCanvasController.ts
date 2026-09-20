@@ -5,7 +5,7 @@ import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import {
   useActiveDiagramId,
-  useActiveDiagramSceneState,
+  useActiveDiagramVersionState,
   useConnections,
   useDiagramTags,
   useResolvedComponents,
@@ -27,7 +27,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const reactFlowInstance = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
-  const [showScenes, setShowScenes] = useState(false);
+  const [showVersions, setShowVersions] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
   const {
     diagram,
@@ -42,7 +42,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const resolvedComponents = useResolvedComponents();
   const resolvedNodeLayouts = useResolvedNodeLayouts();
   const resolvedConnections = useConnections();
-  const diagramSceneState = useActiveDiagramSceneState();
+  const diagramVersionState = useActiveDiagramVersionState();
   const allDiagramTags = useDiagramTags();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
   const { updateSelectedNode } = useCollab();
@@ -98,15 +98,15 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     services,
     compareState,
     flowState,
-    showScenes,
-    setShowScenes,
+    showVersions,
+    setShowVersions,
     setFocusTitleTrigger,
     onAutoLayout: handleAutoLayout,
   });
   const graphState = useCanvasGraphState({
     diagram,
     resolved,
-    diagramSceneState,
+    diagramVersionState,
     flows,
     // Pass selection/highlight/interaction values directly — no extra useMemo wrappers.
     selectedNodeId: visualState.selectedNodeId,
@@ -171,8 +171,8 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     setShowDiagramSidebar: interaction.setShowDiagramSidebar,
     showCommandPalette: interaction.showCommandPalette,
     setShowCommandPalette: interaction.setShowCommandPalette,
-    showScenes,
-    setShowScenes,
+    showVersions,
+    setShowVersions,
     handleSelectDiagram: interaction.handleSelectDiagram,
     handleSearchSelect: interaction.handleSearchSelect,
     focusTitleTrigger,

@@ -15,9 +15,9 @@ interface TrackedDiagramState {
   iconLibrary: Record<string, unknown>;
   nodeLayouts: Record<string, unknown>;
   edgeLayouts: Record<string, unknown>;
-  scenes: Record<string, unknown>;
-  activeSceneId: string | null;
-  compareSceneId: string | null;
+  versions: Record<string, unknown>;
+  activeVersionId: string | null;
+  compareVersionId: string | null;
 }
 
 interface UseCollabStoreSyncParams {
@@ -92,13 +92,13 @@ function applyPatchToTracked(
     iconLibrary: mergeCollection(previous.iconLibrary, patch.iconLibrary),
     nodeLayouts: mergeCollection(previous.nodeLayouts, patch.nodeLayouts),
     edgeLayouts: mergeCollection(previous.edgeLayouts, patch.edgeLayouts),
-    scenes: mergeCollection(previous.scenes, patch.scenes),
-    activeSceneId: hasOwn(patch, "activeSceneId")
-      ? (patch.activeSceneId as string | null)
-      : previous.activeSceneId,
-    compareSceneId: hasOwn(patch, "compareSceneId")
-      ? (patch.compareSceneId as string | null)
-      : previous.compareSceneId,
+    versions: mergeCollection(previous.versions, patch.versions),
+    activeVersionId: hasOwn(patch, "activeVersionId")
+      ? (patch.activeVersionId as string | null)
+      : previous.activeVersionId,
+    compareVersionId: hasOwn(patch, "compareVersionId")
+      ? (patch.compareVersionId as string | null)
+      : previous.compareVersionId,
   };
 }
 
@@ -118,9 +118,9 @@ function pickTrackedState(diagramId: string | null): TrackedDiagramState | null 
     iconLibrary: diagram.snapshot.iconLibrary as Record<string, unknown>,
     nodeLayouts: diagram.nodeLayouts as Record<string, unknown>,
     edgeLayouts: diagram.edgeLayouts as Record<string, unknown>,
-    scenes: (diagram.scenes ?? {}) as Record<string, unknown>,
-    activeSceneId: diagram.activeSceneId ?? null,
-    compareSceneId: diagram.compareSceneId ?? null,
+    versions: (diagram.versions ?? {}) as Record<string, unknown>,
+    activeVersionId: diagram.activeVersionId ?? null,
+    compareVersionId: diagram.compareVersionId ?? null,
   };
 }
 
@@ -132,7 +132,7 @@ const ENTITY_COLLECTIONS = [
   "iconLibrary",
   "nodeLayouts",
   "edgeLayouts",
-  "scenes",
+  "versions",
 ] as const satisfies ReadonlyArray<keyof TrackedDiagramState>;
 
 /**
@@ -190,11 +190,11 @@ export function diffPatch(
     }
   }
 
-  if (previous.activeSceneId !== current.activeSceneId) {
-    patch.activeSceneId = current.activeSceneId;
+  if (previous.activeVersionId !== current.activeVersionId) {
+    patch.activeVersionId = current.activeVersionId;
   }
-  if (previous.compareSceneId !== current.compareSceneId) {
-    patch.compareSceneId = current.compareSceneId;
+  if (previous.compareVersionId !== current.compareVersionId) {
+    patch.compareVersionId = current.compareVersionId;
   }
   if (previous.diagramName !== current.diagramName) {
     patch.diagramName = current.diagramName;
@@ -235,9 +235,9 @@ export function useCollabStoreSync({
       nodeLayouts: diagram.nodeLayouts as Record<string, unknown>,
       edgeLayouts: diagram.edgeLayouts as Record<string, unknown>,
       iconLibrary: diagram.snapshot.iconLibrary as Record<string, unknown>,
-      scenes: (diagram.scenes ?? {}) as Record<string, unknown>,
-      activeSceneId: diagram.activeSceneId ?? null,
-      compareSceneId: diagram.compareSceneId ?? null,
+      versions: (diagram.versions ?? {}) as Record<string, unknown>,
+      activeVersionId: diagram.activeVersionId ?? null,
+      compareVersionId: diagram.compareVersionId ?? null,
     };
   }, [diagramId]);
 
@@ -277,13 +277,13 @@ export function useCollabStoreSync({
           },
           nodeLayouts: mergeCollection(diagram.nodeLayouts, patch.nodeLayouts),
           edgeLayouts: mergeCollection(diagram.edgeLayouts, patch.edgeLayouts),
-          scenes: mergeCollection(diagram.scenes, patch.scenes),
-          activeSceneId: hasOwn(patch, "activeSceneId")
-            ? patch.activeSceneId
-            : diagram.activeSceneId,
-          compareSceneId: hasOwn(patch, "compareSceneId")
-            ? patch.compareSceneId
-            : diagram.compareSceneId,
+          versions: mergeCollection(diagram.versions, patch.versions),
+          activeVersionId: hasOwn(patch, "activeVersionId")
+            ? patch.activeVersionId
+            : diagram.activeVersionId,
+          compareVersionId: hasOwn(patch, "compareVersionId")
+            ? patch.compareVersionId
+            : diagram.compareVersionId,
           updatedAt: now,
         };
 

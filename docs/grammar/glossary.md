@@ -60,7 +60,7 @@ Structura Cloud ships — `ADR-0007` keeps the cloud as a separate product).
 `src/features/diagram/model/diagram.types.ts`.
 
 **Counterpoint:** Not the same as a **Model** (the bounded context in
-`features/diagram`), not the same as a **Scene** (a variant of a diagram),
+`features/diagram`), not the same as a **Version** (a variant of a diagram),
 and not the same as a **Workspace** (the whole container).
 
 ---
@@ -279,26 +279,32 @@ catalog).
 
 ## Part 4 — Variants and narrative
 
-### Scene
+### Version
 
 **Status:** `current`
 
 **Definition:** A named diff over a Diagram's snapshot, used to express
 variants (e.g. "production" vs "staging", or "as-designed" vs "as-built").
-The base Diagram stays the source of truth; the Scene adds/removes
-Components and Connections and overrides layout.
+The base Diagram stays the source of truth; the Version adds/removes
+Components and Connections and overrides layout. Product name is
+**Version** / **Versão** (formerly Scene / Cena).
 
-**Reference:** `SceneDiff` in
-`src/features/diagram/model/diagram.types.ts:129`; slice at
-`src/features/diagram/store/slices/scenes.slice.ts`; compare mode in
-the Canvas.
+**Reference:** `VersionDiff` in
+`src/features/diagram/model/diagram.types.ts`; slice at
+`src/features/diagram/store/slices/versions.slice.ts`; compare mode in
+the Canvas. Persist keys: `versions` / `activeVersionId` /
+`compareVersionId` (schema 15; dual-reads legacy `scenes` /
+`activeSceneId` / `compareSceneId`).
 
 **Counterpoint:** Three distinct axes of variation must not be confused:
 
 | Axis | Mechanism | Lives in |
 | --- | --- | --- |
-| Variant (env, scenario) | **Scene** | `Diagram.scenes` |
+| Variant (env, scenario) | **Version** | `Diagram.versions` |
 | Abstraction (C4 levels) | **Drill-Down** | `BaseComponent.linkedDiagramId` |
+
+Do not confuse with `infrastructure/persistence/versions.ts`
+(file-schema `VersionedDiagram`) or with `FlowReadingScene` (Flow UI).
 
 ---
 
@@ -342,7 +348,7 @@ and a separate `Walkthroughs` Zustand store.
   When that feature is added, the term *Journey* is free to use.
 - **Not** a BPMN process. Steps are pointers to diagrams, not activities
   with gateways and timers.
-- **Not** a Scene (Scene is a variant of a single Diagram; a walkthrough is
+- **Not** a Version (Version is a variant of a single Diagram; a walkthrough is
   a sequence across multiple).
 - **Not** a Flow (Flow is recorded within one Diagram; a walkthrough is
   recorded across Diagrams, optionally invoking Flows).
@@ -359,7 +365,7 @@ and a separate `Walkthroughs` Zustand store.
 holds all custom SVG icons in a workspace. It is the single source of truth
 for icon data; the canvas and interchange layers subscribe to it via selectors.
 When an icon is deleted, `diagramStore.removeIconReferences()` sweeps all
-`customIconId` pointers from components and scenes.
+`customIconId` pointers from components and versions.
 
 **Reference:** `IconStore` in
 `src/features/diagram/store/icon-store.ts`; exported from

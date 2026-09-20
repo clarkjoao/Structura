@@ -1,4 +1,4 @@
-import type { Connection, Diagram, SceneDiff } from "@/features/diagram";
+import type { Connection, Diagram, VersionDiff } from "@/features/diagram";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 
 function sortConnections(connectionA: Connection, connectionB: Connection): number {
@@ -8,14 +8,14 @@ function sortConnections(connectionA: Connection, connectionB: Connection): numb
 export interface DiagramSerializerOptions {
   includeMetadata?: boolean;
   includeLinks?: boolean;
-  activeScene?: SceneDiff;
+  activeVersion?: VersionDiff;
 }
 
 export function serializeDiagramContext(
   diagram: Diagram,
   options: DiagramSerializerOptions = {},
 ): string {
-  const { includeMetadata = true, includeLinks = true, activeScene } = options;
+  const { includeMetadata = true, includeLinks = true, activeVersion } = options;
   const components = Object.values(diagram.snapshot.components).sort((a, b) =>
     a.id.localeCompare(b.id),
   );
@@ -110,21 +110,21 @@ export function serializeDiagramContext(
     }
   }
 
-  if (activeScene) {
-    lines.push(`\nActive Scene: "${activeScene.name}"`);
-    const addedComponents = Object.values(activeScene.addedComponents);
+  if (activeVersion) {
+    lines.push(`\nActive Version: "${activeVersion.name}"`);
+    const addedComponents = Object.values(activeVersion.addedComponents);
     if (addedComponents.length > 0) {
-      lines.push(`  Added in scene: ${addedComponents.map((c) => c.name || c.id).join(", ")}`);
+      lines.push(`  Added in version: ${addedComponents.map((c) => c.name || c.id).join(", ")}`);
     }
-    if (activeScene.removedComponentIds.length > 0) {
-      lines.push(`  Removed in scene: ${activeScene.removedComponentIds.join(", ")}`);
+    if (activeVersion.removedComponentIds.length > 0) {
+      lines.push(`  Removed in version: ${activeVersion.removedComponentIds.join(", ")}`);
     }
 
-    const addedConnections = Object.values(activeScene.addedConnections).sort((a, b) =>
+    const addedConnections = Object.values(activeVersion.addedConnections).sort((a, b) =>
       a.id.localeCompare(b.id),
     );
     if (addedConnections.length > 0) {
-      lines.push(`  Edges added in this scene (${addedConnections.length}):`);
+      lines.push(`  Edges added in this version (${addedConnections.length}):`);
       for (const conn of addedConnections) {
         lines.push(
           `  - id=${conn.id}; source=${conn.sourceId}; target=${conn.targetId}; label=${conn.label || "none"}`,

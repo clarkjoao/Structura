@@ -117,7 +117,7 @@ function buildContext(
     flows: [],
     resolvedComponents: components,
     resolvedNodeLayouts: nodeLayouts,
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     services: {},
     allDiagrams: {},
     selectedNodeId: null,

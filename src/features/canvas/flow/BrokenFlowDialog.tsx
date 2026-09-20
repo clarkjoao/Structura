@@ -14,12 +14,12 @@ interface Props {
    * looking at the base. So the removal is refused here, in the open, instead
    * of being carried out behind the gesture that asked to play.
    */
-  sceneInView?: { name: string };
+  versionInView?: { name: string };
   onRemoveSteps: (stepIds: string[]) => void;
   onCancel: () => void;
 }
 
-const BrokenFlowDialog = ({ flow, brokenSteps, sceneInView, onRemoveSteps, onCancel }: Props) => {
+const BrokenFlowDialog = ({ flow, brokenSteps, versionInView, onRemoveSteps, onCancel }: Props) => {
   const { t } = useTranslation();
   // A step whose element a scene still owns is not removed. It reads as broken
   // only because the scene is not open; deleting it would answer "this element
@@ -30,9 +30,9 @@ const BrokenFlowDialog = ({ flow, brokenSteps, sceneInView, onRemoveSteps, onCan
   // would delete exactly the steps this rule protects, and reading it as "play
   // anyway" would start a flow whose element is not on screen — neither is the
   // dialog's to decide, so it offers the scene as the way forward instead.
-  const removable = brokenSteps.filter((b) => !b.inScene);
-  const heldScenes = [...new Set(brokenSteps.flatMap((b) => (b.inScene ? [b.inScene.name] : [])))];
-  const sceneList = heldScenes.map((name) => `“${name}”`).join(", ");
+  const removable = brokenSteps.filter((b) => !b.inVersion);
+  const heldVersions = [...new Set(brokenSteps.flatMap((b) => (b.inVersion ? [b.inVersion.name] : [])))];
+  const versionList = heldVersions.map((name) => `“${name}”`).join(", ");
   const nothingToRemove = removable.length === 0;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -42,7 +42,7 @@ const BrokenFlowDialog = ({ flow, brokenSteps, sceneInView, onRemoveSteps, onCan
           <div>
             <h2 className="text-sm font-semibold text-foreground">{t("brokenFlow.title")}</h2>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {heldScenes.length > 0
+              {heldVersions.length > 0
                 ? t("brokenFlow.descriptionKept", { name: flow.name })
                 : t("brokenFlow.descriptionWithName", { name: flow.name })}
             </p>
@@ -64,9 +64,9 @@ const BrokenFlowDialog = ({ flow, brokenSteps, sceneInView, onRemoveSteps, onCan
                 <ArrowRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               )}
               <span className="text-xs text-foreground flex-1 min-w-0 truncate">{b.label}</span>
-              {b.inScene ? (
+              {b.inVersion ? (
                 <span className="text-[10px] rounded bg-amber-500/10 text-amber-500 px-1.5 py-0.5 shrink-0">
-                  {t("brokenFlow.inSceneBadge", { scene: b.inScene.name })}
+                  {t("brokenFlow.inVersionBadge", { version: b.inVersion.name })}
                 </span>
               ) : (
                 <span className="text-[10px] rounded bg-destructive/10 text-destructive px-1.5 py-0.5 shrink-0">
@@ -79,32 +79,32 @@ const BrokenFlowDialog = ({ flow, brokenSteps, sceneInView, onRemoveSteps, onCan
           ))}
         </div>
 
-        {sceneInView && (
+        {versionInView && (
           <div
             data-testid="broken-flow-scene-block"
             className="mx-5 mb-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2"
           >
             <p className="text-[11px] font-semibold text-amber-500">
-              {t("brokenFlow.sceneBlocked", { scene: sceneInView.name })}
+              {t("brokenFlow.versionBlocked", { version: versionInView.name })}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {t("brokenFlow.sceneBlockedFix")}
+              {t("brokenFlow.versionBlockedFix")}
             </p>
           </div>
         )}
 
-        {heldScenes.length > 0 && (
+        {heldVersions.length > 0 && (
           <div
             data-testid="broken-flow-kept-block"
             className="mx-5 mb-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2"
           >
             <p className="text-[11px] font-semibold text-amber-500">
               {nothingToRemove
-                ? t("brokenFlow.nothingToRemove", { scenes: sceneList })
-                : t("brokenFlow.keptInScene", { scenes: sceneList })}
+                ? t("brokenFlow.nothingToRemove", { versions: versionList })
+                : t("brokenFlow.keptInVersion", { versions: versionList })}
             </p>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {t("brokenFlow.keptInSceneFix")}
+              {t("brokenFlow.keptInVersionFix")}
             </p>
           </div>
         )}
@@ -117,12 +117,12 @@ const BrokenFlowDialog = ({ flow, brokenSteps, sceneInView, onRemoveSteps, onCan
             {t("brokenFlow.cancel")}
           </button>
           <button
-            disabled={Boolean(sceneInView) || nothingToRemove}
+            disabled={Boolean(versionInView) || nothingToRemove}
             title={
-              sceneInView
-                ? t("brokenFlow.sceneBlocked", { scene: sceneInView.name })
+              versionInView
+                ? t("brokenFlow.versionBlocked", { version: versionInView.name })
                 : nothingToRemove
-                  ? t("brokenFlow.nothingToRemove", { scenes: sceneList })
+                  ? t("brokenFlow.nothingToRemove", { versions: versionList })
                   : undefined
             }
             onClick={() => onRemoveSteps(removable.map((b) => b.stepId))}

@@ -44,8 +44,8 @@ function rewriteComponents(
  * Rewrite the `serviceId` of every component the user accepted, on the in-memory diagram.
  *
  * Applying this before the import action keeps the whole import a single store write, so the
- * relink does not add per-component steps to the undo history. Scene components are walked
- * too: a file can carry scenes, and a component that only exists inside one would otherwise
+ * relink does not add per-component steps to the undo history. Version components are walked
+ * too: a file can carry versions, and a component that only exists inside one would otherwise
  * keep the stale reference.
  */
 export function applyServiceRelink(diagram: Diagram, decisions: ServiceRelinkDecisions): Diagram {
@@ -54,19 +54,19 @@ export function applyServiceRelink(diagram: Diagram, decisions: ServiceRelinkDec
 
   const base = rewriteComponents(diagram.snapshot.components, decisions.remap, clear);
 
-  const scenes = diagram.scenes;
+  const versions = diagram.versions;
   let scenesChanged = false;
-  let nextScenes = scenes;
+  let nextScenes = versions;
 
-  if (scenes) {
-    const rewritten: NonNullable<Diagram["scenes"]> = {};
-    for (const [sceneId, scene] of Object.entries(scenes)) {
+  if (versions) {
+    const rewritten: NonNullable<Diagram["versions"]> = {};
+    for (const [versionId, scene] of Object.entries(versions)) {
       const result = rewriteComponents(scene.addedComponents ?? {}, decisions.remap, clear);
       if (result.changed) {
         scenesChanged = true;
-        rewritten[sceneId] = { ...scene, addedComponents: result.components };
+        rewritten[versionId] = { ...scene, addedComponents: result.components };
       } else {
-        rewritten[sceneId] = scene;
+        rewritten[versionId] = scene;
       }
     }
     if (scenesChanged) nextScenes = rewritten;
@@ -77,6 +77,6 @@ export function applyServiceRelink(diagram: Diagram, decisions: ServiceRelinkDec
   return {
     ...diagram,
     snapshot: { ...diagram.snapshot, components: base.components },
-    ...(scenesChanged ? { scenes: nextScenes } : {}),
+    ...(scenesChanged ? { versions: nextScenes } : {}),
   };
 }

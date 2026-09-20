@@ -43,7 +43,7 @@ function buildPayload(opts: {
     },
     edgeLayouts: opts.edgeLayouts,
     viewport: { x: 0, y: 0, zoom: 1 },
-    scenes: {},
+    versions: {},
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

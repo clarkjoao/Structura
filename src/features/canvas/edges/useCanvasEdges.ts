@@ -14,7 +14,7 @@ const EDITOR_PROJECTION = writePolicy(true);
 
 interface UseCanvasEdgesParams {
   diagram: Diagram | DiagramModel | null | undefined;
-  /** What is shown — `resolveViewSnapshot` for the diagram's own scenes. */
+  /** What is shown — `resolveViewSnapshot` for the diagram's own versions. */
   view: ViewSnapshot;
   edgeHandleAssignments: { connId: string; sourceHandle: string; targetHandle: string }[];
   selectedEdgeId: string | null;

@@ -1,6 +1,6 @@
 import { memo } from "react";
 
-export const SceneElementBadge = memo(function SceneElementBadge({
+export const VersionElementBadge = memo(function VersionElementBadge({
   name,
   color,
 }: {
@@ -18,7 +18,7 @@ export const SceneElementBadge = memo(function SceneElementBadge({
   );
 });
 
-export const CompareSceneBadges = memo(function CompareSceneBadges({
+export const CompareVersionBadges = memo(function CompareVersionBadges({
   a,
   b,
 }: {

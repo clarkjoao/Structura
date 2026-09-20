@@ -14,8 +14,8 @@ export function buildMerchantDeploymentDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 20, y: 20, zoom: 0.7 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-dpm-edge": layout("pl-dpm-edge", 40, 40, 320, 200),
       "pl-dpm-vpc": layout("pl-dpm-vpc", 400, 40, 720, 480),

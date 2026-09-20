@@ -26,7 +26,7 @@ import {
   useConnections,
   useDiagramStore,
   useResolvedNodeLayouts,
-  resolveActiveScene,
+  resolveActiveVersion,
   getStepCount,
   getFlowParticipants,
   repairFlow,
@@ -136,8 +136,8 @@ const FlowPanel = ({
    * broken-flow dialog offers would edit the base from inside a scene — the
    * dialog refuses it and says so rather than doing it quietly.
    */
-  const activeScene = diagram ? resolveActiveScene(diagram) : null;
-  const sceneInView = activeScene ? { name: activeScene.name } : undefined;
+  const activeVersion = diagram ? resolveActiveVersion(diagram) : null;
+  const versionInView = activeVersion ? { name: activeVersion.name } : undefined;
 
   const handlePlayWithValidation = (flow: Flow) => {
     if (!diagram) {
@@ -433,7 +433,7 @@ const FlowPanel = ({
         <BrokenFlowDialog
           flow={pendingPlay.flow}
           brokenSteps={pendingPlay.broken}
-          sceneInView={sceneInView}
+          versionInView={versionInView}
           onCancel={() => setPendingPlay(null)}
           onRemoveSteps={(stepIds) => handleRemoveBrokenAndPlay(stepIds)}
         />

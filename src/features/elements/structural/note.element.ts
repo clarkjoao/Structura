@@ -1,7 +1,7 @@
 import { StickyNote } from "lucide-react";
 import NoteNode from "@/features/canvas/nodes/NoteNode";
 import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import {
   NOTE_COLLAPSED_H,
   NOTE_COLLAPSED_W,
@@ -64,7 +64,7 @@ export const noteElement: ElementDescriptor = {
       onInlineEditingChange: ctx.setNoteInlineEditingId
         ? (editing: boolean) => ctx.setNoteInlineEditingId!(editing ? comp.id : null)
         : undefined,
-      ...sceneBadgePropsForNode(ctx, comp.id),
+      ...versionBadgePropsForNode(ctx, comp.id),
     }),
 
     buildStyle: (comp, ctx) => {

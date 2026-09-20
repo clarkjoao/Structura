@@ -221,7 +221,7 @@ describe("the script is named once, at the top, and not truncated", () => {
     const onSelectFlow = vi.fn();
 
     renderRail(read(), "s1", [], { flows: [read(), other], onSelectFlow });
-    fireEvent.click(screen.getByTitle("Read another script"));
+    fireEvent.click(screen.getByTitle("Read another flow"));
     fireEvent.click(screen.getByRole("button", { name: "Refund" }));
 
     expect(onSelectFlow).toHaveBeenCalledWith("flow-refund");
@@ -232,7 +232,7 @@ describe("the script is named once, at the top, and not truncated", () => {
 
     renderRail(read(), "s1");
 
-    expect(screen.queryByTitle("Read another script")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Read another flow")).not.toBeInTheDocument();
   });
 });
 
@@ -373,14 +373,14 @@ describe("the reading says why the canvas is blank at this step", () => {
 
   it("says the scene is hiding the node, and names it", () => {
     const { read, gatewayId } = seed(CALL);
-    const scene = useDiagramStore.getState().addScene("Q3 proposal");
-    useDiagramStore.getState().setActiveScene(scene.id);
+    const scene = useDiagramStore.getState().addVersion("Q3 proposal");
+    useDiagramStore.getState().setActiveVersion(scene.id);
     useDiagramStore.getState().removeComponent(gatewayId);
 
     renderRail(read(), "s1");
 
     expect(screen.getByTestId("flow-step-element-state")).toHaveTextContent(
-      "the scene “Q3 proposal” is hiding",
+      "the version “Q3 proposal” is hiding",
     );
   });
 

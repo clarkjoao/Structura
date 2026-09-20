@@ -3,7 +3,7 @@ import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
-import { resolveActiveScene } from "../helpers/scene-helpers";
+import { resolveActiveVersion } from "../helpers/version-helpers";
 
 export const componentLinksSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -17,7 +17,7 @@ export const componentLinksSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
       if (!comp) return;
       if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
@@ -30,7 +30,7 @@ export const componentLinksSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
       if (!scene || !inSceneAdds) pushHistory(state);
       const comp = inSceneAdds
@@ -51,7 +51,7 @@ export const componentLinksSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
       if (!scene || !inSceneAdds) pushHistory(state);
       const comp = inSceneAdds
@@ -68,7 +68,7 @@ export const componentLinksSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
       if (!scene || !inSceneAdds) pushHistory(state);
       const comp = inSceneAdds

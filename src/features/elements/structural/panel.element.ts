@@ -2,7 +2,7 @@ import { Square } from "lucide-react";
 import PanelNode from "@/features/canvas/nodes/PanelNode";
 import SwimlaneNode from "@/features/canvas/nodes/SwimlaneNode";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import {
   MAX_HANDLES,
   PANEL_DEFAULT_H,
@@ -58,7 +58,7 @@ const swimlaneCanvas: ElementCanvasSlice = {
       isSelected: ctx.selectedNodeId === comp.id,
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
-      ...sceneBadgePropsForNode(ctx, comp.id),
+      ...versionBadgePropsForNode(ctx, comp.id),
     };
   },
 
@@ -173,7 +173,7 @@ export const panelElement: ElementDescriptor = {
         incomingCount: Math.min(MAX_HANDLES, Math.max(1, counts.incoming)),
         outgoingCount: Math.min(MAX_HANDLES, Math.max(1, counts.outgoing)),
         onToggleCollapse: () => ctx.onPanelCollapseToggle?.(comp.id),
-        ...sceneBadgePropsForNode(ctx, comp.id),
+        ...versionBadgePropsForNode(ctx, comp.id),
       };
     },
 

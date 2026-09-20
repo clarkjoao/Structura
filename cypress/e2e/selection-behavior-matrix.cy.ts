@@ -93,7 +93,7 @@ function buildSelectionTestPayload(): string {
           nodeLayouts,
           edgeLayouts: [],
           viewport: { x: 0, y: 0, zoom: 0.8 },
-          scenes: {},
+          versions: {},
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },

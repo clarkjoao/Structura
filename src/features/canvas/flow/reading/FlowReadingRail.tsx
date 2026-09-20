@@ -3,7 +3,7 @@ import { Check, ChevronDown, EyeOff, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   isParallelStep,
-  resolveSceneSnapshot,
+  resolveVersionSnapshot,
   useActiveDiagram,
   type Component,
   type Connection,
@@ -125,7 +125,7 @@ const FlowReadingRail = ({
   const canSwitch = flows.length > 1;
 
   const view = useMemo(
-    () => (diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null),
+    () => (diagram ? resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null) : null),
     [diagram],
   );
   const components = view?.components ?? EMPTY_COMPONENTS;
@@ -352,9 +352,9 @@ const FlowReadingRail = ({
             <EyeOff className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
             <p className="text-[11px] text-amber-500">
               {elementState.kind === "hidden"
-                ? t("flowStepNav.elementHidden", { scene: elementState.sceneName })
+                ? t("flowStepNav.elementHidden", { version: elementState.versionName })
                 : elementState.kind === "elsewhere"
-                  ? t("flowStepNav.elementElsewhere", { scene: elementState.sceneName })
+                  ? t("flowStepNav.elementElsewhere", { version: elementState.versionName })
                   : t("flowStepNav.elementGone")}
             </p>
           </div>

@@ -90,7 +90,7 @@ const NODE_DATA_UI_ONLY_KEYS = new Set<string>([
   "activeHandleId",
   "lastRecordedHandleId",
   "compareBadges",
-  "sceneBadge",
+  "versionBadge",
   "elementId",
   "onStartEdit",
   "onInlineEditingChange",

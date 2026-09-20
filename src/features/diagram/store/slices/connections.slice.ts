@@ -8,8 +8,8 @@ import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
-import { resolveActiveScene } from "../helpers/scene-helpers";
-import { mutateRemoveConnectionInScene } from "../../utils/scene-mutations";
+import { resolveActiveVersion } from "../helpers/version-helpers";
+import { mutateRemoveConnectionInVersion } from "../../utils/version-mutations";
 import { canBeConnectionSource } from "../../model/connection-rules";
 
 /**
@@ -18,7 +18,7 @@ import { canBeConnectionSource } from "../../model/connection-rules";
  * connection drawn from it has to be judged by the same rule.
  */
 function sourceTypeIn(diagram: Diagram, sourceId: string): string | undefined {
-  const scene = resolveActiveScene(diagram);
+  const scene = resolveActiveVersion(diagram);
   return scene?.addedComponents?.[sourceId]?.type ?? diagram.snapshot.components[sourceId]?.type;
 }
 
@@ -54,7 +54,7 @@ export const connectionsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       if (scene) {
         scene.addedConnections[connection.id] = connection;
@@ -76,7 +76,7 @@ export const connectionsSlice = (
         const sourceType = d.snapshot.components[patch.sourceId]?.type;
         if (sourceType !== undefined && !canBeConnectionSource(sourceType)) return;
       }
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const inScene = !!(scene && scene.addedConnections[id]);
       if (!inScene) pushHistory(state);
       const conn = inScene ? scene!.addedConnections[id] : d.snapshot.connections[id];
@@ -89,10 +89,10 @@ export const connectionsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       if (scene) {
         pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-        publishSewNotices(state, mutateRemoveConnectionInScene(d, scene.id, id));
+        publishSewNotices(state, mutateRemoveConnectionInVersion(d, scene.id, id));
         touchDiagram(d);
         return;
       }

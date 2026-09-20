@@ -16,7 +16,7 @@ import {
   useActiveDiagram,
   useActiveDiagramId,
   useDiagramActions,
-  resolveSceneSnapshot,
+  resolveVersionSnapshot,
 } from "@/features/diagram";
 import {
   collectBoundaryConnectionIds,
@@ -85,7 +85,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
   const idsKey = ids.join(",");
   const resolved = useMemo(
-    () => (diagram ? resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null) : null),
+    () => (diagram ? resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null) : null),
     [diagram],
   );
   const components = useMemo(

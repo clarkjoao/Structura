@@ -69,9 +69,9 @@ function makeSnapshot(nodes: number): Record<string, unknown> {
     nodeLayouts: makeNodeLayouts(nodes),
     edgeLayouts: {},
     iconLibrary: {},
-    scenes: {},
-    activeSceneId: null,
-    compareSceneId: null,
+    versions: {},
+    activeVersionId: null,
+    compareVersionId: null,
   };
 }
 

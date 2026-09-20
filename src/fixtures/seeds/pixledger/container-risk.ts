@@ -14,8 +14,8 @@ export function buildRiskContainerDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 40, y: 40, zoom: 0.75 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-risk-hub-ext": layout("pl-risk-hub-ext", 40, 160, 220, 90),
       "pl-risk-led-ext": layout("pl-risk-led-ext", 40, 340, 220, 90),

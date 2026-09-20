@@ -87,7 +87,7 @@ function buildPayload(): string {
           },
           edgeLayouts: [],
           viewport: { x: 0, y: 0, zoom: ZOOM },
-          scenes: {},
+          versions: {},
           createdAt: now,
           updatedAt: now,
         },

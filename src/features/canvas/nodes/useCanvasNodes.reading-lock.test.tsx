@@ -46,13 +46,13 @@ function Harness({ isPlaying }: { isPlaying: boolean }) {
   const resolved = diagram.snapshot.components;
   nodes.current = useCanvasNodes({
     diagram,
-    diagramSceneState: null,
+    diagramVersionState: null,
     flows: [],
     resolvedComponents: resolved,
     resolvedNodeLayouts: diagram.nodeLayouts,
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     // On the canvas means placed: the view is built as the canvas builds it.
-    view: resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor),
+    view: resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor),
     panelIds: new Set(),
     selectedNodeId: null,
     selectedNodeIds: new Set(),

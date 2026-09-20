@@ -3,7 +3,7 @@ import { createElement } from "react";
 import ApiGroupNode from "@/features/canvas/nodes/ApiGroupNode";
 import ApiGroupPanel from "@/features/canvas/panels/ElementPanel/ApiGroupPanel";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_API_GROUP } from "@/features/diagram/model/component-type-constants";
 import { isApiGroupComponent } from "@/features/diagram/model/component.guards";
 import { isEndpointType } from "@/features/diagram/model/component-type-constants";
@@ -83,7 +83,7 @@ export const apiGroupElement: ElementDescriptor = {
         onAddEndpoint: ctx.onAddEndpointToGroup
           ? () => ctx.onAddEndpointToGroup!(comp.id)
           : undefined,
-        ...sceneBadgePropsForNode(ctx, comp.id),
+        ...versionBadgePropsForNode(ctx, comp.id),
       };
     },
 

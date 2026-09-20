@@ -9,7 +9,7 @@ import type {
   Level,
   Folder,
   PanelKind,
-  SceneDiff,
+  VersionDiff,
   NodeLayout,
   IconDefinition,
   EdgeControlPoint,
@@ -227,19 +227,19 @@ export interface AppActions {
   clearClipboard: () => void;
   hydrateClipboard: (entry: ClipboardEntry) => void;
 
-  addScene: (name: string) => SceneDiff;
-  duplicateScene: (sceneId: string, name?: string) => SceneDiff | null;
-  removeScene: (sceneId: string) => void;
-  mergeSceneIntoBase: (sceneId: string) => void;
-  setActiveScene: (sceneId: string | null) => void;
-  setCompareScene: (sceneId: string | null) => void;
-  renameScene: (sceneId: string, name: string) => void;
-  addComponentToScene: (sceneId: string, component: Component, layout: NodeLayout) => void;
-  removeComponentFromScene: (sceneId: string, componentId: string) => void;
-  addConnectionToScene: (sceneId: string, connection: Connection) => void;
-  removeConnectionFromScene: (sceneId: string, connectionId: string) => void;
-  updateSceneNodeLayout: (
-    sceneId: string,
+  addVersion: (name: string) => VersionDiff;
+  duplicateVersion: (versionId: string, name?: string) => VersionDiff | null;
+  removeVersion: (versionId: string) => void;
+  mergeVersionIntoBase: (versionId: string) => void;
+  setActiveVersion: (versionId: string | null) => void;
+  setCompareVersion: (versionId: string | null) => void;
+  renameVersion: (versionId: string, name: string) => void;
+  addComponentToVersion: (versionId: string, component: Component, layout: NodeLayout) => void;
+  removeComponentFromVersion: (versionId: string, componentId: string) => void;
+  addConnectionToVersion: (versionId: string, connection: Connection) => void;
+  removeConnectionFromVersion: (versionId: string, connectionId: string) => void;
+  updateVersionNodeLayout: (
+    versionId: string,
     elementId: string,
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },

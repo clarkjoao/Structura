@@ -196,9 +196,9 @@ export function buildStressSeed(options?: {
     nodeLayouts,
     edgeLayouts: [],
     viewport: { x: 0, y: 0, zoom: 0.4 },
-    scenes: {},
-    activeSceneId: undefined,
-    compareSceneId: undefined,
+    versions: {},
+    activeVersionId: undefined,
+    compareVersionId: undefined,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

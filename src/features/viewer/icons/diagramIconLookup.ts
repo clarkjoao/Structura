@@ -1,5 +1,5 @@
 import type { Diagram, IconDefinition } from "@/features/diagram/model";
-import { resolveSceneSnapshot } from "@/features/diagram/utils";
+import { resolveVersionSnapshot } from "@/features/diagram/utils";
 
 export type DiagramIconLookup = (componentId: string) => IconDefinition | null;
 
@@ -12,7 +12,7 @@ export type DiagramIconLookup = (componentId: string) => IconDefinition | null;
  * lookup("n1"); // IconDefinition | null
  */
 export function iconLookupForDiagram(diagram: Diagram): DiagramIconLookup {
-  const components = resolveSceneSnapshot(diagram, null).components;
+  const components = resolveVersionSnapshot(diagram, null).components;
   const library = diagram.snapshot.iconLibrary ?? {};
   return (componentId: string): IconDefinition | null => {
     const iconId = components[componentId]?.customIconId;

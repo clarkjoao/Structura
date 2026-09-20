@@ -11,7 +11,7 @@ export type JsonViewerNodeData = {
   layoutHeight: number;
   onStartEdit?: () => void;
   onInlineEditingChange?: (editing: boolean) => void;
-  sceneBadge?: { name: string; color: string };
+  versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
     b: { name: string; color: string };

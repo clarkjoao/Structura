@@ -84,7 +84,7 @@ branch. See [flow.md](flow.md).
 
 ## Scene
 
-A `SceneDiff` is a named diff over the diagram snapshot: added/removed
+A `VersionDiff` is a named diff over the diagram snapshot: added/removed
 components and connections plus layout overrides. Scenes power what-if
 variants and compare mode without forking the diagram. Because a scene is a
 *diff*, the base diagram stays the single source and scenes stay cheap.

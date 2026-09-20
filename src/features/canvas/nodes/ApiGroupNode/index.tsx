@@ -4,7 +4,7 @@ import { Play, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ApiProtocol, FlowRef } from "@/features/diagram";
 import { HEADER_H, FOOTER_H, PROTOCOL_COLORS } from "./constants";
-import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export { PROTOCOL_COLORS } from "./constants";
@@ -22,7 +22,7 @@ export type ApiGroupNodeData = {
   /** Every script running through one of this group's routes, named once. */
   flows?: FlowRef[];
   onPlayFlow?: (flowId: string) => void;
-  sceneBadge?: { name: string; color: string };
+  versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
     b: { name: string; color: string };
@@ -50,9 +50,9 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       )}
-      {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-      {!d.compareBadges && d.sceneBadge && (
-        <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+      {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+      {!d.compareBadges && d.versionBadge && (
+        <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
       )}
       <div
         style={{ height: HEADER_H }}

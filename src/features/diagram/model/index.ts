@@ -103,12 +103,12 @@ export type {
   Flow,
 } from "./flow.types";
 
-// ─── Diagram / Scene / Template / Service ────────────────────────────────────
-// diagram.types owns Level, Icon*, ModelDraft, Diagram, SceneDiff, Folder, etc.
+// ─── Diagram / Version / Template / Service ────────────────────────────────────
+// diagram.types owns Level, Icon*, ModelDraft, Diagram, VersionDiff, Folder, etc.
 export type {
   Diagram,
   DiagramModel,
-  SceneDiff,
+  VersionDiff,
   UserTemplate,
   UserTemplateComponent,
   ExternalLink,

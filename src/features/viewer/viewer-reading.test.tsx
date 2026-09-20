@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import i18n from "@/infrastructure/i18n";
-import type { Component, Diagram, Flow, SceneDiff } from "@/features/diagram";
+import type { Component, Diagram, Flow, VersionDiff } from "@/features/diagram";
 import { ViewerCanvas } from "./components/ViewerCanvas";
 
 /**
@@ -94,7 +94,7 @@ const REFUND: Flow = {
   steps: { r1: { id: "r1", type: "action", componentId: "c2", title: "Refund asked" } },
 };
 
-function diagramWith(flows: Flow[], scenes?: Record<string, SceneDiff>): Diagram {
+function diagramWith(flows: Flow[], versions?: Record<string, VersionDiff>): Diagram {
   return {
     id: "d1",
     name: "Checkout",
@@ -113,8 +113,8 @@ function diagramWith(flows: Flow[], scenes?: Record<string, SceneDiff>): Diagram
     },
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
-    scenes: scenes ?? {},
-    activeSceneId: null,
+    versions: versions ?? {},
+    activeVersionId: null,
   } as unknown as Diagram;
 }
 
@@ -290,7 +290,7 @@ describe("leaving and switching, without losing the diagram", () => {
     open(diagramWith([CHECKOUT, REFUND]));
     startReading("Checkout");
 
-    fireEvent.click(screen.getByTitle("Read another script"));
+    fireEvent.click(screen.getByTitle("Read another flow"));
     fireEvent.click(screen.getByRole("button", { name: "Refund" }));
 
     expect(screen.queryByTestId("viewer-flow-invite")).not.toBeInTheDocument();
@@ -302,7 +302,7 @@ describe("leaving and switching, without losing the diagram", () => {
 
     startReading("Checkout");
 
-    expect(screen.queryByTitle("Read another script")).not.toBeInTheDocument();
+    expect(screen.queryByTitle("Read another flow")).not.toBeInTheDocument();
   });
 });
 

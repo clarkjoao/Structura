@@ -86,8 +86,8 @@ function diagramWith(components: Component[], flows: Flow[]): Diagram {
     ),
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
   } as unknown as Diagram;
 }
 

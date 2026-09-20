@@ -16,8 +16,8 @@ export function buildRiskDeploymentDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 20, y: 20, zoom: 0.75 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-dpr-cluster": layout("pl-dpr-cluster", 40, 40, 960, 480),
       "pl-dpr-ingress": layout("pl-dpr-ingress", 40, 50, 180, 100),

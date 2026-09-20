@@ -21,7 +21,7 @@ features/diagram/
 ## The store is the engine
 
 All mutations go through slice actions
-(`store/slices/*` — components, connections, flows, folders, scenes,
+(`store/slices/*` — components, connections, flows, folders, versions,
 services, clipboard, history, layout, parenting, links, patterns,
 user templates, icons). The composition rules:
 
@@ -53,7 +53,7 @@ Three reasons, in priority order:
 
 - `flow-repair.ts` / `flow-migration.ts` — flows self-heal when components
   they reference are deleted; migrations upgrade old flow shapes.
-- `scene-mutations.ts` / `scene.utils.ts` — applying `SceneDiff`s to a
+- `scene-mutations.ts` / `scene.utils.ts` — applying `VersionDiff`s to a
   snapshot, resolving effective components under an active scene.
 - `children-index.ts` — parent→children index used by panels and layout.
 - `import-mermaid-flowchart.ts` / `import-mermaid-sequence.ts` — text-to-model

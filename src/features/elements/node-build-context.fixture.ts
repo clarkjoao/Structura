@@ -27,7 +27,7 @@ export function emptyNodeBuildContext(overrides: Partial<NodeBuildContext> = {})
     endpointCallsByRoute: new Map(),
     resolvedComponents: {} as Record<string, Component>,
     resolvedNodeLayouts: {} as Record<string, NodeLayout>,
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     services: {},
     allDiagrams: {},
     selectedNodeId: null,

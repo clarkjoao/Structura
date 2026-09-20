@@ -72,7 +72,7 @@ function Probe({ edgeId }: { edgeId: string }) {
     visibleConnections,
     resolvedComponents,
   });
-  const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+  const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
   const edges = useCanvasEdges({
     diagram,
     view,

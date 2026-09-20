@@ -118,7 +118,7 @@ function componentsByServiceId(components: Component[]): Map<string, Component[]
 /** Every component in the file, including the ones only present inside a scene. */
 export function allDiagramComponents(diagram: Diagram): Component[] {
   const components = Object.values(diagram.snapshot?.components ?? {});
-  for (const scene of Object.values(diagram.scenes ?? {})) {
+  for (const scene of Object.values(diagram.versions ?? {})) {
     components.push(...Object.values(scene.addedComponents ?? {}));
   }
   return components;

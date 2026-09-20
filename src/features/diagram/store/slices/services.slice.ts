@@ -78,7 +78,7 @@ function syncLinkedComponentsFromRegistry(
     for (const comp of Object.values(diagram.snapshot.components)) {
       if (apply(comp)) touched = true;
     }
-    for (const scene of Object.values(diagram.scenes ?? {})) {
+    for (const scene of Object.values(diagram.versions ?? {})) {
       for (const comp of Object.values(scene.addedComponents)) {
         if (apply(comp)) touched = true;
       }
@@ -135,7 +135,7 @@ export const servicesSlice = (
         Object.values(entry.snapshot.components).forEach((c) => {
           if (c.serviceId === id) c.serviceId = undefined;
         });
-        Object.values(entry.scenes ?? {}).forEach((sc) => {
+        Object.values(entry.versions ?? {}).forEach((sc) => {
           Object.values(sc.addedComponents).forEach((c) => {
             if (c.serviceId === id) c.serviceId = undefined;
           });
@@ -149,8 +149,8 @@ export const servicesSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const sid = d.activeSceneId ?? null;
-      const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+      const sid = d.activeVersionId ?? null;
+      const scene = sid && d.versions?.[sid] ? d.versions[sid] : null;
       const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
       if (!comp) return;
 
@@ -193,8 +193,8 @@ export const servicesSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      const sid = d.activeSceneId ?? null;
-      const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+      const sid = d.activeVersionId ?? null;
+      const scene = sid && d.versions?.[sid] ? d.versions[sid] : null;
       const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
       if (!comp) {
         touchDiagram(d);

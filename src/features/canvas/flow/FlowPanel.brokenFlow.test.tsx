@@ -33,35 +33,35 @@ function seedBrokenFlow() {
 
 /**
  * A flow reaching across the scene boundary: `s2` names a component that only
- * exists inside a closed scene, and — unless `onlySceneHeld` — `s3` names one
+ * exists inside a closed version, and — unless `onlyVersionHeld` — `s3` names one
  * that exists nowhere at all. From outside the scene the two look identical.
  */
-function seedFlowReachingIntoScene(opts: { onlySceneHeld?: boolean } = {}) {
+function seedFlowReachingIntoVersion(opts: { onlyVersionHeld?: boolean } = {}) {
   const store = useDiagramStore.getState();
   const diagram = store.addDiagram("Scene safety", "context");
   store.openDiagram(diagram.id);
   const gateway = useDiagramStore
     .getState()
     .addComponent("system", "Gateway", null, { x: 0, y: 0 });
-  const sceneId = enterScene("Q3 proposal");
+  const versionId = enterVersion("Q3 proposal");
   const cache = useDiagramStore.getState().addComponent("system", "Cache", null, { x: 200, y: 0 });
-  useDiagramStore.getState().setActiveScene(null);
+  useDiagramStore.getState().setActiveVersion(null);
   const flow = useDiagramStore.getState().addFlow(diagram.id, "Checkout", "")!;
   const steps: Record<string, FlowStep> = {
     s1: { id: "s1", type: "action", next: "s2", componentId: gateway.id },
     s2: { id: "s2", type: "action", next: "s3", componentId: cache.id },
-    s3: opts.onlySceneHeld
+    s3: opts.onlyVersionHeld
       ? { id: "s3", type: "action", next: "s4", componentId: gateway.id }
       : { id: "s3", type: "action", next: "s4", componentId: "el-never-existed" },
     s4: { id: "s4", type: "action", description: "answers" },
   };
   useDiagramStore.getState().updateFlow(flow.id, { steps, entryStepId: "s1" });
-  return { flowId: flow.id, sceneId, cacheId: cache.id };
+  return { flowId: flow.id, versionId, cacheId: cache.id };
 }
 
-function enterScene(name: string): string {
-  const scene = useDiagramStore.getState().addScene(name);
-  useDiagramStore.getState().setActiveScene(scene.id);
+function enterVersion(name: string): string {
+  const scene = useDiagramStore.getState().addVersion(name);
+  useDiagramStore.getState().setActiveVersion(scene.id);
   return scene.id;
 }
 
@@ -90,13 +90,13 @@ function stepIdsOf(flowId: string): string[] {
   return Object.keys(diagram.snapshot.flows[flowId]!.steps).sort();
 }
 
-describe("repairing a broken flow from inside a scene", () => {
+describe("repairing a broken flow from inside a version", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
     useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
   });
 
-  it("offers the repair when no scene is in view", () => {
+  it("offers the repair when no version is in view", () => {
     const { flowId } = seedBrokenFlow();
     renderPanel();
 
@@ -109,10 +109,10 @@ describe("repairing a broken flow from inside a scene", () => {
     expect(stepIdsOf(flowId)).toEqual(["s1", "s3"]);
   });
 
-  it("offers the repair when the diagram has a scene that is not in view", () => {
+  it("offers the repair when the diagram has a version that is not in view", () => {
     const { flowId } = seedBrokenFlow();
-    enterScene("Q3 proposal");
-    useDiagramStore.getState().setActiveScene(null);
+    enterVersion("Q3 proposal");
+    useDiagramStore.getState().setActiveVersion(null);
     renderPanel();
 
     const repair = openBrokenDialog();
@@ -122,9 +122,9 @@ describe("repairing a broken flow from inside a scene", () => {
     expect(stepIdsOf(flowId)).toEqual(["s1", "s3"]);
   });
 
-  it("refuses the repair while a scene is in view", () => {
+  it("refuses the repair while a version is in view", () => {
     seedBrokenFlow();
-    enterScene("Q3 proposal");
+    enterVersion("Q3 proposal");
     renderPanel();
 
     const repair = openBrokenDialog();
@@ -132,9 +132,9 @@ describe("repairing a broken flow from inside a scene", () => {
     expect(repair).toBeDisabled();
   });
 
-  it("says why it refuses, naming the scene", () => {
+  it("says why it refuses, naming the version", () => {
     seedBrokenFlow();
-    enterScene("Q3 proposal");
+    enterVersion("Q3 proposal");
     renderPanel();
     openBrokenDialog();
 
@@ -145,16 +145,16 @@ describe("repairing a broken flow from inside a scene", () => {
 
   it("says what to do instead of refusing and stopping there", () => {
     seedBrokenFlow();
-    enterScene("Q3 proposal");
+    enterVersion("Q3 proposal");
     renderPanel();
     openBrokenDialog();
 
-    expect(screen.getByTestId("broken-flow-scene-block")).toHaveTextContent("Leave the scene");
+    expect(screen.getByTestId("broken-flow-scene-block")).toHaveTextContent("Leave the version");
   });
 
   it("leaves the base flow untouched when the refused button is clicked", () => {
     const { flowId } = seedBrokenFlow();
-    enterScene("Q3 proposal");
+    enterVersion("Q3 proposal");
     renderPanel();
 
     fireEvent.click(openBrokenDialog());
@@ -163,14 +163,14 @@ describe("repairing a broken flow from inside a scene", () => {
   });
 });
 
-describe("repairing a flow whose steps reach into a closed scene", () => {
+describe("repairing a flow whose steps reach into a closed version", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
     useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
   });
 
-  it("removes only the step whose element is nowhere, keeping the scene's", () => {
-    const { flowId } = seedFlowReachingIntoScene();
+  it("removes only the step whose element is nowhere, keeping the version's", () => {
+    const { flowId } = seedFlowReachingIntoVersion();
     renderPanel();
 
     const repair = openBrokenDialog();
@@ -182,7 +182,7 @@ describe("repairing a flow whose steps reach into a closed scene", () => {
 
   it("starts the flow it just repaired", () => {
     const onPlay = vi.fn();
-    seedFlowReachingIntoScene();
+    seedFlowReachingIntoVersion();
     renderPanel(onPlay);
 
     fireEvent.click(openBrokenDialog());
@@ -191,16 +191,16 @@ describe("repairing a flow whose steps reach into a closed scene", () => {
     expect(Object.keys(onPlay.mock.calls[0]![0].steps).sort()).toEqual(["s1", "s2", "s4"]);
   });
 
-  it("marks the kept step with the scene that holds its component", () => {
-    seedFlowReachingIntoScene();
+  it("marks the kept step with the version that holds its component", () => {
+    seedFlowReachingIntoVersion();
     renderPanel();
     openBrokenDialog();
 
-    expect(screen.getByText("in scene “Q3 proposal”")).toBeInTheDocument();
+    expect(screen.getByText("in version “Q3 proposal”")).toBeInTheDocument();
   });
 
-  it("says the marked steps are kept, naming the scene", () => {
-    seedFlowReachingIntoScene();
+  it("says the marked steps are kept, naming the version", () => {
+    seedFlowReachingIntoVersion();
     renderPanel();
     openBrokenDialog();
 
@@ -210,15 +210,15 @@ describe("repairing a flow whose steps reach into a closed scene", () => {
   });
 
   it("says what to do about them instead of stopping at the refusal", () => {
-    seedFlowReachingIntoScene();
+    seedFlowReachingIntoVersion();
     renderPanel();
     openBrokenDialog();
 
-    expect(screen.getByTestId("broken-flow-kept-block")).toHaveTextContent("Open the scene");
+    expect(screen.getByTestId("broken-flow-kept-block")).toHaveTextContent("Open the version");
   });
 
   it("does not tell the reader every element was removed from the diagram", () => {
-    seedFlowReachingIntoScene();
+    seedFlowReachingIntoVersion();
     renderPanel();
     openBrokenDialog();
 
@@ -226,8 +226,8 @@ describe("repairing a flow whose steps reach into a closed scene", () => {
     expect(screen.getByText(/elements the current view does not have/)).toBeInTheDocument();
   });
 
-  it("does not call a step removed when the scene still has its component", () => {
-    seedFlowReachingIntoScene();
+  it("does not call a step removed when the version still has its component", () => {
+    seedFlowReachingIntoVersion();
     renderPanel();
     openBrokenDialog();
 
@@ -235,21 +235,21 @@ describe("repairing a flow whose steps reach into a closed scene", () => {
   });
 });
 
-describe("when every invalid step reaches into a closed scene", () => {
+describe("when every invalid step reaches into a closed version", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
     useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
   });
 
   it("offers no repair, because there is nothing to remove", () => {
-    seedFlowReachingIntoScene({ onlySceneHeld: true });
+    seedFlowReachingIntoVersion({ onlyVersionHeld: true });
     renderPanel();
 
     expect(openBrokenDialog()).toBeDisabled();
   });
 
-  it("says that is why, naming the scene", () => {
-    seedFlowReachingIntoScene({ onlySceneHeld: true });
+  it("says that is why, naming the version", () => {
+    seedFlowReachingIntoVersion({ onlyVersionHeld: true });
     renderPanel();
     openBrokenDialog();
 
@@ -259,7 +259,7 @@ describe("when every invalid step reaches into a closed scene", () => {
   });
 
   it("leaves the flow whole when the refused button is clicked", () => {
-    const { flowId } = seedFlowReachingIntoScene({ onlySceneHeld: true });
+    const { flowId } = seedFlowReachingIntoVersion({ onlyVersionHeld: true });
     renderPanel();
 
     fireEvent.click(openBrokenDialog());
@@ -269,7 +269,7 @@ describe("when every invalid step reaches into a closed scene", () => {
 
   it("does not start the flow behind the refusal", () => {
     const onPlay = vi.fn();
-    seedFlowReachingIntoScene({ onlySceneHeld: true });
+    seedFlowReachingIntoVersion({ onlyVersionHeld: true });
     renderPanel(onPlay);
 
     fireEvent.click(openBrokenDialog());

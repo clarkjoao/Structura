@@ -11,7 +11,7 @@ There are two important views of diagram state:
 
 | View                  | Meaning                                                                                                                                                                                 |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raw persisted state   | The data stored in the diagram itself: snapshot, node layouts, edge layouts, scenes, folders, flows, and registry links.                                                                |
+| Raw persisted state   | The data stored in the diagram itself: snapshot, node layouts, edge layouts, versions, folders, flows, and registry links.                                                                |
 | Resolved canvas state | The scene-aware view produced by helpers such as `getCachedCanvasSnapshot`, where active-scene additions and removals have already been applied for rendering and selector consumption. |
 
 If you are documenting or using selector hooks, this distinction matters:
@@ -30,7 +30,7 @@ If you are documenting or using selector hooks, this distinction matters:
 | `store/diagram.store.ts`  | Composes the Zustand store and exposes `useDiagramStore`, `useDiagramActions`, `useIconActions`, and `useServiceActions`.                                  |
 | `store/selectors/`        | Read-only hooks for diagrams, components, connections, layouts, icons, folders, flows, services, and user templates.                                        |
 | `utils/snapshot-cache.ts` | Builds and caches the resolved canvas snapshot used by scene-aware selectors.                                                                               |
-| `store/slices/`           | Mutation logic grouped by concern: diagrams, components, parenting, connections, flows, layout, scenes, folders, clipboard, patterns, icons, and templates. |
+| `store/slices/`           | Mutation logic grouped by concern: diagrams, components, parenting, connections, flows, layout, versions, folders, clipboard, patterns, icons, and templates. |
 
 ## State access surfaces
 
@@ -69,7 +69,7 @@ If you are documenting or using selector hooks, this distinction matters:
 | `useVisibleConnections`      | Returns only connections whose endpoints are visible in the current scene-aware canvas snapshot.                 |
 | `useResolvedComponents`      | Returns the resolved component map used by canvas derivation hooks.                                              |
 | `useResolvedNodeLayouts`     | Returns the resolved node-layout map aligned with the current scene-aware snapshot.                              |
-| `useActiveDiagramSceneState` | Returns the active diagram ID together with active-scene metadata so consumers can quickly branch on scene mode. |
+| `useActiveDiagramVersionState` | Returns the active diagram ID together with active-scene metadata so consumers can quickly branch on scene mode. |
 
 ### Layout selectors
 
@@ -106,7 +106,7 @@ and restores the user's most recently chosen `EdgeStyle` in local storage under
 - `component-parenting.slice.ts` owns reparenting, grouping, and ungrouping
   semantics, which is why canvas drag hooks delegate structural changes back to
   this feature.
-- `connections.slice.ts` and `scenes.slice.ts` decide whether writes land in the
+- `connections.slice.ts` and `versions.slice.ts` decide whether writes land in the
   base snapshot or in scene-local additions and removals.
 - Removing or changing some structural graph data can trigger flow repair logic,
   so diagram mutations should go through the provided actions instead of editing

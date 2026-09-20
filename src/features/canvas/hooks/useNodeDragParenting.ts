@@ -230,7 +230,7 @@ export function useNodeDragParenting({
         }
 
         if (!canMoveNodeInSceneMode(activeDiagram, change.id)) {
-          toast.error(i18n.t("scenes.baseMoveBlocked"));
+          toast.error(i18n.t("versions.baseMoveBlocked"));
           return;
         }
         if (comp && (comp.locked === true || isAncestorLocked(comp, r.components))) {
@@ -317,7 +317,7 @@ export function useNodeDragParenting({
       const activeDiagram = diagramRef.current;
       if (!activeDiagram) return;
       if (!canMoveNodeInSceneMode(activeDiagram, change.id)) {
-        toast.error(i18n.t("scenes.baseMoveBlocked"));
+        toast.error(i18n.t("versions.baseMoveBlocked"));
         return;
       }
       const r = getCachedCanvasSnapshot(activeDiagram);

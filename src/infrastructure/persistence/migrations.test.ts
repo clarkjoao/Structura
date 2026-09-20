@@ -84,7 +84,7 @@ describe("migrateDiagram sanitises corrupted component types", () => {
       parentId: null,
     } as unknown as Component;
     const diagram = makeDiagram({});
-    diagram.scenes = {
+    diagram.versions = {
       s1: {
         id: "s1",
         name: "Scene",
@@ -98,9 +98,9 @@ describe("migrateDiagram sanitises corrupted component types", () => {
         viewport: { x: 0, y: 0, zoom: 1 },
       },
     };
-    diagram.activeSceneId = "s1";
+    diagram.activeVersionId = "s1";
 
     const migrated = migrateDiagram(diagram, 1);
-    expect(migrated.scenes?.s1.addedComponents["el-1"].type).toBe("unknown");
+    expect(migrated.versions?.s1.addedComponents["el-1"].type).toBe("unknown");
   });
 });

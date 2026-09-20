@@ -13,7 +13,7 @@ function buildContext(): NodeBuildContext {
     flows: [],
     resolvedComponents: {},
     resolvedNodeLayouts: {},
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     services: {},
     allDiagrams: {},
     selectedNodeId: null,

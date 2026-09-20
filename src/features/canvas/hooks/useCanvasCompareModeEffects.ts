@@ -24,7 +24,7 @@ export function useCanvasCompareModeEffects(params: UseCanvasCompareModeEffectsP
       const k = "structura:compareTooltipSeen";
       if (typeof localStorage !== "undefined" && !localStorage.getItem(k)) {
         localStorage.setItem(k, "1");
-        toast.message(t("scenes.compareModeTooltip"));
+        toast.message(t("versions.compareModeTooltip"));
       }
     } catch (error) {
       console.warn("[StructuraContext] compare mode localStorage tooltip flag", error);

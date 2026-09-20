@@ -26,7 +26,7 @@ import { PERSIST_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 export const PERSIST_KEY = "diagram-store";
 
-export const PERSIST_SCHEMA_VERSION = 14;
+export const PERSIST_SCHEMA_VERSION = 15;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -245,7 +245,7 @@ function migrateFlowNodeTypeToProcessos(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrateComponents(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrateComponents(scene.addedComponents);
     }
   }
@@ -269,7 +269,7 @@ function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrateComponents(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrateComponents(scene.addedComponents);
     }
   }
@@ -307,6 +307,41 @@ function migrateServiceCatalogToServices(state: Record<string, unknown>): void {
   adoptLegacyServicesKey(state, "serviceCatalog");
 }
 
+/** Schema v15: `scenes` / `activeSceneId` / `compareSceneId` →
+ * `versions` / `activeVersionId` / `compareVersionId` on every diagram.
+ * Idempotent; always drops the legacy keys. */
+function migrateDiagramScenesToVersions(diagram: Record<string, unknown>): void {
+  const legacyScenes = diagram.scenes;
+  if (legacyScenes && typeof legacyScenes === "object" && !Array.isArray(legacyScenes)) {
+    const existing = diagram.versions as Record<string, unknown> | undefined;
+    const existingIsEmpty = !existing || Object.keys(existing).length === 0;
+    if (existingIsEmpty) {
+      diagram.versions = legacyScenes;
+    }
+  }
+  delete diagram.scenes;
+
+  if ("activeSceneId" in diagram) {
+    if (diagram.activeVersionId === undefined) {
+      diagram.activeVersionId = diagram.activeSceneId;
+    }
+    delete diagram.activeSceneId;
+  }
+  if ("compareSceneId" in diagram) {
+    if (diagram.compareVersionId === undefined) {
+      diagram.compareVersionId = diagram.compareSceneId;
+    }
+    delete diagram.compareSceneId;
+  }
+}
+
+function migrateScenesToVersions(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    migrateDiagramScenesToVersions(diagram as unknown as Record<string, unknown>);
+  }
+}
+
+
 /** Schema v10: rename `ExternalElementComponent.linkedDiagramId` to
  * `referenceDiagramId`. The two fields had the same name but different
  * semantics: drill-down (BaseComponent.linkedDiagramId, the C4 contract)
@@ -327,7 +362,7 @@ function migrateExternalElementLinkedDiagramId(state: Partial<DiagramStore>): vo
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrate(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrate(scene.addedComponents);
     }
   }
@@ -357,7 +392,7 @@ function migrateUnifyRegistryServiceId(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrate(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrate(scene.addedComponents);
     }
   }
@@ -394,7 +429,7 @@ export function migrateUnifyCloudServiceId(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrate(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrate(scene.addedComponents);
     }
   }
@@ -518,6 +553,9 @@ export function mergePersistedState(
   if (!state.services) state.services = {};
   if (!state.folders) state.folders = {};
   migrateAddUserTemplates(state);
+
+  // v15 must run before migrators that walk diagram.versions.
+  migrateScenesToVersions(state);
 
   let next = state;
   next = migrateServiceSources(next);

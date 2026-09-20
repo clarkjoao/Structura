@@ -14,8 +14,8 @@ import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id
 
 function diagramSurface(components: Record<string, unknown>) {
   return {
-    activeSceneId: null,
-    compareSceneId: null,
+    activeVersionId: null,
+    compareVersionId: null,
     components,
     connections: {},
     description: "",
@@ -25,7 +25,7 @@ function diagramSurface(components: Record<string, unknown>) {
     flows: {},
     iconLibrary: {},
     nodeLayouts: {},
-    scenes: {},
+    versions: {},
   };
 }
 

@@ -14,7 +14,7 @@ function clearCustomIconIdFromComponents(
 }
 
 /**
- * Removes all customIconId references to a deleted icon from a diagram's components and scenes.
+ * Removes all customIconId references to a deleted icon from a diagram's components and versions.
  * The actual icon CRUD lives in the global icon-store (icon-store.ts).
  * This slice only handles the reference cleanup.
  */
@@ -29,8 +29,8 @@ export const iconsSlice = (set: (fn: (state: AppState) => void) => void, _get: (
         pushHistory(state);
       }
       clearCustomIconIdFromComponents(diagram.snapshot.components, iconId);
-      if (diagram.scenes) {
-        for (const scene of Object.values(diagram.scenes)) {
+      if (diagram.versions) {
+        for (const scene of Object.values(diagram.versions)) {
           clearCustomIconIdFromComponents(scene.addedComponents, iconId);
         }
       }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Diagram, SceneDiff } from "@/features/diagram";
+import type { Diagram, VersionDiff } from "@/features/diagram";
 import { ExternalLinkType } from "@/features/diagram";
 import { serializeDiagramContext } from "./serializer";
 
@@ -192,14 +192,14 @@ describe("serializeDiagramContext", () => {
   });
 });
 
-describe("serializeDiagramContext with activeScene", () => {
-  it("omits Active Scene section when activeScene is undefined", () => {
+describe("serializeDiagramContext with activeVersion", () => {
+  it("omits Active Version section when activeVersion is undefined", () => {
     const out = serializeDiagramContext(minimalDiagram());
-    expect(out).not.toContain("Active Scene");
+    expect(out).not.toContain("Active Version");
   });
 
-  it("includes Active Scene name", () => {
-    const scene: SceneDiff = {
+  it("includes Active Version name", () => {
+    const scene: VersionDiff = {
       id: "s1",
       name: "Physical View",
       color: "#000",
@@ -210,12 +210,12 @@ describe("serializeDiagramContext with activeScene", () => {
       removedConnectionIds: [],
       nodeLayouts: {},
     };
-    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
-    expect(out).toContain('Active Scene: "Physical View"');
+    const out = serializeDiagramContext(minimalDiagram(), { activeVersion: scene });
+    expect(out).toContain('Active Version: "Physical View"');
   });
 
-  it("lists added components in the scene", () => {
-    const scene: SceneDiff = {
+  it("lists added components in the version", () => {
+    const scene: VersionDiff = {
       id: "s1",
       name: "S",
       color: "",
@@ -234,12 +234,12 @@ describe("serializeDiagramContext with activeScene", () => {
       removedConnectionIds: [],
       nodeLayouts: {},
     };
-    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
-    expect(out).toContain("Added in scene: Lambda");
+    const out = serializeDiagramContext(minimalDiagram(), { activeVersion: scene });
+    expect(out).toContain("Added in version: Lambda");
   });
 
-  it("lists removed component ids in the scene", () => {
-    const scene: SceneDiff = {
+  it("lists removed component ids in the version", () => {
+    const scene: VersionDiff = {
       id: "s1",
       name: "S",
       color: "",
@@ -250,12 +250,12 @@ describe("serializeDiagramContext with activeScene", () => {
       removedConnectionIds: [],
       nodeLayouts: {},
     };
-    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
-    expect(out).toContain("Removed in scene: old-node");
+    const out = serializeDiagramContext(minimalDiagram(), { activeVersion: scene });
+    expect(out).toContain("Removed in version: old-node");
   });
 
-  it("lists added connections in the scene", () => {
-    const scene: SceneDiff = {
+  it("lists added connections in the version", () => {
+    const scene: VersionDiff = {
       id: "s1",
       name: "S",
       color: "",
@@ -268,13 +268,13 @@ describe("serializeDiagramContext with activeScene", () => {
       removedConnectionIds: [],
       nodeLayouts: {},
     };
-    const out = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
-    expect(out).toContain("Edges added in this scene (1)");
+    const out = serializeDiagramContext(minimalDiagram(), { activeVersion: scene });
+    expect(out).toContain("Edges added in this version (1)");
     expect(out).toContain("id=e1; source=a; target=b; label=calls");
   });
 
-  it("output remains deterministic with activeScene", () => {
-    const scene: SceneDiff = {
+  it("output remains deterministic with activeVersion", () => {
+    const scene: VersionDiff = {
       id: "s1",
       name: "S",
       color: "",
@@ -287,8 +287,8 @@ describe("serializeDiagramContext with activeScene", () => {
       removedConnectionIds: [],
       nodeLayouts: {},
     };
-    const first = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
-    const second = serializeDiagramContext(minimalDiagram(), { activeScene: scene });
+    const first = serializeDiagramContext(minimalDiagram(), { activeVersion: scene });
+    const second = serializeDiagramContext(minimalDiagram(), { activeVersion: scene });
     expect(first).toBe(second);
   });
 });

@@ -25,8 +25,8 @@ function makeDiagram(): Diagram {
     },
     nodeLayouts: {},
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     createdAt: 0,
     updatedAt: 0,
   } as unknown as Diagram;
@@ -42,7 +42,7 @@ function withScene(
   },
 ): Diagram {
   const next = structuredClone(diagram);
-  next.scenes = {
+  next.versions = {
     s1: {
       id: "s1",
       name: "Scene",
@@ -55,7 +55,7 @@ function withScene(
       nodeLayouts: {},
     },
   };
-  next.activeSceneId = "s1";
+  next.activeVersionId = "s1";
   return next;
 }
 
@@ -132,7 +132,7 @@ describe("a flow's references are checked against the model, not the view", () =
 /** The same diagram with no scene open, so a scene's own elements are out of reach. */
 function outsideScene(diagram: Diagram): Diagram {
   const next = structuredClone(diagram);
-  next.activeSceneId = null;
+  next.activeVersionId = null;
   return next;
 }
 
@@ -144,8 +144,8 @@ function plusScene(
   addedComponents: Record<string, Component>,
 ): Diagram {
   const next = structuredClone(diagram);
-  next.scenes = {
-    ...next.scenes,
+  next.versions = {
+    ...next.versions,
     [id]: {
       id,
       name,
@@ -172,19 +172,19 @@ describe("an element a closed scene owns is reported, but named as that scene's"
 
   it("names the scene that still holds it", () => {
     const broken = validateFlowGraph(flowOver(["c1", "sc1"]), sceneWithCache());
-    expect(broken[0]!.inScene).toEqual({ id: "s1", name: "Scene" });
+    expect(broken[0]!.inVersion).toEqual({ id: "s1", name: "Scene" });
   });
 
   it("says as much in the label instead of calling the element removed", () => {
     const broken = validateFlowGraph(flowOver(["c1", "sc1"]), sceneWithCache());
-    expect(broken[0]!.label).toContain("lives in scene “Scene”");
+    expect(broken[0]!.label).toContain("lives in version “Scene”");
     expect(broken[0]!.label).not.toContain("removed");
   });
 
   it("leaves the scene unnamed for an element no scene has", () => {
     const broken = validateFlowGraph(flowOver(["c1", "ghost"]), sceneWithCache());
     expect(broken.map((b) => b.missingId)).toEqual(["ghost"]);
-    expect(broken[0]!.inScene).toBeUndefined();
+    expect(broken[0]!.inVersion).toBeUndefined();
     expect(broken[0]!.label).toContain("component removed");
   });
 
@@ -193,7 +193,7 @@ describe("an element a closed scene owns is reported, but named as that scene's"
       withScene(makeDiagram(), { addedConnections: { sn1: connection("sn1", "c1", "c2") } }),
     );
     const broken = validateFlowGraph(flowOver(["c1", "c2"], "sn1"), diagram);
-    expect(broken.map((b) => [b.reason, b.missingId, b.inScene?.name])).toEqual([
+    expect(broken.map((b) => [b.reason, b.missingId, b.inVersion?.name])).toEqual([
       ["connection_deleted", "sn1", "Scene"],
     ]);
   });
@@ -203,7 +203,7 @@ describe("an element a closed scene owns is reported, but named as that scene's"
       withScene(makeDiagram(), { addedComponents: { sc1: component("sc1") } }),
     );
     const broken = validateFlowGraph(flowOver(["c1", "c2"], "sc1"), diagram);
-    expect(broken.map((b) => [b.reason, b.inScene?.name])).toEqual([
+    expect(broken.map((b) => [b.reason, b.inVersion?.name])).toEqual([
       ["connection_deleted", undefined],
     ]);
   });
@@ -211,7 +211,7 @@ describe("an element a closed scene owns is reported, but named as that scene's"
   it("finds the owning scene when it is not the first one", () => {
     const diagram = plusScene(sceneWithCache(), "s2", "Rollout", { sc2: component("sc2") });
     const broken = validateFlowGraph(flowOver(["c1", "sc2"]), diagram);
-    expect(broken[0]!.inScene).toEqual({ id: "s2", name: "Rollout" });
+    expect(broken[0]!.inVersion).toEqual({ id: "s2", name: "Rollout" });
   });
 
   it("says nothing at all once that scene is open", () => {

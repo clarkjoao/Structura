@@ -2,7 +2,7 @@ import { memo } from "react";
 import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export type SvgNodeData = {
@@ -14,7 +14,7 @@ export type SvgNodeData = {
   customColor?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
-  sceneBadge?: { name: string; color: string };
+  versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
     b: { name: string; color: string };
@@ -72,9 +72,9 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
               style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
             />
           )}
-          {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-          {!d.compareBadges && d.sceneBadge && (
-            <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+          {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+          {!d.compareBadges && d.versionBadge && (
+            <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
           )}
 
           <div className="px-3 pt-2.5 pb-1 shrink-0 flex items-center gap-2">
@@ -109,9 +109,9 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
               style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
             />
           )}
-          {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-          {!d.compareBadges && d.sceneBadge && (
-            <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+          {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+          {!d.compareBadges && d.versionBadge && (
+            <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
           )}
           <div
             className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-full [&>svg]:h-full"

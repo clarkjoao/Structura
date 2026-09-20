@@ -14,8 +14,8 @@ export function buildLedgerDeploymentDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 20, y: 20, zoom: 0.7 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-dpl-vpc": layout("pl-dpl-vpc", 40, 40, 1000, 520),
       "pl-dpl-private": layout("pl-dpl-private", 40, 50, 920, 200),

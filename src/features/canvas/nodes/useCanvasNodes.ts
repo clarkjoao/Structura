@@ -12,7 +12,7 @@ import type {
 } from "@/features/diagram";
 import {
   endpointCallersByRoute,
-  isComponentAddedInActiveScene,
+  isComponentAddedInActiveVersion,
   isAncestorLocked,
   buildChildrenIndex,
 } from "@/features/diagram";
@@ -29,20 +29,20 @@ import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 const EDITOR_PROJECTION = writePolicy(true);
 import { useStableSetByContent } from "../hooks/useStableSetByContent";
 
-export type DiagramSceneState = {
+export type DiagramVersionState = {
   id: string;
-  activeSceneId: string | null;
-  hasActiveScene: boolean;
+  activeVersionId: string | null;
+  hasActiveVersion: boolean;
 };
 
 interface UseCanvasNodesParams {
   diagram: Diagram | DiagramModel | null | undefined;
-  diagramSceneState: DiagramSceneState | null;
+  diagramVersionState: DiagramVersionState | null;
   flows: Flow[];
   resolvedComponents: Record<string, Component>;
   resolvedNodeLayouts: Record<string, NodeLayout>;
-  sceneBadgeByComponentId: Record<string, { name: string; color: string }>;
-  /** What is shown, in render order — `resolveViewSnapshot` for the diagram's own scenes. */
+  versionBadgeByComponentId: Record<string, { name: string; color: string }>;
+  /** What is shown, in render order — `resolveViewSnapshot` for the diagram's own versions. */
   view: ViewSnapshot;
   panelIds: Set<string>;
   selectedNodeId: string | null;
@@ -156,11 +156,11 @@ function shallowEqualStyle(a: CSSProperties | undefined, b: CSSProperties | unde
 
 export function useCanvasNodes({
   diagram,
-  diagramSceneState,
+  diagramVersionState,
   flows,
   resolvedComponents,
   resolvedNodeLayouts,
-  sceneBadgeByComponentId,
+  versionBadgeByComponentId,
   view,
   panelIds,
   selectedNodeId,
@@ -256,7 +256,7 @@ export function useCanvasNodes({
       endpointCallsByRoute,
       resolvedComponents,
       resolvedNodeLayouts,
-      sceneBadgeByComponentId,
+      versionBadgeByComponentId,
       compareVisualByComponentId,
       isCompareMode,
       services: services ?? {},
@@ -276,7 +276,7 @@ export function useCanvasNodes({
     diagram,
     resolvedComponents,
     resolvedNodeLayouts,
-    sceneBadgeByComponentId,
+    versionBadgeByComponentId,
     compareVisualByComponentId,
     isCompareMode,
     services,
@@ -314,7 +314,7 @@ export function useCanvasNodes({
       return EMPTY_CANVAS_NODE_LIST;
     }
 
-    const sceneActive = diagramSceneState?.hasActiveScene ?? false;
+    const sceneActive = diagramVersionState?.hasActiveVersion ?? false;
 
     const { highlightedNodeIds: hIds, isViewingCoverage: viewingCov, ...restForCtx } = dataCtx;
 
@@ -367,7 +367,7 @@ export function useCanvasNodes({
         hiddenByTag: isNodeHiddenByTagFilter(comp),
         isReading,
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
-        lockedByScene: sceneActive && !isComponentAddedInActiveScene(diagram, comp.id),
+        lockedByVersion: sceneActive && !isComponentAddedInActiveVersion(diagram, comp.id),
         pending: pendingNodeIds.has(comp.id),
       });
 
@@ -421,5 +421,5 @@ export function useCanvasNodes({
     }
     prevNodesArrayRef.current = nextNodes;
     return nextNodes;
-  }, [diagramSceneState, dataCtx, nodeCtxPlayback, view, isNodeHiddenByTagFilter, pendingNodeIds]);
+  }, [diagramVersionState, dataCtx, nodeCtxPlayback, view, isNodeHiddenByTagFilter, pendingNodeIds]);
 }

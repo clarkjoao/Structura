@@ -82,10 +82,10 @@ export function useGroupShortcuts({
 
       if (
         diagram &&
-        ((diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) ||
+        ((diagram.activeVersionId && diagram.versions?.[diagram.activeVersionId]) ||
           isDiagramCompareMode(diagram))
       ) {
-        toast.error(t("scenes.groupBlockedInScene"));
+        toast.error(t("versions.groupBlockedInVersion"));
         return true;
       }
 

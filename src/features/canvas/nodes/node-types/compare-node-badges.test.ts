@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sceneBadgePropsForNode } from "./compare-node-badges";
+import { versionBadgePropsForNode } from "./compare-node-badges";
 import type { NodeBuildContext } from "./types";
 
 function createMinimalNodeBuildContext(
@@ -21,7 +21,7 @@ function createMinimalNodeBuildContext(
     endpointCallsByRoute: new Map(),
     resolvedComponents: {},
     resolvedNodeLayouts: {},
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     services: {},
     allDiagrams: {},
     selectedNodeId: null,
@@ -50,33 +50,33 @@ function createMinimalNodeBuildContext(
   };
 }
 
-describe("sceneBadgePropsForNode", () => {
+describe("versionBadgePropsForNode", () => {
   const COMP_ID = "comp-1";
 
-  it("returns {} when neither compareVisualByComponentId nor sceneBadgeByComponentId have the comp", () => {
+  it("returns {} when neither compareVisualByComponentId nor versionBadgeByComponentId have the comp", () => {
     const ctx = createMinimalNodeBuildContext();
-    const result = sceneBadgePropsForNode(ctx, COMP_ID);
+    const result = versionBadgePropsForNode(ctx, COMP_ID);
     expect(result).toEqual({});
   });
 
-  it("returns { sceneBadge } when sceneBadgeByComponentId contains the comp", () => {
+  it("returns { versionBadge } when versionBadgeByComponentId contains the comp", () => {
     const badge = { name: "Scene A", color: "#ff0000" };
     const ctx = createMinimalNodeBuildContext({
-      sceneBadgeByComponentId: { [COMP_ID]: badge },
+      versionBadgeByComponentId: { [COMP_ID]: badge },
     });
-    const result = sceneBadgePropsForNode(ctx, COMP_ID);
-    expect(result).toEqual({ sceneBadge: badge });
+    const result = versionBadgePropsForNode(ctx, COMP_ID);
+    expect(result).toEqual({ versionBadge: badge });
   });
 
-  it("returns { sceneBadge: badgeA } when compareVisual has only badgeA", () => {
+  it("returns { versionBadge: badgeA } when compareVisual has only badgeA", () => {
     const badgeA = { name: "Scene A", color: "#00ff00" };
     const ctx = createMinimalNodeBuildContext({
       compareVisualByComponentId: {
         [COMP_ID]: { opacity: 1, badgeA },
       },
     });
-    const result = sceneBadgePropsForNode(ctx, COMP_ID);
-    expect(result).toEqual({ sceneBadge: badgeA });
+    const result = versionBadgePropsForNode(ctx, COMP_ID);
+    expect(result).toEqual({ versionBadge: badgeA });
   });
 
   it("returns { compareBadges } when compareVisual has both badgeA and badgeB", () => {
@@ -87,7 +87,7 @@ describe("sceneBadgePropsForNode", () => {
         [COMP_ID]: { opacity: 1, badgeA, badgeB },
       },
     });
-    const result = sceneBadgePropsForNode(ctx, COMP_ID);
+    const result = versionBadgePropsForNode(ctx, COMP_ID);
     expect(result).toEqual({ compareBadges: { a: badgeA, b: badgeB } });
   });
 });

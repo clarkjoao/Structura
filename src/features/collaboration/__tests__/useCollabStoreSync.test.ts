@@ -23,9 +23,9 @@ function trackedState(overrides: Record<string, unknown> = {}) {
     iconLibrary: {},
     nodeLayouts: {},
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
-    compareSceneId: null,
+    versions: {},
+    activeVersionId: null,
+    compareVersionId: null,
     ...overrides,
   } as Parameters<typeof diffPatch>[0];
 }

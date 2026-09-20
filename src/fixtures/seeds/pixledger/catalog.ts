@@ -130,8 +130,8 @@ export function buildCatalogDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 0, y: 0, zoom: 0.45 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts,
     snapshot: {
       iconLibrary: {},

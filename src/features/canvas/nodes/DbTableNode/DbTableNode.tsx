@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
-import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { DbColumnRow, DbTableColumnKey, DbTableNodeData } from "./DbTableNode.types";
 
@@ -239,10 +239,10 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
           />
         ) : null}
         {d.compareBadges ? (
-          <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />
+          <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />
         ) : null}
-        {!d.compareBadges && d.sceneBadge ? (
-          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        {!d.compareBadges && d.versionBadge ? (
+          <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
         ) : null}
         <Database className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
         <div className="min-w-0 flex-1">
@@ -287,9 +287,9 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       ) : null}
-      {d.compareBadges ? <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} /> : null}
-      {!d.compareBadges && d.sceneBadge ? (
-        <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+      {d.compareBadges ? <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} /> : null}
+      {!d.compareBadges && d.versionBadge ? (
+        <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
       ) : null}
 
       <div

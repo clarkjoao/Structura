@@ -252,7 +252,7 @@ mouseupped                @ @xyflow_react.js:976
         batchCommitNodeDrag @ src/features/diagram/store/slices/component-parenting.slice.ts:84
           store.setState  @ zustand_middleware_immer.js:4
             Immer2.produce @ immer.js:510
-              resolveComponent @ src/features/diagram/store/helpers/scene-helpers.ts:24
+              resolveComponent @ src/features/diagram/store/helpers/version-helpers.ts:24
 ```
 
 **Quem entrega o array sem `measured` ao React Flow** (amostra em +86,5 ms):

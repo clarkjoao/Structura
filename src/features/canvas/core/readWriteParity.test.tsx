@@ -11,7 +11,7 @@ import {
   type Connection,
   type CompareElementVisual,
   type Diagram,
-  type SceneDiff,
+  type VersionDiff,
 } from "@/features/diagram";
 import { useLLMStore, type PendingNodePreview } from "@/features/llm";
 import "@/features/canvas/nodes/node-types/registry";
@@ -150,19 +150,19 @@ function WriteProjection() {
   const resolvedNodeLayouts = useResolvedNodeLayouts();
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({ visibleComponents, visibleConnections, resolvedComponents });
-  // As useCanvasGraphState builds it: the diagram's own scenes.
+  // As useCanvasGraphState builds it: the diagram's own versions.
   const view = resolveViewSnapshot(
     diagram,
-    { sceneId: diagram.activeSceneId ?? null, compareSceneId: diagram.compareSceneId ?? null },
+    { versionId: diagram.activeVersionId ?? null, compareVersionId: diagram.compareVersionId ?? null },
     resolveNodeDescriptor,
   );
   written.nodes = useCanvasNodes({
     diagram,
-    diagramSceneState: null,
+    diagramVersionState: null,
     flows: [],
     resolvedComponents,
     resolvedNodeLayouts,
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     view,
     panelIds,
     selectedNodeId: [...editorModes.selectedNodeIds][0] ?? null,
@@ -349,7 +349,7 @@ function sceneDiagram(
   components: Component[],
   layouts: Record<string, Placement>,
   connections: Connection[] = [],
-  scenes: Record<string, SceneDiff> = {},
+  versions: Record<string, VersionDiff> = {},
 ): Diagram {
   return {
     id: "slice4",
@@ -368,7 +368,7 @@ function sceneDiagram(
     ),
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
-    scenes,
+    versions,
   };
 }
 
@@ -430,8 +430,8 @@ const BASE_CASES: Record<string, Diagram> = {
 
 const scene = (
   id: string,
-  diff: Partial<Omit<SceneDiff, "id" | "name" | "color" | "createdAt">>,
-): SceneDiff => ({
+  diff: Partial<Omit<VersionDiff, "id" | "name" | "color" | "createdAt">>,
+): VersionDiff => ({
   id,
   name: id,
   color: "#000",
@@ -445,7 +445,7 @@ const scene = (
 });
 
 /** Scene `s1` moves x and removes y; `s2` adds z. Base: P holds p1, x and y are roots. */
-function scenedDiagram(activeSceneId: string | null, compareSceneId: string | null): Diagram {
+function versionedDiagram(activeVersionId: string | null, compareVersionId: string | null): Diagram {
   return {
     ...sceneDiagram(
       [panelOf("P"), cardOf("p1", "P"), cardOf("x"), cardOf("y")],
@@ -464,8 +464,8 @@ function scenedDiagram(activeSceneId: string | null, compareSceneId: string | nu
         }),
       },
     ),
-    activeSceneId,
-    compareSceneId,
+    activeVersionId,
+    compareVersionId,
   };
 }
 
@@ -520,11 +520,11 @@ describe("slice 4: editor and viewer hand React Flow the same arrays", () => {
     "two scenes compared": ["s1", "s2"],
   };
 
-  for (const [name, [sceneId, compareSceneId]] of Object.entries(SCENE_CASES)) {
+  for (const [name, [versionId, compareVersionId]] of Object.entries(SCENE_CASES)) {
     it(`${name}: the editor draws what resolveViewSnapshot resolves for its scenes`, () => {
-      const diagram = scenedDiagram(sceneId, compareSceneId);
+      const diagram = versionedDiagram(versionId, compareVersionId);
       const write = writeProjection(diagram);
-      const view = resolveViewSnapshot(diagram, { sceneId, compareSceneId }, resolveNodeDescriptor);
+      const view = resolveViewSnapshot(diagram, { versionId, compareVersionId }, resolveNodeDescriptor);
 
       expect(
         write.nodes.map((node) => ({
@@ -551,18 +551,18 @@ describe("slice 4: editor and viewer hand React Flow the same arrays", () => {
 
   it("the scene cases differ from the base, so the assertions above mean something", () => {
     const base = resolveViewSnapshot(
-      scenedDiagram(null, null),
-      { sceneId: null },
+      versionedDiagram(null, null),
+      { versionId: null },
       resolveNodeDescriptor,
     );
     const inScene = resolveViewSnapshot(
-      scenedDiagram("s1", null),
-      { sceneId: "s1" },
+      versionedDiagram("s1", null),
+      { versionId: "s1" },
       resolveNodeDescriptor,
     );
     const compared = resolveViewSnapshot(
-      scenedDiagram("s1", "s2"),
-      { sceneId: "s1", compareSceneId: "s2" },
+      versionedDiagram("s1", "s2"),
+      { versionId: "s1", compareVersionId: "s2" },
       resolveNodeDescriptor,
     );
     const ids = (view: typeof base) => view.nodes.map((node) => node.component.id);
@@ -575,8 +575,8 @@ describe("slice 4: editor and viewer hand React Flow the same arrays", () => {
   it("a link shows the base, and draws it exactly as the editor draws the base", () => {
     // The viewer always resolves the base: an author in scene s1 shares a link,
     // and the reader sees what the editor shows once the author leaves the scene.
-    const read = projectReadDiagram(scenedDiagram("s1", null));
-    const writeBase = writeProjection(scenedDiagram(null, null));
+    const read = projectReadDiagram(versionedDiagram("s1", null));
+    const writeBase = writeProjection(versionedDiagram(null, null));
     expect(read.nodes.map(drawnNode)).toEqual(writeBase.nodes.map(drawnNode));
     expect(read.edges.map(drawnEdge)).toEqual(writeBase.edges.map(drawnEdge));
   });

@@ -3,7 +3,7 @@ import { createElement } from "react";
 import EndpointNode from "@/features/canvas/nodes/EndpointNode";
 import EndpointPanel from "@/features/canvas/panels/ElementPanel/EndpointPanel";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_ENDPOINT } from "@/features/diagram/model/component-type-constants";
 import {
   isApiGroupComponent,
@@ -106,7 +106,7 @@ export const endpointElement: ElementDescriptor = {
             !ctx.selectedNodeIds.has(comp.id)),
         isPlaying: ctx.isCompareMode ? false : ctx.isPlaying,
         onPlayFlow: ctx.onPlayFlow,
-        ...sceneBadgePropsForNode(ctx, comp.id),
+        ...versionBadgePropsForNode(ctx, comp.id),
       };
     },
 

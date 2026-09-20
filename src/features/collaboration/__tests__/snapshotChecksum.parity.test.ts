@@ -26,9 +26,9 @@ function snapshot(overrides: Record<string, unknown> = {}) {
     iconLibrary: {},
     nodeLayouts: { a: layoutA, b: layoutB },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
-    compareSceneId: null,
+    versions: {},
+    activeVersionId: null,
+    compareVersionId: null,
     ...overrides,
   };
 }

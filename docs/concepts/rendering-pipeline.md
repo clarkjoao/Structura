@@ -6,7 +6,7 @@ allowed to live.
 ## The pipeline
 
 ```
-store (Diagram.snapshot + nodeLayouts, scenes, flow state, selection, …)
+store (Diagram.snapshot + nodeLayouts, versions, flow state, selection, …)
   │  selectors
   ▼
 NodeBuildContext        one shared context per render pass

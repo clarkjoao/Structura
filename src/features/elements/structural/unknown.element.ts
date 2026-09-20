@@ -1,7 +1,7 @@
 import { HelpCircle } from "lucide-react";
 import UnknownNode from "@/features/canvas/nodes/UnknownNode";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_UNKNOWN } from "@/features/diagram/model/component-type-constants";
 import {
   isPluginTypedComponent,
@@ -54,7 +54,7 @@ export const unknownElement: ElementDescriptor = {
           name: comp.name,
           rawContent: comp.type,
           isSelected: ctx.selectedNodeId === comp.id,
-          ...sceneBadgePropsForNode(ctx, comp.id),
+          ...versionBadgePropsForNode(ctx, comp.id),
         };
       }
       if (!isUnknownComponent(comp)) return {};
@@ -63,7 +63,7 @@ export const unknownElement: ElementDescriptor = {
         name: comp.name,
         rawContent: comp.rawContent,
         isSelected: ctx.selectedNodeId === comp.id,
-        ...sceneBadgePropsForNode(ctx, comp.id),
+        ...versionBadgePropsForNode(ctx, comp.id),
       };
     },
 

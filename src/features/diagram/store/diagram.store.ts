@@ -22,7 +22,7 @@ import {
   foldersSlice,
   patternsSlice,
   generatedGraphSlice,
-  scenesSlice,
+  versionsSlice,
   iconsSlice,
   userTemplatesSlice,
 } from "./slices";
@@ -59,7 +59,7 @@ export function createDiagramStore(
         ...foldersSlice(set, get as () => AppState),
         ...patternsSlice(set, get as () => AppState),
         ...generatedGraphSlice(set, get as () => AppState),
-        ...scenesSlice(set, get as () => AppState),
+        ...versionsSlice(set, get as () => AppState),
         ...iconsSlice(set, get as () => AppState),
         ...userTemplatesSlice(set, get as () => AppState),
         addIcon: (_diagramId, icon) => {
@@ -230,18 +230,18 @@ const selectDiagramActions = pickFromStore([
   "importMermaidSequenceResult",
   "clearClipboard",
   "hydrateClipboard",
-  "addScene",
-  "duplicateScene",
-  "removeScene",
-  "mergeSceneIntoBase",
-  "setActiveScene",
-  "setCompareScene",
-  "renameScene",
-  "addComponentToScene",
-  "removeComponentFromScene",
-  "addConnectionToScene",
-  "removeConnectionFromScene",
-  "updateSceneNodeLayout",
+  "addVersion",
+  "duplicateVersion",
+  "removeVersion",
+  "mergeVersionIntoBase",
+  "setActiveVersion",
+  "setCompareVersion",
+  "renameVersion",
+  "addComponentToVersion",
+  "removeComponentFromVersion",
+  "addConnectionToVersion",
+  "removeConnectionFromVersion",
+  "updateVersionNodeLayout",
   "saveUserTemplate",
   "updateUserTemplate",
   "deleteUserTemplate",
@@ -283,19 +283,19 @@ const selectLayoutActions = pickFromStore([
   "setParent",
 ]);
 
-const selectSceneActions = pickFromStore([
-  "addScene",
-  "duplicateScene",
-  "removeScene",
-  "mergeSceneIntoBase",
-  "setActiveScene",
-  "setCompareScene",
-  "renameScene",
-  "addComponentToScene",
-  "removeComponentFromScene",
-  "addConnectionToScene",
-  "removeConnectionFromScene",
-  "updateSceneNodeLayout",
+const selectVersionActions = pickFromStore([
+  "addVersion",
+  "duplicateVersion",
+  "removeVersion",
+  "mergeVersionIntoBase",
+  "setActiveVersion",
+  "setCompareVersion",
+  "renameVersion",
+  "addComponentToVersion",
+  "removeComponentFromVersion",
+  "addConnectionToVersion",
+  "removeConnectionFromVersion",
+  "updateVersionNodeLayout",
 ]);
 
 const selectClipboardActions = pickFromStore([
@@ -330,7 +330,7 @@ export const useConnectionActions = () => useDiagramStore(selectConnectionAction
 
 export const useLayoutActions = () => useDiagramStore(selectLayoutActions);
 
-export const useSceneActions = () => useDiagramStore(selectSceneActions);
+export const useVersionActions = () => useDiagramStore(selectVersionActions);
 
 export const useClipboardActions = () => useDiagramStore(selectClipboardActions);
 

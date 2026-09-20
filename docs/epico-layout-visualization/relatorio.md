@@ -491,7 +491,7 @@ usar.
 | `addConnection` | `connections.slice.ts` | retorna `null`, não cria nada |
 | `updateConnection` | `connections.slice.ts` | ignora um patch que reaponte `sourceId` para um tipo sem saída |
 | `insertGeneratedGraph` | `generated-graph.slice.ts` | descarta a aresta, junto das de endpoint irresolúvel |
-| `addConnectionToScene` | `scenes.slice.ts` | recusa; cena não é exceção |
+| `addConnectionToVersion` | `scenes.slice.ts` | recusa; cena não é exceção |
 
 A busca do tipo é ciente de cena: um nó adicionado por uma cena vive na cena, não
 no snapshot base, e uma conexão saindo dele é julgada pela mesma regra.

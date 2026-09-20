@@ -47,7 +47,7 @@ function project(policy: ReturnType<typeof readPolicy>): {
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
   } as Diagram;
-  const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+  const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
   const onPlayFlow = vi.fn();
   // The same context for both policies, with an editing callback in it — so
   // any difference below is the policy's.

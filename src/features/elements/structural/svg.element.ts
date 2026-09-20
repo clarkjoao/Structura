@@ -3,7 +3,7 @@ import { createElement } from "react";
 import SvgNode from "@/features/canvas/nodes/SvgNode";
 import SvgPanel from "@/features/canvas/panels/ElementPanel/SvgPanel";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_SVG } from "@/features/diagram/model/component-type-constants";
 import { DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { isSvgComponent } from "@/features/diagram/model/component.guards";
@@ -72,7 +72,7 @@ export const svgElement: ElementDescriptor = {
         showBorder: comp.showBorder,
         customColor: comp.customColor,
         isSelected: ctx.selectedNodeId === comp.id,
-        ...sceneBadgePropsForNode(ctx, comp.id),
+        ...versionBadgePropsForNode(ctx, comp.id),
       };
     },
 

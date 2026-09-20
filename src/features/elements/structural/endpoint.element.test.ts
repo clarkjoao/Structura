@@ -31,7 +31,7 @@ function context(
     endpointCallsByRoute: new Map(overrides.calls ?? []),
     resolvedComponents: overrides.components ?? {},
     resolvedNodeLayouts: {},
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     services: {},
     allDiagrams: {},
     selectedNodeId: null,

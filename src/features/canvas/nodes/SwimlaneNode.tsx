@@ -3,7 +3,7 @@ import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { contrastLabelColor, parseCssColorToRgb } from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useTranslation } from "react-i18next";
-import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export type SwimlaneNodeData = {
@@ -18,7 +18,7 @@ export type SwimlaneNodeData = {
   isHighlighted?: boolean;
   isDragTarget?: boolean;
   isUnparentCandidate?: boolean;
-  sceneBadge?: { name: string; color: string };
+  versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
     b: { name: string; color: string };
@@ -83,9 +83,9 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-        {!d.compareBadges && d.sceneBadge && (
-          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+        {!d.compareBadges && d.versionBadge && (
+          <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
         )}
         <div
           className={`absolute z-[1] pointer-events-none ${

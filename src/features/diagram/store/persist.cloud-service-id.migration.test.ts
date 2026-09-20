@@ -13,7 +13,7 @@ function makeStateWithComponents(components: Record<string, Component>): Partial
     diagrams: {
       d1: {
         snapshot: { components },
-        scenes: {
+        versions: {
           s1: {
             addedComponents: {
               "scene-aws": {
@@ -42,10 +42,10 @@ function getSceneComponent(state: Partial<DiagramStore>, id: string): Record<str
     state.diagrams as unknown as Record<
       string,
       {
-        scenes: Record<string, { addedComponents: Record<string, Record<string, unknown>> }>;
+        versions: Record<string, { addedComponents: Record<string, Record<string, unknown>> }>;
       }
     >
-  ).d1.scenes.s1.addedComponents[id];
+  ).d1.versions.s1.addedComponents[id];
 }
 
 describe("v12 -> v13: aws/gcp/azureService -> cloudServiceId", () => {

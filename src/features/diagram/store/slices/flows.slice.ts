@@ -19,7 +19,7 @@ import {
 import { moveStep, type MoveStepRefusalCode, type MoveStepTarget } from "../../utils/flow-move";
 import { sewOnDelete, type SewBlockedStep } from "../../utils/flow-sew";
 import type { AppState } from "../store.types";
-import { resolveSceneSnapshot } from "../../utils/scene.utils";
+import { resolveVersionSnapshot } from "../../utils/version.utils";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory, pushHistoryCheckpoint } from "./history.slice";
@@ -62,7 +62,7 @@ function checkpoint(state: AppState, kind?: typeof STRUCTURAL_MUTATION_MARKER): 
  * of once at the end of a recording.
  */
 function refreshMermaid(d: Diagram, flow: Flow): void {
-  const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+  const r = resolveVersionSnapshot(d, d.activeVersionId ?? null);
   flow.mermaid = stepsToMermaid(current(flow) as Flow, r.components, r.connections);
 }
 
@@ -113,7 +113,7 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
       return null;
     }
     const activeId = get().activeDiagramId;
-    const r = resolveSceneSnapshot(d, activeId === diagramId ? (d.activeSceneId ?? null) : null);
+    const r = resolveVersionSnapshot(d, activeId === diagramId ? (d.activeVersionId ?? null) : null);
 
     let steps: Record<string, FlowStep>;
     let entryStepId: string | undefined;
@@ -181,7 +181,7 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
       checkpoint(state);
       Object.assign(flow, patch);
       if (patch.mermaid !== undefined && patch.steps === undefined) {
-        const r = resolveSceneSnapshot(d, d.activeSceneId ?? null);
+        const r = resolveVersionSnapshot(d, d.activeVersionId ?? null);
         flow.steps = parseMermaidToSteps(
           patch.mermaid ?? flow.mermaid,
           r.components,

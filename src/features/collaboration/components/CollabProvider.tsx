@@ -150,8 +150,8 @@ export function CollabProvider({
               description: snapshot.description,
               createdAt: existing?.createdAt ?? now,
               updatedAt: now,
-              activeSceneId: snapshot.activeSceneId,
-              compareSceneId: snapshot.compareSceneId,
+              activeVersionId: snapshot.activeVersionId,
+              compareVersionId: snapshot.compareVersionId,
               viewport: existing?.viewport ?? { x: 0, y: 0, zoom: 1 },
               snapshot: {
                 components: snapshot.components,
@@ -161,7 +161,7 @@ export function CollabProvider({
               },
               nodeLayouts: snapshot.nodeLayouts,
               edgeLayouts: snapshot.edgeLayouts,
-              scenes: snapshot.scenes,
+              versions: snapshot.versions,
             },
           },
         };

@@ -1,4 +1,4 @@
-export { resolveActiveScene } from "../helpers/scene-helpers";
+export { resolveActiveVersion } from "../helpers/version-helpers";
 export { historySlice } from "./history.slice";
 export { componentsSlice } from "./components.slice";
 export { componentParentingSlice } from "./component-parenting.slice";
@@ -18,6 +18,6 @@ export type {
   GeneratedGraphResult,
   GeneratedNodeInput,
 } from "./generated-graph.slice";
-export { scenesSlice } from "./scenes.slice";
+export { versionsSlice } from "./versions.slice";
 export { iconsSlice } from "./icons.slice";
 export { userTemplatesSlice } from "./userTemplates.slice";

@@ -8,7 +8,7 @@ import { LayerFilterPopover } from "./LayerFilterPopover";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { CanvasToolbarDiagramPanel } from "./components/CanvasToolbarDiagramPanel";
-import { CanvasToolbarScenesButton } from "./components/CanvasToolbarScenesButton";
+import { CanvasToolbarVersionsButton } from "./components/CanvasToolbarVersionsButton";
 import { PluginToolbarSlot } from "@/features/plugins/components/PluginToolbarSlot";
 
 interface CanvasToolbarProps {
@@ -19,7 +19,7 @@ interface CanvasToolbarProps {
   setSelectedNodeId: (id: string | null) => void;
   setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   setSelectedEdgeId: (id: string | null) => void;
-  onOpenScenes?: () => void;
+  onOpenVersions?: () => void;
   allTags: string[];
   /** null means "no tag filter active" (all tags visible). */
   visibleTags: Set<string> | null;
@@ -38,7 +38,7 @@ const CanvasToolbar = ({
   setSelectedNodeId,
   setSelectedNodeIds,
   setSelectedEdgeId,
-  onOpenScenes,
+  onOpenVersions,
   allTags,
   visibleTags,
   onToggleTag,
@@ -49,9 +49,9 @@ const CanvasToolbar = ({
 }: CanvasToolbarProps) => {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { canEditCanvas, canEditScenes } = useInteractionMode(diagram);
+  const { canEditCanvas, canEditVersions } = useInteractionMode(diagram);
   const toolbarEditLocked = !canEditCanvas;
-  const scenesPickerLocked = !canEditScenes;
+  const versionsPickerLocked = !canEditVersions;
   const [showPatterns, setShowPatterns] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -122,16 +122,16 @@ const CanvasToolbar = ({
 
       {!collapsed && (
         <>
-          <CanvasToolbarScenesButton
+          <CanvasToolbarVersionsButton
             diagram={diagram}
-            scenesPickerLocked={scenesPickerLocked || isFlowActive}
-            onOpenScenes={onOpenScenes}
+            versionsPickerLocked={versionsPickerLocked || isFlowActive}
+            onOpenVersions={onOpenVersions}
           />
 
           <LayerFilterPopover
             allTags={allTags}
             visibleTags={visibleTags}
-            scenesPickerLocked={scenesPickerLocked || isFlowActive}
+            versionsPickerLocked={versionsPickerLocked || isFlowActive}
             onToggle={onToggleTag}
             onShowAll={onShowAllTags}
             onShowNoTags={onShowNoTags}

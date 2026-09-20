@@ -17,8 +17,8 @@
  * be synced (ids, level, viewport) would report drift that no resync can fix.
  */
 const SYNCED_KEYS = [
-  "activeSceneId",
-  "compareSceneId",
+  "activeVersionId",
+  "compareVersionId",
   "components",
   "connections",
   "description",
@@ -28,7 +28,7 @@ const SYNCED_KEYS = [
   "flows",
   "iconLibrary",
   "nodeLayouts",
-  "scenes",
+  "versions",
 ] as const;
 
 /**

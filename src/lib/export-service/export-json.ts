@@ -7,24 +7,24 @@ import { createVersionedDiagram } from "@/infrastructure/persistence/versions";
 /**
  * Base snapshot components plus any components that exist only inside scene
  * diffs. Used when collecting icons/services so a scene-only asset still
- * travels with the export. Does not flatten the diagram — SceneDiff stays a
+ * travels with the export. Does not flatten the diagram — VersionDiff stays a
  * delta over base.
  */
 function componentsIncludingScenes(diagram: Diagram): Record<string, Component> {
   const merged: Record<string, Component> = { ...diagram.snapshot.components };
-  for (const scene of Object.values(diagram.scenes ?? {})) {
+  for (const scene of Object.values(diagram.versions ?? {})) {
     Object.assign(merged, scene.addedComponents);
   }
   return merged;
 }
 
 /**
- * Native JSON export — lossless for scenes.
+ * Native JSON export — lossless for versions.
  *
- * Always ships the base `snapshot` plus full `scenes` / `activeSceneId` /
- * `compareSceneId`. Does **not** call `diagramWithResolvedScene`: flattening
+ * Always ships the base `snapshot` plus full `scenes` / `activeVersionId` /
+ * `compareVersionId`. Does **not** call `diagramWithResolvedScene`: flattening
  * would either drop scenes or double-apply diffs on re-import. Draw.io /
- * Mermaid keep flattening because those formats cannot represent scenes.
+ * Mermaid keep flattening because those formats cannot represent versions.
  */
 export function exportJSON(
   diagram: Diagram,
