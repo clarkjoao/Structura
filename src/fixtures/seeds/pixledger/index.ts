@@ -9,7 +9,7 @@ import { buildHubDeploymentDiagram } from "./deployment-hub";
 import { buildLedgerDeploymentDiagram } from "./deployment-ledger";
 import { buildMerchantDeploymentDiagram } from "./deployment-merchant";
 import { buildRiskDeploymentDiagram } from "./deployment-risk";
-import { buildFolders, buildServiceRegistry } from "./folders-and-services";
+import { buildFolders, buildServices } from "./folders-and-services";
 import { SEED_PL_LAID_OUT } from "./layouts.generated";
 
 function withGeneratedLayout(diagram: Diagram): Diagram {
@@ -68,4 +68,4 @@ export function buildDiagrams(): Record<string, Diagram> {
 
 export const SEED_PL_DIAGRAMS: Record<string, Diagram> = buildDiagrams();
 export const SEED_PL_FOLDERS: Record<string, Folder> = buildFolders();
-export const SEED_PL_SERVICE_REGISTRY: Record<string, ServiceDefinition> = buildServiceRegistry();
+export const SEED_PL_SERVICES: Record<string, ServiceDefinition> = buildServices();

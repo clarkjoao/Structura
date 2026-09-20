@@ -219,7 +219,7 @@ describe("buildFallbackEntries", () => {
 });
 
 describe("buildServiceRelinkPlan", () => {
-  const localCatalog = {
+  const localServices = {
     "svc-local": service({
       id: "svc-local",
       name: "checkout",
@@ -249,7 +249,7 @@ describe("buildServiceRelinkPlan", () => {
         }),
       ],
       components,
-      localCatalog,
+      localServices,
     });
 
     expect(plan.relink).toHaveLength(1);
@@ -262,7 +262,7 @@ describe("buildServiceRelinkPlan", () => {
     const plan = buildServiceRelinkPlan({
       entries: [entry({ id: "svc-local", name: "checkout" })],
       components: [component({ id: "c1", serviceId: "svc-local" })],
-      localCatalog,
+      localServices,
     });
 
     expect(plan.alreadyLocal).toHaveLength(1);
@@ -274,7 +274,7 @@ describe("buildServiceRelinkPlan", () => {
     const plan = buildServiceRelinkPlan({
       entries: [entry({ id: "svc-remote", name: "billing" })],
       components: [component({ id: "c1", serviceId: "svc-remote" })],
-      localCatalog,
+      localServices,
     });
 
     expect(plan.unmatched).toHaveLength(1);
@@ -301,7 +301,7 @@ describe("buildServiceRelinkPlan", () => {
     const plan = buildServiceRelinkPlan({
       entries: buildFallbackEntries(components),
       components,
-      localCatalog,
+      localServices,
     });
 
     expect(plan.relink).toHaveLength(1);

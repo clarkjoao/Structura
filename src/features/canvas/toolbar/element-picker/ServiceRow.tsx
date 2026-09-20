@@ -6,7 +6,7 @@ import { registrySourceDotClass } from "./utils";
 
 type Variant = "default" | "search";
 
-export function RegistryServiceRow({
+export function ServiceRow({
   svc,
   isOnCanvas,
   onAdd,

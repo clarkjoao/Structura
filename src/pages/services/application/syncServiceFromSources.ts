@@ -24,7 +24,7 @@ function readDefectDojoConfig(): DefectDojoConfig {
   const rawConfig =
     localStorage.getItem("structura_defectdojo:config") ??
     localStorage.getItem("structura:defectdojo:config");
-  if (!rawConfig) throw new Error(i18n.t("registry.errorDefectDojoNotConfigured"));
+  if (!rawConfig) throw new Error(i18n.t("services.errorDefectDojoNotConfigured"));
   return JSON.parse(rawConfig) as DefectDojoConfig;
 }
 
@@ -105,7 +105,7 @@ export async function syncServiceFromSources({
   const defectDojoMapped = defectDojo.mapped;
 
   if (!githubRepo && !defectDojoMapped) {
-    throw new Error(i18n.t("registry.errorSyncNoSource"));
+    throw new Error(i18n.t("services.errorSyncNoSource"));
   }
 
   const githubTech = githubRepo?.language ? [githubRepo.language] : [];

@@ -28,7 +28,7 @@ function componentsIncludingScenes(diagram: Diagram): Record<string, Component> 
  */
 export function exportJSON(
   diagram: Diagram,
-  serviceCatalog: Record<string, ServiceDefinition> = {},
+  services: Record<string, ServiceDefinition> = {},
 ): string {
   validateDiagram(diagram);
   const assetComponents = componentsIncludingScenes(diagram);
@@ -44,7 +44,7 @@ export function exportJSON(
 
   // The services travel next to the diagram, not inside it: a component only stores a
   // `serviceId`, which is local to the workspace that produced the file.
-  const usedServices = resolveUsedServices(assetComponents, serviceCatalog);
+  const usedServices = resolveUsedServices(assetComponents, services);
 
   const versioned = createVersionedDiagram(diagramData, usedServices);
   return JSON.stringify(versioned, null, 2);

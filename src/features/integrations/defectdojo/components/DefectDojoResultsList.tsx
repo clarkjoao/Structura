@@ -69,7 +69,7 @@ export function DefectDojoResultsList({
     for (const product of toImport) {
       const svcData = mapToServiceDefinition(product);
       if (product.status === DefectDojoImportStatus.Updated && product.existingServiceId) {
-        const existingService = store.serviceCatalog[product.existingServiceId];
+        const existingService = store.services[product.existingServiceId];
         const mergedTech = dedupeStringsPreserveOrder([
           ...(existingService?.technology ?? []),
           ...(svcData.technology ?? []),
@@ -95,7 +95,7 @@ export function DefectDojoResultsList({
         updatedCount++;
         continue;
       } else {
-        const githubExisting = Object.values(store.serviceCatalog).find(
+        const githubExisting = Object.values(store.services).find(
           (s) =>
             normalizeSources(s).some((source) => source.type === ServiceSource.Github) &&
             repoUrlsMatch(s.repositoryUrl, svcData.repositoryUrl),

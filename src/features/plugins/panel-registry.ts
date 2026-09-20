@@ -37,5 +37,9 @@ export function subscribePanelRegistry(listener: () => void): () => void {
 }
 
 export function getPanelsForSlot(slot: PluginPanelSlot): PanelContribution[] {
-  return snapshot.filter((panel) => panel.slot === slot);
+  const aliases: PluginPanelSlot[] =
+    slot === "services-import" || slot === "service-registry-import"
+      ? ["services-import", "service-registry-import"]
+      : [slot];
+  return snapshot.filter((panel) => aliases.includes(panel.slot));
 }

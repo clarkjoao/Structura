@@ -34,7 +34,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     allDiagrams,
     visibleComponents,
     visibleConnections,
-    serviceCatalog,
+    services,
     flows,
     actions,
   } = useCanvasStore();
@@ -95,7 +95,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     diagram,
     allDiagrams,
     actions,
-    serviceCatalog,
+    services,
     compareState,
     flowState,
     showScenes,
@@ -126,7 +126,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     innerOnNodesChange: interaction.innerOnNodesChange,
     visibleComponents,
     visibleConnections,
-    serviceCatalog,
+    services,
     allDiagrams,
     // Direct slices instead of wrapped contexts.
     compareState,

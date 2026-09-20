@@ -22,7 +22,7 @@ const CollabRoom = lazy(() =>
 );
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const Workspace = lazy(() => import("@/pages/workspace"));
-const ServiceCatalog = lazy(() => import("@/pages/serviceCatalog"));
+const ServicesPage = lazy(() => import("@/pages/services"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -68,7 +68,8 @@ function MainPages() {
         <Route path="/workspace" element={<Dashboard />} />
         <Route path="/model/:id" element={<Workspace />} />
         <Route path="/collab/:roomId" element={<CollabRoom />} />
-        <Route path="/catalog" element={<ServiceCatalog />} />
+        <Route path="/services" element={<ServicesPage />} />
+        <Route path="/catalog" element={<Navigate to="/services" replace />} />
         <Route path="/plugins" element={<PluginsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

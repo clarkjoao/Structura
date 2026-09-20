@@ -112,7 +112,7 @@ A investigação identificou **4 cenários CRÍTICOS de perda de dados** e **3 c
 |---------|-------|--------|------------|
 | `src/infrastructure/persistence/useFileSystemStorage.ts` | 274 | **Merge:** aditivo — diagramas do FS são **adicionados** ao estado in-memory (existentes preservados) | **CRITICAL** |
 | `src/infrastructure/persistence/useFileSystemStorage.ts` | 341 | **Overwrite:** substitui estado in-memory pelo FS | **CRITICAL** |
-| `src/infrastructure/persistence/workspace-manifest-fingerprint.ts` | 1 | Manifest fingerprinting **evita escritas redundantes** — hash de diagramIds (sorted), serviceCatalog, folders, etc. Exclui timestamps | INFO |
+| `src/infrastructure/persistence/workspace-manifest-fingerprint.ts` | 1 | Manifest fingerprinting **evita escritas redundantes** — hash de diagramIds (sorted), services, folders, etc. Exclui timestamps | INFO |
 
 ### 3.4 Multi-Tab — **CRÍTICO**
 
@@ -167,7 +167,7 @@ On reconnect:
 | Arquivo | Linha | Achado | Severidade |
 |---------|-------|--------|------------|
 | `src/infrastructure/persistence/FileSystemAdapter.ts` | 106 | Diagramas com `folderId` apontando para pasta deletada externamente são escritos na **raiz do workspace**, não órfãos | MEDIUM |
-| `src/infrastructure/persistence/validateWorkspaceFile.ts` | 256 | `validateManifest` valida apenas versão (1 ou 2) e `diagramIds` (array). **Não valida** estrutura de folders, serviceCatalog, etc. | MEDIUM |
+| `src/infrastructure/persistence/validateWorkspaceFile.ts` | 256 | `validateManifest` valida apenas versão (1 ou 2) e `diagramIds` (array). **Não valida** estrutura de folders, services, etc. | MEDIUM |
 
 ### 4.3 WORKSPACE_SCHEMA_VERSION
 

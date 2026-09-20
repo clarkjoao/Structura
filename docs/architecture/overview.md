@@ -15,7 +15,7 @@ relay and an LLM proxy — it never stores data.
 ┌─────────────────────────────────────────────────────────────┐
 │ Pages (route-level, lazy-loaded)                            │
 │   dashboard · canvas (Index) · Workspace ·              │
-│   ServiceCatalog · viewer                                  │
+│   ServicesPage · viewer                                  │
 ├──────────────┬──────────────────────────────────────────────┤
 │ Feature contexts                                            │
 │   canvas   collaboration   llm   viewer   cloud   custom-components              │

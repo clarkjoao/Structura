@@ -22,7 +22,7 @@ function toManifestEntry(service: ServiceDefinition): ServiceManifestEntry {
  */
 export function resolveUsedServices(
   components: Record<string, Component>,
-  serviceCatalog: Record<string, ServiceDefinition>,
+  services: Record<string, ServiceDefinition>,
 ): ServiceManifestEntry[] {
   const seen = new Set<string>();
   const entries: ServiceManifestEntry[] = [];
@@ -32,7 +32,7 @@ export function resolveUsedServices(
     if (!serviceId || seen.has(serviceId)) continue;
     seen.add(serviceId);
 
-    const service = serviceCatalog[serviceId];
+    const service = services[serviceId];
     if (service) entries.push(toManifestEntry(service));
   }
 

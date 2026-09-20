@@ -58,7 +58,7 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
       ctx.selectedNodeIds.size > 0 &&
       !ctx.selectedNodeIds.has(comp.id),
     serviceId: comp.serviceId,
-    serviceName: comp.serviceId ? ctx.serviceCatalog[comp.serviceId]?.name : undefined,
+    serviceName: comp.serviceId ? ctx.services[comp.serviceId]?.name : undefined,
     externalLinks: comp.externalLinks,
     linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
     onDrillDown:

@@ -105,9 +105,9 @@
   },
   "nav": {
     "workspaces": "Workspaces",
-    "registry": "Services",
     "brandSuffix": "Architecture",
-    "plugins": "Plugins"
+    "plugins": "Plugins",
+    "services": "Services"
   },
   "theme": {
     "lightMode": "Light mode",
@@ -249,7 +249,7 @@
   },
   "serviceRelink": {
     "title": "Reconnect services",
-    "description": "This diagram references services from another workspace. Structura found the equivalents in your catalog — confirm what to reconnect.",
+    "description": "This diagram references services from another workspace. Structura found the equivalents in your services — confirm what to reconnect.",
     "relinkGroup": "Reconnect to your service",
     "unmatchedGroup": "No match found",
     "alreadyLocalGroup_one": "{{count}} service already exists here",
@@ -347,20 +347,6 @@
     "permissionModal": {
       "titleBoot": "Folder access required",
       "titleLost": "Folder access was revoked",
-      "messageNamed": "\"{{name}}\" was connected before, but the browser needs permission again before folder sync can run.",
-      "messageGeneric": "A folder was connected before, but the browser needs permission again before folder sync can run.",
-      "syncDisabledWarning": "Folder sync is off right now. Edits stay in the browser until you reconnect.",
-      "reconnect": "Reconnect",
-      "reconnectHint": "Ask the browser for read/write access to the folder (required for sync).",
-      "continueBrowser": "Continue in browser only",
-      "continueBrowserHint": "Dismiss this dialog. Sync stays off; you can reconnect from the toolbar.",
-      "disconnect": "Disconnect folder",
-      "disconnectHint": "Forget this folder connection and keep working in the browser."
-    },
-    "foldersImported": "Imported {{count}} folder from filesystem",
-    "permissionModal": {
-      "titleBoot": "Folder access required",
-      "titleLost": "Folder access was revoked",
       "messageNamed": "The folder \"{{name}}\" was connected before, but the browser needs permission again before sync can run.",
       "messageGeneric": "A folder was connected before, but the browser needs permission again before sync can run.",
       "syncDisabledWarning": "Folder sync is off right now. Edits stay in the browser only until you reconnect.",
@@ -370,7 +356,8 @@
       "continueBrowserHint": "Close this dialog. Sync stays off; you can reconnect later from the toolbar.",
       "disconnect": "Disconnect folder",
       "disconnectHint": "Forget this folder connection and keep working in the browser."
-    }
+    },
+    "foldersImported": "Imported {{count}} folder from filesystem"
   },
   "workspaceMerge": {
     "title": "Folder with existing files",
@@ -434,49 +421,6 @@
     "selectionBar": "{{count}} items selected",
     "clearSelection": "Clear selection",
     "deleteSelected": "Delete selected"
-  },
-  "registry": {
-    "title": "Services",
-    "subtitle": "Central catalog of services and infrastructure",
-    "addService": "Add Service",
-    "searchPlaceholder": "Search by name, tag, owner...",
-    "filterAll": "All",
-    "filterManual": "Manual",
-    "emptyNoServices": "No services yet. Click \"Add Service\" to get started.",
-    "emptyFiltered": "No services match the current filters.",
-    "selectForDetails": "Select a service to see details.",
-    "chipAddPlaceholder": "Add...",
-    "newService": "New service",
-    "createService": "Create service",
-    "techPlaceholder": "java, spring...",
-    "tagsPlaceholder": "backend, auth...",
-    "repoPlaceholder": "https://github.com/...",
-    "syncFieldsHint": "Some fields are synced from external sources and may be overwritten on the next sync.",
-    "usageInDiagrams": "Usage in diagrams",
-    "notLinked": "Not linked to any diagram",
-    "confirmDelete": "Are you sure? This cannot be undone.",
-    "confirmRemoval": "Confirm removal",
-    "deleteService": "Delete service",
-    "importManual": "✦ Manual",
-    "importGithub": "⌥ GitHub",
-    "importDefectDojo": "🛡 DefectDojo",
-    "sourceManual": "Manual",
-    "errorDefectDojoNotConfigured": "DefectDojo not configured",
-    "errorSyncNoSource": "Could not sync from any source",
-    "errorSyncGeneric": "Error while syncing",
-    "nodeCount_one": "{{count}} node",
-    "nodeCount_other": "{{count}} nodes",
-    "focusServiceNotFound": "Service not found in this diagram",
-    "sourceGithub": "GitHub",
-    "sourceDefectdojo": "DefectDojo",
-    "filterGithub": "GitHub",
-    "filterDefectdojo": "DefectDojo",
-    "syncTitle": "Sync",
-    "repoUrlLabel": "Repository",
-    "productLabel": "Product",
-    "diagramUsage_one": "{{count}} diagram",
-    "diagramUsage_other": "{{count}} diagrams",
-    "chipAddButton": "+ add"
   },
   "canvas": {
     "noDiagramSelected": "No diagram selected",
@@ -1201,10 +1145,6 @@
   "elementPicker": {
     "categoryAll": "All",
     "viewAll": "View all",
-    "viewAllRegistry": "View all in registry",
-    "registry": "Services",
-    "registryEmpty": "No services in registry",
-    "openRegistry": "Open services",
     "modalTitle": "Add element",
     "searchPlaceholderUnified": "Search elements, AWS, GCP, Azure, services…",
     "cloudOther": "Other",
@@ -1215,7 +1155,11 @@
     "flowchart": "Flowchart",
     "canvasGroups": "Canvas & Groups",
     "awsOther": "Other",
-    "categories": {}
+    "categories": {},
+    "viewAllServices": "View all services",
+    "services": "Services",
+    "servicesEmpty": "No services yet",
+    "openServices": "Open services"
   },
   "patterns": {
     "searchPlaceholder": "Search patterns by name, description or components...",
@@ -1938,7 +1882,7 @@
     "flowStepOut": "Step out"
   },
   "github": {
-    "configNote": "Services imported from GitHub are kept in the Registry.",
+    "configNote": "Services imported from GitHub are kept in Services.",
     "connectionFailed": "Connection failed",
     "confirm": "Confirm",
     "baseUrlPlaceholder": "https://api.github.com",
@@ -2279,5 +2223,48 @@
       "label": "Swim lane",
       "defaultName": "Swim lane"
     }
+  },
+  "services": {
+    "title": "Services",
+    "subtitle": "Central list of services and infrastructure",
+    "addService": "Add Service",
+    "searchPlaceholder": "Search by name, tag, owner...",
+    "filterAll": "All",
+    "filterManual": "Manual",
+    "emptyNoServices": "No services yet. Click \"Add Service\" to get started.",
+    "emptyFiltered": "No services match the current filters.",
+    "selectForDetails": "Select a service to see details.",
+    "chipAddPlaceholder": "Add...",
+    "newService": "New service",
+    "createService": "Create service",
+    "techPlaceholder": "java, spring...",
+    "tagsPlaceholder": "backend, auth...",
+    "repoPlaceholder": "https://github.com/...",
+    "syncFieldsHint": "Some fields are synced from external sources and may be overwritten on the next sync.",
+    "usageInDiagrams": "Usage in diagrams",
+    "notLinked": "Not linked to any diagram",
+    "confirmDelete": "Are you sure? This cannot be undone.",
+    "confirmRemoval": "Confirm removal",
+    "deleteService": "Delete service",
+    "importManual": "✦ Manual",
+    "importGithub": "⌥ GitHub",
+    "importDefectDojo": "🛡 DefectDojo",
+    "sourceManual": "Manual",
+    "errorDefectDojoNotConfigured": "DefectDojo not configured",
+    "errorSyncNoSource": "Could not sync from any source",
+    "errorSyncGeneric": "Error while syncing",
+    "nodeCount_one": "{{count}} node",
+    "nodeCount_other": "{{count}} nodes",
+    "focusServiceNotFound": "Service not found in this diagram",
+    "sourceGithub": "GitHub",
+    "sourceDefectdojo": "DefectDojo",
+    "filterGithub": "GitHub",
+    "filterDefectdojo": "DefectDojo",
+    "syncTitle": "Sync",
+    "repoUrlLabel": "Repository",
+    "productLabel": "Product",
+    "diagramUsage_one": "{{count}} diagram",
+    "diagramUsage_other": "{{count}} diagrams",
+    "chipAddButton": "+ add"
   }
 }

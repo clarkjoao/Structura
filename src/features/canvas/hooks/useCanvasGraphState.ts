@@ -50,7 +50,7 @@ export interface UseCanvasGraphStateParams {
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
   visibleComponents: Component[];
   visibleConnections: import("@/features/diagram").Connection[];
-  serviceCatalog: Record<string, import("@/features/diagram").ServiceDefinition>;
+  services: Record<string, import("@/features/diagram").ServiceDefinition>;
   allDiagrams: Record<string, import("@/features/diagram").Diagram>;
   // Direct slices instead of wrapped contexts.
   compareState: CompareSlice;
@@ -79,7 +79,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     innerOnNodesChange,
     visibleComponents,
     visibleConnections,
-    serviceCatalog,
+    services,
     allDiagrams,
     compareState,
     flowState,
@@ -182,7 +182,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     selectedNodeId,
     selectedNodeIds,
     highlightedNodeIds,
-    serviceCatalog,
+    services,
     allDiagrams,
     handleDrillDown,
     handlePanelCollapseToggle,

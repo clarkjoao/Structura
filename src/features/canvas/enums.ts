@@ -8,7 +8,7 @@ export enum ElementCategory {
   All = "all",
   C4 = "c4",
   Canvas = "canvas",
-  Registry = "registry",
+  Services = "services",
   NodeTemplate = "node-template",
   Flowchart = "flowchart",
 }

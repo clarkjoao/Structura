@@ -132,7 +132,7 @@ export function GithubMergeDialog({
                     {normalizeSources(existing).some(
                       (source) => source.type === ServiceSource.Defectdojo,
                     )
-                      ? t("registry.sourceDefectdojo")
+                      ? t("services.sourceDefectdojo")
                       : t("github.sourceBadgeManual")}
                   </div>
                 </div>

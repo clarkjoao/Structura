@@ -14,7 +14,7 @@ export const ChipInput = ({
   placeholder?: string;
 }) => {
   const { t } = useTranslation();
-  const resolvedPlaceholder = placeholder ?? t("registry.chipAddPlaceholder");
+  const resolvedPlaceholder = placeholder ?? t("services.chipAddPlaceholder");
   const [input, setInput] = useState("");
   const add = () => {
     const v = input.trim();
@@ -62,7 +62,7 @@ export const ChipInput = ({
           onClick={add}
           className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"
         >
-          {t("registry.chipAddButton")}
+          {t("services.chipAddButton")}
         </button>
       </div>
     </div>

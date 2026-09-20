@@ -52,7 +52,7 @@ const EXPORTING_SERVICE: ServiceDefinition = {
 };
 
 /** The same service registered independently in the receiving workspace, under its own id. */
-const RECEIVING_CATALOG: Record<string, ServiceDefinition> = {
+const RECEIVING_SERVICES: Record<string, ServiceDefinition> = {
   "svc-in-workspace-b": { ...EXPORTING_SERVICE, id: "svc-in-workspace-b" },
 };
 
@@ -89,7 +89,7 @@ describe("service manifest round trip", () => {
     const plan = buildServiceRelinkPlan({
       entries: validation.services ?? buildFallbackEntries(components),
       components,
-      localCatalog: RECEIVING_CATALOG,
+      localServices: RECEIVING_SERVICES,
     });
 
     expect(plan.relink).toHaveLength(1);
@@ -133,7 +133,7 @@ describe("service manifest round trip", () => {
     const plan = buildServiceRelinkPlan({
       entries: buildFallbackEntries(components),
       components,
-      localCatalog: RECEIVING_CATALOG,
+      localServices: RECEIVING_SERVICES,
     });
 
     expect(plan.relink).toHaveLength(1);

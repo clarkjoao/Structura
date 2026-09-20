@@ -46,7 +46,7 @@ import { ElementPickerAllView } from "./element-picker/ElementPickerAllView";
 import { ElementPickerSearchResults } from "./element-picker/ElementPickerSearchResults";
 import { AwsBrowseView } from "./element-picker/AwsBrowseView";
 import { CloudBrowseView } from "./element-picker/CloudBrowseView";
-import { RegistryCategoryPanel } from "./element-picker/RegistryCategoryPanel";
+import { ServicesCategoryPanel } from "./element-picker/ServicesCategoryPanel";
 import CloudIcon from "../nodes/CloudIcon";
 import { isPanelType } from "@/features/diagram";
 import {
@@ -464,9 +464,9 @@ const ElementPickerModal = memo(function ElementPickerModal({ onClose, onInsert 
             ))}
           </div>
         );
-      case ElementCategory.Registry:
+      case ElementCategory.Services:
         return (
-          <RegistryCategoryPanel
+          <ServicesCategoryPanel
             services={services}
             filteredServices={filteredServices}
             onCanvasServiceIds={onCanvasServiceIds}

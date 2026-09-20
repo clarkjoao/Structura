@@ -26,7 +26,7 @@ import { PERSIST_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 export const PERSIST_KEY = "diagram-store";
 
-export const PERSIST_SCHEMA_VERSION = 13;
+export const PERSIST_SCHEMA_VERSION = 14;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -37,7 +37,7 @@ export function partializeState(state: DiagramStore) {
     diagrams: state.diagrams,
     folders: state.folders,
     userTemplates: state.userTemplates,
-    serviceCatalog: state.serviceCatalog,
+    services: state.services,
     activeDiagramId: state.activeDiagramId,
   };
 }
@@ -53,7 +53,7 @@ export function buildPersistStoragePayload(state: DiagramStore): {
 }
 
 function migrateServiceSources(state: DiagramStore): DiagramStore {
-  Object.values(state.serviceCatalog).forEach((service) => {
+  Object.values(state.services).forEach((service) => {
     const svc = service as ServiceDefinition;
     if (svc.sources && svc.sources.length > 0) return;
     if (svc.source) {
@@ -275,24 +275,36 @@ function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void
   }
 }
 
-/** Schema v8: rename the persisted state field `serviceRegistry` →
- * `serviceCatalog`. The values inside are unchanged. The migration is
- * idempotent: if `serviceCatalog` already exists with content (e.g. a
- * workspace saved at v8 is re-read at v8), the right-hand side is
- * short-circuited. Note: the currentState spread always sets
- * `serviceCatalog = {}` (the in-memory default), so the "not present"
- * check must look at whether the dictionary is empty, not at
- * `undefined`. The legacy key is always dropped. */
-function migrateServiceRegistryToServiceCatalog(state: Record<string, unknown>): void {
-  const legacy = state.serviceRegistry;
+/** Copy a legacy services dictionary onto `state.services` when empty, then
+ * drop the legacy key. Shared by the v8 (`serviceRegistry`) and v14
+ * (`serviceCatalog`) renames. */
+function adoptLegacyServicesKey(
+  state: Record<string, unknown>,
+  legacyKey: "serviceRegistry" | "serviceCatalog",
+): void {
+  const legacy = state[legacyKey];
   if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
-    const existing = state.serviceCatalog as Record<string, unknown> | undefined;
+    const existing = state.services as Record<string, unknown> | undefined;
     const existingIsEmpty = !existing || Object.keys(existing).length === 0;
     if (existingIsEmpty) {
-      state.serviceCatalog = legacy as Record<string, unknown>;
+      state.services = legacy as Record<string, unknown>;
     }
   }
-  delete state.serviceRegistry;
+  delete state[legacyKey];
+}
+
+/** Schema v8: `serviceRegistry` → `services` (via the intermediate name
+ * `serviceCatalog` on disk for workspaces that never hit v14). Always drops
+ * the legacy key. */
+function migrateServiceRegistryToServices(state: Record<string, unknown>): void {
+  adoptLegacyServicesKey(state, "serviceRegistry");
+}
+
+/** Schema v14: `serviceCatalog` → `services`. Idempotent; always drops the
+ * legacy key. Runs after the v8 migration so a workspace that still has
+ * only `serviceRegistry` lands on `services` in one pass. */
+function migrateServiceCatalogToServices(state: Record<string, unknown>): void {
+  adoptLegacyServicesKey(state, "serviceCatalog");
 }
 
 /** Schema v10: rename `ExternalElementComponent.linkedDiagramId` to
@@ -503,7 +515,7 @@ export function mergePersistedState(
   state._flowSession = null;
   state._flowSewNotices = null;
 
-  if (!state.serviceCatalog) state.serviceCatalog = {};
+  if (!state.services) state.services = {};
   if (!state.folders) state.folders = {};
   migrateAddUserTemplates(state);
 
@@ -522,7 +534,8 @@ export function mergePersistedState(
   migrateAddDiagramDescription(next);
   migrateFlowNodeTypeToProcessos(next);
   migrateProcessNodeTypeToProcessNode(next);
-  migrateServiceRegistryToServiceCatalog(next as unknown as Record<string, unknown>);
+  migrateServiceRegistryToServices(next as unknown as Record<string, unknown>);
+  migrateServiceCatalogToServices(next as unknown as Record<string, unknown>);
   migrateExternalElementLinkedDiagramId(next);
   migrateUnifyRegistryServiceId(next);
   migrateUnifyCloudServiceId(next);

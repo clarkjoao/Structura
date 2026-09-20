@@ -141,7 +141,7 @@ export function useWorkspaceImport(options: UseWorkspaceImportOptions = {}) {
       const plan = buildServiceRelinkPlan({
         entries,
         components,
-        localCatalog: useDiagramStore.getState().serviceCatalog,
+        localServices: useDiagramStore.getState().services,
       });
 
       if (planNeedsReview(plan)) {

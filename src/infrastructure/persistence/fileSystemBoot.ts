@@ -127,7 +127,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     diagramIds: Object.keys(state.diagrams),
-    serviceCatalog: state.serviceCatalog,
+    services: state.services,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     elementPresets,
@@ -153,7 +153,7 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
 
   lastSyncedManifestFingerprint = manifestSemanticFingerprint({
     diagramIds: Object.keys(state.diagrams),
-    serviceCatalog: state.serviceCatalog,
+    services: state.services,
     folders: state.folders,
     activeDiagramId: state.activeDiagramId,
     elementPresets,
@@ -236,7 +236,7 @@ async function doReconnect(): Promise<boolean> {
       useDiagramStore.setState((s) => ({
         ...s,
         diagrams: hydrated.diagrams as typeof s.diagrams,
-        serviceCatalog: workspace.serviceCatalog as typeof s.serviceCatalog,
+        services: workspace.services as typeof s.services,
         folders: workspace.folders as typeof s.folders,
         activeDiagramId: workspace.activeDiagramId,
         past: [],
@@ -524,7 +524,7 @@ export function startFileSystemSync(): void {
 
           const manifestFp = manifestSemanticFingerprint({
             diagramIds: Object.keys(diagramState.diagrams),
-            serviceCatalog: diagramState.serviceCatalog,
+            services: diagramState.services,
             folders: diagramState.folders,
             activeDiagramId: diagramState.activeDiagramId,
             elementPresets,
@@ -537,7 +537,7 @@ export function startFileSystemSync(): void {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               diagramIds: Object.keys(diagramState.diagrams),
-              serviceCatalog: diagramState.serviceCatalog,
+              services: diagramState.services,
               folders: diagramState.folders,
               activeDiagramId: diagramState.activeDiagramId,
               elementPresets,

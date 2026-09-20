@@ -107,9 +107,9 @@ catalog of real services. Components link to it via `serviceId`. This
 is the strongest existing form of cross-diagram identity and the natural seed
 of the future Model Index.
 
-> **Naming note.** The state field is `state.serviceCatalog` and
+> **Naming note.** The state field is `state.services` and
 > the page is at `/catalog`. The glossary marks `serviceRegistry`
-> as deprecated in favor of `serviceCatalog` and `/catalog`; see
+> as deprecated in favor of `services` and `/catalog`; see
 > [../grammar/glossary.md](../grammar/glossary.md) § Service Catalog.
 
 ## User template / Custom component

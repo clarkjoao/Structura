@@ -15,7 +15,7 @@ export interface ExportArtifact {
 interface BuildDiagramExportFilesArgs {
   diagram: Diagram;
   flows: Flow[];
-  serviceCatalog: Record<string, ServiceDefinition>;
+  services: Record<string, ServiceDefinition>;
   formats: DiagramExportFormat[];
 }
 
@@ -34,12 +34,12 @@ const FORMAT_MIME: Record<DiagramExportFormat, string> = {
 export function buildDiagramExportFiles({
   diagram,
   flows,
-  serviceCatalog,
+  services,
   formats,
 }: BuildDiagramExportFilesArgs): { baseName: string; files: ExportArtifact[] } {
   const baseName = exportFilenameSlug(diagram);
   const files = formats.map((format) => {
-    const content = buildExportContent(format, diagram, flows, serviceCatalog);
+    const content = buildExportContent(format, diagram, flows, services);
     const suffix = format === "mermaid" ? "-flows" : "";
 
     return {
@@ -56,13 +56,13 @@ function buildExportContent(
   format: DiagramExportFormat,
   diagram: Diagram,
   flows: Flow[],
-  serviceCatalog: Record<string, ServiceDefinition>,
+  services: Record<string, ServiceDefinition>,
 ): string {
   switch (format) {
     case "json":
-      return exportJSON(diagram, serviceCatalog);
+      return exportJSON(diagram, services);
     case "drawio":
-      return exportDrawio(diagram, serviceCatalog);
+      return exportDrawio(diagram, services);
     case "mermaid":
       // Flows are defined against the trunk snapshot; scene-filtered graphs can omit
       // connections still referenced by flow steps, which would yield an empty diagram.

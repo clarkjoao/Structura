@@ -1,7 +1,7 @@
 // ─── Store ────────────────────────────────────────────────────────────────────
 export {
   useDiagramStore,
-  useCatalogActions,
+  useServiceActions,
   createDiagramStore,
   useDiagramActions,
   useComponentActions,
@@ -46,8 +46,7 @@ export {
   useResolvedNodeLayouts,
   useActiveDiagramSceneState,
   useVisibleConnections,
-  useServiceRegistry,
-  useServiceCatalog,
+  useServices,
   useAllComponents,
   useDiagramTags,
   useAllServices,

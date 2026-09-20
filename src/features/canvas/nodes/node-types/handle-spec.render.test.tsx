@@ -73,7 +73,7 @@ function buildContext(
     resolvedComponents: components,
     resolvedNodeLayouts: {},
     sceneBadgeByComponentId: {},
-    serviceCatalog: {},
+    services: {},
     allDiagrams: {},
     selectedNodeId: null,
     selectedNodeIds: new Set<string>(),

@@ -41,7 +41,7 @@ export interface UseCanvasInteractionParams {
   diagram: Diagram | DiagramModel | null | undefined;
   allDiagrams: Record<string, Diagram>;
   actions: DiagramActions;
-  serviceCatalog: Record<string, ServiceDefinition>;
+  services: Record<string, ServiceDefinition>;
   compareState: CompareSlice;
   flowState: FlowSlice;
   showScenes: boolean;
@@ -83,7 +83,7 @@ export function useCanvasInteraction(
     diagram,
     allDiagrams,
     actions,
-    serviceCatalog,
+    services,
     compareState,
     flowState,
     showScenes,
@@ -240,7 +240,7 @@ export function useCanvasInteraction(
     diagram,
     setCompareScene: actions.setCompareScene,
     isCompareMode: compareState.isCompareMode,
-    serviceCatalog,
+    services,
     selectedNodeId: visualState.selectedNodeId,
     selectedEdgeId: visualState.selectedEdgeId,
     reactFlowInstance,

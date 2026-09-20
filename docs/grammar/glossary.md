@@ -115,7 +115,7 @@ escape hatch, and cloud category ids).
 - Not the same as a **Node** (which is the React Flow renderer of a
   Component; lives in `features/canvas/nodes/`).
 - Not the same as a **Service** (a workspace-level production unit; lives
-  in the Service Catalog).
+  in the Services collection).
 - Not the same as a **Capability** (a workspace-level business concept;
   planned, does not exist yet).
 
@@ -198,7 +198,7 @@ all linked Components.
 
 **Reference:** `ServiceDefinition` in
 `src/features/diagram/model/service.types.ts`; held in
-`state.serviceCatalog` (formerly `serviceRegistry`).
+`state.services` (formerly `serviceCatalog` / `serviceRegistry`).
 
 **Counterpoint:**
 
@@ -213,35 +213,27 @@ all linked Components.
 
 ---
 
-### Service Catalog
+### Services
 
-**Status:** `current` (renamed from `serviceRegistry` in
-  `openspec/changes/rename-service-registry-to-service-catalog/`,
-  shipped under `PERSIST_SCHEMA_VERSION` 8; the legacy
-  `useRegistryActions` and `useServiceRegistry` aliases remain for one
-  release)
+**Status:** `current` (renamed from `serviceCatalog` / formerly
+  `serviceRegistry`; `PERSIST_SCHEMA_VERSION` 14)
 
 **Definition:** The workspace-level collection of Services. Implemented
-as `state.serviceCatalog: Record<id, ServiceDefinition>`. UI lives at
-`/catalog` (the URL was already `/catalog`; only the internal page
-component, hook, and i18n keys were renamed).
+as `state.services: Record<id, ServiceDefinition>`. UI lives at
+`/services` (legacy `/catalog` redirects).
 
 **Reference:** `src/features/diagram/store/slices/services.slice.ts`;
-page `src/pages/serviceCatalog/`; hook `useCatalogActions` in
+page `src/pages/services/`; hook `useServiceActions` in
 `src/features/diagram/store/diagram.store.ts`.
 
-**Aliases:** `serviceRegistry` (deprecated; runtime data migrated on
-load), `useRegistryActions` (deprecated; alias of `useCatalogActions`),
-`useServiceRegistry` (deprecated; alias of `useServiceCatalog`),
-i18n `nav.registry` and `elementPicker.registry` (deprecated; resolve
-to "Services"/"Serviços" via the new `services` keys).
+**Aliases (migrated on load):** `serviceRegistry` (≤v7),
+`serviceCatalog` (v8–v13). Plugin panel slot `service-registry-import`
+is accepted as an alias of `services-import` for one release.
 
-**Why rename:** the word *registry* in Structura currently means at least
-six different things — plugin registry, node type registry, panel
-registry, IO registry, import registry, service registry. *Catalog* is
-already the established term for AWS/GCP/Azure icon packs
-(`src/lib/catalogs/`), and it describes the actual UX (a navigable
-catalog of services with cards, search, filters, import panels).
+**Why "Services":** *registry* and *catalog* were overloaded (plugin
+registry, node-type registry, cloud icon catalogs under
+`src/lib/catalogs/` and `*.catalog.ts`). The product term is simply
+**Services** / **Serviços**.
 
 ---
 
@@ -249,7 +241,7 @@ catalog of services with cards, search, filters, import panels).
 
 **Status:** `current`
 
-**Definition:** A reference from a Component to a Service in the catalog,
+**Definition:** A reference from a Component to a Service,
 stored as `Component.serviceId`. The reverse direction ("which Components
 link to this Service?") is derived on demand and is not stored.
 
@@ -614,7 +606,7 @@ blocking defect.
 | --- | --- | --- | --- | --- |
 | 1 | `processos` (ComponentType) | `process-node` | 1 | shipped (PERSIST_SCHEMA_VERSION 7) |
 | 2 | `registryServiceId` (field) | unify with `serviceId` | 1 | shipped (PERSIST_SCHEMA_VERSION 11) — the field was live (used by plugin snapshots and custom-component template instancing); unification with `serviceId` removes a duplicate write path that caused `linkComponentToService` to silently miss the link. |
-| 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | shipped (PERSIST_SCHEMA_VERSION 8) |
+| 3 | `serviceRegistry` / `serviceCatalog` (state, i18n, page) | `services` | 2 | shipped (`serviceRegistry`→`serviceCatalog` at schema 8; `serviceCatalog`→`services` at schema 14; route `/services`) |
 | 4 | `ModelExplorer` (page) | `Workspace` | 2 | shipped |
 | 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
 | 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | shipped (PERSIST_SCHEMA_VERSION 10) |

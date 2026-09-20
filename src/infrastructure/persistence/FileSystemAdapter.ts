@@ -143,7 +143,7 @@ export interface WorkspaceManifest {
   createdAt: string;
   updatedAt: string;
   diagramIds: string[];
-  serviceCatalog: Record<string, unknown>;
+  services: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   elementPresets?: Record<string, ElementPreset>;
@@ -152,9 +152,33 @@ export interface WorkspaceManifest {
   iconLibrary?: Record<string, IconDefinition>;
 }
 
+/** Prefer `services`; fall back to legacy `serviceCatalog` from pre-v14 manifests. */
+function resolveManifestServices(raw: Record<string, unknown>): Record<string, unknown> {
+  const current = raw.services;
+  if (current && typeof current === "object" && !Array.isArray(current)) {
+    const asRecord = current as Record<string, unknown>;
+    if (Object.keys(asRecord).length > 0) return asRecord;
+  }
+  const legacy = raw.serviceCatalog;
+  if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
+    return legacy as Record<string, unknown>;
+  }
+  if (current && typeof current === "object" && !Array.isArray(current)) {
+    return current as Record<string, unknown>;
+  }
+  return {};
+}
+
+function normalizeWorkspaceManifest(raw: Record<string, unknown>): WorkspaceManifest {
+  return {
+    ...(raw as unknown as WorkspaceManifest),
+    services: resolveManifestServices(raw),
+  };
+}
+
 export type WorkspacePayload = {
   diagrams: Record<string, Diagram>;
-  serviceCatalog: Record<string, unknown>;
+  services: Record<string, unknown>;
   folders: Record<string, unknown>;
   activeDiagramId: string | null;
   /** ISO timestamp from manifest; used for merge/reconnect conflict resolution. */
@@ -833,7 +857,8 @@ export class FileSystemAdapter {
     try {
       const file = await this.handle.getFileHandle(MANIFEST_FILE);
       const f = await file.getFile();
-      return JSON.parse(await f.text()) as WorkspaceManifest;
+      const raw = JSON.parse(await f.text()) as Record<string, unknown>;
+      return normalizeWorkspaceManifest(raw);
     } catch {
       return null;
     }
@@ -852,7 +877,7 @@ export class FileSystemAdapter {
 
     return {
       diagrams,
-      serviceCatalog: manifest.serviceCatalog,
+      services: manifest.services,
       folders: manifest.folders,
       activeDiagramId,
       manifestUpdatedAt: manifest.updatedAt,

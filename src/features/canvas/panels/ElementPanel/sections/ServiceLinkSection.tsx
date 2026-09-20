@@ -2,7 +2,7 @@ import { Link2, Lock, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ServiceDefinition } from "@/features/diagram";
 import { useCollab } from "@/features/collaboration";
-import ServiceRegistryCombobox from "../components/ServiceRegistryCombobox";
+import ServiceCombobox from "../components/ServiceCombobox";
 
 export interface ServiceLinkSectionProps {
   componentId: string;
@@ -51,7 +51,7 @@ export function ServiceLinkSection({
           {t("elementPanel.syncButton")}
         </button>
       </div>
-      <ServiceRegistryCombobox value={serviceId ?? null} onChange={onServiceChange} />
+      <ServiceCombobox value={serviceId ?? null} onChange={onServiceChange} />
     </div>
   );
 }

@@ -18,7 +18,7 @@ function ctxWithCounts(incoming: number, outgoing: number): NodeBuildContext {
     selectedNodeId: null,
     selectedNodeIds: new Set(),
     allDiagrams: {},
-    serviceCatalog: {},
+    services: {},
   } as unknown as NodeBuildContext;
 }
 

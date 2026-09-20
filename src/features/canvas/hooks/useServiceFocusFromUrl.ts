@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useReactFlow } from "@xyflow/react";
 import { useActiveDiagram } from "@/features/diagram";
-import { findComponentIdsByServiceId } from "@/pages/serviceCatalog/findComponentsByServiceId";
+import { findComponentIdsByServiceId } from "@/pages/services/findComponentsByServiceId";
 import { focusComponentsOnCanvas } from "../focus/focusComponents";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 
@@ -39,7 +39,7 @@ export function useServiceFocusFromUrl(visualState: CanvasVisualState): void {
 
     if (componentIds.length === 0) {
       processedRef.current = focusKey;
-      toast.error(t("registry.focusServiceNotFound"));
+      toast.error(t("services.focusServiceNotFound"));
       clearServiceIdParam();
       return;
     }

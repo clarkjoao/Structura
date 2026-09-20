@@ -313,7 +313,7 @@ const selectIconActions = pickFromStore([
   "decrementIconUsage",
 ]);
 
-const selectCatalogActions = pickFromStore([
+const selectServiceActions = pickFromStore([
   "addService",
   "updateService",
   "removeService",
@@ -336,4 +336,4 @@ export const useClipboardActions = () => useDiagramStore(selectClipboardActions)
 
 export const useIconActions = () => useDiagramStore(selectIconActions);
 
-export const useCatalogActions = () => useDiagramStore(selectCatalogActions);
+export const useServiceActions = () => useDiagramStore(selectServiceActions);

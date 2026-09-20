@@ -41,7 +41,7 @@ export const ManualCreateForm = ({
       className="rounded-xl border border-border bg-card p-4 space-y-3 mb-4"
     >
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-        {t("registry.newService")}
+        {t("services.newService")}
       </p>
       <div>
         <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
@@ -80,13 +80,13 @@ export const ManualCreateForm = ({
         label={t("common.technology")}
         items={tech}
         onChange={setTech}
-        placeholder={t("registry.techPlaceholder")}
+        placeholder={t("services.techPlaceholder")}
       />
       <ChipInput
         label={t("common.tags")}
         items={tags}
         onChange={setTags}
-        placeholder={t("registry.tagsPlaceholder")}
+        placeholder={t("services.tagsPlaceholder")}
       />
       <div className="flex justify-end gap-2 pt-1">
         <button
@@ -100,7 +100,7 @@ export const ManualCreateForm = ({
           disabled={!name.trim()}
           className="px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          {t("registry.createService")}
+          {t("services.createService")}
         </button>
       </div>
     </motion.div>

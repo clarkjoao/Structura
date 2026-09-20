@@ -27,7 +27,7 @@ If you are documenting or using selector hooks, this distinction matters:
 | Surface                   | Goal                                                                                                                                                        |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `index.ts`                | Public API for models, guards, utilities, store hooks, selectors, and snapshot helpers.                                                                     |
-| `store/diagram.store.ts`  | Composes the Zustand store and exposes `useDiagramStore`, `useDiagramActions`, `useIconActions`, and `useRegistryActions`.                                  |
+| `store/diagram.store.ts`  | Composes the Zustand store and exposes `useDiagramStore`, `useDiagramActions`, `useIconActions`, and `useServiceActions`.                                  |
 | `store/selectors/`        | Read-only hooks for diagrams, components, connections, layouts, icons, folders, flows, services, and user templates.                                        |
 | `utils/snapshot-cache.ts` | Builds and caches the resolved canvas snapshot used by scene-aware selectors.                                                                               |
 | `store/slices/`           | Mutation logic grouped by concern: diagrams, components, parenting, connections, flows, layout, scenes, folders, clipboard, patterns, icons, and templates. |
@@ -40,7 +40,8 @@ If you are documenting or using selector hooks, this distinction matters:
 | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `useDiagramActions`  | Main mutation API for the feature. It groups diagram, component, connection, layout, scene, flow, folder, clipboard, and template actions behind one hook. |
 | `useIconActions`     | Small action surface for the shared icon library that sits alongside the diagram store.                                                                    |
-| `useRegistryActions` | Focused action surface for global service registry mutations and component-to-service linking.                                                             |
+| `useServiceActions` | Focused action surface for workspace Services mutations and component-to-service linking.                                                             |
+
 
 ### Diagram selectors
 
@@ -88,7 +89,7 @@ If you are documenting or using selector hooks, this distinction matters:
 | `useFlows`                                                            | Returns all flows for the active diagram.                                         |
 | `useFolderIds`, `useFolder`, `useFolders`, `useAllFolders`            | Read folder structure and folder lists from the store.                            |
 | `useIconLibrary`, `useIconById`, `useComponentIcon`                   | Read from the shared icon library and resolve a component's selected custom icon. |
-| `useServiceIds`, `useService`, `useAllServices`, `useServiceRegistry` | Read the global service registry that diagrams can link components to.            |
+| `useServiceIds`, `useService`, `useAllServices`, `useServices` | Read the workspace Services collection that diagrams can link components to.            |
 | `useAllUserTemplates`                                                 | Returns saved user templates sorted by creation time.                             |
 
 ## Preference helpers

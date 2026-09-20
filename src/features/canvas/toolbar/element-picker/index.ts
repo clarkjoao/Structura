@@ -16,7 +16,7 @@ export {
   LAST_CATEGORY_KEY,
   OTHER_AWS_SECTION_KEY,
   PICKER_CARD_CLASS,
-  REGISTRY_PREVIEW_LIMIT,
+  SERVICES_PREVIEW_LIMIT,
 } from "./constants";
 export { ElementPickerAllView } from "./ElementPickerAllView";
 export { ElementPickerSearchResults } from "./ElementPickerSearchResults";
@@ -32,8 +32,8 @@ export {
   flattenAwsServices,
 } from "./pickerFilters";
 export { PickerSectionHeader } from "./PickerSectionHeader";
-export { RegistryCategoryPanel } from "./RegistryCategoryPanel";
-export { RegistryServiceRow } from "./RegistryServiceRow";
+export { ServicesCategoryPanel } from "./ServicesCategoryPanel";
+export { ServiceRow } from "./ServiceRow";
 export { persistCategory, readStoredCategory } from "./storage";
 export { type CanvasPickerOption, type ElementPickerModalProps } from "./types";
 export {

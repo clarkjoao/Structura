@@ -18,7 +18,7 @@ export function buildFolders(): Record<string, Folder> {
   };
 }
 
-export function buildServiceRegistry(): Record<string, ServiceDefinition> {
+export function buildServices(): Record<string, ServiceDefinition> {
   return {
     "svc-pl-cob-api": {
       id: "svc-pl-cob-api",

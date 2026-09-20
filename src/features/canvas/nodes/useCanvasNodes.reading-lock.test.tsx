@@ -57,7 +57,7 @@ function Harness({ isPlaying }: { isPlaying: boolean }) {
     selectedNodeId: null,
     selectedNodeIds: new Set(),
     highlightedNodeIds: new Set(),
-    serviceCatalog: {},
+    services: {},
     allDiagrams: store.diagrams as Record<string, Diagram>,
     handleDrillDown: () => {},
     handlePanelCollapseToggle: () => {},

@@ -8,12 +8,13 @@ import type { Component } from "../model/diagram.types";
  * under feat/glossary:
  *
  *   v6 -> v7: ComponentType "processos" -> "process-node"
- *   v7 -> v8: state.serviceRegistry -> state.serviceCatalog
+ *   v7 -> v8: state.serviceRegistry -> state.services
  *   v9 -> v10: ExternalElementComponent.linkedDiagramId ->
  *              referenceDiagramId
  *   v10 -> v11: Component.registryServiceId -> serviceId
  *   v11 -> v12: Diagram.folderId pointing at a folder the workspace does
  *               not have is cleared, so the diagram lands at the root
+ *   v13 -> v14: state.serviceCatalog -> state.services
  *
  * Each test loads a v-shape fixture, runs `mergePersistedState`, and
  * asserts the post-migration shape. The migration is idempotent:
@@ -78,8 +79,8 @@ describe("v6 -> v7: ComponentType processos -> process-node", () => {
   });
 });
 
-describe("v7 -> v8: serviceRegistry -> serviceCatalog", () => {
-  it("copies serviceRegistry to serviceCatalog and drops the legacy key", () => {
+describe("v7 -> v8: serviceRegistry -> services", () => {
+  it("copies serviceRegistry to services and drops the legacy key", () => {
     const state = {
       diagrams: {},
       serviceRegistry: {
@@ -88,16 +89,15 @@ describe("v7 -> v8: serviceRegistry -> serviceCatalog", () => {
       },
     } as unknown as Partial<DiagramStore>;
     const next = mergePersistedState(state, {} as DiagramStore);
-    const catalog = (next as unknown as { serviceCatalog: Record<string, { name: string }> })
-      .serviceCatalog;
+    const catalog = (next as unknown as { services: Record<string, { name: string }> }).services;
     expect(catalog["svc-a"]?.name).toBe("A");
     expect(catalog["svc-b"]?.name).toBe("B");
     expect((next as unknown as { serviceRegistry?: unknown }).serviceRegistry).toBeUndefined();
   });
 
-  it("fixes the latent bug: when serviceRegistry is migrated, the legacy key must be dropped (not serviceCatalog)", () => {
+  it("fixes the latent bug: when serviceRegistry is migrated, the legacy key must be dropped (not services)", () => {
     // This is a regression test for the v7 -> v8 migration that had
-    // `delete record.serviceCatalog` instead of `delete record.serviceRegistry`.
+    // `delete record.services` instead of `delete record.serviceRegistry`.
     // Without the fix, the first save after the migration would have left
     // a stale `serviceRegistry` key. The migration is fixed in persist.config.ts;
     // this test guards against re-introducing the typo.
@@ -111,17 +111,50 @@ describe("v7 -> v8: serviceRegistry -> serviceCatalog", () => {
     expect((next as unknown as { serviceRegistry?: unknown }).serviceRegistry).toBeUndefined();
   });
 
-  it("is idempotent: serviceCatalog stays serviceCatalog", () => {
+  it("is idempotent: services stays services", () => {
     const state = {
       diagrams: {},
-      serviceCatalog: {
+      services: {
         "svc-a": { id: "svc-a", name: "A" },
       },
     } as unknown as Partial<DiagramStore>;
     const next = mergePersistedState(state, {} as DiagramStore);
-    const catalog = (next as unknown as { serviceCatalog: Record<string, { name: string }> })
-      .serviceCatalog;
+    const catalog = (next as unknown as { services: Record<string, { name: string }> }).services;
     expect(catalog["svc-a"]?.name).toBe("A");
+  });
+});
+
+describe("v13 -> v14: serviceCatalog -> services", () => {
+  it("copies serviceCatalog to services and drops the legacy key", () => {
+    const state = {
+      diagrams: {},
+      serviceCatalog: {
+        "svc-a": { id: "svc-a", name: "A" },
+        "svc-b": { id: "svc-b", name: "B" },
+      },
+    } as unknown as Partial<DiagramStore>;
+    const next = mergePersistedState(state, {} as DiagramStore);
+    const services = (next as unknown as { services: Record<string, { name: string }> }).services;
+    expect(services["svc-a"]?.name).toBe("A");
+    expect(services["svc-b"]?.name).toBe("B");
+    expect((next as unknown as { serviceCatalog?: unknown }).serviceCatalog).toBeUndefined();
+  });
+
+  it("drops the legacy key even when services already has content", () => {
+    const state = {
+      diagrams: {},
+      services: {
+        "svc-keep": { id: "svc-keep", name: "Keep" },
+      },
+      serviceCatalog: {
+        "svc-old": { id: "svc-old", name: "Old" },
+      },
+    } as unknown as Partial<DiagramStore>;
+    const next = mergePersistedState(state, {} as DiagramStore);
+    const services = (next as unknown as { services: Record<string, { name: string }> }).services;
+    expect(services["svc-keep"]?.name).toBe("Keep");
+    expect(services["svc-old"]).toBeUndefined();
+    expect((next as unknown as { serviceCatalog?: unknown }).serviceCatalog).toBeUndefined();
   });
 });
 

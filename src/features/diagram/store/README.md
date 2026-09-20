@@ -4,7 +4,7 @@ The Zustand store is assembled in `diagram.store.ts` by composing specialized
 slice functions.
 
 Action hooks such as `useDiagramActions`, `useIconActions`, and
-`useRegistryActions` live in `diagram.store.ts`.
+`useServiceActions` live in `diagram.store.ts`.
 Selector hooks now live in `store/selectors/`.
 
 ## Slice composition

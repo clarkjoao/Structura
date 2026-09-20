@@ -65,7 +65,7 @@ export function DefectDojoConfigForm({ config, onSave, onClear }: Props) {
 
   const handleClearRemoveSourceId = () => {
     const store = useDiagramStore.getState();
-    Object.values(store.serviceCatalog).forEach((svc) => {
+    Object.values(store.services).forEach((svc) => {
       const nextSources = normalizeSources(svc).filter((source) => source.type !== "defectdojo");
       if (nextSources.length !== normalizeSources(svc).length) {
         store.updateService(svc.id, {

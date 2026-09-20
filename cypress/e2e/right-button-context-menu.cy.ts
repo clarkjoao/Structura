@@ -86,7 +86,7 @@ function buildPayload(): string {
       },
       folders: {},
       userTemplates: {},
-      serviceRegistry: {},
+      services: {},
       activeDiagramId: DIAGRAM_ID,
       past: [],
       future: [],

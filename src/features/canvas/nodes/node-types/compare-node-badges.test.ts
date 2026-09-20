@@ -22,7 +22,7 @@ function createMinimalNodeBuildContext(
     resolvedComponents: {},
     resolvedNodeLayouts: {},
     sceneBadgeByComponentId: {},
-    serviceCatalog: {},
+    services: {},
     allDiagrams: {},
     selectedNodeId: null,
     selectedNodeIds: new Set(),

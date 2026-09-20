@@ -21,7 +21,7 @@ interface PluginPanelSlotProps {
   slot: SlotId;
   /** Component ids the panel context exposes as `selection` (element-inspector slot). */
   selectionIds?: readonly string[];
-  /** Service the panel context exposes as `service` (service-registry slot). */
+  /** Service the panel context exposes as `service` (services-import slot). */
   serviceId?: string | null;
 }
 
@@ -38,7 +38,7 @@ export function PluginPanelSlot({
     state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined,
   );
   const service = useDiagramStore((state) =>
-    serviceId ? state.serviceCatalog[serviceId] : undefined,
+    serviceId ? state.services[serviceId] : undefined,
   );
   const updateComponentAction = useDiagramStore((state) => state.updateComponent);
   const updateServiceAction = useDiagramStore((state) => state.updateService);

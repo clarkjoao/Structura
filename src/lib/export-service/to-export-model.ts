@@ -210,7 +210,7 @@ interface BaseGeometry {
 function mapNode(
   c: Component,
   nl: NodeLayout,
-  serviceCatalog: Record<string, ServiceDefinition>,
+  services: Record<string, ServiceDefinition>,
 ): ExportNode {
   const base: BaseGeometry = {
     id: c.id,
@@ -230,7 +230,7 @@ function mapNode(
     if (node.kind === "c4" && node.serviceId) {
       return {
         ...node,
-        serviceName: serviceCatalog[node.serviceId]?.name,
+        serviceName: services[node.serviceId]?.name,
       };
     }
     return node;
@@ -332,7 +332,7 @@ function expandWithContainerAncestors(
  */
 export function diagramToExportModel(
   diagram: Diagram | DiagramModel,
-  serviceCatalog: Record<string, ServiceDefinition>,
+  services: Record<string, ServiceDefinition>,
   options?: { componentIds?: string[] },
 ): ExportModel {
   const resolved = diagramWithResolvedScene(diagram);
@@ -385,7 +385,7 @@ export function diagramToExportModel(
   for (const id of Object.keys(components)) {
     const nl = layoutMap[id];
     if (!nl) continue;
-    nodes.push(mapNode(components[id], nl, serviceCatalog));
+    nodes.push(mapNode(components[id], nl, services));
   }
 
   const edges: ExportEdge[] = Object.values(connections).map((conn) =>

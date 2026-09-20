@@ -118,7 +118,7 @@ describe("a new optional field on a step needs no migration", () => {
       ...(stateWithStep({ id: "s1", type: "action", title: "Kept" }) as DiagramStore),
       folders: {},
       userTemplates: {},
-      serviceCatalog: {},
+      services: {},
       activeDiagramId: "d1",
     } as DiagramStore);
 
@@ -169,7 +169,7 @@ describe("a new optional field on a step needs no migration", () => {
       }) as DiagramStore),
       folders: {},
       userTemplates: {},
-      serviceCatalog: {},
+      services: {},
       activeDiagramId: "d1",
     } as DiagramStore);
 
@@ -181,7 +181,7 @@ describe("a new optional field on a step needs no migration", () => {
     expect(readStep(reloaded).context).toEqual({ sets: { score: "0.12" } });
   });
 
-  it("is schema 13 after the cloudServiceId cutover (F6b)", () => {
-    expect(PERSIST_SCHEMA_VERSION).toBe(13);
+  it("is schema 14 after the Services rename (serviceCatalog → services)", () => {
+    expect(PERSIST_SCHEMA_VERSION).toBe(14);
   });
 });

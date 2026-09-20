@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`ServiceCatalog` → `Services`** (`PERSIST_SCHEMA_VERSION` 13 → 14).
+  Canonical product name is **Services** / **Serviços**. Persist field
+  `serviceCatalog` → `services` (still migrates legacy `serviceRegistry`);
+  FS manifests dual-read `serviceCatalog`; route `/services` with redirect
+  from `/catalog`; i18n namespace `services.*`; hooks `useServices` /
+  `useServiceActions`; plugin slot `services-import` (legacy
+  `service-registry-import` accepted). draw.io XML attrs
+  (`registryService`, `registryId`, `c4RegistryBadge`) unchanged for
+  round-trip compatibility.
+
 ### Added
 
 - `docs/grammar/`: canonical glossary of the Structura modeling language
@@ -67,8 +79,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `useAllJourneys`, `useJourneysStore`, `useJourneyPlayer`,
   `useJourneysByDiagramId`. Use the canonical `Walkthrough*` names
   instead.
-- **Deprecated `useRegistryActions` alias removed.** Use
-  `useCatalogActions` instead.
+- **Deprecated `useServiceActions` alias removed.** Use
+  `useServiceActions` instead.
 
 ### Fixed
 
@@ -142,7 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `FlowNodeComponent` / `FlowNodeData` / `isFlowNodeComponent` /
   `COMPONENT_TYPE_FLOW_NODE` / `COMPONENT_TYPE_PROCESSOS` types
   and constants (alias of `ProcessNode*`).
-- `useRegistryActions` hook (alias of `useCatalogActions`).
+- `useCatalogActions` hook (alias of `useServiceCatalog` at the time;
+  later superseded by `useServiceActions` / `useServices`).
 - `useServiceRegistry` selector (alias of `useServiceCatalog`).
 - i18n keys `nav.registry`, `elementPicker.registry`,
   `registry.*` (alias of `nav.services`, `elementPicker.services`,

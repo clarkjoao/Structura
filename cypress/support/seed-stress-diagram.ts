@@ -208,7 +208,7 @@ export function buildStressSeed(options?: {
       diagrams: { [diagramId]: diagram },
       folders: {},
       userTemplates: {},
-      serviceRegistry: {},
+      services: {},
       activeDiagramId: diagramId,
       past: [],
       future: [],

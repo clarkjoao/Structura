@@ -136,7 +136,7 @@ function emptyDiagramPayload(): string {
       diagrams: { [DIAGRAM_ID]: diagram },
       folders: {},
       userTemplates: {},
-      serviceRegistry: {},
+      services: {},
       activeDiagramId: DIAGRAM_ID,
       past: [],
       future: [],

@@ -49,8 +49,8 @@ function getSceneComponent(state: Partial<DiagramStore>, id: string): Record<str
 }
 
 describe("v12 -> v13: aws/gcp/azureService -> cloudServiceId", () => {
-  it("bumps PERSIST_SCHEMA_VERSION to 13", () => {
-    expect(PERSIST_SCHEMA_VERSION).toBe(13);
+  it("keeps PERSIST_SCHEMA_VERSION at or above 13 (cloudServiceId cutover)", () => {
+    expect(PERSIST_SCHEMA_VERSION).toBeGreaterThanOrEqual(13);
   });
 
   it("unifies legacy cloud fields on snapshot components and scene additions", () => {

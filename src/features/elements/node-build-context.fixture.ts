@@ -28,7 +28,7 @@ export function emptyNodeBuildContext(overrides: Partial<NodeBuildContext> = {})
     resolvedComponents: {} as Record<string, Component>,
     resolvedNodeLayouts: {} as Record<string, NodeLayout>,
     sceneBadgeByComponentId: {},
-    serviceCatalog: {},
+    services: {},
     allDiagrams: {},
     selectedNodeId: null,
     selectedNodeIds: new Set<string>(),

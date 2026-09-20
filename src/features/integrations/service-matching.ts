@@ -156,15 +156,15 @@ interface BuildRelinkPlanParams {
   /** Entries from the file's manifest, or the fallback entries when it has none. */
   entries: ServiceManifestEntry[];
   components: Component[];
-  localCatalog: Record<string, ServiceDefinition>;
+  localServices: Record<string, ServiceDefinition>;
 }
 
 export function buildServiceRelinkPlan({
   entries,
   components,
-  localCatalog,
+  localServices,
 }: BuildRelinkPlanParams): ServiceRelinkPlan {
-  const localServices = Object.values(localCatalog);
+  const localServiceList = Object.values(localServices);
   const grouped = componentsByServiceId(components);
   const plan: ServiceRelinkPlan = { alreadyLocal: [], relink: [], unmatched: [] };
 
@@ -172,7 +172,7 @@ export function buildServiceRelinkPlan({
     const linked = grouped.get(entry.id) ?? [];
     const componentIds = linked.map((component) => component.id);
 
-    if (localCatalog[entry.id]) {
+    if (localServices[entry.id]) {
       plan.alreadyLocal.push(entry);
       continue;
     }
@@ -180,7 +180,7 @@ export function buildServiceRelinkPlan({
     const componentLinkUrls = linked.flatMap((component) =>
       (component.externalLinks ?? []).map((link) => link.url),
     );
-    const match = matchServiceEntry(entry, localServices, componentLinkUrls);
+    const match = matchServiceEntry(entry, localServiceList, componentLinkUrls);
 
     if (match.kind === "match") {
       plan.relink.push({

@@ -54,7 +54,7 @@ export const Badges = memo(function Badges({
     (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       if (!serviceId) return;
-      navigate(`/catalog?serviceId=${encodeURIComponent(serviceId)}`);
+      navigate(`/services?serviceId=${encodeURIComponent(serviceId)}`);
     },
     [navigate, serviceId],
   );

@@ -14,7 +14,7 @@ function buildContext(): NodeBuildContext {
     resolvedComponents: {},
     resolvedNodeLayouts: {},
     sceneBadgeByComponentId: {},
-    serviceCatalog: {},
+    services: {},
     allDiagrams: {},
     selectedNodeId: null,
     selectedNodeIds: new Set<string>(),

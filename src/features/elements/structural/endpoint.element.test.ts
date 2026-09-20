@@ -32,7 +32,7 @@ function context(
     resolvedComponents: overrides.components ?? {},
     resolvedNodeLayouts: {},
     sceneBadgeByComponentId: {},
-    serviceCatalog: {},
+    services: {},
     allDiagrams: {},
     selectedNodeId: null,
     selectedNodeIds: new Set<string>(),

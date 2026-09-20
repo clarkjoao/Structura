@@ -170,7 +170,7 @@ function WriteProjection() {
     highlightedNodeIds: editorModes.highlightedNodeIds,
     isCompareMode: editorModes.isCompareMode,
     compareVisualByComponentId: editorModes.compareVisualByComponentId,
-    serviceCatalog: {},
+    services: {},
     allDiagrams: store.diagrams as Record<string, Diagram>,
     handleDrillDown: () => {},
     handlePanelCollapseToggle: () => {},

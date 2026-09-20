@@ -53,7 +53,7 @@ function buildPayload(opts: {
       diagrams: { [opts.diagramId]: diagram },
       folders: {},
       userTemplates: {},
-      serviceRegistry: {},
+      services: {},
       activeDiagramId: opts.diagramId,
       past: [],
       future: [],

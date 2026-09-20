@@ -2,7 +2,7 @@ import type { Component } from "../../model/diagram.types";
 import type { ServiceDefinition } from "../../model/service.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { SEED_SERVICE_REGISTRY } from "@/fixtures/seeds";
+import { SEED_SERVICES } from "@/fixtures/seeds";
 import { normalizeSources } from "@/features/integrations/merge-utils";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
@@ -93,7 +93,7 @@ export const servicesSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-  serviceCatalog: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICE_REGISTRY,
+  services: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICES,
 
   addService: (service: Omit<ServiceDefinition, "id">): ServiceDefinition => {
     const svc: ServiceDefinition = {
@@ -102,14 +102,14 @@ export const servicesSlice = (
       id: generateId("svc"),
     };
     set((state) => {
-      state.serviceCatalog[svc.id] = svc;
+      state.services[svc.id] = svc;
     });
     return svc;
   },
 
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => {
     set((state) => {
-      const svc = state.serviceCatalog[id];
+      const svc = state.services[id];
       if (!svc) return;
 
       const shouldSyncDiagrams = patchTouchesLinkedComponentFields(patch);
@@ -130,7 +130,7 @@ export const servicesSlice = (
   removeService: (id: string) => {
     set((state) => {
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      delete state.serviceCatalog[id];
+      delete state.services[id];
       Object.values(state.diagrams).forEach((entry) => {
         Object.values(entry.snapshot.components).forEach((c) => {
           if (c.serviceId === id) c.serviceId = undefined;
@@ -176,7 +176,7 @@ export const servicesSlice = (
         return;
       }
 
-      const service = state.serviceCatalog[serviceId];
+      const service = state.services[serviceId];
       if (!service) {
         touchDiagram(d);
         return;

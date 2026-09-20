@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { ServiceDefinition } from "@/features/diagram";
-import { ServiceReadOnlyDetails } from "@/pages/serviceCatalog/ServiceReadOnlyDetails";
+import { ServiceReadOnlyDetails } from "@/pages/services/ServiceReadOnlyDetails";
 import { ServiceLinkSection } from "../sections/ServiceLinkSection";
 
 export interface ServicesTabProps {

@@ -35,9 +35,9 @@ const Navbar = () => {
               }
             />
             <NavItem
-              to="/catalog"
-              label={t("nav.registry")}
-              active={pathname.startsWith("/catalog")}
+              to="/services"
+              label={t("nav.services")}
+              active={pathname.startsWith("/services") || pathname.startsWith("/catalog")}
             />
             <NavItem
               to="/plugins"
