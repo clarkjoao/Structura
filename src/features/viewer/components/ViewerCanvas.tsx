@@ -228,9 +228,9 @@ const ViewerCanvasContent = ({
   //   ← / ↑  go back one step
   //
   // Skipped under `previewMode` (the editor preview is selecting, not
-  // playing) and when focus is in a text field, contenteditable, or the
-  // canvas is mid-drag (so it never fights the diagram editor or any
-  // input). Cmd/Ctrl/Alt are also required to be unmodified.
+  // playing) and when focus is in a text field, contenteditable, or any
+  // element that should consume keystrokes (so it never fights inputs or
+  // native browser shortcuts). Cmd/Ctrl/Alt/Shift must be unmodified.
   useEffect(() => {
     if (previewMode) return;
     function isEditableTarget(target: EventTarget | null): boolean {
