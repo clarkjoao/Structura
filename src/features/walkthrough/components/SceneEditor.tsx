@@ -1,11 +1,9 @@
 import { useState, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Trash2, GripVertical, ChevronDown, ChevronRight, Play, MapPin } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Play, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,

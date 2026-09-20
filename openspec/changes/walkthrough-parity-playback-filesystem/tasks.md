@@ -29,37 +29,37 @@ green on its own. See `design.md — Migration Plan` for why this order.
 
 ## 4. Sidecar persistence primitives
 
-- [ ] 4.1 Add `src/infrastructure/persistence/sidecarFiles.ts` with `SIDECAR_SUFFIXES` and `isSidecarFileName`, commented that the list must outlive the walkthrough feature; verify by unit test that `wt_1.walkthrough.json` matches and `d-abc.json` does not
-- [ ] 4.2 Make `_scanDirectory` and `_scanAllDiagrams` skip sidecar names before validating; verify by test that a scan of a directory holding one diagram and one walkthrough file finds the diagram and reports zero invalid files
-- [ ] 4.3 Extract `resolveFolderPathSegments(folderId, folders)` and refactor `resolveDiagramPathSegments` onto it; verify existing `FileSystemAdapter` tests pass and a nested folder id chain resolves identically
-- [ ] 4.4 Add `writeSidecar`, `deleteSidecarAtSegments` and `scanSidecars(suffix)` to `FileSystemAdapter`; verify by test that a written sidecar is found by `scanSidecars` with its path segments and disappears after delete
+- [x] 4.1 Add `src/infrastructure/persistence/sidecarFiles.ts` with `SIDECAR_SUFFIXES` and `isSidecarFileName`, commented that the list must outlive the walkthrough feature; verify by unit test that `wt_1.walkthrough.json` matches and `d-abc.json` does not
+- [x] 4.2 Make `_scanDirectory` and `_scanAllDiagrams` skip sidecar names before validating; verify by test that a scan of a directory holding one diagram and one walkthrough file finds the diagram and reports zero invalid files
+- [x] 4.3 Extract `resolveFolderPathSegments(folderId, folders)` and refactor `resolveDiagramPathSegments` onto it; verify existing `FileSystemAdapter` tests pass and a nested folder id chain resolves identically
+- [x] 4.4 Add `writeSidecar`, `deleteSidecarAtSegments` and `scanSidecars(suffix)` to `FileSystemAdapter`; verify by test that a written sidecar is found by `scanSidecars` with its path segments and disappears after delete
 
 ## 5. Generic sidecar sync engine
 
-- [ ] 5.1 Add `src/infrastructure/persistence/createSidecarSync.ts` with debounce, proactive `checkPermission`, and write/delete of changed items; verify by test that two rapid changes produce one write and that a permission failure writes nothing
-- [ ] 5.2 Add move detection (delete at old segments, write at new) to the engine; verify by test that changing an item's `folderId` leaves exactly one file, in the new directory
-- [ ] 5.3 Add the per-workspace synced-id set, persisted through `IStoragePort`; verify by test that the key is workspace-scoped and that ids accumulate across flushes
-- [ ] 5.4 Implement the three-case hydration reconciliation; verify by test, one per row of the table in `design.md`: on disk → adopt newer by `updatedAt`; absent and never synced here → written to disk; absent and previously synced here → deleted locally and **not** rewritten
-- [ ] 5.5 Verify the removability guarantee end to end: write items, delete the files outside the engine, hydrate, and assert the items are gone locally and no file reappears
+- [x] 5.1 Add `src/infrastructure/persistence/createSidecarSync.ts` with debounce, proactive `checkPermission`, and write/delete of changed items; verify by test that two rapid changes produce one write and that a permission failure writes nothing
+- [x] 5.2 Add move detection (delete at old segments, write at new) to the engine; verify by test that changing an item's `folderId` leaves exactly one file, in the new directory
+- [x] 5.3 Add the per-workspace synced-id set, persisted through `IStoragePort`; verify by test that the key is workspace-scoped and that ids accumulate across flushes
+- [x] 5.4 Implement the three-case hydration reconciliation; verify by test, one per row of the table in `design.md`: on disk → adopt newer by `updatedAt`; absent and never synced here → written to disk; absent and previously synced here → deleted locally and **not** rewritten
+- [x] 5.5 Verify the removability guarantee end to end: write items, delete the files outside the engine, hydrate, and assert the items are gone locally and no file reappears
 
 ## 6. Walkthrough file sync
 
-- [ ] 6.1 Add `src/features/walkthrough/model/walkthroughFile.ts` with the `kind` / `schemaVersion` envelope, `toFile` / `fromFile`, and a guard that rejects a wrong kind or a future version; verify by unit test that a round trip is lossless and a malformed file is rejected rather than throwing
-- [ ] 6.2 Add `src/features/walkthrough/persistence/walkthroughFileSync.ts` instantiating `createSidecarSync` against the walkthrough store, started when the module loads and only while a folder is connected; verify creating a walkthrough with a folder connected produces `<id>.walkthrough.json` in that folder's directory
-- [ ] 6.3 Delete the file when a walkthrough is deleted, falling back to a `{ "deleted": true }` marker if removal fails; verify by test that deleting removes the file, and that a failing `removeEntry` leaves the marker
-- [ ] 6.4 Hydrate the walkthrough store from `scanSidecars` when the library opens with a folder connected; verify a walkthrough file placed on disk out of band appears in the library
-- [ ] 6.5 Verify local storage still holds every walkthrough with a folder connected, and that disconnecting the folder leaves the library intact
+- [x] 6.1 Add `src/features/walkthrough/model/walkthroughFile.ts` with the `kind` / `schemaVersion` envelope, `toFile` / `fromFile`, and a guard that rejects a wrong kind or a future version; verify by unit test that a round trip is lossless and a malformed file is rejected rather than throwing
+- [x] 6.2 Add `src/features/walkthrough/persistence/walkthroughFileSync.ts` instantiating `createSidecarSync` against the walkthrough store, started when the module loads and only while a folder is connected; verify creating a walkthrough with a folder connected produces `<id>.walkthrough.json` in that folder's directory
+- [x] 6.3 Delete the file when a walkthrough is deleted, falling back to a `{ "deleted": true }` marker if removal fails; verify by test that deleting removes the file, and that a failing `removeEntry` leaves the marker
+- [x] 6.4 Hydrate the walkthrough store from `scanSidecars` when the library opens with a folder connected; verify a walkthrough file placed on disk out of band appears in the library
+- [x] 6.5 Verify local storage still holds every walkthrough with a folder connected, and that disconnecting the folder leaves the library intact
 
 ## 7. Editing surfaces
 
 - [x] 7.1 Add a description field to `AddWalkthroughDialog`; verify a walkthrough created with a description shows it on its card
-- [ ] 7.2 Add description and author-notes editing to `WalkthroughEditorPage`; verify an edited description reaches the library, and that author notes are never rendered by the player
-- [ ] 7.3 Replace the manual Save button with debounced autosave; verify by test that a title change followed by an unmount is present when the walkthrough is read back
+- [x] 7.2 Add description and author-notes editing to `WalkthroughEditorPage`; verify an edited description reaches the library, and that author notes are never rendered by the player
+- [x] 7.3 Replace the manual Save button with debounced autosave; verify by test that a title change followed by an unmount is present when the walkthrough is read back
 
 ## 8. i18n and gates
 
 - [x] 8.1 Add the missing `walkthrough.*` keys (`create.*`, `folderTree.*`, `empty.*`, `delete`) plus every string added by groups 1–7 to `en.json` and `pt-BR.json`, and strip the inline `t(key, "English default")` fallbacks across the module; verify by a script that every `walkthrough.*` key referenced in `src/features/walkthrough` resolves in both locales
-- [ ] 8.2 Run `npm run typecheck && npm run lint && npm run format:check && npm run test` and report the output against the recorded baseline; verify typecheck is green, that every file this change touches is lint- and format-clean, and that no test fails which passed at baseline
+- [x] 8.2 Run `npm run typecheck && npm run lint && npm run format:check && npm run test` and report the output against the recorded baseline; verify typecheck is green, that every file this change touches is lint- and format-clean, and that no test fails which passed at baseline
 
 > **Baseline, measured at `d1b8efc` before any source change.** `typecheck` green.
 > `test`: 13 files / 35 tests failing, all under `features/canvas/*` and `features/llm/*`.

@@ -29,6 +29,7 @@ import {
   type WalkthroughSortKey,
 } from "../walkthroughFiltering";
 import { readFavoriteWalkthroughIds, toggleFavoriteWalkthrough } from "../favoriteWalkthroughs";
+import { startWalkthroughFileSync } from "../persistence/walkthroughFileSync";
 import type { WalkthroughPresentation } from "../model/walkthrough.types";
 
 export default function WalkthroughLibraryPage() {
@@ -64,6 +65,14 @@ export default function WalkthroughLibraryPage() {
   useEffect(() => {
     void readFavoriteWalkthroughIds().then(setFavoriteIds);
   }, []);
+
+  // Mirroring into the connected folder starts when the library opens rather
+  // than at boot: reconciling is a directory walk, and a session that never
+  // looks at a walkthrough should not pay for it.
+  useEffect(() => {
+    if (!hydrated) return;
+    void startWalkthroughFileSync();
+  }, [hydrated]);
 
   const favoriteIdSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
   const allPresentations = useMemo(() => Object.values(presentations), [presentations]);

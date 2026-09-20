@@ -20,6 +20,15 @@ interface WalkthroughStoreActions {
   delete(id: string): Promise<void>;
   /** Get a single presentation by id. */
   get(id: string): WalkthroughPresentation | undefined;
+  /**
+   * Replace the whole set.
+   *
+   * Used by the workspace-folder reconciliation, which is the one caller that
+   * legitimately both adds and removes in a single step — a per-id loop would
+   * write local storage once per walkthrough and leave the library visibly
+   * half-reconciled in between.
+   */
+  replaceAll(presentations: Record<string, WalkthroughPresentation>): Promise<void>;
 }
 
 export type WalkthroughStore = WalkthroughStoreState & WalkthroughStoreActions;
@@ -58,6 +67,11 @@ export const useWalkthroughStore = create<WalkthroughStore>((set, get) => ({
   },
 
   get: (id: string) => get().presentations[id],
+
+  replaceAll: async (presentations: Record<string, WalkthroughPresentation>) => {
+    await storage.save(STORAGE_KEY, presentations);
+    set({ presentations, hydrated: true });
+  },
 }));
 
 /** Create a new blank presentation with a generated id. */
