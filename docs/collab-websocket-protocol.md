@@ -349,7 +349,7 @@ Must be **byte-identical** in the server, the Go port and the browser client, or
 the detector fires on rooms that never drifted.
 
 1. Hash exactly these keys, in this order — no more:
-   `activeSceneId, compareSceneId, components, connections, description,
+   `activeVersionId, compareVersionId, components, connections, description,
    diagramName, domain, edgeLayouts, flows, iconLibrary, nodeLayouts, scenes`.
 
    Anything that cannot be synced (ids, `level`, `viewport`) is excluded: it

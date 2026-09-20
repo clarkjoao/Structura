@@ -159,7 +159,7 @@ link fields.
 
 - **Pros:** Zero migration. Matches how users think while sketching ("this is
   *my* drawing"). Deleting a diagram has obvious semantics. Free-form and
-  semantic elements coexist trivially. Undo/redo, scenes, collaboration all
+  semantic elements coexist trivially. Undo/redo, versions, collaboration all
   stay diagram-scoped and simple.
 - **Cons:** The same real-world system drawn in five diagrams is five
   unrelated components — renames don't propagate, the Architecture Map can
@@ -204,7 +204,7 @@ The recommended path:
    a model element (or link it to an existing one). Promoted elements share
    identity across diagrams — a rename propagates. Unpromoted components keep
    working exactly as today. Diagrams remain documents that own layout,
-   annotations, scenes, and narrative.
+   annotations, versions, and narrative.
 4. **Only then decide** whether the model becomes fully authoritative. By that
    point real usage data exists, and the migration is a ratchet users opted
    into rather than a cliff.

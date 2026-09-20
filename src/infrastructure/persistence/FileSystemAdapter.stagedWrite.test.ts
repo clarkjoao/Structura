@@ -202,7 +202,7 @@ describe("FileSystemAdapter two-phase commit", () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       diagramIds: ["d2"],
-      serviceCatalog: {},
+      services: {},
       folders: {},
       activeDiagramId: "d2",
     });

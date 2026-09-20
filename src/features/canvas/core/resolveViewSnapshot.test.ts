@@ -108,7 +108,7 @@ describe("resolveViewSnapshot is pure", () => {
   });
 
   it("works with a descriptor lookup of the caller's choosing", () => {
-    const view = resolveViewSnapshot(diagram(), { sceneId: null }, describeNode);
+    const view = resolveViewSnapshot(diagram(), { versionId: null }, describeNode);
     expect(view.nodes.map((node) => [node.component.id, node.zIndex, node.isChild])).toEqual([
       ["P", -1, false],
       ["a", 0, true],
@@ -119,13 +119,13 @@ describe("resolveViewSnapshot is pure", () => {
 describe("the editor keeps the snapshot identity its memos depend on", () => {
   it("returns the cached snapshot when asked for the scenes the diagram has open", () => {
     const d = diagram();
-    expect(resolveViewScene(d, { sceneId: null })).toBe(resolveViewScene(d, { sceneId: null }));
+    expect(resolveViewScene(d, { versionId: null })).toBe(resolveViewScene(d, { versionId: null }));
   });
 
   it("resolves the base afresh when a link asks for it while the author sits in a scene", () => {
     const d = diagram({
-      activeSceneId: "s1",
-      scenes: {
+      activeVersionId: "s1",
+      versions: {
         s1: {
           id: "s1",
           name: "s1",
@@ -139,8 +139,8 @@ describe("the editor keeps the snapshot identity its memos depend on", () => {
         },
       },
     });
-    expect(Object.keys(resolveViewScene(d, { sceneId: "s1" }).components)).toEqual(["P"]);
-    expect(Object.keys(resolveViewScene(d, { sceneId: null }).components).sort()).toEqual([
+    expect(Object.keys(resolveViewScene(d, { versionId: "s1" }).components)).toEqual(["P"]);
+    expect(Object.keys(resolveViewScene(d, { versionId: null }).components).sort()).toEqual([
       "P",
       "a",
     ]);

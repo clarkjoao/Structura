@@ -26,7 +26,7 @@ import { PERSIST_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 export const PERSIST_KEY = "diagram-store";
 
-export const PERSIST_SCHEMA_VERSION = 13;
+export const PERSIST_SCHEMA_VERSION = 15;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -37,7 +37,7 @@ export function partializeState(state: DiagramStore) {
     diagrams: state.diagrams,
     folders: state.folders,
     userTemplates: state.userTemplates,
-    serviceCatalog: state.serviceCatalog,
+    services: state.services,
     activeDiagramId: state.activeDiagramId,
   };
 }
@@ -53,7 +53,7 @@ export function buildPersistStoragePayload(state: DiagramStore): {
 }
 
 function migrateServiceSources(state: DiagramStore): DiagramStore {
-  Object.values(state.serviceCatalog).forEach((service) => {
+  Object.values(state.services).forEach((service) => {
     const svc = service as ServiceDefinition;
     if (svc.sources && svc.sources.length > 0) return;
     if (svc.source) {
@@ -245,7 +245,7 @@ function migrateFlowNodeTypeToProcessos(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrateComponents(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrateComponents(scene.addedComponents);
     }
   }
@@ -269,31 +269,78 @@ function migrateProcessNodeTypeToProcessNode(state: Partial<DiagramStore>): void
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrateComponents(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrateComponents(scene.addedComponents);
     }
   }
 }
 
-/** Schema v8: rename the persisted state field `serviceRegistry` →
- * `serviceCatalog`. The values inside are unchanged. The migration is
- * idempotent: if `serviceCatalog` already exists with content (e.g. a
- * workspace saved at v8 is re-read at v8), the right-hand side is
- * short-circuited. Note: the currentState spread always sets
- * `serviceCatalog = {}` (the in-memory default), so the "not present"
- * check must look at whether the dictionary is empty, not at
- * `undefined`. The legacy key is always dropped. */
-function migrateServiceRegistryToServiceCatalog(state: Record<string, unknown>): void {
-  const legacy = state.serviceRegistry;
+/** Copy a legacy services dictionary onto `state.services` when empty, then
+ * drop the legacy key. Shared by the v8 (`serviceRegistry`) and v14
+ * (`serviceCatalog`) renames. */
+function adoptLegacyServicesKey(
+  state: Record<string, unknown>,
+  legacyKey: "serviceRegistry" | "serviceCatalog",
+): void {
+  const legacy = state[legacyKey];
   if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
-    const existing = state.serviceCatalog as Record<string, unknown> | undefined;
+    const existing = state.services as Record<string, unknown> | undefined;
     const existingIsEmpty = !existing || Object.keys(existing).length === 0;
     if (existingIsEmpty) {
-      state.serviceCatalog = legacy as Record<string, unknown>;
+      state.services = legacy as Record<string, unknown>;
     }
   }
-  delete state.serviceRegistry;
+  delete state[legacyKey];
 }
+
+/** Schema v8: `serviceRegistry` → `services` (via the intermediate name
+ * `serviceCatalog` on disk for workspaces that never hit v14). Always drops
+ * the legacy key. */
+function migrateServiceRegistryToServices(state: Record<string, unknown>): void {
+  adoptLegacyServicesKey(state, "serviceRegistry");
+}
+
+/** Schema v14: `serviceCatalog` → `services`. Idempotent; always drops the
+ * legacy key. Runs after the v8 migration so a workspace that still has
+ * only `serviceRegistry` lands on `services` in one pass. */
+function migrateServiceCatalogToServices(state: Record<string, unknown>): void {
+  adoptLegacyServicesKey(state, "serviceCatalog");
+}
+
+/** Schema v15: `scenes` / `activeSceneId` / `compareSceneId` →
+ * `versions` / `activeVersionId` / `compareVersionId` on every diagram.
+ * Idempotent; always drops the legacy keys. */
+function migrateDiagramScenesToVersions(diagram: Record<string, unknown>): void {
+  const legacyScenes = diagram.scenes;
+  if (legacyScenes && typeof legacyScenes === "object" && !Array.isArray(legacyScenes)) {
+    const existing = diagram.versions as Record<string, unknown> | undefined;
+    const existingIsEmpty = !existing || Object.keys(existing).length === 0;
+    if (existingIsEmpty) {
+      diagram.versions = legacyScenes;
+    }
+  }
+  delete diagram.scenes;
+
+  if ("activeSceneId" in diagram) {
+    if (diagram.activeVersionId === undefined) {
+      diagram.activeVersionId = diagram.activeSceneId;
+    }
+    delete diagram.activeSceneId;
+  }
+  if ("compareSceneId" in diagram) {
+    if (diagram.compareVersionId === undefined) {
+      diagram.compareVersionId = diagram.compareSceneId;
+    }
+    delete diagram.compareSceneId;
+  }
+}
+
+function migrateScenesToVersions(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    migrateDiagramScenesToVersions(diagram as unknown as Record<string, unknown>);
+  }
+}
+
 
 /** Schema v10: rename `ExternalElementComponent.linkedDiagramId` to
  * `referenceDiagramId`. The two fields had the same name but different
@@ -315,7 +362,7 @@ function migrateExternalElementLinkedDiagramId(state: Partial<DiagramStore>): vo
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrate(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrate(scene.addedComponents);
     }
   }
@@ -345,7 +392,7 @@ function migrateUnifyRegistryServiceId(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrate(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrate(scene.addedComponents);
     }
   }
@@ -382,7 +429,7 @@ export function migrateUnifyCloudServiceId(state: Partial<DiagramStore>): void {
   for (const diagram of Object.values(state.diagrams ?? {})) {
     const d = diagram as Diagram;
     migrate(d.snapshot?.components);
-    for (const scene of Object.values(d.scenes ?? {})) {
+    for (const scene of Object.values(d.versions ?? {})) {
       migrate(scene.addedComponents);
     }
   }
@@ -503,9 +550,12 @@ export function mergePersistedState(
   state._flowSession = null;
   state._flowSewNotices = null;
 
-  if (!state.serviceCatalog) state.serviceCatalog = {};
+  if (!state.services) state.services = {};
   if (!state.folders) state.folders = {};
   migrateAddUserTemplates(state);
+
+  // v15 must run before migrators that walk diagram.versions.
+  migrateScenesToVersions(state);
 
   let next = state;
   next = migrateServiceSources(next);
@@ -522,7 +572,8 @@ export function mergePersistedState(
   migrateAddDiagramDescription(next);
   migrateFlowNodeTypeToProcessos(next);
   migrateProcessNodeTypeToProcessNode(next);
-  migrateServiceRegistryToServiceCatalog(next as unknown as Record<string, unknown>);
+  migrateServiceRegistryToServices(next as unknown as Record<string, unknown>);
+  migrateServiceCatalogToServices(next as unknown as Record<string, unknown>);
   migrateExternalElementLinkedDiagramId(next);
   migrateUnifyRegistryServiceId(next);
   migrateUnifyCloudServiceId(next);

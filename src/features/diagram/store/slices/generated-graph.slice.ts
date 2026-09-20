@@ -11,7 +11,7 @@ import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
-import { resolveActiveScene, writeComponentAndLayout } from "../helpers/scene-helpers";
+import { resolveActiveVersion, writeComponentAndLayout } from "../helpers/version-helpers";
 import { buildComponentForType } from "./components.slice";
 
 /**
@@ -98,7 +98,7 @@ export const generatedGraphSlice = (
       if (!diagram) return;
       committed = true;
 
-      const scene = resolveActiveScene(diagram);
+      const scene = resolveActiveVersion(diagram);
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
       for (const node of nodes) {

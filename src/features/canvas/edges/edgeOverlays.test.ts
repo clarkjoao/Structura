@@ -48,7 +48,7 @@ function projectedEdge(): Edge {
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
   } as Diagram;
-  const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+  const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
   return projectEdges(
     view,
     {

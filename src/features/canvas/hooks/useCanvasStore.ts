@@ -3,12 +3,12 @@ import {
   useDiagrams,
   useVisibleComponents,
   useVisibleConnections,
-  useServiceRegistry,
+  useServices,
   useDiagramActions,
   useFlows,
 } from "@/features/diagram";
 
-const EMPTY_REGISTRY: Record<string, never> = {};
+const EMPTY_SERVICES: Record<string, never> = {};
 
 export function useCanvasStore() {
   const diagram = useActiveDiagramModel();
@@ -16,18 +16,18 @@ export function useCanvasStore() {
   // Selectors now memoize their own arrays — no wrapper needed.
   const visibleComponents = useVisibleComponents();
   const visibleConnections = useVisibleConnections();
-  const serviceCatalog = useServiceRegistry();
+  const services = useServices();
   const flows = useFlows();
   const actions = useDiagramActions();
 
-  const stableRegistry = serviceCatalog ?? EMPTY_REGISTRY;
+  const stableServices = services ?? EMPTY_SERVICES;
 
   return {
     diagram,
     allDiagrams,
     visibleComponents,
     visibleConnections,
-    serviceCatalog: stableRegistry,
+    services: stableServices,
     flows,
     actions,
   };

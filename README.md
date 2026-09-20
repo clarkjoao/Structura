@@ -99,7 +99,7 @@ src/
 │   └── chat/              # LLM chat UI components (stateless)
 ├── infrastructure/
 │   └── persistence/       # IStoragePort, LocalStorageAdapter, InMemoryAdapter
-├── pages/                 # Dashboard, Workspace, ServiceCatalog, Index
+├── pages/                 # Dashboard, Workspace, ServicesPage, Index
 └── lib/                   # aws-catalog, export-service, github-import, utils
 ```
 

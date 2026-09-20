@@ -2,8 +2,8 @@ import { ExternalLink, ExternalLink as ExternalLinkIcon, User } from "lucide-rea
 import { useTranslation } from "react-i18next";
 import { normalizeSources } from "@/features/integrations/merge-utils";
 import type { ServiceDefinition } from "@/features/diagram";
-import { SOURCE_BADGE } from "./registry.constants";
-import { sourceTypeLabel } from "./registryLabels";
+import { SOURCE_BADGE } from "./services.constants";
+import { sourceTypeLabel } from "./serviceLabels";
 
 export interface ServiceReadOnlyDetailsProps {
   svc: ServiceDefinition;
@@ -83,7 +83,7 @@ export function ServiceReadOnlyDetails({ svc }: ServiceReadOnlyDetailsProps) {
       {defectDojoProductLink && (
         <div className="flex items-start gap-2">
           <span className="text-[11px] text-muted-foreground w-20 shrink-0 pt-0.5">
-            {t("registry.productLabel")}
+            {t("services.productLabel")}
           </span>
           <a
             href={defectDojoProductLink}

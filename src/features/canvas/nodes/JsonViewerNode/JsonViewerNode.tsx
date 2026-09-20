@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useDiagramActions } from "@/features/diagram";
 import { useTheme } from "@/hooks/useTheme";
-import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { JsonViewerNodeData, JsonViewerMode } from "./JsonViewerNode.types";
 
@@ -227,15 +227,15 @@ const JsonViewerNode = memo(
           }
         >
           {diagramNodeData.compareBadges && (
-            <CompareSceneBadges
+            <CompareVersionBadges
               a={diagramNodeData.compareBadges.a}
               b={diagramNodeData.compareBadges.b}
             />
           )}
-          {!diagramNodeData.compareBadges && diagramNodeData.sceneBadge && (
-            <SceneElementBadge
-              name={diagramNodeData.sceneBadge.name}
-              color={diagramNodeData.sceneBadge.color}
+          {!diagramNodeData.compareBadges && diagramNodeData.versionBadge && (
+            <VersionElementBadge
+              name={diagramNodeData.versionBadge.name}
+              color={diagramNodeData.versionBadge.color}
             />
           )}
 

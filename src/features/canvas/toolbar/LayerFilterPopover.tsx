@@ -7,7 +7,7 @@ export interface LayerFilterPopoverProps {
   allTags: string[];
   /** null means "no tag filter active" (all tags visible). */
   visibleTags: Set<string> | null;
-  scenesPickerLocked?: boolean;
+  versionsPickerLocked?: boolean;
   onToggle: (tag: string) => void;
   onShowAll: () => void;
   onShowNoTags: () => void;
@@ -16,7 +16,7 @@ export interface LayerFilterPopoverProps {
 export function LayerFilterPopover({
   allTags,
   visibleTags,
-  scenesPickerLocked,
+  versionsPickerLocked,
   onToggle,
   onShowAll,
   onShowNoTags,
@@ -29,17 +29,17 @@ export function LayerFilterPopover({
       <PopoverTrigger asChild>
         <button
           type="button"
-          disabled={noTags || scenesPickerLocked}
+          disabled={noTags || versionsPickerLocked}
           title={
             noTags
               ? t("canvas.toolbar.noTags")
-              : scenesPickerLocked
+              : versionsPickerLocked
                 ? t("diagramNav.unavailableWhileRecordingOrPlayback")
                 : t("canvas.toolbar.filterByTag")
           }
           className={cn(
             "relative flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors",
-            (noTags || scenesPickerLocked) && "opacity-50 pointer-events-none",
+            (noTags || versionsPickerLocked) && "opacity-50 pointer-events-none",
           )}
         >
           <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />

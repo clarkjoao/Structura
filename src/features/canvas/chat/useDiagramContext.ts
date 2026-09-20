@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import {
   type Diagram,
   getCachedCanvasSnapshot,
-  resolveActiveScene,
+  resolveActiveVersion,
   useActiveDiagramModel,
 } from "@/features/diagram";
 import { serializeDiagramContext } from "@/features/llm";
@@ -36,12 +36,12 @@ export function useDiagramContext(params: {
       snapshot: getCachedCanvasSnapshot(activeDiagram),
     } as unknown as Diagram;
 
-    const activeScene = resolveActiveScene(activeDiagram);
+    const activeVersion = resolveActiveVersion(activeDiagram);
 
     return serializeDiagramContext(resolvedDiagram, {
       includeMetadata: true,
       includeLinks: true,
-      activeScene: activeScene ?? undefined,
+      activeVersion: activeVersion ?? undefined,
     });
   }, [activeModel]);
 

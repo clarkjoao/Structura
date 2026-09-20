@@ -26,7 +26,7 @@ a neutral IR into mxGraph XML, with **zero** dependency on `@/features/*` or the
 plugin snapshot (enforced by a unit guard). Each side owns a thin adapter into
 the IR:
 
-- app: `Diagram + nodeLayouts + edgeLayouts + serviceCatalog → ExportModel`
+- app: `Diagram + nodeLayouts + edgeLayouts + services → ExportModel`
   (`export-service/to-export-model.ts`)
 - plugin: `DiagramSnapshot → ExportModel`
   (`export-drawio/to-export-model.ts`)

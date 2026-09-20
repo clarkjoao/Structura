@@ -14,7 +14,7 @@ interface CanvasDiagramNavParams {
   diagramSidebarOpen?: boolean;
   onDiagramSidebarOpenChange?: (open: boolean) => void;
   navigate: NavigateFunction;
-  setShowScenes: Dispatch<SetStateAction<boolean>>;
+  setShowVersions: Dispatch<SetStateAction<boolean>>;
 }
 
 interface CanvasDiagramNavResult {
@@ -33,21 +33,21 @@ function useCloseAllOnNavLock({
   setShowCommandPalette,
   setShowSearch,
   setShowDiagramSidebar,
-  setShowScenes,
+  setShowVersions,
 }: {
   diagramNavLocked: boolean;
   setShowCommandPalette: (v: boolean) => void;
   setShowSearch: (v: boolean) => void;
   setShowDiagramSidebar: Dispatch<SetStateAction<boolean>>;
-  setShowScenes: Dispatch<SetStateAction<boolean>>;
+  setShowVersions: Dispatch<SetStateAction<boolean>>;
 }) {
   useEffect(() => {
     if (!diagramNavLocked) return;
     setShowCommandPalette(false);
     setShowSearch(false);
     setShowDiagramSidebar(false);
-    setShowScenes(false);
-  }, [diagramNavLocked, setShowDiagramSidebar, setShowScenes]);
+    setShowVersions(false);
+  }, [diagramNavLocked, setShowDiagramSidebar, setShowVersions]);
 }
 
 export function useCanvasDiagramNavigation(params: CanvasDiagramNavParams): CanvasDiagramNavResult {
@@ -61,7 +61,7 @@ export function useCanvasDiagramNavigation(params: CanvasDiagramNavParams): Canv
     diagramSidebarOpen: controlledDiagramSidebarOpen,
     onDiagramSidebarOpenChange,
     navigate,
-    setShowScenes,
+    setShowVersions,
   } = params;
 
   const [showSearch, setShowSearch] = useState(false);
@@ -136,7 +136,7 @@ export function useCanvasDiagramNavigation(params: CanvasDiagramNavParams): Canv
     setShowCommandPalette,
     setShowSearch,
     setShowDiagramSidebar,
-    setShowScenes,
+    setShowVersions,
   });
 
   return {

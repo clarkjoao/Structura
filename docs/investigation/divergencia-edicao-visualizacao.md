@@ -69,7 +69,7 @@ fonte de escrita no modo edição. Detalhes e ordem de migração no §5.
 ```
                  EDITOR (Canvas.tsx)                         LEITOR (ViewerCanvas.tsx)
 dado       store: state.diagrams[activeDiagramId]       prop `diagram` (payload / arquivo / store)
-           getCachedCanvasSnapshot → cena ATIVA         resolveSceneSnapshot(diagram, null) → BASE
+           getCachedCanvasSnapshot → cena ATIVA         resolveVersionSnapshot(diagram, null) → BASE
            ↓                                            ↓ (?diagramId / ?source=file: ELK antes)
 filtro     useVisibleComponents: tem nodeLayout         filter(!component.hidden)
            useVisibleConnections: pontas com layout     todas as conexões
@@ -158,8 +158,8 @@ todas as outras edges daquele lado. Ocorre em dado importado ou gerado que chego
 ### 3.4 Cena ativa — **LIDO NO CÓDIGO**, deliberado
 
 O editor resolve a cena ativa (`getCachedCanvasSnapshot` → `resolveCanvasSnapshot`). O leitor
-força a base: `resolveSceneSnapshot(diagram, null)` (`projectReadDiagram.ts:91`), e o link remove
-`activeSceneId` do payload (`lib/share-url/encode.ts:47-59`). As duas escolhas estão documentadas
+força a base: `resolveVersionSnapshot(diagram, null)` (`projectReadDiagram.ts:91`), e o link remove
+`activeVersionId` do payload (`lib/share-url/encode.ts:47-59`). As duas escolhas estão documentadas
 e fazem sentido para compartilhamento. Mas um autor que compara o editor (com cena aberta) ao
 link vê componentes, conexões e layouts diferentes (`scene.nodeLayouts` sobrescreve posições).
 Classifico como **divergência esperada**. Vale expor ao autor ("este link mostra a base"), não
@@ -241,7 +241,7 @@ local, e não do diagrama, pode aparecer só no editor.
 
 | responsabilidade | editor | leitor |
 |---|---|---|
-| resolver cena | `getCachedCanvasSnapshot` (ativa) | `resolveSceneSnapshot(…, null)` (base) |
+| resolver cena | `getCachedCanvasSnapshot` (ativa) | `resolveVersionSnapshot(…, null)` (base) |
 | visibilidade de componente | `useVisibleComponents` (tem layout) + `computeNodeVisibility` (hidden, colapso) | `!component.hidden` |
 | visibilidade de conexão | `useVisibleConnections` + `filterVisibleConnections` | nenhuma |
 | z-index | `layout.zIndex ?? descriptor` | `descriptor` |
@@ -283,7 +283,7 @@ do §3 são exatamente isso.
   pontas, sem seleção RF.
 - Nós travados (`draggable/selectable/connectable=false`, `lockForReading`), com
   `.flow-play-control` reabilitando `pointer-events` (`ViewerCanvas.css`).
-- Base sempre, sem cena ativa; `activeSceneId` removido no encode.
+- Base sempre, sem cena ativa; `activeVersionId` removido no encode.
 - ELK automático em `?diagramId`/`?source=file` e **nunca** em `#data=`/`postMessage`
   (`ViewerPage.unified.test.tsx`).
 - Estado de flow local (sem store), `FlowInvite`, `initialFlowId` respeitado uma vez.
@@ -325,8 +325,8 @@ do §3 são exatamente isso.
 Princípios:
 
 1. **Um `resolveViewSnapshot` só** decide quem aparece, com que z e em que ordem, e recebe
-   `{ sceneId, respectUserZ: true, hideCollapsedDescendants: true, requireLayout: true }`. O
-   leitor passa `sceneId: null`, e **só isso** deve diferir. As quatro regras do §3.1-3.4 passam a
+   `{ versionId, respectUserZ: true, hideCollapsedDescendants: true, requireLayout: true }`. O
+   leitor passa `versionId: null`, e **só isso** deve diferir. As quatro regras do §3.1-3.4 passam a
    existir uma vez. `computeNodeVisibility` vira parte dele (a parte de seleção fica como overlay
    do editor).
 2. **Um `projectDiagram` puro.** `projectReadDiagram` já é quase isso. O trabalho é o editor passar

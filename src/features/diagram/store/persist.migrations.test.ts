@@ -8,12 +8,14 @@ import type { Component } from "../model/diagram.types";
  * under feat/glossary:
  *
  *   v6 -> v7: ComponentType "processos" -> "process-node"
- *   v7 -> v8: state.serviceRegistry -> state.serviceCatalog
+ *   v7 -> v8: state.serviceRegistry -> state.services
  *   v9 -> v10: ExternalElementComponent.linkedDiagramId ->
  *              referenceDiagramId
  *   v10 -> v11: Component.registryServiceId -> serviceId
  *   v11 -> v12: Diagram.folderId pointing at a folder the workspace does
  *               not have is cleared, so the diagram lands at the root
+ *   v13 -> v14: state.serviceCatalog -> state.services
+ *   v14 -> v15: diagram.scenes -> diagram.versions
  *
  * Each test loads a v-shape fixture, runs `mergePersistedState`, and
  * asserts the post-migration shape. The migration is idempotent:
@@ -25,7 +27,7 @@ function makeStateWithComponents(components: Record<string, Component>): Partial
     diagrams: {
       d1: {
         snapshot: { components },
-        scenes: {},
+        versions: {},
       } as never,
     },
   } as Partial<DiagramStore>;
@@ -78,8 +80,8 @@ describe("v6 -> v7: ComponentType processos -> process-node", () => {
   });
 });
 
-describe("v7 -> v8: serviceRegistry -> serviceCatalog", () => {
-  it("copies serviceRegistry to serviceCatalog and drops the legacy key", () => {
+describe("v7 -> v8: serviceRegistry -> services", () => {
+  it("copies serviceRegistry to services and drops the legacy key", () => {
     const state = {
       diagrams: {},
       serviceRegistry: {
@@ -88,16 +90,15 @@ describe("v7 -> v8: serviceRegistry -> serviceCatalog", () => {
       },
     } as unknown as Partial<DiagramStore>;
     const next = mergePersistedState(state, {} as DiagramStore);
-    const catalog = (next as unknown as { serviceCatalog: Record<string, { name: string }> })
-      .serviceCatalog;
+    const catalog = (next as unknown as { services: Record<string, { name: string }> }).services;
     expect(catalog["svc-a"]?.name).toBe("A");
     expect(catalog["svc-b"]?.name).toBe("B");
     expect((next as unknown as { serviceRegistry?: unknown }).serviceRegistry).toBeUndefined();
   });
 
-  it("fixes the latent bug: when serviceRegistry is migrated, the legacy key must be dropped (not serviceCatalog)", () => {
+  it("fixes the latent bug: when serviceRegistry is migrated, the legacy key must be dropped (not services)", () => {
     // This is a regression test for the v7 -> v8 migration that had
-    // `delete record.serviceCatalog` instead of `delete record.serviceRegistry`.
+    // `delete record.services` instead of `delete record.serviceRegistry`.
     // Without the fix, the first save after the migration would have left
     // a stale `serviceRegistry` key. The migration is fixed in persist.config.ts;
     // this test guards against re-introducing the typo.
@@ -111,17 +112,112 @@ describe("v7 -> v8: serviceRegistry -> serviceCatalog", () => {
     expect((next as unknown as { serviceRegistry?: unknown }).serviceRegistry).toBeUndefined();
   });
 
-  it("is idempotent: serviceCatalog stays serviceCatalog", () => {
+  it("is idempotent: services stays services", () => {
     const state = {
       diagrams: {},
-      serviceCatalog: {
+      services: {
         "svc-a": { id: "svc-a", name: "A" },
       },
     } as unknown as Partial<DiagramStore>;
     const next = mergePersistedState(state, {} as DiagramStore);
-    const catalog = (next as unknown as { serviceCatalog: Record<string, { name: string }> })
-      .serviceCatalog;
+    const catalog = (next as unknown as { services: Record<string, { name: string }> }).services;
     expect(catalog["svc-a"]?.name).toBe("A");
+  });
+});
+
+describe("v13 -> v14: serviceCatalog -> services", () => {
+  it("copies serviceCatalog to services and drops the legacy key", () => {
+    const state = {
+      diagrams: {},
+      serviceCatalog: {
+        "svc-a": { id: "svc-a", name: "A" },
+        "svc-b": { id: "svc-b", name: "B" },
+      },
+    } as unknown as Partial<DiagramStore>;
+    const next = mergePersistedState(state, {} as DiagramStore);
+    const services = (next as unknown as { services: Record<string, { name: string }> }).services;
+    expect(services["svc-a"]?.name).toBe("A");
+    expect(services["svc-b"]?.name).toBe("B");
+    expect((next as unknown as { serviceCatalog?: unknown }).serviceCatalog).toBeUndefined();
+  });
+
+  it("drops the legacy key even when services already has content", () => {
+    const state = {
+      diagrams: {},
+      services: {
+        "svc-keep": { id: "svc-keep", name: "Keep" },
+      },
+      serviceCatalog: {
+        "svc-old": { id: "svc-old", name: "Old" },
+      },
+    } as unknown as Partial<DiagramStore>;
+    const next = mergePersistedState(state, {} as DiagramStore);
+    const services = (next as unknown as { services: Record<string, { name: string }> }).services;
+    expect(services["svc-keep"]?.name).toBe("Keep");
+    expect(services["svc-old"]).toBeUndefined();
+    expect((next as unknown as { serviceCatalog?: unknown }).serviceCatalog).toBeUndefined();
+  });
+});
+
+describe("v14 -> v15: scenes -> versions", () => {
+  it("renames scenes / activeSceneId / compareSceneId on each diagram", () => {
+    const state = {
+      diagrams: {
+        d1: {
+          id: "d1",
+          snapshot: { components: {}, connections: {} },
+          scenes: {
+            s1: { id: "s1", name: "TO-BE", addedComponents: {}, addedConnections: {} },
+          },
+          activeSceneId: "s1",
+          compareSceneId: null,
+        },
+      },
+    } as unknown as Partial<DiagramStore>;
+    const next = mergePersistedState(state, {} as DiagramStore);
+    const d1 = (
+      next as unknown as {
+        diagrams: Record<
+          string,
+          {
+            versions?: Record<string, { name: string }>;
+            activeVersionId?: string | null;
+            compareVersionId?: string | null;
+            scenes?: unknown;
+            activeSceneId?: unknown;
+            compareSceneId?: unknown;
+          }
+        >;
+      }
+    ).diagrams.d1;
+    expect(d1.versions?.["s1"]?.name).toBe("TO-BE");
+    expect(d1.activeVersionId).toBe("s1");
+    expect(d1.compareVersionId).toBeNull();
+    expect(d1.scenes).toBeUndefined();
+    expect(d1.activeSceneId).toBeUndefined();
+    expect(d1.compareSceneId).toBeUndefined();
+  });
+
+  it("is idempotent when versions already present", () => {
+    const state = {
+      diagrams: {
+        d1: {
+          id: "d1",
+          snapshot: { components: {}, connections: {} },
+          versions: {
+            v1: { id: "v1", name: "Keep", addedComponents: {}, addedConnections: {} },
+          },
+          activeVersionId: "v1",
+        },
+      },
+    } as unknown as Partial<DiagramStore>;
+    const next = mergePersistedState(state, {} as DiagramStore);
+    const d1 = (
+      next as unknown as {
+        diagrams: Record<string, { versions?: Record<string, { name: string }> }>;
+      }
+    ).diagrams.d1;
+    expect(d1.versions?.["v1"]?.name).toBe("Keep");
   });
 });
 
@@ -161,7 +257,7 @@ describe("v9 -> v10: ExternalElementComponent.linkedDiagramId -> referenceDiagra
       diagrams: {
         d1: {
           snapshot: { components: {} },
-          scenes: {
+          versions: {
             s1: {
               addedComponents: {
                 e1: {
@@ -179,7 +275,7 @@ describe("v9 -> v10: ExternalElementComponent.linkedDiagramId -> referenceDiagra
       next.diagrams as unknown as Record<
         string,
         {
-          scenes: Record<
+          versions: Record<
             string,
             {
               addedComponents: Record<
@@ -190,7 +286,7 @@ describe("v9 -> v10: ExternalElementComponent.linkedDiagramId -> referenceDiagra
           >;
         }
       >
-    ).d1.scenes.s1.addedComponents.e1;
+    ).d1.versions.s1.addedComponents.e1;
     expect(e1.referenceDiagramId).toBe("diag-target");
     expect(e1.linkedDiagramId).toBeUndefined();
   });
@@ -277,7 +373,7 @@ describe("v11 -> v12: orphaned Diagram.folderId is cleared", () => {
       diagrams: Object.fromEntries(
         Object.entries(diagrams).map(([id, diagram]) => [
           id,
-          { ...diagram, snapshot: { components: {} }, scenes: {} } as never,
+          { ...diagram, snapshot: { components: {} }, versions: {} } as never,
         ]),
       ),
       folders: folders as never,

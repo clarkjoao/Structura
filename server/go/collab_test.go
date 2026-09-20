@@ -230,10 +230,10 @@ func TestSnapshotChecksumMatchesTypeScript(t *testing.T) {
 		{"unsyncedKeyIgnored", `{"components":{},"viewport":{"x":1,"y":2},"id":"nope"}`, "3b8713165e54a21c"},
 		{"unicode", `{"diagramName":"coração 🇧🇷 <b>&"}`, "19f19832eb7c19dc"},
 		{"booleans", `{"components":{"a":{"locked":true,"hidden":false}}}`, "55c0129007a63b2a"},
-		{"allKeys", `{"activeSceneId":"s1","compareSceneId":null,"components":{"a":{"id":"a"}},` +
+		{"allKeys", `{"activeVersionId":"s1","compareVersionId":null,"components":{"a":{"id":"a"}},` +
 			`"connections":{"c":{"id":"c"}},"description":"d","diagramName":"n","domain":"dom",` +
 			`"edgeLayouts":{"e":{"id":"e"}},"flows":{"f":{"id":"f"}},"iconLibrary":{"i":{"id":"i"}},` +
-			`"nodeLayouts":{"l":{"x":0}},"scenes":{"s":{"id":"s"}}}`, "1e8b44c08d1cbcce"},
+			`"nodeLayouts":{"l":{"x":0}},"versions":{"s":{"id":"s"}}}`, "9dc14d944c250de2"},
 	}
 
 	for _, v := range vectors {

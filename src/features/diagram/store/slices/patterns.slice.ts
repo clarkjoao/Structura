@@ -122,8 +122,8 @@ export const patternsSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       committed = true;
-      const sid = d.activeSceneId ?? null;
-      const scene = sid && d.scenes?.[sid] ? d.scenes[sid] : null;
+      const sid = d.activeVersionId ?? null;
+      const scene = sid && d.versions?.[sid] ? d.versions[sid] : null;
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       template.components.forEach((raw, i) => {
         let component: Component;

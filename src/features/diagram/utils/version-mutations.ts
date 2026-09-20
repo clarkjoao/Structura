@@ -7,7 +7,7 @@ import {
   toFlowSewNotices,
   type FlowSewNotice,
 } from "./flow-repair";
-import { baseConnectionsTouchingAny, collectBaseDescendantIds } from "./scene.utils";
+import { baseConnectionsTouchingAny, collectBaseDescendantIds } from "./version.utils";
 
 /**
  * Sews the base flows after a scene dropped elements it had added itself.
@@ -44,12 +44,12 @@ function sewFlowsAfterSceneRemoval(
  * joins come back to be said out loud. A component from the base is only
  * hidden: nothing leaves the model, no flow changes, and the list is empty.
  */
-export function mutateRemoveComponentInScene(
+export function mutateRemoveComponentInVersion(
   d: Diagram,
-  sceneId: string,
+  versionId: string,
   componentId: string,
 ): FlowSewNotice[] {
-  const sc = d.scenes?.[sceneId];
+  const sc = d.versions?.[versionId];
   if (!sc) return [];
 
   if (sc.addedComponents[componentId]) {
@@ -140,12 +140,12 @@ export function mutateRemoveComponentInScene(
  * Same split as components: one the scene added is deleted for good and the
  * flows are sewn; one from the base is only hidden and nothing changes.
  */
-export function mutateRemoveConnectionInScene(
+export function mutateRemoveConnectionInVersion(
   d: Diagram,
-  sceneId: string,
+  versionId: string,
   connectionId: string,
 ): FlowSewNotice[] {
-  const sc = d.scenes?.[sceneId];
+  const sc = d.versions?.[versionId];
   if (!sc) return [];
 
   const added = sc.addedConnections[connectionId];

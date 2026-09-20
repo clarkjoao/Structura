@@ -6,12 +6,12 @@ import { isPanelType } from "@/features/diagram";
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import CloudIcon from "../../nodes/CloudIcon";
 import { PickerSectionHeader } from "./PickerSectionHeader";
-import { PICKER_CARD_CLASS, REGISTRY_PREVIEW_LIMIT } from "./constants";
+import { PICKER_CARD_CLASS, SERVICES_PREVIEW_LIMIT } from "./constants";
 import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
 import { ElementCategory, type PickerCategoryId } from "../../enums";
 import type { C4PickerOption } from "./buildPickerOptions";
-import { RegistryServiceRow } from "./RegistryServiceRow";
+import { ServiceRow } from "./ServiceRow";
 
 export function ElementPickerAllView({
   C4_OPTIONS,
@@ -134,31 +134,31 @@ export function ElementPickerAllView({
       <section>
         {services.length === 0 ? (
           <>
-            <PickerSectionHeader sectionLabel={t("elementPicker.registry")} />
+            <PickerSectionHeader sectionLabel={t("elementPicker.services")} />
             <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
-              <p className="text-sm text-muted-foreground">{t("elementPicker.registryEmpty")}</p>
+              <p className="text-sm text-muted-foreground">{t("elementPicker.servicesEmpty")}</p>
               <Link
-                to="/workspace"
+                to="/services"
                 className="text-sm font-medium text-primary hover:underline"
                 onClick={onClose}
               >
-                {t("elementPicker.openRegistry")}
+                {t("elementPicker.openServices")}
               </Link>
             </div>
           </>
         ) : (
           <>
             <PickerSectionHeader
-              sectionLabel={t("elementPicker.registry")}
-              showViewAll={services.length > REGISTRY_PREVIEW_LIMIT}
-              viewAllLabel={t("elementPicker.viewAllRegistry")}
-              onViewAll={() => setCategory(ElementCategory.Registry)}
+              sectionLabel={t("elementPicker.services")}
+              showViewAll={services.length > SERVICES_PREVIEW_LIMIT}
+              viewAllLabel={t("elementPicker.viewAllServices")}
+              onViewAll={() => setCategory(ElementCategory.Services)}
             />
             <div className="space-y-2">
-              {services.slice(0, REGISTRY_PREVIEW_LIMIT).map((svc) => {
+              {services.slice(0, SERVICES_PREVIEW_LIMIT).map((svc) => {
                 const isOnCanvas = onCanvasServiceIds.has(svc.id);
                 return (
-                  <RegistryServiceRow
+                  <ServiceRow
                     key={svc.id}
                     svc={svc}
                     isOnCanvas={isOnCanvas}

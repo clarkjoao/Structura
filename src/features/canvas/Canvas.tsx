@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import CanvasToolbar from "./toolbar/CanvasToolbar";
-import { ConnectedSceneDrawer } from "./toolbar/SceneDrawer";
+import { ConnectedVersionDrawer } from "./toolbar/VersionDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { useNodeTypes } from "./nodes/node-types";
@@ -153,8 +153,8 @@ const Canvas = (props: CanvasProps = {}) => {
     setShowDiagramSidebar,
     showCommandPalette,
     setShowCommandPalette,
-    showScenes,
-    setShowScenes,
+    showVersions,
+    setShowVersions,
     handleSelectDiagram,
     handleSearchSelect,
     focusTitleTrigger,
@@ -219,10 +219,10 @@ const Canvas = (props: CanvasProps = {}) => {
   }, [isFlowActive, isChatOpen]);
 
   useEffect(() => {
-    if (isFlowActive && showScenes) {
-      setShowScenes(false);
+    if (isFlowActive && showVersions) {
+      setShowVersions(false);
     }
-  }, [isFlowActive, showScenes, setShowScenes]);
+  }, [isFlowActive, showVersions, setShowVersions]);
 
   useEffect(() => {
     if (isFlowActive && showDiagramSidebar) {
@@ -231,8 +231,8 @@ const Canvas = (props: CanvasProps = {}) => {
   }, [isFlowActive, showDiagramSidebar, setShowDiagramSidebar]);
 
   useEffect(() => {
-    setShowScenes(false);
-  }, [diagram?.id, setShowScenes]);
+    setShowVersions(false);
+  }, [diagram?.id, setShowVersions]);
 
   const accept = useCallback(
     (suggestionId: string) => {
@@ -316,7 +316,7 @@ const Canvas = (props: CanvasProps = {}) => {
       <div className="flex-1 flex relative h-full min-h-0">
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
-          {showScenes && <ConnectedSceneDrawer onClose={() => setShowScenes(false)} />}
+          {showVersions && <ConnectedVersionDrawer onClose={() => setShowVersions(false)} />}
           <CanvasToolbar
             onDrillUp={onDrillUp}
             isPanelOpen={isPanelOpen}
@@ -324,7 +324,7 @@ const Canvas = (props: CanvasProps = {}) => {
             setSelectedNodeId={visualState.setSelectedNodeId}
             setSelectedNodeIds={visualState.setSelectedNodeIds}
             setSelectedEdgeId={visualState.setSelectedEdgeId}
-            onOpenScenes={() => setShowScenes(true)}
+            onOpenVersions={() => setShowVersions(true)}
             isFlowActive={isFlowActive}
             allTags={allDiagramTags}
             visibleTags={visualState.visibleTags}

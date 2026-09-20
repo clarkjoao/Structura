@@ -31,9 +31,9 @@ import { useCanvasMediaPaste } from "./useCanvasMediaPaste";
 
 interface UseCanvasKeyboardParams {
   diagram: Diagram | DiagramModel | null | undefined;
-  setCompareScene: (sceneId: string | null) => void;
+  setCompareVersion: (versionId: string | null) => void;
   isCompareMode?: boolean;
-  serviceCatalog: Record<string, ServiceDefinition>;
+  services: Record<string, ServiceDefinition>;
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
   reactFlowInstance: ReactFlowInstance;
@@ -75,8 +75,8 @@ interface UseCanvasKeyboardParams {
   isRecording?: boolean;
   isSearchOpen?: boolean;
   onOpenSearch?: () => void;
-  isScenesDrawerOpen?: boolean;
-  onCloseScenesDrawer?: () => void;
+  isVersionsDrawerOpen?: boolean;
+  onCloseVersionsDrawer?: () => void;
   isCommandPaletteOpen?: boolean;
   onToggleDiagramSidebar?: () => void;
   onOpenCommandPalette?: () => void;
@@ -118,9 +118,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
 
   const {
     diagram,
-    setCompareScene,
+    setCompareVersion,
     isCompareMode = false,
-    serviceCatalog,
+    services,
     selectedNodeId,
     selectedEdgeId,
     reactFlowInstance,
@@ -147,8 +147,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     isPlaying = false,
     isRecording = false,
     isSearchOpen,
-    isScenesDrawerOpen,
-    onCloseScenesDrawer,
+    isVersionsDrawerOpen,
+    onCloseVersionsDrawer,
     isCommandPaletteOpen,
     onOpenSearch,
     onToggleDiagramSidebar,
@@ -172,9 +172,9 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const exportDrawioXml = useCallback(
     (ids: string[]): string => {
       if (!diagram) return "";
-      return exportDrawio(diagram, serviceCatalog, { componentIds: ids });
+      return exportDrawio(diagram, services, { componentIds: ids });
     },
-    [diagram, serviceCatalog],
+    [diagram, services],
   );
 
   const pasteSvgAsCanvasNode = useCallback(
@@ -211,7 +211,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     importDrawioResult,
     hydrateClipboard,
     pasteSvgAsCanvasNode,
-    serviceCatalog,
+    services,
     exportDrawioXml,
     setSelectedNodeIds,
     lastPointerScreenRef,
@@ -276,13 +276,13 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       isFlowPanelOpen,
       isSearchOpen,
       isCommandPaletteOpen,
-      isScenesDrawerOpen,
+      isVersionsDrawerOpen,
     },
     hasDiagram: Boolean(diagram),
-    onCloseScenesDrawer,
+    onCloseVersionsDrawer,
     forceSaveToFolder,
     onAutoLayout,
-    setCompareScene,
+    setCompareVersion,
     recordingHandler,
     editHandlers: [
       (event) => copyPasteRef.current(event),

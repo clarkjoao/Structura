@@ -10,7 +10,9 @@ export function readStoredCategory(): PickerCategoryId {
   try {
     const v = localStorage.getItem(LAST_CATEGORY_KEY);
     if (!v) return ElementCategory.All;
-    if (isFixedCategory(v) || isRegisteredCloudFamily(v)) return v;
+    // Dual-read: pre-rename picker tab id was "registry".
+    const normalized = v === "registry" ? ElementCategory.Services : v;
+    if (isFixedCategory(normalized) || isRegisteredCloudFamily(normalized)) return normalized;
   } catch (error) {
     console.warn("[StructuraContext] element picker readStoredCategory", error);
   }

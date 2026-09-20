@@ -41,11 +41,11 @@ export interface UseCanvasInteractionParams {
   diagram: Diagram | DiagramModel | null | undefined;
   allDiagrams: Record<string, Diagram>;
   actions: DiagramActions;
-  serviceCatalog: Record<string, ServiceDefinition>;
+  services: Record<string, ServiceDefinition>;
   compareState: CompareSlice;
   flowState: FlowSlice;
-  showScenes: boolean;
-  setShowScenes: Dispatch<SetStateAction<boolean>>;
+  showVersions: boolean;
+  setShowVersions: Dispatch<SetStateAction<boolean>>;
   setFocusTitleTrigger: Dispatch<SetStateAction<number>>;
   onAutoLayout: () => void;
 }
@@ -83,11 +83,11 @@ export function useCanvasInteraction(
     diagram,
     allDiagrams,
     actions,
-    serviceCatalog,
+    services,
     compareState,
     flowState,
-    showScenes,
-    setShowScenes,
+    showVersions,
+    setShowVersions,
     setFocusTitleTrigger,
     onAutoLayout,
   } = params;
@@ -103,7 +103,7 @@ export function useCanvasInteraction(
   }, [flowState.isPlaying, flowMode]);
   const exitCompareMode = useCallback(() => {
     if (!compareState.isCompareMode) return false;
-    actions.setCompareScene(null);
+    actions.setCompareVersion(null);
     return true;
   }, [compareState.isCompareMode, actions]);
 
@@ -151,7 +151,7 @@ export function useCanvasInteraction(
     diagramSidebarOpen: canvasProps.diagramSidebarOpen,
     onDiagramSidebarOpenChange: canvasProps.onDiagramSidebarOpenChange,
     navigate,
-    setShowScenes,
+    setShowVersions,
   });
 
   const navigateToDiagram = useCallback(
@@ -238,9 +238,9 @@ export function useCanvasInteraction(
 
   useCanvasKeyboard({
     diagram,
-    setCompareScene: actions.setCompareScene,
+    setCompareVersion: actions.setCompareVersion,
     isCompareMode: compareState.isCompareMode,
-    serviceCatalog,
+    services,
     selectedNodeId: visualState.selectedNodeId,
     selectedEdgeId: visualState.selectedEdgeId,
     reactFlowInstance,
@@ -271,8 +271,8 @@ export function useCanvasInteraction(
       setShowCommandPalette(false);
       setShowSearch(true);
     },
-    isScenesDrawerOpen: showScenes,
-    onCloseScenesDrawer: () => setShowScenes(false),
+    isVersionsDrawerOpen: showVersions,
+    onCloseVersionsDrawer: () => setShowVersions(false),
     isCommandPaletteOpen: showCommandPalette,
     onToggleDiagramSidebar: () => {
       if (diagramNavLocked) return;

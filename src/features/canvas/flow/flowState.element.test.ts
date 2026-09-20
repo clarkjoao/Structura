@@ -15,7 +15,7 @@ import { describeStepElement } from "./flowState";
 const component = (id: string) => ({ id, name: id, type: "component" }) as Component;
 const connection = (id: string) => ({ id, sourceId: "c1", targetId: "c2" }) as Connection;
 
-function diagramOf(scenes: Diagram["scenes"], activeSceneId: string | null = null): Diagram {
+function diagramOf(versions: Diagram["versions"], activeVersionId: string | null = null): Diagram {
   return {
     id: "d1",
     name: "D",
@@ -28,8 +28,8 @@ function diagramOf(scenes: Diagram["scenes"], activeSceneId: string | null = nul
     },
     nodeLayouts: {},
     edgeLayouts: {},
-    scenes,
-    activeSceneId,
+    versions,
+    activeVersionId,
     createdAt: 0,
     updatedAt: 0,
   } as unknown as Diagram;
@@ -57,7 +57,7 @@ function scene(
       removedConnectionIds: diff.removedConnectionIds ?? [],
       nodeLayouts: {},
     },
-  } as unknown as Diagram["scenes"];
+  } as unknown as Diagram["versions"];
 }
 
 const stepOn = (componentId: string): FlowStep => ({ id: "s1", type: "action", componentId });
@@ -77,7 +77,7 @@ describe("the reading says why the canvas has nothing to light up", () => {
     const diagram = diagramOf(scene("sc1", "Q3 proposal", { removedComponentIds: ["c1"] }), "sc1");
     expect(describeStepElement(stepOn("c1"), diagram)).toEqual({
       kind: "hidden",
-      sceneName: "Q3 proposal",
+      versionName: "Q3 proposal",
     });
   });
 
@@ -85,7 +85,7 @@ describe("the reading says why the canvas has nothing to light up", () => {
     const diagram = diagramOf(scene("sc1", "Q3 proposal", { removedConnectionIds: ["n1"] }), "sc1");
     expect(describeStepElement(stepVia("n1"), diagram)).toEqual({
       kind: "hidden",
-      sceneName: "Q3 proposal",
+      versionName: "Q3 proposal",
     });
   });
 
@@ -99,7 +99,7 @@ describe("the reading says why the canvas has nothing to light up", () => {
     );
     expect(describeStepElement(stepOn("c1"), diagram)).toEqual({
       kind: "hidden",
-      sceneName: "Q3 proposal",
+      versionName: "Q3 proposal",
     });
   });
 
@@ -114,7 +114,7 @@ describe("the reading says why the canvas has nothing to light up", () => {
     );
     expect(describeStepElement(stepOn("own"), diagram)).toEqual({
       kind: "elsewhere",
-      sceneName: "Rollout",
+      versionName: "Rollout",
     });
   });
 

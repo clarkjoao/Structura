@@ -109,22 +109,22 @@ export type {
 } from "./flow-move";
 export { buildFlowDuplicatePatch } from "./flow-duplicate";
 
-// ─── Scene ───────────────────────────────────────────────────────────────────
+// ─── Version ───────────────────────────────────────────────────────────────────
 export {
-  resolveSceneSnapshot,
+  resolveVersionSnapshot,
   resolveCanvasSnapshot,
   resolveCompareSnapshot,
   diagramWithResolvedScene,
   exportFilenameSlug,
   canMoveNodeInSceneMode,
-  isComponentAddedInActiveScene,
+  isComponentAddedInActiveVersion,
   isDiagramCompareMode,
   buildCompareComponentVisuals,
   buildCompareConnectionVisuals,
   computeMergePreview,
-  sceneHasDiff,
-} from "./scene.utils";
-export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./scene.utils";
+  versionHasDiff,
+} from "./version.utils";
+export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./version.utils";
 
 export { buildChildrenIndex, getDescendantIdsFromIndex } from "./children-index";
 

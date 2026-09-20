@@ -16,8 +16,8 @@ export function buildContextDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 40, y: 20, zoom: 0.85 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-ctx-payer": layout("pl-ctx-payer", 40, 120, 240, 90),
       "pl-ctx-merchant": layout("pl-ctx-merchant", 40, 320, 240, 90),

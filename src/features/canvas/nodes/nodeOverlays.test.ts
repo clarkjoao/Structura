@@ -21,7 +21,7 @@ import {
   lockOverlay,
   pendingOverlay,
   readingOverlay,
-  sceneLockOverlay,
+  versionLockOverlay,
   selectedOverlay,
   tagFilterOverlay,
   type EditorNodeOverlayInput,
@@ -65,7 +65,7 @@ function projected(): { node: Node; viewNode: ViewNode } {
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
   } as Diagram;
-  const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+  const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
   const ctx = buildReadNodeContext(diagram, view.components, view.nodeLayouts, [], null, undefined);
   const nodes = projectNodes(view, ctx, writePolicy(true), resolveNodeDescriptor);
   const index = view.nodes.findIndex((n) => n.component.id === "b");
@@ -183,12 +183,12 @@ describe("each node overlay, applied alone", () => {
     },
     {
       name: "scene lock",
-      apply: (n) => sceneLockOverlay(n, true),
+      apply: (n) => versionLockOverlay(n, true),
       expectOn: (n) => {
         expect(n.draggable).toBe(false);
         expect(n.selectable).toBe(node.selectable);
       },
-      off: (n) => sceneLockOverlay(n, false),
+      off: (n) => versionLockOverlay(n, false),
     },
     {
       name: "pending",
@@ -224,7 +224,7 @@ describe("the one order overlays need", () => {
     hiddenByTag: false,
     isReading: false,
     locked: false,
-    lockedByScene: false,
+    lockedByVersion: false,
     pending: false,
   };
 

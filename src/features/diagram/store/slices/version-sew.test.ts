@@ -14,8 +14,8 @@ function sceneWithOwnComponent(store: Store) {
   const base = store.getState().addComponent("system", "Gateway", null, { x: 0, y: 0 });
   const tail = store.getState().addComponent("system", "Ledger", null, { x: 400, y: 0 });
 
-  const scene = store.getState().addScene("Proposal");
-  store.getState().setActiveScene(scene.id);
+  const scene = store.getState().addVersion("Proposal");
+  store.getState().setActiveVersion(scene.id);
   const inScene = store.getState().addComponent("system", "Cache", null, { x: 200, y: 0 });
 
   const flow = store.getState().addFlow(diagram.id, "Checkout", "")!;
@@ -26,7 +26,7 @@ function sceneWithOwnComponent(store: Store) {
   };
   store.getState().updateFlow(flow.id, { steps, entryStepId: "s1" });
 
-  return { diagramId: diagram.id, sceneId: scene.id, flowId: flow.id, base, tail, inScene };
+  return { diagramId: diagram.id, versionId: scene.id, flowId: flow.id, base, tail, inScene };
 }
 
 function readFlow(store: Store, flowId: string): Flow {
@@ -36,9 +36,9 @@ function readFlow(store: Store, flowId: string): Flow {
   return flow;
 }
 
-function sceneOf(store: Store, sceneId: string) {
+function sceneOf(store: Store, versionId: string) {
   const diagramId = store.getState().activeDiagramId!;
-  return store.getState().diagrams[diagramId]!.scenes![sceneId]!;
+  return store.getState().diagrams[diagramId]!.versions![versionId]!;
 }
 
 describe("deleting a component a scene owns", () => {
@@ -74,30 +74,30 @@ describe("deleting a component a scene owns", () => {
 
   it("puts the component and the step back together on undo", () => {
     const store = createTestDiagramStore();
-    const { flowId, sceneId, inScene } = sceneWithOwnComponent(store);
+    const { flowId, versionId, inScene } = sceneWithOwnComponent(store);
 
     store.getState().removeComponent(inScene.id);
     store.getState().undo();
 
     expect(Object.keys(readFlow(store, flowId).steps).sort()).toEqual(["s1", "s2", "s3"]);
-    expect(sceneOf(store, sceneId).addedComponents[inScene.id]).toBeDefined();
+    expect(sceneOf(store, versionId).addedComponents[inScene.id]).toBeDefined();
   });
 
   it("takes them away again on redo", () => {
     const store = createTestDiagramStore();
-    const { flowId, sceneId, inScene } = sceneWithOwnComponent(store);
+    const { flowId, versionId, inScene } = sceneWithOwnComponent(store);
 
     store.getState().removeComponent(inScene.id);
     store.getState().undo();
     store.getState().redo();
 
     expect(Object.keys(readFlow(store, flowId).steps).sort()).toEqual(["s1", "s3"]);
-    expect(sceneOf(store, sceneId).addedComponents[inScene.id]).toBeUndefined();
+    expect(sceneOf(store, versionId).addedComponents[inScene.id]).toBeUndefined();
   });
 
   it("takes the scene's own wiring with it, and sews the steps that named it", () => {
     const store = createTestDiagramStore();
-    const { diagramId, sceneId, base, inScene } = sceneWithOwnComponent(store);
+    const { diagramId, versionId, base, inScene } = sceneWithOwnComponent(store);
     const link = store.getState().addConnection(base.id, inScene.id, "warms")!;
     const flow = store.getState().addFlow(diagramId, "Wire", "")!;
     store.getState().updateFlow(flow.id, {
@@ -111,7 +111,7 @@ describe("deleting a component a scene owns", () => {
 
     store.getState().removeComponent(inScene.id);
 
-    expect(sceneOf(store, sceneId).addedConnections[link.id]).toBeUndefined();
+    expect(sceneOf(store, versionId).addedConnections[link.id]).toBeUndefined();
     expect(Object.keys(readFlow(store, flow.id).steps).sort()).toEqual(["w1", "w3"]);
   });
 
@@ -127,9 +127,9 @@ describe("deleting a component a scene owns", () => {
 
   it("sews the same way when the scene panel drops it", () => {
     const store = createTestDiagramStore();
-    const { flowId, sceneId, inScene } = sceneWithOwnComponent(store);
+    const { flowId, versionId, inScene } = sceneWithOwnComponent(store);
 
-    store.getState().removeComponentFromScene(sceneId, inScene.id);
+    store.getState().removeComponentFromVersion(versionId, inScene.id);
 
     expect(Object.keys(readFlow(store, flowId).steps).sort()).toEqual(["s1", "s3"]);
     expect(store.getState()._flowSewNotices?.notices).toHaveLength(1);
@@ -166,11 +166,11 @@ describe("hiding a base component inside a scene", () => {
 
   it("still takes the component out of the scene's view", () => {
     const store = createTestDiagramStore();
-    const { sceneId, base } = sceneWithOwnComponent(store);
+    const { versionId, base } = sceneWithOwnComponent(store);
 
     store.getState().removeComponent(base.id);
 
-    expect(sceneOf(store, sceneId).removedComponentIds).toContain(base.id);
+    expect(sceneOf(store, versionId).removedComponentIds).toContain(base.id);
   });
 });
 
@@ -185,7 +185,7 @@ describe("deleting a connection a scene owns", () => {
 
   it("closes the script up and names the connection that left", () => {
     const store = createTestDiagramStore();
-    const { diagramId, sceneId, base, tail } = sceneWithOwnComponent(store);
+    const { diagramId, versionId, base, tail } = sceneWithOwnComponent(store);
     const link = store.getState().addConnection(base.id, tail.id, "calls")!;
     const flow = store.getState().addFlow(diagramId, "Wire", "")!;
     store.getState().updateFlow(flow.id, {
@@ -196,7 +196,7 @@ describe("deleting a connection a scene owns", () => {
       },
       entryStepId: "w1",
     });
-    expect(sceneOf(store, sceneId).addedConnections[link.id]).toBeDefined();
+    expect(sceneOf(store, versionId).addedConnections[link.id]).toBeDefined();
 
     store.getState().removeConnection(link.id);
 

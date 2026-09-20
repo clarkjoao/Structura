@@ -9,9 +9,9 @@ export function extractMxGraphModelXml(fullDrawioFile: string): string {
 
 export function exportDrawio(
   diagram: Diagram | DiagramModel,
-  serviceCatalog: Record<string, ServiceDefinition>,
+  services: Record<string, ServiceDefinition>,
   options?: { componentIds?: string[] },
 ): string {
-  const model = diagramToExportModel(diagram, serviceCatalog, options);
+  const model = diagramToExportModel(diagram, services, options);
   return buildMxGraphXml(model, { wrapper: "mxfile" });
 }

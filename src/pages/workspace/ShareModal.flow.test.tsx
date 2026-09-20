@@ -39,8 +39,8 @@ function diagram(flows: Flow[]): Diagram {
     nodeLayouts: {},
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
   } as unknown as Diagram;
 }
 
@@ -61,7 +61,7 @@ describe("the share dialog names a script", () => {
     const select = screen.getByTestId("share-flow");
 
     expect(select).toHaveValue("");
-    expect(screen.getByRole("option", { name: "no script" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "no flow" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Checkout" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Refund" })).toBeInTheDocument();
   });

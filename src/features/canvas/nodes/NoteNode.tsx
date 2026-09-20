@@ -14,7 +14,7 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
-import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { singleIncomingTargetHandleId } from "./node-types/handle-spec";
 
@@ -57,7 +57,7 @@ export type NoteNodeData = {
   onToggleCollapse?: () => void;
   /** Read surfaces: the note is read, not written — a click focuses it. */
   controlsDisabled?: boolean;
-  sceneBadge?: { name: string; color: string };
+  versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
     b: { name: string; color: string };
@@ -193,9 +193,9 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-        {!d.compareBadges && d.sceneBadge && (
-          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+        {!d.compareBadges && d.versionBadge && (
+          <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
         )}
         {customDiagramIcon ? (
           <CustomIconRenderer
@@ -261,9 +261,9 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-        {!d.compareBadges && d.sceneBadge && (
-          <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+        {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+        {!d.compareBadges && d.versionBadge && (
+          <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
         )}
 
         <div

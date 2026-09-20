@@ -6,7 +6,7 @@ import { decodeShareParam, generateShareUrl, generateViewerUrl } from "./share-u
  * The script a link opens on.
  *
  * It travels beside the payload rather than inside it, for the same reason
- * `activeSceneId` was taken out of the payload: which script an author wants
+ * `activeVersionId` was taken out of the payload: which script an author wants
  * read is part of the invitation, not part of the diagram. It also means the
  * two can disagree — a link kept after its script was deleted — which is why
  * the reader checks rather than trusts.
@@ -36,8 +36,8 @@ function diagram(): Diagram {
     nodeLayouts: {},
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
   } as unknown as Diagram;
 }
 

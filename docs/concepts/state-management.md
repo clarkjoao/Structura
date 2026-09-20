@@ -24,7 +24,7 @@ AppState: diagrams, folders, userTemplates, serviceRegistry,
 AppActions: contributed by slices in store/slices/
 ```
 
-Each slice owns one concern (components, connections, flows, scenes,
+Each slice owns one concern (components, connections, flows, versions,
 folders, services, clipboard, history, layout, parenting,
 component-links, patterns, user templates, icons) and exposes actions; selectors
 live separately in `store/selectors/`. The rule: **UI calls actions and

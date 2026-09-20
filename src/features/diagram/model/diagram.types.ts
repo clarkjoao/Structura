@@ -130,7 +130,7 @@ export interface UserTemplate {
   >;
 }
 
-export interface SceneDiff {
+export interface VersionDiff {
   id: string;
   name: string;
   color: string;
@@ -156,10 +156,10 @@ export interface Diagram {
   edgeLayouts: Record<string, EdgeLayout>;
   viewport: { x: number; y: number; zoom: number };
   folderId?: string | null;
-  scenes?: Record<string, SceneDiff>;
-  activeSceneId?: string | null;
+  versions?: Record<string, VersionDiff>;
+  activeVersionId?: string | null;
 
-  compareSceneId?: string | null;
+  compareVersionId?: string | null;
 }
 
 export type DiagramModel = Omit<Diagram, "viewport">;

@@ -21,9 +21,9 @@ export interface CollabSnapshot {
   nodeLayouts: Record<string, unknown>;
   edgeLayouts: Record<string, unknown>;
   iconLibrary: Record<string, unknown>;
-  scenes: Record<string, unknown>;
-  activeSceneId: string | null;
-  compareSceneId: string | null;
+  versions: Record<string, unknown>;
+  activeVersionId: string | null;
+  compareVersionId: string | null;
 }
 
 export type CollabPatch = Partial<Omit<CollabSnapshot, "diagramId">>;
@@ -199,13 +199,13 @@ function parseSnapshot(value: unknown): CollabSnapshot | null {
   if (typeof diagramName !== "string") return null;
   if (typeof level !== "string") return null;
 
-  const activeSceneId: string | null =
-    typeof value.activeSceneId === "string" || value.activeSceneId === null
-      ? (value.activeSceneId as string | null)
+  const activeVersionId: string | null =
+    typeof value.activeVersionId === "string" || value.activeVersionId === null
+      ? (value.activeVersionId as string | null)
       : null;
-  const compareSceneId: string | null =
-    typeof value.compareSceneId === "string" || value.compareSceneId === null
-      ? (value.compareSceneId as string | null)
+  const compareVersionId: string | null =
+    typeof value.compareVersionId === "string" || value.compareVersionId === null
+      ? (value.compareVersionId as string | null)
       : null;
 
   return {
@@ -220,9 +220,9 @@ function parseSnapshot(value: unknown): CollabSnapshot | null {
     nodeLayouts: isRecord(value.nodeLayouts) ? value.nodeLayouts : {},
     edgeLayouts: isRecord(value.edgeLayouts) ? value.edgeLayouts : {},
     iconLibrary: isRecord(value.iconLibrary) ? value.iconLibrary : {},
-    scenes: isRecord(value.scenes) ? value.scenes : {},
-    activeSceneId,
-    compareSceneId,
+    versions: isRecord(value.versions) ? value.versions : {},
+    activeVersionId,
+    compareVersionId,
   };
 }
 
@@ -401,9 +401,9 @@ export function useCollab({
           nodeLayouts: {},
           edgeLayouts: {},
           iconLibrary: {},
-          scenes: {},
-          activeSceneId: null,
-          compareSceneId: null,
+          versions: {},
+          activeVersionId: null,
+          compareVersionId: null,
         };
 
         ws.send(

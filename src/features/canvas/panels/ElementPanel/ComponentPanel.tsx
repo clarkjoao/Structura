@@ -6,7 +6,7 @@ import {
   useActiveDiagram,
   useAllServices,
   useDiagramActions,
-  resolveSceneSnapshot,
+  resolveVersionSnapshot,
 } from "@/features/diagram";
 import type {
   Component,
@@ -95,7 +95,7 @@ const ComponentPanel = ({
   const resolved = useMemo(
     () =>
       activeDiagram
-        ? resolveSceneSnapshot(activeDiagram, activeDiagram.activeSceneId ?? null)
+        ? resolveVersionSnapshot(activeDiagram, activeDiagram.activeVersionId ?? null)
         : null,
     [activeDiagram],
   );

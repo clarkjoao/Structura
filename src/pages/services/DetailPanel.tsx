@@ -8,7 +8,7 @@ import type { ExternalLink as DiagramExternalLink } from "@/features/diagram";
 import { ServiceSource } from "@/features/diagram";
 import { ExternalLinksSection } from "@/features/canvas/panels/ElementPanel/sections";
 import { ChipInput } from "./ChipInput";
-import { SOURCE_DOT } from "./registry.constants";
+import { SOURCE_DOT } from "./services.constants";
 import { getServiceUsage } from "./serviceUsage";
 import type { DetailPanelProps } from "./types";
 import { syncServiceFromSources } from "./application/syncServiceFromSources";
@@ -77,7 +77,7 @@ export function DetailPanel({
       });
       updateService(svc.id, patch);
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : i18n.t("registry.errorSyncGeneric"));
+      setSyncError(err instanceof Error ? err.message : i18n.t("services.errorSyncGeneric"));
     } finally {
       setSyncing(false);
     }
@@ -98,7 +98,7 @@ export function DetailPanel({
               onClick={handleSync}
               disabled={syncing}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-              title={t("registry.syncTitle")}
+              title={t("services.syncTitle")}
             >
               {syncing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -157,7 +157,7 @@ export function DetailPanel({
 
             {hasSyncSource && editing && (
               <p className="text-[10px] text-muted-foreground italic border border-border rounded-md px-3 py-1.5">
-                {t("registry.syncFieldsHint")}
+                {t("services.syncFieldsHint")}
               </p>
             )}
 
@@ -197,12 +197,12 @@ export function DetailPanel({
                 </div>
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-                    {t("registry.repoUrlLabel")}
+                    {t("services.repoUrlLabel")}
                   </label>
                   <input
                     value={editRepo}
                     onChange={(e) => setEditRepo(e.target.value)}
-                    placeholder={t("registry.repoPlaceholder")}
+                    placeholder={t("services.repoPlaceholder")}
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
@@ -237,11 +237,11 @@ export function DetailPanel({
 
           <div className="space-y-1.5">
             <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
-              {t("registry.usageInDiagrams")}
+              {t("services.usageInDiagrams")}
             </span>
             {usage.length === 0 ? (
               <p className="text-xs text-muted-foreground italic rounded-lg border border-border bg-secondary/30 p-3">
-                {t("registry.notLinked")}
+                {t("services.notLinked")}
               </p>
             ) : (
               <div className="rounded-lg border border-border bg-secondary/30 divide-y divide-border">
@@ -257,7 +257,7 @@ export function DetailPanel({
                       {u.diagramName}
                     </span>
                     <span className="text-[10px] text-muted-foreground shrink-0">
-                      {t("registry.nodeCount", { count: u.nodeCount })}
+                      {t("services.nodeCount", { count: u.nodeCount })}
                       <ChevronRight className="h-3 w-3 inline ml-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </span>
                   </button>
@@ -270,7 +270,7 @@ export function DetailPanel({
             {confirmDelete ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-destructive flex-1">
-                  {t("registry.confirmDelete")}
+                  {t("services.confirmDelete")}
                 </span>
                 <button
                   onClick={() => setConfirmDelete(false)}
@@ -285,7 +285,7 @@ export function DetailPanel({
                   }}
                   className="px-3 py-1.5 text-xs font-semibold rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  {t("registry.confirmRemoval")}
+                  {t("services.confirmRemoval")}
                 </button>
               </div>
             ) : (
@@ -293,7 +293,7 @@ export function DetailPanel({
                 onClick={() => setConfirmDelete(true)}
                 className="text-xs text-destructive hover:underline"
               >
-                {t("registry.deleteService")}
+                {t("services.deleteService")}
               </button>
             )}
           </div>

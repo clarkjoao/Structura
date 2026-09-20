@@ -644,7 +644,7 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
               filteredCloud.length > 0) && <div className="border-t border-border my-1" />}
             <div className="px-3 py-1">
               <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("elementPicker.registry")}
+                {t("elementPicker.services")}
               </span>
             </div>
             {filteredServices.map((svc, index) => (

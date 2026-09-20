@@ -3,67 +3,67 @@ import type {
   Connection,
   Diagram,
   NodeLayout,
-  SceneDiff,
+  VersionDiff,
 } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { computeMergePreview, nextSceneColor } from "../../utils/scene.utils";
+import { computeMergePreview, nextVersionColor } from "../../utils/version.utils";
 import {
-  mutateRemoveComponentInScene,
-  mutateRemoveConnectionInScene,
-} from "../../utils/scene-mutations";
+  mutateRemoveComponentInVersion,
+  mutateRemoveConnectionInVersion,
+} from "../../utils/version-mutations";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
-import { resolveActiveScene } from "../helpers/scene-helpers";
+import { resolveActiveVersion } from "../helpers/version-helpers";
 import i18n from "@/infrastructure/i18n";
 import { canBeConnectionSource } from "../../model/connection-rules";
 
-function ensureScenes(d: Diagram): Record<string, SceneDiff> {
-  if (!d.scenes) d.scenes = {};
-  return d.scenes;
+function ensureVersions(d: Diagram): Record<string, VersionDiff> {
+  if (!d.versions) d.versions = {};
+  return d.versions;
 }
 
-export const scenesSlice = (
+export const versionsSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-  duplicateScene: (sceneId: string, name?: string): SceneDiff | null => {
-    let created: SceneDiff | null = null;
+  duplicateVersion: (versionId: string, name?: string): VersionDiff | null => {
+    let created: VersionDiff | null = null;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const src = d?.scenes?.[sceneId];
+      const src = d?.versions?.[versionId];
       if (!src) return;
-      const scenes = ensureScenes(d);
-      const index = Object.keys(scenes).length;
-      const id = generateId("scene");
-      const copy = structuredClone(src) as SceneDiff;
+      const versions = ensureVersions(d);
+      const index = Object.keys(versions).length;
+      const id = generateId("version");
+      const copy = structuredClone(src) as VersionDiff;
       copy.id = id;
-      const baseName = name?.trim() || i18n.t("scenes.duplicatedSceneName", { name: src.name });
+      const baseName = name?.trim() || i18n.t("versions.duplicatedVersionName", { name: src.name });
       copy.name = baseName;
       copy.createdAt = Date.now();
-      copy.color = nextSceneColor(index);
-      scenes[id] = copy;
+      copy.color = nextVersionColor(index);
+      versions[id] = copy;
       created = copy;
       touchDiagram(d);
     });
     return created;
   },
 
-  addScene: (name: string): SceneDiff => {
-    let created!: SceneDiff;
+  addVersion: (name: string): VersionDiff => {
+    let created!: VersionDiff;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scenes = ensureScenes(d);
-      const index = Object.keys(scenes).length;
-      const id = generateId("scene");
+      const versions = ensureVersions(d);
+      const index = Object.keys(versions).length;
+      const id = generateId("version");
       created = {
         id,
-        name: name.trim() || i18n.t("scenes.numberedDefaultName", { number: index + 1 }),
-        color: nextSceneColor(index),
+        name: name.trim() || i18n.t("versions.numberedDefaultName", { number: index + 1 }),
+        color: nextVersionColor(index),
         createdAt: Date.now(),
         addedComponents: {},
         addedConnections: {},
@@ -71,77 +71,77 @@ export const scenesSlice = (
         removedConnectionIds: [],
         nodeLayouts: {},
       };
-      scenes[id] = created;
+      versions[id] = created;
       touchDiagram(d);
     });
     return created;
   },
 
-  removeScene: (sceneId: string) => {
+  removeVersion: (versionId: string) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      if (!d?.scenes?.[sceneId]) return;
+      if (!d?.versions?.[versionId]) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      delete d.scenes[sceneId];
-      if (Object.keys(d.scenes).length === 0) {
-        d.scenes = undefined;
+      delete d.versions[versionId];
+      if (Object.keys(d.versions).length === 0) {
+        d.versions = undefined;
       }
-      if (d.activeSceneId === sceneId) {
-        d.activeSceneId = null;
+      if (d.activeVersionId === versionId) {
+        d.activeVersionId = null;
       }
-      if (d.compareSceneId === sceneId) {
-        d.compareSceneId = null;
+      if (d.compareVersionId === versionId) {
+        d.compareVersionId = null;
       }
       touchDiagram(d);
     });
   },
 
-  setActiveScene: (sceneId: string | null) => {
+  setActiveVersion: (versionId: string | null) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      if (sceneId !== null && !d.scenes?.[sceneId]) return;
+      if (versionId !== null && !d.versions?.[versionId]) return;
 
-      d.compareSceneId = null;
+      d.compareVersionId = null;
 
-      const prev = d.activeSceneId ?? null;
+      const prev = d.activeVersionId ?? null;
       const vp = { ...d.viewport };
-      if (prev && d.scenes?.[prev]) {
-        d.scenes[prev].viewport = vp;
+      if (prev && d.versions?.[prev]) {
+        d.versions[prev].viewport = vp;
       }
 
-      d.activeSceneId = sceneId;
+      d.activeVersionId = versionId;
 
-      if (sceneId && d.scenes?.[sceneId]?.viewport) {
-        const next = d.scenes[sceneId].viewport!;
+      if (versionId && d.versions?.[versionId]?.viewport) {
+        const next = d.versions[versionId].viewport!;
         d.viewport = { x: next.x, y: next.y, zoom: next.zoom };
       }
       touchDiagram(d);
     });
   },
 
-  setCompareScene: (sceneId: string | null) => {
+  setCompareVersion: (versionId: string | null) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      if (sceneId === null) {
-        d.compareSceneId = null;
+      if (versionId === null) {
+        d.compareVersionId = null;
         touchDiagram(d);
         return;
       }
-      const activeScene = resolveActiveScene(d);
-      if (!activeScene) return;
-      if (sceneId === activeScene.id) return;
-      if (!d.scenes?.[sceneId]) return;
-      d.compareSceneId = sceneId;
+      const activeVersion = resolveActiveVersion(d);
+      if (!activeVersion) return;
+      if (versionId === activeVersion.id) return;
+      if (!d.versions?.[versionId]) return;
+      d.compareVersionId = versionId;
       touchDiagram(d);
     });
   },
 
-  renameScene: (sceneId: string, name: string) => {
+  renameVersion: (versionId: string, name: string) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      const sc = d?.scenes?.[sceneId];
+      const sc = d?.versions?.[versionId];
       if (!sc) return;
       const t = name.trim();
       if (t) sc.name = t;
@@ -149,13 +149,13 @@ export const scenesSlice = (
     });
   },
 
-  mergeSceneIntoBase: (sceneId: string) => {
+  mergeVersionIntoBase: (versionId: string) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      if (!d?.scenes?.[sceneId]) return;
+      if (!d?.versions?.[versionId]) return;
       let preview: ReturnType<typeof computeMergePreview>;
       try {
-        preview = computeMergePreview(d, sceneId);
+        preview = computeMergePreview(d, versionId);
       } catch {
         return;
       }
@@ -180,10 +180,10 @@ export const scenesSlice = (
 
       const removeCompSet = new Set(preview.componentIdsToRemove);
       const removeConnSet = new Set(preview.connectionIdsToRemove);
-      const scenesMap = d.scenes!;
+      const scenesMap = d.versions!;
 
       for (const other of Object.values(scenesMap)) {
-        if (other.id === sceneId) continue;
+        if (other.id === versionId) continue;
         other.removedComponentIds = other.removedComponentIds.filter(
           (id) => !removeCompSet.has(id),
         );
@@ -203,24 +203,24 @@ export const scenesSlice = (
         }
       }
 
-      delete scenesMap[sceneId];
+      delete scenesMap[versionId];
       if (Object.keys(scenesMap).length === 0) {
-        d.scenes = undefined;
+        d.versions = undefined;
       }
-      if (d.activeSceneId === sceneId) {
-        d.activeSceneId = null;
+      if (d.activeVersionId === versionId) {
+        d.activeVersionId = null;
       }
-      if (d.compareSceneId === sceneId) {
-        d.compareSceneId = null;
+      if (d.compareVersionId === versionId) {
+        d.compareVersionId = null;
       }
       touchDiagram(d);
     });
   },
 
-  addComponentToScene: (sceneId: string, component: Component, layout: NodeLayout) => {
+  addComponentToVersion: (versionId: string, component: Component, layout: NodeLayout) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      const sc = d?.scenes?.[sceneId];
+      const sc = d?.versions?.[versionId];
       if (!sc) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       sc.addedComponents[component.id] = component;
@@ -229,20 +229,20 @@ export const scenesSlice = (
     });
   },
 
-  removeComponentFromScene: (sceneId: string, componentId: string) => {
+  removeComponentFromVersion: (versionId: string, componentId: string) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      if (!d?.scenes?.[sceneId]) return;
+      if (!d?.versions?.[versionId]) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      publishSewNotices(state, mutateRemoveComponentInScene(d, sceneId, componentId));
+      publishSewNotices(state, mutateRemoveComponentInVersion(d, versionId, componentId));
       touchDiagram(d);
     });
   },
 
-  addConnectionToScene: (sceneId: string, connection: Connection) => {
+  addConnectionToVersion: (versionId: string, connection: Connection) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      const sc = d?.scenes?.[sceneId];
+      const sc = d?.versions?.[versionId];
       if (!sc) return;
       // Same rule as `addConnection`: nothing leaves a note, a JSON viewer or
       // a db-table, and a scene is not an exception to it.
@@ -256,25 +256,25 @@ export const scenesSlice = (
     });
   },
 
-  removeConnectionFromScene: (sceneId: string, connectionId: string) => {
+  removeConnectionFromVersion: (versionId: string, connectionId: string) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      if (!d?.scenes?.[sceneId]) return;
+      if (!d?.versions?.[versionId]) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      publishSewNotices(state, mutateRemoveConnectionInScene(d, sceneId, connectionId));
+      publishSewNotices(state, mutateRemoveConnectionInVersion(d, versionId, connectionId));
       touchDiagram(d);
     });
   },
 
-  updateSceneNodeLayout: (
-    sceneId: string,
+  updateVersionNodeLayout: (
+    versionId: string,
     elementId: string,
     position: { x: number; y: number },
     dimensions?: { width: number; height: number },
   ) => {
     set((state) => {
       const d = getActiveDiagram(state);
-      const sc = d?.scenes?.[sceneId];
+      const sc = d?.versions?.[versionId];
       if (!sc) return;
       const layout = sc.nodeLayouts[elementId];
       if (!layout) return;

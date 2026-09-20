@@ -4,7 +4,7 @@ import {
   handleAutoLayoutShortcut,
   handleCompareModeKeys,
   handleSaveShortcut,
-  handleScenesDrawerKey,
+  handleVersionsDrawerKey,
   isCanvasEditingLocked,
   isCanvasOverlayOpen,
   type CanvasKeydownModeFlags,
@@ -13,10 +13,10 @@ import {
 export interface CanvasKeydownDispatch {
   flags: CanvasKeydownModeFlags;
   hasDiagram: boolean;
-  onCloseScenesDrawer?: () => void;
+  onCloseVersionsDrawer?: () => void;
   forceSaveToFolder: () => void | Promise<void>;
   onAutoLayout?: () => void;
-  setCompareScene: (sceneId: string | null) => void;
+  setCompareVersion: (versionId: string | null) => void;
   recordingHandler: KeyHandler;
   /** Handlers that mutate the diagram / selection; claimed on success. */
   editHandlers: readonly KeyHandler[];
@@ -34,7 +34,7 @@ export async function dispatchCanvasKeydown(
 ): Promise<void> {
   if (shouldYieldCanvasShortcutToFocusedField(event)) return;
 
-  if (handleScenesDrawerKey(event, dispatch.flags, dispatch.onCloseScenesDrawer)) return;
+  if (handleVersionsDrawerKey(event, dispatch.flags, dispatch.onCloseVersionsDrawer)) return;
 
   if (handleSaveShortcut(event, dispatch.flags, dispatch.forceSaveToFolder)) return;
 
@@ -44,7 +44,7 @@ export async function dispatchCanvasKeydown(
 
   if (dispatch.recordingHandler(event)) return;
 
-  if (handleCompareModeKeys(event, dispatch.flags, dispatch.setCompareScene)) return;
+  if (handleCompareModeKeys(event, dispatch.flags, dispatch.setCompareVersion)) return;
 
   if (isCanvasEditingLocked(dispatch.flags) || isCanvasOverlayOpen(dispatch.flags)) return;
 

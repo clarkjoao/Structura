@@ -14,12 +14,12 @@ import type { ServiceDefinition } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 
-interface ServiceRegistryComboboxProps {
+interface ServiceComboboxProps {
   value: string | null;
   onChange: (serviceId: string | null) => void;
 }
 
-const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxProps) => {
+const ServiceCombobox = ({ value, onChange }: ServiceComboboxProps) => {
   const { t } = useTranslation();
   const allServices = useAllServices();
   const { addService } = useDiagramActions();
@@ -201,4 +201,4 @@ const ServiceRegistryCombobox = ({ value, onChange }: ServiceRegistryComboboxPro
   );
 };
 
-export default ServiceRegistryCombobox;
+export default ServiceCombobox;

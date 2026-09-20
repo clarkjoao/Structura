@@ -177,7 +177,12 @@ export interface ExporterContribution {
   export(diagram: DiagramSnapshot): string | Promise<string>;
 }
 
-export type PluginPanelSlot = "element-inspector" | "service-registry-import" | "canvas-toolbar";
+export type PluginPanelSlot =
+  | "element-inspector"
+  | "services-import"
+  /** @deprecated Prefer `services-import`. Accepted for one release. */
+  | "service-registry-import"
+  | "canvas-toolbar";
 
 /**
  * Context handed to every plugin panel, whatever slot it fills. v1.2 unified the former
@@ -188,7 +193,7 @@ export type PluginPanelSlot = "element-inspector" | "service-registry-import" | 
 export interface PluginPanelContext {
   /** Read-only snapshot of the current selection (element-inspector slot; [] elsewhere). */
   selection: readonly PluginComponentSnapshot[];
-  /** Read-only snapshot of the service being viewed (service-registry slot; null elsewhere). */
+  /** Read-only snapshot of the service being viewed (services-import slot; null elsewhere). */
   service: PluginServiceSnapshot | null;
   /** Sanctioned mutations — routed through store actions, pushHistory included. */
   updateComponent(id: string, patch: PluginComponentPatch): void;

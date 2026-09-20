@@ -5,7 +5,7 @@ import type {
   EdgeLayout,
   Folder,
   ModelDraft,
-  SceneDiff,
+  VersionDiff,
   UserTemplate,
   ViewNodeLayout,
 } from "../model/diagram.types";
@@ -23,9 +23,9 @@ export interface DiagramSnapshot {
    * A scene holds elements of its own, and deleting one of those now sews the
    * base flows: undoing that has to put the element back as well as the step,
    * or the step comes back pointing at nothing. Undefined on a diagram that
-   * has no scenes.
+   * has no versions.
    */
-  scenes?: Record<string, SceneDiff>;
+  versions?: Record<string, VersionDiff>;
   timestamp: number;
 }
 
@@ -40,7 +40,7 @@ export interface AppState {
   diagrams: Record<string, Diagram>;
   folders: Record<string, Folder>;
   userTemplates: Record<string, UserTemplate>;
-  serviceCatalog: Record<string, ServiceDefinition>;
+  services: Record<string, ServiceDefinition>;
   activeDiagramId: string | null;
   past: DiagramSnapshot[];
   future: DiagramSnapshot[];

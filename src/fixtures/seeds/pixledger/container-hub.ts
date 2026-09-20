@@ -16,8 +16,8 @@ export function buildHubContainerDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 80, y: 40, zoom: 0.7 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-hub-payer": layout("pl-hub-payer", -40, 200, 220, 85),
       "pl-hub-merchant-sys": layout("pl-hub-merchant-sys", -40, 420, 220, 85),

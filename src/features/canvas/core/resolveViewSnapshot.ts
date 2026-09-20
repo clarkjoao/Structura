@@ -7,7 +7,7 @@ import type {
 } from "@/features/diagram/model";
 import { isApiGroupComponent, isPanelComponent } from "@/features/diagram/model/component.guards";
 import { placedComponents, placedConnections } from "@/features/diagram/utils/placement";
-import { resolveCanvasSnapshot } from "@/features/diagram/utils/scene.utils";
+import { resolveCanvasSnapshot } from "@/features/diagram/utils/version.utils";
 import {
   getCachedCanvasSnapshot,
   type ResolvedSnapshot,
@@ -35,8 +35,8 @@ export type DescribeNode = (component: Component) => ViewNodeDescriptor;
  * the base scene.
  */
 export interface ViewSnapshotOptions {
-  sceneId: string | null;
-  compareSceneId?: string | null;
+  versionId: string | null;
+  compareVersionId?: string | null;
 }
 
 /** One placed component, as the canvas shows it. */
@@ -91,15 +91,15 @@ export function resolveViewScene(
   diagram: Diagram | DiagramModel,
   options: ViewSnapshotOptions,
 ): ResolvedSnapshot {
-  const sceneId = options.sceneId;
-  const compareSceneId = options.compareSceneId ?? null;
+  const versionId = options.versionId;
+  const compareVersionId = options.compareVersionId ?? null;
   if (
-    (diagram.activeSceneId ?? null) === sceneId &&
-    (diagram.compareSceneId ?? null) === compareSceneId
+    (diagram.activeVersionId ?? null) === versionId &&
+    (diagram.compareVersionId ?? null) === compareVersionId
   ) {
     return getCachedCanvasSnapshot(diagram);
   }
-  return resolveCanvasSnapshot({ ...diagram, activeSceneId: sceneId, compareSceneId });
+  return resolveCanvasSnapshot({ ...diagram, activeVersionId: versionId, compareVersionId });
 }
 
 /** Containers a node can be nested in: panels and API groups. */
@@ -237,7 +237,7 @@ export function sortForRender(
  * same for both surfaces, which is why it is not one of the `options`.
  *
  * @example
- * const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+ * const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
  * view.nodes.map((node) => node.component.id); // render order
  */
 export function resolveViewSnapshot(

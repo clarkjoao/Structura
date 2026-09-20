@@ -18,7 +18,7 @@ import { DrillDownButton } from "./DrillDownButton";
 import { EmbedButton } from "./EmbedButton";
 import { StepBadge } from "./StepBadge";
 import { useTranslation } from "react-i18next";
-import { CompareSceneBadges, SceneElementBadge } from "../SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { useCollab } from "@/features/collaboration/components/CollabProvider";
 import { CARD_MAX_W, CARD_MIN_W } from "./constants";
 
@@ -210,9 +210,9 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
         />
       )}
       {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />}
-      {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-      {!d.compareBadges && d.sceneBadge && (
-        <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+      {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+      {!d.compareBadges && d.versionBadge && (
+        <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
       )}
       {d.stepBadges && d.stepBadges.length > 0 && (
         <StepBadge badges={d.stepBadges} isLastRecorded={d.isLastRecorded} />

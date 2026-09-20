@@ -2,7 +2,7 @@ import { useCallback, useMemo, type MutableRefObject } from "react";
 import type { TFunction } from "i18next";
 import { useStoreApi, type Node } from "@xyflow/react";
 import type { Component } from "@/features/diagram";
-import type { DiagramSceneState } from "../nodes/useCanvasNodes";
+import type { DiagramVersionState } from "../nodes/useCanvasNodes";
 import type { Flow } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import { useCanvasEdges } from "../edges/useCanvasEdges";
@@ -28,7 +28,7 @@ export interface UseCanvasGraphStateParams {
     | null
     | undefined;
   resolved: ResolvedSnapshot | null;
-  diagramSceneState: DiagramSceneState | null;
+  diagramVersionState: DiagramVersionState | null;
   flows: Flow[];
   // Selection/highlight values that previously formed nodeSelectionState — passed directly
   // so useCanvasController can drop its useMemo wrappers.
@@ -50,7 +50,7 @@ export interface UseCanvasGraphStateParams {
   innerOnNodesChange: NodeDragParenting["onNodesChange"];
   visibleComponents: Component[];
   visibleConnections: import("@/features/diagram").Connection[];
-  serviceCatalog: Record<string, import("@/features/diagram").ServiceDefinition>;
+  services: Record<string, import("@/features/diagram").ServiceDefinition>;
   allDiagrams: Record<string, import("@/features/diagram").Diagram>;
   // Direct slices instead of wrapped contexts.
   compareState: CompareSlice;
@@ -69,7 +69,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const {
     diagram,
     resolved,
-    diagramSceneState,
+    diagramVersionState,
     flows,
     selectedEdgeId,
     visibleTags,
@@ -79,7 +79,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     innerOnNodesChange,
     visibleComponents,
     visibleConnections,
-    serviceCatalog,
+    services,
     allDiagrams,
     compareState,
     flowState,
@@ -131,8 +131,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
         ? resolveViewSnapshot(
             diagram,
             {
-              sceneId: diagram.activeSceneId ?? null,
-              compareSceneId: diagram.compareSceneId ?? null,
+              versionId: diagram.activeVersionId ?? null,
+              compareVersionId: diagram.compareVersionId ?? null,
             },
             resolveNodeDescriptor,
           )
@@ -141,8 +141,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     // references below are what the view depends on.
     [
       diagram?.id,
-      diagram?.activeSceneId,
-      diagram?.compareSceneId,
+      diagram?.activeVersionId,
+      diagram?.compareVersionId,
       resolvedComponentsRef,
       resolvedNodeLayoutsRef,
       resolvedConnectionsRef,
@@ -170,11 +170,11 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
 
   const storeNodes = useCanvasNodes({
     diagram,
-    diagramSceneState,
+    diagramVersionState,
     flows,
     resolvedComponents: resolved?.components ?? {},
     resolvedNodeLayouts: resolved?.nodeLayouts ?? {},
-    sceneBadgeByComponentId: compareState.sceneBadgeByComponentId,
+    versionBadgeByComponentId: compareState.versionBadgeByComponentId,
     compareVisualByComponentId: compareState.compareVisualByComponentId,
     isCompareMode: compareState.isCompareMode,
     view,
@@ -182,7 +182,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     selectedNodeId,
     selectedNodeIds,
     highlightedNodeIds,
-    serviceCatalog,
+    services,
     allDiagrams,
     handleDrillDown,
     handlePanelCollapseToggle,

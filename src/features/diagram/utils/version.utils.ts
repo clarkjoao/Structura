@@ -4,12 +4,12 @@ import type {
   Diagram,
   DiagramModel,
   NodeLayout,
-  SceneDiff,
+  VersionDiff,
 } from "../model/diagram.types";
 
-type SceneDiagram = Diagram | DiagramModel;
+type VersionDiagram = Diagram | DiagramModel;
 
-export const SCENE_COLOR_PALETTE = [
+export const VERSION_COLOR_PALETTE = [
   "#10b981",
   "#6366f1",
   "#f59e0b",
@@ -18,29 +18,29 @@ export const SCENE_COLOR_PALETTE = [
   "#8b5cf6",
 ] as const;
 
-export function nextSceneColor(sceneIndex: number): string {
-  return SCENE_COLOR_PALETTE[sceneIndex % SCENE_COLOR_PALETTE.length]!;
+export function nextVersionColor(sceneIndex: number): string {
+  return VERSION_COLOR_PALETTE[sceneIndex % VERSION_COLOR_PALETTE.length]!;
 }
 
-export function resolveSceneSnapshot(
-  diagram: SceneDiagram,
-  sceneId: string | null,
+export function resolveVersionSnapshot(
+  diagram: VersionDiagram,
+  versionId: string | null,
 ): {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
   nodeLayouts: Record<string, NodeLayout>;
-  sceneId: string | null;
+  versionId: string | null;
 } {
-  if (!sceneId || !diagram.scenes?.[sceneId]) {
+  if (!versionId || !diagram.versions?.[versionId]) {
     return {
       components: diagram.snapshot.components,
       connections: diagram.snapshot.connections,
       nodeLayouts: diagram.nodeLayouts,
-      sceneId: null,
+      versionId: null,
     };
   }
 
-  const scene = diagram.scenes[sceneId];
+  const scene = diagram.versions[versionId];
   const removedComp = new Set(scene.removedComponentIds);
   const removedConn = new Set(scene.removedConnectionIds);
 
@@ -63,13 +63,13 @@ export function resolveSceneSnapshot(
     ...scene.nodeLayouts,
   };
 
-  return { components, connections, nodeLayouts, sceneId };
+  return { components, connections, nodeLayouts, versionId };
 }
 
-export function diagramWithResolvedScene<T extends SceneDiagram>(diagram: T): T {
-  const active = diagram.activeSceneId ?? null;
-  if (!active || !diagram.scenes?.[active]) return diagram;
-  const r = resolveSceneSnapshot(diagram, active);
+export function diagramWithResolvedScene<T extends VersionDiagram>(diagram: T): T {
+  const active = diagram.activeVersionId ?? null;
+  if (!active || !diagram.versions?.[active]) return diagram;
+  const r = resolveVersionSnapshot(diagram, active);
   return {
     ...diagram,
     snapshot: {
@@ -78,43 +78,43 @@ export function diagramWithResolvedScene<T extends SceneDiagram>(diagram: T): T 
       connections: r.connections,
     },
     nodeLayouts: r.nodeLayouts,
-    activeSceneId: undefined,
-    compareSceneId: undefined,
-    scenes: undefined,
+    activeVersionId: undefined,
+    compareVersionId: undefined,
+    versions: undefined,
   } as T;
 }
 
 export function exportFilenameSlug(diagram: Diagram): string {
   const base = diagram.name.toLowerCase().replace(/\s+/g, "-");
-  const sid = diagram.activeSceneId;
-  if (!sid || !diagram.scenes?.[sid]) return base;
-  const sceneSlug = diagram.scenes[sid].name.toLowerCase().replace(/\s+/g, "-");
+  const sid = diagram.activeVersionId;
+  if (!sid || !diagram.versions?.[sid]) return base;
+  const sceneSlug = diagram.versions[sid].name.toLowerCase().replace(/\s+/g, "-");
   return `${base}-${sceneSlug}`;
 }
 
-export function isComponentAddedInActiveScene(diagram: SceneDiagram, componentId: string): boolean {
-  const sid = diagram.activeSceneId;
-  if (!sid || !diagram.scenes?.[sid]) return false;
-  return componentId in diagram.scenes[sid].addedComponents;
+export function isComponentAddedInActiveVersion(diagram: VersionDiagram, componentId: string): boolean {
+  const sid = diagram.activeVersionId;
+  if (!sid || !diagram.versions?.[sid]) return false;
+  return componentId in diagram.versions[sid].addedComponents;
 }
 
-export function isConnectionAddedInActiveScene(
-  diagram: SceneDiagram,
+export function isConnectionAddedInActiveVersion(
+  diagram: VersionDiagram,
   connectionId: string,
 ): boolean {
-  const sid = diagram.activeSceneId;
-  if (!sid || !diagram.scenes?.[sid]) return false;
-  return connectionId in diagram.scenes[sid].addedConnections;
+  const sid = diagram.activeVersionId;
+  if (!sid || !diagram.versions?.[sid]) return false;
+  return connectionId in diagram.versions[sid].addedConnections;
 }
 
-export function isBaseSnapshotComponent(diagram: SceneDiagram, componentId: string): boolean {
+export function isBaseSnapshotComponent(diagram: VersionDiagram, componentId: string): boolean {
   return componentId in diagram.snapshot.components;
 }
 
-export function canMoveNodeInSceneMode(diagram: SceneDiagram, componentId: string): boolean {
+export function canMoveNodeInSceneMode(diagram: VersionDiagram, componentId: string): boolean {
   if (isDiagramCompareMode(diagram)) return false;
-  if (!diagram.activeSceneId || !diagram.scenes?.[diagram.activeSceneId]) return true;
-  return isComponentAddedInActiveScene(diagram, componentId);
+  if (!diagram.activeVersionId || !diagram.versions?.[diagram.activeVersionId]) return true;
+  return isComponentAddedInActiveVersion(diagram, componentId);
 }
 
 export function collectBaseDescendantIds(
@@ -153,14 +153,14 @@ export interface CompareSnapshotResult {
 }
 
 export function resolveCompareSnapshot(
-  diagram: SceneDiagram,
+  diagram: VersionDiagram,
   sceneAId: string,
   sceneBId: string,
 ): CompareSnapshotResult {
-  const snapA = resolveSceneSnapshot(diagram, sceneAId);
-  const snapB = resolveSceneSnapshot(diagram, sceneBId);
-  const sceneA = diagram.scenes![sceneAId]!;
-  const sceneB = diagram.scenes![sceneBId]!;
+  const snapA = resolveVersionSnapshot(diagram, sceneAId);
+  const snapB = resolveVersionSnapshot(diagram, sceneBId);
+  const sceneA = diagram.versions![sceneAId]!;
+  const sceneB = diagram.versions![sceneBId]!;
 
   const idsA = new Set(Object.keys(snapA.components));
   const idsB = new Set(Object.keys(snapB.components));
@@ -207,14 +207,14 @@ export function resolveCompareSnapshot(
   };
 }
 
-export function resolveCanvasSnapshot(diagram: SceneDiagram): {
+export function resolveCanvasSnapshot(diagram: VersionDiagram): {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
   nodeLayouts: Record<string, NodeLayout>;
 } {
-  const a = diagram.activeSceneId ?? null;
-  const b = diagram.compareSceneId ?? null;
-  if (a && b && a !== b && diagram.scenes?.[a] && diagram.scenes?.[b]) {
+  const a = diagram.activeVersionId ?? null;
+  const b = diagram.compareVersionId ?? null;
+  if (a && b && a !== b && diagram.versions?.[a] && diagram.versions?.[b]) {
     const c = resolveCompareSnapshot(diagram, a, b);
     return {
       components: c.mergedComponents,
@@ -222,7 +222,7 @@ export function resolveCanvasSnapshot(diagram: SceneDiagram): {
       nodeLayouts: c.mergedLayouts,
     };
   }
-  const r = resolveSceneSnapshot(diagram, a);
+  const r = resolveVersionSnapshot(diagram, a);
   return {
     components: r.components,
     connections: r.connections,
@@ -238,14 +238,14 @@ export interface CompareElementVisual {
 }
 
 export function buildCompareComponentVisuals(
-  diagram: SceneDiagram,
+  diagram: VersionDiagram,
   sceneAId: string,
   sceneBId: string,
 ): Record<string, CompareElementVisual> {
-  const snapA = resolveSceneSnapshot(diagram, sceneAId);
-  const snapB = resolveSceneSnapshot(diagram, sceneBId);
-  const sceneA = diagram.scenes![sceneAId]!;
-  const sceneB = diagram.scenes![sceneBId]!;
+  const snapA = resolveVersionSnapshot(diagram, sceneAId);
+  const snapB = resolveVersionSnapshot(diagram, sceneBId);
+  const sceneA = diagram.versions![sceneAId]!;
+  const sceneB = diagram.versions![sceneBId]!;
   const idsA = new Set(Object.keys(snapA.components));
   const idsB = new Set(Object.keys(snapB.components));
   const mergedIds = new Set([...idsA, ...idsB]);
@@ -279,14 +279,14 @@ export function buildCompareComponentVisuals(
 }
 
 export function buildCompareConnectionVisuals(
-  diagram: SceneDiagram,
+  diagram: VersionDiagram,
   sceneAId: string,
   sceneBId: string,
 ): Record<string, CompareElementVisual> {
-  const snapA = resolveSceneSnapshot(diagram, sceneAId);
-  const snapB = resolveSceneSnapshot(diagram, sceneBId);
-  const sceneA = diagram.scenes![sceneAId]!;
-  const sceneB = diagram.scenes![sceneBId]!;
+  const snapA = resolveVersionSnapshot(diagram, sceneAId);
+  const snapB = resolveVersionSnapshot(diagram, sceneBId);
+  const sceneA = diagram.versions![sceneAId]!;
+  const sceneB = diagram.versions![sceneBId]!;
   const idsA = new Set(Object.keys(snapA.connections));
   const idsB = new Set(Object.keys(snapB.connections));
   const mergedIds = new Set([...idsA, ...idsB]);
@@ -319,14 +319,14 @@ export function buildCompareConnectionVisuals(
   return out;
 }
 
-export function isDiagramCompareMode(diagram: SceneDiagram | null | undefined): boolean {
+export function isDiagramCompareMode(diagram: VersionDiagram | null | undefined): boolean {
   if (!diagram) return false;
-  const a = diagram.activeSceneId ?? null;
-  const b = diagram.compareSceneId ?? null;
-  return !!(a && b && a !== b && diagram.scenes?.[a] && diagram.scenes?.[b]);
+  const a = diagram.activeVersionId ?? null;
+  const b = diagram.compareVersionId ?? null;
+  return !!(a && b && a !== b && diagram.versions?.[a] && diagram.versions?.[b]);
 }
 
-export function sceneHasDiff(scene: SceneDiff): boolean {
+export function versionHasDiff(scene: VersionDiff): boolean {
   return (
     Object.keys(scene.addedComponents).length > 0 ||
     Object.keys(scene.addedConnections).length > 0 ||
@@ -344,43 +344,43 @@ export interface MergePreview {
   conflicts: Array<{
     elementId: string;
     elementName: string;
-    conflictingSceneId: string;
-    conflictingSceneName: string;
+    conflictingVersionId: string;
+    conflictingVersionName: string;
     resolution: "merge";
   }>;
 }
 
-const MERGE_CONFLICT_BASE_SCENE_ID = "__diagramBase__";
-const MERGE_CONFLICT_BASE_SCENE_NAME = "Diagram base";
+const MERGE_CONFLICT_BASE_VERSION_ID = "__diagramBase__";
+const MERGE_CONFLICT_BASE_VERSION_NAME = "Diagram base";
 
-export function computeMergePreview(diagram: Diagram, sceneId: string): MergePreview {
-  const scene = diagram.scenes?.[sceneId];
+export function computeMergePreview(diagram: Diagram, versionId: string): MergePreview {
+  const scene = diagram.versions?.[versionId];
   if (!scene) {
-    throw new Error(`Scene ${sceneId} not found`);
+    throw new Error(`Version ${versionId} not found`);
   }
 
-  const otherScenes = Object.values(diagram.scenes ?? {}).filter((s) => s.id !== sceneId);
+  const otherVersions = Object.values(diagram.versions ?? {}).filter((s) => s.id !== versionId);
   const conflicts: MergePreview["conflicts"] = [];
 
   for (const comp of Object.values(scene.addedComponents)) {
     const existsInBase = Boolean(diagram.snapshot.components[comp.id]);
-    const removedByScene = scene.removedComponentIds.includes(comp.id);
-    if (existsInBase && !removedByScene) {
+    const removedByVersion = scene.removedComponentIds.includes(comp.id);
+    if (existsInBase && !removedByVersion) {
       conflicts.push({
         elementId: comp.id,
         elementName: comp.name,
-        conflictingSceneId: MERGE_CONFLICT_BASE_SCENE_ID,
-        conflictingSceneName: MERGE_CONFLICT_BASE_SCENE_NAME,
+        conflictingVersionId: MERGE_CONFLICT_BASE_VERSION_ID,
+        conflictingVersionName: MERGE_CONFLICT_BASE_VERSION_NAME,
         resolution: "merge",
       });
     }
-    for (const other of otherScenes) {
+    for (const other of otherVersions) {
       if (other.addedComponents[comp.id]) {
         conflicts.push({
           elementId: comp.id,
           elementName: comp.name,
-          conflictingSceneId: other.id,
-          conflictingSceneName: other.name,
+          conflictingVersionId: other.id,
+          conflictingVersionName: other.name,
           resolution: "merge",
         });
       }
@@ -389,13 +389,13 @@ export function computeMergePreview(diagram: Diagram, sceneId: string): MergePre
 
   for (const conn of Object.values(scene.addedConnections)) {
     const label = conn.label?.trim() || conn.technology?.trim() || conn.id;
-    for (const other of otherScenes) {
+    for (const other of otherVersions) {
       if (other.addedConnections[conn.id]) {
         conflicts.push({
           elementId: conn.id,
           elementName: label,
-          conflictingSceneId: other.id,
-          conflictingSceneName: other.name,
+          conflictingVersionId: other.id,
+          conflictingVersionName: other.name,
           resolution: "merge",
         });
       }

@@ -6,15 +6,15 @@ export {
 } from "./DiagramDescriptionField";
 export { default as ElementPickerModal } from "./ElementPickerModal";
 export { LayerFilterPopover, type LayerFilterPopoverProps } from "./LayerFilterPopover";
-export { MergeSceneDialog, type MergeSceneDialogProps } from "./MergeSceneDialog";
+export { MergeVersionDialog, type MergeVersionDialogProps } from "./MergeVersionDialog";
 export { PatternFlowPreview } from "./PatternFlowPreview";
 export { default as PatternPicker } from "./PatternPicker";
 export { default as QuickInsertPopover } from "./QuickInsertPopover";
 export {
-  ConnectedSceneDrawer,
-  SceneDrawer,
-  type SceneDrawerProps,
-  type SceneDrawerScene,
-} from "./SceneDrawer";
+  ConnectedVersionDrawer,
+  VersionDrawer,
+  type VersionDrawerProps,
+  type VersionDrawerVersion,
+} from "./VersionDrawer";
 export { UserTemplateCard, type UserTemplateCardProps } from "./UserTemplateCard";
 export { getTopUsed, trackUsage, type UsageEntry } from "./element-usage-tracker";

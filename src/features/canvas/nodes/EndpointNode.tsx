@@ -4,7 +4,7 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { Play } from "lucide-react";
 import type { EndpointHandler, FlowRef, HttpMethod } from "@/features/diagram";
 import { ENDPOINT_H, METHOD_COLORS } from "./ApiGroupNode/constants";
-import { CompareSceneBadges, SceneElementBadge } from "./SceneElementBadge";
+import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export { METHOD_COLORS } from "./ApiGroupNode/constants";
@@ -32,7 +32,7 @@ export type EndpointNodeData = {
   controlsDisabled?: boolean;
   isPlaying?: boolean;
   onPlayFlow?: (flowId: string) => void;
-  sceneBadge?: { name: string; color: string };
+  versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
     b: { name: string; color: string };
@@ -63,9 +63,9 @@ const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       )}
-      {d.compareBadges && <CompareSceneBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
-      {!d.compareBadges && d.sceneBadge && (
-        <SceneElementBadge name={d.sceneBadge.name} color={d.sceneBadge.color} />
+      {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
+      {!d.compareBadges && d.versionBadge && (
+        <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
       )}
       <Handle
         id="target-0"

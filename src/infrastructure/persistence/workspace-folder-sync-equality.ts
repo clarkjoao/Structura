@@ -18,9 +18,9 @@ export function diagramsEqualForFolderSync(a: Diagram, b: Diagram): boolean {
   if (a.level !== b.level) return false;
   if (a.createdAt !== b.createdAt) return false;
   if (a.folderId !== b.folderId) return false;
-  if (a.scenes !== b.scenes) return false;
-  if (a.activeSceneId !== b.activeSceneId) return false;
-  if (a.compareSceneId !== b.compareSceneId) return false;
+  if (a.versions !== b.versions) return false;
+  if (a.activeVersionId !== b.activeVersionId) return false;
+  if (a.compareVersionId !== b.compareVersionId) return false;
   return true;
 }
 
@@ -32,7 +32,7 @@ export function diagramStoreWorkspaceEqualsForFolderSync(
   if (next === prev) return true;
   if (next.activeDiagramId !== prev.activeDiagramId) return false;
   if (next.folders !== prev.folders) return false;
-  if (next.serviceCatalog !== prev.serviceCatalog) return false;
+  if (next.services !== prev.services) return false;
 
   const nextIds = Object.keys(next.diagrams);
   const prevIds = Object.keys(prev.diagrams);

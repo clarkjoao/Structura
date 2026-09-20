@@ -7,7 +7,7 @@ import {
   useDiagramActions,
   useDiagramStore,
   useFlows,
-  useServiceRegistry,
+  useServices,
 } from "@/features/diagram";
 import { getExporterContribution } from "@/features/plugins/io-registry";
 import { toDiagramSnapshot } from "@/features/plugins/snapshots";
@@ -35,7 +35,7 @@ export default function WorkspacePage() {
   const urlDiagramExists = useDiagramStore((s) => !!(urlId && s.diagrams[urlId]));
   const { openDiagram } = useDiagramActions();
   const flows = useFlows();
-  const serviceCatalog = useServiceRegistry();
+  const services = useServices();
   const navigate = useNavigate();
   const [showFlows, setShowFlows] = useState(false);
   const [isViewingCoverage, setIsViewingCoverage] = useState(false);
@@ -97,18 +97,18 @@ export default function WorkspacePage() {
 
   const handleCopyDrawio = useCallback(() => {
     if (!diagram) return;
-    void writeDrawioToClipboard(exportDrawio(diagram, serviceCatalog)).then(() => {
+    void writeDrawioToClipboard(exportDrawio(diagram, services)).then(() => {
       flashCopied("drawio");
     });
-  }, [diagram, flashCopied, serviceCatalog]);
+  }, [diagram, flashCopied, services]);
 
   const handleCopyJson = useCallback(async () => {
     if (!diagram) return;
     // Same payload as the downloaded file, service manifest included — otherwise a diagram
     // pasted from the clipboard would lose its service links on import.
-    await navigator.clipboard.writeText(exportJson(diagram, serviceCatalog));
+    await navigator.clipboard.writeText(exportJson(diagram, services));
     flashCopied("json");
-  }, [diagram, flashCopied, serviceCatalog]);
+  }, [diagram, flashCopied, services]);
 
   const handleExportFormats = useCallback(
     async (formats: DiagramExportFormat[], pluginExporterIds: string[]) => {
@@ -118,7 +118,7 @@ export default function WorkspacePage() {
         const { baseName, files } = buildDiagramExportFiles({
           diagram,
           flows,
-          serviceCatalog,
+          services,
           formats,
         });
 
@@ -150,7 +150,7 @@ export default function WorkspacePage() {
         toast.error(error instanceof Error ? error.message : t("export.modal.error"));
       }
     },
-    [diagram, flows, serviceCatalog, t],
+    [diagram, flows, services, t],
   );
 
   const handleStartCollab = useCallback((name: string, serverUrl: string) => {

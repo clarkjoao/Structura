@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   useActiveDiagram,
   useDiagramActions,
-  resolveSceneSnapshot,
+  resolveVersionSnapshot,
   type ComponentPatch,
   type SvgComponent,
 } from "@/features/diagram";
@@ -36,7 +36,7 @@ export default function SvgPanel({
   const resolved = useMemo(
     () =>
       activeDiagram
-        ? resolveSceneSnapshot(activeDiagram, activeDiagram.activeSceneId ?? null)
+        ? resolveVersionSnapshot(activeDiagram, activeDiagram.activeVersionId ?? null)
         : null,
     [activeDiagram],
   );

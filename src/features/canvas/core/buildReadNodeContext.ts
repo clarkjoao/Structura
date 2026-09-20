@@ -48,8 +48,8 @@ function readIdleChrome(
   focusedNodeId: string | null,
 ): Pick<
   NodeBuildContext,
-  | "sceneBadgeByComponentId"
-  | "serviceCatalog"
+  | "versionBadgeByComponentId"
+  | "services"
   | "allDiagrams"
   | "selectedNodeId"
   | "selectedNodeIds"
@@ -57,8 +57,8 @@ function readIdleChrome(
   | "unparentCandidatePanelId"
 > {
   return {
-    sceneBadgeByComponentId: {},
-    serviceCatalog: {},
+    versionBadgeByComponentId: {},
+    services: {},
     allDiagrams: {},
     selectedNodeId: focusedNodeId,
     selectedNodeIds: focusedNodeId ? new Set([focusedNodeId]) : new Set(),

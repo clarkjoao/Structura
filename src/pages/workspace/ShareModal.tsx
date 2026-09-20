@@ -83,7 +83,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
           {/*
             Always shown, before anything is copied. A link opens on the base
             scene whatever the author has open (the #share= payload drops
-            `activeSceneId`, and the viewer resolves the base regardless), so an
+            `activeVersionId`, and the viewer resolves the base regardless), so an
             author in a scene would otherwise send a picture they are not
             looking at.
           */}
@@ -93,7 +93,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
             className="flex items-start gap-2 rounded-md border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground"
           >
             <Info size={14} className="mt-px shrink-0" aria-hidden />
-            <span>{t("share.baseSceneNotice")}</span>
+            <span>{t("share.baseVersionNotice")}</span>
           </p>
 
           {flows.length > 0 && (

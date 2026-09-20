@@ -15,8 +15,8 @@ export function buildLedgerContainerDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 60, y: 40, zoom: 0.75 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-led-hub-ext": layout("pl-led-hub-ext", 40, 200, 220, 90),
       "pl-led-boundary": layout("pl-led-boundary", 320, 40, 720, 560),

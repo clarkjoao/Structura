@@ -82,23 +82,23 @@ export const useResolvedNodeLayouts = () =>
     }),
   );
 
-export type ActiveDiagramSceneState = {
+export type ActiveDiagramVersionState = {
   id: string;
-  activeSceneId: string | null;
-  hasActiveScene: boolean;
+  activeVersionId: string | null;
+  hasActiveVersion: boolean;
 };
 
-export const useActiveDiagramSceneState = (): ActiveDiagramSceneState | null =>
+export const useActiveDiagramVersionState = (): ActiveDiagramVersionState | null =>
   useDiagramStore(
     useShallow((s) => {
       if (!s.activeDiagramId) return null;
       const d = s.diagrams[s.activeDiagramId];
-      const activeSceneId = d.activeSceneId ?? null;
-      const hasActiveScene = !!activeSceneId && !!d.scenes?.[activeSceneId];
+      const activeVersionId = d.activeVersionId ?? null;
+      const hasActiveVersion = !!activeVersionId && !!d.versions?.[activeVersionId];
       return {
         id: d.id,
-        activeSceneId,
-        hasActiveScene,
+        activeVersionId,
+        hasActiveVersion,
       };
     }),
   );

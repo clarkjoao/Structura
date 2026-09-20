@@ -14,11 +14,11 @@ function ctxWithCounts(incoming: number, outgoing: number): NodeBuildContext {
     coverage: null,
     connectionCounts: { c1: { incoming, outgoing } },
     effectiveHandleOrder: {},
-    sceneBadgeByComponentId: {},
+    versionBadgeByComponentId: {},
     selectedNodeId: null,
     selectedNodeIds: new Set(),
     allDiagrams: {},
-    serviceCatalog: {},
+    services: {},
   } as unknown as NodeBuildContext;
 }
 

@@ -1,6 +1,6 @@
 import type { Flow, FlowStep } from "../model/flow.types";
-import type { Diagram, SceneDiff } from "../model/diagram.types";
-import { resolveSceneSnapshot } from "./scene.utils";
+import type { Diagram, VersionDiff } from "../model/diagram.types";
+import { resolveVersionSnapshot } from "./version.utils";
 
 // ─── Graph edge types (from flow-graph.ts) ────────────────────────────────────
 
@@ -235,7 +235,7 @@ export interface BrokenStep {
    * here, but it is not garbage: removing it would throw away a reference that
    * works again the moment the scene is opened.
    */
-  inScene?: { id: string; name: string };
+  inVersion?: { id: string; name: string };
 }
 
 /**
@@ -244,12 +244,12 @@ export interface BrokenStep {
  * Only a scene's *own* elements count. An element a scene merely hides is
  * still in the base, so it never reaches here.
  */
-function sceneHolding(
-  scenes: Record<string, SceneDiff> | undefined,
+function versionHolding(
+  versions: Record<string, VersionDiff> | undefined,
   id: string,
   kind: "component" | "connection",
 ): { id: string; name: string } | undefined {
-  for (const scene of Object.values(scenes ?? {})) {
+  for (const scene of Object.values(versions ?? {})) {
     const own = kind === "component" ? scene.addedComponents : scene.addedConnections;
     if (own[id]) return { id: scene.id, name: scene.name };
   }
@@ -260,16 +260,16 @@ function brokenStep(
   stepId: string,
   reason: BrokenStep["reason"],
   missingId: string,
-  inScene: { id: string; name: string } | undefined,
+  inVersion: { id: string; name: string } | undefined,
 ): BrokenStep {
   const what = reason === "component_deleted" ? "component" : "connection";
-  const where = inScene ? `lives in scene “${inScene.name}”` : "removed";
+  const where = inVersion ? `lives in version “${inVersion.name}”` : "removed";
   return {
     stepId,
     reason,
     missingId,
     label: `Step ${stepId.slice(0, 8)}… — ${what} ${where} (${missingId.slice(0, 8)}…)`,
-    inScene,
+    inVersion,
   };
 }
 
@@ -292,15 +292,15 @@ function brokenStep(
  */
 export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   const broken: BrokenStep[] = [];
-  const { components, connections } = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const { components, connections } = resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null);
   const base = diagram.snapshot;
-  const scenes = diagram.scenes;
+  const versions = diagram.versions;
 
   walkFlow(flow, (step) => {
     if (step.componentId && !components[step.componentId] && !base.components[step.componentId]) {
       const id = step.componentId;
       broken.push(
-        brokenStep(step.id, "component_deleted", id, sceneHolding(scenes, id, "component")),
+        brokenStep(step.id, "component_deleted", id, versionHolding(versions, id, "component")),
       );
     }
     if (
@@ -310,7 +310,7 @@ export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
     ) {
       const id = step.connectionId;
       broken.push(
-        brokenStep(step.id, "connection_deleted", id, sceneHolding(scenes, id, "connection")),
+        brokenStep(step.id, "connection_deleted", id, versionHolding(versions, id, "connection")),
       );
     }
   });

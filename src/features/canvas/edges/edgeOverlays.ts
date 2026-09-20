@@ -19,7 +19,7 @@ export function selectedEdgeOverlay(edge: Edge, selectedEdgeId: string | null): 
   return selectedEdgeId !== null && edge.id === selectedEdgeId ? { ...edge, selected: true } : edge;
 }
 
-/** Comparing two scenes: the edge takes the opacity the comparison gives it. */
+/** Comparing two versions: the edge takes the opacity the comparison gives it. */
 export function compareEdgeOverlay(
   edge: Edge,
   isCompareMode: boolean,

@@ -20,7 +20,7 @@ export interface ReadDiagramRoutePlay {
 /**
  * Pure Diagram → React Flow projection for Reader hosts.
  *
- * Always uses the base scene (`activeSceneId` ignored): a shared link must not
+ * Always uses the base scene (`activeVersionId` ignored): a shared link must not
  * hide nodes a script may walk through. Everything else — what is shown
  * (`resolveViewSnapshot`) and how it is drawn (`projectDiagram`) — is the
  * projection the editor runs, without the editor's overlays, so a link draws
@@ -50,7 +50,7 @@ export function projectReadDiagramView(
   routePlay: ReadDiagramRoutePlay | null = null,
   focusedNodeId: string | null = null,
 ): { nodes: Node[]; edges: Edge[]; view: ViewSnapshot } {
-  const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+  const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
   const ctx = buildReadNodeContext(
     diagram,
     view.components,

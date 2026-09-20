@@ -59,17 +59,45 @@ export function unwrapDiagram(fileContent: unknown): Diagram | null {
 
   const obj = fileContent as Record<string, unknown>;
 
+  let diagram: Diagram | null = null;
+
   // Formato novo versionado
   if (obj.$schema === DIAGRAM_SCHEMA_URI && obj.data) {
-    return obj.data as Diagram;
+    diagram = obj.data as Diagram;
+  } else if (obj.id && obj.snapshot && obj.nodeLayouts && obj.viewport) {
+    // Formato antigo (sem $schema)
+    diagram = fileContent as Diagram;
   }
 
-  // Formato antigo (sem $schema)
-  if (obj.id && obj.snapshot && obj.nodeLayouts && obj.viewport) {
-    return fileContent as Diagram;
-  }
+  if (!diagram) return null;
+  normalizeDiagramVersionFields(diagram as unknown as Record<string, unknown>);
+  return diagram;
+}
 
-  return null;
+/** Dual-read legacy Scene fields onto Version fields (store schema v15). */
+export function normalizeDiagramVersionFields(diagram: Record<string, unknown>): void {
+  const legacyScenes = diagram.scenes;
+  if (legacyScenes && typeof legacyScenes === "object" && !Array.isArray(legacyScenes)) {
+    const existing = diagram.versions as Record<string, unknown> | undefined;
+    const existingIsEmpty = !existing || Object.keys(existing).length === 0;
+    if (existingIsEmpty) {
+      diagram.versions = legacyScenes;
+    }
+  }
+  delete diagram.scenes;
+
+  if ("activeSceneId" in diagram) {
+    if (diagram.activeVersionId === undefined) {
+      diagram.activeVersionId = diagram.activeSceneId;
+    }
+    delete diagram.activeSceneId;
+  }
+  if ("compareSceneId" in diagram) {
+    if (diagram.compareVersionId === undefined) {
+      diagram.compareVersionId = diagram.compareSceneId;
+    }
+    delete diagram.compareSceneId;
+  }
 }
 
 // Helper para detectar se é formato versionado

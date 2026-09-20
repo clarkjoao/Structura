@@ -24,7 +24,7 @@ export function encodeDiagramPayload(diagram: Diagram): string {
  *
  * The script an author wants read is not part of the diagram — it is part of
  * the invitation — so it travels as its own parameter rather than inside the
- * compressed payload, the same reasoning that keeps `activeSceneId` out of it.
+ * compressed payload, the same reasoning that keeps `activeVersionId` out of it.
  * A link can then be pointed at another script by editing a few characters,
  * and the parameter can be checked against the payload instead of trusted.
  */
@@ -44,7 +44,7 @@ export function getFlowParamFromUrl(): string | null {
 /**
  * The diagram as a reader should receive it.
  *
- * `activeSceneId` is which scene the author happened to have open, not part of
+ * `activeVersionId` is which scene the author happened to have open, not part of
  * the diagram: carried into a link it dropped the reader inside that scene,
  * missing the nodes it hides, with nothing saying so and no way out. A link
  * opens on the base.
@@ -56,7 +56,7 @@ export function getFlowParamFromUrl(): string | null {
 function stripForShare(diagram: Diagram): Record<string, unknown> {
   return JSON.parse(
     JSON.stringify(diagram, (key: string, value: unknown) => {
-      if (key === "activeSceneId") return undefined;
+      if (key === "activeVersionId") return undefined;
       if (key === "hidden" && value === false) return undefined;
       return value;
     }),

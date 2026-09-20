@@ -5,9 +5,9 @@ import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import {
   getActiveComponents,
   getActiveNodeLayouts,
-  resolveActiveScene,
+  resolveActiveVersion,
   resolveNodeLayout,
-} from "../helpers/scene-helpers";
+} from "../helpers/version-helpers";
 import { computeFitBounds } from "../../utils/fit-group-to-children";
 
 export const layoutSlice = (
@@ -29,7 +29,7 @@ export const layoutSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       let wrote = false;
       if (scene && scene.addedComponents[elementId]) {
         const layout = scene.nodeLayouts[elementId];
@@ -86,7 +86,7 @@ export const layoutSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       for (const { elementId, position, dimensions } of entries) {
         const target =
           scene && scene.addedComponents[elementId] ? scene.nodeLayouts : d.nodeLayouts;
@@ -203,7 +203,7 @@ export const layoutSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       if (scene && scene.addedComponents[elementId]) {
         const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
         const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
@@ -223,7 +223,7 @@ export const layoutSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       if (scene && scene.addedComponents[elementId]) {
         const merged = { ...d.nodeLayouts, ...scene.nodeLayouts };
         const vals = Object.values(merged).map((nl) => nl.zIndex ?? 0);
@@ -244,7 +244,7 @@ export const layoutSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
 
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
       const activeComponents = getActiveComponents(d, scene);
       const activeNodeLayouts = getActiveNodeLayouts(d, scene);
       const layouts = scene ? { ...d.nodeLayouts, ...activeNodeLayouts } : activeNodeLayouts;
@@ -336,7 +336,7 @@ export const layoutSlice = (
       // `useLocalNodes.layoutWrite.test.ts`.
       state._lastLayoutWriteAt = (state._lastLayoutWriteAt ?? 0) + 1;
 
-      const scene = resolveActiveScene(d);
+      const scene = resolveActiveVersion(d);
 
       for (const { elementId, x, y, width, height } of layouts) {
         const layout =

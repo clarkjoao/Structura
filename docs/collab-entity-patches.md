@@ -41,7 +41,7 @@ Uniformemente **dois níveis**: `coleção → entityId → entidade`.
 
 | Coleções (7) | Escalares (5) |
 |---|---|
-| `components`, `connections`, `flows`, `iconLibrary`, `nodeLayouts`, `edgeLayouts`, `scenes` | `diagramName`, `domain`, `description`, `activeSceneId`, `compareSceneId` |
+| `components`, `connections`, `flows`, `iconLibrary`, `nodeLayouts`, `edgeLayouts`, `scenes` | `diagramName`, `domain`, `description`, `activeVersionId`, `compareVersionId` |
 
 `NodeLayout` = `{elementId, x, y, zIndex?, width?, height?}` — ~60 bytes.
 

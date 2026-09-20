@@ -9,7 +9,7 @@ import { PICKER_CARD_CLASS } from "./constants";
 import { shortAwsName } from "./utils";
 import type { CanvasPickerOption } from "./types";
 import type { C4PickerOption } from "./buildPickerOptions";
-import { RegistryServiceRow } from "./RegistryServiceRow";
+import { ServiceRow } from "./ServiceRow";
 import {
   useElementPresetStore,
   ElementPresetPreviewCard,
@@ -215,13 +215,13 @@ export function ElementPickerSearchResults({
       {filteredServices.length > 0 && (
         <section>
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t("elementPicker.registry")} · {filteredServices.length}
+            {t("elementPicker.services")} · {filteredServices.length}
           </h3>
           <div className="space-y-2">
             {filteredServices.map((svc) => {
               const isOnCanvas = onCanvasServiceIds.has(svc.id);
               return (
-                <RegistryServiceRow
+                <ServiceRow
                   key={svc.id}
                   svc={svc}
                   isOnCanvas={isOnCanvas}

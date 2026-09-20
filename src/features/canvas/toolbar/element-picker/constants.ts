@@ -8,7 +8,7 @@ export const LAST_CATEGORY_KEY = "structura:lastElementCategory";
 /** Spotlight services — owned by the AWS family; re-exported for picker call sites. */
 export const AWS_SPOTLIGHT_IDS: string[] = [...AWS_FAMILY_SPOTLIGHT_SERVICE_IDS];
 
-export const REGISTRY_PREVIEW_LIMIT = 5;
+export const SERVICES_PREVIEW_LIMIT = 5;
 
 /** Primary browse categories — owned by the AWS family. */
 export const AWS_PRIMARY_CATEGORY_IDS: string[] = [...AWS_FAMILY_PRIMARY_CATEGORY_IDS];

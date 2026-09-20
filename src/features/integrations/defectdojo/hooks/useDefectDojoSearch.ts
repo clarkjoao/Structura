@@ -13,7 +13,7 @@ function resolveImportStatus(
   productDesc: string,
 ): { status: ImportStatus; existingServiceId?: string } {
   const state = useDiagramStore.getState();
-  const allServices = Object.values(state.serviceCatalog);
+  const allServices = Object.values(state.services);
   const existing = allServices.find((service) =>
     normalizeSources(service).some(
       (source) => source.type === ServiceSource.Defectdojo && source.sourceId === String(productId),

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Diagram } from "../model/diagram.types";
-import type { SceneDiff } from "../model/diagram.types";
+import type { VersionDiff } from "../model/diagram.types";
 import {
   canMoveNodeInSceneMode,
   computeMergePreview,
-  resolveSceneSnapshot,
-  sceneHasDiff,
-} from "./scene.utils";
+  resolveVersionSnapshot,
+  versionHasDiff,
+} from "./version.utils";
 
 function emptyDiagram(overrides: Partial<Diagram> = {}): Diagram {
   return {
@@ -23,7 +23,7 @@ function emptyDiagram(overrides: Partial<Diagram> = {}): Diagram {
   };
 }
 
-describe("resolveSceneSnapshot", () => {
+describe("resolveVersionSnapshot", () => {
   it("returns base when no scene id", () => {
     const d = emptyDiagram({
       snapshot: {
@@ -34,8 +34,8 @@ describe("resolveSceneSnapshot", () => {
       },
       nodeLayouts: { a: { elementId: "a", x: 1, y: 2 } },
     });
-    const r = resolveSceneSnapshot(d, null);
-    expect(r.sceneId).toBeNull();
+    const r = resolveVersionSnapshot(d, null);
+    expect(r.versionId).toBeNull();
     expect(r.components.a?.name).toBe("A");
     expect(r.nodeLayouts.a?.x).toBe(1);
   });
@@ -55,7 +55,7 @@ describe("resolveSceneSnapshot", () => {
         base1: { elementId: "base1", x: 0, y: 0 },
         hide: { elementId: "hide", x: 0, y: 0 },
       },
-      scenes: {
+      versions: {
         s1: {
           id: "s1",
           name: "S",
@@ -71,7 +71,7 @@ describe("resolveSceneSnapshot", () => {
         },
       },
     });
-    const r = resolveSceneSnapshot(d, "s1");
+    const r = resolveVersionSnapshot(d, "s1");
     expect(r.components.base1).toBeDefined();
     expect(r.components.hide).toBeUndefined();
     expect(r.components.add1?.name).toBe("A1");
@@ -93,7 +93,7 @@ describe("resolveSceneSnapshot", () => {
         keep: { elementId: "keep", x: 0, y: 0 },
         drop: { elementId: "drop", x: 0, y: 0 },
       },
-      scenes: {
+      versions: {
         s1: {
           id: "s1",
           name: "S",
@@ -115,7 +115,7 @@ describe("resolveSceneSnapshot", () => {
         },
       },
     });
-    const r = resolveSceneSnapshot(d, "s1");
+    const r = resolveVersionSnapshot(d, "s1");
     expect(r.components.keep).toBeDefined();
     expect(r.components.drop).toBeUndefined();
     expect(r.components.onlyInScene?.name).toBe("N");
@@ -123,9 +123,9 @@ describe("resolveSceneSnapshot", () => {
   });
 });
 
-describe("sceneHasDiff", () => {
+describe("versionHasDiff", () => {
   it("is false for empty scene diff", () => {
-    const sc: SceneDiff = {
+    const sc: VersionDiff = {
       id: "s",
       name: "S",
       color: "#000",
@@ -136,11 +136,11 @@ describe("sceneHasDiff", () => {
       removedConnectionIds: [],
       nodeLayouts: {},
     };
-    expect(sceneHasDiff(sc)).toBe(false);
+    expect(versionHasDiff(sc)).toBe(false);
   });
 
   it("is true when scene has additions or removals", () => {
-    const sc: SceneDiff = {
+    const sc: VersionDiff = {
       id: "s",
       name: "S",
       color: "#000",
@@ -153,7 +153,7 @@ describe("sceneHasDiff", () => {
       removedConnectionIds: [],
       nodeLayouts: {},
     };
-    expect(sceneHasDiff(sc)).toBe(true);
+    expect(versionHasDiff(sc)).toBe(true);
   });
 });
 
@@ -181,7 +181,7 @@ describe("computeMergePreview", () => {
         iconLibrary: {},
       },
       nodeLayouts: { old: { elementId: "old", x: 0, y: 0 } },
-      scenes: {
+      versions: {
         s1: {
           id: "s1",
           name: "A",
@@ -210,7 +210,7 @@ describe("computeMergePreview", () => {
     expect(p.componentsToAdd).toHaveLength(1);
     expect(p.componentIdsToRemove).toEqual(["old"]);
     expect(p.conflicts).toHaveLength(1);
-    expect(p.conflicts[0]!.conflictingSceneId).toBe("s2");
+    expect(p.conflicts[0]!.conflictingVersionId).toBe("s2");
     expect(p.conflicts[0]!.elementId).toBe("dup");
   });
 
@@ -230,7 +230,7 @@ describe("computeMergePreview", () => {
         iconLibrary: {},
       },
       nodeLayouts: { overlap: { elementId: "overlap", x: 0, y: 0 } },
-      scenes: {
+      versions: {
         s1: {
           id: "s1",
           name: "A",
@@ -245,7 +245,7 @@ describe("computeMergePreview", () => {
       },
     });
     const preview = computeMergePreview(d, "s1");
-    const baseConflict = preview.conflicts.find((c) => c.conflictingSceneId === "__diagramBase__");
+    const baseConflict = preview.conflicts.find((c) => c.conflictingVersionId === "__diagramBase__");
     expect(baseConflict).toBeDefined();
     expect(baseConflict!.elementId).toBe("overlap");
   });
@@ -254,8 +254,8 @@ describe("computeMergePreview", () => {
 describe("canMoveNodeInSceneMode", () => {
   it("returns true for a node added by the active scene", () => {
     const d = emptyDiagram({
-      activeSceneId: "s1",
-      scenes: {
+      activeVersionId: "s1",
+      versions: {
         s1: {
           id: "s1",
           name: "S",
@@ -282,7 +282,7 @@ describe("canMoveNodeInSceneMode", () => {
 
   it("returns false for a base snapshot node while a scene is active", () => {
     const d = emptyDiagram({
-      activeSceneId: "s1",
+      activeVersionId: "s1",
       snapshot: {
         components: {
           baseNode: { id: "baseNode", name: "B", type: "system", description: "", parentId: null },
@@ -291,7 +291,7 @@ describe("canMoveNodeInSceneMode", () => {
         flows: {},
         iconLibrary: {},
       },
-      scenes: {
+      versions: {
         s1: {
           id: "s1",
           name: "S",

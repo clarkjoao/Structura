@@ -60,7 +60,7 @@ Structura Cloud ships — `ADR-0007` keeps the cloud as a separate product).
 `src/features/diagram/model/diagram.types.ts`.
 
 **Counterpoint:** Not the same as a **Model** (the bounded context in
-`features/diagram`), not the same as a **Scene** (a variant of a diagram),
+`features/diagram`), not the same as a **Version** (a variant of a diagram),
 and not the same as a **Workspace** (the whole container).
 
 ---
@@ -115,7 +115,7 @@ escape hatch, and cloud category ids).
 - Not the same as a **Node** (which is the React Flow renderer of a
   Component; lives in `features/canvas/nodes/`).
 - Not the same as a **Service** (a workspace-level production unit; lives
-  in the Service Catalog).
+  in the Services collection).
 - Not the same as a **Capability** (a workspace-level business concept;
   planned, does not exist yet).
 
@@ -198,7 +198,7 @@ all linked Components.
 
 **Reference:** `ServiceDefinition` in
 `src/features/diagram/model/service.types.ts`; held in
-`state.serviceCatalog` (formerly `serviceRegistry`).
+`state.services` (formerly `serviceCatalog` / `serviceRegistry`).
 
 **Counterpoint:**
 
@@ -213,35 +213,27 @@ all linked Components.
 
 ---
 
-### Service Catalog
+### Services
 
-**Status:** `current` (renamed from `serviceRegistry` in
-  `openspec/changes/rename-service-registry-to-service-catalog/`,
-  shipped under `PERSIST_SCHEMA_VERSION` 8; the legacy
-  `useRegistryActions` and `useServiceRegistry` aliases remain for one
-  release)
+**Status:** `current` (renamed from `serviceCatalog` / formerly
+  `serviceRegistry`; `PERSIST_SCHEMA_VERSION` 14)
 
 **Definition:** The workspace-level collection of Services. Implemented
-as `state.serviceCatalog: Record<id, ServiceDefinition>`. UI lives at
-`/catalog` (the URL was already `/catalog`; only the internal page
-component, hook, and i18n keys were renamed).
+as `state.services: Record<id, ServiceDefinition>`. UI lives at
+`/services` (legacy `/catalog` redirects).
 
 **Reference:** `src/features/diagram/store/slices/services.slice.ts`;
-page `src/pages/serviceCatalog/`; hook `useCatalogActions` in
+page `src/pages/services/`; hook `useServiceActions` in
 `src/features/diagram/store/diagram.store.ts`.
 
-**Aliases:** `serviceRegistry` (deprecated; runtime data migrated on
-load), `useRegistryActions` (deprecated; alias of `useCatalogActions`),
-`useServiceRegistry` (deprecated; alias of `useServiceCatalog`),
-i18n `nav.registry` and `elementPicker.registry` (deprecated; resolve
-to "Services"/"Serviços" via the new `services` keys).
+**Aliases (migrated on load):** `serviceRegistry` (≤v7),
+`serviceCatalog` (v8–v13). Plugin panel slot `service-registry-import`
+is accepted as an alias of `services-import` for one release.
 
-**Why rename:** the word *registry* in Structura currently means at least
-six different things — plugin registry, node type registry, panel
-registry, IO registry, import registry, service registry. *Catalog* is
-already the established term for AWS/GCP/Azure icon packs
-(`src/lib/catalogs/`), and it describes the actual UX (a navigable
-catalog of services with cards, search, filters, import panels).
+**Why "Services":** *registry* and *catalog* were overloaded (plugin
+registry, node-type registry, cloud icon catalogs under
+`src/lib/catalogs/` and `*.catalog.ts`). The product term is simply
+**Services** / **Serviços**.
 
 ---
 
@@ -249,7 +241,7 @@ catalog of services with cards, search, filters, import panels).
 
 **Status:** `current`
 
-**Definition:** A reference from a Component to a Service in the catalog,
+**Definition:** A reference from a Component to a Service,
 stored as `Component.serviceId`. The reverse direction ("which Components
 link to this Service?") is derived on demand and is not stored.
 
@@ -287,26 +279,32 @@ catalog).
 
 ## Part 4 — Variants and narrative
 
-### Scene
+### Version
 
 **Status:** `current`
 
 **Definition:** A named diff over a Diagram's snapshot, used to express
 variants (e.g. "production" vs "staging", or "as-designed" vs "as-built").
-The base Diagram stays the source of truth; the Scene adds/removes
-Components and Connections and overrides layout.
+The base Diagram stays the source of truth; the Version adds/removes
+Components and Connections and overrides layout. Product name is
+**Version** / **Versão** (formerly Scene / Cena).
 
-**Reference:** `SceneDiff` in
-`src/features/diagram/model/diagram.types.ts:129`; slice at
-`src/features/diagram/store/slices/scenes.slice.ts`; compare mode in
-the Canvas.
+**Reference:** `VersionDiff` in
+`src/features/diagram/model/diagram.types.ts`; slice at
+`src/features/diagram/store/slices/versions.slice.ts`; compare mode in
+the Canvas. Persist keys: `versions` / `activeVersionId` /
+`compareVersionId` (schema 15; dual-reads legacy `scenes` /
+`activeSceneId` / `compareSceneId`).
 
 **Counterpoint:** Three distinct axes of variation must not be confused:
 
 | Axis | Mechanism | Lives in |
 | --- | --- | --- |
-| Variant (env, scenario) | **Scene** | `Diagram.scenes` |
+| Variant (env, scenario) | **Version** | `Diagram.versions` |
 | Abstraction (C4 levels) | **Drill-Down** | `BaseComponent.linkedDiagramId` |
+
+Do not confuse with `infrastructure/persistence/versions.ts`
+(file-schema `VersionedDiagram`) or with `FlowReadingScene` (Flow UI).
 
 ---
 
@@ -350,7 +348,7 @@ and a separate `Walkthroughs` Zustand store.
   When that feature is added, the term *Journey* is free to use.
 - **Not** a BPMN process. Steps are pointers to diagrams, not activities
   with gateways and timers.
-- **Not** a Scene (Scene is a variant of a single Diagram; a walkthrough is
+- **Not** a Version (Version is a variant of a single Diagram; a walkthrough is
   a sequence across multiple).
 - **Not** a Flow (Flow is recorded within one Diagram; a walkthrough is
   recorded across Diagrams, optionally invoking Flows).
@@ -367,7 +365,7 @@ and a separate `Walkthroughs` Zustand store.
 holds all custom SVG icons in a workspace. It is the single source of truth
 for icon data; the canvas and interchange layers subscribe to it via selectors.
 When an icon is deleted, `diagramStore.removeIconReferences()` sweeps all
-`customIconId` pointers from components and scenes.
+`customIconId` pointers from components and versions.
 
 **Reference:** `IconStore` in
 `src/features/diagram/store/icon-store.ts`; exported from
@@ -614,7 +612,7 @@ blocking defect.
 | --- | --- | --- | --- | --- |
 | 1 | `processos` (ComponentType) | `process-node` | 1 | shipped (PERSIST_SCHEMA_VERSION 7) |
 | 2 | `registryServiceId` (field) | unify with `serviceId` | 1 | shipped (PERSIST_SCHEMA_VERSION 11) — the field was live (used by plugin snapshots and custom-component template instancing); unification with `serviceId` removes a duplicate write path that caused `linkComponentToService` to silently miss the link. |
-| 3 | `serviceRegistry` (state, i18n, page) | `serviceCatalog` | 2 | shipped (PERSIST_SCHEMA_VERSION 8) |
+| 3 | `serviceRegistry` / `serviceCatalog` (state, i18n, page) | `services` | 2 | shipped (`serviceRegistry`→`serviceCatalog` at schema 8; `serviceCatalog`→`services` at schema 14; route `/services`) |
 | 4 | `ModelExplorer` (page) | `Workspace` | 2 | shipped |
 | 5 | `Journey` (entity, route, i18n) | `Walkthrough` | 3 | shipped (PERSIST_SCHEMA_VERSION 9) |
 | 6 | `ExternalElementComponent.linkedDiagramId` | `referenceDiagramId` | 3 | shipped (PERSIST_SCHEMA_VERSION 10) |

@@ -49,7 +49,7 @@ function Harness() {
     visibleConnections,
     resolvedComponents,
   });
-  const view = resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor);
+  const view = resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor);
   latest.edges = useCanvasEdges({
     diagram,
     view,

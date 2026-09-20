@@ -139,9 +139,9 @@ function makeSnapshot(overrides: Record<string, unknown> = {}) {
     nodeLayouts: {},
     edgeLayouts: {},
     iconLibrary: {},
-    scenes: {},
-    activeSceneId: null,
-    compareSceneId: null,
+    versions: {},
+    activeVersionId: null,
+    compareVersionId: null,
     ...overrides,
   };
 }

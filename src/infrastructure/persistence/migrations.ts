@@ -68,15 +68,15 @@ function sanitizeCorruptedComponentTypes(diagram: Diagram): Diagram {
   };
 
   // Active scene's added components may also carry corrupted types.
-  if (diagram.activeSceneId && diagram.scenes?.[diagram.activeSceneId]) {
-    const scene = diagram.scenes[diagram.activeSceneId];
+  if (diagram.activeVersionId && diagram.versions?.[diagram.activeVersionId]) {
+    const scene = diagram.versions[diagram.activeVersionId];
     const sceneComponents = cleanMap(scene.addedComponents);
     if (sceneComponents) {
       nextDiagram = {
         ...nextDiagram,
-        scenes: {
-          ...nextDiagram.scenes,
-          [diagram.activeSceneId]: { ...scene, addedComponents: sceneComponents },
+        versions: {
+          ...nextDiagram.versions,
+          [diagram.activeVersionId]: { ...scene, addedComponents: sceneComponents },
         },
       };
     }

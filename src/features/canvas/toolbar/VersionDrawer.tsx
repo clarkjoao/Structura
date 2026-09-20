@@ -4,54 +4,54 @@ import { toast } from "sonner";
 import { Copy, GitBranch, GitMerge, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
 import {
   computeMergePreview,
-  sceneHasDiff,
+  versionHasDiff,
   useActiveDiagram,
   useDiagramActions,
   type MergePreview,
-  type SceneDiff,
+  type VersionDiff,
 } from "@/features/diagram";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import { MergeSceneDialog } from "./MergeSceneDialog";
+import { MergeVersionDialog } from "./MergeVersionDialog";
 
-export type SceneDrawerScene = SceneDiff;
+export type VersionDrawerVersion = VersionDiff;
 
-export interface SceneDrawerProps {
-  scenes: SceneDrawerScene[];
-  activeSceneId: string | null;
-  compareSceneId: string | null;
+export interface VersionDrawerProps {
+  versions: VersionDrawerVersion[];
+  activeVersionId: string | null;
+  compareVersionId: string | null;
   onClose: () => void;
-  onSelectScene: (id: string) => void;
-  onAddScene: (name: string) => void;
+  onSelectVersion: (id: string) => void;
+  onAddVersion: (name: string) => void;
   onRename: (id: string, name: string) => void;
   onDuplicate: (id: string) => void;
   onDelete: (id: string) => void;
-  onMerge: (scene: SceneDiff) => void;
+  onMerge: (version: VersionDiff) => void;
   onSelectBase: () => void;
 
-  scenesLocked?: boolean;
+  versionsLocked?: boolean;
 
-  scenesGuestReadOnly?: boolean;
+  versionsGuestReadOnly?: boolean;
 }
 
-function SceneRow({
-  scene,
+function VersionRow({
+  version,
   isActive,
   isCompare,
-  scenesLocked,
-  scenesGuestReadOnly,
+  versionsLocked,
+  versionsGuestReadOnly,
   onSelect,
   onRename,
   onDuplicate,
   onDelete,
   onMerge,
 }: {
-  scene: SceneDrawerScene;
+  version: VersionDrawerVersion;
   isActive: boolean;
   isCompare: boolean;
-  scenesLocked?: boolean;
-  scenesGuestReadOnly?: boolean;
+  versionsLocked?: boolean;
+  versionsGuestReadOnly?: boolean;
   onSelect: () => void;
   onRename: () => void;
   onDuplicate: () => void;
@@ -60,15 +60,15 @@ function SceneRow({
 }) {
   const { t } = useTranslation();
   const [showActions, setShowActions] = useState(false);
-  const hasDiff = sceneHasDiff(scene);
-  const structuralDisabled = Boolean(scenesLocked || scenesGuestReadOnly);
-  const readOnlyTitle = scenesGuestReadOnly ? t("collaboration.scenesReadOnly") : undefined;
+  const hasDiff = versionHasDiff(version);
+  const structuralDisabled = Boolean(versionsLocked || versionsGuestReadOnly);
+  const readOnlyTitle = versionsGuestReadOnly ? t("collaboration.versionsReadOnly") : undefined;
 
   return (
     <div
       className={cn(
         "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
-        scenesLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+        versionsLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
         isActive
           ? "bg-primary/10 text-primary"
           : isCompare
@@ -76,7 +76,7 @@ function SceneRow({
             : "hover:bg-surface-hover text-foreground",
       )}
       onClick={() => {
-        if (scenesLocked) return;
+        if (versionsLocked) return;
         onSelect();
       }}
       onMouseEnter={() => setShowActions(true)}
@@ -87,11 +87,11 @@ function SceneRow({
           "w-2.5 h-2.5 rounded-full shrink-0 transition-transform",
           isActive ? "scale-125" : "",
         )}
-        style={{ backgroundColor: scene.color }}
+        style={{ backgroundColor: version.color }}
       />
 
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium truncate">{scene.name}</p>
+        <p className="text-xs font-medium truncate">{version.name}</p>
       </div>
 
       {isCompare && (
@@ -102,7 +102,7 @@ function SceneRow({
 
       {isActive && (
         <span className="text-[9px] font-bold uppercase tracking-wider text-primary shrink-0">
-          {t("scenes.drawerActiveBadge")}
+          {t("versions.drawerActiveBadge")}
         </span>
       )}
 
@@ -113,7 +113,7 @@ function SceneRow({
             disabled={structuralDisabled}
             onClick={onRename}
             className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
-            title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.rename")}
+            title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("versions.rename")}
           >
             <Pencil className="h-3 w-3" />
           </button>
@@ -122,7 +122,7 @@ function SceneRow({
             disabled={structuralDisabled}
             onClick={onDuplicate}
             className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
-            title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.duplicate")}
+            title={structuralDisabled && readOnlyTitle ? readOnlyTitle : t("versions.duplicate")}
           >
             <Copy className="h-3 w-3" />
           </button>
@@ -133,7 +133,7 @@ function SceneRow({
               onClick={onMerge}
               className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
               title={
-                structuralDisabled && readOnlyTitle ? readOnlyTitle : t("scenes.mergeIntoBase")
+                structuralDisabled && readOnlyTitle ? readOnlyTitle : t("versions.mergeIntoBase")
               }
             >
               <GitMerge className="h-3 w-3" />
@@ -148,8 +148,8 @@ function SceneRow({
               structuralDisabled && readOnlyTitle
                 ? readOnlyTitle
                 : hasDiff
-                  ? t("scenes.remove")
-                  : t("scenes.deleteEmptyScene")
+                  ? t("versions.remove")
+                  : t("versions.deleteEmptyVersion")
             }
           >
             <Trash2 className="h-3 w-3" />
@@ -160,28 +160,28 @@ function SceneRow({
   );
 }
 
-export function SceneDrawer({
-  scenes,
-  activeSceneId,
-  compareSceneId,
+export function VersionDrawer({
+  versions,
+  activeVersionId,
+  compareVersionId,
   onClose,
-  onSelectScene,
-  onAddScene,
+  onSelectVersion,
+  onAddVersion,
   onRename,
   onDuplicate,
   onDelete,
   onMerge,
   onSelectBase,
-  scenesLocked = false,
-  scenesGuestReadOnly = false,
-}: SceneDrawerProps) {
+  versionsLocked = false,
+  versionsGuestReadOnly = false,
+}: VersionDrawerProps) {
   const { t } = useTranslation();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [newOpen, setNewOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [mergeDialog, setMergeDialog] = useState<{
-    scene: SceneDiff;
+    version: VersionDiff;
     preview: MergePreview;
   } | null>(null);
 
@@ -194,13 +194,13 @@ export function SceneDrawer({
     setRenameDraft("");
   };
 
-  const openMergeDialog = (sc: SceneDiff) => {
+  const openMergeDialog = (sc: VersionDiff) => {
     if (!diagram) return;
     try {
       const preview = computeMergePreview(diagram, sc.id);
-      setMergeDialog({ scene: sc, preview });
+      setMergeDialog({ version: sc, preview });
     } catch {
-      toast.error(t("scenes.mergePreviewError"));
+      toast.error(t("versions.mergePreviewError"));
     }
   };
 
@@ -217,21 +217,21 @@ export function SceneDrawer({
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={t("scenes.drawerTitle")}
+        aria-label={t("versions.drawerTitle")}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2 min-w-0">
             <GitBranch className="h-3.5 w-3.5 text-primary shrink-0" />
             <span className="text-xs font-semibold text-foreground truncate">
-              {t("scenes.drawerTitle")}
+              {t("versions.drawerTitle")}
             </span>
-            {scenesGuestReadOnly && (
-              <span className="shrink-0" title={t("collaboration.scenesReadOnly")}>
+            {versionsGuestReadOnly && (
+              <span className="shrink-0" title={t("collaboration.versionsReadOnly")}>
                 <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
               </span>
             )}
             <span className="text-[10px] text-muted-foreground shrink-0">
-              {t("scenes.drawerSceneCount", { count: scenes.length })}
+              {t("versions.drawerVersionCount", { count: versions.length })}
             </span>
           </div>
           <button
@@ -244,81 +244,81 @@ export function SceneDrawer({
           </button>
         </div>
 
-        {scenesLocked && (
+        {versionsLocked && (
           <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/20">
-            {t("scenes.switchBlockedDuringFlow")}
+            {t("versions.switchBlockedDuringFlow")}
           </div>
         )}
 
-        {scenesGuestReadOnly && (
+        {versionsGuestReadOnly && (
           <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/20 flex items-center gap-2">
             <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span>{t("collaboration.scenesReadOnly")}</span>
+            <span>{t("collaboration.versionsReadOnly")}</span>
           </div>
         )}
 
         <div className="p-2 space-y-0.5 max-h-[320px] overflow-y-auto">
           <button
             type="button"
-            disabled={scenesLocked}
+            disabled={versionsLocked}
             onClick={() => {
               onSelectBase();
               onClose();
             }}
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 w-full text-left transition-colors",
-              scenesLocked && "opacity-60 cursor-not-allowed",
-              activeSceneId === null && !compareSceneId
+              versionsLocked && "opacity-60 cursor-not-allowed",
+              activeVersionId === null && !compareVersionId
                 ? "bg-primary/10 text-primary"
                 : "hover:bg-surface-hover text-foreground",
             )}
           >
             <span className="w-2.5 h-2.5 rounded-full shrink-0 bg-muted-foreground/40" />
-            <span className="text-xs font-medium">{t("scenes.base")}</span>
-            {activeSceneId === null && !compareSceneId && (
+            <span className="text-xs font-medium">{t("versions.base")}</span>
+            {activeVersionId === null && !compareVersionId && (
               <span className="text-[9px] font-bold uppercase tracking-wider text-primary ml-auto">
-                {t("scenes.drawerActiveBadge")}
+                {t("versions.drawerActiveBadge")}
               </span>
             )}
           </button>
 
-          {scenes.map((scene) =>
-            renamingId === scene.id ? (
-              <div key={scene.id} className="px-2 py-1">
+          {versions.map((versionItem) =>
+            renamingId === versionItem.id ? (
+              <div key={versionItem.id} className="px-2 py-1">
                 <input
                   autoFocus
                   value={renameDraft}
                   onChange={(e) => setRenameDraft(e.target.value)}
                   onKeyDown={(e) => {
-                    if (keyIs(e, KEY.ENTER)) commitRename(scene.id);
+                    if (keyIs(e, KEY.ENTER)) commitRename(versionItem.id);
                     if (keyIs(e, KEY.ESCAPE)) {
                       setRenamingId(null);
                       setRenameDraft("");
                     }
                   }}
-                  onBlur={() => commitRename(scene.id)}
+                  onBlur={() => commitRename(versionItem.id)}
                   className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs"
                 />
               </div>
             ) : (
-              <SceneRow
-                key={scene.id}
-                scene={scene}
-                isActive={scene.id === activeSceneId}
-                isCompare={scene.id === compareSceneId}
-                scenesLocked={scenesLocked}
-                scenesGuestReadOnly={scenesGuestReadOnly}
+              <VersionRow
+                key={versionItem.id}
+                version={versionItem}
+                isActive={versionItem.id === activeVersionId}
+                isCompare={versionItem.id === compareVersionId}
+                versionsLocked={versionsLocked}
+                versionsGuestReadOnly={versionsGuestReadOnly}
                 onSelect={() => {
-                  onSelectScene(scene.id);
+                  onSelectVersion(versionItem.id);
                   onClose();
                 }}
                 onRename={() => {
-                  setRenamingId(scene.id);
-                  setRenameDraft(scene.name);
+                  setRenamingId(versionItem.id);
+                  setRenameDraft(versionItem.name);
                 }}
-                onDuplicate={() => onDuplicate(scene.id)}
-                onDelete={() => onDelete(scene.id)}
-                onMerge={() => openMergeDialog(scene)}
+                onDuplicate={() => onDuplicate(versionItem.id)}
+                onDelete={() => onDelete(versionItem.id)}
+                onMerge={() => openMergeDialog(versionItem)}
               />
             ),
           )}
@@ -332,7 +332,7 @@ export function SceneDrawer({
               onChange={(e) => setNewName(e.target.value)}
               onKeyDown={(e) => {
                 if (keyIs(e, KEY.ENTER)) {
-                  onAddScene(newName.trim());
+                  onAddVersion(newName.trim());
                   setNewName("");
                   setNewOpen(false);
                 }
@@ -345,45 +345,45 @@ export function SceneDrawer({
                 setNewName("");
                 setNewOpen(false);
               }}
-              placeholder={t("scenes.newNamePlaceholder")}
+              placeholder={t("versions.newNamePlaceholder")}
               className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs"
             />
           ) : (
             <button
               type="button"
-              disabled={scenesLocked || scenesGuestReadOnly}
-              title={scenesGuestReadOnly ? t("collaboration.scenesReadOnly") : undefined}
+              disabled={versionsLocked || versionsGuestReadOnly}
+              title={versionsGuestReadOnly ? t("collaboration.versionsReadOnly") : undefined}
               onClick={() => {
                 setNewOpen(true);
               }}
               className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors disabled:opacity-50 disabled:pointer-events-none"
             >
               <Plus className="h-3.5 w-3.5" />
-              {t("scenes.newScene")}
+              {t("versions.newVersion")}
             </button>
           )}
         </div>
       </div>
 
       {mergeDialog && diagram && (
-        <MergeSceneDialog
+        <MergeVersionDialog
           open
           onOpenChange={(open) => {
             if (!open) setMergeDialog(null);
           }}
           diagram={diagram}
-          scene={mergeDialog.scene}
+          version={mergeDialog.version}
           preview={mergeDialog.preview}
           onConfirm={() => {
             if (!mergeDialog) return;
-            const { scene, preview } = mergeDialog;
+            const { version, preview } = mergeDialog;
             const conflictCount = preview.conflicts.length;
-            onMerge(scene);
+            onMerge(version);
             setMergeDialog(null);
-            toast.success(t("scenes.mergeSuccess", { name: scene.name }), {
+            toast.success(t("versions.mergeSuccess", { name: version.name }), {
               description:
                 conflictCount > 0
-                  ? t("scenes.mergeSuccessConflicts", { count: conflictCount })
+                  ? t("versions.mergeSuccessConflicts", { count: conflictCount })
                   : undefined,
             });
           }}
@@ -394,127 +394,127 @@ export function SceneDrawer({
   );
 }
 
-export function ConnectedSceneDrawer({ onClose }: { onClose: () => void }) {
+export function ConnectedVersionDrawer({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
-  const { canEditScenes, isCollabGuest } = useInteractionMode(diagram);
-  const scenesGuestReadOnly = isCollabGuest;
-  const scenesLocked = !canEditScenes;
+  const { canEditVersions, isCollabGuest } = useInteractionMode(diagram);
+  const versionsGuestReadOnly = isCollabGuest;
+  const versionsLocked = !canEditVersions;
   const {
-    addScene,
-    removeScene,
-    setActiveScene,
-    setCompareScene,
-    renameScene,
-    mergeSceneIntoBase,
-    duplicateScene,
+    addVersion,
+    removeVersion,
+    setActiveVersion,
+    setCompareVersion,
+    renameVersion,
+    mergeVersionIntoBase,
+    duplicateVersion,
   } = useDiagramActions();
 
   if (!diagram) return null;
 
-  const sceneRecord = diagram.scenes ?? {};
-  const scenes = Object.values(sceneRecord).sort((a, b) => a.createdAt - b.createdAt);
+  const sceneRecord = diagram.versions ?? {};
+  const versions = Object.values(sceneRecord).sort((a, b) => a.createdAt - b.createdAt);
   const activeId =
-    diagram.activeSceneId && sceneRecord[diagram.activeSceneId] ? diagram.activeSceneId : null;
+    diagram.activeVersionId && sceneRecord[diagram.activeVersionId] ? diagram.activeVersionId : null;
   const compareId =
-    diagram.compareSceneId && sceneRecord[diagram.compareSceneId] ? diagram.compareSceneId : null;
+    diagram.compareVersionId && sceneRecord[diagram.compareVersionId] ? diagram.compareVersionId : null;
 
-  const handleScenePillClick = (sceneId: string) => {
-    if (scenesLocked) {
-      toast.warning(t("scenes.switchBlockedDuringFlow"));
+  const handleVersionPillClick = (versionId: string) => {
+    if (versionsLocked) {
+      toast.warning(t("versions.switchBlockedDuringFlow"));
       return;
     }
     if (activeId === null) {
-      setActiveScene(sceneId);
+      setActiveVersion(versionId);
       return;
     }
-    if (activeId === sceneId) {
-      setActiveScene(null);
-      setCompareScene(null);
+    if (activeId === versionId) {
+      setActiveVersion(null);
+      setCompareVersion(null);
       return;
     }
-    if (compareId === sceneId) {
-      setCompareScene(null);
+    if (compareId === versionId) {
+      setCompareVersion(null);
       return;
     }
     if (compareId === null) {
-      setCompareScene(sceneId);
+      setCompareVersion(versionId);
       return;
     }
-    setCompareScene(sceneId);
+    setCompareVersion(versionId);
   };
 
-  const handleDeleteEmptyScene = (sc: SceneDiff) => {
-    removeScene(sc.id);
-    toast.success(t("scenes.emptySceneDeleted", { name: sc.name }));
+  const handleDeleteEmptyVersion = (sc: VersionDiff) => {
+    removeVersion(sc.id);
+    toast.success(t("versions.emptyVersionDeleted", { name: sc.name }));
   };
 
   return (
-    <SceneDrawer
-      scenes={scenes}
-      activeSceneId={activeId}
-      compareSceneId={compareId}
+    <VersionDrawer
+      versions={versions}
+      activeVersionId={activeId}
+      compareVersionId={compareId}
       onClose={onClose}
-      scenesLocked={scenesLocked}
-      scenesGuestReadOnly={scenesGuestReadOnly}
-      onSelectScene={(id) => handleScenePillClick(id)}
-      onAddScene={(trimmed) => {
-        if (scenesGuestReadOnly) return;
-        if (scenesLocked) {
-          toast.warning(t("scenes.switchBlockedDuringFlow"));
+      versionsLocked={versionsLocked}
+      versionsGuestReadOnly={versionsGuestReadOnly}
+      onSelectVersion={(id) => handleVersionPillClick(id)}
+      onAddVersion={(trimmed) => {
+        if (versionsGuestReadOnly) return;
+        if (versionsLocked) {
+          toast.warning(t("versions.switchBlockedDuringFlow"));
           return;
         }
-        const name = trimmed.trim() || t("scenes.defaultSceneName");
-        const created = addScene(name);
-        setActiveScene(created.id);
+        const name = trimmed.trim() || t("versions.defaultVersionName");
+        const created = addVersion(name);
+        setActiveVersion(created.id);
       }}
       onRename={(id, name) => {
-        if (scenesGuestReadOnly) return;
-        renameScene(id, name);
+        if (versionsGuestReadOnly) return;
+        renameVersion(id, name);
       }}
       onDuplicate={(id) => {
-        if (scenesGuestReadOnly) return;
-        if (scenesLocked) {
-          toast.warning(t("scenes.switchBlockedDuringFlow"));
+        if (versionsGuestReadOnly) return;
+        if (versionsLocked) {
+          toast.warning(t("versions.switchBlockedDuringFlow"));
           return;
         }
         const src = sceneRecord[id];
-        const dupName = t("scenes.duplicatedSceneName", { name: src?.name ?? "" });
-        const created = duplicateScene(id, dupName);
+        const dupName = t("versions.duplicatedVersionName", { name: src?.name ?? "" });
+        const created = duplicateVersion(id, dupName);
         if (created) {
-          setActiveScene(created.id);
-          toast.success(t("scenes.duplicateSuccess", { name: created.name }));
+          setActiveVersion(created.id);
+          toast.success(t("versions.duplicateSuccess", { name: created.name }));
         }
       }}
       onDelete={(id) => {
-        if (scenesGuestReadOnly) return;
-        if (scenesLocked) {
-          toast.warning(t("scenes.switchBlockedDuringFlow"));
+        if (versionsGuestReadOnly) return;
+        if (versionsLocked) {
+          toast.warning(t("versions.switchBlockedDuringFlow"));
           return;
         }
         const sc = sceneRecord[id];
         if (!sc) return;
-        if (sceneHasDiff(sc)) {
-          removeScene(sc.id);
+        if (versionHasDiff(sc)) {
+          removeVersion(sc.id);
         } else {
-          handleDeleteEmptyScene(sc);
+          handleDeleteEmptyVersion(sc);
         }
       }}
       onMerge={(scene) => {
-        if (scenesGuestReadOnly) return;
-        if (scenesLocked) {
-          toast.warning(t("scenes.switchBlockedDuringFlow"));
+        if (versionsGuestReadOnly) return;
+        if (versionsLocked) {
+          toast.warning(t("versions.switchBlockedDuringFlow"));
           return;
         }
-        mergeSceneIntoBase(scene.id);
+        mergeVersionIntoBase(scene.id);
       }}
       onSelectBase={() => {
-        if (scenesLocked) {
-          toast.warning(t("scenes.switchBlockedDuringFlow"));
+        if (versionsLocked) {
+          toast.warning(t("versions.switchBlockedDuringFlow"));
           return;
         }
-        setActiveScene(null);
-        setCompareScene(null);
+        setActiveVersion(null);
+        setCompareVersion(null);
       }}
     />
   );

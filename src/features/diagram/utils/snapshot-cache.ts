@@ -5,7 +5,7 @@ import type {
   Connection,
   NodeLayout,
 } from "../model/diagram.types";
-import { resolveCanvasSnapshot } from "./scene.utils";
+import { resolveCanvasSnapshot } from "./version.utils";
 
 export interface ResolvedSnapshot {
   components: Record<string, Component>;
@@ -20,9 +20,9 @@ export interface ResolvedSnapshot {
 type SnapshotCacheEntry = {
   snapshot: unknown;
   nodeLayouts: unknown;
-  scenes: unknown;
-  activeSceneId: unknown;
-  compareSceneId: unknown;
+  versions: unknown;
+  activeVersionId: unknown;
+  compareVersionId: unknown;
   result: ResolvedSnapshot;
 };
 
@@ -34,9 +34,9 @@ export function getCachedCanvasSnapshot(diagram: Diagram | DiagramModel): Resolv
     hit &&
     hit.snapshot === diagram.snapshot &&
     hit.nodeLayouts === diagram.nodeLayouts &&
-    hit.scenes === diagram.scenes &&
-    hit.activeSceneId === diagram.activeSceneId &&
-    hit.compareSceneId === diagram.compareSceneId
+    hit.versions === diagram.versions &&
+    hit.activeVersionId === diagram.activeVersionId &&
+    hit.compareVersionId === diagram.compareVersionId
   ) {
     return hit.result;
   }
@@ -44,9 +44,9 @@ export function getCachedCanvasSnapshot(diagram: Diagram | DiagramModel): Resolv
   cacheByDiagramId.set(diagram.id, {
     snapshot: diagram.snapshot,
     nodeLayouts: diagram.nodeLayouts,
-    scenes: diagram.scenes,
-    activeSceneId: diagram.activeSceneId,
-    compareSceneId: diagram.compareSceneId,
+    versions: diagram.versions,
+    activeVersionId: diagram.activeVersionId,
+    compareVersionId: diagram.compareVersionId,
     result: resolved,
   });
   return resolved;

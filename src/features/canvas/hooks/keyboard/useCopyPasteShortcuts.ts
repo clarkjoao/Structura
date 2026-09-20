@@ -48,7 +48,7 @@ interface UseCopyPasteShortcutsParams {
   ) => string[];
   hydrateClipboard: (entry: ClipboardEntry) => void;
   pasteSvgAsCanvasNode: (svgContent: string, position: { x: number; y: number }) => string | null;
-  serviceCatalog: Record<string, { id: string; name: string }>;
+  services: Record<string, { id: string; name: string }>;
   exportDrawioXml: (componentIds: string[]) => string;
   setSelectedNodeIds: (ids: Set<string>) => void;
   lastPointerScreenRef: MutableRefObject<{ x: number; y: number } | null>;
@@ -66,7 +66,7 @@ export function useCopyPasteShortcuts({
   importDrawioResult,
   hydrateClipboard,
   pasteSvgAsCanvasNode,
-  serviceCatalog,
+  services,
   exportDrawioXml,
   setSelectedNodeIds,
   lastPointerScreenRef,
@@ -154,7 +154,7 @@ export function useCopyPasteShortcuts({
               reactFlowWrapperRef,
               lastPointerScreenRef.current,
             );
-            const result = parseDrawioXml(drawioXml, pasteCenter, serviceCatalog);
+            const result = parseDrawioXml(drawioXml, pasteCenter, services);
             if (result.components.length > 0 || result.connections.length > 0) {
               const newIds = importDrawioResult(
                 result.components,
@@ -221,7 +221,7 @@ export function useCopyPasteShortcuts({
       importDrawioResult,
       hydrateClipboard,
       pasteSvgAsCanvasNode,
-      serviceCatalog,
+      services,
       exportDrawioXml,
       setSelectedNodeIds,
       lastPointerScreenRef,

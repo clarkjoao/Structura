@@ -3,7 +3,7 @@ import { createElement } from "react";
 import DbTableNode from "@/features/canvas/nodes/DbTableNode";
 import DbTablePanel from "@/features/canvas/panels/ElementPanel/DbTablePanel";
 import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { DB_TABLE_COLLAPSED_H, DB_TABLE_COLLAPSED_W } from "@/features/canvas/canvas.constants";
 import { COMPONENT_TYPE_DB_TABLE } from "@/features/diagram/model/component-type-constants";
 import { isDbTableComponent } from "@/features/diagram/model/component.guards";
@@ -108,7 +108,7 @@ export const dbTableElement: ElementDescriptor = {
           });
           ctx.updateComponent?.(comp.id, { columns: merged });
         },
-        ...sceneBadgePropsForNode(ctx, comp.id),
+        ...versionBadgePropsForNode(ctx, comp.id),
       };
     },
 

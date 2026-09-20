@@ -8,7 +8,7 @@ import {
   getFlowParticipants,
   getStepCount,
   isConditionStep,
-  resolveSceneSnapshot,
+  resolveVersionSnapshot,
 } from "@/features/diagram";
 
 export interface FlowHighlight {
@@ -268,8 +268,8 @@ export function describeFlowProgress(
  */
 export type StepElementState =
   | { kind: "present" }
-  | { kind: "hidden"; sceneName: string }
-  | { kind: "elsewhere"; sceneName: string }
+  | { kind: "hidden"; versionName: string }
+  | { kind: "elsewhere"; versionName: string }
   | { kind: "gone" };
 
 export function describeStepElement(
@@ -282,22 +282,22 @@ export function describeStepElement(
   const id = componentId ?? connectionId;
   if (!id) return { kind: "present" };
 
-  const view = resolveSceneSnapshot(diagram, diagram.activeSceneId ?? null);
+  const view = resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null);
   const inView = componentId ? view.components[componentId] : view.connections[connectionId!];
   if (inView) return { kind: "present" };
 
   const base = diagram.snapshot;
   const inBase = componentId ? base.components[componentId] : base.connections[connectionId!];
   if (inBase) {
-    const active = diagram.activeSceneId ? diagram.scenes?.[diagram.activeSceneId] : undefined;
-    return active ? { kind: "hidden", sceneName: active.name } : { kind: "present" };
+    const active = diagram.activeVersionId ? diagram.versions?.[diagram.activeVersionId] : undefined;
+    return active ? { kind: "hidden", versionName: active.name } : { kind: "present" };
   }
 
-  for (const scene of Object.values(diagram.scenes ?? {})) {
+  for (const scene of Object.values(diagram.versions ?? {})) {
     const owned = componentId
       ? scene.addedComponents[componentId]
       : scene.addedConnections[connectionId!];
-    if (owned) return { kind: "elsewhere", sceneName: scene.name };
+    if (owned) return { kind: "elsewhere", versionName: scene.name };
   }
 
   return { kind: "gone" };

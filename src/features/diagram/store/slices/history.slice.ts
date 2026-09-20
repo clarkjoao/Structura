@@ -35,7 +35,7 @@ export function pushHistoryCheckpoint(state: AppState): boolean {
     snapshot: toPlain(d.snapshot),
     nodeLayouts: toPlain(d.nodeLayouts),
     edgeLayouts: toPlain(d.edgeLayouts),
-    scenes: toPlain(d.scenes),
+    versions: toPlain(d.versions),
   });
   if (state.past.length > MAX_HISTORY_STEPS) state.past.shift();
   state.future = [];
@@ -82,7 +82,7 @@ export const historySlice = (
       const currentSnapshot = d.snapshot;
       const currentNodeLayouts = d.nodeLayouts;
       const currentEdgeLayouts = d.edgeLayouts;
-      const currentScenes = d.scenes;
+      const currentScenes = d.versions;
 
       state.past.splice(entryIndex, 1);
       state.future.push({
@@ -90,13 +90,13 @@ export const historySlice = (
         snapshot: currentSnapshot,
         nodeLayouts: currentNodeLayouts,
         edgeLayouts: currentEdgeLayouts,
-        scenes: currentScenes,
+        versions: currentScenes,
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
-      d.scenes = entry.scenes;
+      d.versions = entry.versions;
       state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
       state._lastUndoRedoTimestamp = Date.now();
     });
@@ -125,7 +125,7 @@ export const historySlice = (
       const currentSnapshot = d.snapshot;
       const currentNodeLayouts = d.nodeLayouts;
       const currentEdgeLayouts = d.edgeLayouts;
-      const currentScenes = d.scenes;
+      const currentScenes = d.versions;
 
       state.future.splice(entryIndex, 1);
       state.past.push({
@@ -133,13 +133,13 @@ export const historySlice = (
         snapshot: currentSnapshot,
         nodeLayouts: currentNodeLayouts,
         edgeLayouts: currentEdgeLayouts,
-        scenes: currentScenes,
+        versions: currentScenes,
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
-      d.scenes = entry.scenes;
+      d.versions = entry.versions;
       state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
       state._lastUndoRedoTimestamp = Date.now();
     });

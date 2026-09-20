@@ -70,9 +70,9 @@ host.send(
       nodeLayouts: makeNodeLayouts(NODES),
       edgeLayouts: {},
       iconLibrary: {},
-      scenes: {},
-      activeSceneId: null,
-      compareSceneId: null,
+      versions: {},
+      activeVersionId: null,
+      compareVersionId: null,
     },
   }),
 );

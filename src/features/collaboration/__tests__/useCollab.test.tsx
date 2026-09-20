@@ -91,9 +91,9 @@ function makeSnapshot(): CollabSnapshot {
     nodeLayouts: {},
     edgeLayouts: {},
     iconLibrary: {},
-    scenes: {},
-    activeSceneId: null,
-    compareSceneId: null,
+    versions: {},
+    activeVersionId: null,
+    compareVersionId: null,
   };
 }
 

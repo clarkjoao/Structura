@@ -6,7 +6,7 @@ export * from "./nodeVisibility";
 export * from "./NoteNode";
 export * from "./PanelNode";
 export * from "./panelLabel";
-export * from "./SceneElementBadge";
+export * from "./VersionElementBadge";
 export * from "./SvgNode";
 export * from "./SwimlaneNode";
 export * from "./UnknownNode";

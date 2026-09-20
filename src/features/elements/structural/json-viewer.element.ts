@@ -3,7 +3,7 @@ import { createElement } from "react";
 import JsonViewerNode from "@/features/canvas/nodes/JsonViewerNode";
 import JsonViewerPanel from "@/features/canvas/panels/ElementPanel/JsonViewerPanel";
 import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_JSON_VIEWER } from "@/features/diagram/model/component-type-constants";
 import { isJsonViewerComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
@@ -70,7 +70,7 @@ export const jsonViewerElement: ElementDescriptor = {
         onInlineEditingChange: ctx.setJsonViewerInlineEditingId
           ? (editing: boolean) => ctx.setJsonViewerInlineEditingId!(editing ? comp.id : null)
           : undefined,
-        ...sceneBadgePropsForNode(ctx, comp.id),
+        ...versionBadgePropsForNode(ctx, comp.id),
       };
     },
 

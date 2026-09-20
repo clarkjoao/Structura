@@ -81,7 +81,7 @@ function params(
 ) {
   return {
     diagram,
-    view: resolveViewSnapshot(diagram, { sceneId: null }, resolveNodeDescriptor),
+    view: resolveViewSnapshot(diagram, { versionId: null }, resolveNodeDescriptor),
     edgeHandleAssignments: assignments,
     selectedEdgeId,
     isPlaying: false,

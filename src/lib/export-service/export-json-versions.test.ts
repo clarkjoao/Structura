@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { Component, Diagram, SceneDiff } from "@/features/diagram";
-import { resolveSceneSnapshot } from "@/features/diagram";
+import type { Component, Diagram, VersionDiff } from "@/features/diagram";
+import { resolveVersionSnapshot } from "@/features/diagram";
 import { validateDiagramFile } from "@/infrastructure/persistence/validateWorkspaceFile";
 import { exportJSON } from "./export-json";
 
 /**
  * Scenes are diagram content: exportJSON must preserve them whether or not a
- * scene is active. Snapshot stays the base; SceneDiffs stay diffs over it.
+ * scene is active. Snapshot stays the base; VersionDiffs stay diffs over it.
  */
 
 function baseComponent(id: string, name: string): Component {
@@ -19,7 +19,7 @@ function baseComponent(id: string, name: string): Component {
   };
 }
 
-function sceneDiff(overrides: Partial<SceneDiff> & Pick<SceneDiff, "id" | "name">): SceneDiff {
+function sceneDiff(overrides: Partial<VersionDiff> & Pick<VersionDiff, "id" | "name">): VersionDiff {
   return {
     color: "#6366f1",
     createdAt: 1,
@@ -32,7 +32,7 @@ function sceneDiff(overrides: Partial<SceneDiff> & Pick<SceneDiff, "id" | "name"
   };
 }
 
-function diagramWithScenes(activeSceneId: string | null | undefined): Diagram {
+function diagramWithScenes(activeVersionId: string | null | undefined): Diagram {
   const base: Component = baseComponent("base-1", "Base System");
   const sceneOnly: Component = baseComponent("scene-1", "Scene Only");
   const scene = sceneDiff({
@@ -57,8 +57,8 @@ function diagramWithScenes(activeSceneId: string | null | undefined): Diagram {
     nodeLayouts: { [base.id]: { elementId: base.id, x: 0, y: 0 } },
     edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 1 },
-    scenes: { [scene.id]: scene },
-    ...(activeSceneId !== undefined ? { activeSceneId } : {}),
+    versions: { [scene.id]: scene },
+    ...(activeVersionId !== undefined ? { activeVersionId } : {}),
   };
 }
 
@@ -69,10 +69,10 @@ describe("exportJSON — scenes as content", () => {
       data: Diagram;
     };
 
-    expect(parsed.data.scenes).toBeDefined();
-    expect(Object.keys(parsed.data.scenes!)).toEqual(["sc1"]);
-    expect(parsed.data.scenes!.sc1.addedComponents["scene-1"]?.name).toBe("Scene Only");
-    expect(parsed.data.activeSceneId).toBe("sc1");
+    expect(parsed.data.versions).toBeDefined();
+    expect(Object.keys(parsed.data.versions!)).toEqual(["sc1"]);
+    expect(parsed.data.versions!.sc1.addedComponents["scene-1"]?.name).toBe("Scene Only");
+    expect(parsed.data.activeVersionId).toBe("sc1");
     // Base snapshot is not flattened — scene-only component stays out of base
     expect(parsed.data.snapshot.components["scene-1"]).toBeUndefined();
     expect(parsed.data.snapshot.components["base-1"]).toBeDefined();
@@ -82,9 +82,9 @@ describe("exportJSON — scenes as content", () => {
     const diagram = diagramWithScenes(null);
     const parsed = JSON.parse(exportJSON(diagram)) as { data: Diagram };
 
-    expect(parsed.data.scenes).toBeDefined();
-    expect(Object.keys(parsed.data.scenes!)).toEqual(["sc1"]);
-    expect(parsed.data.activeSceneId).toBeNull();
+    expect(parsed.data.versions).toBeDefined();
+    expect(Object.keys(parsed.data.versions!)).toEqual(["sc1"]);
+    expect(parsed.data.activeVersionId).toBeNull();
   });
 
   it("round-trips: reimport recovers all scenes and active scene still resolves", () => {
@@ -95,13 +95,13 @@ describe("exportJSON — scenes as content", () => {
     if (!validation.valid) return;
 
     const imported = validation.diagram;
-    expect(imported.scenes).toBeDefined();
-    expect(Object.keys(imported.scenes!)).toEqual(["sc1"]);
-    expect(imported.activeSceneId).toBe("sc1");
+    expect(imported.versions).toBeDefined();
+    expect(Object.keys(imported.versions!)).toEqual(["sc1"]);
+    expect(imported.activeVersionId).toBe("sc1");
     expect(imported.snapshot.components["base-1"]).toBeDefined();
     expect(imported.snapshot.components["scene-1"]).toBeUndefined();
 
-    const resolved = resolveSceneSnapshot(imported, "sc1");
+    const resolved = resolveVersionSnapshot(imported, "sc1");
     expect(resolved.components["base-1"]).toBeDefined();
     expect(resolved.components["scene-1"]?.name).toBe("Scene Only");
   });

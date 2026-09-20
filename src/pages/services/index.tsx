@@ -12,7 +12,7 @@ import { normalizeSources } from "@/features/integrations/merge-utils";
 import {
   useAllServices,
   useDiagrams,
-  useCatalogActions,
+  useServiceActions,
   useDiagramActions,
 } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
@@ -32,11 +32,11 @@ const DefectDojoPanel = lazy(() =>
   })),
 );
 
-export default function ServiceCatalogPage() {
+export default function ServicesPage() {
   const { t } = useTranslation();
   const services = useAllServices();
   const diagrams = useDiagrams();
-  const { addService, updateService, removeService } = useCatalogActions();
+  const { addService, updateService, removeService } = useServiceActions();
   const { openDiagram } = useDiagramActions();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -170,10 +170,10 @@ export default function ServiceCatalogPage() {
   };
 
   const SOURCE_FILTERS: { value: SourceFilter; label: string }[] = [
-    { value: "all", label: t("registry.filterAll") },
-    { value: ServiceSource.Manual, label: t("registry.filterManual") },
-    { value: ServiceSource.Github, label: t("registry.filterGithub") },
-    { value: ServiceSource.Defectdojo, label: t("registry.filterDefectdojo") },
+    { value: "all", label: t("services.filterAll") },
+    { value: ServiceSource.Manual, label: t("services.filterManual") },
+    { value: ServiceSource.Github, label: t("services.filterGithub") },
+    { value: ServiceSource.Defectdojo, label: t("services.filterDefectdojo") },
   ];
 
   return (
@@ -183,15 +183,15 @@ export default function ServiceCatalogPage() {
         <div className="mx-auto max-w-[1600px]">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h1 className="text-2xl font-bold">{t("registry.title")}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{t("registry.subtitle")}</p>
+              <h1 className="text-2xl font-bold">{t("services.title")}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{t("services.subtitle")}</p>
             </div>
             <button
               onClick={() => setImportPanel((current) => (current ? null : ImportPanel.Manual))}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <Plus className="h-4 w-4" />
-              {t("registry.addService")}
+              {t("services.addService")}
             </button>
           </div>
 
@@ -200,7 +200,7 @@ export default function ServiceCatalogPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("registry.searchPlaceholder")}
+              placeholder={t("services.searchPlaceholder")}
               className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
             {search && (
@@ -244,7 +244,7 @@ export default function ServiceCatalogPage() {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {t("registry.importManual")}
+                    {t("services.importManual")}
                   </button>
                   {showEnableGithub && (
                     <button
@@ -255,7 +255,7 @@ export default function ServiceCatalogPage() {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {t("registry.importGithub")}
+                      {t("services.importGithub")}
                     </button>
                   )}
                   {showEnableDefectDojo && (
@@ -267,7 +267,7 @@ export default function ServiceCatalogPage() {
                           : "text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      {t("registry.importDefectDojo")}
+                      {t("services.importDefectDojo")}
                     </button>
                   )}
                 </div>
@@ -289,7 +289,7 @@ export default function ServiceCatalogPage() {
           )}
 
           <div className="mb-6 empty:hidden">
-            <PluginPanelSlot slot="service-registry-import" serviceId={selectedId} />
+            <PluginPanelSlot slot="services-import" serviceId={selectedId} />
           </div>
 
           <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
@@ -298,8 +298,8 @@ export default function ServiceCatalogPage() {
                 <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
                   <p className="text-sm text-muted-foreground">
                     {services.length === 0
-                      ? t("registry.emptyNoServices")
-                      : t("registry.emptyFiltered")}
+                      ? t("services.emptyNoServices")
+                      : t("services.emptyFiltered")}
                   </p>
                 </div>
               ) : (
@@ -332,7 +332,7 @@ export default function ServiceCatalogPage() {
                 />
               ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
-                  {t("registry.selectForDetails")}
+                  {t("services.selectForDetails")}
                 </div>
               )}
             </div>

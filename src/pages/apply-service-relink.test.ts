@@ -31,7 +31,7 @@ function diagram(components: Component[], sceneComponents: Component[] = []): Di
     viewport: { x: 0, y: 0, zoom: 1 },
     ...(sceneComponents.length > 0
       ? {
-          scenes: {
+          versions: {
             s1: {
               id: "s1",
               name: "s1",
@@ -60,7 +60,7 @@ describe("applyServiceRelink", () => {
       { remap: { "svc-remote": "svc-local" }, clear: [] },
     );
 
-    expect(result.scenes?.s1.addedComponents["s-c1"].serviceId).toBe("svc-local");
+    expect(result.versions?.s1.addedComponents["s-c1"].serviceId).toBe("svc-local");
   });
 
   it("clears a dangling serviceId the user chose to drop", () => {

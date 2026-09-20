@@ -9,7 +9,7 @@ import {
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.constants";
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
-import { sceneBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
+import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { flowPlaybackOpacity } from "@/features/canvas/flow/flowState";
 
 import { CARD_RECORDING_DIM_OPACITY } from "./constants";
@@ -58,7 +58,7 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
       ctx.selectedNodeIds.size > 0 &&
       !ctx.selectedNodeIds.has(comp.id),
     serviceId: comp.serviceId,
-    serviceName: comp.serviceId ? ctx.serviceCatalog[comp.serviceId]?.name : undefined,
+    serviceName: comp.serviceId ? ctx.services[comp.serviceId]?.name : undefined,
     externalLinks: comp.externalLinks,
     linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
     onDrillDown:
@@ -86,7 +86,7 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
           ? (side: "incoming" | "outgoing", connId: string, direction: "up" | "down") =>
               ctx.onReorderHandle!(comp.id, side, connId, direction)
           : undefined,
-    ...sceneBadgePropsForNode(ctx, comp.id),
+    ...versionBadgePropsForNode(ctx, comp.id),
   };
 }
 

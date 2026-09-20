@@ -21,8 +21,8 @@ export function buildHubDeploymentDiagram(): Diagram {
     updatedAt: SEED_TS.updated,
     viewport: { x: 328, y: 217, zoom: 0.64 },
     edgeLayouts: {},
-    scenes: {},
-    activeSceneId: null,
+    versions: {},
+    activeVersionId: null,
     nodeLayouts: {
       "pl-dph-vpc": layout("pl-dph-vpc", 40, 40, 1680, 725),
       "pl-dph-public": layout("pl-dph-public", 40, 40, 710, 428),

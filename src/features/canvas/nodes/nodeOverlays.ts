@@ -122,7 +122,7 @@ function compareDiffOutlineClass(visual: CompareElementVisual): string {
 }
 
 /**
- * Comparing two scenes: the node's opacity is scaled by what the comparison
+ * Comparing two versions: the node's opacity is scaled by what the comparison
  * makes of it, it is outlined by its diff, and nothing can be edited.
  */
 export function compareOverlay(
@@ -169,8 +169,8 @@ export function lockOverlay(node: Node, locked: boolean): Node {
 }
 
 /** In a scene, a node that belongs to the base cannot be moved from the scene. */
-export function sceneLockOverlay(node: Node, lockedByScene: boolean): Node {
-  return lockedByScene ? withoutInteraction(node, ["draggable"]) : node;
+export function versionLockOverlay(node: Node, lockedByVersion: boolean): Node {
+  return lockedByVersion ? withoutInteraction(node, ["draggable"]) : node;
 }
 
 /** A node an LLM suggestion would add, waiting to be kept or discarded. */
@@ -190,7 +190,7 @@ export interface EditorNodeOverlayInput {
   hiddenByTag: boolean;
   isReading: boolean;
   locked: boolean;
-  lockedByScene: boolean;
+  lockedByVersion: boolean;
   pending: boolean;
 }
 
@@ -219,6 +219,6 @@ export function applyEditorNodeOverlays(
   next = tagFilterOverlay(next, input.hiddenByTag);
   next = readingOverlay(next, input.isReading);
   next = lockOverlay(next, input.locked);
-  next = sceneLockOverlay(next, input.lockedByScene);
+  next = versionLockOverlay(next, input.lockedByVersion);
   return pendingOverlay(next, input.pending);
 }

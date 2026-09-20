@@ -59,7 +59,7 @@ export function DefectDojoPanel() {
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-2">
           <Shield className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">{t("registry.sourceDefectdojo")}</span>
+          <span className="text-sm font-semibold">{t("services.sourceDefectdojo")}</span>
           {isConfigured && (
             <span className="rounded-full bg-green-500/10 border border-green-500/30 px-2 py-0.5 text-[10px] font-semibold text-green-600">
               {t("defectdojo.panelBadgeConnected")}

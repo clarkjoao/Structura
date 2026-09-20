@@ -1,13 +1,13 @@
 // ─── Store ────────────────────────────────────────────────────────────────────
 export {
   useDiagramStore,
-  useCatalogActions,
+  useServiceActions,
   createDiagramStore,
   useDiagramActions,
   useComponentActions,
   useConnectionActions,
   useLayoutActions,
-  useSceneActions,
+  useVersionActions,
   useClipboardActions,
   useIconActions,
   flushDiagramStoreToLocalStorageNow,
@@ -44,10 +44,9 @@ export {
   useVisibleComponents,
   useResolvedComponents,
   useResolvedNodeLayouts,
-  useActiveDiagramSceneState,
+  useActiveDiagramVersionState,
   useVisibleConnections,
-  useServiceRegistry,
-  useServiceCatalog,
+  useServices,
   useAllComponents,
   useDiagramTags,
   useAllServices,
@@ -61,10 +60,10 @@ export {
   useGlobalIconLibrary,
   useGlobalIconById,
 } from "./selectors";
-export type { ActiveDiagramSceneState } from "./selectors/connection.selectors";
+export type { ActiveDiagramVersionState } from "./selectors/connection.selectors";
 
-// ─── Scene helpers ────────────────────────────────────────────────────────────
-export { resolveActiveScene } from "./helpers/scene-helpers";
+// ─── Version helpers ────────────────────────────────────────────────────────────
+export { resolveActiveVersion } from "./helpers/version-helpers";
 
 // ─── Import safety helpers ────────────────────────────────────────────────────
 export { reparentOrphanDiagram, reparentOrphanDiagrams } from "./helpers/reparent-orphan-diagram";

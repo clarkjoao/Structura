@@ -22,7 +22,7 @@ export interface InteractionMode {
 
   canStartCollab: boolean;
 
-  canEditScenes: boolean;
+  canEditVersions: boolean;
 
   canExport: boolean;
 
@@ -44,7 +44,7 @@ export function useInteractionMode(
     const canEditCanvas = !isFlowActive && !isCompareMode;
     const canUseFlow = !isCollabActive;
     const canStartCollab = !isFlowActive;
-    const canEditScenes = !isFlowActive;
+    const canEditVersions = !isFlowActive;
     const canExport = !isFlowActive;
     const canNavigateDiagrams = !isFlowActive && !isCompareMode;
 
@@ -58,7 +58,7 @@ export function useInteractionMode(
       canEditCanvas,
       canUseFlow,
       canStartCollab,
-      canEditScenes,
+      canEditVersions,
       canExport,
       canNavigateDiagrams,
     };
