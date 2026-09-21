@@ -40,6 +40,9 @@
     "element_other": "elementos",
     "selected_one": "selecionado",
     "selected_other": "selecionados",
+    "file_one": "arquivo",
+    "file_other": "arquivos",
+    "andMore": "e mais {{count}}",
     "multipleValues": "Múltiplos valores",
     "commaSeparatedTags": "Tags separadas por vírgula",
     "techExample": "ex.: REST, gRPC",
@@ -1556,6 +1559,21 @@
         "direct": "Direto (iframe)",
         "postMessage": "Via código"
       }
+    },
+    "workspace": {
+      "title": "Exportar Workspace",
+      "description": "Selecione o escopo e os formatos para exportar seus diagramas.",
+      "scopeLabel": "Escopo",
+      "scopeSelected": "Diagramas selecionados",
+      "scopeFolder": "Esta pasta",
+      "scopeWorkspace": "Todo o workspace",
+      "formatLabel": "Formato",
+      "previewLabel": "Prévia",
+      "noDiagrams": "Nenhum diagrama para exportar com a seleção atual.",
+      "exportButton": "Exportar",
+      "mermaidNote": "Fluxos exportados como Markdown",
+      "success": "{{count}} arquivos exportados",
+      "error": "Falha na exportação"
     }
   },
   "toolbar": {},
