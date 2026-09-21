@@ -17,10 +17,7 @@ export interface FlowEdge {
 }
 
 export type FlowInvariantCode =
-  | "missing_entry"
-  | "dangling_reference"
-  | "unreachable_step"
-  | "cycle";
+  "missing_entry" | "dangling_reference" | "unreachable_step" | "cycle";
 
 export interface FlowInvariantViolation {
   code: FlowInvariantCode;
@@ -292,7 +289,10 @@ function brokenStep(
  */
 export function validateFlowGraph(flow: Flow, diagram: Diagram): BrokenStep[] {
   const broken: BrokenStep[] = [];
-  const { components, connections } = resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null);
+  const { components, connections } = resolveVersionSnapshot(
+    diagram,
+    diagram.activeVersionId ?? null,
+  );
   const base = diagram.snapshot;
   const versions = diagram.versions;
 

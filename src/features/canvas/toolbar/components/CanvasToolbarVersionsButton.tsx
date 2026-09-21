@@ -31,7 +31,9 @@ export function CanvasToolbarVersionsButton({
           if (versionsPickerLocked) return;
           onOpenVersions();
         }}
-        title={versionsPickerLocked ? t("diagramNav.unavailableWhileRecordingOrPlayback") : undefined}
+        title={
+          versionsPickerLocked ? t("diagramNav.unavailableWhileRecordingOrPlayback") : undefined
+        }
         className={`flex items-center gap-1 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors ${versionsPickerLocked ? "opacity-50 pointer-events-none" : ""}`}
       >
         <span

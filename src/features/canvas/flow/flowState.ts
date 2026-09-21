@@ -289,7 +289,9 @@ export function describeStepElement(
   const base = diagram.snapshot;
   const inBase = componentId ? base.components[componentId] : base.connections[connectionId!];
   if (inBase) {
-    const active = diagram.activeVersionId ? diagram.versions?.[diagram.activeVersionId] : undefined;
+    const active = diagram.activeVersionId
+      ? diagram.versions?.[diagram.activeVersionId]
+      : undefined;
     return active ? { kind: "hidden", versionName: active.name } : { kind: "present" };
   }
 

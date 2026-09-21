@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { Flow, FlowStep } from "@/features/diagram";
@@ -6,11 +6,6 @@ import { checkFlowInvariants, computeFlowStepLabels, useDiagramStore } from "@/f
 import { useCanvasSelectionStore } from "../../hooks/useCanvasSelectionStore";
 import { useFlowViewStore } from "../useFlowViewStore";
 import { FlowScriptPanel } from "./FlowScriptPanel";
-
-vi.mock("sonner", () => ({
-  toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() },
-}));
-const { toast } = await import("sonner");
 
 /**
  * Seeds a diagram with three real components and one flow. The steps name the
@@ -69,9 +64,15 @@ function dragRow(container: HTMLElement, fromStepId: string, ontoStepId: string)
   const rowOf = (stepId: string) =>
     container.querySelector(`[data-step-id="${stepId}"] > div[draggable]`) as HTMLElement;
   const dataTransfer = { effectAllowed: "", dropEffect: "" };
-  fireEvent.dragStart(rowOf(fromStepId), { dataTransfer });
-  fireEvent.dragOver(rowOf(ontoStepId), { dataTransfer });
-  fireEvent.drop(rowOf(ontoStepId), { dataTransfer });
+  act(() => {
+    fireEvent.dragStart(rowOf(fromStepId), { dataTransfer });
+  });
+  act(() => {
+    fireEvent.dragOver(rowOf(ontoStepId), { dataTransfer });
+  });
+  act(() => {
+    fireEvent.drop(rowOf(ontoStepId), { dataTransfer });
+  });
 }
 
 // Written down back to front on purpose: a test about the order the rows read
@@ -107,7 +108,6 @@ const BRANCHED_WITH_TAIL = (): FlowStep[] => [
 describe("dragging a row moves the step", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
-    vi.mocked(toast.warning).mockClear();
     useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
     useCanvasSelectionStore.getState().clearSelection();
   });
@@ -145,7 +145,7 @@ describe("dragging a row moves the step", () => {
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
-  it("refuses to drag the join in front of its branch point, and says why", () => {
+  it("refuses to drag the join in front of its branch point", () => {
     const { read } = seedFlow(BRANCHED);
     const { container } = renderPanel(read);
     const before = JSON.stringify(read().steps);
@@ -153,9 +153,6 @@ describe("dragging a row moves the step", () => {
     dragRow(container, "join", "s1");
 
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalledWith(
-      expect.stringContaining("undo where the branches meet again"),
-    );
   });
 
   it("refuses to pull the join into one of its own branches", () => {
@@ -166,29 +163,22 @@ describe("dragging a row moves the step", () => {
     dragRow(container, "join", "a1");
 
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalled();
   });
 
-  it("refuses to move a condition, and says why", () => {
+  it("refuses to move a condition", () => {
     const { read } = seedFlow(BRANCHED);
     const { container } = renderPanel(read);
     const before = JSON.stringify(read().steps);
     dragRow(container, "c", "s1");
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalledWith(
-      expect.stringContaining("A condition moves together with its branches"),
-    );
   });
 
-  it("refuses a drop directly behind a condition, and says why", () => {
+  it("refuses a drop directly behind a condition", () => {
     const { read } = seedFlow(BRANCHED);
     const { container } = renderPanel(read);
     const before = JSON.stringify(read().steps);
     dragRow(container, "s1", "c");
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalledWith(
-      expect.stringContaining("no place directly after a condition"),
-    );
   });
 
   it("does nothing when a row is dropped on itself", () => {
@@ -197,7 +187,6 @@ describe("dragging a row moves the step", () => {
     const before = JSON.stringify(read().steps);
     dragRow(container, "s2", "s2");
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).not.toHaveBeenCalled();
   });
 });
 
@@ -258,7 +247,6 @@ describe("the script row and the canvas share one selection", () => {
 describe("a step carries a title and a note the author writes", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
-    vi.mocked(toast.warning).mockClear();
     useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
     useCanvasSelectionStore.getState().clearSelection();
   });

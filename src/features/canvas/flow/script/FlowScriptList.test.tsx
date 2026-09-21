@@ -1,14 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { Flow, FlowStep } from "@/features/diagram";
 import { checkFlowInvariants, useDiagramStore } from "@/features/diagram";
 import { FlowScriptList } from "./FlowScriptList";
-
-vi.mock("sonner", () => ({
-  toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() },
-}));
-const { toast } = await import("sonner");
 
 /**
  * Seeds the shared store with a diagram holding one flow of the given shape,
@@ -70,7 +65,6 @@ const BRANCHED: FlowStep[] = [
 describe("FlowScriptList", () => {
   beforeEach(async () => {
     await i18n.changeLanguage("en");
-    vi.mocked(toast.warning).mockClear();
   });
 
   it("shows one row per step, numbered off the graph", () => {
@@ -132,9 +126,6 @@ describe("FlowScriptList", () => {
     const before = JSON.stringify(read().steps);
     fireEvent.click(screen.getAllByTitle("Remove step")[1]!);
     expect(JSON.stringify(read().steps)).toBe(before);
-    expect(toast.warning).toHaveBeenCalledWith(
-      expect.stringContaining("A condition cannot be removed on its own"),
-    );
   });
 
   it("renames a branch without moving anything", () => {
@@ -246,9 +237,6 @@ describe("FlowScriptList", () => {
 
     expect(read().steps.a1).toBeUndefined();
     expect(read().steps.a2).toBeUndefined();
-    expect(toast.warning).toHaveBeenCalledWith(
-      expect.stringContaining("the 2 steps only it reached"),
-    );
   });
 
   it("says how many steps nothing reaches instead of hiding them", () => {

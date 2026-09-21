@@ -421,5 +421,12 @@ export function useCanvasNodes({
     }
     prevNodesArrayRef.current = nextNodes;
     return nextNodes;
-  }, [diagramVersionState, dataCtx, nodeCtxPlayback, view, isNodeHiddenByTagFilter, pendingNodeIds]);
+  }, [
+    diagramVersionState,
+    dataCtx,
+    nodeCtxPlayback,
+    view,
+    isNodeHiddenByTagFilter,
+    pendingNodeIds,
+  ]);
 }

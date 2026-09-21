@@ -128,9 +128,9 @@ of edge and menu state must not.
 
 ## Node hooks
 
-| Hook              | Goal                                                                                                                                                                                                                               |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useCanvasNodes`  | Translates resolved diagram components and layouts into React Flow nodes. It layers in selection, compare diffs, flow overlays, drag-parenting affordances, tag filtering, pending LLM previews, and node-type-specific callbacks. |
+| Hook             | Goal                                                                                                                                                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useCanvasNodes` | Translates resolved diagram components and layouts into React Flow nodes. It layers in selection, compare diffs, flow overlays, drag-parenting affordances, tag filtering, pending LLM previews, and node-type-specific callbacks. |
 
 ## Flow hooks
 

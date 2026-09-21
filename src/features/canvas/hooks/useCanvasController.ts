@@ -29,15 +29,8 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const reactFlowWrapperRef = useRef<HTMLDivElement>(null);
   const [showVersions, setShowVersions] = useState(false);
   const [focusTitleTrigger, setFocusTitleTrigger] = useState(0);
-  const {
-    diagram,
-    allDiagrams,
-    visibleComponents,
-    visibleConnections,
-    services,
-    flows,
-    actions,
-  } = useCanvasStore();
+  const { diagram, allDiagrams, visibleComponents, visibleConnections, services, flows, actions } =
+    useCanvasStore();
   const activeDiagramId = useActiveDiagramId();
   const resolvedComponents = useResolvedComponents();
   const resolvedNodeLayouts = useResolvedNodeLayouts();

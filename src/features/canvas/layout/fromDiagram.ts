@@ -47,10 +47,7 @@ function dbTableHeight(columns: Array<{ id: string }>): number {
   return DB_TABLE_FIXED_H + columns.length * DB_TABLE_ROW_H;
 }
 
-function countEndpointChildren(
-  groupId: string,
-  components: Record<string, Component>,
-): number {
+function countEndpointChildren(groupId: string, components: Record<string, Component>): number {
   let count = 0;
   for (const child of Object.values(components)) {
     if (child.parentId === groupId && isEndpointType(child.type)) count += 1;

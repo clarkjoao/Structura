@@ -31,7 +31,9 @@ const BrokenFlowDialog = ({ flow, brokenSteps, versionInView, onRemoveSteps, onC
   // anyway" would start a flow whose element is not on screen — neither is the
   // dialog's to decide, so it offers the scene as the way forward instead.
   const removable = brokenSteps.filter((b) => !b.inVersion);
-  const heldVersions = [...new Set(brokenSteps.flatMap((b) => (b.inVersion ? [b.inVersion.name] : [])))];
+  const heldVersions = [
+    ...new Set(brokenSteps.flatMap((b) => (b.inVersion ? [b.inVersion.name] : []))),
+  ];
   const versionList = heldVersions.map((name) => `“${name}”`).join(", ");
   const nothingToRemove = removable.length === 0;
   return (

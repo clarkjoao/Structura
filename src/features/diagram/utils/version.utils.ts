@@ -92,7 +92,10 @@ export function exportFilenameSlug(diagram: Diagram): string {
   return `${base}-${sceneSlug}`;
 }
 
-export function isComponentAddedInActiveVersion(diagram: VersionDiagram, componentId: string): boolean {
+export function isComponentAddedInActiveVersion(
+  diagram: VersionDiagram,
+  componentId: string,
+): boolean {
   const sid = diagram.activeVersionId;
   if (!sid || !diagram.versions?.[sid]) return false;
   return componentId in diagram.versions[sid].addedComponents;

@@ -18,9 +18,8 @@ export interface ServiceReadOnlyDetailsProps {
 export function ServiceReadOnlyDetails({ svc }: ServiceReadOnlyDetailsProps) {
   const { t } = useTranslation();
   const normalizedSources = normalizeSources(svc);
-  const defectDojoProductLink = (
-    svc.metadata?.defectdojo as { productLink?: string } | undefined
-  )?.productLink;
+  const defectDojoProductLink = (svc.metadata?.defectdojo as { productLink?: string } | undefined)
+    ?.productLink;
 
   return (
     <div className="space-y-3">
@@ -98,7 +97,9 @@ export function ServiceReadOnlyDetails({ svc }: ServiceReadOnlyDetailsProps) {
       )}
 
       <div>
-        <span className="text-[11px] text-muted-foreground block mb-1">{t("common.technology")}</span>
+        <span className="text-[11px] text-muted-foreground block mb-1">
+          {t("common.technology")}
+        </span>
         {svc.technology.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {svc.technology.map((techStr) => (
