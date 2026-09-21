@@ -48,25 +48,6 @@ export function resolveCloudServiceId(component: CloudServiceIdFields): string |
 /* ────────────────────────── F6b write side ────────────────────────── */
 
 /**
- * Env name of the F6b release gate. Opt-in, like `VITE_ENABLE_GITHUB_IMPORT`.
- *
- * Exported so the Vite build guard and the bypass test name the same string
- * instead of repeating a literal that could drift.
- */
-export const CLOUD_SERVICE_ID_WRITE_FLAG = "VITE_ENABLE_CLOUD_SERVICE_ID_WRITE";
-
-/**
- * Whether this build was explicitly cleared to persist `cloudServiceId`.
- *
- * Read by the Vite build guard (`vite.config.ts`), **not** by the write
- * helpers below — see `cloudServiceIdWrite` for why the gate is a build gate
- * and not a runtime switch.
- */
-export function isCloudServiceIdWriteEnabled(): boolean {
-  return import.meta.env?.[CLOUD_SERVICE_ID_WRITE_FLAG] === "true";
-}
-
-/**
  * The persisted cloud-service field, for an object literal being built.
  *
  * **This is the single control point for writing `cloudServiceId`.** Nothing
@@ -78,31 +59,15 @@ export function isCloudServiceIdWriteEnabled(): boolean {
  * the same shape it had before the helper existed. Use
  * `cloudServiceIdClearingPatch` when the caller needs to *erase* the field.
  *
- * ### Why this helper does not switch on the release flag
+ * ### Why the writes stay in one place
  *
- * The obvious design — flag off ⇒ write the legacy `awsService` / `gcpService`
- * / `azureService` field, so the runtime behaves like F6a — does not work here,
- * and shipping it would be worse than shipping nothing, because it reads as
- * protection while providing none:
- *
- * 1. `migrateUnifyCloudServiceId` (`store/persist.config.ts`) runs on **every**
- *    rehydrate and unconditionally `delete`s the three legacy fields after
- *    copying them into `cloudServiceId`. A legacy write would survive until the
- *    next page load and no longer.
- * 2. `AwsComponent` / `GcpComponent` / `AzureComponent` no longer declare the
- *    legacy fields at all, so the "off" branch could not type-check without
- *    re-opening the union that F6b closed.
- * 3. `k8s` and `oss` never had a legacy field. There is no F6a behaviour for
- *    them to fall back to. They still share this build gate: the cutover is
- *    "any `cloudServiceId` writer in the production bundle", not
- *    "hyperscaler legacy only". Exempting them needs a per-family gate
- *    redesign — see `docs/audits/correcao-achados-auditoria.md` (fatia 2+3).
- *
- * The cutover is schema v13 as a whole — migration included — not a choice of
- * field name at the write sites. So the gate lives where the cutover actually
- * happens: a production **build** refuses to run unless
- * `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true` is set deliberately. Dev and test
- * are unaffected. See ADR-0010 and `docs/architecture/element-registry.md`.
+ * They were concentrated for the F6b release gate: thirteen unconditional
+ * write sites and a release rule that lived only in ADR prose, so an audit
+ * had thirteen places to check. The gate is gone — the cutover was taken on
+ * 2026-09-20, see ADR-0010 — but the concentration is worth keeping on its
+ * own: `cloud-service-id.write-gate.test.ts` still fails if a fourteenth
+ * producer appears, and the next change to how cloud service ids persist has
+ * one call site to reason about instead of thirteen.
  *
  * @example
  * const component = { ...base, type: "aws-compute", ...cloudServiceIdWrite("lambda") };

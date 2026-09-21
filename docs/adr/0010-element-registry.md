@@ -61,34 +61,43 @@ registries. This ADR records the domain-level registry that closes that gap for
   `cypress/e2e/ir-generation-smoke.cy.ts` is what covers the chunk boundary —
   no unit test can, because it runs in one module graph where bootstrap has
   always run.
-- (−) **F6b deploy gate:** schema v13 / `cloudServiceId` writes must not ship
-  until F6a tolerant reads have been live long enough. Mixed collab rooms
-  (legacy field writers vs `cloudServiceId` writers) diverge checksums; there is
-  no component-schema version gate on the wire. Merge/deploy of this stack is a
-  **human** release decision, not implied by a green branch.
+- (−) **F6b cutover — taken on 2026-09-20, gate removed.** Schema v13 /
+  `cloudServiceId` writes were held behind a build gate until F6a tolerant reads
+  had been live long enough for every client to upgrade: mixed collab rooms
+  (legacy field writers vs `cloudServiceId` writers) diverge on snapshot
+  checksums, and there is no component-schema version on the wire to negotiate
+  it. `cloudServiceIdReleaseGate` in `vite.config.ts` aborted `npm run build`
+  unless `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true` was set deliberately.
 
-  The rule is enforced by code, not by this paragraph:
+  **The decision was taken on 2026-09-20 and the gate deleted**, on these facts:
 
-  1. **One writer.** `cloudServiceIdWrite()` /
-     `cloudServiceIdClearingPatch()` in
-     `src/features/diagram/model/cloud-service-id.ts` are the only producers of
-     the field; `cloud-service-id.write-gate.test.ts` fails the suite if any
-     other source file emits it.
-  2. **The build refuses.** `cloudServiceIdReleaseGate` in `vite.config.ts`
-     aborts `npm run build` unless `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true` is
-     set deliberately. `npm run dev` and `npm test` are unaffected.
+  - F6a tolerant reads (`resolveCloudServiceId`) shipped in 49416c0 on
+    2026-09-16 and have been on `main` — and therefore on Pages — since.
+  - Distribution is a static SPA on GitHub Pages with **no service worker**, so
+    a client picks up a new bundle on its next load. A pre-F6a client is only
+    one whose tab has been open since before that deploy.
+  - No one was using collaboration in production, so no mixed room could exist.
 
-  The gate applies to **every** family that writes `cloudServiceId`, including
-  `k8s` / `oss` (which never had a legacy field). Exempting them would require
-  a per-family gate redesign; the build gate is all-or-nothing by design. See
-  `docs/audits/correcao-achados-auditoria.md` (fatia 2+3).
+  Note that F6a and F6b landed in the *same* commit, so the "readers first, then
+  writers" window never existed as a separate deploy — the build gate is what
+  held the writer half back. That is why the gate could be settled by reasoning
+  about a single deploy date rather than about two.
+
+  **What survives the gate, and why.** `cloudServiceIdWrite()` /
+  `cloudServiceIdClearingPatch()` in
+  `src/features/diagram/model/cloud-service-id.ts` remain the only producers of
+  the field, and `cloud-service-id.write-gate.test.ts` still fails the suite if
+  another source file emits it. That concentration was built for the gate, but
+  it earns its keep without one: the audit that prompted this found thirteen
+  scattered write sites, and the next change to how cloud service ids persist
+  has one call site to reason about instead of thirteen.
 
   A runtime flag that fell back to *writing* the legacy fields was considered
-  and rejected: `migrateUnifyCloudServiceId` deletes those fields on every
-  rehydrate, the three cloud component types no longer declare them, and `k8s` /
-  `oss` never had one — so the fallback would be undone on the next page load
-  while looking like protection. The cutover is schema v13 as a whole, so the
-  gate sits at the build, where the artifact is produced.
+  and rejected at the time: `migrateUnifyCloudServiceId` deletes those fields on
+  every rehydrate, the three cloud component types no longer declare them, and
+  `k8s` / `oss` never had one — so the fallback would have been undone on the
+  next page load while looking like protection. The cutover was schema v13 as a
+  whole, which is why the gate sat at the build rather than at the write sites.
 
 ## Related
 
