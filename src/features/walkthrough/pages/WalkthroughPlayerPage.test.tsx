@@ -110,8 +110,8 @@ const boundary = () => screen.queryByTestId("scene-boundary");
 const stepTitle = () => screen.getByTestId("flow-step-title").textContent;
 
 const TWO_SCENES = presentation([
-  { diagramId: "d1", flowId: "fa" },
-  { diagramId: "d1", flowId: "fb" },
+  { id: "st1", diagramId: "d1", flowId: "fa" },
+  { id: "st2", diagramId: "d1", flowId: "fb" },
 ]);
 
 describe("one key walks the whole walkthrough", () => {
@@ -263,8 +263,8 @@ describe("crossing into another diagram", () => {
 
   it("announces the change, naming the diagram now being read", () => {
     const across = presentation([
-      { diagramId: "d1", flowId: "fa" },
-      { diagramId: "d2", flowId: "fc" },
+      { id: "st3", diagramId: "d1", flowId: "fa" },
+      { id: "st4", diagramId: "d2", flowId: "fc" },
     ]);
     mount(across);
 
@@ -279,8 +279,8 @@ describe("crossing into another diagram", () => {
 
   it("does not update a departed player when the notice outlives it", () => {
     const across = presentation([
-      { diagramId: "d1", flowId: "fa" },
-      { diagramId: "d2", flowId: "fc" },
+      { id: "st5", diagramId: "d1", flowId: "fa" },
+      { id: "st6", diagramId: "d2", flowId: "fc" },
     ]);
     const { unmount } = mount(across);
     const errors: unknown[] = [];
@@ -303,9 +303,9 @@ describe("the scene's note", () => {
   });
 
   const WITH_NOTE = presentation([
-    { diagramId: "d1", flowId: "fa", note: "Mention the retry budget here" },
-    { diagramId: "d1", flowId: "fb" },
-    { diagramId: "d1", flowId: "fa", note: "And the settlement window" },
+    { id: "st7", diagramId: "d1", flowId: "fa", note: "Mention the retry budget here" },
+    { id: "st8", diagramId: "d1", flowId: "fb" },
+    { id: "st9", diagramId: "d1", flowId: "fa", note: "And the settlement window" },
   ]);
 
   it("is shown to the reader while the scene plays", () => {

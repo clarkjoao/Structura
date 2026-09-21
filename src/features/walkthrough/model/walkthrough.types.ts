@@ -3,6 +3,15 @@
  * Each scene points to one diagram + one flow within that diagram.
  */
 export interface WalkthroughStepRef {
+  /**
+   * This scene's own identity, stable across reordering.
+   *
+   * Scenes used to be known by their position, which is what the rail keyed
+   * its rows on — so dragging one past another handed a row the wrong scene's
+   * state. Backfilled on read by `ensureStepIds` for walkthroughs recorded
+   * before the field existed.
+   */
+  id: string;
   diagramId: string;
   flowId: string;
   /** Override title shown for this step in the player/editor; undefined = use the flow's name */

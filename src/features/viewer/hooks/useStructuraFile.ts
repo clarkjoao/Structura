@@ -131,6 +131,8 @@ export function useStructuraFile(): {
 
     const timer = window.setInterval(() => void readHandle(handle, false), POLL_MS);
     return () => window.clearInterval(timer);
+    // The ternary keeps the watcher from restarting on any status but `ready`; worth extracting one day.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.status, state.status === "ready" ? state.readAt : 0, readHandle]);
 
   return { state, pick, supported: isFilePickerSupported() };

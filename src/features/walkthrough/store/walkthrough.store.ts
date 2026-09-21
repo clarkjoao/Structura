@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
 import type { WalkthroughPresentation } from "../model/walkthrough.types";
+import { ensureStepIds, ensureStepIdsIn } from "../model/ensureStepIds";
 
 const STORAGE_KEY = "walkthrough_presentations";
 
@@ -44,15 +45,16 @@ export const useWalkthroughStore = create<WalkthroughStore>((set, get) => ({
 
   hydrate: async () => {
     const data = await storage.load<Record<string, WalkthroughPresentation>>(STORAGE_KEY);
-    set({ presentations: data ?? {}, hydrated: true });
+    // Walkthroughs recorded before scenes had ids are migrated on the way in.
+    set({ presentations: ensureStepIdsIn(data ?? {}), hydrated: true });
   },
 
   save: async (presentation: WalkthroughPresentation) => {
     const current = get().presentations;
-    const updated: WalkthroughPresentation = {
+    const updated: WalkthroughPresentation = ensureStepIds({
       ...presentation,
       updatedAt: Date.now(),
-    };
+    });
     const next = { ...current, [presentation.id]: updated };
     await storage.save(STORAGE_KEY, next);
     set({ presentations: next });
@@ -69,8 +71,9 @@ export const useWalkthroughStore = create<WalkthroughStore>((set, get) => ({
   get: (id: string) => get().presentations[id],
 
   replaceAll: async (presentations: Record<string, WalkthroughPresentation>) => {
-    await storage.save(STORAGE_KEY, presentations);
-    set({ presentations, hydrated: true });
+    const migrated = ensureStepIdsIn(presentations);
+    await storage.save(STORAGE_KEY, migrated);
+    set({ presentations: migrated, hydrated: true });
   },
 }));
 

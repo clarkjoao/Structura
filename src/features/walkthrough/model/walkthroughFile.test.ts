@@ -14,8 +14,8 @@ const FULL: WalkthroughPresentation = {
   authorNotes: "mention the retry",
   folderId: "payments",
   steps: [
-    { diagramId: "d-1", flowId: "f-1", label: "Start here", note: "slow down" },
-    { diagramId: "d-2", flowId: "f-2" },
+    { id: "st1", diagramId: "d-1", flowId: "f-1", label: "Start here", note: "slow down" },
+    { id: "st2", diagramId: "d-2", flowId: "f-2" },
   ],
   createdAt: 111,
   updatedAt: 222,
@@ -87,7 +87,7 @@ describe("rejecting rather than throwing", () => {
       {
         kind: WALKTHROUGH_FILE_KIND,
         schemaVersion: 1,
-        walkthrough: { id: "a", title: "t", steps: [{ diagramId: "d-1" }] },
+        walkthrough: { id: "a", title: "t", steps: [{ id: "st3", diagramId: "d-1" }] },
       },
     ],
     ["a deletion marker", { deleted: true }],

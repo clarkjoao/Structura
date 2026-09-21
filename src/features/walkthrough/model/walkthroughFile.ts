@@ -1,4 +1,5 @@
 import type { WalkthroughPresentation, WalkthroughStepRef } from "./walkthrough.types";
+import { ensureStepIds, newStepId } from "./ensureStepIds";
 
 /** The suffix a walkthrough's companion file takes, beside the diagrams of its folder. */
 export const WALKTHROUGH_FILE_SUFFIX = ".walkthrough.json";
@@ -41,6 +42,9 @@ function readSteps(value: unknown): WalkthroughStepRef[] | null {
     if (!isRecord(entry)) return null;
     if (typeof entry.diagramId !== "string" || typeof entry.flowId !== "string") return null;
     steps.push({
+      // A file written before scenes had ids gets one here rather than at the
+      // call site, so every path into the store produces identified scenes.
+      id: typeof entry.id === "string" && entry.id ? entry.id : newStepId(),
       diagramId: entry.diagramId,
       flowId: entry.flowId,
       label: typeof entry.label === "string" ? entry.label : undefined,
@@ -77,7 +81,7 @@ export function fromWalkthroughFile(raw: unknown): WalkthroughPresentation | nul
   const steps = readSteps(walkthrough.steps);
   if (!steps) return null;
 
-  return {
+  return ensureStepIds({
     id: walkthrough.id,
     title: walkthrough.title,
     description: typeof walkthrough.description === "string" ? walkthrough.description : undefined,
@@ -86,5 +90,5 @@ export function fromWalkthroughFile(raw: unknown): WalkthroughPresentation | nul
     steps,
     createdAt: typeof walkthrough.createdAt === "number" ? walkthrough.createdAt : 0,
     updatedAt: typeof walkthrough.updatedAt === "number" ? walkthrough.updatedAt : 0,
-  };
+  });
 }

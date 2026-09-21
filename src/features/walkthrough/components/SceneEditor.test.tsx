@@ -79,9 +79,9 @@ const THREE_SCENES: WalkthroughPresentation = {
   updatedAt: 0,
   folderId: null,
   steps: [
-    { diagramId: "d-1", flowId: "f-1", label: "Um" },
-    { diagramId: "d-1", flowId: "f-2", label: "Dois" },
-    { diagramId: "d-1", flowId: "f-1", label: "Três" },
+    { id: "st1", diagramId: "d-1", flowId: "f-1", label: "Um" },
+    { id: "st2", diagramId: "d-1", flowId: "f-2", label: "Dois" },
+    { id: "st3", diagramId: "d-1", flowId: "f-1", label: "Três" },
   ],
 };
 
@@ -151,7 +151,7 @@ describe("the scene rail reads as a sequence", () => {
   it("marks a scene whose diagram is gone", () => {
     renderEditor({
       ...THREE_SCENES,
-      steps: [{ diagramId: "d-missing", flowId: "f-1", label: "Órfã" }],
+      steps: [{ id: "st4", diagramId: "d-missing", flowId: "f-1", label: "Órfã" }],
     });
 
     expect(within(row("Órfã")).getByText("Diagrama não encontrado")).toBeTruthy();
@@ -276,7 +276,7 @@ describe("a scene that cannot play says so", () => {
   it("warns when the chosen diagram has no flows", () => {
     renderEditor({
       ...THREE_SCENES,
-      steps: [{ diagramId: "d-empty", flowId: "", label: "Sem fluxo" }],
+      steps: [{ id: "st5", diagramId: "d-empty", flowId: "", label: "Sem fluxo" }],
     });
 
     // The old form put this in a 10px grey footnote under a disabled select,
@@ -293,7 +293,7 @@ describe("a scene that cannot play says so", () => {
   it("warns in the inspector when the diagram is gone, as the rail does", () => {
     renderEditor({
       ...THREE_SCENES,
-      steps: [{ diagramId: "d-missing", flowId: "f-1", label: "Órfã" }],
+      steps: [{ id: "st6", diagramId: "d-missing", flowId: "f-1", label: "Órfã" }],
     });
 
     // Once in the rail, once under the diagram select, once in place of the

@@ -139,6 +139,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
         : EMPTY_VIEW_SNAPSHOT,
     // `diagram` is read for its scene ids and cache key only; the snapshot
     // references below are what the view depends on.
+    // See the note above: `diagram` is the cache key, the snapshot refs are the real inputs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       diagram?.id,
       diagram?.activeVersionId,

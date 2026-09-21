@@ -191,6 +191,8 @@ export function useFileSystemStorage() {
         }
       });
     });
+    // Runs once on mount: seeding localStorage a second time would undo a newer in-memory state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const reconnectWithPermission = useCallback(async () => {

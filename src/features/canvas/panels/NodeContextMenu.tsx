@@ -174,6 +174,8 @@ const NodeContextMenu = ({
 
     setPosition({ top, left });
     setVisible(true);
+    // Positions the menu once on open; the menu remounts per invocation, so x/y cannot go stale.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleClickOutside = useCallback(

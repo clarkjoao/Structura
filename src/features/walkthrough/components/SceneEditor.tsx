@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useDiagramStore, useDiagrams } from "@/features/diagram";
 import type { WalkthroughPresentation, WalkthroughStepRef } from "../model/walkthrough.types";
+import { newStepId } from "../model/ensureStepIds";
 import { ViewerCanvas } from "@/features/viewer";
 import { cn } from "@/lib/utils";
 import { WALKTHROUGH_SCENE_DRAG_MIME } from "@/components/folders/dragTypes";
@@ -64,8 +65,12 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
   const addStep = useCallback(() => {
     const newStep: WalkthroughStepRef =
       diagramList.length > 0 && Object.keys(flowsByDiagram).length > 0
-        ? { diagramId: diagramList[0].id, flowId: Object.values(flowsByDiagram)[0][0].id }
-        : { diagramId: "", flowId: "" };
+        ? {
+            id: newStepId(),
+            diagramId: diagramList[0].id,
+            flowId: Object.values(flowsByDiagram)[0][0].id,
+          }
+        : { id: newStepId(), diagramId: "", flowId: "" };
     const steps = [...presentation.steps, newStep];
     onUpdate({ ...presentation, steps });
     setSelectedIndex(steps.length - 1);
@@ -148,7 +153,9 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
 
                 return (
                   <li
-                    key={index}
+                    // Keyed on the scene, not its position: dragging one past
+                    // another used to hand a row the next scene's state.
+                    key={step.id}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.setData(WALKTHROUGH_SCENE_DRAG_MIME, String(index));
