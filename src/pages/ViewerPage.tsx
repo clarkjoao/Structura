@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, FileJson, LayoutDashboard, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -71,6 +71,20 @@ function ViewerError({ message }: { message: string }) {
   );
 }
 
+function ViewerFrame({ children }: { children: ReactNode }) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        position: "relative",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function assertDiagram(value: unknown): asserts value is Diagram {
   if (!value || typeof value !== "object" || !("id" in value) || !("snapshot" in value)) {
     throw new Error("Missing required fields: id, snapshot");
@@ -107,7 +121,10 @@ function FileSource({ path }: { path: string | null }) {
   }
 
   if (state.status === "reading") return <ViewerLoading label={t("embedPage.loading")} />;
-  return <ViewerCanvas diagram={state.diagram} showOpenInStructuraButton={false} />;
+  return (
+  <ViewerFrame>
+  <ViewerCanvas diagram={state.diagram} showOpenInStructuraButton={false} />
+  </ViewerFrame>);
 }
 
 /** `?diagramId=` — one of the reader's own diagrams, at its saved positions. */
@@ -116,7 +133,10 @@ function StoreSource({ diagramId }: { diagramId: string }) {
   const stored = useDiagramStore((state) => state.diagrams[diagramId]);
 
   if (!stored) return <ViewerError message={t("viewPage.errors.notFound", { id: diagramId })} />;
-  return <ViewerCanvas diagram={stored} showOpenInStructuraButton={false} />;
+  return (
+  <ViewerFrame>
+  <ViewerCanvas diagram={stored} showOpenInStructuraButton={false} />
+  </ViewerFrame>);
 }
 
 type HandedOverState =
@@ -186,7 +206,11 @@ function HandedOverDiagram() {
     case "error":
       return <ViewerError message={state.message} />;
     case "ready":
-      return <ViewerCanvas diagram={state.diagram} initialFlowId={state.flowId} />;
+      return (
+      <ViewerFrame>
+      <ViewerCanvas diagram={state.diagram} initialFlowId={state.flowId} />
+      </ViewerFrame>
+      );
   }
 }
 
