@@ -11,6 +11,7 @@ import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
+import { contrastLabelColor } from "@/features/diagram";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 import { buildPanelHandles } from "./CardNode/Handles";
@@ -79,6 +80,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const useAwsIcon = d.awsIconName ?? kindDef.awsIconName;
   const Icon = kindDef.icon;
   const opacity = d.panelOpacity ?? DEFAULT_PANEL_OPACITY;
+  const labelColor = contrastLabelColor(color, opacity);
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
@@ -163,7 +165,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           <Icon className="h-4 w-4 shrink-0 opacity-80" style={{ color }} />
         )}
         <div className="min-w-0 flex-1">
-          <span className="text-sm font-semibold text-foreground truncate block">
+          <span className="text-sm font-semibold truncate block" style={{ color: labelColor }}>
             {d.name || t("panelNode.defaultName")}
           </span>
           <span className="text-[8px] text-muted-foreground text-nowrap truncate">
@@ -289,7 +291,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             <Icon className="h-3.5 w-3.5 shrink-0 mt-0.5" style={{ color }} />
           )}
           <div className="min-w-0 flex-1">
-            <span className="text-sm font-semibold text-foreground truncate block">
+            <span className="text-sm font-semibold truncate block" style={{ color: labelColor }}>
               {buildPanelHeaderLabel(d.panelKind, panelKindLabel(d.panelKind), d.name)}
             </span>
             {d.description && (
