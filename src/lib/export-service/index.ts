@@ -1,5 +1,6 @@
 export { exportDrawio } from "./export-drawio";
 export { buildDiagramExportFiles } from "./build-export-files";
+export { buildWorkspaceExportFiles } from "./build-workspace-export-files";
 export { exportJSON as exportJson } from "./export-json";
 export { exportMermaid } from "./export-mermaid";
 export { parseDrawioXml as importDrawio } from "./import-drawio";
