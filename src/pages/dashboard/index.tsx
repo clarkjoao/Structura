@@ -2,13 +2,16 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Network, FolderOpen, Upload, Clock, Star } from "lucide-react";
+import { Plus, Network, FolderOpen, Upload, Clock, Star, Download } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import type { Level, Diagram } from "@/features/diagram";
 import { useRecentDiagrams } from "@/features/canvas/navigation/useRecentDiagrams";
 import { ImportModal } from "@/pages/ImportModal";
+import { WorkspaceExportModal } from "@/pages/workspace/WorkspaceExportModal";
+import { useServices } from "@/features/diagram";
+import type { ServiceDefinition } from "@/features/diagram";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -130,6 +133,7 @@ export default function DashboardPage() {
   const folderTreeRef = useRef<HTMLDivElement>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [workspaceExportOpen, setWorkspaceExportOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const isModifierActive = useModifierKey();
@@ -139,6 +143,13 @@ export default function DashboardPage() {
     clearSelection,
     isSelected: isBulkIdSelected,
   } = useMultiSelect();
+
+  const services = useServices();
+
+  const servicesRecord = useMemo(
+    () => Object.fromEntries(Object.entries(services)),
+    [services],
+  );
 
   const diagramIdSet = useMemo(() => new Set(diagrams.map((diagram) => diagram.id)), [diagrams]);
 
@@ -796,6 +807,16 @@ export default function DashboardPage() {
               </Button>
               <Button
                 type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setWorkspaceExportOpen(true)}
+                className="gap-1.5"
+              >
+                <Download className="h-3.5 w-3.5" />
+                {t("export.workspace.exportButton")}
+              </Button>
+              <Button
+                type="button"
                 variant="destructive"
                 size="sm"
                 onClick={() => setBulkDeleteOpen(true)}
@@ -814,6 +835,16 @@ export default function DashboardPage() {
           onConfirm={handleDashboardBulkDeleteConfirm}
         />
       )}
+
+      <WorkspaceExportModal
+        open={workspaceExportOpen}
+        onOpenChange={setWorkspaceExportOpen}
+        diagrams={diagrams}
+        folders={folders}
+        services={servicesRecord}
+        selectedIds={selectedIds as Set<string>}
+        selectedFolderId={selectedFolderId}
+      />
 
       <AlertDialog
         open={pendingDeleteId !== null}
