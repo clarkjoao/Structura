@@ -92,9 +92,7 @@ function tryParseJson(text: string): { value: unknown } | { error: true } {
   }
 }
 
-export const LLMSettings = memo(function LLMSettings({
-  onClose,
-}: LLMSettingsProps) {
+export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsProps) {
   const { t } = useTranslation();
   const connections = useLLMStore((state) => state.connections);
   const activeConnectionId = useLLMStore((state) => state.activeConnectionId);

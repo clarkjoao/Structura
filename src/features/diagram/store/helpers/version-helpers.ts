@@ -2,7 +2,9 @@ import type { Component, Diagram, NodeLayout, VersionDiff } from "../../model/di
 
 export function resolveActiveVersion(diagram: Diagram): VersionDiff | null {
   const activeVersionId = diagram.activeVersionId ?? null;
-  return activeVersionId && diagram.versions?.[activeVersionId] ? diagram.versions[activeVersionId] : null;
+  return activeVersionId && diagram.versions?.[activeVersionId]
+    ? diagram.versions[activeVersionId]
+    : null;
 }
 
 /** Escreve um componente e seu layout no contexto correto (scene ou base). */

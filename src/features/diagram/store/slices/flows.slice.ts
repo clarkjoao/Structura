@@ -113,7 +113,10 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
       return null;
     }
     const activeId = get().activeDiagramId;
-    const r = resolveVersionSnapshot(d, activeId === diagramId ? (d.activeVersionId ?? null) : null);
+    const r = resolveVersionSnapshot(
+      d,
+      activeId === diagramId ? (d.activeVersionId ?? null) : null,
+    );
 
     let steps: Record<string, FlowStep>;
     let entryStepId: string | undefined;

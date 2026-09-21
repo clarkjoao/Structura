@@ -341,7 +341,6 @@ function migrateScenesToVersions(state: Partial<DiagramStore>): void {
   }
 }
 
-
 /** Schema v10: rename `ExternalElementComponent.linkedDiagramId` to
  * `referenceDiagramId`. The two fields had the same name but different
  * semantics: drill-down (BaseComponent.linkedDiagramId, the C4 contract)

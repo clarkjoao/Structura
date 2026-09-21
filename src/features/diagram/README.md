@@ -11,7 +11,7 @@ There are two important views of diagram state:
 
 | View                  | Meaning                                                                                                                                                                                 |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raw persisted state   | The data stored in the diagram itself: snapshot, node layouts, edge layouts, versions, folders, flows, and registry links.                                                                |
+| Raw persisted state   | The data stored in the diagram itself: snapshot, node layouts, edge layouts, versions, folders, flows, and registry links.                                                              |
 | Resolved canvas state | The scene-aware view produced by helpers such as `getCachedCanvasSnapshot`, where active-scene additions and removals have already been applied for rendering and selector consumption. |
 
 If you are documenting or using selector hooks, this distinction matters:
@@ -24,24 +24,23 @@ If you are documenting or using selector hooks, this distinction matters:
 
 ## Main entry points
 
-| Surface                   | Goal                                                                                                                                                        |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `index.ts`                | Public API for models, guards, utilities, store hooks, selectors, and snapshot helpers.                                                                     |
-| `store/diagram.store.ts`  | Composes the Zustand store and exposes `useDiagramStore`, `useDiagramActions`, `useIconActions`, and `useServiceActions`.                                  |
-| `store/selectors/`        | Read-only hooks for diagrams, components, connections, layouts, icons, folders, flows, services, and user templates.                                        |
-| `utils/snapshot-cache.ts` | Builds and caches the resolved canvas snapshot used by scene-aware selectors.                                                                               |
+| Surface                   | Goal                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.ts`                | Public API for models, guards, utilities, store hooks, selectors, and snapshot helpers.                                                                       |
+| `store/diagram.store.ts`  | Composes the Zustand store and exposes `useDiagramStore`, `useDiagramActions`, `useIconActions`, and `useServiceActions`.                                     |
+| `store/selectors/`        | Read-only hooks for diagrams, components, connections, layouts, icons, folders, flows, services, and user templates.                                          |
+| `utils/snapshot-cache.ts` | Builds and caches the resolved canvas snapshot used by scene-aware selectors.                                                                                 |
 | `store/slices/`           | Mutation logic grouped by concern: diagrams, components, parenting, connections, flows, layout, versions, folders, clipboard, patterns, icons, and templates. |
 
 ## State access surfaces
 
 ### Action hooks
 
-| Hook                 | Goal                                                                                                                                                       |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `useDiagramActions`  | Main mutation API for the feature. It groups diagram, component, connection, layout, scene, flow, folder, clipboard, and template actions behind one hook. |
-| `useIconActions`     | Small action surface for the shared icon library that sits alongside the diagram store.                                                                    |
-| `useServiceActions` | Focused action surface for workspace Services mutations and component-to-service linking.                                                             |
-
+| Hook                | Goal                                                                                                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `useDiagramActions` | Main mutation API for the feature. It groups diagram, component, connection, layout, scene, flow, folder, clipboard, and template actions behind one hook. |
+| `useIconActions`    | Small action surface for the shared icon library that sits alongside the diagram store.                                                                    |
+| `useServiceActions` | Focused action surface for workspace Services mutations and component-to-service linking.                                                                  |
 
 ### Diagram selectors
 
@@ -56,19 +55,19 @@ If you are documenting or using selector hooks, this distinction matters:
 
 ### Component and connection selectors
 
-| Hook                         | Goal                                                                                                             |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `useComponentIds`            | Returns component IDs from the resolved active-diagram snapshot.                                                 |
-| `useComponent`               | Reads one resolved component from the active diagram.                                                            |
-| `useComponents`              | Returns the resolved component map for the active diagram.                                                       |
-| `useAllComponents`           | Returns all resolved components for the active diagram as an array.                                              |
-| `useConnectionIds`           | Returns connection IDs from the resolved active-diagram snapshot.                                                |
-| `useConnection`              | Reads one resolved connection from the active diagram.                                                           |
-| `useConnections`             | Returns the resolved connection map for the active diagram.                                                      |
-| `useVisibleComponents`       | Returns only components that are visible in the current scene-aware canvas snapshot.                             |
-| `useVisibleConnections`      | Returns only connections whose endpoints are visible in the current scene-aware canvas snapshot.                 |
-| `useResolvedComponents`      | Returns the resolved component map used by canvas derivation hooks.                                              |
-| `useResolvedNodeLayouts`     | Returns the resolved node-layout map aligned with the current scene-aware snapshot.                              |
+| Hook                           | Goal                                                                                                             |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `useComponentIds`              | Returns component IDs from the resolved active-diagram snapshot.                                                 |
+| `useComponent`                 | Reads one resolved component from the active diagram.                                                            |
+| `useComponents`                | Returns the resolved component map for the active diagram.                                                       |
+| `useAllComponents`             | Returns all resolved components for the active diagram as an array.                                              |
+| `useConnectionIds`             | Returns connection IDs from the resolved active-diagram snapshot.                                                |
+| `useConnection`                | Reads one resolved connection from the active diagram.                                                           |
+| `useConnections`               | Returns the resolved connection map for the active diagram.                                                      |
+| `useVisibleComponents`         | Returns only components that are visible in the current scene-aware canvas snapshot.                             |
+| `useVisibleConnections`        | Returns only connections whose endpoints are visible in the current scene-aware canvas snapshot.                 |
+| `useResolvedComponents`        | Returns the resolved component map used by canvas derivation hooks.                                              |
+| `useResolvedNodeLayouts`       | Returns the resolved node-layout map aligned with the current scene-aware snapshot.                              |
 | `useActiveDiagramVersionState` | Returns the active diagram ID together with active-scene metadata so consumers can quickly branch on scene mode. |
 
 ### Layout selectors
@@ -82,15 +81,15 @@ If you are documenting or using selector hooks, this distinction matters:
 
 ### Flows, folders, icons, registry, and templates
 
-| Hook                                                                  | Goal                                                                              |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `useFlowIds`                                                          | Returns flow IDs for the active diagram.                                          |
-| `useFlow`                                                             | Returns a single flow from the active diagram snapshot.                           |
-| `useFlows`                                                            | Returns all flows for the active diagram.                                         |
-| `useFolderIds`, `useFolder`, `useFolders`, `useAllFolders`            | Read folder structure and folder lists from the store.                            |
-| `useIconLibrary`, `useIconById`, `useComponentIcon`                   | Read from the shared icon library and resolve a component's selected custom icon. |
-| `useServiceIds`, `useService`, `useAllServices`, `useServices` | Read the workspace Services collection that diagrams can link components to.            |
-| `useAllUserTemplates`                                                 | Returns saved user templates sorted by creation time.                             |
+| Hook                                                           | Goal                                                                              |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `useFlowIds`                                                   | Returns flow IDs for the active diagram.                                          |
+| `useFlow`                                                      | Returns a single flow from the active diagram snapshot.                           |
+| `useFlows`                                                     | Returns all flows for the active diagram.                                         |
+| `useFolderIds`, `useFolder`, `useFolders`, `useAllFolders`     | Read folder structure and folder lists from the store.                            |
+| `useIconLibrary`, `useIconById`, `useComponentIcon`            | Read from the shared icon library and resolve a component's selected custom icon. |
+| `useServiceIds`, `useService`, `useAllServices`, `useServices` | Read the workspace Services collection that diagrams can link components to.      |
+| `useAllUserTemplates`                                          | Returns saved user templates sorted by creation time.                             |
 
 ## Preference helpers
 

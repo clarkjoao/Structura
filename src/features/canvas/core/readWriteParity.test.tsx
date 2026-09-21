@@ -153,7 +153,10 @@ function WriteProjection() {
   // As useCanvasGraphState builds it: the diagram's own versions.
   const view = resolveViewSnapshot(
     diagram,
-    { versionId: diagram.activeVersionId ?? null, compareVersionId: diagram.compareVersionId ?? null },
+    {
+      versionId: diagram.activeVersionId ?? null,
+      compareVersionId: diagram.compareVersionId ?? null,
+    },
     resolveNodeDescriptor,
   );
   written.nodes = useCanvasNodes({
@@ -445,7 +448,10 @@ const scene = (
 });
 
 /** Scene `s1` moves x and removes y; `s2` adds z. Base: P holds p1, x and y are roots. */
-function versionedDiagram(activeVersionId: string | null, compareVersionId: string | null): Diagram {
+function versionedDiagram(
+  activeVersionId: string | null,
+  compareVersionId: string | null,
+): Diagram {
   return {
     ...sceneDiagram(
       [panelOf("P"), cardOf("p1", "P"), cardOf("x"), cardOf("y")],
@@ -524,7 +530,11 @@ describe("slice 4: editor and viewer hand React Flow the same arrays", () => {
     it(`${name}: the editor draws what resolveViewSnapshot resolves for its scenes`, () => {
       const diagram = versionedDiagram(versionId, compareVersionId);
       const write = writeProjection(diagram);
-      const view = resolveViewSnapshot(diagram, { versionId, compareVersionId }, resolveNodeDescriptor);
+      const view = resolveViewSnapshot(
+        diagram,
+        { versionId, compareVersionId },
+        resolveNodeDescriptor,
+      );
 
       expect(
         write.nodes.map((node) => ({

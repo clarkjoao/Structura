@@ -19,7 +19,9 @@ function baseComponent(id: string, name: string): Component {
   };
 }
 
-function sceneDiff(overrides: Partial<VersionDiff> & Pick<VersionDiff, "id" | "name">): VersionDiff {
+function sceneDiff(
+  overrides: Partial<VersionDiff> & Pick<VersionDiff, "id" | "name">,
+): VersionDiff {
   return {
     color: "#6366f1",
     createdAt: 1,

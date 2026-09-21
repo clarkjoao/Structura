@@ -37,9 +37,7 @@ export function PluginPanelSlot({
   const activeDiagram = useDiagramStore((state) =>
     state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined,
   );
-  const service = useDiagramStore((state) =>
-    serviceId ? state.services[serviceId] : undefined,
-  );
+  const service = useDiagramStore((state) => (serviceId ? state.services[serviceId] : undefined));
   const updateComponentAction = useDiagramStore((state) => state.updateComponent);
   const updateServiceAction = useDiagramStore((state) => state.updateService);
 

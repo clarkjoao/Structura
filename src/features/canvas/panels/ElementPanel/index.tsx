@@ -1,11 +1,7 @@
 import { LayoutDashboard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CollabEditingWarning } from "@/features/collaboration";
-import {
-  useComponent,
-  useConnections,
-  useDiagramActions,
-} from "@/features/diagram";
+import { useComponent, useConnections, useDiagramActions } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { MultiSelectPanel } from "../MultiSelectPanel";
@@ -33,13 +29,8 @@ const ElementPanel = ({
   const { t } = useTranslation();
   const component = useComponent(selectedElementId ?? "");
   const connections = useConnections();
-  const {
-    updateComponent,
-    removeComponent,
-    updateConnection,
-    removeConnection,
-    groupNodes,
-  } = useDiagramActions();
+  const { updateComponent, removeComponent, updateConnection, removeConnection, groupNodes } =
+    useDiagramActions();
 
   if (selectedNodes.length > 1) {
     return <MultiSelectPanel selectedNodes={selectedNodes} onClose={onClose} />;

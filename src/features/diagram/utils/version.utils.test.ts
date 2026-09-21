@@ -245,7 +245,9 @@ describe("computeMergePreview", () => {
       },
     });
     const preview = computeMergePreview(d, "s1");
-    const baseConflict = preview.conflicts.find((c) => c.conflictingVersionId === "__diagramBase__");
+    const baseConflict = preview.conflicts.find(
+      (c) => c.conflictingVersionId === "__diagramBase__",
+    );
     expect(baseConflict).toBeDefined();
     expect(baseConflict!.elementId).toBe("overlap");
   });

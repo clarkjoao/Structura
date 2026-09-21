@@ -415,9 +415,13 @@ export function ConnectedVersionDrawer({ onClose }: { onClose: () => void }) {
   const sceneRecord = diagram.versions ?? {};
   const versions = Object.values(sceneRecord).sort((a, b) => a.createdAt - b.createdAt);
   const activeId =
-    diagram.activeVersionId && sceneRecord[diagram.activeVersionId] ? diagram.activeVersionId : null;
+    diagram.activeVersionId && sceneRecord[diagram.activeVersionId]
+      ? diagram.activeVersionId
+      : null;
   const compareId =
-    diagram.compareVersionId && sceneRecord[diagram.compareVersionId] ? diagram.compareVersionId : null;
+    diagram.compareVersionId && sceneRecord[diagram.compareVersionId]
+      ? diagram.compareVersionId
+      : null;
 
   const handleVersionPillClick = (versionId: string) => {
     if (versionsLocked) {

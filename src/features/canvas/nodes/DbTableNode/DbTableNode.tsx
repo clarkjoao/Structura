@@ -287,7 +287,9 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       ) : null}
-      {d.compareBadges ? <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} /> : null}
+      {d.compareBadges ? (
+        <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />
+      ) : null}
       {!d.compareBadges && d.versionBadge ? (
         <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
       ) : null}
