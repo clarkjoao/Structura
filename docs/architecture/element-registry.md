@@ -76,7 +76,6 @@ Two mechanisms hold it, so the rule survives someone who has not read this page:
 | Where | What it does |
 | --- | --- |
 | `cloud-service-id.write-gate.test.ts` | Fails if any file outside the control point emits `cloudServiceId`, so the write sites stay countable |
-| `cloudServiceIdReleaseGate` (`vite.config.ts`) | Aborts `npm run build` unless `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true`; dev and tests unaffected |
 
 Turning the flag on is the release decision itself — see
 [ADR-0010](../adr/0010-element-registry.md) for why the gate is at the build

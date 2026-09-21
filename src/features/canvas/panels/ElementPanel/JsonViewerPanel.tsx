@@ -82,6 +82,8 @@ export default function JsonViewerPanel({
     setJsonDraft(formatJson(component.jsonContent ?? "{}"));
     setParseError(false);
     setIsEditingJson(false);
+    // Keyed on `component.id`: re-seeding on every field change would overwrite what is being typed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [component.id]);
 
   useEffect(() => {

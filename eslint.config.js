@@ -37,7 +37,12 @@ export default tseslint.config(
       "react-hooks/refs": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/immutability": "off",
-      "react-hooks/exhaustive-deps": "off",
+      // Back on, as an error. It was off globally, which meant no dependency array in
+      // the app was checked — including in code written after the suppression landed.
+      // The sixteen pre-existing sites are each deliberate (an effect keyed on identity,
+      // a value read through a ref on a hot path) and now carry a per-site disable with
+      // the reason, so an exception has to be argued for rather than inherited.
+      "react-hooks/exhaustive-deps": "error",
       "react-hooks/static-components": "off",
       "react-hooks/preserve-manual-memoization": "off",
       "react-hooks/purity": "off",

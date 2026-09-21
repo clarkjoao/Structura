@@ -171,10 +171,14 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
         panelKind: entry.createOptions.panelKind,
         awsIconName: entry.awsIconName,
       })),
+    // `t` is deliberate: rebuilds the labels on a language change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [t],
   );
 
   // Empty: every canvas type now arrives through REGISTRY_OPTIONS.
+  // `t` is deliberate: rebuilds the labels on a language change.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const CANVAS_OPTIONS = useMemo((): CanvasInsertOption[] => [], [t]);
 
   const CANVAS_OPTIONS_ALL = useMemo(

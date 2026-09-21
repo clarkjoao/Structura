@@ -8,47 +8,68 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { ContentFilter, ViewMode } from "@/pages/dashboard/dashboard.types";
 
-interface WorkspaceFilterToolbarProps {
-  contentFilter: ContentFilter;
-  onContentFilterChange: (filter: ContentFilter) => void;
-  globalSearch: string;
-  onGlobalSearchChange: (value: string) => void;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-  onSort: (key: "name" | "updatedAt" | "level" | "domain") => void;
+export type ViewMode = "grid" | "list";
+
+export interface FilterChipOption<F extends string> {
+  value: F;
+  label: string;
 }
 
-export function WorkspaceFilterToolbar({
-  contentFilter,
-  onContentFilterChange,
-  globalSearch,
-  onGlobalSearchChange,
+export interface SortOption<K extends string> {
+  key: K;
+  label: string;
+}
+
+export interface LibraryFilterToolbarProps<F extends string, K extends string> {
+  /** The narrowing chips, in the order they appear. Labels arrive translated. */
+  chips: readonly FilterChipOption<F>[];
+  activeChip: F;
+  onChipChange: (value: F) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+  searchPlaceholder: string;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+  /** The orderings this library can be sorted by. Labels arrive translated. */
+  sortOptions: readonly SortOption<K>[];
+  onSort: (key: K) => void;
+}
+
+/**
+ * The narrowing controls above a library listing: chips, search, view toggle
+ * and sort, shared by the diagram workspace and the walkthrough library.
+ *
+ * Both libraries narrow the same way; what differs is only *what* they narrow
+ * by — a diagram sorts by C4 level, a walkthrough by how many scenes it has —
+ * so the chip set and the sort orderings arrive as props, already translated by
+ * the host that knows what they mean.
+ */
+export function LibraryFilterToolbar<F extends string, K extends string>({
+  chips,
+  activeChip,
+  onChipChange,
+  search,
+  onSearchChange,
+  searchPlaceholder,
   viewMode,
   onViewModeChange,
+  sortOptions,
   onSort,
-}: WorkspaceFilterToolbarProps) {
+}: LibraryFilterToolbarProps<F, K>) {
   const { t } = useTranslation();
 
   return (
     <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-1.5">
-        <FilterChip
-          active={contentFilter === "all"}
-          label={t("common.all")}
-          onClick={() => onContentFilterChange("all")}
-        />
-        <FilterChip
-          active={contentFilter === "recent"}
-          label={t("dashboard.filterRecent")}
-          onClick={() => onContentFilterChange("recent")}
-        />
-        <FilterChip
-          active={contentFilter === "favorites"}
-          label={t("dashboard.filterFavorites")}
-          onClick={() => onContentFilterChange("favorites")}
-        />
+        {chips.map((chip) => (
+          <FilterChip
+            key={chip.value}
+            active={activeChip === chip.value}
+            label={chip.label}
+            onClick={() => onChipChange(chip.value)}
+          />
+        ))}
       </div>
 
       <div className="flex items-center gap-1.5 self-end sm:self-auto">
@@ -56,9 +77,9 @@ export function WorkspaceFilterToolbar({
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
           <input
             type="search"
-            placeholder={t("dashboard.searchComponentPlaceholder")}
-            value={globalSearch}
-            onChange={(event) => onGlobalSearchChange(event.target.value)}
+            placeholder={searchPlaceholder}
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
             className="h-7 w-48 rounded-md border border-border bg-secondary/50 pl-7 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
@@ -100,16 +121,11 @@ export function WorkspaceFilterToolbar({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onSort("name")}>{t("common.name")}</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSort("updatedAt")}>
-              {t("common.lastEdited")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSort("level")}>
-              {t("common.c4Level")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSort("domain")}>
-              {t("common.domain")}
-            </DropdownMenuItem>
+            {sortOptions.map((option) => (
+              <DropdownMenuItem key={option.key} onClick={() => onSort(option.key)}>
+                {option.label}
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

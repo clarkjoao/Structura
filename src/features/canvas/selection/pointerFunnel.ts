@@ -407,6 +407,8 @@ export function usePointerFunnel(params: {
       window.removeEventListener("pointerup", onPointerUp, true);
       window.removeEventListener("mouseup", onPointerUp, true);
     };
+    // Canvas gesture hot path: `params` is read through a ref so the listener is never rebound mid-drag.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     params.openContextMenu,
     params.onNodePointerDown,

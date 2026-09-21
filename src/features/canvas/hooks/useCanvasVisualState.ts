@@ -98,11 +98,15 @@ export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisu
 
   useEffect(() => {
     clearCanvasSelectionImpl();
+    // Registers the impl once; re-running would swap the handler mid-gesture.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDiagramId]);
 
   // Clear the connection highlight when node selection changes so it doesn't persist.
   useEffect(() => {
     clearHighlightFn();
+    // Registers the handler once; see above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection.selectedNodeId]);
 
   // Stable callbacks backed by ref to avoid stale closures in event handlers.

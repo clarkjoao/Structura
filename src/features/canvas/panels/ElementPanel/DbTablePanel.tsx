@@ -136,6 +136,8 @@ export default function DbTablePanel({
     setName(component.name);
     setDescription(component.description ?? "");
     setColumns(component.columns);
+    // Keyed on `component.id`: re-seeding on every field change would overwrite what is being typed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [component.id]);
 
   useEffect(() => {

@@ -47,6 +47,8 @@ function useCloseAllOnNavLock({
     setShowSearch(false);
     setShowDiagramSidebar(false);
     setShowVersions(false);
+    // Bound once: the setters come from useState and never change identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diagramNavLocked, setShowDiagramSidebar, setShowVersions]);
 }
 
@@ -95,6 +97,8 @@ export function useCanvasDiagramNavigation(params: CanvasDiagramNavParams): Canv
   // itself can be lost. Measured 2026-09-13; see docs/epico-virtualizacao/.
   useEffect(() => {
     if (diagram) recordOpened(diagram.id);
+    // Keyed on the diagram's identity, not its contents — re-running on every edit would re-navigate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [diagram?.id, recordOpened]);
 
   const handleSelectDiagram = useCallback(

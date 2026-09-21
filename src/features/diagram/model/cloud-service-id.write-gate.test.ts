@@ -12,9 +12,10 @@ import { cloudServiceIdClearingPatch, cloudServiceIdWrite } from "./cloud-servic
  * fourteenth site cannot be added without turning this suite red and reading
  * why.
  *
- * The build-side half of the gate lives in `vite.config.ts`
- * (`cloudServiceIdReleaseGate`), which refuses a production bundle unless
- * `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true`.
+ * The build-side half — a Vite plugin that refused a production bundle until
+ * the cutover was cleared — is gone: the decision was taken on 2026-09-20, see
+ * ADR-0010. This half stays, because one producer is worth having whether or
+ * not a release is being gated against it.
  */
 
 const SRC = path.resolve(__dirname, "../../../");
@@ -100,7 +101,7 @@ describe("F6b — cloudServiceId has one write path", () => {
       offenders,
       "Write `cloudServiceId` through `cloudServiceIdWrite()` / " +
         "`cloudServiceIdClearingPatch()` in features/diagram/model/cloud-service-id.ts. " +
-        "That single producer is what the F6b release gate is reviewed against.\n" +
+        "One producer is what keeps this reviewable; see ADR-0010.\n" +
         offenders.join("\n"),
     ).toEqual([]);
   });

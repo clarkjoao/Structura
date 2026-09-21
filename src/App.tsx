@@ -26,6 +26,19 @@ const ServicesPage = lazy(() => import("@/pages/services"));
 const PluginsPage = lazy(() => import("@/pages/settings/PluginsPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
+// Walkthrough pages — only imported (and route registered) when VITE_ENABLE_WALKTHROUGHS="true".
+// Using import.meta.env directly here (not the runtime constant) so that Vite's
+// dead-code elimination removes the entire branch at build time when the flag is off.
+const WalkthroughLibraryPage = lazy(
+  () => import("@/features/walkthrough/pages/WalkthroughLibraryPage"),
+);
+const WalkthroughEditorPage = lazy(
+  () => import("@/features/walkthrough/pages/WalkthroughEditorPage"),
+);
+const WalkthroughPlayerPage = lazy(
+  () => import("@/features/walkthrough/pages/WalkthroughPlayerPage"),
+);
+
 const ROUTER_FUTURE: Partial<FutureConfig> = {
   v7_relativeSplatPath: true,
   v7_startTransition: true,
@@ -71,6 +84,13 @@ function MainPages() {
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/catalog" element={<Navigate to="/services" replace />} />
         <Route path="/plugins" element={<PluginsPage />} />
+        {import.meta.env.VITE_ENABLE_WALKTHROUGHS === "true" && (
+          <>
+            <Route path="/workflows" element={<WalkthroughLibraryPage />} />
+            <Route path="/workflow/:id/edit" element={<WalkthroughEditorPage />} />
+            <Route path="/workflow/:id/step/:step" element={<WalkthroughPlayerPage />} />
+          </>
+        )}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>

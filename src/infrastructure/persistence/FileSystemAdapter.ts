@@ -10,6 +10,7 @@ import {
 import { readElementPresetsField } from "./read-element-presets-field";
 import { type StagedDiagramWrite, getTempFileName, isTempFile } from "./stagedDiagramWrite";
 import { isValidFolderId } from "./folderSync";
+import { isSidecarFileName, sidecarIdFromFileName } from "./sidecarFiles";
 
 const MAX_DIRECTORY_SCAN_DEPTH = 64;
 /** Orphan `.json.tmp` files older than this are removed on reconnect/connect. */
@@ -46,6 +47,19 @@ interface FileSystemDirectoryHandleWithPermissions extends FileSystemDirectoryHa
 }
 
 export type { FileSystemDirectoryHandleWithPermissions };
+
+/** One companion file found by {@link FileSystemAdapter.scanSidecars}. */
+export interface SidecarScanEntry {
+  /** The item id the file name carries. */
+  id: string;
+  fileName: string;
+  /** Folder-id path segments the file was found under; empty at the root. */
+  segments: string[];
+  /** Parsed JSON, or null when the file could not be read. */
+  raw: unknown;
+  /** The file is there but could not be read or parsed. */
+  unreadable?: boolean;
+}
 
 interface WindowWithDirectoryPicker extends Window {
   showDirectoryPicker?: (options?: unknown) => Promise<FileSystemDirectoryHandle>;
@@ -109,22 +123,34 @@ async function verifyPermission(
   return false;
 }
 
-function resolveDiagramPathSegments(diagram: Diagram, folders: Record<string, Folder>): string[] {
-  const segments: string[] = [];
+/**
+ * The directory a folder's contents live in, as path segments.
+ *
+ * Folder **ids**, not names, so renaming a folder does not orphan the files
+ * already written under it. Domain/tag is logical-only (stored inside the
+ * diagram JSON) and is not reflected in the path.
+ *
+ * Taken off `Diagram` so anything else filed into the same folders — a
+ * walkthrough, say — lands in the same directory by the same rule, rather than
+ * growing a second copy of this walk that can drift from it.
+ */
+function resolveFolderPathSegments(
+  folderId: string | null | undefined,
+  folders: Record<string, Folder>,
+): string[] {
+  if (!folderId) return [];
 
-  if (diagram.folderId) {
-    const folderChain: Folder[] = [];
-    let current: Folder | undefined = folders[diagram.folderId];
-    while (current) {
-      folderChain.unshift(current);
-      current = current.parentId ? folders[current.parentId] : undefined;
-    }
-    // Use folder ID (stable, not tied to name) so renames don't orphan files on disk.
-    // Domain/tag is logical-only (stored in diagram JSON), not reflected in the path.
-    segments.push(...folderChain.map((f) => f.id));
+  const folderChain: Folder[] = [];
+  let current: Folder | undefined = folders[folderId];
+  while (current) {
+    folderChain.unshift(current);
+    current = current.parentId ? folders[current.parentId] : undefined;
   }
+  return folderChain.map((f) => f.id);
+}
 
-  return segments;
+function resolveDiagramPathSegments(diagram: Diagram, folders: Record<string, Folder>): string[] {
+  return resolveFolderPathSegments(diagram.folderId, folders);
 }
 
 async function getOrCreateDirectory(
@@ -413,6 +439,140 @@ export class FileSystemAdapter {
       await dir.removeEntry(`${diagramId}.json`);
     } catch {
       // File may not exist at this path (already moved/deleted), not an error
+    }
+  }
+
+  /**
+   * Where a sidecar for something filed in this folder belongs.
+   *
+   * Public so a feature can work out a path without reaching into the folder
+   * graph itself — it is the one place that knows ids, not names, make the path.
+   */
+  resolveSegmentsForFolder(folderId: string | null | undefined): string[] {
+    return resolveFolderPathSegments(folderId, this.folders);
+  }
+
+  /**
+   * Writes a companion file beside the diagrams of a folder.
+   *
+   * Deliberately plain next to `writeDiagramStaged`: a sidecar is small, single,
+   * and independent of every other file, so there is no batch to make atomic and
+   * nothing a half-written one can corrupt but itself.
+   *
+   * Knows nothing of what it is writing — `data` is whatever the caller wants
+   * persisted, and the caller owns its shape and its validation.
+   */
+  async writeSidecar(segments: string[], fileName: string, data: unknown): Promise<boolean> {
+    if (!this.handle) return false;
+    if (!(await this.checkPermission())) return false;
+
+    try {
+      const dir = await getOrCreateDirectory(this.handle, segments);
+      const file = await dir.getFileHandle(fileName, { create: true });
+      const writable = await file.createWritable();
+      await writable.write(JSON.stringify(data, null, 2));
+      await writable.close();
+      return true;
+    } catch (e) {
+      this._hasPermissionError = true;
+      console.error("[FileSystemAdapter] writeSidecar failed:", fileName, e);
+      this._onPermissionError?.();
+      return false;
+    }
+  }
+
+  /**
+   * Removes a companion file, or leaves a deletion marker where it stood if it
+   * cannot be removed.
+   *
+   * The marker matters: without it, a delete that failed would look on the next
+   * read exactly like a file that was never there, and the reconciliation would
+   * write the item straight back.
+   */
+  async deleteSidecarAtSegments(segments: string[], fileName: string): Promise<boolean> {
+    if (!this.handle) return false;
+
+    let dir: FileSystemDirectoryHandle;
+    try {
+      dir = await getOrCreateDirectory(this.handle, segments);
+    } catch {
+      // The directory is gone, so the file is too. Nothing to mark.
+      return true;
+    }
+
+    try {
+      await dir.removeEntry(fileName);
+      return true;
+    } catch {
+      // Already gone is success; anything else gets a tombstone.
+      try {
+        await dir.getFileHandle(fileName);
+      } catch {
+        return true;
+      }
+      try {
+        const file = await dir.getFileHandle(fileName, { create: true });
+        const writable = await file.createWritable();
+        await writable.write(JSON.stringify({ deleted: true }, null, 2));
+        await writable.close();
+        return true;
+      } catch (e) {
+        console.error("[FileSystemAdapter] deleteSidecarAtSegments failed:", fileName, e);
+        return false;
+      }
+    }
+  }
+
+  /**
+   * Every companion file of one type in the workspace, with where it was found.
+   *
+   * Returns raw parsed JSON: this layer recognises the file by its name and
+   * nothing more. Deciding whether the contents are meaningful — and what to do
+   * with a tombstone — belongs to whoever owns the type.
+   */
+  async scanSidecars(suffix: string): Promise<SidecarScanEntry[]> {
+    if (!this.handle) return [];
+    const found: SidecarScanEntry[] = [];
+    await this._scanSidecarDirectory(this.handle, suffix, [], found);
+    return found;
+  }
+
+  private async _scanSidecarDirectory(
+    dir: FileSystemDirectoryHandle,
+    suffix: string,
+    segments: string[],
+    found: SidecarScanEntry[],
+    depth = 0,
+  ): Promise<void> {
+    if (depth > MAX_DIRECTORY_SCAN_DEPTH) return;
+
+    for await (const [name, entry] of directoryEntries(dir)) {
+      if (entry.kind === FileSystemEntryKind.File) {
+        const id = sidecarIdFromFileName(name, suffix);
+        if (!id) continue;
+        try {
+          const file = await (entry as FileSystemFileHandle).getFile();
+          const raw: unknown = JSON.parse(await file.text());
+          found.push({ id, fileName: name, segments: [...segments], raw });
+        } catch (error) {
+          // A file that cannot be read is reported as unreadable rather than
+          // skipped silently — absence is meaningful to the reconciliation, and
+          // "I could not read it" must never be mistaken for "it is not there".
+          console.warn("[FileSystemAdapter] sidecar file skipped", name, error);
+          found.push({ id, fileName: name, segments: [...segments], raw: null, unreadable: true });
+        }
+        continue;
+      }
+
+      if (entry.kind === FileSystemEntryKind.Directory && isValidFolderId(name)) {
+        await this._scanSidecarDirectory(
+          entry as FileSystemDirectoryHandle,
+          suffix,
+          [...segments, name],
+          found,
+          depth + 1,
+        );
+      }
     }
   }
 
@@ -909,7 +1069,14 @@ export class FileSystemAdapter {
     if (depth > MAX_DIRECTORY_SCAN_DEPTH) return;
 
     for await (const [name, entry] of directoryEntries(dir)) {
-      if (entry.kind === FileSystemEntryKind.File && name.endsWith(".json")) {
+      if (
+        entry.kind === FileSystemEntryKind.File &&
+        name.endsWith(".json") &&
+        // Skipped by name, before the file is opened: that keeps boot cheap and
+        // keeps these files out of the invalid list whether or not the feature
+        // that writes them is loaded, or still exists.
+        !isSidecarFileName(name)
+      ) {
         result.totalFilesScanned++;
         try {
           const f = await (entry as FileSystemFileHandle).getFile();
@@ -970,7 +1137,8 @@ export class FileSystemAdapter {
       if (
         entry.kind === FileSystemEntryKind.File &&
         name.endsWith(".json") &&
-        name !== MANIFEST_FILE
+        name !== MANIFEST_FILE &&
+        !isSidecarFileName(name)
       ) {
         try {
           const f = await (entry as FileSystemFileHandle).getFile();

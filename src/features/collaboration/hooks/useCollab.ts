@@ -922,6 +922,8 @@ export function useCollab({
     };
 
     ws.onerror = () => {};
+    // Collab send path: both are read through refs so the socket handlers are not rebound per batch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDiagramId, clearClientHeartbeat, clearReconnectTimer, isHost, roomId, serverUrl]);
 
   useEffect(() => {
@@ -974,6 +976,8 @@ export function useCollab({
         }
       }
     };
+    // Collab send path: `flushBatch` is read through a ref; see above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clearClientHeartbeat, clearReconnectTimer, connect, isHost, roomId]);
 
   // flushBatch must be declared before sendPatch so it captures the current isHost/sendRaw

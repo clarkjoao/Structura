@@ -2,7 +2,8 @@ import type { MouseEvent, DragEvent } from "react";
 import type { Component, Diagram, Level } from "@/features/diagram";
 
 export type SortKey = "name" | "domain" | "level" | "updatedAt";
-export type ViewMode = "grid" | "list";
+/** One definition, shared with the walkthrough library via the filter toolbar. */
+export type { ViewMode } from "@/components/filters/LibraryFilterToolbar";
 export type ContentFilter = "all" | "recent" | "favorites";
 
 export interface DiagramGridProps {

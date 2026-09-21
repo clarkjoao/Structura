@@ -61,7 +61,10 @@ function defaultExpandedForFamily(familyId: string): Set<string> {
   return new Set(first ? [first] : []);
 }
 
-const ElementPickerModal = memo(function ElementPickerModal({ onClose, onInsert }: ElementPickerModalProps) {
+const ElementPickerModal = memo(function ElementPickerModal({
+  onClose,
+  onInsert,
+}: ElementPickerModalProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<PickerCategoryId>(() =>
@@ -97,6 +100,8 @@ const ElementPickerModal = memo(function ElementPickerModal({ onClose, onInsert 
         awsIconName: entry.awsIconName,
       })),
     ],
+    // `t` is deliberate: the registry labels are translated, and rebuilding on a language change is cheaper than a stale menu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [t],
   );
   const FLOWCHART_OPTIONS = useMemo(() => buildFlowchartPickerOptions(t), [t]);
