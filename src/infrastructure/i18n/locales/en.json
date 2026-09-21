@@ -2376,5 +2376,23 @@
     "untitled": "Untitled Walkthrough",
     "untitledPlaceholder": "Untitled Walkthrough",
     "upNext": "Up next:"
+  },
+  "upstream": {
+    "title": "ASL Upstream",
+    "subtitle": "Browse diagrams from external AWS storage",
+    "searchPlaceholder": "Search namespaces...",
+    "noResults": "No namespaces match your search",
+    "empty": "No namespaces available",
+    "diagram": "{{count}} diagram",
+    "diagram_plural": "{{count}} diagrams",
+    "clickToLoad": "Click to load",
+    "openViewer": "Open in viewer",
+    "viewer": "Upstream Viewer",
+    "loading": "Loading diagram...",
+    "loadFailed": "Failed to load diagram",
+    "noDiagrams": "No diagrams available in this namespace",
+    "invalidDiagram": "Invalid diagram format",
+    "diagramNotFound": "Diagram \"{{name}}\" not found",
+    "diagramNotFoundDesc": "The diagram could not be loaded from the upstream source"
   }
 }

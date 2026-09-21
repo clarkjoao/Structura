@@ -2376,5 +2376,23 @@
     "untitled": "Workflow sem título",
     "untitledPlaceholder": "Workflow sem título",
     "upNext": "A seguir:"
+  },
+  "upstream": {
+    "title": "ASL Upstream",
+    "subtitle": "Navegue diagramas do armazenamento AWS externo",
+    "searchPlaceholder": "Buscar namespaces...",
+    "noResults": "Nenhum namespace corresponde à busca",
+    "empty": "Nenhum namespace disponível",
+    "diagram": "{{count}} diagrama",
+    "diagram_plural": "{{count}} diagramas",
+    "clickToLoad": "Clique para carregar",
+    "openViewer": "Abrir no visualizador",
+    "viewer": "Visualizador Upstream",
+    "loading": "Carregando diagrama...",
+    "loadFailed": "Falha ao carregar diagrama",
+    "noDiagrams": "Nenhum diagrama disponível neste namespace",
+    "invalidDiagram": "Formato de diagrama inválido",
+    "diagramNotFound": "Diagrama \"{{name}}\" não encontrado",
+    "diagramNotFoundDesc": "O diagrama não pôde ser carregado da fonte upstream"
   }
 }

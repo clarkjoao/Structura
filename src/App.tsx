@@ -39,6 +39,14 @@ const WalkthroughPlayerPage = lazy(
   () => import("@/features/walkthrough/pages/WalkthroughPlayerPage"),
 );
 
+// ASL Upstream pages — only imported (and route registered) when VITE_ENABLE_ASL_UPSTREAM="true".
+const UpstreamLibraryPage = lazy(
+  () => import("@/features/asl-upstream/pages/UpstreamLibraryPage"),
+);
+const UpstreamViewerPage = lazy(
+  () => import("@/features/asl-upstream/pages/UpstreamViewerPage"),
+);
+
 const ROUTER_FUTURE: Partial<FutureConfig> = {
   v7_relativeSplatPath: true,
   v7_startTransition: true,
@@ -89,6 +97,12 @@ function MainPages() {
             <Route path="/workflows" element={<WalkthroughLibraryPage />} />
             <Route path="/workflow/:id/edit" element={<WalkthroughEditorPage />} />
             <Route path="/workflow/:id/step/:step" element={<WalkthroughPlayerPage />} />
+          </>
+        )}
+        {import.meta.env.VITE_ENABLE_ASL_UPSTREAM === "true" && (
+          <>
+            <Route path="/upstream" element={<UpstreamLibraryPage />} />
+            <Route path="/upstream/:namespace/view" element={<UpstreamViewerPage />} />
           </>
         )}
         <Route path="*" element={<NotFound />} />
