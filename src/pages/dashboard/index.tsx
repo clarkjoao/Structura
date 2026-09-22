@@ -33,6 +33,7 @@ import { BulkDeleteConfirmDialog } from "@/components/BulkDeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
+import { useSelectAllShortcut } from "@/hooks/useSelectAllShortcut";
 import { FolderTree } from "@/components/folders/FolderTree";
 import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
 import { DIAGRAM_DRAG_MIME } from "@/components/folders/dragTypes";
@@ -153,6 +154,7 @@ export default function DashboardPage() {
   const {
     selectedIds,
     toggleSelect,
+    selectAll,
     clearSelection,
     isSelected: isBulkIdSelected,
   } = useMultiSelect();
@@ -284,6 +286,13 @@ export default function DashboardPage() {
   const showMutationActions = contentFilter === "all";
   const showNewDiagramTile =
     showMutationActions && globalSearchResults === null && viewMode === "grid";
+
+  const handleSelectAllVisible = useCallback(() => {
+    selectAll(visibleDiagrams.map((diagram) => diagram.id));
+  }, [selectAll, visibleDiagrams]);
+
+  // Cmd/Ctrl+A picks the diagrams on screen — the current folder and filter.
+  useSelectAllShortcut(handleSelectAllVisible, globalSearchResults === null);
 
   const handleToggleFavorite = useCallback((diagramId: string) => {
     setFavoriteIds(toggleFavoriteDiagram(diagramId));
@@ -821,49 +830,51 @@ export default function DashboardPage() {
         targetFolderId={selectedFolderId}
       />
 
-      <AnimatePresence>
-        {selectedIds.size > 0 && (
-          <motion.div
-            key="dashboard-selection-bar"
-            role="toolbar"
-            aria-label={t("bulkDelete.selectionBar", {
-              count: selectedIds.size,
-            })}
-            initial={{ y: 24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 24, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="fixed bottom-6 left-1/2 z-50 flex w-[min(100%-1.5rem,36rem)] -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
-          >
-            <p className="text-xs font-medium text-foreground truncate">
-              {t("bulkDelete.selectionBar", { count: selectedIds.size })}
-            </p>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={clearSelection}>
-                {t("bulkDelete.clearSelection")}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setWorkspaceExportOpen(true)}
-                className="gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                {t("export.workspace.exportButton")}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => setBulkDeleteOpen(true)}
-              >
-                {t("bulkDelete.deleteSelected")}
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-3">
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              key="dashboard-selection-bar"
+              role="toolbar"
+              aria-label={t("bulkDelete.selectionBar", {
+                count: selectedIds.size,
+              })}
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              className="pointer-events-auto flex w-full max-w-xl items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
+            >
+              <p className="truncate text-xs font-medium text-foreground">
+                {t("bulkDelete.selectionBar", { count: selectedIds.size })}
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={clearSelection}>
+                  {t("bulkDelete.clearSelection")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setWorkspaceExportOpen(true)}
+                  className="gap-1.5"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {t("export.workspace.exportButton")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBulkDeleteOpen(true)}
+                >
+                  {t("bulkDelete.deleteSelected")}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {bulkDeleteOpen && (
         <BulkDeleteConfirmDialog
