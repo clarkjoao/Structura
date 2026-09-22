@@ -33,54 +33,34 @@ export function defaultOrthogonalCorners(
   ];
 }
 
-/** Orthogonal SVG path through the corners: horizontal then vertical per knot. */
+/**
+ * Orthogonal SVG path through the corners: horizontal then vertical per knot —
+ * except the leg into the target, which turns *before* it arrives.
+ *
+ * `marker-end` with `orient="auto"` takes its angle from the last segment, so
+ * `H x V y` ends the path on the vertical and points the arrowhead away from
+ * the node whenever the last corner's Y is not exactly the handle's. And it
+ * rarely is: auto-layout stamps a corridor measured against ELK's boxes, the
+ * canvas draws between the handles React Flow measured on the DOM, and the two
+ * disagree by a fraction of a pixel (ELK rounds 173.5 to 174).
+ *
+ * `V y H x` costs nothing when the route is well formed. In a valid orthogonal
+ * route the last corner shares exactly one axis with the target — `computeCornerDrag`
+ * constrains a target-adjacent corner so the endpoint segment cannot go diagonal —
+ * so one of the two commands is a no-op either way and the drawn shape is
+ * identical. It differs only where the route is *not* well formed, which is
+ * exactly the case worth fixing.
+ */
 export function buildStepPath(source: Point, target: Point, corners: readonly Point[]): string {
   const knots: Point[] = [source, ...corners, target];
   let path = `M ${knots[0].x} ${knots[0].y}`;
-  for (let i = 1; i < knots.length; i += 1) {
+  for (let i = 1; i < knots.length - 1; i += 1) {
     path += ` H ${knots[i].x} V ${knots[i].y}`;
   }
+  const approach = knots[knots.length - 2]!;
+  if (approach.y !== target.y) path += ` V ${target.y}`;
+  path += ` H ${target.x}`;
   return path;
-}
-
-/**
- * Vertical drift (flow units) below which a terminal corner is layout noise.
- *
- * Auto-layout stamps corners against ELK's boxes, but the canvas draws between
- * the handles React Flow measured on the real DOM node — and the two sizes do
- * not agree to the pixel (ELK rounds 173.5 to 174). A bend nobody could aim for
- * is drift; anything wider is a route the user or the layout meant.
- */
-export const TERMINAL_SNAP_TOLERANCE = 2;
-
-/**
- * Pin the first and last corners onto the endpoints' Y so the edge leaves and
- * arrives horizontally.
- *
- * `buildStepPath` emits `H x V y` per knot, so a last corner sitting a fraction
- * of a pixel off the target's Y makes the path end on a sub-pixel *vertical*
- * segment. SVG `marker-end` with `orient="auto"` takes its angle from that last
- * segment, so the arrowhead turns 90° and sits beside the handle instead of
- * pointing into it — invisible in the geometry, glaring on screen. The same
- * applies to `marker-start` on the first leg.
- *
- * Only drift under `TERMINAL_SNAP_TOLERANCE` is absorbed; a deliberate vertical
- * approach is left alone.
- */
-export function snapTerminalCorners(
-  source: Point,
-  target: Point,
-  corners: readonly Point[],
-  tolerance: number = TERMINAL_SNAP_TOLERANCE,
-): Point[] {
-  if (corners.length === 0) return [];
-
-  const snapped = corners.map((corner) => ({ x: corner.x, y: corner.y }));
-  const first = snapped[0];
-  const last = snapped[snapped.length - 1];
-  if (Math.abs(first.y - source.y) <= tolerance) first.y = source.y;
-  if (Math.abs(last.y - target.y) <= tolerance) last.y = target.y;
-  return snapped;
 }
 
 export interface StepSegment {
