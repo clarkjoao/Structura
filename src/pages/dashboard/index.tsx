@@ -47,8 +47,11 @@ import {
   toggleFavoriteDiagram,
   writeFavoriteIds,
 } from "@/pages/dashboard/favoriteDiagrams";
+import { RenameDiagramModal } from "@/pages/dashboard/RenameDiagramModal";
+import { MoveDiagramDialog } from "@/pages/dashboard/components/diagram-card/MoveDiagramDialog";
 import type {
   ContentFilter,
+  DiagramItemActions,
   GlobalSearchHit,
   SortKey,
   ViewMode,
@@ -73,7 +76,16 @@ export default function DashboardPage() {
   );
   const diagrams = useAllDiagrams();
   const folders = useFolders();
-  const { addDiagram, openDiagram, deleteDiagram, moveDiagram, deleteFolder } = useDiagramActions();
+  const {
+    addDiagram,
+    openDiagram,
+    deleteDiagram,
+    moveDiagram,
+    deleteFolder,
+    updateDiagram,
+    updateDiagramDescription,
+    duplicateDiagram,
+  } = useDiagramActions();
   const { recent } = useRecentDiagrams();
   const navigate = useNavigate();
 
@@ -135,6 +147,8 @@ export default function DashboardPage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [workspaceExportOpen, setWorkspaceExportOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [renamingDiagram, setRenamingDiagram] = useState<Diagram | null>(null);
+  const [movingDiagramId, setMovingDiagramId] = useState<string | null>(null);
 
   const isModifierActive = useModifierKey();
   const {
@@ -146,10 +160,7 @@ export default function DashboardPage() {
 
   const services = useServices();
 
-  const servicesRecord = useMemo(
-    () => Object.fromEntries(Object.entries(services)),
-    [services],
-  );
+  const servicesRecord = useMemo(() => Object.fromEntries(Object.entries(services)), [services]);
 
   const diagramIdSet = useMemo(() => new Set(diagrams.map((diagram) => diagram.id)), [diagrams]);
 
@@ -365,10 +376,25 @@ export default function DashboardPage() {
     setBulkDeleteOpen(false);
   }, [clearSelection, deleteDiagram, deleteFolder, diagramIdSet, folders, selectedIds]);
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setPendingDeleteId(id);
-  };
+  const diagramActions = useMemo<DiagramItemActions>(
+    () => ({
+      onRename: (diagram) => setRenamingDiagram(diagram),
+      onDuplicate: (diagram) => {
+        duplicateDiagram(
+          diagram.id,
+          t("dashboard.card.duplicatedDiagramName", { name: diagram.name }),
+        );
+      },
+      onMove: (diagram) => setMovingDiagramId(diagram.id),
+      onDelete: (diagram) => setPendingDeleteId(diagram.id),
+    }),
+    [duplicateDiagram, t],
+  );
+
+  const sortedFolders = useMemo(
+    () => Object.values(folders).sort((a, b) => a.name.localeCompare(b.name)),
+    [folders],
+  );
 
   const pendingDeleteDiagram = pendingDeleteId
     ? (diagrams.find((diagram) => diagram.id === pendingDeleteId) ?? null)
@@ -741,12 +767,13 @@ export default function DashboardPage() {
                   onNewDiagram={() => setShowAdd(true)}
                   favoriteIds={favoriteIdSet}
                   onToggleFavorite={handleToggleFavorite}
+                  actions={diagramActions}
                 />
               ) : (
                 <DiagramList
                   diagrams={visibleDiagrams}
                   onOpen={handleOpen}
-                  onDelete={handleDelete}
+                  actions={diagramActions}
                   onDragStart={handleDragStart}
                   levelLabels={levelLabels}
                 />
@@ -844,6 +871,32 @@ export default function DashboardPage() {
         services={servicesRecord}
         selectedIds={selectedIds as Set<string>}
         selectedFolderId={selectedFolderId}
+      />
+
+      <RenameDiagramModal
+        open={renamingDiagram !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenamingDiagram(null);
+        }}
+        diagram={renamingDiagram}
+        onSave={(name, description) => {
+          if (!renamingDiagram) return;
+          updateDiagram(renamingDiagram.id, { name });
+          updateDiagramDescription(renamingDiagram.id, description);
+          setRenamingDiagram(null);
+        }}
+      />
+
+      <MoveDiagramDialog
+        open={movingDiagramId !== null}
+        onOpenChange={(open) => {
+          if (!open) setMovingDiagramId(null);
+        }}
+        sortedFolders={sortedFolders}
+        onSelectFolder={(_event, folderId) => {
+          if (movingDiagramId) moveDiagram(movingDiagramId, folderId);
+          setMovingDiagramId(null);
+        }}
       />
 
       <AlertDialog

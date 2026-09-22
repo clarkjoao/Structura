@@ -12,6 +12,7 @@ export function DiagramGrid({
   onNewDiagram,
   favoriteIds,
   onToggleFavorite,
+  actions,
 }: DiagramGridProps) {
   if (diagrams.length === 0 && !showNewDiagramTile) return null;
 
@@ -28,6 +29,7 @@ export function DiagramGrid({
           levelLabels={levelLabels}
           isFavorite={favoriteIds?.has(diagram.id) ?? false}
           onToggleFavorite={onToggleFavorite}
+          actions={actions}
         />
       ))}
       {showNewDiagramTile && onNewDiagram ? <NewDiagramTile onClick={onNewDiagram} /> : null}

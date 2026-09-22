@@ -13,6 +13,7 @@ export function CardAction({ icon, title, onClick, variant = "default" }: CardAc
       type="button"
       draggable={false}
       title={title}
+      aria-label={title}
       onClick={(event) => {
         event.stopPropagation();
         onClick(event);

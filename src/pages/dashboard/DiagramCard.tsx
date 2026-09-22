@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import type { Diagram } from "@/features/diagram";
 import { getPreview } from "@/lib/diagram-preview";
 import { cn } from "@/lib/utils";
+import type { DiagramItemActions } from "@/pages/dashboard/dashboard.types";
 import { DiagramCardFooter } from "@/pages/dashboard/components/diagram-card/DiagramCardFooter";
 import { DiagramCardPreview } from "@/pages/dashboard/components/diagram-card/DiagramCardPreview";
 
@@ -16,6 +17,7 @@ interface DiagramCardProps {
   levelLabels: Record<string, string>;
   isFavorite?: boolean;
   onToggleFavorite?: (diagramId: string) => void;
+  actions?: DiagramItemActions;
 }
 
 export function DiagramCard({
@@ -27,6 +29,7 @@ export function DiagramCard({
   levelLabels,
   isFavorite = false,
   onToggleFavorite,
+  actions,
 }: DiagramCardProps) {
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -51,7 +54,7 @@ export function DiagramCard({
         isSelected && "ring-2 ring-primary",
       )}
     >
-      <DiagramCardPreview diagram={diagram} preview={preview} />
+      <DiagramCardPreview diagram={diagram} preview={preview} actions={actions} />
       <DiagramCardFooter
         diagram={diagram}
         levelLabels={levelLabels}
