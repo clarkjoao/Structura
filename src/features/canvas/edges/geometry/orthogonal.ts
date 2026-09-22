@@ -43,6 +43,46 @@ export function buildStepPath(source: Point, target: Point, corners: readonly Po
   return path;
 }
 
+/**
+ * Vertical drift (flow units) below which a terminal corner is layout noise.
+ *
+ * Auto-layout stamps corners against ELK's boxes, but the canvas draws between
+ * the handles React Flow measured on the real DOM node — and the two sizes do
+ * not agree to the pixel (ELK rounds 173.5 to 174). A bend nobody could aim for
+ * is drift; anything wider is a route the user or the layout meant.
+ */
+export const TERMINAL_SNAP_TOLERANCE = 2;
+
+/**
+ * Pin the first and last corners onto the endpoints' Y so the edge leaves and
+ * arrives horizontally.
+ *
+ * `buildStepPath` emits `H x V y` per knot, so a last corner sitting a fraction
+ * of a pixel off the target's Y makes the path end on a sub-pixel *vertical*
+ * segment. SVG `marker-end` with `orient="auto"` takes its angle from that last
+ * segment, so the arrowhead turns 90° and sits beside the handle instead of
+ * pointing into it — invisible in the geometry, glaring on screen. The same
+ * applies to `marker-start` on the first leg.
+ *
+ * Only drift under `TERMINAL_SNAP_TOLERANCE` is absorbed; a deliberate vertical
+ * approach is left alone.
+ */
+export function snapTerminalCorners(
+  source: Point,
+  target: Point,
+  corners: readonly Point[],
+  tolerance: number = TERMINAL_SNAP_TOLERANCE,
+): Point[] {
+  if (corners.length === 0) return [];
+
+  const snapped = corners.map((corner) => ({ x: corner.x, y: corner.y }));
+  const first = snapped[0];
+  const last = snapped[snapped.length - 1];
+  if (Math.abs(first.y - source.y) <= tolerance) first.y = source.y;
+  if (Math.abs(last.y - target.y) <= tolerance) last.y = target.y;
+  return snapped;
+}
+
 export interface StepSegment {
   index: number;
   x1: number;

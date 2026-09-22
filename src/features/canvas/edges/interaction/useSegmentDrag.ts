@@ -15,6 +15,7 @@ import {
   computeSegmentDrag,
   defaultOrthogonalCorners,
   pruneRedundantCorners,
+  snapTerminalCorners,
   type StepSegment,
 } from "../geometry/orthogonal";
 import { resolveAxis, useEdgeSnapping, type SnapGuide } from "./snapping";
@@ -68,10 +69,19 @@ export function useSegmentDrag(
   /** The in-progress gesture's corners: what the edge draws until release. */
   const [draftCorners, setDraftCorners] = useState<Point[] | null>(null);
 
+  // Stamped corners are measured against the layout's boxes, the endpoints
+  // against the DOM node React Flow measured; the two disagree by a fraction of
+  // a pixel, which is enough to end the path on a vertical stub and spin the
+  // arrowhead. Snap the terminal corners onto the live handles before anything
+  // — path, segments, drag baseline — reads them.
   const storedCorners = useMemo<Point[]>(
     () =>
       points.length > 0
-        ? points.map((p) => ({ x: p.x, y: p.y }))
+        ? snapTerminalCorners(
+            source,
+            target,
+            points.map((p) => ({ x: p.x, y: p.y })),
+          )
         : defaultOrthogonalCorners(source, target, sourcePosition),
     [points, source, target, sourcePosition],
   );
