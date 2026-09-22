@@ -11,7 +11,6 @@ import { useRecentDiagrams } from "@/features/canvas/navigation/useRecentDiagram
 import { ImportModal } from "@/pages/ImportModal";
 import { WorkspaceExportModal } from "@/pages/workspace/WorkspaceExportModal";
 import { useServices } from "@/features/diagram";
-import type { ServiceDefinition } from "@/features/diagram";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -159,8 +158,6 @@ export default function DashboardPage() {
   } = useMultiSelect();
 
   const services = useServices();
-
-  const servicesRecord = useMemo(() => Object.fromEntries(Object.entries(services)), [services]);
 
   const diagramIdSet = useMemo(() => new Set(diagrams.map((diagram) => diagram.id)), [diagrams]);
 
@@ -550,21 +547,34 @@ export default function DashboardPage() {
               </BreadcrumbList>
             </Breadcrumb>
 
-            {showMutationActions && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setImportModalOpen(true)}
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                </Button>
-                <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
-                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
-                </Button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => setWorkspaceExportOpen(true)}
+                disabled={diagrams.length === 0}
+                title={t("export.workspace.title")}
+                aria-label={t("export.workspace.title")}
+              >
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+              {showMutationActions && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setImportModalOpen(true)}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
+                    <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5">
@@ -868,8 +878,8 @@ export default function DashboardPage() {
         onOpenChange={setWorkspaceExportOpen}
         diagrams={diagrams}
         folders={folders}
-        services={servicesRecord}
-        selectedIds={selectedIds as Set<string>}
+        services={services}
+        selectedIds={selectedIds}
         selectedFolderId={selectedFolderId}
       />
 

@@ -5,11 +5,21 @@ import { exportMermaid } from "./export-mermaid";
 import type { DiagramExportFormat } from "./build-export-files";
 import type { ZipEntryFile } from "./download-file";
 
-export interface WorkspaceExportOptions {
+export interface WorkspaceExportPlanOptions {
   diagrams: Diagram[];
   formats: DiagramExportFormat[];
-  services: Record<string, ServiceDefinition>;
   folders: Record<string, Folder>;
+}
+
+export interface WorkspaceExportOptions extends WorkspaceExportPlanOptions {
+  services: Record<string, ServiceDefinition>;
+}
+
+/** One file the bulk export will write: which diagram, in which format, under which name. */
+export interface WorkspaceExportEntry {
+  diagram: Diagram;
+  format: DiagramExportFormat;
+  filename: string;
 }
 
 const FORMAT_EXTENSION: Record<DiagramExportFormat, string> = {
@@ -18,73 +28,93 @@ const FORMAT_EXTENSION: Record<DiagramExportFormat, string> = {
   mermaid: "md",
 };
 
+const UNTITLED = "untitled";
+
 /**
- * Lowercase, replace spaces with hyphens, remove special chars, collapse runs of
- * hyphens, and trim leading/trailing hyphens.
+ * Fold accents (so "Catálogo" keeps its letters), lowercase, turn anything that is not
+ * a-z/0-9 into a hyphen, collapse runs of hyphens and trim them from both ends.
  */
 function sanitizeFilename(name: string): string {
   return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
+    .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
 
 /**
  * Walk up the folder tree building the prefix from each ancestor's sanitized name,
- * joined with hyphens.
+ * joined with hyphens. Guards against a parent cycle in corrupted data.
  */
-function getFolderPrefix(folderId: string | null | undefined, folders: Record<string, Folder>): string {
-  if (!folderId) return "";
+function getFolderPrefix(
+  folderId: string | null | undefined,
+  folders: Record<string, Folder>,
+): string {
   const parts: string[] = [];
+  const seen = new Set<string>();
   let currentId: string | null | undefined = folderId;
-  while (currentId) {
-    const folder = folders[currentId];
+  while (currentId && !seen.has(currentId)) {
+    seen.add(currentId);
+    const folder: Folder | undefined = folders[currentId];
     if (!folder) break;
-    parts.unshift(sanitizeFilename(folder.name));
+    parts.unshift(sanitizeFilename(folder.name) || UNTITLED);
     currentId = folder.parentId;
   }
   return parts.join("-");
 }
 
-/**
- * Build the filename for a single diagram export entry.
- */
-function buildFilename(baseName: string, format: DiagramExportFormat, folderPrefix: string): string {
-  const ext = FORMAT_EXTENSION[format];
-  const suffix = format === "mermaid" ? "-flows" : "";
-  const prefix = folderPrefix ? `${folderPrefix}_` : "";
-  return `${prefix}${baseName}${suffix}.${ext}`;
+function buildStem(diagram: Diagram, folders: Record<string, Folder>): string {
+  const baseName = sanitizeFilename(diagram.name) || UNTITLED;
+  const folderPrefix = getFolderPrefix(diagram.folderId, folders);
+  return folderPrefix ? `${folderPrefix}_${baseName}` : baseName;
 }
 
 /**
- * Generate zip entries for bulk workspace export with folder-preserving paths.
- * One file per format per diagram is produced; mermaid is always included
- * regardless of whether the diagram has flows.
+ * Name every file the bulk export will write, without building any content — cheap
+ * enough to drive a live preview. Diagrams whose names collide after sanitizing get
+ * `-2`, `-3`… so no entry overwrites another inside the zip; all formats of one
+ * diagram share the same stem.
  */
-export function buildWorkspaceExportFiles({
+export function planWorkspaceExport({
   diagrams,
   formats,
-  services,
   folders,
-}: WorkspaceExportOptions): ZipEntryFile[] {
-  if (diagrams.length === 0) return [];
-
-  const entries: ZipEntryFile[] = [];
+}: WorkspaceExportPlanOptions): WorkspaceExportEntry[] {
+  const entries: WorkspaceExportEntry[] = [];
+  const usedStems = new Set<string>();
 
   for (const diagram of diagrams) {
-    const baseName = sanitizeFilename(diagram.name);
-    const folderPrefix = getFolderPrefix(diagram.folderId, folders);
+    const stem = buildStem(diagram, folders);
+    let uniqueStem = stem;
+    for (let n = 2; usedStems.has(uniqueStem); n += 1) uniqueStem = `${stem}-${n}`;
+    usedStems.add(uniqueStem);
 
     for (const format of formats) {
-      const filename = buildFilename(baseName, format, folderPrefix);
-      const content = buildExportContent(diagram, format, services);
-      entries.push({ filename, content });
+      const suffix = format === "mermaid" ? "-flows" : "";
+      entries.push({
+        diagram,
+        format,
+        filename: `${uniqueStem}${suffix}.${FORMAT_EXTENSION[format]}`,
+      });
     }
   }
 
   return entries;
+}
+
+/**
+ * Generate zip entries for bulk workspace export. One file per format per diagram;
+ * mermaid is always included, whether or not the diagram has flows.
+ */
+export function buildWorkspaceExportFiles({
+  services,
+  ...planOptions
+}: WorkspaceExportOptions): ZipEntryFile[] {
+  return planWorkspaceExport(planOptions).map(({ diagram, format, filename }) => ({
+    filename,
+    content: buildExportContent(diagram, format, services),
+  }));
 }
 
 function buildExportContent(
@@ -97,12 +127,15 @@ function buildExportContent(
       return exportJSON(diagram, services);
     case "drawio":
       return exportDrawio(diagram, services);
-    case "mermaid":
-      // Always export mermaid; returns empty string when there are no flows.
-      return exportMermaid(
+    case "mermaid": {
+      // A diagram without flows still gets a file carrying its name, so the zip has
+      // one .md per diagram rather than a mix of real and empty files.
+      const flows = exportMermaid(
         Object.values(diagram.snapshot.flows),
         diagram.snapshot.components,
         diagram.snapshot.connections,
       );
+      return flows ? `# ${diagram.name}\n\n${flows}\n` : `# ${diagram.name}\n`;
+    }
   }
 }

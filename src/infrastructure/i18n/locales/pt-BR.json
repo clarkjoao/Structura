@@ -1570,6 +1570,7 @@
       "formatLabel": "Formato",
       "previewLabel": "Prévia",
       "noDiagrams": "Nenhum diagrama para exportar com a seleção atual.",
+      "noFormats": "Escolha pelo menos um formato.",
       "exportButton": "Exportar",
       "mermaidNote": "Fluxos exportados como Markdown",
       "success": "{{count}} arquivos exportados",

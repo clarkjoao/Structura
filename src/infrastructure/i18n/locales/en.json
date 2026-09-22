@@ -1570,6 +1570,7 @@
       "formatLabel": "Format",
       "previewLabel": "Preview",
       "noDiagrams": "No diagrams to export with the current selection.",
+      "noFormats": "Pick at least one format.",
       "exportButton": "Export",
       "mermaidNote": "Flows exported as Markdown",
       "success": "Exported {{count}} files",

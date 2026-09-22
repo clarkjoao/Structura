@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Diagram, Folder } from "@/features/diagram";
-import { buildWorkspaceExportFiles } from "./build-workspace-export-files";
+import { buildWorkspaceExportFiles, planWorkspaceExport } from "./build-workspace-export-files";
 
 function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
   const base: Diagram = {
@@ -128,6 +128,100 @@ describe("buildWorkspaceExportFiles", () => {
     });
     expect(result).toHaveLength(1);
     expect(result[0].filename).toBe("api-design-flows.md");
-    expect(result[0].content).toBe(""); // No flows = empty content
+    expect(result[0].content).toBe("# API Design\n");
+  });
+
+  it("gives colliding names a numeric suffix shared by all formats of a diagram", () => {
+    const result = buildWorkspaceExportFiles({
+      diagrams: [
+        minimalDiagram({ id: "a", name: "Auth" }),
+        minimalDiagram({ id: "b", name: "auth!" }),
+        minimalDiagram({ id: "c", name: "AUTH" }),
+      ],
+      formats: ["json", "drawio"],
+      services: {},
+      folders: {},
+    });
+    expect(result.map((f) => f.filename)).toEqual([
+      "auth.json",
+      "auth.drawio",
+      "auth-2.json",
+      "auth-2.drawio",
+      "auth-3.json",
+      "auth-3.drawio",
+    ]);
+  });
+
+  it("keeps same-named diagrams in different folders apart through the prefix", () => {
+    const folders: Record<string, Folder> = {
+      f1: minimalFolder({ id: "f1", name: "Backend" }),
+      f2: minimalFolder({ id: "f2", name: "Frontend" }),
+    };
+    const result = buildWorkspaceExportFiles({
+      diagrams: [
+        minimalDiagram({ id: "a", name: "Overview", folderId: "f1" }),
+        minimalDiagram({ id: "b", name: "Overview", folderId: "f2" }),
+      ],
+      formats: ["json"],
+      services: {},
+      folders,
+    });
+    expect(result.map((f) => f.filename)).toEqual([
+      "backend_overview.json",
+      "frontend_overview.json",
+    ]);
+  });
+
+  it("folds accents instead of dropping the letter", () => {
+    const folders = { f1: minimalFolder({ id: "f1", name: "Catálogo de elementos" }) };
+    const result = buildWorkspaceExportFiles({
+      diagrams: [minimalDiagram({ name: "Ledger Core — Containers", folderId: "f1" })],
+      formats: ["json"],
+      services: {},
+      folders,
+    });
+    expect(result[0].filename).toBe("catalogo-de-elementos_ledger-core-containers.json");
+  });
+
+  it("falls back to 'untitled' when nothing survives sanitizing", () => {
+    const result = buildWorkspaceExportFiles({
+      diagrams: [minimalDiagram({ name: "!!!" })],
+      formats: ["json"],
+      services: {},
+      folders: {},
+    });
+    expect(result[0].filename).toBe("untitled.json");
+  });
+
+  it("survives a parent cycle in the folder data", () => {
+    const folders: Record<string, Folder> = {
+      f1: minimalFolder({ id: "f1", name: "A", parentId: "f2" }),
+      f2: minimalFolder({ id: "f2", name: "B", parentId: "f1" }),
+    };
+    const result = buildWorkspaceExportFiles({
+      diagrams: [minimalDiagram({ name: "X", folderId: "f1" })],
+      formats: ["json"],
+      services: {},
+      folders,
+    });
+    expect(result[0].filename).toBe("b-a_x.json");
+  });
+
+  it("plans exactly the filenames the build writes", () => {
+    const options = {
+      diagrams: [
+        minimalDiagram({ id: "a", name: "Auth" }),
+        minimalDiagram({ id: "b", name: "Auth" }),
+      ],
+      formats: ["json", "mermaid"] as const,
+      folders: {},
+    };
+    const planned = planWorkspaceExport({ ...options, formats: [...options.formats] });
+    const built = buildWorkspaceExportFiles({
+      ...options,
+      formats: [...options.formats],
+      services: {},
+    });
+    expect(planned.map((e) => e.filename)).toEqual(built.map((f) => f.filename));
   });
 });
