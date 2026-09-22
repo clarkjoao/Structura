@@ -32,6 +32,13 @@ export type NodeData = {
     connId: string,
     direction: "up" | "down",
   ) => void;
+  /**
+   * The height auto-layout measured this card at, as a floor it cannot fall
+   * below. Lives on the card itself, not on React Flow's wrapper, because the
+   * handles are positioned against this box — see `laidOutMinHeight` in
+   * `buildCardNodeData`.
+   */
+  laidOutMinHeight?: number;
   versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };

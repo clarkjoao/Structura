@@ -86,8 +86,37 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
           ? (side: "incoming" | "outgoing", connId: string, direction: "up" | "down") =>
               ctx.onReorderHandle!(comp.id, side, connId, direction)
           : undefined,
+    laidOutMinHeight: laidOutMinHeight(comp, ctx),
     ...versionBadgePropsForNode(ctx, comp.id),
   };
+}
+
+/**
+ * The height auto-layout measured this card at, as a floor it cannot fall below.
+ *
+ * A card is content-sized, and the two surfaces do not render the same content:
+ * the reader zeroes `services` and `allDiagrams` (`buildReadNodeContext`), so
+ * the service chip and the "explore inside" row vanish and the same card comes
+ * out ~70px shorter than in the editor. Auto-layout anchors every waypoint at
+ * `(slot + 1) / (count + 1)` of the height ELK was given, so a card that draws
+ * shorter puts every handle where the corridor does not reach — edges arrive
+ * diagonally and the arrowheads turn away from the node.
+ *
+ * `minHeight`, not `height`: the box is at least what the layout assumed, and a
+ * card whose content outgrows a stale entry still expands instead of clipping.
+ * Notes and swimlanes already pin their size like this, through `buildStyle` on
+ * React Flow's wrapper — which is why they measure identically on both surfaces
+ * and cards did not. This one goes on the card element rather than the wrapper
+ * because the handles are positioned against the card: a floor on the wrapper
+ * alone stretches the box and leaves the handles bunched at the old height.
+ *
+ * Compare mode is excluded: it redraws both revisions of a card, and pinning
+ * either to the other's laid-out height would misreport the diff.
+ */
+function laidOutMinHeight(comp: Component, ctx: NodeBuildContext): number | undefined {
+  if (ctx.isCompareMode) return undefined;
+  const height = ctx.resolvedNodeLayouts?.[comp.id]?.height;
+  return typeof height === "number" ? height : undefined;
 }
 
 /** Playback / recording opacity for card nodes (C4 + cloud). */
