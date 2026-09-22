@@ -153,7 +153,15 @@ export function WorkspaceExportModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+      {/*
+        The dialog itself must not be the scroll container. Its `p-6` counts as
+        scrollable overflow, and `overflow-y-auto` alone makes `overflow-x`
+        compute to `auto` too — together that is a horizontal scrollbar exactly
+        one padding wide. Scrolling lives on the body instead, which has no
+        padding of its own, and the two-column split keeps the body short enough
+        that it does not scroll at all on a normal viewport.
+      */}
+      <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-4xl flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Download className="h-5 w-5" />
@@ -162,98 +170,102 @@ export function WorkspaceExportModal({
           <DialogDescription>{t("export.workspace.description")}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
-          <div
-            className="space-y-2"
-            role="radiogroup"
-            aria-label={t("export.workspace.scopeLabel")}
-          >
-            <p className="text-sm font-medium">{t("export.workspace.scopeLabel")}</p>
-            {SCOPES.map((value) => {
-              const count = counts[value];
-              const active = scope === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  disabled={count === 0}
-                  onClick={() => setScope(value)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
-                    active
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "border-border hover:border-primary/50 hover:bg-muted/50",
-                    "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:bg-transparent",
-                  )}
-                >
-                  <span
+        <div className="grid min-h-0 flex-1 gap-5 overflow-y-auto sm:grid-cols-2 sm:gap-6">
+          <div className="space-y-5">
+            <div
+              className="space-y-2"
+              role="radiogroup"
+              aria-label={t("export.workspace.scopeLabel")}
+            >
+              <p className="text-sm font-medium">{t("export.workspace.scopeLabel")}</p>
+              {SCOPES.map((value) => {
+                const count = counts[value];
+                const active = scope === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    disabled={count === 0}
+                    onClick={() => setScope(value)}
                     className={cn(
-                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
-                      active ? "border-primary bg-primary" : "border-muted-foreground/30",
+                      "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
+                      active
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50",
+                      "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-border disabled:hover:bg-transparent",
                     )}
                   >
-                    {active && <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
-                  </span>
-                  <span className="flex-1 text-sm">{scopeLabels[value]}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {count} {t(count === 1 ? "common.diagram_one" : "common.diagram_other")}
-                  </span>
-                </button>
-              );
-            })}
+                    <span
+                      className={cn(
+                        "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
+                        active ? "border-primary bg-primary" : "border-muted-foreground/30",
+                      )}
+                    >
+                      {active && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />
+                      )}
+                    </span>
+                    <span className="flex-1 text-sm">{scopeLabels[value]}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {count} {t(count === 1 ? "common.diagram_one" : "common.diagram_other")}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("export.workspace.formatLabel")}</p>
+              {formatOptions.map(({ format, icon: Icon, title, description }) => {
+                const active = formats.has(format);
+                return (
+                  <button
+                    key={format}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={active}
+                    onClick={() => toggleFormat(format)}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
+                      active
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                        active ? "bg-primary text-primary-foreground" : "bg-muted",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-medium">{title}</span>
+                      <span className="block text-xs text-muted-foreground">{description}</span>
+                    </span>
+                    <span
+                      className={cn(
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded",
+                        active ? "bg-primary text-primary-foreground" : "bg-muted",
+                      )}
+                    >
+                      {active && <Check className="h-3 w-3" strokeWidth={3} />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">{t("export.workspace.formatLabel")}</p>
-            {formatOptions.map(({ format, icon: Icon, title, description }) => {
-              const active = formats.has(format);
-              return (
-                <button
-                  key={format}
-                  type="button"
-                  role="checkbox"
-                  aria-checked={active}
-                  onClick={() => toggleFormat(format)}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all",
-                    active
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "border-border hover:border-primary/50 hover:bg-muted/50",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                      active ? "bg-primary text-primary-foreground" : "bg-muted",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{title}</span>
-                    <span className="block text-xs text-muted-foreground">{description}</span>
-                  </span>
-                  <span
-                    className={cn(
-                      "flex h-5 w-5 shrink-0 items-center justify-center rounded",
-                      active ? "bg-primary text-primary-foreground" : "bg-muted",
-                    )}
-                  >
-                    {active && <Check className="h-3 w-3" strokeWidth={3} />}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="space-y-2">
+          <div className="flex min-h-0 flex-col space-y-2">
             <p className="text-sm font-medium">
               {t("export.workspace.previewLabel")} ({plannedFiles.length}{" "}
               {t(plannedFiles.length === 1 ? "common.file_one" : "common.file_other")})
             </p>
-            <div className="max-h-40 overflow-y-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs">
+            <div className="min-h-0 max-h-60 flex-1 overflow-y-auto rounded-lg border bg-muted/30 p-3 font-mono text-xs sm:max-h-none">
               {plannedFiles.length === 0 ? (
                 <span className="italic text-muted-foreground">
                   {orderedFormats.length === 0

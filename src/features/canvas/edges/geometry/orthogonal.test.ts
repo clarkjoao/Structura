@@ -9,6 +9,7 @@ import {
   computeSegmentDrag,
   defaultOrthogonalCorners,
   pruneRedundantCorners,
+  snapTerminalCorners,
   snapToGrid,
 } from "./orthogonal";
 
@@ -191,5 +192,39 @@ describe("snapToGrid", () => {
 
   it("leaves an axis untouched when the nearest grid line is beyond the threshold", () => {
     expect(snapToGrid({ x: 7, y: 0 }, 15, 3)).toEqual({ x: 7, y: 0 });
+  });
+});
+
+describe("snapTerminalCorners", () => {
+  // The numbers are the ones auto-layout actually produced for
+  // `pl-hub-c-merchant` on the PixLedger "Pix Hub — Containers" seed: ELK sizes
+  // the node at 174px, the DOM measures 173.5px, so the stamped corridor sits
+  // 0.672 flow units above the handle React Flow reports.
+  const handleSource: Point = { x: 860.0000261579241, y: 576.6666405087426 };
+  const handleTarget: Point = { x: 2566.4999651227677, y: 1104.3281075613838 };
+  const driftedCorners: Point[] = [
+    { x: 876, y: 577.3333333333334 },
+    { x: 876, y: 1105 },
+  ];
+
+  it("leaves the marker-end leg horizontal after sub-pixel layout drift", () => {
+    const snapped = snapTerminalCorners(handleSource, handleTarget, driftedCorners);
+    const d = buildStepPath(handleSource, handleTarget, snapped);
+    expect(d.endsWith(`H ${handleTarget.x} V ${handleTarget.y}`)).toBe(true);
+    const segments = buildStepSegments(handleSource, handleTarget, snapped);
+    expect(segments[segments.length - 1].orientation).toBe("horizontal");
+    expect(segments[0].orientation).toBe("horizontal");
+  });
+
+  it("keeps a deliberate bend that is wider than the tolerance", () => {
+    const corners: Point[] = [
+      { x: 876, y: 576.6666405087426 },
+      { x: 876, y: 900 },
+    ];
+    expect(snapTerminalCorners(handleSource, handleTarget, corners)).toEqual(corners);
+  });
+
+  it("returns the corners untouched when there are none to snap", () => {
+    expect(snapTerminalCorners(handleSource, handleTarget, [])).toEqual([]);
   });
 });
