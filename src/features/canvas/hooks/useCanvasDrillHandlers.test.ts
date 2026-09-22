@@ -1,18 +1,22 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as diagramModule from "@/features/diagram";
 import type { Diagram } from "@/features/diagram";
 import { useCanvasDrillHandlers } from "./useCanvasDrillHandlers";
 
-const { getCachedCanvasSnapshotMock } = vi.hoisted(() => ({
-  getCachedCanvasSnapshotMock: vi.fn(),
-}));
+/**
+ * Spy on the live export instead of `vi.mock`: the test setup imports the
+ * element bootstrap, which instantiates this barrel before a factory mock can
+ * replace it, so the hook would keep calling the real snapshot resolver.
+ */
+let getCachedCanvasSnapshotMock: ReturnType<typeof vi.spyOn>;
 
-vi.mock("@/features/diagram", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@/features/diagram")>();
-  return {
-    ...mod,
-    getCachedCanvasSnapshot: getCachedCanvasSnapshotMock,
-  };
+beforeEach(() => {
+  getCachedCanvasSnapshotMock = vi.spyOn(diagramModule, "getCachedCanvasSnapshot");
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 function createDiagram(id: string): Diagram {
@@ -24,7 +28,7 @@ describe("useCanvasDrillHandlers", () => {
     getCachedCanvasSnapshotMock.mockReturnValue({
       components: { nodeA: { id: "nodeA", linkedDiagramId: "d2" } },
       nodeLayouts: {},
-    });
+    } as never);
 
     const clearCanvasSelection = vi.fn();
     const openDiagram = vi.fn();
@@ -54,7 +58,7 @@ describe("useCanvasDrillHandlers", () => {
     getCachedCanvasSnapshotMock.mockReturnValue({
       components: { nodeA: { id: "nodeA", linkedDiagramId: "d2" } },
       nodeLayouts: {},
-    });
+    } as never);
 
     const calls: string[] = [];
     const clearCanvasSelection = vi.fn(() => calls.push("clearCanvasSelection"));
@@ -85,7 +89,7 @@ describe("useCanvasDrillHandlers", () => {
     getCachedCanvasSnapshotMock.mockReturnValue({
       components: { nodeA: { id: "nodeA" } },
       nodeLayouts: {},
-    });
+    } as never);
 
     const clearCanvasSelection = vi.fn();
     const openDiagram = vi.fn();
