@@ -41,3 +41,33 @@ describe("buildCardNodeData handle counts", () => {
     expect(data.outgoingCount).toBe(MAX_HANDLES);
   });
 });
+
+function ctxWithLayout(
+  height: number | undefined,
+  overrides: Partial<NodeBuildContext> = {},
+): NodeBuildContext {
+  return {
+    ...ctxWithCounts(1, 1),
+    resolvedNodeLayouts: { c1: { elementId: "c1", x: 0, y: 0, width: 260, height } },
+    ...overrides,
+  } as unknown as NodeBuildContext;
+}
+
+describe("buildCardNodeData reserves the height the layout assumed", () => {
+  // The editor draws the service chip and the "explore inside" row; the reader
+  // zeroes `services` / `allDiagrams`, so the same card comes out ~70px shorter
+  // and every handle-anchored waypoint misses. The box the layout measured has
+  // to be the box both surfaces draw, and the handles sit inside it.
+  it("floors the card at the laid-out height", () => {
+    expect(buildCardNodeData(container, ctxWithLayout(174)).laidOutMinHeight).toBe(174);
+  });
+
+  it("leaves a card the layout never sized to its content", () => {
+    expect(buildCardNodeData(container, ctxWithLayout(undefined)).laidOutMinHeight).toBeUndefined();
+  });
+
+  it("does not floor the card while a compare diff is shown", () => {
+    const data = buildCardNodeData(container, ctxWithLayout(174, { isCompareMode: true }));
+    expect(data.laidOutMinHeight).toBeUndefined();
+  });
+});

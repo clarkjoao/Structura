@@ -199,6 +199,9 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       style={{
         minWidth: CARD_MIN_W,
         maxWidth: CARD_MAX_W,
+        // The box auto-layout anchored the handles against, so the reader draws
+        // the same card the editor did — see `laidOutMinHeight`.
+        ...(d.laidOutMinHeight !== undefined ? { minHeight: d.laidOutMinHeight } : {}),
         ...borderStyle,
         ...expandStyle,
       }}
