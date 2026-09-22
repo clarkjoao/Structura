@@ -1,14 +1,15 @@
-import { Clock, Network, Trash2 } from "lucide-react";
+import { Clock, Network } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatTimestamp } from "@/lib/core/format-timestamp";
 import { cn } from "@/lib/utils";
 import { levelColors } from "@/pages/dashboard/dashboard.constants";
 import type { DiagramListProps } from "@/pages/dashboard/dashboard.types";
+import { DiagramItemActionButtons } from "@/pages/dashboard/components/diagram-card/DiagramItemActionButtons";
 
 export function DiagramList({
   diagrams,
   onOpen,
-  onDelete,
+  actions,
   onDragStart,
   levelLabels,
 }: DiagramListProps) {
@@ -32,7 +33,7 @@ export function DiagramList({
             <th className="text-left px-3 py-2.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               {t("common.edited")}
             </th>
-            <th className="w-10 px-3 py-2.5" />
+            <th className="w-36 px-3 py-2.5" />
           </tr>
         </thead>
         <tbody>
@@ -75,12 +76,9 @@ export function DiagramList({
                 </div>
               </td>
               <td className="px-3 py-2.5">
-                <button
-                  onClick={(e) => onDelete(e, d.id)}
-                  className="text-muted-foreground/50 hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                  <DiagramItemActionButtons diagram={d} actions={actions} />
+                </div>
               </td>
             </tr>
           ))}

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import { ReactFlowProvider } from "@xyflow/react";
 import type { ReactNode } from "react";
@@ -12,20 +12,22 @@ import { useDiagramStore } from "@/features/diagram";
  * call site therefore omits `resetPaths` so `applyLayoutResultEdges` writes
  * interior waypoints. Scope (`edgeIds`) is still this panel's edges only.
  *
- * `applyLayoutResultEdges` is mocked so this asserts what the call site asks
+ * `applyLayoutResultEdges` is spied on so this asserts what the call site asks
  * for. Waypoint writing itself is covered by `applyLayoutResult.test.ts`.
+ *
+ * A spy and not a `vi.mock` factory: the test setup imports the element
+ * bootstrap, which instantiates this module first, and the hook would keep its
+ * binding to the real function.
  */
 
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 
-const applyLayoutResultEdges = vi.fn();
-vi.mock("../layout/applyLayoutResult", () => ({
-  applyLayoutResultEdges: (...args: unknown[]) => applyLayoutResultEdges(...args),
-}));
-
+import * as applyLayoutResultModule from "../layout/applyLayoutResult";
 import { usePanelChildLayout } from "./usePanelChildLayout";
+
+const applyLayoutResultEdges = vi.fn();
 
 function wrapper({ children }: { children: ReactNode }) {
   return <ReactFlowProvider>{children}</ReactFlowProvider>;
@@ -48,6 +50,13 @@ function seedDiagram() {
 describe("panel child layout", () => {
   beforeEach(() => {
     applyLayoutResultEdges.mockClear();
+    vi.spyOn(applyLayoutResultModule, "applyLayoutResultEdges").mockImplementation((...args) => {
+      applyLayoutResultEdges(...args);
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("keeps ELK waypoints (does not ask to reset paths)", async () => {

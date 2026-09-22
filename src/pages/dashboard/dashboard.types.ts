@@ -6,6 +6,14 @@ export type SortKey = "name" | "domain" | "level" | "updatedAt";
 export type { ViewMode } from "@/components/filters/LibraryFilterToolbar";
 export type ContentFilter = "all" | "recent" | "favorites";
 
+/** Per-diagram mutations offered from a grid card or list row. */
+export interface DiagramItemActions {
+  onRename: (diagram: Diagram) => void;
+  onDuplicate: (diagram: Diagram) => void;
+  onMove: (diagram: Diagram) => void;
+  onDelete: (diagram: Diagram) => void;
+}
+
 export interface DiagramGridProps {
   diagrams: Diagram[];
   onSelect: (d: Diagram, event: MouseEvent<HTMLElement>) => void;
@@ -16,12 +24,13 @@ export interface DiagramGridProps {
   onNewDiagram?: () => void;
   favoriteIds?: ReadonlySet<string>;
   onToggleFavorite?: (diagramId: string) => void;
+  actions?: DiagramItemActions;
 }
 
 export interface DiagramListProps {
   diagrams: Diagram[];
   onOpen: (d: Diagram) => void;
-  onDelete: (e: MouseEvent, id: string) => void;
+  actions: DiagramItemActions;
   onDragStart: (e: DragEvent, id: string) => void;
   levelLabels: Record<string, string>;
 }

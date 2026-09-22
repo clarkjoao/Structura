@@ -6,7 +6,7 @@ import {
   isPanelComponent,
   getCachedCanvasSnapshot,
 } from "@/features/diagram";
-import { KEY, keyMatchesLetter } from "@/lib/core/keyboard";
+import { isEditableTarget, KEY, keyMatchesLetter } from "@/lib/core/keyboard";
 
 export const PASTE_OFFSET = 20;
 
@@ -38,28 +38,8 @@ export {
   keyMatchesLetterOrCode,
 } from "@/lib/core/keyboard";
 
-export function isInputFocused(target: EventTarget | null): boolean {
-  const el = target as HTMLElement;
-  if (!el) return false;
-
-  const tag = el.tagName;
-  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
-  if (el.isContentEditable) return true;
-  // Monaco renders div[role="textbox"] as its main editor
-  if (el.getAttribute?.("role") === "textbox") return true;
-  // Walk up to 5 levels to catch editors that delegate focus to children
-  let parent = el.parentElement;
-  let depth = 0;
-  while (parent && depth < 5) {
-    if (parent.isContentEditable) return true;
-    const parentTag = parent.tagName;
-    if (parentTag === "INPUT" || parentTag === "TEXTAREA") return true;
-    if (parent.getAttribute?.("role") === "textbox") return true;
-    parent = parent.parentElement;
-    depth++;
-  }
-  return false;
-}
+/** @deprecated prefer `isEditableTarget` from `@/lib/core/keyboard`. */
+export const isInputFocused = isEditableTarget;
 
 /**
  * Mark a keyboard event as fully handled by the canvas.

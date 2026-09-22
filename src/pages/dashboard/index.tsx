@@ -2,13 +2,15 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Network, FolderOpen, Upload, Clock, Star } from "lucide-react";
+import { Plus, Network, FolderOpen, Upload, Clock, Star, Download } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
 import type { Level, Diagram } from "@/features/diagram";
 import { useRecentDiagrams } from "@/features/canvas/navigation/useRecentDiagrams";
 import { ImportModal } from "@/pages/ImportModal";
+import { WorkspaceExportModal } from "@/pages/workspace/WorkspaceExportModal";
+import { useServices } from "@/features/diagram";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -31,6 +33,7 @@ import { BulkDeleteConfirmDialog } from "@/components/BulkDeleteConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
+import { useSelectAllShortcut } from "@/hooks/useSelectAllShortcut";
 import { FolderTree } from "@/components/folders/FolderTree";
 import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
 import { DIAGRAM_DRAG_MIME } from "@/components/folders/dragTypes";
@@ -44,8 +47,11 @@ import {
   toggleFavoriteDiagram,
   writeFavoriteIds,
 } from "@/pages/dashboard/favoriteDiagrams";
+import { RenameDiagramModal } from "@/pages/dashboard/RenameDiagramModal";
+import { MoveDiagramDialog } from "@/pages/dashboard/components/diagram-card/MoveDiagramDialog";
 import type {
   ContentFilter,
+  DiagramItemActions,
   GlobalSearchHit,
   SortKey,
   ViewMode,
@@ -70,7 +76,16 @@ export default function DashboardPage() {
   );
   const diagrams = useAllDiagrams();
   const folders = useFolders();
-  const { addDiagram, openDiagram, deleteDiagram, moveDiagram, deleteFolder } = useDiagramActions();
+  const {
+    addDiagram,
+    openDiagram,
+    deleteDiagram,
+    moveDiagram,
+    deleteFolder,
+    updateDiagram,
+    updateDiagramDescription,
+    duplicateDiagram,
+  } = useDiagramActions();
   const { recent } = useRecentDiagrams();
   const navigate = useNavigate();
 
@@ -130,15 +145,21 @@ export default function DashboardPage() {
   const folderTreeRef = useRef<HTMLDivElement>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [workspaceExportOpen, setWorkspaceExportOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [renamingDiagram, setRenamingDiagram] = useState<Diagram | null>(null);
+  const [movingDiagramId, setMovingDiagramId] = useState<string | null>(null);
 
   const isModifierActive = useModifierKey();
   const {
     selectedIds,
     toggleSelect,
+    selectAll,
     clearSelection,
     isSelected: isBulkIdSelected,
   } = useMultiSelect();
+
+  const services = useServices();
 
   const diagramIdSet = useMemo(() => new Set(diagrams.map((diagram) => diagram.id)), [diagrams]);
 
@@ -266,6 +287,13 @@ export default function DashboardPage() {
   const showNewDiagramTile =
     showMutationActions && globalSearchResults === null && viewMode === "grid";
 
+  const handleSelectAllVisible = useCallback(() => {
+    selectAll(visibleDiagrams.map((diagram) => diagram.id));
+  }, [selectAll, visibleDiagrams]);
+
+  // Cmd/Ctrl+A picks the diagrams on screen — the current folder and filter.
+  useSelectAllShortcut(handleSelectAllVisible, globalSearchResults === null);
+
   const handleToggleFavorite = useCallback((diagramId: string) => {
     setFavoriteIds(toggleFavoriteDiagram(diagramId));
   }, []);
@@ -354,10 +382,25 @@ export default function DashboardPage() {
     setBulkDeleteOpen(false);
   }, [clearSelection, deleteDiagram, deleteFolder, diagramIdSet, folders, selectedIds]);
 
-  const handleDelete = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    setPendingDeleteId(id);
-  };
+  const diagramActions = useMemo<DiagramItemActions>(
+    () => ({
+      onRename: (diagram) => setRenamingDiagram(diagram),
+      onDuplicate: (diagram) => {
+        duplicateDiagram(
+          diagram.id,
+          t("dashboard.card.duplicatedDiagramName", { name: diagram.name }),
+        );
+      },
+      onMove: (diagram) => setMovingDiagramId(diagram.id),
+      onDelete: (diagram) => setPendingDeleteId(diagram.id),
+    }),
+    [duplicateDiagram, t],
+  );
+
+  const sortedFolders = useMemo(
+    () => Object.values(folders).sort((a, b) => a.name.localeCompare(b.name)),
+    [folders],
+  );
 
   const pendingDeleteDiagram = pendingDeleteId
     ? (diagrams.find((diagram) => diagram.id === pendingDeleteId) ?? null)
@@ -513,21 +556,34 @@ export default function DashboardPage() {
               </BreadcrumbList>
             </Breadcrumb>
 
-            {showMutationActions && (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={() => setImportModalOpen(true)}
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                </Button>
-                <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
-                  <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
-                </Button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => setWorkspaceExportOpen(true)}
+                disabled={diagrams.length === 0}
+                title={t("export.workspace.title")}
+                aria-label={t("export.workspace.title")}
+              >
+                <Download className="h-3.5 w-3.5" />
+              </Button>
+              {showMutationActions && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={() => setImportModalOpen(true)}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button onClick={() => setShowAdd(true)} size="sm" className="gap-1.5 h-8">
+                    <Plus className="h-3.5 w-3.5" /> {t("dashboard.newDiagram")}
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-5">
@@ -730,12 +786,13 @@ export default function DashboardPage() {
                   onNewDiagram={() => setShowAdd(true)}
                   favoriteIds={favoriteIdSet}
                   onToggleFavorite={handleToggleFavorite}
+                  actions={diagramActions}
                 />
               ) : (
                 <DiagramList
                   diagrams={visibleDiagrams}
                   onOpen={handleOpen}
-                  onDelete={handleDelete}
+                  actions={diagramActions}
                   onDragStart={handleDragStart}
                   levelLabels={levelLabels}
                 />
@@ -773,39 +830,51 @@ export default function DashboardPage() {
         targetFolderId={selectedFolderId}
       />
 
-      <AnimatePresence>
-        {selectedIds.size > 0 && (
-          <motion.div
-            key="dashboard-selection-bar"
-            role="toolbar"
-            aria-label={t("bulkDelete.selectionBar", {
-              count: selectedIds.size,
-            })}
-            initial={{ y: 24, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 24, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-            className="fixed bottom-6 left-1/2 z-50 flex w-[min(100%-1.5rem,36rem)] -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
-          >
-            <p className="text-xs font-medium text-foreground truncate">
-              {t("bulkDelete.selectionBar", { count: selectedIds.size })}
-            </p>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={clearSelection}>
-                {t("bulkDelete.clearSelection")}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => setBulkDeleteOpen(true)}
-              >
-                {t("bulkDelete.deleteSelected")}
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-3">
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
+            <motion.div
+              key="dashboard-selection-bar"
+              role="toolbar"
+              aria-label={t("bulkDelete.selectionBar", {
+                count: selectedIds.size,
+              })}
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+              className="pointer-events-auto flex w-full max-w-xl items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-2xl"
+            >
+              <p className="truncate text-xs font-medium text-foreground">
+                {t("bulkDelete.selectionBar", { count: selectedIds.size })}
+              </p>
+              <div className="flex shrink-0 items-center gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={clearSelection}>
+                  {t("bulkDelete.clearSelection")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setWorkspaceExportOpen(true)}
+                  className="gap-1.5"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {t("export.workspace.exportButton")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setBulkDeleteOpen(true)}
+                >
+                  {t("bulkDelete.deleteSelected")}
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {bulkDeleteOpen && (
         <BulkDeleteConfirmDialog
@@ -814,6 +883,42 @@ export default function DashboardPage() {
           onConfirm={handleDashboardBulkDeleteConfirm}
         />
       )}
+
+      <WorkspaceExportModal
+        open={workspaceExportOpen}
+        onOpenChange={setWorkspaceExportOpen}
+        diagrams={diagrams}
+        folders={folders}
+        services={services}
+        selectedIds={selectedIds}
+        selectedFolderId={selectedFolderId}
+      />
+
+      <RenameDiagramModal
+        open={renamingDiagram !== null}
+        onOpenChange={(open) => {
+          if (!open) setRenamingDiagram(null);
+        }}
+        diagram={renamingDiagram}
+        onSave={(name, description) => {
+          if (!renamingDiagram) return;
+          updateDiagram(renamingDiagram.id, { name });
+          updateDiagramDescription(renamingDiagram.id, description);
+          setRenamingDiagram(null);
+        }}
+      />
+
+      <MoveDiagramDialog
+        open={movingDiagramId !== null}
+        onOpenChange={(open) => {
+          if (!open) setMovingDiagramId(null);
+        }}
+        sortedFolders={sortedFolders}
+        onSelectFolder={(_event, folderId) => {
+          if (movingDiagramId) moveDiagram(movingDiagramId, folderId);
+          setMovingDiagramId(null);
+        }}
+      />
 
       <AlertDialog
         open={pendingDeleteId !== null}

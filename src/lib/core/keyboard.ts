@@ -88,6 +88,34 @@ export function keyMatchesLetterOrCode(
   return event.code === code;
 }
 
+/**
+ * True when the event target is a text-entry surface (input, textarea, select,
+ * contenteditable, or a Monaco-style `role="textbox"`), including editors that
+ * delegate focus to a child. Shortcuts use it to keep out of the user's typing.
+ */
+export function isEditableTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+
+  const tag = el.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  if (el.isContentEditable) return true;
+  // Monaco renders div[role="textbox"] as its main editor
+  if (el.getAttribute?.("role") === "textbox") return true;
+  // Walk up to 5 levels to catch editors that delegate focus to children
+  let parent = el.parentElement;
+  let depth = 0;
+  while (parent && depth < 5) {
+    if (parent.isContentEditable) return true;
+    const parentTag = parent.tagName;
+    if (parentTag === "INPUT" || parentTag === "TEXTAREA") return true;
+    if (parent.getAttribute?.("role") === "textbox") return true;
+    parent = parent.parentElement;
+    depth++;
+  }
+  return false;
+}
+
 export function keyIs(event: { key: string }, key: string): boolean {
   return event.key === key;
 }

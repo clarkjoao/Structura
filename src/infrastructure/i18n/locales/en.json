@@ -40,6 +40,9 @@
     "element_other": "elements",
     "selected_one": "selected",
     "selected_other": "selected",
+    "file_one": "file",
+    "file_other": "files",
+    "andMore": "and {{count}} more",
     "multipleValues": "Multiple values",
     "commaSeparatedTags": "Comma-separated tags",
     "techExample": "e.g. REST, gRPC",
@@ -1556,6 +1559,22 @@
         "direct": "Direct (iframe)",
         "postMessage": "Via code"
       }
+    },
+    "workspace": {
+      "title": "Export Workspace",
+      "description": "Select the scope and formats to export your diagrams.",
+      "scopeLabel": "Scope",
+      "scopeSelected": "Selected diagrams",
+      "scopeFolder": "This folder",
+      "scopeWorkspace": "All workspace",
+      "formatLabel": "Format",
+      "previewLabel": "Preview",
+      "noDiagrams": "No diagrams to export with the current selection.",
+      "noFormats": "Pick at least one format.",
+      "exportButton": "Export",
+      "mermaidNote": "Flows exported as Markdown",
+      "success": "Exported {{count}} files",
+      "error": "Export failed"
     }
   },
   "toolbar": {},

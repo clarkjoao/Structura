@@ -1,13 +1,15 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Diagram } from "@/features/diagram";
+import * as recentDiagramsModule from "../navigation/useRecentDiagrams";
 import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
 
-const { recordOpened } = vi.hoisted(() => ({ recordOpened: vi.fn() }));
-
-vi.mock("../navigation/useRecentDiagrams", () => ({
-  useRecentDiagrams: () => ({ recordOpened }),
-}));
+/**
+ * Spy on the live export instead of `vi.mock`: the test setup imports the
+ * element bootstrap, which instantiates this module before a factory mock can
+ * replace it, so the hook would keep calling the real recents store.
+ */
+const recordOpened = vi.fn();
 
 function createDiagram(id: string): Diagram {
   return { id } as unknown as Diagram;
@@ -16,6 +18,13 @@ function createDiagram(id: string): Diagram {
 describe("useCanvasDiagramNavigation", () => {
   beforeEach(() => {
     recordOpened.mockClear();
+    vi.spyOn(recentDiagramsModule, "useRecentDiagrams").mockReturnValue({
+      recordOpened,
+    } as never);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   // A store mutation (moving a node, say) hands the canvas a brand-new diagram
