@@ -87,6 +87,20 @@ export function shouldYieldCanvasShortcutToFocusedField(event: KeyboardEvent): b
   return isOsTextEditingChord(event);
 }
 
+/**
+ * True while a dialog layer (Radix Dialog, AlertDialog, Popover) is open. Such a
+ * layer owns Escape: the canvas listens in the capture phase and claims the
+ * event, so without this check the layer never sees it and stays open.
+ */
+export function isDialogLayerOpen(): boolean {
+  if (typeof document === "undefined") return false;
+  return (
+    document.querySelector(
+      '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]',
+    ) !== null
+  );
+}
+
 export function getSelectedNodes(rf: ReactFlowInstance, fallbackId: string | null): Node[] {
   const nodes = rf.getNodes();
   const selected = nodes.filter((n) => n.selected);

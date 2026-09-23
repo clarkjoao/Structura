@@ -16,6 +16,13 @@ import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.c
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 import { buildPanelHandles } from "./CardNode/Handles";
 
+/**
+ * The header's "minimize" button is switched off for now; the collapse code
+ * stays. The expand button on an already-collapsed panel is kept, so a panel
+ * minimized before this can still be opened.
+ */
+const PANEL_MINIMIZE_BUTTON_ENABLED = false;
+
 export type PanelNodeData = {
   elementId: string;
   name: string;
@@ -304,7 +311,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
               </span>
             )}
           </div>
-          {onToggle && (
+          {PANEL_MINIMIZE_BUTTON_ENABLED && onToggle && (
             <button
               type="button"
               onClick={(e) => {

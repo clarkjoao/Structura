@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { layout } from "./layoutEngine";
-import { fromDiagram, resizableIds } from "./fromDiagram";
-import { toAppliedLayouts } from "./applyLayout";
+import { fitToContentIds, fromDiagram, resizableIds } from "./fromDiagram";
+import { fitContainersToChildren, toAppliedLayouts } from "./applyLayout";
 import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
 
 /**
@@ -35,10 +35,14 @@ async function organizeChildren(store: Store, diagramId: string, panelId: string
   const result = await layout(graph);
 
   const panelLayout = nodeLayouts[panelId];
-  const applied = toAppliedLayouts(graph, result, resizableIds(graph, components)).map((entry) =>
-    entry.elementId === panelId && panelLayout
-      ? { ...entry, x: panelLayout.x, y: panelLayout.y }
-      : entry,
+  const applied = fitContainersToChildren(
+    toAppliedLayouts(graph, result, resizableIds(graph, components)).map((entry) =>
+      entry.elementId === panelId && panelLayout
+        ? { ...entry, x: panelLayout.x, y: panelLayout.y }
+        : entry,
+    ),
+    graph,
+    fitToContentIds(graph, components),
   );
 
   store.getState().applyAutoLayout(applied);
@@ -126,6 +130,40 @@ describe("panel child layout", () => {
     store.getState().updateNodeLayout(panelId, { x: -720, y: -310 });
     await organizeChildren(store, diagramId, panelId);
     expect(overflows(store, diagramId, panelId)).toHaveLength(0);
+  }, 60000);
+
+  /**
+   * "Organize children (LR)" is the auto-layout (Cmd/Ctrl+Shift+L) scoped to one
+   * panel, not an algorithm of its own. On a diagram that holds only the panel
+   * the two see the same graph, so every child has to land in the same place
+   * and the panel has to come out the same size; only the panel's x/y differ,
+   * because organizing keeps it where the user put it.
+   */
+  it("places the children exactly where the full auto-layout does", async () => {
+    const { store, diagramId, panelId } = await buildDiagram();
+    const { components, connections, nodeLayouts } = read(store, diagramId);
+    const fullGraph = fromDiagram(components, connections, nodeLayouts);
+    const full = fitContainersToChildren(
+      toAppliedLayouts(fullGraph, await layout(fullGraph), resizableIds(fullGraph, components)),
+      fullGraph,
+      fitToContentIds(fullGraph, components),
+    );
+
+    await organizeChildren(store, diagramId, panelId);
+    const organized = read(store, diagramId).nodeLayouts;
+
+    for (const entry of full) {
+      const got = organized[entry.elementId]!;
+      if (entry.elementId === panelId) {
+        expect([got.width, got.height]).toEqual([entry.width, entry.height]);
+        continue;
+      }
+      expect({ id: entry.elementId, x: got.x, y: got.y }).toEqual({
+        id: entry.elementId,
+        x: entry.x,
+        y: entry.y,
+      });
+    }
   }, 60000);
 
   /**

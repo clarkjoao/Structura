@@ -1609,6 +1609,10 @@
     }
   },
   "viewPage": {
+    "openInStructura": {
+      "label": "Open in Structura",
+      "ariaLabel": "Open {{name}} in Structura"
+    },
     "file": {
       "open": "Choose the file",
       "noPath": "No file named"

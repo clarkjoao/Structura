@@ -1,4 +1,5 @@
 import type { Node } from "@xyflow/react";
+import { computeFitBounds } from "@/features/diagram/utils/fit-group-to-children";
 import type { LayoutGraph, LayoutPoint, LayoutResult } from "./contract";
 
 /**
@@ -50,6 +51,73 @@ export function toAppliedLayouts(
   }
 
   return applied;
+}
+
+/**
+ * "Fit to content" (`fitGroupToChildren`) over every container of a layout run,
+ * so an auto-layout leaves each panel wrapped the way the panel's own button
+ * would. Innermost containers go first: an outer panel wraps the box its inner
+ * one ends up with. A container's children keep their place on the canvas —
+ * they move by the opposite of what the container moves — so the routes the
+ * layout computed between them still land where they were drawn.
+ *
+ * A child with no size of its own in `applied` is measured by the box the
+ * layout gave it (`graph`), the size the engine actually placed.
+ */
+export function fitContainersToChildren(
+  applied: readonly AppliedLayout[],
+  graph: LayoutGraph,
+  containers: ReadonlySet<string>,
+): AppliedLayout[] {
+  const byId = new Map(applied.map((entry) => [entry.elementId, { ...entry }]));
+  const present = new Set(graph.nodes.map((node) => node.id));
+  const graphNode = new Map(graph.nodes.map((node) => [node.id, node]));
+
+  const childrenOf = new Map<string, string[]>();
+  for (const node of graph.nodes) {
+    if (node.parentId === null || !present.has(node.parentId)) continue;
+    const siblings = childrenOf.get(node.parentId) ?? [];
+    siblings.push(node.id);
+    childrenOf.set(node.parentId, siblings);
+  }
+
+  const depthOf = (id: string): number => {
+    let depth = 0;
+    let parentId = graphNode.get(id)?.parentId ?? null;
+    while (parentId !== null && present.has(parentId)) {
+      depth++;
+      parentId = graphNode.get(parentId)?.parentId ?? null;
+    }
+    return depth;
+  };
+
+  const innermostFirst = [...containers]
+    .filter((id) => byId.has(id) && (childrenOf.get(id)?.length ?? 0) > 0)
+    .sort((a, b) => depthOf(b) - depthOf(a));
+
+  for (const containerId of innermostFirst) {
+    const children = childrenOf.get(containerId)!.flatMap((childId) => {
+      const entry = byId.get(childId);
+      const node = graphNode.get(childId);
+      if (!entry || !node) return [];
+      return [{ ...entry, width: entry.width ?? node.width, height: entry.height ?? node.height }];
+    });
+    const bounds = computeFitBounds(children);
+    if (!bounds) continue;
+
+    for (const child of children) {
+      const entry = byId.get(child.elementId)!;
+      entry.x -= bounds.x;
+      entry.y -= bounds.y;
+    }
+    const container = byId.get(containerId)!;
+    container.x += bounds.x;
+    container.y += bounds.y;
+    container.width = bounds.width;
+    container.height = bounds.height;
+  }
+
+  return applied.map((entry) => byId.get(entry.elementId)!);
 }
 
 /**

@@ -40,6 +40,12 @@ export interface NodeBuildContext {
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
   isCompareMode?: boolean;
   /**
+   * True on a read-only surface (viewer, embed, walkthrough). The editor
+   * measures its own nodes and writes the box back; a reader only draws the box
+   * it was given, so it is the one that has to hold a node to that box.
+   */
+  isReader?: boolean;
+  /**
    * Names only: what a node shows of the service and linked diagram it points
    * at. The editor hands in the workspace; a reader hands in the names its
    * payload carried (`ReaderCatalog`). Narrowed to the name on purpose — a node

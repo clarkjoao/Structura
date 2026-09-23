@@ -113,5 +113,6 @@ export function buildReadNodeContext(
     coverage: null,
     handleDrillDown: NOOP_DRILL_DOWN,
     onPlayFlow,
+    isReader: true,
   };
 }

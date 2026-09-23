@@ -3,8 +3,8 @@ import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { layout } from "../layout/layoutEngine";
-import { fromDiagram, resizableIds } from "../layout/fromDiagram";
-import { toAppliedLayouts, measuredSizesOf } from "../layout/applyLayout";
+import { fitToContentIds, fromDiagram, resizableIds } from "../layout/fromDiagram";
+import { fitContainersToChildren, toAppliedLayouts, measuredSizesOf } from "../layout/applyLayout";
 import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
 import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
@@ -64,7 +64,14 @@ export function useAutoLayout() {
           return;
         }
 
-        applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, components)));
+        // Every panel comes out wrapped the way its "Fit to content" button leaves it.
+        applyAutoLayout(
+          fitContainersToChildren(
+            toAppliedLayouts(graph, result, resizableIds(graph, components)),
+            graph,
+            fitToContentIds(graph, components),
+          ),
+        );
 
         const diagramId = useDiagramStore.getState().activeDiagramId;
         if (diagramId !== null) {

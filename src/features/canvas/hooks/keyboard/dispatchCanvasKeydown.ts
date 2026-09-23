@@ -1,4 +1,10 @@
-import { shouldYieldCanvasShortcutToFocusedField, type KeyHandler } from "./helpers";
+import {
+  isDialogLayerOpen,
+  KEY,
+  keyIs,
+  shouldYieldCanvasShortcutToFocusedField,
+  type KeyHandler,
+} from "./helpers";
 import { runClaimingChain } from "./runClaimingChain";
 import {
   handleAutoLayoutShortcut,
@@ -24,15 +30,17 @@ export interface CanvasKeydownDispatch {
 }
 
 /**
- * Single entry for canvas keydown. Order is intentional: focus yield → overlays →
- * save/layout (allowed outside some locks) → recording → compare guards →
- * edit chain → tool chords.
+ * Single entry for canvas keydown. Order is intentional: focus yield → an open
+ * dialog keeps Escape → overlays → save/layout (allowed outside some locks) →
+ * recording → compare guards → edit chain → tool chords.
  */
 export async function dispatchCanvasKeydown(
   event: KeyboardEvent,
   dispatch: CanvasKeydownDispatch,
 ): Promise<void> {
   if (shouldYieldCanvasShortcutToFocusedField(event)) return;
+
+  if (keyIs(event, KEY.ESCAPE) && isDialogLayerOpen()) return;
 
   if (handleVersionsDrawerKey(event, dispatch.flags, dispatch.onCloseVersionsDrawer)) return;
 
