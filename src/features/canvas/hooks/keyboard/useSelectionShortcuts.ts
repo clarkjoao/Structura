@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import type { ReactFlowInstance, Node } from "@xyflow/react";
+import type { ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
   isModKeyPressed,
@@ -21,6 +21,8 @@ interface UseSelectionShortcutsParams {
   setSelectedEdgeId: (id: string | null) => void;
   setContextMenu: (v: null) => void;
   clearClipboard: () => void;
+  /** Clears the connection highlight a selected edge lights up (edge + both ends). */
+  clearHighlight?: () => void;
   removeElements: (nodeIds: string[], edgeIds: string[]) => void;
   /**
    * Phase 4 — decision #5: Esc layered precedence, layer 1.
@@ -49,6 +51,7 @@ export function useSelectionShortcuts({
   setSelectedEdgeId,
   setContextMenu,
   clearClipboard,
+  clearHighlight,
   removeElements,
   cancelInFlightGesture,
   onExitFlowPlayback,
@@ -69,9 +72,12 @@ export function useSelectionShortcuts({
         if (onExitCompareMode?.()) return true;
         if (onExitFlowPlayback?.()) return true;
         if (onExitFocusMode?.()) return true;
-        // Layer 3 — clear selection.
+        // Layer 3 — clear selection. The store is the only source of `selected`
+        // (see useLocalNodes); writing it into React Flow as well queues a
+        // `replace` that lands after the store render and restores the node's
+        // previous data, so the node kept its selection ring.
         clearClipboard();
-        reactFlowInstance.setNodes((nds: Node[]) => nds.map((n) => ({ ...n, selected: false })));
+        clearHighlight?.();
         setSelectedNodeId(null);
         setSelectedNodeIds(new Set());
         setSelectedEdgeId(null);
@@ -81,12 +87,9 @@ export function useSelectionShortcuts({
 
       if (mod && keyMatchesLetter(e, KEY.A)) {
         e.preventDefault();
-        reactFlowInstance.setNodes((nds: Node[]) => {
-          const updated = nds.map((n) => ({ ...n, selected: true }));
-          setSelectedNodeIds(new Set(updated.map((n) => n.id)));
-          setSelectedNodeId(updated[0]?.id ?? null);
-          return updated;
-        });
+        const ids = reactFlowInstance.getNodes().map((n) => n.id);
+        setSelectedNodeIds(new Set(ids));
+        setSelectedNodeId(ids[0] ?? null);
         return true;
       }
 
@@ -121,6 +124,7 @@ export function useSelectionShortcuts({
       setSelectedEdgeId,
       setContextMenu,
       clearClipboard,
+      clearHighlight,
       removeElements,
       cancelInFlightGesture,
       onExitFlowPlayback,

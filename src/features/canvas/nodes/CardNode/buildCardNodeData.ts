@@ -61,8 +61,11 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
     serviceName: comp.serviceId ? ctx.services[comp.serviceId]?.name : undefined,
     externalLinks: comp.externalLinks,
     linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
+    // A reader names the linked diagram but cannot go there.
     onDrillDown:
-      isPlaying || isRecording ? undefined : linkedDiagramName ? ctx.handleDrillDown : undefined,
+      isPlaying || isRecording || ctx.isReader || !linkedDiagramName
+        ? undefined
+        : ctx.handleDrillDown,
     stepBadges: flowBadges?.nodeLabels.get(comp.id),
     isLastRecorded: flowBadges?.lastNodeId === comp.id,
     coverageFlowNames: coverage?.nodeFlows.get(comp.id),
@@ -94,10 +97,11 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
 /**
  * The height auto-layout measured this card at, as a floor it cannot fall below.
  *
- * A card is content-sized, and the two surfaces do not render the same content:
- * the reader zeroes `services` and `allDiagrams` (`buildReadNodeContext`), so
- * the service chip and the "explore inside" row vanish and the same card comes
- * out ~70px shorter than in the editor. Auto-layout anchors every waypoint at
+ * A card is content-sized, and its content is not only its own: the service
+ * chip and the "explore inside" row need names from the workspace. The reader
+ * gets them through `ReaderCatalog`, but a link written before the catalog
+ * travelled has none, and a flow being played hides the row on both surfaces —
+ * so the same card can come out ~70px shorter. Auto-layout anchors every waypoint at
  * `(slot + 1) / (count + 1)` of the height ELK was given, so a card that draws
  * shorter puts every handle where the corridor does not reach — edges arrive
  * diagonally and the arrowheads turn away from the node.
@@ -112,9 +116,16 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
  *
  * Compare mode is excluded: it redraws both revisions of a card, and pinning
  * either to the other's laid-out height would misreport the diff.
+ *
+ * The editor applies it only while a flow plays, the one time its own card
+ * hides content. Otherwise the editor is where the box comes from: React Flow
+ * measures the card and writes the height back, so a floor there is fed by its
+ * own measurement and can only rise — a card that grew once (a long
+ * description while selected) never shrank back.
  */
 function laidOutMinHeight(comp: Component, ctx: NodeBuildContext): number | undefined {
   if (ctx.isCompareMode) return undefined;
+  if (!ctx.isReader && !ctx.isPlaying) return undefined;
   const height = ctx.resolvedNodeLayouts?.[comp.id]?.height;
   return typeof height === "number" ? height : undefined;
 }

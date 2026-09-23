@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ComponentPatch, PanelComponent, SwimlaneStyle } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
@@ -45,8 +45,26 @@ export function PanelStyleSection({
   const { t } = useTranslation();
   const [widthInput, setWidthInput] = useState<string>("");
   const [heightInput, setHeightInput] = useState<string>("");
+  /**
+   * Whether the fields hold something the user typed. They show the layout
+   * rounded, so without this the commit below wrote that rounding back on its
+   * own — showing the inspector changed a 933.333 panel to 933 in the store
+   * while the canvas kept drawing the old size.
+   */
+  const editedRef = useRef(false);
+  const editWidth = (value: string) => {
+    editedRef.current = true;
+    setWidthInput(value);
+  };
+  const editHeight = (value: string) => {
+    editedRef.current = true;
+    setHeightInput(value);
+  };
 
   useEffect(() => {
+    // The fields are about to show the layout, not what was typed — including
+    // after another panel is selected, which must not inherit a pending edit.
+    editedRef.current = false;
     if (!componentNodeLayout) {
       setWidthInput("");
       setHeightInput("");
@@ -57,8 +75,9 @@ export function PanelStyleSection({
   }, [componentNodeLayout]);
 
   useEffect(() => {
-    if (!componentNodeLayout) return;
+    if (!componentNodeLayout || !editedRef.current) return;
     const timeoutId = window.setTimeout(() => {
+      editedRef.current = false;
       const parsedWidth = Number(widthInput);
       const parsedHeight = Number(heightInput);
       if (!Number.isFinite(parsedWidth) || !Number.isFinite(parsedHeight)) return;
@@ -193,7 +212,7 @@ export function PanelStyleSection({
                   type="number"
                   min={MIN_PANEL_WIDTH}
                   value={widthInput}
-                  onChange={(event) => setWidthInput(event.target.value)}
+                  onChange={(event) => editWidth(event.target.value)}
                   className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
@@ -205,7 +224,7 @@ export function PanelStyleSection({
                   type="number"
                   min={MIN_PANEL_HEIGHT}
                   value={heightInput}
-                  onChange={(event) => setHeightInput(event.target.value)}
+                  onChange={(event) => editHeight(event.target.value)}
                   className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
@@ -224,7 +243,7 @@ export function PanelStyleSection({
                   type="number"
                   min={MIN_PANEL_WIDTH}
                   value={widthInput}
-                  onChange={(event) => setWidthInput(event.target.value)}
+                  onChange={(event) => editWidth(event.target.value)}
                   className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
@@ -236,7 +255,7 @@ export function PanelStyleSection({
                   type="number"
                   min={MIN_PANEL_HEIGHT}
                   value={heightInput}
-                  onChange={(event) => setHeightInput(event.target.value)}
+                  onChange={(event) => editHeight(event.target.value)}
                   className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>

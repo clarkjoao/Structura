@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useShallow } from "zustand/react/shallow";
 import type { Diagram } from "@/features/diagram/model";
+import type { ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
 import {
   cloneDiagramForImportWithId,
   formatDiagramImportCalendarDate,
@@ -14,11 +15,13 @@ import SharedDiagramBanner from "./SharedDiagramBanner";
 
 interface SharedDiagramViewProps {
   diagram: Diagram;
+  /** The names the link carried beside the diagram. Not imported: the store has its own. */
+  catalog: ReaderCatalog;
   /** The script the link named, already checked against this diagram. */
   flowId?: string | null;
 }
 
-export function SharedDiagramView({ diagram, flowId = null }: SharedDiagramViewProps) {
+export function SharedDiagramView({ diagram, catalog, flowId = null }: SharedDiagramViewProps) {
   const { t } = useTranslation();
   const diagrams = useDiagramStore(useShallow((state) => state.diagrams));
   const { addImportedDiagram } = useDiagramActions();
@@ -57,6 +60,7 @@ export function SharedDiagramView({ diagram, flowId = null }: SharedDiagramViewP
       ) : null}
       <ViewerCanvas
         diagram={diagram}
+        catalog={catalog}
         offsetTop={44}
         showOpenInStructuraButton={false}
         initialFlowId={flowId}

@@ -9,7 +9,6 @@ import {
   computeSegmentDrag,
   defaultOrthogonalCorners,
   pruneRedundantCorners,
-  snapTerminalCorners,
   snapToGrid,
 } from "./orthogonal";
 
@@ -36,7 +35,10 @@ describe("buildStepPath", () => {
   it("emits only horizontal/vertical commands (sharp corners)", () => {
     const corners = defaultOrthogonalCorners(source, target, Position.Right);
     const d = buildStepPath(source, target, corners);
-    expect(d).toBe("M 0 0 H 50 V 0 H 50 V 80 H 100 V 80");
+    // The trailing `V 80` the old shape emitted was a no-op: the route is
+    // already on the target's row by then, and the path now ends on the
+    // horizontal that `marker-end` reads its angle from.
+    expect(d).toBe("M 0 0 H 50 V 0 H 50 V 80 H 100");
     expect(d).not.toContain("C");
     expect(d).not.toContain("Q");
   });
@@ -195,36 +197,68 @@ describe("snapToGrid", () => {
   });
 });
 
-describe("snapTerminalCorners", () => {
-  // The numbers are the ones auto-layout actually produced for
-  // `pl-hub-c-merchant` on the PixLedger "Pix Hub — Containers" seed: ELK sizes
-  // the node at 174px, the DOM measures 173.5px, so the stamped corridor sits
-  // 0.672 flow units above the handle React Flow reports.
-  const handleSource: Point = { x: 860.0000261579241, y: 576.6666405087426 };
+describe("buildStepPath arrival", () => {
+  // Auto-layout stamps a corridor measured against ELK's boxes while the canvas
+  // draws between the handles React Flow measured on the DOM. The two disagree,
+  // so the last corner's Y is not exactly the target's. The turn has to happen
+  // before the edge arrives, or the path ends on that sliver of a vertical and
+  // `marker-end` (orient="auto") points the arrowhead away from the node.
+  const handleSource: Point = { x: 860, y: 576.6666405087426 };
   const handleTarget: Point = { x: 2566.4999651227677, y: 1104.3281075613838 };
-  const driftedCorners: Point[] = [
-    { x: 876, y: 577.3333333333334 },
-    { x: 876, y: 1105 },
-  ];
 
-  it("leaves the marker-end leg horizontal after sub-pixel layout drift", () => {
-    const snapped = snapTerminalCorners(handleSource, handleTarget, driftedCorners);
-    const d = buildStepPath(handleSource, handleTarget, snapped);
-    expect(d.endsWith(`H ${handleTarget.x} V ${handleTarget.y}`)).toBe(true);
-    const segments = buildStepSegments(handleSource, handleTarget, snapped);
-    expect(segments[segments.length - 1].orientation).toBe("horizontal");
-    expect(segments[0].orientation).toBe("horizontal");
-  });
-
-  it("keeps a deliberate bend that is wider than the tolerance", () => {
-    const corners: Point[] = [
-      { x: 876, y: 576.6666405087426 },
-      { x: 876, y: 900 },
+  it("arrives horizontally when the corridor sits off the handle's row", () => {
+    const drifted: Point[] = [
+      { x: 876, y: 577.3333333333334 },
+      { x: 876, y: 1105 },
     ];
-    expect(snapTerminalCorners(handleSource, handleTarget, corners)).toEqual(corners);
+    const d = buildStepPath(handleSource, handleTarget, drifted);
+    expect(d.endsWith(`H ${handleTarget.x}`)).toBe(true);
+
+    const visited = pointsFromStepPath(d);
+    const last = visited[visited.length - 1]!;
+    const beforeLast = visited[visited.length - 2]!;
+    expect(last.y).toBe(beforeLast.y);
+    expect(last.x).toBeGreaterThan(beforeLast.x);
   });
 
-  it("returns the corners untouched when there are none to snap", () => {
-    expect(snapTerminalCorners(handleSource, handleTarget, [])).toEqual([]);
+  it("leaves a route already on the handle's row untouched", () => {
+    const aligned: Point[] = [
+      { x: 876, y: handleSource.y },
+      { x: 876, y: handleTarget.y },
+    ];
+    expect(buildStepPath(handleSource, handleTarget, aligned)).toBe(
+      `M 860 576.6666405087426 H 876 V 576.6666405087426 H 876 V 1104.3281075613838 H 2566.4999651227677`,
+    );
+  });
+
+  it("still arrives vertically when the route genuinely comes from above", () => {
+    const fromAbove: Point[] = [{ x: handleTarget.x, y: 400 }];
+    const visited = pointsFromStepPath(buildStepPath(handleSource, handleTarget, fromAbove));
+    const last = visited[visited.length - 1]!;
+    const beforeLast = visited[visited.length - 2]!;
+    expect(last.x).toBe(beforeLast.x);
   });
 });
+
+/** The points an H/V path visits, skipping commands that do not move. */
+function pointsFromStepPath(path: string): Point[] {
+  const tokens = path.trim().split(/\s+/);
+  const points: Point[] = [];
+  let current: Point = { x: 0, y: 0 };
+  for (let i = 0; i < tokens.length;) {
+    if (tokens[i] === "M") {
+      current = { x: Number(tokens[i + 1]), y: Number(tokens[i + 2]) };
+      points.push(current);
+      i += 3;
+    } else if (tokens[i] === "H") {
+      const x = Number(tokens[i + 1]);
+      if (x !== current.x) points.push((current = { x, y: current.y }));
+      i += 2;
+    } else if (tokens[i] === "V") {
+      const y = Number(tokens[i + 1]);
+      if (y !== current.y) points.push((current = { x: current.x, y }));
+      i += 2;
+    } else i += 1;
+  }
+  return points;
+}

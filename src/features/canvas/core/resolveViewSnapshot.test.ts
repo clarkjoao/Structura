@@ -1,6 +1,5 @@
-import { existsSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { runtimeImportsOf } from "@/test/runtime-imports";
 import type { Component, Diagram } from "@/features/diagram";
 import {
   resolveViewScene,
@@ -16,7 +15,6 @@ import {
  * keep the module from growing a path back to the store.
  */
 
-const ROOT = process.cwd();
 /*
  * Store, LLM, collaboration and React Flow. React itself is not on the list:
  * the model's type guards (`component.guards.ts`) import the cloud barrel and
@@ -24,39 +22,6 @@ const ROOT = process.cwd();
  * module, and out of this slice's scope.
  */
 const FORBIDDEN = /src\/features\/(diagram\/store|llm|collaboration)\/|node_modules\/@xyflow\//;
-
-function resolveImport(from: string, spec: string): string | null {
-  let base: string;
-  if (spec.startsWith("@/")) base = join(ROOT, "src", spec.slice(2));
-  else if (spec.startsWith(".")) base = resolve(dirname(from), spec);
-  // A package: recorded by name, not walked.
-  else return join(ROOT, "node_modules", spec, "index.js");
-  for (const ext of ["", ".ts", ".tsx", "/index.ts", "/index.tsx"]) {
-    const candidate = base + ext;
-    if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
-  }
-  return null;
-}
-
-/** Every module reached through runtime imports (`import type` is erased, so skipped). */
-function runtimeImportsOf(entry: string): string[] {
-  const seen = new Set<string>();
-  const stack = [resolve(ROOT, entry)];
-  const statement = /(?:^|\n)\s*(?:import|export)\s+(type\s+)?[^;'"]*?from\s+["']([^"']+)["']/g;
-  while (stack.length > 0) {
-    const file = stack.pop()!;
-    if (seen.has(file)) continue;
-    seen.add(file);
-    if (!/\.tsx?$/.test(file)) continue;
-    const source = readFileSync(file, "utf8");
-    for (const match of source.matchAll(statement)) {
-      if (match[1]) continue;
-      const target = resolveImport(file, match[2]!);
-      if (target && !seen.has(target)) stack.push(target);
-    }
-  }
-  return [...seen].map((file) => relative(ROOT, file));
-}
 
 const component = (partial: Record<string, unknown>): Component =>
   ({ description: "", parentId: null, ...partial }) as unknown as Component;

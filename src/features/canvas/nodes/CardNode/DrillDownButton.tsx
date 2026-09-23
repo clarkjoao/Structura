@@ -25,7 +25,19 @@ export const DrillDownButton = memo(function DrillDownButton({
     },
     [elementId, onDrillDown],
   );
-  if (!onDrillDown) return null;
+  // A reader has nowhere to go, but the row stays: it is part of the card's
+  // box, and the box is what the layout anchored the edges against. Drawn the
+  // same, just not a control.
+  if (!onDrillDown) {
+    return (
+      <span
+        className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${colorClass}`}
+        style={customColor ? { color: customColor } : undefined}
+      >
+        <MousePointerClick className="h-3 w-3" /> {t("cardNode.drillExplore")}
+      </span>
+    );
+  }
   return (
     <button
       onClick={handleClick}

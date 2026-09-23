@@ -85,7 +85,15 @@ E uma regra, que é o que fecha a classe inteira:
 
 ## 3. Três guardas, da mais barata para a mais cara
 
-### 3.1 Teste de paridade renderizada (recomendado, cobre as cinco divergências)
+### 3.1 Teste de paridade renderizada — **FEITO**
+
+Está em `cypress/e2e/editor-viewer-render-parity.cy.ts`.
+
+**Provado que falha**, uma mutação por vez: sem o piso do card, o seed mede
+`cmp_linked: editor 260x173.5 vs viewer 260x103.5` e 3 dos 4 testes reprovam; com `buildStepPath`
+de volta ao `H x V y`, o quarto reprova com `ends on a vertical: (698, 290.664) -> (698, 290)`.
+
+O desenho original segue abaixo, porque a forma importa mais que o arquivo.
 
 O script desta sessão já é o teste. Em Cypress, que o repo já usa para stress:
 
@@ -107,16 +115,66 @@ reprova 20 de 20 edges que estão visualmente idênticas.
 que nomeie o que o leitor não tem — e um comentário apontando para esta regra — transforma "campo
 vazio" em "capacidade ausente", que é o que ele é.
 
-### 3.3 Parar de gravar Y absoluto no waypoint
+### 3.3 Virar o invariante da seta em estrutura — **FEITO**
 
-A correção mais profunda, e a mais cara. Hoje `edgeLayouts[].points` guarda coordenada absoluta,
-que embute a altura do nó no momento do layout. Se o waypoint guardasse o corredor mais a
-referência de handle, resolvendo o Y no desenho, nenhuma superfície poderia errar, e o
-`snapTerminalCorners` (`edges/geometry/orthogonal.ts`) — que hoje absorve o arredondamento de
-sub-pixel do ELK — deixaria de ser necessário. Encaixa na fatia 6 do §5.2 do doc anterior
-("edge sem store"), que já mexe nessa camada.
+A primeira versão desta correção foi o `snapTerminalCorners`: grudar o canto terminal no handle
+quando o desvio fosse menor que 2px. Era um remendo — escolhia uma tolerância, e não tinha resposta
+para desvio maior.
+
+A versão estrutural está em `buildStepPath` (`edges/geometry/orthogonal.ts`): a perna que chega ao
+alvo emite `V y H x` em vez de `H x V y`, ou seja, **vira antes de chegar**. Assim o último segmento
+é horizontal por construção, em qualquer desvio, sem tolerância e sem dado nenhum. O
+`snapTerminalCorners` foi removido.
+
+**Por que isso não muda desenho nenhum:** numa rota ortogonal bem formada o último canto compartilha
+exatamente um eixo com o alvo — `computeCornerDrag` trava o canto vizinho do alvo justamente para o
+segmento final não sair diagonal. Com um eixo compartilhado, um dos dois comandos é no-op de
+qualquer jeito. **MEDIDO**: em 800 rotas bem formadas geradas, a polilinha antiga e a nova são
+idênticas em 100%; só divergem onde a rota **não** é bem formada, que é o caso que interessa. É por
+isso que as baselines de `layoutReadability` não se mexeram (`C4 Context healthcare crossings 5`,
+igual antes e depois).
+
+`stepPolyline` (`layout/renderedEdgePath.ts`) espelha a mudança, como o próprio teste dela exige.
+
+### 3.4 Parar de gravar Y absoluto no waypoint
+
+A correção mais profunda, e a mais cara — e a única que apagaria também o `laidOutMinHeight`. Hoje
+`edgeLayouts[].points` guarda coordenada absoluta, que embute a altura do nó no momento do layout.
+Se o waypoint guardasse o corredor mais a referência de handle, resolvendo o Y no desenho, nenhuma
+superfície poderia errar. Encaixa na fatia 6 do §5.2 do doc anterior ("edge sem store"), que já mexe
+nessa camada.
+
+**Custo medido:** `edgeLayouts` é lido ou escrito por **42 arquivos**, incluindo
+`collaboration/utils/snapshotChecksum.ts`, `collaboration/hooks/useCollabStoreSync.ts`,
+`store/persist.config.ts` e `store/slices/history.slice.ts` — é migração de schema com colaboração
+em cima, não um refactor local.
 
 ---
+
+## 3.5 O dado ausente, resolvido (2026-09-22)
+
+O §3.2 pedia tornar o contexto do leitor explícito. Foi feito como **dado**, não como política:
+
+- `ReaderCatalog` (`diagram/utils/reader-catalog.ts`): só os **nomes** de serviço e diagrama linkado que
+  o diagrama referencia. `NodeBuildContext.services`/`allDiagrams` foram estreitados para `{ name }`, de
+  modo que nenhum nó possa ler do workspace algo que o leitor não tem.
+- O link carrega o catálogo (`readerCatalog`, ao lado do diagrama no payload de `#data=` e `#share=`), e
+  o decoder o tira antes de qualquer importação chegar ao store. Leitores na máquina do autor
+  (`?diagramId`, arquivo, walkthrough) montam o catálogo do próprio store.
+- A linha "explore inside" é desenhada sempre que o card aponta para um diagrama, e só é **botão** onde
+  há para onde ir. No leitor ela fica, sem ação: faz parte da caixa.
+
+**MEDIDO** pelo spec novo, antes das correções: `pl-risk-api` tinha **260px de largura no editor e
+252,9 no leitor** — a largura também é emergente, e o piso de altura não a cobria. Depois: igual.
+
+Duas causas a mais apareceram, as duas do **editor** divergindo do próprio store:
+
+- `useNodeDragParenting` gravava a medida do React Flow de volta no layout. A medida vem de
+  `offsetWidth/offsetHeight`, que são inteiros: um painel de 933,333 virava 933 no store enquanto o
+  canvas continuava desenhando 933,333. **MEDIDO** (stack capturada no dev server). Agora uma
+  re-medida a menos de 1px do valor salvo, fora de um resize do usuário, não é gravada.
+- `PanelStyleSection` fazia a mesma coisa pelo inspetor (auto-commit do valor arredondado sem o usuário
+  digitar). **Não era a causa medida acima** — foi achado no caminho, provado por teste e corrigido.
 
 ## 4. Não verificado
 

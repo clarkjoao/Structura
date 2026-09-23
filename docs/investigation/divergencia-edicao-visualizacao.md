@@ -7,6 +7,15 @@ Toda afirmação vem marcada como **MEDIDO** (medido no browser nesta sessão), 
 
 ---
 
+> **Atualização (2026-09-22, branch `feat/viewer-render-parity`).** O plano do §5.2 foi executado
+> inteiro (fatias 1–7). Decisões do §6: **6.1** — nenhuma rota re-arranja mais; o
+> `layoutForVisualization` e o perfil ELK `visualization` foram removidos, e existe um só layout, o do
+> autor. **6.2** — o link mostra a **cena que o autor tem aberta** (opção A): `activeVersionId` vai no
+> payload e o leitor o resolve como o editor; o aviso "sempre a base" saiu do `ShareModal`. Walkthroughs
+> continuam na base (`WalkthroughSceneCanvas`). A paridade agora é medida no que foi renderizado, em
+> todos os seeds e nas três formas de ler (`cypress/e2e/editor-viewer-render-parity-seeds.cy.ts`); ver
+> também [`paridade-editor-viewer-caixa-do-no.md`](./paridade-editor-viewer-caixa-do-no.md) §6.
+
 ## 0. Resumo
 
 1. **Já existe um core compartilhado, e ele funciona.** Desde o trabalho de `canvas/core`

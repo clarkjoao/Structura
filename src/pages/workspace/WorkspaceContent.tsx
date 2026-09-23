@@ -303,6 +303,7 @@ export function WorkspaceContent({
                 type="button"
                 disabled={canvasInteractionLocked}
                 onClick={() => setShareModalOpen(true)}
+                data-testid="open-share-modal"
                 className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-all ${
                   canvasInteractionLocked
                     ? "opacity-50 pointer-events-none text-muted-foreground border-transparent"

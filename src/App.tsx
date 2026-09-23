@@ -98,7 +98,7 @@ function MainPages() {
 }
 
 const App = () => {
-  const { sharedDiagram, sharedFlowId, ShareProvider } = useSharedDiagram();
+  const { sharedDiagram, sharedCatalog, sharedFlowId, ShareProvider } = useSharedDiagram();
 
   return (
     <BrowserRouter future={ROUTER_FUTURE}>
@@ -106,7 +106,11 @@ const App = () => {
       {sharedDiagram ? (
         <ShareProvider>
           <Suspense fallback={<RouteFallback />}>
-            <SharedDiagramView diagram={sharedDiagram} flowId={sharedFlowId} />
+            <SharedDiagramView
+              diagram={sharedDiagram}
+              catalog={sharedCatalog}
+              flowId={sharedFlowId}
+            />
           </Suspense>
         </ShareProvider>
       ) : (

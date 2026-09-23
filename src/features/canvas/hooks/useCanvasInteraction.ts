@@ -261,6 +261,7 @@ export function useCanvasInteraction(
     importDrawioResult: actions.importDrawioResult,
     hydrateClipboard: actions.hydrateClipboard,
     clearClipboard: actions.clearClipboard,
+    clearHighlight: visualState.clearHighlight,
     addComponent: actions.addComponent,
     isPanelOpen,
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,

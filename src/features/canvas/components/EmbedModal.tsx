@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { Diagram } from "@/features/diagram";
+import { readerCatalogFromStore, type Diagram } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -48,7 +48,7 @@ export function EmbedModal({ open, onOpenChange, diagram }: EmbedModalProps) {
   // looking at the result. Measured 2026-09-13; see docs/epico-virtualizacao/.
   const hashIframeCode = useMemo(() => {
     if (!open) return "";
-    const embedUrl = generateViewerUrl(diagram);
+    const embedUrl = generateViewerUrl(diagram, { catalog: readerCatalogFromStore(diagram) });
     return buildIframeCode(embedUrl);
   }, [open, diagram]);
 

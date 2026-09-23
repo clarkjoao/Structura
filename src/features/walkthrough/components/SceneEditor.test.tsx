@@ -70,7 +70,10 @@ vi.mock("@/features/diagram", async (importOriginal) => ({
     selector({ diagrams: ALL }),
 }));
 
-vi.mock("@/features/viewer", () => ({ ViewerCanvas: () => <div data-testid="preview" /> }));
+vi.mock("@/features/viewer", () => ({
+  ViewerCanvas: () => <div data-testid="preview" />,
+  useStoreReaderCatalog: () => undefined,
+}));
 
 const THREE_SCENES: WalkthroughPresentation = {
   id: "wt_1",

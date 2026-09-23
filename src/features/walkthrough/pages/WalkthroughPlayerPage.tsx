@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useWalkthroughStore } from "../hooks/useWalkthroughStore";
 import { useDiagramStore } from "@/features/diagram";
-import { ViewerCanvas } from "@/features/viewer";
+import { WalkthroughSceneCanvas } from "../components/WalkthroughSceneCanvas";
 import { WalkthroughDiagramNotFound } from "../components/WalkthroughDiagramNotFound";
 
 /** How long the change-of-diagram notice stays up. */
@@ -383,7 +383,7 @@ export default function WalkthroughPlayerPage() {
           once via an internal ref, so subsequent steps would never
           auto-open their flow. */}
       <div className="relative flex-1 min-h-0">
-        <ViewerCanvas
+        <WalkthroughSceneCanvas
           key={`${step.diagramId}:${step.flowId}:${stepIndex}`}
           diagram={diagram}
           initialFlowId={step.flowId || null}

@@ -3,8 +3,8 @@ import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { layout } from "../layout/layoutEngine";
-import { fromDiagram, resizableIds } from "../layout/fromDiagram";
-import { measuredSizesOf, toAppliedLayouts } from "../layout/applyLayout";
+import { fitToContentIds, fromDiagram, resizableIds } from "../layout/fromDiagram";
+import { fitContainersToChildren, measuredSizesOf, toAppliedLayouts } from "../layout/applyLayout";
 import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
 import {
   useDiagramActions,
@@ -47,12 +47,18 @@ export function usePanelChildLayout() {
         }
 
         // The panel keeps where it sits; only its size comes from the layout.
+        // Then every panel is wrapped the way the auto-layout leaves it — after
+        // the panel is put back, so its children stay where the routes below
+        // are anchored.
         const panelLayout = nodeLayouts[panelId];
-        const applied = toAppliedLayouts(graph, result, resizableIds(graph, components)).map(
-          (entry) =>
+        const applied = fitContainersToChildren(
+          toAppliedLayouts(graph, result, resizableIds(graph, components)).map((entry) =>
             entry.elementId === panelId && panelLayout
               ? { ...entry, x: panelLayout.x, y: panelLayout.y }
               : entry,
+          ),
+          graph,
+          fitToContentIds(graph, components),
         );
 
         applyAutoLayout(applied);

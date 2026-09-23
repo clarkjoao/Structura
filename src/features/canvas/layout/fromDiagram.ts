@@ -219,3 +219,19 @@ export function resizableIds(
   }
   return ids;
 }
+
+/**
+ * The containers an auto-layout wraps to their content afterwards: the resizable
+ * ones, minus a collapsed panel, which `fitGroupToChildren` leaves alone too.
+ */
+export function fitToContentIds(
+  graph: LayoutGraph,
+  components: Record<string, Component>,
+): Set<string> {
+  const ids = resizableIds(graph, components);
+  for (const id of ids) {
+    const component = components[id];
+    if (component && "collapsed" in component && component.collapsed) ids.delete(id);
+  }
+  return ids;
+}

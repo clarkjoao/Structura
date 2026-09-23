@@ -127,4 +127,60 @@ describe("dimension flush", () => {
     expect(batchUpdateNodeLayouts).not.toHaveBeenCalled();
     expect(updateNodeLayout).not.toHaveBeenCalled();
   });
+
+  /**
+   * React Flow measures with `offsetWidth` / `offsetHeight`, which are whole
+   * pixels. A panel the layout sized at 933.333 measures 933, and writing that
+   * back changed the stored size while the canvas kept drawing 933.333 — the
+   * editor no longer matched its own store, and the viewer, which draws the
+   * store, drew a different box. Less than a pixel off is the DOM rounding, not
+   * a size the node took.
+   */
+  it("does not write the DOM's rounding of a fractional size back", async () => {
+    const { nodes, diagram } = buildFixture();
+    diagram.nodeLayouts["n-3"] = { elementId: "n-3", x: 30, y: 0, width: 1860, height: 933.3333 };
+    const batchUpdateNodeLayouts = vi.fn();
+
+    const { result } = renderHook(() =>
+      useNodeDragParenting({
+        diagram,
+        nodes,
+        updateNodeLayout: vi.fn(),
+        batchUpdateNodeLayouts,
+        batchCommitNodeDrag: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.onNodesChange([dimensionChange("n-3", 1860, 933)]);
+    });
+    await drainAnimationFrame();
+
+    expect(batchUpdateNodeLayouts).not.toHaveBeenCalled();
+  });
+
+  it("still writes a size that really changed, however the node is sized", async () => {
+    const { nodes, diagram } = buildFixture();
+    diagram.nodeLayouts["n-3"] = { elementId: "n-3", x: 30, y: 0, width: 1860, height: 933.3333 };
+    const batchUpdateNodeLayouts = vi.fn();
+
+    const { result } = renderHook(() =>
+      useNodeDragParenting({
+        diagram,
+        nodes,
+        updateNodeLayout: vi.fn(),
+        batchUpdateNodeLayouts,
+        batchCommitNodeDrag: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      result.current.onNodesChange([dimensionChange("n-3", 1860, 960)]);
+    });
+    await drainAnimationFrame();
+
+    expect(batchUpdateNodeLayouts).toHaveBeenCalledWith([
+      { elementId: "n-3", position: { x: 30, y: 0 }, dimensions: { width: 1860, height: 960 } },
+    ]);
+  });
 });

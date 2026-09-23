@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactFlow } from "@xyflow/react";
 import {
@@ -37,6 +37,7 @@ import {
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
 import { toast } from "sonner";
+import { isEditableTarget, KEY, keyIs } from "@/lib/core/keyboard";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -86,6 +87,20 @@ const FlowPanel = ({
   const [showMermaidImport, setShowMermaidImport] = useState(false);
   const scriptFlowId = useFlowViewStore((state) => state.scriptFlowId);
   const openScript = useFlowViewStore((state) => state.openScript);
+
+  // Escape closes the panel. The canvas stands down while it is open, so nothing
+  // else handles the key; a dialog or menu opened from here dismisses itself
+  // first and marks the event handled, and a focused field keeps it.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!keyIs(event, KEY.ESCAPE) || event.defaultPrevented) return;
+      if (isEditableTarget(event.target)) return;
+      event.preventDefault();
+      onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   const layoutNewNodes = useCallback(
     async (nodeIds: string[], connectionIds: string[]) => {

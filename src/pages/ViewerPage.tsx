@@ -2,11 +2,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertCircle, FileJson, LayoutDashboard, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram, ReaderCatalog } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
-import { ViewerCanvas } from "@/features/viewer";
+import { ViewerCanvas, useStoreReaderCatalog } from "@/features/viewer";
 import { useStructuraFile } from "@/features/viewer/hooks/useStructuraFile";
-import { getFlowParamFromUrl, getViewerDataFromHash } from "@/lib/share-url";
+import { getFlowParamFromUrl, getViewerPayloadFromHash, splitSharedPayload } from "@/lib/share-url";
 
 /**
  * The reading route — every way into it.
@@ -18,6 +18,10 @@ import { getFlowParamFromUrl, getViewerDataFromHash } from "@/lib/share-url";
  * that is already out in the world: `generateViewerUrl` writes `/viewer#data=`
  * into every shared link, and `EmbedModal` writes `/viewer` into every iframe
  * snippet it hands out.
+ *
+ * **Every source draws what the editor draws**: the scene the diagram has open,
+ * and the names its cards show — from the link's payload when it was handed
+ * over, from the reader's own store otherwise (`ReaderCatalog`).
  *
  * **No source is re-arranged.** Every way in renders the positions and edge
  * waypoints the diagram carries — the same picture the editor draws. The
@@ -100,6 +104,7 @@ function namedFlowIn(diagram: Diagram, flowId: string | null): string | null {
 function FileSource({ path }: { path: string | null }) {
   const { t } = useTranslation();
   const { state, pick, supported } = useStructuraFile();
+  const catalog = useStoreReaderCatalog(state.status === "ready" ? state.diagram : null);
 
   if (!supported) return <ViewerError message={t("viewPage.errors.noFilePicker")} />;
   if (state.status === "error") return <ViewerError message={t("viewPage.errors.invalidFile")} />;
@@ -122,27 +127,30 @@ function FileSource({ path }: { path: string | null }) {
 
   if (state.status === "reading") return <ViewerLoading label={t("embedPage.loading")} />;
   return (
-  <ViewerFrame>
-  <ViewerCanvas diagram={state.diagram} showOpenInStructuraButton={false} />
-  </ViewerFrame>);
+    <ViewerFrame>
+      <ViewerCanvas diagram={state.diagram} catalog={catalog} showOpenInStructuraButton={false} />
+    </ViewerFrame>
+  );
 }
 
 /** `?diagramId=` — one of the reader's own diagrams, at its saved positions. */
 function StoreSource({ diagramId }: { diagramId: string }) {
   const { t } = useTranslation();
   const stored = useDiagramStore((state) => state.diagrams[diagramId]);
+  const catalog = useStoreReaderCatalog(stored);
 
   if (!stored) return <ViewerError message={t("viewPage.errors.notFound", { id: diagramId })} />;
   return (
-  <ViewerFrame>
-  <ViewerCanvas diagram={stored} showOpenInStructuraButton={false} />
-  </ViewerFrame>);
+    <ViewerFrame>
+      <ViewerCanvas diagram={stored} catalog={catalog} showOpenInStructuraButton={false} />
+    </ViewerFrame>
+  );
 }
 
 type HandedOverState =
   | { status: "loading" }
   | { status: "waiting" }
-  | { status: "ready"; diagram: Diagram; flowId: string | null }
+  | { status: "ready"; diagram: Diagram; catalog: ReaderCatalog; flowId: string | null }
   | { status: "error"; message: string };
 
 /**
@@ -157,9 +165,15 @@ function HandedOverDiagram() {
   const [state, setState] = useState<HandedOverState>({ status: "loading" });
 
   useEffect(() => {
-    const diagram = getViewerDataFromHash();
-    if (diagram) {
-      setState({ status: "ready", diagram, flowId: namedFlowIn(diagram, getFlowParamFromUrl()) });
+    const payload = getViewerPayloadFromHash();
+    if (payload) {
+      const { diagram, catalog } = payload;
+      setState({
+        status: "ready",
+        diagram,
+        catalog,
+        flowId: namedFlowIn(diagram, getFlowParamFromUrl()),
+      });
       return;
     }
 
@@ -173,10 +187,12 @@ function HandedOverDiagram() {
 
       try {
         assertDiagram(json);
+        const { diagram, catalog } = splitSharedPayload(json);
         setState({
           status: "ready",
-          diagram: json,
-          flowId: namedFlowIn(json, getFlowParamFromUrl()),
+          diagram,
+          catalog,
+          flowId: namedFlowIn(diagram, getFlowParamFromUrl()),
         });
         event.source?.postMessage(
           { type: "STRUCTURA_LOADED", success: true },
@@ -207,9 +223,13 @@ function HandedOverDiagram() {
       return <ViewerError message={state.message} />;
     case "ready":
       return (
-      <ViewerFrame>
-      <ViewerCanvas diagram={state.diagram} initialFlowId={state.flowId} />
-      </ViewerFrame>
+        <ViewerFrame>
+          <ViewerCanvas
+            diagram={state.diagram}
+            catalog={state.catalog}
+            initialFlowId={state.flowId}
+          />
+        </ViewerFrame>
       );
   }
 }

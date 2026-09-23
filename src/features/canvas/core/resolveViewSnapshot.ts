@@ -31,8 +31,8 @@ export type DescribeNode = (component: Component) => ViewNodeDescriptor;
  * legitimately disagree on.
  *
  * The editor passes the scene the author has open (and the second one while
- * comparing two); a shared link passes `null`, because a link always opens on
- * the base scene.
+ * comparing two); a reader passes the scene the diagram has open, so a link
+ * draws what its author saw. Only the comparison is the editor's alone.
  */
 export interface ViewSnapshotOptions {
   versionId: string | null;

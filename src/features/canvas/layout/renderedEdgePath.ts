@@ -47,16 +47,18 @@ export function handleAnchor(
 
 /**
  * Expands the knots into the points the SVG path visits. `buildStepPath` emits
- * `H x V y` per knot, so each leg is an L: horizontal first, then vertical.
- * Kept in step with that function by `renderedEdgePath.test.ts`, which compares
- * these points against the path string it produces.
+ * `H x V y` per knot, so each leg is an L: horizontal first, then vertical —
+ * except the leg into the target, which turns first and arrives horizontally so
+ * the arrowhead points into the handle. Kept in step with that function by
+ * `renderedEdgePath.test.ts`, which compares these points against the path
+ * string it produces.
  */
 export function stepPolyline(source: Point, target: Point, corners: readonly Point[]): Point[] {
   const knots: Point[] = [source, ...corners, target];
   const points: Point[] = [{ x: knots[0].x, y: knots[0].y }];
   let current = points[0];
 
-  for (let i = 1; i < knots.length; i += 1) {
+  for (let i = 1; i < knots.length - 1; i += 1) {
     const knot = knots[i];
     if (knot.x !== current.x) {
       current = { x: knot.x, y: current.y };
@@ -66,6 +68,15 @@ export function stepPolyline(source: Point, target: Point, corners: readonly Poi
       current = { x: current.x, y: knot.y };
       points.push(current);
     }
+  }
+
+  if (target.y !== current.y) {
+    current = { x: current.x, y: target.y };
+    points.push(current);
+  }
+  if (target.x !== current.x) {
+    current = { x: target.x, y: current.y };
+    points.push(current);
   }
 
   return points;

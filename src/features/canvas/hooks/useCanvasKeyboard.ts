@@ -62,6 +62,7 @@ interface UseCanvasKeyboardParams {
   ) => string[];
   hydrateClipboard: (entry: ClipboardEntry) => void;
   clearClipboard: () => void;
+  clearHighlight?: () => void;
   addComponent: (
     type: ComponentType,
     name: string,
@@ -141,6 +142,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     importDrawioResult,
     hydrateClipboard,
     clearClipboard,
+    clearHighlight,
     addComponent,
     isPanelOpen,
     isFlowPanelOpen,
@@ -230,6 +232,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setSelectedEdgeId,
     setContextMenu,
     clearClipboard,
+    clearHighlight,
     removeElements,
     cancelInFlightGesture,
     onExitFlowPlayback,

@@ -114,4 +114,27 @@ describe("projectReadDiagram", () => {
     expect(data.layoutPoints).toEqual([]);
     expect(data.layoutLabelOffset).toBeNull();
   });
+
+  it("shows the names the catalog carries, as the editor shows the workspace's", () => {
+    const diagram = diagramOf([
+      component({
+        id: "api",
+        name: "API",
+        type: "container",
+        serviceId: "billing",
+        linkedDiagramId: "ledger",
+      }),
+    ]);
+    const catalog = {
+      services: { billing: { name: "billing-service" } },
+      diagrams: { ledger: { name: "Ledger — Containers" } },
+    };
+
+    const [card] = projectReadDiagram(diagram, null, null, null, catalog).nodes;
+
+    expect(card?.data.serviceName).toBe("billing-service");
+    expect(card?.data.linkedDiagramName).toBe("Ledger — Containers");
+    // Named, but the reader cannot go there: the row is drawn, not a control.
+    expect(card?.data.onDrillDown).toBeUndefined();
+  });
 });

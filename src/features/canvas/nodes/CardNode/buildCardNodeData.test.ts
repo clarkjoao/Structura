@@ -58,16 +58,58 @@ describe("buildCardNodeData reserves the height the layout assumed", () => {
   // zeroes `services` / `allDiagrams`, so the same card comes out ~70px shorter
   // and every handle-anchored waypoint misses. The box the layout measured has
   // to be the box both surfaces draw, and the handles sit inside it.
-  it("floors the card at the laid-out height", () => {
-    expect(buildCardNodeData(container, ctxWithLayout(174)).laidOutMinHeight).toBe(174);
+  it("floors the card at the laid-out height on a reader", () => {
+    const data = buildCardNodeData(container, ctxWithLayout(174, { isReader: true }));
+    expect(data.laidOutMinHeight).toBe(174);
+  });
+
+  it("floors the card in the editor while a flow plays, which hides its content", () => {
+    const data = buildCardNodeData(container, ctxWithLayout(174, { isPlaying: true }));
+    expect(data.laidOutMinHeight).toBe(174);
+  });
+
+  // The editor writes what it measures back into the layout. A floor there is
+  // fed by its own measurement: a card that grew while selected (a long
+  // description) came back at the grown height and could never shrink.
+  it("does not floor the card in the editor otherwise", () => {
+    expect(buildCardNodeData(container, ctxWithLayout(174)).laidOutMinHeight).toBeUndefined();
   });
 
   it("leaves a card the layout never sized to its content", () => {
-    expect(buildCardNodeData(container, ctxWithLayout(undefined)).laidOutMinHeight).toBeUndefined();
+    const data = buildCardNodeData(container, ctxWithLayout(undefined, { isReader: true }));
+    expect(data.laidOutMinHeight).toBeUndefined();
   });
 
   it("does not floor the card while a compare diff is shown", () => {
-    const data = buildCardNodeData(container, ctxWithLayout(174, { isCompareMode: true }));
+    const data = buildCardNodeData(
+      container,
+      ctxWithLayout(174, { isReader: true, isCompareMode: true }),
+    );
     expect(data.laidOutMinHeight).toBeUndefined();
+  });
+});
+
+describe("buildCardNodeData drill-down", () => {
+  const linked = { ...container, linkedDiagramId: "ledger" } as Component;
+  const handleDrillDown = () => {};
+  const ctx = (overrides: Partial<NodeBuildContext>): NodeBuildContext =>
+    ({
+      ...ctxWithCounts(0, 0),
+      allDiagrams: { ledger: { name: "Ledger" } },
+      handleDrillDown,
+      ...overrides,
+    }) as unknown as NodeBuildContext;
+
+  it("gives the editor a drill-down control for a linked diagram", () => {
+    const data = buildCardNodeData(linked, ctx({}));
+    expect(data.onDrillDown).toBe(handleDrillDown);
+  });
+
+  // The reader names the linked diagram but cannot go there. Its context
+  // carries a no-op handler, which would still render a clickable button.
+  it("names the linked diagram on a reader without a control", () => {
+    const data = buildCardNodeData(linked, ctx({ isReader: true }));
+    expect(data.linkedDiagramName).toBe("Ledger");
+    expect(data.onDrillDown).toBeUndefined();
   });
 });
