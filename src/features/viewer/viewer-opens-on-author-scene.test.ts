@@ -12,13 +12,13 @@ import { useReadDiagramFlow } from "@/features/canvas/core";
 const shareParamOf = (url: string) => new URLSearchParams(url.split("#")[1]).get("share")!;
 
 /**
- * A link opens on the base.
+ * A link opens on the scene its author had open.
  *
- * `activeVersionId` is which scene the author had open when they copied the
- * link. Carried through, it dropped the reader inside that scene — without the
- * nodes it hides, without saying so, and with no way out. Two guards: the link
- * stops carrying it, and the viewer stops reading it, because links shared
- * before the first guard are still out there.
+ * The editor draws the scene the author is in; a link used to draw the base
+ * underneath, whatever the author was looking at — one of the ways "the same
+ * diagram" read differently depending on where it was opened. The decision
+ * (2026-09-22) is that a link draws what the author saw: it carries
+ * `activeVersionId`, and the viewer resolves it as the editor does.
  */
 
 const component = (id: string, name: string) =>
@@ -102,33 +102,39 @@ describe("the scripts reach the viewer in the payload", () => {
   });
 });
 
-describe("a link opens on the base, not in the author's scene", () => {
-  it("stops carrying which scene the author had open", () => {
+describe("a link opens in the author's scene, as the editor shows it", () => {
+  it("carries which scene the author had open", () => {
     const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
-    expect(shared!.activeVersionId).toBeUndefined();
+    expect(shared!.activeVersionId).toBe("sc1");
   });
 
-  it("shows the node the scene was hiding", () => {
+  it("hides what the scene hides", () => {
     const shared = decodeShareParam(shareParamOf(generateShareUrl(diagramInScene()).url));
 
-    expect(nodeNames(shared!)).toEqual(["Gateway", "Ledger"]);
+    expect(nodeNames(shared!)).toEqual(["Gateway"]);
   });
 
-  it("ignores the field even on a link shared before the rule", () => {
-    // What an older link decodes to: the field survived the round trip.
-    const legacy = diagramInScene();
-    expect(legacy.activeVersionId).toBe("sc1");
-
-    expect(nodeNames(legacy)).toEqual(["Gateway", "Ledger"]);
-  });
-
-  it("shows the same nodes whichever scene was open", () => {
+  it("follows whichever scene was open", () => {
     const other = diagramInScene();
     other.versions!.sc2 = scene("sc2", "Sem gateway", ["c1"]);
     other.activeVersionId = "sc2";
 
-    expect(nodeNames(other)).toEqual(nodeNames(diagramInScene()));
+    expect(nodeNames(other)).toEqual(["Ledger"]);
+  });
+
+  it("draws the base when the author was on the base", () => {
+    const onBase = diagramInScene();
+    onBase.activeVersionId = null;
+
+    expect(nodeNames(onBase)).toEqual(["Gateway", "Ledger"]);
+  });
+
+  it("draws the base when the scene named no longer exists", () => {
+    const stale = diagramInScene();
+    stale.activeVersionId = "deleted-scene";
+
+    expect(nodeNames(stale)).toEqual(["Gateway", "Ledger"]);
   });
 
   it("still shows a diagram that has no scenes at all", () => {

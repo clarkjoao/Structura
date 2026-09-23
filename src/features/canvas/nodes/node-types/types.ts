@@ -10,7 +10,7 @@ import type {
   EndpointCall,
   FlowStep,
   NodeLayout,
-  ServiceDefinition,
+  NamedRef,
 } from "@/features/diagram";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../../flow/flowState";
 import type { NodeHandleSpec } from "./handle-spec";
@@ -39,8 +39,14 @@ export interface NodeBuildContext {
 
   compareVisualByComponentId?: Record<string, CompareElementVisual>;
   isCompareMode?: boolean;
-  services: Record<string, ServiceDefinition>;
-  allDiagrams: Record<string, Diagram>;
+  /**
+   * Names only: what a node shows of the service and linked diagram it points
+   * at. The editor hands in the workspace; a reader hands in the names its
+   * payload carried (`ReaderCatalog`). Narrowed to the name on purpose — a node
+   * that read anything else would draw something a reader cannot have.
+   */
+  services: Readonly<Record<string, NamedRef>>;
+  allDiagrams: Readonly<Record<string, NamedRef>>;
   selectedNodeId: string | null;
   selectedNodeIds: Set<string>;
   dragTargetPanelId: string | null;

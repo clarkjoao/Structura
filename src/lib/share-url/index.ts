@@ -14,8 +14,20 @@ export {
   type ShareUrlResult,
 } from "./encode";
 
-export { decodeShareParam, getShareParamFromUrl, decodeDiagramPayload } from "./decode";
+export {
+  decodeShareParam,
+  decodeSharePayload,
+  getShareParamFromUrl,
+  decodeDiagramPayload,
+  splitSharedPayload,
+  type SharedPayload,
+} from "./decode";
 
-export { getViewerPostMessageUrl, generateViewerUrl, getViewerDataFromHash } from "./viewer";
+export {
+  getViewerPostMessageUrl,
+  generateViewerUrl,
+  getViewerDataFromHash,
+  getViewerPayloadFromHash,
+} from "./viewer";
 
 export { getAppUrl, getAppBaseUrl } from "./utils";

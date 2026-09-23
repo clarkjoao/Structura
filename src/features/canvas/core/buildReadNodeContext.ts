@@ -1,4 +1,5 @@
 import type { Component, Connection, Diagram, Flow } from "@/features/diagram/model";
+import { EMPTY_READER_CATALOG, type ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
 import {
   buildChildrenIndex,
   endpointCallersByRoute,
@@ -49,8 +50,6 @@ function readIdleChrome(
 ): Pick<
   NodeBuildContext,
   | "versionBadgeByComponentId"
-  | "services"
-  | "allDiagrams"
   | "selectedNodeId"
   | "selectedNodeIds"
   | "dragTargetPanelId"
@@ -58,8 +57,6 @@ function readIdleChrome(
 > {
   return {
     versionBadgeByComponentId: {},
-    services: {},
-    allDiagrams: {},
     selectedNodeId: focusedNodeId,
     selectedNodeIds: focusedNodeId ? new Set([focusedNodeId]) : new Set(),
     dragTargetPanelId: null,
@@ -70,9 +67,14 @@ function readIdleChrome(
 /**
  * Read-only descriptor context for a shared/embed diagram.
  *
- * Same `buildData` / `buildStyle` the editor runs, without catalog or edit
- * callbacks. Optional `focusedNodeId` marks a node as selected so CardNode can
- * expand its description on click (viewer has no RF selection).
+ * Same `buildData` / `buildStyle` the editor runs, without edit callbacks.
+ * Optional `focusedNodeId` marks a node as selected so CardNode can expand its
+ * description on click (viewer has no RF selection).
+ *
+ * The names a card shows of its service and linked diagram come from `catalog`
+ * — what the link carried, or what the reader's own store holds. A reader never
+ * has the workspace itself, and without the names the same card draws shorter
+ * and narrower than the editor's, off every waypoint laid out against it.
  *
  * @example
  * const ctx = buildReadNodeContext(diagram, components, layouts, connections, reading, play);
@@ -86,6 +88,7 @@ export function buildReadNodeContext(
   reading: ReadDiagramReading | null,
   onPlayFlow: ((flowId: string) => void) | undefined,
   focusedNodeId: string | null = null,
+  catalog: ReaderCatalog = EMPTY_READER_CATALOG,
 ): NodeBuildContext {
   const flows = diagram.snapshot.flows ?? {};
   return {
@@ -95,6 +98,8 @@ export function buildReadNodeContext(
     resolvedComponents: components,
     resolvedNodeLayouts: layouts,
     ...readIdleChrome(focusedNodeId),
+    services: catalog.services,
+    allDiagrams: catalog.diagrams,
     // From placed components only, as the editor builds it: a child of a panel
     // that has no layout is not nested inside a node that does not exist.
     panelIds: buildPanelIds(placedComponents(components, layouts)),

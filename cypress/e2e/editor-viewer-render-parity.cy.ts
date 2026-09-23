@@ -4,17 +4,20 @@
  *
  * `core/readWriteParity.test.tsx` already compares the two *projections*, and it
  * passes — both produce identical node objects, because neither carries a
- * height. A card is sized by its content, and the reader zeroes `services` and
- * `allDiagrams` (`buildReadNodeContext`), so the service chip and the "explore
- * inside" row vanish and the same card comes out ~70px shorter. Auto-layout
+ * height. A card is sized by its content, and the reader used to zero `services`
+ * and `allDiagrams` (`buildReadNodeContext`), so the service chip and the
+ * "explore inside" row vanished and the same card came out ~70px shorter. The
+ * reader now gets the names (`ReaderCatalog`), and the card still declares the
+ * height the layout measured, so neither content nor a stale layout can move
+ * the box. Auto-layout
  * anchors every waypoint at a fraction of the height it was given, so the
  * handles then sit where the corridor does not reach. That divergence exists
  * only after the DOM, which is why it needs a test at this altitude.
  *
  * The seed is built to make both failures reachable:
- *  - `linked` carries `linkedDiagramId` + `serviceId`, so the editor draws two
- *    rows the reader cannot (it does not have the names), and `nodeLayouts`
- *    gives it the height the layout measured;
+ *  - `linked` carries `linkedDiagramId` + `serviceId`, so the card draws two
+ *    rows that depend on names outside the diagram, and `nodeLayouts` gives it
+ *    a height taller than its content;
  *  - the stamped corridor sits a fraction of a pixel off the handle's row, the
  *    way ELK's rounded boxes leave it, so an edge that turns *after* it arrives
  *    ends on a sliver of a vertical and spins its arrowhead.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
-import { buildFlowOutline } from "@/features/diagram";
+import { EMPTY_READER_CATALOG, buildFlowOutline, type ReaderCatalog } from "@/features/diagram";
 import {
   DiagramControls,
   DiagramFlowProvider,
@@ -39,6 +39,12 @@ const RAIL_W = 392;
 
 interface ViewerCanvasProps {
   diagram: Diagram;
+  /**
+   * The names the diagram shows but does not hold — its services' and linked
+   * diagrams'. From the link's payload, or the reader's own store. Without it a
+   * card loses two rows and no longer matches the box the layout drew around it.
+   */
+  catalog?: ReaderCatalog;
   offsetTop?: number;
   showOpenInStructuraButton?: boolean;
   /**
@@ -91,6 +97,7 @@ interface ViewerCanvasProps {
 
 const ViewerCanvasContent = ({
   diagram,
+  catalog = EMPTY_READER_CATALOG,
   offsetTop = 0,
   showOpenInStructuraButton = true,
   initialFlowId = null,
@@ -313,7 +320,7 @@ const ViewerCanvasContent = ({
     nodes: projectedNodes,
     edges,
     view,
-  } = useReadDiagramFlow(diagram, reading, routePlay, focusedNodeId);
+  } = useReadDiagramFlow(diagram, reading, routePlay, focusedNodeId, catalog);
   const reactFlowInstance = useDiagramFlow();
   const focusedNodeIds = useMemo(
     () => (focusedNodeId ? new Set([focusedNodeId]) : NO_NODE_IDS),
@@ -472,7 +479,7 @@ const ViewerCanvasContent = ({
 
         {!readingFlow && !previewMode && <FlowInvite flows={flows} onSelect={startFlow} />}
 
-        {showOpenInStructuraButton && <OpenInStructuraButton diagram={diagram} />}
+        {showOpenInStructuraButton && <OpenInStructuraButton diagram={diagram} catalog={catalog} />}
       </div>
     </div>
   );
@@ -480,6 +487,7 @@ const ViewerCanvasContent = ({
 
 export const ViewerCanvas = ({
   diagram,
+  catalog,
   offsetTop = 0,
   showOpenInStructuraButton = true,
   initialFlowId = null,
@@ -492,6 +500,7 @@ export const ViewerCanvas = ({
   <DiagramFlowProvider>
     <ViewerCanvasContent
       diagram={diagram}
+      catalog={catalog}
       offsetTop={offsetTop}
       showOpenInStructuraButton={showOpenInStructuraButton}
       initialFlowId={initialFlowId}

@@ -1584,7 +1584,6 @@
     "flowLabel": "Flow to open on",
     "flowDescription": "The reader arrives with this flow already playing.",
     "flowNone": "no flow",
-    "baseVersionNotice": "Both links always show the base version, even if you have another version open right now.",
     "linkLabel": "View link",
     "linkDescription": "Opens the diagram in preview mode with import option",
     "embedLabel": "Embed link (iframe)",

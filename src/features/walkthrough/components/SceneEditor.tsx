@@ -14,7 +14,7 @@ import {
 import { useDiagramStore, useDiagrams } from "@/features/diagram";
 import type { WalkthroughPresentation, WalkthroughStepRef } from "../model/walkthrough.types";
 import { newStepId } from "../model/ensureStepIds";
-import { ViewerCanvas } from "@/features/viewer";
+import { WalkthroughSceneCanvas } from "./WalkthroughSceneCanvas";
 import { cn } from "@/lib/utils";
 import { WALKTHROUGH_SCENE_DRAG_MIME } from "@/components/folders/dragTypes";
 
@@ -292,7 +292,7 @@ export function SceneEditor({ presentation, onUpdate }: Props) {
           <>
             <main className="order-2 flex min-h-0 min-w-0 flex-1 flex-col xl:order-1">
               {selectedDiagram ? (
-                <ViewerCanvas
+                <WalkthroughSceneCanvas
                   key={`${selectedStep.diagramId}:${selectedStep.flowId}`}
                   diagram={selectedDiagram}
                   initialFlowId={null}

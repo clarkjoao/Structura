@@ -47,6 +47,7 @@ export {
   useActiveDiagramVersionState,
   useVisibleConnections,
   useServices,
+  readerCatalogFromStore,
   useAllComponents,
   useDiagramTags,
   useAllServices,

@@ -3,6 +3,7 @@
  */
 import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
+import type { ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
 import { getAppBaseUrl, currentHashParams } from "./utils";
 
 export interface ShareUrlResult {
@@ -15,8 +16,24 @@ export interface ShareUrlResult {
 
 const WARN_THRESHOLD = 8_000;
 
-export function encodeDiagramPayload(diagram: Diagram): string {
-  return LZString.compressToEncodedURIComponent(JSON.stringify(diagram));
+/**
+ * The payload key the names travel under, beside the diagram's own fields.
+ *
+ * Not part of `Diagram`: the diagram does not own its services' or linked
+ * diagrams' names, the workspace does. The decoder takes it back off before
+ * anything reaches the store (`splitSharedPayload`).
+ */
+export const READER_CATALOG_KEY = "readerCatalog";
+
+function withCatalog<T extends object>(diagram: T, catalog?: ReaderCatalog): T {
+  if (!catalog) return diagram;
+  const empty =
+    Object.keys(catalog.services).length === 0 && Object.keys(catalog.diagrams).length === 0;
+  return empty ? diagram : { ...diagram, [READER_CATALOG_KEY]: catalog };
+}
+
+export function encodeDiagramPayload(diagram: Diagram, catalog?: ReaderCatalog): string {
+  return LZString.compressToEncodedURIComponent(JSON.stringify(withCatalog(diagram, catalog)));
 }
 
 /**
@@ -30,6 +47,8 @@ export function encodeDiagramPayload(diagram: Diagram): string {
  */
 export interface ShareOptions {
   flowId?: string | null;
+  /** The names the diagram shows but does not hold — see `ReaderCatalog`. */
+  catalog?: ReaderCatalog;
 }
 
 function flowParam(flowId?: string | null): string {
@@ -44,19 +63,13 @@ export function getFlowParamFromUrl(): string | null {
 /**
  * The diagram as a reader should receive it.
  *
- * `activeVersionId` is which scene the author happened to have open, not part of
- * the diagram: carried into a link it dropped the reader inside that scene,
- * missing the nodes it hides, with nothing saying so and no way out. A link
- * opens on the base.
- *
- * The viewer resolves the base whatever arrives, so this is not the only guard
- * — links shared before this change still carry the field. Dropping it here
- * keeps the payload to what the reader is meant to see.
+ * `activeVersionId` stays: a link draws the scene its author had open, the
+ * picture they were looking at when they copied it — the same one the editor
+ * draws. `hidden: false` is the default, and dropping it only shortens the link.
  */
 function stripForShare(diagram: Diagram): Record<string, unknown> {
   return JSON.parse(
     JSON.stringify(diagram, (key: string, value: unknown) => {
-      if (key === "activeVersionId") return undefined;
       if (key === "hidden" && value === false) return undefined;
       return value;
     }),
@@ -64,7 +77,7 @@ function stripForShare(diagram: Diagram): Record<string, unknown> {
 }
 
 export function generateShareUrl(diagram: Diagram, options: ShareOptions = {}): ShareUrlResult {
-  const stripped = stripForShare(diagram);
+  const stripped = withCatalog(stripForShare(diagram), options.catalog);
   const json = JSON.stringify(stripped);
   const encoded = encodeURIComponent(LZString.compressToEncodedURIComponent(json));
   const url = `${getAppBaseUrl()}#share=${encoded}${flowParam(options.flowId)}`;

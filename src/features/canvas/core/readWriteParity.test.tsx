@@ -582,13 +582,16 @@ describe("slice 4: editor and viewer hand React Flow the same arrays", () => {
     expect(ids(compared)).toEqual(expect.arrayContaining(["z", "x", "p1", "P"]));
   });
 
-  it("a link shows the base, and draws it exactly as the editor draws the base", () => {
-    // The viewer always resolves the base: an author in scene s1 shares a link,
-    // and the reader sees what the editor shows once the author leaves the scene.
+  it("a link shows the scene the author has open, drawn exactly as the editor draws it", () => {
+    // An author in scene s1 shares a link, and the reader sees what the editor
+    // shows — the scene, not the base underneath it.
     const read = projectReadDiagram(versionedDiagram("s1", null));
-    const writeBase = writeProjection(versionedDiagram(null, null));
-    expect(read.nodes.map(drawnNode)).toEqual(writeBase.nodes.map(drawnNode));
-    expect(read.edges.map(drawnEdge)).toEqual(writeBase.edges.map(drawnEdge));
+    const writeScene = writeProjection(versionedDiagram("s1", null));
+    expect(read.nodes.map(drawnNode)).toEqual(writeScene.nodes.map(drawnNode));
+    expect(read.edges.map(drawnEdge)).toEqual(writeScene.edges.map(drawnEdge));
+    // And the scene is not the base, or the assertions above would prove nothing.
+    const base = projectReadDiagram(versionedDiagram(null, null));
+    expect(read.nodes.map(drawnNode)).not.toEqual(base.nodes.map(drawnNode));
   });
 });
 

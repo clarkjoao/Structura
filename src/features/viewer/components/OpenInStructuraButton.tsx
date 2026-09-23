@@ -1,14 +1,17 @@
 import { ExternalLink } from "lucide-react";
 import type { Diagram } from "@/features/diagram/model";
+import type { ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
 import { generateShareUrl } from "@/lib/share-url";
 
 interface OpenInStructuraButtonProps {
   diagram: Diagram;
+  /** Carried on, so the diagram opened from here still shows its names. */
+  catalog: ReaderCatalog;
 }
 
-export const OpenInStructuraButton = ({ diagram }: OpenInStructuraButtonProps) => (
+export const OpenInStructuraButton = ({ diagram, catalog }: OpenInStructuraButtonProps) => (
   <a
-    href={generateShareUrl(diagram).url}
+    href={generateShareUrl(diagram, { catalog }).url}
     target="_blank"
     rel="noopener noreferrer"
     aria-label={`Abrir ${diagram.name} no Structura`}

@@ -72,6 +72,17 @@ interface UseNodeDragParentingResult {
   onNodeDragStop: (_: unknown, draggedNode: Node) => void;
 }
 
+/** Whether a measured size is the stored one, rounded by the DOM to whole pixels. */
+function isSubPixelRemeasure(
+  stored: { width?: number; height?: number },
+  measured: { width: number; height: number },
+): boolean {
+  if (stored.width === undefined || stored.height === undefined) return false;
+  return (
+    Math.abs(stored.width - measured.width) < 1 && Math.abs(stored.height - measured.height) < 1
+  );
+}
+
 export function useNodeDragParenting({
   diagram,
   nodes,
@@ -323,6 +334,12 @@ export function useNodeDragParenting({
       const r = getCachedCanvasSnapshot(activeDiagram);
       const layout = r.nodeLayouts[change.id];
       if (!layout) return;
+      // React Flow measures with offsetWidth/offsetHeight, which are whole
+      // pixels: a node stored at 933.333 measures 933. Writing that back moved
+      // the store off what the canvas draws, and every reader of the store (the
+      // viewer) drew a different box. Under a pixel is the DOM rounding; a
+      // resize the user drags is always written.
+      if (!change.resizing && isSubPixelRemeasure(layout, change.dimensions)) return;
       pendingLayoutUpdatesRef.current.set(change.id, change.dimensions);
       if (layoutUpdateRafRef.current === null) {
         layoutUpdateRafRef.current = requestAnimationFrame(() => {

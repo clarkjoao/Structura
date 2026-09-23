@@ -1584,7 +1584,6 @@
     "flowLabel": "Fluxo de abertura",
     "flowDescription": "Quem abrir o link chega com este fluxo já rodando.",
     "flowNone": "nenhum fluxo",
-    "baseVersionNotice": "Os dois links sempre mostram a versão base, mesmo que você esteja com outra versão aberta agora.",
     "linkLabel": "Link de visualização",
     "linkDescription": "Abre o diagrama em modo preview com opção de importar",
     "embedLabel": "Link de embed (iframe)",

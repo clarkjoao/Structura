@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { AlertCircle, AlertTriangle, Check, Copy, Info } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import type { Diagram } from "@/features/diagram";
+import { readerCatalogFromStore, type Diagram } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -44,14 +44,20 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
   // the dialog opens or the diagram/flow choice changes while open.
   const shareResult: ShareUrlResult = useMemo(() => {
     if (!open) return EMPTY_SHARE_RESULT;
-    return generateShareUrl(diagram, { flowId: flowId || null });
+    return generateShareUrl(diagram, {
+      flowId: flowId || null,
+      catalog: readerCatalogFromStore(diagram),
+    });
   }, [open, diagram, flowId]);
 
   const shareUrl = shareResult.url;
 
   const embedUrl = useMemo(() => {
     if (!open) return "";
-    return generateViewerUrl(diagram, flowId ? { flowId } : {});
+    return generateViewerUrl(diagram, {
+      flowId: flowId || null,
+      catalog: readerCatalogFromStore(diagram),
+    });
   }, [open, diagram, flowId]);
 
   const formattedLinkSize = useMemo(
@@ -80,22 +86,6 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4">
-          {/*
-            Always shown, before anything is copied. A link opens on the base
-            scene whatever the author has open (the #share= payload drops
-            `activeVersionId`, and the viewer resolves the base regardless), so an
-            author in a scene would otherwise send a picture they are not
-            looking at.
-          */}
-          <p
-            role="note"
-            data-testid="share-base-scene-notice"
-            className="flex items-start gap-2 rounded-md border border-border bg-secondary px-3 py-2 text-xs text-muted-foreground"
-          >
-            <Info size={14} className="mt-px shrink-0" aria-hidden />
-            <span>{t("share.baseVersionNotice")}</span>
-          </p>
-
           {flows.length > 0 && (
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium" htmlFor="share-flow">
@@ -128,7 +118,12 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
               {compressionPercent}% {t("share.smaller")}
             </p>
             <div className="flex gap-2">
-              <Input readOnly value={shareUrl} className="text-xs font-mono" />
+              <Input
+                readOnly
+                value={shareUrl}
+                data-testid="share-link-url"
+                className="text-xs font-mono"
+              />
               <Button
                 size="sm"
                 variant="outline"
@@ -183,7 +178,12 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
             <label className="text-sm font-medium">{t("share.embedLabel")}</label>
             <p className="text-xs text-muted-foreground">{t("share.embedDescription")}</p>
             <div className="flex gap-2">
-              <Input readOnly value={embedUrl} className="text-xs font-mono" />
+              <Input
+                readOnly
+                value={embedUrl}
+                data-testid="share-embed-url"
+                className="text-xs font-mono"
+              />
               <Button
                 size="sm"
                 variant="outline"

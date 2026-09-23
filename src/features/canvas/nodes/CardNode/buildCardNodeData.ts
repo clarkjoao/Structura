@@ -94,10 +94,11 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
 /**
  * The height auto-layout measured this card at, as a floor it cannot fall below.
  *
- * A card is content-sized, and the two surfaces do not render the same content:
- * the reader zeroes `services` and `allDiagrams` (`buildReadNodeContext`), so
- * the service chip and the "explore inside" row vanish and the same card comes
- * out ~70px shorter than in the editor. Auto-layout anchors every waypoint at
+ * A card is content-sized, and its content is not only its own: the service
+ * chip and the "explore inside" row need names from the workspace. The reader
+ * gets them through `ReaderCatalog`, but a link written before the catalog
+ * travelled has none, and a flow being played hides the row on both surfaces —
+ * so the same card can come out ~70px shorter. Auto-layout anchors every waypoint at
  * `(slot + 1) / (count + 1)` of the height ELK was given, so a card that draws
  * shorter puts every handle where the corridor does not reach — edges arrive
  * diagonally and the arrowheads turn away from the node.

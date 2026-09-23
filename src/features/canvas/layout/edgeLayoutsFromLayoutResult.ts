@@ -24,8 +24,7 @@ const identity = (id: string): string | undefined => id;
 /**
  * Pure handle-aligned ELK corridors as `EdgeLayout` records.
  *
- * Used by store-backed `applyLayoutResultEdges` and by `layoutForVisualization`
- * (immutable diagram copy — no Zustand write).
+ * Used by store-backed `applyLayoutResultEdges`.
  *
  * @example
  * const edgeLayouts = edgeLayoutsFromLayoutResult(graph, result);

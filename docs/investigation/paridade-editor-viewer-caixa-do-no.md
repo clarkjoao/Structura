@@ -151,6 +151,31 @@ em cima, não um refactor local.
 
 ---
 
+## 3.5 O dado ausente, resolvido (2026-09-22)
+
+O §3.2 pedia tornar o contexto do leitor explícito. Foi feito como **dado**, não como política:
+
+- `ReaderCatalog` (`diagram/utils/reader-catalog.ts`): só os **nomes** de serviço e diagrama linkado que
+  o diagrama referencia. `NodeBuildContext.services`/`allDiagrams` foram estreitados para `{ name }`, de
+  modo que nenhum nó possa ler do workspace algo que o leitor não tem.
+- O link carrega o catálogo (`readerCatalog`, ao lado do diagrama no payload de `#data=` e `#share=`), e
+  o decoder o tira antes de qualquer importação chegar ao store. Leitores na máquina do autor
+  (`?diagramId`, arquivo, walkthrough) montam o catálogo do próprio store.
+- A linha "explore inside" é desenhada sempre que o card aponta para um diagrama, e só é **botão** onde
+  há para onde ir. No leitor ela fica, sem ação: faz parte da caixa.
+
+**MEDIDO** pelo spec novo, antes das correções: `pl-risk-api` tinha **260px de largura no editor e
+252,9 no leitor** — a largura também é emergente, e o piso de altura não a cobria. Depois: igual.
+
+Duas causas a mais apareceram, as duas do **editor** divergindo do próprio store:
+
+- `useNodeDragParenting` gravava a medida do React Flow de volta no layout. A medida vem de
+  `offsetWidth/offsetHeight`, que são inteiros: um painel de 933,333 virava 933 no store enquanto o
+  canvas continuava desenhando 933,333. **MEDIDO** (stack capturada no dev server). Agora uma
+  re-medida a menos de 1px do valor salvo, fora de um resize do usuário, não é gravada.
+- `PanelStyleSection` fazia a mesma coisa pelo inspetor (auto-commit do valor arredondado sem o usuário
+  digitar). **Não era a causa medida acima** — foi achado no caminho, provado por teste e corrigido.
+
 ## 4. Não verificado
 
 - Só `?diagramId` foi medido. `#data=` (link compartilhado) e `?source=file` usam o mesmo

@@ -87,7 +87,9 @@ interface NodeActionsProps {
 }
 
 const NodeActions = ({ d, controlsDisabled, colorClass, customColor }: NodeActionsProps) => {
-  const hasDrillDown = !!d.linkedDiagramName && !!d.onDrillDown;
+  // Drawn whenever the card links somewhere, a control only where it can go:
+  // the reader keeps the row (and so the card's size) without the action.
+  const hasDrillDown = !!d.linkedDiagramName;
   const hasEmbed = !!d.linkedDiagramName && !!d.onEmbed;
 
   return (

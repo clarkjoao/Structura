@@ -133,6 +133,15 @@ export { getCachedCanvasSnapshot } from "./snapshot-cache";
 export { placedComponents, placedConnections } from "./placement";
 export type { ResolvedSnapshot } from "./snapshot-cache";
 
+// ─── Reader catalog ──────────────────────────────────────────────────────────
+export {
+  EMPTY_READER_CATALOG,
+  buildReaderCatalog,
+  linkedDiagramIdOf,
+  readerCatalogFrom,
+} from "./reader-catalog";
+export type { NamedRef, ReaderCatalog } from "./reader-catalog";
+
 // ─── Component lock ──────────────────────────────────────────────────────────
 export { isAncestorLocked } from "./component-lock";
 
