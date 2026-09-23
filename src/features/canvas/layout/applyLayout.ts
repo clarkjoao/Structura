@@ -84,7 +84,10 @@ export function fitContainersToChildren(
   const depthOf = (id: string): number => {
     let depth = 0;
     let parentId = graphNode.get(id)?.parentId ?? null;
-    while (parentId !== null && present.has(parentId)) {
+    // A containment cycle would loop forever; see buildElkNode's guard.
+    const visited = new Set<string>([id]);
+    while (parentId !== null && present.has(parentId) && !visited.has(parentId)) {
+      visited.add(parentId);
       depth++;
       parentId = graphNode.get(parentId)?.parentId ?? null;
     }

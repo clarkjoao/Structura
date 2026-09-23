@@ -86,4 +86,22 @@ describe("fitContainersToChildren", () => {
     fitContainersToChildren(applied, graph, new Set(["outer", "inner"]));
     expect(applied).toEqual(copy);
   });
+
+  // The IR validator rejects containment cycles, so this is insurance: a
+  // cycle that slipped through must not hang the tab on auto-layout.
+  it("terminates on a containment cycle", () => {
+    const cyclic: LayoutGraph = {
+      nodes: [
+        { id: "x", parentId: "y", width: 400, height: 300 },
+        { id: "y", parentId: "x", width: 400, height: 300 },
+      ],
+      edges: [],
+    };
+    const entries: AppliedLayout[] = [
+      { elementId: "x", x: 0, y: 0, width: 400, height: 300 },
+      { elementId: "y", x: 0, y: 0, width: 400, height: 300 },
+    ];
+
+    expect(() => fitContainersToChildren(entries, cyclic, new Set(["x", "y"]))).not.toThrow();
+  });
 });

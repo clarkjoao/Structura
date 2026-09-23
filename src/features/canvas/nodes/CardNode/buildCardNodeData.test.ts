@@ -88,3 +88,28 @@ describe("buildCardNodeData reserves the height the layout assumed", () => {
     expect(data.laidOutMinHeight).toBeUndefined();
   });
 });
+
+describe("buildCardNodeData drill-down", () => {
+  const linked = { ...container, linkedDiagramId: "ledger" } as Component;
+  const handleDrillDown = () => {};
+  const ctx = (overrides: Partial<NodeBuildContext>): NodeBuildContext =>
+    ({
+      ...ctxWithCounts(0, 0),
+      allDiagrams: { ledger: { name: "Ledger" } },
+      handleDrillDown,
+      ...overrides,
+    }) as unknown as NodeBuildContext;
+
+  it("gives the editor a drill-down control for a linked diagram", () => {
+    const data = buildCardNodeData(linked, ctx({}));
+    expect(data.onDrillDown).toBe(handleDrillDown);
+  });
+
+  // The reader names the linked diagram but cannot go there. Its context
+  // carries a no-op handler, which would still render a clickable button.
+  it("names the linked diagram on a reader without a control", () => {
+    const data = buildCardNodeData(linked, ctx({ isReader: true }));
+    expect(data.linkedDiagramName).toBe("Ledger");
+    expect(data.onDrillDown).toBeUndefined();
+  });
+});

@@ -61,8 +61,11 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
     serviceName: comp.serviceId ? ctx.services[comp.serviceId]?.name : undefined,
     externalLinks: comp.externalLinks,
     linkedDiagramName: isPlaying || isRecording ? undefined : linkedDiagramName,
+    // A reader names the linked diagram but cannot go there.
     onDrillDown:
-      isPlaying || isRecording ? undefined : linkedDiagramName ? ctx.handleDrillDown : undefined,
+      isPlaying || isRecording || ctx.isReader || !linkedDiagramName
+        ? undefined
+        : ctx.handleDrillDown,
     stepBadges: flowBadges?.nodeLabels.get(comp.id),
     isLastRecorded: flowBadges?.lastNodeId === comp.id,
     coverageFlowNames: coverage?.nodeFlows.get(comp.id),

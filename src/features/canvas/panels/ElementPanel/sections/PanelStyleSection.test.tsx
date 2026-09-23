@@ -73,4 +73,30 @@ describe("PanelStyleSection size fields", () => {
       { width: 1860, height: 1000 },
     );
   });
+
+  it("does not carry an edit over to the next selected panel", () => {
+    const updateNodeLayout = vi.fn();
+    const props = { updateComponent: vi.fn(), updateNodeLayout };
+    const { rerender } = render(
+      <PanelStyleSection {...props} component={panel} componentNodeLayout={layout(800, 600)} />,
+    );
+    const [width] = sizeFields();
+
+    fireEvent.change(width, { target: { value: "900" } });
+    // Selecting another panel before the edit commits: its size is fractional,
+    // so a commit armed by the first panel's edit would round it.
+    const other = { ...panel, id: "p2" } as PanelComponent;
+    rerender(
+      <PanelStyleSection
+        {...props}
+        component={other}
+        componentNodeLayout={{ ...layout(1860, 933.3333333333334), elementId: "p2" }}
+      />,
+    );
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(updateNodeLayout).not.toHaveBeenCalledWith("p2", expect.anything(), expect.anything());
+  });
 });

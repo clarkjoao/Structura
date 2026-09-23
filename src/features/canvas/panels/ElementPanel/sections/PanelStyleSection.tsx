@@ -62,6 +62,9 @@ export function PanelStyleSection({
   };
 
   useEffect(() => {
+    // The fields are about to show the layout, not what was typed — including
+    // after another panel is selected, which must not inherit a pending edit.
+    editedRef.current = false;
     if (!componentNodeLayout) {
       setWidthInput("");
       setHeightInput("");
