@@ -1,7 +1,6 @@
 import { cloudRegistry } from "@/features/cloud";
 import { hasElement } from "@/features/elements/element.registry";
 import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
-import type { DiagramPatchAction } from "./types";
 
 export type AddNodeValidation = { ok: true } | { ok: false; reason: string };
 
@@ -102,7 +101,3 @@ export function validateAddNodeAgainstRegistry(
  * run before writes (`runCatalogReadActions`) so the model can act on results
  * in one turn — that ordering was the useful half of F8b and it stays.
  */
-
-export function patchContainsSearchElements(actions: DiagramPatchAction[]): boolean {
-  return actions.some((action) => action.type === "SEARCH_ELEMENTS");
-}

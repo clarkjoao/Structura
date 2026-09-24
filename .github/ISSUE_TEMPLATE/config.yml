@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: 💬 Discussion / Question
-    url: https://github.com/clarkjoao/Structura/discussions
-    about: Use Discussions for questions, ideas, and general conversation
-  - name: 📖 Documentation
-    url: https://github.com/clarkjoao/Structura/blob/main/README.md
-    about: Check the README and CONTRIBUTING guide first
+  - name: Security vulnerability
+    url: https://github.com/clarkjoao/Structura/security/advisories/new
+    about: Report security issues privately — please do not open a public issue.
+  - name: Documentation
+    url: https://github.com/clarkjoao/Structura/tree/main/docs
+    about: Architecture, concepts, guides and the feature map.
+  - name: Try the app
+    url: https://structur.dev/
+    about: Check whether the behavior reproduces on the hosted version.

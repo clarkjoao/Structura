@@ -101,21 +101,6 @@ function cloudFamilyRegisteredTypes(familyId: string): ComponentTypeDefinition[]
     });
 }
 
-/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
-export function awsRegisteredTypes(): ComponentTypeDefinition[] {
-  return cloudFamilyRegisteredTypes("aws");
-}
-
-/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
-export function gcpRegisteredTypes(): ComponentTypeDefinition[] {
-  return cloudFamilyRegisteredTypes("gcp");
-}
-
-/** @deprecated Prefer iterating `allCloudFamilies()` — kept for call-site stability. */
-export function azureRegisteredTypes(): ComponentTypeDefinition[] {
-  return cloudFamilyRegisteredTypes("azure");
-}
-
 export function allComponentTypes(): ComponentTypeDefinition[] {
   return [
     ...STRUCTURAL_TYPES,
@@ -233,16 +218,6 @@ export function buildAwsCatalogCompact(): string {
   return buildCloudFamilyCatalogCompact("aws");
 }
 
-/** @deprecated Use `buildCloudFamilyCatalogCompact("gcp")`. */
-export function buildGcpCatalogCompact(): string {
-  return buildCloudFamilyCatalogCompact("gcp");
-}
-
-/** @deprecated Use `buildCloudFamilyCatalogCompact("azure")`. */
-export function buildAzureCatalogCompact(): string {
-  return buildCloudFamilyCatalogCompact("azure");
-}
-
 export function buildPatternCatalogCompact(): string {
   const lines: string[] = [
     "",
@@ -264,29 +239,6 @@ export function buildPatternCatalogCompact(): string {
 
 export function isValidNodeType(nodeType: string): boolean {
   return allComponentTypes().some((definition) => definition.nodeType === nodeType);
-}
-
-export function buildPatternCatalog(): string {
-  const lines: string[] = [
-    "",
-    "### Architectural Patterns",
-    "",
-    "These are reusable architectural templates you can insert into the diagram. Use the insert_pattern tool.",
-    "",
-  ];
-
-  for (const category of PATTERN_CATEGORIES) {
-    const patterns = PATTERNS.filter((p) => p.category === category);
-    lines.push(`${category.toUpperCase()}:`);
-    for (const p of patterns) {
-      const shortDesc =
-        p.description.length > 120 ? p.description.slice(0, 117) + "..." : p.description;
-      lines.push(`  - ${p.id}: ${shortDesc}`);
-    }
-    lines.push("");
-  }
-
-  return lines.join("\n");
 }
 
 export function isValidPatternId(patternId: string): boolean {

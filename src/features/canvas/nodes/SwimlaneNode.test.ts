@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { withAlpha } from "./SwimlaneNode";
+import { withAlpha } from "./swimlane-color";
 
 describe("withAlpha", () => {
   it("applies alpha to a hex color", () => {

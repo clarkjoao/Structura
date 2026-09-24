@@ -1,4 +1,4 @@
-import type { PanelContribution, PluginPanelSlot } from "./plugin.types";
+import type { PanelContribution } from "./plugin.types";
 
 /** Registry for plugin UI panels, keyed by contribution id, queried by host slot. */
 
@@ -34,12 +34,4 @@ export function subscribePanelRegistry(listener: () => void): () => void {
   return () => {
     listeners.delete(listener);
   };
-}
-
-export function getPanelsForSlot(slot: PluginPanelSlot): PanelContribution[] {
-  const aliases: PluginPanelSlot[] =
-    slot === "services-import" || slot === "service-registry-import"
-      ? ["services-import", "service-registry-import"]
-      : [slot];
-  return snapshot.filter((panel) => aliases.includes(panel.slot));
 }

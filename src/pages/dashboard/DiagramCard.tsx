@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { Diagram } from "@/features/diagram";
 import { getPreview } from "@/lib/diagram-preview";
+import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 import type { DiagramItemActions } from "@/pages/dashboard/dashboard.types";
 import { DiagramCardFooter } from "@/pages/dashboard/components/diagram-card/DiagramCardFooter";
@@ -37,9 +38,11 @@ export function DiagramCard({
   const connectionCount = Object.keys(diagram.snapshot.connections).length;
   const flowCount = Object.keys(diagram.snapshot.flows).length;
 
+  const { theme } = useTheme();
+
   useEffect(() => {
-    setPreview(getPreview(diagram.id));
-  }, [diagram.id]);
+    setPreview(getPreview(diagram.id, theme) ?? getPreview(diagram.id));
+  }, [diagram.id, theme]);
 
   return (
     <motion.div

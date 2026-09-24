@@ -12,7 +12,11 @@ the *why* behind them.
 | [adr/](adr/) | Architecture Decision Records — long-term decisions and their trade-offs. |
 | [concepts/](concepts/) | How each subsystem works and why it is shaped that way (canvas engine, diagram engine, node system, persistence, …). |
 | [grammar/](grammar/) | The canonical glossary of Structura's domain vocabulary. If a term is used differently in code, that's a bug. |
-| [guides/](guides/) | Task-oriented guides for contributors (adding a node type, writing a spec, …). |
+| [guides/](guides/) | Task-oriented guides (adding a node type, embedding a diagram, …). |
+| [features.md](features.md) | User-facing feature map and keyboard shortcuts. |
+| [decisions/](decisions/) | Product decisions that are not architecture (for example, removing a feature). |
+| [collab-websocket-protocol.md](collab-websocket-protocol.md) | Wire protocol of the collaboration relay in `server/`. |
+| [assets/](assets/) | Images and recordings used by the README (regenerate with `scripts/capture-media.mjs`). |
 | [../openspec/](../openspec/) | Spec Driven Development via [OpenSpec](https://github.com/Fission-AI/OpenSpec): active changes in `changes/`, accepted requirements in `specs/`. |
 
 ## Reading order for new contributors
@@ -33,3 +37,11 @@ the *why* behind them.
 - English is the canonical language for all documentation.
 - When a doc contradicts the code, the code wins — and fixing the doc is part
   of the change that made it wrong.
+
+## Historical investigation logs
+
+`investigation/`, `epico-virtualizacao/`, `epico-layout-visualization/`, `discovery/` and
+`collab-entity-patches.md` are dated engineering logs — measurements, hypotheses and the fixes
+they led to. They are **written in Portuguese** and kept as a record because source comments cite
+them by section. They describe the code at the time they were written, not today; see
+[investigation/README.md](investigation/README.md).

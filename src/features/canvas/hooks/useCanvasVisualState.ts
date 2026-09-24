@@ -39,16 +39,6 @@ export interface CanvasVisualState {
   setJsonViewerInlineEditingId: (id: string | null) => void;
 }
 
-/** Fields that affect how nodes render in React Flow */
-export interface NodeSelectionState {
-  selectedNodeId: string | null;
-  selectedNodeIds: Set<string>;
-  highlightedNodeIds: Set<string>;
-  dragTargetPanelId: string | null;
-  unparentCandidatePanelId: string | null;
-  isNodeHiddenByTagFilter: (component: Component) => boolean;
-}
-
 export function useCanvasVisualState(activeDiagramId: string | null): CanvasVisualState {
   // Internal sub-hooks — each owns a focused slice of state.
   const selection = useCanvasSelection(activeDiagramId);

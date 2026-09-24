@@ -1,227 +1,157 @@
+<div align="center">
+
 # Structura
 
+**Architecture diagrams that stay close to the system they describe.**
+
 [![CI](https://github.com/clarkjoao/Structura/actions/workflows/ci.yml/badge.svg)](https://github.com/clarkjoao/Structura/actions/workflows/ci.yml)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![React](https://img.shields.io/badge/React-18-61dafb.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg)
+[![License: MIT](https://img.shields.io/github/license/clarkjoao/Structura)](LICENSE)
+[![Release](https://img.shields.io/github/v/tag/clarkjoao/Structura?label=release&sort=semver)](https://github.com/clarkjoao/Structura/tags)
+[![Website](https://img.shields.io/badge/app-structur.dev-0f9fae)](https://structur.dev/)
 
-**Architecture diagramming for teams who think in systems.**
+[**Open the app**](https://structur.dev/) · [Documentation](docs/README.md) · [Features](docs/features.md) · [Plugins](plugins/README.md) · [Contributing](CONTRIBUTING.md)
 
-<!-- screenshot -->
+![A C4 diagram of an AWS deployment on the Structura canvas](docs/assets/screenshots/canvas-aws.png)
 
----
+</div>
 
 ## What is Structura?
 
-Structura is an open source architecture diagramming tool built around the [C4 Model](https://c4model.com/) — a hierarchical approach to describing software systems at four levels of abstraction: Context, Container, Component, and Code. Structura focuses on the first three, giving teams a shared visual language for communicating architecture decisions.
+Structura is an open source, browser-based tool for drawing and maintaining solution architecture
+diagrams. It is built around the [C4 model](https://c4model.com/): you describe a system at several
+levels (context, containers, components, deployment) and drill from one diagram into the next.
 
-Beyond static diagrams, Structura supports **flows**: named sequences of interactions across your components that can be recorded, played back step-by-step, and exported to Mermaid sequence diagrams. This lets you document not just the structure of a system, but the dynamic behavior — API calls, event flows, data pipelines — directly on the same canvas.
+It is aimed at solution architects and engineering teams who want diagrams that are **modeled, not
+just drawn**: elements carry types, technologies and links to real services; connections carry an
+intent; and the same model can be replayed as flows, compared as versions, shared as a read-only
+link or exported to other tools.
 
-Structura also includes a built-in **AWS service catalog** so cloud-native teams can annotate components with real service types (Lambda, S3, RDS, and more) and keep diagrams close to the infrastructure they describe.
+Structura is **local-first**. There is no account and no backend: your workspace lives in the
+browser, and optionally in a folder on your disk that you can commit to Git.
 
----
+![Creating a diagram, adding elements, connecting them and exporting](docs/assets/demo.gif)
 
 ## Features
 
-- **C4 Model levels** — Context, Container, and Component diagrams in a single workspace, with drill-down navigation between levels
-- **AWS Services catalog** — 80+ AWS service types for annotating components with real infrastructure
-- **Flow recording & playback** — Record interaction sequences as flows, replay them step-by-step, and track coverage across your diagram
-- **Pattern library** — Reusable component panels and grouping to express architectural patterns
-- **Undo / Redo** — Full history stack scoped to each diagram
-- **Export** — Export to JSON, draw.io XML, or Mermaid sequence diagrams
-- **Dark / Light theme** — Toggle between themes from the navigation bar
-- **Folder organization** — Organize diagrams into nested folders on the dashboard
-- **LLM Diagram Assistant** — Conversational AI assistant grounded in the current diagram; suggests and applies changes with canvas preview and explicit user confirmation
-- **Collaboration** — Real-time collaborative sessions via WebRTC + Yjs with presence cursors
-- **Walkthroughs** — Cross-diagram step sequences that document user flows or business processes across diagrams
-- **Scenes** — Declarative diagram variants (diffs) for environments, scenarios, or alternate architectural views
-- **Custom component templates** — Capture groups of nodes as reusable templates
+- **C4 modeling with drill-down** — context, container, component and deployment diagrams, linked
+  so you can open an element and "explore inside".
+- **Cloud and infrastructure catalogs** — AWS (~140 services), Azure (~55), Google Cloud (~40),
+  Kubernetes and common OSS building blocks, plus structural elements: VPC / subnet / cluster
+  panels, swimlanes, notes, API groups and endpoints, database tables, JSON viewers and images.
+- **Editable connections** — orthogonal and curved routing with draggable segments and waypoints,
+  labels, line styles and a typed intent (call, event, data flow, async message, dependency).
+- **Flows** — record a request path across the diagram, play it back step by step with branches,
+  and import/export it as a Mermaid sequence diagram.
+- **Versions** — keep AS-IS / TO-BE variants of a diagram and compare them.
+- **Auto layout** — ELK-based layered layout (`Cmd/Ctrl + Shift + L`).
+- **Services catalog** — a registry of the services behind your diagrams, linkable from elements,
+  with optional GitHub and DefectDojo importers.
+- **Import & export** — JSON (lossless), draw.io / diagrams.net, Mermaid; export a single diagram, a
+  folder or the whole workspace as a zip.
+- **Share and embed** — read-only share links and an iframe viewer for docs sites.
+- **Local-first persistence** — browser storage by default; connect a local folder (File System
+  Access API) to keep the workspace as files.
+- **Live sessions** _(experimental)_ — real-time collaboration through a small self-hosted
+  WebSocket relay ([`server/`](server/)).
+- **AI assistant** — a chat grounded in the open diagram that proposes changes you review before
+  they are applied. Bring your own OpenAI, Anthropic or compatible endpoint.
+- **Plugins** — add node types, importers, exporters and panels from a local JavaScript file.
+- **Keyboard-first** — command palette, quick insert and shortcuts for most actions; light and dark
+  themes; English and Brazilian Portuguese UI.
 
----
+The full list, with every shortcut, lives in [docs/features.md](docs/features.md).
 
-## Tech Stack
+<table>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshots/workspace.png" alt="Workspace with folders and diagram cards"></td>
+    <td width="50%"><img src="docs/assets/screenshots/canvas-c4.png" alt="C4 system context diagram"></td>
+  </tr>
+  <tr>
+    <td align="center">Workspace</td>
+    <td align="center">C4 system context</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/assets/screenshots/plugins.png" alt="Plugins page with two example plugins installed"></td>
+    <td width="50%"><img src="docs/assets/screenshots/dark-mode.png" alt="AWS deployment diagram in dark mode"></td>
+  </tr>
+  <tr>
+    <td align="center">Plugins</td>
+    <td align="center">Dark mode</td>
+  </tr>
+</table>
 
-| Layer            | Technology                                           |
-| ---------------- | ---------------------------------------------------- |
-| UI Framework     | [React 18](https://react.dev/)                       |
-| Language         | [TypeScript 5](https://www.typescriptlang.org/)      |
-| State Management | [Zustand](https://zustand-demo.pmnd.rs/) + Immer     |
-| Canvas           | [@xyflow/react](https://reactflow.dev/) (React Flow) |
-| Styling          | [Tailwind CSS](https://tailwindcss.com/) + shadcn/ui |
-| Build            | [Vite](https://vitejs.dev/)                          |
-| Tests            | [Vitest](https://vitest.dev/)                        |
+## Quick start
 
----
+The hosted app is at **[structur.dev](https://structur.dev/)** — open it and start drawing. A demo
+workspace is created on first visit.
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-
-### Installation
+To run it locally you need **Node.js 20 or newer** (CI runs Node 20; some transitive dependencies
+prefer 22+) and npm.
 
 ```bash
-git clone https://github.com/your-org/structura.git
-cd structura
-npm install
+git clone https://github.com/clarkjoao/Structura.git
+cd Structura
+npm ci
+npm run dev          # http://localhost:8080
 ```
 
-### Development
+Optional features are switched on with `VITE_*` variables; copy [`.env.example`](.env.example) to
+`.env` to see them. The collaboration relay and the LLM/integration proxy live in
+[`server/`](server/) and are only needed for live sessions and proxied requests:
 
 ```bash
-npm run dev        # Start dev server at http://localhost:8080
-npm run build      # Production build
-npm run lint       # Run ESLint
-npm run test       # Run tests
+npm run proxy        # installs and starts server/ in dev mode
 ```
 
-The `@` path alias resolves to `./src`.
+### Useful scripts
 
----
+| Command                      | What it does                                           |
+| ---------------------------- | ------------------------------------------------------ |
+| `npm run dev`                | Vite dev server on port 8080                           |
+| `npm run build`              | Type check + production build into `dist/`             |
+| `npm run typecheck`          | TypeScript gate (app + Vite config)                    |
+| `npm test`                   | Unit tests (Vitest)                                    |
+| `npm run lint`               | ESLint                                                 |
+| `npm run format:check`       | Prettier check (`npm run format` to fix)               |
+| `npm run cy:run:stress`      | Cypress canvas stress suite                            |
+| `npm run plugins:sync-check` | Verifies the LeanIX plugin's generated files are fresh |
+| `npm run media:capture`      | Regenerates the README screenshots and demo recording  |
 
-## Project Architecture
+## Plugins
 
-```
-src/
-├── features/
-│   ├── diagram/           # Core domain — types, Zustand store, slices, selectors
-│   │                      # NO React, NO JSX allowed here
-│   ├── canvas/            # ReactFlow canvas, node descriptors, toolbar, hooks
-│   ├── collaboration/     # Real-time collab via WebRTC + Yjs
-│   ├── custom-components/ # User-defined component templates
-│   ├── viewer/            # Read-only shared diagram viewer
-│   ├── icons/             # Icon library store
-│   └── llm/               # LLM Assistant — domain logic only (no React)
-├── components/
-│   ├── ui/                # shadcn/ui component library
-│   └── chat/              # LLM chat UI components (stateless)
-├── infrastructure/
-│   └── persistence/       # IStoragePort, LocalStorageAdapter, InMemoryAdapter
-├── pages/                 # Dashboard, Workspace, ServicesPage, Index
-└── lib/                   # aws-catalog, export-service, github-import, utils
-```
+Plugins are plain JavaScript files installed from the **Plugins** page. They run with full access
+to the page (there is no sandbox), so only install plugins you trust.
 
-### Diagram Store (`features/diagram`)
+- [`plugins/examples/`](plugins/examples/) — two no-build examples (a Mermaid importer and a
+  diagram-change logger).
+- [`plugins/structura-plugin-example-ui/`](plugins/structura-plugin-example-ui/) — a React plugin
+  with toolbar, modal and settings panel.
+- [`plugins/structura-plugin-leanix/`](plugins/structura-plugin-leanix/) — LeanIX integration
+  (exports diagrams to LeanIX).
 
-The single source of truth is `useDiagramStore`, a Zustand store with Immer mutations and localStorage persistence. It is split into focused slices:
+See [plugins/README.md](plugins/README.md) for the API and how to build and bundle plugins.
 
-| Slice         | Responsibility                                      |
-| ------------- | --------------------------------------------------- |
-| `diagram`     | Diagram CRUD, active diagram, drill-down navigation |
-| `components`  | Add, update, remove, parent, group components       |
-| `connections` | Manage edges between components                     |
-| `flows`       | CRUD for named interaction flows                    |
-| `layout`      | Node positions, dimensions, viewport, z-order       |
-| `services`    | Service registry and component-service linking      |
-| `clipboard`   | Copy/paste within and across diagrams               |
-| `history`     | Undo/redo via past/future snapshot stacks           |
-| `folders`     | Nested folder hierarchy for the dashboard           |
-| `patterns`    | Insert pattern templates onto the canvas            |
+## Documentation
 
-Each `Diagram` snapshot stores components as a **discriminated union** (`C4Component | PanelComponent | NoteComponent | AwsComponent`). Use the provided type guards (`isC4Component`, `isPanelComponent`, etc.) instead of checking `type` directly.
+- [docs/README.md](docs/README.md) — map of the documentation and reading order.
+- [docs/architecture/overview.md](docs/architecture/overview.md) — how the code is organized.
+- [docs/adr/](docs/adr/) — architecture decision records.
+- [docs/guides/](docs/guides/) — task guides (adding a node type, embedding diagrams, …).
+- [AGENTS.md](AGENTS.md) — conventions and hard rules (also read by AI coding agents).
 
-### Canvas (`features/canvas`)
+## Roadmap
 
-`Canvas.tsx` bridges the diagram store to ReactFlow. Node rendering is driven by a **descriptor registry** — each node type implements `NodeTypeDescriptor` and registers itself. To add a new node type, see [`src/features/canvas/nodes/node-types/README.md`](src/features/canvas/nodes/node-types/README.md).
-
-Key hooks:
-
-| Hook                   | Purpose                                             |
-| ---------------------- | --------------------------------------------------- |
-| `useCanvasStore`       | Centralised access to store data and actions        |
-| `useCanvasNodes`       | Derives ReactFlow `Node[]` from visible components  |
-| `useCanvasEdges`       | Derives ReactFlow `Edge[]` from visible connections |
-| `useNodeDragParenting` | Handles drag-to-panel parenting and unparenting     |
-| `useCanvasKeyboard`    | Orchestrates all canvas keyboard shortcuts          |
-| `useCanvasVisualState` | Selection, highlights, context menu state           |
-| `useCanvasEffects`     | Side-effects: viewport sync, layout persistence     |
-| `useFlowState`         | Computes playback highlights and coverage overlays  |
-
----
+Structura is pre-1.0 and moves quickly. Current focus areas are canvas performance on large
+diagrams, persistence hardening, and editor/viewer parity. See [ROADMAP.md](ROADMAP.md) for the
+full list and [CHANGELOG.md](CHANGELOG.md) for what already shipped.
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on opening issues, submitting pull requests, and the code style conventions used in this project.
-
-## Architecture & Roadmap
-
-Structura follows a phased quality and feature roadmap documented in:
-
-- [`ROADMAP.md`](ROADMAP.md) — phased roadmap
-- [`AGENTS.md`](AGENTS.md) — project structure, conventions, and hard rules (also the guide for AI coding agents)
-
-### Active roadmap phases
-
-| Phase | Focus                                            | Status         |
-| ----- | ------------------------------------------------ | -------------- |
-| **0** | Foundation — tests + standards + core bugfixes   | 🔄 In progress |
-| **1** | Stabilization — feature structure + domain fixes | 📋 Planned     |
-| **2** | High-impact product features                     | 📋 Planned     |
-| **3** | Native 4+1 architectural views                   | 📋 Planned     |
-| **4** | Enterprise & ecosystem integrations              | 📋 Planned     |
-
----
+Bug reports, ideas and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md)
+(setup, conventions, how to propose a change) and follow the
+[Code of Conduct](CODE_OF_CONDUCT.md). Security issues go through [SECURITY.md](SECURITY.md), not
+public issues.
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
-
----
-
-## Embedding a diagram
-
-### HTML
-
-```html
-<iframe id="structura" src="https://app.structura.dev/embed" height="500"></iframe>
-<script>
-  const iframe = document.getElementById("structura");
-  const diagram = /* your diagram JSON */;
-  iframe.addEventListener("load", () => {
-    iframe.contentWindow.postMessage(
-      { type: "STRUCTURA_LOAD", diagram },
-      "https://app.structura.dev"
-    );
-  });
-</script>
-```
-
-### React / Docusaurus
-
-```jsx
-import { useEffect, useRef } from "react";
-import diagram from "./my-diagram.json";
-
-export function ArchitectureDiagram() {
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const iframe = ref.current;
-    if (!iframe) return;
-    const send = () =>
-      iframe.contentWindow.postMessage(
-        { type: "STRUCTURA_LOAD", diagram },
-        "https://app.structura.dev",
-      );
-    iframe.addEventListener("load", send);
-    return () => iframe.removeEventListener("load", send);
-  }, []);
-
-  return <iframe ref={ref} src="https://app.structura.dev/embed" height={500} />;
-}
-```
-
-### StructuraEmbed helper
-
-You can also use the helper component in this repository:
-
-```tsx
-import { StructuraEmbed } from "@/components/StructuraEmbed";
-import diagram from "./my-diagram.json";
-
-export function ArchitectureDiagram() {
-  return <StructuraEmbed diagram={diagram} appOrigin="https://app.structura.dev" height={500} />;
-}
-```
+[MIT](LICENSE) © João Luis Clark

@@ -49,10 +49,6 @@ function formatConversationForCopy(
 }
 
 /* ── Slash commands ───────────────────────────────────────────────────── */
-// Support both Portuguese and English command names
-export type SlashCommand =
-  "analisar" | "analyze" | "exportar" | "export" | "limpar" | "clear" | "copiar" | "copy";
-
 export interface SlashCommandDef {
   names: string[]; // Both PT and EN aliases
   labelKey: string;

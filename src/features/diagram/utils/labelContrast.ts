@@ -1,5 +1,5 @@
 /**
- * WCAG-oriented label colour against a translucent fill over a light canvas.
+ * WCAG-oriented label colour against a translucent fill over the canvas.
  *
  * @example
  * contrastLabelColor("#000000", 100) // → "#ffffff"
@@ -89,18 +89,26 @@ export function contrastRatio(foreground: RgbColor, background: RgbColor): numbe
 }
 
 /**
- * Label colour (≥ WCAG AA 4.5:1) for a lane fill blended toward white by opacity.
+ * Label colour (≥ WCAG AA 4.5:1) for a lane fill blended by opacity over `backdrop` —
+ * the canvas the translucent fill is painted on. It defaults to white (the light
+ * theme); the dark theme must pass its own canvas colour, or a faint fill over a
+ * dark canvas is judged as a near-white surface and gets a near-black label.
  * Invalid colour → dark label. Alpha inputs use only RGB channels (alpha discarded).
  */
-export function contrastLabelColor(laneColor: string, opacityPct: number): string {
+export function contrastLabelColor(
+  laneColor: string,
+  opacityPct: number,
+  backdrop: string = "#ffffff",
+): string {
   const laneRgb = parseCssColorToRgb(laneColor);
   if (!laneRgb) return FALLBACK_LABEL;
+  const base = parseCssColorToRgb(backdrop) ?? WHITE;
 
   const alpha = Math.max(0, Math.min(1, opacityPct / 100));
   const effective: RgbColor = {
-    r: Math.round(laneRgb.r + (WHITE.r - laneRgb.r) * (1 - alpha)),
-    g: Math.round(laneRgb.g + (WHITE.g - laneRgb.g) * (1 - alpha)),
-    b: Math.round(laneRgb.b + (WHITE.b - laneRgb.b) * (1 - alpha)),
+    r: Math.round(laneRgb.r + (base.r - laneRgb.r) * (1 - alpha)),
+    g: Math.round(laneRgb.g + (base.g - laneRgb.g) * (1 - alpha)),
+    b: Math.round(laneRgb.b + (base.b - laneRgb.b) * (1 - alpha)),
   };
 
   const dark = parseCssColorToRgb(DARK_LABEL)!;

@@ -66,7 +66,6 @@ describe("hierarchical element catalog (F8)", () => {
     const catalog = buildComponentTypeCatalog();
     const prompt = buildSystemPrompt("## Diagram\n(empty)", "en");
     const types = allComponentTypes();
-    // eslint-disable-next-line no-console
     console.log(
       `[perf] AFTER hierarchical catalog: types=${types.length} catalogChars=${catalog.length} catalogLines=${catalog.split("\n").length} promptChars=${prompt.length}`,
     );

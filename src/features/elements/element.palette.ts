@@ -88,10 +88,3 @@ export function paletteEntriesForCategory(categoryId: string): ElementPaletteEnt
     .flatMap(entriesFor)
     .sort((a, b) => a.label.localeCompare(b.label));
 }
-
-/** True when the query matches the entry's label or one of its search keys. */
-export function paletteEntryMatchesQuery(entry: ElementPaletteEntry, query: string): boolean {
-  if (!query) return true;
-  const q = query.toLowerCase();
-  return entry.label.toLowerCase().includes(q) || entry.searchKeys.some((key) => key.includes(q));
-}

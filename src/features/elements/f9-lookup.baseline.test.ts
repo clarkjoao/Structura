@@ -23,7 +23,6 @@ describe("F9 resolve/hasElement lookup baseline", () => {
       }
     }
     const elapsed = performance.now() - start;
-    // eslint-disable-next-line no-console
     console.log(
       `[F9 baseline] hasElement × ${ids.length} ids × ${rounds} rounds = ${elapsed.toFixed(2)}ms`,
     );
@@ -37,7 +36,6 @@ describe("F9 resolve/hasElement lookup baseline", () => {
       getDescriptor("person");
     }
     const elapsed = performance.now() - start;
-    // eslint-disable-next-line no-console
     console.log(`[F9 baseline] getDescriptor("person") × ${calls} = ${elapsed.toFixed(2)}ms`);
     expect(elapsed).toBeLessThan(50);
     expect(getDescriptor("person").rfType).toBe("person");

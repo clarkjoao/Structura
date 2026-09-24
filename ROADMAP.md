@@ -27,6 +27,11 @@ This document reflects the current direction of Structura. Items are subject to 
 - Plugin diagram API: read/write surface for diagrams (`getDiagram`, `getActiveDiagramId`, `updateComponent`, `moveComponents`, `onDiagramChange`, namespaced `storage`)
 - Editable step edges: orthogonal routing, corner handles, segment drag preview, grid snapping
 - Rebuilt editable edges with persistent `EdgeLayout` schema (control points, edge toolbar)
+- Azure, Google Cloud, Kubernetes and OSS element catalogs on a single element registry (ADR-0010)
+- Versions (AS-IS / TO-BE variants with compare mode)
+- Read-only viewer, share links and iframe embedding
+- Bulk export of diagrams, folders or the whole workspace
+- Experimental live sessions through a self-hosted WebSocket relay (`server/`)
 
 ---
 
@@ -78,7 +83,7 @@ This document reflects the current direction of Structura. Items are subject to 
 
 ### Collaboration _(experimental)_
 
-- [ ] Real-time collaboration via Yjs/WebRTC
+- [ ] Harden live sessions (the WebSocket relay in `server/`) beyond experimental status
 
 ---
 
@@ -88,4 +93,4 @@ Structura follows [Semantic Versioning](https://semver.org/). Breaking changes t
 
 ---
 
-_Last updated: July 2026. Detailed engineering notes for several planned items (data models, file lists, open questions) live in git history — see `TODO.md` before its removal in July 2026._
+_Last updated: September 2026._

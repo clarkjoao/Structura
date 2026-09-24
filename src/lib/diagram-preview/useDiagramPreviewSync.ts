@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { useDiagramStore } from "@/features/diagram";
-import { generatePreviewSvg } from "./generatePreviewSvg";
+import { generatePreviewSvg, type PreviewTheme } from "./generatePreviewSvg";
 import { getPreview, setPreview } from "./previewCache";
+
+/** Both variants are kept current, so switching theme never shows a stale card. */
+const PREVIEW_THEMES: readonly PreviewTheme[] = ["light", "dark"];
 
 function schedulePreviewSvgWork(run: () => void): () => void {
   const globalWithIdle = globalThis as typeof globalThis & {
@@ -32,8 +35,10 @@ export function useDiagramPreviewSync(): void {
     const initialState = useDiagramStore.getState();
     const cancelInitial = schedulePreviewSvgWork(() => {
       Object.values(initialState.diagrams).forEach((diagram) => {
-        if (!getPreview(diagram.id)) {
-          setPreview(diagram.id, generatePreviewSvg(diagram));
+        for (const theme of PREVIEW_THEMES) {
+          if (!getPreview(diagram.id, theme)) {
+            setPreview(diagram.id, generatePreviewSvg(diagram, theme), theme);
+          }
         }
       });
     });
@@ -70,7 +75,9 @@ export function useDiagramPreviewSync(): void {
           cancelIdle = undefined;
           const latest = useDiagramStore.getState().diagrams[id];
           if (!latest) return;
-          setPreview(id, generatePreviewSvg(latest));
+          for (const theme of PREVIEW_THEMES) {
+            setPreview(id, generatePreviewSvg(latest, theme), theme);
+          }
         });
       }, 1500);
     });

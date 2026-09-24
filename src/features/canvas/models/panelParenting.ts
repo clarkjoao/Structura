@@ -11,16 +11,6 @@ export function getPanelDimensions(node: Node): { width: number; height: number 
   return { width: w, height: h };
 }
 
-export function isInsidePanel(node: Node, x: number, y: number): boolean {
-  const { width, height } = getPanelDimensions(node);
-  return (
-    x > node.position.x &&
-    y > node.position.y &&
-    x < node.position.x + width &&
-    y < node.position.y + height
-  );
-}
-
 export function isOutsideParentBounds(
   childPos: { x: number; y: number },
   parent: Node,
@@ -181,26 +171,6 @@ export function resolveAbsoluteFromIndex(
   const parentAbsolute = index.absoluteById.get(parentId);
   if (!parentAbsolute) return relativePosition;
   return { x: parentAbsolute.x + relativePosition.x, y: parentAbsolute.y + relativePosition.y };
-}
-
-export function toAbsolutePosition(
-  relativePos: { x: number; y: number },
-  parentLayout: { x: number; y: number },
-): { x: number; y: number } {
-  return {
-    x: relativePos.x + parentLayout.x,
-    y: relativePos.y + parentLayout.y,
-  };
-}
-
-export function toRelativePosition(
-  absPos: { x: number; y: number },
-  parentPos: { x: number; y: number },
-): { x: number; y: number } {
-  return {
-    x: absPos.x - parentPos.x,
-    y: absPos.y - parentPos.y,
-  };
 }
 
 export function resolveAbsolutePosition(
