@@ -4,6 +4,11 @@
 **Status:** Decided, executed
 **Tag:** `pre-remove-walkthroughs` (commit `6b3d9a1`)
 
+> **Later note (2026-09):** a new, independently designed walkthrough module was built afterwards
+> in `src/features/walkthrough/` (#238). It ships disabled and is only mounted when the build sets
+> `VITE_ENABLE_WALKTHROUGHS=true`. This record still describes why the original feature was
+> removed.
+
 ## What Walkthroughs was
 
 Walkthroughs was a cross-diagram narrative feature. A `Walkthrough` was an

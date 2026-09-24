@@ -1,172 +1,204 @@
-# EdgeLabelRenderer, shallowEqualRecord e useNodeDragParenting
+# EdgeLabelRenderer, shallowEqualRecord and useNodeDragParenting
 
-Notas a partir dos commits de perf do canvas (set/2026):
+Notes from the canvas performance commits (September 2026):
 
-- `a91147a` — um `EdgeLabelRenderer` por canvas
-- `079d0b4` — identidade estável de edges + `shallowEqualRecord`
-- `5c14bb4` / `fb1b40b` / `9e1a22d` — hot path e commit de drag parenting
+- `a91147a` — one `EdgeLabelRenderer` per canvas
+- `079d0b4` — stable edge identity + `shallowEqualRecord`
+- `5c14bb4` / `fb1b40b` / `9e1a22d` — hot path and the drag-parenting commit
 
-Relacionado: [canvas-engine.md](./canvas-engine.md), [node-system.md](./node-system.md),
-[canvas-hot-path.md](./canvas-hot-path.md) (English rules + remaining opportunities).
+Related: [canvas-engine.md](./canvas-engine.md), [node-system.md](./node-system.md),
+[canvas-hot-path.md](./canvas-hot-path.md) (rules + remaining opportunities).
 
 ---
 
-## 1. O que é e o que faz o `EdgeLabelRenderer`?
+## 1. What is `EdgeLabelRenderer` and what does it do?
 
-### No React Flow
+### In React Flow
 
-`<EdgeLabelRenderer>` (de `@xyflow/react`) é o portal oficial para UI “colada” a edges — labels, toolbars, highlights — mas **fora** do SVG das arestas.
+`<EdgeLabelRenderer>` (from `@xyflow/react`) is the official portal for UI "attached" to edges —
+labels, toolbars, highlights — but rendered **outside** the edges' SVG.
 
-Ele:
+It:
 
-1. Assina o store interno do React Flow.
-2. Em cada notificação, resolve o DOM com um seletor do tipo  
+1. Subscribes to React Flow's internal store.
+2. On every notification, resolves its DOM target with a selector along the lines of
    `domNode?.querySelector('.react-flow__edgelabel-renderer')`.
-3. Renderiza os filhos nesse container (posição absoluta no plano do viewport, não dentro do path da edge).
+3. Renders its children into that container (absolutely positioned in the viewport plane, not
+   inside the edge path).
 
-Sem isso, labels/toolbars ficariam presos ao SVG da edge (clipping, `pointer-events` ruins, z-index difícil).
+Without it, labels and toolbars would be trapped inside the edge SVG (clipping, awkward
+`pointer-events`, hard z-index).
 
-### Por que Structura não monta um por edge
+### Why Structura does not mount one per edge
 
-Cada instância é um subscriber que roda `querySelector` em **toda** notificação do store. Em drag, `setNodes` notifica o store a cada frame.
+Every instance is a subscriber that runs `querySelector` on **every** store notification. During a
+drag, `setNodes` notifies the store on every frame.
 
-Antes: um renderer por edge (label, toolbar, collab highlight, overlay de playback…) → em um diagrama ~400 nós / ~439 edges, **~439 `querySelector` por frame** (~291 ms de um gesto de ~2.1 s).
+Before: one renderer per edge (label, toolbar, collab highlight, playback overlay…) → on a diagram
+with ~400 nodes / ~439 edges, **~439 `querySelector` calls per frame** (~291 ms of a ~2.1 s
+gesture).
 
-### O padrão atual: um host, N portals
+### The current pattern: one host, N portals
 
-| Peça | Papel |
-| --- | --- |
-| `EdgeLabelPortalProvider` | Cria um `div` detached e o expõe via context |
-| `EdgeLabelPortalHost` | Único `<EdgeLabelRenderer>` no canvas; anexa o container ao renderer do RF |
-| `EdgeLabelPortal` | Drop-in nos componentes de edge: `createPortal(children, container)` |
+| Piece                     | Role                                                                     |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `EdgeLabelPortalProvider` | Creates a detached `div` and exposes it through context                  |
+| `EdgeLabelPortalHost`     | The only `<EdgeLabelRenderer>` on the canvas; attaches the container to it |
+| `EdgeLabelPortal`         | Drop-in for edge components: `createPortal(children, container)`         |
 
-Montagem em `Canvas.tsx` (dentro de `<ReactFlow>`, sob o provider). Consumidores: `EdgeLabel`, `EdgeToolbar`, `CollabEdgeHighlight`, overlays de playback em `EditableEdge`, etc.
+Mounted in `features/canvas/core/DiagramSurface.tsx` (inside `<ReactFlow>`, under the provider).
+Consumers: `EdgeLabel`, `EdgeToolbar`, `CollabEdgeHighlight`, the playback overlays in
+`EditableEdge`, and so on.
 
-**Regra:** só `EdgeLabelPortal.tsx` importa `EdgeLabelRenderer` de `@xyflow/react`. O restante usa `EdgeLabelPortal`. Há teste que caminha `features/canvas` e falha se alguém reintroduzir o import direto.
+**Rule:** only `EdgeLabelPortal.tsx` imports `EdgeLabelRenderer` from `@xyflow/react`. Everything
+else uses `EdgeLabelPortal`. A test walks `features/canvas` and fails if anyone reintroduces the
+direct import.
 
-Medido depois: ~1.4 `querySelector`/frame e self-time de ~4.3 ms no mesmo fixture.
+Measured afterwards: ~1.4 `querySelector` calls per frame and ~4.3 ms of self time on the same
+fixture.
 
-**Armadilha (já corrigida):** o host precisa anexar o container com **ref callback**, não com `useEffect([container])`. Na primeira paint o `EdgeLabelRenderer` muitas vezes ainda retorna `null` (`domNode` do RF não pronto); depois ele portaliza o mount **sem** re-renderizar o host. Um effect nesse caso roda uma vez com `mount === null` e nunca anexa — toolbar/labels ficam num nó detached e somem. Isso **não** foi remoção intencional da toolbar.
-
----
-
-## 2. Quando e por que `shallowEqualRecord`?
-
-Definida **só** em `useCanvasEdges.ts` (função local, não exportada).
-
-Compara dois records pelas **own keys** e igualdade referencial dos valores (`===`). Não é deep equal.
-
-### Por quê
-
-`buildEdge` aloca objetos novos a cada chamada (`data`, `style`, `markerEnd`, `markerStart`). Sem estabilizar:
-
-1. Todo edge vira objeto novo.
-2. React Flow remonta a camada de edges.
-3. Portals de label remountam → churn de DOM.
-
-Um commit de drag com 439 edges gerava milhares de `childList` mutations **só** por edges/labels, sem criar/remover nodes.
-
-### Quando roda
-
-Dentro do `useMemo` de `useCanvasEdges`, **depois** de `buildEdge`, para cada connection visível:
-
-1. Compara nested objects com o cache (`prevPartsRef`) via `shallowEqualRecord`.
-2. Se iguais → reusa a referência antiga.
-3. `isSameBuiltEdge` pode então ser comparação por referência nos nested fields.
-4. Se **todos** os edges batem com o array anterior → devolve o **mesmo** array (`prevArrayRef`).
-
-Isso espelha o cache de identidade que `useCanvasNodes` já tinha para nodes.
-
-### Quando **não** importa
-
-- Durante o frame de drag: o store do diagrama não escreve; `useCanvasEdges` não rebuilda por causa do gesto.
-- No **commit** do drag e em qualquer outro `set()` do store: é exatamente aí que a identidade estável evita remount em massa.
-
-Se o conteúdo de `data`/`style`/markers mudou de verdade, `shallowEqualRecord` falha → objeto novo → edge novo (só o que mudou).
+**Pitfall (already fixed):** the host must attach the container with a **ref callback**, not with
+`useEffect([container])`. On first paint `EdgeLabelRenderer` often still returns `null` (React
+Flow's `domNode` is not ready yet); later it portals the mount **without** re-rendering the host.
+An effect in that case runs once with `mount === null` and never attaches — toolbars and labels end
+up in a detached node and disappear. That was **not** an intentional removal of the toolbar.
 
 ---
 
-## 3. Quando `useNodeDragParenting` é usado — e quando não?
+## 2. When and why `shallowEqualRecord`?
 
-### O que faz
+Defined **only** in `useCanvasEdges.ts` (a local, non-exported function).
 
-Hook de **contenção em painéis** (parent/unparent) no editor:
+It compares two records by their **own keys** and referential equality of the values (`===`). It
+is not a deep equal.
 
-| Durante o drag | No soltar (`onNodeDragStop`) |
-| --- | --- |
-| Detecta painel sob o cursor → `dragTargetPanelId` (highlight) | Calcula `newParentId` + posição relativa |
-| Detecta saída do pai → `unparentCandidatePanelId` | Um `batchCommitNodeDrag` para **todos** os nós do gesto |
-| Flush de dimensões medidas → `batchUpdateNodeLayouts` | Recusa painel virar filho do próprio descendente |
+### Why
 
-Também: bloqueia move em scene mode (`canMoveNodeInSceneMode`), nós locked / ancestral locked (toast), e ignora endpoints no path de parenting.
+`buildEdge` allocates new objects on every call (`data`, `style`, `markerEnd`, `markerStart`).
+Without stabilizing them:
 
-Índice de gesto (`GesturePanelIndex`): montado **uma vez** no primeiro frame; frames seguintes são O(1) lookup (não re-filtram a lista de nodes).
+1. Every edge becomes a new object.
+2. React Flow remounts the edge layer.
+3. Label portals remount → DOM churn.
 
-### Quando **é** usado
+A drag commit with 439 edges produced thousands of `childList` mutations from edges and labels
+**alone**, without creating or removing a single node.
 
-Sempre no canvas **editável**, via `useCanvasInteraction` → `useCanvasController`:
+### When it runs
+
+Inside the `useMemo` of `useCanvasEdges`, **after** `buildEdge`, for every visible connection:
+
+1. Compares the nested objects with the cache (`prevPartsRef`) using `shallowEqualRecord`.
+2. If equal → reuses the old reference.
+3. `isSameBuiltEdge` can then compare the nested fields by reference.
+4. If **every** edge matches the previous array → returns the **same** array (`prevArrayRef`).
+
+This mirrors the identity cache `useCanvasNodes` already had for nodes.
+
+### When it does **not** matter
+
+- During a drag frame: the diagram store does not write, so `useCanvasEdges` does not rebuild
+  because of the gesture.
+- On the drag **commit** and on any other store `set()`: that is exactly where stable identity
+  prevents a mass remount.
+
+If the content of `data` / `style` / markers really changed, `shallowEqualRecord` fails → new
+object → new edge (only the ones that changed).
+
+---
+
+## 3. When is `useNodeDragParenting` used — and when not?
+
+### What it does
+
+The **panel containment** hook (parent / unparent) in the editor:
+
+| During the drag                                           | On drop (`onNodeDragStop`)                              |
+| --------------------------------------------------------- | ------------------------------------------------------- |
+| Detects the panel under the cursor → `dragTargetPanelId` (highlight) | Computes `newParentId` + the relative position |
+| Detects leaving the parent → `unparentCandidatePanelId`   | One `batchCommitNodeDrag` for **all** nodes of the gesture |
+| Flushes measured dimensions → `batchUpdateNodeLayouts`    | Refuses to make a panel a child of its own descendant   |
+
+It also blocks moves in version mode (`canMoveNodeInSceneMode`), blocks locked nodes and nodes with
+a locked ancestor (toast), and skips endpoints on the parenting path.
+
+Gesture index (`GesturePanelIndex`): built **once** on the first frame; later frames are O(1)
+lookups (they do not re-filter the node list).
+
+### When it **is** used
+
+Always on the **editable** canvas, through `useCanvasInteraction` → `useCanvasController`:
 
 - `onNodesChange` (position + dimensions)
 - `onNodeDragStop`
-- `dragTargetPanelId` / `unparentCandidatePanelId` → descriptors de panel/swimlane (`isDragTarget`, `isUnparentCandidate`)
+- `dragTargetPanelId` / `unparentCandidatePanelId` → panel/swimlane descriptors (`isDragTarget`,
+  `isUnparentCandidate`)
 
-Ou seja: usuário arrasta nós no editor com `nodesDraggable` ligado.
+In other words: whenever the user drags nodes in the editor with `nodesDraggable` on.
 
-### Quando **não** aplica (comportamento / early return)
+### When it does **not** apply (behavior / early return)
 
-O hook **está montado** no editor, mas a lógica de parenting **não age** (ou só faz layout) nestes casos:
+The hook **is mounted** in the editor, but the parenting logic **does not act** (or only updates
+layout) in these cases:
 
-| Situação | Efeito |
-| --- | --- |
-| **Endpoint** | Ignorado no drag parenting e no drag stop |
-| **Note** (enquanto `dragging`) | Sem candidate de parent no frame |
-| **Locked** / ancestral locked | Toast; sem update de layout/parent |
-| **Scene mode** bloqueia move | Toast / return |
-| Filho arrastado **junto com o painel pai** | Position do filho ignorada no frame (pai move o grupo) |
-| **Viewer** / read-only | Hook **não** é montado; context força `dragTargetPanelId` / `unparentCandidatePanelId` = `null` |
-| `nodesDraggable={false}` (playback, compare sem edit, etc.) | Sem gesto de drag → parenting não dispara |
+| Situation                                         | Effect                                                                                      |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Endpoint**                                      | Ignored by drag parenting and drag stop                                                     |
+| **Note** (while `dragging`)                       | No parent candidate during the frame                                                        |
+| **Locked** / locked ancestor                      | Toast; no layout or parent update                                                           |
+| **Version mode** blocks the move                  | Toast / return                                                                              |
+| Child dragged **together with its parent panel**  | The child's position is ignored for the frame (the parent moves the group)                  |
+| **Viewer** / read-only                            | The hook is **not** mounted; the context forces `dragTargetPanelId` / `unparentCandidatePanelId` to `null` |
+| `nodesDraggable={false}` (playback, compare without edit, …) | No drag gesture → parenting never fires                                          |
 
-Parenting de verdade só no **drag stop**. Frames só atualizam highlights e (via outro caminho) posição local / store layout conforme o caso.
+Real parenting only happens on **drag stop**. Frames only update the highlights and (through
+another path) the local position / store layout as appropriate.
 
 ---
 
-## 4. Conceitos irmãos (vale conhecer juntos)
+## 4. Sibling concepts (worth knowing together)
 
 ### `useLocalNodes`
 
-Cópia local dos nodes **durante** o drag para o canvas ficar fluido sem escrever o Zustand a cada frame. No settle, merge de volta com o store. Sharp edge documentado em `AGENTS.md` — não refatorar de leve.
+A local copy of the nodes **during** the drag so the canvas stays fluid without writing Zustand on
+every frame. On settle, it merges back with the store. A sharp edge documented in `AGENTS.md` —
+do not refactor it casually.
 
-`useNodeDragParenting` recebe `nodes: localNodesRef.current` (posições do gesto), não só o snapshot do store.
+`useNodeDragParenting` receives `nodes: localNodesRef.current` (the gesture positions), not just
+the store snapshot.
 
-### Um `set()` por gesto / por round de measure
+### One `set()` per gesture / per measure round
 
-- **Commit do drag:** um `batchCommitNodeDrag` (antes: até K+2 writes → múltiplos checkpoints de undo e ~1 s de long tasks em diagrama grande).
-- **Re-measure (ResizeObserver):** um `batchUpdateNodeLayouts` (sem history — tamanho medido não é “edit” do usuário).
+- **Drag commit:** one `batchCommitNodeDrag` (before: up to K+2 writes → several undo checkpoints
+  and ~1 s of long tasks on a large diagram).
+- **Re-measure (ResizeObserver):** one `batchUpdateNodeLayouts` (no history — a measured size is
+  not a user edit).
 
-Custo dominante: cada `set()` no store serializa o workspace inteiro no persist middleware.
+The dominant cost: every store `set()` serializes the whole workspace in the persist middleware.
 
-### Identidade de edges ↔ EdgeLabelPortal
+### Edge identity ↔ EdgeLabelPortal
 
-São o mesmo tema de perf em duas pontas:
+The same performance theme at two ends:
 
-1. **Um** `EdgeLabelRenderer` → barato assinar o store do RF durante o drag.
-2. **Edges estáveis** → no commit, não remountar labels/portals à toa.
+1. **One** `EdgeLabelRenderer` → subscribing to the React Flow store during a drag is cheap.
+2. **Stable edges** → on commit, labels and portals are not remounted for nothing.
 
-### Handles L→R (contrato do produto)
+### Left-to-right handles (product contract)
 
-Independente de parenting: edge sai pela direita e entra pela esquerda, sempre. Mover nó não rewire lados. Ver `AGENTS.md` e `connectionDerivations.fixedSides.test.ts`.
+Independent of parenting: an edge leaves on the right and arrives on the left, always. Moving a
+node does not rewire sides. See `AGENTS.md` and `connectionDerivations.fixedSides.test.ts`.
 
 ---
 
-## Mapa mental rápido
+## Quick mental map
 
 ```
 Drag frame
-  ├─ useLocalNodes          → UI fluida (RF nodes locais)
-  ├─ useNodeDragParenting   → highlight parent/unparent (índice O(1))
-  └─ EdgeLabelPortalHost    → 1× querySelector (não N×)
+  ├─ useLocalNodes          → fluid UI (local React Flow nodes)
+  ├─ useNodeDragParenting   → parent/unparent highlight (O(1) index)
+  └─ EdgeLabelPortalHost    → 1× querySelector (not N×)
 
-Store write (commit / seleção / …)
+Store write (commit / selection / …)
   ├─ batchCommitNodeDrag / batchUpdateNodeLayouts → 1 set()
-  └─ useCanvasEdges + shallowEqualRecord → mesmos Edge objects → portals vivos
+  └─ useCanvasEdges + shallowEqualRecord → same Edge objects → portals stay alive
 ```

@@ -1,10 +1,8 @@
 ## Summary
 
-<!-- What does this PR do? Link the related issue. -->
+<!-- What does this PR change, and why? -->
 
 Closes #
-
----
 
 ## Type of change
 
@@ -13,39 +11,31 @@ Closes #
 - [ ] Refactor / performance
 - [ ] Documentation
 - [ ] Tests
-- [ ] CI / tooling
+- [ ] CI / tooling / dependencies
 
----
+## Checklist
 
-## Architecture checklist
+See [CONTRIBUTING.md](../CONTRIBUTING.md#rules-the-code-follows) and [AGENTS.md](../AGENTS.md).
 
-> These are non-negotiable. PRs that fail these will be closed without review.
+- [ ] Type guards from `@/features/diagram` instead of `type === "..."` string checks
+- [ ] No hardcoded UI strings — new keys added to both `en.json` and `pt-BR.json`
+- [ ] Structural store mutations call `pushHistory`; persisted schema changes include a migration
+- [ ] Persistence goes through `IStoragePort` (no direct `localStorage` outside `infrastructure/persistence`)
+- [ ] Left handles stay inputs and right handles stay outputs
+- [ ] New logic has tests, and a bug fix has a test that fails without the fix
+- [ ] Docs updated where behavior changed (`docs/`, `README.md`, `CHANGELOG.md` under _Unreleased_)
 
-- [ ] `pushHistory(state)` is the **first call** inside every `set()` that mutates diagram state
-- [ ] No direct calls to `setParent()` or `updateNodeLayout()` — used `batchCommitNodeDrag()` instead
-- [ ] No imports from `src/lib/model-types` or `src/lib/model-store` — used `@/features/diagram` only
-- [ ] Type guards used (e.g. `isC4Component(node)`) — no `node.type === '...'` string checks
-- [ ] All UI text uses `i18n` / `useTranslation()` — no hardcoded strings
-- [ ] Node rendering order preserved: `panel → swimlane → note → apiGroup → endpoint → c4`
-- [ ] `features/diagram` contains no React imports
+## Checks
 
----
-
-## Quality checklist
-
-- [ ] `npm run lint` — no errors
-- [ ] `npm run test` — all tests pass
-- [ ] `npm run build` — builds successfully
-- [ ] New logic has unit tests (if applicable)
-
----
+- [ ] `npm run typecheck`
+- [ ] `npm run lint` and `npm run format:check`
+- [ ] `npm test`
+- [ ] `npm run build`
 
 ## Screenshots / recordings
 
-<!-- For UI changes, include a before/after screenshot or screen recording. -->
-
----
+<!-- For UI changes, include a before/after screenshot or a short recording. -->
 
 ## Notes for reviewers
 
-<!-- Anything the reviewer should pay special attention to. -->
+<!-- Anything that deserves extra attention. -->

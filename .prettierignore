@@ -7,3 +7,4 @@ cypress/reports
 *.tsbuildinfo
 CHANGELOG.md
 src/fixtures/seeds
+.claude/worktrees

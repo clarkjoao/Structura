@@ -1,9 +1,10 @@
 # Plugin System — Architectural Preparation
 
-**Status:** Preparation only. Nothing here is implemented; the design happens
-in `specs/0005-plugin-contribution-points` (and its prerequisites). This
-document fixes the philosophy so that all work between now and then converges
-instead of diverging.
+**Status:** Historical. Written before the plugin system existed; it has since
+shipped (`src/features/plugins/`, OpenSpec changes archived under
+`openspec/changes/archive/2026-07-*-plugin-*`, and
+[extension-points.md](extension-points.md) for the current inventory). Kept for
+the philosophy it fixed; where it disagrees with the code, the code wins.
 
 ## Philosophy: contribution points, not a plugin runtime
 

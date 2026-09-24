@@ -49,4 +49,5 @@ ds-bundle/
 # Debug diagram exports
 *.test-diagram.json
 graphify-out
+.claude/worktrees/
 .playwright-mcp

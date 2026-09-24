@@ -81,13 +81,6 @@ export type GestureTarget =
 /** What the funnel decided the gesture is. */
 export type Gesture = "click" | "drag" | "marquee" | "pan" | "context-menu" | "connect";
 
-export interface GestureResolve {
-  gesture: Gesture;
-  target: GestureTarget;
-  /** True when the funnel has already written selection state on pointerdown. */
-  consumedSelection: boolean;
-}
-
 /**
  * Selector panel parts the funnel looks for in the DOM. RF does not surface
  * a typed handle on the node element for "this part is the header" — we

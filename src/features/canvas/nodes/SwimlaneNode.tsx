@@ -1,7 +1,8 @@
 import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
-import { contrastLabelColor, parseCssColorToRgb } from "@/features/diagram";
+import { contrastLabelColor } from "@/features/diagram";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { withAlpha } from "./swimlane-color";
 import { useTranslation } from "react-i18next";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
@@ -26,13 +27,6 @@ export type SwimlaneNodeData = {
 };
 
 const DEFAULT_SWIMLANE_OPACITY = 9;
-
-export function withAlpha(color: string, opacityPct: number): string {
-  const rgb = parseCssColorToRgb(color);
-  if (!rgb) return color;
-  const alpha = Math.max(0, Math.min(1, opacityPct / 100));
-  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
-}
 
 const UNPARENT_BORDER = "hsl(25 95% 53%)";
 

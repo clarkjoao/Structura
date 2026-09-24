@@ -2,7 +2,6 @@ export {
   API_GROUP_HEADER_H as HEADER_H,
   API_GROUP_ENDPOINT_H as ENDPOINT_H,
   API_GROUP_FOOTER_H as FOOTER_H,
-  API_GROUP_FRAME_W as FRAME_W,
 } from "@/features/diagram";
 
 export const METHOD_COLORS: Record<string, string> = {

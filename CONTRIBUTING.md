@@ -1,245 +1,184 @@
 # Contributing to Structura
 
-Thank you for your interest in contributing! This document explains how to get involved, what we expect, and how to get your changes merged efficiently.
+Thanks for your interest in Structura! This guide covers how to set up the project, the
+conventions the codebase follows, and how to get a change merged.
 
----
-
-## Table of Contents
+## Table of contents
 
 - [Code of Conduct](#code-of-conduct)
-- [Ways to Contribute](#ways-to-contribute)
-- [Getting Started](#getting-started)
-- [Architecture Overview](#architecture-overview)
-- [Development Workflow](#development-workflow)
-- [Naming and File Conventions](#naming-and-file-conventions)
-- [Commit Convention](#commit-convention)
-- [Pull Request Process](#pull-request-process)
-- [Issue Labels](#issue-labels)
-
----
+- [Ways to contribute](#ways-to-contribute)
+- [Local setup](#local-setup)
+- [Project layout](#project-layout)
+- [Rules the code follows](#rules-the-code-follows)
+- [Tests and checks](#tests-and-checks)
+- [Branches and commits](#branches-and-commits)
+- [Proposing a change](#proposing-a-change)
+- [Pull requests](#pull-requests)
+- [Naming and file conventions](#naming-and-file-conventions)
 
 ## Code of Conduct
 
-This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold it.
+This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to
+uphold it.
 
----
+## Ways to contribute
 
-## Ways to Contribute
+| Type           | How                                                                                                      |
+| -------------- | -------------------------------------------------------------------------------------------------------- |
+| Bug report     | Open a [bug report](https://github.com/clarkjoao/Structura/issues/new?template=bug_report.yml)           |
+| Feature idea   | Open a [feature request](https://github.com/clarkjoao/Structura/issues/new?template=feature_request.yml) |
+| Bug fix        | Fork → branch → PR (link the issue)                                                                      |
+| New feature    | **Discuss it in an issue first**; larger features start with a spec (see below)                          |
+| Documentation  | Same workflow as code; docs live in [`docs/`](docs/README.md)                                            |
+| Tests          | Always welcome                                                                                           |
+| Security issue | **Do not open an issue** — follow [SECURITY.md](SECURITY.md)                                             |
 
-| Type                | How                                                                  |
-| ------------------- | -------------------------------------------------------------------- |
-| 🐛 Bug reports      | Open a [bug report](.github/ISSUE_TEMPLATE/bug_report.yml)           |
-| 💡 Feature requests | Open a [feature request](.github/ISSUE_TEMPLATE/feature_request.yml) |
-| 🔧 Bug fixes        | Fork → fix → PR                                                      |
-| ✨ New features     | **Discuss in an issue first** before opening a PR                    |
-| 📖 Documentation    | Same workflow as code changes                                        |
-| 🧪 Tests            | Always welcome                                                       |
+## Local setup
 
-> **New here?** Look for issues labeled [`good first issue`](https://github.com/clarkjoao/Structura/issues?q=label%3A%22good+first+issue%22) or [`help wanted`](https://github.com/clarkjoao/Structura/issues?q=label%3A%22help+wanted%22).
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-
-### Local Setup
+Requirements: **Node.js 20+** (CI runs Node 20; some transitive dependencies prefer 22+) and npm.
+Chromium-based browsers are needed for the connected-folder feature (File System Access API).
 
 ```bash
-git clone https://github.com/clarkjoao/Structura.git
+git clone https://github.com/<your-user>/Structura.git
 cd Structura
-npm install
-npm run dev        # http://localhost:8080
+npm ci
+npm run dev          # http://localhost:8080
 ```
 
-### Available Scripts
+Optional features are toggled with `VITE_*` variables — copy [`.env.example`](.env.example) to
+`.env`. The optional Node server in [`server/`](server/) (collaboration relay and request proxy)
+has its own `package.json`; `npm run proxy` installs and starts it.
+
+### Scripts
 
 ```bash
-npm run dev          # Dev server
-npm run build        # Production build
-npm run lint         # ESLint
-npm run test         # Vitest (unit)
-npm run test:watch   # Vitest watch mode
-npm run cy:open      # Cypress interactive
-npm run cy:run       # Cypress headless
+npm run dev                 # Vite dev server (port 8080)
+npm run typecheck           # TypeScript gate: app + vite.config.ts (what CI runs)
+npm test                    # Vitest, single run
+npm run test:watch          # Vitest, watch mode
+npm run lint                # ESLint
+npm run format              # Prettier --write
+npm run format:check        # Prettier --check (CI)
+npm run plugins:sync-check  # LeanIX plugin generated files are in sync (CI)
+npm run build               # typecheck + production build
+npm run cy:open             # Cypress, interactive
+npm run cy:run:stress       # Cypress canvas stress suite
 ```
 
----
+## Project layout
 
-## Architecture Overview
-
-Understanding the architecture is **mandatory** before contributing. Violating these boundaries will cause your PR to be rejected.
+The full map, with the reasoning behind it, is in [AGENTS.md](AGENTS.md) and
+[docs/architecture/overview.md](docs/architecture/overview.md). In short:
 
 ```
 src/
-├── features/
-│   ├── diagram/      ← PURE DOMAIN — no React, no side effects
-│   └── canvas/       ← UI layer — React, ReactFlow, hooks
-├── infrastructure/
-│   └── persistence/  ← Storage adapters only
-├── components/ui/    ← Stateless shadcn/ui primitives
-└── hooks/            ← Shared app hooks
+├── features/            # bounded contexts: diagram (domain, no React), canvas (React Flow UI),
+│                        # elements (element registry), cloud, flows, collaboration, llm,
+│                        # plugins, viewer, walkthrough, …
+├── infrastructure/      # persistence adapters (IStoragePort) and i18n
+├── pages/               # route-level components (lazy-loaded)
+├── components/          # shared UI; components/ui is generated by the shadcn CLI
+└── lib/                 # export/import services, share URLs, catalogs, utils
+server/                  # optional collaboration relay + proxy (Node)
+plugins/                 # example and first-party plugins
+openspec/                # specs and change proposals (OpenSpec)
+docs/                    # architecture, ADRs, concepts, guides
 ```
 
-### Critical Constraints
+## Rules the code follows
 
-#### Imports
+[AGENTS.md](AGENTS.md) is the source of truth; these are the ones reviews check most often:
 
-```ts
-// ✅ CORRECT
-import { ... } from '@/features/diagram'
+- **Left-to-right handles.** Left handles are inputs, right handles are outputs. Never derive
+  the side from node geometry.
+- **Type guards, not string checks:** `isPanelComponent(c)`, `isC4Component(c)` from
+  `@/features/diagram` — not `c.type === "panel"`.
+- **No hardcoded UI strings:** use `t("key")` and add the key to both `en.json` and
+  `pt-BR.json`.
+- **Language:** code, comments, docs and commit messages in English. Demo seed content may stay
+  Portuguese.
+- **Strict TypeScript:** no `any`, no `as unknown as`.
+- **Store changes go through slices**, and structural mutations call `pushHistory` so undo/redo
+  keeps working. Persisted schema changes need a migration (`persist.config.ts`).
+- **Node drags commit once per gesture** (`batchCommitNodeDrag`) — do not call `setParent` /
+  `updateNodeLayout` per node from drag handlers.
+- **Persistence goes through `IStoragePort`** — no direct `localStorage` access outside
+  `src/infrastructure/persistence/`.
+- **New element types go on the element registry** (`src/features/elements/`) — see
+  [docs/guides/adding-a-node-type.md](docs/guides/adding-a-node-type.md).
+- **Don't hand-edit** `src/components/ui/` (regenerate with the shadcn CLI) or
+  `plugins/structura-plugin-leanix/src/generated/` (written by `sync-shared.mjs`, see
+  [ADR-0009](docs/adr/0009-export-core-sharing.md)).
 
-// ❌ FORBIDDEN
-import { ... } from 'src/lib/model-types'
-import { ... } from 'src/lib/model-store'
-```
+## Tests and checks
 
-#### State mutations — Undo/Redo is non-negotiable
+- Unit tests use **Vitest** and live next to the code as `<name>.test.ts(x)`.
+- The canvas stress suite uses **Cypress** (`cypress/e2e/stress-*`).
+- Before pushing, run what CI runs:
 
-```ts
-// ✅ CORRECT — pushHistory MUST be called first, before any mutation
-set((state) => {
-  pushHistory(state);
-  state.components[id].label = newLabel;
-});
+  ```bash
+  npm run typecheck && npm run lint && npm run format:check && npm test && npm run build
+  ```
 
-// ❌ WRONG — missing pushHistory
-// ❌ WRONG — pushHistory called after mutation
-```
+- Run Prettier only on the files you touched (`npx prettier --write <files>`), so formatting
+  noise does not end up in your diff.
+- A test that cannot fail is not a test: when fixing a bug, check the new test fails without the
+  fix.
 
-#### Node drag — never call setParent or updateNodeLayout directly
+## Branches and commits
 
-```ts
-// ✅ CORRECT — one batch call commits the whole gesture
-batchCommitNodeDrag([{ nodeId, newParentId, newPosition }]);
+- Branch from `main` using a type prefix: `feat/…`, `fix/…`, `docs/…`, `refactor/…`, `perf/…`,
+  `test/…`, `chore/…`.
+- Commits follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-// ❌ FORBIDDEN
-setParent(nodeId, parentId);
-updateNodeLayout(nodeId, position);
-```
+  ```
+  <type>(<scope>): <description>
 
-#### Node rendering order (strict, never reorder)
+  types:  feat | fix | docs | style | refactor | perf | test | build | ci | chore
+  scopes: canvas | diagram | elements | flows | layout | persistence | collab | llm | plugins |
+          viewer | export | i18n | deps | ci | docs
+  ```
 
-```
-panel → swimlane → note → apiGroup → endpoint → c4
-```
+  Examples:
 
-#### Type guards — never use string checks
+  ```
+  feat(canvas): add alignment toolbar
+  fix(diagram): call pushHistory before label mutation
+  perf(canvas): replace full-store selector with fine-grained selectors
+  docs(guides): document the embed postMessage protocol
+  ```
 
-```ts
-// ✅ CORRECT
-if (isC4Component(node)) { ... }
+## Proposing a change
 
-// ❌ FORBIDDEN
-if (node.type === 'c4') { ... }
-```
+- **Small fixes:** open a PR that links the issue.
+- **Features and behavior changes:** open an issue first to agree on the problem. Significant
+  features are specified with [OpenSpec](https://github.com/Fission-AI/OpenSpec) in
+  [`openspec/`](openspec/) (propose → apply → archive; see `openspec/config.yaml`).
+- **Long-lived architectural decisions** are recorded as ADRs in [`docs/adr/`](docs/adr/).
+- When code and docs disagree, the code wins — fix the doc in the same PR.
 
-#### UI Text — no hardcoded strings
+## Pull requests
 
-```ts
-// ✅ CORRECT
-const { t } = useTranslation()
-<Button>{t('actions.save')}</Button>
+- Link the issue the PR addresses.
+- Keep PRs focused: one concern per PR; do not mix refactors or mass formatting with fixes.
+- CI must be green (lint, format, type check, unit tests, build).
+- Include screenshots or a short recording for UI changes.
+- At least one maintainer approval is required to merge.
 
-// ❌ FORBIDDEN
-<Button>Save</Button>
-```
+The [pull request template](.github/PULL_REQUEST_TEMPLATE.md) has the checklist reviewers use.
 
----
+## Naming and file conventions
 
-## Development Workflow
+These apply to **new files**. Existing files use older mixed styles; do not mass-rename them
+(it destroys `git blame` and conflicts with open PRs).
 
-1. **Find or open an issue** — every PR must be linked to an issue
-2. **Fork the repository**
-3. **Create a branch** from `main`:
-   ```bash
-   git checkout -b feat/my-feature
-   git checkout -b fix/my-bug
-   ```
-4. **Implement** following all constraints above
-5. **Run checks before pushing**:
-   ```bash
-   npm run lint && npm run test && npm run build
-   ```
-6. **Open a PR** against `main`
-
----
-
-## Naming and File Conventions
-
-These apply to **new files**. Existing files use older mixed styles; do not
-mass-rename them (it destroys `git blame` and conflicts with open PRs) —
-renaming is fine when you are already substantially rewriting a file.
-
-| What                                         | Convention                                                                                                                 | Example               |
-| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| React components                             | `PascalCase.tsx`, one component per file                                                                                   | `FlowPanel.tsx`       |
-| Everything else (utils, hooks files, stores) | `kebab-case.ts`                                                                                                            | `flow-repair.ts`      |
-| Hooks                                        | `useXxx` export, file may be `useXxx.ts`                                                                                   | `useAutoLayout.ts`    |
-| Tests                                        | colocated next to the code as `<name>.test.ts(x)` — no `__tests__/` folders                                                | `flow-repair.test.ts` |
-| Constants                                    | one `<feature>.constants.ts` per feature root; node-local constants stay next to the node                                  | `canvas.constants.ts` |
-| Types                                        | `types.ts` (or `<area>.types.ts`) inside the feature; shared domain types live in `@/features/diagram`                     | `edgeData.types.ts`   |
-| Imports                                      | always via the `@/` alias for cross-directory imports; relative only within the same folder subtree                        | `@/features/diagram`  |
-| Feature placement                            | user-facing capability → `src/features/<name>/`; route shell → `src/pages/`; storage/i18n plumbing → `src/infrastructure/` | —                     |
-
----
-
-## Commit Convention
-
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>(<scope>): <description>
-
-Types: feat | fix | docs | style | refactor | test | chore | perf
-Scope: diagram | canvas | persistence | flows | layout | ci | deps
-```
-
-Examples:
-
-```
-feat(canvas): add alignment toolbar
-fix(diagram): call pushHistory before label mutation
-perf(canvas): replace full store selector with fine-grained selectors
-test(layout): add unit tests for computeGridLayout
-```
-
----
-
-## Pull Request Process
-
-- PRs without a linked issue will be closed
-- All CI checks must pass (lint, type-check, unit tests)
-- At least one maintainer approval required
-- Keep PRs focused — one concern per PR
-
-### PR checklist (reviewers will verify)
-
-- [ ] Linked to an issue
-- [ ] `pushHistory` called correctly (if mutating state)
-- [ ] No `updateNodeLayout` / `setParent` called directly
-- [ ] No hardcoded UI strings
-- [ ] Type guards used (no `node.type === '...'`)
-- [ ] Imports only from `@/features/diagram`
-- [ ] `npm run lint` passes
-- [ ] `npm run test` passes
-- [ ] `npm run build` succeeds
-
----
-
-## Issue Labels
-
-| Label              | Meaning                    |
-| ------------------ | -------------------------- |
-| `bug`              | Something is broken        |
-| `enhancement`      | New feature or improvement |
-| `good first issue` | Suitable for newcomers     |
-| `help wanted`      | Extra attention needed     |
-| `persistence`      | Storage layer (high risk)  |
-| `canvas`           | ReactFlow / canvas layer   |
-| `diagram`          | Domain model / store       |
-| `performance`      | Performance-related        |
-| `documentation`    | Docs only                  |
+| What              | Convention                                                                                        | Example               |
+| ----------------- | ------------------------------------------------------------------------------------------------- | --------------------- |
+| React components  | `PascalCase.tsx`, one component per file                                                          | `FlowPanel.tsx`       |
+| Other modules     | `kebab-case.ts`                                                                                   | `flow-repair.ts`      |
+| Hooks             | `useXxx` export; file may be `useXxx.ts`                                                          | `useAutoLayout.ts`    |
+| Tests             | next to the code as `<name>.test.ts(x)` — no `__tests__/` folders                                 | `flow-repair.test.ts` |
+| Constants         | one `<feature>.constants.ts` per feature root; node-local constants stay next to the node         | `canvas.constants.ts` |
+| Types             | `types.ts` or `<area>.types.ts` in the feature; shared domain types in `@/features/diagram`       | `edgeData.types.ts`   |
+| Imports           | `@/` alias across directories; relative imports only within the same folder subtree               | `@/features/diagram`  |
+| Feature placement | capability → `src/features/<name>/`; route shell → `src/pages/`; plumbing → `src/infrastructure/` | —                     |

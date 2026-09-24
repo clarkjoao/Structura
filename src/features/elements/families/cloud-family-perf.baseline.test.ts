@@ -26,7 +26,6 @@ describe("cloud family registry performance baseline", () => {
     // on a warm run). Soft floor so CI noise does not flake.
     expect(cachedMs).toBeLessThan(rebuildMs);
     expect(cloudRegistry.allProviders().length).toBe(allCloudFamilies().length);
-    // eslint-disable-next-line no-console
     console.log(
       `[perf] allProviders×${N}=${cachedMs.toFixed(2)}ms rebuild×${N}=${rebuildMs.toFixed(2)}ms`,
     );

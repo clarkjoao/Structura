@@ -138,10 +138,3 @@ export const NOTE_PRESETS_DARK: ColorPreset[] = [
   { nameKey: "colors.orange", color: "hsl(25 90% 52%)" },
   { nameKey: "colors.amber", color: "hsl(38 92% 50%)" },
 ];
-
-export const C4_DEFAULT_COLORS: Record<string, string> = {
-  person: "hsl(38 92% 50%)",
-  system: "hsl(187 72% 51%)",
-  container: "hsl(260 60% 55%)",
-  component: "hsl(152 60% 45%)",
-};

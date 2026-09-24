@@ -144,9 +144,3 @@ export function measureMs(fn: () => void): number {
   fn();
   return performance.now() - start;
 }
-
-export async function measureMsAsync(fn: () => Promise<void>): Promise<number> {
-  const start = performance.now();
-  await fn();
-  return performance.now() - start;
-}

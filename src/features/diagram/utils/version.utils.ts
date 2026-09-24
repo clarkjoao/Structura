@@ -101,19 +101,6 @@ export function isComponentAddedInActiveVersion(
   return componentId in diagram.versions[sid].addedComponents;
 }
 
-export function isConnectionAddedInActiveVersion(
-  diagram: VersionDiagram,
-  connectionId: string,
-): boolean {
-  const sid = diagram.activeVersionId;
-  if (!sid || !diagram.versions?.[sid]) return false;
-  return connectionId in diagram.versions[sid].addedConnections;
-}
-
-export function isBaseSnapshotComponent(diagram: VersionDiagram, componentId: string): boolean {
-  return componentId in diagram.snapshot.components;
-}
-
 export function canMoveNodeInSceneMode(diagram: VersionDiagram, componentId: string): boolean {
   if (isDiagramCompareMode(diagram)) return false;
   if (!diagram.activeVersionId || !diagram.versions?.[diagram.activeVersionId]) return true;

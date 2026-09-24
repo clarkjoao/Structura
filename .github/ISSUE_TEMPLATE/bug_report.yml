@@ -15,14 +15,20 @@ body:
       description: Which part of Structura is affected?
       options:
         - Canvas / diagramming
-        - Persistence (save/load/filesystem)
+        - Connections / edges
+        - Persistence (save/load/connected folder)
         - Undo / Redo
         - Flows (recording/playback)
-        - Layout (Grid Tidy Up / Auto Layout)
-        - Export (JSON / draw.io / Mermaid)
-        - AWS catalog
-        - LLM / AI features
-        - Dashboard / folders
+        - Versions
+        - Layout (auto layout)
+        - Import / Export (JSON / draw.io / Mermaid)
+        - Share links / viewer / embed
+        - Cloud catalogs (AWS / Azure / GCP / Kubernetes)
+        - Services catalog
+        - Live sessions (collaboration)
+        - AI assistant
+        - Plugins
+        - Workspace / folders
         - Performance
         - Other
     validations:
@@ -74,7 +80,7 @@ body:
       placeholder: |
         - Browser: Chrome 124
         - OS: macOS 14
-        - Structura version / commit: v0.1.0
+        - Structura: structur.dev, or local build at commit abc1234
     validations:
       required: true
 

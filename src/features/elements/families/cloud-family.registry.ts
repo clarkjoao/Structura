@@ -89,13 +89,6 @@ export function isRegisteredCloudFamily(familyId: string): boolean {
   return families.has(familyId);
 }
 
-export function cloudFamilyForCategoryType(type: string): CloudFamilyDefinition | undefined {
-  for (const family of families.values()) {
-    if (family.categories.some((category) => category.id === type)) return family;
-  }
-  return undefined;
-}
-
 /**
  * Derive a `CloudProviderAdapter` from a family definition.
  *

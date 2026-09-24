@@ -10,6 +10,7 @@ plugins/
 │   ├── console-log/    # Diagram change logger + keyboard shortcuts
 │   └── mermaid-import/ # Mermaid flowchart importer
 ├── structura-plugin-example-ui/  # React/TypeScript plugin example
+├── structura-plugin-leanix/      # LeanIX integration (export diagrams to LeanIX)
 └── README.md           # This file
 ```
 
@@ -64,7 +65,7 @@ uninstall them. A plain `npm run build` ships zero built-in plugins.
 
 ## Plugin Capabilities Reference
 
-See [docs/architecture/extension-points.md](../../docs/architecture/extension-points.md) for the full extension point inventory.
+See [docs/architecture/extension-points.md](../docs/architecture/extension-points.md) for the full extension point inventory.
 
 | Capability          | Description                                                             |
 | ------------------- | ----------------------------------------------------------------------- |

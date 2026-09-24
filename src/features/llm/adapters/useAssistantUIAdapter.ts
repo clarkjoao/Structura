@@ -76,14 +76,6 @@ function mapErrorToMessage(kind: LLMErrorKind): string {
   return messages[kind] ?? messages.unknown;
 }
 
-export interface AssistantUIAdapterState {
-  messages: readonly ThreadMessage[];
-  suggestions: readonly ThreadSuggestion[];
-  isLoading: boolean;
-  isRunning: boolean;
-  error: string | null;
-}
-
 export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
   const {
     send,
