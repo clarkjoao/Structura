@@ -1,24 +1,29 @@
+import type { PreviewTheme } from "./generatePreviewSvg";
+
 const PREVIEW_KEY_PREFIX = "structura_diagram-preview:";
 
-function previewKey(diagramId: string): string {
-  return `${PREVIEW_KEY_PREFIX}${diagramId}`;
+/** Light keeps the original key so previews cached before themes existed stay valid. */
+function previewKey(diagramId: string, theme: PreviewTheme = "light"): string {
+  return theme === "dark"
+    ? `${PREVIEW_KEY_PREFIX}dark:${diagramId}`
+    : `${PREVIEW_KEY_PREFIX}${diagramId}`;
 }
 
-export function setPreview(diagramId: string, svg: string): void {
+export function setPreview(diagramId: string, svg: string, theme: PreviewTheme = "light"): void {
   try {
-    localStorage.setItem(previewKey(diagramId), svg);
+    localStorage.setItem(previewKey(diagramId, theme), svg);
   } catch {
     try {
-      localStorage.removeItem(previewKey(diagramId));
+      localStorage.removeItem(previewKey(diagramId, theme));
     } catch {
       // ignore
     }
   }
 }
 
-export function getPreview(diagramId: string): string | null {
+export function getPreview(diagramId: string, theme: PreviewTheme = "light"): string | null {
   try {
-    return localStorage.getItem(previewKey(diagramId));
+    return localStorage.getItem(previewKey(diagramId, theme));
   } catch {
     return null;
   }
@@ -26,7 +31,8 @@ export function getPreview(diagramId: string): string | null {
 
 export function deletePreview(diagramId: string): void {
   try {
-    localStorage.removeItem(previewKey(diagramId));
+    localStorage.removeItem(previewKey(diagramId, "light"));
+    localStorage.removeItem(previewKey(diagramId, "dark"));
   } catch {
     // ignore
   }

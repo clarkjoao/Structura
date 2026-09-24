@@ -12,6 +12,7 @@ import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHigh
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { contrastLabelColor } from "@/features/diagram";
+import { useCanvasBackdrop } from "./use-canvas-backdrop";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 import { buildPanelHandles } from "./CardNode/Handles";
@@ -87,7 +88,8 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const useAwsIcon = d.awsIconName ?? kindDef.awsIconName;
   const Icon = kindDef.icon;
   const opacity = d.panelOpacity ?? DEFAULT_PANEL_OPACITY;
-  const labelColor = contrastLabelColor(color, opacity);
+  const backdrop = useCanvasBackdrop();
+  const labelColor = contrastLabelColor(color, opacity, backdrop);
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;

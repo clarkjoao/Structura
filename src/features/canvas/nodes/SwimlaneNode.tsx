@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { contrastLabelColor } from "@/features/diagram";
+import { useCanvasBackdrop } from "./use-canvas-backdrop";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { withAlpha } from "./swimlane-color";
 import { useTranslation } from "react-i18next";
@@ -42,7 +43,8 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
   const opacityPct = Math.max(0, Math.min(100, d.opacity ?? DEFAULT_SWIMLANE_OPACITY));
   const fill = withAlpha(laneColor, opacityPct);
   const labelText = d.laneLabel?.trim() || d.name?.trim() || t("swimlane.defaultLaneLabel");
-  const labelColor = contrastLabelColor(laneColor, opacityPct);
+  const backdrop = useCanvasBackdrop();
+  const labelColor = contrastLabelColor(laneColor, opacityPct, backdrop);
 
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);

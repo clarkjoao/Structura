@@ -87,4 +87,18 @@ describe("relativeLuminance / rgbToHex", () => {
   it("round-trips rgb to hex", () => {
     expect(rgbToHex({ r: 190, g: 169, b: 221 })).toBe("#bea9dd");
   });
+
+  it("over a dark backdrop, a faint fill gets a light label", () => {
+    const backdrop = "hsl(231 15% 12%)";
+    const label = contrastLabelColor("#0000ff", 9, backdrop);
+    expect(label).toBe("#ffffff");
+  });
+
+  it("keeps white as the default backdrop", () => {
+    expect(contrastLabelColor("#0000ff", 9)).toBe(contrastLabelColor("#0000ff", 9, "#ffffff"));
+  });
+
+  it("falls back to white when the backdrop cannot be parsed", () => {
+    expect(contrastLabelColor("#0000ff", 9, "")).toBe("#0a0a0a");
+  });
 });

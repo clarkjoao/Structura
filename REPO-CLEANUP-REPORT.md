@@ -244,8 +244,6 @@ refazer:
 - As telas usam o workspace de demonstração (PixLedger, **conteúdo em português**, como definido
   no AGENTS.md). Para um README 100% em inglês, seria preciso um seed em inglês — mudança de
   produto, não fiz.
-- No **dark mode**, os títulos de painel (VPC, Public subnet, Private subnet, Data tier) ficam quase
-  invisíveis (`dark-mode.png`). Parece bug de contraste do produto; não corrigi.
 - O GIF tem 3,1 MB (< 5 MB). Os PNGs somam ~2,5 MB; sem `pngquant`/`oxipng` na máquina não
   otimizei.
 - Aparece "Saving…" no header de algumas capturas (o seed está sendo gravado).
@@ -307,6 +305,39 @@ Na ordem, cada um passa sozinho nos gates (exceto as 7 falhas pré-existentes):
 8. `docs(changelog): restructure into Keep a Changelog` — `CHANGELOG.md`.
 
 `package.json` tem mudanças de três commits (deps, metadados, script); use `git add -p`.
+
+## 9. Adendo — nova paleta do dark mode (pedido posterior)
+
+Isto é mudança de **produto** (fora do escopo original); ficou isolado para virar um commit próprio:
+`feat(theme): refresh dark palette`.
+
+- `src/index.css` (bloco `.dark`): o azul-marinho saturado (`222 47% 6%`) virou um grafite frio com
+  leve tom violeta (família Dracula, ~15% de saturação), em camadas como nos temas escuros do VS Code:
+  sidebar `231 16% 10%` → canvas `231 15% 12%` → cards `231 15% 15%` (= "darker background" do
+  Dracula) → popovers/inputs. Bordas `231 13% 24%`, texto off-white `60 20% 93%`. O ciano da marca
+  continua com o mesmo matiz (187), só mais claro. Nós C4 em tons Dracula mais suaves (roxo
+  `265 80% 74%`, verde `140 60% 56%`, laranja `34 100% 68%`); JSON com a leitura Dracula (chave
+  ciano, string amarela, número roxo, booleano rosa). `--accent` no dark virou neutro (antes era o
+  ciano, então todo hover de menu ficava ciano); agora segue a mesma semântica do tema claro. Cores
+  de catálogos (AWS/Azure/GCP/K8s) e gráficos não mudaram.
+- **Títulos de painel e swimlane invisíveis no dark (bug):** `contrastLabelColor` sempre misturava a
+  cor do painel com **branco**, então no dark escolhia texto quase preto. Agora recebe o fundo real
+  (`backdrop`, padrão branco → tema claro idêntico); `PanelNode`/`SwimlaneNode` passam o
+  `--background` do tema via o novo `src/features/canvas/nodes/use-canvas-backdrop.ts`. +3 testes em
+  `labelContrast.test.ts`.
+- **Miniaturas do dashboard no dark:** as notas saíam como blocos claros (a miniatura é um `<img>`
+  SVG e não enxerga o tema). `generatePreviewSvg` aceita `theme`; o cache guarda também uma variante
+  `structura_diagram-preview:dark:<id>` (a chave clara não mudou, então caches antigos continuam
+  válidos); `DiagramCard` escolhe pelo tema atual com fallback para a clara; `deletePreview` apaga
+  as duas. +1 teste.
+- `docs/assets/screenshots/*.png` regenerados (o `dark-mode.png` agora mostra a paleta nova).
+
+Gates após o adendo: typecheck 0, lint 5 warnings, format 0, build ok, sync ok, testes 2994 ✓ / as
+mesmas 7 ✗ pré-existentes (3001 no total, +4 novos).
+
+Não mexi nas cores de nota salvas (`NOTE_PRESET_PAIRS`): são valores persistidos nos diagramas e
+usados como chave de lookup. As variáveis `--color-border-*`, `--color-text-*` usadas pelo viewer
+não estão definidas em nenhum tema (pré-existente); vale definir num próximo passo.
 
 ---
 

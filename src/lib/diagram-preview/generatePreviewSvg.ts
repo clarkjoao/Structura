@@ -22,6 +22,13 @@ import {
   PANEL_DEFAULT_H,
   PANEL_DEFAULT_W,
 } from "@/features/canvas/canvas.constants";
+import {
+  NOTE_DEFAULT_DARK,
+  NOTE_DEFAULT_LIGHT,
+} from "@/features/canvas/panels/ElementPanel/components/colorPresets";
+
+/** The app theme a preview is drawn for — the card image cannot read the page's CSS. */
+export type PreviewTheme = "light" | "dark";
 
 const MAX_ELEMENTS = 120;
 
@@ -34,9 +41,18 @@ const C4_PREVIEW_COLORS: Record<string, string> = {
 
 const AWS_PREVIEW_FILL = "hsl(25 90% 52%)";
 const API_GROUP_PREVIEW_FILL = "hsl(187 72% 51%)";
-const DEFAULT_PANEL_FILL = "hsl(220 14% 90%)";
-const NOTE_FALLBACK_FILL = "hsl(45 25% 97%)";
-const CONNECTION_STROKE = "hsl(220 20% 40%)";
+const DEFAULT_PANEL_FILL: Record<PreviewTheme, string> = {
+  light: "hsl(220 14% 90%)",
+  dark: "hsl(231 13% 40%)",
+};
+const CONNECTION_STROKE: Record<PreviewTheme, string> = {
+  light: "hsl(220 20% 40%)",
+  dark: "hsl(229 15% 65%)",
+};
+const EMPTY_FILL: Record<PreviewTheme, string> = {
+  light: "hsl(220 14% 96%)",
+  dark: "hsl(231 14% 17%)",
+};
 
 function escapeXmlAttr(value: string): string {
   return value
@@ -132,6 +148,7 @@ function centerOf(bounds: { x: number; y: number; width: number; height: number 
 function renderConnectionLines(
   connections: Record<string, Connection>,
   boundsById: Map<string, { x: number; y: number; width: number; height: number }>,
+  theme: PreviewTheme,
 ): string[] {
   const lines: string[] = [];
   for (const connection of Object.values(connections)) {
@@ -141,7 +158,7 @@ function renderConnectionLines(
     const sourceCenter = centerOf(sourceBounds);
     const targetCenter = centerOf(targetBounds);
     lines.push(
-      `<line x1="${sourceCenter.cx.toFixed(1)}" y1="${sourceCenter.cy.toFixed(1)}" x2="${targetCenter.cx.toFixed(1)}" y2="${targetCenter.cy.toFixed(1)}" stroke="${CONNECTION_STROKE}" stroke-width="1" opacity="0.4"/>`,
+      `<line x1="${sourceCenter.cx.toFixed(1)}" y1="${sourceCenter.cy.toFixed(1)}" x2="${targetCenter.cx.toFixed(1)}" y2="${targetCenter.cy.toFixed(1)}" stroke="${CONNECTION_STROKE[theme]}" stroke-width="1" opacity="0.4"/>`,
     );
   }
   return lines;
@@ -150,9 +167,10 @@ function renderConnectionLines(
 function renderPanelShape(
   component: Component,
   bounds: { x: number; y: number; width: number; height: number },
+  theme: PreviewTheme,
 ): string {
   if (!isPanelComponent(component)) return "";
-  const fillBase = component.panelColor?.trim() || DEFAULT_PANEL_FILL;
+  const fillBase = component.panelColor?.trim() || DEFAULT_PANEL_FILL[theme];
   const fill = escapeXmlAttr(fillBase);
   const stroke = fill;
   const strokeDash =
@@ -167,9 +185,14 @@ function renderPanelShape(
 function renderNoteShape(
   component: Component,
   bounds: { x: number; y: number; width: number; height: number },
+  theme: PreviewTheme,
 ): string {
   if (!isNoteComponent(component)) return "";
-  const fillBase = component.panelColor?.trim() || NOTE_FALLBACK_FILL;
+  // Same paper the canvas draws for this theme (NoteNode): notes carry a colour per theme.
+  const fillBase =
+    theme === "dark"
+      ? component.panelColorDark?.trim() || NOTE_DEFAULT_DARK
+      : component.panelColor?.trim() || NOTE_DEFAULT_LIGHT;
   const fill = escapeXmlAttr(fillBase);
   return `<rect x="${bounds.x.toFixed(1)}" y="${bounds.y.toFixed(1)}" width="${bounds.width.toFixed(1)}" height="${bounds.height.toFixed(1)}" rx="4" fill="${fill}" fill-opacity="0.6"/>`;
 }
@@ -212,11 +235,12 @@ function shapeForComponent(
   component: Component,
   bounds: { x: number; y: number; width: number; height: number },
   simplified: boolean,
+  theme: PreviewTheme,
 ): string {
   if (simplified && !isPanelComponent(component)) return "";
 
-  if (isPanelComponent(component)) return renderPanelShape(component, bounds);
-  if (isNoteComponent(component)) return renderNoteShape(component, bounds);
+  if (isPanelComponent(component)) return renderPanelShape(component, bounds, theme);
+  if (isNoteComponent(component)) return renderNoteShape(component, bounds, theme);
   if (isApiGroupComponent(component)) return renderApiGroupShape(bounds);
   if (isAwsComponent(component)) return renderAwsShape(bounds);
   if (isPersonType(component.type)) return renderPersonShape(bounds);
@@ -227,7 +251,7 @@ function shapeForComponent(
   return renderC4Rect("component", bounds);
 }
 
-export function generatePreviewSvg(diagram: Diagram): string {
+export function generatePreviewSvg(diagram: Diagram, theme: PreviewTheme = "light"): string {
   const components = diagram.snapshot.components;
   const connections = diagram.snapshot.connections;
   const layouts = diagram.nodeLayouts;
@@ -260,7 +284,7 @@ export function generatePreviewSvg(diagram: Diagram): string {
   const padding = 40;
   if (!Number.isFinite(minX)) {
     const size = 200;
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet"><rect width="${size}" height="${size}" fill="hsl(220 14% 96%)" fill-opacity="0.5"/></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" preserveAspectRatio="xMidYMid meet"><rect width="${size}" height="${size}" fill="${EMPTY_FILL[theme]}" fill-opacity="0.5"/></svg>`;
   }
 
   minX -= padding;
@@ -271,7 +295,7 @@ export function generatePreviewSvg(diagram: Diagram): string {
   const viewW = Math.max(1, maxX - minX);
   const viewH = Math.max(1, maxY - minY);
 
-  const lines = renderConnectionLines(connections, boundsCache);
+  const lines = renderConnectionLines(connections, boundsCache, theme);
 
   const panels: string[] = [];
   const nonPanels: string[] = [];
@@ -279,7 +303,7 @@ export function generatePreviewSvg(diagram: Diagram): string {
   for (const c of visibleWithLayout) {
     const bounds = boundsCache.get(c.id);
     if (!bounds) continue;
-    const shape = shapeForComponent(c, bounds, simplified);
+    const shape = shapeForComponent(c, bounds, simplified, theme);
     if (!shape) continue;
     if (isPanelComponent(c)) panels.push(shape);
     else nonPanels.push(shape);
