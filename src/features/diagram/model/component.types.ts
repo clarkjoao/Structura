@@ -291,7 +291,7 @@ export interface SkinParts {
 }
 
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
-export type VsmComponentType = "vsm-external";
+export type VsmComponentType = "vsm-external" | "vsm-process";
 
 /** Which side of the stream an outside source sits on. Absent means supplier. */
 export type VsmRole = "supplier" | "customer";
@@ -300,6 +300,22 @@ export type VsmRole = "supplier" | "customer";
 export interface VsmExternalComponent extends BaseComponent, SkinParts {
   type: "vsm-external";
   role?: VsmRole;
+}
+
+/** One row of a VSM process's data box: a metric and its value, both as typed. */
+export interface VsmMetric {
+  id: string;
+  key: string;
+  value: string;
+}
+
+/** A process box: a step of the stream with its operators and its data box. */
+export interface VsmProcessComponent extends BaseComponent, SkinParts {
+  type: "vsm-process";
+  /** People working the step; absent shows no count. */
+  operators?: number;
+  /** The data box rows, in order. */
+  metrics?: VsmMetric[];
 }
 
 export interface ExternalElementComponent extends BaseComponent {
@@ -322,6 +338,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | VsmProcessComponent
   | VsmExternalComponent
   | C4Component
   | PanelComponent
@@ -357,7 +374,8 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<SvgComponent, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
-  Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
@@ -378,5 +396,6 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

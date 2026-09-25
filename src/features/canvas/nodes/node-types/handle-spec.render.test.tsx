@@ -164,6 +164,7 @@ const NARROW_TYPES = [
   "svg",
   "endpoint",
   "vsm-external",
+  "vsm-process",
 ] as const;
 
 describe("declared handles reach the DOM", () => {

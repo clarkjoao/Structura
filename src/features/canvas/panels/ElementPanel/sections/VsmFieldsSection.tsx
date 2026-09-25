@@ -1,11 +1,79 @@
 import { useTranslation } from "react-i18next";
+import { Plus, X } from "lucide-react";
 import {
+  generateId,
   isVsmExternalComponent,
+  isVsmProcessComponent,
   type Component,
   type ComponentPatch,
+  type VsmMetric,
   type VsmRole,
 } from "@/features/diagram";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "../components/SegmentedControl";
+
+const LABEL_CLASS = "text-[11px] text-muted-foreground uppercase tracking-wider font-semibold";
+
+/** A whole number or nothing: an empty field clears the value instead of storing 0. */
+function parseCount(value: string): number | undefined {
+  if (value.trim() === "") return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined;
+}
+
+function MetricsEditor({
+  metrics,
+  onChange,
+}: {
+  metrics: VsmMetric[];
+  onChange: (metrics: VsmMetric[]) => void;
+}) {
+  const { t } = useTranslation();
+  const set = (index: number, patch: Partial<VsmMetric>) =>
+    onChange(metrics.map((metric, i) => (i === index ? { ...metric, ...patch } : metric)));
+  return (
+    <div className="space-y-1.5">
+      <p className={LABEL_CLASS}>{t("vsm.fields.metrics")}</p>
+      {metrics.map((metric, index) => (
+        <div key={metric.id} className="flex items-center gap-1.5">
+          <Input
+            aria-label={t("vsm.fields.metricKey")}
+            value={metric.key}
+            onChange={(event) => set(index, { key: event.target.value })}
+            className="h-8 w-24 font-mono text-xs"
+          />
+          <Input
+            aria-label={t("vsm.fields.metricValue")}
+            value={metric.value}
+            onChange={(event) => set(index, { value: event.target.value })}
+            className="h-8 flex-1 font-mono text-xs"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            aria-label={t("vsm.fields.removeMetric")}
+            onClick={() => onChange(metrics.filter((_, i) => i !== index))}
+          >
+            <X />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-full text-xs"
+        onClick={() => onChange([...metrics, { id: generateId("m"), key: "", value: "" }])}
+      >
+        <Plus />
+        {t("vsm.fields.addMetric")}
+      </Button>
+    </div>
+  );
+}
 
 export interface VsmFieldsSectionProps {
   component: Component;
@@ -28,6 +96,30 @@ export function VsmFieldsSection({ component, onChange }: VsmFieldsSectionProps)
         // Supplier is the default and is stored as nothing.
         onChange={(role) => onChange({ role: role === "supplier" ? undefined : role })}
       />
+    );
+  }
+
+  if (isVsmProcessComponent(component)) {
+    return (
+      <>
+        <div className="space-y-1.5">
+          <label htmlFor="vsm-operators" className={`${LABEL_CLASS} block`}>
+            {t("vsm.fields.operators")}
+          </label>
+          <Input
+            id="vsm-operators"
+            type="number"
+            min={0}
+            value={component.operators ?? ""}
+            onChange={(event) => onChange({ operators: parseCount(event.target.value) })}
+            className="h-9"
+          />
+        </div>
+        <MetricsEditor
+          metrics={component.metrics ?? []}
+          onChange={(metrics) => onChange({ metrics })}
+        />
+      </>
     );
   }
 

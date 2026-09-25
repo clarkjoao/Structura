@@ -67,3 +67,17 @@ describe("vsm-external", () => {
     expect(roles.sort()).toEqual(["customer", "supplier"]);
   });
 });
+
+describe("vsm-process", () => {
+  it("starts with the classic four-row data box, values blank", () => {
+    const comp = getElement("vsm-process")!.model.createComponent(
+      { id: "p", name: "Stamping", description: "", parentId: null },
+      {},
+    );
+    expect(comp).toMatchObject({ type: "vsm-process" });
+    const metrics = (comp as { metrics: Array<{ key: string; value: string }> }).metrics;
+    expect(metrics).toHaveLength(4);
+    expect(metrics.every((metric) => metric.value === "")).toBe(true);
+    expect(metrics[0].key).toBe("C/T");
+  });
+});

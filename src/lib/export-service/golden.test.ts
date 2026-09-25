@@ -367,6 +367,16 @@ describe("golden — value stream map", () => {
       customColor: "hsl(var(--node-system))",
       fill: "soft",
     }),
+    process: vsm("process", {
+      type: "vsm-process",
+      operators: 2,
+      metrics: [
+        { id: "m1", key: "C/T", value: "45 s" },
+        { id: "m2", key: "C/O", value: "10 min" },
+      ],
+      fill: "solid",
+      customColor: "hsl(var(--node-container))",
+    }),
   };
 
   const ids = Object.keys(components);
@@ -378,5 +388,6 @@ describe("golden — value stream map", () => {
     const xml = exportDrawio(diagram("VSM", components, {}, layouts), catalog);
     expect(xml).toMatchSnapshot();
     expect(xml).toContain("shape=mxgraph.lean_mapping.outside_sources;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.manufacturing_process;");
   });
 });

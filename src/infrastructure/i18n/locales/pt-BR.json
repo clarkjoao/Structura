@@ -1138,6 +1138,10 @@
     "vsm-external": {
       "label": "Fornecedor / cliente",
       "description": "Uma fonte externa numa das pontas do fluxo de valor: o fornecedor que o alimenta ou o cliente que ele atende."
+    },
+    "vsm-process": {
+      "label": "Processo",
+      "description": "Uma etapa do fluxo de valor, com seus operadores e uma caixa de dados de métricas (tempo de ciclo, setup, disponibilidade, turnos)."
     }
   },
   "flowchart": {
@@ -2429,7 +2433,19 @@
       "customer": "Cliente"
     },
     "fields": {
-      "role": "Papel"
+      "role": "Papel",
+      "operators": "Operadores",
+      "metrics": "Caixa de dados",
+      "metricKey": "Métrica",
+      "metricValue": "Valor",
+      "addMetric": "Adicionar linha",
+      "removeMetric": "Remover linha"
+    },
+    "metrics": {
+      "cycleTime": "C/T",
+      "changeover": "C/O",
+      "uptime": "Disp.",
+      "shifts": "Turnos"
     }
   }
 }

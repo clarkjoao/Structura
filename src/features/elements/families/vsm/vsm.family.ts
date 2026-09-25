@@ -1,5 +1,6 @@
 import type { ElementDescriptor } from "../../element.types";
 import { vsmExternalElement } from "./vsm-external.element";
+import { vsmProcessElement } from "./vsm-process.element";
 
 /**
  * Value Stream Mapping: the lean vocabulary, wearing the flow family's skin.
@@ -8,4 +9,4 @@ import { vsmExternalElement } from "./vsm-external.element";
  * rather than more flowchart shapes: each element carries its own data — a
  * process's metrics, an inventory's quantity, a timeline's segments.
  */
-export const vsmElements: readonly ElementDescriptor[] = [vsmExternalElement];
+export const vsmElements: readonly ElementDescriptor[] = [vsmExternalElement, vsmProcessElement];

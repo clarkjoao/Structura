@@ -45,6 +45,8 @@ export type {
   VsmComponentType,
   VsmRole,
   VsmExternalComponent,
+  VsmProcessComponent,
+  VsmMetric,
   EndpointHandler,
   HttpMethod,
 } from "./component.types";
@@ -147,6 +149,8 @@ export {
   isExternalElementType,
   COMPONENT_TYPE_VSM_EXTERNAL,
   isVsmExternalType,
+  COMPONENT_TYPE_VSM_PROCESS,
+  isVsmProcessType,
   isPanelType,
   isNoteType,
   isC4Type,
@@ -193,5 +197,6 @@ export {
   isProcessNodeComponent,
   isExternalElementComponent,
   isVsmExternalComponent,
+  isVsmProcessComponent,
   isPluginTypedComponent,
 } from "./component.guards";

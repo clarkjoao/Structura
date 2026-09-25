@@ -1138,6 +1138,10 @@
     "vsm-external": {
       "label": "Supplier / customer",
       "description": "An outside source at either end of a value stream: the supplier that feeds it or the customer it serves."
+    },
+    "vsm-process": {
+      "label": "Process",
+      "description": "A step of the value stream, with its operators and a data box of metrics (cycle time, changeover, uptime, shifts)."
     }
   },
   "flowchart": {
@@ -2429,7 +2433,19 @@
       "customer": "Customer"
     },
     "fields": {
-      "role": "Role"
+      "role": "Role",
+      "operators": "Operators",
+      "metrics": "Data box",
+      "metricKey": "Metric",
+      "metricValue": "Value",
+      "addMetric": "Add row",
+      "removeMetric": "Remove row"
+    },
+    "metrics": {
+      "cycleTime": "C/T",
+      "changeover": "C/O",
+      "uptime": "Uptime",
+      "shifts": "Shifts"
     }
   }
 }
