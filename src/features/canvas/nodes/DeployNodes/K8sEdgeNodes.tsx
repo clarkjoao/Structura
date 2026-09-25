@@ -57,13 +57,21 @@ function EntryCard({
           >
             {d.name}
           </p>
-          {d.detail && (
-            <p className="select-none truncate text-xs" style={{ color: palette.muted }}>
-              {d.detail}
-            </p>
+          {/* Under the name, so a long chip never squeezes it. */}
+          {(d.detail || d.chip) && (
+            <div className="flex min-w-0 items-center gap-1.5">
+              {d.detail && (
+                <span
+                  className="min-w-0 select-none truncate text-xs"
+                  style={{ color: palette.muted }}
+                >
+                  {d.detail}
+                </span>
+              )}
+              {d.chip && <Chip>{d.chip}</Chip>}
+            </div>
           )}
         </div>
-        {d.chip && <Chip>{d.chip}</Chip>}
       </div>
     </>
   );

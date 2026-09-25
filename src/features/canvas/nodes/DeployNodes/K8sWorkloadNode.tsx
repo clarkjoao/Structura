@@ -96,7 +96,6 @@ const K8sWorkloadNode = memo(({ data: d, selected }: NodeProps<Node<K8sWorkloadN
           >
             {d.name}
           </span>
-          <Chip>{d.kind}</Chip>
           {d.kind !== "Pod" && d.kind !== "CronJob" && d.kind !== "Job" && (
             <span
               className="shrink-0 select-none font-mono text-[11px]"
@@ -105,18 +104,18 @@ const K8sWorkloadNode = memo(({ data: d, selected }: NodeProps<Node<K8sWorkloadN
               ×{d.replicas}
             </span>
           )}
+        </div>
+        {/* The name keeps the first row; kind, autoscaling, image and resources wrap below it. */}
+        <div className="flex min-w-0 flex-wrap gap-1">
+          <Chip>{d.kind}</Chip>
           {d.hpaMin !== undefined && d.hpaMax !== undefined && (
             <Chip>
               HPA {d.hpaMin}–{d.hpaMax}
             </Chip>
           )}
+          {d.image && <Chip>{d.image}</Chip>}
+          {d.resources && <Chip>{d.resources}</Chip>}
         </div>
-        {(d.image || d.resources) && (
-          <div className="flex min-w-0 flex-wrap gap-1">
-            {d.image && <Chip>{d.image}</Chip>}
-            {d.resources && <Chip>{d.resources}</Chip>}
-          </div>
-        )}
         {d.kind === "CronJob" ? (
           <div className="flex min-w-0 flex-wrap gap-1">
             {d.schedule && <Chip>{d.schedule}</Chip>}
