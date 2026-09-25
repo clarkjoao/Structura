@@ -78,6 +78,12 @@ export function isK8sIngressType(type: string): type is "k8s-ingress" {
   return type === COMPONENT_TYPE_K8S_INGRESS;
 }
 
+export const COMPONENT_TYPE_K8S_CONTAINER = "k8s-container";
+
+export function isK8sContainerType(type: string): type is "k8s-container" {
+  return type === COMPONENT_TYPE_K8S_CONTAINER;
+}
+
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
 export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";

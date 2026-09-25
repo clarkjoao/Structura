@@ -23,6 +23,7 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  K8sContainerComponent,
   K8sIngressComponent,
   K8sServiceComponent,
   K8sWorkloadComponent,
@@ -54,6 +55,7 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isK8sContainerType,
   isK8sIngressType,
   isK8sServiceType,
   isK8sWorkloadType,
@@ -160,6 +162,9 @@ export const isK8sServiceComponent = (c: Component): c is K8sServiceComponent =>
 
 export const isK8sIngressComponent = (c: Component): c is K8sIngressComponent =>
   isK8sIngressType(c.type);
+
+export const isK8sContainerComponent = (c: Component): c is K8sContainerComponent =>
+  isK8sContainerType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);

@@ -309,7 +309,12 @@ export type DeployComponentType = "deploy-sharded-store" | "deploy-shard" | "dep
 
 /** Kubernetes as structure (the `k8s` family's own elements, beside its catalog cards). */
 export type K8sStructureType =
-  "k8s-cluster" | "k8s-namespace" | "k8s-workload" | "k8s-service" | "k8s-ingress";
+  | "k8s-cluster"
+  | "k8s-namespace"
+  | "k8s-workload"
+  | "k8s-service"
+  | "k8s-ingress"
+  | "k8s-container";
 
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
 export type VsmComponentType =
@@ -470,6 +475,8 @@ export interface K8sWorkloadComponent extends BaseComponent, SkinParts {
   /** CronJob schedule, in cron syntax. */
   schedule?: string;
   concurrencyPolicy?: "Allow" | "Forbid" | "Replace";
+  /** Drawn as one card with its sidecars as tabs. Absent means expanded. */
+  collapsed?: boolean;
 }
 
 /** A Service in front of a workload's pods. */
@@ -485,6 +492,30 @@ export interface K8sIngressComponent extends BaseComponent, SkinParts {
   type: "k8s-ingress";
   host?: string;
   ingressClass?: string;
+}
+
+/** What a container does in its pod. Absent means main. */
+export type K8sContainerRole = "main" | "sidecar" | "init";
+
+/**
+ * A container of a workload's pod template: the main one, a sidecar beside
+ * it, or an init container run before both, in order.
+ */
+export interface K8sContainerComponent extends BaseComponent, SkinParts {
+  type: "k8s-container";
+  /**
+   * Not `role`: the patch type intersects every component's fields, and the
+   * VSM source already has a `role` of its own.
+   */
+  podRole?: K8sContainerRole;
+  /** A sidecar's function, free text: "proxy", "logs", "secrets", "metrics"… */
+  purpose?: string;
+  /** An init container's place in the sequence, from 1. */
+  order?: number;
+  image?: string;
+  ports?: number[];
+  /** "100m / 128Mi". */
+  resources?: string;
 }
 
 export interface ExternalElementComponent extends BaseComponent {
@@ -507,6 +538,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | K8sContainerComponent
   | K8sIngressComponent
   | K8sServiceComponent
   | K8sWorkloadComponent
@@ -558,6 +590,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<K8sContainerComponent, "id">> &
   Partial<Omit<K8sIngressComponent, "id">> &
   Partial<Omit<K8sServiceComponent, "id">> &
   Partial<Omit<K8sWorkloadComponent, "id">> &
@@ -593,6 +626,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sContainerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sIngressComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sServiceComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sWorkloadComponent, "id">> & { width?: number; height?: number })

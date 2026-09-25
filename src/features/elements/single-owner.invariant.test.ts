@@ -40,6 +40,7 @@ const FIXED_REGISTERED_IDS = [
   "process-node",
   "external-element",
   "vsm-external",
+  "k8s-container",
   "k8s-ingress",
   "k8s-service",
   "k8s-workload",
