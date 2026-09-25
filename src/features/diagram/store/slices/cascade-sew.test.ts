@@ -83,3 +83,44 @@ describe("deleting a typed container sews the flow in one go", () => {
     expect(notices[0].elementName).toBe("shard-1");
   });
 });
+
+describe("grouping sewn joins", () => {
+  it("removedRoots: maps descendants to the element the user removed, and survives a cycle", async () => {
+    const { removedRoots } = await import("../../utils/flow-repair");
+    const parents: Record<string, string | null> = { box: null, a: "box", b: "a", x: "y", y: "x" };
+    const roots = removedRoots(
+      new Set(["box", "a", "b", "x", "y"]),
+      new Set(["box", "x"]),
+      (id) => parents[id],
+    );
+    expect(roots.get("b")).toBe("box");
+    expect(roots.get("a")).toBe("box");
+    expect(roots.get("box")).toBe("box");
+    expect(roots.get("y")).toBe("x");
+  });
+
+  it("toFlowSewNotices: one notice from the first join's start to the last join's end", async () => {
+    const { toFlowSewNotices } = await import("../../utils/flow-repair");
+    const notices = toFlowSewNotices(
+      [
+        {
+          flowId: "f",
+          flowName: "F",
+          blocked: [],
+          joins: [
+            { stepId: "s2", componentId: "a", fromLabel: "1", toLabel: "2" },
+            { stepId: "s3", componentId: "b", fromLabel: "2", toLabel: "3" },
+          ],
+        },
+      ],
+      new Map([["box", "Pedidos"]]),
+      new Map([
+        ["a", "box"],
+        ["b", "box"],
+      ]),
+    );
+    expect(notices).toEqual([
+      { flowId: "f", flowName: "F", elementName: "Pedidos", fromLabel: "1", toLabel: "3" },
+    ]);
+  });
+});

@@ -71,18 +71,19 @@ describe("hierarchical element catalog (F8)", () => {
       `[perf] AFTER hierarchical catalog: types=${types.length} catalogChars=${catalog.length} catalogLines=${catalog.split("\n").length} promptChars=${prompt.length}`,
     );
     // BEFORE (F7 tip, pre-shrink): types=269 catalogChars=7237 catalogLines=120 promptChars=20381
-    // The budget pins the F8 shrink on the vocabulary that existed then. A
-    // vocabulary registered since (the VSM family) is meant to reach the
-    // catalog — elements are derived, not curated — so its own section is
-    // measured apart rather than counted against the old budget.
-    // (While VSM is held back its section is absent and the whole catalog counts.)
-    const vsmHeading = `### ${i18n.t("elements.families.vsm.label", { lng: "en" })}`;
-    const start = catalog.indexOf(vsmHeading);
-    const end = start === -1 ? -1 : catalog.indexOf("\n### ", start + vsmHeading.length);
-    const withoutVsm =
-      start === -1
-        ? catalog
-        : catalog.slice(0, start) + catalog.slice(end === -1 ? catalog.length : end);
+    // The budget pins the F8 shrink on the vocabulary that existed then.
+    // Vocabularies registered since (VSM, deployment) are meant to reach the
+    // catalog — elements are derived, not curated — each under its own
+    // heading, so those sections are measured apart from the old budget.
+    let withoutVsm = catalog;
+    for (const familyId of ["vsm", "deploy"]) {
+      const heading = `### ${i18n.t(`elements.families.${familyId}.label`, { lng: "en" })}`;
+      const start = withoutVsm.indexOf(heading);
+      if (start === -1) continue;
+      const end = withoutVsm.indexOf("\n### ", start + heading.length);
+      withoutVsm =
+        withoutVsm.slice(0, start) + withoutVsm.slice(end === -1 ? withoutVsm.length : end);
+    }
     expect(withoutVsm.length).toBeLessThan(7237);
     expect(catalog).not.toContain("CATEGORY:");
     expect(catalog).toContain("search_elements");

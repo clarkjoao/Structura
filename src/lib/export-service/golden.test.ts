@@ -494,3 +494,62 @@ describe("golden — service blueprint", () => {
     expect(xml).toMatch(/value="LINE OF VISIBILITY" style="line;[^"]*dashed=1;/);
   });
 });
+
+/**
+ * A sharded store with its router and shards (one hot), expanded and compact:
+ * a draw.io container with the key bar as plain cells and the children as the
+ * container's own cells; compact is a collapsed container keeping its box.
+ */
+describe("golden — sharded store", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const build = (collapsed: boolean): Record<string, Component> => ({
+    app: item("app", { type: "container" }),
+    store: item("store", {
+      type: "deploy-sharded-store",
+      name: "Pedidos",
+      technology: "MongoDB 7",
+      keyExpression: "hash(customer_id)",
+      replicationFactor: 3,
+      ...(collapsed ? { collapsed: true } : {}),
+    }),
+    router: item("router", { type: "deploy-shard-router", name: "mongos", parentId: "store" }),
+    s1: item("s1", { type: "deploy-shard", name: "shard-1", parentId: "store", keyRange: "0–50%" }),
+    s2: item("s2", {
+      type: "deploy-shard",
+      name: "shard-2",
+      parentId: "store",
+      keyRange: "50–100%",
+      region: "sa-east-1",
+      hot: true,
+    }),
+  });
+  const layouts: Record<string, NodeLayout> = {
+    app: { elementId: "app", x: 0, y: 0, width: 200, height: 80 },
+    store: { elementId: "store", x: 320, y: 0, width: 600, height: 320 },
+    router: { elementId: "router", x: 16, y: 104, width: 160, height: 56 },
+    s1: { elementId: "s1", x: 16, y: 200, width: 180, height: 80 },
+    s2: { elementId: "s2", x: 208, y: 200, width: 180, height: 80 },
+  };
+  const connections: Record<string, Connection> = {
+    q: { id: "q", sourceId: "app", targetId: "router", label: "query" },
+    r: { id: "r", sourceId: "router", targetId: "s2", label: "route" },
+  };
+
+  it("freezes the expanded store", () => {
+    const xml = exportDrawio(diagram("Store", build(false), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="store"[^>]*style="swimlane;container=1;/);
+    expect(xml).toMatch(/id="s2"[^>]*parent="store"/);
+    expect(xml).toContain("hash · 2 shards");
+    expect(xml).toMatch(/id="store-key-0"[^>]*connectable=0;/);
+  });
+
+  it("freezes the compact store", () => {
+    const xml = exportDrawio(diagram("Store", build(true), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="store"[^>]*collapsed="1"/);
+    expect(xml).toContain('as="alternateBounds"');
+  });
+});
