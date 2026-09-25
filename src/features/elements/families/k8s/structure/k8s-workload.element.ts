@@ -197,13 +197,34 @@ export const k8sWorkloadElement: ElementDescriptor = {
           height: TILE.height,
           fillOpacity: 14,
         }));
+        // Compact, draw.io hides a collapsed container's cells, the tabs with
+        // them: what the compact card says of its pod goes in its label.
+        const compact = comp.collapsed === true;
+        const pod = compact ? podContainers(comp.id, components, context?.layouts) : undefined;
+        const podLine = pod
+          ? [
+              pod.sidecars.length > 0
+                ? `sidecars: ${pod.sidecars.map((c) => c.name).join(", ")}`
+                : "",
+              pod.inits.length > 0 ? `init ×${pod.inits.length}` : "",
+            ]
+              .filter(Boolean)
+              .join(" · ")
+          : "";
         return {
           ...base,
           kind: "container",
           name: comp.name,
-          label: [`${comp.name} · ${header.join(" · ")}`, details.filter(Boolean).join(" · ")]
+          label: [
+            `${comp.name} · ${header.join(" · ")}`,
+            details.filter(Boolean).join(" · "),
+            podLine,
+          ]
             .filter(Boolean)
             .join("\n"),
+          ...(pod
+            ? { compact: { width: base.width, height: workloadCompactHeight(pod.sidecars.length) } }
+            : {}),
           extraStyle: EXPORT_TITLE_INDENT,
           stacked: isStacked(comp, components),
           representations: [

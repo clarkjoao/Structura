@@ -640,3 +640,75 @@ describe("golden — kubernetes", () => {
     expect(xml).toMatch(/id="deploy"[^>]*parent="ns"/);
   });
 });
+
+/**
+ * A workload as its pod: an init, the envoy sidecar and the main container,
+ * ingress → envoy → main; expanded and compact (drawn as a collapsed
+ * container whose label says its sidecars and inits).
+ */
+describe("golden — kubernetes pod", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const build = (compact: boolean): Record<string, Component> => ({
+    ing: item("ing", { type: "k8s-ingress", name: "api", host: "api.shop.com" }),
+    wl: item("wl", {
+      type: "k8s-workload",
+      name: "checkout",
+      replicas: 2,
+      ...(compact ? { collapsed: true } : {}),
+    }),
+    wait: item("wait", {
+      type: "k8s-container",
+      name: "wait-db",
+      parentId: "wl",
+      podRole: "init",
+      order: 1,
+    }),
+    envoy: item("envoy", {
+      type: "k8s-container",
+      name: "envoy",
+      parentId: "wl",
+      podRole: "sidecar",
+      purpose: "proxy",
+      ports: [15001],
+    }),
+    app: item("app", {
+      type: "k8s-container",
+      name: "checkout-api",
+      parentId: "wl",
+      image: "checkout:2.4",
+      ports: [8080],
+    }),
+  });
+  const layouts: Record<string, NodeLayout> = {
+    ing: { elementId: "ing", x: 0, y: 120, width: 200, height: 56 },
+    wl: { elementId: "wl", x: 280, y: 0, width: 420, height: 280 },
+    wait: { elementId: "wait", x: 12, y: 116, width: 160, height: 56 },
+    envoy: { elementId: "envoy", x: 12, y: 184, width: 180, height: 72 },
+    app: { elementId: "app", x: 204, y: 184, width: 180, height: 72 },
+  };
+  const connections: Record<string, Connection> = {
+    a: { id: "a", sourceId: "ing", targetId: "envoy", label: "http" },
+    b: { id: "b", sourceId: "envoy", targetId: "app", label: "localhost:8080" },
+  };
+
+  it("freezes the expanded pod", () => {
+    const xml = exportDrawio(diagram("Pod", build(false), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="envoy"[^>]*parent="wl"/);
+    expect(xml).toContain("sidecar · proxy");
+    expect(xml).toMatch(/id="wait" value="1\. wait-db[^"]*"[^>]*dashed=1;/);
+    // The in-pod link is dashed; the ingress link is not.
+    expect(xml).toMatch(/id="b"[^>]*dashed=1;/);
+    expect(xml).not.toMatch(/id="a"[^>]*dashed=1;/);
+  });
+
+  it("freezes the compact pod", () => {
+    const xml = exportDrawio(diagram("Pod", build(true), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="wl"[^>]*collapsed="1"/);
+    expect(xml).toContain("sidecars: envoy · init ×1");
+    expect(xml).toMatch(/id="app"[^>]*parent="wl"/);
+  });
+});
