@@ -198,8 +198,18 @@ export interface FlowNode extends BaseNode {
   name: string;
   description?: string;
   shape: ExportFlowShape;
-  /** Raw colour from the snapshot, when the user picked one. */
-  nodeColor?: string;
+  /** The mono chip on the canvas; exported as a bracketed line, like a C4 technology. */
+  technology?: string;
+  /**
+   * The resolved accent as `#rrggbb` — theme tokens already turned into the
+   * light theme's value, since draw.io has no theme to resolve them against.
+   */
+  accentColor: string;
+  /** How the accent fills the body, defaults resolved. */
+  fill: "none" | "soft" | "solid";
+  dashed: boolean;
+  /** Text colour on a solid fill, chosen by contrast; absent otherwise. */
+  fontColor?: string;
 }
 
 export type ExportNode =

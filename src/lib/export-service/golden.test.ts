@@ -258,3 +258,87 @@ describe("golden — app draw.io export", () => {
     expect(xml).toMatchSnapshot();
   });
 });
+
+/**
+ * One of every flowchart shape, and one of every colour part — the old golden
+ * had no flow node at all, so the flowNode builder ran nowhere. Also an edge
+ * that leaves a decision from its bottom handle and one that enters a step on
+ * its top handle, which must export at those anchors rather than right/left.
+ */
+describe("golden — flowchart shapes", () => {
+  const SHAPES = [
+    "rectangle",
+    "rounded",
+    "subroutine",
+    "stadium",
+    "diamond",
+    "hexagon",
+    "parallelogram",
+    "cylinder",
+    "circle",
+  ] as const;
+
+  const flow = (
+    id: string,
+    shape: (typeof SHAPES)[number],
+    extra: Partial<Extract<Component, { type: "process-node" }>> = {},
+  ): Component => ({
+    id,
+    name: id,
+    description: "",
+    parentId: null,
+    type: "process-node",
+    flowShape: shape,
+    ...extra,
+  });
+
+  const components: Record<string, Component> = {
+    ...Object.fromEntries(SHAPES.map((shape) => [`s-${shape}`, flow(`s-${shape}`, shape)])),
+    soft: flow("soft", "rectangle", { customColor: "hsl(var(--node-system))", fill: "soft" }),
+    solidAmber: flow("solidAmber", "rectangle", {
+      customColor: "hsl(var(--node-person))",
+      fill: "solid",
+    }),
+    solidPurple: flow("solidPurple", "diamond", {
+      customColor: "hsl(var(--node-container))",
+      fill: "solid",
+    }),
+    dashed: flow("dashed", "rectangle", { stroke: "dashed" }),
+    legacy: flow("legacy", "rectangle", { nodeColor: "#ff0000" }),
+    tech: flow("tech", "cylinder", { technology: "PostgreSQL" }),
+  };
+
+  const ids = Object.keys(components);
+  const layouts: Record<string, NodeLayout> = Object.fromEntries(
+    ids.map((id, index) => [
+      id,
+      {
+        elementId: id,
+        x: (index % 5) * 280,
+        y: Math.floor(index / 5) * 180,
+        width: 200,
+        height: 80,
+      },
+    ]),
+  );
+
+  const connections: Record<string, Connection> = {
+    plain: { id: "plain", sourceId: "s-rectangle", targetId: "s-diamond", label: "" },
+    down: {
+      id: "down",
+      sourceId: "s-diamond",
+      targetId: "s-cylinder",
+      label: "no",
+      sourceSide: "bottom",
+      targetSide: "top",
+    },
+  };
+
+  it("freezes every shape and colour part", () => {
+    const xml = exportDrawio(diagram("Flow", components, connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    // The bottom/top edge is exported at those anchors, not the fixed sides.
+    expect(xml).toMatch(/id="down"[^>]*>.*?exitX="0\.5" exitY="1"/s);
+    expect(xml).toMatch(/id="down"[^>]*>.*?entryX="0\.5" entryY="0"/s);
+  });
+});

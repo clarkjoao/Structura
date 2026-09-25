@@ -234,9 +234,15 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       const w = width || 160;
       const h = height || 60;
       const shapeStyle = FLOW_SHAPE_STYLES[node.shape] ?? FLOW_SHAPE_STYLES.rectangle;
-      const fill = node.nodeColor ? `fillColor=${node.nodeColor};` : "";
-      const style = `${shapeStyle}whiteSpace=wrap;html=1;align=center;fontSize=11;${fill}`;
-      const value = node.description ? `${node.name}\n${node.description}` : node.name;
+      const style =
+        `${shapeStyle}whiteSpace=wrap;html=1;align=center;fontSize=11;` + flowColourStyle(node);
+      const value = [
+        node.name,
+        node.description,
+        node.technology ? `[${node.technology}]` : undefined,
+      ]
+        .filter(Boolean)
+        .join("\n");
       return (
         `<mxCell id="${escXml(node.id)}" value="${escXml(value)}" style="${style}" ` +
         `vertex="1" parent="${escXml(parentId)}">` +
@@ -354,4 +360,23 @@ function buildPassthroughCell(
     `</mxCell>` +
     `</object>`
   );
+}
+
+/**
+ * The colour parts of a flow node as mxGraph style. draw.io cannot draw the
+ * canvas's 3px accent bar, so the accent goes where it can show: the outline.
+ * Soft is the accent at 8% (`fillOpacity`) with the outline at 30%, as on the
+ * canvas; solid fills with the accent and writes in the contrast colour.
+ */
+function flowColourStyle(node: Extract<ExportNode, { kind: "flowNode" }>): string {
+  const accent = node.accentColor;
+  const dashed = node.dashed ? "dashed=1;" : "";
+  switch (node.fill) {
+    case "solid":
+      return `fillColor=${accent};strokeColor=${accent};fontColor=${node.fontColor ?? "#000000"};${dashed}`;
+    case "soft":
+      return `fillColor=${accent};fillOpacity=8;strokeColor=${accent};strokeOpacity=30;${dashed}`;
+    default:
+      return `fillColor=#ffffff;strokeColor=${accent};${dashed}`;
+  }
 }

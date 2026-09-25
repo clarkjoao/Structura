@@ -31,7 +31,7 @@ import type {
 import { getElement, isRegisteredElementComponent } from "@/features/elements/element.registry";
 import { validateDiagram } from "./validate-diagram";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
-import { resolveEdgeRouting } from "./edge-routing";
+import { edgeSides, resolveEdgeRouting } from "./edge-routing";
 import type { HandleSlots } from "./edge-routing";
 
 /**
@@ -148,6 +148,11 @@ function resolveHandleIndex(
   return usageCount % slotCount;
 }
 
+/** Whether the component's type declares the flowchart shapes' vertical handles. */
+function hasVerticalSides(component: Component | undefined): boolean {
+  return !!component && getElement(component.type)?.canvas.handles.verticalSides === true;
+}
+
 /**
  * Compute handle slots for each edge, matching how React Flow distributes handles
  * on the canvas. This is needed so multiple edges exiting/entering the same side
@@ -166,16 +171,20 @@ function buildHandleSlots(
     const srcComp = components[conn.sourceId];
     const tgtComp = components[conn.targetId];
 
-    // Determine slot counts (same logic as canvas)
-    const outCount = Math.min(MAX_HANDLES, Math.max(1, counts[conn.sourceId]?.outgoing ?? 1));
+    // Determine slot counts (same logic as canvas). A flowchart shape has one
+    // handle a side, in the middle, whatever its edge count.
+    const outCount = hasVerticalSides(srcComp)
+      ? 1
+      : Math.min(MAX_HANDLES, Math.max(1, counts[conn.sourceId]?.outgoing ?? 1));
 
     // Single incoming handle for notes, db tables, json viewers
     const isSingleIncomingTarget =
       tgtComp !== undefined &&
       (isNoteComponent(tgtComp) || isDbTableComponent(tgtComp) || isJsonViewerComponent(tgtComp));
-    const inCount = isSingleIncomingTarget
-      ? 1
-      : Math.min(MAX_HANDLES, Math.max(1, counts[conn.targetId]?.incoming ?? 1));
+    const inCount =
+      isSingleIncomingTarget || hasVerticalSides(tgtComp)
+        ? 1
+        : Math.min(MAX_HANDLES, Math.max(1, counts[conn.targetId]?.incoming ?? 1));
 
     // Get handle order from components
     const srcOrder = srcComp?.handleOrder?.outgoing;
@@ -264,6 +273,10 @@ function mapEdge(
     components,
     edgeLayout,
     slot,
+    edgeSides(
+      conn.sourceSide === "bottom" && hasVerticalSides(components[conn.sourceId]),
+      conn.targetSide === "top" && hasVerticalSides(components[conn.targetId]),
+    ),
   );
 
   // Compute normalised draw.io anchor values from absolute handle positions.

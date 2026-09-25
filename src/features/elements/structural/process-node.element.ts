@@ -2,6 +2,7 @@ import { Square } from "lucide-react";
 import ProcessNode from "@/features/canvas/nodes/ProcessNode";
 import { FLOW_SHAPE_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { FLOW_SHAPE_DEFAULT_SIZE } from "@/features/canvas/nodes/ProcessNode/flowShapeGeometry";
+import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { isProcessNodeComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
@@ -101,7 +102,8 @@ export const processNodeElement: ElementDescriptor = {
           name: comp.name,
           description: comp.description || undefined,
           shape: comp.flowShape,
-          nodeColor: comp.nodeColor,
+          technology: comp.technology || undefined,
+          ...flowExportColours(comp),
         };
       },
     },

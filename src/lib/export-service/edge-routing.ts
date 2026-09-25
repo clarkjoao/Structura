@@ -80,6 +80,21 @@ export const FIXED_EDGE_SIDES: Readonly<InferredSides> = Object.freeze({
   entryY: 0.5,
 });
 
+/**
+ * The sides for one edge: the fixed right-to-left pair, except where the edge
+ * itself asked for a flowchart shape's bottom output or top input (and the
+ * shape honours it — the caller decides that from the handle spec, exactly as
+ * the canvas's `buildEdgeHandleAssignments` does).
+ */
+export function edgeSides(leavesBottom: boolean, entersTop: boolean): Readonly<InferredSides> {
+  if (!leavesBottom && !entersTop) return FIXED_EDGE_SIDES;
+  return {
+    ...FIXED_EDGE_SIDES,
+    ...(leavesBottom ? { sourcePosition: "bottom" as const, exitX: 0.5, exitY: 1 } : {}),
+    ...(entersTop ? { targetPosition: "top" as const, entryX: 0.5, entryY: 0 } : {}),
+  };
+}
+
 // ─── Default waypoints (matching React Flow's smoothstep/step routing) ──────────
 
 const SMOOTHSTEP_OFFSET = 20; // px gap from node edge before reconnecting
@@ -345,6 +360,7 @@ export function resolveEdgeRouting(
   components: Record<string, Component>,
   edgeLayout: EdgeLayout | undefined,
   slot: HandleSlots | undefined,
+  sides: Readonly<InferredSides> = FIXED_EDGE_SIDES,
 ): EdgeRoutingResult {
   // 1. User-authored waypoints always win
   const userWaypoints =
@@ -352,8 +368,9 @@ export function resolveEdgeRouting(
       ? edgeLayout.points.map((p) => ({ x: p.x, y: p.y }))
       : undefined;
 
-  // 2. Sides are fixed by the reading direction, never derived from geometry.
-  const sides = FIXED_EDGE_SIDES;
+  // 2. Sides are fixed by the reading direction, never derived from geometry —
+  // `sides` only differs when the edge itself chose a flowchart shape's
+  // vertical handle.
 
   const srcLayout = layoutMap[sourceId];
   const tgtLayout = layoutMap[targetId];
