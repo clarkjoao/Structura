@@ -103,6 +103,15 @@ export function handleSpecForType(type: ComponentType): NodeHandleSpec {
   return getDescriptor(type).handles;
 }
 
+/**
+ * The handle set a component renders: its variant's, when its element draws
+ * it another way (a Step Functions Choice is the flowchart's diamond, with the
+ * flowchart's one slot a side), else its type's.
+ */
+export function handleSpecFor(comp: Component): NodeHandleSpec {
+  return resolveNodeDescriptor(comp).handles;
+}
+
 export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {
   // A registered element may render more than one way for the same type — a
   // panel that is a lane. The element says which; this used to be a hardcoded
