@@ -39,6 +39,8 @@ export type {
   ProcessNodeComponent,
   ExternalElementComponent,
   FlowNodeShape,
+  NodeFillMode,
+  NodeStrokeMode,
   EndpointHandler,
   HttpMethod,
 } from "./component.types";

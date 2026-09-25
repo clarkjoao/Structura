@@ -241,10 +241,30 @@ export type FlowNodeShape =
   | "circle" // Mermaid: ((text))
   | "subroutine"; // Mermaid: [[text]]
 
+/** How a shape's accent colours its body. Absent means `"none"`. */
+export type NodeFillMode = "none" | "soft" | "solid";
+
+/** A shape's outline. Absent means `"solid"`. */
+export type NodeStrokeMode = "solid" | "dashed";
+
 export interface ProcessNodeComponent extends BaseComponent {
   type: "process-node";
   flowShape: FlowNodeShape;
+  /**
+   * Legacy fill colour. Nothing in the UI writes it any more — the accent is
+   * `customColor`, the same field and toolbar control as the cloud cards — but
+   * saved diagrams and presets can still carry it, so it is read as an accent
+   * painted solid when the node has no accent of its own.
+   */
   nodeColor?: string;
+  /**
+   * Accent: the bar, outline, icon and markers. Same field the toolbar colour
+   * picker already writes on every card that has no dedicated colour; absent
+   * means the family default (slate), resolved at render and never stored.
+   */
+  customColor?: string;
+  /** Shown as the mono chip under the title (a data store's engine, say). */
+  technology?: string;
 }
 
 export interface ExternalElementComponent extends BaseComponent {

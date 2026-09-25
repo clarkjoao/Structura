@@ -1,14 +1,10 @@
 import { Square } from "lucide-react";
 import ProcessNode from "@/features/canvas/nodes/ProcessNode";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
+import { FLOW_SHAPE_DEFAULT_SIZE } from "@/features/canvas/nodes/ProcessNode/flowShapeGeometry";
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { isProcessNodeComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
-
-const PROCESS_DEFAULT_W = 160;
-const PROCESS_DEFAULT_H = 60;
-/** A circle is drawn square so it stays a circle rather than an ellipse. */
-const PROCESS_CIRCLE_SIZE = 80;
 
 export const processNodeElement: ElementDescriptor = {
   id: COMPONENT_TYPE_PROCESS_NODE,
@@ -23,14 +19,12 @@ export const processNodeElement: ElementDescriptor = {
       flowShape: options.flowShape ?? "rectangle",
     }),
 
-    // The shape asked for decides the box: everything is a wide rectangle
-    // except a circle, which is square so it does not come out an ellipse.
-    defaultSize: (options) =>
-      options.flowShape === "circle"
-        ? { width: PROCESS_CIRCLE_SIZE, height: PROCESS_CIRCLE_SIZE }
-        : { width: PROCESS_DEFAULT_W, height: PROCESS_DEFAULT_H },
+    // The shape asked for decides the box, declared per shape so the editor,
+    // the reader and auto-layout agree on it (a circle is square so it does not
+    // come out an ellipse).
+    defaultSize: (options) => FLOW_SHAPE_DEFAULT_SIZE[options.flowShape ?? "rectangle"],
 
-    patchableKeys: ["flowShape", "nodeColor"],
+    patchableKeys: ["flowShape", "nodeColor", "customColor", "technology"],
   },
 
   canvas: {
@@ -64,7 +58,9 @@ export const processNodeElement: ElementDescriptor = {
         name: comp.name,
         description: comp.description,
         flowShape: comp.flowShape,
+        customColor: comp.customColor,
         nodeColor: comp.nodeColor,
+        technology: comp.technology,
         isSelected: ctx.selectedNodeId === comp.id,
       };
     },
@@ -72,9 +68,10 @@ export const processNodeElement: ElementDescriptor = {
     buildStyle: (comp, ctx) => {
       if (!isProcessNodeComponent(comp)) return undefined;
       const layout = ctx.resolvedNodeLayouts[comp.id];
+      const fallback = FLOW_SHAPE_DEFAULT_SIZE[comp.flowShape] ?? FLOW_SHAPE_DEFAULT_SIZE.rectangle;
       return {
-        width: layout?.width ?? PROCESS_DEFAULT_W,
-        height: layout?.height ?? PROCESS_DEFAULT_H,
+        width: layout?.width ?? fallback.width,
+        height: layout?.height ?? fallback.height,
       };
     },
   },

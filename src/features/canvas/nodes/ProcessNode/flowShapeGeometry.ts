@@ -155,13 +155,20 @@ export function cylinderTopCap(
 
 /**
  * The stroke that carries the accent on a shape whose accent is an edge rather
- * than a bar: the input/output's left slanted edge. `null` for shapes that take
- * their accent some other way.
+ * than a bar: the input/output's left slanted edge, the preparation hexagon's
+ * left point. `null` for shapes that take their accent some other way.
  */
 export function flowShapeAccentPath(shape: FlowNodeShape, w: number, h: number): string | null {
   if (shape === "parallelogram") {
     const slant = clampFeature(IO_SLANT, w);
     return `M${round(slant + INSET + 0.5)} ${INSET + 0.5} L${INSET + 0.5} ${round(h - INSET - 0.5)}`;
+  }
+  if (shape === "hexagon") {
+    const cut = clampFeature(HEXAGON_CUT, w);
+    return (
+      `M${round(cut + INSET + 0.5)} ${INSET + 0.5} L${INSET + 0.5} ${round(h / 2)} ` +
+      `L${round(cut + INSET + 0.5)} ${round(h - INSET - 0.5)}`
+    );
   }
   return null;
 }
@@ -186,3 +193,20 @@ export function flowShapeHandles(shape: FlowNodeShape, w: number, h: number): Fl
   }
   return box;
 }
+
+/**
+ * The box a new node of each shape is created at — declared, not left to the
+ * content, so the editor, the reader and auto-layout all agree on it. Existing
+ * nodes keep the size they were stored with.
+ */
+export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; height: number }> = {
+  rectangle: { width: 220, height: 72 },
+  rounded: { width: 220, height: 72 },
+  subroutine: { width: 220, height: 88 },
+  stadium: { width: 210, height: 50 },
+  diamond: { width: 180, height: 112 },
+  hexagon: { width: 210, height: 64 },
+  parallelogram: { width: 230, height: 64 },
+  cylinder: { width: 150, height: 108 },
+  circle: { width: 80, height: 80 },
+};
