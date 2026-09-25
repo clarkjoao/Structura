@@ -163,6 +163,39 @@ describe("applyLayoutResultEdges", () => {
     expect(fakeStore._waypoints[0].connectionId).toBe("e1");
   });
 
+  it("leaves an edge on a vertical handle to its default route", () => {
+    // ELK only knows right-out, left-in; its corridor would drag an edge the
+    // user put on a top or bottom handle back to the side.
+    const graph = {
+      nodes: [{ id: "a" }, { id: "b" }, { id: "c" }],
+      edges: [
+        { id: "e1", sourceId: "a", targetId: "b" },
+        { id: "e2", sourceId: "a", targetId: "c" },
+      ],
+    };
+    const result = makeResult(graph);
+    const withDiagrams = fakeStore as typeof fakeStore & { diagrams: unknown };
+    withDiagrams.diagrams = {
+      [diagramId]: {
+        snapshot: {
+          connections: {
+            e1: { id: "e1", sourceId: "a", targetId: "b", label: "" },
+            e2: { id: "e2", sourceId: "a", targetId: "c", label: "", sourceSide: "bottom" },
+          },
+        },
+      },
+    };
+
+    applyLayoutResultEdges(
+      graph as unknown as Parameters<typeof applyLayoutResultEdges>[0],
+      result,
+      diagramId,
+    );
+
+    expect(fakeStore._resets).toEqual(expect.arrayContaining(["e1", "e2"]));
+    expect(fakeStore._waypoints.map((w) => w.connectionId)).toEqual(["e1"]);
+  });
+
   it("writes default handle-aligned corners when the ELK route has no interior", () => {
     const graph = {
       nodes: [

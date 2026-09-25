@@ -13,8 +13,10 @@ import {
   ROUNDED_RADIUS,
   cylinderTopCap,
   flowShapeAccentPath,
+  flowShapeHandles,
   flowShapePath,
 } from "./flowShapeGeometry";
+import { BOTTOM_SOURCE_HANDLE_ID, TOP_TARGET_HANDLE_ID } from "../node-types/handle-spec";
 import { flowPalette, resolveFlowAppearance, type FlowPalette } from "./flowAppearance";
 import { useOnAccentColor } from "./useOnAccentColor";
 import { FlowShapeIcon } from "./FlowShapeIcon";
@@ -270,63 +272,49 @@ function SvgShapeBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
   );
 }
 
-function FourSideHandles() {
+/**
+ * One handle in the middle of each side, on the shape's own outline. Left and
+ * right are the plain input and output every edge uses by default; top is an
+ * extra input and bottom an extra output, used by the edges drawn to or from
+ * them (see `FLOW_SHAPE_HANDLES`).
+ *
+ * Positions are percentages of the box so they stay on the outline while the
+ * node is being resized, before the next measurement.
+ */
+function FlowHandles({ shape, w, h }: { shape: FlowNodeShape; w: number; h: number }) {
+  const at = flowShapeHandles(shape, w, h);
+  const pct = (p: { x: number; y: number }): CSSProperties => ({
+    left: `${(p.x / w) * 100}%`,
+    top: `${(p.y / h) * 100}%`,
+  });
   return (
     <>
       <Handle
         id="target-0"
         type="target"
         position={Position.Left}
-        style={{ top: "35%" }}
+        style={pct(at.left)}
+        className={HANDLE_CLASS}
+      />
+      <Handle
+        id={TOP_TARGET_HANDLE_ID}
+        type="target"
+        position={Position.Top}
+        style={pct(at.top)}
         className={HANDLE_CLASS}
       />
       <Handle
         id="source-0"
         type="source"
-        position={Position.Left}
-        style={{ top: "65%" }}
-        className={HANDLE_CLASS}
-      />
-      <Handle
-        id="target-1"
-        type="target"
         position={Position.Right}
-        style={{ top: "35%" }}
+        style={pct(at.right)}
         className={HANDLE_CLASS}
       />
       <Handle
-        id="source-1"
-        type="source"
-        position={Position.Right}
-        style={{ top: "65%" }}
-        className={HANDLE_CLASS}
-      />
-      <Handle
-        id="target-2"
-        type="target"
-        position={Position.Top}
-        style={{ left: "35%" }}
-        className={HANDLE_CLASS}
-      />
-      <Handle
-        id="source-2"
-        type="source"
-        position={Position.Top}
-        style={{ left: "65%" }}
-        className={HANDLE_CLASS}
-      />
-      <Handle
-        id="target-3"
-        type="target"
-        position={Position.Bottom}
-        style={{ left: "35%" }}
-        className={HANDLE_CLASS}
-      />
-      <Handle
-        id="source-3"
+        id={BOTTOM_SOURCE_HANDLE_ID}
         type="source"
         position={Position.Bottom}
-        style={{ left: "65%" }}
+        style={pct(at.bottom)}
         className={HANDLE_CLASS}
       />
     </>
@@ -360,7 +348,7 @@ const ProcessNode = memo(
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
         />
-        <FourSideHandles />
+        <FlowHandles shape={d.flowShape} w={w} h={h} />
         <div className="relative h-full w-full">
           {isCardShape(d.flowShape) ? (
             <CardShapeBody {...shapeProps} />

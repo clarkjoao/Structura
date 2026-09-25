@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import type { Connection as FlowConnection, Edge } from "@xyflow/react";
 import { useDiagramActions } from "@/features/diagram";
+import { sidesFromHandles } from "../../nodes/node-types/handle-spec";
 
 export interface UseEdgeReconnectResult {
   onReconnectStart: () => void;
@@ -25,9 +26,14 @@ export function useEdgeReconnect(): UseEdgeReconnectResult {
     (oldEdge: Edge, newConnection: FlowConnection) => {
       if (!newConnection.source || !newConnection.target) return;
       reconnectSucceededRef.current = true;
+      // The side goes with the handle it was dropped on: onto a vertical handle
+      // sets it, back onto a plain one clears it.
+      const sides = sidesFromHandles(newConnection.sourceHandle, newConnection.targetHandle);
       updateConnection(oldEdge.id, {
         sourceId: newConnection.source,
         targetId: newConnection.target,
+        sourceSide: sides.sourceSide,
+        targetSide: sides.targetSide,
       });
     },
     [updateConnection],

@@ -75,6 +75,7 @@ export interface AppActions {
     targetId: string,
     label: string,
     edgeStyle?: EdgeStyle,
+    sides?: Pick<Connection, "sourceSide" | "targetSide">,
   ) => Connection | null;
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;

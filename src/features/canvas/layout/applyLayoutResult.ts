@@ -69,10 +69,16 @@ export function applyLayoutResultEdges(
   if (resetPaths) return;
 
   const layouts = edgeLayoutsFromLayoutResult(graph, result, { ...options, resetPaths: false });
+  const connections = store.diagrams?.[diagramId]?.snapshot.connections ?? {};
 
   for (const edge of edgesToStyle) {
     const storeEdgeId = edgeIdOf(edge.id);
     if (storeEdgeId === undefined) continue;
+    // ELK routes every edge out of the right and into the left. An edge the user
+    // put on a top or bottom handle would be forced through that corridor, so it
+    // keeps the default route, which starts from the handle it actually uses.
+    const conn = connections[storeEdgeId];
+    if (conn?.sourceSide || conn?.targetSide) continue;
     const points = layouts[storeEdgeId]?.points ?? [];
     if (points.length === 0) continue;
     store.setEdgeControlPoints(diagramId, storeEdgeId, points, { history: false });

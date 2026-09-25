@@ -77,6 +77,10 @@ src/
   drawn further left) must keep reading as one. Same contract as draw.io. This
   outranks layout metrics — improve a crossing count by routing or placement, never
   by flipping a side. Locked by `edges/connectionDerivations.fixedSides.test.ts`.
+  One declared extension: the flowchart shapes (`verticalSides` in their handle
+  spec) also have a top input and a bottom output. The side is still the edge's
+  own — stored as `Connection.sourceSide`/`targetSide` when the user draws from or
+  to those handles, absent by default — and is never derived from geometry.
 - **Type guards, not raw strings**: `isPanelComponent(c)` / `isPanelType(t)` from
   `@/features/diagram` — never `c.type === "panel"`.
 - **No hardcoded user-visible strings**: always `t("key")` with entries in both

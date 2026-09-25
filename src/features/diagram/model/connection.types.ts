@@ -29,4 +29,13 @@ export interface Connection {
   communicationType?: "standard" | "custom";
   transportPreset?: "sync" | "async" | "event" | "tcp" | "udp";
   style?: ConnectionStyle;
+  /**
+   * The edge leaves its source from the bottom instead of the right. Only a
+   * node whose handle spec declares `verticalSides` honours it (the flowchart
+   * shapes); anywhere else the edge keeps the right side. Absent means right —
+   * the default is never written, so an edge nobody re-sided hashes as before.
+   */
+  sourceSide?: "bottom";
+  /** The edge arrives at its target on the top instead of the left. Same rules as `sourceSide`. */
+  targetSide?: "top";
 }

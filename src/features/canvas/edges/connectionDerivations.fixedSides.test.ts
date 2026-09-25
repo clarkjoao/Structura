@@ -88,3 +88,59 @@ describe("handle sides are fixed", () => {
     expect(assignments.find((a) => a.connId === "c1")?.sourceHandle).toBe("source-1");
   });
 });
+
+/**
+ * The flowchart shapes add a top input and a bottom output. The side is still
+ * the edge's — stored on the connection when it was drawn — and never comes
+ * from where the nodes sit.
+ */
+describe("vertical sides on the flowchart shapes", () => {
+  const flow = (id: string): Component =>
+    ({
+      id,
+      name: id,
+      description: "",
+      parentId: null,
+      type: "process-node",
+      flowShape: "diamond",
+    }) as Component;
+  const sided = (
+    id: string,
+    sourceId: string,
+    targetId: string,
+    sides: Pick<Connection, "sourceSide" | "targetSide">,
+  ): Connection => ({ ...connection(id, sourceId, targetId), ...sides });
+
+  it("keeps a plain edge on the right and the left", () => {
+    const [only] = assign([connection("c1", "d", "e")], { d: flow("d"), e: flow("e") });
+    expect(only).toMatchObject({ sourceHandle: "source-0", targetHandle: "target-0" });
+  });
+
+  it("leaves from the bottom and arrives on the top when the edge says so", () => {
+    const [only] = assign([sided("c1", "d", "e", { sourceSide: "bottom", targetSide: "top" })], {
+      d: flow("d"),
+      e: flow("e"),
+    });
+    expect(only).toMatchObject({ sourceHandle: "source-bottom", targetHandle: "target-top" });
+  });
+
+  it("ignores a stored side on a node that has no vertical handles", () => {
+    // A process node re-typed to a card, or an edge pasted onto one, keeps
+    // reading left to right rather than naming a handle the card never renders.
+    const [only] = assign([sided("c1", "a", "b", { sourceSide: "bottom", targetSide: "top" })], {
+      a: component("a"),
+      b: component("b"),
+    });
+    expect(only).toMatchObject({ sourceHandle: "source-0", targetHandle: "target-0" });
+  });
+
+  it("gives a back-edge the same sides as a forward one", () => {
+    const assignments = assign([connection("c1", "d", "e"), connection("c2", "e", "d")], {
+      d: flow("d"),
+      e: flow("e"),
+    });
+    for (const a of assignments) {
+      expect(a).toMatchObject({ sourceHandle: "source-0", targetHandle: "target-0" });
+    }
+  });
+});

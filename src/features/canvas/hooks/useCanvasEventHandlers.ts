@@ -13,6 +13,7 @@ import {
 import type { EdgeStyle } from "@/features/diagram";
 import { getLastEdgeStyle } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
+import { sidesFromHandles, type ConnectionSides } from "../nodes/node-types/handle-spec";
 import { dragSelectionRef } from "./useLocalNodes";
 import { usePointerFunnel, type GestureTarget } from "../selection/pointerFunnel";
 
@@ -22,7 +23,13 @@ interface UseCanvasEventHandlersParams {
   isCompareMode?: boolean;
   isFlowPanelOpen: boolean;
   updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
-  addConnection: (source: string, target: string, label: string, edgeStyle?: EdgeStyle) => void;
+  addConnection: (
+    source: string,
+    target: string,
+    label: string,
+    edgeStyle?: EdgeStyle,
+    sides?: ConnectionSides,
+  ) => void;
   screenToFlowPosition: (pos: { x: number; y: number }) => { x: number; y: number };
   onRequestFocusTitle?: () => void;
 }
@@ -175,7 +182,13 @@ export function useCanvasEventHandlers({
   const onConnect: OnConnect = useCallback(
     (c: Connection) => {
       if (c.source && c.target) {
-        addConnection(c.source, c.target, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
+        addConnection(
+          c.source,
+          c.target,
+          t("canvas.usesEdgeLabel"),
+          getLastEdgeStyle(),
+          sidesFromHandles(c.sourceHandle, c.targetHandle),
+        );
       }
     },
     [addConnection, t],

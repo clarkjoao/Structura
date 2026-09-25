@@ -207,3 +207,100 @@ describe("declared handles reach the DOM", () => {
     }
   });
 });
+
+/**
+ * The flowchart shapes used to render `target-0..3` / `source-0..3`, one of
+ * each per side, while declaring eight slots a side — so a fifth edge was
+ * handed `target-4`, which no handle had, and vanished (#008). They now render
+ * one handle per side, and a diagram saved under the old layout — edges fanned
+ * over the old slots — must keep every edge attached.
+ */
+describe("flowchart shapes keep every edge attached", () => {
+  function renderFlowHub(connections: Connection[], peers: number) {
+    const hub = {
+      id: "hub",
+      name: "hub",
+      description: "",
+      type: "process-node",
+      flowShape: "diamond",
+      parentId: null,
+    } as unknown as Component;
+    const components: Record<string, Component> = { hub };
+    for (let i = 0; i < peers; i += 1) {
+      components[`peer-${i}`] = {
+        id: `peer-${i}`,
+        name: `peer-${i}`,
+        type: "system",
+        parentId: null,
+      } as unknown as Component;
+    }
+    const counts = buildConnectionCountPerNode(connections);
+    const assignments = buildEdgeHandleAssignments(connections, counts, components);
+    const rendered = (() => {
+      const ctx = buildContext(components, connections);
+      const descriptor = resolveNodeDescriptor(hub);
+      const nodes: Node[] = [
+        {
+          id: "hub",
+          type: descriptor.rfType,
+          position: { x: 0, y: 0 },
+          width: 200,
+          height: 100,
+          measured: { width: 200, height: 100 },
+          data: descriptor.buildData(hub, ctx),
+        },
+      ];
+      const { container } = render(
+        <ReactFlowProvider>
+          <div style={{ width: 800, height: 600 }}>
+            <ReactFlow nodes={nodes} edges={[]} nodeTypes={getNodeTypesSnapshot()} />
+          </div>
+        </ReactFlowProvider>,
+      );
+      const ids = new Set<string>();
+      for (const element of container.querySelectorAll(".react-flow__handle")) {
+        const id = element.getAttribute("data-handleid");
+        if (id !== null) ids.add(id);
+      }
+      return ids;
+    })();
+    return { assignments, rendered };
+  }
+
+  const fan = (n: number): Connection[] =>
+    Array.from({ length: n }, (_, i) => [
+      { id: `out-${i}`, sourceId: "hub", targetId: `peer-${i}` } as Connection,
+      { id: `in-${i}`, sourceId: `peer-${i}`, targetId: "hub" } as Connection,
+    ]).flat();
+
+  it("renders one handle in the middle of each side", () => {
+    const { rendered } = renderFlowHub([], 0);
+    expect([...rendered].sort()).toEqual(["source-0", "source-bottom", "target-0", "target-top"]);
+  });
+
+  it("attaches all eight edges of a legacy fan, and more", () => {
+    // Four in and four out filled every slot the old node rendered; a fifth pair
+    // is the one that used to be dropped.
+    const { assignments, rendered } = renderFlowHub(fan(5), 5);
+    for (const a of assignments) {
+      if (a.connId.startsWith("out-")) {
+        expect(rendered.has(a.sourceHandle), `${a.connId} -> ${a.sourceHandle}`).toBe(true);
+      } else {
+        expect(rendered.has(a.targetHandle), `${a.connId} -> ${a.targetHandle}`).toBe(true);
+      }
+    }
+  });
+
+  it("puts an edge drawn from the bottom or into the top on those handles", () => {
+    const connections = [
+      { id: "down", sourceId: "hub", targetId: "peer-0", sourceSide: "bottom" } as Connection,
+      { id: "above", sourceId: "peer-1", targetId: "hub", targetSide: "top" } as Connection,
+    ];
+    const { assignments, rendered } = renderFlowHub(connections, 2);
+    const byId = Object.fromEntries(assignments.map((a) => [a.connId, a]));
+    expect(byId.down.sourceHandle).toBe("source-bottom");
+    expect(byId.above.targetHandle).toBe("target-top");
+    expect(rendered.has(byId.down.sourceHandle)).toBe(true);
+    expect(rendered.has(byId.above.targetHandle)).toBe(true);
+  });
+});

@@ -1,6 +1,6 @@
 import { Square } from "lucide-react";
 import ProcessNode from "@/features/canvas/nodes/ProcessNode";
-import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
+import { FLOW_SHAPE_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { FLOW_SHAPE_DEFAULT_SIZE } from "@/features/canvas/nodes/ProcessNode/flowShapeGeometry";
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { isProcessNodeComponent } from "@/features/diagram/model/component.guards";
@@ -40,7 +40,7 @@ export const processNodeElement: ElementDescriptor = {
      */
     rfType: "flow-node",
     component: ProcessNode,
-    handles: SPREAD_HANDLES,
+    handles: FLOW_SHAPE_HANDLES,
     role: "custom-shape",
     zIndex: 1,
     connectable: true,
