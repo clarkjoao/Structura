@@ -339,6 +339,20 @@ export interface ElementCanvasVariant {
   canvas: ElementCanvasSlice;
 }
 
+/**
+ * The colour-in-parts skin the flowchart shapes introduced — an accent
+ * (`customColor`), a fill and a stroke — for every element that wears it (the
+ * flow and VSM families). Its presence is what gives an element the flow
+ * accent presets in the toolbar and the Appearance section in the inspector.
+ */
+export interface ElementSkin {
+  /**
+   * The accent a node shows when none is stored. Resolved at render and never
+   * written: picking it in a control clears the stored accent instead.
+   */
+  defaultAccent: string;
+}
+
 export interface ElementDescriptor {
   id: ElementTypeId;
   family: ElementFamilyId;
@@ -354,4 +368,6 @@ export interface ElementDescriptor {
   palette: ElementPaletteSlice;
   inspector: ElementInspectorSlice;
   export: ElementExportSlice;
+  /** Present when the element wears the flow skin; see `ElementSkin`. */
+  skin?: ElementSkin;
 }

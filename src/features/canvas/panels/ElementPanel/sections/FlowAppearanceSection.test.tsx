@@ -61,13 +61,10 @@ describe("FlowAppearanceSection", () => {
     const onChange = renderSection({ customColor: "hsl(var(--node-system))" });
     fireEvent.click(button("canvas.quickActions.color"));
     fireEvent.click(button("colors.slate"));
-    expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined, nodeColor: undefined });
+    expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
     fireEvent.click(button("canvas.quickActions.color"));
     fireEvent.click(button("colors.amber"));
-    expect(onChange).toHaveBeenLastCalledWith({
-      customColor: "hsl(var(--node-person))",
-      nodeColor: undefined,
-    });
+    expect(onChange).toHaveBeenLastCalledWith({ customColor: "hsl(var(--node-person))" });
   });
 
   it("stores solid on evidence, whose default is dashed", () => {
@@ -77,5 +74,20 @@ describe("FlowAppearanceSection", () => {
     expect(onChange).toHaveBeenLastCalledWith({ stroke: "solid" });
     fireEvent.click(radio("elementPanel.strokeDashed"));
     expect(onChange).toHaveBeenLastCalledWith({ stroke: undefined });
+  });
+
+  it("clears to nothing when the element's own default accent is picked", () => {
+    // VSM inventory defaults to amber: picking amber there stores nothing.
+    const onChange = vi.fn();
+    render(
+      <FlowAppearanceSection
+        appearance={{ customColor: "hsl(var(--node-system))" }}
+        defaultAccent="hsl(var(--node-person))"
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(button("canvas.quickActions.color"));
+    fireEvent.click(button("colors.amber"));
+    expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
   });
 });

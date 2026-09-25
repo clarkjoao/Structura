@@ -21,6 +21,7 @@ import ProcessNode from "@/features/canvas/nodes/ProcessNode";
 import { FLOW_SHAPE_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { FLOW_SHAPE_DEFAULT_SIZE } from "@/features/canvas/nodes/ProcessNode/flowShapeGeometry";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
+import { FLOW_DEFAULT_ACCENT } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { isProcessNodeComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
@@ -137,6 +138,8 @@ export const processNodeElement: ElementDescriptor = {
   },
 
   inspector: {},
+
+  skin: { defaultAccent: FLOW_DEFAULT_ACCENT },
 
   export: {
     drawio: {

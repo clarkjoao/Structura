@@ -13,6 +13,8 @@ export interface FlowAppearanceSectionProps {
   /** The three stored parts (and the legacy fill), exactly as on the component. */
   appearance: FlowAppearanceInput;
   onChange: (patch: ComponentPatch) => void;
+  /** The element's default accent (`ElementSkin.defaultAccent`); slate when omitted. */
+  defaultAccent?: string;
 }
 
 /**
@@ -23,9 +25,16 @@ export interface FlowAppearanceSectionProps {
  * resolved at render, and an unset part keeps the diagram's checksum where an
  * explicitly-default one would move it.
  */
-export function FlowAppearanceSection({ appearance, onChange }: FlowAppearanceSectionProps) {
+export function FlowAppearanceSection({
+  appearance,
+  onChange,
+  defaultAccent,
+}: FlowAppearanceSectionProps) {
   const { t } = useTranslation();
-  const resolved = resolveFlowAppearance(appearance);
+  const resolved = resolveFlowAppearance(appearance, defaultAccent);
+  // Only a flow node can carry the legacy nodeColor; clearing it elsewhere
+  // would only add an empty key.
+  const clearLegacy = appearance.nodeColor !== undefined ? { nodeColor: undefined } : {};
 
   return (
     <section className="space-y-3" aria-label={t("elementPanel.appearance")}>
@@ -37,12 +46,12 @@ export function FlowAppearanceSection({ appearance, onChange }: FlowAppearanceSe
         <ColorPicker
           group="flow"
           align="end"
-          selectedColor={appearance.customColor ?? appearance.nodeColor}
+          selectedColor={resolved.accent}
           onSelectColor={(color) =>
             // A legacy nodeColor is cleared with it, or it would keep winning as the fill.
-            onChange({ customColor: accentToStore(color), nodeColor: undefined })
+            onChange({ customColor: accentToStore(color, defaultAccent), ...clearLegacy })
           }
-          onReset={() => onChange({ customColor: undefined, nodeColor: undefined })}
+          onReset={() => onChange({ customColor: undefined, ...clearLegacy })}
         />
       </div>
       <SegmentedControl<NodeFillMode>

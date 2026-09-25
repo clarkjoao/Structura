@@ -50,10 +50,13 @@ export interface ResolvedFlowAppearance {
  * A legacy `nodeColor` was a whole-body colour, so a node that has one and no
  * accent of its own keeps looking filled: it becomes the accent, painted solid.
  */
-export function resolveFlowAppearance(input: FlowAppearanceInput): ResolvedFlowAppearance {
+export function resolveFlowAppearance(
+  input: FlowAppearanceInput,
+  defaultAccent: string = FLOW_DEFAULT_ACCENT,
+): ResolvedFlowAppearance {
   const legacyFill = !input.customColor && !!input.nodeColor;
   return {
-    accent: input.customColor ?? input.nodeColor ?? FLOW_DEFAULT_ACCENT,
+    accent: input.customColor ?? input.nodeColor ?? defaultAccent,
     fill: input.fill ?? (legacyFill ? "solid" : "none"),
     stroke: input.stroke ?? defaultStrokeFor(input.flowShape),
   };
@@ -156,9 +159,12 @@ export function flowPalette(appearance: ResolvedFlowAppearance, onAccent: string
 }
 
 /**
- * What to store for a picked accent: nothing for the family default, so picking
- * slate is the same as never having picked.
+ * What to store for a picked accent: nothing for the element's default, so
+ * picking it is the same as never having picked.
  */
-export function accentToStore(color: string): string | undefined {
-  return color === FLOW_DEFAULT_ACCENT ? undefined : color;
+export function accentToStore(
+  color: string,
+  defaultAccent: string = FLOW_DEFAULT_ACCENT,
+): string | undefined {
+  return color === defaultAccent ? undefined : color;
 }

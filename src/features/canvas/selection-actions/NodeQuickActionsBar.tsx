@@ -24,6 +24,7 @@ import {
   PanelKind,
 } from "@/features/diagram";
 import { accentToStore } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
+import { getElement } from "@/features/elements/element.registry";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
@@ -48,7 +49,7 @@ function pickColorGroup(component: Component | null): ColorPickerGroup {
   if (isNoteComponent(component)) return "note";
   if (isC4Component(component)) return "c4";
   if (isPanelComponent(component)) return "panel";
-  if (isProcessNodeComponent(component)) return "flow";
+  if (getElement(component.type)?.skin) return "flow";
   return "vibrant";
 }
 
@@ -196,10 +197,15 @@ export function NodeQuickActionsBar({
         });
         return;
       }
-      // Flow shapes: the family default is stored as nothing, and a legacy
-      // nodeColor goes with it so it cannot keep winning as the fill.
-      if (isProcessNodeComponent(component)) {
-        updateComponent(nodeId, { customColor: accentToStore(color), nodeColor: undefined });
+      // Skinned elements (flow, VSM): the element's default accent is stored
+      // as nothing, and a flow node's legacy nodeColor goes with it so it
+      // cannot keep winning as the fill.
+      const skin = getElement(component.type)?.skin;
+      if (skin) {
+        updateComponent(nodeId, {
+          customColor: accentToStore(color, skin.defaultAccent),
+          ...(isProcessNodeComponent(component) ? { nodeColor: undefined } : {}),
+        });
         return;
       }
       // Components that use customColor (cloud, unknown, etc.)
