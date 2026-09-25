@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ViewportPortal, useReactFlow, useStore } from "@xyflow/react";
 import { Share2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -48,6 +48,7 @@ function useBoxes(ids: readonly string[]): Readonly<Record<string, Box>> {
 }
 
 const BADGE_H = 16;
+const LEAVE_DELAY_MS = 400;
 
 export interface SharedLayerProps {
   components: Record<string, Component>;
@@ -76,18 +77,45 @@ export const SharedLayer = memo(function SharedLayer({
   const { fitView } = useReactFlow();
   const model = useMemo(() => buildSharedLayer(components, connections), [components, connections]);
   const boxes = useBoxes(model === EMPTY_SHARED_LAYER ? [] : model.anchorIds);
-  const [hovered, setHovered] = useState<string | null>(null);
+  // The original being looked at, and the node the pointer found it on: the
+  // popover opens beside that node (a consumer for a badge, the original for
+  // its chip), where the pointer already is.
+  const [hovered, setHovered] = useState<{ originalId: string; anchorId: string } | null>(null);
+  // Leaving is not closing at once: the pointer has to cross the gap from a
+  // badge or chip to the popover without it vanishing on the way.
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    },
+    [],
+  );
 
   if (model.originals.length === 0 && (!suggest || model.suggestions.size === 0)) return null;
   const byId = new Map(model.originals.map((original) => [original.id, original]));
-  const active = hovered ? byId.get(hovered) : undefined;
+  const active = hovered ? byId.get(hovered.originalId) : undefined;
+  const anchorBox = hovered
+    ? (boxes[hovered.anchorId] ?? (active ? boxes[active.id] : undefined))
+    : undefined;
   const goTo = (id: string) => {
     if (onPick) onPick(id);
     void fitView({ nodes: [{ id }], duration: 300, maxZoom: 1.2, padding: 0.4 });
   };
   const hover = {
-    onMouseEnter: (id: string) => () => setHovered(id),
-    onMouseLeave: () => setHovered(null),
+    onMouseEnter:
+      (originalId: string, anchorId: string = originalId) =>
+      () => {
+        if (leaveTimer.current) clearTimeout(leaveTimer.current);
+        setHovered((current) =>
+          current?.originalId === originalId && current.anchorId === anchorId
+            ? current
+            : { originalId, anchorId },
+        );
+      },
+    onMouseLeave: () => {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+      leaveTimer.current = setTimeout(() => setHovered(null), LEAVE_DELAY_MS);
+    },
   };
 
   const lit = active ? [active.id, ...active.refs, ...active.consumers.map((c) => c.id)] : [];
@@ -122,7 +150,8 @@ export const SharedLayer = memo(function SharedLayer({
             data-testid="shared-chip"
             className="nodrag nopan absolute flex items-center gap-1 rounded-full px-1.5 font-mono text-[10px] leading-4"
             style={{
-              transform: `translate(${box.x + box.width - 8}px, ${box.y - BADGE_H - 4}px) translateX(-100%)`,
+              // Under its right edge: above it is where the selected node's toolbar goes.
+              transform: `translate(${box.x + box.width}px, ${box.y + box.height + 4}px) translateX(-100%)`,
               background: `color-mix(in srgb, ${original.accent} 10%, hsl(var(--card)))`,
               border: `1px solid color-mix(in srgb, ${original.accent} 40%, transparent)`,
               color: "hsl(var(--foreground))",
@@ -167,7 +196,7 @@ export const SharedLayer = memo(function SharedLayer({
                     color: "hsl(var(--foreground))",
                     pointerEvents: "all",
                   }}
-                  onMouseEnter={hover.onMouseEnter(originalId)}
+                  onMouseEnter={hover.onMouseEnter(originalId, consumerId)}
                   onMouseLeave={hover.onMouseLeave}
                   onClick={() => goTo(originalId)}
                 >
@@ -203,11 +232,11 @@ export const SharedLayer = memo(function SharedLayer({
           );
         })}
 
-      {active && boxes[active.id] && (
+      {active && hovered && anchorBox && (
         <UsedByPopover
           original={active}
-          box={boxes[active.id]}
-          onEnter={hover.onMouseEnter(active.id)}
+          box={anchorBox}
+          onEnter={hover.onMouseEnter(hovered.originalId, hovered.anchorId)}
           onLeave={hover.onMouseLeave}
           onGoTo={() => goTo(active.id)}
         />
