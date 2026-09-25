@@ -263,6 +263,42 @@ function JunctionBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
   );
 }
 
+/**
+ * An annotation: an open bracket in the muted colour and free text beside it —
+ * no fill, no shadow, no accent. It is something the diagram points at.
+ */
+function AnnotationBody({ shape, d, isActive, w, h }: ShapeProps) {
+  return (
+    <>
+      <svg
+        className="absolute inset-0 h-full w-full overflow-visible"
+        viewBox={`0 0 ${w} ${h}`}
+        aria-hidden
+      >
+        <path
+          d={flowShapePath(shape, w, h)}
+          fill="none"
+          stroke={isActive ? PRIMARY : "hsl(var(--muted-foreground))"}
+          strokeWidth={1.5}
+        />
+      </svg>
+      <div className="pointer-events-none absolute inset-y-1 left-4 right-1 select-none overflow-hidden text-[13px] leading-snug">
+        <p className="whitespace-pre-wrap break-words" style={{ color: "hsl(var(--foreground))" }}>
+          {d.name}
+        </p>
+        {d.description && (
+          <p
+            className="mt-0.5 whitespace-pre-wrap break-words"
+            style={{ color: "hsl(var(--muted-foreground))" }}
+          >
+            {d.description}
+          </p>
+        )}
+      </div>
+    </>
+  );
+}
+
 /** How an SVG-drawn shape paints its body and outline. */
 function svgPaint(shape: FlowNodeShape, palette: FlowPalette, solid: boolean) {
   // The decision is outlined in the accent, over a tint; the rest keep the
@@ -396,15 +432,20 @@ function FlowHandles({ shape, w, h }: { shape: FlowNodeShape; w: number; h: numb
     left: `${(p.x / w) * 100}%`,
     top: `${(p.y / h) * 100}%`,
   });
+  const left = (
+    <Handle
+      id="target-0"
+      type="target"
+      position={Position.Left}
+      style={pct(at.left)}
+      className={HANDLE_CLASS}
+    />
+  );
+  // An annotation is pointed at, from its bracket side only.
+  if (shape === "annotation") return left;
   return (
     <>
-      <Handle
-        id="target-0"
-        type="target"
-        position={Position.Left}
-        style={pct(at.left)}
-        className={HANDLE_CLASS}
-      />
+      {left}
       <Handle
         id={TOP_TARGET_HANDLE_ID}
         type="target"
@@ -466,6 +507,8 @@ const ProcessNode = memo(
             <StartEndBody {...shapeProps} />
           ) : shape === "junction-and" || shape === "junction-or" ? (
             <JunctionBody {...shapeProps} />
+          ) : shape === "annotation" ? (
+            <AnnotationBody {...shapeProps} />
           ) : shape === "stadium" ? (
             <TerminalBody {...shapeProps} />
           ) : (

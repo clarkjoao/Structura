@@ -8,6 +8,7 @@ import {
   FileText,
   GitBranch,
   Hexagon,
+  MessageSquareText,
   Play,
   Square,
   SquareStack,
@@ -54,6 +55,7 @@ export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasP
     { shape: "event", labelKey: "flowchart.shapes.event", icon: Zap },
     { shape: "junction-and", labelKey: "flowchart.shapes.junction-and", icon: CircleDot },
     { shape: "junction-or", labelKey: "flowchart.shapes.junction-or", icon: Circle },
+    { shape: "annotation", labelKey: "flowchart.shapes.annotation", icon: MessageSquareText },
   ];
 
   return shapes.map(({ shape, labelKey, icon }) => ({

@@ -215,6 +215,19 @@ function eventPath(w: number, h: number): string {
   );
 }
 
+/** Length of the annotation bracket's top and bottom arms. */
+export const ANNOTATION_ARM = 10;
+
+/** The annotation's open bracket on the left — the one outline that is not closed. */
+function annotationPath(h: number): string {
+  return `M${ANNOTATION_ARM + INSET} ${INSET} H${INSET} V${round(h - INSET)} H${ANNOTATION_ARM + INSET}`;
+}
+
+/** Shapes whose outline is a stroke only, never a closed, filled body. */
+export function isOpenShape(shape: FlowNodeShape): boolean {
+  return shape === "annotation";
+}
+
 /** The outline of `shape` at `w × h`, as an SVG path in node-local pixels. */
 export function flowShapePath(shape: FlowNodeShape, w: number, h: number): string {
   switch (shape) {
@@ -243,6 +256,8 @@ export function flowShapePath(shape: FlowNodeShape, w: number, h: number): strin
       return documentPath(w, h);
     case "event":
       return eventPath(w, h);
+    case "annotation":
+      return annotationPath(h);
     default: {
       const exhaustive: never = shape;
       return exhaustive;
@@ -339,6 +354,7 @@ export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; hei
   event: { width: 210, height: 60 },
   "junction-and": { width: 20, height: 20 },
   "junction-or": { width: 20, height: 20 },
+  annotation: { width: 230, height: 56 },
 };
 
 /** Shapes small enough that their minimum size is a marker's, not a card's. */

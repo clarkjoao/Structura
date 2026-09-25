@@ -8,6 +8,7 @@ import {
   flowShapeAccentPath,
   flowShapeHandles,
   flowShapePath,
+  isOpenShape,
   readFlowShape,
   type Point,
 } from "./flowShapeGeometry";
@@ -28,6 +29,7 @@ const SHAPES: FlowNodeShape[] = [
   "event",
   "junction-and",
   "junction-or",
+  "annotation",
 ];
 
 const SIZES: Array<[number, number]> = [
@@ -58,7 +60,7 @@ describe("flowShapePath", () => {
     for (const [w, h] of SIZES) {
       const d = flowShapePath(shape, w, h);
       expect(d.startsWith("M")).toBe(true);
-      expect(d.trim().endsWith("Z")).toBe(true);
+      expect(d.trim().endsWith("Z")).toBe(!isOpenShape(shape));
       expect(d).not.toMatch(/NaN|Infinity/);
     }
   });

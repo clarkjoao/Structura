@@ -58,6 +58,7 @@ const SHAPE_ICONS: Record<FlowNodeShape, IconComponent | null> = {
   event: Zap,
   "junction-and": null,
   "junction-or": null,
+  annotation: null,
 };
 
 export function FlowShapeIcon({

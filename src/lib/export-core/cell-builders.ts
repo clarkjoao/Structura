@@ -370,6 +370,9 @@ function buildPassthroughCell(
  */
 function flowColourStyle(node: Extract<ExportNode, { kind: "flowNode" }>): string {
   const accent = node.accentColor;
+  // An annotation is a bracket and text: no body to fill, and the bracket is
+  // drawn in the neutral colour whatever the accent.
+  if (node.shape === "annotation") return "fillColor=none;strokeColor=#64748b;strokeWidth=1.5;";
   const dashed = node.dashed ? "dashed=1;" : "";
   switch (node.fill) {
     case "solid":

@@ -64,6 +64,10 @@ export const FLOW_SHAPE_STYLES: Record<string, string> = {
   // name is kept on the cell but not drawn over a 20px circle.
   "junction-and": "ellipse;aspect=fixed;noLabel=1;",
   "junction-or": "ellipse;aspect=fixed;noLabel=1;strokeWidth=2;",
+  // A bracket on the left and free text: draw.io's partialRectangle with only
+  // its left side drawn (Shapes.js reads the top/left/bottom/right keys).
+  annotation:
+    "text;shape=partialRectangle;left=1;right=0;top=0;bottom=0;align=left;spacingLeft=10;fontSize=13;",
 };
 
 export const THEME = {
