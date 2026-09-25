@@ -17,6 +17,8 @@ export type SwimlaneNodeData = {
   laneLabel: string;
   /** Background tint 0–100. Falls back to a low-opacity tint when unset. */
   opacity?: number;
+  /** The panel's outline; a dashed lane is the blueprint's physical evidence. */
+  borderStyle?: "solid" | "dashed" | "dotted";
   isSelected: boolean;
   isHighlighted?: boolean;
   isDragTarget?: boolean;
@@ -82,6 +84,9 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
         } ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-95"}`}
         style={{
           background: fill,
+          ...(d.borderStyle === "dashed" || d.borderStyle === "dotted"
+            ? { border: `1.5px ${d.borderStyle} ${withAlpha(laneColor, 60)}` }
+            : {}),
           ...(isUnparentCandidate ? { borderColor: UNPARENT_BORDER } : {}),
         }}
       >

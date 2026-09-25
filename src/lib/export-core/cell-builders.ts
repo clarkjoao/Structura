@@ -136,11 +136,12 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
     case "swimlane": {
       const w = width || CONFIG.defaults.panelWidth;
       const h = height || CONFIG.defaults.panelHeight;
-      const style = buildSwimlaneStyle({
-        laneColor: node.laneColor ?? "#6366f1",
-        orientation: node.orientation,
-        opacity: node.opacity ?? 10,
-      });
+      const style =
+        buildSwimlaneStyle({
+          laneColor: node.laneColor ?? "#6366f1",
+          orientation: node.orientation,
+          opacity: node.opacity ?? 10,
+        }) + (node.dashed ? "dashed=1;" : "");
       const label = node.laneLabel?.trim() || node.name?.trim() || "Lane";
       return (
         `<mxCell id="${escXml(node.id)}" value="${escXml(label)}" style="${style}" ` +

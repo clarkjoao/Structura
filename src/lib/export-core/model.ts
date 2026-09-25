@@ -99,6 +99,8 @@ export interface SwimlaneNode extends BaseNode {
   orientation: "horizontal" | "vertical";
   /** Background tint 0–100 (Structura canvas semantics). */
   opacity?: number;
+  /** A dashed (or dotted) lane outline — the physical-evidence lane of a blueprint. */
+  dashed?: boolean;
 }
 
 export interface ApiGroupNode extends BaseNode {

@@ -439,7 +439,18 @@ describe("golden — service blueprint", () => {
   const item = (id: string, extra: Record<string, unknown>): Component =>
     ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
 
+  const lane = (name: string, laneColor: string, extra: Record<string, unknown> = {}) =>
+    item(name, {
+      type: "panel",
+      panelKind: PanelKind.Swimlane,
+      panelColor: laneColor,
+      swimlane: { orientation: "horizontal", laneColor, laneLabel: name },
+      ...extra,
+    });
+
   const components: Record<string, Component> = {
+    evidence: lane("Physical evidence", "hsl(var(--muted-foreground))", { borderStyle: "dashed" }),
+    stage: lane("Onstage", "hsl(var(--gcp-database))"),
     interaction: item("Line of interaction", { type: "flow-divider" }),
     visibility: item("Line of visibility", { type: "flow-divider", stroke: "dashed" }),
     internal: item("Line of internal interaction", { type: "flow-divider" }),
@@ -454,6 +465,9 @@ describe("golden — service blueprint", () => {
     const xml = exportDrawio(diagram("Blueprint", components, {}, layouts), catalog);
     expect(xml).toMatchSnapshot();
     expect(xml).toContain('value="LINE OF VISIBILITY"');
+    // The evidence lane is dashed, and token accents export as hex.
+    expect(xml).toMatch(/value="Physical evidence" style="swimlane;[^"]*dashed=1;/);
+    expect(xml).not.toContain("var(--");
     expect(xml).toMatch(/value="LINE OF VISIBILITY" style="line;[^"]*dashed=1;/);
   });
 });

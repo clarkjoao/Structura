@@ -100,3 +100,31 @@ describe("PanelStyleSection size fields", () => {
     expect(updateNodeLayout).not.toHaveBeenCalledWith("p2", expect.anything(), expect.anything());
   });
 });
+
+describe("a swimlane's stroke", () => {
+  const lane = {
+    id: "l1",
+    name: "Evidence",
+    type: "panel",
+    panelKind: "swimlane",
+    parentId: null,
+    swimlane: { orientation: "horizontal", laneColor: "#6366f1", laneLabel: "Evidence" },
+  } as unknown as PanelComponent;
+
+  it("writes dashed into the panel's borderStyle and clears it for solid", () => {
+    const updateComponent = vi.fn();
+    render(
+      <PanelStyleSection
+        component={lane}
+        updateComponent={updateComponent}
+        updateNodeLayout={vi.fn()}
+        componentNodeLayout={undefined}
+      />,
+    );
+    const radios = screen.getAllByRole("radio");
+    fireEvent.click(radios[radios.length - 1]);
+    expect(updateComponent).toHaveBeenLastCalledWith("l1", { borderStyle: "dashed" });
+    fireEvent.click(radios[radios.length - 2]);
+    expect(updateComponent).toHaveBeenLastCalledWith("l1", { borderStyle: undefined });
+  });
+});

@@ -56,6 +56,7 @@ const swimlaneCanvas: ElementCanvasSlice = {
       laneColor,
       laneLabel,
       opacity,
+      borderStyle: comp.borderStyle,
       isSelected: ctx.selectedNodeId === comp.id,
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
@@ -247,6 +248,7 @@ export const panelElement: ElementDescriptor = {
             laneLabel: sl?.laneLabel ?? comp.name,
             orientation: sl?.orientation ?? "horizontal",
             opacity: sl?.opacity ?? comp.panelOpacity ?? DEFAULT_PANEL_OPACITY,
+            ...(comp.borderStyle && comp.borderStyle !== "solid" ? { dashed: true } : {}),
           };
         }
 
