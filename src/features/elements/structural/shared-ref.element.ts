@@ -1,4 +1,3 @@
-import { createElement } from "react";
 import { Link2 } from "lucide-react";
 import SharedRefNode from "@/features/canvas/nodes/SharedRefNode";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
@@ -9,32 +8,13 @@ import { isSharedRefComponent } from "@/features/diagram/model/component.guards"
 import { resolveShared } from "@/features/diagram/utils/shared";
 import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.constants";
 import { playbackStyle } from "../families/deploy/deploy.shared";
-import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
-import { getElement } from "../element.registry";
-import { useResolvedComponents } from "@/features/diagram";
+import type { ElementDescriptor } from "../element.types";
 
 const REF_W = 200;
 const REF_H = 48;
 
 function clampSlots(count: number): number {
   return Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, count));
-}
-
-/**
- * A reference has no data of its own: its inspector is the original's,
- * editing the original.
- */
-function SharedRefInspector(props: ElementInspectorProps) {
-  const components = useResolvedComponents();
-  const original = isSharedRefComponent(props.component)
-    ? components[resolveShared(props.component.id, components)]
-    : undefined;
-  const Panel =
-    original && !isSharedRefComponent(original)
-      ? getElement(original.type)?.inspector.panel
-      : undefined;
-  if (!original || !Panel) return null;
-  return createElement(Panel, { ...props, component: original });
 }
 
 /** A reference to a shared element, drawn near its consumers. Created from the original, never from the palette. */
@@ -103,7 +83,8 @@ export const sharedRefElement: ElementDescriptor = {
     hidden: true,
   },
 
-  inspector: { panel: SharedRefInspector },
+  // Selecting a reference inspects its original (the element panel resolves it).
+  inspector: {},
 
   export: {
     drawio: {
