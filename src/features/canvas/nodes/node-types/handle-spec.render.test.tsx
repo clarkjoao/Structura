@@ -216,13 +216,13 @@ describe("declared handles reach the DOM", () => {
  * over the old slots — must keep every edge attached.
  */
 describe("flowchart shapes keep every edge attached", () => {
-  function renderFlowHub(connections: Connection[], peers: number) {
+  function renderFlowHub(connections: Connection[], peers: number, flowShape = "diamond") {
     const hub = {
       id: "hub",
       name: "hub",
       description: "",
       type: "process-node",
-      flowShape: "diamond",
+      flowShape,
       parentId: null,
     } as unknown as Component;
     const components: Record<string, Component> = { hub };
@@ -302,5 +302,21 @@ describe("flowchart shapes keep every edge attached", () => {
     expect(byId.above.targetHandle).toBe("target-top");
     expect(rendered.has(byId.down.sourceHandle)).toBe(true);
     expect(rendered.has(byId.above.targetHandle)).toBe(true);
+  });
+
+  it("keeps every edge attached when a node is switched to an annotation", () => {
+    // The annotation shows only its bracket-side handle, but edges drawn while
+    // it was another shape — out of it, or into its top — must not vanish.
+    const connections = [
+      ...fan(2),
+      { id: "down", sourceId: "hub", targetId: "peer-0", sourceSide: "bottom" } as Connection,
+      { id: "above", sourceId: "peer-1", targetId: "hub", targetSide: "top" } as Connection,
+    ];
+    const { assignments, rendered } = renderFlowHub(connections, 2, "annotation");
+    for (const a of assignments) {
+      const handle =
+        a.connId.startsWith("in-") || a.connId === "above" ? a.targetHandle : a.sourceHandle;
+      expect(rendered.has(handle), `${a.connId} -> ${handle}`).toBe(true);
+    }
   });
 });

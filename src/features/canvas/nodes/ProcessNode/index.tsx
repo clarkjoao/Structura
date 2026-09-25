@@ -27,6 +27,8 @@ import { useOnAccentColor } from "./useOnAccentColor";
 import { FlowShapeIcon } from "./FlowShapeIcon";
 
 const HANDLE_CLASS = "!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground";
+/** Present for edge resolution only: no dot, no pointer, no new connection. */
+const INERT_HANDLE_CLASS = "!w-2.5 !h-2.5 !bg-transparent !border-transparent !opacity-0";
 const PRIMARY = "hsl(var(--primary))";
 
 /** Shapes drawn as a card: a box with the accent as a 3px bar on the left, like C4. */
@@ -69,7 +71,10 @@ function Title({
 function Description({ text, color }: { text?: string; color: string }) {
   if (!text) return null;
   return (
-    <p className="mt-1 shrink-0 select-none text-xs leading-snug line-clamp-2 break-words" style={{ color }}>
+    <p
+      className="mt-1 shrink-0 select-none text-xs leading-snug line-clamp-2 break-words"
+      style={{ color }}
+    >
       {text}
     </p>
   );
@@ -441,40 +446,46 @@ function FlowHandles({ shape, w, h }: { shape: FlowNodeShape; w: number; h: numb
     bottom: "auto",
     transform: "translate(-50%, -50%)",
   });
-  const left = (
-    <Handle
-      id="target-0"
-      type="target"
-      position={Position.Left}
-      style={pct(at.left)}
-      className={HANDLE_CLASS}
-    />
-  );
-  // An annotation is pointed at, from its bracket side only.
-  if (shape === "annotation") return left;
+  // An annotation is pointed at, from its bracket side only. Its other handles
+  // stay in the DOM, invisible and inert, so an edge it already had — from
+  // before the shape was switched to annotation — keeps a handle to attach to
+  // instead of vanishing (React Flow #008).
+  const hidden = shape === "annotation";
+  const cls = hidden ? INERT_HANDLE_CLASS : HANDLE_CLASS;
+  const inert = (p: { x: number; y: number }): CSSProperties =>
+    hidden ? { ...pct(p), pointerEvents: "none" } : pct(p);
   return (
     <>
-      {left}
+      <Handle
+        id="target-0"
+        type="target"
+        position={Position.Left}
+        style={pct(at.left)}
+        className={HANDLE_CLASS}
+      />
       <Handle
         id={TOP_TARGET_HANDLE_ID}
         type="target"
         position={Position.Top}
-        style={pct(at.top)}
-        className={HANDLE_CLASS}
+        style={inert(at.top)}
+        className={cls}
+        isConnectable={!hidden}
       />
       <Handle
         id="source-0"
         type="source"
         position={Position.Right}
-        style={pct(at.right)}
-        className={HANDLE_CLASS}
+        style={inert(at.right)}
+        className={cls}
+        isConnectable={!hidden}
       />
       <Handle
         id={BOTTOM_SOURCE_HANDLE_ID}
         type="source"
         position={Position.Bottom}
-        style={pct(at.bottom)}
-        className={HANDLE_CLASS}
+        style={inert(at.bottom)}
+        className={cls}
+        isConnectable={!hidden}
       />
     </>
   );
