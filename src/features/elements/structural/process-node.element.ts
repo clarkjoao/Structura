@@ -22,6 +22,7 @@ import { FLOW_SHAPE_HANDLES } from "@/features/canvas/nodes/node-types/handle-sp
 import { FLOW_SHAPE_DEFAULT_SIZE } from "@/features/canvas/nodes/ProcessNode/flowShapeGeometry";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import { FLOW_DEFAULT_ACCENT } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
+import { laneAccentFor } from "@/features/canvas/nodes/laneAccent";
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { isProcessNodeComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
@@ -108,6 +109,7 @@ export const processNodeElement: ElementDescriptor = {
         technology: comp.technology,
         fill: comp.fill,
         stroke: comp.stroke,
+        laneAccent: laneAccentFor(comp, ctx),
         isSelected: ctx.selectedNodeId === comp.id,
       };
     },

@@ -22,7 +22,12 @@ import {
   readFlowShape,
 } from "./flowShapeGeometry";
 import { BOTTOM_SOURCE_HANDLE_ID, TOP_TARGET_HANDLE_ID } from "../node-types/handle-spec";
-import { flowPalette, resolveFlowAppearance, type FlowPalette } from "./flowAppearance";
+import {
+  FLOW_DEFAULT_ACCENT,
+  flowPalette,
+  resolveFlowAppearance,
+  type FlowPalette,
+} from "./flowAppearance";
 import { useOnAccentColor } from "./useOnAccentColor";
 import { FlowShapeIcon } from "./FlowShapeIcon";
 
@@ -504,7 +509,8 @@ const ProcessNode = memo(
     const w = width || fallback.width;
     const h = height || fallback.height;
 
-    const appearance = resolveFlowAppearance(d);
+    // Own accent, else the lane's, else slate — resolved here, never written.
+    const appearance = resolveFlowAppearance(d, d.laneAccent ?? FLOW_DEFAULT_ACCENT);
     const onAccent = useOnAccentColor(appearance.accent, appearance.fill === "solid");
     const palette = flowPalette(appearance, onAccent);
     const shapeProps: ShapeProps = { shape, d, palette, isActive, w, h };

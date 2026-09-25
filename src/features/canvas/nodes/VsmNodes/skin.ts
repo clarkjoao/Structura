@@ -11,8 +11,12 @@ import { useOnAccentColor } from "../ProcessNode/useOnAccentColor";
  * parts and its own default accent. Same resolution as the flowchart shapes:
  * defaults at render, never written; text on a solid fill by contrast.
  */
-export function useSkinPalette(parts: SkinParts, defaultAccent: string): FlowPalette {
-  const appearance = resolveFlowAppearance(parts, defaultAccent);
+export function useSkinPalette(
+  parts: SkinParts & { laneAccent?: string },
+  defaultAccent: string,
+): FlowPalette {
+  // Own accent, else the lane's, else the element's default.
+  const appearance = resolveFlowAppearance(parts, parts.laneAccent ?? defaultAccent);
   const onAccent = useOnAccentColor(appearance.accent, appearance.fill === "solid");
   return flowPalette(appearance, onAccent);
 }
@@ -22,6 +26,8 @@ export type SkinNodeData = {
   customColor?: SkinParts["customColor"];
   fill?: SkinParts["fill"];
   stroke?: SkinParts["stroke"];
+  /** The accent of the swimlane it sits in, when that lane passes one on. */
+  laneAccent?: string;
   elementId: string;
   name: string;
   description?: string;

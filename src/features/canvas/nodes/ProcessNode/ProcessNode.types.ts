@@ -12,5 +12,7 @@ export type ProcessNodeData = {
   technology?: string;
   fill?: NodeFillMode;
   stroke?: NodeStrokeMode;
+  /** The accent of the swimlane it sits in, when that lane passes one on; see `laneAccentFor`. */
+  laneAccent?: string;
   isSelected?: boolean;
 };

@@ -2,6 +2,7 @@ import { createElement } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
+import { laneAccentFor } from "@/features/canvas/nodes/laneAccent";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import VsmPanel from "@/features/canvas/panels/ElementPanel/VsmPanel";
 import type { Component, SkinParts } from "@/features/diagram/model/component.types";
@@ -31,6 +32,7 @@ export function skinBuildData(comp: Component & SkinParts, ctx: NodeBuildContext
     customColor: comp.customColor,
     fill: comp.fill,
     stroke: comp.stroke,
+    laneAccent: laneAccentFor(comp, ctx),
     isSelected: ctx.selectedNodeId === comp.id,
   };
 }
