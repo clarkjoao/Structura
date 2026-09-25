@@ -4,6 +4,7 @@ import { Share2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Component, Connection } from "@/features/diagram";
 import { EMPTY_SHARED_LAYER, buildSharedLayer, type SharedOriginal } from "./sharedLayerModel";
+import { useSharedRevealStore } from "./useSharedRevealStore";
 
 interface Box {
   x: number;
@@ -229,6 +230,7 @@ function UsedByPopover({
         ))}
       </ul>
       <div className="flex gap-1">
+        {original.mode === "badge" && <RevealButton original={original} />}
         <button
           type="button"
           className="rounded border border-border px-2 py-0.5 hover:bg-surface-hover"
@@ -238,5 +240,23 @@ function UsedByPopover({
         </button>
       </div>
     </div>
+  );
+}
+
+/** "Show the N edges": the hidden edges drawn again until pressed again. Never saved. */
+function RevealButton({ original }: { original: SharedOriginal }) {
+  const { t } = useTranslation();
+  const revealed = useSharedRevealStore((state) => state.originals.has(original.id));
+  const toggle = useSharedRevealStore((state) => state.toggleOriginal);
+  const count = original.connectionIds.length;
+  return (
+    <button
+      type="button"
+      aria-pressed={revealed}
+      className="rounded border border-border px-2 py-0.5 hover:bg-surface-hover"
+      onClick={() => toggle(original.id)}
+    >
+      {revealed ? t("shared.hideEdges", { count }) : t("shared.showEdges", { count })}
+    </button>
   );
 }

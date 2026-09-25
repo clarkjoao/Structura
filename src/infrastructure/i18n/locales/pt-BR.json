@@ -2688,6 +2688,10 @@
       "edges": "Arestas",
       "badge": "Selos",
       "ref": "Referências"
-    }
+    },
+    "showEdges_one": "Mostrar a aresta",
+    "showEdges_other": "Mostrar as {{count}} arestas",
+    "hideEdges_one": "Esconder a aresta",
+    "hideEdges_other": "Esconder as {{count}} arestas"
   }
 }
