@@ -29,6 +29,7 @@ export type ComponentType =
   | "external-element"
   | "flow-divider"
   | VsmComponentType
+  | SharedComponentType
   | SfnComponentType
   | K8sStructureType
   | DeployComponentType
@@ -83,6 +84,19 @@ interface BaseComponent {
   templateId?: string;
 
   externalLinks?: ExternalLink[];
+
+  /**
+   * How the edges into it are drawn when many things use it. Absent means
+   * `edges`, drawn as they are; the edges stay in the model in every mode.
+   */
+  shared?: SharedSpec;
+}
+
+/** How a shared element's incoming edges are drawn: as they are, as badges, via references, or a bus. */
+export type SharedMode = "edges" | "badge" | "ref" | "bus";
+
+export interface SharedSpec {
+  mode: SharedMode;
 }
 
 export interface C4Component extends BaseComponent {
@@ -319,6 +333,9 @@ export type K8sStructureType =
 
 /** AWS Step Functions: a state machine, its states, Parallel and Map (the `aws-sfn` family). */
 export type SfnComponentType = "sfn-state-machine" | "sfn-state" | "sfn-parallel" | "sfn-map";
+
+/** A reference to a shared element, drawn where its consumers are (`shared-ref`). */
+export type SharedComponentType = "shared-ref";
 
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
 export type VsmComponentType =
@@ -571,6 +588,15 @@ export interface SfnMapComponent extends BaseComponent, SkinParts {
   retry?: SfnRetry[];
 }
 
+/**
+ * A reference to a shared element: no data of its own, drawn near its
+ * consumers. Edges to it are read as edges to the element (`resolveShared`).
+ */
+export interface SharedRefComponent extends BaseComponent {
+  type: "shared-ref";
+  refOf: string;
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -591,6 +617,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | SharedRefComponent
   | SfnMapComponent
   | SfnParallelComponent
   | SfnStateComponent
@@ -647,6 +674,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<SharedRefComponent, "id">> &
   Partial<Omit<SfnMapComponent, "id">> &
   Partial<Omit<SfnParallelComponent, "id">> &
   Partial<Omit<SfnStateComponent, "id">> &
@@ -687,6 +715,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<SharedRefComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SfnMapComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SfnParallelComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SfnStateComponent, "id">> & { width?: number; height?: number })

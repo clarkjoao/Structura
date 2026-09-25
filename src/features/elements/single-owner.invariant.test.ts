@@ -40,6 +40,7 @@ const FIXED_REGISTERED_IDS = [
   "process-node",
   "external-element",
   "vsm-external",
+  "shared-ref",
   "sfn-map",
   "sfn-parallel",
   "sfn-state",

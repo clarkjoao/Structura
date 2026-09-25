@@ -52,6 +52,7 @@ export type RegisteredElementTypeId =
   | "process-node"
   | "external-element"
   | "vsm-external"
+  | "shared-ref"
   | "sfn-map"
   | "sfn-parallel"
   | "sfn-state"

@@ -108,6 +108,12 @@ export function isSfnMapType(type: string): type is "sfn-map" {
   return type === COMPONENT_TYPE_SFN_MAP;
 }
 
+export const COMPONENT_TYPE_SHARED_REF = "shared-ref";
+
+export function isSharedRefType(type: string): type is "shared-ref" {
+  return type === COMPONENT_TYPE_SHARED_REF;
+}
+
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
 export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";

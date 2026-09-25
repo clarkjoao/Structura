@@ -23,6 +23,7 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  SharedRefComponent,
   SfnMapComponent,
   SfnParallelComponent,
   SfnStateComponent,
@@ -59,6 +60,7 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isSharedRefType,
   isSfnMapType,
   isSfnParallelType,
   isSfnStateType,
@@ -183,6 +185,9 @@ export const isSfnParallelComponent = (c: Component): c is SfnParallelComponent 
   isSfnParallelType(c.type);
 
 export const isSfnMapComponent = (c: Component): c is SfnMapComponent => isSfnMapType(c.type);
+
+export const isSharedRefComponent = (c: Component): c is SharedRefComponent =>
+  isSharedRefType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);
