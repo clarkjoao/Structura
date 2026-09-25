@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Component, Diagram, Flow, FlowStep } from "@/features/diagram";
 import { resolveVersionSnapshot } from "@/features/diagram";
 import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
-import { stepsToMermaid } from "@/features/diagram/utils/flow-mermaid";
+import { participantName, stepsToMermaid } from "@/features/diagram/utils/flow-mermaid";
 import { buildFlowHighlight } from "@/features/canvas/flow/flowState";
 import {
   compactContainerIdsOf,
@@ -106,6 +106,19 @@ describe("a workload's containers", () => {
     expect(data("app")).toMatchObject({ asTab: false, podRole: "main" });
   });
 
+  it("expanded, or loose outside any workload, a sidecar is a card, not a tab", () => {
+    const expanded = diagram(false).snapshot.components;
+    const loose = { ...expanded, envoy: { ...expanded.envoy, parentId: null } };
+    const ghost = { ...expanded, envoy: { ...expanded.envoy, parentId: "gone" } };
+    for (const components of [expanded, loose, ghost]) {
+      const data = getElement("k8s-container")!.canvas.buildData(components.envoy, {
+        ...emptyNodeBuildContext(),
+        resolvedComponents: components,
+      });
+      expect(data).toMatchObject({ asTab: false });
+    }
+  });
+
   it("the compact workload grows to hold its tabs; expanded, it keeps its stored size", () => {
     const workload = getElement("k8s-workload")!;
     const ctx = (d: Diagram) => ({
@@ -153,6 +166,33 @@ describe("reading ingress → envoy (sidecar) → checkout-api (main)", () => {
     const c2 = edges.find((e) => e.id === "c2")!;
     expect(c2).toMatchObject({ source: "envoy", target: "wl" });
     expect(c2.data).toMatchObject({ strokeStyle: "dashed" });
+  });
+
+  it("the mermaid path climbs typed containers only, and survives a broken or cyclic parent", () => {
+    const d = diagram(false);
+    const c = d.snapshot.components;
+    const named = (components: Record<string, Component>) => participantName("envoy", components);
+    const inNamespace = {
+      ...c,
+      ns: comp({ id: "ns", name: "shop", type: "k8s-namespace" }),
+      wl: { ...c.wl, parentId: "ns" },
+    };
+    expect(named(inNamespace)).toBe("shop › checkout › envoy");
+    const inPanel = {
+      ...c,
+      p: comp({ id: "p", name: "VPC", type: "panel" }),
+      wl: { ...c.wl, parentId: "p" },
+    };
+    expect(named(inPanel)).toBe("checkout › envoy");
+    expect(named({ ...c, wl: { ...c.wl, parentId: "missing" } })).toBe("checkout › envoy");
+    const cyclic = {
+      ...c,
+      a: comp({ id: "a", name: "a", type: "k8s-namespace", parentId: "b" }),
+      b: comp({ id: "b", name: "b", type: "k8s-namespace", parentId: "a" }),
+      wl: { ...c.wl, parentId: "a" },
+    };
+    expect(named(cyclic)).toBe("b › a › checkout › envoy");
+    expect(participantName("nobody", c)).toBeUndefined();
   });
 
   it("the mermaid export names the containers by their path", () => {
