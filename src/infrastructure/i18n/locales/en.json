@@ -1135,6 +1135,7 @@
   },
   "flowchart": {
     "shapes": {
+      "event": "Event",
       "document": "Document",
       "start": "Start",
       "end": "End",

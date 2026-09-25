@@ -186,7 +186,8 @@ export type ExportFlowShape =
   | "subroutine"
   | "start"
   | "end"
-  | "document";
+  | "document"
+  | "event";
 
 /**
  * A flowchart box.

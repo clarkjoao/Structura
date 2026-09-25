@@ -58,6 +58,8 @@ export const FLOW_SHAPE_STYLES: Record<string, string> = {
   start: "ellipse;aspect=fixed;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;",
   end: "ellipse;aspect=fixed;strokeWidth=4;verticalLabelPosition=bottom;verticalAlign=top;",
   document: "shape=document;boundedLbl=1;size=0.18;",
+  // ArchiMate 3's business event, registered by draw.io's mxArchiMate3.js.
+  event: "shape=mxgraph.archimate3.event;outlineConnect=0;",
 };
 
 export const THEME = {

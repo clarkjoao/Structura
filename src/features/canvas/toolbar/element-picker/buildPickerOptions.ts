@@ -10,6 +10,7 @@ import {
   Play,
   Square,
   SquareStack,
+  Zap,
 } from "lucide-react";
 import { type ComponentType, type FlowNodeShape } from "@/features/diagram";
 import { paletteEntriesForCategory } from "@/features/elements/element.palette";
@@ -49,6 +50,7 @@ export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasP
     { shape: "start", labelKey: "flowchart.shapes.start", icon: Play },
     { shape: "end", labelKey: "flowchart.shapes.end", icon: CircleStop },
     { shape: "document", labelKey: "flowchart.shapes.document", icon: FileText },
+    { shape: "event", labelKey: "flowchart.shapes.event", icon: Zap },
   ];
 
   return shapes.map(({ shape, labelKey, icon }) => ({

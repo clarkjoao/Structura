@@ -25,6 +25,7 @@ const SHAPES: FlowNodeShape[] = [
   "start",
   "end",
   "document",
+  "event",
 ];
 
 const SIZES: Array<[number, number]> = [
@@ -188,5 +189,21 @@ describe("document", () => {
 
   it("paints its accent down the left edge", () => {
     expect(flowShapeAccentPath("document", 220, 78)).toMatch(/^M1\.5 /);
+  });
+});
+
+describe("event", () => {
+  it("matches the reference drawing at 210x60", () => {
+    expect(flowShapePath("event", 210, 60)).toBe("M1 1 H184 L209 30 L184 59 H1 Q18 30 1 1 Z");
+  });
+
+  it("puts the left handle in the bottom of the notch and the right one on the point", () => {
+    const { left, right } = flowShapeHandles("event", 210, 60);
+    expect(left).toEqual({ x: 9.5, y: 30 });
+    expect(right).toEqual({ x: 210, y: 30 });
+  });
+
+  it("paints its accent along the notch", () => {
+    expect(flowShapeAccentPath("event", 210, 60)).toBe("M1.5 1.5 Q18 30 1.5 58.5");
   });
 });

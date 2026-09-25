@@ -242,7 +242,8 @@ export type FlowNodeShape =
   | "subroutine" // Mermaid: [[text]]
   | "start"
   | "end"
-  | "document";
+  | "document"
+  | "event";
 
 /** How a shape's accent colours its body. Absent means `"none"`. */
 export type NodeFillMode = "none" | "soft" | "solid";

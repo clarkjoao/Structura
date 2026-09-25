@@ -196,6 +196,25 @@ function documentPath(w: number, h: number): string {
   ].join(" ");
 }
 
+/** How far the event's point juts out on the right. */
+export const EVENT_TIP = 25;
+/** Control depth of the event's concave notch on the left (the curve reaches half of it). */
+export const EVENT_NOTCH = 18;
+
+/**
+ * ArchiMate's business event: a concave notch on the left, a point on the right.
+ * Both are fixed-size, so only the straight top and bottom runs grow.
+ */
+function eventPath(w: number, h: number): string {
+  const tip = clampFeature(EVENT_TIP, w);
+  const notch = clampFeature(EVENT_NOTCH, w);
+  return (
+    `M${INSET} ${INSET} H${round(w - tip - INSET)} L${round(w - INSET)} ${round(h / 2)} ` +
+    `L${round(w - tip - INSET)} ${round(h - INSET)} H${INSET} ` +
+    `Q${round(notch)} ${round(h / 2)} ${INSET} ${INSET} Z`
+  );
+}
+
 /** The outline of `shape` at `w × h`, as an SVG path in node-local pixels. */
 export function flowShapePath(shape: FlowNodeShape, w: number, h: number): string {
   switch (shape) {
@@ -220,6 +239,8 @@ export function flowShapePath(shape: FlowNodeShape, w: number, h: number): strin
       return ellipsePath(w, h);
     case "document":
       return documentPath(w, h);
+    case "event":
+      return eventPath(w, h);
     default: {
       const exhaustive: never = shape;
       return exhaustive;
@@ -251,6 +272,10 @@ export function flowShapeAccentPath(shape: FlowNodeShape, w: number, h: number):
     const wave = documentWave(w, h);
     return `M${INSET + 0.5} ${round(INSET + r)} V${round(wave[2][3].y)}`;
   }
+  if (shape === "event") {
+    const notch = clampFeature(EVENT_NOTCH, w);
+    return `M${INSET + 0.5} ${INSET + 0.5} Q${round(notch)} ${round(h / 2)} ${INSET + 0.5} ${round(h - INSET - 0.5)}`;
+  }
   if (shape === "hexagon") {
     const cut = clampFeature(HEXAGON_CUT, w);
     return (
@@ -272,6 +297,11 @@ export function flowShapeHandles(shape: FlowNodeShape, w: number, h: number): Fl
   if (shape === "document") {
     // The base is a wave: the bottom handle sits on it, not on the box.
     return { ...box, bottom: documentWaveAt(w, h, w / 2) };
+  }
+  if (shape === "event") {
+    // Left in the bottom of the notch (a quadratic reaches half its control
+    // depth), right on the point.
+    return { ...box, left: { x: round(INSET / 2 + clampFeature(EVENT_NOTCH, w) / 2), y: h / 2 } };
   }
   if (shape === "parallelogram") {
     // Halfway down each slanted edge, not on the box: the box's left midpoint
@@ -304,6 +334,7 @@ export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; hei
   start: { width: 56, height: 56 },
   end: { width: 56, height: 56 },
   document: { width: 220, height: 78 },
+  event: { width: 210, height: 60 },
 };
 
 /**

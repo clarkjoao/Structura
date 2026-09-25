@@ -6,6 +6,7 @@ import {
   Layers,
   Repeat,
   Settings2,
+  Zap,
   type LucideProps,
 } from "lucide-react";
 import type { FlowNodeShape } from "@/features/diagram/model/component.types";
@@ -54,6 +55,7 @@ const SHAPE_ICONS: Record<FlowNodeShape, IconComponent | null> = {
   start: null,
   end: null,
   document: FileText,
+  event: Zap,
 };
 
 export function FlowShapeIcon({
