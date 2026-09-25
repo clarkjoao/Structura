@@ -56,11 +56,20 @@ describe("references", () => {
     expect(ctx.store.getState()._sharedRefNotice).toBeNull();
   });
 
-  it("the batch removal takes them too", () => {
+  it("the batch removal takes them too, named after the element that had them", () => {
     const ctx = setup();
-    ctx.store.getState().removeElements([ctx.auth.id, ctx.orders.id], []);
+    ctx.store.getState().removeElements([ctx.orders.id, ctx.auth.id], []);
     expect(Object.keys(ctx.components())).toEqual([]);
-    expect(ctx.store.getState()._sharedRefNotice).toMatchObject({ count: 2 });
+    expect(ctx.store.getState()._sharedRefNotice).toMatchObject({ count: 2, name: "Auth" });
+  });
+
+  it("each removal is a new notice", () => {
+    const ctx = setup();
+    ctx.store.getState().removeComponent(ctx.auth.id);
+    const first = ctx.store.getState()._sharedRefNotice!.id;
+    ctx.store.getState().undo();
+    ctx.store.getState().removeComponent(ctx.auth.id);
+    expect(ctx.store.getState()._sharedRefNotice!.id).toBe(first + 1);
   });
 
   it("a step on the original lights the original and its references", () => {

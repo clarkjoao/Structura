@@ -105,4 +105,34 @@ describe("badge mode", () => {
     expect(layer.originals).toEqual([]);
     expect(components.auth).not.toHaveProperty("shared");
   });
+
+  it("reads past elements drawn with their edges, anchors references and suggestions, and colours by accent", () => {
+    const d = diagram("badge");
+    const components: Record<string, Component> = {
+      first: comp({ id: "first", name: "First" }),
+      ...d.snapshot.components,
+      r1: comp({ id: "r1", name: "Auth", type: "shared-ref", refOf: "auth" }),
+      own: comp({ id: "own", name: "Own", customColor: "#123456", shared: { mode: "ref" } }),
+      plain: comp({ id: "plain", name: "Plain", type: "note", shared: { mode: "ref" } }),
+    };
+    const layer = buildSharedLayer(components, d.snapshot.connections);
+    expect(layer.originals.map((o) => o.id)).toEqual(["auth", "own", "plain"]);
+    expect(layer.anchorIds).toContain("r1");
+    const byId = Object.fromEntries(layer.originals.map((o) => [o.id, o]));
+    expect(byId.auth.accent).toBe("hsl(var(--node-container))");
+    expect(byId.own.accent).toBe("#123456");
+    expect(byId.plain.accent).toBe("hsl(var(--muted-foreground))");
+    const withSuggestion = buildSharedLayer(
+      { ...components, x: comp({ id: "x", name: "X" }), y: comp({ id: "y", name: "Y" }) },
+      {
+        ...d.snapshot.connections,
+        s1: { id: "s1", sourceId: "a", targetId: "db", label: "" },
+        s2: { id: "s2", sourceId: "b", targetId: "db", label: "" },
+        s3: { id: "s3", sourceId: "x", targetId: "db", label: "" },
+        s4: { id: "s4", sourceId: "y", targetId: "db", label: "" },
+      },
+    );
+    expect([...withSuggestion.suggestions.keys()]).toEqual(["db"]);
+    expect(withSuggestion.anchorIds).toContain("db");
+  });
 });

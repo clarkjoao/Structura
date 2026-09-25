@@ -117,6 +117,31 @@ describe("hideSharedEdges", () => {
     expect(hideSharedEdges(edges, world("badge")).map((e) => e.id)).toEqual(["e2", "e3"]);
   });
 
+  it("shows a revealed connection and still hides the others", () => {
+    const more = [...edges, link("e4", "d", "auth")];
+    expect(
+      hideSharedEdges(more, world("badge"), { connections: new Set(["e1"]) }).map((e) => e.id),
+    ).toEqual(["e1", "e2", "e3"]);
+  });
+
+  it("a self-link does not stop the count of the uses after it", () => {
+    const w = world();
+    const connections = {
+      self: link("self", "r1", "auth"),
+      e1: link("e1", "a", "auth", "gRPC"),
+    };
+    expect(sharedUses("auth", w, connections).map((u) => u.consumerId)).toEqual(["a"]);
+    const many = { ...w, e: c("e") };
+    const four = {
+      self: link("self", "r2", "auth"),
+      x1: link("x1", "a", "auth"),
+      x2: link("x2", "b", "auth"),
+      x3: link("x3", "d", "auth"),
+      x4: link("x4", "e", "auth"),
+    };
+    expect([...suggestedShared(many, four)]).toEqual([["auth", 4]]);
+  });
+
   it("shows a revealed connection, or every edge of a revealed element", () => {
     expect(hideSharedEdges(edges, world("badge"), { connections: new Set(["e1"]) })).toHaveLength(
       3,
