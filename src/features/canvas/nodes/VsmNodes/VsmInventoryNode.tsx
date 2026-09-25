@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { SkinHandles } from "./SkinHandles";
+import { VSM_SIZE_LIMITS } from "./vsmSizeLimits";
 import { useSkinPalette, type SkinNodeData } from "./skin";
 import { VSM_AMBER } from "./vsmAccents";
 import { inventoryHandles, inventoryTriangle } from "./vsmGeometry";
@@ -29,8 +30,7 @@ const VsmInventoryNode = memo(
     return (
       <>
         <NodeResizer
-          minWidth={60}
-          minHeight={70}
+          {...VSM_SIZE_LIMITS["vsm-inventory"]}
           isVisible={isSelected}
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"

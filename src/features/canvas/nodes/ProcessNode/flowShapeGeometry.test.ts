@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { FlowNodeShape } from "@/features/diagram/model/component.types";
+import { CARD_MAX_W, CARD_MIN_W } from "../CardNode/constants";
 import {
   CYLINDER_CAP_RY,
   DOCUMENT_WAVE_RISE,
+  FLOW_SHAPE_DEFAULT_SIZE,
   IO_SLANT,
   cylinderTopCap,
   flowShapeAccentPath,
@@ -211,4 +213,15 @@ describe("event", () => {
   it("paints its accent along the notch", () => {
     expect(flowShapeAccentPath("event", 210, 60)).toBe("M1.5 1.5 Q18 30 1.5 58.5");
   });
+});
+
+describe("card shapes are created within the C4 card's width bounds", () => {
+  it.each(["rectangle", "rounded", "subroutine", "document", "evidence"] as const)(
+    "%s",
+    (shape) => {
+      const { width } = FLOW_SHAPE_DEFAULT_SIZE[shape];
+      expect(width).toBeGreaterThanOrEqual(CARD_MIN_W);
+      expect(width).toBeLessThanOrEqual(CARD_MAX_W);
+    },
+  );
 });

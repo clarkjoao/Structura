@@ -4,6 +4,7 @@ import { Factory, User } from "lucide-react";
 import type { VsmMetric } from "@/features/diagram/model/component.types";
 import { FLOW_DEFAULT_ACCENT } from "../ProcessNode/flowAppearance";
 import { SkinHandles } from "./SkinHandles";
+import { VSM_SIZE_LIMITS } from "./vsmSizeLimits";
 import { useSkinPalette, type SkinNodeData } from "./skin";
 
 export type VsmProcessNodeData = SkinNodeData & {
@@ -30,8 +31,7 @@ const VsmProcessNode = memo(
     return (
       <>
         <NodeResizer
-          minWidth={140}
-          minHeight={80}
+          {...VSM_SIZE_LIMITS["vsm-process"]}
           isVisible={isSelected}
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"

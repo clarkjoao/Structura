@@ -3,6 +3,7 @@ import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflo
 import { Plus } from "lucide-react";
 import type { FlowNodeShape } from "@/features/diagram";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
+import { CARD_MAX_W, CARD_MIN_W } from "../CardNode/constants";
 import type { ProcessNodeData } from "./ProcessNode.types";
 import {
   CYLINDER_CAP_RY,
@@ -35,6 +36,14 @@ const HANDLE_CLASS = "!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreg
 /** Present for edge resolution only: no dot, no pointer, no new connection. */
 const INERT_HANDLE_CLASS = "!w-2.5 !h-2.5 !bg-transparent !border-transparent !opacity-0";
 const PRIMARY = "hsl(var(--primary))";
+
+/**
+ * The shapes that are cards — the process family, the document, evidence —
+ * resize within the C4 card's width bounds; the others keep their own.
+ */
+function isCardWidth(shape: FlowNodeShape): boolean {
+  return isCardShape(shape) || shape === "document";
+}
 
 /** Shapes drawn as a card: a box with the accent as a 3px bar on the left, like C4. */
 type CardShape = "rectangle" | "rounded" | "subroutine" | "evidence";
@@ -518,7 +527,8 @@ const ProcessNode = memo(
     return (
       <>
         <NodeResizer
-          minWidth={isMarkerShape(shape) ? 16 : 60}
+          minWidth={isMarkerShape(shape) ? 16 : isCardWidth(shape) ? CARD_MIN_W : 60}
+          maxWidth={isCardWidth(shape) ? CARD_MAX_W : undefined}
           minHeight={isMarkerShape(shape) ? 16 : 40}
           isVisible={isSelected}
           keepAspectRatio={isMarkerShape(shape)}
