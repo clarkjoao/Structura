@@ -4,6 +4,7 @@ import {
   CircleStop,
   Database,
   Diamond,
+  FileText,
   GitBranch,
   Hexagon,
   Play,
@@ -47,6 +48,7 @@ export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasP
     { shape: "subroutine", labelKey: "flowchart.shapes.subroutine", icon: SquareStack },
     { shape: "start", labelKey: "flowchart.shapes.start", icon: Play },
     { shape: "end", labelKey: "flowchart.shapes.end", icon: CircleStop },
+    { shape: "document", labelKey: "flowchart.shapes.document", icon: FileText },
   ];
 
   return shapes.map(({ shape, labelKey, icon }) => ({

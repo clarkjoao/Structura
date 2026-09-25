@@ -6,6 +6,7 @@ import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
 import type { ProcessNodeData } from "./ProcessNode.types";
 import {
   CYLINDER_CAP_RY,
+  DOCUMENT_WAVE_RISE,
   FLOW_SHAPE_DEFAULT_SIZE,
   HEXAGON_CUT,
   IO_SLANT,
@@ -247,6 +248,8 @@ function contentInset(shape: FlowNodeShape, w: number): CSSProperties {
     }
     case "cylinder":
       return { left: 10, right: 10, top: CYLINDER_CAP_RY * 2 + 4, bottom: 8 };
+    case "document":
+      return { left: 12, right: 10, top: 8, bottom: DOCUMENT_WAVE_RISE + 2 };
     default:
       return { left: 10, right: 10, top: 6, bottom: 6 };
   }

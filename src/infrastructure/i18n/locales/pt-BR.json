@@ -1135,6 +1135,7 @@
   },
   "flowchart": {
     "shapes": {
+      "document": "Documento",
       "start": "Início",
       "end": "Fim",
       "rectangle": "Processo",

@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   CircleDot,
+  FileText,
   GitFork,
   Layers,
   Repeat,
@@ -52,6 +53,7 @@ const SHAPE_ICONS: Record<FlowNodeShape, IconComponent | null> = {
   circle: null,
   start: null,
   end: null,
+  document: FileText,
 };
 
 export function FlowShapeIcon({

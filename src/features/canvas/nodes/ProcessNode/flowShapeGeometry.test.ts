@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { FlowNodeShape } from "@/features/diagram/model/component.types";
 import {
   CYLINDER_CAP_RY,
+  DOCUMENT_WAVE_RISE,
   IO_SLANT,
   cylinderTopCap,
   flowShapeAccentPath,
@@ -23,6 +24,7 @@ const SHAPES: FlowNodeShape[] = [
   "subroutine",
   "start",
   "end",
+  "document",
 ];
 
 const SIZES: Array<[number, number]> = [
@@ -163,5 +165,28 @@ describe("readFlowShape", () => {
     for (const shape of ["rectangle", "diamond", "start", "end"] as const) {
       expect(readFlowShape(shape)).toBe(shape);
     }
+  });
+});
+
+describe("document", () => {
+  it("puts the bottom handle on the wave, not on the box", () => {
+    const [w, h] = [220, 78];
+    const { bottom, left, right } = flowShapeHandles("document", w, h);
+    expect(bottom.x).toBe(w / 2);
+    // The wave dips below the base line around the middle, but never to the box edge.
+    expect(bottom.y).toBeGreaterThan(h - DOCUMENT_WAVE_RISE);
+    expect(bottom.y).toBeLessThan(h);
+    expect(left).toEqual({ x: 0, y: h / 2 });
+    expect(right).toEqual({ x: w, y: h / 2 });
+  });
+
+  it("keeps the wave's height when the document gets wider", () => {
+    const narrow = flowShapeHandles("document", 220, 78).bottom.y;
+    const wide = flowShapeHandles("document", 440, 78).bottom.y;
+    expect(wide).toBeCloseTo(narrow, 1);
+  });
+
+  it("paints its accent down the left edge", () => {
+    expect(flowShapeAccentPath("document", 220, 78)).toMatch(/^M1\.5 /);
   });
 });

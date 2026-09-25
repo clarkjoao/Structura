@@ -57,6 +57,7 @@ export const FLOW_SHAPE_STYLES: Record<string, string> = {
   // a start, thick for an end. The legacy combined circle exports as a start.
   start: "ellipse;aspect=fixed;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;",
   end: "ellipse;aspect=fixed;strokeWidth=4;verticalLabelPosition=bottom;verticalAlign=top;",
+  document: "shape=document;boundedLbl=1;size=0.18;",
 };
 
 export const THEME = {

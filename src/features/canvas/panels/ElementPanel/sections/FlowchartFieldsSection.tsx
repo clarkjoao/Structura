@@ -14,6 +14,7 @@ const FLOW_SHAPES: FlowNodeShape[] = [
   "subroutine",
   "start",
   "end",
+  "document",
 ];
 
 export interface FlowchartFieldsSectionProps {

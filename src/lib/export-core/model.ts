@@ -185,7 +185,8 @@ export type ExportFlowShape =
   | "circle"
   | "subroutine"
   | "start"
-  | "end";
+  | "end"
+  | "document";
 
 /**
  * A flowchart box.

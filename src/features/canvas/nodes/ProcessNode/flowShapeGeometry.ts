@@ -117,6 +117,85 @@ function ellipsePath(w: number, h: number): string {
   );
 }
 
+/** How far the document's wavy base rises above the bottom of the box. */
+export const DOCUMENT_WAVE_RISE = 14;
+
+/**
+ * The document's base as three cubic segments, from the right edge leftwards.
+ * The x positions scale with the width (they are the reference drawing's
+ * 220-wide proportions); the wave's height stays fixed, so a wide document is
+ * not a stormy one.
+ */
+function documentWave(w: number, h: number): Array<[Point, Point, Point, Point]> {
+  const x = (at: number) => (at / 220) * w;
+  const base = h - Math.min(DOCUMENT_WAVE_RISE, h / 3);
+  const start = { x: w - INSET, y: base };
+  return [
+    [start, { x: x(190), y: base - 8 }, { x: x(160), y: base - 8 }, { x: x(130), y: base }],
+    [
+      { x: x(130), y: base },
+      { x: x(100), y: base + 8 },
+      { x: x(70), y: base + 12 },
+      { x: x(40), y: base + 4 },
+    ],
+    [
+      { x: x(40), y: base + 4 },
+      { x: x(24), y: base },
+      { x: x(12), y: base },
+      { x: INSET, y: base + 4 },
+    ],
+  ];
+}
+
+function cubicAt([p0, p1, p2, p3]: [Point, Point, Point, Point], t: number): Point {
+  const u = 1 - t;
+  const a = u * u * u;
+  const b = 3 * u * u * t;
+  const c = 3 * u * t * t;
+  const d = t * t * t;
+  return {
+    x: a * p0.x + b * p1.x + c * p2.x + d * p3.x,
+    y: a * p0.y + b * p1.y + c * p2.y + d * p3.y,
+  };
+}
+
+/** The point on the document's wave directly under `x` — where the bottom handle sits. */
+function documentWaveAt(w: number, h: number, x: number): Point {
+  for (const segment of documentWave(w, h)) {
+    const [from, , , to] = segment;
+    if (x > from.x || x < to.x) continue;
+    // x decreases monotonically along each segment: bisect on t.
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 40; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (cubicAt(segment, mid).x > x) lo = mid;
+      else hi = mid;
+    }
+    const p = cubicAt(segment, (lo + hi) / 2);
+    return { x: round(x), y: round(p.y) };
+  }
+  return { x, y: h };
+}
+
+function documentPath(w: number, h: number): string {
+  const r = Math.min(7, w / 4, h / 4);
+  const wave = documentWave(w, h);
+  const top = INSET + r;
+  return [
+    `M${INSET} ${round(top)}`,
+    `A${round(r)} ${round(r)} 0 0 1 ${round(INSET + r)} ${INSET}`,
+    `H${round(w - INSET - r)}`,
+    `A${round(r)} ${round(r)} 0 0 1 ${round(w - INSET)} ${round(top)}`,
+    `V${round(wave[0][0].y)}`,
+    ...wave.map(
+      ([, c1, c2, to]) =>
+        `C${round(c1.x)} ${round(c1.y)} ${round(c2.x)} ${round(c2.y)} ${round(to.x)} ${round(to.y)}`,
+    ),
+    "Z",
+  ].join(" ");
+}
+
 /** The outline of `shape` at `w × h`, as an SVG path in node-local pixels. */
 export function flowShapePath(shape: FlowNodeShape, w: number, h: number): string {
   switch (shape) {
@@ -139,6 +218,8 @@ export function flowShapePath(shape: FlowNodeShape, w: number, h: number): strin
     case "start":
     case "end":
       return ellipsePath(w, h);
+    case "document":
+      return documentPath(w, h);
     default: {
       const exhaustive: never = shape;
       return exhaustive;
@@ -165,6 +246,11 @@ export function flowShapeAccentPath(shape: FlowNodeShape, w: number, h: number):
     const slant = clampFeature(IO_SLANT, w);
     return `M${round(slant + INSET + 0.5)} ${INSET + 0.5} L${INSET + 0.5} ${round(h - INSET - 0.5)}`;
   }
+  if (shape === "document") {
+    const r = Math.min(7, w / 4, h / 4);
+    const wave = documentWave(w, h);
+    return `M${INSET + 0.5} ${round(INSET + r)} V${round(wave[2][3].y)}`;
+  }
   if (shape === "hexagon") {
     const cut = clampFeature(HEXAGON_CUT, w);
     return (
@@ -183,6 +269,10 @@ export function flowShapeHandles(shape: FlowNodeShape, w: number, h: number): Fl
     top: { x: w / 2, y: 0 },
     bottom: { x: w / 2, y: h },
   };
+  if (shape === "document") {
+    // The base is a wave: the bottom handle sits on it, not on the box.
+    return { ...box, bottom: documentWaveAt(w, h, w / 2) };
+  }
   if (shape === "parallelogram") {
     // Halfway down each slanted edge, not on the box: the box's left midpoint
     // is outside the shape by half the slant.
@@ -213,6 +303,7 @@ export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; hei
   circle: { width: 80, height: 80 },
   start: { width: 56, height: 56 },
   end: { width: 56, height: 56 },
+  document: { width: 220, height: 78 },
 };
 
 /**

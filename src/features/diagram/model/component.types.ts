@@ -241,7 +241,8 @@ export type FlowNodeShape =
   | "circle" // Mermaid: ((text)) — legacy "start / end", read as `start`
   | "subroutine" // Mermaid: [[text]]
   | "start"
-  | "end";
+  | "end"
+  | "document";
 
 /** How a shape's accent colours its body. Absent means `"none"`. */
 export type NodeFillMode = "none" | "soft" | "solid";
