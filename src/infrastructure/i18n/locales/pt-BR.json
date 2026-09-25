@@ -1150,6 +1150,10 @@
     "vsm-supermarket": {
       "label": "Supermercado",
       "description": "Um estoque controlado de peças de onde a etapa seguinte puxa."
+    },
+    "vsm-push": {
+      "label": "Seta de empurrar",
+      "description": "Material empurrado para a etapa seguinte, precise ela ou não."
     }
   },
   "flowchart": {

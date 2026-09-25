@@ -1150,6 +1150,10 @@
     "vsm-supermarket": {
       "label": "Supermarket",
       "description": "A controlled store of parts that the downstream step pulls from."
+    },
+    "vsm-push": {
+      "label": "Push arrow",
+      "description": "Material pushed to the next step whether it needs it or not."
     }
   },
   "flowchart": {

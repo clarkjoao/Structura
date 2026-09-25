@@ -164,6 +164,7 @@ const NARROW_TYPES = [
   "svg",
   "endpoint",
   "vsm-external",
+  "vsm-push",
   "vsm-supermarket",
   "vsm-inventory",
   "vsm-process",

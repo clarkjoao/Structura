@@ -70,3 +70,31 @@ export function supermarketPath(w: number, h: number): string {
     ...shelves.map((y) => `M${inset} ${y} H${right}`),
   ].join(" ");
 }
+
+/** Length of the push arrow's head. */
+export const PUSH_HEAD = 22;
+
+/**
+ * The push arrow: a block arrow whose shaft is striped — three filled bands
+ * with gaps between them — and a solid head.
+ */
+export function pushArrowPaths(
+  w: number,
+  h: number,
+): { stripes: string[]; head: string; shaft: string } {
+  const head = Math.min(PUSH_HEAD, w / 3);
+  const shaftTop = round(h * 0.25);
+  const shaftBottom = round(h * 0.75);
+  const shaftEnd = w - head;
+  const band = (shaftEnd - INSET) / 5;
+  const stripes = [0, 2, 4].map((i) => {
+    const x0 = round(INSET + i * band);
+    const x1 = round(INSET + (i + 1) * band);
+    return `M${x0} ${shaftTop} H${x1} V${shaftBottom} H${x0} Z`;
+  });
+  const headPath =
+    `M${round(shaftEnd)} ${INSET} L${round(w - INSET)} ${round(h / 2)} ` +
+    `L${round(shaftEnd)} ${round(h - INSET)} Z`;
+  const shaft = `M${INSET} ${shaftTop} H${round(shaftEnd)} V${shaftBottom} H${INSET} Z`;
+  return { stripes, head: headPath, shaft };
+}

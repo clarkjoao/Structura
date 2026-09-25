@@ -291,7 +291,8 @@ export interface SkinParts {
 }
 
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
-export type VsmComponentType = "vsm-external" | "vsm-process" | "vsm-inventory" | "vsm-supermarket";
+export type VsmComponentType =
+  "vsm-external" | "vsm-process" | "vsm-inventory" | "vsm-supermarket" | "vsm-push";
 
 /** Which side of the stream an outside source sits on. Absent means supplier. */
 export type VsmRole = "supplier" | "customer";
@@ -332,6 +333,11 @@ export interface VsmSupermarketComponent extends BaseComponent, SkinParts {
   type: "vsm-supermarket";
 }
 
+/** A push arrow: material pushed downstream whether it is needed or not. */
+export interface VsmPushComponent extends BaseComponent, SkinParts {
+  type: "vsm-push";
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -352,6 +358,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | VsmPushComponent
   | VsmSupermarketComponent
   | VsmInventoryComponent
   | VsmProcessComponent
@@ -391,6 +398,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<VsmPushComponent, "id">> &
   Partial<Omit<VsmSupermarketComponent, "id">> &
   Partial<Omit<VsmInventoryComponent, "id">> &
   Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number };
@@ -414,6 +422,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmPushComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmSupermarketComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmInventoryComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number })
