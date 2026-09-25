@@ -1202,6 +1202,10 @@
     "k8s-ingress": {
       "label": "Ingress",
       "description": "A Kubernetes Ingress: the host and class traffic enters the cluster by."
+    },
+    "k8s-container": {
+      "label": "Container",
+      "description": "A container of a workload's pod: the main one, a sidecar (proxy, logs, secrets, metrics) or an init container run first, in order."
     }
   },
   "flowchart": {
@@ -2602,7 +2606,24 @@
       "serviceType": "Service type",
       "port": "Port",
       "host": "Host",
-      "ingressClass": "Ingress class"
+      "ingressClass": "Ingress class",
+      "podRole": "Role",
+      "purpose": "Function",
+      "order": "Order",
+      "ports": "Ports (comma separated)"
+    },
+    "role": {
+      "main": "main",
+      "sidecar": "sidecar",
+      "init": "init"
+    },
+    "addContainer": "Add container",
+    "addSidecar": "Add sidecar",
+    "addInit": "Add init",
+    "variant": {
+      "main": "Container",
+      "sidecar": "Sidecar",
+      "init": "Init container"
     }
   }
 }

@@ -68,7 +68,8 @@ describe("kubernetes structure", () => {
       expect(element.canvas.canBeConnectionSource, element.id).toBe(true);
       expect(element.canvas.canHaveParent, element.id).toBe(true);
     }
-    expect(getElement("k8s-workload")!.canvas.derivesSize).toBe(false);
+    // Compact, a workload's height comes from its sidecar tabs.
+    expect(getElement("k8s-workload")!.canvas.derivesSize).toBe(true);
   });
 
   it("exports ×N only for kinds that keep replicas, and HPA only with both bounds", () => {

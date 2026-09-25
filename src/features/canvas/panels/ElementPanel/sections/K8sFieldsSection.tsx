@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
+import { Plus } from "lucide-react";
 import {
   isK8sClusterComponent,
+  isK8sContainerComponent,
   isK8sIngressComponent,
   isK8sNamespaceComponent,
   isK8sServiceComponent,
@@ -10,7 +12,13 @@ import {
   type K8sServiceComponent,
   type K8sWorkloadComponent,
   type K8sWorkloadKind,
+  type K8sContainerRole,
+  useDiagramActions,
+  useResolvedComponents,
+  useResolvedNodeLayouts,
 } from "@/features/diagram";
+import { podContainers, SIDECAR_PURPOSES } from "@/features/diagram/utils/k8s-pod";
+import { Button } from "@/components/ui/button";
 import { DEFAULT_WORKLOAD_KIND } from "@/features/diagram/utils/k8s-workload";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -36,6 +44,31 @@ const POLICIES: readonly NonNullable<K8sWorkloadComponent["concurrencyPolicy"]>[
   "Forbid",
   "Replace",
 ];
+
+const ROLES: readonly K8sContainerRole[] = ["main", "sidecar", "init"];
+/** "8080, 9090" → [8080, 9090]; nothing valid left clears it. */
+const portList = (value: string) => {
+  const ports = value
+    .split(",")
+    .map((item) => Number(item.trim()))
+    .filter((n) => Number.isInteger(n) && n > 0);
+  return ports.length > 0 ? ports : undefined;
+};
+
+/*
+ * Where a new container goes inside its workload, workload-relative: inits in
+ * a row under the card's header, then sidecars in a column with the main one
+ * beside them. Nothing already there moves.
+ */
+const POD_HEADER = 116;
+const POD_BODY = POD_HEADER + 68;
+const SLOT = { width: 180, height: 72, rowStep: 84, initStep: 172, mainX: 204 } as const;
+
+function containerSlot(role: K8sContainerRole, index: number): { x: number; y: number } {
+  if (role === "init") return { x: 12 + index * SLOT.initStep, y: POD_HEADER };
+  if (role === "sidecar") return { x: 12, y: POD_BODY + index * SLOT.rowStep };
+  return { x: SLOT.mainX, y: POD_BODY + index * SLOT.rowStep };
+}
 
 const SELECT_CLASS =
   "w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
@@ -79,6 +112,100 @@ export function K8sFieldsSection({
   onChange: (patch: ComponentPatch) => void;
 }) {
   const { t } = useTranslation();
+  const components = useResolvedComponents();
+  const layouts = useResolvedNodeLayouts();
+  const { addComponent, updateNodeLayout } = useDiagramActions();
+
+  /** Adds a container in its slot and grows the workload to hold it, if it has to. */
+  const addContainer = (workloadId: string, role: K8sContainerRole) => {
+    const workload = layouts[workloadId];
+    if (!workload) return;
+    const pod = podContainers(workloadId, components, layouts);
+    const index =
+      role === "init"
+        ? pod.inits.length
+        : role === "sidecar"
+          ? pod.sidecars.length
+          : pod.main.length;
+    const slot = containerSlot(role, index);
+    const name = role === "main" ? "app" : role === "sidecar" ? "sidecar" : `init-${index + 1}`;
+    const added = addComponent(
+      "k8s-container",
+      name,
+      workloadId,
+      { x: workload.x + slot.x, y: workload.y + slot.y },
+      undefined,
+      undefined,
+      undefined,
+      role === "main" ? {} : { podRole: role, ...(role === "init" ? { order: index + 1 } : {}) },
+    );
+    if (!added || added.parentId !== workloadId) return;
+    const width = Math.max(workload.width ?? 0, slot.x + (role === "init" ? 160 : SLOT.width) + 12);
+    const height = Math.max(workload.height ?? 0, slot.y + SLOT.height + 12);
+    if (width !== workload.width || height !== workload.height) {
+      updateNodeLayout(workloadId, { x: workload.x, y: workload.y }, { width, height });
+    }
+  };
+
+  if (isK8sContainerComponent(component)) {
+    const role = component.podRole ?? "main";
+    return (
+      <>
+        <Select
+          label={t("k8s.fields.podRole")}
+          value={role}
+          options={ROLES}
+          onChange={(next) => onChange({ podRole: next === "main" ? undefined : next })}
+        />
+        {role === "sidecar" && (
+          <div className="space-y-1.5">
+            <label htmlFor="k8s-purpose" className={`${DEPLOY_LABEL_CLASS} block`}>
+              {t("k8s.fields.purpose")}
+            </label>
+            <input
+              id="k8s-purpose"
+              list="k8s-purpose-presets"
+              value={component.purpose ?? ""}
+              onChange={(event) => onChange({ purpose: text(event.target.value) })}
+              className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            />
+            <datalist id="k8s-purpose-presets">
+              {SIDECAR_PURPOSES.map((purpose) => (
+                <option key={purpose} value={purpose} />
+              ))}
+            </datalist>
+          </div>
+        )}
+        {role === "init" && (
+          <TextField
+            id="k8s-order"
+            type="number"
+            label={t("k8s.fields.order")}
+            value={component.order}
+            onChange={(value) => onChange({ order: positive(value) })}
+          />
+        )}
+        <TextField
+          id="k8s-container-image"
+          label={t("k8s.fields.image")}
+          value={component.image}
+          onChange={(value) => onChange({ image: text(value) })}
+        />
+        <TextField
+          id="k8s-ports"
+          label={t("k8s.fields.ports")}
+          value={component.ports?.join(", ")}
+          onChange={(value) => onChange({ ports: portList(value) })}
+        />
+        <TextField
+          id="k8s-container-resources"
+          label={t("k8s.fields.resources")}
+          value={component.resources}
+          onChange={(value) => onChange({ resources: text(value) })}
+        />
+      </>
+    );
+  }
 
   if (isK8sClusterComponent(component)) {
     return (
@@ -201,6 +328,27 @@ export function K8sFieldsSection({
           value={component.resources}
           onChange={(value) => onChange({ resources: text(value) })}
         />
+        <div className="flex flex-wrap gap-2">
+          {(["main", "sidecar", "init"] as const).map((role) => (
+            <Button
+              key={role}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 flex-1 text-xs"
+              onClick={() => addContainer(component.id, role)}
+            >
+              <Plus />
+              {t(
+                role === "main"
+                  ? "k8s.addContainer"
+                  : role === "sidecar"
+                    ? "k8s.addSidecar"
+                    : "k8s.addInit",
+              )}
+            </Button>
+          ))}
+        </div>
       </>
     );
   }

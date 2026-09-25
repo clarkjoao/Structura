@@ -21,6 +21,9 @@ export type K8sWorkloadNodeData = SkinNodeData & {
   resources?: string;
   schedule?: string;
   concurrencyPolicy?: string;
+  collapsed: boolean;
+  /** Init containers, said as "init ×N" on the compact card. */
+  initCount: number;
   defaultAccent: string;
   incomingCount: number;
   outgoingCount: number;
@@ -64,7 +67,7 @@ const K8sWorkloadNode = memo(({ data: d, selected }: NodeProps<Node<K8sWorkloadN
     <>
       <NodeResizer
         {...ELEMENT_SIZE_LIMITS["k8s-workload"]}
-        isVisible={isSelected}
+        isVisible={isSelected && !d.collapsed}
         lineClassName="!border-transparent"
         handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
       />
@@ -115,6 +118,7 @@ const K8sWorkloadNode = memo(({ data: d, selected }: NodeProps<Node<K8sWorkloadN
           )}
           {d.image && <Chip>{d.image}</Chip>}
           {d.resources && <Chip>{d.resources}</Chip>}
+          {d.collapsed && d.initCount > 0 && <Chip>init ×{d.initCount}</Chip>}
         </div>
         {d.kind === "CronJob" ? (
           <div className="flex min-w-0 flex-wrap gap-1">

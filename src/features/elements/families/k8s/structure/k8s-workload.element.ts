@@ -2,7 +2,12 @@ import { Box } from "lucide-react";
 import K8sWorkloadNode from "@/features/canvas/nodes/DeployNodes/K8sWorkloadNode";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
-import { COMPONENT_TYPE_K8S_WORKLOAD } from "@/features/diagram/model/component-type-constants";
+import {
+  COMPONENT_TYPE_K8S_CONTAINER,
+  COMPONENT_TYPE_K8S_WORKLOAD,
+} from "@/features/diagram/model/component-type-constants";
+import { COMPACT_TAB } from "@/features/canvas/core/compactView";
+import { podContainers } from "@/features/diagram/utils/k8s-pod";
 import { isK8sWorkloadComponent } from "@/features/diagram/model/component.guards";
 import type { K8sWorkloadKind } from "@/features/diagram/model/component.types";
 import {
@@ -25,6 +30,17 @@ import {
 
 const WORKLOAD_W = 240;
 const WORKLOAD_H = 120;
+/**
+ * Compact, the card is tall enough for its sidecar tabs: derived, never
+ * stored. With none it is the plain card's height.
+ */
+export function workloadCompactHeight(sidecars: number): number {
+  return Math.max(
+    WORKLOAD_H,
+    COMPACT_TAB.top + sidecars * (COMPACT_TAB.height + COMPACT_TAB.gap) + 8,
+  );
+}
+
 /** Where the pod tiles start in the exported card, and how big each is. */
 const TILE = { y: 64, width: 52, height: 18, gap: 4 } as const;
 
@@ -66,6 +82,7 @@ export const k8sWorkloadElement: ElementDescriptor = {
       "zones",
       "schedule",
       "concurrencyPolicy",
+      "collapsed",
       ...skinPatchableKeys,
     ],
   },
@@ -74,18 +91,23 @@ export const k8sWorkloadElement: ElementDescriptor = {
     rfType: COMPONENT_TYPE_K8S_WORKLOAD,
     component: K8sWorkloadNode,
     handles: SPREAD_HANDLES,
-    role: "custom-shape",
+    // The workload is its pod template: it takes the pod's containers.
+    role: "container",
     zIndex: 1,
     connectable: true,
     canHaveParent: true,
-    canBeParent: false,
+    canBeParent: true,
     canBeConnectionSource: true,
-    derivesSize: false,
+    // Compact, the height is derived from the sidecar tabs, not stored.
+    derivesSize: true,
+    acceptsChildren: [COMPONENT_TYPE_K8S_CONTAINER],
+    collapsible: true,
 
     buildData: (comp, ctx) => {
       if (!isK8sWorkloadComponent(comp)) return {};
       const kind = workloadKind(comp);
       const { tiles, more } = replicaTiles(comp, ctx.resolvedComponents);
+      const pod = podContainers(comp.id, ctx.resolvedComponents);
       return {
         ...deployBuildData(comp, ctx),
         kind,
@@ -99,15 +121,22 @@ export const k8sWorkloadElement: ElementDescriptor = {
         resources: comp.resources,
         schedule: comp.schedule,
         concurrencyPolicy: comp.concurrencyPolicy,
+        collapsed: comp.collapsed === true,
+        initCount: pod.inits.length,
         defaultAccent: K8S_ACCENT,
       };
     },
 
     buildStyle: (comp, ctx) => {
+      if (!isK8sWorkloadComponent(comp)) return undefined;
       const layout = ctx.resolvedNodeLayouts[comp.id];
+      const height =
+        comp.collapsed === true
+          ? workloadCompactHeight(podContainers(comp.id, ctx.resolvedComponents).sidecars.length)
+          : (layout?.height ?? WORKLOAD_H);
       return {
         width: layout?.width ?? WORKLOAD_W,
-        height: layout?.height ?? WORKLOAD_H,
+        height,
         ...playbackStyle(comp, ctx),
       };
     },

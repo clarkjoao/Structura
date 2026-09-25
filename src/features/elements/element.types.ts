@@ -14,6 +14,7 @@ import type { PanelKind } from "@/features/diagram/enums";
 import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import type {
   FlowNodeShape,
+  K8sContainerRole,
   NodeStrokeMode,
   VsmRole,
 } from "@/features/diagram/model/component.types";
@@ -196,6 +197,10 @@ export interface ElementCreateOptions {
   laneAccent?: string;
   /** i18n key of a preset swimlane's label. */
   laneLabelKey?: string;
+  /** What a new k8s container is in its pod; absent (main) is not written. */
+  podRole?: K8sContainerRole;
+  /** A new init container's place in the run order. */
+  order?: number;
 }
 
 export interface ElementSize {
@@ -425,6 +430,11 @@ export interface ElementSkin {
    * written: picking it in a control clears the stored accent instead.
    */
   defaultAccent: string;
+  /**
+   * When the default depends on the component — a k8s container's on its
+   * role — the default for this one. Falls back to `defaultAccent`.
+   */
+  defaultAccentOf?: (component: Component) => string;
 }
 
 export interface ElementDescriptor {
