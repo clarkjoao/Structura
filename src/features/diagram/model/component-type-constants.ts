@@ -84,6 +84,30 @@ export function isK8sContainerType(type: string): type is "k8s-container" {
   return type === COMPONENT_TYPE_K8S_CONTAINER;
 }
 
+export const COMPONENT_TYPE_SFN_STATE_MACHINE = "sfn-state-machine";
+
+export function isSfnStateMachineType(type: string): type is "sfn-state-machine" {
+  return type === COMPONENT_TYPE_SFN_STATE_MACHINE;
+}
+
+export const COMPONENT_TYPE_SFN_STATE = "sfn-state";
+
+export function isSfnStateType(type: string): type is "sfn-state" {
+  return type === COMPONENT_TYPE_SFN_STATE;
+}
+
+export const COMPONENT_TYPE_SFN_PARALLEL = "sfn-parallel";
+
+export function isSfnParallelType(type: string): type is "sfn-parallel" {
+  return type === COMPONENT_TYPE_SFN_PARALLEL;
+}
+
+export const COMPONENT_TYPE_SFN_MAP = "sfn-map";
+
+export function isSfnMapType(type: string): type is "sfn-map" {
+  return type === COMPONENT_TYPE_SFN_MAP;
+}
+
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
 export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";

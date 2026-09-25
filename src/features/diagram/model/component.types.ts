@@ -29,6 +29,7 @@ export type ComponentType =
   | "external-element"
   | "flow-divider"
   | VsmComponentType
+  | SfnComponentType
   | K8sStructureType
   | DeployComponentType
   | AwsCategoryId
@@ -316,6 +317,9 @@ export type K8sStructureType =
   | "k8s-ingress"
   | "k8s-container";
 
+/** AWS Step Functions: a state machine, its states, Parallel and Map (the `aws-sfn` family). */
+export type SfnComponentType = "sfn-state-machine" | "sfn-state" | "sfn-parallel" | "sfn-map";
+
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
 export type VsmComponentType =
   | "vsm-external"
@@ -518,6 +522,55 @@ export interface K8sContainerComponent extends BaseComponent, SkinParts {
   resources?: string;
 }
 
+/** What a state is in its machine. Absent means Task. `Start` is the entry marker, not an ASL state. */
+export type SfnStateType = "Task" | "Choice" | "Wait" | "Pass" | "Succeed" | "Fail" | "Start";
+
+/** One retrier of a state (ASL `Retry`); absent fields mean ASL's defaults. */
+export interface SfnRetry {
+  errors?: string[];
+  maxAttempts?: number;
+  backoffRate?: number;
+  intervalSeconds?: number;
+}
+
+/** A Step Functions state machine: its states are its children. */
+export interface SfnStateMachineComponent extends BaseComponent, SkinParts {
+  type: "sfn-state-machine";
+  /** Absent means Standard. */
+  workflowType?: "Standard" | "Express";
+  xray?: boolean;
+  collapsed?: boolean;
+}
+
+/** A state of a machine (or of a Parallel branch, or of a Map's iterator). */
+export interface SfnStateComponent extends BaseComponent, SkinParts {
+  type: "sfn-state";
+  stateType?: SfnStateType;
+  /** A Task's integrated service: "lambda", "dynamodb", "sqs"… */
+  service?: string;
+  /** A Task's action on it: "Invoke", "PutItem"… */
+  action?: string;
+  /** A Wait's seconds. */
+  waitSeconds?: number;
+  /** A Fail's error name. */
+  errorName?: string;
+  retry?: SfnRetry[];
+}
+
+/** A Parallel state: its branches' states are its children, side by side. */
+export interface SfnParallelComponent extends BaseComponent, SkinParts {
+  type: "sfn-parallel";
+  retry?: SfnRetry[];
+}
+
+/** A Map state: its iterator's states are its children. */
+export interface SfnMapComponent extends BaseComponent, SkinParts {
+  type: "sfn-map";
+  itemsPath?: string;
+  maxConcurrency?: number;
+  retry?: SfnRetry[];
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -538,6 +591,10 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | SfnMapComponent
+  | SfnParallelComponent
+  | SfnStateComponent
+  | SfnStateMachineComponent
   | K8sContainerComponent
   | K8sIngressComponent
   | K8sServiceComponent
@@ -590,6 +647,10 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<SfnMapComponent, "id">> &
+  Partial<Omit<SfnParallelComponent, "id">> &
+  Partial<Omit<SfnStateComponent, "id">> &
+  Partial<Omit<SfnStateMachineComponent, "id">> &
   Partial<Omit<K8sContainerComponent, "id">> &
   Partial<Omit<K8sIngressComponent, "id">> &
   Partial<Omit<K8sServiceComponent, "id">> &
@@ -626,6 +687,10 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<SfnMapComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<SfnParallelComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<SfnStateComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<SfnStateMachineComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sContainerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sIngressComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sServiceComponent, "id">> & { width?: number; height?: number })

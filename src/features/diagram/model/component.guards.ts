@@ -23,6 +23,10 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  SfnMapComponent,
+  SfnParallelComponent,
+  SfnStateComponent,
+  SfnStateMachineComponent,
   K8sContainerComponent,
   K8sIngressComponent,
   K8sServiceComponent,
@@ -55,6 +59,10 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isSfnMapType,
+  isSfnParallelType,
+  isSfnStateType,
+  isSfnStateMachineType,
   isK8sContainerType,
   isK8sIngressType,
   isK8sServiceType,
@@ -165,6 +173,16 @@ export const isK8sIngressComponent = (c: Component): c is K8sIngressComponent =>
 
 export const isK8sContainerComponent = (c: Component): c is K8sContainerComponent =>
   isK8sContainerType(c.type);
+
+export const isSfnStateMachineComponent = (c: Component): c is SfnStateMachineComponent =>
+  isSfnStateMachineType(c.type);
+
+export const isSfnStateComponent = (c: Component): c is SfnStateComponent => isSfnStateType(c.type);
+
+export const isSfnParallelComponent = (c: Component): c is SfnParallelComponent =>
+  isSfnParallelType(c.type);
+
+export const isSfnMapComponent = (c: Component): c is SfnMapComponent => isSfnMapType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);
