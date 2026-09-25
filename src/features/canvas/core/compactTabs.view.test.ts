@@ -95,8 +95,8 @@ describe("tabs on a compact parent", () => {
     const byId = Object.fromEntries(v.shownConnections.map((c) => [c.id, c]));
     expect(byId.inbound).toMatchObject({ sourceId: "ing", targetId: "envoy" });
     expect(byId.toMain).toMatchObject({ sourceId: "ing", targetId: "pod" });
-    // tab → hidden sibling becomes tab → its own parent: still drawn, on the card.
-    expect(byId.inPod).toMatchObject({ sourceId: "envoy", targetId: "pod" });
+    // tab → hidden sibling stays inside the card the tab belongs to: not drawn.
+    expect(byId.inPod).toBeUndefined();
   });
 
   it("a tab hides with its parent when something above compacts the parent away", () => {

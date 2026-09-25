@@ -38,6 +38,15 @@ export function visibleAncestorOf(
 
 const NO_TABS: ReadonlyMap<string, number> = new Map();
 
+function isTabOn(
+  tabId: string,
+  parentId: string,
+  components: Record<string, Component>,
+  tabIds: ReadonlyMap<string, number>,
+): boolean {
+  return tabIds.has(tabId) && components[tabId]?.parentId === parentId;
+}
+
 /** A tab's box on its compact parent, parent-relative: along the right edge, top to bottom. */
 export const COMPACT_TAB = { width: 120, height: 24, gap: 4, top: 36, overlap: 4 } as const;
 
@@ -89,6 +98,10 @@ export function remapConnectionsToVisible(
       continue;
     }
     if (sourceId === targetId) continue;
+    // A tab is part of its parent's card: a link from it to a sibling hidden
+    // in that card (envoy → main on a compact workload) is inside the card too.
+    if (isTabOn(sourceId, targetId, components, tabIds)) continue;
+    if (isTabOn(targetId, sourceId, components, tabIds)) continue;
     out.push({ ...connection, sourceId, targetId });
   }
   return out;

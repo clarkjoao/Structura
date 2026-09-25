@@ -169,7 +169,7 @@ export function projectEdges(
   const assignmentById = new Map(handleAssignments.map((entry) => [entry.connId, entry]));
   const reading = policy.kind === "read";
   return view.shownConnections.map((connection) => {
-    const drawn = withPodLinkStyle(connection, view.components, view.connections[connection.id]);
+    const drawn = withPodLinkStyle(connection, view.components);
     const edge = buildEdge(drawn, assignmentById.get(connection.id), {
       diagram: ctx.diagram,
       selectedEdgeId: null,

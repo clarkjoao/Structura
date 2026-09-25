@@ -162,10 +162,8 @@ describe("reading ingress → envoy (sidecar) → checkout-api (main)", () => {
     expect(nodes.find((n) => n.id === "envoy")?.hidden).toBeFalsy();
     expect(nodes.find((n) => n.id === "app")?.hidden).toBe(true);
     expect(edges.find((e) => e.id === "c1")).toMatchObject({ source: "ing", target: "envoy" });
-    // envoy → main is drawn from the tab onto the card, still dashed.
-    const c2 = edges.find((e) => e.id === "c2")!;
-    expect(c2).toMatchObject({ source: "envoy", target: "wl" });
-    expect(c2.data).toMatchObject({ strokeStyle: "dashed" });
+    // envoy → main runs inside the compact card the tab belongs to: not drawn.
+    expect(edges.map((e) => e.id)).not.toContain("c2");
   });
 
   it("the mermaid path climbs typed containers only, and survives a broken or cyclic parent", () => {

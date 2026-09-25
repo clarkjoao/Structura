@@ -124,9 +124,4 @@ describe("withPodLinkStyle", () => {
     const outside = link({ sourceId: "wl" });
     expect(withPodLinkStyle(outside, world())).toBe(outside);
   });
-
-  it("reads the stored ends when the drawn ones were redrawn onto a compact workload", () => {
-    const drawn = link({ targetId: "wl" });
-    expect(withPodLinkStyle(drawn, world(), link()).style?.strokeStyle).toBe("dashed");
-  });
 });

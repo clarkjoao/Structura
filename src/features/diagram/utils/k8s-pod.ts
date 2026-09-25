@@ -102,20 +102,18 @@ export const POD_LINK_COLOR = "hsl(var(--node-system))";
 
 /**
  * How an in-pod link is drawn when nobody styled it: dashed teal — a normal
- * edge, the style derived at draw time and never written. `stored` is the
- * connection as saved (a compact workload redraws its ends); a stroke or a
+ * edge, the style derived at draw time and never written. A stroke or a
  * colour the author chose wins.
  */
 export function withPodLinkStyle(
-  drawn: Connection,
+  connection: Connection,
   components: Record<string, Component>,
-  stored: Connection = drawn,
 ): Connection {
-  if (!isInPodLink(stored, components)) return drawn;
-  const style = drawn.style ?? {};
-  if (style.strokeStyle !== undefined && style.color !== undefined) return drawn;
+  if (!isInPodLink(connection, components)) return connection;
+  const style = connection.style ?? {};
+  if (style.strokeStyle !== undefined && style.color !== undefined) return connection;
   return {
-    ...drawn,
+    ...connection,
     style: {
       ...style,
       strokeStyle: style.strokeStyle ?? StrokeStyle.Dashed,
