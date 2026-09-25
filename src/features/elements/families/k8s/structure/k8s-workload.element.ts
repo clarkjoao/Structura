@@ -7,7 +7,7 @@ import {
   COMPONENT_TYPE_K8S_WORKLOAD,
 } from "@/features/diagram/model/component-type-constants";
 import { COMPACT_TAB } from "@/features/canvas/core/compactView";
-import { podContainers } from "@/features/diagram/utils/k8s-pod";
+import { isMeshed, podContainers } from "@/features/diagram/utils/k8s-pod";
 import { isK8sWorkloadComponent } from "@/features/diagram/model/component.guards";
 import type { K8sWorkloadKind } from "@/features/diagram/model/component.types";
 import {
@@ -123,6 +123,7 @@ export const k8sWorkloadElement: ElementDescriptor = {
         concurrencyPolicy: comp.concurrencyPolicy,
         collapsed: comp.collapsed === true,
         initCount: pod.inits.length,
+        meshed: isMeshed(comp, ctx.resolvedComponents),
         defaultAccent: K8S_ACCENT,
       };
     },
@@ -216,6 +217,20 @@ export const k8sWorkloadElement: ElementDescriptor = {
               shapeStyle: k8sIconStyle(WORKLOAD_PR_ICON[kind]),
             },
             ...tileCells,
+            // The mesh's badge: its sidecar is implied, not a container.
+            ...(isMeshed(comp, components)
+              ? [
+                  {
+                    id: `${comp.id}-mesh`,
+                    label: "mesh",
+                    x: Math.max(0, base.width - 52),
+                    y: 6,
+                    width: 44,
+                    height: 16,
+                    fillOpacity: 12,
+                  },
+                ]
+              : []),
           ],
           ...flowExportColours(comp, K8S_ACCENT),
         };

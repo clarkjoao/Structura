@@ -91,6 +91,23 @@ describe("kubernetes structure", () => {
     expect(exportLabel({ hpaMin: 2, hpaMax: 5 })).toContain("HPA 2–5");
   });
 
+  it("badges a workload in a meshed namespace, without adding a container", () => {
+    const workload = getElement("k8s-workload")!;
+    const ns = comp({ id: "ns", name: "shop", type: "k8s-namespace", meshInjection: true });
+    const w = comp({ id: "w", name: "api", type: "k8s-workload", parentId: "ns" });
+    const ctx = { ...emptyNodeBuildContext(), resolvedComponents: { ns, w } };
+    expect(workload.canvas.buildData(w, ctx)).toMatchObject({ meshed: true, initCount: 0 });
+    const plain = { ...ctx, resolvedComponents: { ns: { ...ns, meshInjection: undefined }, w } };
+    expect(workload.canvas.buildData(w, plain as never)).toMatchObject({ meshed: false });
+    const exported = workload.export.drawio.toExportNode(
+      w,
+      { id: "w", parentId: "ns", x: 0, y: 0, width: 240, height: 120 },
+      { components: { ns, w }, layouts: {} },
+    ) as { representations: { id: string; label: string }[] };
+    expect(exported.representations.find((r) => r.id === "w-mesh")?.label).toBe("mesh");
+    expect(Object.keys(ctx.resolvedComponents)).toEqual(["ns", "w"]);
+  });
+
   it("names a service by its type and port", () => {
     const base = {
       id: "s",

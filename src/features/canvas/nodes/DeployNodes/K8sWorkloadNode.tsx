@@ -24,6 +24,8 @@ export type K8sWorkloadNodeData = SkinNodeData & {
   collapsed: boolean;
   /** Init containers, said as "init ×N" on the compact card. */
   initCount: number;
+  /** In a namespace whose mesh injects a sidecar: badged, no container drawn. */
+  meshed: boolean;
   defaultAccent: string;
   incomingCount: number;
   outgoingCount: number;
@@ -91,7 +93,19 @@ const K8sWorkloadNode = memo(({ data: d, selected }: NodeProps<Node<K8sWorkloadN
         }`}
         style={{ ...card, borderLeft: `3px solid ${accent}` }}
       >
-        <div className="flex min-w-0 items-center gap-2">
+        {d.meshed && (
+          <span
+            className="absolute right-2 top-1 select-none rounded-full px-1.5 font-mono text-[10px] leading-4"
+            style={{
+              border: "1px solid hsl(var(--node-system))",
+              color: "hsl(var(--node-system))",
+              background: "hsl(var(--card))",
+            }}
+          >
+            mesh
+          </span>
+        )}
+        <div className={`flex min-w-0 items-center gap-2 ${d.meshed ? "pr-11" : ""}`}>
           <Box size={16} strokeWidth={1.75} color={palette.icon} className="shrink-0" />
           <span
             className="min-w-0 flex-1 select-none truncate text-sm font-semibold"
