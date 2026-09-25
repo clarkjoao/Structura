@@ -94,6 +94,14 @@ describe("keySpaceSegments", () => {
     expect(segments.map((s) => s.share)).toEqual([0.5, 0.5]);
   });
 
+  it("gives a zero share nothing when another shard has some", () => {
+    const segments = keySpaceSegments("range", [
+      shard("a", { share: 0 }),
+      shard("b", { share: 2 }),
+    ]);
+    expect(segments.map((s) => s.share)).toEqual([0, 1]);
+  });
+
   it("ignores share outside a range strategy", () => {
     const segments = keySpaceSegments("geo", [shard("a", { share: 9 }), shard("b")]);
     expect(segments.map((s) => s.share)).toEqual([0.5, 0.5]);
@@ -102,6 +110,8 @@ describe("keySpaceSegments", () => {
   it("labels a segment with the shard's range, or its name", () => {
     const segments = keySpaceSegments("geo", [shard("a", { keyRange: "BR" }), shard("b")]);
     expect(segments.map((s) => s.label)).toEqual(["BR", "b"]);
+    const hashed = keySpaceSegments("hash", [shard("a", { keyRange: "0–7f" }), shard("b")]);
+    expect(hashed.map((s) => s.label)).toEqual(["0–7f", "b"]);
   });
 
   it("is empty without shards", () => {

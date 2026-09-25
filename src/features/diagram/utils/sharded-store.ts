@@ -75,16 +75,11 @@ export function keySpaceSegments(
   const total = weights.reduce((sum, weight) => sum + weight, 0);
   return shards.map((shard, index) => ({
     shardId: shard.id,
-    label: segmentLabel(strategy, shard),
+    label: shard.keyRange || shard.name,
     share: total > 0 ? weights[index] / total : 1 / shards.length,
     hot: shard.hot === true,
     emphasis: index % 2 === 0 ? "light" : "strong",
   }));
-}
-
-function segmentLabel(strategy: ShardStrategy, shard: ShardComponent): string {
-  if (strategy === "geo" || strategy === "directory") return shard.keyRange || shard.name;
-  return shard.keyRange || shard.name;
 }
 
 function validNumber(value: number | undefined): number | undefined {

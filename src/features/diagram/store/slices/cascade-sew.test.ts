@@ -99,6 +99,13 @@ describe("grouping sewn joins", () => {
     expect(roots.get("y")).toBe("x");
   });
 
+  it("removedRoots: stops on a cycle above the removed element", async () => {
+    const { removedRoots } = await import("../../utils/flow-repair");
+    const parents: Record<string, string | null> = { z: "x", x: "y", y: "x" };
+    const roots = removedRoots(new Set(["z"]), new Set(["z"]), (id) => parents[id]);
+    expect(roots.get("z")).toBe("z");
+  });
+
   it("toFlowSewNotices: one notice from the first join's start to the last join's end", async () => {
     const { toFlowSewNotices } = await import("../../utils/flow-repair");
     const notices = toFlowSewNotices(
