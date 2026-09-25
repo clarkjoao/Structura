@@ -47,6 +47,7 @@ export function emptyNodeBuildContext(overrides: Partial<NodeBuildContext> = {})
       participantNodeIds: new Set<string>(),
       participantConnIds: new Set<string>(),
       openFrameConnIds: new Set<string>(),
+      litNodeIds: new Set<string>(),
     },
     activeStep: null,
     flowBadges: null,

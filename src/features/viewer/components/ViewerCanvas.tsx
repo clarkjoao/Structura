@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
-import { EMPTY_READER_CATALOG, buildFlowOutline, type ReaderCatalog } from "@/features/diagram";
+import {
+  EMPTY_READER_CATALOG,
+  buildFlowOutline,
+  resolveVersionSnapshot,
+  type ReaderCatalog,
+} from "@/features/diagram";
 import {
   DiagramControls,
   DiagramFlowProvider,
@@ -19,6 +24,7 @@ import {
   FlowReadingRail,
   buildFlowBadges,
   buildFlowHighlight,
+  compactContainerIdsOf,
   useFlowModePlayback,
   useFlowReadingKeys,
   useFrameReadStep,
@@ -141,6 +147,13 @@ const ViewerCanvasContent = ({
     return firstStep?.id ?? null;
   }, [previewFlow]);
 
+  // Steps on children of compact containers are drawn on the container, in
+  // the scene the link draws.
+  const visibility = useMemo(() => {
+    const { components } = resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null);
+    return { components, compactIds: compactContainerIdsOf(components) };
+  }, [diagram]);
+
   const reading = useMemo(() => {
     if (previewMode && previewFlow) {
       // Show the previewed flow's numbering with the entry step active, but
@@ -148,7 +161,7 @@ const ViewerCanvasContent = ({
       if (!previewEntryStepId) return null;
       return {
         badges: buildFlowBadges(previewFlow, buildFlowOutline(previewFlow).rows),
-        highlight: buildFlowHighlight(previewFlow, previewEntryStepId, []),
+        highlight: buildFlowHighlight(previewFlow, previewEntryStepId, [], visibility),
       };
     }
     if (!readingFlow) return null;
@@ -156,7 +169,7 @@ const ViewerCanvasContent = ({
     return {
       badges: rows.length > 0 ? buildFlowBadges(readingFlow, rows) : null,
       highlight: playing?.currentStepId
-        ? buildFlowHighlight(readingFlow, playing.currentStepId, playing.history)
+        ? buildFlowHighlight(readingFlow, playing.currentStepId, playing.history, visibility)
         : EMPTY_FLOW_HIGHLIGHT,
     };
   }, [
@@ -166,6 +179,7 @@ const ViewerCanvasContent = ({
     readingFlow,
     playing?.currentStepId,
     playing?.history,
+    visibility,
   ]);
 
   /**

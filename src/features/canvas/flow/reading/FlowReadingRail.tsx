@@ -16,6 +16,7 @@ import { describeStepElement } from "../flowState";
 import { CONDITION_KIND_LABEL, conditionGlyph, conditionGlyphClass } from "../conditionKinds";
 import FlowReadingScene from "./FlowReadingScene";
 import { describeStepHeading, describeStepTarget, type StepHeadingLabels } from "./readingScene";
+import { compactContainerIdsOf } from "../visibleTarget";
 import { buildReadingSpine, type ReadingRow } from "./readingSpine";
 import { describeStepCall } from "./stepCall";
 import FlowVariablesPanel from "./FlowVariablesPanel";
@@ -138,6 +139,8 @@ const FlowReadingRail = ({
     [diagram],
   );
   const components = view?.components ?? EMPTY_COMPONENTS;
+  // A step on a child of a compact container is named by its path.
+  const compactIds = useMemo(() => compactContainerIdsOf(components), [components]);
   const connections = view?.connections ?? EMPTY_CONNECTIONS;
 
   const headingLabels = useMemo<StepHeadingLabels>(
@@ -165,10 +168,10 @@ const FlowReadingRail = ({
         flow,
         currentStepId,
         history,
-        (step) => describeStepHeading(step, components, connections, headingLabels),
+        (step) => describeStepHeading(step, components, connections, headingLabels, compactIds),
         seen,
       ),
-    [flow, currentStepId, history, seen, components, connections, headingLabels],
+    [flow, currentStepId, history, seen, components, connections, headingLabels, compactIds],
   );
 
   // The one thing the rail asks about a branch point: whether the ways out are
@@ -181,8 +184,8 @@ const FlowReadingRail = ({
     [currentStep, connections],
   );
   const target = useMemo(
-    () => describeStepTarget(currentStep, components, connections),
-    [currentStep, components, connections],
+    () => describeStepTarget(currentStep, components, connections, compactIds),
+    [currentStep, components, connections, compactIds],
   );
   const elementState = useMemo(
     () => describeStepElement(currentStep, diagram),

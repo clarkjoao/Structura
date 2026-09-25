@@ -1,6 +1,7 @@
 import { conditionKindOf, isConditionStep, resolveStepEndpoint } from "@/features/diagram";
 import type { Component, Connection, FlowConditionKind, FlowStep } from "@/features/diagram";
 import { componentSwatchColor, componentTechnology } from "../../nodes/componentColor";
+import { formatTargetPath, visibleTargetIn } from "../visibleTarget";
 
 /** The element a step happens at, said the way the reading rail says it. */
 export interface StepTarget {
@@ -41,6 +42,7 @@ export function describeStepTarget(
   step: FlowStep | null | undefined,
   components: Record<string, Component>,
   connections: Record<string, Connection>,
+  compactIds: ReadonlySet<string> = NO_COMPACT,
 ): StepTarget | null {
   if (!step) return null;
 
@@ -50,21 +52,42 @@ export function describeStepTarget(
       const landsOn =
         step.payloadDirection === "response" ? connection.sourceId : connection.targetId;
       const component = components[landsOn];
-      if (component) return toTarget(component);
+      if (component) return toTarget(component, components, compactIds);
     }
   }
 
   if (step.componentId) {
     const component = components[step.componentId];
-    return component ? toTarget(component) : null;
+    return component ? toTarget(component, components, compactIds) : null;
   }
 
   return null;
 }
 
-function toTarget(component: Component): StepTarget {
+const NO_COMPACT: ReadonlySet<string> = new Set();
+
+/**
+ * An element's name as the reading says it: a child hidden inside a compact
+ * container is named by its path — `Pedidos › shard-2` — since the canvas
+ * shows only the container. The container is not expanded for it.
+ */
+function readingName(
+  component: Component,
+  components: Record<string, Component>,
+  compactIds: ReadonlySet<string>,
+): string {
+  if (compactIds.size === 0) return component.name;
+  const target = visibleTargetIn(components, compactIds, component.id);
+  return target?.hidden ? formatTargetPath(target.path) : component.name;
+}
+
+function toTarget(
+  component: Component,
+  components: Record<string, Component>,
+  compactIds: ReadonlySet<string>,
+): StepTarget {
   return {
-    name: component.name,
+    name: readingName(component, components, compactIds),
     detail: componentTechnology(component),
     color: componentSwatchColor(component),
   };
@@ -88,6 +111,7 @@ export function describeStepHeading(
   components: Record<string, Component>,
   connections: Record<string, Connection>,
   labels: StepHeadingLabels,
+  compactIds: ReadonlySet<string> = NO_COMPACT,
 ): string {
   if (step.title?.trim()) return step.title.trim();
 
@@ -105,7 +129,7 @@ export function describeStepHeading(
 
   if (step.componentId) {
     const component = components[step.componentId];
-    return component ? component.name : labels.componentRemoved;
+    return component ? readingName(component, components, compactIds) : labels.componentRemoved;
   }
 
   if (step.connectionId) {

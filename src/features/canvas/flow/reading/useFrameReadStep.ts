@@ -18,7 +18,10 @@ interface Params {
  * of them hides who it is talking to.
  */
 function targetsOf(step: FlowStep, instance: ReactFlowInstance): string[] | null {
-  if (step.componentId) return instance.getNode(step.componentId) ? [step.componentId] : null;
+  if (step.componentId) {
+    const drawn = drawnNodeId(step.componentId, instance);
+    return drawn ? [drawn] : null;
+  }
 
   if (!step.connectionId) return null;
   const edge = instance.getEdge(step.connectionId);
@@ -26,6 +29,21 @@ function targetsOf(step: FlowStep, instance: ReactFlowInstance): string[] | null
   return instance.getNode(edge.source) && instance.getNode(edge.target)
     ? [edge.source, edge.target]
     : null;
+}
+
+/**
+ * The node on screen for `nodeId`: itself, or — hidden inside a compact
+ * container — the first ancestor that is drawn. (An ancestor above a drawn one
+ * is never hidden: hiding a container hides everything in it.)
+ */
+function drawnNodeId(nodeId: string, instance: ReactFlowInstance): string | null {
+  let node = instance.getNode(nodeId);
+  const seen = new Set<string>();
+  while (node && node.hidden && node.parentId && !seen.has(node.id)) {
+    seen.add(node.id);
+    node = instance.getNode(node.parentId);
+  }
+  return node && !node.hidden ? node.id : null;
 }
 
 /**

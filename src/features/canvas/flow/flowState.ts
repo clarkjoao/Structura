@@ -1,4 +1,5 @@
-import type { Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
+import type { Component, Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
+import { ancestorsOf, visibleAncestorOf } from "../core/compactView";
 import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../canvas.constants";
 import {
   buildCallStack,
@@ -25,6 +26,21 @@ export interface FlowHighlight {
    * while the rest of the flow recedes.
    */
   openFrameConnIds: Set<string>;
+  /**
+   * Drawn at full strength with the active step: the element drawn for it, the
+   * containers it sits in, and — when that element is a container — everything
+   * inside it, so a highlighted container's children do not dim each other.
+   */
+  litNodeIds: Set<string>;
+}
+
+/**
+ * How the components of the diagram being read nest and which containers are
+ * compact — what maps a step's element to the one actually drawn.
+ */
+export interface FlowVisibility {
+  components: Record<string, Component>;
+  compactIds: ReadonlySet<string>;
 }
 
 export interface CoverageInfo {
@@ -56,6 +72,7 @@ export const EMPTY_FLOW_HIGHLIGHT: FlowHighlight = {
   participantNodeIds: new Set(),
   participantConnIds: new Set(),
   openFrameConnIds: new Set(),
+  litNodeIds: new Set(),
 };
 
 function addFlowToMap(map: Map<string, string[]>, key: string, flowName: string): void {
@@ -68,15 +85,31 @@ export function buildFlowHighlight(
   activeFlow: Flow,
   currentStepId: string,
   visitedStepIds: string[],
+  visibility?: FlowVisibility,
 ): FlowHighlight {
   const step = getStepById(activeFlow, currentStepId);
-  const { componentIds: participantNodeIds, connectionIds: participantConnIds } =
-    getFlowParticipants(activeFlow);
+  // A step on a child hidden in a compact container is shown on the container:
+  // every id the highlight names is the one actually drawn.
+  const drawn = (id: string) =>
+    visibility ? visibleAncestorOf(id, visibility.components, visibility.compactIds) : id;
+  const participants = getFlowParticipants(activeFlow);
+  const participantNodeIds = new Set([...participants.componentIds].map(drawn));
+  const participantConnIds = participants.connectionIds;
 
   const visitedNodeIds = new Set<string>();
   for (const vid of visitedStepIds) {
     const vs = activeFlow.steps[vid];
-    if (vs?.componentId) visitedNodeIds.add(vs.componentId);
+    if (vs?.componentId) visitedNodeIds.add(drawn(vs.componentId));
+  }
+
+  const activeNodeId = step?.componentId ? drawn(step.componentId) : null;
+  const litNodeIds = new Set<string>();
+  if (activeNodeId) {
+    litNodeIds.add(activeNodeId);
+    if (visibility) {
+      for (const id of ancestorsOf(activeNodeId, visibility.components)) litNodeIds.add(id);
+      for (const id of descendantsOf(activeNodeId, visibility.components)) litNodeIds.add(id);
+    }
   }
 
   const callStack = buildCallStack(activeFlow, buildFlowOutline(activeFlow));
@@ -87,13 +120,36 @@ export function buildFlowHighlight(
   }
 
   return {
-    activeNodeId: step?.componentId ?? null,
+    activeNodeId,
     activeConnId: step?.connectionId ?? null,
     visitedNodeIds,
     participantNodeIds,
     participantConnIds,
     openFrameConnIds,
+    litNodeIds,
   };
+}
+
+/** Everything nested under `id`, at any depth. */
+function descendantsOf(id: string, components: Record<string, Component>): string[] {
+  const children = new Map<string, string[]>();
+  for (const component of Object.values(components)) {
+    if (!component.parentId) continue;
+    const list = children.get(component.parentId) ?? [];
+    list.push(component.id);
+    children.set(component.parentId, list);
+  }
+  const out: string[] = [];
+  const stack = [...(children.get(id) ?? [])];
+  const seen = new Set<string>([id]);
+  while (stack.length > 0) {
+    const next = stack.pop()!;
+    if (seen.has(next)) continue;
+    seen.add(next);
+    out.push(next);
+    stack.push(...(children.get(next) ?? []));
+  }
+  return out;
 }
 
 /**
@@ -110,6 +166,7 @@ export const FLOW_PLAYBACK_VISITED_OPACITY = 0.85;
 
 export function flowPlaybackOpacity(componentId: string, highlight: FlowHighlight): number {
   if (highlight.activeNodeId === componentId) return 1;
+  if (highlight.litNodeIds.has(componentId)) return 1;
   if (highlight.visitedNodeIds.has(componentId)) return FLOW_PLAYBACK_VISITED_OPACITY;
   if (highlight.participantNodeIds.has(componentId)) return OPACITY_FLOW_PLAYBACK_PARTICIPANT;
   return FLOW_PLAYBACK_DIM_OPACITY;

@@ -390,3 +390,24 @@ describe("leaving the reading leaves no selection behind either", () => {
     expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(loose);
   });
 });
+
+/**
+ * F1: what a click records inside a typed container. React Flow hands the click
+ * to the deepest node under the cursor, so clicking a child records the child
+ * and clicking the container's header records the container; both are plain
+ * component ids in the step.
+ */
+describe("recording inside a typed container", () => {
+  beforeEach(() => {
+    useDiagramStore.setState({ past: [], future: [], _flowSession: null });
+  });
+
+  it("records the child that was clicked, and the container from its header", () => {
+    const { recorded } = mountRecorder();
+    act(() => api.startRecording());
+    act(() => api.onRecordNodeClick("shard-2"));
+    act(() => api.onRecordNodeClick("pedidos"));
+    const components = Object.values(recorded().steps).map((step) => step.componentId);
+    expect(components).toEqual(expect.arrayContaining(["shard-2", "pedidos"]));
+  });
+});

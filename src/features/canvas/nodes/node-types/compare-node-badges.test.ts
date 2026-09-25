@@ -40,6 +40,7 @@ function createMinimalNodeBuildContext(
       participantNodeIds: new Set(),
       participantConnIds: new Set(),
       openFrameConnIds: new Set(),
+      litNodeIds: new Set(),
     },
     activeStep: null,
     flowBadges: null,
