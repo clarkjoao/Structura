@@ -34,6 +34,13 @@ describe("sfnStateCount", () => {
   it("ends on a parent cycle", () => {
     const cyclic = { x: c("x", "sfn-parallel", "y"), y: c("y", "sfn-parallel", "x") };
     expect(sfnStateCount("x", cyclic)).toBe(1);
+    // A seen child does not stop its siblings from being counted.
+    const branching = {
+      x: c("x", "sfn-parallel", "y"),
+      y: c("y", "sfn-parallel", "x"),
+      w: c("w", "sfn-state", "y"),
+    };
+    expect(sfnStateCount("x", branching)).toBe(2);
   });
 
   it("isSfnStep", () => {

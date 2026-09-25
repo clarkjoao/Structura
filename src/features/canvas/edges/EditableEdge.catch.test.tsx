@@ -60,6 +60,8 @@ describe("a catch edge on the canvas", () => {
     const catcher = drawn({ edgeStyle: EdgeStyle.Catch, strokeStyle: StrokeStyle.Solid });
     const step = drawn({ edgeStyle: EdgeStyle.EditableStep, strokeStyle: StrokeStyle.Solid });
     expect(catcher.d).toBe(step.d);
+    // …and that route is the orthogonal one, not a straight line.
+    expect(catcher.d).not.toBe(drawn({ edgeStyle: EdgeStyle.Straight }).d);
     expect(catcher.stroke).toBe("hsl(var(--destructive))");
     expect(catcher.dash).toBeTruthy();
     expect(step.dash).toBeFalsy();
