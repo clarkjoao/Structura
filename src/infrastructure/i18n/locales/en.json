@@ -1146,6 +1146,10 @@
     "vsm-inventory": {
       "label": "Inventory",
       "description": "Stock waiting between two steps, with its quantity and how long it lasts."
+    },
+    "vsm-supermarket": {
+      "label": "Supermarket",
+      "description": "A controlled store of parts that the downstream step pulls from."
     }
   },
   "flowchart": {

@@ -56,3 +56,17 @@ export function inventoryHandles(w: number, h: number) {
   const y = round((INSET + height) / 2);
   return { left: { x: round(w / 4), y }, right: { x: round((3 * w) / 4), y } };
 }
+
+/**
+ * The supermarket: shelves open to the left — a mirrored E. Top, bottom and
+ * two shelves between them, all joined on the right.
+ */
+export function supermarketPath(w: number, h: number): string {
+  const inset = 1.25;
+  const right = round(w - inset);
+  const shelves = [inset, h / 3, (2 * h) / 3, h - inset].map(round);
+  return [
+    `M${right} ${shelves[0]} V${shelves[3]}`,
+    ...shelves.map((y) => `M${inset} ${y} H${right}`),
+  ].join(" ");
+}

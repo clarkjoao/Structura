@@ -1146,6 +1146,10 @@
     "vsm-inventory": {
       "label": "Estoque",
       "description": "Estoque parado entre duas etapas, com a quantidade e quanto tempo ele cobre."
+    },
+    "vsm-supermarket": {
+      "label": "Supermercado",
+      "description": "Um estoque controlado de peças de onde a etapa seguinte puxa."
     }
   },
   "flowchart": {
