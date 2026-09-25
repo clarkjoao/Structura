@@ -36,6 +36,7 @@ export function FlowAppearanceSection({ appearance, onChange }: FlowAppearanceSe
         </span>
         <ColorPicker
           group="flow"
+          align="end"
           selectedColor={appearance.customColor ?? appearance.nodeColor}
           onSelectColor={(color) =>
             // A legacy nodeColor is cleared with it, or it would keep winning as the fill.

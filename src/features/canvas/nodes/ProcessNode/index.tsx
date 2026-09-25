@@ -69,7 +69,7 @@ function Title({
 function Description({ text, color }: { text?: string; color: string }) {
   if (!text) return null;
   return (
-    <p className="mt-1 select-none text-xs leading-snug line-clamp-2 break-words" style={{ color }}>
+    <p className="mt-1 shrink-0 select-none text-xs leading-snug line-clamp-2 break-words" style={{ color }}>
       {text}
     </p>
   );
@@ -79,7 +79,7 @@ function Chip({ text, palette }: { text?: string; palette: FlowPalette }) {
   if (!text) return null;
   return (
     <span
-      className="mt-1.5 inline-block max-w-full shrink-0 truncate rounded px-1.5 py-0.5 font-mono text-[11px] leading-tight"
+      className="mt-1.5 inline-block max-w-full shrink-0 self-start truncate rounded px-1.5 py-0.5 font-mono text-[11px] leading-tight"
       style={{ background: palette.chipBg, color: palette.chipText }}
     >
       {text}
@@ -112,7 +112,7 @@ function CardShapeBody({ shape, d, palette, isActive }: ShapeProps) {
         paddingBottom: isSubprocess ? 28 : undefined,
       }}
     >
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 shrink-0 items-center gap-2">
         <FlowShapeIcon shape={shape} color={palette.icon} />
         <Title name={d.name} color={palette.title} />
       </div>
@@ -408,7 +408,7 @@ function SvgShapeBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
           </>
         ) : (
           <>
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 shrink-0 items-center gap-2">
               <FlowShapeIcon shape={shape} color={palette.icon} />
               <Title name={d.name} color={palette.title} />
             </div>
@@ -431,9 +431,15 @@ function SvgShapeBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
  */
 function FlowHandles({ shape, w, h }: { shape: FlowNodeShape; w: number; h: number }) {
   const at = flowShapeHandles(shape, w, h);
+  // Centred on the point whatever the side: React Flow's per-side classes pin
+  // right/bottom and translate by half a handle, which would push the handle
+  // off the outline once left/top are set too.
   const pct = (p: { x: number; y: number }): CSSProperties => ({
     left: `${(p.x / w) * 100}%`,
     top: `${(p.y / h) * 100}%`,
+    right: "auto",
+    bottom: "auto",
+    transform: "translate(-50%, -50%)",
   });
   const left = (
     <Handle

@@ -340,9 +340,9 @@ export function flowShapeHandles(shape: FlowNodeShape, w: number, h: number): Fl
  * nodes keep the size they were stored with.
  */
 export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; height: number }> = {
-  rectangle: { width: 220, height: 72 },
-  rounded: { width: 220, height: 72 },
-  subroutine: { width: 220, height: 88 },
+  rectangle: { width: 220, height: 80 },
+  rounded: { width: 220, height: 80 },
+  subroutine: { width: 220, height: 96 },
   stadium: { width: 210, height: 50 },
   diamond: { width: 180, height: 112 },
   hexagon: { width: 210, height: 64 },
