@@ -30,6 +30,24 @@ export function isFlowDividerType(type: string): type is "flow-divider" {
   return type === COMPONENT_TYPE_FLOW_DIVIDER;
 }
 
+export const COMPONENT_TYPE_SHARDED_STORE = "deploy-sharded-store";
+
+export function isShardedStoreType(type: string): type is "deploy-sharded-store" {
+  return type === COMPONENT_TYPE_SHARDED_STORE;
+}
+
+export const COMPONENT_TYPE_SHARD = "deploy-shard";
+
+export function isShardType(type: string): type is "deploy-shard" {
+  return type === COMPONENT_TYPE_SHARD;
+}
+
+export const COMPONENT_TYPE_SHARD_ROUTER = "deploy-shard-router";
+
+export function isShardRouterType(type: string): type is "deploy-shard-router" {
+  return type === COMPONENT_TYPE_SHARD_ROUTER;
+}
+
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
 export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";

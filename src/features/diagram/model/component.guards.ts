@@ -23,6 +23,9 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  ShardRouterComponent,
+  ShardComponent,
+  ShardedStoreComponent,
   FlowDividerComponent,
   VsmTimelineComponent,
   VsmKaizenComponent,
@@ -46,6 +49,9 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isShardRouterType,
+  isShardType,
+  isShardedStoreType,
   isFlowDividerType,
   isVsmTimelineType,
   isVsmKaizenType,
@@ -121,6 +127,14 @@ export const isVsmTimelineComponent = (c: Component): c is VsmTimelineComponent 
 
 export const isFlowDividerComponent = (c: Component): c is FlowDividerComponent =>
   isFlowDividerType(c.type);
+
+export const isShardedStoreComponent = (c: Component): c is ShardedStoreComponent =>
+  isShardedStoreType(c.type);
+
+export const isShardComponent = (c: Component): c is ShardComponent => isShardType(c.type);
+
+export const isShardRouterComponent = (c: Component): c is ShardRouterComponent =>
+  isShardRouterType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);

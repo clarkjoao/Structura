@@ -29,6 +29,7 @@ export type ComponentType =
   | "external-element"
   | "flow-divider"
   | VsmComponentType
+  | DeployComponentType
   | AwsCategoryId
   | GcpCategoryId
   | AzureCategoryId
@@ -302,6 +303,9 @@ export interface FlowDividerComponent extends BaseComponent {
   stroke?: NodeStrokeMode;
 }
 
+/** The deployment vocabulary (the `deploy` family): stores and their shards. */
+export type DeployComponentType = "deploy-sharded-store" | "deploy-shard" | "deploy-shard-router";
+
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
 export type VsmComponentType =
   | "vsm-external"
@@ -383,6 +387,44 @@ export interface VsmTimelineComponent extends BaseComponent, SkinParts {
   unit?: VsmTimeUnit;
 }
 
+/** How a sharded store spreads its keys. Absent means hash. */
+export type ShardStrategy = "hash" | "consistent-hash" | "range" | "geo" | "directory";
+
+/**
+ * A sharded data store: a typed container whose children are its shards and,
+ * optionally, the router in front of them. The number of shards is never
+ * stored — it is the number of shard children.
+ */
+export interface ShardedStoreComponent extends BaseComponent, SkinParts {
+  type: "deploy-sharded-store";
+  strategy?: ShardStrategy;
+  /** "hash(customer_id)". */
+  keyExpression?: string;
+  /** "MongoDB 7". */
+  technology?: string;
+  /** Copies of each shard, primary included. Absent means 1. */
+  replicationFactor?: number;
+  /** Drawn compact. Absent means expanded; never written as false. */
+  collapsed?: boolean;
+}
+
+/** One shard of a sharded store. Its replicas come from the store's replication factor. */
+export interface ShardComponent extends BaseComponent, SkinParts {
+  type: "deploy-shard";
+  /** What it holds, as the chip and key-bar label say it: "0–25%", "BR", "A–F". */
+  keyRange?: string;
+  /** Relative width of its range under a range strategy. Absent means 1. */
+  share?: number;
+  region?: string;
+  /** Takes more than its share: painted amber, on the key bar too. */
+  hot?: boolean;
+}
+
+/** The router in front of a store's shards (mongos, Vitess vtgate): 0 or 1 per store. */
+export interface ShardRouterComponent extends BaseComponent, SkinParts {
+  type: "deploy-shard-router";
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -403,6 +445,9 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | ShardRouterComponent
+  | ShardComponent
+  | ShardedStoreComponent
   | FlowDividerComponent
   | VsmTimelineComponent
   | VsmKaizenComponent
@@ -446,6 +491,9 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<ShardRouterComponent, "id">> &
+  Partial<Omit<ShardComponent, "id">> &
+  Partial<Omit<ShardedStoreComponent, "id">> &
   Partial<Omit<FlowDividerComponent, "id">> &
   Partial<Omit<VsmTimelineComponent, "id">> &
   Partial<Omit<VsmKaizenComponent, "id">> &
@@ -473,6 +521,9 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ShardRouterComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ShardComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ShardedStoreComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmTimelineComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmKaizenComponent, "id">> & { width?: number; height?: number })

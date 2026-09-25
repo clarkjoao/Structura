@@ -11,6 +11,7 @@ import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { PanelKind } from "@/features/diagram/enums";
+import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import type {
   FlowNodeShape,
   NodeStrokeMode,
@@ -49,6 +50,9 @@ export type RegisteredElementTypeId =
   | "process-node"
   | "external-element"
   | "vsm-external"
+  | "deploy-shard-router"
+  | "deploy-shard"
+  | "deploy-sharded-store"
   | "flow-divider"
   | "vsm-timeline"
   | "vsm-kaizen"
@@ -125,6 +129,16 @@ export type PaletteIcon =
   | { kind: "lucide"; icon: LucideIcon }
   /** Resolved through the owning family's `IconResolver` (F4+). */
   | { kind: "family"; iconName: string };
+
+/**
+ * The rest of the diagram, for an element whose export depends on it: a
+ * typed container draws its children's count and distribution (a sharded
+ * store's key bar). Most mappings ignore it.
+ */
+export interface ExportContext {
+  components: Record<string, Component>;
+  layouts: Record<string, NodeLayout>;
+}
 
 /** Geometry the export adapter has already resolved for a node. */
 export interface ExportGeometry {
@@ -365,7 +379,7 @@ export interface ElementExportSlice {
      * swimlane cell when it is a lane — so naming a single kind here would
      * have been a value no reader could trust, and nothing read it.
      */
-    toExportNode: (comp: Component, base: ExportGeometry) => ExportNode;
+    toExportNode: (comp: Component, base: ExportGeometry, context?: ExportContext) => ExportNode;
   };
 }
 
