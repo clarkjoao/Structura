@@ -86,4 +86,23 @@ describe("badge mode", () => {
     ]);
     expect(layer.anchorIds.sort()).toEqual(["a", "auth", "b"]);
   });
+
+  it("suggests, without applying, an element four things use while drawn with its edges", () => {
+    const d = diagram();
+    const components: Record<string, Component> = {
+      ...d.snapshot.components,
+      c: comp({ id: "c", name: "C" }),
+      e: comp({ id: "e", name: "E" }),
+    };
+    const connections = {
+      ...d.snapshot.connections,
+      e5: { id: "e5", sourceId: "c", targetId: "auth", label: "" },
+      e6: { id: "e6", sourceId: "e", targetId: "auth", label: "" },
+      e7: { id: "e7", sourceId: "db", targetId: "auth", label: "" },
+    };
+    const layer = buildSharedLayer(components, connections);
+    expect([...layer.suggestions]).toEqual([["auth", 5]]);
+    expect(layer.originals).toEqual([]);
+    expect(components.auth).not.toHaveProperty("shared");
+  });
 });

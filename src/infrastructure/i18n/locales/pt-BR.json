@@ -2692,6 +2692,8 @@
     "showEdges_one": "Mostrar a aresta",
     "showEdges_other": "Mostrar as {{count}} arestas",
     "hideEdges_one": "Esconder a aresta",
-    "hideEdges_other": "Esconder as {{count}} arestas"
+    "hideEdges_other": "Esconder as {{count}} arestas",
+    "suggest_one": "Usado por {{count}} — desenhar como compartilhado?",
+    "suggest_other": "Usado por {{count}} — desenhar como compartilhado?"
   }
 }

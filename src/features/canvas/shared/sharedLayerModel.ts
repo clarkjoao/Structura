@@ -1,6 +1,12 @@
 import type { Component, Connection } from "@/features/diagram";
 import { getElement } from "@/features/elements/element.registry";
-import { refsOf, sharedMode, sharedUses, usageCount } from "@/features/diagram/utils/shared";
+import {
+  refsOf,
+  sharedMode,
+  sharedUses,
+  suggestedShared,
+  usageCount,
+} from "@/features/diagram/utils/shared";
 
 /**
  * What the shared layer draws, from the diagram alone (no positions): the
@@ -23,6 +29,8 @@ export interface SharedLayerModel {
   originals: SharedOriginal[];
   /** consumer id → the badge-mode originals it wears a badge for. */
   badgesByConsumer: Map<string, string[]>;
+  /** Elements drawn with their edges that enough things use to suggest sharing: id → consumers. */
+  suggestions: Map<string, number>;
   /** Every element the layer needs a box for. */
   anchorIds: string[];
 }
@@ -30,6 +38,7 @@ export interface SharedLayerModel {
 export const EMPTY_SHARED_LAYER: SharedLayerModel = {
   originals: [],
   badgesByConsumer: new Map(),
+  suggestions: new Map(),
   anchorIds: [],
 };
 
@@ -85,6 +94,8 @@ export function buildSharedLayer(
       }
     }
   }
-  if (originals.length === 0) return EMPTY_SHARED_LAYER;
-  return { originals, badgesByConsumer, anchorIds: [...anchors] };
+  const suggestions = suggestedShared(components, connections);
+  for (const id of suggestions.keys()) anchors.add(id);
+  if (originals.length === 0 && suggestions.size === 0) return EMPTY_SHARED_LAYER;
+  return { originals, badgesByConsumer, suggestions, anchorIds: [...anchors] };
 }

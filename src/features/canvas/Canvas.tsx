@@ -427,6 +427,7 @@ const Canvas = (props: CanvasProps = {}) => {
               onMoveEnd={eventHandlers.onMoveEnd}
             >
               <SharedLayer
+                suggest={interactionMode.canEditCanvas}
                 components={resolvedSnapshot.components}
                 connections={resolvedSnapshot.connections}
                 onPick={(originalId) => {

@@ -3,6 +3,7 @@ import type { Component } from "../model/component.types";
 import type { Connection } from "../model/connection.types";
 import {
   hideSharedEdges,
+  suggestedShared,
   refsOf,
   resolveShared,
   sharedMode,
@@ -92,6 +93,15 @@ describe("uses", () => {
     expect(
       suggestsSharing("auth", { ...many, auth: c("auth", { shared: { mode: "badge" } }) }, four),
     ).toBe(false);
+    // The one-pass list agrees.
+    expect([...suggestedShared(many, four)]).toEqual([["auth", 4]]);
+    expect([...suggestedShared(many, three)]).toEqual([]);
+    expect([
+      ...suggestedShared({ ...many, auth: c("auth", { shared: { mode: "badge" } }) }, four),
+    ]).toEqual([]);
+    // Through references, and not counting a self-link.
+    const viaRef = { ...four, x4: link("x4", "e", "r1"), self: link("self", "r2", "auth") };
+    expect([...suggestedShared(many, viaRef)]).toEqual([["auth", 4]]);
   });
 });
 

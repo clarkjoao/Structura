@@ -2692,6 +2692,8 @@
     "showEdges_one": "Show the edge",
     "showEdges_other": "Show the {{count}} edges",
     "hideEdges_one": "Hide the edge",
-    "hideEdges_other": "Hide the {{count}} edges"
+    "hideEdges_other": "Hide the {{count}} edges",
+    "suggest_one": "Used by {{count}} — draw it as shared?",
+    "suggest_other": "Used by {{count}} — draw it as shared?"
   }
 }

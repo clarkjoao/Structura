@@ -54,6 +54,8 @@ export interface SharedLayerProps {
   connections: Record<string, Connection>;
   /** What picking a badge does — the editor selects (or records) the original. */
   onPick?: (originalId: string) => void;
+  /** Hint at elements worth sharing (the editor; a reader has nothing to change). */
+  suggest?: boolean;
 }
 
 /**
@@ -68,6 +70,7 @@ export const SharedLayer = memo(function SharedLayer({
   components,
   connections,
   onPick,
+  suggest = false,
 }: SharedLayerProps) {
   const { t } = useTranslation();
   const { fitView } = useReactFlow();
@@ -75,7 +78,7 @@ export const SharedLayer = memo(function SharedLayer({
   const boxes = useBoxes(model === EMPTY_SHARED_LAYER ? [] : model.anchorIds);
   const [hovered, setHovered] = useState<string | null>(null);
 
-  if (model.originals.length === 0) return null;
+  if (model.originals.length === 0 && (!suggest || model.suggestions.size === 0)) return null;
   const byId = new Map(model.originals.map((original) => [original.id, original]));
   const active = hovered ? byId.get(hovered) : undefined;
   const goTo = (id: string) => {
@@ -175,6 +178,30 @@ export const SharedLayer = memo(function SharedLayer({
           </div>
         );
       })}
+
+      {suggest &&
+        [...model.suggestions.entries()].map(([id, count]) => {
+          const box = boxes[id];
+          if (!box) return null;
+          // A hint only: it selects the element, whose bar holds the mode.
+          return (
+            <button
+              key={`suggest-${id}`}
+              type="button"
+              data-testid="shared-suggestion"
+              title={t("shared.suggest", { count })}
+              aria-label={t("shared.suggest", { count })}
+              className="nodrag nopan absolute flex h-4 w-4 items-center justify-center rounded-full border border-border bg-card text-muted-foreground opacity-70 hover:opacity-100"
+              style={{
+                transform: `translate(${box.x + box.width - 6}px, ${box.y - 10}px)`,
+                pointerEvents: "all",
+              }}
+              onClick={() => onPick?.(id)}
+            >
+              <Share2 size={9} strokeWidth={2} aria-hidden />
+            </button>
+          );
+        })}
 
       {active && boxes[active.id] && (
         <UsedByPopover

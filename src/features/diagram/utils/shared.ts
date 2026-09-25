@@ -89,6 +89,33 @@ export function suggestsSharing(
   );
 }
 
+/**
+ * Every element worth suggesting as shared, in one pass over the edges: drawn
+ * with its edges, and used by `SUGGEST_SHARED_AT` or more things. Suggested
+ * only; nothing is applied.
+ */
+export function suggestedShared(
+  components: Record<string, Component>,
+  connections: Record<string, Connection>,
+): Map<string, number> {
+  const consumers = new Map<string, Set<string>>();
+  for (const connection of Object.values(connections)) {
+    const target = resolveShared(connection.targetId, components);
+    const source = resolveShared(connection.sourceId, components);
+    if (source === target) continue;
+    const set = consumers.get(target) ?? new Set<string>();
+    set.add(source);
+    consumers.set(target, set);
+  }
+  const suggested = new Map<string, number>();
+  for (const [id, set] of consumers) {
+    if (set.size >= SUGGEST_SHARED_AT && components[id] && sharedMode(components[id]) === "edges") {
+      suggested.set(id, set.size);
+    }
+  }
+  return suggested;
+}
+
 /** What is being shown despite the mode: whole originals, or single connections. */
 export interface SharedReveal {
   originals?: ReadonlySet<string>;
