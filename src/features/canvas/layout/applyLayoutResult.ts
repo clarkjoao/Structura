@@ -69,7 +69,7 @@ export function applyLayoutResultEdges(
   if (resetPaths) return;
 
   const layouts = edgeLayoutsFromLayoutResult(graph, result, { ...options, resetPaths: false });
-  const connections = store.diagrams?.[diagramId]?.snapshot.connections ?? {};
+  const connections = store.diagrams?.[diagramId]?.snapshot?.connections ?? {};
 
   for (const edge of edgesToStyle) {
     const storeEdgeId = edgeIdOf(edge.id);
