@@ -18,9 +18,13 @@ const THEME_TOKEN_RE = /^hsl\(\s*var\(--[\w-]+\)\s*\)$/;
  * existing lane. A token can only have come from the new presets.
  */
 export function laneAccentFor(comp: Component, ctx: NodeBuildContext): string | undefined {
-  if (!comp.parentId) return undefined;
-  const parent = ctx.resolvedComponents[comp.parentId];
-  if (!parent || !isPanelComponent(parent) || parent.panelKind !== PanelKind.Swimlane) {
+  return laneAccentOf(comp, comp.parentId ? ctx.resolvedComponents[comp.parentId] : undefined);
+}
+
+/** `laneAccentFor` given the parent itself — for the controls, which have no build context. */
+export function laneAccentOf(comp: Component, parent: Component | undefined): string | undefined {
+  if (!comp.parentId || !parent || parent.id !== comp.parentId) return undefined;
+  if (!isPanelComponent(parent) || parent.panelKind !== PanelKind.Swimlane) {
     return undefined;
   }
   const accent = parent.swimlane?.laneColor ?? parent.panelColor;

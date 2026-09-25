@@ -6,7 +6,7 @@ import { snapshotChecksum } from "@/features/collaboration/utils/snapshotChecksu
 import { getElement } from "@/features/elements/element.registry";
 import { emptyNodeBuildContext } from "@/features/elements/node-build-context.fixture";
 import { buildCardNodeData } from "./CardNode/buildCardNodeData";
-import { laneAccentFor } from "./laneAccent";
+import { laneAccentFor, laneAccentOf } from "./laneAccent";
 import { resolveFlowAppearance } from "./ProcessNode/flowAppearance";
 
 const TEAL = "hsl(var(--node-system))";
@@ -137,5 +137,15 @@ describe("a C4 system dragged into the support lane", () => {
     expect(data.customColor).toBe(TEAL);
     expect(components[system.id]).not.toHaveProperty("customColor");
     expect(components[system.id]).not.toHaveProperty("panelColor");
+  });
+});
+
+describe("laneAccentOf", () => {
+  it("answers from the parent alone, for controls without a build context", () => {
+    const support = lane("support", TEAL);
+    const node = child("n", "support");
+    expect(laneAccentOf(node, support)).toBe(TEAL);
+    expect(laneAccentOf(node, undefined)).toBeUndefined();
+    expect(laneAccentOf(node, lane("other", TEAL))).toBeUndefined();
   });
 });

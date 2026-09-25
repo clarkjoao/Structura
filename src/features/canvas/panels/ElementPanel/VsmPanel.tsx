@@ -10,7 +10,7 @@ import {
 } from "@/features/diagram";
 import { getElement } from "@/features/elements/element.registry";
 import type { ElementInspectorProps } from "@/features/elements/element.types";
-import { FLOW_DEFAULT_ACCENT } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
+import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import Field from "./components/Field";
 import { FlowAppearanceSection, PositionSection } from "./sections";
 import { VsmFieldsSection } from "./sections/VsmFieldsSection";
@@ -41,6 +41,8 @@ export default function VsmPanel({
     [activeDiagram],
   );
   const descriptor = getElement(component.type);
+  // Unset, the accent is the lane's (when it passes one on) or the element's.
+  const defaultAccent = useEffectiveDefaultAccent(component);
   const update = (patch: ComponentPatch) => updateComponent(component.id, patch);
 
   useEffect(() => {
@@ -102,7 +104,7 @@ export default function VsmPanel({
         {descriptor?.skin && (
           <FlowAppearanceSection
             appearance={component as SkinParts}
-            defaultAccent={descriptor.skin.defaultAccent ?? FLOW_DEFAULT_ACCENT}
+            defaultAccent={defaultAccent}
             onChange={update}
           />
         )}

@@ -25,6 +25,7 @@ import {
 } from "@/features/diagram";
 import { accentToStore } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
 import { getElement } from "@/features/elements/element.registry";
+import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
@@ -109,6 +110,8 @@ export function NodeQuickActionsBar({
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const colorGroup = pickColorGroup(component ?? null);
+  // What an unset accent resolves to here — the lane's, else the element's.
+  const defaultAccent = useEffectiveDefaultAccent(component);
   const currentColor = useMemo(
     () => (component ? getCurrentColor(component, isDark) : undefined),
     [component, isDark],
@@ -205,7 +208,7 @@ export function NodeQuickActionsBar({
       const skin = getElement(component.type)?.skin;
       if (skin) {
         updateComponent(nodeId, {
-          customColor: accentToStore(color, skin.defaultAccent),
+          customColor: accentToStore(color, defaultAccent),
           ...(isProcessNodeComponent(component) ? { nodeColor: undefined } : {}),
         });
         return;
@@ -232,7 +235,7 @@ export function NodeQuickActionsBar({
       }
       updateComponent(nodeId, { panelColor: color });
     },
-    [component, isDark, nodeId, updateComponent],
+    [component, defaultAccent, isDark, nodeId, updateComponent],
   );
 
   const handleColorReset = useCallback(() => {

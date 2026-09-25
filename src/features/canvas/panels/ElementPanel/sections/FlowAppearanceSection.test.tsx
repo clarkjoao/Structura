@@ -90,4 +90,18 @@ describe("FlowAppearanceSection", () => {
     fireEvent.click(button("colors.amber"));
     expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
   });
+
+  it("inside a teal lane, stores slate explicitly and teal as nothing", () => {
+    // Unset, a node in a teal lane is drawn teal: so teal is its default here,
+    // and slate is a choice that has to be stored or it could never be made.
+    const teal = "hsl(var(--node-system))";
+    const onChange = vi.fn();
+    render(<FlowAppearanceSection appearance={{}} defaultAccent={teal} onChange={onChange} />);
+    fireEvent.click(button("canvas.quickActions.color"));
+    fireEvent.click(button("colors.slate"));
+    expect(onChange).toHaveBeenLastCalledWith({ customColor: "hsl(var(--muted-foreground))" });
+    fireEvent.click(button("canvas.quickActions.color"));
+    fireEvent.click(button("colors.teal"));
+    expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
+  });
 });
