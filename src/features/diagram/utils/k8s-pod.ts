@@ -6,6 +6,7 @@ import type {
   K8sWorkloadComponent,
 } from "../model/component.types";
 import type { NodeLayout } from "../model/layout.types";
+import { StrokeStyle } from "../enums";
 import { isK8sContainerComponent, isK8sNamespaceComponent } from "../model/component.guards";
 
 /*
@@ -94,4 +95,31 @@ export function isInPodLink(
     source.parentId !== null &&
     source.parentId === target.parentId
   );
+}
+
+/** Teal, the sidecar's colour: what an in-pod link is drawn in. */
+export const POD_LINK_COLOR = "hsl(var(--node-system))";
+
+/**
+ * How an in-pod link is drawn when nobody styled it: dashed teal — a normal
+ * edge, the style derived at draw time and never written. `stored` is the
+ * connection as saved (a compact workload redraws its ends); a stroke or a
+ * colour the author chose wins.
+ */
+export function withPodLinkStyle(
+  drawn: Connection,
+  components: Record<string, Component>,
+  stored: Connection = drawn,
+): Connection {
+  if (!isInPodLink(stored, components)) return drawn;
+  const style = drawn.style ?? {};
+  if (style.strokeStyle !== undefined && style.color !== undefined) return drawn;
+  return {
+    ...drawn,
+    style: {
+      ...style,
+      strokeStyle: style.strokeStyle ?? StrokeStyle.Dashed,
+      color: style.color ?? POD_LINK_COLOR,
+    },
+  };
 }

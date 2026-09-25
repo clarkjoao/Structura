@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Component } from "../model/component.types";
 import type { Connection } from "../model/connection.types";
-import { isInPodLink, isMeshed, podContainers, sidecarCaption } from "./k8s-pod";
+import { isInPodLink, isMeshed, podContainers, sidecarCaption, withPodLinkStyle } from "./k8s-pod";
 import type { K8sContainerComponent, K8sWorkloadComponent } from "../model/component.types";
 
 const c = (id: string, extra: Record<string, unknown> = {}): Component =>
@@ -100,5 +100,33 @@ describe("isInPodLink", () => {
     expect(isInPodLink(link("envoy", "other"), world())).toBe(false);
     expect(isInPodLink(link("wl", "app"), world())).toBe(false);
     expect(isInPodLink(link("app", "ghost"), world())).toBe(false);
+  });
+});
+
+describe("withPodLinkStyle", () => {
+  const link = (extra: Partial<Connection> = {}) =>
+    ({ id: "l", sourceId: "envoy", targetId: "app", label: "", ...extra }) as Connection;
+
+  it("draws an unstyled in-pod link dashed teal, without touching the stored one", () => {
+    const stored = link();
+    const drawn = withPodLinkStyle(stored, world());
+    expect(drawn.style).toEqual({ strokeStyle: "dashed", color: "hsl(var(--node-system))" });
+    expect(stored.style).toBeUndefined();
+  });
+
+  it("keeps what the author chose, and leaves other links alone", () => {
+    expect(withPodLinkStyle(link({ style: { color: "red" } }), world()).style).toEqual({
+      color: "red",
+      strokeStyle: "dashed",
+    });
+    const both = link({ style: { color: "red", strokeStyle: "solid" as never } });
+    expect(withPodLinkStyle(both, world())).toBe(both);
+    const outside = link({ sourceId: "wl" });
+    expect(withPodLinkStyle(outside, world())).toBe(outside);
+  });
+
+  it("reads the stored ends when the drawn ones were redrawn onto a compact workload", () => {
+    const drawn = link({ targetId: "wl" });
+    expect(withPodLinkStyle(drawn, world(), link()).style?.strokeStyle).toBe("dashed");
   });
 });

@@ -7,6 +7,7 @@ import type { NodeBuildContext, NodeTypeDescriptor } from "../nodes/node-types/t
 import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 import type { ViewNode, ViewSnapshot } from "./resolveViewSnapshot";
 import { compactTabBox } from "./compactView";
+import { withPodLinkStyle } from "@/features/diagram/utils/k8s-pod";
 
 /*
  * The whole projection, Diagram view → React Flow arrays, as one pure step.
@@ -168,7 +169,8 @@ export function projectEdges(
   const assignmentById = new Map(handleAssignments.map((entry) => [entry.connId, entry]));
   const reading = policy.kind === "read";
   return view.shownConnections.map((connection) => {
-    const edge = buildEdge(connection, assignmentById.get(connection.id), {
+    const drawn = withPodLinkStyle(connection, view.components, view.connections[connection.id]);
+    const edge = buildEdge(drawn, assignmentById.get(connection.id), {
       diagram: ctx.diagram,
       selectedEdgeId: null,
       isPlaying: ctx.isPlaying,

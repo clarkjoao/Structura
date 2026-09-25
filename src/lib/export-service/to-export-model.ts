@@ -34,6 +34,7 @@ import { validateDiagram } from "./validate-diagram";
 import { withInheritedAccent } from "@/features/canvas/nodes/laneAccent";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
 import { edgeSides, resolveEdgeRouting } from "./edge-routing";
+import { withPodLinkStyle } from "@/features/diagram/utils/k8s-pod";
 import type { HandleSlots } from "./edge-routing";
 
 /**
@@ -412,7 +413,13 @@ export function diagramToExportModel(
   }
 
   const edges: ExportEdge[] = Object.values(connections).map((conn) =>
-    mapEdge(conn, edgeLayouts[conn.id], layoutMap, components, handleSlots.get(conn.id)),
+    mapEdge(
+      withPodLinkStyle(conn, components),
+      edgeLayouts[conn.id],
+      layoutMap,
+      components,
+      handleSlots.get(conn.id),
+    ),
   );
 
   return { name: diagramForExport.name, nodes, edges };
