@@ -87,3 +87,36 @@ describe("vsm-inventory", () => {
     expect(getElement("vsm-inventory")!.skin?.defaultAccent).toBe("hsl(var(--node-person))");
   });
 });
+
+/**
+ * Production control is not a VSM element: it is a C4 system, placed in the
+ * value stream map like any other node. What has to hold is that nothing
+ * about the VSM family gets in its way — it connects both ways to a process
+ * box, and a map that mixes the two exports.
+ */
+describe("production control is a C4 system", () => {
+  it("connects to and from a process box", async () => {
+    const { canBeConnectionSource } = await import("@/features/diagram/model/connection-rules");
+    const { buildConnectionCountPerNode, buildEdgeHandleAssignments } =
+      await import("@/features/canvas/edges/connectionDerivations");
+    const components = {
+      pc: { id: "pc", name: "Production control", description: "", parentId: null, type: "system" },
+      p: { id: "p", name: "Stamping", description: "", parentId: null, type: "vsm-process" },
+    } as unknown as Record<string, import("@/features/diagram").Component>;
+    const connections = [
+      { id: "down", sourceId: "pc", targetId: "p", label: "schedule" },
+      { id: "up", sourceId: "p", targetId: "pc", label: "status" },
+    ];
+    expect(canBeConnectionSource("system")).toBe(true);
+    expect(canBeConnectionSource("vsm-process")).toBe(true);
+    const assignments = buildEdgeHandleAssignments(
+      connections,
+      buildConnectionCountPerNode(connections),
+      components,
+    );
+    expect(assignments.map((a) => [a.sourceHandle, a.targetHandle])).toEqual([
+      ["source-0", "target-0"],
+      ["source-0", "target-0"],
+    ]);
+  });
+});
