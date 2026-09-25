@@ -24,7 +24,7 @@ export const processNodeElement: ElementDescriptor = {
     // come out an ellipse).
     defaultSize: (options) => FLOW_SHAPE_DEFAULT_SIZE[options.flowShape ?? "rectangle"],
 
-    patchableKeys: ["flowShape", "nodeColor", "customColor", "technology"],
+    patchableKeys: ["flowShape", "nodeColor", "customColor", "technology", "fill", "stroke"],
   },
 
   canvas: {
@@ -61,6 +61,8 @@ export const processNodeElement: ElementDescriptor = {
         customColor: comp.customColor,
         nodeColor: comp.nodeColor,
         technology: comp.technology,
+        fill: comp.fill,
+        stroke: comp.stroke,
         isSelected: ctx.selectedNodeId === comp.id,
       };
     },

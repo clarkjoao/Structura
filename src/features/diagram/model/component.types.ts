@@ -265,6 +265,10 @@ export interface ProcessNodeComponent extends BaseComponent {
   customColor?: string;
   /** Shown as the mono chip under the title (a data store's engine, say). */
   technology?: string;
+  /** How the accent fills the body. Absent means `"none"`; the default is never written. */
+  fill?: NodeFillMode;
+  /** The outline. Absent means `"solid"`; the default is never written. */
+  stroke?: NodeStrokeMode;
 }
 
 export interface ExternalElementComponent extends BaseComponent {

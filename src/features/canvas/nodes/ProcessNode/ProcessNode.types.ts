@@ -1,4 +1,4 @@
-import type { FlowNodeShape } from "@/features/diagram";
+import type { FlowNodeShape, NodeFillMode, NodeStrokeMode } from "@/features/diagram";
 
 export type ProcessNodeData = {
   elementId: string;
@@ -10,5 +10,7 @@ export type ProcessNodeData = {
   /** Legacy whole-body colour; see `ProcessNodeComponent.nodeColor`. */
   nodeColor?: string;
   technology?: string;
+  fill?: NodeFillMode;
+  stroke?: NodeStrokeMode;
   isSelected?: boolean;
 };
