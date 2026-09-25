@@ -2659,7 +2659,12 @@
       "waitSeconds": "Seconds",
       "errorName": "Error",
       "itemsPath": "ItemsPath",
-      "maxConcurrency": "Max concurrency"
+      "maxConcurrency": "Max concurrency",
+      "retry": "Retry",
+      "retryErrors": "Errors (comma separated)",
+      "maxAttempts": "Attempts",
+      "backoffRate": "Backoff",
+      "intervalSeconds": "Interval (s)"
     },
     "stateType": {
       "Task": "Task",

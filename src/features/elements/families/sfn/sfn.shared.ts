@@ -15,8 +15,19 @@ export const SFN_ACCENT = "hsl(var(--aws-integration))";
 /** A machine compact: header, chips and the drill-down "+". Derived, never stored. */
 export const SFN_MACHINE_COMPACT_H = 84;
 
-/** Every retry-bearing state's retry patch key. */
-export const retryPatchKeys = ["retry"] as const;
+/** The retry badge in an export: a plain cell pinned to the state's top right. */
+export function retryRepresentation(id: string, text: string, width: number) {
+  const badgeWidth = Math.min(width, 8 + text.length * 6);
+  return {
+    id: `${id}-retry`,
+    label: text,
+    x: Math.max(0, width - badgeWidth - 8),
+    y: -8,
+    width: badgeWidth,
+    height: 16,
+    fillOpacity: 16,
+  };
+}
 
 export function SfnInspector(props: ElementInspectorProps) {
   return createElement(SkinnedElementPanel, props);

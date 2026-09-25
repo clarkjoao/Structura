@@ -14,10 +14,16 @@ import type {
   SfnStateComponent,
   SfnStateType,
 } from "@/features/diagram/model/component.types";
-import { SFN_SERVICES, sfnStateType, taskCaption } from "@/features/diagram/utils/sfn";
+import { SFN_SERVICES, retryBadge, sfnStateType, taskCaption } from "@/features/diagram/utils/sfn";
 import type { ElementCanvasSlice, ElementDescriptor } from "../../element.types";
 import { deployBuildData, playbackStyle, skinPatchableKeys } from "../deploy/deploy.shared";
-import { SFN_ACCENT, SFN_CATEGORY_ID, SFN_FAMILY_ID, SfnInspector } from "./sfn.shared";
+import {
+  SFN_ACCENT,
+  SFN_CATEGORY_ID,
+  SFN_FAMILY_ID,
+  SfnInspector,
+  retryRepresentation,
+} from "./sfn.shared";
 
 const CARD_W = 220;
 const CARD_H = 64;
@@ -157,6 +163,7 @@ export const sfnStateElement: ElementDescriptor = {
         stateType: sfnStateType(comp),
         service: comp.service,
         caption: sfnStateCaption(comp),
+        retry: sfnStateType(comp) === "Task" ? retryBadge(comp.retry) : null,
         defaultAccent: SFN_ACCENT,
       };
     },
@@ -218,28 +225,31 @@ export const sfnStateElement: ElementDescriptor = {
         }
         const caption = sfnStateCaption(comp);
         const aws4 = type === "Task" && comp.service ? SFN_SERVICES[comp.service]?.aws4 : undefined;
+        const badge = type === "Task" ? retryBadge(comp.retry) : null;
+        const representations = [
+          ...(badge ? [retryRepresentation(comp.id, badge, base.width)] : []),
+          ...(aws4
+            ? [
+                {
+                  id: `${comp.id}-icon`,
+                  label: "",
+                  x: 8,
+                  y: Math.max(0, Math.round((base.height - 22) / 2)),
+                  width: 22,
+                  height: 22,
+                  // draw.io's aws4 resource icon (Sidebar-AWS4.js).
+                  shapeStyle: `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.${aws4};`,
+                },
+              ]
+            : []),
+        ];
         return {
           ...base,
           kind: "stencil",
           name: comp.name,
           shapeStyle: `rounded=1;arcSize=8;absoluteArcSize=1;align=left;spacingLeft=${aws4 ? 36 : 10};`,
           label: caption ? `${comp.name}\n${caption}` : comp.name,
-          ...(aws4
-            ? {
-                representations: [
-                  {
-                    id: `${comp.id}-icon`,
-                    label: "",
-                    x: 8,
-                    y: Math.max(0, Math.round((base.height - 22) / 2)),
-                    width: 22,
-                    height: 22,
-                    // draw.io's aws4 resource icon (Sidebar-AWS4.js).
-                    shapeStyle: `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.${aws4};`,
-                  },
-                ],
-              }
-            : {}),
+          ...(representations.length > 0 ? { representations } : {}),
           ...colours,
         };
       },

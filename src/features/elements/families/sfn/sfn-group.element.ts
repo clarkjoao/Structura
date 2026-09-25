@@ -10,11 +10,17 @@ import {
   isSfnMapComponent,
   isSfnParallelComponent,
 } from "@/features/diagram/model/component.guards";
-import { parallelBranches } from "@/features/diagram/utils/sfn";
+import { parallelBranches, retryBadge } from "@/features/diagram/utils/sfn";
 import type { ElementDescriptor } from "../../element.types";
 import { deployBuildData, playbackStyle, skinPatchableKeys } from "../deploy/deploy.shared";
 import { SFN_STATE_TYPES } from "./sfn-state-machine.element";
-import { SFN_ACCENT, SFN_CATEGORY_ID, SFN_FAMILY_ID, SfnInspector } from "./sfn.shared";
+import {
+  SFN_ACCENT,
+  SFN_CATEGORY_ID,
+  SFN_FAMILY_ID,
+  SfnInspector,
+  retryRepresentation,
+} from "./sfn.shared";
 
 const GROUP_W = 420;
 const GROUP_H = 220;
@@ -29,6 +35,11 @@ function groupStyle(
     height: layout?.height ?? GROUP_H,
     ...playbackStyle(comp, ctx),
   };
+}
+
+function badgeOf(id: string, retry: Parameters<typeof retryBadge>[0], width: number) {
+  const text = retryBadge(retry);
+  return text ? [retryRepresentation(id, text, width)] : [];
 }
 
 const groupCanvas = {
@@ -68,6 +79,7 @@ export const sfnParallelElement: ElementDescriptor = {
         kind: "Parallel",
         dividers: parallelBranches(comp.id, ctx.resolvedComponents, ctx.resolvedNodeLayouts)
           .dividers,
+        retry: retryBadge(comp.retry),
         defaultAccent: SFN_ACCENT,
       };
     },
@@ -98,15 +110,17 @@ export const sfnParallelElement: ElementDescriptor = {
           name: comp.name,
           label: `Parallel · ${comp.name}`,
           // The branch dividers, as thin dashed cells: representations, not nodes.
-          representations: dividers.map((x, index) => ({
-            id: `${comp.id}-branch-${index}`,
-            label: "",
-            x,
-            y: 36,
-            width: 1,
-            height: Math.max(0, base.height - 44),
-            fillOpacity: 45,
-          })),
+          representations: dividers
+            .map((x, index) => ({
+              id: `${comp.id}-branch-${index}`,
+              label: "",
+              x,
+              y: 36,
+              width: 1,
+              height: Math.max(0, base.height - 44),
+              fillOpacity: 45,
+            }))
+            .concat(badgeOf(comp.id, comp.retry, base.width)),
           ...flowExportColours(comp, SFN_ACCENT),
           dashed: true,
         };
@@ -140,6 +154,7 @@ export const sfnMapElement: ElementDescriptor = {
         dividers: [],
         itemsPath: comp.itemsPath,
         maxConcurrency: comp.maxConcurrency,
+        retry: retryBadge(comp.retry),
         defaultAccent: SFN_ACCENT,
       };
     },
@@ -172,6 +187,7 @@ export const sfnMapElement: ElementDescriptor = {
           label: [`Map · ${comp.name}`, chips.join(" · ")].filter(Boolean).join("\n"),
           // Its iterator runs per item: a stack, exported as a shadow.
           stacked: true,
+          representations: badgeOf(comp.id, comp.retry, base.width),
           ...flowExportColours(comp, SFN_ACCENT),
           dashed: true,
         };

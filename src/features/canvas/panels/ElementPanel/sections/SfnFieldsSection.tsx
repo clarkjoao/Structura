@@ -1,17 +1,19 @@
 import { useTranslation } from "react-i18next";
 import {
   isSfnMapComponent,
+  isSfnParallelComponent,
   isSfnStateComponent,
   isSfnStateMachineComponent,
   type Component,
   type ComponentPatch,
+  type SfnRetry,
   type SfnStateType,
 } from "@/features/diagram";
 import { SFN_SERVICES, sfnStateType } from "@/features/diagram/utils/sfn";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { DeployTextField as TextField } from "./DeployTextField";
-import { DEPLOY_LABEL_CLASS, positive, text, whole } from "./deployFieldValues";
+import { DEPLOY_LABEL_CLASS, list, positive, text, whole } from "./deployFieldValues";
 
 const STATE_TYPES: readonly SfnStateType[] = [
   "Task",
@@ -24,6 +26,73 @@ const STATE_TYPES: readonly SfnStateType[] = [
 ];
 const SELECT_CLASS =
   "w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
+
+/**
+ * A state's first retrier — what its badge says. Switching it on stores an
+ * empty retrier (ASL's defaults); the others, if any, are kept as they are.
+ */
+function RetryFields({
+  retry,
+  onChange,
+}: {
+  retry: SfnRetry[] | undefined;
+  onChange: (patch: ComponentPatch) => void;
+}) {
+  const { t } = useTranslation();
+  const first = retry?.[0];
+  const setFirst = (patch: Partial<SfnRetry>) => {
+    const next = { ...first, ...patch };
+    for (const key of Object.keys(next) as (keyof SfnRetry)[]) {
+      if (next[key] === undefined) delete next[key];
+    }
+    onChange({ retry: [next, ...(retry ?? []).slice(1)] });
+  };
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <Label htmlFor="sfn-retry">{t("sfn.fields.retry")}</Label>
+        <Switch
+          id="sfn-retry"
+          checked={first !== undefined}
+          onCheckedChange={(on) => onChange({ retry: on ? [{}] : undefined })}
+        />
+      </div>
+      {first && (
+        <>
+          <TextField
+            id="sfn-retry-errors"
+            label={t("sfn.fields.retryErrors")}
+            value={first.errors?.join(", ")}
+            onChange={(value) => setFirst({ errors: list(value) })}
+          />
+          <div className="grid grid-cols-3 gap-2">
+            <TextField
+              id="sfn-retry-max"
+              type="number"
+              label={t("sfn.fields.maxAttempts")}
+              value={first.maxAttempts}
+              onChange={(value) => setFirst({ maxAttempts: whole(value) })}
+            />
+            <TextField
+              id="sfn-retry-backoff"
+              type="number"
+              label={t("sfn.fields.backoffRate")}
+              value={first.backoffRate}
+              onChange={(value) => setFirst({ backoffRate: positive(value) })}
+            />
+            <TextField
+              id="sfn-retry-interval"
+              type="number"
+              label={t("sfn.fields.intervalSeconds")}
+              value={first.intervalSeconds}
+              onChange={(value) => setFirst({ intervalSeconds: positive(value) })}
+            />
+          </div>
+        </>
+      )}
+    </>
+  );
+}
 
 /** The fields each Step Functions element carries beyond a name and a description. */
 export function SfnFieldsSection({
@@ -113,6 +182,7 @@ export function SfnFieldsSection({
               value={component.action}
               onChange={(value) => onChange({ action: text(value) })}
             />
+            <RetryFields retry={component.retry} onChange={onChange} />
           </>
         )}
         {type === "Wait" && (
@@ -152,8 +222,13 @@ export function SfnFieldsSection({
           value={component.maxConcurrency}
           onChange={(value) => onChange({ maxConcurrency: positive(value) })}
         />
+        <RetryFields retry={component.retry} onChange={onChange} />
       </>
     );
+  }
+
+  if (isSfnParallelComponent(component)) {
+    return <RetryFields retry={component.retry} onChange={onChange} />;
   }
 
   return null;

@@ -22,12 +22,15 @@ import type { SfnStateType } from "@/features/diagram/model/component.types";
 import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
 import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 import { DeployHandles } from "../DeployNodes/DeployParts";
+import { RetryBadge } from "./RetryBadge";
 
 export type SfnStateNodeData = SkinNodeData & {
   stateType: SfnStateType;
   service?: string;
   /** "Lambda · Invoke", "wait 30s"… */
   caption?: string;
+  /** "retry 3× · backoff 2", when the state retries. */
+  retry?: string | null;
   defaultAccent: string;
   incomingCount: number;
   outgoingCount: number;
@@ -86,6 +89,7 @@ const SfnStateNode = memo(({ data: d, selected }: NodeProps<Node<SfnStateNodeDat
           borderLeft: `3px solid ${palette.accent}`,
         }}
       >
+        {d.retry && <RetryBadge text={d.retry} />}
         <Icon size={16} strokeWidth={1.75} color={palette.icon} className="shrink-0" />
         <div className="min-w-0 flex-1">
           <p

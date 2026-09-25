@@ -5,6 +5,7 @@ import { mix } from "../ProcessNode/flowAppearance";
 import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
 import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 import { Chip, DeployHandles } from "../DeployNodes/DeployParts";
+import { RetryBadge } from "./RetryBadge";
 
 export type SfnGroupNodeData = SkinNodeData & {
   kind: "Parallel" | "Map";
@@ -12,6 +13,7 @@ export type SfnGroupNodeData = SkinNodeData & {
   dividers: number[];
   itemsPath?: string;
   maxConcurrency?: number;
+  retry?: string | null;
   defaultAccent: string;
   incomingCount: number;
   outgoingCount: number;
@@ -87,6 +89,7 @@ const SfnGroupNode = memo(({ data: d, selected }: NodeProps<Node<SfnGroupNodeDat
           />
         ))}
       </div>
+      {d.retry && <RetryBadge text={d.retry} />}
     </>
   );
 });
