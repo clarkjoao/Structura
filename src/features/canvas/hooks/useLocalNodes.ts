@@ -125,6 +125,24 @@ function isDragFrame(changes: NodeChange[]): boolean {
   return true;
 }
 
+/**
+ * Whether a node takes the store's position over the one React Flow holds.
+ * A reparent does; so does a node that cannot be dragged, or just stopped
+ * or started being draggable — nothing local can have moved it, and its
+ * place may be derived (a sidecar's tab on a compact workload moves to the
+ * workload's edge and back without its parent changing).
+ */
+export function adoptsStorePosition(
+  storeNode: { parentId?: string; draggable?: boolean },
+  localNode: { parentId?: string; draggable?: boolean },
+): boolean {
+  return (
+    storeNode.parentId !== localNode.parentId ||
+    storeNode.draggable === false ||
+    localNode.draggable === false
+  );
+}
+
 export function useLocalNodes(
   storeNodes: Node[],
   innerOnNodesChange: OnNodesChange,
@@ -207,7 +225,7 @@ export function useLocalNodes(
         const merged = storeNodes.map((sn) => {
           const ln = localMap.get(sn.id);
           if (!ln) return sn;
-          const useRemotePosition = sn.parentId !== ln.parentId;
+          const useRemotePosition = adoptsStorePosition(sn, ln);
           const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
           return {
             ...ln,
@@ -242,7 +260,7 @@ export function useLocalNodes(
             return sn;
           }
 
-          const useRemotePosition = sn.parentId !== ln.parentId;
+          const useRemotePosition = adoptsStorePosition(sn, ln);
 
           const positionToUse = useRemotePosition ? sn.position : ln.position;
           const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
