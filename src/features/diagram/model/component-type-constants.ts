@@ -48,6 +48,36 @@ export function isShardRouterType(type: string): type is "deploy-shard-router" {
   return type === COMPONENT_TYPE_SHARD_ROUTER;
 }
 
+export const COMPONENT_TYPE_K8S_CLUSTER = "k8s-cluster";
+
+export function isK8sClusterType(type: string): type is "k8s-cluster" {
+  return type === COMPONENT_TYPE_K8S_CLUSTER;
+}
+
+export const COMPONENT_TYPE_K8S_NAMESPACE = "k8s-namespace";
+
+export function isK8sNamespaceType(type: string): type is "k8s-namespace" {
+  return type === COMPONENT_TYPE_K8S_NAMESPACE;
+}
+
+export const COMPONENT_TYPE_K8S_WORKLOAD = "k8s-workload";
+
+export function isK8sWorkloadType(type: string): type is "k8s-workload" {
+  return type === COMPONENT_TYPE_K8S_WORKLOAD;
+}
+
+export const COMPONENT_TYPE_K8S_SERVICE = "k8s-service";
+
+export function isK8sServiceType(type: string): type is "k8s-service" {
+  return type === COMPONENT_TYPE_K8S_SERVICE;
+}
+
+export const COMPONENT_TYPE_K8S_INGRESS = "k8s-ingress";
+
+export function isK8sIngressType(type: string): type is "k8s-ingress" {
+  return type === COMPONENT_TYPE_K8S_INGRESS;
+}
+
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
 export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";

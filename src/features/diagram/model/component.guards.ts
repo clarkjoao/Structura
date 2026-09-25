@@ -23,6 +23,11 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  K8sIngressComponent,
+  K8sServiceComponent,
+  K8sWorkloadComponent,
+  K8sNamespaceComponent,
+  K8sClusterComponent,
   ShardRouterComponent,
   ShardComponent,
   ShardedStoreComponent,
@@ -49,6 +54,11 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isK8sIngressType,
+  isK8sServiceType,
+  isK8sWorkloadType,
+  isK8sNamespaceType,
+  isK8sClusterType,
   isShardRouterType,
   isShardType,
   isShardedStoreType,
@@ -135,6 +145,21 @@ export const isShardComponent = (c: Component): c is ShardComponent => isShardTy
 
 export const isShardRouterComponent = (c: Component): c is ShardRouterComponent =>
   isShardRouterType(c.type);
+
+export const isK8sClusterComponent = (c: Component): c is K8sClusterComponent =>
+  isK8sClusterType(c.type);
+
+export const isK8sNamespaceComponent = (c: Component): c is K8sNamespaceComponent =>
+  isK8sNamespaceType(c.type);
+
+export const isK8sWorkloadComponent = (c: Component): c is K8sWorkloadComponent =>
+  isK8sWorkloadType(c.type);
+
+export const isK8sServiceComponent = (c: Component): c is K8sServiceComponent =>
+  isK8sServiceType(c.type);
+
+export const isK8sIngressComponent = (c: Component): c is K8sIngressComponent =>
+  isK8sIngressType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);

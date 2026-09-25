@@ -29,6 +29,7 @@ export type ComponentType =
   | "external-element"
   | "flow-divider"
   | VsmComponentType
+  | K8sStructureType
   | DeployComponentType
   | AwsCategoryId
   | GcpCategoryId
@@ -306,6 +307,10 @@ export interface FlowDividerComponent extends BaseComponent {
 /** The deployment vocabulary (the `deploy` family): stores and their shards. */
 export type DeployComponentType = "deploy-sharded-store" | "deploy-shard" | "deploy-shard-router";
 
+/** Kubernetes as structure (the `k8s` family's own elements, beside its catalog cards). */
+export type K8sStructureType =
+  "k8s-cluster" | "k8s-namespace" | "k8s-workload" | "k8s-service" | "k8s-ingress";
+
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
 export type VsmComponentType =
   | "vsm-external"
@@ -425,6 +430,63 @@ export interface ShardRouterComponent extends BaseComponent, SkinParts {
   type: "deploy-shard-router";
 }
 
+/** A Kubernetes cluster: the outermost typed container of a deployment. */
+export interface K8sClusterComponent extends BaseComponent, SkinParts {
+  type: "k8s-cluster";
+  /** "EKS", "GKE", "k3s". */
+  distribution?: string;
+  /** "1.30". */
+  version?: string;
+  nodeCount?: number;
+  zoneCount?: number;
+  collapsed?: boolean;
+}
+
+/** A namespace inside a cluster: a logical grouping, drawn dashed. */
+export interface K8sNamespaceComponent extends BaseComponent, SkinParts {
+  type: "k8s-namespace";
+  /** Sidecars injected by the mesh into every pod here. Absent means no. */
+  meshInjection?: boolean;
+  collapsed?: boolean;
+}
+
+/** What a workload is. Absent means Deployment. */
+export type K8sWorkloadKind =
+  "Deployment" | "StatefulSet" | "DaemonSet" | "Job" | "CronJob" | "Pod";
+
+/** A workload: its pods are drawn from its data (replica tiles), not as nodes. */
+export interface K8sWorkloadComponent extends BaseComponent, SkinParts {
+  type: "k8s-workload";
+  kind?: K8sWorkloadKind;
+  /** Desired replicas. Absent means 1. */
+  replicas?: number;
+  hpaMin?: number;
+  hpaMax?: number;
+  image?: string;
+  /** "250m / 512Mi". */
+  resources?: string;
+  /** Zones the pods spread over, as labels: ["1a", "1b"]. */
+  zones?: string[];
+  /** CronJob schedule, in cron syntax. */
+  schedule?: string;
+  concurrencyPolicy?: "Allow" | "Forbid" | "Replace";
+}
+
+/** A Service in front of a workload's pods. */
+export interface K8sServiceComponent extends BaseComponent, SkinParts {
+  type: "k8s-service";
+  /** Absent means ClusterIP. */
+  serviceType?: "ClusterIP" | "NodePort" | "LoadBalancer" | "ExternalName";
+  port?: number;
+}
+
+/** An Ingress: the host and class traffic comes in by. */
+export interface K8sIngressComponent extends BaseComponent, SkinParts {
+  type: "k8s-ingress";
+  host?: string;
+  ingressClass?: string;
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -445,6 +507,11 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | K8sIngressComponent
+  | K8sServiceComponent
+  | K8sWorkloadComponent
+  | K8sNamespaceComponent
+  | K8sClusterComponent
   | ShardRouterComponent
   | ShardComponent
   | ShardedStoreComponent
@@ -491,6 +558,11 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<K8sIngressComponent, "id">> &
+  Partial<Omit<K8sServiceComponent, "id">> &
+  Partial<Omit<K8sWorkloadComponent, "id">> &
+  Partial<Omit<K8sNamespaceComponent, "id">> &
+  Partial<Omit<K8sClusterComponent, "id">> &
   Partial<Omit<ShardRouterComponent, "id">> &
   Partial<Omit<ShardComponent, "id">> &
   Partial<Omit<ShardedStoreComponent, "id">> &
@@ -521,6 +593,11 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sIngressComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sServiceComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sWorkloadComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sNamespaceComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sClusterComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ShardRouterComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ShardComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ShardedStoreComponent, "id">> & { width?: number; height?: number })
