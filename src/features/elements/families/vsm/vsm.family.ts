@@ -1,5 +1,6 @@
 import type { ElementDescriptor } from "../../element.types";
 import { vsmExternalElement } from "./vsm-external.element";
+import { vsmKaizenElement } from "./vsm-kaizen.element";
 import { vsmPushElement } from "./vsm-push.element";
 import { vsmSupermarketElement } from "./vsm-supermarket.element";
 import { vsmInventoryElement } from "./vsm-inventory.element";
@@ -18,4 +19,5 @@ export const vsmElements: readonly ElementDescriptor[] = [
   vsmInventoryElement,
   vsmSupermarketElement,
   vsmPushElement,
+  vsmKaizenElement,
 ];

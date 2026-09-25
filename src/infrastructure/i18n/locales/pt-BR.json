@@ -1154,6 +1154,10 @@
     "vsm-push": {
       "label": "Seta de empurrar",
       "description": "Material empurrado para a etapa seguinte, precise ela ou não."
+    },
+    "vsm-kaizen": {
+      "label": "Kaizen",
+      "description": "Uma melhoria a fazer neste ponto do fluxo."
     }
   },
   "flowchart": {

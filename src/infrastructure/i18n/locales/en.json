@@ -1154,6 +1154,10 @@
     "vsm-push": {
       "label": "Push arrow",
       "description": "Material pushed to the next step whether it needs it or not."
+    },
+    "vsm-kaizen": {
+      "label": "Kaizen burst",
+      "description": "An improvement to make at this point of the stream."
     }
   },
   "flowchart": {

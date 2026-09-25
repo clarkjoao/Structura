@@ -98,3 +98,35 @@ export function pushArrowPaths(
   const shaft = `M${INSET} ${shaftTop} H${round(shaftEnd)} V${shaftBottom} H${INSET} Z`;
   return { stripes, head: headPath, shaft };
 }
+
+/**
+ * How far in each of the burst's 18 valleys reaches, as a fraction of the
+ * radius. Fixed rather than random, so the burst is irregular but the same
+ * every time it is drawn — and the same in the reader as in the editor.
+ */
+const KAIZEN_VALLEYS = [
+  0.62, 0.74, 0.58, 0.7, 0.66, 0.55, 0.72, 0.6, 0.68, 0.57, 0.73, 0.63, 0.69, 0.56, 0.71, 0.61,
+  0.67, 0.59,
+];
+/** And how far out each point reaches. */
+const KAIZEN_PEAKS = [
+  1, 0.9, 0.97, 0.88, 1, 0.93, 0.86, 0.99, 0.91, 0.95, 0.87, 1, 0.92, 0.89, 0.98, 0.9, 0.94, 0.96,
+];
+
+/** The kaizen burst: an irregular 18-point star filling the box. */
+export function kaizenBurstPath(w: number, h: number): string {
+  const cx = w / 2;
+  const cy = h / 2;
+  const rx = w / 2 - INSET;
+  const ry = h / 2 - INSET;
+  const points: string[] = [];
+  for (let i = 0; i < 18; i += 1) {
+    const peak = ((i * 2) / 36) * Math.PI * 2 - Math.PI / 2;
+    const valley = ((i * 2 + 1) / 36) * Math.PI * 2 - Math.PI / 2;
+    points.push(
+      `${round(cx + Math.cos(peak) * rx * KAIZEN_PEAKS[i])} ${round(cy + Math.sin(peak) * ry * KAIZEN_PEAKS[i])}`,
+      `${round(cx + Math.cos(valley) * rx * KAIZEN_VALLEYS[i])} ${round(cy + Math.sin(valley) * ry * KAIZEN_VALLEYS[i])}`,
+    );
+  }
+  return `M${points.join(" L")} Z`;
+}

@@ -26,6 +26,12 @@ export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
+export const COMPONENT_TYPE_VSM_KAIZEN = "vsm-kaizen";
+
+export function isVsmKaizenType(type: string): type is "vsm-kaizen" {
+  return type === COMPONENT_TYPE_VSM_KAIZEN;
+}
+
 export const COMPONENT_TYPE_VSM_PUSH = "vsm-push";
 
 export function isVsmPushType(type: string): type is "vsm-push" {

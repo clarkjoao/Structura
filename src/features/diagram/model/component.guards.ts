@@ -23,6 +23,7 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  VsmKaizenComponent,
   VsmPushComponent,
   VsmSupermarketComponent,
   VsmInventoryComponent,
@@ -43,6 +44,7 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isVsmKaizenType,
   isVsmPushType,
   isVsmSupermarketType,
   isVsmInventoryType,
@@ -106,6 +108,9 @@ export const isVsmSupermarketComponent = (c: Component): c is VsmSupermarketComp
   isVsmSupermarketType(c.type);
 
 export const isVsmPushComponent = (c: Component): c is VsmPushComponent => isVsmPushType(c.type);
+
+export const isVsmKaizenComponent = (c: Component): c is VsmKaizenComponent =>
+  isVsmKaizenType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);
