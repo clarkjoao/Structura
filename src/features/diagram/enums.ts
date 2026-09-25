@@ -13,6 +13,11 @@ export enum EdgeStyle {
   Editable = "editable",
   /** Editable orthogonal path (draw.io-style) with draggable right-angle segments. */
   EditableStep = "editable-step",
+  /**
+   * A straight line with a lightning zigzag in the middle: VSM's electronic
+   * information flow (a manual one is a plain straight edge).
+   */
+  Zigzag = "zigzag",
 }
 
 export enum StrokeStyle {

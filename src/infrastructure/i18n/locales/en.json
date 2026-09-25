@@ -87,7 +87,8 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Transport type",
     "copySuffix": " (copy)",
-    "defaultNamePrefix": "New"
+    "defaultNamePrefix": "New",
+    "edgeZigzag": "Zigzag (electronic)"
   },
   "externalLinks": {
     "sectionTitle": "Links",

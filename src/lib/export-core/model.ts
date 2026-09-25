@@ -9,7 +9,7 @@
 
 /** Edge routing style (source enums map onto these string literals). */
 export type ExportEdgeStyle =
-  "smoothstep" | "step" | "bezier" | "straight" | "editable" | "editable-step";
+  "smoothstep" | "step" | "bezier" | "straight" | "editable" | "editable-step" | "zigzag";
 
 /** Line style. */
 export type ExportStrokeStyle = "solid" | "dashed" | "dotted";

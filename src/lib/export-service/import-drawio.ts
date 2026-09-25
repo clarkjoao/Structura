@@ -30,6 +30,8 @@ const C4_TYPE_MAP: Record<string, string> = {
 };
 
 const EDGE_STYLE_MAP: Array<[string, EdgeStyle]> = [
+  // Before edgeStyle=none, which the zigzag's style also carries.
+  ["mxgraph.lean_mapping.electronic_info_flow_edge", EdgeStyle.Zigzag],
   ["edgeStyle=none", EdgeStyle.Straight],
   ["edgeStyle=orthogonalEdgeStyle", EdgeStyle.Step],
   ["edgeStyle=entityRelationEdgeStyle", EdgeStyle.Bezier],

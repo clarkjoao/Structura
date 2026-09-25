@@ -396,8 +396,26 @@ describe("golden — value stream map", () => {
     ids.map((id, index) => [id, { elementId: id, x: index * 260, y: 0, width: 200, height: 100 }]),
   );
 
+  // Information flow: manual is a plain straight edge, electronic a zigzag.
+  const connections: Record<string, Connection> = {
+    manual: {
+      id: "manual",
+      sourceId: "supplier",
+      targetId: "process",
+      label: "",
+      style: { edgeStyle: EdgeStyle.Straight },
+    },
+    electronic: {
+      id: "electronic",
+      sourceId: "process",
+      targetId: "customer",
+      label: "EDI",
+      style: { edgeStyle: EdgeStyle.Zigzag },
+    },
+  };
+
   it("freezes every VSM element", () => {
-    const xml = exportDrawio(diagram("VSM", components, {}, layouts), catalog);
+    const xml = exportDrawio(diagram("VSM", components, connections, layouts), catalog);
     expect(xml).toMatchSnapshot();
     expect(xml).toContain("shape=mxgraph.lean_mapping.outside_sources;");
     expect(xml).toContain("shape=mxgraph.lean_mapping.manufacturing_process;");
@@ -406,6 +424,7 @@ describe("golden — value stream map", () => {
     expect(xml).toContain("shape=mxgraph.lean_mapping.push_arrow;");
     expect(xml).toContain("shape=mxgraph.lean_mapping.kaizen_lightening_burst;");
     expect(xml).toContain("shape=mxgraph.lean_mapping.timeline2;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.electronic_info_flow_edge;");
     // The totals are computed from the segments: 5 + 0.5 + 3 + 1 and 0.5 + 1.
     expect(xml).toContain("Lead time: 9.5 d");
     expect(xml).toContain("Value-added time: 1.5 d");
