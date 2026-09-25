@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { canContain, isCompactContainer } from "@/features/elements/containment";
+import { canContain, isCompactContainer, isShownAsTab } from "@/features/elements/containment";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
@@ -343,6 +343,8 @@ export function useNodeDragParenting({
       // size and change the diagram's checksum just by opening it.
       const measured = r.components[change.id];
       if (!change.resizing && measured && isCompactContainer(measured)) return;
+      // Nor is a tab's: its box is derived from the compact parent it sits on.
+      if (measured && isShownAsTab(measured, r.components)) return;
       // React Flow measures with offsetWidth/offsetHeight, which are whole
       // pixels: a node stored at 933.333 measures 933. Writing that back moved
       // the store off what the canvas draws, and every reader of the store (the

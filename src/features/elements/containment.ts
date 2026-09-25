@@ -36,3 +36,10 @@ export function isCompactContainer(comp: Component): boolean {
   if ((comp as { collapsed?: boolean }).collapsed !== true) return false;
   return getElement(comp.type)?.canvas.collapsible === true;
 }
+
+/** Whether the component is drawn right now as a tab on its compact parent. */
+export function isShownAsTab(comp: Component, components: Record<string, Component>): boolean {
+  const parent = comp.parentId ? components[comp.parentId] : undefined;
+  if (!parent || !isCompactContainer(parent)) return false;
+  return getElement(comp.type)?.canvas.tabOnCompactParent?.(comp) === true;
+}

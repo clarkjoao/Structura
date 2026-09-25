@@ -314,6 +314,14 @@ export interface ElementCanvasSlice {
    */
   collapsible?: boolean;
 
+  /**
+   * While its parent is compact, this child is not hidden with the rest: it
+   * stays on screen as a tab on the parent's right edge, still its own node —
+   * edges end on it and a click selects it. A sidecar on a compact workload.
+   * Its stored position and size are untouched; the tab's are derived.
+   */
+  tabOnCompactParent?: (component: Component) => boolean;
+
   /** React Flow behaviour overrides, same meaning as in `NodeTypeDescriptor`. */
   dragHandle?: string;
   draggable?: boolean;

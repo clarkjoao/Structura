@@ -124,6 +124,9 @@ export interface NodeTypeDescriptor {
   /** See `ElementCanvasSlice.collapsible`. */
   collapsible?: boolean;
 
+  /** See `ElementCanvasSlice.tabOnCompactParent`. */
+  tabOnCompactParent?: (comp: Component) => boolean;
+
   buildData: (comp: Component, ctx: NodeBuildContext) => Record<string, unknown>;
 
   buildStyle?: (comp: Component, ctx: NodeBuildContext) => CSSProperties | undefined;

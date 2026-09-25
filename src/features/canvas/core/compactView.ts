@@ -19,16 +19,38 @@ export function visibleAncestorOf(
   elementId: string,
   components: Record<string, Component>,
   compactIds: ReadonlySet<string>,
+  tabIds: ReadonlyMap<string, number> = NO_TABS,
 ): string {
   let visible = elementId;
-  let currentId = components[elementId]?.parentId ?? null;
+  const parentId = components[elementId]?.parentId ?? null;
+  // A tab stays on screen on its compact parent: only what hides the parent hides it.
+  let currentId =
+    tabIds.has(elementId) && parentId ? (components[parentId]?.parentId ?? null) : parentId;
   const seen = new Set<string>([elementId]);
+  if (tabIds.has(elementId) && parentId) seen.add(parentId);
   while (currentId && !seen.has(currentId)) {
     seen.add(currentId);
     if (compactIds.has(currentId)) visible = currentId;
     currentId = components[currentId]?.parentId ?? null;
   }
   return visible;
+}
+
+const NO_TABS: ReadonlyMap<string, number> = new Map();
+
+/** A tab's box on its compact parent, parent-relative: along the right edge, top to bottom. */
+export const COMPACT_TAB = { width: 120, height: 24, gap: 4, top: 36, overlap: 4 } as const;
+
+export function compactTabBox(
+  index: number,
+  parentWidth: number,
+): { x: number; y: number; width: number; height: number } {
+  return {
+    x: parentWidth - COMPACT_TAB.overlap,
+    y: COMPACT_TAB.top + index * (COMPACT_TAB.height + COMPACT_TAB.gap),
+    width: COMPACT_TAB.width,
+    height: COMPACT_TAB.height,
+  };
 }
 
 /** The ancestors of `elementId`, innermost first. */
@@ -55,12 +77,13 @@ export function remapConnectionsToVisible(
   connections: readonly Connection[],
   components: Record<string, Component>,
   compactIds: ReadonlySet<string>,
+  tabIds: ReadonlyMap<string, number> = NO_TABS,
 ): Connection[] {
   if (compactIds.size === 0) return connections as Connection[];
   const out: Connection[] = [];
   for (const connection of connections) {
-    const sourceId = visibleAncestorOf(connection.sourceId, components, compactIds);
-    const targetId = visibleAncestorOf(connection.targetId, components, compactIds);
+    const sourceId = visibleAncestorOf(connection.sourceId, components, compactIds, tabIds);
+    const targetId = visibleAncestorOf(connection.targetId, components, compactIds, tabIds);
     if (sourceId === connection.sourceId && targetId === connection.targetId) {
       out.push(connection);
       continue;

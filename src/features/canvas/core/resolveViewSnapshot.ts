@@ -26,7 +26,7 @@ import { remapConnectionsToVisible } from "./compactView";
 /** What the view needs to know of a node's type: whether it nests, and its default z. */
 export type ViewNodeDescriptor = Pick<
   NodeTypeDescriptor,
-  "canHaveParent" | "zIndex" | "acceptsChildren" | "collapsible"
+  "canHaveParent" | "zIndex" | "acceptsChildren" | "collapsible" | "tabOnCompactParent"
 >;
 export type DescribeNode = (component: Component) => ViewNodeDescriptor;
 
@@ -53,6 +53,8 @@ export interface ViewNode {
   isHidden: boolean;
   /** Nested inside its parent (the parent is a placed panel or API group). */
   isChild: boolean;
+  /** Drawn as the n-th tab on its compact parent (`tabOnCompactParent`), from 0. */
+  tabIndex?: number;
 }
 
 export interface ViewSnapshot {
@@ -66,6 +68,8 @@ export interface ViewSnapshot {
   collapsedPanelIds: Set<string>;
   /** The compact typed containers alone: what edges and flow steps are redrawn onto. */
   compactContainerIds: Set<string>;
+  /** Children drawn as tabs on a compact parent, with their place among its tabs. */
+  compactTabIds: Map<string, number>;
   /** Every placed component, in render order. Hidden ones stay, flagged. */
   nodes: ViewNode[];
   /**
@@ -85,6 +89,7 @@ export const EMPTY_VIEW_SNAPSHOT: ViewSnapshot = Object.freeze({
   panelIds: new Set<string>(),
   collapsedPanelIds: new Set<string>(),
   compactContainerIds: new Set<string>(),
+  compactTabIds: new Map<string, number>(),
   nodes: [],
   placedConnections: [],
   shownConnections: [],
@@ -150,6 +155,37 @@ export function buildCompactContainerIds(
   return ids;
 }
 
+/**
+ * Children that stay on screen as tabs on a compact parent, each with its
+ * place: top to bottom as they sit in the parent, then by name.
+ */
+export function buildCompactTabIds(
+  components: Record<string, Component>,
+  compactIds: ReadonlySet<string>,
+  nodeLayouts: Record<string, NodeLayout>,
+  describe?: DescribeNode,
+): Map<string, number> {
+  const tabs = new Map<string, number>();
+  if (!describe || compactIds.size === 0) return tabs;
+  const byParent = new Map<string, Component[]>();
+  for (const c of Object.values(components)) {
+    if (!c.parentId || !compactIds.has(c.parentId)) continue;
+    if (describe(c).tabOnCompactParent?.(c) !== true) continue;
+    const siblings = byParent.get(c.parentId) ?? [];
+    siblings.push(c);
+    byParent.set(c.parentId, siblings);
+  }
+  for (const siblings of byParent.values()) {
+    siblings
+      .sort(
+        (a, b) =>
+          (nodeLayouts[a.id]?.y ?? 0) - (nodeLayouts[b.id]?.y ?? 0) || a.name.localeCompare(b.name),
+      )
+      .forEach((c, index) => tabs.set(c.id, index));
+  }
+  return tabs;
+}
+
 /** The edges drawn: a connection to a hidden component is not. */
 export function filterVisibleConnections(
   connections: Connection[],
@@ -174,8 +210,16 @@ function hasCollapsedOrHiddenAncestor(
   comp: Component,
   components: Record<string, Component>,
   collapsedPanelIds: Set<string>,
+  isTab = false,
 ): boolean {
   let currentParentId = comp.parentId;
+  // A tab is not hidden by its compact parent — only by whatever hides the parent.
+  if (isTab && currentParentId) {
+    const parent = components[currentParentId];
+    if (!parent) return false;
+    if (parent.hidden === true) return true;
+    currentParentId = parent.parentId;
+  }
   while (currentParentId !== null && currentParentId !== undefined) {
     const parent = components[currentParentId];
     if (!parent) break;
@@ -198,13 +242,15 @@ export function resolveNodeView(
   panelIds: Set<string>,
   collapsedPanelIds: Set<string>,
   components: Record<string, Component>,
+  isTab = false,
 ): { isChild: boolean; zIndex: number; isHidden: boolean } {
   const isChild = descriptor.canHaveParent && comp.parentId !== null && panelIds.has(comp.parentId);
   const zIndex =
     layout?.zIndex ??
     (typeof descriptor.zIndex === "function" ? descriptor.zIndex(comp) : descriptor.zIndex);
   const isHidden =
-    comp.hidden === true || hasCollapsedOrHiddenAncestor(comp, components, collapsedPanelIds);
+    comp.hidden === true ||
+    hasCollapsedOrHiddenAncestor(comp, components, collapsedPanelIds, isTab);
   return { isChild, zIndex, isHidden };
 }
 
@@ -291,9 +337,16 @@ export function resolveViewSnapshot(
   const compactContainerIds = buildCompactContainerIds(resolved.components, describe);
   const collapsedPanelIds = buildCollapsedPanelIds(resolved.components);
   for (const id of compactContainerIds) collapsedPanelIds.add(id);
+  const compactTabIds = buildCompactTabIds(
+    resolved.components,
+    compactContainerIds,
+    resolved.nodeLayouts,
+    describe,
+  );
 
   const nodes = sortForRender(placed, resolved.components, describe).map((component): ViewNode => {
     const layout = resolved.nodeLayouts[component.id];
+    const tabIndex = compactTabIds.get(component.id);
     const view = resolveNodeView(
       component,
       describe(component),
@@ -301,14 +354,16 @@ export function resolveViewSnapshot(
       panelIds,
       collapsedPanelIds,
       resolved.components,
+      tabIndex !== undefined,
     );
-    return { component, layout, ...view };
+    return { component, layout, ...view, ...(tabIndex !== undefined ? { tabIndex } : {}) };
   });
 
   const connections = remapConnectionsToVisible(
     placedConnections(resolved.connections, resolved.nodeLayouts),
     resolved.components,
     compactContainerIds,
+    compactTabIds,
   );
 
   return {
@@ -318,6 +373,7 @@ export function resolveViewSnapshot(
     panelIds,
     collapsedPanelIds,
     compactContainerIds,
+    compactTabIds,
     nodes,
     placedConnections: connections,
     shownConnections: filterVisibleConnections(connections, resolved.components),

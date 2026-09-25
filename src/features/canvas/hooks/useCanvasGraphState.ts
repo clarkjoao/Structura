@@ -160,8 +160,9 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
         visibleConnections,
         resolved?.components ?? {},
         view.compactContainerIds,
+        view.compactTabIds,
       ),
-    [visibleConnections, resolved?.components, view.compactContainerIds],
+    [visibleConnections, resolved?.components, view.compactContainerIds, view.compactTabIds],
   );
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
