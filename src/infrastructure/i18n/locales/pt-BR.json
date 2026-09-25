@@ -1182,6 +1182,14 @@
     "deploy-shard-router": {
       "label": "Roteador de shards",
       "description": "O roteador na frente dos shards (mongos, vtgate)."
+    },
+    "k8s-cluster": {
+      "label": "Cluster Kubernetes",
+      "description": "Um cluster Kubernetes com distribuição, versão, nós e zonas; contém namespaces e workloads."
+    },
+    "k8s-namespace": {
+      "label": "Namespace",
+      "description": "Um namespace Kubernetes dentro de um cluster, com injeção opcional de sidecar da malha."
     }
   },
   "flowchart": {
@@ -2552,6 +2560,22 @@
       "share": "Tamanho da faixa",
       "region": "Região",
       "hot": "Shard quente"
+    }
+  },
+  "k8s": {
+    "cluster": "cluster",
+    "namespace": "namespace",
+    "nodes_one": "{{count}} nó",
+    "nodes_other": "{{count}} nós",
+    "zones_one": "{{count}} zona",
+    "zones_other": "{{count}} zonas",
+    "meshInjected": "istio · sidecar injetado",
+    "fields": {
+      "distribution": "Distribuição",
+      "version": "Versão",
+      "nodeCount": "Nós",
+      "zoneCount": "Zonas",
+      "meshInjection": "Injeção de sidecar da malha"
     }
   }
 }

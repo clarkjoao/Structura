@@ -1182,6 +1182,14 @@
     "deploy-shard-router": {
       "label": "Shard router",
       "description": "The router in front of a store's shards (mongos, vtgate)."
+    },
+    "k8s-cluster": {
+      "label": "Kubernetes cluster",
+      "description": "A Kubernetes cluster with its distribution, version, nodes and zones; holds namespaces and workloads."
+    },
+    "k8s-namespace": {
+      "label": "Namespace",
+      "description": "A Kubernetes namespace inside a cluster, optionally with mesh sidecar injection."
     }
   },
   "flowchart": {
@@ -2552,6 +2560,22 @@
       "share": "Range size",
       "region": "Region",
       "hot": "Hot shard"
+    }
+  },
+  "k8s": {
+    "cluster": "cluster",
+    "namespace": "namespace",
+    "nodes_one": "{{count}} node",
+    "nodes_other": "{{count}} nodes",
+    "zones_one": "{{count}} zone",
+    "zones_other": "{{count}} zones",
+    "meshInjected": "istio · sidecar injected",
+    "fields": {
+      "distribution": "Distribution",
+      "version": "Version",
+      "nodeCount": "Nodes",
+      "zoneCount": "Zones",
+      "meshInjection": "Mesh sidecar injection"
     }
   }
 }

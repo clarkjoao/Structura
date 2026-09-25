@@ -23,4 +23,6 @@ export const ELEMENT_SIZE_LIMITS: Readonly<Record<string, SizeLimits>> = {
   "deploy-sharded-store": { minWidth: 240, minHeight: 84 },
   "deploy-shard": { minWidth: 140, minHeight: 64 },
   "deploy-shard-router": { minWidth: 120, minHeight: 48 },
+  "k8s-cluster": { minWidth: 280, minHeight: 64 },
+  "k8s-namespace": { minWidth: 240, minHeight: 64 },
 };

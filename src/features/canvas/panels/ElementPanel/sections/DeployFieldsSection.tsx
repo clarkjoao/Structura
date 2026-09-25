@@ -12,12 +12,11 @@ import {
 } from "@/features/diagram";
 import { hasShardRouter, shardCount } from "@/features/diagram/utils/sharded-store";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { SegmentedControl } from "../components/SegmentedControl";
+import { DeployTextField as TextField } from "./DeployTextField";
+import { DEPLOY_LABEL_CLASS as LABEL_CLASS, positive, text } from "./deployFieldValues";
 
-const LABEL_CLASS = "text-[11px] text-muted-foreground uppercase tracking-wider font-semibold";
 const STRATEGIES: readonly ShardStrategy[] = [
   "hash",
   "consistent-hash",
@@ -25,44 +24,6 @@ const STRATEGIES: readonly ShardStrategy[] = [
   "geo",
   "directory",
 ];
-
-function TextField({
-  id,
-  label,
-  value,
-  onChange,
-  type = "text",
-}: {
-  id: string;
-  label: string;
-  value: string | number | undefined;
-  onChange: (value: string) => void;
-  type?: "text" | "number";
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className={`${LABEL_CLASS} block`}>
-        {label}
-      </label>
-      <Input
-        id={id}
-        type={type}
-        min={type === "number" ? 0 : undefined}
-        value={value ?? ""}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-9"
-      />
-    </div>
-  );
-}
-
-/** Free text; empty clears the field instead of storing "". */
-const text = (value: string) => (value === "" ? undefined : value);
-/** A positive number; empty or invalid clears it. */
-const positive = (value: string) => {
-  const n = Number(value);
-  return value.trim() === "" || !Number.isFinite(n) || n <= 0 ? undefined : n;
-};
 
 /** The fields each deployment element carries beyond a name and a description. */
 export function DeployFieldsSection({
