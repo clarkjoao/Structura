@@ -276,6 +276,12 @@ describe("buildMxGraphXml — edges", () => {
           "edgeStyle=none;shape=mxgraph.lean_mapping.electronic_info_flow_edge;html=1;",
         expectRounded: "absent",
       },
+      {
+        style: "catch",
+        expectEdgeStyleToken:
+          "edgeStyle=orthogonalEdgeStyle;orthogonalLoop=1;jettySize=auto;html=1;structuraEdge=catch;",
+        expectRounded: "absent",
+      },
     ];
 
     for (const c of cases) {

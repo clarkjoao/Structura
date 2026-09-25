@@ -88,7 +88,8 @@
     "transportTypeTitle": "Tipo de transporte",
     "copySuffix": " (cópia)",
     "defaultNamePrefix": "Novo",
-    "edgeZigzag": "Zigue-zague (eletrônico)"
+    "edgeZigzag": "Zigue-zague (eletrônico)",
+    "edgeCatch": "Catch (tracejado vermelho)"
   },
   "externalLinks": {
     "sectionTitle": "Links",

@@ -35,14 +35,16 @@ function getStrokeColor(intent: string | undefined): string {
 }
 
 export function buildEdgeCell(edge: ExportEdge, options?: BuildEdgeCellOptions): string {
-  const isDashed = edge.strokeStyle === "dashed" || edge.strokeStyle === "dotted";
+  // A catcher is always drawn dashed in the destructive red.
+  const isCatch = edge.edgeStyle === "catch";
+  const isDashed = isCatch || edge.strokeStyle === "dashed" || edge.strokeStyle === "dotted";
   const dashPattern = edge.strokeStyle === "dotted" ? "2 4" : "8 4";
 
   const endArrow = toDrawioArrow(edge.markerEnd);
   const startArrow = toDrawioArrow(edge.markerStart);
   const hasStartArrow = edge.markerStart !== "none";
 
-  const strokeColor = getStrokeColor(edge.intent);
+  const strokeColor = isCatch ? THEME.strokes.catch : getStrokeColor(edge.intent);
   const strokeWidth = edge.strokeWidth ?? 1;
 
   const style = buildEdgeStyle(

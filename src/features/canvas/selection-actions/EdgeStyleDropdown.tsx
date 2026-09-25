@@ -21,6 +21,8 @@ const EDGE_STYLE_OPTIONS: EdgeStyleOption[] = [
   },
   // VSM's electronic information flow.
   { value: "zigzag", label: "edgeZigzag", icon: "M 2 18 L 8 12 L 12 16 L 8 8 L 12 12 L 18 2" },
+  // A Step Functions catcher: orthogonal, dashed red.
+  { value: "catch", label: "edgeCatch", icon: "M 2 18 H 10 V 2 H 18" },
 ];
 
 interface EdgeStyleDropdownProps {

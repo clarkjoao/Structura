@@ -18,6 +18,11 @@ export enum EdgeStyle {
    * information flow (a manual one is a plain straight edge).
    */
   Zigzag = "zigzag",
+  /**
+   * A Step Functions catcher: routed like `editable-step`, drawn dashed in
+   * the destructive red, the error it catches in its label.
+   */
+  Catch = "catch",
 }
 
 export enum StrokeStyle {

@@ -117,6 +117,8 @@ export const THEME = {
     asyncMessage: "#7c3aed",
     dependency: "#666666",
     default: "#666666",
+    /** `--destructive` in the light theme (0 72% 51%). */
+    catch: "#dc2828",
   },
 } as const;
 

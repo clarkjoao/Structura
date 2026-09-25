@@ -42,6 +42,7 @@ import { EdgeLabelPortal } from "./EdgeLabelPortal";
 export type { EdgeData };
 
 const DEFAULT_STROKE = "hsl(220 20% 30%)";
+const CATCH_STROKE = "hsl(var(--destructive))";
 const HIGHLIGHT_STROKE = "hsl(187 72% 51%)";
 const ALIGN_STROKE = "hsl(316 80% 63%)";
 
@@ -91,7 +92,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   // write, drag frames included.
   const elementsSelectable = useElementsSelectable();
   const edgeStyle = edgeData.edgeStyle ?? EdgeStyle.EditableStep;
-  const isStep = edgeStyle === EdgeStyle.EditableStep;
+  // A catcher is routed like an editable step; only its stroke differs.
+  const isCatch = edgeStyle === EdgeStyle.Catch;
+  const isStep = edgeStyle === EdgeStyle.EditableStep || isCatch;
   const isCurve = edgeStyle === EdgeStyle.Editable;
   const isEditable = (isCurve || isStep) && elementsSelectable;
 
@@ -202,9 +205,12 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   );
 
   const isHighlighted = Boolean(selected) || highlightedConnectionIds.has(connectionId);
-  const strokeStyle = edgeData.strokeStyle ?? StrokeStyle.Solid;
+  // A catcher is dashed red unless its author set a stroke or colour of its own.
+  const strokeStyle = isCatch
+    ? (edgeData.connectionStyle?.strokeStyle ?? StrokeStyle.Dashed)
+    : (edgeData.strokeStyle ?? StrokeStyle.Solid);
   const strokeWidth = edgeData.strokeWidth ?? 1;
-  const baseStroke = edgeData.color ?? DEFAULT_STROKE;
+  const baseStroke = edgeData.color ?? (isCatch ? CATCH_STROKE : DEFAULT_STROKE);
 
   const showAffordances = isEditable && (Boolean(selected) || hovered) && !!activeDiagramId;
   const ghosts = useMemo(
