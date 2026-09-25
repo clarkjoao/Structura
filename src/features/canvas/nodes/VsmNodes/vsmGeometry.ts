@@ -37,3 +37,22 @@ export function factoryHandles(w: number, h: number) {
   const y = round((roof + INSET + h) / 2);
   return { left: { x: 0, y }, right: { x: w, y } };
 }
+
+/** Height of the chip row under the inventory triangle. */
+export const INVENTORY_CHIPS = 34;
+
+/** The inventory triangle, apex up, over the chip row. */
+export function inventoryTriangle(w: number, h: number): { path: string; height: number } {
+  const height = Math.max(20, h - INVENTORY_CHIPS);
+  return {
+    path: `M${round(w / 2)} ${INSET} L${round(w - INSET)} ${round(height)} H${INSET} Z`,
+    height,
+  };
+}
+
+/** Handles halfway up the triangle's two slanted sides. */
+export function inventoryHandles(w: number, h: number) {
+  const { height } = inventoryTriangle(w, h);
+  const y = round((INSET + height) / 2);
+  return { left: { x: round(w / 4), y }, right: { x: round((3 * w) / 4), y } };
+}

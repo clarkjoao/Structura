@@ -1,5 +1,6 @@
 import type { ElementDescriptor } from "../../element.types";
 import { vsmExternalElement } from "./vsm-external.element";
+import { vsmInventoryElement } from "./vsm-inventory.element";
 import { vsmProcessElement } from "./vsm-process.element";
 
 /**
@@ -9,4 +10,8 @@ import { vsmProcessElement } from "./vsm-process.element";
  * rather than more flowchart shapes: each element carries its own data — a
  * process's metrics, an inventory's quantity, a timeline's segments.
  */
-export const vsmElements: readonly ElementDescriptor[] = [vsmExternalElement, vsmProcessElement];
+export const vsmElements: readonly ElementDescriptor[] = [
+  vsmExternalElement,
+  vsmProcessElement,
+  vsmInventoryElement,
+];

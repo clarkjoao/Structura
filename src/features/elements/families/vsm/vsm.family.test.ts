@@ -81,3 +81,9 @@ describe("vsm-process", () => {
     expect(metrics[0].key).toBe("C/T");
   });
 });
+
+describe("vsm-inventory", () => {
+  it("defaults to the amber accent", () => {
+    expect(getElement("vsm-inventory")!.skin?.defaultAccent).toBe("hsl(var(--node-person))");
+  });
+});

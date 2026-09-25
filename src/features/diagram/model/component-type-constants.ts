@@ -26,6 +26,12 @@ export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
+export const COMPONENT_TYPE_VSM_INVENTORY = "vsm-inventory";
+
+export function isVsmInventoryType(type: string): type is "vsm-inventory" {
+  return type === COMPONENT_TYPE_VSM_INVENTORY;
+}
+
 export const COMPONENT_TYPE_VSM_PROCESS = "vsm-process";
 
 export function isVsmProcessType(type: string): type is "vsm-process" {

@@ -291,7 +291,7 @@ export interface SkinParts {
 }
 
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
-export type VsmComponentType = "vsm-external" | "vsm-process";
+export type VsmComponentType = "vsm-external" | "vsm-process" | "vsm-inventory";
 
 /** Which side of the stream an outside source sits on. Absent means supplier. */
 export type VsmRole = "supplier" | "customer";
@@ -318,6 +318,15 @@ export interface VsmProcessComponent extends BaseComponent, SkinParts {
   metrics?: VsmMetric[];
 }
 
+/** Inventory between two steps: the triangle with an I, and how much waits there. */
+export interface VsmInventoryComponent extends BaseComponent, SkinParts {
+  type: "vsm-inventory";
+  /** As the user writes it: "1,200 pcs". */
+  quantity?: string;
+  /** How long it covers, as the user writes it: "2 days". */
+  duration?: string;
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -338,6 +347,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | VsmInventoryComponent
   | VsmProcessComponent
   | VsmExternalComponent
   | C4Component
@@ -375,6 +385,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<VsmInventoryComponent, "id">> &
   Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
@@ -396,6 +407,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmInventoryComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

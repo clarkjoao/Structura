@@ -1142,6 +1142,10 @@
     "vsm-process": {
       "label": "Process",
       "description": "A step of the value stream, with its operators and a data box of metrics (cycle time, changeover, uptime, shifts)."
+    },
+    "vsm-inventory": {
+      "label": "Inventory",
+      "description": "Stock waiting between two steps, with its quantity and how long it lasts."
     }
   },
   "flowchart": {
@@ -2439,7 +2443,9 @@
       "metricKey": "Metric",
       "metricValue": "Value",
       "addMetric": "Add row",
-      "removeMetric": "Remove row"
+      "removeMetric": "Remove row",
+      "quantity": "Quantity",
+      "duration": "Duration"
     },
     "metrics": {
       "cycleTime": "C/T",

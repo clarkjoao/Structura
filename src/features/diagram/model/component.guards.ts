@@ -23,6 +23,7 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  VsmInventoryComponent,
   VsmProcessComponent,
   PluginTypedComponent,
 } from "./component.types";
@@ -40,6 +41,7 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isVsmInventoryType,
   isVsmProcessType,
 } from "./component-type-constants";
 
@@ -92,6 +94,9 @@ export const isVsmExternalComponent = (c: Component): c is VsmExternalComponent 
 
 export const isVsmProcessComponent = (c: Component): c is VsmProcessComponent =>
   isVsmProcessType(c.type);
+
+export const isVsmInventoryComponent = (c: Component): c is VsmInventoryComponent =>
+  isVsmInventoryType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);

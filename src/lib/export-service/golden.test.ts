@@ -377,6 +377,7 @@ describe("golden — value stream map", () => {
       fill: "solid",
       customColor: "hsl(var(--node-container))",
     }),
+    inventory: vsm("inventory", { type: "vsm-inventory", quantity: "1200 pcs", duration: "2 d" }),
   };
 
   const ids = Object.keys(components);
@@ -389,5 +390,6 @@ describe("golden — value stream map", () => {
     expect(xml).toMatchSnapshot();
     expect(xml).toContain("shape=mxgraph.lean_mapping.outside_sources;");
     expect(xml).toContain("shape=mxgraph.lean_mapping.manufacturing_process;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.inventory_box;");
   });
 });

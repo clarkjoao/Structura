@@ -45,6 +45,7 @@ export type RegisteredElementTypeId =
   | "process-node"
   | "external-element"
   | "vsm-external"
+  | "vsm-inventory"
   | "vsm-process"
   | "svg"
   | "unknown"

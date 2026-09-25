@@ -3,6 +3,7 @@ import { Plus, X } from "lucide-react";
 import {
   generateId,
   isVsmExternalComponent,
+  isVsmInventoryComponent,
   isVsmProcessComponent,
   type Component,
   type ComponentPatch,
@@ -20,6 +21,33 @@ function parseCount(value: string): number | undefined {
   if (value.trim() === "") return undefined;
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : undefined;
+}
+
+/** A free-text field whose empty value clears the field instead of storing "". */
+function TextField({
+  id,
+  label,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string | undefined;
+  onChange: (value: string | undefined) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={id} className={`${LABEL_CLASS} block`}>
+        {label}
+      </label>
+      <Input
+        id={id}
+        value={value ?? ""}
+        onChange={(event) => onChange(event.target.value === "" ? undefined : event.target.value)}
+        className="h-9"
+      />
+    </div>
+  );
 }
 
 function MetricsEditor({
@@ -118,6 +146,25 @@ export function VsmFieldsSection({ component, onChange }: VsmFieldsSectionProps)
         <MetricsEditor
           metrics={component.metrics ?? []}
           onChange={(metrics) => onChange({ metrics })}
+        />
+      </>
+    );
+  }
+
+  if (isVsmInventoryComponent(component)) {
+    return (
+      <>
+        <TextField
+          id="vsm-quantity"
+          label={t("vsm.fields.quantity")}
+          value={component.quantity}
+          onChange={(quantity) => onChange({ quantity })}
+        />
+        <TextField
+          id="vsm-duration"
+          label={t("vsm.fields.duration")}
+          value={component.duration}
+          onChange={(duration) => onChange({ duration })}
         />
       </>
     );

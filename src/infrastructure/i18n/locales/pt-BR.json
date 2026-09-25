@@ -1142,6 +1142,10 @@
     "vsm-process": {
       "label": "Processo",
       "description": "Uma etapa do fluxo de valor, com seus operadores e uma caixa de dados de métricas (tempo de ciclo, setup, disponibilidade, turnos)."
+    },
+    "vsm-inventory": {
+      "label": "Estoque",
+      "description": "Estoque parado entre duas etapas, com a quantidade e quanto tempo ele cobre."
     }
   },
   "flowchart": {
@@ -2439,7 +2443,9 @@
       "metricKey": "Métrica",
       "metricValue": "Valor",
       "addMetric": "Adicionar linha",
-      "removeMetric": "Remover linha"
+      "removeMetric": "Remover linha",
+      "quantity": "Quantidade",
+      "duration": "Duração"
     },
     "metrics": {
       "cycleTime": "C/T",
