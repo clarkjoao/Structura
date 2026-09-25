@@ -1,4 +1,4 @@
-import { allElements, getElement } from "@/features/elements/element.registry";
+import { getElement, offeredElements } from "@/features/elements/element.registry";
 import {
   allCloudFamilies,
   nonCatalogFamilyIds,
@@ -91,7 +91,7 @@ export function listElementFamilies(
   const families: ElementFamilySummary[] = nonCatalogFamilyIds().map((familyId) => ({
     id: familyId,
     label: familyLabel(familyId),
-    elementCount: allElements().filter((element) => element.family === familyId).length,
+    elementCount: offeredElements().filter((element) => element.family === familyId).length,
     categories: [],
   }));
 
@@ -142,7 +142,7 @@ export function searchElements(params: {
   const pushNonCatalogFamily = (familyFilter: string) => {
     if (params.familyId && params.familyId !== familyFilter) return;
     if (params.categoryId) return;
-    for (const element of allElements().filter((entry) => entry.family === familyFilter)) {
+    for (const element of offeredElements().filter((entry) => entry.family === familyFilter)) {
       const label = t(element.labelKey);
       const description = t(element.descriptionKey);
       const keys = [element.id, label, description, ...(element.palette.searchKeys ?? [])];

@@ -14,15 +14,18 @@ describe("the VSM family", () => {
     }
   });
 
-  it("reaches the LLM catalog from the registry alone", () => {
+  // Built but not released: held back from every place that offers elements,
+  // still registered so a saved diagram keeps rendering and exporting it.
+  it("is held back from the LLM catalog", () => {
     const catalog = buildComponentTypeCatalog();
     for (const id of VSM_IDS) {
-      expect(isValidNodeType(id), id).toBe(true);
-      expect(catalog, id).toContain(`nodeType: "${id}"`);
+      expect(isValidNodeType(id), id).toBe(false);
+      expect(catalog, id).not.toContain(`nodeType: "${id}"`);
+      expect(getElement(id)?.palette.hidden, id).toBe(true);
     }
   });
 
-  it("gets its own picker tab", () => {
+  it("has no picker tab and no palette entries", () => {
     const ids = buildCategoryNavItems((key) => key, {
       all: 0,
       c4: 0,
@@ -32,8 +35,15 @@ describe("the VSM family", () => {
       flowchart: 0,
       byFamily: {},
     }).map((item) => item.id);
-    expect(ids).toContain("vsm");
-    expect(paletteEntriesForCategory("vsm").length).toBeGreaterThan(0);
+    expect(ids).not.toContain("vsm");
+    expect(paletteEntriesForCategory("vsm")).toEqual([]);
+  });
+
+  it("stays registered, so a saved diagram still recognises its elements", async () => {
+    const { sanitizeComponentType } = await import("@/features/diagram");
+    for (const id of VSM_IDS) {
+      expect(sanitizeComponentType(id), id).toBe(id);
+    }
   });
 
   it("wears the flow skin", () => {
@@ -60,10 +70,10 @@ describe("vsm-external", () => {
     });
   });
 
-  it("is offered as a supplier and a customer", () => {
-    const roles = paletteEntriesForCategory("vsm")
-      .filter((entry) => entry.type === "vsm-external")
-      .map((entry) => entry.createOptions.vsmRole);
+  it("declares a supplier and a customer entry, for when the family is released", () => {
+    const roles = (getElement("vsm-external")!.palette.variants ?? []).map(
+      (variant) => variant.createOptions.vsmRole,
+    );
     expect(roles.sort()).toEqual(["customer", "supplier"]);
   });
 });

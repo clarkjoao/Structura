@@ -322,6 +322,13 @@ export interface ElementPaletteSlice {
   spotlight?: number;
   /** One palette entry each, instead of a single entry for the element. */
   variants?: readonly ElementPaletteVariant[];
+  /**
+   * Held back from everything that *offers* elements — the picker, quick
+   * insert, the LLM catalog and element search — while the element stays
+   * registered: saved diagrams keep rendering, exporting and round-tripping
+   * it. For a vocabulary that is built but not released yet.
+   */
+  hidden?: boolean;
 }
 
 /** How the element is edited when selected. */

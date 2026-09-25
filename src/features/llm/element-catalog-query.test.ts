@@ -75,11 +75,14 @@ describe("hierarchical element catalog (F8)", () => {
     // vocabulary registered since (the VSM family) is meant to reach the
     // catalog — elements are derived, not curated — so its own section is
     // measured apart rather than counted against the old budget.
+    // (While VSM is held back its section is absent and the whole catalog counts.)
     const vsmHeading = `### ${i18n.t("elements.families.vsm.label", { lng: "en" })}`;
     const start = catalog.indexOf(vsmHeading);
-    expect(start).toBeGreaterThan(-1);
-    const end = catalog.indexOf("\n### ", start + vsmHeading.length);
-    const withoutVsm = catalog.slice(0, start) + catalog.slice(end === -1 ? catalog.length : end);
+    const end = start === -1 ? -1 : catalog.indexOf("\n### ", start + vsmHeading.length);
+    const withoutVsm =
+      start === -1
+        ? catalog
+        : catalog.slice(0, start) + catalog.slice(end === -1 ? catalog.length : end);
     expect(withoutVsm.length).toBeLessThan(7237);
     expect(catalog).not.toContain("CATEGORY:");
     expect(catalog).toContain("search_elements");

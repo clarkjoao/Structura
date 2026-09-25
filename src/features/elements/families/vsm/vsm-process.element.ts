@@ -9,7 +9,13 @@ import { COMPONENT_TYPE_VSM_PROCESS } from "@/features/diagram/model/component-t
 import { isVsmProcessComponent } from "@/features/diagram/model/component.guards";
 import i18n from "@/infrastructure/i18n";
 import type { ElementDescriptor, ElementInspectorProps } from "../../element.types";
-import { VSM_CATEGORY_ID, VSM_FAMILY_ID, skinBuildData, skinPatchableKeys } from "./vsm.shared";
+import {
+  VSM_CATEGORY_ID,
+  VSM_FAMILY_ID,
+  VSM_HIDDEN,
+  skinBuildData,
+  skinPatchableKeys,
+} from "./vsm.shared";
 
 const PROCESS_W = 200;
 const PROCESS_H = 150;
@@ -74,6 +80,7 @@ export const vsmProcessElement: ElementDescriptor = {
 
   palette: {
     categoryId: VSM_CATEGORY_ID,
+    hidden: VSM_HIDDEN,
     icon: { kind: "lucide", icon: Factory },
     accent: { kind: "neutral" },
     searchKeys: ["vsm", "process", "processo", "step", "cycle time", "operators"],

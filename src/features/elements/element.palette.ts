@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { Shapes } from "lucide-react";
 import i18n from "@/infrastructure/i18n";
-import { allElements } from "./element.registry";
+import { offeredElements } from "./element.registry";
 import type { ElementCreateOptions, ElementDescriptor, ElementTypeId } from "./element.types";
 
 /**
@@ -91,7 +91,7 @@ export function paletteEntriesForCategory(
   categoryId: string,
   order: "label" | "declared" = "label",
 ): ElementPaletteEntry[] {
-  const entries = allElements()
+  const entries = offeredElements()
     .filter((element) => element.palette.categoryId === categoryId)
     .flatMap(entriesFor);
   return order === "declared" ? entries : entries.sort((a, b) => a.label.localeCompare(b.label));

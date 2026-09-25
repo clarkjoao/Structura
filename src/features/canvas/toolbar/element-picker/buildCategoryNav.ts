@@ -10,7 +10,7 @@ import {
   Shapes,
 } from "lucide-react";
 import { ElementCategory, type PickerCategoryId } from "../../enums";
-import { allElements } from "@/features/elements/element.registry";
+import { offeredElements } from "@/features/elements/element.registry";
 import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
 import i18n from "@/infrastructure/i18n";
 
@@ -54,7 +54,7 @@ function registryCategoryItems(counts: Record<string, number>): CategoryNavItem[
   const seen = new Set<string>();
   const items: CategoryNavItem[] = [];
 
-  for (const element of allElements()) {
+  for (const element of offeredElements()) {
     const id = element.palette.categoryId;
     if (tabbed.has(id) || seen.has(id)) continue;
     seen.add(id);

@@ -18,6 +18,13 @@ import type {
  * registry alone (`elements.families.vsm.label`).
  */
 export const VSM_FAMILY_ID = "vsm";
+
+/**
+ * The VSM family is built but not released yet: held back from the picker,
+ * quick insert and the LLM catalog (`palette.hidden`) while still rendering
+ * and exporting in any diagram that has it. Flip to release.
+ */
+export const VSM_HIDDEN = true;
 export const VSM_CATEGORY_ID = "vsm";
 
 /** The skin's parts, copyable by presets like any other field. */
@@ -113,6 +120,7 @@ export function defineVsmElement<C extends Component & SkinParts>(
       icon: { kind: "lucide", icon: spec.icon },
       accent: { kind: "neutral" },
       searchKeys: ["vsm", ...spec.searchKeys],
+      hidden: VSM_HIDDEN,
     },
 
     inspector: { panel: (props) => createElement(VsmPanel, props) },

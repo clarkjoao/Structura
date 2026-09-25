@@ -8,7 +8,13 @@ import VsmPanel from "@/features/canvas/panels/ElementPanel/VsmPanel";
 import { COMPONENT_TYPE_VSM_EXTERNAL } from "@/features/diagram/model/component-type-constants";
 import { isVsmExternalComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor, ElementInspectorProps } from "../../element.types";
-import { VSM_CATEGORY_ID, VSM_FAMILY_ID, skinBuildData, skinPatchableKeys } from "./vsm.shared";
+import {
+  VSM_CATEGORY_ID,
+  VSM_FAMILY_ID,
+  VSM_HIDDEN,
+  skinBuildData,
+  skinPatchableKeys,
+} from "./vsm.shared";
 
 const EXTERNAL_W = 150;
 const EXTERNAL_H = 96;
@@ -63,6 +69,7 @@ export const vsmExternalElement: ElementDescriptor = {
 
   palette: {
     categoryId: VSM_CATEGORY_ID,
+    hidden: VSM_HIDDEN,
     icon: { kind: "lucide", icon: Factory },
     accent: { kind: "neutral" },
     searchKeys: ["vsm", "supplier", "customer", "fornecedor", "cliente", "factory", "fábrica"],
