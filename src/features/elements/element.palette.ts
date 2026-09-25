@@ -81,10 +81,18 @@ function entriesFor(element: ElementDescriptor): ElementPaletteEntry[] {
   ];
 }
 
-/** Registered elements offered in `categoryId`, label-resolved in the active locale. */
-export function paletteEntriesForCategory(categoryId: string): ElementPaletteEntry[] {
-  return allElements()
+/**
+ * Registered elements offered in `categoryId`, label-resolved in the active
+ * locale. Sorted by label unless `order` is `"declared"`: a category whose
+ * order carries meaning (the flowchart shapes, most-used first) keeps the order
+ * its variants are declared in.
+ */
+export function paletteEntriesForCategory(
+  categoryId: string,
+  order: "label" | "declared" = "label",
+): ElementPaletteEntry[] {
+  const entries = allElements()
     .filter((element) => element.palette.categoryId === categoryId)
-    .flatMap(entriesFor)
-    .sort((a, b) => a.label.localeCompare(b.label));
+    .flatMap(entriesFor);
+  return order === "declared" ? entries : entries.sort((a, b) => a.label.localeCompare(b.label));
 }

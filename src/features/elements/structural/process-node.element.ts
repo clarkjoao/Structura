@@ -1,4 +1,22 @@
-import { Square } from "lucide-react";
+import {
+  Circle,
+  CircleDot,
+  CircleStop,
+  Database,
+  Diamond,
+  Eye,
+  FileText,
+  GitBranch,
+  Hexagon,
+  MessageSquareText,
+  Play,
+  RectangleHorizontal,
+  Square,
+  SquareStack,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import type { FlowNodeShape } from "@/features/diagram/model/component.types";
 import ProcessNode from "@/features/canvas/nodes/ProcessNode";
 import { FLOW_SHAPE_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { FLOW_SHAPE_DEFAULT_SIZE } from "@/features/canvas/nodes/ProcessNode/flowShapeGeometry";
@@ -6,6 +24,31 @@ import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExpor
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { isProcessNodeComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
+
+/**
+ * The flowchart shapes as palette entries, in the order the palette shows them:
+ * the everyday steps first, then the data shapes, the markers, and the
+ * annotations. One element, many shapes — a variant each, so the picker, the
+ * search and usage tracking all read them from here.
+ */
+const FLOW_PALETTE: ReadonlyArray<{ shape: FlowNodeShape; icon: LucideIcon; keys: string[] }> = [
+  { shape: "rectangle", icon: Square, keys: ["process", "processo", "step", "etapa"] },
+  { shape: "rounded", icon: RectangleHorizontal, keys: ["alternate", "alternativo"] },
+  { shape: "subroutine", icon: SquareStack, keys: ["subprocess", "subprocesso"] },
+  { shape: "stadium", icon: Circle, keys: ["terminal", "terminator"] },
+  { shape: "diamond", icon: Diamond, keys: ["decision", "decisão", "if", "condição"] },
+  { shape: "parallelogram", icon: GitBranch, keys: ["input", "output", "entrada", "saída", "io"] },
+  { shape: "hexagon", icon: Hexagon, keys: ["preparation", "preparação"] },
+  { shape: "cylinder", icon: Database, keys: ["database", "banco", "store", "datastore"] },
+  { shape: "document", icon: FileText, keys: ["document", "documento", "report"] },
+  { shape: "event", icon: Zap, keys: ["event", "evento", "trigger", "gatilho"] },
+  { shape: "start", icon: Play, keys: ["start", "início", "begin"] },
+  { shape: "end", icon: CircleStop, keys: ["end", "fim", "stop"] },
+  { shape: "junction-and", icon: CircleDot, keys: ["junction", "junção", "and", "parallel"] },
+  { shape: "junction-or", icon: Circle, keys: ["junction", "junção", "or", "ou"] },
+  { shape: "annotation", icon: MessageSquareText, keys: ["annotation", "anotação", "comment"] },
+  { shape: "evidence", icon: Eye, keys: ["evidence", "evidência", "blueprint", "physical"] },
+];
 
 export const processNodeElement: ElementDescriptor = {
   id: COMPONENT_TYPE_PROCESS_NODE,
@@ -84,6 +127,13 @@ export const processNodeElement: ElementDescriptor = {
     icon: { kind: "lucide", icon: Square },
     accent: { kind: "neutral" },
     searchKeys: ["process", "processo", "flowchart", "fluxograma", "step"],
+    variants: FLOW_PALETTE.map(({ shape, icon, keys }) => ({
+      id: shape,
+      labelKey: `flowchart.shapes.${shape}`,
+      icon: { kind: "lucide" as const, icon },
+      createOptions: { flowShape: shape },
+      searchKeys: ["flowchart", "fluxograma", ...keys],
+    })),
   },
 
   inspector: {},
