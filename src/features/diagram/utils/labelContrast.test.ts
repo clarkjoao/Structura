@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  accentTextColor,
   contrastLabelColor,
+  tintOver,
   contrastRatio,
   parseCssColorToRgb,
   relativeLuminance,
@@ -100,5 +102,40 @@ describe("relativeLuminance / rgbToHex", () => {
 
   it("falls back to white when the backdrop cannot be parsed", () => {
     expect(contrastLabelColor("#0000ff", 9, "")).toBe("#0a0a0a");
+  });
+});
+
+describe("accentTextColor", () => {
+  const ratio = (a: string, b: string) =>
+    contrastRatio(parseCssColorToRgb(a)!, parseCssColorToRgb(b)!);
+
+  it("reads at 4.5:1 on a light header while staying the accent's hue", () => {
+    const bg = "#fef5e6";
+    const text = accentTextColor("#f59f0a", bg);
+    expect(ratio(text, bg)).toBeGreaterThanOrEqual(4.5);
+    const rgb = parseCssColorToRgb(text)!;
+    // Still amber-ish: red above blue, not the plain near-black fallback.
+    expect(rgb.r).toBeGreaterThan(rgb.b);
+    expect(text).not.toBe("#0a0a0a");
+  });
+
+  it("lightens instead on a dark header", () => {
+    const bg = "#1f2230";
+    const text = accentTextColor("#6231c4", bg);
+    expect(ratio(text, bg)).toBeGreaterThanOrEqual(4.5);
+    expect(relativeLuminance(parseCssColorToRgb(text)!)).toBeGreaterThan(
+      relativeLuminance(parseCssColorToRgb("#6231c4")!),
+    );
+  });
+
+  it("keeps a colour that already reads", () => {
+    expect(accentTextColor("#1d67c9", "#ffffff")).toBe("#1d67c9");
+  });
+});
+
+describe("tintOver", () => {
+  it("mixes the colour over the backdrop by the percentage", () => {
+    expect(tintOver("#000000", 50, "#ffffff")).toBe("#808080");
+    expect(tintOver("#ff0000", 0, "#ffffff")).toBe("#ffffff");
   });
 });

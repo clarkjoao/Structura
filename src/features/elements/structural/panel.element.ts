@@ -1,6 +1,7 @@
 import { Square } from "lucide-react";
 import PanelNode from "@/features/canvas/nodes/PanelNode";
 import SwimlaneNode from "@/features/canvas/nodes/SwimlaneNode";
+import { exportColorHex } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import {
@@ -71,6 +72,11 @@ const swimlaneCanvas: ElementCanvasSlice = {
     };
   },
 };
+
+/** A lane colour draw.io can use: theme tokens resolved, anything else as stored. */
+function exportableColor(color: string): string {
+  return exportColorHex(color) ?? color;
+}
 
 export const panelElement: ElementDescriptor = {
   id: COMPONENT_TYPE_PANEL,
@@ -233,7 +239,11 @@ export const panelElement: ElementDescriptor = {
             ...base,
             kind: "swimlane",
             name: comp.name,
-            laneColor: sl?.laneColor ?? comp.panelColor ?? kindDef.defaultColor ?? "#6366f1",
+            // A theme-token accent (a flow preset) has no meaning in draw.io:
+            // it exports as the light theme's value.
+            laneColor: exportableColor(
+              sl?.laneColor ?? comp.panelColor ?? kindDef.defaultColor ?? "#6366f1",
+            ),
             laneLabel: sl?.laneLabel ?? comp.name,
             orientation: sl?.orientation ?? "horizontal",
             opacity: sl?.opacity ?? comp.panelOpacity ?? DEFAULT_PANEL_OPACITY,
