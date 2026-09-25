@@ -1202,6 +1202,15 @@
     "idLabel": "ID"
   },
   "elementPanel": {
+    "appearance": "Aparência",
+    "accent": "Acento",
+    "fill": "Preenchimento",
+    "fillNone": "Nenhum",
+    "fillSoft": "Suave",
+    "fillSolid": "Sólido",
+    "stroke": "Traço",
+    "strokeSolid": "Contínuo",
+    "strokeDashed": "Tracejado",
     "suggestedNudge": "Você pode vincular este {{name}} a um diagrama.",
     "suggested": "Sugerido",
     "panelHeaderPanel": "Painel",

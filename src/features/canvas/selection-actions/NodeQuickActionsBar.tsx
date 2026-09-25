@@ -20,8 +20,10 @@ import {
   isC4Component,
   isPanelComponent,
   isEndpointComponent,
+  isProcessNodeComponent,
   PanelKind,
 } from "@/features/diagram";
+import { accentToStore } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
@@ -46,6 +48,7 @@ function pickColorGroup(component: Component | null): ColorPickerGroup {
   if (isNoteComponent(component)) return "note";
   if (isC4Component(component)) return "c4";
   if (isPanelComponent(component)) return "panel";
+  if (isProcessNodeComponent(component)) return "flow";
   return "vibrant";
 }
 
@@ -193,6 +196,12 @@ export function NodeQuickActionsBar({
         });
         return;
       }
+      // Flow shapes: the family default is stored as nothing, and a legacy
+      // nodeColor goes with it so it cannot keep winning as the fill.
+      if (isProcessNodeComponent(component)) {
+        updateComponent(nodeId, { customColor: accentToStore(color), nodeColor: undefined });
+        return;
+      }
       // Components that use customColor (cloud, unknown, etc.)
       if (usesCustomColor(component)) {
         updateComponent(nodeId, { customColor: color });
@@ -225,6 +234,10 @@ export function NodeQuickActionsBar({
         panelColor: undefined,
         panelColorDark: undefined,
       });
+      return;
+    }
+    if (isProcessNodeComponent(component)) {
+      updateComponent(nodeId, { customColor: undefined, nodeColor: undefined });
       return;
     }
     // Components that use customColor

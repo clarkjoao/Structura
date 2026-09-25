@@ -42,6 +42,7 @@ import {
   PanelStyleSection,
   ExternalLinksSection,
   FlowchartFieldsSection,
+  FlowAppearanceSection,
   PositionSection,
 } from "./sections";
 import { isComponentType } from "@/features/diagram";
@@ -335,6 +336,12 @@ const ComponentPanel = ({
                     setFlowShape(shape);
                     updateComponent(component.id, { flowShape: shape } as ComponentPatch);
                   }}
+                />
+              )}
+              {isProcessNodeComponent(component) && (
+                <FlowAppearanceSection
+                  appearance={component}
+                  onChange={(patch) => updateComponent(component.id, patch)}
                 />
               )}
               {!isDbTable && !isFlowchart && (

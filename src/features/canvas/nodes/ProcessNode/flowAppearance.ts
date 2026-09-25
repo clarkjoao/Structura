@@ -140,3 +140,11 @@ export function flowPalette(appearance: ResolvedFlowAppearance, onAccent: string
     chipText: CHIP_TEXT,
   };
 }
+
+/**
+ * What to store for a picked accent: nothing for the family default, so picking
+ * slate is the same as never having picked.
+ */
+export function accentToStore(color: string): string | undefined {
+  return color === FLOW_DEFAULT_ACCENT ? undefined : color;
+}
