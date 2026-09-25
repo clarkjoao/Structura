@@ -11,7 +11,11 @@ import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { PanelKind } from "@/features/diagram/enums";
-import type { FlowNodeShape, VsmRole } from "@/features/diagram/model/component.types";
+import type {
+  FlowNodeShape,
+  NodeStrokeMode,
+  VsmRole,
+} from "@/features/diagram/model/component.types";
 import type { ExportNode } from "@/lib/export-core";
 
 /**
@@ -45,6 +49,7 @@ export type RegisteredElementTypeId =
   | "process-node"
   | "external-element"
   | "vsm-external"
+  | "flow-divider"
   | "vsm-timeline"
   | "vsm-kaizen"
   | "vsm-push"
@@ -162,6 +167,8 @@ export interface ElementCreateOptions {
   serviceId?: string;
   /** Which end of a value stream an outside source is (`vsm-external`). */
   vsmRole?: VsmRole;
+  /** A named line drawn dashed from the start (the line of visibility). */
+  stroke?: NodeStrokeMode;
 }
 
 export interface ElementSize {

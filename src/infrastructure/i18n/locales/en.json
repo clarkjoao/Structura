@@ -1163,6 +1163,10 @@
     "vsm-timeline": {
       "label": "Timeline",
       "description": "The square wave under a value stream: waiting times above, processing times below, with lead time and value-added time totalled."
+    },
+    "flow-divider": {
+      "label": "Named line",
+      "description": "A labelled line across the diagram — a service blueprint’s line of interaction, visibility or internal interaction."
     }
   },
   "flowchart": {
@@ -2485,6 +2489,16 @@
       "min": "min",
       "h": "h",
       "d": "d"
+    }
+  },
+  "blueprint": {
+    "lines": {
+      "interaction": "Line of interaction",
+      "visibility": "Line of visibility",
+      "internal": "Line of internal interaction"
+    },
+    "fields": {
+      "stroke": "Line"
     }
   }
 }

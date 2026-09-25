@@ -1163,6 +1163,10 @@
     "vsm-timeline": {
       "label": "Linha do tempo",
       "description": "A onda quadrada sob o fluxo de valor: tempos de espera acima, tempos de processo abaixo, com lead time e tempo de agregação de valor somados."
+    },
+    "flow-divider": {
+      "label": "Linha nomeada",
+      "description": "Uma linha com rótulo atravessando o diagrama — a linha de interação, de visibilidade ou de interação interna de um service blueprint."
     }
   },
   "flowchart": {
@@ -2485,6 +2489,16 @@
       "min": "min",
       "h": "h",
       "d": "d"
+    }
+  },
+  "blueprint": {
+    "lines": {
+      "interaction": "Linha de interação",
+      "visibility": "Linha de visibilidade",
+      "internal": "Linha de interação interna"
+    },
+    "fields": {
+      "stroke": "Linha"
     }
   }
 }

@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Plus, X } from "lucide-react";
 import {
   generateId,
+  isFlowDividerComponent,
   isVsmExternalComponent,
   isVsmInventoryComponent,
   isVsmProcessComponent,
@@ -9,6 +10,7 @@ import {
   type Component,
   type ComponentPatch,
   type VsmMetric,
+  type NodeStrokeMode,
   type VsmRole,
   type VsmTimelineSegment,
   type VsmTimeUnit,
@@ -197,9 +199,26 @@ export interface VsmFieldsSectionProps {
   onChange: (patch: ComponentPatch) => void;
 }
 
-/** The fields each VSM element carries beyond a name and a description. */
+/**
+ * The fields each VSM element carries beyond a name and a description — and
+ * the named line's stroke, which shares the same inspector.
+ */
 export function VsmFieldsSection({ component, onChange }: VsmFieldsSectionProps) {
   const { t } = useTranslation();
+
+  if (isFlowDividerComponent(component)) {
+    return (
+      <SegmentedControl<NodeStrokeMode>
+        label={t("blueprint.fields.stroke")}
+        value={component.stroke ?? "solid"}
+        options={[
+          { value: "solid", label: t("elementPanel.strokeSolid") },
+          { value: "dashed", label: t("elementPanel.strokeDashed") },
+        ]}
+        onChange={(stroke) => onChange({ stroke: stroke === "solid" ? undefined : stroke })}
+      />
+    );
+  }
 
   if (isVsmExternalComponent(component)) {
     return (

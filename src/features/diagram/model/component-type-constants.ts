@@ -24,6 +24,12 @@ export const COMPONENT_TYPE_FLOW_NODE = "process-node";
 
 export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
+export const COMPONENT_TYPE_FLOW_DIVIDER = "flow-divider";
+
+export function isFlowDividerType(type: string): type is "flow-divider" {
+  return type === COMPONENT_TYPE_FLOW_DIVIDER;
+}
+
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
 export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";

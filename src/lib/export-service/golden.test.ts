@@ -430,3 +430,30 @@ describe("golden — value stream map", () => {
     expect(xml).toContain("Value-added time: 1.5 d");
   });
 });
+
+/**
+ * A service blueprint: lanes with a flow-preset accent (a theme token, which
+ * exports as its light value) and the three named lines.
+ */
+describe("golden — service blueprint", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const components: Record<string, Component> = {
+    interaction: item("Line of interaction", { type: "flow-divider" }),
+    visibility: item("Line of visibility", { type: "flow-divider", stroke: "dashed" }),
+    internal: item("Line of internal interaction", { type: "flow-divider" }),
+  };
+
+  const ids = Object.keys(components);
+  const layouts: Record<string, NodeLayout> = Object.fromEntries(
+    ids.map((id, index) => [id, { elementId: id, x: 0, y: index * 140, width: 900, height: 24 }]),
+  );
+
+  it("freezes the lanes and the named lines", () => {
+    const xml = exportDrawio(diagram("Blueprint", components, {}, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toContain('value="LINE OF VISIBILITY"');
+    expect(xml).toMatch(/value="LINE OF VISIBILITY" style="line;[^"]*dashed=1;/);
+  });
+});

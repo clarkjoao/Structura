@@ -23,6 +23,7 @@ import type {
   ProcessNodeComponent,
   ExternalElementComponent,
   VsmExternalComponent,
+  FlowDividerComponent,
   VsmTimelineComponent,
   VsmKaizenComponent,
   VsmPushComponent,
@@ -45,6 +46,7 @@ import {
   isProcessNodeType,
   isExternalElementType,
   isVsmExternalType,
+  isFlowDividerType,
   isVsmTimelineType,
   isVsmKaizenType,
   isVsmPushType,
@@ -116,6 +118,9 @@ export const isVsmKaizenComponent = (c: Component): c is VsmKaizenComponent =>
 
 export const isVsmTimelineComponent = (c: Component): c is VsmTimelineComponent =>
   isVsmTimelineType(c.type);
+
+export const isFlowDividerComponent = (c: Component): c is FlowDividerComponent =>
+  isFlowDividerType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);

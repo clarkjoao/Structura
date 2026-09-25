@@ -164,6 +164,7 @@ const NARROW_TYPES = [
   "svg",
   "endpoint",
   "vsm-external",
+  "flow-divider",
   "vsm-timeline",
   "vsm-kaizen",
   "vsm-push",

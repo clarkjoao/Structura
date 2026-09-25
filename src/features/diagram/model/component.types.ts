@@ -27,6 +27,7 @@ export type ComponentType =
   | "json-viewer"
   | "process-node"
   | "external-element"
+  | "flow-divider"
   | VsmComponentType
   | AwsCategoryId
   | GcpCategoryId
@@ -290,6 +291,17 @@ export interface SkinParts {
   stroke?: NodeStrokeMode;
 }
 
+/**
+ * A named line across a diagram — a service blueprint's line of interaction,
+ * of visibility, of internal interaction. Its label is the name; it stands on
+ * its own, not tied to any lane.
+ */
+export interface FlowDividerComponent extends BaseComponent {
+  type: "flow-divider";
+  /** Absent means solid. */
+  stroke?: NodeStrokeMode;
+}
+
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
 export type VsmComponentType =
   | "vsm-external"
@@ -391,6 +403,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | FlowDividerComponent
   | VsmTimelineComponent
   | VsmKaizenComponent
   | VsmPushComponent
@@ -433,6 +446,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<FlowDividerComponent, "id">> &
   Partial<Omit<VsmTimelineComponent, "id">> &
   Partial<Omit<VsmKaizenComponent, "id">> &
   Partial<Omit<VsmPushComponent, "id">> &
@@ -459,6 +473,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmTimelineComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmKaizenComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmPushComponent, "id">> & { width?: number; height?: number })
