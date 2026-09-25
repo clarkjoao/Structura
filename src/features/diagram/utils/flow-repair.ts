@@ -125,6 +125,32 @@ export function repairFlowsAfterRemovingDiagramElements(
   return reports;
 }
 
+const NO_ROOTS: ReadonlyMap<string, string> = new Map();
+
+/**
+ * For each removed id, the element the user actually removed that took it
+ * along — a container for its descendants — or itself.
+ */
+export function removedRoots(
+  removedIds: ReadonlySet<string>,
+  requestedIds: ReadonlySet<string>,
+  parentOf: (id: string) => string | null | undefined,
+): Map<string, string> {
+  const roots = new Map<string, string>();
+  for (const id of removedIds) {
+    let root = id;
+    let current = parentOf(id);
+    const seen = new Set<string>([id]);
+    while (current && !seen.has(current)) {
+      seen.add(current);
+      if (requestedIds.has(current)) root = current;
+      current = parentOf(current);
+    }
+    roots.set(id, root);
+  }
+  return roots;
+}
+
 /** One sewn join, ready to be said to the user. */
 export interface FlowSewNotice {
   flowId: string;
@@ -144,16 +170,29 @@ export interface FlowSewNotice {
 export function toFlowSewNotices(
   reports: readonly FlowSewReport[],
   elementNames: ReadonlyMap<string, string>,
+  rootOf: ReadonlyMap<string, string> = NO_ROOTS,
 ): FlowSewNotice[] {
   const notices: FlowSewNotice[] = [];
   for (const report of reports) {
+    // Joins made because one container went (with everything in it) are one
+    // change to the script, said once and named after the container: from
+    // where the script now leaves off to where it picks up again.
+    const byRoot = new Map<string, FlowSewJoin[]>();
     for (const join of report.joins) {
-      const elementId = join.componentId ?? join.connectionId;
+      const elementId = join.componentId ?? join.connectionId ?? join.stepId;
+      const root = rootOf.get(elementId) ?? elementId;
+      const group = byRoot.get(root) ?? [];
+      group.push(join);
+      byRoot.set(root, group);
+    }
+    for (const [root, joins] of byRoot) {
       const notice: FlowSewNotice = { flowId: report.flowId, flowName: report.flowName };
-      const elementName = elementId ? elementNames.get(elementId) : undefined;
+      const elementName = elementNames.get(root);
       if (elementName !== undefined) notice.elementName = elementName;
-      if (join.fromLabel !== undefined) notice.fromLabel = join.fromLabel;
-      if (join.toLabel !== undefined) notice.toLabel = join.toLabel;
+      const fromLabel = joins.find((join) => join.fromLabel !== undefined)?.fromLabel;
+      const toLabel = [...joins].reverse().find((join) => join.toLabel !== undefined)?.toLabel;
+      if (fromLabel !== undefined) notice.fromLabel = fromLabel;
+      if (toLabel !== undefined) notice.toLabel = toLabel;
       notices.push(notice);
     }
   }

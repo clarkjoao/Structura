@@ -56,6 +56,7 @@ import {
 } from "../../utils/version-mutations";
 import {
   repairFlowsAfterRemovingDiagramElements,
+  removedRoots,
   toFlowSewNotices,
   type FlowSewNotice,
 } from "../../utils/flow-repair";
@@ -292,6 +293,13 @@ function removeElementsFromSnapshot(
     if (label) elementNames.set(connectionId, label);
   });
 
+  // Read before the deletes too: which requested element took each one along.
+  const rootOf = removedRoots(
+    toRemove,
+    new Set(nodeIds),
+    (id) => d.snapshot.components[id]?.parentId,
+  );
+
   toRemove.forEach((eid) => delete d.snapshot.components[eid]);
   removedConnectionIds.forEach((connectionId) => {
     delete d.snapshot.connections[connectionId];
@@ -303,7 +311,7 @@ function removeElementsFromSnapshot(
     toRemove,
     removedConnectionIds,
   );
-  const notices = toFlowSewNotices(reports, elementNames);
+  const notices = toFlowSewNotices(reports, elementNames, rootOf);
 
   const syncApiGroupSize = (groupId: string) => {
     const childCount = Object.values(d.snapshot.components).filter(
