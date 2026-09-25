@@ -1,6 +1,12 @@
-import { Share2 } from "lucide-react";
+import { Link2, Share2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Component, ComponentPatch, SharedMode } from "@/features/diagram";
+import {
+  useDiagramActions,
+  useResolvedNodeLayouts,
+  type Component,
+  type ComponentPatch,
+  type SharedMode,
+} from "@/features/diagram";
 import { sharedMode } from "@/features/diagram/utils/shared";
 import {
   DropdownMenu,
@@ -11,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const MODES: readonly SharedMode[] = ["edges", "badge"];
+const MODES: readonly SharedMode[] = ["edges", "badge", "ref"];
 
 /**
  * How the edges into this element are drawn. `edges` is today's drawing and
@@ -57,5 +63,38 @@ export function SharedModeControl({
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * A new reference to the element, beside it: drawn where its consumers are,
+ * standing for it everywhere meaning is read.
+ */
+export function CreateRefButton({ original }: { original: Component }) {
+  const { t } = useTranslation();
+  const layouts = useResolvedNodeLayouts();
+  const { addComponent } = useDiagramActions();
+  const at = layouts[original.id];
+  return (
+    <button
+      type="button"
+      className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
+      title={t("shared.createRef")}
+      aria-label={t("shared.createRef")}
+      onClick={() =>
+        addComponent(
+          "shared-ref",
+          original.name,
+          original.parentId,
+          at ? { x: at.x + (at.width ?? 200) + 40, y: at.y } : undefined,
+          undefined,
+          undefined,
+          undefined,
+          { refOf: original.id },
+        )
+      }
+    >
+      <Link2 className="h-3.5 w-3.5" />
+    </button>
   );
 }

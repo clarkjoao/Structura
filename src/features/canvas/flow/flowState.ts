@@ -1,3 +1,4 @@
+import { refsOf } from "@/features/diagram/utils/shared";
 import type { Component, Diagram, Flow, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import { ancestorsOf, visibleAncestorOf } from "../core/compactView";
 import { OPACITY_FLOW_PLAYBACK_PARTICIPANT } from "../canvas.constants";
@@ -109,6 +110,8 @@ export function buildFlowHighlight(
     if (visibility) {
       for (const id of ancestorsOf(activeNodeId, visibility.components)) litNodeIds.add(id);
       for (const id of descendantsOf(activeNodeId, visibility.components)) litNodeIds.add(id);
+      // A shared element is read with the references that stand for it.
+      for (const id of refsOf(activeNodeId, visibility.components)) litNodeIds.add(id);
     }
   }
 

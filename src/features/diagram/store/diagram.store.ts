@@ -46,6 +46,7 @@ export function createDiagramStore(
         _lastLayoutWriteAt: 0,
         _flowSession: null as { undoMark: number | null } | null,
         _flowSewNotices: null as AppState["_flowSewNotices"],
+        _sharedRefNotice: null as AppState["_sharedRefNotice"],
         ...diagramsSlice(set, get as () => AppState),
         ...componentsSlice(set, get as () => AppState),
         ...componentParentingSlice(set, get as () => AppState),

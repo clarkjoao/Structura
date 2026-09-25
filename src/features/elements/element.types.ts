@@ -209,6 +209,8 @@ export interface ElementCreateOptions {
   order?: number;
   /** What a new Step Functions state is; absent (Task) is not written. */
   sfnStateType?: SfnStateType;
+  /** The shared element a new reference stands for. */
+  refOf?: string;
 }
 
 export interface ElementSize {

@@ -15,6 +15,7 @@ import { processNodeElement } from "./structural/process-node.element";
 import { flowDividerElement } from "./structural/flow-divider.element";
 import { svgElement } from "./structural/svg.element";
 import { unknownElement } from "./structural/unknown.element";
+import { sharedRefElement } from "./structural/shared-ref.element";
 import { gcpFamily } from "./families/gcp/gcp.family";
 import { azureFamily } from "./families/azure/azure.family";
 import { awsFamily } from "./families/aws/aws.family";
@@ -39,6 +40,7 @@ const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   externalElementElement,
   svgElement,
   unknownElement,
+  sharedRefElement,
   ...vsmElements,
   ...deployElements,
   ...k8sStructureElements,

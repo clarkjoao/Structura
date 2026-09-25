@@ -548,6 +548,7 @@ export function mergePersistedState(
   state._lastLayoutWriteAt = 0;
   state._flowSession = null;
   state._flowSewNotices = null;
+  state._sharedRefNotice = null;
 
   if (!state.services) state.services = {};
   if (!state.folders) state.folders = {};

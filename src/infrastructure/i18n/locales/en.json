@@ -1226,6 +1226,10 @@
     "sfn-map": {
       "label": "Map",
       "description": "A Map state: its iterator states run once per item of ItemsPath, up to a concurrency."
+    },
+    "shared-ref": {
+      "label": "Reference",
+      "description": "A reference to a shared element, drawn near its consumers; edges to it are edges to the element."
     }
   },
   "flowchart": {
@@ -2694,6 +2698,9 @@
     "hideEdges_one": "Hide the edge",
     "hideEdges_other": "Hide the {{count}} edges",
     "suggest_one": "Used by {{count}} — draw it as shared?",
-    "suggest_other": "Used by {{count}} — draw it as shared?"
+    "suggest_other": "Used by {{count}} — draw it as shared?",
+    "createRef": "New reference",
+    "refsRemoved_one": "{{name}} left with its reference",
+    "refsRemoved_other": "{{name}} left with its {{count}} references"
   }
 }

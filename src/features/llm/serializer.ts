@@ -1,5 +1,7 @@
 import type { Connection, Diagram, VersionDiff } from "@/features/diagram";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
+import { resolveShared } from "@/features/diagram/utils/shared";
 
 function sortConnections(connectionA: Connection, connectionB: Connection): number {
   return connectionA.id.localeCompare(connectionB.id);
@@ -16,9 +18,12 @@ export function serializeDiagramContext(
   options: DiagramSerializerOptions = {},
 ): string {
   const { includeMetadata = true, includeLinks = true, activeVersion } = options;
-  const components = Object.values(diagram.snapshot.components).sort((a, b) =>
-    a.id.localeCompare(b.id),
-  );
+  // A reference is a drawing of a shared element, not an element: the model
+  // reads the element, and edges to a reference as edges to it.
+  const byId = diagram.snapshot.components;
+  const components = Object.values(byId)
+    .filter((component) => !isSharedRefComponent(component))
+    .sort((a, b) => a.id.localeCompare(b.id));
   const connections = Object.values(diagram.snapshot.connections).sort(sortConnections);
 
   const lines: string[] = [];
@@ -41,6 +46,9 @@ export function serializeDiagramContext(
     const parts: string[] = [`id=${component.id}`, `type=${component.type}`, `name="${label}"`];
 
     if (component.parentId) parts.push(`parent=${component.parentId}`);
+    if (component.shared && component.shared.mode !== "edges") {
+      parts.push(`shared=${component.shared.mode}`);
+    }
 
     const comp = component as unknown as Record<string, unknown>;
     if (typeof comp.technology === "string" && comp.technology.trim()) {
@@ -84,8 +92,8 @@ export function serializeDiagramContext(
   for (const connection of connections) {
     const parts: string[] = [
       `id=${connection.id}`,
-      `from=${connection.sourceId}`,
-      `to=${connection.targetId}`,
+      `from=${resolveShared(connection.sourceId, byId)}`,
+      `to=${resolveShared(connection.targetId, byId)}`,
     ];
     if (connection.label) parts.push(`label="${connection.label}"`);
     if (connection.technology) parts.push(`technology="${connection.technology}"`);

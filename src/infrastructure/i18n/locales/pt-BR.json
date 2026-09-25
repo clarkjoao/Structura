@@ -1226,6 +1226,10 @@
     "sfn-map": {
       "label": "Map",
       "description": "Um estado Map: os estados do iterador rodam uma vez por item de ItemsPath, até uma concorrência."
+    },
+    "shared-ref": {
+      "label": "Referência",
+      "description": "Uma referência a um elemento compartilhado, desenhada perto dos consumidores; arestas até ela são arestas até o elemento."
     }
   },
   "flowchart": {
@@ -2694,6 +2698,9 @@
     "hideEdges_one": "Esconder a aresta",
     "hideEdges_other": "Esconder as {{count}} arestas",
     "suggest_one": "Usado por {{count}} — desenhar como compartilhado?",
-    "suggest_other": "Usado por {{count}} — desenhar como compartilhado?"
+    "suggest_other": "Usado por {{count}} — desenhar como compartilhado?",
+    "createRef": "Nova referência",
+    "refsRemoved_one": "{{name}} saiu com a sua referência",
+    "refsRemoved_other": "{{name}} saiu com as suas {{count}} referências"
   }
 }

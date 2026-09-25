@@ -31,7 +31,7 @@ import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveD
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
-import { SharedModeControl } from "./SharedModeControl";
+import { CreateRefButton, SharedModeControl } from "./SharedModeControl";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 
@@ -317,6 +317,7 @@ export function NodeQuickActionsBar({
               onChange={(patch) => updateComponent(nodeId, patch)}
             />
           )}
+          {component.shared?.mode === "ref" && <CreateRefButton original={component} />}
 
           {/* Compact / expanded — only for collapsible typed containers */}
           {isCollapsible && (

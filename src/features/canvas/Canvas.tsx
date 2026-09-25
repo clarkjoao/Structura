@@ -1,3 +1,4 @@
+import { useSharedRefNotices } from "./shared/useSharedRefNotices";
 import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
@@ -125,6 +126,7 @@ const PendingNodeToolbars = React.memo(function PendingNodeToolbars({
 
 const Canvas = (props: CanvasProps = {}) => {
   useFlowSewNotices();
+  useSharedRefNotices();
   const nodeTypes = useNodeTypes();
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);

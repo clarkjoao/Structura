@@ -1,3 +1,5 @@
+import { refsOf } from "../../utils/shared";
+import { resolveVersionSnapshot } from "../../utils/version.utils";
 import type {
   Component,
   ComponentPatch,
@@ -175,6 +177,27 @@ export function buildComponentForType(
     component = getElement(COMPONENT_TYPE_UNKNOWN)!.model.createComponent(base, {});
   }
   return { component, resolvedPanelKind };
+}
+
+/** The references that stand for any of `ids`, which go when those go. */
+function refsRemovedWith(d: Diagram, ids: string[]): { ids: string[]; name: string } {
+  const scene = resolveActiveVersion(d);
+  const components = scene ? resolveVersionSnapshot(d, scene.id).components : d.snapshot.components;
+  const removing = new Set(ids);
+  const refIds = ids
+    .flatMap((id) => refsOf(id, components))
+    .filter((refId) => !removing.has(refId));
+  const named = ids.find((id) => refsOf(id, components).length > 0);
+  return { ids: [...new Set(refIds)], name: named ? (components[named]?.name ?? "") : "" };
+}
+
+function publishRefNotice(state: AppState, refs: { ids: string[]; name: string }): void {
+  if (refs.ids.length === 0) return;
+  state._sharedRefNotice = {
+    id: (state._sharedRefNotice?.id ?? 0) + 1,
+    name: refs.name,
+    count: refs.ids.length,
+  };
 }
 
 function resolveInsertPosition(params: {
@@ -503,15 +526,22 @@ export const componentsSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
+      // A shared element's references go with it: they stand for nothing else.
+      const refs = refsRemovedWith(d, [id]);
       if (scene) {
         pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-        publishSewNotices(state, mutateRemoveComponentInVersion(d, scene.id, id));
+        publishSewNotices(state, [
+          ...mutateRemoveComponentInVersion(d, scene.id, id),
+          ...refs.ids.flatMap((refId) => mutateRemoveComponentInVersion(d, scene.id, refId)),
+        ]);
+        publishRefNotice(state, refs);
         touchDiagram(d);
         return;
       }
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      publishSewNotices(state, removeElementsFromSnapshot(d, [id], []));
+      publishSewNotices(state, removeElementsFromSnapshot(d, [id, ...refs.ids], []));
+      publishRefNotice(state, refs);
       touchDiagram(d);
     });
   },
@@ -528,18 +558,22 @@ export const componentsSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
+      const refs = refsRemovedWith(d, nodeIds);
+      const allNodeIds = [...nodeIds, ...refs.ids];
       if (scene) {
         pushHistory(state, STRUCTURAL_MUTATION_MARKER);
         publishSewNotices(state, [
-          ...nodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
+          ...allNodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
           ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
         ]);
+        publishRefNotice(state, refs);
         touchDiagram(d);
         return;
       }
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      publishSewNotices(state, removeElementsFromSnapshot(d, nodeIds, edgeIds));
+      publishSewNotices(state, removeElementsFromSnapshot(d, allNodeIds, edgeIds));
+      publishRefNotice(state, refs);
       touchDiagram(d);
     });
   },
