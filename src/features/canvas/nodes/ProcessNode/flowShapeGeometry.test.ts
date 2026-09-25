@@ -26,6 +26,8 @@ const SHAPES: FlowNodeShape[] = [
   "end",
   "document",
   "event",
+  "junction-and",
+  "junction-or",
 ];
 
 const SIZES: Array<[number, number]> = [

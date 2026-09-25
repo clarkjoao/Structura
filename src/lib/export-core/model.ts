@@ -187,7 +187,9 @@ export type ExportFlowShape =
   | "start"
   | "end"
   | "document"
-  | "event";
+  | "event"
+  | "junction-and"
+  | "junction-or";
 
 /**
  * A flowchart box.

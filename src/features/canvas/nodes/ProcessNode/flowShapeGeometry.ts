@@ -236,6 +236,8 @@ export function flowShapePath(shape: FlowNodeShape, w: number, h: number): strin
     case "circle":
     case "start":
     case "end":
+    case "junction-and":
+    case "junction-or":
       return ellipsePath(w, h);
     case "document":
       return documentPath(w, h);
@@ -335,7 +337,16 @@ export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; hei
   end: { width: 56, height: 56 },
   document: { width: 220, height: 78 },
   event: { width: 210, height: 60 },
+  "junction-and": { width: 20, height: 20 },
+  "junction-or": { width: 20, height: 20 },
 };
+
+/** Shapes small enough that their minimum size is a marker's, not a card's. */
+export function isMarkerShape(shape: FlowNodeShape): boolean {
+  return (
+    shape === "start" || shape === "end" || shape === "junction-and" || shape === "junction-or"
+  );
+}
 
 /**
  * The shape a stored value is drawn as. The old combined "start / end" circle

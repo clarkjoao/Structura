@@ -18,6 +18,7 @@ import {
   flowShapeAccentPath,
   flowShapeHandles,
   flowShapePath,
+  isMarkerShape,
   readFlowShape,
 } from "./flowShapeGeometry";
 import { BOTTOM_SOURCE_HANDLE_ID, TOP_TARGET_HANDLE_ID } from "../node-types/handle-spec";
@@ -221,6 +222,47 @@ function StartEndBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
   );
 }
 
+/**
+ * A junction: a dot. AND is filled with the accent, OR is a hollow 2px ring.
+ * No label is drawn on a 20px circle; the name stays available to assistive
+ * technology and on hover.
+ */
+function JunctionBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
+  const isAnd = shape === "junction-and";
+  const ring = isAnd ? 1.5 : 2;
+  return (
+    <svg
+      className="absolute inset-0 h-full w-full overflow-visible"
+      viewBox={`0 0 ${w} ${h}`}
+      role="img"
+      aria-label={d.name}
+    >
+      <title>{d.name}</title>
+      <ellipse
+        cx={w / 2}
+        cy={h / 2}
+        rx={w / 2 - ring / 2}
+        ry={h / 2 - ring / 2}
+        fill={isAnd || palette.solid ? palette.accent : palette.surface}
+        stroke={palette.accentOutline}
+        strokeWidth={ring}
+        strokeDasharray={palette.dashArray}
+      />
+      {isActive && (
+        <ellipse
+          cx={w / 2}
+          cy={h / 2}
+          rx={w / 2 + 2}
+          ry={h / 2 + 2}
+          fill="none"
+          stroke={PRIMARY}
+          strokeWidth={2}
+        />
+      )}
+    </svg>
+  );
+}
+
 /** How an SVG-drawn shape paints its body and outline. */
 function svgPaint(shape: FlowNodeShape, palette: FlowPalette, solid: boolean) {
   // The decision is outlined in the accent, over a tint; the rest keep the
@@ -409,10 +451,10 @@ const ProcessNode = memo(
     return (
       <>
         <NodeResizer
-          minWidth={60}
-          minHeight={40}
+          minWidth={isMarkerShape(shape) ? 16 : 60}
+          minHeight={isMarkerShape(shape) ? 16 : 40}
           isVisible={isSelected}
-          keepAspectRatio={shape === "start" || shape === "end"}
+          keepAspectRatio={isMarkerShape(shape)}
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
         />
@@ -422,6 +464,8 @@ const ProcessNode = memo(
             <CardShapeBody {...shapeProps} />
           ) : shape === "start" || shape === "end" ? (
             <StartEndBody {...shapeProps} />
+          ) : shape === "junction-and" || shape === "junction-or" ? (
+            <JunctionBody {...shapeProps} />
           ) : shape === "stadium" ? (
             <TerminalBody {...shapeProps} />
           ) : (

@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Circle,
+  CircleDot,
   CircleStop,
   Database,
   Diamond,
@@ -51,6 +52,8 @@ export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasP
     { shape: "end", labelKey: "flowchart.shapes.end", icon: CircleStop },
     { shape: "document", labelKey: "flowchart.shapes.document", icon: FileText },
     { shape: "event", labelKey: "flowchart.shapes.event", icon: Zap },
+    { shape: "junction-and", labelKey: "flowchart.shapes.junction-and", icon: CircleDot },
+    { shape: "junction-or", labelKey: "flowchart.shapes.junction-or", icon: Circle },
   ];
 
   return shapes.map(({ shape, labelKey, icon }) => ({

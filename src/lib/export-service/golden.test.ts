@@ -280,6 +280,8 @@ describe("golden — flowchart shapes", () => {
     "end",
     "document",
     "event",
+    "junction-and",
+    "junction-or",
   ] as const;
 
   const flow = (

@@ -243,7 +243,9 @@ export type FlowNodeShape =
   | "start"
   | "end"
   | "document"
-  | "event";
+  | "event"
+  | "junction-and"
+  | "junction-or";
 
 /** How a shape's accent colours its body. Absent means `"none"`. */
 export type NodeFillMode = "none" | "soft" | "solid";

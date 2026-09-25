@@ -103,7 +103,10 @@ export const processNodeElement: ElementDescriptor = {
           description: comp.description || undefined,
           shape: comp.flowShape,
           technology: comp.technology || undefined,
-          ...flowExportColours(comp),
+          // An AND junction is the accent itself, whatever its fill part says.
+          ...flowExportColours(
+            comp.flowShape === "junction-and" ? { ...comp, fill: "solid" } : comp,
+          ),
         };
       },
     },

@@ -60,6 +60,10 @@ export const FLOW_SHAPE_STYLES: Record<string, string> = {
   document: "shape=document;boundedLbl=1;size=0.18;",
   // ArchiMate 3's business event, registered by draw.io's mxArchiMate3.js.
   event: "shape=mxgraph.archimate3.event;outlineConnect=0;",
+  // A junction is a dot: filled for AND, hollow with a 2px ring for OR. The
+  // name is kept on the cell but not drawn over a 20px circle.
+  "junction-and": "ellipse;aspect=fixed;noLabel=1;",
+  "junction-or": "ellipse;aspect=fixed;noLabel=1;strokeWidth=2;",
 };
 
 export const THEME = {

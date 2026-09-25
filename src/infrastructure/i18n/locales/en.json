@@ -1135,6 +1135,8 @@
   },
   "flowchart": {
     "shapes": {
+      "junction-and": "Junction (AND)",
+      "junction-or": "Junction (OR)",
       "event": "Event",
       "document": "Document",
       "start": "Start",
