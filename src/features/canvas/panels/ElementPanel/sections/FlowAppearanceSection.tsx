@@ -3,6 +3,7 @@ import type { ComponentPatch, NodeFillMode, NodeStrokeMode } from "@/features/di
 import { ColorPicker } from "@/features/canvas/selection-actions/ColorPicker";
 import {
   accentToStore,
+  defaultStrokeFor,
   resolveFlowAppearance,
   type FlowAppearanceInput,
 } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
@@ -69,7 +70,11 @@ export function FlowAppearanceSection({ appearance, onChange }: FlowAppearanceSe
           { value: "solid", label: t("elementPanel.strokeSolid") },
           { value: "dashed", label: t("elementPanel.strokeDashed") },
         ]}
-        onChange={(stroke) => onChange({ stroke: stroke === "solid" ? undefined : stroke })}
+        onChange={(stroke) =>
+          onChange({
+            stroke: stroke === defaultStrokeFor(appearance.flowShape) ? undefined : stroke,
+          })
+        }
       />
     </section>
   );

@@ -19,6 +19,7 @@ const FLOW_SHAPES: FlowNodeShape[] = [
   "junction-and",
   "junction-or",
   "annotation",
+  "evidence",
 ];
 
 export interface FlowchartFieldsSectionProps {

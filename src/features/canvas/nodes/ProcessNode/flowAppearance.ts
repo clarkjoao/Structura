@@ -1,4 +1,8 @@
-import type { NodeFillMode, NodeStrokeMode } from "@/features/diagram/model/component.types";
+import type {
+  FlowNodeShape,
+  NodeFillMode,
+  NodeStrokeMode,
+} from "@/features/diagram/model/component.types";
 
 /**
  * Colour in parts, not as a whole: an accent, how the accent fills the body,
@@ -23,6 +27,8 @@ const CHIP_TEXT = "hsl(var(--secondary-foreground))";
 
 /** The three parts, as stored — every one optional, absent meaning its default. */
 export interface FlowAppearanceInput {
+  /** Some shapes have their own default for a part (evidence is dashed). */
+  flowShape?: FlowNodeShape;
   customColor?: string;
   /** Legacy fill colour; see `ProcessNodeComponent.nodeColor`. */
   nodeColor?: string;
@@ -49,8 +55,16 @@ export function resolveFlowAppearance(input: FlowAppearanceInput): ResolvedFlowA
   return {
     accent: input.customColor ?? input.nodeColor ?? FLOW_DEFAULT_ACCENT,
     fill: input.fill ?? (legacyFill ? "solid" : "none"),
-    stroke: input.stroke ?? "solid",
+    stroke: input.stroke ?? defaultStrokeFor(input.flowShape),
   };
+}
+
+/**
+ * The stroke a shape has when none is stored. Physical evidence is drawn
+ * dashed — it is what the customer sees, not a step anyone performs.
+ */
+export function defaultStrokeFor(shape: FlowNodeShape | undefined): NodeStrokeMode {
+  return shape === "evidence" ? "dashed" : "solid";
 }
 
 /** `color` at `percent`% over `base`. */

@@ -5,6 +5,7 @@ import {
   CircleStop,
   Database,
   Diamond,
+  Eye,
   FileText,
   GitBranch,
   Hexagon,
@@ -56,6 +57,7 @@ export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasP
     { shape: "junction-and", labelKey: "flowchart.shapes.junction-and", icon: CircleDot },
     { shape: "junction-or", labelKey: "flowchart.shapes.junction-or", icon: Circle },
     { shape: "annotation", labelKey: "flowchart.shapes.annotation", icon: MessageSquareText },
+    { shape: "evidence", labelKey: "flowchart.shapes.evidence", icon: Eye },
   ];
 
   return shapes.map(({ shape, labelKey, icon }) => ({

@@ -233,6 +233,7 @@ export function flowShapePath(shape: FlowNodeShape, w: number, h: number): strin
   switch (shape) {
     case "rectangle":
     case "subroutine":
+    case "evidence":
       return roundedRectPath(w, h, PROCESS_RADIUS);
     case "rounded":
       return roundedRectPath(w, h, ROUNDED_RADIUS);
@@ -355,6 +356,7 @@ export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; hei
   "junction-and": { width: 20, height: 20 },
   "junction-or": { width: 20, height: 20 },
   annotation: { width: 230, height: 56 },
+  evidence: { width: 200, height: 64 },
 };
 
 /** Shapes small enough that their minimum size is a marker's, not a card's. */

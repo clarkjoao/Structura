@@ -30,6 +30,7 @@ const SHAPES: FlowNodeShape[] = [
   "junction-and",
   "junction-or",
   "annotation",
+  "evidence",
 ];
 
 const SIZES: Array<[number, number]> = [

@@ -66,3 +66,11 @@ describe("flowPalette", () => {
     expect(palette.dashArray).toBeDefined();
   });
 });
+
+describe("shape defaults", () => {
+  it("draws evidence dashed when no stroke is stored", () => {
+    expect(resolveFlowAppearance({ flowShape: "evidence" }).stroke).toBe("dashed");
+    expect(resolveFlowAppearance({ flowShape: "evidence", stroke: "solid" }).stroke).toBe("solid");
+    expect(resolveFlowAppearance({ flowShape: "rectangle" }).stroke).toBe("solid");
+  });
+});

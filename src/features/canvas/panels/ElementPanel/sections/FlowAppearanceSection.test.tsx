@@ -69,4 +69,13 @@ describe("FlowAppearanceSection", () => {
       nodeColor: undefined,
     });
   });
+
+  it("stores solid on evidence, whose default is dashed", () => {
+    const onChange = renderSection({ flowShape: "evidence" });
+    expect(radio("elementPanel.strokeDashed").getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(radio("elementPanel.strokeSolid"));
+    expect(onChange).toHaveBeenLastCalledWith({ stroke: "solid" });
+    fireEvent.click(radio("elementPanel.strokeDashed"));
+    expect(onChange).toHaveBeenLastCalledWith({ stroke: undefined });
+  });
 });

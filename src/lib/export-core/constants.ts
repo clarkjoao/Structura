@@ -66,6 +66,9 @@ export const FLOW_SHAPE_STYLES: Record<string, string> = {
   "junction-or": "ellipse;aspect=fixed;noLabel=1;strokeWidth=2;",
   // A bracket on the left and free text: draw.io's partialRectangle with only
   // its left side drawn (Shapes.js reads the top/left/bottom/right keys).
+  // Physical evidence: a plain card, dashed unless its stroke says otherwise
+  // (the dash comes from the colour parts, like any dashed stroke).
+  evidence: "rounded=1;arcSize=8;absoluteArcSize=1;shadow=0;",
   annotation:
     "text;shape=partialRectangle;left=1;right=0;top=0;bottom=0;align=left;spacingLeft=10;fontSize=13;",
 };

@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   CircleDot,
+  Eye,
   FileText,
   GitFork,
   Layers,
@@ -59,6 +60,7 @@ const SHAPE_ICONS: Record<FlowNodeShape, IconComponent | null> = {
   "junction-and": null,
   "junction-or": null,
   annotation: null,
+  evidence: Eye,
 };
 
 export function FlowShapeIcon({

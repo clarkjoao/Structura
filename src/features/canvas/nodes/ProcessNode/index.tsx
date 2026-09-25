@@ -30,10 +30,12 @@ const HANDLE_CLASS = "!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreg
 const PRIMARY = "hsl(var(--primary))";
 
 /** Shapes drawn as a card: a box with the accent as a 3px bar on the left, like C4. */
-type CardShape = "rectangle" | "rounded" | "subroutine";
+type CardShape = "rectangle" | "rounded" | "subroutine" | "evidence";
 
 function isCardShape(shape: FlowNodeShape): shape is CardShape {
-  return shape === "rectangle" || shape === "rounded" || shape === "subroutine";
+  return (
+    shape === "rectangle" || shape === "rounded" || shape === "subroutine" || shape === "evidence"
+  );
 }
 
 interface ShapeProps {
@@ -98,9 +100,10 @@ function CardShapeBody({ shape, d, palette, isActive }: ShapeProps) {
   const isSubprocess = shape === "subroutine";
   return (
     <div
-      className={`absolute inset-0 flex flex-col overflow-hidden px-3 py-2.5 shadow-sm ${
-        isActive ? "ring-2 ring-primary" : ""
-      }`}
+      // Evidence sits in the diagram as a thing, not a step: no shadow.
+      className={`absolute inset-0 flex flex-col overflow-hidden px-3 py-2.5 ${
+        shape === "evidence" ? "" : "shadow-sm"
+      } ${isActive ? "ring-2 ring-primary" : ""}`}
       style={{
         ...borderFor(palette),
         borderLeft: `3px solid ${palette.accent}`,

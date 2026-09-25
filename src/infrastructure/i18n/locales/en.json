@@ -1135,6 +1135,7 @@
   },
   "flowchart": {
     "shapes": {
+      "evidence": "Physical evidence",
       "annotation": "Annotation",
       "junction-and": "Junction (AND)",
       "junction-or": "Junction (OR)",

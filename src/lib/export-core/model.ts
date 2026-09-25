@@ -190,7 +190,8 @@ export type ExportFlowShape =
   | "event"
   | "junction-and"
   | "junction-or"
-  | "annotation";
+  | "annotation"
+  | "evidence";
 
 /**
  * A flowchart box.
