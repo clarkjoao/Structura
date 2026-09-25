@@ -381,6 +381,14 @@ describe("golden — value stream map", () => {
     supermarket: vsm("supermarket", { type: "vsm-supermarket", stroke: "dashed" }),
     push: vsm("push", { type: "vsm-push" }),
     kaizen: vsm("kaizen", { type: "vsm-kaizen", fill: "solid" }),
+    timeline: vsm("timeline", {
+      type: "vsm-timeline",
+      unit: "d",
+      segments: [
+        { id: "s1", wait: 5, process: 0.5 },
+        { id: "s2", wait: 3, process: 1 },
+      ],
+    }),
   };
 
   const ids = Object.keys(components);
@@ -397,5 +405,9 @@ describe("golden — value stream map", () => {
     expect(xml).toContain("shape=mxgraph.lean_mapping.supermarket;");
     expect(xml).toContain("shape=mxgraph.lean_mapping.push_arrow;");
     expect(xml).toContain("shape=mxgraph.lean_mapping.kaizen_lightening_burst;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.timeline2;");
+    // The totals are computed from the segments: 5 + 0.5 + 3 + 1 and 0.5 + 1.
+    expect(xml).toContain("Lead time: 9.5 d");
+    expect(xml).toContain("Value-added time: 1.5 d");
   });
 });

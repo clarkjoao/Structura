@@ -26,6 +26,12 @@ export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
 export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
 
+export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";
+
+export function isVsmTimelineType(type: string): type is "vsm-timeline" {
+  return type === COMPONENT_TYPE_VSM_TIMELINE;
+}
+
 export const COMPONENT_TYPE_VSM_KAIZEN = "vsm-kaizen";
 
 export function isVsmKaizenType(type: string): type is "vsm-kaizen" {

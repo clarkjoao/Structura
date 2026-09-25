@@ -292,7 +292,13 @@ export interface SkinParts {
 
 /** The Value Stream Mapping vocabulary (the `vsm` family). */
 export type VsmComponentType =
-  "vsm-external" | "vsm-process" | "vsm-inventory" | "vsm-supermarket" | "vsm-push" | "vsm-kaizen";
+  | "vsm-external"
+  | "vsm-process"
+  | "vsm-inventory"
+  | "vsm-supermarket"
+  | "vsm-push"
+  | "vsm-kaizen"
+  | "vsm-timeline";
 
 /** Which side of the stream an outside source sits on. Absent means supplier. */
 export type VsmRole = "supplier" | "customer";
@@ -343,6 +349,28 @@ export interface VsmKaizenComponent extends BaseComponent, SkinParts {
   type: "vsm-kaizen";
 }
 
+/** One step of a VSM timeline: how long work waits, then how long it is worked on. */
+export interface VsmTimelineSegment {
+  id: string;
+  wait: number;
+  process: number;
+}
+
+/** The unit every value on one timeline is in, so its totals can be summed. */
+export type VsmTimeUnit = "s" | "min" | "h" | "d";
+
+/**
+ * The timeline under a value stream: a square wave of waits and processing
+ * times. Its totals — lead time and value-added time — are computed from the
+ * segments, never stored.
+ */
+export interface VsmTimelineComponent extends BaseComponent, SkinParts {
+  type: "vsm-timeline";
+  segments?: VsmTimelineSegment[];
+  /** Absent means minutes. */
+  unit?: VsmTimeUnit;
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -363,6 +391,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | VsmTimelineComponent
   | VsmKaizenComponent
   | VsmPushComponent
   | VsmSupermarketComponent
@@ -404,6 +433,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
   Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<VsmTimelineComponent, "id">> &
   Partial<Omit<VsmKaizenComponent, "id">> &
   Partial<Omit<VsmPushComponent, "id">> &
   Partial<Omit<VsmSupermarketComponent, "id">> &
@@ -429,6 +459,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmTimelineComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmKaizenComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmPushComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<VsmSupermarketComponent, "id">> & { width?: number; height?: number })

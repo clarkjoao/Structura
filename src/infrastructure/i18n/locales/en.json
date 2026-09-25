@@ -1158,6 +1158,10 @@
     "vsm-kaizen": {
       "label": "Kaizen burst",
       "description": "An improvement to make at this point of the stream."
+    },
+    "vsm-timeline": {
+      "label": "Timeline",
+      "description": "The square wave under a value stream: waiting times above, processing times below, with lead time and value-added time totalled."
     }
   },
   "flowchart": {
@@ -2457,13 +2461,29 @@
       "addMetric": "Add row",
       "removeMetric": "Remove row",
       "quantity": "Quantity",
-      "duration": "Duration"
+      "duration": "Duration",
+      "unit": "Unit",
+      "segments": "Segments",
+      "wait": "Wait",
+      "process": "Process",
+      "addSegment": "Add segment",
+      "removeSegment": "Remove segment"
     },
     "metrics": {
       "cycleTime": "C/T",
       "changeover": "C/O",
       "uptime": "Uptime",
       "shifts": "Shifts"
+    },
+    "timeline": {
+      "leadTime": "Lead time",
+      "valueAdded": "Value-added time"
+    },
+    "units": {
+      "s": "s",
+      "min": "min",
+      "h": "h",
+      "d": "d"
     }
   }
 }

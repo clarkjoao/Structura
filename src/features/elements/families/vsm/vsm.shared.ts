@@ -57,8 +57,11 @@ export interface VsmElementSpec<C extends Component & SkinParts> {
    * burst and the timeline cannot: they annotate the stream, they are not in it.
    */
   connectable: boolean;
-  /** The draw.io shape style, confirmed against draw.io's sources. */
-  shapeStyle: string;
+  /**
+   * The draw.io shape style, confirmed against draw.io's sources — a function
+   * when it depends on the component (the timeline's plateaus).
+   */
+  shapeStyle: string | ((comp: C, width: number) => string);
   exportLabel: (comp: C) => string;
 }
 
@@ -124,7 +127,10 @@ export function defineVsmElement<C extends Component & SkinParts>(
             ...base,
             kind: "stencil",
             name: comp.name,
-            shapeStyle: spec.shapeStyle,
+            shapeStyle:
+              typeof spec.shapeStyle === "function"
+                ? spec.shapeStyle(comp, base.width)
+                : spec.shapeStyle,
             label: spec.exportLabel(comp),
             ...flowExportColours(comp, spec.defaultAccent),
           };

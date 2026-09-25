@@ -130,3 +130,32 @@ export function kaizenBurstPath(w: number, h: number): string {
   }
   return `M${points.join(" L")} Z`;
 }
+
+/** Width of the timeline's totals card. */
+export const TIMELINE_TOTALS_W = 150;
+
+/**
+ * The timeline's square wave for `count` segments: each segment a high
+ * plateau (waiting) then a low one (processing), all the same width, in the
+ * space left of the totals card. Also returns where each plateau's label is
+ * centred and the two levels.
+ */
+export function timelineWave(count: number, w: number, h: number) {
+  const right = Math.max(INSET, w - TIMELINE_TOTALS_W - 12);
+  const high = round(h * 0.35);
+  const low = round(h * 0.65);
+  const plateaus = Math.max(1, count * 2);
+  const step = (right - INSET) / plateaus;
+  const parts: string[] = [`M${INSET} ${high}`];
+  const waitCentres: number[] = [];
+  const processCentres: number[] = [];
+  for (let i = 0; i < count; i += 1) {
+    const x0 = INSET + 2 * i * step;
+    parts.push(`H${round(x0 + step)}`, `V${low}`, `H${round(x0 + 2 * step)}`);
+    if (i < count - 1) parts.push(`V${high}`);
+    waitCentres.push(round(x0 + step / 2));
+    processCentres.push(round(x0 + (3 * step) / 2));
+  }
+  if (count === 0) parts.push(`H${round(right)}`);
+  return { path: parts.join(" "), high, low, waitCentres, processCentres };
+}

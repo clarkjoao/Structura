@@ -1158,6 +1158,10 @@
     "vsm-kaizen": {
       "label": "Kaizen",
       "description": "Uma melhoria a fazer neste ponto do fluxo."
+    },
+    "vsm-timeline": {
+      "label": "Linha do tempo",
+      "description": "A onda quadrada sob o fluxo de valor: tempos de espera acima, tempos de processo abaixo, com lead time e tempo de agregação de valor somados."
     }
   },
   "flowchart": {
@@ -2457,13 +2461,29 @@
       "addMetric": "Adicionar linha",
       "removeMetric": "Remover linha",
       "quantity": "Quantidade",
-      "duration": "Duração"
+      "duration": "Duração",
+      "unit": "Unidade",
+      "segments": "Segmentos",
+      "wait": "Espera",
+      "process": "Processo",
+      "addSegment": "Adicionar segmento",
+      "removeSegment": "Remover segmento"
     },
     "metrics": {
       "cycleTime": "C/T",
       "changeover": "C/O",
       "uptime": "Disp.",
       "shifts": "Turnos"
+    },
+    "timeline": {
+      "leadTime": "Lead time",
+      "valueAdded": "Tempo de agregação de valor"
+    },
+    "units": {
+      "s": "s",
+      "min": "min",
+      "h": "h",
+      "d": "d"
     }
   }
 }

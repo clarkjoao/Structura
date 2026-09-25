@@ -40,6 +40,7 @@ const FIXED_REGISTERED_IDS = [
   "process-node",
   "external-element",
   "vsm-external",
+  "vsm-timeline",
   "vsm-kaizen",
   "vsm-push",
   "vsm-supermarket",
