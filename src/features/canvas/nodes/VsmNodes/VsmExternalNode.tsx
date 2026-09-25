@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { VsmRole } from "@/features/diagram/model/component.types";
 import { FLOW_DEFAULT_ACCENT } from "../ProcessNode/flowAppearance";
 import { SkinHandles } from "./SkinHandles";
-import { VSM_SIZE_LIMITS } from "./vsmSizeLimits";
+import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 import { useSkinPalette, type SkinNodeData } from "./skin";
 import { FACTORY_ROOF, factoryHandles, factoryPaths } from "./vsmGeometry";
 
@@ -32,7 +32,7 @@ const VsmExternalNode = memo(
     return (
       <>
         <NodeResizer
-          {...VSM_SIZE_LIMITS["vsm-external"]}
+          {...ELEMENT_SIZE_LIMITS["vsm-external"]}
           isVisible={isSelected}
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"

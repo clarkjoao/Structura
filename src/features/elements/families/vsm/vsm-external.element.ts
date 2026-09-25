@@ -4,7 +4,7 @@ import VsmExternalNode from "@/features/canvas/nodes/VsmNodes/VsmExternalNode";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { FLOW_DEFAULT_ACCENT } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
-import VsmPanel from "@/features/canvas/panels/ElementPanel/VsmPanel";
+import SkinnedElementPanel from "@/features/canvas/panels/ElementPanel/SkinnedElementPanel";
 import { COMPONENT_TYPE_VSM_EXTERNAL } from "@/features/diagram/model/component-type-constants";
 import { isVsmExternalComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor, ElementInspectorProps } from "../../element.types";
@@ -20,7 +20,7 @@ const EXTERNAL_W = 150;
 const EXTERNAL_H = 96;
 
 function VsmExternalInspector(props: ElementInspectorProps) {
-  return createElement(VsmPanel, props);
+  return createElement(SkinnedElementPanel, props);
 }
 
 /**

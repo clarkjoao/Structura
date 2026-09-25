@@ -2,7 +2,7 @@ import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import type { NodeStrokeMode } from "@/features/diagram/model/component.types";
 import { SkinHandles } from "./VsmNodes/SkinHandles";
-import { VSM_SIZE_LIMITS } from "./VsmNodes/vsmSizeLimits";
+import { ELEMENT_SIZE_LIMITS } from "./elementSizeLimits";
 
 export type FlowDividerNodeData = {
   elementId: string;
@@ -30,7 +30,7 @@ const FlowDividerNode = memo(
     return (
       <>
         <NodeResizer
-          minWidth={VSM_SIZE_LIMITS["flow-divider"].minWidth}
+          minWidth={ELEMENT_SIZE_LIMITS["flow-divider"].minWidth}
           minHeight={h}
           maxHeight={h}
           isVisible={isSelected}

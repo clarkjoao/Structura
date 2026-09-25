@@ -29,6 +29,7 @@ import type {
   ExportStrokeStyle,
 } from "../export-core";
 import { getElement, isRegisteredElementComponent } from "@/features/elements/element.registry";
+import type { ExportContext } from "@/features/elements/element.types";
 import { validateDiagram } from "./validate-diagram";
 import { withInheritedAccent } from "@/features/canvas/nodes/laneAccent";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
@@ -223,6 +224,7 @@ function mapNode(
   c: Component,
   nl: NodeLayout,
   services: Record<string, ServiceDefinition>,
+  context: ExportContext,
 ): ExportNode {
   const base: BaseGeometry = {
     id: c.id,
@@ -236,7 +238,7 @@ function mapNode(
   // Registered elements declare their own draw.io mapping (decision 6); the
   // guard chain below still owns every type that has not migrated.
   if (isRegisteredElementComponent(c)) {
-    const node = getElement(c.type)!.export.drawio.toExportNode(c, base);
+    const node = getElement(c.type)!.export.drawio.toExportNode(c, base, context);
     // Business-catalog service names live outside the descriptor contract; the
     // adapter fills them in for C4 cards the way the legacy branch did.
     if (node.kind === "c4" && node.serviceId) {
@@ -406,7 +408,7 @@ export function diagramToExportModel(
     const comp = components[id];
     const parent = comp.parentId ? components[comp.parentId] : undefined;
     const exported = withInheritedAccent(comp, parent, !!getElement(comp.type)?.skin);
-    nodes.push(mapNode(exported, nl, services));
+    nodes.push(mapNode(exported, nl, services, { components, layouts: layoutMap }));
   }
 
   const edges: ExportEdge[] = Object.values(connections).map((conn) =>

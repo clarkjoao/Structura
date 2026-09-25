@@ -1134,6 +1134,9 @@
       },
       "c4": {
         "label": "Modelo C4"
+      },
+      "deploy": {
+        "label": "Deployment"
       }
     },
     "vsm-external": {
@@ -1167,6 +1170,18 @@
     "flow-divider": {
       "label": "Linha nomeada",
       "description": "Uma linha com rótulo atravessando o diagrama — a linha de interação, de visibilidade ou de interação interna de um service blueprint."
+    },
+    "deploy-sharded-store": {
+      "label": "Armazenamento fragmentado",
+      "description": "Um banco dividido em shards por uma chave: shards e roteador são filhos dele, e a barra de chaves mostra como elas se distribuem."
+    },
+    "deploy-shard": {
+      "label": "Shard",
+      "description": "Um shard de um armazenamento fragmentado, com faixa de chaves, região e réplicas."
+    },
+    "deploy-shard-router": {
+      "label": "Roteador de shards",
+      "description": "O roteador na frente dos shards (mongos, vtgate)."
     }
   },
   "flowchart": {
@@ -2512,5 +2527,31 @@
     "refusedChild": "{{container}} não aceita {{child}}.",
     "compact": "Compactar",
     "expand": "Expandir"
+  },
+  "deploy": {
+    "strategy": {
+      "hash": "hash",
+      "consistent-hash": "hash consistente",
+      "range": "faixa",
+      "geo": "geo",
+      "directory": "diretório"
+    },
+    "shards_one": "{{count}} shard",
+    "shards_other": "{{count}} shards",
+    "replicas_one": "{{count}} cópia",
+    "replicas_other": "{{count}} cópias",
+    "hot": "quente",
+    "router": "Roteador",
+    "addShard": "Adicionar shard",
+    "addRouter": "Adicionar roteador",
+    "fields": {
+      "strategy": "Estratégia",
+      "keyExpression": "Chave de shard",
+      "replicationFactor": "Fator de replicação",
+      "keyRange": "Faixa / rótulo",
+      "share": "Tamanho da faixa",
+      "region": "Região",
+      "hot": "Shard quente"
+    }
   }
 }

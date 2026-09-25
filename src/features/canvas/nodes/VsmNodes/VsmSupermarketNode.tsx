@@ -2,7 +2,7 @@ import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { FLOW_DEFAULT_ACCENT } from "../ProcessNode/flowAppearance";
 import { SkinHandles } from "./SkinHandles";
-import { VSM_SIZE_LIMITS } from "./vsmSizeLimits";
+import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 import { useSkinPalette, type SkinNodeData } from "./skin";
 import { supermarketPath } from "./vsmGeometry";
 
@@ -21,7 +21,7 @@ const VsmSupermarketNode = memo(
     return (
       <>
         <NodeResizer
-          {...VSM_SIZE_LIMITS["vsm-supermarket"]}
+          {...ELEMENT_SIZE_LIMITS["vsm-supermarket"]}
           isVisible={isSelected}
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"

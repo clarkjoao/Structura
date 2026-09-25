@@ -4,7 +4,7 @@ import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types"
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { laneAccentFor } from "@/features/canvas/nodes/laneAccent";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
-import VsmPanel from "@/features/canvas/panels/ElementPanel/VsmPanel";
+import SkinnedElementPanel from "@/features/canvas/panels/ElementPanel/SkinnedElementPanel";
 import type { Component, SkinParts } from "@/features/diagram/model/component.types";
 import type {
   ElementCanvasSlice,
@@ -123,7 +123,7 @@ export function defineVsmElement<C extends Component & SkinParts>(
       hidden: VSM_HIDDEN,
     },
 
-    inspector: { panel: (props) => createElement(VsmPanel, props) },
+    inspector: { panel: (props) => createElement(SkinnedElementPanel, props) },
 
     skin: { defaultAccent: spec.defaultAccent },
 

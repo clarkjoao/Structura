@@ -22,6 +22,7 @@ import { k8sFamily } from "./families/k8s/k8s.family";
 import { ossFamily } from "./families/oss/oss.family";
 import { c4Elements } from "./families/c4/c4.family";
 import { vsmElements } from "./families/vsm/vsm.family";
+import { deployElements } from "./families/deploy/deploy.family";
 
 const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   ...c4Elements,
@@ -37,6 +38,7 @@ const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   svgElement,
   unknownElement,
   ...vsmElements,
+  ...deployElements,
 ];
 
 for (const element of BUILT_IN_ELEMENTS) {

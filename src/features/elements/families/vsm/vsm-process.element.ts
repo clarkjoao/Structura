@@ -4,7 +4,7 @@ import VsmProcessNode from "@/features/canvas/nodes/VsmNodes/VsmProcessNode";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { FLOW_DEFAULT_ACCENT } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
-import VsmPanel from "@/features/canvas/panels/ElementPanel/VsmPanel";
+import SkinnedElementPanel from "@/features/canvas/panels/ElementPanel/SkinnedElementPanel";
 import { COMPONENT_TYPE_VSM_PROCESS } from "@/features/diagram/model/component-type-constants";
 import { isVsmProcessComponent } from "@/features/diagram/model/component.guards";
 import i18n from "@/infrastructure/i18n";
@@ -29,7 +29,7 @@ const DEFAULT_METRIC_KEYS = [
 ] as const;
 
 function VsmProcessInspector(props: ElementInspectorProps) {
-  return createElement(VsmPanel, props);
+  return createElement(SkinnedElementPanel, props);
 }
 
 export const vsmProcessElement: ElementDescriptor = {

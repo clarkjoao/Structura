@@ -14,14 +14,15 @@ import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveD
 import Field from "./components/Field";
 import { FlowAppearanceSection, PositionSection } from "./sections";
 import { VsmFieldsSection } from "./sections/VsmFieldsSection";
-import { VSM_SIZE_LIMITS } from "@/features/canvas/nodes/VsmNodes/vsmSizeLimits";
+import { DeployFieldsSection } from "./sections/DeployFieldsSection";
+import { ELEMENT_SIZE_LIMITS } from "@/features/canvas/nodes/elementSizeLimits";
 
 /**
  * The inspector for every Value Stream Mapping element: name and description,
  * the fields that element carries (`VsmFieldsSection`), and the flow skin's
  * Appearance section with the element's own default accent.
  */
-export default function VsmPanel({
+export default function SkinnedElementPanel({
   component,
   onClose,
   updateComponent,
@@ -82,7 +83,7 @@ export default function VsmPanel({
           nodeLayout={resolved?.nodeLayouts[component.id]}
           updateNodeLayout={updateNodeLayout}
           isPanel
-          {...VSM_SIZE_LIMITS[component.type]}
+          {...ELEMENT_SIZE_LIMITS[component.type]}
         />
         <Field
           label={t("common.name")}
@@ -103,6 +104,7 @@ export default function VsmPanel({
           }}
         />
         <VsmFieldsSection component={component} onChange={update} />
+        <DeployFieldsSection component={component} onChange={update} />
         {descriptor?.skin && (
           <FlowAppearanceSection
             appearance={component as SkinParts}

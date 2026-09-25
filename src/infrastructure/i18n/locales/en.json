@@ -1134,6 +1134,9 @@
       },
       "c4": {
         "label": "C4 Model"
+      },
+      "deploy": {
+        "label": "Deployment"
       }
     },
     "vsm-external": {
@@ -1167,6 +1170,18 @@
     "flow-divider": {
       "label": "Named line",
       "description": "A labelled line across the diagram — a service blueprint’s line of interaction, visibility or internal interaction."
+    },
+    "deploy-sharded-store": {
+      "label": "Sharded store",
+      "description": "A data store split into shards by a key: its shards and router are its children, and the key-space bar shows how the keys are spread."
+    },
+    "deploy-shard": {
+      "label": "Shard",
+      "description": "One shard of a sharded store, with its key range, region and replicas."
+    },
+    "deploy-shard-router": {
+      "label": "Shard router",
+      "description": "The router in front of a store's shards (mongos, vtgate)."
     }
   },
   "flowchart": {
@@ -2512,5 +2527,31 @@
     "refusedChild": "{{container}} does not take {{child}}.",
     "compact": "Compact",
     "expand": "Expand"
+  },
+  "deploy": {
+    "strategy": {
+      "hash": "hash",
+      "consistent-hash": "consistent hash",
+      "range": "range",
+      "geo": "geo",
+      "directory": "directory"
+    },
+    "shards_one": "{{count}} shard",
+    "shards_other": "{{count}} shards",
+    "replicas_one": "{{count}} copy",
+    "replicas_other": "{{count}} copies",
+    "hot": "hot",
+    "router": "Router",
+    "addShard": "Add shard",
+    "addRouter": "Add router",
+    "fields": {
+      "strategy": "Strategy",
+      "keyExpression": "Shard key",
+      "replicationFactor": "Replication factor",
+      "keyRange": "Range / label",
+      "share": "Range size",
+      "region": "Region",
+      "hot": "Hot shard"
+    }
   }
 }

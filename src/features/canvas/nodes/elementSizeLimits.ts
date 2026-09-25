@@ -1,4 +1,4 @@
-import { CARD_MAX_W, CARD_MIN_W } from "../CardNode/constants";
+import { CARD_MAX_W, CARD_MIN_W } from "./CardNode/constants";
 
 export interface SizeLimits {
   minWidth: number;
@@ -7,11 +7,11 @@ export interface SizeLimits {
 }
 
 /**
- * How small (and, for a card, how wide) each VSM element and the named line
- * may be resized — on the canvas and in the inspector's size fields alike.
+ * How small (and, for a card, how wide) each VSM element, deployment element
+ * and the named line may be resized — on the canvas and in the inspector's size fields alike.
  * The process box is a card, so it takes the C4 card's width bounds.
  */
-export const VSM_SIZE_LIMITS: Readonly<Record<string, SizeLimits>> = {
+export const ELEMENT_SIZE_LIMITS: Readonly<Record<string, SizeLimits>> = {
   "vsm-process": { minWidth: CARD_MIN_W, maxWidth: CARD_MAX_W, minHeight: 80 },
   "vsm-external": { minWidth: 90, minHeight: 60 },
   "vsm-inventory": { minWidth: 60, minHeight: 70 },
@@ -20,4 +20,7 @@ export const VSM_SIZE_LIMITS: Readonly<Record<string, SizeLimits>> = {
   "vsm-kaizen": { minWidth: 70, minHeight: 50 },
   "vsm-timeline": { minWidth: 240, minHeight: 80 },
   "flow-divider": { minWidth: 120, minHeight: 24 },
+  "deploy-sharded-store": { minWidth: 240, minHeight: 84 },
+  "deploy-shard": { minWidth: 140, minHeight: 64 },
+  "deploy-shard-router": { minWidth: 120, minHeight: 48 },
 };

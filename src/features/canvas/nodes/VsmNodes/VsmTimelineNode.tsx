@@ -5,7 +5,7 @@ import type { VsmTimelineSegment, VsmTimeUnit } from "@/features/diagram/model/c
 import { DEFAULT_VSM_TIME_UNIT, vsmTimelineTotals } from "@/features/diagram/utils/vsm-timeline";
 import { FLOW_DEFAULT_ACCENT } from "../ProcessNode/flowAppearance";
 import { SkinHandles } from "./SkinHandles";
-import { VSM_SIZE_LIMITS } from "./vsmSizeLimits";
+import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 import { useSkinPalette, type SkinNodeData } from "./skin";
 import { TIMELINE_TOTALS_W, timelineWave } from "./vsmGeometry";
 
@@ -39,7 +39,7 @@ const VsmTimelineNode = memo(
     return (
       <>
         <NodeResizer
-          {...VSM_SIZE_LIMITS["vsm-timeline"]}
+          {...ELEMENT_SIZE_LIMITS["vsm-timeline"]}
           isVisible={isSelected}
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
