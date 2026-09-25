@@ -276,24 +276,28 @@ export function buildEditableEdgePath(
 /** Half-length of the zigzag's diagonal and how far it swings off the line. */
 const ZIGZAG_RUN = 10;
 const ZIGZAG_SWING = 8;
+/** Where along the edge the zigzag sits. */
+const ZIGZAG_AT = 1 / 3;
 
 /**
  * The knots of a zigzag edge: straight from source to target, with a lightning
- * "N" in the middle — VSM's electronic information flow. The zigzag keeps its
+ * "N" a third of the way along — VSM's electronic information flow. The zigzag keeps its
  * size whatever the edge length; an edge too short for it is drawn straight.
  */
 export function getZigzagKnots(source: Point, target: Point): Point[] {
   const dx = target.x - source.x;
   const dy = target.y - source.y;
   const length = Math.hypot(dx, dy);
-  if (length < ZIGZAG_RUN * 4) return [source, target];
+  if (length * ZIGZAG_AT < ZIGZAG_RUN * 2) return [source, target];
   const ux = dx / length;
   const uy = dy / length;
   // Perpendicular, turned so the first swing goes up on a left-to-right edge.
   const px = uy;
   const py = -ux;
-  const mx = source.x + dx / 2;
-  const my = source.y + dy / 2;
+  // A third of the way along rather than the middle, where the label sits and
+  // would cover it.
+  const mx = source.x + dx * ZIGZAG_AT;
+  const my = source.y + dy * ZIGZAG_AT;
   return [
     source,
     { x: mx - ux * ZIGZAG_RUN, y: my - uy * ZIGZAG_RUN },

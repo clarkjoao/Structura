@@ -2,15 +2,17 @@ import { describe, expect, it } from "vitest";
 import { buildZigzagPath, getZigzagKnots } from "./paths";
 
 describe("zigzag edge", () => {
-  it("runs from source to target with a zigzag in the middle", () => {
+  it("runs from source to target with a zigzag a third of the way along", () => {
     const knots = getZigzagKnots({ x: 0, y: 0 }, { x: 200, y: 0 });
     expect(knots[0]).toEqual({ x: 0, y: 0 });
     expect(knots.at(-1)).toEqual({ x: 200, y: 0 });
     expect(knots).toHaveLength(6);
-    // The two inner knots swing to opposite sides of the line, around its middle.
+    // The two inner knots swing to opposite sides of the line, around the
+    // third — clear of the label, which sits in the middle.
     expect(Math.sign(knots[2].y)).toBe(-Math.sign(knots[3].y));
-    expect(knots[2].x).toBeLessThan(100);
-    expect(knots[3].x).toBeGreaterThan(100);
+    expect(knots[2].x).toBeLessThan(200 / 3);
+    expect(knots[3].x).toBeGreaterThan(200 / 3);
+    expect(knots[4].x).toBeLessThan(100);
   });
 
   it("keeps its size on a long edge", () => {
