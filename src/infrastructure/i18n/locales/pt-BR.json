@@ -1190,6 +1190,10 @@
     "k8s-namespace": {
       "label": "Namespace",
       "description": "Um namespace Kubernetes dentro de um cluster, com injeção opcional de sidecar da malha."
+    },
+    "k8s-workload": {
+      "label": "Workload",
+      "description": "Um Deployment, StatefulSet, DaemonSet, Job, CronJob ou Pod, com réplicas, autoescala, imagem e recursos."
     }
   },
   "flowchart": {
@@ -2570,12 +2574,23 @@
     "zones_one": "{{count}} zona",
     "zones_other": "{{count}} zonas",
     "meshInjected": "istio · sidecar injetado",
+    "replicas": "Réplicas",
+    "onePerNode": "um por nó",
     "fields": {
       "distribution": "Distribuição",
       "version": "Versão",
       "nodeCount": "Nós",
       "zoneCount": "Zonas",
-      "meshInjection": "Injeção de sidecar da malha"
+      "meshInjection": "Injeção de sidecar da malha",
+      "kind": "Tipo",
+      "replicas": "Réplicas",
+      "hpaMin": "HPA mín.",
+      "hpaMax": "HPA máx.",
+      "image": "Imagem",
+      "resources": "Recursos",
+      "zones": "Zonas (separadas por vírgula)",
+      "schedule": "Agenda",
+      "concurrencyPolicy": "Política de concorrência"
     }
   }
 }

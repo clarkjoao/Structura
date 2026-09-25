@@ -1,5 +1,6 @@
 import type { ElementDescriptor } from "../../../element.types";
 import { k8sClusterElement, k8sNamespaceElement } from "./k8s-frames.element";
+import { k8sWorkloadElement } from "./k8s-workload.element";
 
 /**
  * Kubernetes structure, registered through `registerElement` under the
@@ -9,4 +10,5 @@ import { k8sClusterElement, k8sNamespaceElement } from "./k8s-frames.element";
 export const k8sStructureElements: readonly ElementDescriptor[] = [
   k8sClusterElement,
   k8sNamespaceElement,
+  k8sWorkloadElement,
 ];
