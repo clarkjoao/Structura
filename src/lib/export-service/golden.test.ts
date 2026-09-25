@@ -553,3 +553,90 @@ describe("golden — sharded store", () => {
     expect(xml).toContain('as="alternateBounds"');
   });
 });
+
+/**
+ * A cluster with a meshed namespace holding ingress → service → Deployment,
+ * and a StatefulSet beside it; expanded and with the namespace compact. The
+ * glyphs are draw.io's `mxgraph.kubernetes.icon2`, the pods plain cells.
+ */
+describe("golden — kubernetes", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const build = (compact: boolean): Record<string, Component> => ({
+    cluster: item("cluster", {
+      type: "k8s-cluster",
+      name: "prod",
+      distribution: "EKS",
+      version: "1.30",
+      nodeCount: 6,
+      zoneCount: 3,
+    }),
+    ns: item("ns", {
+      type: "k8s-namespace",
+      name: "checkout",
+      parentId: "cluster",
+      meshInjection: true,
+      ...(compact ? { collapsed: true } : {}),
+    }),
+    ing: item("ing", {
+      type: "k8s-ingress",
+      name: "api",
+      parentId: "ns",
+      host: "api.shop.com",
+      ingressClass: "nginx",
+    }),
+    svc: item("svc", { type: "k8s-service", name: "checkout-svc", parentId: "ns", port: 8080 }),
+    deploy: item("deploy", {
+      type: "k8s-workload",
+      name: "checkout",
+      parentId: "ns",
+      replicas: 3,
+      hpaMin: 3,
+      hpaMax: 10,
+      image: "checkout:2.4",
+      resources: "250m / 512Mi",
+    }),
+    db: item("db", {
+      type: "k8s-workload",
+      name: "pg",
+      parentId: "cluster",
+      kind: "StatefulSet",
+      replicas: 2,
+    }),
+  });
+  const layouts: Record<string, NodeLayout> = {
+    cluster: { elementId: "cluster", x: 0, y: 0, width: 900, height: 480 },
+    ns: { elementId: "ns", x: 20, y: 80, width: 600, height: 360 },
+    ing: { elementId: "ing", x: 20, y: 80, width: 200, height: 56 },
+    svc: { elementId: "svc", x: 20, y: 180, width: 200, height: 56 },
+    deploy: { elementId: "deploy", x: 300, y: 150, width: 260, height: 120 },
+    db: { elementId: "db", x: 640, y: 150, width: 240, height: 120 },
+  };
+  const connections: Record<string, Connection> = {
+    a: { id: "a", sourceId: "ing", targetId: "svc", label: "/checkout" },
+    b: { id: "b", sourceId: "svc", targetId: "deploy", label: "8080" },
+  };
+
+  it("freezes the expanded cluster", () => {
+    const xml = exportDrawio(diagram("K8s", build(false), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="cluster"[^>]*style="swimlane;container=1;/);
+    expect(xml).toMatch(/id="ns"[^>]*dashed=1;[^>]*parent="cluster"/);
+    expect(xml).toMatch(/id="deploy"[^>]*shadow=1;[^>]*parent="ns"/);
+    expect(xml).toMatch(/id="deploy-icon"[^>]*shape=mxgraph\.kubernetes\.icon2;prIcon=deploy;/);
+    expect(xml).toMatch(/id="db-icon"[^>]*prIcon=sts;/);
+    expect(xml).toMatch(/id="svc-icon"[^>]*prIcon=svc;[^>]*connectable=0;/);
+    expect(xml).toMatch(/id="ing-icon"[^>]*prIcon=ing;/);
+    expect(xml).toContain("ClusterIP :8080");
+    expect(xml).toContain("Deployment · ×3 · HPA 3–10");
+    expect(xml).toContain("pg-1 · pvc-1");
+  });
+
+  it("freezes the compact namespace", () => {
+    const xml = exportDrawio(diagram("K8s", build(true), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="ns"[^>]*collapsed="1"/);
+    expect(xml).toMatch(/id="deploy"[^>]*parent="ns"/);
+  });
+});
