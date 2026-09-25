@@ -21,10 +21,11 @@ const SfnFlowStateNode = memo((props: NodeProps<Node<SfnFlowStateNodeData>>) => 
   <>
     <ProcessNode {...(props as unknown as NodeProps<Node<ProcessNodeData>>)} />
     {props.data.failed && (
+      // Over the end's filled stop square, in the card's colour so it reads on the red.
       <X
-        size={18}
-        strokeWidth={2.5}
-        color="hsl(var(--destructive))"
+        size={14}
+        strokeWidth={3}
+        color="hsl(var(--card))"
         className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         aria-hidden
       />
