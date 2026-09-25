@@ -846,3 +846,74 @@ describe("golden — step functions", () => {
     expect(xml).toContain('width="1200" height="560" as="alternateBounds"');
   });
 });
+
+/**
+ * A shared element in each mode, faithful to the drawing: in badge mode its
+ * incoming edges are not exported, its object lists its consumers and each
+ * consumer wears its badge; in ref mode its references are dashed cells
+ * that carry what they stand for, and the edges end on them.
+ */
+describe("golden — shared", () => {
+  const item = (id: string, extra: Record<string, unknown> = {}): Component =>
+    ({
+      id,
+      name: id,
+      description: "",
+      parentId: null,
+      type: "container",
+      ...extra,
+    }) as unknown as Component;
+  const layouts: Record<string, NodeLayout> = {
+    auth: { elementId: "auth", x: 400, y: 0, width: 200, height: 80 },
+    orders: { elementId: "orders", x: 0, y: 0, width: 200, height: 80 },
+    billing: { elementId: "billing", x: 0, y: 200, width: 200, height: 80 },
+    db: { elementId: "db", x: 800, y: 0, width: 200, height: 80 },
+    r1: { elementId: "r1", x: 250, y: 200, width: 200, height: 48 },
+  };
+
+  it("freezes badge mode", () => {
+    const components = {
+      auth: item("auth", { name: "Auth", shared: { mode: "badge" } }),
+      orders: item("orders", { name: "Orders" }),
+      billing: item("billing", { name: "Billing" }),
+      db: item("db", { name: "DB" }),
+    };
+    const connections: Record<string, Connection> = {
+      e1: { id: "e1", sourceId: "orders", targetId: "auth", label: "gRPC" },
+      e2: { id: "e2", sourceId: "billing", targetId: "auth", label: "HTTP" },
+      e3: { id: "e3", sourceId: "auth", targetId: "db", label: "SQL" },
+    };
+    const xml = exportDrawio(diagram("Shared", components, connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).not.toMatch(/id="e1"/);
+    expect(xml).not.toMatch(/id="e2"/);
+    expect(xml).toMatch(/id="e3"/);
+    expect(xml).toMatch(
+      /<object structuraShared="badge" structuraConsumers="orders,billing"[^>]*id="auth"/,
+    );
+    expect(xml).toMatch(
+      /id="orders-shared-auth" value="Auth"[^>]*structuraBadge=1;[^>]*parent="orders"/,
+    );
+    expect(xml).toMatch(/id="billing-shared-auth"[^>]*parent="billing"/);
+  });
+
+  it("freezes ref mode", () => {
+    const components = {
+      auth: item("auth", { name: "Auth", shared: { mode: "ref" } }),
+      orders: item("orders", { name: "Orders" }),
+      billing: item("billing", { name: "Billing" }),
+      r1: item("r1", { name: "Auth", type: "shared-ref", refOf: "auth" }),
+    };
+    const connections: Record<string, Connection> = {
+      e1: { id: "e1", sourceId: "orders", targetId: "auth", label: "gRPC" },
+      e2: { id: "e2", sourceId: "billing", targetId: "r1", label: "HTTP" },
+    };
+    const xml = exportDrawio(diagram("Shared", components, connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(
+      /<object id="r1" label="Auth \(ref\)" structuraRefOf="auth"><mxCell style="[^"]*dashed=1;/,
+    );
+    expect(xml).toMatch(/id="e2"[^>]*target="r1"/);
+    expect(xml).toMatch(/structuraShared="ref"/);
+  });
+});

@@ -1,3 +1,6 @@
+import { hideSharedEdges, sharedMode, sharedUses } from "@/features/diagram/utils/shared";
+import { elementAccent } from "@/features/canvas/shared/sharedLayerModel";
+import { exportColorHex } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import {
   diagramWithResolvedScene,
   EdgeMarker,
@@ -414,7 +417,36 @@ export function diagramToExportModel(
     nodes.push(mapNode(exported, nl, services, { components, layouts: layoutMap }));
   }
 
-  const edges: ExportEdge[] = Object.values(connections).map((conn) =>
+  // Shared elements, fiel ao desenho: a badge-mode element's hidden edges are
+  // not exported as edges; its consumers go on its object and each consumer
+  // wears its badge. The model keeps everything; the importer reads it back.
+  const byNodeId = new Map(nodes.map((node) => [node.id, node]));
+  for (const component of Object.values(components)) {
+    const mode = sharedMode(component);
+    if (mode === "edges") continue;
+    const node = byNodeId.get(component.id);
+    if (!node) continue;
+    const consumers = [
+      ...new Set(sharedUses(component.id, components, connections).map((use) => use.consumerId)),
+    ];
+    node.metadata = {
+      ...node.metadata,
+      structuraShared: mode,
+      ...(mode === "badge" ? { structuraConsumers: consumers.join(",") } : {}),
+    };
+    if (mode !== "badge") continue;
+    const accentColor = exportColorHex(elementAccent(component)) ?? "#64748b";
+    for (const consumerId of consumers) {
+      const consumer = byNodeId.get(consumerId);
+      if (!consumer) continue;
+      consumer.badges = [
+        ...(consumer.badges ?? []),
+        { id: `${consumerId}-shared-${component.id}`, label: component.name, accentColor },
+      ];
+    }
+  }
+
+  const edges: ExportEdge[] = hideSharedEdges(Object.values(connections), components).map((conn) =>
     mapEdge(
       withPodLinkStyle(conn, components),
       edgeLayouts[conn.id],

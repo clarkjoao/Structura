@@ -123,6 +123,8 @@ export const sharedRefElement: ElementDescriptor = {
           accentColor: exportColorHex(original ? elementAccent(original) : "#64748b") ?? "#64748b",
           fill: "none",
           dashed: true,
+          // Read back as a reference by the importer.
+          metadata: { structuraRefOf: originalId },
         };
       },
     },

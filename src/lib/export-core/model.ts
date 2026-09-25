@@ -43,6 +43,22 @@ interface BaseNode {
   /** 0 means "use the kind's default size" (kept for CSS-auto C4 nodes). */
   width: number;
   height: number;
+  /**
+   * `structura*` attributes carried on the cell's `<object>` (the cell is
+   * promoted to one if it is not already): what a drawing hides but the
+   * model keeps, read back by the importer. Named without a `structura:`
+   * prefix: an undeclared XML namespace prefix makes the file unparseable.
+   */
+  metadata?: Readonly<Record<string, string>>;
+  /** Badges worn under the node: a shared element's name, as a plain cell of its own. */
+  badges?: ExportBadge[];
+}
+
+export interface ExportBadge {
+  id: string;
+  label: string;
+  /** `#rrggbb`. */
+  accentColor: string;
 }
 
 export interface C4Node extends BaseNode {
