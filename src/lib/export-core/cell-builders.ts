@@ -231,6 +231,40 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       );
     }
 
+    case "container": {
+      const w = width || 320;
+      const h = height || 200;
+      const style =
+        "swimlane;container=1;collapsible=1;startSize=32;rounded=1;arcSize=12;absoluteArcSize=1;" +
+        "html=1;fontSize=12;fontStyle=1;align=left;spacingLeft=10;" +
+        (node.stacked ? "shadow=1;" : "") +
+        (node.extraStyle ?? "") +
+        skinColourStyle(node);
+      // Compact: draw.io's collapsed container, drawn at the compact box, with
+      // the expanded one kept as alternateBounds so nothing inside is lost.
+      const geometry = node.compact
+        ? `<mxGeometry x="${x}" y="${y}" width="${node.compact.width}" height="${node.compact.height}" as="geometry">` +
+          `<mxRectangle x="${x}" y="${y}" width="${w}" height="${h}" as="alternateBounds"/></mxGeometry>`
+        : `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>`;
+      const cell =
+        `<mxCell id="${escXml(node.id)}" value="${escXml(node.label)}" style="${style}" ` +
+        `vertex="1"${node.compact ? ' collapsed="1"' : ""} parent="${escXml(parentId)}">` +
+        geometry +
+        `</mxCell>`;
+      const representations = (node.representations ?? [])
+        .map(
+          (rep) =>
+            `<mxCell id="${escXml(rep.id)}" value="${escXml(rep.label)}" ` +
+            `style="rounded=1;arcSize=20;absoluteArcSize=1;html=1;fontSize=10;fontFamily=monospace;` +
+            `connectable=0;movable=0;resizable=0;strokeColor=none;fillColor=${node.accentColor};` +
+            `fillOpacity=${rep.fillOpacity ?? 20};" vertex="1" parent="${escXml(node.id)}">` +
+            `<mxGeometry x="${rep.x}" y="${rep.y}" width="${rep.width}" height="${rep.height}" as="geometry"/>` +
+            `</mxCell>`,
+        )
+        .join("");
+      return cell + representations;
+    }
+
     case "stencil": {
       const w = width || 120;
       const h = height || 80;

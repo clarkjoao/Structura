@@ -22,7 +22,7 @@ export interface BoundingBox {
 export function getContainerIds(nodes: ExportNode[]): Set<string> {
   const ids = new Set<string>();
   for (const n of nodes) {
-    if (n.kind === "panel" || n.kind === "apiGroup") ids.add(n.id);
+    if (n.kind === "panel" || n.kind === "apiGroup" || n.kind === "container") ids.add(n.id);
   }
   return ids;
 }

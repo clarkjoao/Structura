@@ -31,7 +31,8 @@ export type ExportNodeKind =
   | "image"
   | "passthrough"
   | "flowNode"
-  | "stencil";
+  | "stencil"
+  | "container";
 
 interface BaseNode {
   id: string;
@@ -250,7 +251,47 @@ export interface StencilNode extends BaseNode, ExportSkinColours {
   label?: string;
 }
 
+/**
+ * What a typed container shows of its data without it being a node — a key
+ * range segment, a pod tile, a badge. Exported as a plain, non-connectable
+ * cell inside the container, never as a node an edge can reach.
+ */
+export interface ExportRepresentation {
+  id: string;
+  label: string;
+  /** Container-relative. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Accent wash, 0–100. */
+  fillOpacity?: number;
+}
+
+/**
+ * A typed container (a sharded store, a cluster, a state machine): a draw.io
+ * container whose children are the element's children, as real cells.
+ *
+ * Compact is exported as draw.io's own collapsed container — `collapsed="1"`
+ * with the expanded box kept as `alternateBounds` — so the file opens looking
+ * like the canvas, and expanding it in draw.io shows every child.
+ */
+export interface ContainerNode extends BaseNode, ExportSkinColours {
+  kind: "container";
+  name: string;
+  /** Header text: the name, then the parameters. */
+  label: string;
+  /** Extra style for the container cell (a stencil icon, say), ending in `;`. */
+  extraStyle?: string;
+  /** Present while compact: the size it is drawn at; `width`/`height` stay the expanded box. */
+  compact?: { width: number; height: number };
+  /** Replicas drawn as a stack: exported as a shadow, not as extra cells. */
+  stacked?: boolean;
+  representations?: ExportRepresentation[];
+}
+
 export type ExportNode =
+  | ContainerNode
   | StencilNode
   | FlowNode
   | ImageNode
