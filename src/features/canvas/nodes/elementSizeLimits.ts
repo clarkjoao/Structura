@@ -26,4 +26,6 @@ export const ELEMENT_SIZE_LIMITS: Readonly<Record<string, SizeLimits>> = {
   "k8s-cluster": { minWidth: 280, minHeight: 64 },
   "k8s-namespace": { minWidth: 240, minHeight: 64 },
   "k8s-workload": { minWidth: 200, minHeight: 64 },
+  "k8s-service": { minWidth: 160, minHeight: 56 },
+  "k8s-ingress": { minWidth: 160, minHeight: 56 },
 };

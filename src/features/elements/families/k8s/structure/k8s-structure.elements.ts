@@ -1,4 +1,5 @@
 import type { ElementDescriptor } from "../../../element.types";
+import { k8sIngressElement, k8sServiceElement } from "./k8s-entry.element";
 import { k8sClusterElement, k8sNamespaceElement } from "./k8s-frames.element";
 import { k8sWorkloadElement } from "./k8s-workload.element";
 
@@ -11,4 +12,6 @@ export const k8sStructureElements: readonly ElementDescriptor[] = [
   k8sClusterElement,
   k8sNamespaceElement,
   k8sWorkloadElement,
+  k8sServiceElement,
+  k8sIngressElement,
 ];

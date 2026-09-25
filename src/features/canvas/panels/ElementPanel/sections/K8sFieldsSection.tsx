@@ -1,10 +1,13 @@
 import { useTranslation } from "react-i18next";
 import {
   isK8sClusterComponent,
+  isK8sIngressComponent,
   isK8sNamespaceComponent,
+  isK8sServiceComponent,
   isK8sWorkloadComponent,
   type Component,
   type ComponentPatch,
+  type K8sServiceComponent,
   type K8sWorkloadComponent,
   type K8sWorkloadKind,
 } from "@/features/diagram";
@@ -21,6 +24,12 @@ const KINDS: readonly K8sWorkloadKind[] = [
   "Job",
   "CronJob",
   "Pod",
+];
+const SERVICE_TYPES: readonly NonNullable<K8sServiceComponent["serviceType"]>[] = [
+  "ClusterIP",
+  "NodePort",
+  "LoadBalancer",
+  "ExternalName",
 ];
 const POLICIES: readonly NonNullable<K8sWorkloadComponent["concurrencyPolicy"]>[] = [
   "Allow",
@@ -191,6 +200,45 @@ export function K8sFieldsSection({
           label={t("k8s.fields.resources")}
           value={component.resources}
           onChange={(value) => onChange({ resources: text(value) })}
+        />
+      </>
+    );
+  }
+
+  if (isK8sServiceComponent(component)) {
+    return (
+      <>
+        <Select
+          label={t("k8s.fields.serviceType")}
+          value={component.serviceType ?? "ClusterIP"}
+          options={SERVICE_TYPES}
+          onChange={(next) => onChange({ serviceType: next === "ClusterIP" ? undefined : next })}
+        />
+        <TextField
+          id="k8s-port"
+          type="number"
+          label={t("k8s.fields.port")}
+          value={component.port}
+          onChange={(value) => onChange({ port: positive(value) })}
+        />
+      </>
+    );
+  }
+
+  if (isK8sIngressComponent(component)) {
+    return (
+      <>
+        <TextField
+          id="k8s-host"
+          label={t("k8s.fields.host")}
+          value={component.host}
+          onChange={(value) => onChange({ host: text(value) })}
+        />
+        <TextField
+          id="k8s-class"
+          label={t("k8s.fields.ingressClass")}
+          value={component.ingressClass}
+          onChange={(value) => onChange({ ingressClass: text(value) })}
         />
       </>
     );

@@ -1194,6 +1194,14 @@
     "k8s-workload": {
       "label": "Workload",
       "description": "A Deployment, StatefulSet, DaemonSet, Job, CronJob or Pod, with replicas, autoscaling, image and resources."
+    },
+    "k8s-service": {
+      "label": "Service",
+      "description": "A Kubernetes Service in front of a workload: its type and port."
+    },
+    "k8s-ingress": {
+      "label": "Ingress",
+      "description": "A Kubernetes Ingress: the host and class traffic enters the cluster by."
     }
   },
   "flowchart": {
@@ -2590,7 +2598,11 @@
       "resources": "Resources",
       "zones": "Zones (comma separated)",
       "schedule": "Schedule",
-      "concurrencyPolicy": "Concurrency policy"
+      "concurrencyPolicy": "Concurrency policy",
+      "serviceType": "Service type",
+      "port": "Port",
+      "host": "Host",
+      "ingressClass": "Ingress class"
     }
   }
 }
