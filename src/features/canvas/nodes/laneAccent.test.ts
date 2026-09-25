@@ -6,7 +6,7 @@ import { snapshotChecksum } from "@/features/collaboration/utils/snapshotChecksu
 import { getElement } from "@/features/elements/element.registry";
 import { emptyNodeBuildContext } from "@/features/elements/node-build-context.fixture";
 import { buildCardNodeData } from "./CardNode/buildCardNodeData";
-import { laneAccentFor, laneAccentOf } from "./laneAccent";
+import { laneAccentFor, laneAccentOf, withInheritedAccent } from "./laneAccent";
 import { resolveFlowAppearance } from "./ProcessNode/flowAppearance";
 
 const TEAL = "hsl(var(--node-system))";
@@ -147,5 +147,29 @@ describe("laneAccentOf", () => {
     expect(laneAccentOf(node, support)).toBe(TEAL);
     expect(laneAccentOf(node, undefined)).toBeUndefined();
     expect(laneAccentOf(node, lane("other", TEAL))).toBeUndefined();
+  });
+});
+
+describe("withInheritedAccent", () => {
+  const support = lane("support", TEAL);
+
+  it("hands the export a copy with the lane's accent, leaving the component alone", () => {
+    const node = child("n", "support");
+    const exported = withInheritedAccent(node, support, true);
+    expect(exported).toMatchObject({ customColor: TEAL });
+    expect(exported).not.toBe(node);
+    expect(node).not.toHaveProperty("customColor");
+  });
+
+  it("keeps a node's own accent, and a legacy nodeColor", () => {
+    const own = child("a", "support", { customColor: "#ff0000" });
+    const legacy = child("b", "support", { nodeColor: "#00ff00" });
+    expect(withInheritedAccent(own, support, true)).toBe(own);
+    expect(withInheritedAccent(legacy, support, true)).toBe(legacy);
+  });
+
+  it("does nothing for an element that does not wear the skin", () => {
+    const node = child("n", "support");
+    expect(withInheritedAccent(node, support, false)).toBe(node);
   });
 });

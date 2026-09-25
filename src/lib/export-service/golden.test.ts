@@ -450,7 +450,23 @@ describe("golden — service blueprint", () => {
 
   const components: Record<string, Component> = {
     evidence: lane("Physical evidence", "hsl(var(--muted-foreground))", { borderStyle: "dashed" }),
-    stage: lane("Onstage", "hsl(var(--gcp-database))"),
+    stage: lane("Onstage", "hsl(var(--gcp-database))", { id: "stage" }),
+    legacyLane: lane("Legacy lane", "#6366f1", { id: "legacyLane" }),
+    // Inherits the onstage blue (a token lane); keeps its own amber; and the
+    // one in a literal-colour lane stays slate, as on the canvas.
+    inherits: item("inherits", { type: "process-node", flowShape: "rectangle", parentId: "stage" }),
+    ownAccent: item("ownAccent", {
+      type: "process-node",
+      flowShape: "rectangle",
+      parentId: "stage",
+      customColor: "hsl(var(--node-person))",
+    }),
+    vsmInherits: item("vsmInherits", { type: "vsm-process", parentId: "stage" }),
+    inLegacyLane: item("inLegacyLane", {
+      type: "process-node",
+      flowShape: "rectangle",
+      parentId: "legacyLane",
+    }),
     interaction: item("Line of interaction", { type: "flow-divider" }),
     visibility: item("Line of visibility", { type: "flow-divider", stroke: "dashed" }),
     internal: item("Line of internal interaction", { type: "flow-divider" }),
@@ -468,6 +484,13 @@ describe("golden — service blueprint", () => {
     // The evidence lane is dashed, and token accents export as hex.
     expect(xml).toMatch(/value="Physical evidence" style="swimlane;[^"]*dashed=1;/);
     expect(xml).not.toContain("var(--");
+    // Lane inheritance reaches draw.io: blue #1d67c9 is --gcp-database's light value.
+    const styleOf = (id: string) =>
+      new RegExp(`id="${id}" value="[^"]*" style="([^"]*)"`).exec(xml)?.[1];
+    expect(styleOf("inherits")).toContain("strokeColor=#1d67c9;");
+    expect(styleOf("vsmInherits")).toContain("strokeColor=#1d67c9;");
+    expect(styleOf("ownAccent")).toContain("strokeColor=#f59f0a;");
+    expect(styleOf("inLegacyLane")).toContain("strokeColor=#65758b;");
     expect(xml).toMatch(/value="LINE OF VISIBILITY" style="line;[^"]*dashed=1;/);
   });
 });

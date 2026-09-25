@@ -30,6 +30,7 @@ import type {
 } from "../export-core";
 import { getElement, isRegisteredElementComponent } from "@/features/elements/element.registry";
 import { validateDiagram } from "./validate-diagram";
+import { withInheritedAccent } from "@/features/canvas/nodes/laneAccent";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
 import { edgeSides, resolveEdgeRouting } from "./edge-routing";
 import type { HandleSlots } from "./edge-routing";
@@ -400,7 +401,12 @@ export function diagramToExportModel(
   for (const id of Object.keys(components)) {
     const nl = layoutMap[id];
     if (!nl) continue;
-    nodes.push(mapNode(components[id], nl, services));
+    // A node's lane accent is resolved at render, never stored; the export
+    // resolves it the same way so draw.io shows what the canvas draws.
+    const comp = components[id];
+    const parent = comp.parentId ? components[comp.parentId] : undefined;
+    const exported = withInheritedAccent(comp, parent, !!getElement(comp.type)?.skin);
+    nodes.push(mapNode(exported, nl, services));
   }
 
   const edges: ExportEdge[] = Object.values(connections).map((conn) =>

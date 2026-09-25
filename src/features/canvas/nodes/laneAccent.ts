@@ -30,3 +30,24 @@ export function laneAccentOf(comp: Component, parent: Component | undefined): st
   const accent = parent.swimlane?.laneColor ?? parent.panelColor;
   return accent && THEME_TOKEN_RE.test(accent.trim()) ? accent : undefined;
 }
+
+/**
+ * The component as an export should see it: a skinned node (flow, VSM) with no
+ * accent of its own gets its lane's accent on a transient copy, so draw.io
+ * shows the colour the canvas draws. The stored component is never touched.
+ *
+ * Only skinned elements: their export reads the accent. A C4 or cloud card
+ * inherits on the canvas too, but its draw.io cell uses the C4/cloud palette
+ * and exports no custom colour at all, own or inherited.
+ */
+export function withInheritedAccent<C extends Component>(
+  comp: C,
+  parent: Component | undefined,
+  isSkinned: boolean,
+): C {
+  if (!isSkinned) return comp;
+  const own = comp as { customColor?: string; nodeColor?: string };
+  if (own.customColor || own.nodeColor) return comp;
+  const lane = laneAccentOf(comp, parent);
+  return lane ? { ...comp, customColor: lane } : comp;
+}
