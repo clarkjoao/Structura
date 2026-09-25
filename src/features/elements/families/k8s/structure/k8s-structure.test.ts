@@ -62,6 +62,34 @@ describe("kubernetes structure", () => {
     expect(canContain("k8s-workload", "system")).toBe(false);
   });
 
+  it("every element is a connectable node that can sit in a container", () => {
+    for (const element of k8sStructureElements) {
+      expect(element.canvas.connectable, element.id).toBe(true);
+      expect(element.canvas.canBeConnectionSource, element.id).toBe(true);
+      expect(element.canvas.canHaveParent, element.id).toBe(true);
+    }
+    expect(getElement("k8s-workload")!.canvas.derivesSize).toBe(false);
+  });
+
+  it("exports ×N only for kinds that keep replicas, and HPA only with both bounds", () => {
+    const exportLabel = (extra: Record<string, unknown>) => {
+      const w = comp({ id: "w", name: "w", type: "k8s-workload", replicas: 2, ...extra });
+      const node = getElement("k8s-workload")!.export.drawio.toExportNode(w, {
+        id: "w",
+        parentId: null,
+        x: 0,
+        y: 0,
+        width: 240,
+        height: 120,
+      });
+      return (node as { label: string }).label;
+    };
+    expect(exportLabel({ kind: "DaemonSet" })).toContain("DaemonSet · ×3");
+    expect(exportLabel({ kind: "Job" })).not.toContain("×");
+    expect(exportLabel({ hpaMin: 2 })).not.toContain("HPA");
+    expect(exportLabel({ hpaMin: 2, hpaMax: 5 })).toContain("HPA 2–5");
+  });
+
   it("names a service by its type and port", () => {
     const base = {
       id: "s",

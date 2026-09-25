@@ -107,3 +107,38 @@ describe("clusterOf", () => {
     expect(clusterOf("a", cyclic)).toBeUndefined();
   });
 });
+
+describe("edges of the derivation", () => {
+  it("keeps zero replicas as zero, not the default", () => {
+    const w = wl({ replicas: 0 });
+    expect(replicaCount(w, tree(w))).toBe(0);
+    expect(replicaTiles(w, tree(w)).tiles).toEqual([]);
+  });
+
+  it("falls back to the default zones when the list is empty", () => {
+    const w = wl({ replicas: 2, zones: [] });
+    expect(replicaTiles(w, tree(w)).tiles.map((t) => t.label)).toEqual(["1a", "1b"]);
+  });
+
+  it("stops on a parent cycle above the workload", () => {
+    const w = wl();
+    const components: Record<string, Component> = {
+      wl: w,
+      ns: {
+        id: "ns",
+        name: "a",
+        description: "",
+        parentId: "x",
+        type: "k8s-namespace",
+      } as Component,
+      x: {
+        id: "x",
+        name: "x",
+        description: "",
+        parentId: "ns",
+        type: "k8s-namespace",
+      } as Component,
+    };
+    expect(clusterOf("wl", components)).toBeUndefined();
+  });
+});
