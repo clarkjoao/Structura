@@ -13,6 +13,7 @@ import {
   type ResolvedSnapshot,
 } from "@/features/diagram/utils/snapshot-cache";
 import type { NodeTypeDescriptor } from "../nodes/node-types/types";
+import { remapConnectionsToVisible } from "./compactView";
 
 /*
  * Pure by construction: this module imports the diagram model and utils only —
@@ -23,7 +24,10 @@ import type { NodeTypeDescriptor } from "../nodes/node-types/types";
  */
 
 /** What the view needs to know of a node's type: whether it nests, and its default z. */
-export type ViewNodeDescriptor = Pick<NodeTypeDescriptor, "canHaveParent" | "zIndex">;
+export type ViewNodeDescriptor = Pick<
+  NodeTypeDescriptor,
+  "canHaveParent" | "zIndex" | "acceptsChildren" | "collapsible"
+>;
 export type DescribeNode = (component: Component) => ViewNodeDescriptor;
 
 /**
@@ -58,10 +62,16 @@ export interface ViewSnapshot {
   nodeLayouts: Record<string, NodeLayout>;
   /** Placed panels and API groups: the only things a node can be nested in. */
   panelIds: Set<string>;
+  /** Collapsed panels and compact typed containers: what hides a node's children. */
   collapsedPanelIds: Set<string>;
+  /** The compact typed containers alone: what edges and flow steps are redrawn onto. */
+  compactContainerIds: Set<string>;
   /** Every placed component, in render order. Hidden ones stay, flagged. */
   nodes: ViewNode[];
-  /** Connections with both ends placed — what handle counts and assignments are built from. */
+  /**
+   * Connections with both ends placed — what handle counts and assignments are
+   * built from — with ends hidden in a compact container drawn on it.
+   */
   placedConnections: Connection[];
   /** The edges drawn: placed connections whose ends are not hidden. */
   shownConnections: Connection[];
@@ -74,6 +84,7 @@ export const EMPTY_VIEW_SNAPSHOT: ViewSnapshot = Object.freeze({
   nodeLayouts: {},
   panelIds: new Set<string>(),
   collapsedPanelIds: new Set<string>(),
+  compactContainerIds: new Set<string>(),
   nodes: [],
   placedConnections: [],
   shownConnections: [],
@@ -102,11 +113,39 @@ export function resolveViewScene(
   return resolveCanvasSnapshot({ ...diagram, activeVersionId: versionId, compareVersionId });
 }
 
-/** Containers a node can be nested in: panels and API groups. */
-export function buildPanelIds(components: readonly Component[]): Set<string> {
+/** Whether the descriptor makes its component a typed container. */
+function isTypedContainer(component: Component, describe?: DescribeNode): boolean {
+  return describe?.(component).acceptsChildren !== undefined;
+}
+
+/**
+ * Containers a node can be nested in: panels, API groups, and — given the
+ * registry's `describe` — every typed container.
+ */
+export function buildPanelIds(
+  components: readonly Component[],
+  describe?: DescribeNode,
+): Set<string> {
   const ids = new Set<string>();
   for (const c of components) {
-    if (isPanelComponent(c) || isApiGroupComponent(c)) ids.add(c.id);
+    if (isPanelComponent(c) || isApiGroupComponent(c) || isTypedContainer(c, describe)) {
+      ids.add(c.id);
+    }
+  }
+  return ids;
+}
+
+/** Typed containers drawn compact: `collapsible` and flagged `collapsed`. */
+export function buildCompactContainerIds(
+  components: Record<string, Component>,
+  describe?: DescribeNode,
+): Set<string> {
+  const ids = new Set<string>();
+  if (!describe) return ids;
+  for (const c of Object.values(components)) {
+    if ((c as { collapsed?: boolean }).collapsed === true && describe(c).collapsible === true) {
+      ids.add(c.id);
+    }
   }
   return ids;
 }
@@ -196,6 +235,7 @@ function parentDepth(comp: Component, components: Record<string, Component>): nu
 export function sortForRender(
   components: readonly Component[],
   componentsById: Record<string, Component>,
+  describe?: DescribeNode,
 ): Component[] {
   const depthCache = new Map<string, number>();
   const depthOf = (comp: Component): number => {
@@ -206,8 +246,8 @@ export function sortForRender(
     return depth;
   };
   return [...components].sort((a, b) => {
-    const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
-    const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
+    const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a) || isTypedContainer(a, describe);
+    const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b) || isTypedContainer(b, describe);
     if (aIsGroup && !bIsGroup) return -1;
     if (!aIsGroup && bIsGroup) return 1;
     const depthA = depthOf(a);
@@ -247,10 +287,12 @@ export function resolveViewSnapshot(
 ): ViewSnapshot {
   const resolved = resolveViewScene(diagram, options);
   const placed = placedComponents(resolved.components, resolved.nodeLayouts);
-  const panelIds = buildPanelIds(placed);
+  const panelIds = buildPanelIds(placed, describe);
+  const compactContainerIds = buildCompactContainerIds(resolved.components, describe);
   const collapsedPanelIds = buildCollapsedPanelIds(resolved.components);
+  for (const id of compactContainerIds) collapsedPanelIds.add(id);
 
-  const nodes = sortForRender(placed, resolved.components).map((component): ViewNode => {
+  const nodes = sortForRender(placed, resolved.components, describe).map((component): ViewNode => {
     const layout = resolved.nodeLayouts[component.id];
     const view = resolveNodeView(
       component,
@@ -263,7 +305,11 @@ export function resolveViewSnapshot(
     return { component, layout, ...view };
   });
 
-  const connections = placedConnections(resolved.connections, resolved.nodeLayouts);
+  const connections = remapConnectionsToVisible(
+    placedConnections(resolved.connections, resolved.nodeLayouts),
+    resolved.components,
+    compactContainerIds,
+  );
 
   return {
     components: resolved.components,
@@ -271,6 +317,7 @@ export function resolveViewSnapshot(
     nodeLayouts: resolved.nodeLayouts,
     panelIds,
     collapsedPanelIds,
+    compactContainerIds,
     nodes,
     placedConnections: connections,
     shownConnections: filterVisibleConnections(connections, resolved.components),

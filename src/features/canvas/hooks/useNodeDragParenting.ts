@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { canContain, isCompactContainer } from "@/features/elements/containment";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
@@ -305,7 +306,10 @@ export function useNodeDragParenting({
       }
 
       const match = findPanelInIndex(index, absX, absY, comp.parentId);
-      const newTarget = match?.id ?? null;
+      // A container that refuses this node is not lit up as a target.
+      const matchType = match ? r.components[match.id]?.type : undefined;
+      const newTarget =
+        match && (matchType === undefined || canContain(matchType, comp.type)) ? match.id : null;
 
       if (newTarget !== dragTargetRef.current) {
         dragTargetRef.current = newTarget;
@@ -334,6 +338,11 @@ export function useNodeDragParenting({
       const r = getCachedCanvasSnapshot(activeDiagram);
       const layout = r.nodeLayouts[change.id];
       if (!layout) return;
+      // A compact container is drawn at a size derived from its content, not
+      // stored: writing that measurement back would overwrite its expanded
+      // size and change the diagram's checksum just by opening it.
+      const measured = r.components[change.id];
+      if (!change.resizing && measured && isCompactContainer(measured)) return;
       // React Flow measures with offsetWidth/offsetHeight, which are whole
       // pixels: a node stored at 933.333 measures 933. Writing that back moved
       // the store off what the canvas draws, and every reader of the store (the
@@ -412,6 +421,25 @@ export function useNodeDragParenting({
       }
       const components = r.components;
 
+      /**
+       * Whether the container under the drop takes this node. A typed
+       * container that does not (a pod into a shard, say) refuses it with a
+       * message, and the node lands where it would have without the container.
+       */
+      let refusalShown = false;
+      const acceptsDrop = (containerId: string, nodeId: string): boolean => {
+        const container = components[containerId];
+        const node = components[nodeId];
+        if (!container || !node || canContain(container.type, node.type)) return true;
+        if (!refusalShown) {
+          refusalShown = true;
+          toast.error(
+            i18n.t("containers.refusedChild", { child: node.name, container: container.name }),
+          );
+        }
+        return false;
+      };
+
       const draggedAbsPos = draggedNode.parentId
         ? resolveAbsolutePositionFromNodeMap(draggedNode.id, nodeMap)
         : draggedNode.position;
@@ -468,7 +496,7 @@ export function useNodeDragParenting({
             components,
           );
 
-          if (match && match.id !== node.parentId) {
+          if (match && match.id !== node.parentId && acceptsDrop(match.id, node.id)) {
             const matchAbsPos = resolveAbsolutePosition(
               match.id,
               match.position,
@@ -556,7 +584,7 @@ export function useNodeDragParenting({
         r.nodeLayouts,
         components,
       );
-      if (match) {
+      if (match && acceptsDrop(match.id, draggedNode.id)) {
         const matchAbsPos = resolveAbsolutePosition(
           match.id,
           match.position,

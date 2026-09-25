@@ -118,6 +118,12 @@ export interface NodeTypeDescriptor {
 
   canBeParent: boolean;
 
+  /** See `ElementCanvasSlice.acceptsChildren`: set, the type is a typed container. */
+  acceptsChildren?: readonly string[];
+
+  /** See `ElementCanvasSlice.collapsible`. */
+  collapsible?: boolean;
+
   buildData: (comp: Component, ctx: NodeBuildContext) => Record<string, unknown>;
 
   buildStyle?: (comp: Component, ctx: NodeBuildContext) => CSSProperties | undefined;

@@ -1,7 +1,16 @@
 import type { Node } from "@xyflow/react";
+import { isTypedContainerType } from "@/features/elements/containment";
 import type { Component, NodeLayout } from "@/features/diagram";
 import { isReactFlowParentPanelType } from "@/features/diagram";
 import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../canvas.constants";
+
+/**
+ * Whether a React Flow node type takes dropped nodes: a panel (or lane), or a
+ * typed container. Whether it takes *this* node is `canContain`'s answer.
+ */
+export function isDropContainerType(type: string): boolean {
+  return isReactFlowParentPanelType(type) || isTypedContainerType(type);
+}
 
 export function getPanelDimensions(node: Node): { width: number; height: number } {
   const widthFromStyle = typeof node.style?.width === "number" ? node.style.width : undefined;
@@ -53,7 +62,7 @@ export function findPanelContainingPoint(
   components?: Record<string, Component>,
 ): Node | undefined {
   const panels = nodes.filter(
-    (n) => isReactFlowParentPanelType(String(n.type)) && n.id !== excludeParentId,
+    (n) => isDropContainerType(String(n.type)) && n.id !== excludeParentId,
   );
 
   let bestPanel: Node | undefined;
@@ -127,7 +136,7 @@ export function buildGesturePanelIndex(
   const sizeById = new Map<string, { width: number; height: number }>();
 
   for (const node of nodes) {
-    if (!isReactFlowParentPanelType(String(node.type))) continue;
+    if (!isDropContainerType(String(node.type))) continue;
     const absolutePosition = node.parentId
       ? resolveAbsolutePosition(node.id, node.position, components, nodeLayouts)
       : node.position;

@@ -5,7 +5,7 @@ import {
   endpointCallersByRoute,
   placedComponents,
 } from "@/features/diagram/utils";
-import type { NodeBuildContext } from "../nodes/node-types";
+import { resolveNodeDescriptor, type NodeBuildContext } from "../nodes/node-types";
 import {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
@@ -102,7 +102,7 @@ export function buildReadNodeContext(
     allDiagrams: catalog.diagrams,
     // From placed components only, as the editor builds it: a child of a panel
     // that has no layout is not nested inside a node that does not exist.
-    panelIds: buildPanelIds(placedComponents(components, layouts)),
+    panelIds: buildPanelIds(placedComponents(components, layouts), resolveNodeDescriptor),
     ...readHandleState(connections, components),
     childrenIndex: buildChildrenIndex(components),
     isPlaying: Boolean(reading),

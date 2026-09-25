@@ -11,6 +11,7 @@ import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useCanvasNodes } from "../nodes/useCanvasNodes";
 import { resolveNodeDescriptor } from "../nodes/node-types";
 import { EMPTY_VIEW_SNAPSHOT, resolveViewSnapshot } from "../core/resolveViewSnapshot";
+import { remapConnectionsToVisible } from "../core/compactView";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
 
@@ -151,10 +152,22 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     ],
   );
 
+  // Edges into a compact container's children are drawn on the container —
+  // the same remap the view applies for the reader (`remapConnectionsToVisible`).
+  const drawnConnections = useMemo(
+    () =>
+      remapConnectionsToVisible(
+        visibleConnections,
+        resolved?.components ?? {},
+        view.compactContainerIds,
+      ),
+    [visibleConnections, resolved?.components, view.compactContainerIds],
+  );
+
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({
       visibleComponents,
-      visibleConnections,
+      visibleConnections: drawnConnections,
       resolvedComponents: resolved?.components ?? {},
     });
 

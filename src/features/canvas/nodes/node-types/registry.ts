@@ -45,6 +45,8 @@ function adaptElement(element: ElementDescriptor, canvas = element.canvas): Node
     handles: canvas.handles,
     canHaveParent: canvas.canHaveParent,
     canBeParent: canvas.canBeParent,
+    acceptsChildren: canvas.acceptsChildren,
+    collapsible: canvas.collapsible,
     buildData: canvas.buildData,
     buildStyle: canvas.buildStyle,
     // NodeTypeDescriptor still wants both dimensions; an element that leaves

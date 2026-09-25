@@ -6,6 +6,7 @@ import {
   buildEdgeHandleAssignments,
   buildEffectiveHandleOrder,
 } from "./connectionDerivations";
+import { resolveNodeDescriptor } from "../nodes/node-types/registry";
 
 interface UseCanvasConnectionDerivationsParams {
   visibleComponents: Component[];
@@ -19,7 +20,10 @@ export function useCanvasConnectionDerivations({
   visibleConnections,
   resolvedComponents,
 }: UseCanvasConnectionDerivationsParams) {
-  const panelIds = useMemo(() => buildPanelIds(visibleComponents), [visibleComponents]);
+  const panelIds = useMemo(
+    () => buildPanelIds(visibleComponents, resolveNodeDescriptor),
+    [visibleComponents],
+  );
 
   // Node positions are deliberately not an input here: handle sides are fixed,
   // so moving a node must never change which handles its edges use. See the

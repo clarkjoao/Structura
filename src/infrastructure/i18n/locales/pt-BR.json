@@ -2507,5 +2507,10 @@
       "backstage": "Bastidores",
       "support": "Suporte"
     }
+  },
+  "containers": {
+    "refusedChild": "{{container}} não aceita {{child}}.",
+    "compact": "Compactar",
+    "expand": "Expandir"
   }
 }

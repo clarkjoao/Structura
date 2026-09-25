@@ -24,6 +24,7 @@ import {
   isRegisteredElementType,
 } from "@/features/elements/element.registry";
 import type { ElementCreateOptions } from "@/features/elements/element.types";
+import { canContain } from "@/features/elements/containment";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -337,9 +338,17 @@ function removeElementsFromSnapshot(
   return notices;
 }
 
+/** A component of the active diagram's scene, by id — for checks made before `set`. */
+function getActiveComponentById(state: AppState, id: string): Component | undefined {
+  const d = state.diagrams[state.activeDiagramId ?? ""];
+  if (!d) return undefined;
+  const scene = resolveActiveVersion(d);
+  return resolveComponent(d, scene, id);
+}
+
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
+  get: () => AppState,
 ) => ({
   addComponent: (
     type: ComponentType,
@@ -352,6 +361,10 @@ export const componentsSlice = (
     createOptions?: ElementCreateOptions,
   ): Component => {
     const id = generateId("el");
+    // A typed container refuses what it does not take: the node is created at
+    // the top level instead, as a paste or a generated graph would be.
+    const requestedParent = parentId ? getActiveComponentById(get(), parentId) : undefined;
+    if (requestedParent && !canContain(requestedParent.type, type)) parentId = null;
     const { component, resolvedPanelKind } = buildComponentForType(
       id,
       type,

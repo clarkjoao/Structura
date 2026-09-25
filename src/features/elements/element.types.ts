@@ -278,6 +278,22 @@ export interface ElementCanvasSlice {
   buildData: (comp: Component, ctx: NodeBuildContext) => Record<string, unknown>;
   buildStyle?: (comp: Component, ctx: NodeBuildContext) => CSSProperties | undefined;
 
+  /**
+   * The child types a typed container takes, like an api-group takes
+   * endpoints. Absent means the container takes anything, as a panel does.
+   * Enforced by the store on every path that can nest a node (`canContain`),
+   * so a paste or a generated graph cannot do what a drop is refused.
+   */
+  acceptsChildren?: readonly string[];
+
+  /**
+   * The container has a compact mode, switched by the component's optional
+   * `collapsed` flag (absent = expanded, never written as `false`). Compact,
+   * its children are hidden and the edges that reach them are drawn to the
+   * container instead — the data stays as it is (`isCompactContainer`).
+   */
+  collapsible?: boolean;
+
   /** React Flow behaviour overrides, same meaning as in `NodeTypeDescriptor`. */
   dragHandle?: string;
   draggable?: boolean;

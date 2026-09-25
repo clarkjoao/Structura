@@ -7,6 +7,8 @@ import {
   RotateCcw,
   Group,
   Maximize2,
+  ChevronsDownUp,
+  ChevronsUpDown,
   LayoutGrid,
   Link2Off,
 } from "lucide-react";
@@ -262,6 +264,8 @@ export function NodeQuickActionsBar({
   if (!component) return null;
 
   const hasOpacity = isPanelComponent(component);
+  const isCollapsible = getElement(component.type)?.canvas.collapsible === true;
+  const isCollapsed = (component as { collapsed?: boolean }).collapsed === true;
   const hasIcon = "customIconId" in component;
   // Show color picker only for components that support color
   const hasColor = supportsColor(component);
@@ -302,6 +306,27 @@ export function NodeQuickActionsBar({
                 onReset={handleColorReset}
               />
             </div>
+          )}
+
+          {/* Compact / expanded — only for collapsible typed containers */}
+          {isCollapsible && (
+            <button
+              type="button"
+              onClick={() =>
+                // Expanded is the default: stored as nothing, never `false`.
+                updateComponent(nodeId, { collapsed: isCollapsed ? undefined : true })
+              }
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
+              title={isCollapsed ? t("containers.expand") : t("containers.compact")}
+              aria-label={isCollapsed ? t("containers.expand") : t("containers.compact")}
+              aria-pressed={isCollapsed}
+            >
+              {isCollapsed ? (
+                <ChevronsUpDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronsDownUp className="h-3.5 w-3.5" />
+              )}
+            </button>
           )}
 
           {/* Opacity control — only for panel components */}

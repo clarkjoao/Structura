@@ -2507,5 +2507,10 @@
       "backstage": "Backstage",
       "support": "Support processes"
     }
+  },
+  "containers": {
+    "refusedChild": "{{container}} does not take {{child}}.",
+    "compact": "Compact",
+    "expand": "Expand"
   }
 }
