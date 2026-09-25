@@ -48,7 +48,9 @@ function pickColorGroup(component: Component | null): ColorPickerGroup {
   if (!component) return "vibrant";
   if (isNoteComponent(component)) return "note";
   if (isC4Component(component)) return "c4";
-  if (isPanelComponent(component)) return "panel";
+  if (isPanelComponent(component)) {
+    return component.panelKind === PanelKind.Swimlane ? "lane" : "panel";
+  }
   if (getElement(component.type)?.skin) return "flow";
   return "vibrant";
 }

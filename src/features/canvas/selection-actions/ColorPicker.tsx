@@ -8,12 +8,13 @@ import {
   NOTE_PRESETS,
   NOTE_PRESETS_DARK,
   FLOW_ACCENT_PRESETS,
+  LANE_PRESETS,
   getNotePresetPair,
   type ColorPreset,
 } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { cn } from "@/lib/utils";
 
-export type ColorPickerGroup = "vibrant" | "panel" | "c4" | "note" | "note-dark" | "flow";
+export type ColorPickerGroup = "vibrant" | "panel" | "c4" | "note" | "note-dark" | "flow" | "lane";
 
 interface ColorPickerProps {
   selectedColor?: string;
@@ -40,6 +41,8 @@ const presetsForGroup = (group: ColorPickerGroup): ColorPreset[] => {
       return NOTE_PRESETS_DARK;
     case "flow":
       return FLOW_ACCENT_PRESETS;
+    case "lane":
+      return LANE_PRESETS;
     default:
       return VIBRANT_PRESETS;
   }

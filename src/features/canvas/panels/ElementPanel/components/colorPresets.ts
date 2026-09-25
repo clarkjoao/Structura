@@ -110,6 +110,13 @@ export const FLOW_ACCENT_PRESETS: ColorPreset[] = [
 
 export const PANEL_PRESETS: ColorPreset[] = [...VIBRANT_PRESETS, ...NEUTRAL_PRESETS];
 
+/**
+ * A swimlane's accents: the flow presets first — theme tokens, the only lane
+ * colours its children inherit (see `laneAccentFor`) — then the panel colours
+ * lanes have always offered.
+ */
+export const LANE_PRESETS: ColorPreset[] = [...FLOW_ACCENT_PRESETS, ...PANEL_PRESETS];
+
 export const NOTE_PRESETS: ColorPreset[] = [
   { nameKey: "colors.ivory", color: "hsl(45 25% 97%)" },
   { nameKey: "colors.white", color: "hsl(0 0% 98%)" },

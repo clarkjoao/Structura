@@ -167,8 +167,15 @@ export interface ElementCreateOptions {
   serviceId?: string;
   /** Which end of a value stream an outside source is (`vsm-external`). */
   vsmRole?: VsmRole;
-  /** A named line drawn dashed from the start (the line of visibility). */
+  /**
+   * Drawn dashed from the start: the line of visibility, or a lane's outline
+   * (the physical-evidence lane).
+   */
   stroke?: NodeStrokeMode;
+  /** A swimlane's accent from a preset (a flow-preset theme token). */
+  laneAccent?: string;
+  /** i18n key of a preset swimlane's label. */
+  laneLabelKey?: string;
 }
 
 export interface ElementSize {

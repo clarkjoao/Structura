@@ -2499,6 +2499,13 @@
     },
     "fields": {
       "stroke": "Line"
+    },
+    "lanes": {
+      "evidence": "Physical evidence",
+      "customer": "Customer actions",
+      "onstage": "Onstage",
+      "backstage": "Backstage",
+      "support": "Support processes"
     }
   }
 }

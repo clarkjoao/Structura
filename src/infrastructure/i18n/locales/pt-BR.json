@@ -2499,6 +2499,13 @@
     },
     "fields": {
       "stroke": "Linha"
+    },
+    "lanes": {
+      "evidence": "Evidência física",
+      "customer": "Ações do cliente",
+      "onstage": "Palco",
+      "backstage": "Bastidores",
+      "support": "Suporte"
     }
   }
 }
