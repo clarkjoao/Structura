@@ -31,4 +31,6 @@ export const ELEMENT_SIZE_LIMITS: Readonly<Record<string, SizeLimits>> = {
   "k8s-container": { minWidth: 140, minHeight: 56 },
   "sfn-state-machine": { minWidth: 280, minHeight: 84 },
   "sfn-state": { minWidth: 160, minHeight: 48 },
+  "sfn-parallel": { minWidth: 200, minHeight: 120 },
+  "sfn-map": { minWidth: 200, minHeight: 120 },
 };

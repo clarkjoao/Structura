@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import {
+  isSfnMapComponent,
   isSfnStateComponent,
   isSfnStateMachineComponent,
   type Component,
@@ -10,7 +11,7 @@ import { SFN_SERVICES, sfnStateType } from "@/features/diagram/utils/sfn";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { DeployTextField as TextField } from "./DeployTextField";
-import { DEPLOY_LABEL_CLASS, text, whole } from "./deployFieldValues";
+import { DEPLOY_LABEL_CLASS, positive, text, whole } from "./deployFieldValues";
 
 const STATE_TYPES: readonly SfnStateType[] = [
   "Task",
@@ -131,6 +132,26 @@ export function SfnFieldsSection({
             onChange={(value) => onChange({ errorName: text(value) })}
           />
         )}
+      </>
+    );
+  }
+
+  if (isSfnMapComponent(component)) {
+    return (
+      <>
+        <TextField
+          id="sfn-items"
+          label={t("sfn.fields.itemsPath")}
+          value={component.itemsPath}
+          onChange={(value) => onChange({ itemsPath: text(value) })}
+        />
+        <TextField
+          id="sfn-max"
+          type="number"
+          label={t("sfn.fields.maxConcurrency")}
+          value={component.maxConcurrency}
+          onChange={(value) => onChange({ maxConcurrency: positive(value) })}
+        />
       </>
     );
   }

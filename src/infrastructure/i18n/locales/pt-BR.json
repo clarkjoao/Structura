@@ -1218,6 +1218,14 @@
     "sfn-state": {
       "label": "Estado",
       "description": "Um estado de Step Functions: Task (um serviço e sua ação), Choice, Wait, Pass, Succeed, Fail ou o início."
+    },
+    "sfn-parallel": {
+      "label": "Parallel",
+      "description": "Um estado Parallel: ramos de estados executados lado a lado dentro dele."
+    },
+    "sfn-map": {
+      "label": "Map",
+      "description": "Um estado Map: os estados do iterador rodam uma vez por item de ItemsPath, até uma concorrência."
     }
   },
   "flowchart": {
@@ -2649,7 +2657,9 @@
       "service": "Serviço",
       "action": "Ação",
       "waitSeconds": "Segundos",
-      "errorName": "Erro"
+      "errorName": "Erro",
+      "itemsPath": "ItemsPath",
+      "maxConcurrency": "Concorrência máxima"
     },
     "stateType": {
       "Task": "Task",

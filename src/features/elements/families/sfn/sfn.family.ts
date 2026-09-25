@@ -1,4 +1,5 @@
 import type { ElementDescriptor } from "../../element.types";
+import { sfnMapElement, sfnParallelElement } from "./sfn-group.element";
 import { sfnStateElement } from "./sfn-state.element";
 import { sfnStateMachineElement } from "./sfn-state-machine.element";
 
@@ -10,4 +11,6 @@ import { sfnStateMachineElement } from "./sfn-state-machine.element";
 export const sfnElements: readonly ElementDescriptor[] = [
   sfnStateMachineElement,
   sfnStateElement,
+  sfnParallelElement,
+  sfnMapElement,
 ];
