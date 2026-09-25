@@ -1,3 +1,4 @@
+import i18n from "@/infrastructure/i18n";
 import { describe, expect, it } from "vitest";
 import {
   computeDiagramFamilyMix,
@@ -70,7 +71,16 @@ describe("hierarchical element catalog (F8)", () => {
       `[perf] AFTER hierarchical catalog: types=${types.length} catalogChars=${catalog.length} catalogLines=${catalog.split("\n").length} promptChars=${prompt.length}`,
     );
     // BEFORE (F7 tip, pre-shrink): types=269 catalogChars=7237 catalogLines=120 promptChars=20381
-    expect(catalog.length).toBeLessThan(7237);
+    // The budget pins the F8 shrink on the vocabulary that existed then. A
+    // vocabulary registered since (the VSM family) is meant to reach the
+    // catalog — elements are derived, not curated — so its own section is
+    // measured apart rather than counted against the old budget.
+    const vsmHeading = `### ${i18n.t("elements.families.vsm.label", { lng: "en" })}`;
+    const start = catalog.indexOf(vsmHeading);
+    expect(start).toBeGreaterThan(-1);
+    const end = catalog.indexOf("\n### ", start + vsmHeading.length);
+    const withoutVsm = catalog.slice(0, start) + catalog.slice(end === -1 ? catalog.length : end);
+    expect(withoutVsm.length).toBeLessThan(7237);
     expect(catalog).not.toContain("CATEGORY:");
     expect(catalog).toContain("search_elements");
     expect(catalog).toContain("list_element_families");

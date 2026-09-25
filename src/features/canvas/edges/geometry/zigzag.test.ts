@@ -5,7 +5,7 @@ describe("zigzag edge", () => {
   it("runs from source to target with a zigzag a third of the way along", () => {
     const knots = getZigzagKnots({ x: 0, y: 0 }, { x: 200, y: 0 });
     expect(knots[0]).toEqual({ x: 0, y: 0 });
-    expect(knots.at(-1)).toEqual({ x: 200, y: 0 });
+    expect(knots[knots.length - 1]).toEqual({ x: 200, y: 0 });
     expect(knots).toHaveLength(6);
     // The two inner knots swing to opposite sides of the line, around the
     // third — clear of the label, which sits in the middle.
