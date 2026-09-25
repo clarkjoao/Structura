@@ -61,8 +61,9 @@ const portList = (value: string) => {
  * beside them. Nothing already there moves.
  */
 const POD_HEADER = 116;
-const POD_BODY = POD_HEADER + 68;
-const SLOT = { width: 180, height: 72, rowStep: 84, initStep: 172, mainX: 204 } as const;
+/** Under the init row: an init is as tall as any container (88), plus a gap. */
+const POD_BODY = POD_HEADER + 100;
+const SLOT = { width: 180, height: 88, rowStep: 100, initStep: 192, mainX: 204 } as const;
 
 function containerSlot(role: K8sContainerRole, index: number): { x: number; y: number } {
   if (role === "init") return { x: 12 + index * SLOT.initStep, y: POD_HEADER };
@@ -140,7 +141,7 @@ export function K8sFieldsSection({
       role === "main" ? {} : { podRole: role, ...(role === "init" ? { order: index + 1 } : {}) },
     );
     if (!added || added.parentId !== workloadId) return;
-    const width = Math.max(workload.width ?? 0, slot.x + (role === "init" ? 160 : SLOT.width) + 12);
+    const width = Math.max(workload.width ?? 0, slot.x + SLOT.width + 12);
     const height = Math.max(workload.height ?? 0, slot.y + SLOT.height + 12);
     if (width !== workload.width || height !== workload.height) {
       updateNodeLayout(workloadId, { x: workload.x, y: workload.y }, { width, height });

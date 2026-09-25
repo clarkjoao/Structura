@@ -22,7 +22,8 @@ import {
 } from "./k8s-structure.shared";
 
 const CONTAINER_W = 180;
-const CONTAINER_H = 72;
+/** Name, role and a row of chips. */
+const CONTAINER_H = 88;
 
 /** Teal, the system token: what rides alongside the main container. */
 export const K8S_SIDECAR_ACCENT = "hsl(var(--node-system))";
