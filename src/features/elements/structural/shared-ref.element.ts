@@ -8,6 +8,7 @@ import { COMPONENT_TYPE_SHARED_REF } from "@/features/diagram/model/component-ty
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { resolveShared } from "@/features/diagram/utils/shared";
 import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.constants";
+import { playbackStyle } from "../families/deploy/deploy.shared";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
 import { getElement } from "../element.registry";
 import { useResolvedComponents } from "@/features/diagram";
@@ -75,7 +76,9 @@ export const sharedRefElement: ElementDescriptor = {
         name: original?.name ?? comp.name,
         accent: original ? elementAccent(original) : "hsl(var(--muted-foreground))",
         dangling: !original,
-        isSelected: ctx.selectedNodeId === comp.id,
+        isSelected: ctx.isPlaying
+          ? ctx.flowHighlight.litNodeIds.has(comp.id)
+          : ctx.selectedNodeId === comp.id,
         incomingCount: clampSlots(counts.incoming),
         outgoingCount: clampSlots(counts.outgoing),
       };
@@ -83,7 +86,12 @@ export const sharedRefElement: ElementDescriptor = {
 
     buildStyle: (comp, ctx) => {
       const layout = ctx.resolvedNodeLayouts[comp.id];
-      return { width: layout?.width ?? REF_W, height: layout?.height ?? REF_H };
+      // Dimmed or lit with the reading like any card: it lights with its original.
+      return {
+        width: layout?.width ?? REF_W,
+        height: layout?.height ?? REF_H,
+        ...playbackStyle(comp, ctx),
+      };
     },
   },
 

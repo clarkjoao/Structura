@@ -119,7 +119,16 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const effectiveFlowHighlight = flowState.flowHighlight;
   // "Show the N edges" of a shared element: a view state, never saved.
   const revealedOriginals = useSharedRevealStore((state) => state.originals);
-  const sharedReveal = useMemo(() => ({ originals: revealedOriginals }), [revealedOriginals]);
+  // …and the edge a flow step is on, while it is being read (F5): hidden by a
+  // shared element, it is drawn for that step and hidden again after.
+  const activeConnId = effectiveFlowHighlight.activeConnId;
+  const sharedReveal = useMemo(
+    () => ({
+      originals: revealedOriginals,
+      ...(activeConnId ? { connections: new Set([activeConnId]) } : {}),
+    }),
+    [revealedOriginals, activeConnId],
+  );
 
   /*
    * What the canvas shows — the rule the viewer uses too (slice 5 of

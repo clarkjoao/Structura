@@ -68,9 +68,16 @@ export function projectReadDiagramView(
   catalog: ReaderCatalog = EMPTY_READER_CATALOG,
   reveal: SharedReveal = {},
 ): { nodes: Node[]; edges: Edge[]; view: ViewSnapshot } {
+  // The edge a step is on is drawn while it is read, even if a shared element hides it (F5).
+  const activeConnId = reading?.highlight.activeConnId;
   const view = resolveViewSnapshot(
     diagram,
-    { versionId: diagram.activeVersionId ?? null, reveal },
+    {
+      versionId: diagram.activeVersionId ?? null,
+      reveal: activeConnId
+        ? { ...reveal, connections: new Set([...(reveal.connections ?? []), activeConnId]) }
+        : reveal,
+    },
     resolveNodeDescriptor,
   );
   const ctx = buildReadNodeContext(
