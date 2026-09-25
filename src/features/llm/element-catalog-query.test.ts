@@ -72,12 +72,12 @@ describe("hierarchical element catalog (F8)", () => {
     );
     // BEFORE (F7 tip, pre-shrink): types=269 catalogChars=7237 catalogLines=120 promptChars=20381
     // The budget pins the F8 shrink on the vocabulary that existed then.
-    // Vocabularies registered since (VSM, deployment, Kubernetes structure)
+    // Vocabularies registered since (VSM, deployment, Kubernetes structure, Step Functions)
     // are meant to reach the catalog — elements are derived, not curated —
     // each under its own heading or block, so they are measured apart from
     // the old budget.
     let withoutVsm = catalog;
-    for (const familyId of ["vsm", "deploy"]) {
+    for (const familyId of ["vsm", "deploy", "aws-sfn"]) {
       const heading = `### ${i18n.t(`elements.families.${familyId}.label`, { lng: "en" })}`;
       const start = withoutVsm.indexOf(heading);
       if (start === -1) continue;

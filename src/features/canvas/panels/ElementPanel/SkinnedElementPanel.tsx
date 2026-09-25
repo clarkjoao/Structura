@@ -16,6 +16,7 @@ import { FlowAppearanceSection, PositionSection } from "./sections";
 import { VsmFieldsSection } from "./sections/VsmFieldsSection";
 import { DeployFieldsSection } from "./sections/DeployFieldsSection";
 import { K8sFieldsSection } from "./sections/K8sFieldsSection";
+import { SfnFieldsSection } from "./sections/SfnFieldsSection";
 import { ELEMENT_SIZE_LIMITS } from "@/features/canvas/nodes/elementSizeLimits";
 
 /**
@@ -107,6 +108,7 @@ export default function SkinnedElementPanel({
         <VsmFieldsSection component={component} onChange={update} />
         <DeployFieldsSection component={component} onChange={update} />
         <K8sFieldsSection component={component} onChange={update} />
+        <SfnFieldsSection component={component} onChange={update} />
         {descriptor?.skin && (
           <FlowAppearanceSection
             appearance={component as SkinParts}

@@ -1138,6 +1138,9 @@
       },
       "deploy": {
         "label": "Deployment"
+      },
+      "aws-sfn": {
+        "label": "Step Functions"
       }
     },
     "vsm-external": {
@@ -1207,6 +1210,14 @@
     "k8s-container": {
       "label": "Container",
       "description": "Um container do pod de um workload: o principal, um sidecar (proxy, logs, secrets, metrics) ou um init executado antes, em ordem."
+    },
+    "sfn-state-machine": {
+      "label": "State machine",
+      "description": "Uma state machine do AWS Step Functions, Standard ou Express; seus estados ficam dentro dela."
+    },
+    "sfn-state": {
+      "label": "Estado",
+      "description": "Um estado de Step Functions: Task (um serviço e sua ação), Choice, Wait, Pass, Succeed, Fail ou o início."
     }
   },
   "flowchart": {
@@ -2625,6 +2636,29 @@
       "main": "Container",
       "sidecar": "Sidecar",
       "init": "Container init"
+    }
+  },
+  "sfn": {
+    "stateMachine": "State machine",
+    "states_one": "{{count}} estado",
+    "states_other": "{{count}} estados",
+    "fields": {
+      "workflowType": "Tipo de workflow",
+      "xray": "Rastreamento X-Ray",
+      "stateType": "Tipo de estado",
+      "service": "Serviço",
+      "action": "Ação",
+      "waitSeconds": "Segundos",
+      "errorName": "Erro"
+    },
+    "stateType": {
+      "Task": "Task",
+      "Choice": "Choice",
+      "Wait": "Wait",
+      "Pass": "Pass",
+      "Succeed": "Succeed",
+      "Fail": "Fail",
+      "Start": "Início"
     }
   }
 }

@@ -16,6 +16,7 @@ import type {
   FlowNodeShape,
   K8sContainerRole,
   NodeStrokeMode,
+  SfnStateType,
   VsmRole,
 } from "@/features/diagram/model/component.types";
 import type { ExportNode } from "@/lib/export-core";
@@ -205,6 +206,8 @@ export interface ElementCreateOptions {
   podRole?: K8sContainerRole;
   /** A new init container's place in the run order. */
   order?: number;
+  /** What a new Step Functions state is; absent (Task) is not written. */
+  sfnStateType?: SfnStateType;
 }
 
 export interface ElementSize {
