@@ -249,6 +249,8 @@ export interface StencilNode extends BaseNode, ExportSkinColours {
   shapeStyle: string;
   /** The cell's text; defaults to the name. */
   label?: string;
+  /** Glyphs and chips drawn inside it, as in `ContainerNode`. */
+  representations?: ExportRepresentation[];
 }
 
 /**
@@ -266,6 +268,12 @@ export interface ExportRepresentation {
   height: number;
   /** Accent wash, 0–100. */
   fillOpacity?: number;
+  /**
+   * A draw.io stencil to draw it with instead of the plain chip — a
+   * `mxgraph.kubernetes.icon2` glyph, say — ending in `;`. Filled with the
+   * accent, stroked white, as draw.io's own palette draws them.
+   */
+  shapeStyle?: string;
 }
 
 /**

@@ -70,4 +70,47 @@ describe("container export", () => {
     const xml = xmlOf([container({ stacked: true, dashed: true })]);
     expect(xml).toMatch(/id="store"[^>]*style="[^"]*shadow=1;[^"]*dashed=1;/);
   });
+
+  it("draws a representation with a stencil as that glyph, accent-filled and white-stroked", () => {
+    const xml = xmlOf([
+      container({
+        representations: [
+          {
+            id: "store-icon",
+            label: "",
+            x: 8,
+            y: 6,
+            width: 20,
+            height: 20,
+            shapeStyle: "shape=mxgraph.kubernetes.icon2;prIcon=ns;",
+          },
+        ],
+      }),
+    ]);
+    expect(xml).toMatch(
+      /id="store-icon" value="" style="shape=mxgraph\.kubernetes\.icon2;prIcon=ns;aspect=fixed;[^"]*connectable=0;[^"]*fillColor=#1d67c9;strokeColor=#ffffff;" vertex="1" parent="store"/,
+    );
+  });
+
+  it("gives a stencil node its representations too, as its own cells", () => {
+    const stencil: ExportNode = {
+      kind: "stencil",
+      id: "svc",
+      parentId: null,
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 56,
+      name: "svc",
+      shapeStyle: "rounded=1;",
+      accentColor: "#64748b",
+      fill: "none",
+      dashed: false,
+      representations: [
+        { id: "svc-icon", label: "", x: 8, y: 14, width: 28, height: 28, shapeStyle: "shape=x;" },
+      ],
+    };
+    const xml = xmlOf([stencil]);
+    expect(xml).toMatch(/id="svc-icon"[^>]*style="shape=x;[^"]*"[^>]*parent="svc"/);
+  });
 });

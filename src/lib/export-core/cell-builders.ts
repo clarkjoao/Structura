@@ -1,5 +1,5 @@
 import { C4_LABEL_TEMPLATE, C4_META, CONFIG, FLOW_SHAPE_STYLES, THEME } from "./constants";
-import type { ExportNode, ExportSkinColours } from "./model";
+import type { ExportNode, ExportRepresentation, ExportSkinColours } from "./model";
 import { logger } from "@/lib/core/logger";
 import {
   buildApiGroupStyle,
@@ -251,18 +251,7 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
         `vertex="1"${node.compact ? ' collapsed="1"' : ""} parent="${escXml(parentId)}">` +
         geometry +
         `</mxCell>`;
-      const representations = (node.representations ?? [])
-        .map(
-          (rep) =>
-            `<mxCell id="${escXml(rep.id)}" value="${escXml(rep.label)}" ` +
-            `style="rounded=1;arcSize=20;absoluteArcSize=1;html=1;fontSize=10;fontFamily=monospace;` +
-            `connectable=0;movable=0;resizable=0;strokeColor=none;fillColor=${node.accentColor};` +
-            `fillOpacity=${rep.fillOpacity ?? 20};" vertex="1" parent="${escXml(node.id)}">` +
-            `<mxGeometry x="${rep.x}" y="${rep.y}" width="${rep.width}" height="${rep.height}" as="geometry"/>` +
-            `</mxCell>`,
-        )
-        .join("");
-      return cell + representations;
+      return cell + representationCells(node.id, node.representations, node.accentColor);
     }
 
     case "stencil": {
@@ -274,7 +263,8 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
         `<mxCell id="${escXml(node.id)}" value="${escXml(value)}" style="${style}" ` +
         `vertex="1" parent="${escXml(parentId)}">` +
         `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
-        `</mxCell>`
+        `</mxCell>` +
+        representationCells(node.id, node.representations, node.accentColor)
       );
     }
 
@@ -424,6 +414,33 @@ function flowColourStyle(node: Extract<ExportNode, { kind: "flowNode" }>): strin
  * outline at 30%, as on the canvas; solid fills with the accent and writes in
  * the contrast colour.
  */
+/**
+ * What a node shows of its data without it being a node: plain cells inside
+ * it that no edge can reach and that move with it.
+ */
+function representationCells(
+  parentId: string,
+  representations: readonly ExportRepresentation[] | undefined,
+  accent: string,
+): string {
+  return (representations ?? [])
+    .map((rep) => {
+      const style = rep.shapeStyle
+        ? `${rep.shapeStyle}aspect=fixed;html=1;connectable=0;movable=0;resizable=0;` +
+          `fillColor=${accent};strokeColor=#ffffff;`
+        : `rounded=1;arcSize=20;absoluteArcSize=1;html=1;fontSize=10;fontFamily=monospace;` +
+          `connectable=0;movable=0;resizable=0;strokeColor=none;fillColor=${accent};` +
+          `fillOpacity=${rep.fillOpacity ?? 20};`;
+      return (
+        `<mxCell id="${escXml(rep.id)}" value="${escXml(rep.label)}" ` +
+        `style="${style}" vertex="1" parent="${escXml(parentId)}">` +
+        `<mxGeometry x="${rep.x}" y="${rep.y}" width="${rep.width}" height="${rep.height}" as="geometry"/>` +
+        `</mxCell>`
+      );
+    })
+    .join("");
+}
+
 function skinColourStyle(parts: ExportSkinColours): string {
   const accent = parts.accentColor;
   const dashed = parts.dashed ? "dashed=1;" : "";
