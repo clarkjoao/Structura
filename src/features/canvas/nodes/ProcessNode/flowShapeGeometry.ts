@@ -136,6 +136,8 @@ export function flowShapePath(shape: FlowNodeShape, w: number, h: number): strin
     case "cylinder":
       return cylinderPath(w, h);
     case "circle":
+    case "start":
+    case "end":
       return ellipsePath(w, h);
     default: {
       const exhaustive: never = shape;
@@ -209,4 +211,15 @@ export const FLOW_SHAPE_DEFAULT_SIZE: Record<FlowNodeShape, { width: number; hei
   parallelogram: { width: 230, height: 64 },
   cylinder: { width: 150, height: 108 },
   circle: { width: 80, height: 80 },
+  start: { width: 56, height: 56 },
+  end: { width: 56, height: 56 },
 };
+
+/**
+ * The shape a stored value is drawn as. The old combined "start / end" circle
+ * is read as `start` — at render, never written back, so a legacy diagram
+ * keeps its data (and its checksum) until someone picks a shape.
+ */
+export function readFlowShape(shape: FlowNodeShape): FlowNodeShape {
+  return shape === "circle" ? "start" : shape;
+}

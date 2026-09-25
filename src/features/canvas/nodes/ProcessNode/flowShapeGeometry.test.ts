@@ -7,6 +7,7 @@ import {
   flowShapeAccentPath,
   flowShapeHandles,
   flowShapePath,
+  readFlowShape,
   type Point,
 } from "./flowShapeGeometry";
 
@@ -20,6 +21,8 @@ const SHAPES: FlowNodeShape[] = [
   "cylinder",
   "circle",
   "subroutine",
+  "start",
+  "end",
 ];
 
 const SIZES: Array<[number, number]> = [
@@ -148,5 +151,17 @@ describe("flowShapeAccentPath", () => {
 
   it("has no edge accent for a card shape", () => {
     expect(flowShapeAccentPath("rectangle", 220, 78)).toBeNull();
+  });
+});
+
+describe("readFlowShape", () => {
+  it("reads the legacy start / end circle as a start", () => {
+    expect(readFlowShape("circle")).toBe("start");
+  });
+
+  it("leaves every other shape as stored", () => {
+    for (const shape of ["rectangle", "diamond", "start", "end"] as const) {
+      expect(readFlowShape(shape)).toBe(shape);
+    }
   });
 });

@@ -276,6 +276,8 @@ describe("golden — flowchart shapes", () => {
     "parallelogram",
     "cylinder",
     "circle",
+    "start",
+    "end",
   ] as const;
 
   const flow = (

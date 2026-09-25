@@ -50,6 +50,8 @@ const SHAPE_ICONS: Record<FlowNodeShape, IconComponent | null> = {
   parallelogram: ArrowLeftRight,
   cylinder: null,
   circle: null,
+  start: null,
+  end: null,
 };
 
 export function FlowShapeIcon({

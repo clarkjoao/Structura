@@ -15,6 +15,7 @@ import {
   flowShapeAccentPath,
   flowShapeHandles,
   flowShapePath,
+  readFlowShape,
 } from "./flowShapeGeometry";
 import { BOTTOM_SOURCE_HANDLE_ID, TOP_TARGET_HANDLE_ID } from "../node-types/handle-spec";
 import { flowPalette, resolveFlowAppearance, type FlowPalette } from "./flowAppearance";
@@ -151,16 +152,81 @@ function TerminalBody({ shape, d, palette, isActive, h }: ShapeProps) {
   );
 }
 
+/**
+ * Start and end: a small circle whose outline is the whole message, as in
+ * BPMN — 2px for a start, 4px for an end — with a play or a stop glyph inside.
+ * The name is a caption under the circle, which is too small to hold it.
+ */
+function StartEndBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
+  const isEnd = shape === "end";
+  const strokeWidth = isEnd ? 4 : 2;
+  const r = Math.max(1, Math.min(w, h) / 2 - strokeWidth / 2);
+  const glyph = Math.max(8, Math.min(w, h) * 0.32);
+  return (
+    <>
+      <svg
+        className="absolute inset-0 h-full w-full overflow-visible drop-shadow-sm"
+        viewBox={`0 0 ${w} ${h}`}
+        aria-hidden
+      >
+        <ellipse
+          cx={w / 2}
+          cy={h / 2}
+          rx={w / 2 - strokeWidth / 2}
+          ry={h / 2 - strokeWidth / 2}
+          fill={palette.solid ? palette.accent : palette.tint}
+          stroke={palette.accentOutline}
+          strokeWidth={strokeWidth}
+          strokeDasharray={palette.dashArray}
+        />
+        {isEnd ? (
+          <rect
+            x={w / 2 - glyph / 2}
+            y={h / 2 - glyph / 2}
+            width={glyph}
+            height={glyph}
+            rx={2}
+            fill={palette.icon}
+          />
+        ) : (
+          <path
+            d={`M${w / 2 - glyph * 0.35} ${h / 2 - glyph / 2} L${w / 2 + glyph * 0.5} ${h / 2} L${
+              w / 2 - glyph * 0.35
+            } ${h / 2 + glyph / 2} Z`}
+            fill={palette.icon}
+            strokeLinejoin="round"
+          />
+        )}
+        {isActive && (
+          <circle
+            cx={w / 2}
+            cy={h / 2}
+            r={r + strokeWidth / 2 + 2}
+            fill="none"
+            stroke={PRIMARY}
+            strokeWidth={2}
+          />
+        )}
+      </svg>
+      <span
+        className="pointer-events-none absolute left-1/2 top-full mt-1.5 max-w-[160px] -translate-x-1/2 select-none truncate text-center text-xs font-semibold"
+        style={{ color: "hsl(var(--foreground))" }}
+      >
+        {d.name}
+      </span>
+    </>
+  );
+}
+
 /** How an SVG-drawn shape paints its body and outline. */
 function svgPaint(shape: FlowNodeShape, palette: FlowPalette, solid: boolean) {
-  // The decision and the start/end circle are outlined in the accent, over a
-  // tint; the rest keep the neutral outline and carry the accent on one edge.
-  const accentOutlined = shape === "diamond" || shape === "circle";
-  if (accentOutlined) {
+  // The decision is outlined in the accent, over a tint; the rest keep the
+  // neutral outline and carry the accent on one edge.
+  if (shape === "diamond") {
     return {
       fill: solid ? palette.accent : palette.tint,
       stroke: palette.accentOutline,
-      strokeWidth: shape === "circle" ? 2 : 1.5,
+      strokeWidth: 1.5,
     };
   }
   return { fill: palette.surface, stroke: palette.border, strokeWidth: 1.5 };
@@ -171,8 +237,6 @@ function contentInset(shape: FlowNodeShape, w: number): CSSProperties {
   switch (shape) {
     case "diamond":
       return { left: "20%", right: "20%", top: "18%", bottom: "18%" };
-    case "circle":
-      return { left: "14%", right: "14%", top: "14%", bottom: "14%" };
     case "hexagon": {
       const cut = Math.min(HEXAGON_CUT, w / 4);
       return { left: cut + 8, right: cut + 8, top: 6, bottom: 6 };
@@ -188,14 +252,14 @@ function contentInset(shape: FlowNodeShape, w: number): CSSProperties {
   }
 }
 
-/** Decision, preparation, input/output, data store, start/end: drawn from the geometry. */
+/** Decision, preparation, input/output, data store: drawn from the geometry. */
 function SvgShapeBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
   const { solid } = palette;
   const outline = flowShapePath(shape, w, h);
   const accentEdge = flowShapeAccentPath(shape, w, h);
   const paint = svgPaint(shape, palette, solid);
   const cap = shape === "cylinder" ? cylinderTopCap(w, h) : null;
-  const centred = shape === "diamond" || shape === "circle" || shape === "cylinder";
+  const centred = shape === "diamond" || shape === "cylinder";
 
   return (
     <>
@@ -251,11 +315,7 @@ function SvgShapeBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
           </>
         ) : centred ? (
           <>
-            <Title
-              name={d.name}
-              color={palette.title}
-              className={shape === "circle" ? "text-xs" : "text-sm"}
-            />
+            <Title name={d.name} color={palette.title} />
             <Chip text={d.technology} palette={palette} />
           </>
         ) : (
@@ -328,6 +388,7 @@ const ProcessNode = memo(
     const isHighlighted = highlightedNodeIds.has(d.elementId);
     const isActive = !!(isSelected || isHighlighted);
 
+    const shape = readFlowShape(d.flowShape);
     // Measured by React Flow; the declared default covers the first frame.
     const fallback = FLOW_SHAPE_DEFAULT_SIZE[d.flowShape];
     const w = width || fallback.width;
@@ -336,7 +397,7 @@ const ProcessNode = memo(
     const appearance = resolveFlowAppearance(d);
     const onAccent = useOnAccentColor(appearance.accent, appearance.fill === "solid");
     const palette = flowPalette(appearance, onAccent);
-    const shapeProps: ShapeProps = { shape: d.flowShape, d, palette, isActive, w, h };
+    const shapeProps: ShapeProps = { shape, d, palette, isActive, w, h };
 
     return (
       <>
@@ -344,15 +405,17 @@ const ProcessNode = memo(
           minWidth={60}
           minHeight={40}
           isVisible={isSelected}
-          keepAspectRatio={d.flowShape === "circle"}
+          keepAspectRatio={shape === "start" || shape === "end"}
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
         />
-        <FlowHandles shape={d.flowShape} w={w} h={h} />
-        <div className="relative h-full w-full">
-          {isCardShape(d.flowShape) ? (
+        <FlowHandles shape={shape} w={w} h={h} />
+        <div className="relative h-full w-full" data-flow-shape={shape}>
+          {isCardShape(shape) ? (
             <CardShapeBody {...shapeProps} />
-          ) : d.flowShape === "stadium" ? (
+          ) : shape === "start" || shape === "end" ? (
+            <StartEndBody {...shapeProps} />
+          ) : shape === "stadium" ? (
             <TerminalBody {...shapeProps} />
           ) : (
             <SvgShapeBody {...shapeProps} />

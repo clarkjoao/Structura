@@ -238,8 +238,10 @@ export type FlowNodeShape =
   | "hexagon" // Mermaid: {{text}}
   | "parallelogram" // Mermaid: [/text/]
   | "cylinder" // Mermaid: [(text)]
-  | "circle" // Mermaid: ((text))
-  | "subroutine"; // Mermaid: [[text]]
+  | "circle" // Mermaid: ((text)) — legacy "start / end", read as `start`
+  | "subroutine" // Mermaid: [[text]]
+  | "start"
+  | "end";
 
 /** How a shape's accent colours its body. Absent means `"none"`. */
 export type NodeFillMode = "none" | "soft" | "solid";

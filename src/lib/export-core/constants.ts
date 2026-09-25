@@ -51,8 +51,12 @@ export const FLOW_SHAPE_STYLES: Record<string, string> = {
   hexagon: "shape=hexagon;perimeter=hexagonPerimeter2;",
   parallelogram: "shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;",
   cylinder: "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=8;",
-  circle: "ellipse;",
+  circle: "ellipse;aspect=fixed;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;",
   subroutine: "shape=process;whiteSpace=wrap;backgroundOutline=1;",
+  // Start and end are told apart by the outline alone, as in BPMN: thin for
+  // a start, thick for an end. The legacy combined circle exports as a start.
+  start: "ellipse;aspect=fixed;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;",
+  end: "ellipse;aspect=fixed;strokeWidth=4;verticalLabelPosition=bottom;verticalAlign=top;",
 };
 
 export const THEME = {

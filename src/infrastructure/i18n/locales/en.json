@@ -1135,6 +1135,8 @@
   },
   "flowchart": {
     "shapes": {
+      "start": "Start",
+      "end": "End",
       "rectangle": "Process",
       "rounded": "Rounded Process",
       "stadium": "Terminal",

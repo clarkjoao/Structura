@@ -183,7 +183,9 @@ export type ExportFlowShape =
   | "parallelogram"
   | "cylinder"
   | "circle"
-  | "subroutine";
+  | "subroutine"
+  | "start"
+  | "end";
 
 /**
  * A flowchart box.

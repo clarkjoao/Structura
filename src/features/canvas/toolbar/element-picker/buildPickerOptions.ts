@@ -1,5 +1,15 @@
 import type { LucideIcon } from "lucide-react";
-import { Circle, Database, Diamond, GitBranch, Hexagon, Square, SquareStack } from "lucide-react";
+import {
+  Circle,
+  CircleStop,
+  Database,
+  Diamond,
+  GitBranch,
+  Hexagon,
+  Play,
+  Square,
+  SquareStack,
+} from "lucide-react";
 import { type ComponentType, type FlowNodeShape } from "@/features/diagram";
 import { paletteEntriesForCategory } from "@/features/elements/element.palette";
 import type { CanvasPickerOption } from "./types";
@@ -34,8 +44,9 @@ export function buildFlowchartPickerOptions(t: (key: string) => string): CanvasP
     { shape: "hexagon", labelKey: "flowchart.shapes.hexagon", icon: Hexagon },
     { shape: "parallelogram", labelKey: "flowchart.shapes.parallelogram", icon: GitBranch },
     { shape: "cylinder", labelKey: "flowchart.shapes.cylinder", icon: Database },
-    { shape: "circle", labelKey: "flowchart.shapes.circle", icon: Circle },
     { shape: "subroutine", labelKey: "flowchart.shapes.subroutine", icon: SquareStack },
+    { shape: "start", labelKey: "flowchart.shapes.start", icon: Play },
+    { shape: "end", labelKey: "flowchart.shapes.end", icon: CircleStop },
   ];
 
   return shapes.map(({ shape, labelKey, icon }) => ({
