@@ -320,6 +320,10 @@ describe("deleting the machine sews the flow", () => {
     const notify = s.addComponent("container", "Notificador", null, { x: 900, y: 0 });
     const components = () => store.getState().diagrams[created.id].snapshot.components;
     expect(components()[stock.id]).toMatchObject({ parentId: sm.id, stateType: "Choice" });
+    // Created at its type's size, not a Task's card (seen on the canvas).
+    const layouts = store.getState().diagrams[created.id].nodeLayouts;
+    expect(layouts[stock.id]).toMatchObject({ width: 180, height: 112 });
+    expect(layouts[validate.id]).toMatchObject({ width: 220, height: 64 });
     expect(Object.keys(components()[validate.id]).sort()).toEqual(
       ["description", "id", "name", "parentId", "type"].sort(),
     );

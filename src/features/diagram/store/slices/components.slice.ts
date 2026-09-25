@@ -209,13 +209,17 @@ function buildLayoutForComponent(
   resolvedPanelKind: PanelKind | undefined,
   resolvedPosition: { x: number; y: number },
   flowShape?: FlowNodeShape,
+  createOptions: ElementCreateOptions = {},
 ): NodeLayout {
   const { x, y } = resolvedPosition;
   // Decision 3: for a registered element the descriptor's defaultSize governs,
   // instead of a literal repeated here.
   const registered = getElement(type);
   if (registered) {
+    // Everything the element was created with sizes it — a Step Functions
+    // Choice is not a Task's card.
     const { width, height } = elementDefaultSize(registered, {
+      ...createOptions,
       panelKind: resolvedPanelKind,
       flowShape,
     });
@@ -419,6 +423,7 @@ export const componentsSlice = (
         resolvedPanelKind,
         resolvedPosition,
         flowShape,
+        createOptions,
       );
       writeComponentAndLayout(d, scene, component, layout);
 
