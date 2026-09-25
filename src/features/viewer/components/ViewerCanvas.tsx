@@ -1,3 +1,4 @@
+import { SharedLayer } from "@/features/canvas/shared/SharedLayer";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
@@ -488,6 +489,7 @@ const ViewerCanvasContent = ({
             onPaneClick={handlePaneClick}
           >
             <DiagramControls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+            <SharedLayer components={view.components} connections={view.connections} />
           </DiagramSurface>
         </HandleHighlightProvider>
 

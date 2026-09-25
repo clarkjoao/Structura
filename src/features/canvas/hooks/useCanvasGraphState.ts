@@ -12,6 +12,8 @@ import { useCanvasNodes } from "../nodes/useCanvasNodes";
 import { resolveNodeDescriptor } from "../nodes/node-types";
 import { EMPTY_VIEW_SNAPSHOT, resolveViewSnapshot } from "../core/resolveViewSnapshot";
 import { remapConnectionsToVisible } from "../core/compactView";
+import { hideSharedEdges } from "@/features/diagram/utils/shared";
+import { useSharedRevealStore } from "../shared/useSharedRevealStore";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
 
@@ -115,6 +117,9 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   } = nodeSelectionState;
 
   const effectiveFlowHighlight = flowState.flowHighlight;
+  // "Show the N edges" of a shared element: a view state, never saved.
+  const revealedOriginals = useSharedRevealStore((state) => state.originals);
+  const sharedReveal = useMemo(() => ({ originals: revealedOriginals }), [revealedOriginals]);
 
   /*
    * What the canvas shows — the rule the viewer uses too (slice 5 of
@@ -134,6 +139,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
             {
               versionId: diagram.activeVersionId ?? null,
               compareVersionId: diagram.compareVersionId ?? null,
+              reveal: sharedReveal,
             },
             resolveNodeDescriptor,
           )
@@ -149,6 +155,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
       resolvedComponentsRef,
       resolvedNodeLayoutsRef,
       resolvedConnectionsRef,
+      sharedReveal,
     ],
   );
 
@@ -157,12 +164,18 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const drawnConnections = useMemo(
     () =>
       remapConnectionsToVisible(
-        visibleConnections,
+        hideSharedEdges(visibleConnections, resolved?.components ?? {}, sharedReveal),
         resolved?.components ?? {},
         view.compactContainerIds,
         view.compactTabIds,
       ),
-    [visibleConnections, resolved?.components, view.compactContainerIds, view.compactTabIds],
+    [
+      visibleConnections,
+      resolved?.components,
+      view.compactContainerIds,
+      view.compactTabIds,
+      sharedReveal,
+    ],
   );
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =

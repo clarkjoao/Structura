@@ -31,6 +31,8 @@ import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveD
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
+import { SharedModeControl } from "./SharedModeControl";
+import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 
 interface NodeQuickActionsBarProps {
@@ -306,6 +308,14 @@ export function NodeQuickActionsBar({
                 onReset={handleColorReset}
               />
             </div>
+          )}
+
+          {/* How the edges into it are drawn when many things use it */}
+          {!isSharedRefComponent(component) && (
+            <SharedModeControl
+              component={component}
+              onChange={(patch) => updateComponent(nodeId, patch)}
+            />
           )}
 
           {/* Compact / expanded — only for collapsible typed containers */}

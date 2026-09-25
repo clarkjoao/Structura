@@ -13,6 +13,7 @@ import {
   type ResolvedSnapshot,
 } from "@/features/diagram/utils/snapshot-cache";
 import type { NodeTypeDescriptor } from "../nodes/node-types/types";
+import { hideSharedEdges, type SharedReveal } from "@/features/diagram/utils/shared";
 import { remapConnectionsToVisible } from "./compactView";
 
 /*
@@ -41,6 +42,11 @@ export type DescribeNode = (component: Component) => ViewNodeDescriptor;
 export interface ViewSnapshotOptions {
   versionId: string | null;
   compareVersionId?: string | null;
+  /**
+   * Edges a shared element hides that are being shown anyway: its "show the
+   * N edges", or the one a flow step is on (F5). A view state, never saved.
+   */
+  reveal?: SharedReveal;
 }
 
 /** One placed component, as the canvas shows it. */
@@ -359,8 +365,14 @@ export function resolveViewSnapshot(
     return { component, layout, ...view, ...(tabIndex !== undefined ? { tabIndex } : {}) };
   });
 
+  // A badge-mode element's incoming edges are not drawn (the model keeps
+  // them); then ends hidden in a compact container are drawn on it.
   const connections = remapConnectionsToVisible(
-    placedConnections(resolved.connections, resolved.nodeLayouts),
+    hideSharedEdges(
+      placedConnections(resolved.connections, resolved.nodeLayouts),
+      resolved.components,
+      options.reveal,
+    ),
     resolved.components,
     compactContainerIds,
     compactTabIds,

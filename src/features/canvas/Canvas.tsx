@@ -1,3 +1,4 @@
+import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -425,6 +426,15 @@ const Canvas = (props: CanvasProps = {}) => {
               fitView={!hasSavedViewport(initialViewport)}
               onMoveEnd={eventHandlers.onMoveEnd}
             >
+              <SharedLayer
+                components={resolvedSnapshot.components}
+                connections={resolvedSnapshot.connections}
+                onPick={(originalId) => {
+                  // A badge stands for its original: picking it is picking the original.
+                  const node = nodes.find((candidate) => candidate.id === originalId);
+                  if (node) eventHandlers.onNodeClick?.({} as never, node);
+                }}
+              />
               <PendingNodeToolbars
                 pendingNodeIds={pendingNodeIds}
                 pendingPreviews={pendingPreviews}

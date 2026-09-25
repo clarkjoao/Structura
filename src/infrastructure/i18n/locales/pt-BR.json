@@ -2675,5 +2675,19 @@
       "Fail": "Fail",
       "Start": "Início"
     }
+  },
+  "shared": {
+    "chip": "compartilhado",
+    "uses_one": "{{count}} uso",
+    "uses_other": "{{count}} usos",
+    "usedBy_one": "Usado por {{count}}",
+    "usedBy_other": "Usado por {{count}}",
+    "goToOriginal": "Ir para o original",
+    "mode": {
+      "label": "Compartilhado",
+      "edges": "Arestas",
+      "badge": "Selos",
+      "ref": "Referências"
+    }
   }
 }

@@ -2675,5 +2675,19 @@
       "Fail": "Fail",
       "Start": "Start"
     }
+  },
+  "shared": {
+    "chip": "shared",
+    "uses_one": "{{count}} use",
+    "uses_other": "{{count}} uses",
+    "usedBy_one": "Used by {{count}}",
+    "usedBy_other": "Used by {{count}}",
+    "goToOriginal": "Go to the original",
+    "mode": {
+      "label": "Shared",
+      "edges": "Edges",
+      "badge": "Badges",
+      "ref": "References"
+    }
   }
 }
