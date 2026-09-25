@@ -261,7 +261,16 @@ const ElementPickerModal = memo(function ElementPickerModal({
     );
     const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
     const name = getDefaultNameForNewComponent(entry.type, entry.label, panelDefaultName);
-    const comp = addComponent(entry.type, name, null, getInsertPos(), serviceId, panelKind);
+    const comp = addComponent(
+      entry.type,
+      name,
+      null,
+      getInsertPos(),
+      serviceId,
+      panelKind,
+      entry.createOptions.flowShape,
+      entry.createOptions,
+    );
     onInsert?.(comp.id);
     onClose();
   };

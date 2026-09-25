@@ -27,6 +27,7 @@ export type ComponentType =
   | "json-viewer"
   | "process-node"
   | "external-element"
+  | VsmComponentType
   | AwsCategoryId
   | GcpCategoryId
   | AzureCategoryId
@@ -279,6 +280,28 @@ export interface ProcessNodeComponent extends BaseComponent {
   stroke?: NodeStrokeMode;
 }
 
+/** The three colour parts, for elements that wear the flow skin (flow, VSM). */
+export interface SkinParts {
+  /** Accent; absent means the element's default, resolved at render. */
+  customColor?: string;
+  /** Absent means `"none"`. */
+  fill?: NodeFillMode;
+  /** Absent means `"solid"`. */
+  stroke?: NodeStrokeMode;
+}
+
+/** The Value Stream Mapping vocabulary (the `vsm` family). */
+export type VsmComponentType = "vsm-external";
+
+/** Which side of the stream an outside source sits on. Absent means supplier. */
+export type VsmRole = "supplier" | "customer";
+
+/** A supplier or a customer: the factory icon at either end of the stream. */
+export interface VsmExternalComponent extends BaseComponent, SkinParts {
+  type: "vsm-external";
+  role?: VsmRole;
+}
+
 export interface ExternalElementComponent extends BaseComponent {
   type: "external-element";
   /** Diagram this external element represents. Distinct from
@@ -299,6 +322,7 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | VsmExternalComponent
   | C4Component
   | PanelComponent
   | NoteComponent
@@ -332,7 +356,8 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<JsonViewerComponent, "id">> &
   Partial<Omit<SvgComponent, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
-  Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<ExternalElementComponent, "id">> &
+  Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
@@ -352,5 +377,6 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

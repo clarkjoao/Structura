@@ -23,6 +23,7 @@ import {
   getElement,
   isRegisteredElementType,
 } from "@/features/elements/element.registry";
+import type { ElementCreateOptions } from "@/features/elements/element.types";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -112,6 +113,7 @@ export function buildComponentForType(
   panelKind: PanelKind | undefined,
   cloudServiceId: string | undefined,
   flowShape?: FlowNodeShape,
+  createOptions: ElementCreateOptions = {},
 ): { component: Component; resolvedPanelKind: PanelKind | undefined } {
   const base = { id, name, description: "", parentId };
 
@@ -125,6 +127,7 @@ export function buildComponentForType(
       // Descriptors read it as `ElementCreateOptions.serviceId` → attachService
       // writes `cloudServiceId` on the component.
       component: descriptor.model.createComponent(base, {
+        ...createOptions,
         panelKind,
         flowShape,
         serviceId: cloudServiceId,
@@ -346,6 +349,7 @@ export const componentsSlice = (
     cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: FlowNodeShape,
+    createOptions?: ElementCreateOptions,
   ): Component => {
     const id = generateId("el");
     const { component, resolvedPanelKind } = buildComponentForType(
@@ -356,6 +360,7 @@ export const componentsSlice = (
       panelKind,
       cloudServiceId,
       flowShape,
+      createOptions,
     );
 
     set((state) => {

@@ -22,6 +22,7 @@ import type {
   JsonViewerComponent,
   ProcessNodeComponent,
   ExternalElementComponent,
+  VsmExternalComponent,
   PluginTypedComponent,
 } from "./component.types";
 import {
@@ -37,6 +38,7 @@ import {
   isJsonViewerType,
   isProcessNodeType,
   isExternalElementType,
+  isVsmExternalType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -82,6 +84,9 @@ export const isFlowNodeComponent = (c: Component): c is ProcessNodeComponent =>
 
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
   isExternalElementType(c.type);
+
+export const isVsmExternalComponent = (c: Component): c is VsmExternalComponent =>
+  isVsmExternalType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);

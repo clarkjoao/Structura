@@ -1125,12 +1125,19 @@
       }
     },
     "families": {
+      "vsm": {
+        "label": "Value stream map"
+      },
       "structural": {
         "label": "Structural & Canvas"
       },
       "c4": {
         "label": "C4 Model"
       }
+    },
+    "vsm-external": {
+      "label": "Supplier / customer",
+      "description": "An outside source at either end of a value stream: the supplier that feeds it or the customer it serves."
     }
   },
   "flowchart": {
@@ -2415,5 +2422,14 @@
     "untitled": "Untitled Walkthrough",
     "untitledPlaceholder": "Untitled Walkthrough",
     "upNext": "Up next:"
+  },
+  "vsm": {
+    "role": {
+      "supplier": "Supplier",
+      "customer": "Customer"
+    },
+    "fields": {
+      "role": "Role"
+    }
   }
 }

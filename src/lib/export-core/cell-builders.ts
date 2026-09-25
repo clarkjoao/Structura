@@ -1,5 +1,5 @@
 import { C4_LABEL_TEMPLATE, C4_META, CONFIG, FLOW_SHAPE_STYLES, THEME } from "./constants";
-import type { ExportNode } from "./model";
+import type { ExportNode, ExportSkinColours } from "./model";
 import { logger } from "@/lib/core/logger";
 import {
   buildApiGroupStyle,
@@ -230,6 +230,19 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       );
     }
 
+    case "stencil": {
+      const w = width || 120;
+      const h = height || 80;
+      const style = `${node.shapeStyle}whiteSpace=wrap;html=1;fontSize=11;` + skinColourStyle(node);
+      const value = node.label ?? node.name;
+      return (
+        `<mxCell id="${escXml(node.id)}" value="${escXml(value)}" style="${style}" ` +
+        `vertex="1" parent="${escXml(parentId)}">` +
+        `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
+        `</mxCell>`
+      );
+    }
+
     case "flowNode": {
       const w = width || 160;
       const h = height || 60;
@@ -362,21 +375,26 @@ function buildPassthroughCell(
   );
 }
 
-/**
- * The colour parts of a flow node as mxGraph style. draw.io cannot draw the
- * canvas's 3px accent bar, so the accent goes where it can show: the outline.
- * Soft is the accent at 8% (`fillOpacity`) with the outline at 30%, as on the
- * canvas; solid fills with the accent and writes in the contrast colour.
- */
 function flowColourStyle(node: Extract<ExportNode, { kind: "flowNode" }>): string {
-  const accent = node.accentColor;
   // An annotation is a bracket and text: no body to fill, and the bracket is
   // drawn in the neutral colour whatever the accent.
   if (node.shape === "annotation") return "fillColor=none;strokeColor=#64748b;strokeWidth=1.5;";
-  const dashed = node.dashed ? "dashed=1;" : "";
-  switch (node.fill) {
+  return skinColourStyle(node);
+}
+
+/**
+ * The flow skin's colour parts as mxGraph style, for flow nodes and stencils.
+ * draw.io cannot draw the canvas's 3px accent bar, so the accent goes where it
+ * can show: the outline. Soft is the accent at 8% (`fillOpacity`) with the
+ * outline at 30%, as on the canvas; solid fills with the accent and writes in
+ * the contrast colour.
+ */
+function skinColourStyle(parts: ExportSkinColours): string {
+  const accent = parts.accentColor;
+  const dashed = parts.dashed ? "dashed=1;" : "";
+  switch (parts.fill) {
     case "solid":
-      return `fillColor=${accent};strokeColor=${accent};fontColor=${node.fontColor ?? "#000000"};${dashed}`;
+      return `fillColor=${accent};strokeColor=${accent};fontColor=${parts.fontColor ?? "#000000"};${dashed}`;
     case "soft":
       return `fillColor=${accent};fillOpacity=8;strokeColor=${accent};strokeOpacity=30;${dashed}`;
     default:

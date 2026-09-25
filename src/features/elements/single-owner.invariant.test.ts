@@ -39,6 +39,7 @@ const FIXED_REGISTERED_IDS = [
   "panel",
   "process-node",
   "external-element",
+  "vsm-external",
   "svg",
   "unknown",
 ] as const;

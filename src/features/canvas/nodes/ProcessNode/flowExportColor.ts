@@ -3,7 +3,11 @@ import {
   parseCssColorToRgb,
   rgbToHex,
 } from "@/features/diagram/utils/labelContrast";
-import { resolveFlowAppearance, type FlowAppearanceInput } from "./flowAppearance";
+import {
+  FLOW_DEFAULT_ACCENT,
+  resolveFlowAppearance,
+  type FlowAppearanceInput,
+} from "./flowAppearance";
 
 /**
  * The light theme's value for each token an accent preset can name, as in
@@ -36,15 +40,18 @@ export function exportColorHex(color: string): string | null {
   return rgb ? rgbToHex(rgb) : null;
 }
 
-/** The colour parts of a flow node, resolved for an export. */
-export function flowExportColours(input: FlowAppearanceInput): {
+/** The colour parts of a skinned node, resolved for an export. */
+export function flowExportColours(
+  input: FlowAppearanceInput,
+  defaultAccent: string = FLOW_DEFAULT_ACCENT,
+): {
   accentColor: string;
   fill: "none" | "soft" | "solid";
   dashed: boolean;
   fontColor?: string;
 } {
-  const appearance = resolveFlowAppearance(input);
-  const fallback = exportColorHex(resolveFlowAppearance({}).accent)!;
+  const appearance = resolveFlowAppearance(input, defaultAccent);
+  const fallback = exportColorHex(FLOW_DEFAULT_ACCENT)!;
   const accentColor = exportColorHex(appearance.accent) ?? fallback;
   return {
     accentColor,

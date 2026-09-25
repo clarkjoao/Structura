@@ -24,6 +24,12 @@ export const COMPONENT_TYPE_FLOW_NODE = "process-node";
 
 export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
+export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
+
+export function isVsmExternalType(type: string): type is "vsm-external" {
+  return type === COMPONENT_TYPE_VSM_EXTERNAL;
+}
+
 /** Legacy type strings; both are migrated to "process-node" by
  * `migrateProcessNodeTypeToProcessNode` in `store/persist.config.ts`. */
 const LEGACY_FLOW_NODE_TYPE = "flow-node";

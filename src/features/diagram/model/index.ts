@@ -41,6 +41,10 @@ export type {
   FlowNodeShape,
   NodeFillMode,
   NodeStrokeMode,
+  SkinParts,
+  VsmComponentType,
+  VsmRole,
+  VsmExternalComponent,
   EndpointHandler,
   HttpMethod,
 } from "./component.types";
@@ -141,6 +145,8 @@ export {
   COMPONENT_TYPE_PROCESS_NODE,
   COMPONENT_TYPE_EXTERNAL_ELEMENT,
   isExternalElementType,
+  COMPONENT_TYPE_VSM_EXTERNAL,
+  isVsmExternalType,
   isPanelType,
   isNoteType,
   isC4Type,
@@ -186,5 +192,6 @@ export {
   isFlowNodeComponent,
   isProcessNodeComponent,
   isExternalElementComponent,
+  isVsmExternalComponent,
   isPluginTypedComponent,
 } from "./component.guards";

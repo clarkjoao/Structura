@@ -350,3 +350,33 @@ describe("golden — flowchart shapes", () => {
     expect(xml).toMatch(/id="down"[^>]*>.*?entryX="0\.5" entryY="0"/s);
   });
 });
+
+/**
+ * One instance of every Value Stream Mapping element, exported through the
+ * generic stencil kind onto draw.io's own `mxgraph.lean_mapping.*` shapes.
+ */
+describe("golden — value stream map", () => {
+  const vsm = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const components: Record<string, Component> = {
+    supplier: vsm("supplier", { type: "vsm-external" }),
+    customer: vsm("customer", {
+      type: "vsm-external",
+      role: "customer",
+      customColor: "hsl(var(--node-system))",
+      fill: "soft",
+    }),
+  };
+
+  const ids = Object.keys(components);
+  const layouts: Record<string, NodeLayout> = Object.fromEntries(
+    ids.map((id, index) => [id, { elementId: id, x: index * 260, y: 0, width: 200, height: 100 }]),
+  );
+
+  it("freezes every VSM element", () => {
+    const xml = exportDrawio(diagram("VSM", components, {}, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toContain("shape=mxgraph.lean_mapping.outside_sources;");
+  });
+});

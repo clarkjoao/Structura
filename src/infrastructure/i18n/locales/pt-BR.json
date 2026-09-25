@@ -1125,12 +1125,19 @@
       }
     },
     "families": {
+      "vsm": {
+        "label": "Mapa de fluxo de valor"
+      },
       "structural": {
         "label": "Estruturais e Canvas"
       },
       "c4": {
         "label": "Modelo C4"
       }
+    },
+    "vsm-external": {
+      "label": "Fornecedor / cliente",
+      "description": "Uma fonte externa numa das pontas do fluxo de valor: o fornecedor que o alimenta ou o cliente que ele atende."
     }
   },
   "flowchart": {
@@ -2415,5 +2422,14 @@
     "untitled": "Workflow sem título",
     "untitledPlaceholder": "Workflow sem título",
     "upNext": "A seguir:"
+  },
+  "vsm": {
+    "role": {
+      "supplier": "Fornecedor",
+      "customer": "Cliente"
+    },
+    "fields": {
+      "role": "Papel"
+    }
   }
 }

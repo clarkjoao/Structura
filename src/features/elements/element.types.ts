@@ -11,7 +11,7 @@ import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { PanelKind } from "@/features/diagram/enums";
-import type { FlowNodeShape } from "@/features/diagram/model/component.types";
+import type { FlowNodeShape, VsmRole } from "@/features/diagram/model/component.types";
 import type { ExportNode } from "@/lib/export-core";
 
 /**
@@ -44,6 +44,7 @@ export type RegisteredElementTypeId =
   | "panel"
   | "process-node"
   | "external-element"
+  | "vsm-external"
   | "svg"
   | "unknown"
   | "gcp-compute"
@@ -153,6 +154,8 @@ export interface ElementCreateOptions {
   panelKind?: PanelKind;
   flowShape?: FlowNodeShape;
   serviceId?: string;
+  /** Which end of a value stream an outside source is (`vsm-external`). */
+  vsmRole?: VsmRole;
 }
 
 export interface ElementSize {
