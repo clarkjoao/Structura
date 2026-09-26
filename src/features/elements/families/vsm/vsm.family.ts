@@ -1,0 +1,25 @@
+import type { ElementDescriptor } from "../../element.types";
+import { vsmExternalElement } from "./vsm-external.element";
+import { vsmTimelineElement } from "./vsm-timeline.element";
+import { vsmKaizenElement } from "./vsm-kaizen.element";
+import { vsmPushElement } from "./vsm-push.element";
+import { vsmSupermarketElement } from "./vsm-supermarket.element";
+import { vsmInventoryElement } from "./vsm-inventory.element";
+import { vsmProcessElement } from "./vsm-process.element";
+
+/**
+ * Value Stream Mapping: the lean vocabulary, wearing the flow family's skin.
+ *
+ * Its own family (a real set of categories, like Kubernetes in decision 11)
+ * rather than more flowchart shapes: each element carries its own data — a
+ * process's metrics, an inventory's quantity, a timeline's segments.
+ */
+export const vsmElements: readonly ElementDescriptor[] = [
+  vsmExternalElement,
+  vsmProcessElement,
+  vsmInventoryElement,
+  vsmSupermarketElement,
+  vsmPushElement,
+  vsmKaizenElement,
+  vsmTimelineElement,
+];

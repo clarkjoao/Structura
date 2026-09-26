@@ -19,6 +19,8 @@ const EDGE_STYLE_OPTIONS: EdgeStyleOption[] = [
     label: "edgeSmoothstep",
     icon: "M 2 18 C 8 18 8 2 18 2",
   },
+  // VSM's electronic information flow.
+  { value: "zigzag", label: "edgeZigzag", icon: "M 2 18 L 8 12 L 12 16 L 8 8 L 12 12 L 18 2" },
 ];
 
 interface EdgeStyleDropdownProps {

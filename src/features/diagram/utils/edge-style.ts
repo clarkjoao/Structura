@@ -7,7 +7,8 @@ function isEdgeStyle(value: string | null): value is EdgeStyle {
     value === EdgeStyle.Straight ||
     value === EdgeStyle.Bezier ||
     value === EdgeStyle.Step ||
-    value === EdgeStyle.Smoothstep
+    value === EdgeStyle.Smoothstep ||
+    value === EdgeStyle.Zigzag
   );
 }
 
