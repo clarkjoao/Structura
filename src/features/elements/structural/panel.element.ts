@@ -1,6 +1,7 @@
-import { Square } from "lucide-react";
+import { Rows3, Square } from "lucide-react";
 import PanelNode from "@/features/canvas/nodes/PanelNode";
 import SwimlaneNode from "@/features/canvas/nodes/SwimlaneNode";
+import { exportColorHex } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import {
@@ -55,6 +56,7 @@ const swimlaneCanvas: ElementCanvasSlice = {
       laneColor,
       laneLabel,
       opacity,
+      borderStyle: comp.borderStyle,
       isSelected: ctx.selectedNodeId === comp.id,
       isDragTarget: ctx.dragTargetPanelId === comp.id,
       isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
@@ -71,6 +73,24 @@ const swimlaneCanvas: ElementCanvasSlice = {
     };
   },
 };
+
+/** A lane colour draw.io can use: theme tokens resolved, anything else as stored. */
+function exportableColor(color: string): string {
+  return exportColorHex(color) ?? color;
+}
+
+/**
+ * The service-blueprint lanes, top to bottom. The accents reuse the C4 tokens
+ * whose role they match: the customer is a person (amber), backstage is a
+ * container (purple), support is a system (teal).
+ */
+const BLUEPRINT_LANES = [
+  { id: "evidence", accent: "hsl(var(--muted-foreground))", dashed: true },
+  { id: "customer", accent: "hsl(var(--node-person))", dashed: false },
+  { id: "onstage", accent: "hsl(var(--gcp-database))", dashed: false },
+  { id: "backstage", accent: "hsl(var(--node-container))", dashed: false },
+  { id: "support", accent: "hsl(var(--node-system))", dashed: false },
+] as const;
 
 export const panelElement: ElementDescriptor = {
   id: COMPONENT_TYPE_PANEL,
@@ -89,10 +109,14 @@ export const panelElement: ElementDescriptor = {
         panelColor: def.defaultColor,
         ...(kind === PanelKind.Swimlane
           ? {
+              // A blueprint preset brings its own accent (a theme token, which
+              // children inherit) and label; a plain lane keeps the old ones.
+              ...(options.laneAccent ? { panelColor: options.laneAccent } : {}),
+              ...(options.stroke === "dashed" ? { borderStyle: "dashed" as const } : {}),
               swimlane: {
                 orientation: "horizontal" as const,
-                laneColor: "#6366f1",
-                laneLabel: i18n.t("swimlane.defaultLaneLabel"),
+                laneColor: options.laneAccent ?? "#6366f1",
+                laneLabel: i18n.t(options.laneLabelKey ?? "swimlane.defaultLaneLabel"),
               },
             }
           : {}),
@@ -201,17 +225,33 @@ export const panelElement: ElementDescriptor = {
      * them: a VPC, an EKS cluster, a swimlane and the rest all create a
      * `panel` and differ only by the kind they carry.
      */
-    variants: PANEL_KINDS.map((kind) => ({
-      id: kind.id,
-      labelKey: kind.labelKey,
-      icon: { kind: "lucide" as const, icon: kind.icon },
-      createOptions: { panelKind: kind.id },
-      awsIconName: kind.awsIconName,
-      searchKeys:
-        kind.id === PanelKind.Swimlane
-          ? ["swimlane", "lane", "strip", "actor", "pool", "domain", "team", "faixa", "raia"]
-          : ["panel", "painel", "group", "grupo"],
-    })),
+    variants: [
+      ...PANEL_KINDS.map((kind) => ({
+        id: kind.id,
+        labelKey: kind.labelKey,
+        icon: { kind: "lucide" as const, icon: kind.icon },
+        createOptions: { panelKind: kind.id },
+        awsIconName: kind.awsIconName,
+        searchKeys:
+          kind.id === PanelKind.Swimlane
+            ? ["swimlane", "lane", "strip", "actor", "pool", "domain", "team", "faixa", "raia"]
+            : ["panel", "painel", "group", "grupo"],
+      })),
+      // Service blueprint lanes: palette content, not a new type — a swimlane
+      // with an accent (the C4 token its role matches) and a label.
+      ...BLUEPRINT_LANES.map((lane) => ({
+        id: `blueprint-${lane.id}`,
+        labelKey: `blueprint.lanes.${lane.id}`,
+        icon: { kind: "lucide" as const, icon: Rows3 },
+        createOptions: {
+          panelKind: PanelKind.Swimlane,
+          laneAccent: lane.accent,
+          laneLabelKey: `blueprint.lanes.${lane.id}`,
+          ...(lane.dashed ? { stroke: "dashed" as const } : {}),
+        },
+        searchKeys: ["blueprint", "service", "lane", "raia", "swimlane", lane.id],
+      })),
+    ],
   },
 
   // Panels are edited through the generic ComponentPanel and its style section.
@@ -233,10 +273,15 @@ export const panelElement: ElementDescriptor = {
             ...base,
             kind: "swimlane",
             name: comp.name,
-            laneColor: sl?.laneColor ?? comp.panelColor ?? kindDef.defaultColor ?? "#6366f1",
+            // A theme-token accent (a flow preset) has no meaning in draw.io:
+            // it exports as the light theme's value.
+            laneColor: exportableColor(
+              sl?.laneColor ?? comp.panelColor ?? kindDef.defaultColor ?? "#6366f1",
+            ),
             laneLabel: sl?.laneLabel ?? comp.name,
             orientation: sl?.orientation ?? "horizontal",
             opacity: sl?.opacity ?? comp.panelOpacity ?? DEFAULT_PANEL_OPACITY,
+            ...(comp.borderStyle && comp.borderStyle !== "solid" ? { dashed: true } : {}),
           };
         }
 

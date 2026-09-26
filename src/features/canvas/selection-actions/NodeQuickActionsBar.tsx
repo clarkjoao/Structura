@@ -20,8 +20,12 @@ import {
   isC4Component,
   isPanelComponent,
   isEndpointComponent,
+  isProcessNodeComponent,
   PanelKind,
 } from "@/features/diagram";
+import { accentToStore } from "@/features/canvas/nodes/ProcessNode/flowAppearance";
+import { getElement } from "@/features/elements/element.registry";
+import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
@@ -45,7 +49,10 @@ function pickColorGroup(component: Component | null): ColorPickerGroup {
   if (!component) return "vibrant";
   if (isNoteComponent(component)) return "note";
   if (isC4Component(component)) return "c4";
-  if (isPanelComponent(component)) return "panel";
+  if (isPanelComponent(component)) {
+    return component.panelKind === PanelKind.Swimlane ? "lane" : "panel";
+  }
+  if (getElement(component.type)?.skin) return "flow";
   return "vibrant";
 }
 
@@ -103,6 +110,8 @@ export function NodeQuickActionsBar({
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const colorGroup = pickColorGroup(component ?? null);
+  // What an unset accent resolves to here — the lane's, else the element's.
+  const defaultAccent = useEffectiveDefaultAccent(component);
   const currentColor = useMemo(
     () => (component ? getCurrentColor(component, isDark) : undefined),
     [component, isDark],
@@ -193,6 +202,17 @@ export function NodeQuickActionsBar({
         });
         return;
       }
+      // Skinned elements (flow, VSM): the element's default accent is stored
+      // as nothing, and a flow node's legacy nodeColor goes with it so it
+      // cannot keep winning as the fill.
+      const skin = getElement(component.type)?.skin;
+      if (skin) {
+        updateComponent(nodeId, {
+          customColor: accentToStore(color, defaultAccent),
+          ...(isProcessNodeComponent(component) ? { nodeColor: undefined } : {}),
+        });
+        return;
+      }
       // Components that use customColor (cloud, unknown, etc.)
       if (usesCustomColor(component)) {
         updateComponent(nodeId, { customColor: color });
@@ -215,7 +235,7 @@ export function NodeQuickActionsBar({
       }
       updateComponent(nodeId, { panelColor: color });
     },
-    [component, isDark, nodeId, updateComponent],
+    [component, defaultAccent, isDark, nodeId, updateComponent],
   );
 
   const handleColorReset = useCallback(() => {
@@ -225,6 +245,10 @@ export function NodeQuickActionsBar({
         panelColor: undefined,
         panelColorDark: undefined,
       });
+      return;
+    }
+    if (isProcessNodeComponent(component)) {
+      updateComponent(nodeId, { customColor: undefined, nodeColor: undefined });
       return;
     }
     // Components that use customColor

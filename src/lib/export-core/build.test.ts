@@ -270,6 +270,12 @@ describe("buildMxGraphXml — edges", () => {
           "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
         expectRounded: "present",
       },
+      {
+        style: "zigzag",
+        expectEdgeStyleToken:
+          "edgeStyle=none;shape=mxgraph.lean_mapping.electronic_info_flow_edge;html=1;",
+        expectRounded: "absent",
+      },
     ];
 
     for (const c of cases) {

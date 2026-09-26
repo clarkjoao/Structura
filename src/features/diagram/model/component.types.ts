@@ -27,6 +27,8 @@ export type ComponentType =
   | "json-viewer"
   | "process-node"
   | "external-element"
+  | "flow-divider"
+  | VsmComponentType
   | AwsCategoryId
   | GcpCategoryId
   | AzureCategoryId
@@ -238,13 +240,147 @@ export type FlowNodeShape =
   | "hexagon" // Mermaid: {{text}}
   | "parallelogram" // Mermaid: [/text/]
   | "cylinder" // Mermaid: [(text)]
-  | "circle" // Mermaid: ((text))
-  | "subroutine"; // Mermaid: [[text]]
+  | "circle" // Mermaid: ((text)) — legacy "start / end", read as `start`
+  | "subroutine" // Mermaid: [[text]]
+  | "start"
+  | "end"
+  | "document"
+  | "event"
+  | "junction-and"
+  | "junction-or"
+  | "annotation"
+  | "evidence";
+
+/** How a shape's accent colours its body. Absent means `"none"`. */
+export type NodeFillMode = "none" | "soft" | "solid";
+
+/** A shape's outline. Absent means `"solid"`. */
+export type NodeStrokeMode = "solid" | "dashed";
 
 export interface ProcessNodeComponent extends BaseComponent {
   type: "process-node";
   flowShape: FlowNodeShape;
+  /**
+   * Legacy fill colour. Nothing in the UI writes it any more — the accent is
+   * `customColor`, the same field and toolbar control as the cloud cards — but
+   * saved diagrams and presets can still carry it, so it is read as an accent
+   * painted solid when the node has no accent of its own.
+   */
   nodeColor?: string;
+  /**
+   * Accent: the bar, outline, icon and markers. Same field the toolbar colour
+   * picker already writes on every card that has no dedicated colour; absent
+   * means the family default (slate), resolved at render and never stored.
+   */
+  customColor?: string;
+  /** Shown as the mono chip under the title (a data store's engine, say). */
+  technology?: string;
+  /** How the accent fills the body. Absent means `"none"`; the default is never written. */
+  fill?: NodeFillMode;
+  /** The outline. Absent means `"solid"`; the default is never written. */
+  stroke?: NodeStrokeMode;
+}
+
+/** The three colour parts, for elements that wear the flow skin (flow, VSM). */
+export interface SkinParts {
+  /** Accent; absent means the element's default, resolved at render. */
+  customColor?: string;
+  /** Absent means `"none"`. */
+  fill?: NodeFillMode;
+  /** Absent means `"solid"`. */
+  stroke?: NodeStrokeMode;
+}
+
+/**
+ * A named line across a diagram — a service blueprint's line of interaction,
+ * of visibility, of internal interaction. Its label is the name; it stands on
+ * its own, not tied to any lane.
+ */
+export interface FlowDividerComponent extends BaseComponent {
+  type: "flow-divider";
+  /** Absent means solid. */
+  stroke?: NodeStrokeMode;
+}
+
+/** The Value Stream Mapping vocabulary (the `vsm` family). */
+export type VsmComponentType =
+  | "vsm-external"
+  | "vsm-process"
+  | "vsm-inventory"
+  | "vsm-supermarket"
+  | "vsm-push"
+  | "vsm-kaizen"
+  | "vsm-timeline";
+
+/** Which side of the stream an outside source sits on. Absent means supplier. */
+export type VsmRole = "supplier" | "customer";
+
+/** A supplier or a customer: the factory icon at either end of the stream. */
+export interface VsmExternalComponent extends BaseComponent, SkinParts {
+  type: "vsm-external";
+  role?: VsmRole;
+}
+
+/** One row of a VSM process's data box: a metric and its value, both as typed. */
+export interface VsmMetric {
+  id: string;
+  key: string;
+  value: string;
+}
+
+/** A process box: a step of the stream with its operators and its data box. */
+export interface VsmProcessComponent extends BaseComponent, SkinParts {
+  type: "vsm-process";
+  /** People working the step; absent shows no count. */
+  operators?: number;
+  /** The data box rows, in order. */
+  metrics?: VsmMetric[];
+}
+
+/** Inventory between two steps: the triangle with an I, and how much waits there. */
+export interface VsmInventoryComponent extends BaseComponent, SkinParts {
+  type: "vsm-inventory";
+  /** As the user writes it: "1,200 pcs". */
+  quantity?: string;
+  /** How long it covers, as the user writes it: "2 days". */
+  duration?: string;
+}
+
+/** A supermarket: a controlled store of parts the downstream step pulls from. */
+export interface VsmSupermarketComponent extends BaseComponent, SkinParts {
+  type: "vsm-supermarket";
+}
+
+/** A push arrow: material pushed downstream whether it is needed or not. */
+export interface VsmPushComponent extends BaseComponent, SkinParts {
+  type: "vsm-push";
+}
+
+/** A kaizen burst: an improvement to make, its text being the node's name. */
+export interface VsmKaizenComponent extends BaseComponent, SkinParts {
+  type: "vsm-kaizen";
+}
+
+/** One step of a VSM timeline: how long work waits, then how long it is worked on. */
+export interface VsmTimelineSegment {
+  id: string;
+  wait: number;
+  process: number;
+}
+
+/** The unit every value on one timeline is in, so its totals can be summed. */
+export type VsmTimeUnit = "s" | "min" | "h" | "d";
+
+/**
+ * The timeline under a value stream: a square wave of waits and processing
+ * times. Its totals — lead time and value-added time — are computed from the
+ * segments, never stored.
+ */
+export interface VsmTimelineComponent extends BaseComponent, SkinParts {
+  type: "vsm-timeline";
+  segments?: VsmTimelineSegment[];
+  /** Absent means minutes. */
+  unit?: VsmTimeUnit;
 }
 
 export interface ExternalElementComponent extends BaseComponent {
@@ -267,6 +403,14 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | FlowDividerComponent
+  | VsmTimelineComponent
+  | VsmKaizenComponent
+  | VsmPushComponent
+  | VsmSupermarketComponent
+  | VsmInventoryComponent
+  | VsmProcessComponent
+  | VsmExternalComponent
   | C4Component
   | PanelComponent
   | NoteComponent
@@ -300,7 +444,15 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<JsonViewerComponent, "id">> &
   Partial<Omit<SvgComponent, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
-  Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<ExternalElementComponent, "id">> &
+  Partial<Omit<VsmExternalComponent, "id">> &
+  Partial<Omit<FlowDividerComponent, "id">> &
+  Partial<Omit<VsmTimelineComponent, "id">> &
+  Partial<Omit<VsmKaizenComponent, "id">> &
+  Partial<Omit<VsmPushComponent, "id">> &
+  Partial<Omit<VsmSupermarketComponent, "id">> &
+  Partial<Omit<VsmInventoryComponent, "id">> &
+  Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
@@ -320,5 +472,13 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmTimelineComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmKaizenComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmPushComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmSupermarketComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmInventoryComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

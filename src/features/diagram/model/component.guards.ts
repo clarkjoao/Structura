@@ -22,6 +22,14 @@ import type {
   JsonViewerComponent,
   ProcessNodeComponent,
   ExternalElementComponent,
+  VsmExternalComponent,
+  FlowDividerComponent,
+  VsmTimelineComponent,
+  VsmKaizenComponent,
+  VsmPushComponent,
+  VsmSupermarketComponent,
+  VsmInventoryComponent,
+  VsmProcessComponent,
   PluginTypedComponent,
 } from "./component.types";
 import {
@@ -37,6 +45,14 @@ import {
   isJsonViewerType,
   isProcessNodeType,
   isExternalElementType,
+  isVsmExternalType,
+  isFlowDividerType,
+  isVsmTimelineType,
+  isVsmKaizenType,
+  isVsmPushType,
+  isVsmSupermarketType,
+  isVsmInventoryType,
+  isVsmProcessType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -82,6 +98,29 @@ export const isFlowNodeComponent = (c: Component): c is ProcessNodeComponent =>
 
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
   isExternalElementType(c.type);
+
+export const isVsmExternalComponent = (c: Component): c is VsmExternalComponent =>
+  isVsmExternalType(c.type);
+
+export const isVsmProcessComponent = (c: Component): c is VsmProcessComponent =>
+  isVsmProcessType(c.type);
+
+export const isVsmInventoryComponent = (c: Component): c is VsmInventoryComponent =>
+  isVsmInventoryType(c.type);
+
+export const isVsmSupermarketComponent = (c: Component): c is VsmSupermarketComponent =>
+  isVsmSupermarketType(c.type);
+
+export const isVsmPushComponent = (c: Component): c is VsmPushComponent => isVsmPushType(c.type);
+
+export const isVsmKaizenComponent = (c: Component): c is VsmKaizenComponent =>
+  isVsmKaizenType(c.type);
+
+export const isVsmTimelineComponent = (c: Component): c is VsmTimelineComponent =>
+  isVsmTimelineType(c.type);
+
+export const isFlowDividerComponent = (c: Component): c is FlowDividerComponent =>
+  isFlowDividerType(c.type);
 
 export const isPluginTypedComponent = (c: Component): c is PluginTypedComponent =>
   isPluginComponentType(c.type);

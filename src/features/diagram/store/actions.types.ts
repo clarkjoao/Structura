@@ -51,6 +51,8 @@ export interface AppActions {
     cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: import("../model/diagram.types").FlowNodeShape,
+    /** Anything else the element's descriptor reads at creation (a VSM role, say). */
+    createOptions?: import("@/features/elements/element.types").ElementCreateOptions,
   ) => Component;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
@@ -75,6 +77,7 @@ export interface AppActions {
     targetId: string,
     label: string,
     edgeStyle?: EdgeStyle,
+    sides?: Pick<Connection, "sourceSide" | "targetSide">,
   ) => Connection | null;
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;

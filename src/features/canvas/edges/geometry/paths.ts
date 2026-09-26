@@ -272,3 +272,49 @@ export function buildEditableEdgePath(
 // "@/features/canvas/edges/geometry/paths"`. No re-export is needed here —
 // TypeScript flags a duplicate export-declaration if we re-export the same
 // type from the same module.
+
+/** Half-length of the zigzag's diagonal and how far it swings off the line. */
+const ZIGZAG_RUN = 10;
+const ZIGZAG_SWING = 8;
+/** Where along the edge the zigzag sits. */
+const ZIGZAG_AT = 1 / 3;
+
+/**
+ * The knots of a zigzag edge: straight from source to target, with a lightning
+ * "N" a third of the way along — VSM's electronic information flow. The zigzag keeps its
+ * size whatever the edge length; an edge too short for it is drawn straight.
+ */
+export function getZigzagKnots(source: Point, target: Point): Point[] {
+  const dx = target.x - source.x;
+  const dy = target.y - source.y;
+  const length = Math.hypot(dx, dy);
+  if (length * ZIGZAG_AT < ZIGZAG_RUN * 2) return [source, target];
+  const ux = dx / length;
+  const uy = dy / length;
+  // Perpendicular, turned so the first swing goes up on a left-to-right edge.
+  const px = uy;
+  const py = -ux;
+  // A third of the way along rather than the middle, where the label sits and
+  // would cover it.
+  const mx = source.x + dx * ZIGZAG_AT;
+  const my = source.y + dy * ZIGZAG_AT;
+  return [
+    source,
+    { x: mx - ux * ZIGZAG_RUN, y: my - uy * ZIGZAG_RUN },
+    {
+      x: mx - ux * (ZIGZAG_RUN / 3) + px * ZIGZAG_SWING,
+      y: my - uy * (ZIGZAG_RUN / 3) + py * ZIGZAG_SWING,
+    },
+    {
+      x: mx + ux * (ZIGZAG_RUN / 3) - px * ZIGZAG_SWING,
+      y: my + uy * (ZIGZAG_RUN / 3) - py * ZIGZAG_SWING,
+    },
+    { x: mx + ux * ZIGZAG_RUN, y: my + uy * ZIGZAG_RUN },
+    target,
+  ];
+}
+
+/** The SVG path of a zigzag edge; see `getZigzagKnots`. */
+export function buildZigzagPath(source: Point, target: Point): string {
+  return toLinearPath(getZigzagKnots(source, target));
+}

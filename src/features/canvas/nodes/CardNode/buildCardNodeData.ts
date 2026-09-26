@@ -11,6 +11,7 @@ import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.consta
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { flowPlaybackOpacity } from "@/features/canvas/flow/flowState";
+import { laneAccentFor } from "@/features/canvas/nodes/laneAccent";
 
 import { CARD_RECORDING_DIM_OPACITY } from "./constants";
 
@@ -47,9 +48,12 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
       isC4Component(comp) || isAwsComponent(comp) || isGcpComponent(comp) || isAzureComponent(comp)
         ? comp.technology
         : undefined,
+    // Own colour first; else the accent of a swimlane that passes one on
+    // (resolved here, never written — see `laneAccentFor`).
     customColor:
       (comp as { customColor?: string }).customColor ??
-      (isC4Component(comp) ? comp.panelColor : undefined),
+      (isC4Component(comp) ? comp.panelColor : undefined) ??
+      laneAccentFor(comp, ctx),
     cloudService: resolveCloudServiceId(comp),
     isSelected: isPlaying ? flowHighlight.activeNodeId === comp.id : ctx.selectedNodeId === comp.id,
     controlsDisabled:

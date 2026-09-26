@@ -87,7 +87,8 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Tipo de transporte",
     "copySuffix": " (cópia)",
-    "defaultNamePrefix": "Novo"
+    "defaultNamePrefix": "Novo",
+    "edgeZigzag": "Zigue-zague (eletrônico)"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -1125,16 +1126,59 @@
       }
     },
     "families": {
+      "vsm": {
+        "label": "Mapa de fluxo de valor"
+      },
       "structural": {
         "label": "Estruturais e Canvas"
       },
       "c4": {
         "label": "Modelo C4"
       }
+    },
+    "vsm-external": {
+      "label": "Fornecedor / cliente",
+      "description": "Uma fonte externa numa das pontas do fluxo de valor: o fornecedor que o alimenta ou o cliente que ele atende."
+    },
+    "vsm-process": {
+      "label": "Processo",
+      "description": "Uma etapa do fluxo de valor, com seus operadores e uma caixa de dados de métricas (tempo de ciclo, setup, disponibilidade, turnos)."
+    },
+    "vsm-inventory": {
+      "label": "Estoque",
+      "description": "Estoque parado entre duas etapas, com a quantidade e quanto tempo ele cobre."
+    },
+    "vsm-supermarket": {
+      "label": "Supermercado",
+      "description": "Um estoque controlado de peças de onde a etapa seguinte puxa."
+    },
+    "vsm-push": {
+      "label": "Seta de empurrar",
+      "description": "Material empurrado para a etapa seguinte, precise ela ou não."
+    },
+    "vsm-kaizen": {
+      "label": "Kaizen",
+      "description": "Uma melhoria a fazer neste ponto do fluxo."
+    },
+    "vsm-timeline": {
+      "label": "Linha do tempo",
+      "description": "A onda quadrada sob o fluxo de valor: tempos de espera acima, tempos de processo abaixo, com lead time e tempo de agregação de valor somados."
+    },
+    "flow-divider": {
+      "label": "Linha nomeada",
+      "description": "Uma linha com rótulo atravessando o diagrama — a linha de interação, de visibilidade ou de interação interna de um service blueprint."
     }
   },
   "flowchart": {
     "shapes": {
+      "evidence": "Evidência física",
+      "annotation": "Anotação",
+      "junction-and": "Junção (E)",
+      "junction-or": "Junção (OU)",
+      "event": "Evento",
+      "document": "Documento",
+      "start": "Início",
+      "end": "Fim",
       "rectangle": "Processo",
       "rounded": "Processo Arredondado",
       "stadium": "Terminal",
@@ -1202,6 +1246,15 @@
     "idLabel": "ID"
   },
   "elementPanel": {
+    "appearance": "Aparência",
+    "accent": "Acento",
+    "fill": "Preenchimento",
+    "fillNone": "Nenhum",
+    "fillSoft": "Suave",
+    "fillSolid": "Sólido",
+    "stroke": "Traço",
+    "strokeSolid": "Contínuo",
+    "strokeDashed": "Tracejado",
     "suggestedNudge": "Você pode vincular este {{name}} a um diagrama.",
     "suggested": "Sugerido",
     "panelHeaderPanel": "Painel",
@@ -2398,5 +2451,61 @@
     "untitled": "Workflow sem título",
     "untitledPlaceholder": "Workflow sem título",
     "upNext": "A seguir:"
+  },
+  "vsm": {
+    "role": {
+      "supplier": "Fornecedor",
+      "customer": "Cliente"
+    },
+    "fields": {
+      "role": "Papel",
+      "operators": "Operadores",
+      "metrics": "Caixa de dados",
+      "metricKey": "Métrica",
+      "metricValue": "Valor",
+      "addMetric": "Adicionar linha",
+      "removeMetric": "Remover linha",
+      "quantity": "Quantidade",
+      "duration": "Duração",
+      "unit": "Unidade",
+      "segments": "Segmentos",
+      "wait": "Espera",
+      "process": "Processo",
+      "addSegment": "Adicionar segmento",
+      "removeSegment": "Remover segmento"
+    },
+    "metrics": {
+      "cycleTime": "C/T",
+      "changeover": "C/O",
+      "uptime": "Disp.",
+      "shifts": "Turnos"
+    },
+    "timeline": {
+      "leadTime": "Lead time",
+      "valueAdded": "Tempo de agregação de valor"
+    },
+    "units": {
+      "s": "s",
+      "min": "min",
+      "h": "h",
+      "d": "d"
+    }
+  },
+  "blueprint": {
+    "lines": {
+      "interaction": "Linha de interação",
+      "visibility": "Linha de visibilidade",
+      "internal": "Linha de interação interna"
+    },
+    "fields": {
+      "stroke": "Linha"
+    },
+    "lanes": {
+      "evidence": "Evidência física",
+      "customer": "Ações do cliente",
+      "onstage": "Palco",
+      "backstage": "Bastidores",
+      "support": "Suporte"
+    }
   }
 }

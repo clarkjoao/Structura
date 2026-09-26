@@ -25,6 +25,40 @@ export interface NodeHandleSpec {
    * source** — it renders no outgoing handle because nothing should leave it.
    */
   outgoing: number;
+  /**
+   * Also renders an input on the top side and an output on the bottom — the
+   * flowchart shapes, where a decision's "no" leaves downwards and a step can
+   * be entered from above. The side is chosen by the edge (`Connection.sourceSide`
+   * / `targetSide`, written when the user draws from or to one of these
+   * handles), never derived from where the nodes sit.
+   */
+  verticalSides?: boolean;
+}
+
+/** The top-side input of a node with `verticalSides`. */
+export const TOP_TARGET_HANDLE_ID = "target-top";
+/** The bottom-side output of a node with `verticalSides`. */
+export const BOTTOM_SOURCE_HANDLE_ID = "source-bottom";
+
+/** The sides a connection asks for, as stored. Absent means right/left. */
+export interface ConnectionSides {
+  sourceSide?: "bottom";
+  targetSide?: "top";
+}
+
+/**
+ * The sides a connection drawn between two handles asks for. Only the keys
+ * that differ from the default are present, so a plain right-to-left edge
+ * stores nothing new.
+ */
+export function sidesFromHandles(
+  sourceHandle: string | null | undefined,
+  targetHandle: string | null | undefined,
+): ConnectionSides {
+  return {
+    ...(sourceHandle === BOTTOM_SOURCE_HANDLE_ID ? { sourceSide: "bottom" as const } : {}),
+    ...(targetHandle === TOP_TARGET_HANDLE_ID ? { targetSide: "top" as const } : {}),
+  };
 }
 
 /**
@@ -68,6 +102,17 @@ export const SINGLE_INCOMING_HANDLES: NodeHandleSpec = {
 export const SINGLE_PAIR_HANDLES: NodeHandleSpec = {
   incoming: 1,
   outgoing: 1,
+};
+
+/**
+ * One slot in the middle of each side, on the shape's own outline: the
+ * flowchart shapes. Left and right take every plain edge (in and out); top and
+ * bottom take the edges drawn to or from them.
+ */
+export const FLOW_SHAPE_HANDLES: NodeHandleSpec = {
+  incoming: 1,
+  outgoing: 1,
+  verticalSides: true,
 };
 
 /** Slots actually available on a side, for a spec and a wanted count. */

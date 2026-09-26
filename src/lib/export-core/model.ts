@@ -9,7 +9,7 @@
 
 /** Edge routing style (source enums map onto these string literals). */
 export type ExportEdgeStyle =
-  "smoothstep" | "step" | "bezier" | "straight" | "editable" | "editable-step";
+  "smoothstep" | "step" | "bezier" | "straight" | "editable" | "editable-step" | "zigzag";
 
 /** Line style. */
 export type ExportStrokeStyle = "solid" | "dashed" | "dotted";
@@ -30,7 +30,8 @@ export type ExportNodeKind =
   | "jsonViewer"
   | "image"
   | "passthrough"
-  | "flowNode";
+  | "flowNode"
+  | "stencil";
 
 interface BaseNode {
   id: string;
@@ -98,6 +99,8 @@ export interface SwimlaneNode extends BaseNode {
   orientation: "horizontal" | "vertical";
   /** Background tint 0–100 (Structura canvas semantics). */
   opacity?: number;
+  /** A dashed (or dotted) lane outline — the physical-evidence lane of a blueprint. */
+  dashed?: boolean;
 }
 
 export interface ApiGroupNode extends BaseNode {
@@ -183,7 +186,15 @@ export type ExportFlowShape =
   | "parallelogram"
   | "cylinder"
   | "circle"
-  | "subroutine";
+  | "subroutine"
+  | "start"
+  | "end"
+  | "document"
+  | "event"
+  | "junction-and"
+  | "junction-or"
+  | "annotation"
+  | "evidence";
 
 /**
  * A flowchart box.
@@ -198,11 +209,49 @@ export interface FlowNode extends BaseNode {
   name: string;
   description?: string;
   shape: ExportFlowShape;
-  /** Raw colour from the snapshot, when the user picked one. */
-  nodeColor?: string;
+  /** The mono chip on the canvas; exported as a bracketed line, like a C4 technology. */
+  technology?: string;
+  /**
+   * The resolved accent as `#rrggbb` — theme tokens already turned into the
+   * light theme's value, since draw.io has no theme to resolve them against.
+   */
+  accentColor: string;
+  /** How the accent fills the body, defaults resolved. */
+  fill: "none" | "soft" | "solid";
+  dashed: boolean;
+  /** Text colour on a solid fill, chosen by contrast; absent otherwise. */
+  fontColor?: string;
+}
+
+/** The flow skin's colour parts, resolved for an export. */
+export interface ExportSkinColours {
+  /** `#rrggbb`, theme tokens already resolved to the light theme. */
+  accentColor: string;
+  fill: "none" | "soft" | "solid";
+  dashed: boolean;
+  /** Text colour on a solid fill, chosen by contrast; absent otherwise. */
+  fontColor?: string;
+}
+
+/**
+ * A shape from one of draw.io's own stencil libraries — the VSM family maps to
+ * `mxgraph.lean_mapping.*` — coloured with the flow skin's parts.
+ *
+ * One kind for the whole family rather than a builder per element: the
+ * descriptor names the stencil (each one confirmed against draw.io's sources)
+ * and the builder only lays it out.
+ */
+export interface StencilNode extends BaseNode, ExportSkinColours {
+  kind: "stencil";
+  name: string;
+  /** The shape part of the style, ending in `;`. */
+  shapeStyle: string;
+  /** The cell's text; defaults to the name. */
+  label?: string;
 }
 
 export type ExportNode =
+  | StencilNode
   | FlowNode
   | ImageNode
   | PassthroughNode

@@ -120,3 +120,41 @@ export function contrastLabelColor(
   if (lightRatio >= MIN_CONTRAST) return LIGHT_LABEL;
   return darkRatio >= lightRatio ? DARK_LABEL : LIGHT_LABEL;
 }
+
+/** `a` mixed toward `b` by `t` ∈ [0, 1]. */
+function mixRgb(a: RgbColor, b: RgbColor, t: number): RgbColor {
+  return {
+    r: Math.round(a.r + (b.r - a.r) * t),
+    g: Math.round(a.g + (b.g - a.g) * t),
+    b: Math.round(a.b + (b.b - a.b) * t),
+  };
+}
+
+/**
+ * The accent itself, pushed just far enough toward black (or white, on a dark
+ * background) to read at WCAG AA (4.5:1) on `background` — so a lane header's
+ * text stays recognisably the lane's colour instead of turning plain black.
+ *
+ * @example
+ * accentTextColor("#f59f0a", "#fef5e6") // → a dark amber, not "#0a0a0a"
+ */
+export function accentTextColor(accent: string, background: string): string {
+  const accentRgb = parseCssColorToRgb(accent);
+  const bgRgb = parseCssColorToRgb(background);
+  if (!accentRgb || !bgRgb) return FALLBACK_LABEL;
+  const toward: RgbColor =
+    relativeLuminance(bgRgb) > 0.4 ? { r: 0, g: 0, b: 0 } : { r: 255, g: 255, b: 255 };
+  for (let step = 0; step <= 20; step += 1) {
+    const candidate = mixRgb(accentRgb, toward, step / 20);
+    if (contrastRatio(candidate, bgRgb) >= MIN_CONTRAST) return rgbToHex(candidate);
+  }
+  return rgbToHex(toward);
+}
+
+/** `color` at `pct`% over `backdrop`, as `#rrggbb` — what a translucent tint looks like. */
+export function tintOver(color: string, pct: number, backdrop: string): string {
+  const rgb = parseCssColorToRgb(color);
+  const base = parseCssColorToRgb(backdrop) ?? WHITE;
+  if (!rgb) return backdrop;
+  return rgbToHex(mixRgb(base, rgb, Math.max(0, Math.min(1, pct / 100))));
+}

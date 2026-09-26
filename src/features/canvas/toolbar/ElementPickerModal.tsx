@@ -1,3 +1,4 @@
+import type { ElementCreateOptions } from "@/features/elements/element.types";
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { Search, X } from "lucide-react";
 import { useReactFlow } from "@xyflow/react";
@@ -98,6 +99,7 @@ const ElementPickerModal = memo(function ElementPickerModal({
         searchKeys: entry.searchKeys,
         panelKind: entry.createOptions.panelKind,
         awsIconName: entry.awsIconName,
+        createOptions: entry.createOptions,
       })),
     ],
     // `t` is deliberate: the registry labels are translated, and rebuilding on a language change is cheaper than a stale menu.
@@ -240,11 +242,25 @@ const ElementPickerModal = memo(function ElementPickerModal({
     [rfInstance],
   );
 
-  const handleAddElement = (type: ComponentType, label: string, panelKind?: PanelKind) => {
+  const handleAddElement = (
+    type: ComponentType,
+    label: string,
+    panelKind?: PanelKind,
+    createOptions?: ElementCreateOptions,
+  ) => {
     trackUsage(getUsageKeyForType(type, panelKind));
     const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
     const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
-    const comp = addComponent(type, name, null, getInsertPos(), undefined, panelKind);
+    const comp = addComponent(
+      type,
+      name,
+      null,
+      getInsertPos(),
+      undefined,
+      panelKind,
+      undefined,
+      createOptions,
+    );
     onInsert?.(comp.id);
     onClose();
   };
@@ -261,7 +277,16 @@ const ElementPickerModal = memo(function ElementPickerModal({
     );
     const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
     const name = getDefaultNameForNewComponent(entry.type, entry.label, panelDefaultName);
-    const comp = addComponent(entry.type, name, null, getInsertPos(), serviceId, panelKind);
+    const comp = addComponent(
+      entry.type,
+      name,
+      null,
+      getInsertPos(),
+      serviceId,
+      panelKind,
+      entry.createOptions.flowShape,
+      entry.createOptions,
+    );
     onInsert?.(comp.id);
     onClose();
   };
@@ -352,7 +377,7 @@ const ElementPickerModal = memo(function ElementPickerModal({
     filteredTemplates.length === 0;
 
   const onAddCanvas = (opt: CanvasPickerOption) => {
-    handleAddElement(opt.type, opt.label, opt.panelKind);
+    handleAddElement(opt.type, opt.label, opt.panelKind, opt.createOptions);
   };
 
   const handleAddFlowNode = useCallback(

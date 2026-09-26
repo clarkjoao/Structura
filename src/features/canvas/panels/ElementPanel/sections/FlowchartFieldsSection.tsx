@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import type { FlowNodeShape } from "@/features/diagram";
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram";
+import { readFlowShape } from "@/features/canvas/nodes/ProcessNode/flowShapeGeometry";
 
 const FLOW_SHAPES: FlowNodeShape[] = [
   "rectangle",
@@ -10,8 +11,15 @@ const FLOW_SHAPES: FlowNodeShape[] = [
   "hexagon",
   "parallelogram",
   "cylinder",
-  "circle",
   "subroutine",
+  "start",
+  "end",
+  "document",
+  "event",
+  "junction-and",
+  "junction-or",
+  "annotation",
+  "evidence",
 ];
 
 export interface FlowchartFieldsSectionProps {
@@ -44,7 +52,8 @@ export function FlowchartFieldsSection({
           {t("elementPanel.flowShape")}
         </label>
         <select
-          value={flowShape}
+          // A legacy "start / end" circle shows as the start it is drawn as.
+          value={readFlowShape(flowShape)}
           onChange={(event) => onFlowShapeChange(event.target.value as FlowNodeShape)}
           className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >

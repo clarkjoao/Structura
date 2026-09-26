@@ -30,7 +30,7 @@ const NODE_SHAPE_PATTERNS: ReadonlyArray<{
   { re: /^\[\[(.+?)\]\]/, shape: "subroutine" },
   { re: /^\{\{(.+?)\}\}/, shape: "hexagon" },
   { re: /^\(\[(.+?)\]\)/, shape: "stadium" },
-  { re: /^\(\((.+?)\)\)/, shape: "circle" },
+  { re: /^\(\((.+?)\)\)/, shape: "start" },
   { re: /^\[\((.+?)\)\]/, shape: "cylinder" },
   { re: /^\/(.+?)\//, shape: "parallelogram" },
   { re: /^\{(.+?)\}/, shape: "diamond" },

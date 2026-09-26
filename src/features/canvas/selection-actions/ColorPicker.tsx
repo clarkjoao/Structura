@@ -7,12 +7,14 @@ import {
   C4_PRESETS,
   NOTE_PRESETS,
   NOTE_PRESETS_DARK,
+  FLOW_ACCENT_PRESETS,
+  LANE_PRESETS,
   getNotePresetPair,
   type ColorPreset,
 } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { cn } from "@/lib/utils";
 
-export type ColorPickerGroup = "vibrant" | "panel" | "c4" | "note" | "note-dark";
+export type ColorPickerGroup = "vibrant" | "panel" | "c4" | "note" | "note-dark" | "flow" | "lane";
 
 interface ColorPickerProps {
   selectedColor?: string;
@@ -20,6 +22,11 @@ interface ColorPickerProps {
   onReset?: () => void;
   /** Which preset group to show in the dropdown. Default: "vibrant". */
   group?: ColorPickerGroup;
+  /**
+   * Where the dropdown opens: centred under the trigger (the toolbar), or
+   * right-aligned to it for a trigger at the edge of a panel.
+   */
+  align?: "center" | "end";
 }
 
 const presetsForGroup = (group: ColorPickerGroup): ColorPreset[] => {
@@ -32,6 +39,10 @@ const presetsForGroup = (group: ColorPickerGroup): ColorPreset[] => {
       return NOTE_PRESETS;
     case "note-dark":
       return NOTE_PRESETS_DARK;
+    case "flow":
+      return FLOW_ACCENT_PRESETS;
+    case "lane":
+      return LANE_PRESETS;
     default:
       return VIBRANT_PRESETS;
   }
@@ -42,6 +53,7 @@ export function ColorPicker({
   onSelectColor,
   onReset,
   group = "vibrant",
+  align = "center",
 }: ColorPickerProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -95,7 +107,10 @@ export function ColorPicker({
 
       {open && (
         <div
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-2 min-w-[148px]"
+          className={cn(
+            "absolute top-full mt-1 z-50 bg-card border border-border rounded-md shadow-lg p-2 min-w-[148px]",
+            align === "end" ? "right-0" : "left-1/2 -translate-x-1/2",
+          )}
           onPointerDown={(e) => e.stopPropagation()}
         >
           <div className="flex flex-wrap gap-1.5 justify-center max-w-[160px]">

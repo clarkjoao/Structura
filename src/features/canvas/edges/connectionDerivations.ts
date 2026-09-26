@@ -1,9 +1,11 @@
 import type { Component, Connection } from "@/features/diagram";
 import { handleSpecForType } from "../nodes/node-types/registry";
 import {
+  BOTTOM_SOURCE_HANDLE_ID,
   singleIncomingTargetHandleId,
   slotCountFor,
   SPREAD_HANDLES,
+  TOP_TARGET_HANDLE_ID,
 } from "../nodes/node-types/handle-spec";
 
 /**
@@ -20,6 +22,11 @@ import {
  * under the user, and a deliberate back-edge — a loop, a retry, a write-back to
  * a store drawn further left — stops reading as one. Same contract as draw.io:
  * the connection owns its endpoints.
+ *
+ * The one extension is on the flowchart shapes (`verticalSides`): an edge may
+ * also leave from the bottom or arrive on the top. That is still the edge's
+ * choice, stored on the connection when the user drew it from or to those
+ * handles — top is input, bottom is output, and nothing here looks at geometry.
  */
 
 export { singleIncomingTargetHandleId };
@@ -103,13 +110,18 @@ export function buildEdgeHandleAssignments(
     sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
     targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;
 
-    // Sides are fixed: out of the right, into the left. Only the slot varies.
+    // Sides are fixed: out of the right, into the left. Only the slot varies —
+    // unless the edge itself asked for a vertical side the node renders.
+    const leavesBottom = conn.sourceSide === "bottom" && sourceSpec.verticalSides === true;
+    const entersTop = conn.targetSide === "top" && targetSpec.verticalSides === true;
     return {
       connId: conn.id,
-      sourceHandle: `source-${sIdx}`,
-      targetHandle: usesSingleIncomingHandle
-        ? singleIncomingTargetHandleId(conn.targetId)
-        : `target-${tIdx}`,
+      sourceHandle: leavesBottom ? BOTTOM_SOURCE_HANDLE_ID : `source-${sIdx}`,
+      targetHandle: entersTop
+        ? TOP_TARGET_HANDLE_ID
+        : usesSingleIncomingHandle
+          ? singleIncomingTargetHandleId(conn.targetId)
+          : `target-${tIdx}`,
     };
   });
 }
@@ -133,8 +145,9 @@ export function buildEffectiveHandleOrder(
     if (!result[conn.sourceId]) result[conn.sourceId] = { incoming: [], outgoing: [] };
     if (!result[conn.targetId]) result[conn.targetId] = { incoming: [], outgoing: [] };
 
-    result[conn.sourceId].outgoing[sIdx] = conn.id;
-    result[conn.targetId].incoming[tIdx] = conn.id;
+    // A vertical side is not one of the ordered slots down the left or right.
+    if (a.sourceHandle !== BOTTOM_SOURCE_HANDLE_ID) result[conn.sourceId].outgoing[sIdx] = conn.id;
+    if (a.targetHandle !== TOP_TARGET_HANDLE_ID) result[conn.targetId].incoming[tIdx] = conn.id;
   }
   return result;
 }

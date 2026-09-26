@@ -1,20 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import i18n from "@/infrastructure/i18n";
 
-vi.mock("@/features/canvas/panels/ElementPanel/components/colorPresets", () => ({
-  VIBRANT_PRESETS: [
-    { color: "#FF0000", nameKey: "color.red" },
-    { color: "#00FF00", nameKey: "color.green" },
-    { color: "#0000FF", nameKey: "color.blue" },
-  ],
-}));
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
+// No `vi.mock` for the presets or for react-i18next: the picker is reachable
+// from the test setup's module graph (the flow inspector section uses it), so a
+// factory mock arrives too late and silently does nothing — see
+// `src/test/setup.tsx`. The assertions below hold for the real presets and the
+// real translations.
 import { ColorPicker } from "./ColorPicker";
 
 describe("ColorPicker", () => {
@@ -31,7 +23,7 @@ describe("ColorPicker", () => {
     fireEvent.click(screen.getByRole("button"));
     // After click, swatches should appear (now visible as buttons)
     const buttons = screen.getAllByRole("button");
-    // 1 trigger button + 3 swatch buttons
+    // 1 trigger button + the swatch buttons
     expect(buttons.length).toBeGreaterThan(1);
   });
 
@@ -51,7 +43,7 @@ describe("ColorPicker", () => {
     render(<ColorPicker selectedColor="#FF0000" onSelectColor={onSelectColor} onReset={onReset} />);
     fireEvent.click(screen.getByRole("button"));
     // Reset button now lives inside the dropdown, not the trigger
-    const resetButtons = screen.getAllByTitle("colorSwatches.default");
+    const resetButtons = screen.getAllByTitle(i18n.t("colorSwatches.default"));
     expect(resetButtons.length).toBeGreaterThan(0);
   });
 
@@ -60,7 +52,7 @@ describe("ColorPicker", () => {
     const onReset = vi.fn();
     render(<ColorPicker selectedColor="#FF0000" onSelectColor={onSelectColor} onReset={onReset} />);
     fireEvent.click(screen.getByRole("button"));
-    const resetButton = screen.getByTitle("colorSwatches.default");
+    const resetButton = screen.getByTitle(i18n.t("colorSwatches.default"));
     fireEvent.click(resetButton);
     expect(onReset).toHaveBeenCalledTimes(1);
   });

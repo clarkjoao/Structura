@@ -7,6 +7,7 @@ import { PANEL_KINDS, getPanelKindDef, panelKindLabel } from "@/lib/catalogs/pan
 import type { NodeLayout } from "@/features/diagram";
 import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/canvas.constants";
 import Field from "../components/Field";
+import { SegmentedControl } from "../components/SegmentedControl";
 import { MIN_PANEL_WIDTH, MIN_PANEL_HEIGHT } from "../../../constants/panel.constants";
 
 function mergeSwimlane(
@@ -230,6 +231,20 @@ export function PanelStyleSection({
               </div>
             </div>
           )}
+          {/* A lane's outline, as on any panel: the evidence lane is dashed. */}
+          <SegmentedControl<"solid" | "dashed">
+            label={t("elementPanel.stroke")}
+            value={component.borderStyle === "dashed" ? "dashed" : "solid"}
+            options={[
+              { value: "solid", label: t("elementPanel.strokeSolid") },
+              { value: "dashed", label: t("elementPanel.strokeDashed") },
+            ]}
+            onChange={(stroke) =>
+              updateComponent(component.id, {
+                borderStyle: stroke === "solid" ? undefined : stroke,
+              } as ComponentPatch)
+            }
+          />
         </>
       ) : (
         <>

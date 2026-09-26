@@ -157,6 +157,8 @@ export type { RecentDiagramRef } from "./recent-diagrams";
 // ─── Colour / contrast ─────────────────────────────────────────────────────────
 export {
   contrastLabelColor,
+  accentTextColor,
+  tintOver,
   contrastRatio,
   parseCssColorToRgb,
   relativeLuminance,

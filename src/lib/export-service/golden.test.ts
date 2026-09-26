@@ -258,3 +258,239 @@ describe("golden — app draw.io export", () => {
     expect(xml).toMatchSnapshot();
   });
 });
+
+/**
+ * One of every flowchart shape, and one of every colour part — the old golden
+ * had no flow node at all, so the flowNode builder ran nowhere. Also an edge
+ * that leaves a decision from its bottom handle and one that enters a step on
+ * its top handle, which must export at those anchors rather than right/left.
+ */
+describe("golden — flowchart shapes", () => {
+  const SHAPES = [
+    "rectangle",
+    "rounded",
+    "subroutine",
+    "stadium",
+    "diamond",
+    "hexagon",
+    "parallelogram",
+    "cylinder",
+    "circle",
+    "start",
+    "end",
+    "document",
+    "event",
+    "junction-and",
+    "junction-or",
+    "annotation",
+    "evidence",
+  ] as const;
+
+  const flow = (
+    id: string,
+    shape: (typeof SHAPES)[number],
+    extra: Partial<Extract<Component, { type: "process-node" }>> = {},
+  ): Component => ({
+    id,
+    name: id,
+    description: "",
+    parentId: null,
+    type: "process-node",
+    flowShape: shape,
+    ...extra,
+  });
+
+  const components: Record<string, Component> = {
+    ...Object.fromEntries(SHAPES.map((shape) => [`s-${shape}`, flow(`s-${shape}`, shape)])),
+    soft: flow("soft", "rectangle", { customColor: "hsl(var(--node-system))", fill: "soft" }),
+    solidAmber: flow("solidAmber", "rectangle", {
+      customColor: "hsl(var(--node-person))",
+      fill: "solid",
+    }),
+    solidPurple: flow("solidPurple", "diamond", {
+      customColor: "hsl(var(--node-container))",
+      fill: "solid",
+    }),
+    dashed: flow("dashed", "rectangle", { stroke: "dashed" }),
+    legacy: flow("legacy", "rectangle", { nodeColor: "#ff0000" }),
+    tech: flow("tech", "cylinder", { technology: "PostgreSQL" }),
+  };
+
+  const ids = Object.keys(components);
+  const layouts: Record<string, NodeLayout> = Object.fromEntries(
+    ids.map((id, index) => [
+      id,
+      {
+        elementId: id,
+        x: (index % 5) * 280,
+        y: Math.floor(index / 5) * 180,
+        width: 200,
+        height: 80,
+      },
+    ]),
+  );
+
+  const connections: Record<string, Connection> = {
+    plain: { id: "plain", sourceId: "s-rectangle", targetId: "s-diamond", label: "" },
+    down: {
+      id: "down",
+      sourceId: "s-diamond",
+      targetId: "s-cylinder",
+      label: "no",
+      sourceSide: "bottom",
+      targetSide: "top",
+    },
+  };
+
+  it("freezes every shape and colour part", () => {
+    const xml = exportDrawio(diagram("Flow", components, connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    // The bottom/top edge is exported at those anchors, not the fixed sides.
+    expect(xml).toMatch(/id="down"[^>]*>.*?exitX="0\.5" exitY="1"/s);
+    expect(xml).toMatch(/id="down"[^>]*>.*?entryX="0\.5" entryY="0"/s);
+  });
+});
+
+/**
+ * One instance of every Value Stream Mapping element, exported through the
+ * generic stencil kind onto draw.io's own `mxgraph.lean_mapping.*` shapes.
+ */
+describe("golden — value stream map", () => {
+  const vsm = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const components: Record<string, Component> = {
+    supplier: vsm("supplier", { type: "vsm-external" }),
+    customer: vsm("customer", {
+      type: "vsm-external",
+      role: "customer",
+      customColor: "hsl(var(--node-system))",
+      fill: "soft",
+    }),
+    process: vsm("process", {
+      type: "vsm-process",
+      operators: 2,
+      metrics: [
+        { id: "m1", key: "C/T", value: "45 s" },
+        { id: "m2", key: "C/O", value: "10 min" },
+      ],
+      fill: "solid",
+      customColor: "hsl(var(--node-container))",
+    }),
+    inventory: vsm("inventory", { type: "vsm-inventory", quantity: "1200 pcs", duration: "2 d" }),
+    supermarket: vsm("supermarket", { type: "vsm-supermarket", stroke: "dashed" }),
+    push: vsm("push", { type: "vsm-push" }),
+    kaizen: vsm("kaizen", { type: "vsm-kaizen", fill: "solid" }),
+    timeline: vsm("timeline", {
+      type: "vsm-timeline",
+      unit: "d",
+      segments: [
+        { id: "s1", wait: 5, process: 0.5 },
+        { id: "s2", wait: 3, process: 1 },
+      ],
+    }),
+  };
+
+  const ids = Object.keys(components);
+  const layouts: Record<string, NodeLayout> = Object.fromEntries(
+    ids.map((id, index) => [id, { elementId: id, x: index * 260, y: 0, width: 200, height: 100 }]),
+  );
+
+  // Information flow: manual is a plain straight edge, electronic a zigzag.
+  const connections: Record<string, Connection> = {
+    manual: {
+      id: "manual",
+      sourceId: "supplier",
+      targetId: "process",
+      label: "",
+      style: { edgeStyle: EdgeStyle.Straight },
+    },
+    electronic: {
+      id: "electronic",
+      sourceId: "process",
+      targetId: "customer",
+      label: "EDI",
+      style: { edgeStyle: EdgeStyle.Zigzag },
+    },
+  };
+
+  it("freezes every VSM element", () => {
+    const xml = exportDrawio(diagram("VSM", components, connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toContain("shape=mxgraph.lean_mapping.outside_sources;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.manufacturing_process;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.inventory_box;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.supermarket;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.push_arrow;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.kaizen_lightening_burst;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.timeline2;");
+    expect(xml).toContain("shape=mxgraph.lean_mapping.electronic_info_flow_edge;");
+    // The totals are computed from the segments: 5 + 0.5 + 3 + 1 and 0.5 + 1.
+    expect(xml).toContain("Lead time: 9.5 d");
+    expect(xml).toContain("Value-added time: 1.5 d");
+  });
+});
+
+/**
+ * A service blueprint: lanes with a flow-preset accent (a theme token, which
+ * exports as its light value) and the three named lines.
+ */
+describe("golden — service blueprint", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const lane = (name: string, laneColor: string, extra: Record<string, unknown> = {}) =>
+    item(name, {
+      type: "panel",
+      panelKind: PanelKind.Swimlane,
+      panelColor: laneColor,
+      swimlane: { orientation: "horizontal", laneColor, laneLabel: name },
+      ...extra,
+    });
+
+  const components: Record<string, Component> = {
+    evidence: lane("Physical evidence", "hsl(var(--muted-foreground))", { borderStyle: "dashed" }),
+    stage: lane("Onstage", "hsl(var(--gcp-database))", { id: "stage" }),
+    legacyLane: lane("Legacy lane", "#6366f1", { id: "legacyLane" }),
+    // Inherits the onstage blue (a token lane); keeps its own amber; and the
+    // one in a literal-colour lane stays slate, as on the canvas.
+    inherits: item("inherits", { type: "process-node", flowShape: "rectangle", parentId: "stage" }),
+    ownAccent: item("ownAccent", {
+      type: "process-node",
+      flowShape: "rectangle",
+      parentId: "stage",
+      customColor: "hsl(var(--node-person))",
+    }),
+    vsmInherits: item("vsmInherits", { type: "vsm-process", parentId: "stage" }),
+    inLegacyLane: item("inLegacyLane", {
+      type: "process-node",
+      flowShape: "rectangle",
+      parentId: "legacyLane",
+    }),
+    interaction: item("Line of interaction", { type: "flow-divider" }),
+    visibility: item("Line of visibility", { type: "flow-divider", stroke: "dashed" }),
+    internal: item("Line of internal interaction", { type: "flow-divider" }),
+  };
+
+  const ids = Object.keys(components);
+  const layouts: Record<string, NodeLayout> = Object.fromEntries(
+    ids.map((id, index) => [id, { elementId: id, x: 0, y: index * 140, width: 900, height: 24 }]),
+  );
+
+  it("freezes the lanes and the named lines", () => {
+    const xml = exportDrawio(diagram("Blueprint", components, {}, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toContain('value="LINE OF VISIBILITY"');
+    // The evidence lane is dashed, and token accents export as hex.
+    expect(xml).toMatch(/value="Physical evidence" style="swimlane;[^"]*dashed=1;/);
+    expect(xml).not.toContain("var(--");
+    // Lane inheritance reaches draw.io: blue #1d67c9 is --gcp-database's light value.
+    const styleOf = (id: string) =>
+      new RegExp(`id="${id}" value="[^"]*" style="([^"]*)"`).exec(xml)?.[1];
+    expect(styleOf("inherits")).toContain("strokeColor=#1d67c9;");
+    expect(styleOf("vsmInherits")).toContain("strokeColor=#1d67c9;");
+    expect(styleOf("ownAccent")).toContain("strokeColor=#f59f0a;");
+    expect(styleOf("inLegacyLane")).toContain("strokeColor=#65758b;");
+    expect(xml).toMatch(/value="LINE OF VISIBILITY" style="line;[^"]*dashed=1;/);
+  });
+});

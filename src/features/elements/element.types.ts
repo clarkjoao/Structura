@@ -11,7 +11,11 @@ import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { PanelKind } from "@/features/diagram/enums";
-import type { FlowNodeShape } from "@/features/diagram/model/component.types";
+import type {
+  FlowNodeShape,
+  NodeStrokeMode,
+  VsmRole,
+} from "@/features/diagram/model/component.types";
 import type { ExportNode } from "@/lib/export-core";
 
 /**
@@ -44,6 +48,14 @@ export type RegisteredElementTypeId =
   | "panel"
   | "process-node"
   | "external-element"
+  | "vsm-external"
+  | "flow-divider"
+  | "vsm-timeline"
+  | "vsm-kaizen"
+  | "vsm-push"
+  | "vsm-supermarket"
+  | "vsm-inventory"
+  | "vsm-process"
   | "svg"
   | "unknown"
   | "gcp-compute"
@@ -153,6 +165,17 @@ export interface ElementCreateOptions {
   panelKind?: PanelKind;
   flowShape?: FlowNodeShape;
   serviceId?: string;
+  /** Which end of a value stream an outside source is (`vsm-external`). */
+  vsmRole?: VsmRole;
+  /**
+   * Drawn dashed from the start: the line of visibility, or a lane's outline
+   * (the physical-evidence lane).
+   */
+  stroke?: NodeStrokeMode;
+  /** A swimlane's accent from a preset (a flow-preset theme token). */
+  laneAccent?: string;
+  /** i18n key of a preset swimlane's label. */
+  laneLabelKey?: string;
 }
 
 export interface ElementSize {
@@ -299,6 +322,13 @@ export interface ElementPaletteSlice {
   spotlight?: number;
   /** One palette entry each, instead of a single entry for the element. */
   variants?: readonly ElementPaletteVariant[];
+  /**
+   * Held back from everything that *offers* elements — the picker, quick
+   * insert, the LLM catalog and element search — while the element stays
+   * registered: saved diagrams keep rendering, exporting and round-tripping
+   * it. For a vocabulary that is built but not released yet.
+   */
+  hidden?: boolean;
 }
 
 /** How the element is edited when selected. */
@@ -339,6 +369,20 @@ export interface ElementCanvasVariant {
   canvas: ElementCanvasSlice;
 }
 
+/**
+ * The colour-in-parts skin the flowchart shapes introduced — an accent
+ * (`customColor`), a fill and a stroke — for every element that wears it (the
+ * flow and VSM families). Its presence is what gives an element the flow
+ * accent presets in the toolbar and the Appearance section in the inspector.
+ */
+export interface ElementSkin {
+  /**
+   * The accent a node shows when none is stored. Resolved at render and never
+   * written: picking it in a control clears the stored accent instead.
+   */
+  defaultAccent: string;
+}
+
 export interface ElementDescriptor {
   id: ElementTypeId;
   family: ElementFamilyId;
@@ -354,4 +398,6 @@ export interface ElementDescriptor {
   palette: ElementPaletteSlice;
   inspector: ElementInspectorSlice;
   export: ElementExportSlice;
+  /** Present when the element wears the flow skin; see `ElementSkin`. */
+  skin?: ElementSkin;
 }

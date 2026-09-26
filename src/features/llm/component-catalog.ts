@@ -1,4 +1,4 @@
-import { allElements } from "@/features/elements/element.registry";
+import { offeredElements } from "@/features/elements/element.registry";
 import type { ElementDescriptor } from "@/features/elements/element.types";
 import {
   allCloudFamilies,
@@ -47,7 +47,7 @@ function toTypeDefinition(element: ElementDescriptor): ComponentTypeDefinition {
 
 /** Every element of one non-catalog family, as prompt entries. */
 export function familyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
-  return allElements()
+  return offeredElements()
     .filter((element) => element.family === familyId)
     .map(toTypeDefinition);
 }
@@ -66,7 +66,7 @@ export function c4RegisteredTypes(): ComponentTypeDefinition[] {
 
 /** Cloud family categories registered on the element registry, as catalog entries. */
 function cloudFamilyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
-  return allElements()
+  return offeredElements()
     .filter((element) => element.family === familyId)
     .flatMap((element) => {
       const variants = element.palette.variants;

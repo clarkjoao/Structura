@@ -20,7 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
+import { buildEditableEdgePath, buildZigzagPath, getRenderedPathKnots } from "./geometry/paths";
 import { buildStepPath } from "./geometry/orthogonal";
 import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/projection";
 import { useControlPoints } from "./interaction/useControlPoints";
@@ -120,12 +120,13 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           target,
           sourcePosition: sourcePosition as "left" | "top" | "right" | "bottom",
           targetPosition: targetPosition as "left" | "top" | "right" | "bottom",
+          // A zigzag's label sits on its straight line, like a straight edge's.
           style:
             edgeStyle === EdgeStyle.Bezier
               ? "bezier"
               : edgeStyle === EdgeStyle.Step
                 ? "step"
-                : edgeStyle === EdgeStyle.Straight
+                : edgeStyle === EdgeStyle.Straight || edgeStyle === EdgeStyle.Zigzag
                   ? "straight"
                   : "smoothstep",
         });
@@ -174,6 +175,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     }
     if (edgeStyle === EdgeStyle.Bezier) {
       return { edgePath: getBezierPath(params)[0] };
+    }
+    if (edgeStyle === EdgeStyle.Zigzag) {
+      return { edgePath: buildZigzagPath(source, target) };
     }
     return { edgePath: getStraightPath(params)[0] };
   }, [

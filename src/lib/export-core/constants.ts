@@ -51,8 +51,26 @@ export const FLOW_SHAPE_STYLES: Record<string, string> = {
   hexagon: "shape=hexagon;perimeter=hexagonPerimeter2;",
   parallelogram: "shape=parallelogram;perimeter=parallelogramPerimeter;fixedSize=1;",
   cylinder: "shape=cylinder3;boundedLbl=1;backgroundOutline=1;size=8;",
-  circle: "ellipse;",
+  circle: "ellipse;aspect=fixed;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;",
   subroutine: "shape=process;whiteSpace=wrap;backgroundOutline=1;",
+  // Start and end are told apart by the outline alone, as in BPMN: thin for
+  // a start, thick for an end. The legacy combined circle exports as a start.
+  start: "ellipse;aspect=fixed;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;",
+  end: "ellipse;aspect=fixed;strokeWidth=4;verticalLabelPosition=bottom;verticalAlign=top;",
+  document: "shape=document;boundedLbl=1;size=0.18;",
+  // ArchiMate 3's business event, registered by draw.io's mxArchiMate3.js.
+  event: "shape=mxgraph.archimate3.event;outlineConnect=0;",
+  // A junction is a dot: filled for AND, hollow with a 2px ring for OR. The
+  // name is kept on the cell but not drawn over a 20px circle.
+  "junction-and": "ellipse;aspect=fixed;noLabel=1;",
+  "junction-or": "ellipse;aspect=fixed;noLabel=1;strokeWidth=2;",
+  // A bracket on the left and free text: draw.io's partialRectangle with only
+  // its left side drawn (Shapes.js reads the top/left/bottom/right keys).
+  // Physical evidence: a plain card, dashed unless its stroke says otherwise
+  // (the dash comes from the colour parts, like any dashed stroke).
+  evidence: "rounded=1;arcSize=8;absoluteArcSize=1;shadow=0;",
+  annotation:
+    "text;shape=partialRectangle;left=1;right=0;top=0;bottom=0;align=left;spacingLeft=10;fontSize=13;",
 };
 
 export const THEME = {

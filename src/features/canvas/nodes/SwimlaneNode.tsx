@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
-import { contrastLabelColor } from "@/features/diagram";
+import { accentTextColor, tintOver } from "@/features/diagram";
+import { resolveThemeColor } from "./ProcessNode/useOnAccentColor";
 import { useCanvasBackdrop } from "./use-canvas-backdrop";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { withAlpha } from "./swimlane-color";
@@ -16,6 +17,8 @@ export type SwimlaneNodeData = {
   laneLabel: string;
   /** Background tint 0–100. Falls back to a low-opacity tint when unset. */
   opacity?: number;
+  /** The panel's outline; a dashed lane is the blueprint's physical evidence. */
+  borderStyle?: "solid" | "dashed" | "dotted";
   isSelected: boolean;
   isHighlighted?: boolean;
   isDragTarget?: boolean;
@@ -29,6 +32,11 @@ export type SwimlaneNodeData = {
 
 const DEFAULT_SWIMLANE_OPACITY = 9;
 
+/** The lane header: a 44px band down the left (or across the top of a vertical lane). */
+const SWIMLANE_HEADER = 44;
+/** How strongly the header is washed with the lane's accent, over the lane's own tint. */
+const HEADER_TINT_PCT = 12;
+
 const UNPARENT_BORDER = "hsl(25 95% 53%)";
 
 const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
@@ -39,12 +47,18 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
   const { t } = useTranslation();
   const { highlightedNodeIds } = useHandleHighlight();
   const isHorizontal = d.orientation !== "vertical";
-  const laneColor = d.laneColor || "#6366f1";
+  const backdrop = useCanvasBackdrop();
+  // A lane accent may be a theme token (the flow presets): resolved against the
+  // active theme — re-rendered with the backdrop when it flips — because a
+  // translucent fill and a contrast ratio both need channels.
+  const laneColor = resolveThemeColor(d.laneColor || "#6366f1");
   const opacityPct = Math.max(0, Math.min(100, d.opacity ?? DEFAULT_SWIMLANE_OPACITY));
   const fill = withAlpha(laneColor, opacityPct);
   const labelText = d.laneLabel?.trim() || d.name?.trim() || t("swimlane.defaultLaneLabel");
-  const backdrop = useCanvasBackdrop();
-  const labelColor = contrastLabelColor(laneColor, opacityPct, backdrop);
+  // The header is the lane tint plus the header wash, over the canvas; its text
+  // is the accent itself, darkened (or lightened) just enough for 4.5:1.
+  const headerBg = tintOver(laneColor, opacityPct + HEADER_TINT_PCT, backdrop);
+  const labelColor = accentTextColor(laneColor, headerBg);
 
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
@@ -70,6 +84,9 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
         } ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-95"}`}
         style={{
           background: fill,
+          ...(d.borderStyle === "dashed" || d.borderStyle === "dotted"
+            ? { border: `1.5px ${d.borderStyle} ${withAlpha(laneColor, 60)}` }
+            : {}),
           ...(isUnparentCandidate ? { borderColor: UNPARENT_BORDER } : {}),
         }}
       >
@@ -84,13 +101,34 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
           <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
         )}
         <div
-          className={`absolute z-[1] pointer-events-none ${
+          className={`absolute z-[1] pointer-events-none flex items-center justify-center overflow-hidden ${
             isHorizontal
-              ? "left-0 top-0 bottom-0 w-1 rounded-l-lg"
-              : "top-0 left-0 right-0 h-1 rounded-t-lg"
+              ? "left-0 top-0 bottom-0 rounded-l-lg"
+              : "top-0 left-0 right-0 rounded-t-lg"
           }`}
-          style={{ background: isUnparentCandidate ? UNPARENT_BORDER : laneColor }}
-        />
+          style={{
+            [isHorizontal ? "width" : "height"]: SWIMLANE_HEADER,
+            background: withAlpha(laneColor, HEADER_TINT_PCT),
+            [isHorizontal ? "borderRight" : "borderBottom"]:
+              `1px solid ${withAlpha(laneColor, 30)}`,
+            ...(isUnparentCandidate
+              ? { [isHorizontal ? "borderLeft" : "borderTop"]: `3px solid ${UNPARENT_BORDER}` }
+              : {}),
+          }}
+          data-testid="swimlane-header"
+        >
+          <span
+            className="max-h-full max-w-full select-none truncate whitespace-nowrap px-1 text-xs font-semibold uppercase tracking-[0.04em]"
+            style={{
+              color: labelColor,
+              ...(isHorizontal
+                ? { writingMode: "vertical-rl" as const, transform: "rotate(180deg)" }
+                : {}),
+            }}
+          >
+            {labelText}
+          </span>
+        </div>
         {isDragTarget && (
           <div
             className="absolute inset-0 rounded-lg animate-pulse-glow pointer-events-none z-0"
@@ -98,17 +136,12 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
           />
         )}
         <div
-          className={`absolute z-[2] ${
+          className="p-3 h-full min-h-[48px]"
+          style={
             isHorizontal
-              ? "left-3 top-1/2 -translate-y-1/2 -rotate-90"
-              : "top-2 left-1/2 -translate-x-1/2"
-          } text-[11px] font-semibold uppercase tracking-widest select-none whitespace-nowrap max-w-[calc(100%-2rem)] truncate`}
-          style={{ color: labelColor }}
-        >
-          {labelText}
-        </div>
-        <div
-          className={isHorizontal ? "pl-8 p-3 h-full min-h-[48px]" : "pt-7 p-3 h-full min-h-[48px]"}
+              ? { paddingLeft: SWIMLANE_HEADER + 12 }
+              : { paddingTop: SWIMLANE_HEADER + 12 }
+          }
         />
       </div>
     </>

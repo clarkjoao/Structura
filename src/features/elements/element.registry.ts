@@ -166,6 +166,16 @@ export function allElements(): ElementDescriptor[] {
   return [...registry.values()];
 }
 
+/**
+ * The elements a user or the assistant may be offered: every registered one
+ * except those whose palette is `hidden`. Everything that lists elements to
+ * choose from reads this; rendering, export and type recognition read
+ * `allElements`, so a hidden element in a saved diagram still works.
+ */
+export function offeredElements(): ElementDescriptor[] {
+  return allElements().filter((element) => !element.palette.hidden);
+}
+
 export function registeredElementIds(): ElementTypeId[] {
   return [...registry.keys()];
 }

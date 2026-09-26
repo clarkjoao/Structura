@@ -93,7 +93,29 @@ export const NEUTRAL_PRESETS: ColorPreset[] = [
   { nameKey: "colors.gray", color: "hsl(220 10% 45%)" },
 ];
 
+/**
+ * Accents for the flow family (and the families that share its skin). Stored
+ * as theme tokens, not literal colours, so a preset follows light and dark
+ * mode; the tokens are the C4 ones, so a flowchart can be coloured to match
+ * the architecture it sits beside. Slate first: it is the family default.
+ */
+export const FLOW_ACCENT_PRESETS: ColorPreset[] = [
+  { nameKey: "colors.slate", color: "hsl(var(--muted-foreground))" },
+  { nameKey: "colors.teal", color: "hsl(var(--node-system))" },
+  { nameKey: "colors.purple", color: "hsl(var(--node-container))" },
+  { nameKey: "colors.green", color: "hsl(var(--node-component))" },
+  { nameKey: "colors.amber", color: "hsl(var(--node-person))" },
+  { nameKey: "colors.blue", color: "hsl(var(--gcp-database))" },
+];
+
 export const PANEL_PRESETS: ColorPreset[] = [...VIBRANT_PRESETS, ...NEUTRAL_PRESETS];
+
+/**
+ * A swimlane's accents: the flow presets first — theme tokens, the only lane
+ * colours its children inherit (see `laneAccentFor`) — then the panel colours
+ * lanes have always offered.
+ */
+export const LANE_PRESETS: ColorPreset[] = [...FLOW_ACCENT_PRESETS, ...PANEL_PRESETS];
 
 export const NOTE_PRESETS: ColorPreset[] = [
   { nameKey: "colors.ivory", color: "hsl(45 25% 97%)" },

@@ -39,6 +39,14 @@ const FIXED_REGISTERED_IDS = [
   "panel",
   "process-node",
   "external-element",
+  "vsm-external",
+  "flow-divider",
+  "vsm-timeline",
+  "vsm-kaizen",
+  "vsm-push",
+  "vsm-supermarket",
+  "vsm-inventory",
+  "vsm-process",
   "svg",
   "unknown",
 ] as const;
@@ -93,8 +101,10 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
     expect(sanitizeComponentType(type)).toBe(type);
   });
 
-  it("is offered to the LLM", () => {
-    expect(isValidNodeType(type)).toBe(true);
+  // A hidden (not yet released) element is held back from the LLM like from
+  // the picker; everything else is offered.
+  it("is offered to the LLM unless its palette is hidden", () => {
+    expect(isValidNodeType(type)).toBe(!getElement(type)!.palette.hidden);
   });
 
   it("declares everything the registry requires", () => {

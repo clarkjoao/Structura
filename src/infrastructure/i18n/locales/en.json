@@ -87,7 +87,8 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Transport type",
     "copySuffix": " (copy)",
-    "defaultNamePrefix": "New"
+    "defaultNamePrefix": "New",
+    "edgeZigzag": "Zigzag (electronic)"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -1125,16 +1126,59 @@
       }
     },
     "families": {
+      "vsm": {
+        "label": "Value stream map"
+      },
       "structural": {
         "label": "Structural & Canvas"
       },
       "c4": {
         "label": "C4 Model"
       }
+    },
+    "vsm-external": {
+      "label": "Supplier / customer",
+      "description": "An outside source at either end of a value stream: the supplier that feeds it or the customer it serves."
+    },
+    "vsm-process": {
+      "label": "Process",
+      "description": "A step of the value stream, with its operators and a data box of metrics (cycle time, changeover, uptime, shifts)."
+    },
+    "vsm-inventory": {
+      "label": "Inventory",
+      "description": "Stock waiting between two steps, with its quantity and how long it lasts."
+    },
+    "vsm-supermarket": {
+      "label": "Supermarket",
+      "description": "A controlled store of parts that the downstream step pulls from."
+    },
+    "vsm-push": {
+      "label": "Push arrow",
+      "description": "Material pushed to the next step whether it needs it or not."
+    },
+    "vsm-kaizen": {
+      "label": "Kaizen burst",
+      "description": "An improvement to make at this point of the stream."
+    },
+    "vsm-timeline": {
+      "label": "Timeline",
+      "description": "The square wave under a value stream: waiting times above, processing times below, with lead time and value-added time totalled."
+    },
+    "flow-divider": {
+      "label": "Named line",
+      "description": "A labelled line across the diagram — a service blueprint’s line of interaction, visibility or internal interaction."
     }
   },
   "flowchart": {
     "shapes": {
+      "evidence": "Physical evidence",
+      "annotation": "Annotation",
+      "junction-and": "Junction (AND)",
+      "junction-or": "Junction (OR)",
+      "event": "Event",
+      "document": "Document",
+      "start": "Start",
+      "end": "End",
       "rectangle": "Process",
       "rounded": "Rounded Process",
       "stadium": "Terminal",
@@ -1202,6 +1246,15 @@
     "idLabel": "ID"
   },
   "elementPanel": {
+    "appearance": "Appearance",
+    "accent": "Accent",
+    "fill": "Fill",
+    "fillNone": "None",
+    "fillSoft": "Soft",
+    "fillSolid": "Solid",
+    "stroke": "Stroke",
+    "strokeSolid": "Solid",
+    "strokeDashed": "Dashed",
     "suggestedNudge": "You can link this {{name}} to a diagram.",
     "suggested": "Suggested",
     "panelHeaderPanel": "Panel",
@@ -2398,5 +2451,61 @@
     "untitled": "Untitled Walkthrough",
     "untitledPlaceholder": "Untitled Walkthrough",
     "upNext": "Up next:"
+  },
+  "vsm": {
+    "role": {
+      "supplier": "Supplier",
+      "customer": "Customer"
+    },
+    "fields": {
+      "role": "Role",
+      "operators": "Operators",
+      "metrics": "Data box",
+      "metricKey": "Metric",
+      "metricValue": "Value",
+      "addMetric": "Add row",
+      "removeMetric": "Remove row",
+      "quantity": "Quantity",
+      "duration": "Duration",
+      "unit": "Unit",
+      "segments": "Segments",
+      "wait": "Wait",
+      "process": "Process",
+      "addSegment": "Add segment",
+      "removeSegment": "Remove segment"
+    },
+    "metrics": {
+      "cycleTime": "C/T",
+      "changeover": "C/O",
+      "uptime": "Uptime",
+      "shifts": "Shifts"
+    },
+    "timeline": {
+      "leadTime": "Lead time",
+      "valueAdded": "Value-added time"
+    },
+    "units": {
+      "s": "s",
+      "min": "min",
+      "h": "h",
+      "d": "d"
+    }
+  },
+  "blueprint": {
+    "lines": {
+      "interaction": "Line of interaction",
+      "visibility": "Line of visibility",
+      "internal": "Line of internal interaction"
+    },
+    "fields": {
+      "stroke": "Line"
+    },
+    "lanes": {
+      "evidence": "Physical evidence",
+      "customer": "Customer actions",
+      "onstage": "Onstage",
+      "backstage": "Backstage",
+      "support": "Support processes"
+    }
   }
 }

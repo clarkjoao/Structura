@@ -178,3 +178,63 @@ describe("PositionSection", () => {
     expect(yField().value).toBe("360");
   });
 });
+
+describe("PositionSection size bounds", () => {
+  const sized = (width: number, height: number): NodeLayout => ({
+    elementId: "c1",
+    x: 0,
+    y: 0,
+    width,
+    height,
+  });
+  const widthField = () => inputs()[2];
+
+  it("keeps a card's width within its maximum", () => {
+    const updateNodeLayout = vi.fn();
+    render(
+      <PositionSection
+        componentId="c1"
+        nodeLayout={sized(220, 150)}
+        updateNodeLayout={updateNodeLayout}
+        isPanel
+        minWidth={200}
+        maxWidth={260}
+        minHeight={80}
+      />,
+    );
+    fireEvent.focus(widthField());
+    fireEvent.change(widthField(), { target: { value: "400" } });
+    fireEvent.blur(widthField());
+    expect(updateNodeLayout).toHaveBeenLastCalledWith(
+      "c1",
+      { x: 0, y: 0 },
+      { width: 260, height: 150 },
+      { syncCanvas: true },
+    );
+  });
+
+  it("does not stretch a small element to the panel minimum when only X moves", () => {
+    // An inventory triangle is 96 wide; with the panel default floor of 200,
+    // editing its X used to rewrite its width to 200.
+    const updateNodeLayout = vi.fn();
+    render(
+      <PositionSection
+        componentId="c1"
+        nodeLayout={sized(96, 110)}
+        updateNodeLayout={updateNodeLayout}
+        isPanel
+        minWidth={60}
+        minHeight={70}
+      />,
+    );
+    fireEvent.focus(xField());
+    fireEvent.change(xField(), { target: { value: "40" } });
+    fireEvent.blur(xField());
+    expect(updateNodeLayout).toHaveBeenLastCalledWith(
+      "c1",
+      { x: 40, y: 0 },
+      { width: 96, height: 110 },
+      { syncCanvas: true },
+    );
+  });
+});

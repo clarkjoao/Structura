@@ -20,6 +20,8 @@ export interface PositionSectionProps {
   minWidth?: number;
   /** Floor for height when `isPanel`; defaults to panel min (150). */
   minHeight?: number;
+  /** Ceiling for width when `isPanel` (a card's); none when omitted. */
+  maxWidth?: number;
 }
 
 export function PositionSection({
@@ -29,6 +31,7 @@ export function PositionSection({
   isPanel,
   minWidth = MIN_PANEL_WIDTH,
   minHeight = MIN_PANEL_HEIGHT,
+  maxWidth = Number.POSITIVE_INFINITY,
 }: PositionSectionProps) {
   const { t } = useTranslation();
   const [xInput, setXInput] = useState("");
@@ -80,7 +83,7 @@ export function PositionSection({
       const parsedH = Number(trimmedH);
       if (!Number.isFinite(parsedW) || !Number.isFinite(parsedH)) return;
 
-      const nextW = Math.max(minWidth, Math.round(parsedW));
+      const nextW = Math.min(maxWidth, Math.max(minWidth, Math.round(parsedW)));
       const nextH = Math.max(minHeight, Math.round(parsedH));
 
       if (
@@ -108,6 +111,7 @@ export function PositionSection({
     componentId,
     heightInput,
     isPanel,
+    maxWidth,
     minHeight,
     minWidth,
     nodeLayout,

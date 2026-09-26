@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from "react";
+import type { ElementCreateOptions } from "@/features/elements/element.types";
 import { useDiagramActions, useAllServices } from "@/features/diagram";
 import { PanelKind, COMPONENT_TYPE_PANEL } from "@/features/diagram";
 import type { ComponentType, FlowNodeShape } from "@/features/diagram";
@@ -26,6 +27,8 @@ type CanvasInsertOption = {
   flowShape?: FlowNodeShape;
   /** Search synonyms carried by the option itself (registry-derived entries). */
   searchKeys?: string[];
+  /** Everything else the palette entry creates with. */
+  createOptions?: ElementCreateOptions;
 };
 
 type FlatOption =
@@ -170,6 +173,7 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
         searchKeys: entry.searchKeys,
         panelKind: entry.createOptions.panelKind,
         awsIconName: entry.awsIconName,
+        createOptions: entry.createOptions,
       })),
     // `t` is deliberate: rebuilds the labels on a language change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -356,10 +360,25 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
   );
 
   const handleSelectCanvas = useCallback(
-    (type: ComponentType, label: string, panelKind?: PanelKind, flowShape?: FlowNodeShape) => {
+    (
+      type: ComponentType,
+      label: string,
+      panelKind?: PanelKind,
+      flowShape?: FlowNodeShape,
+      createOptions?: ElementCreateOptions,
+    ) => {
       const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
       const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
-      const comp = addComponent(type, name, null, insertPos, undefined, panelKind, flowShape);
+      const comp = addComponent(
+        type,
+        name,
+        null,
+        insertPos,
+        undefined,
+        panelKind,
+        flowShape,
+        createOptions,
+      );
       finalizeInsertion(comp.id);
     },
     [addComponent, insertPos, finalizeInsertion],
@@ -430,6 +449,7 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
             option.opt.label,
             option.opt.panelKind,
             option.opt.flowShape,
+            option.opt.createOptions,
           );
           break;
         case "aws":
@@ -560,7 +580,15 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
                     : opt.type
                 }
                 data-selected={selectedIndex === canvasOffset + index}
-                onClick={() => handleSelectCanvas(opt.type, opt.label, opt.panelKind)}
+                onClick={() =>
+                  handleSelectCanvas(
+                    opt.type,
+                    opt.label,
+                    opt.panelKind,
+                    undefined,
+                    opt.createOptions,
+                  )
+                }
                 className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
                   selectedIndex === canvasOffset + index
                     ? "bg-primary/10 text-primary"

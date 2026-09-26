@@ -4,7 +4,12 @@ import type {
   CloudService,
 } from "@/features/cloud/model/cloud.types";
 import { cloudRegistry } from "@/features/cloud/registry/cloud.registry";
-import { registerElement, hasElement, unregisterElement, allElements } from "../element.registry";
+import {
+  registerElement,
+  hasElement,
+  unregisterElement,
+  offeredElements,
+} from "../element.registry";
 import type { CloudFamilyDefinition } from "./cloud-family.types";
 import { buildCloudFamilyDescriptors } from "./build-cloud-family-descriptors";
 import { forgetFamilyIconResolver } from "./family-icon-resolvers";
@@ -74,7 +79,8 @@ export function allCloudFamilies(): readonly CloudFamilyDefinition[] {
 export function nonCatalogFamilyIds(): string[] {
   const catalogIds = new Set(families.keys());
   const seen: string[] = [];
-  for (const element of allElements()) {
+  // A family with nothing on offer (all of it hidden) is not one to name.
+  for (const element of offeredElements()) {
     if (catalogIds.has(element.family) || seen.includes(element.family)) continue;
     seen.push(element.family);
   }

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import debounce from "lodash.debounce";
 import { X, Trash2 } from "lucide-react";
 import {
@@ -42,6 +43,7 @@ import {
   PanelStyleSection,
   ExternalLinksSection,
   FlowchartFieldsSection,
+  FlowAppearanceSection,
   PositionSection,
 } from "./sections";
 import { isComponentType } from "@/features/diagram";
@@ -122,6 +124,8 @@ const ComponentPanel = ({
   const isNote = isNoteComponent(component);
   const isDbTable = isDbTableComponent(component);
   const isFlowchart = isProcessNodeComponent(component);
+  // A flow node in a lane that passes on its accent shows that accent unset.
+  const defaultAccent = useEffectiveDefaultAccent(component);
   const isSimple = isPanel || isNote;
   const [flowShape, setFlowShape] = useState<FlowNodeShape>(
     isFlowchart ? component.flowShape : "rectangle",
@@ -335,6 +339,13 @@ const ComponentPanel = ({
                     setFlowShape(shape);
                     updateComponent(component.id, { flowShape: shape } as ComponentPatch);
                   }}
+                />
+              )}
+              {isProcessNodeComponent(component) && (
+                <FlowAppearanceSection
+                  appearance={component}
+                  defaultAccent={defaultAccent}
+                  onChange={(patch) => updateComponent(component.id, patch)}
                 />
               )}
               {!isDbTable && !isFlowchart && (

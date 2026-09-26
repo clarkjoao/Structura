@@ -24,6 +24,54 @@ export const COMPONENT_TYPE_FLOW_NODE = "process-node";
 
 export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
+export const COMPONENT_TYPE_FLOW_DIVIDER = "flow-divider";
+
+export function isFlowDividerType(type: string): type is "flow-divider" {
+  return type === COMPONENT_TYPE_FLOW_DIVIDER;
+}
+
+export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
+
+export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";
+
+export function isVsmTimelineType(type: string): type is "vsm-timeline" {
+  return type === COMPONENT_TYPE_VSM_TIMELINE;
+}
+
+export const COMPONENT_TYPE_VSM_KAIZEN = "vsm-kaizen";
+
+export function isVsmKaizenType(type: string): type is "vsm-kaizen" {
+  return type === COMPONENT_TYPE_VSM_KAIZEN;
+}
+
+export const COMPONENT_TYPE_VSM_PUSH = "vsm-push";
+
+export function isVsmPushType(type: string): type is "vsm-push" {
+  return type === COMPONENT_TYPE_VSM_PUSH;
+}
+
+export const COMPONENT_TYPE_VSM_SUPERMARKET = "vsm-supermarket";
+
+export function isVsmSupermarketType(type: string): type is "vsm-supermarket" {
+  return type === COMPONENT_TYPE_VSM_SUPERMARKET;
+}
+
+export const COMPONENT_TYPE_VSM_INVENTORY = "vsm-inventory";
+
+export function isVsmInventoryType(type: string): type is "vsm-inventory" {
+  return type === COMPONENT_TYPE_VSM_INVENTORY;
+}
+
+export const COMPONENT_TYPE_VSM_PROCESS = "vsm-process";
+
+export function isVsmProcessType(type: string): type is "vsm-process" {
+  return type === COMPONENT_TYPE_VSM_PROCESS;
+}
+
+export function isVsmExternalType(type: string): type is "vsm-external" {
+  return type === COMPONENT_TYPE_VSM_EXTERNAL;
+}
+
 /** Legacy type strings; both are migrated to "process-node" by
  * `migrateProcessNodeTypeToProcessNode` in `store/persist.config.ts`. */
 const LEGACY_FLOW_NODE_TYPE = "flow-node";

@@ -37,6 +37,7 @@ export const connectionsSlice = (
     targetId: string,
     label: string,
     edgeStyle: EdgeStyle = EdgeStyleEnum.EditableStep,
+    sides: Pick<Connection, "sourceSide" | "targetSide"> = {},
   ): Connection | null => {
     const state = get();
     const active = state.diagrams[state.activeDiagramId ?? ""];
@@ -50,6 +51,9 @@ export const connectionsSlice = (
       style: {
         edgeStyle,
       },
+      // Only a side the user actually drew from/to; the defaults stay unwritten.
+      ...(sides.sourceSide ? { sourceSide: sides.sourceSide } : {}),
+      ...(sides.targetSide ? { targetSide: sides.targetSide } : {}),
     };
     set((state) => {
       const d = getActiveDiagram(state);
