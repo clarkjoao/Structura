@@ -17,6 +17,18 @@ import type {
   ExternalLink,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+
+/**
+ * A reference the auto-layout decided on: `refId` stands for `originalId` in
+ * `parentId`, and the edges from `sourceIds` (layout ids — a component, or
+ * the api-group its endpoints collapse onto) to the original end on it.
+ */
+export interface AutoRefAssignment {
+  refId: string;
+  originalId: string;
+  parentId: string | null;
+  sourceIds: readonly string[];
+}
 import type { FlowCursor } from "../utils/flow-edit";
 import type { MoveStepTarget } from "../utils/flow-move";
 import type { FlowStoreResult, RecordedStepContent } from "./slices/flows.slice";
@@ -136,6 +148,7 @@ export interface AppActions {
       width?: number;
       height?: number;
     }>,
+    autoRefs?: readonly AutoRefAssignment[],
   ) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;

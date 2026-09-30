@@ -2199,6 +2199,8 @@
   "autoLayout": {
     "contextMenuLabel": "Auto Layout (LR)",
     "applied": "Layout applied successfully",
+    "appliedWithRefs_one": "Layout applied — 1 reference untangles a busy element",
+    "appliedWithRefs_other": "Layout applied — {{count}} references untangle busy elements",
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",

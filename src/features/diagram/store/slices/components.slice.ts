@@ -11,7 +11,11 @@ import type {
 } from "../../model/diagram.types";
 import { PanelKind } from "../../enums";
 import { generateId } from "../../utils/generate-id";
-import { isPanelComponent, isApiGroupComponent } from "../../model/component.guards";
+import {
+  isPanelComponent,
+  isApiGroupComponent,
+  isSharedRefComponent,
+} from "../../model/component.guards";
 import {
   isPanelType,
   isEndpointType,
@@ -19,7 +23,8 @@ import {
   COMPONENT_TYPE_UNKNOWN,
   COMPONENT_TYPE_SHARED_REF,
 } from "../../model/component-type-constants";
-import type { FlowNodeShape } from "../../model/component.types";
+import type { FlowNodeShape, SharedRefComponent } from "../../model/component.types";
+import type { AutoRefAssignment } from "../actions.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
 import {
   elementDefaultSize,
@@ -422,9 +427,10 @@ function writeSharedRef(
   original: Component,
   parentId: string | null,
   position: { x: number; y: number },
+  id: string = generateId("el"),
 ): Component {
   const { component } = buildComponentForType(
-    generateId("el"),
+    id,
     COMPONENT_TYPE_SHARED_REF,
     original.name,
     parentId,
@@ -443,6 +449,86 @@ function writeSharedRef(
   const stored = resolveComponent(d, scene, original.id);
   if (stored && sharedMode(stored) === "edges") stored.shared = { mode: "ref" };
   return component;
+}
+
+/**
+ * Makes the base diagram's automatic references exactly `assignments`, inside
+ * an open `set` that has already pushed history. Every automatic reference is
+ * first dissolved back into its original (the auto-layout planned without
+ * them); the assigned ones are then kept, or made, and the edges from their
+ * consumers moved onto them. What is left over goes. A reference the user made
+ * is never touched. An original the auto-layout turned to ref mode goes back to
+ * drawing its edges once it has no reference left.
+ */
+export function reconcileAutoRefs(d: Diagram, assignments: readonly AutoRefAssignment[]): void {
+  const components = d.snapshot.components;
+  const connections = Object.values(d.snapshot.connections);
+  const autoRefs = new Map<string, SharedRefComponent>();
+  for (const component of Object.values(components)) {
+    if (isSharedRefComponent(component) && component.auto) autoRefs.set(component.id, component);
+  }
+  const dissolved = new Set([...autoRefs.values()].map((ref) => ref.refOf));
+  if (autoRefs.size === 0 && assignments.length === 0) return;
+
+  const clearPath = (connectionId: string) => {
+    const edgeLayout = d.edgeLayouts[connectionId];
+    if (edgeLayout?.points) delete edgeLayout.points;
+  };
+  for (const connection of connections) {
+    const target = autoRefs.get(connection.targetId);
+    if (target) {
+      connection.targetId = target.refOf;
+      clearPath(connection.id);
+    }
+    const source = autoRefs.get(connection.sourceId);
+    if (source) {
+      connection.sourceId = source.refOf;
+      clearPath(connection.id);
+    }
+  }
+
+  const kept = new Set<string>();
+  for (const assignment of assignments) {
+    const original = components[assignment.originalId];
+    if (!original || !canBeReferenced(original)) continue;
+    const existing = autoRefs.get(assignment.refId);
+    if (existing) {
+      existing.parentId = assignment.parentId;
+    } else {
+      const created = writeSharedRef(
+        d,
+        null,
+        original,
+        assignment.parentId,
+        { x: 0, y: 0 },
+        assignment.refId,
+      );
+      const stored = components[created.id];
+      if (stored && isSharedRefComponent(stored)) stored.auto = true;
+    }
+    kept.add(assignment.refId);
+    const consumers = new Set(assignment.sourceIds);
+    for (const connection of connections) {
+      if (connection.targetId !== assignment.originalId) continue;
+      const source = components[connection.sourceId];
+      const layoutSourceId =
+        source?.parentId && isApiGroupComponent(components[source.parentId])
+          ? source.parentId
+          : connection.sourceId;
+      if (!consumers.has(layoutSourceId)) continue;
+      connection.targetId = assignment.refId;
+      clearPath(connection.id);
+    }
+  }
+
+  const stale = [...autoRefs.keys()].filter((id) => !kept.has(id));
+  if (stale.length > 0) removeElementsFromSnapshot(d, stale, []);
+
+  for (const originalId of dissolved) {
+    const original = components[originalId];
+    if (!original || sharedMode(original) !== "ref") continue;
+    if (refsOf(originalId, components).length === 0) delete original.shared;
+  }
 }
 
 /** A component of the active diagram's scene, by id — for checks made before `set`. */

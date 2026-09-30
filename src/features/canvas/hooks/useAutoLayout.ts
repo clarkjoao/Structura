@@ -6,6 +6,8 @@ import { layout } from "../layout/layoutEngine";
 import { fitToContentIds, fromDiagram, resizableIds } from "../layout/fromDiagram";
 import { fitContainersToChildren, toAppliedLayouts, measuredSizesOf } from "../layout/applyLayout";
 import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
+import { chooseAutoRefs } from "../layout/autoRefs";
+import { autoRefOptionsFor, withoutAutoRefs } from "../layout/autoRefsFromDiagram";
 import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
@@ -54,10 +56,22 @@ export function useAutoLayout() {
 
       setIsRunning(true);
       try {
-        const graph = fromDiagram(components, connections, nodeLayouts, {
+        const store = useDiagramStore.getState();
+        const active = store.activeDiagramId ? store.diagrams[store.activeDiagramId] : undefined;
+        // A scene adds and removes elements through its own diff; references are
+        // made on the base diagram only, and a scene is laid out as it is.
+        const inScene = !!active?.activeVersionId && !!active.versions?.[active.activeVersionId];
+        const planned = inScene
+          ? { components, connections: [...connections] }
+          : withoutAutoRefs(components, connections);
+        const baseGraph = fromDiagram(planned.components, planned.connections, nodeLayouts, {
           measured: measuredSizesOf(nodesToUse),
         });
-        const result = await layout(graph);
+        // Hubs used from other panels get a reference where they are used, when
+        // that reads better. The layout applied is the one that was measured.
+        const { graph, result, groups } = inScene
+          ? { graph: baseGraph, result: await layout(baseGraph), groups: [] }
+          : await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), layout);
 
         if (result.boxes.size === 0) {
           toast.info(t("autoLayout.nothingToLayout"));
@@ -71,6 +85,14 @@ export function useAutoLayout() {
             graph,
             fitToContentIds(graph, components),
           ),
+          inScene
+            ? undefined
+            : groups.map(({ refId, originalId, parentId, sourceIds }) => ({
+                refId,
+                originalId,
+                parentId,
+                sourceIds,
+              })),
         );
 
         const diagramId = useDiagramStore.getState().activeDiagramId;
@@ -84,7 +106,11 @@ export function useAutoLayout() {
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });
         });
-        toast.success(t("autoLayout.applied"));
+        toast.success(
+          groups.length > 0
+            ? t("autoLayout.appliedWithRefs", { count: groups.length })
+            : t("autoLayout.applied"),
+        );
       } catch (err) {
         console.error("[autoLayout] ELK error", err);
         toast.error(t("autoLayout.error"));

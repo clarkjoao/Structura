@@ -458,6 +458,11 @@ export interface SharedRefComponent extends BaseComponent {
   refOf: string;
   /** Its own accent; absent means the original's. The one thing a reference owns. */
   customColor?: string;
+  /**
+   * Made by the auto-layout to untangle a hub, not by the user: the next
+   * auto-layout may move it, keep it or dissolve it back into the original.
+   */
+  auto?: boolean;
 }
 
 export interface ExternalElementComponent extends BaseComponent {

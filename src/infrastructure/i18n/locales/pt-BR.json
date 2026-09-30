@@ -2199,6 +2199,8 @@
   "autoLayout": {
     "contextMenuLabel": "Auto Layout (LR)",
     "applied": "Layout aplicado com sucesso",
+    "appliedWithRefs_one": "Layout aplicado — 1 referência desembaraça um elemento muito usado",
+    "appliedWithRefs_other": "Layout aplicado — {{count}} referências desembaraçam elementos muito usados",
     "panelApplied": "Layout do painel aplicado",
     "organizeChildren": "Organizar filhos (LR)",
     "error": "Erro ao calcular layout",
