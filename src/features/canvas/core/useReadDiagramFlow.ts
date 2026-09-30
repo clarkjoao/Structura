@@ -3,6 +3,7 @@ import type { Edge, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
 import { EMPTY_READER_CATALOG, type ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
 import type { ViewSnapshot } from "./resolveViewSnapshot";
+import { useSharedRevealStore } from "../shared/useSharedRevealStore";
 import {
   projectReadDiagramView,
   type ReadDiagramReading,
@@ -25,8 +26,11 @@ export function useReadDiagramFlow(
   focusedNodeId: string | null = null,
   catalog: ReaderCatalog = EMPTY_READER_CATALOG,
 ): { nodes: Node[]; edges: Edge[]; view: ViewSnapshot } {
+  // "Show the N edges" of a shared element, as the reader asked: a view state.
+  const originals = useSharedRevealStore((state) => state.originals);
   return useMemo(
-    () => projectReadDiagramView(diagram, reading, routePlay, focusedNodeId, catalog),
-    [diagram, reading, routePlay, focusedNodeId, catalog],
+    () =>
+      projectReadDiagramView(diagram, reading, routePlay, focusedNodeId, catalog, { originals }),
+    [diagram, reading, routePlay, focusedNodeId, catalog, originals],
   );
 }

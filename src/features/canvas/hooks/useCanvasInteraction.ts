@@ -186,6 +186,7 @@ export function useCanvasInteraction(
     updateNodeLayout: actions.updateNodeLayout,
     batchUpdateNodeLayouts: actions.batchUpdateNodeLayouts,
     batchCommitNodeDrag: actions.batchCommitNodeDrag,
+    addSharedRef: actions.addSharedRef,
   });
 
   // Reset focus title trigger when selection changes (e.g., user selects a different node).

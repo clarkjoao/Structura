@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { canContain, isCompactContainer, isShownAsTab } from "@/features/elements/containment";
+import { canBeReferenced } from "@/features/elements/referencing";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
@@ -9,6 +11,7 @@ import {
   buildChildrenIndex,
   getDescendantIdsFromIndex,
   isAncestorLocked,
+  COMPONENT_TYPE_SHARED_REF,
 } from "@/features/diagram";
 import {
   isOutsideParentBounds,
@@ -63,13 +66,57 @@ interface UseNodeDragParentingParams {
       newPosition: { x: number; y: number };
     }>,
   ) => void;
+
+  /**
+   * Alt+drag: instead of moving the node, a reference to it lands where it is
+   * dropped, and the node stays where it was. Absent, Alt+drag is a drag.
+   */
+  addSharedRef?: (
+    elementId: string,
+    parentId: string | null,
+    position: { x: number; y: number },
+  ) => unknown;
 }
 
 interface UseNodeDragParentingResult {
   dragTargetPanelId: string | null;
   unparentCandidatePanelId: string | null;
   onNodesChange: OnNodesChange;
-  onNodeDragStop: (_: unknown, draggedNode: Node) => void;
+  onNodeDragStop: (event: unknown, draggedNode: Node) => void;
+}
+
+/** Whether the gesture ended with Alt (Option) held: a reference is dropped, not the node. */
+function isAltDrag(event: unknown): boolean {
+  return typeof event === "object" && event !== null && "altKey" in event && event.altKey === true;
+}
+
+/**
+ * Marks the document while Alt is held, so the stylesheet can draw a node
+ * being Alt-dragged as the reference it will drop (`[data-alt-held]`).
+ */
+function useAltHeldMarker(enabled: boolean): void {
+  useEffect(() => {
+    if (!enabled) return;
+    const root = document.documentElement;
+    const set = (held: boolean) => {
+      if (held) root.dataset.altHeld = "";
+      else delete root.dataset.altHeld;
+    };
+    const onKey = (event: KeyboardEvent) => set(event.altKey);
+    const onPointer = (event: PointerEvent) => set(event.altKey);
+    const onBlur = () => set(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKey);
+    window.addEventListener("pointerdown", onPointer);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKey);
+      window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("blur", onBlur);
+      set(false);
+    };
+  }, [enabled]);
 }
 
 /** Whether a measured size is the stored one, rounded by the DOM to whole pixels. */
@@ -89,7 +136,9 @@ export function useNodeDragParenting({
   updateNodeLayout,
   batchUpdateNodeLayouts,
   batchCommitNodeDrag,
+  addSharedRef,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
+  useAltHeldMarker(addSharedRef !== undefined);
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
   /**
@@ -305,7 +354,10 @@ export function useNodeDragParenting({
       }
 
       const match = findPanelInIndex(index, absX, absY, comp.parentId);
-      const newTarget = match?.id ?? null;
+      // A container that refuses this node is not lit up as a target.
+      const matchType = match ? r.components[match.id]?.type : undefined;
+      const newTarget =
+        match && (matchType === undefined || canContain(matchType, comp.type)) ? match.id : null;
 
       if (newTarget !== dragTargetRef.current) {
         dragTargetRef.current = newTarget;
@@ -334,6 +386,13 @@ export function useNodeDragParenting({
       const r = getCachedCanvasSnapshot(activeDiagram);
       const layout = r.nodeLayouts[change.id];
       if (!layout) return;
+      // A compact container is drawn at a size derived from its content, not
+      // stored: writing that measurement back would overwrite its expanded
+      // size and change the diagram's checksum just by opening it.
+      const measured = r.components[change.id];
+      if (!change.resizing && measured && isCompactContainer(measured)) return;
+      // Nor is a tab's: its box is derived from the compact parent it sits on.
+      if (measured && isShownAsTab(measured, r.components)) return;
       // React Flow measures with offsetWidth/offsetHeight, which are whole
       // pixels: a node stored at 933.333 measures 933. Writing that back moved
       // the store off what the canvas draws, and every reader of the store (the
@@ -381,7 +440,7 @@ export function useNodeDragParenting({
   );
 
   const onNodeDragStop = useCallback(
-    (_: unknown, draggedNode: Node) => {
+    (event: unknown, draggedNode: Node) => {
       const nodes = nodesRef.current;
       endGesture();
       // One walk of the node list for the whole commit instead of one per node.
@@ -412,11 +471,66 @@ export function useNodeDragParenting({
       }
       const components = r.components;
 
+      /**
+       * Whether the container under the drop takes this node. A typed
+       * container that does not (a pod into a shard, say) refuses it with a
+       * message, and the node lands where it would have without the container.
+       */
+      let refusalShown = false;
+      const acceptsDrop = (containerId: string, nodeId: string): boolean => {
+        const container = components[containerId];
+        const node = components[nodeId];
+        if (!container || !node || canContain(container.type, node.type)) return true;
+        if (!refusalShown) {
+          refusalShown = true;
+          toast.error(
+            i18n.t("containers.refusedChild", { child: node.name, container: container.name }),
+          );
+        }
+        return false;
+      };
+
       const draggedAbsPos = draggedNode.parentId
         ? resolveAbsolutePositionFromNodeMap(draggedNode.id, nodeMap)
         : draggedNode.position;
       const absX = draggedAbsPos.x;
       const absY = draggedAbsPos.y;
+
+      // Alt+drag drops a reference where the node was let go; the node itself
+      // is not moved (the store bumps its layout stamp, and the canvas puts it
+      // back). Nothing else the gesture moved is written either.
+      if (
+        addSharedRef &&
+        isAltDrag(event) &&
+        draggedComponent &&
+        canBeReferenced(draggedComponent)
+      ) {
+        const into = findPanelContainingPoint(
+          nodes,
+          absX,
+          absY,
+          undefined,
+          r.nodeLayouts,
+          components,
+        );
+        const intoType = into ? components[into.id]?.type : undefined;
+        const nested =
+          into && into.id !== draggedNode.id && intoType !== undefined
+            ? canContain(intoType, COMPONENT_TYPE_SHARED_REF) &&
+              !getDescendantIdsFromIndex(draggedNode.id, buildChildrenIndex(components)).has(
+                into.id,
+              )
+            : false;
+        const origin =
+          into && nested
+            ? resolveAbsolutePosition(into.id, into.position, components, r.nodeLayouts)
+            : { x: 0, y: 0 };
+        const created = addSharedRef(draggedNode.id, into && nested ? into.id : null, {
+          x: absX - origin.x,
+          y: absY - origin.y,
+        });
+        if (created) return;
+      }
 
       type DragEntry = {
         nodeId: string;
@@ -468,7 +582,7 @@ export function useNodeDragParenting({
             components,
           );
 
-          if (match && match.id !== node.parentId) {
+          if (match && match.id !== node.parentId && acceptsDrop(match.id, node.id)) {
             const matchAbsPos = resolveAbsolutePosition(
               match.id,
               match.position,
@@ -556,7 +670,7 @@ export function useNodeDragParenting({
         r.nodeLayouts,
         components,
       );
-      if (match) {
+      if (match && acceptsDrop(match.id, draggedNode.id)) {
         const matchAbsPos = resolveAbsolutePosition(
           match.id,
           match.position,
@@ -578,7 +692,7 @@ export function useNodeDragParenting({
 
       flush();
     },
-    [batchCommitNodeDrag, endGesture],
+    [batchCommitNodeDrag, endGesture, addSharedRef],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

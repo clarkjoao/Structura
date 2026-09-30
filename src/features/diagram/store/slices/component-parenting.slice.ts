@@ -14,6 +14,7 @@ import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
+import { canContain } from "@/features/elements/containment";
 import {
   getActiveComponents,
   getActiveNodeLayouts,
@@ -31,7 +32,15 @@ function applySingleNodeDrag(
 ): boolean {
   if (scene && !scene.addedComponents[nodeId]) return false;
   const comp = resolveComponent(d, scene, nodeId);
-  if (comp) comp.parentId = newParentId;
+  // A typed container refuses what it does not take; the node keeps its parent.
+  const parentType = newParentId ? resolveComponent(d, scene, newParentId)?.type : undefined;
+  const refused =
+    !!comp &&
+    newParentId !== comp.parentId &&
+    parentType !== undefined &&
+    !canContain(parentType, comp.type);
+  if (comp && !refused) comp.parentId = newParentId;
+  if (refused) return false;
   const layout = resolveNodeLayout(d, scene, nodeId);
   if (layout) {
     layout.x = newPosition.x;
@@ -50,6 +59,14 @@ export const componentParentingSlice = (
       if (!d) return;
       const scene = resolveActiveVersion(d);
       if (scene && !scene.addedComponents[childId]) return;
+      // A typed container refuses what it does not take — before any history,
+      // so a refused nesting leaves nothing to undo. Every path that nests a
+      // node (drop, paste, a generated graph) meets the same rule.
+      if (parentId) {
+        const child = resolveComponent(d, scene, childId);
+        const parent = resolveComponent(d, scene, parentId);
+        if (child && parent && !canContain(parent.type, child.type)) return;
+      }
       // Always push history (even when the parentId is unchanged) so the
       // user can undo a reparent.
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);

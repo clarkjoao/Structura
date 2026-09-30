@@ -1,4 +1,5 @@
 import type { Component, Connection, FlowStep, NodeLayout } from "../../model/diagram.types";
+import { canContain } from "@/features/elements/containment";
 import { current } from "immer";
 import { generateId } from "../../utils/generate-id";
 import type { AppState, ClipboardEntry } from "../store.types";
@@ -108,8 +109,15 @@ export const clipboardSlice = (
         // parentId here leaves the new component with a stale reference until
         // the second pass runs, and the second pass silently no-ops if the
         // entry was overwritten by something else in the meantime.
+        const keepsParent =
+          parentIsAlsoPasted || (options?.preserveParentWhenMissing && parentExistsInActiveDiagram);
+        // A typed container refuses what it does not take, pasted or not.
+        const parentType = c.parentId
+          ? (availableComponents[c.parentId]?.type ??
+            state.clipboard?.components.find((p) => p.id === c.parentId)?.type)
+          : undefined;
         const parentId =
-          parentIsAlsoPasted || (options?.preserveParentWhenMissing && parentExistsInActiveDiagram)
+          keepsParent && (parentType === undefined || canContain(parentType, c.type))
             ? c.parentId
             : null;
         const comp = { ...current(c), id: newId, parentId };
@@ -130,6 +138,8 @@ export const clipboardSlice = (
             : null;
         if (!newParentId) continue;
         const existing = activeComponents[newComponentId];
+        const newParent = activeComponents[newParentId];
+        if (existing && newParent && !canContain(newParent.type, existing.type)) continue;
         if (existing) existing.parentId = newParentId;
       }
       state.clipboard.components.forEach((originalComponent) => {
@@ -141,6 +151,8 @@ export const clipboardSlice = (
             ? idMap[originalComponent.parentId]
             : null;
         if (!newParentId) return;
+        // Refused by its container above: it stays top level, in canvas space.
+        if (activeComponents[newComponentId]?.parentId !== newParentId) return;
 
         const parentLayout = activeNodeLayouts[newParentId];
         if (!parentLayout) return;

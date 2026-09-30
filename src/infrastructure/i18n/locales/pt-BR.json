@@ -87,8 +87,7 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Tipo de transporte",
     "copySuffix": " (cópia)",
-    "defaultNamePrefix": "Novo",
-    "edgeZigzag": "Zigue-zague (eletrônico)"
+    "defaultNamePrefix": "Novo"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -1126,47 +1125,59 @@
       }
     },
     "families": {
-      "vsm": {
-        "label": "Mapa de fluxo de valor"
-      },
       "structural": {
         "label": "Estruturais e Canvas"
       },
       "c4": {
         "label": "Modelo C4"
+      },
+      "deploy": {
+        "label": "Deployment"
       }
-    },
-    "vsm-external": {
-      "label": "Fornecedor / cliente",
-      "description": "Uma fonte externa numa das pontas do fluxo de valor: o fornecedor que o alimenta ou o cliente que ele atende."
-    },
-    "vsm-process": {
-      "label": "Processo",
-      "description": "Uma etapa do fluxo de valor, com seus operadores e uma caixa de dados de métricas (tempo de ciclo, setup, disponibilidade, turnos)."
-    },
-    "vsm-inventory": {
-      "label": "Estoque",
-      "description": "Estoque parado entre duas etapas, com a quantidade e quanto tempo ele cobre."
-    },
-    "vsm-supermarket": {
-      "label": "Supermercado",
-      "description": "Um estoque controlado de peças de onde a etapa seguinte puxa."
-    },
-    "vsm-push": {
-      "label": "Seta de empurrar",
-      "description": "Material empurrado para a etapa seguinte, precise ela ou não."
-    },
-    "vsm-kaizen": {
-      "label": "Kaizen",
-      "description": "Uma melhoria a fazer neste ponto do fluxo."
-    },
-    "vsm-timeline": {
-      "label": "Linha do tempo",
-      "description": "A onda quadrada sob o fluxo de valor: tempos de espera acima, tempos de processo abaixo, com lead time e tempo de agregação de valor somados."
     },
     "flow-divider": {
       "label": "Linha nomeada",
       "description": "Uma linha com rótulo atravessando o diagrama — a linha de interação, de visibilidade ou de interação interna de um service blueprint."
+    },
+    "deploy-sharded-store": {
+      "label": "Armazenamento fragmentado",
+      "description": "Um banco dividido em shards por uma chave: shards e roteador são filhos dele, e a barra de chaves mostra como elas se distribuem."
+    },
+    "deploy-shard": {
+      "label": "Shard",
+      "description": "Um shard de um armazenamento fragmentado, com faixa de chaves, região e réplicas."
+    },
+    "deploy-shard-router": {
+      "label": "Roteador de shards",
+      "description": "O roteador na frente dos shards (mongos, vtgate)."
+    },
+    "k8s-cluster": {
+      "label": "Cluster Kubernetes",
+      "description": "Um cluster Kubernetes com distribuição, versão, nós e zonas; contém namespaces e workloads."
+    },
+    "k8s-namespace": {
+      "label": "Namespace",
+      "description": "Um namespace Kubernetes dentro de um cluster, com injeção opcional de sidecar da malha."
+    },
+    "k8s-workload": {
+      "label": "Workload",
+      "description": "Um Deployment, StatefulSet, DaemonSet, Job, CronJob ou Pod, com réplicas, autoescala, imagem e recursos."
+    },
+    "k8s-service": {
+      "label": "Service",
+      "description": "Um Service Kubernetes na frente de um workload: tipo e porta."
+    },
+    "k8s-ingress": {
+      "label": "Ingress",
+      "description": "Um Ingress Kubernetes: o host e a classe por onde o tráfego entra no cluster."
+    },
+    "k8s-container": {
+      "label": "Container",
+      "description": "Um container do pod de um workload: o principal, um sidecar (proxy, logs, secrets, metrics) ou um init executado antes, em ordem."
+    },
+    "shared-ref": {
+      "label": "Referência",
+      "description": "Uma referência a um elemento compartilhado, desenhada perto dos consumidores; arestas até ela são arestas até o elemento."
     }
   },
   "flowchart": {
@@ -2452,45 +2463,6 @@
     "untitledPlaceholder": "Workflow sem título",
     "upNext": "A seguir:"
   },
-  "vsm": {
-    "role": {
-      "supplier": "Fornecedor",
-      "customer": "Cliente"
-    },
-    "fields": {
-      "role": "Papel",
-      "operators": "Operadores",
-      "metrics": "Caixa de dados",
-      "metricKey": "Métrica",
-      "metricValue": "Valor",
-      "addMetric": "Adicionar linha",
-      "removeMetric": "Remover linha",
-      "quantity": "Quantidade",
-      "duration": "Duração",
-      "unit": "Unidade",
-      "segments": "Segmentos",
-      "wait": "Espera",
-      "process": "Processo",
-      "addSegment": "Adicionar segmento",
-      "removeSegment": "Remover segmento"
-    },
-    "metrics": {
-      "cycleTime": "C/T",
-      "changeover": "C/O",
-      "uptime": "Disp.",
-      "shifts": "Turnos"
-    },
-    "timeline": {
-      "leadTime": "Lead time",
-      "valueAdded": "Tempo de agregação de valor"
-    },
-    "units": {
-      "s": "s",
-      "min": "min",
-      "h": "h",
-      "d": "d"
-    }
-  },
   "blueprint": {
     "lines": {
       "interaction": "Linha de interação",
@@ -2499,13 +2471,111 @@
     },
     "fields": {
       "stroke": "Linha"
-    },
-    "lanes": {
-      "evidence": "Evidência física",
-      "customer": "Ações do cliente",
-      "onstage": "Palco",
-      "backstage": "Bastidores",
-      "support": "Suporte"
     }
+  },
+  "containers": {
+    "refusedChild": "{{container}} não aceita {{child}}.",
+    "compact": "Compactar",
+    "expand": "Expandir"
+  },
+  "deploy": {
+    "strategy": {
+      "hash": "hash",
+      "consistent-hash": "hash consistente",
+      "range": "faixa",
+      "geo": "geo",
+      "directory": "diretório"
+    },
+    "shards_one": "{{count}} shard",
+    "shards_other": "{{count}} shards",
+    "replicas_one": "{{count}} cópia",
+    "replicas_other": "{{count}} cópias",
+    "hot": "quente",
+    "router": "Roteador",
+    "addShard": "Adicionar shard",
+    "addRouter": "Adicionar roteador",
+    "fields": {
+      "strategy": "Estratégia",
+      "keyExpression": "Chave de shard",
+      "replicationFactor": "Fator de replicação",
+      "keyRange": "Faixa / rótulo",
+      "share": "Tamanho da faixa",
+      "region": "Região",
+      "hot": "Shard quente"
+    }
+  },
+  "k8s": {
+    "cluster": "cluster",
+    "namespace": "namespace",
+    "nodes_one": "{{count}} nó",
+    "nodes_other": "{{count}} nós",
+    "zones_one": "{{count}} zona",
+    "zones_other": "{{count}} zonas",
+    "meshInjected": "istio · sidecar injetado",
+    "replicas": "Réplicas",
+    "onePerNode": "um por nó",
+    "fields": {
+      "distribution": "Distribuição",
+      "version": "Versão",
+      "nodeCount": "Nós",
+      "zoneCount": "Zonas",
+      "meshInjection": "Injeção de sidecar da malha",
+      "kind": "Tipo",
+      "replicas": "Réplicas",
+      "hpaMin": "HPA mín.",
+      "hpaMax": "HPA máx.",
+      "image": "Imagem",
+      "resources": "Recursos",
+      "zones": "Zonas (separadas por vírgula)",
+      "schedule": "Agenda",
+      "concurrencyPolicy": "Política de concorrência",
+      "serviceType": "Tipo de Service",
+      "port": "Porta",
+      "host": "Host",
+      "ingressClass": "Classe de ingress",
+      "podRole": "Papel",
+      "purpose": "Função",
+      "order": "Ordem",
+      "ports": "Portas (separadas por vírgula)"
+    },
+    "role": {
+      "main": "principal",
+      "sidecar": "sidecar",
+      "init": "init"
+    },
+    "addContainer": "Adicionar container",
+    "addSidecar": "Adicionar sidecar",
+    "addInit": "Adicionar init",
+    "variant": {
+      "main": "Container",
+      "sidecar": "Sidecar",
+      "init": "Container init"
+    }
+  },
+  "shared": {
+    "chip": "compartilhado",
+    "uses_one": "{{count}} uso",
+    "uses_other": "{{count}} usos",
+    "usedBy_one": "Usado por {{count}}",
+    "usedBy_other": "Usado por {{count}}",
+    "goToOriginal": "Ir para o original",
+    "focusOriginal": "Focar no elemento principal",
+    "mode": {
+      "label": "Compartilhado",
+      "edges": "Arestas",
+      "badge": "Selos",
+      "ref": "Referências"
+    },
+    "showEdges_one": "Mostrar a aresta",
+    "showEdges_other": "Mostrar as {{count}} arestas",
+    "hideEdges_one": "Esconder a aresta",
+    "hideEdges_other": "Esconder as {{count}} arestas",
+    "suggest_one": "Usado por {{count}} — desenhar como compartilhado?",
+    "suggest_other": "Usado por {{count}} — desenhar como compartilhado?",
+    "createRef": "Nova referência",
+    "createRefHint": "Nova referência (ou Alt+arraste o elemento até onde ele é usado)",
+    "routeThroughRef": "Desenhar por uma referência, ao lado da origem",
+    "refsRemoved_one": "{{name}} saiu com a sua referência",
+    "refsRemoved_other": "{{name}} saiu com as suas {{count}} referências"
   }
 }

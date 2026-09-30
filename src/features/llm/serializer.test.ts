@@ -291,4 +291,29 @@ describe("serializeDiagramContext with activeVersion", () => {
     const second = serializeDiagramContext(minimalDiagram(), { activeVersion: scene });
     expect(first).toBe(second);
   });
+
+  it("reads a shared element's references as the element, and says its mode", () => {
+    const node = (id: string, extra: Record<string, unknown> = {}) =>
+      ({ id, name: id, type: "container", description: "", parentId: null, ...extra }) as never;
+    const out = serializeDiagramContext(
+      minimalDiagram({
+        snapshot: {
+          components: {
+            auth: node("auth", { shared: { mode: "ref" } }),
+            orders: node("orders"),
+            r1: node("r1", { type: "shared-ref", refOf: "auth" }),
+          },
+          connections: {
+            c1: { id: "c1", sourceId: "orders", targetId: "r1", label: "gRPC" },
+          },
+          flows: {},
+          iconLibrary: {},
+        },
+      }),
+    );
+    expect(out).toContain("Nodes (2)");
+    expect(out).not.toContain("id=r1");
+    expect(out).toContain("shared=ref");
+    expect(out).toContain("id=c1; from=orders; to=auth");
+  });
 });

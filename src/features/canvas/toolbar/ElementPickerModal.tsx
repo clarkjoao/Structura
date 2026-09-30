@@ -14,6 +14,7 @@ import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import { cloudRegistry } from "@/features/cloud";
 import {
   allCloudFamilies,
+  familyOwnElements,
   getCloudFamily,
   isRegisteredCloudFamily,
 } from "@/features/elements/families/cloud-family.registry";
@@ -29,6 +30,7 @@ import {
 } from "./element-picker/buildPickerOptions";
 import {
   paletteEntriesForCategory,
+  paletteEntriesForElements,
   type ElementPaletteEntry,
 } from "@/features/elements/element.palette";
 import {
@@ -118,7 +120,7 @@ const ElementPickerModal = memo(function ElementPickerModal({
   const byFamilyCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const provider of cloudProviders) {
-      counts[provider.id] = provider.services.length;
+      counts[provider.id] = provider.services.length + familyOwnElements(provider.id).length;
     }
     return counts;
   }, [cloudProviders]);
@@ -400,6 +402,31 @@ const ElementPickerModal = memo(function ElementPickerModal({
     [addComponent, getInsertPos, onClose, onInsert],
   );
 
+  const renderPaletteGrid = (entries: readonly ElementPaletteEntry[]) => (
+    <div className="grid grid-cols-4 gap-3">
+      {entries.map((entry) => (
+        <button
+          key={entry.key}
+          type="button"
+          onClick={() => handleAddPaletteEntry(entry)}
+          className={PICKER_CARD_CLASS}
+        >
+          {entry.familyIcon ? (
+            <CloudIcon
+              providerId={entry.familyIcon.familyId}
+              iconName={entry.familyIcon.iconName}
+              size={40}
+              className="text-muted-foreground"
+            />
+          ) : (
+            <entry.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
+          )}
+          <span className="mt-2 text-xs text-foreground">{entry.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   const renderCloudFamilyBody = (familyId: string) => {
     const family = getCloudFamily(familyId);
     const provider = cloudRegistry.forId(familyId);
@@ -419,15 +446,21 @@ const ElementPickerModal = memo(function ElementPickerModal({
       );
     }
 
+    // The family's own elements (Kubernetes' cluster, namespace, workload…)
+    // above its services.
+    const own = paletteEntriesForElements(familyOwnElements(familyId));
     return (
-      <CloudBrowseView
-        provider={provider}
-        primaryCategoryIds={[...(family.primaryCategoryIds ?? [])]}
-        expandedSubcats={expandedByFamily[familyId] ?? defaultExpandedForFamily(familyId)}
-        q={q}
-        toggleSubcat={(catId) => toggleFamilySubcat(familyId, catId)}
-        onPick={handleAddCloudService}
-      />
+      <div className="space-y-4">
+        {own.length > 0 && renderPaletteGrid(own)}
+        <CloudBrowseView
+          provider={provider}
+          primaryCategoryIds={[...(family.primaryCategoryIds ?? [])]}
+          expandedSubcats={expandedByFamily[familyId] ?? defaultExpandedForFamily(familyId)}
+          q={q}
+          toggleSubcat={(catId) => toggleFamilySubcat(familyId, catId)}
+          onPick={handleAddCloudService}
+        />
+      </div>
     );
   };
 
@@ -541,31 +574,7 @@ const ElementPickerModal = memo(function ElementPickerModal({
         // elements is all a new family has to do to become insertable.
         const entries = paletteEntriesForCategory(activeCategory);
         if (entries.length === 0) return null;
-
-        return (
-          <div className="grid grid-cols-4 gap-3">
-            {entries.map((entry) => (
-              <button
-                key={entry.key}
-                type="button"
-                onClick={() => handleAddPaletteEntry(entry)}
-                className={PICKER_CARD_CLASS}
-              >
-                {entry.familyIcon ? (
-                  <CloudIcon
-                    providerId={entry.familyIcon.familyId}
-                    iconName={entry.familyIcon.iconName}
-                    size={40}
-                    className="text-muted-foreground"
-                  />
-                ) : (
-                  <entry.icon className="h-10 w-10 shrink-0 text-muted-foreground" />
-                )}
-                <span className="mt-2 text-xs text-foreground">{entry.label}</span>
-              </button>
-            ))}
-          </div>
-        );
+        return renderPaletteGrid(entries);
       }
     }
   };

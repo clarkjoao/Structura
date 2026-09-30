@@ -1,4 +1,10 @@
-import { Suspense, memo, type ComponentType } from "react";
+import {
+  Component as ReactComponent,
+  Suspense,
+  memo,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { Cloud, Network } from "lucide-react";
 import { cloudRegistry } from "../registry/cloud.registry";
 import type { IconResolver } from "../model/cloud.types";
@@ -57,6 +63,25 @@ const Skeleton = ({ size, className }: { size: number; className?: string }) => 
   />
 );
 
+/**
+ * An icon that fails to load (a redeploy, Vite's stale optimized deps) falls
+ * back to the family's icon instead of taking down whatever lists it.
+ */
+class IconLoadBoundary extends ReactComponent<
+  { fallback: ReactNode; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 function resolverForFamily(familyId: string): IconResolver | undefined {
   return iconResolverForFamily(familyId) ?? cloudRegistry.forId(familyId)?.iconResolver;
 }
@@ -92,12 +117,24 @@ function renderResolved(
     );
   }
 
+  const Fallback = resolver.Fallback;
   return (
-    <Suspense fallback={<Skeleton size={size} className={className} />}>
-      <div style={{ width: size, height: size }} className={className}>
-        <LazyIcon size={size} />
-      </div>
-    </Suspense>
+    <IconLoadBoundary
+      fallback={
+        <div
+          className={`flex items-center justify-center text-muted-foreground ${className ?? ""}`}
+          style={{ width: size, height: size }}
+        >
+          <Fallback size={size * 0.8} />
+        </div>
+      }
+    >
+      <Suspense fallback={<Skeleton size={size} className={className} />}>
+        <div style={{ width: size, height: size }} className={className}>
+          <LazyIcon size={size} />
+        </div>
+      </Suspense>
+    </IconLoadBoundary>
   );
 }
 

@@ -15,6 +15,8 @@ import {
 import type { FlowMode, RecordingContext } from "./flowMode.types";
 import { recordingCursor } from "./flowMode.types";
 import { useFlowViewStore } from "./useFlowViewStore";
+import { getCachedCanvasSnapshot } from "@/features/diagram";
+import { resolveShared } from "@/features/diagram/utils/shared";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 
 export interface FlowRecordingSlice {
@@ -165,9 +167,16 @@ export function useFlowRecording(
     setMode({ kind: "idle" });
   }, [commitFlowSession, recording, setMode, t, updateFlow]);
 
+  // A reference (or a badge) stands for its shared original: the step is on the original.
   const onRecordNodeClick = useCallback(
-    (nodeId: string) => write({ componentId: nodeId }),
-    [write],
+    (nodeId: string) => {
+      const diagram = activeDiagramId
+        ? useDiagramStore.getState().diagrams[activeDiagramId]
+        : undefined;
+      const components = diagram ? getCachedCanvasSnapshot(diagram).components : {};
+      write({ componentId: resolveShared(nodeId, components) });
+    },
+    [write, activeDiagramId],
   );
 
   /**

@@ -28,7 +28,9 @@ export type ComponentType =
   | "process-node"
   | "external-element"
   | "flow-divider"
-  | VsmComponentType
+  | SharedComponentType
+  | K8sStructureType
+  | DeployComponentType
   | AwsCategoryId
   | GcpCategoryId
   | AzureCategoryId
@@ -80,6 +82,19 @@ interface BaseComponent {
   templateId?: string;
 
   externalLinks?: ExternalLink[];
+
+  /**
+   * How the edges into it are drawn when many things use it. Absent means
+   * `edges`, drawn as they are; the edges stay in the model in every mode.
+   */
+  shared?: SharedSpec;
+}
+
+/** How a shared element's incoming edges are drawn: as they are, as badges, via references, or a bus. */
+export type SharedMode = "edges" | "badge" | "ref" | "bus";
+
+export interface SharedSpec {
+  mode: SharedMode;
 }
 
 export interface C4Component extends BaseComponent {
@@ -281,7 +296,7 @@ export interface ProcessNodeComponent extends BaseComponent {
   stroke?: NodeStrokeMode;
 }
 
-/** The three colour parts, for elements that wear the flow skin (flow, VSM). */
+/** The three colour parts, for elements that wear the flow skin (flow, deploy, k8s). */
 export interface SkinParts {
   /** Accent; absent means the element's default, resolved at render. */
   customColor?: string;
@@ -302,85 +317,147 @@ export interface FlowDividerComponent extends BaseComponent {
   stroke?: NodeStrokeMode;
 }
 
-/** The Value Stream Mapping vocabulary (the `vsm` family). */
-export type VsmComponentType =
-  | "vsm-external"
-  | "vsm-process"
-  | "vsm-inventory"
-  | "vsm-supermarket"
-  | "vsm-push"
-  | "vsm-kaizen"
-  | "vsm-timeline";
+/** The deployment vocabulary (the `deploy` family): stores and their shards. */
+export type DeployComponentType = "deploy-sharded-store" | "deploy-shard" | "deploy-shard-router";
 
-/** Which side of the stream an outside source sits on. Absent means supplier. */
-export type VsmRole = "supplier" | "customer";
+/** Kubernetes as structure (the `k8s` family's own elements, beside its catalog cards). */
+export type K8sStructureType =
+  | "k8s-cluster"
+  | "k8s-namespace"
+  | "k8s-workload"
+  | "k8s-service"
+  | "k8s-ingress"
+  | "k8s-container";
 
-/** A supplier or a customer: the factory icon at either end of the stream. */
-export interface VsmExternalComponent extends BaseComponent, SkinParts {
-  type: "vsm-external";
-  role?: VsmRole;
-}
+/** A reference to a shared element, drawn where its consumers are (`shared-ref`). */
+export type SharedComponentType = "shared-ref";
 
-/** One row of a VSM process's data box: a metric and its value, both as typed. */
-export interface VsmMetric {
-  id: string;
-  key: string;
-  value: string;
-}
-
-/** A process box: a step of the stream with its operators and its data box. */
-export interface VsmProcessComponent extends BaseComponent, SkinParts {
-  type: "vsm-process";
-  /** People working the step; absent shows no count. */
-  operators?: number;
-  /** The data box rows, in order. */
-  metrics?: VsmMetric[];
-}
-
-/** Inventory between two steps: the triangle with an I, and how much waits there. */
-export interface VsmInventoryComponent extends BaseComponent, SkinParts {
-  type: "vsm-inventory";
-  /** As the user writes it: "1,200 pcs". */
-  quantity?: string;
-  /** How long it covers, as the user writes it: "2 days". */
-  duration?: string;
-}
-
-/** A supermarket: a controlled store of parts the downstream step pulls from. */
-export interface VsmSupermarketComponent extends BaseComponent, SkinParts {
-  type: "vsm-supermarket";
-}
-
-/** A push arrow: material pushed downstream whether it is needed or not. */
-export interface VsmPushComponent extends BaseComponent, SkinParts {
-  type: "vsm-push";
-}
-
-/** A kaizen burst: an improvement to make, its text being the node's name. */
-export interface VsmKaizenComponent extends BaseComponent, SkinParts {
-  type: "vsm-kaizen";
-}
-
-/** One step of a VSM timeline: how long work waits, then how long it is worked on. */
-export interface VsmTimelineSegment {
-  id: string;
-  wait: number;
-  process: number;
-}
-
-/** The unit every value on one timeline is in, so its totals can be summed. */
-export type VsmTimeUnit = "s" | "min" | "h" | "d";
+/** How a sharded store spreads its keys. Absent means hash. */
+export type ShardStrategy = "hash" | "consistent-hash" | "range" | "geo" | "directory";
 
 /**
- * The timeline under a value stream: a square wave of waits and processing
- * times. Its totals — lead time and value-added time — are computed from the
- * segments, never stored.
+ * A sharded data store: a typed container whose children are its shards and,
+ * optionally, the router in front of them. The number of shards is never
+ * stored — it is the number of shard children.
  */
-export interface VsmTimelineComponent extends BaseComponent, SkinParts {
-  type: "vsm-timeline";
-  segments?: VsmTimelineSegment[];
-  /** Absent means minutes. */
-  unit?: VsmTimeUnit;
+export interface ShardedStoreComponent extends BaseComponent, SkinParts {
+  type: "deploy-sharded-store";
+  strategy?: ShardStrategy;
+  /** "hash(customer_id)". */
+  keyExpression?: string;
+  /** "MongoDB 7". */
+  technology?: string;
+  /** Copies of each shard, primary included. Absent means 1. */
+  replicationFactor?: number;
+  /** Drawn compact. Absent means expanded; never written as false. */
+  collapsed?: boolean;
+}
+
+/** One shard of a sharded store. Its replicas come from the store's replication factor. */
+export interface ShardComponent extends BaseComponent, SkinParts {
+  type: "deploy-shard";
+  /** What it holds, as the chip and key-bar label say it: "0–25%", "BR", "A–F". */
+  keyRange?: string;
+  /** Relative width of its range under a range strategy. Absent means 1. */
+  share?: number;
+  region?: string;
+  /** Takes more than its share: painted amber, on the key bar too. */
+  hot?: boolean;
+}
+
+/** The router in front of a store's shards (mongos, Vitess vtgate): 0 or 1 per store. */
+export interface ShardRouterComponent extends BaseComponent, SkinParts {
+  type: "deploy-shard-router";
+}
+
+/** A Kubernetes cluster: the outermost typed container of a deployment. */
+export interface K8sClusterComponent extends BaseComponent, SkinParts {
+  type: "k8s-cluster";
+  /** "EKS", "GKE", "k3s". */
+  distribution?: string;
+  /** "1.30". */
+  version?: string;
+  nodeCount?: number;
+  zoneCount?: number;
+  collapsed?: boolean;
+}
+
+/** A namespace inside a cluster: a logical grouping, drawn dashed. */
+export interface K8sNamespaceComponent extends BaseComponent, SkinParts {
+  type: "k8s-namespace";
+  /** Sidecars injected by the mesh into every pod here. Absent means no. */
+  meshInjection?: boolean;
+  collapsed?: boolean;
+}
+
+/** What a workload is. Absent means Deployment. */
+export type K8sWorkloadKind =
+  "Deployment" | "StatefulSet" | "DaemonSet" | "Job" | "CronJob" | "Pod";
+
+/** A workload: its pods are drawn from its data (replica tiles), not as nodes. */
+export interface K8sWorkloadComponent extends BaseComponent, SkinParts {
+  type: "k8s-workload";
+  kind?: K8sWorkloadKind;
+  /** Desired replicas. Absent means 1. */
+  replicas?: number;
+  hpaMin?: number;
+  hpaMax?: number;
+  image?: string;
+  /** "250m / 512Mi". */
+  resources?: string;
+  /** Zones the pods spread over, as labels: ["1a", "1b"]. */
+  zones?: string[];
+  /** CronJob schedule, in cron syntax. */
+  schedule?: string;
+  concurrencyPolicy?: "Allow" | "Forbid" | "Replace";
+  /** Drawn as one card with its sidecars as tabs. Absent means expanded. */
+  collapsed?: boolean;
+}
+
+/** A Service in front of a workload's pods. */
+export interface K8sServiceComponent extends BaseComponent, SkinParts {
+  type: "k8s-service";
+  /** Absent means ClusterIP. */
+  serviceType?: "ClusterIP" | "NodePort" | "LoadBalancer" | "ExternalName";
+  port?: number;
+}
+
+/** An Ingress: the host and class traffic comes in by. */
+export interface K8sIngressComponent extends BaseComponent, SkinParts {
+  type: "k8s-ingress";
+  host?: string;
+  ingressClass?: string;
+}
+
+/** What a container does in its pod. Absent means main. */
+export type K8sContainerRole = "main" | "sidecar" | "init";
+
+/**
+ * A container of a workload's pod template: the main one, a sidecar beside
+ * it, or an init container run before both, in order.
+ */
+export interface K8sContainerComponent extends BaseComponent, SkinParts {
+  type: "k8s-container";
+  podRole?: K8sContainerRole;
+  /** A sidecar's function, free text: "proxy", "logs", "secrets", "metrics"… */
+  purpose?: string;
+  /** An init container's place in the sequence, from 1. */
+  order?: number;
+  image?: string;
+  ports?: number[];
+  /** "100m / 128Mi". */
+  resources?: string;
+}
+
+/**
+ * A reference to a shared element: no data of its own, drawn near its
+ * consumers. Edges to it are read as edges to the element (`resolveShared`).
+ */
+export interface SharedRefComponent extends BaseComponent {
+  type: "shared-ref";
+  refOf: string;
+  /** Its own accent; absent means the original's. The one thing a reference owns. */
+  customColor?: string;
 }
 
 export interface ExternalElementComponent extends BaseComponent {
@@ -403,14 +480,17 @@ export interface PluginTypedComponent extends BaseComponent {
 }
 
 export type Component =
+  | SharedRefComponent
+  | K8sContainerComponent
+  | K8sIngressComponent
+  | K8sServiceComponent
+  | K8sWorkloadComponent
+  | K8sNamespaceComponent
+  | K8sClusterComponent
+  | ShardRouterComponent
+  | ShardComponent
+  | ShardedStoreComponent
   | FlowDividerComponent
-  | VsmTimelineComponent
-  | VsmKaizenComponent
-  | VsmPushComponent
-  | VsmSupermarketComponent
-  | VsmInventoryComponent
-  | VsmProcessComponent
-  | VsmExternalComponent
   | C4Component
   | PanelComponent
   | NoteComponent
@@ -445,14 +525,17 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<SvgComponent, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
-  Partial<Omit<VsmExternalComponent, "id">> &
-  Partial<Omit<FlowDividerComponent, "id">> &
-  Partial<Omit<VsmTimelineComponent, "id">> &
-  Partial<Omit<VsmKaizenComponent, "id">> &
-  Partial<Omit<VsmPushComponent, "id">> &
-  Partial<Omit<VsmSupermarketComponent, "id">> &
-  Partial<Omit<VsmInventoryComponent, "id">> &
-  Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<SharedRefComponent, "id">> &
+  Partial<Omit<K8sContainerComponent, "id">> &
+  Partial<Omit<K8sIngressComponent, "id">> &
+  Partial<Omit<K8sServiceComponent, "id">> &
+  Partial<Omit<K8sWorkloadComponent, "id">> &
+  Partial<Omit<K8sNamespaceComponent, "id">> &
+  Partial<Omit<K8sClusterComponent, "id">> &
+  Partial<Omit<ShardRouterComponent, "id">> &
+  Partial<Omit<ShardComponent, "id">> &
+  Partial<Omit<ShardedStoreComponent, "id">> &
+  Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
@@ -472,13 +555,16 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<SharedRefComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sContainerComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sIngressComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sServiceComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sWorkloadComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sNamespaceComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<K8sClusterComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ShardRouterComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ShardComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<ShardedStoreComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmTimelineComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmKaizenComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmPushComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmSupermarketComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmInventoryComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

@@ -2,6 +2,7 @@ import { offeredElements } from "@/features/elements/element.registry";
 import type { ElementDescriptor } from "@/features/elements/element.types";
 import {
   allCloudFamilies,
+  familyOwnElements,
   nonCatalogFamilyIds,
 } from "@/features/elements/families/cloud-family.registry";
 import i18n from "@/infrastructure/i18n";
@@ -208,6 +209,17 @@ export function buildCloudFamilyCatalogCompact(familyId: string): string {
     lines.push(
       `- ${category.id} — ${categoryLabel} (${serviceCount} service${serviceCount === 1 ? "" : "s"})`,
     );
+  }
+
+  // Elements of the family that are not service categories: add them by id, no serviceId.
+  const own = familyOwnElements(familyId);
+  if (own.length > 0) {
+    lines.push("", "Elements (nodeType = element id, no serviceId):");
+    for (const element of own) {
+      const label = i18n.t(element.labelKey, { lng: CATALOG_LOCALE });
+      const description = i18n.t(element.descriptionKey, { lng: CATALOG_LOCALE });
+      lines.push(`- ${element.id} — ${label}: ${description}`);
+    }
   }
 
   return lines.join("\n");

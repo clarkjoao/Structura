@@ -1,5 +1,5 @@
 import type { Component, Connection } from "@/features/diagram";
-import { handleSpecForType } from "../nodes/node-types/registry";
+import { handleSpecFor } from "../nodes/node-types/registry";
 import {
   BOTTOM_SOURCE_HANDLE_ID,
   singleIncomingTargetHandleId,
@@ -87,8 +87,8 @@ export function buildEdgeHandleAssignments(
     // it keeps the general spec.
     const sourceComp = components[conn.sourceId];
     const targetComp = components[conn.targetId];
-    const sourceSpec = sourceComp ? handleSpecForType(sourceComp.type) : SPREAD_HANDLES;
-    const targetSpec = targetComp ? handleSpecForType(targetComp.type) : SPREAD_HANDLES;
+    const sourceSpec = sourceComp ? handleSpecFor(sourceComp) : SPREAD_HANDLES;
+    const targetSpec = targetComp ? handleSpecFor(targetComp) : SPREAD_HANDLES;
 
     const outCount = slotCountFor(
       sourceSpec.outgoing,

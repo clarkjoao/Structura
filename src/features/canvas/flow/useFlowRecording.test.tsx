@@ -84,6 +84,27 @@ describe("recording writes into the store as it goes", () => {
     expect(Object.keys(recorded().steps)).toHaveLength(2);
   });
 
+  it("records a shared element when its reference is clicked", () => {
+    const { recorded } = mountRecorder();
+    const store = useDiagramStore.getState();
+    const auth = store.addComponent("container", "Auth", null, { x: 0, y: 0 });
+    const ref = store.addComponent(
+      "shared-ref",
+      "Auth",
+      null,
+      { x: 300, y: 0 },
+      undefined,
+      undefined,
+      undefined,
+      {
+        refOf: auth.id,
+      },
+    );
+    act(() => api.startRecording());
+    act(() => api.onRecordNodeClick(ref.id));
+    expect(Object.values(recorded().steps)[0]!.componentId).toBe(auth.id);
+  });
+
   it("keeps the mermaid cache in step with the graph while recording", () => {
     const { recorded } = mountRecorder();
     act(() => api.startRecording());
@@ -388,5 +409,26 @@ describe("leaving the reading leaves no selection behind either", () => {
     act(() => api.exitPlay());
 
     expect(useCanvasSelectionStore.getState().selectedNodeId).toBe(loose);
+  });
+});
+
+/**
+ * F1: what a click records inside a typed container. React Flow hands the click
+ * to the deepest node under the cursor, so clicking a child records the child
+ * and clicking the container's header records the container; both are plain
+ * component ids in the step.
+ */
+describe("recording inside a typed container", () => {
+  beforeEach(() => {
+    useDiagramStore.setState({ past: [], future: [], _flowSession: null });
+  });
+
+  it("records the child that was clicked, and the container from its header", () => {
+    const { recorded } = mountRecorder();
+    act(() => api.startRecording());
+    act(() => api.onRecordNodeClick("shard-2"));
+    act(() => api.onRecordNodeClick("pedidos"));
+    const components = Object.values(recorded().steps).map((step) => step.componentId);
+    expect(components).toEqual(expect.arrayContaining(["shard-2", "pedidos"]));
   });
 });

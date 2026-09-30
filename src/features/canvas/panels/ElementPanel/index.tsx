@@ -1,3 +1,6 @@
+import { useResolvedComponents } from "@/features/diagram";
+import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
+import { resolveShared } from "@/features/diagram/utils/shared";
 import { LayoutDashboard } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CollabEditingWarning } from "@/features/collaboration";
@@ -27,7 +30,14 @@ const ElementPanel = ({
   onClose,
 }: Props) => {
   const { t } = useTranslation();
-  const component = useComponent(selectedElementId ?? "");
+  const selected = useComponent(selectedElementId ?? "");
+  const resolvedComponents = useResolvedComponents();
+  // A reference has no data of its own: selecting it inspects — and edits —
+  // the shared element it stands for.
+  const component =
+    selected && isSharedRefComponent(selected)
+      ? (resolvedComponents[resolveShared(selected.id, resolvedComponents)] ?? selected)
+      : selected;
   const connections = useConnections();
   const { updateComponent, removeComponent, updateConnection, removeConnection, groupNodes } =
     useDiagramActions();

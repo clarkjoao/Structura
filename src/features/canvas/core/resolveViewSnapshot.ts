@@ -13,6 +13,8 @@ import {
   type ResolvedSnapshot,
 } from "@/features/diagram/utils/snapshot-cache";
 import type { NodeTypeDescriptor } from "../nodes/node-types/types";
+import { hideSharedEdges, type SharedReveal } from "@/features/diagram/utils/shared";
+import { remapConnectionsToVisible } from "./compactView";
 
 /*
  * Pure by construction: this module imports the diagram model and utils only —
@@ -23,7 +25,10 @@ import type { NodeTypeDescriptor } from "../nodes/node-types/types";
  */
 
 /** What the view needs to know of a node's type: whether it nests, and its default z. */
-export type ViewNodeDescriptor = Pick<NodeTypeDescriptor, "canHaveParent" | "zIndex">;
+export type ViewNodeDescriptor = Pick<
+  NodeTypeDescriptor,
+  "canHaveParent" | "zIndex" | "acceptsChildren" | "collapsible" | "tabOnCompactParent"
+>;
 export type DescribeNode = (component: Component) => ViewNodeDescriptor;
 
 /**
@@ -37,6 +42,11 @@ export type DescribeNode = (component: Component) => ViewNodeDescriptor;
 export interface ViewSnapshotOptions {
   versionId: string | null;
   compareVersionId?: string | null;
+  /**
+   * Edges a shared element hides that are being shown anyway: its "show the
+   * N edges", or the one a flow step is on (F5). A view state, never saved.
+   */
+  reveal?: SharedReveal;
 }
 
 /** One placed component, as the canvas shows it. */
@@ -49,6 +59,8 @@ export interface ViewNode {
   isHidden: boolean;
   /** Nested inside its parent (the parent is a placed panel or API group). */
   isChild: boolean;
+  /** Drawn as the n-th tab on its compact parent (`tabOnCompactParent`), from 0. */
+  tabIndex?: number;
 }
 
 export interface ViewSnapshot {
@@ -58,10 +70,18 @@ export interface ViewSnapshot {
   nodeLayouts: Record<string, NodeLayout>;
   /** Placed panels and API groups: the only things a node can be nested in. */
   panelIds: Set<string>;
+  /** Collapsed panels and compact typed containers: what hides a node's children. */
   collapsedPanelIds: Set<string>;
+  /** The compact typed containers alone: what edges and flow steps are redrawn onto. */
+  compactContainerIds: Set<string>;
+  /** Children drawn as tabs on a compact parent, with their place among its tabs. */
+  compactTabIds: Map<string, number>;
   /** Every placed component, in render order. Hidden ones stay, flagged. */
   nodes: ViewNode[];
-  /** Connections with both ends placed — what handle counts and assignments are built from. */
+  /**
+   * Connections with both ends placed — what handle counts and assignments are
+   * built from — with ends hidden in a compact container drawn on it.
+   */
   placedConnections: Connection[];
   /** The edges drawn: placed connections whose ends are not hidden. */
   shownConnections: Connection[];
@@ -74,6 +94,8 @@ export const EMPTY_VIEW_SNAPSHOT: ViewSnapshot = Object.freeze({
   nodeLayouts: {},
   panelIds: new Set<string>(),
   collapsedPanelIds: new Set<string>(),
+  compactContainerIds: new Set<string>(),
+  compactTabIds: new Map<string, number>(),
   nodes: [],
   placedConnections: [],
   shownConnections: [],
@@ -102,13 +124,72 @@ export function resolveViewScene(
   return resolveCanvasSnapshot({ ...diagram, activeVersionId: versionId, compareVersionId });
 }
 
-/** Containers a node can be nested in: panels and API groups. */
-export function buildPanelIds(components: readonly Component[]): Set<string> {
+/** Whether the descriptor makes its component a typed container. */
+function isTypedContainer(component: Component, describe?: DescribeNode): boolean {
+  return describe?.(component).acceptsChildren !== undefined;
+}
+
+/**
+ * Containers a node can be nested in: panels, API groups, and — given the
+ * registry's `describe` — every typed container.
+ */
+export function buildPanelIds(
+  components: readonly Component[],
+  describe?: DescribeNode,
+): Set<string> {
   const ids = new Set<string>();
   for (const c of components) {
-    if (isPanelComponent(c) || isApiGroupComponent(c)) ids.add(c.id);
+    if (isPanelComponent(c) || isApiGroupComponent(c) || isTypedContainer(c, describe)) {
+      ids.add(c.id);
+    }
   }
   return ids;
+}
+
+/** Typed containers drawn compact: `collapsible` and flagged `collapsed`. */
+export function buildCompactContainerIds(
+  components: Record<string, Component>,
+  describe?: DescribeNode,
+): Set<string> {
+  const ids = new Set<string>();
+  if (!describe) return ids;
+  for (const c of Object.values(components)) {
+    if ((c as { collapsed?: boolean }).collapsed === true && describe(c).collapsible === true) {
+      ids.add(c.id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Children that stay on screen as tabs on a compact parent, each with its
+ * place: top to bottom as they sit in the parent, then by name.
+ */
+export function buildCompactTabIds(
+  components: Record<string, Component>,
+  compactIds: ReadonlySet<string>,
+  nodeLayouts: Record<string, NodeLayout>,
+  describe?: DescribeNode,
+): Map<string, number> {
+  const tabs = new Map<string, number>();
+  if (!describe || compactIds.size === 0) return tabs;
+  const byParent = new Map<string, Component[]>();
+  for (const c of Object.values(components)) {
+    if (!c.parentId || !compactIds.has(c.parentId)) continue;
+    if (describe(c).tabOnCompactParent?.(c) !== true) continue;
+    const siblings = byParent.get(c.parentId) ?? [];
+    siblings.push(c);
+    byParent.set(c.parentId, siblings);
+  }
+  for (const siblings of byParent.values()) {
+    siblings
+      .sort(
+        (a, b) =>
+          (nodeLayouts[a.id]?.y ?? 0) - (nodeLayouts[b.id]?.y ?? 0) || a.name.localeCompare(b.name),
+      )
+      .forEach((c, index) => tabs.set(c.id, index));
+  }
+  return tabs;
 }
 
 /** The edges drawn: a connection to a hidden component is not. */
@@ -135,8 +216,16 @@ function hasCollapsedOrHiddenAncestor(
   comp: Component,
   components: Record<string, Component>,
   collapsedPanelIds: Set<string>,
+  isTab = false,
 ): boolean {
   let currentParentId = comp.parentId;
+  // A tab is not hidden by its compact parent — only by whatever hides the parent.
+  if (isTab && currentParentId) {
+    const parent = components[currentParentId];
+    if (!parent) return false;
+    if (parent.hidden === true) return true;
+    currentParentId = parent.parentId;
+  }
   while (currentParentId !== null && currentParentId !== undefined) {
     const parent = components[currentParentId];
     if (!parent) break;
@@ -159,13 +248,15 @@ export function resolveNodeView(
   panelIds: Set<string>,
   collapsedPanelIds: Set<string>,
   components: Record<string, Component>,
+  isTab = false,
 ): { isChild: boolean; zIndex: number; isHidden: boolean } {
   const isChild = descriptor.canHaveParent && comp.parentId !== null && panelIds.has(comp.parentId);
   const zIndex =
     layout?.zIndex ??
     (typeof descriptor.zIndex === "function" ? descriptor.zIndex(comp) : descriptor.zIndex);
   const isHidden =
-    comp.hidden === true || hasCollapsedOrHiddenAncestor(comp, components, collapsedPanelIds);
+    comp.hidden === true ||
+    hasCollapsedOrHiddenAncestor(comp, components, collapsedPanelIds, isTab);
   return { isChild, zIndex, isHidden };
 }
 
@@ -196,6 +287,7 @@ function parentDepth(comp: Component, components: Record<string, Component>): nu
 export function sortForRender(
   components: readonly Component[],
   componentsById: Record<string, Component>,
+  describe?: DescribeNode,
 ): Component[] {
   const depthCache = new Map<string, number>();
   const depthOf = (comp: Component): number => {
@@ -206,8 +298,8 @@ export function sortForRender(
     return depth;
   };
   return [...components].sort((a, b) => {
-    const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a);
-    const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b);
+    const aIsGroup = isPanelComponent(a) || isApiGroupComponent(a) || isTypedContainer(a, describe);
+    const bIsGroup = isPanelComponent(b) || isApiGroupComponent(b) || isTypedContainer(b, describe);
     if (aIsGroup && !bIsGroup) return -1;
     if (!aIsGroup && bIsGroup) return 1;
     const depthA = depthOf(a);
@@ -247,11 +339,20 @@ export function resolveViewSnapshot(
 ): ViewSnapshot {
   const resolved = resolveViewScene(diagram, options);
   const placed = placedComponents(resolved.components, resolved.nodeLayouts);
-  const panelIds = buildPanelIds(placed);
+  const panelIds = buildPanelIds(placed, describe);
+  const compactContainerIds = buildCompactContainerIds(resolved.components, describe);
   const collapsedPanelIds = buildCollapsedPanelIds(resolved.components);
+  for (const id of compactContainerIds) collapsedPanelIds.add(id);
+  const compactTabIds = buildCompactTabIds(
+    resolved.components,
+    compactContainerIds,
+    resolved.nodeLayouts,
+    describe,
+  );
 
-  const nodes = sortForRender(placed, resolved.components).map((component): ViewNode => {
+  const nodes = sortForRender(placed, resolved.components, describe).map((component): ViewNode => {
     const layout = resolved.nodeLayouts[component.id];
+    const tabIndex = compactTabIds.get(component.id);
     const view = resolveNodeView(
       component,
       describe(component),
@@ -259,11 +360,23 @@ export function resolveViewSnapshot(
       panelIds,
       collapsedPanelIds,
       resolved.components,
+      tabIndex !== undefined,
     );
-    return { component, layout, ...view };
+    return { component, layout, ...view, ...(tabIndex !== undefined ? { tabIndex } : {}) };
   });
 
-  const connections = placedConnections(resolved.connections, resolved.nodeLayouts);
+  // A badge-mode element's incoming edges are not drawn (the model keeps
+  // them); then ends hidden in a compact container are drawn on it.
+  const connections = remapConnectionsToVisible(
+    hideSharedEdges(
+      placedConnections(resolved.connections, resolved.nodeLayouts),
+      resolved.components,
+      options.reveal,
+    ),
+    resolved.components,
+    compactContainerIds,
+    compactTabIds,
+  );
 
   return {
     components: resolved.components,
@@ -271,6 +384,8 @@ export function resolveViewSnapshot(
     nodeLayouts: resolved.nodeLayouts,
     panelIds,
     collapsedPanelIds,
+    compactContainerIds,
+    compactTabIds,
     nodes,
     placedConnections: connections,
     shownConnections: filterVisibleConnections(connections, resolved.components),

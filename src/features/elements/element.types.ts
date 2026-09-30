@@ -11,10 +11,11 @@ import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import type { NodeHandleSpec } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { PanelKind } from "@/features/diagram/enums";
+import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import type {
   FlowNodeShape,
+  K8sContainerRole,
   NodeStrokeMode,
-  VsmRole,
 } from "@/features/diagram/model/component.types";
 import type { ExportNode } from "@/lib/export-core";
 
@@ -48,14 +49,17 @@ export type RegisteredElementTypeId =
   | "panel"
   | "process-node"
   | "external-element"
-  | "vsm-external"
+  | "shared-ref"
+  | "k8s-container"
+  | "k8s-ingress"
+  | "k8s-service"
+  | "k8s-workload"
+  | "k8s-namespace"
+  | "k8s-cluster"
+  | "deploy-shard-router"
+  | "deploy-shard"
+  | "deploy-sharded-store"
   | "flow-divider"
-  | "vsm-timeline"
-  | "vsm-kaizen"
-  | "vsm-push"
-  | "vsm-supermarket"
-  | "vsm-inventory"
-  | "vsm-process"
   | "svg"
   | "unknown"
   | "gcp-compute"
@@ -126,6 +130,16 @@ export type PaletteIcon =
   /** Resolved through the owning family's `IconResolver` (F4+). */
   | { kind: "family"; iconName: string };
 
+/**
+ * The rest of the diagram, for an element whose export depends on it: a
+ * typed container draws its children's count and distribution (a sharded
+ * store's key bar). Most mappings ignore it.
+ */
+export interface ExportContext {
+  components: Record<string, Component>;
+  layouts: Record<string, NodeLayout>;
+}
+
 /** Geometry the export adapter has already resolved for a node. */
 export interface ExportGeometry {
   id: string;
@@ -165,17 +179,14 @@ export interface ElementCreateOptions {
   panelKind?: PanelKind;
   flowShape?: FlowNodeShape;
   serviceId?: string;
-  /** Which end of a value stream an outside source is (`vsm-external`). */
-  vsmRole?: VsmRole;
-  /**
-   * Drawn dashed from the start: the line of visibility, or a lane's outline
-   * (the physical-evidence lane).
-   */
+  /** A named line drawn dashed from the start (the line of visibility). */
   stroke?: NodeStrokeMode;
-  /** A swimlane's accent from a preset (a flow-preset theme token). */
-  laneAccent?: string;
-  /** i18n key of a preset swimlane's label. */
-  laneLabelKey?: string;
+  /** What a new k8s container is in its pod; absent (main) is not written. */
+  podRole?: K8sContainerRole;
+  /** A new init container's place in the run order. */
+  order?: number;
+  /** The shared element a new reference stands for. */
+  refOf?: string;
 }
 
 export interface ElementSize {
@@ -278,6 +289,30 @@ export interface ElementCanvasSlice {
   buildData: (comp: Component, ctx: NodeBuildContext) => Record<string, unknown>;
   buildStyle?: (comp: Component, ctx: NodeBuildContext) => CSSProperties | undefined;
 
+  /**
+   * The child types a typed container takes, like an api-group takes
+   * endpoints. Absent means the container takes anything, as a panel does.
+   * Enforced by the store on every path that can nest a node (`canContain`),
+   * so a paste or a generated graph cannot do what a drop is refused.
+   */
+  acceptsChildren?: readonly string[];
+
+  /**
+   * The container has a compact mode, switched by the component's optional
+   * `collapsed` flag (absent = expanded, never written as `false`). Compact,
+   * its children are hidden and the edges that reach them are drawn to the
+   * container instead — the data stays as it is (`isCompactContainer`).
+   */
+  collapsible?: boolean;
+
+  /**
+   * While its parent is compact, this child is not hidden with the rest: it
+   * stays on screen as a tab on the parent's right edge, still its own node —
+   * edges end on it and a click selects it. A sidecar on a compact workload.
+   * Its stored position and size are untouched; the tab's are derived.
+   */
+  tabOnCompactParent?: (component: Component) => boolean;
+
   /** React Flow behaviour overrides, same meaning as in `NodeTypeDescriptor`. */
   dragHandle?: string;
   draggable?: boolean;
@@ -349,7 +384,7 @@ export interface ElementExportSlice {
      * swimlane cell when it is a lane — so naming a single kind here would
      * have been a value no reader could trust, and nothing read it.
      */
-    toExportNode: (comp: Component, base: ExportGeometry) => ExportNode;
+    toExportNode: (comp: Component, base: ExportGeometry, context?: ExportContext) => ExportNode;
   };
 }
 
@@ -372,7 +407,7 @@ export interface ElementCanvasVariant {
 /**
  * The colour-in-parts skin the flowchart shapes introduced — an accent
  * (`customColor`), a fill and a stroke — for every element that wears it (the
- * flow and VSM families). Its presence is what gives an element the flow
+ * flow, deploy and k8s families). Its presence is what gives an element the flow
  * accent presets in the toolbar and the Appearance section in the inspector.
  */
 export interface ElementSkin {
@@ -381,6 +416,11 @@ export interface ElementSkin {
    * written: picking it in a control clears the stored accent instead.
    */
   defaultAccent: string;
+  /**
+   * When the default depends on the component — a k8s container's on its
+   * role — the default for this one. Falls back to `defaultAccent`.
+   */
+  defaultAccentOf?: (component: Component) => string;
 }
 
 export interface ElementDescriptor {

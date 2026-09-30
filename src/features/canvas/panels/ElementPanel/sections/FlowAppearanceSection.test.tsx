@@ -77,7 +77,7 @@ describe("FlowAppearanceSection", () => {
   });
 
   it("clears to nothing when the element's own default accent is picked", () => {
-    // VSM inventory defaults to amber: picking amber there stores nothing.
+    // An element whose default is amber: picking amber there stores nothing.
     const onChange = vi.fn();
     render(
       <FlowAppearanceSection
@@ -103,5 +103,14 @@ describe("FlowAppearanceSection", () => {
     fireEvent.click(button("canvas.quickActions.color"));
     fireEvent.click(button("colors.teal"));
     expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
+  });
+
+  it("stores solid on evidence, whose default is dashed", () => {
+    const onChange = renderSection({ flowShape: "evidence" });
+    expect(radio("elementPanel.strokeDashed").getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(radio("elementPanel.strokeSolid"));
+    expect(onChange).toHaveBeenLastCalledWith({ stroke: "solid" });
+    fireEvent.click(radio("elementPanel.strokeDashed"));
+    expect(onChange).toHaveBeenLastCalledWith({ stroke: undefined });
   });
 });

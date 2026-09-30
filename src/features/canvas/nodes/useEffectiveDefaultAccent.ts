@@ -14,9 +14,11 @@ import { laneAccentOf } from "./laneAccent";
 export function useEffectiveDefaultAccent(component: Component | null | undefined): string {
   const parent = useComponent(component?.parentId ?? "");
   if (!component) return FLOW_DEFAULT_ACCENT;
+  const skin = getElement(component.type)?.skin;
   return (
     laneAccentOf(component, parent) ??
-    getElement(component.type)?.skin?.defaultAccent ??
+    skin?.defaultAccentOf?.(component) ??
+    skin?.defaultAccent ??
     FLOW_DEFAULT_ACCENT
   );
 }

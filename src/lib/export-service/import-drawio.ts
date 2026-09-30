@@ -30,8 +30,6 @@ const C4_TYPE_MAP: Record<string, string> = {
 };
 
 const EDGE_STYLE_MAP: Array<[string, EdgeStyle]> = [
-  // Before edgeStyle=none, which the zigzag's style also carries.
-  ["mxgraph.lean_mapping.electronic_info_flow_edge", EdgeStyle.Zigzag],
   ["edgeStyle=none", EdgeStyle.Straight],
   ["edgeStyle=orthogonalEdgeStyle", EdgeStyle.Step],
   ["edgeStyle=entityRelationEdgeStyle", EdgeStyle.Bezier],
@@ -272,9 +270,20 @@ function resolveServiceIdByName(
   return matched?.id;
 }
 
+/** A shared element's mode and hidden consumers, as Structura exported them. */
+function readShared(objectEl: Element): { mode: "badge" | "ref"; consumers: string[] } | null {
+  const mode = getAttr(objectEl, "structuraShared");
+  if (mode !== "badge" && mode !== "ref") return null;
+  const consumers = getAttr(objectEl, "structuraConsumers")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return { mode, consumers };
+}
+
 interface PendingVertex {
   drawioId: string;
-  kind: "c4" | "panel" | "aws" | "panel-mxcell" | "unknown";
+  kind: "c4" | "panel" | "aws" | "panel-mxcell" | "shared-ref" | "unknown";
   parentDrawioId: string;
   rawGeometry: { x: number; y: number; width: number; height: number };
 
@@ -301,6 +310,7 @@ export function parseDrawioXml(
     return { ...EMPTY_RESULT };
   }
 
+  const sharedEdges: Array<{ sourceDrawioId: string; targetId: string }> = [];
   const skipped: string[] = [];
   const idMap = new Map<string, string>();
   const pendingVertices: PendingVertex[] = [];
@@ -310,6 +320,23 @@ export function parseDrawioXml(
   for (let index = 0; index < objectNodes.length; index += 1) {
     const objectEl = objectNodes[index]!;
     const c4TypeLabel = getAttr(objectEl, "c4Type");
+    // A reference to a shared element, as Structura exported it.
+    const refOf = getAttr(objectEl, "structuraRefOf");
+    if (!c4TypeLabel && refOf) {
+      const refCell = getVertexMxCellFromObject(objectEl);
+      const refId = getAttr(objectEl, "id");
+      if (refCell && refId) {
+        innerMxCellsFromObjects.add(refCell);
+        pendingVertices.push({
+          drawioId: refId,
+          kind: "shared-ref",
+          parentDrawioId: getAttr(refCell, "parent"),
+          rawGeometry: readGeometry(refCell),
+          sourceElement: objectEl,
+        });
+      }
+      continue;
+    }
     if (!c4TypeLabel) continue;
 
     const drawioId = getAttr(objectEl, "id");
@@ -385,6 +412,9 @@ export function parseDrawioXml(
     }
 
     const style = getAttr(mxCell, "style");
+
+    // A shared element's badge is a drawing of an edge the object carries, not an element.
+    if (style.includes("structuraBadge=1;")) continue;
 
     if (styleHasDashedBorder(style)) {
       const ancestorObject = closestObjectAncestor(mxCell);
@@ -536,6 +566,26 @@ export function parseDrawioXml(
       continue;
     }
 
+    if (pending.kind === "shared-ref") {
+      // Its original is mapped once every vertex has its new id, below.
+      components.push({
+        id: newId,
+        name: getAttr(pending.sourceElement, "label") || "ref",
+        description: "",
+        parentId,
+        type: "shared-ref",
+        refOf: getAttr(pending.sourceElement, "structuraRefOf"),
+      });
+      layouts.push({
+        elementId: newId,
+        x: positioned.x,
+        y: positioned.y,
+        width: positioned.width || undefined,
+        height: positioned.height || undefined,
+      });
+      continue;
+    }
+
     if (pending.kind === "c4") {
       const objectEl = pending.sourceElement;
       const c4TypeLabel = getAttr(objectEl, "c4Type");
@@ -544,6 +594,7 @@ export function parseDrawioXml(
       const registryServiceName = getAttr(objectEl, "registryService");
       const serviceId = resolveServiceIdByName(registryServiceName, services);
 
+      const shared = readShared(objectEl);
       components.push({
         id: newId,
         name: getAttr(objectEl, "c4Name") || "Unnamed",
@@ -552,7 +603,13 @@ export function parseDrawioXml(
         type: mappedType,
         technology: getAttr(objectEl, "c4Technology") || undefined,
         ...(serviceId ? { serviceId } : {}),
+        ...(shared ? { shared: { mode: shared.mode } } : {}),
       });
+      if (shared) {
+        for (const consumer of shared.consumers) {
+          sharedEdges.push({ sourceDrawioId: consumer, targetId: newId });
+        }
+      }
       layouts.push({
         elementId: newId,
         x: positioned.x,
@@ -628,7 +685,20 @@ export function parseDrawioXml(
     }
   }
 
+  // References point at their originals' new ids.
+  for (const component of components) {
+    if (component.type === "shared-ref") {
+      component.refOf = idMap.get(component.refOf) ?? component.refOf;
+    }
+  }
+
   const connections: Connection[] = [];
+  // The edges a badge-mode element hid in draw.io, back from its consumers.
+  for (const edge of sharedEdges) {
+    const sourceId = idMap.get(edge.sourceDrawioId);
+    if (!sourceId) continue;
+    connections.push({ id: generateId("conn"), sourceId, targetId: edge.targetId, label: "" });
+  }
 
   for (let index = 0; index < mxCellNodes.length; index += 1) {
     const mxCell = mxCellNodes[index]!;

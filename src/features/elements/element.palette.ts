@@ -81,6 +81,13 @@ function entriesFor(element: ElementDescriptor): ElementPaletteEntry[] {
   ];
 }
 
+/** Palette entries for a given set of elements, in the order given. */
+export function paletteEntriesForElements(
+  elements: readonly ElementDescriptor[],
+): ElementPaletteEntry[] {
+  return elements.flatMap(entriesFor);
+}
+
 /**
  * Registered elements offered in `categoryId`, label-resolved in the active
  * locale. Sorted by label unless `order` is `"declared"`: a category whose

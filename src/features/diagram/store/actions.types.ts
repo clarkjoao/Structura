@@ -51,9 +51,17 @@ export interface AppActions {
     cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: import("../model/diagram.types").FlowNodeShape,
-    /** Anything else the element's descriptor reads at creation (a VSM role, say). */
+    /** Anything else the element's descriptor reads at creation (a k8s container's role, say). */
     createOptions?: import("@/features/elements/element.types").ElementCreateOptions,
   ) => Component;
+  /** A new reference to an element, at a position in a parent; turns the original to ref mode. */
+  addSharedRef: (
+    elementId: string,
+    parentId: string | null,
+    position: { x: number; y: number },
+  ) => Component | null;
+  /** Ends a connection on a new reference to its target, placed beside its source. */
+  routeConnectionThroughRef: (connectionId: string) => Component | null;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   removeElements: (nodeIds: string[], edgeIds: string[]) => void;

@@ -1,3 +1,4 @@
+import type { SharedReveal } from "@/features/diagram/utils/shared";
 import type { Edge, Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
 import { EMPTY_READER_CATALOG, type ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
@@ -41,6 +42,7 @@ export function projectReadDiagram(
   routePlay: ReadDiagramRoutePlay | null = null,
   focusedNodeId: string | null = null,
   catalog: ReaderCatalog = EMPTY_READER_CATALOG,
+  reveal: SharedReveal = {},
 ): { nodes: Node[]; edges: Edge[] } {
   const { nodes, edges } = projectReadDiagramView(
     diagram,
@@ -48,6 +50,7 @@ export function projectReadDiagram(
     routePlay,
     focusedNodeId,
     catalog,
+    reveal,
   );
   return { nodes, edges };
 }
@@ -63,10 +66,18 @@ export function projectReadDiagramView(
   routePlay: ReadDiagramRoutePlay | null = null,
   focusedNodeId: string | null = null,
   catalog: ReaderCatalog = EMPTY_READER_CATALOG,
+  reveal: SharedReveal = {},
 ): { nodes: Node[]; edges: Edge[]; view: ViewSnapshot } {
+  // The edge a step is on is drawn while it is read, even if a shared element hides it (F5).
+  const activeConnId = reading?.highlight.activeConnId;
   const view = resolveViewSnapshot(
     diagram,
-    { versionId: diagram.activeVersionId ?? null },
+    {
+      versionId: diagram.activeVersionId ?? null,
+      reveal: activeConnId
+        ? { ...reveal, connections: new Set([...(reveal.connections ?? []), activeConnId]) }
+        : reveal,
+    },
     resolveNodeDescriptor,
   );
   const ctx = buildReadNodeContext(

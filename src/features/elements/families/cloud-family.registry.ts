@@ -10,6 +10,7 @@ import {
   unregisterElement,
   offeredElements,
 } from "../element.registry";
+import type { ElementDescriptor } from "../element.types";
 import type { CloudFamilyDefinition } from "./cloud-family.types";
 import { buildCloudFamilyDescriptors } from "./build-cloud-family-descriptors";
 import { forgetFamilyIconResolver } from "./family-icon-resolvers";
@@ -85,6 +86,21 @@ export function nonCatalogFamilyIds(): string[] {
     seen.push(element.family);
   }
   return seen;
+}
+
+/**
+ * What a catalog family offers besides its categories: elements registered
+ * through `registerElement` under the family's id — Kubernetes' cluster,
+ * namespace and workload beside its service cards. The categories are the
+ * ones `registerCloudFamily` built.
+ */
+export function familyOwnElements(familyId: string): ElementDescriptor[] {
+  const family = families.get(familyId);
+  if (!family) return [];
+  const categoryIds = new Set<string>(family.categories.map((category) => category.id));
+  return offeredElements().filter(
+    (element) => element.family === familyId && !categoryIds.has(element.id),
+  );
 }
 
 export function getCloudFamily(familyId: string): CloudFamilyDefinition | undefined {
