@@ -3,14 +3,29 @@ import UnknownNode from "@/features/canvas/nodes/UnknownNode";
 import { SPREAD_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_UNKNOWN } from "@/features/diagram/model/component-type-constants";
-import {
-  isPluginTypedComponent,
-  isUnknownComponent,
-} from "@/features/diagram/model/component.guards";
+import { isUnknownComponent } from "@/features/diagram/model/component.guards";
 import i18n from "@/infrastructure/i18n";
+import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.constants";
+import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
 import type { ElementDescriptor } from "../element.types";
 
 const UNKNOWN_DEFAULT_W = 240;
+
+function clampSlots(count: number): number {
+  return Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, count));
+}
+
+/**
+ * The handle slots the node renders, one per edge a side: it declares spread
+ * handles, and an edge whose slot is not rendered is dropped by React Flow.
+ */
+function slotsFor(id: string, ctx: NodeBuildContext) {
+  const counts = ctx.connectionCounts[id] ?? { incoming: 0, outgoing: 0 };
+  return {
+    incomingCount: clampSlots(counts.incoming),
+    outgoingCount: clampSlots(counts.outgoing),
+  };
+}
 const UNKNOWN_DEFAULT_H = 140;
 
 /**
@@ -46,23 +61,16 @@ export const unknownElement: ElementDescriptor = {
     derivesSize: false,
 
     buildData: (comp, ctx) => {
-      // Also the degradation target for plugin-typed components whose plugin is absent:
-      // show the name and the namespaced type, never touch the persisted data.
-      if (isPluginTypedComponent(comp)) {
-        return {
-          elementId: comp.id,
-          name: comp.name,
-          rawContent: comp.type,
-          isSelected: ctx.selectedNodeId === comp.id,
-          ...versionBadgePropsForNode(ctx, comp.id),
-        };
-      }
-      if (!isUnknownComponent(comp)) return {};
+      // Also the degradation target for plugin-typed components whose plugin is
+      // absent, and for a type no longer built in (a removed family's element in
+      // a saved diagram): show the name and the type, never touch the data.
+      const rawContent = isUnknownComponent(comp) ? comp.rawContent : comp.type;
       return {
         elementId: comp.id,
         name: comp.name,
-        rawContent: comp.rawContent,
+        rawContent,
         isSelected: ctx.selectedNodeId === comp.id,
+        ...slotsFor(comp.id, ctx),
         ...versionBadgePropsForNode(ctx, comp.id),
       };
     },

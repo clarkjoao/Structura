@@ -19,6 +19,8 @@ import { useTranslation } from "react-i18next";
 import { useElementPresetLibrary } from "@/features/element-presets";
 
 type CanvasInsertOption = {
+  /** Unique per entry: one element may offer several (a named line's three). */
+  key?: string;
   type: ComponentType;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -167,6 +169,7 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
   const REGISTRY_OPTIONS = useMemo(
     (): CanvasInsertOption[] =>
       paletteEntriesForCategory(ElementCategory.Canvas).map((entry) => ({
+        key: entry.key,
         type: entry.type,
         label: entry.label,
         icon: entry.icon,
@@ -575,9 +578,10 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
             {filteredCanvas.map((opt, index) => (
               <button
                 key={
-                  opt.type === COMPONENT_TYPE_PANEL
+                  opt.key ??
+                  (opt.type === COMPONENT_TYPE_PANEL
                     ? `panel-${opt.panelKind ?? PanelKind.Default}`
-                    : opt.type
+                    : opt.type)
                 }
                 data-selected={selectedIndex === canvasOffset + index}
                 onClick={() =>

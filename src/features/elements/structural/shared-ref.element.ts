@@ -5,6 +5,7 @@ import { elementAccent } from "@/features/canvas/shared/sharedLayerModel";
 import { exportColorHex } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import { COMPONENT_TYPE_SHARED_REF } from "@/features/diagram/model/component-type-constants";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
+import type { Component, SharedRefComponent } from "@/features/diagram/model/component.types";
 import { resolveShared } from "@/features/diagram/utils/shared";
 import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.constants";
 import { playbackStyle } from "../families/deploy/deploy.shared";
@@ -15,6 +16,12 @@ const REF_H = 48;
 
 function clampSlots(count: number): number {
   return Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, count));
+}
+
+/** Its own colour when it has one, else the original's; slate when the original is gone. */
+function refAccent(ref: SharedRefComponent, original: Component | undefined): string {
+  if (ref.customColor) return ref.customColor;
+  return original ? elementAccent(original) : "hsl(var(--muted-foreground))";
 }
 
 /** A reference to a shared element, drawn near its consumers. Created from the original, never from the palette. */
@@ -31,7 +38,7 @@ export const sharedRefElement: ElementDescriptor = {
       refOf: options.refOf ?? "",
     }),
     defaultSize: { width: REF_W, height: REF_H },
-    patchableKeys: ["refOf"],
+    patchableKeys: ["refOf", "customColor"],
   },
 
   canvas: {
@@ -54,7 +61,7 @@ export const sharedRefElement: ElementDescriptor = {
       return {
         elementId: comp.id,
         name: original?.name ?? comp.name,
-        accent: original ? elementAccent(original) : "hsl(var(--muted-foreground))",
+        accent: refAccent(comp, original),
         dangling: !original,
         isSelected: ctx.isPlaying
           ? ctx.flowHighlight.litNodeIds.has(comp.id)
@@ -101,7 +108,7 @@ export const sharedRefElement: ElementDescriptor = {
           name: original?.name ?? comp.name,
           shapeStyle: "rounded=1;arcSize=8;absoluteArcSize=1;",
           label: `${original?.name ?? comp.name} (ref)`,
-          accentColor: exportColorHex(original ? elementAccent(original) : "#64748b") ?? "#64748b",
+          accentColor: exportColorHex(refAccent(comp, original)) ?? "#64748b",
           fill: "none",
           dashed: true,
           // Read back as a reference by the importer.

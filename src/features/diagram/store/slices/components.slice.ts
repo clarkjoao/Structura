@@ -1,4 +1,4 @@
-import { refsOf } from "../../utils/shared";
+import { refsOf, resolveShared, sharedMode } from "../../utils/shared";
 import { resolveVersionSnapshot } from "../../utils/version.utils";
 import type {
   Component,
@@ -17,6 +17,7 @@ import {
   isEndpointType,
   isPluginComponentType,
   COMPONENT_TYPE_UNKNOWN,
+  COMPONENT_TYPE_SHARED_REF,
 } from "../../model/component-type-constants";
 import type { FlowNodeShape } from "../../model/component.types";
 import { getPanelKindDef } from "@/lib/catalogs/panels";
@@ -27,6 +28,7 @@ import {
 } from "@/features/elements/element.registry";
 import type { ElementCreateOptions } from "@/features/elements/element.types";
 import { canContain } from "@/features/elements/containment";
+import { canBeReferenced } from "@/features/elements/referencing";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
@@ -372,6 +374,77 @@ function removeElementsFromSnapshot(
   return notices;
 }
 
+/** Space between a node and a reference placed beside it. */
+const REF_GAP = 48;
+
+/** The components of the active scene, or the base diagram's when none is open. */
+function sceneComponents(d: Diagram): Record<string, Component> {
+  const scene = resolveActiveVersion(d);
+  return scene ? resolveVersionSnapshot(d, scene.id).components : d.snapshot.components;
+}
+
+/**
+ * Where a reference drawn to the right of `nodeId` goes, vertically centred on
+ * it: the node's parent, or the nearest ancestor that takes a reference when a
+ * typed container does not, with the position in that parent's coordinates.
+ */
+function besideNode(
+  d: Diagram,
+  scene: VersionDiff | null,
+  components: Record<string, Component>,
+  nodeId: string,
+): { parentId: string | null; position: { x: number; y: number } } | null {
+  const layout = resolveNodeLayout(d, scene, nodeId);
+  if (!layout) return null;
+  const refSize = elementDefaultSize(getElement(COMPONENT_TYPE_SHARED_REF)!);
+  let x = layout.x + (layout.width ?? DEFAULT_NODE_W) + REF_GAP;
+  let y = layout.y + ((layout.height ?? DEFAULT_NODE_H) - (refSize.height ?? 0)) / 2;
+  let parentId = components[nodeId]?.parentId ?? null;
+  while (parentId) {
+    const parent = components[parentId];
+    if (!parent || canContain(parent.type, COMPONENT_TYPE_SHARED_REF)) break;
+    const parentLayout = resolveNodeLayout(d, scene, parentId);
+    x += parentLayout?.x ?? 0;
+    y += parentLayout?.y ?? 0;
+    parentId = parent.parentId;
+  }
+  return { parentId, position: { x, y } };
+}
+
+/**
+ * Writes a new reference to `originalId` inside an open `set`, and turns the
+ * original to ref mode when it was still drawn with its edges: making a
+ * reference is how an element becomes shared, not a mode picked beforehand.
+ */
+function writeSharedRef(
+  d: Diagram,
+  scene: VersionDiff | null,
+  original: Component,
+  parentId: string | null,
+  position: { x: number; y: number },
+): Component {
+  const { component } = buildComponentForType(
+    generateId("el"),
+    COMPONENT_TYPE_SHARED_REF,
+    original.name,
+    parentId,
+    undefined,
+    undefined,
+    undefined,
+    { refOf: original.id },
+  );
+  const layout = buildLayoutForComponent(
+    component.id,
+    COMPONENT_TYPE_SHARED_REF,
+    undefined,
+    position,
+  );
+  writeComponentAndLayout(d, scene, component, layout);
+  const stored = resolveComponent(d, scene, original.id);
+  if (stored && sharedMode(stored) === "edges") stored.shared = { mode: "ref" };
+  return component;
+}
+
 /** A component of the active diagram's scene, by id — for checks made before `set`. */
 function getActiveComponentById(state: AppState, id: string): Component | undefined {
   const d = state.diagrams[state.activeDiagramId ?? ""];
@@ -463,6 +536,71 @@ export const componentsSlice = (
       }
     });
     return component;
+  },
+
+  /**
+   * A new reference to `elementId` at `position` in `parentId`. Only an
+   * original is referenced: asked for a reference of a reference, nothing is made. One undo step with the original's
+   * switch to ref mode. The canvas takes the store's positions afterwards, so
+   * a node dragged to make it goes back to where it was.
+   */
+  addSharedRef: (
+    elementId: string,
+    parentId: string | null,
+    position: { x: number; y: number },
+  ): Component | null => {
+    let created: Component | null = null;
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveVersion(d);
+      const components = sceneComponents(d);
+      const original = components[elementId];
+      if (!original || !canBeReferenced(original)) return;
+      const parent = parentId ? components[parentId] : undefined;
+      const inParent = parent && canContain(parent.type, COMPONENT_TYPE_SHARED_REF);
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      created = writeSharedRef(d, scene, original, inParent ? parentId : null, position);
+      state._lastLayoutWriteAt = (state._lastLayoutWriteAt ?? 0) + 1;
+      touchDiagram(d);
+    });
+    return created;
+  },
+
+  /**
+   * Draws an edge through a reference: a new reference to its target, beside
+   * its source, and the edge ending on it instead. The edge keeps its label,
+   * style and meaning — it is read as reaching the original everywhere.
+   */
+  routeConnectionThroughRef: (connectionId: string): Component | null => {
+    let created: Component | null = null;
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveVersion(d);
+      const connection =
+        scene?.addedConnections[connectionId] ?? d.snapshot.connections[connectionId];
+      if (!connection) return;
+      const components = sceneComponents(d);
+      const target = components[connection.targetId];
+      if (!target || !canBeReferenced(target)) return;
+      if (resolveShared(connection.sourceId, components) === target.id) return;
+      const place = besideNode(d, scene, components, connection.sourceId);
+      if (!place) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      created = writeSharedRef(d, scene, target, place.parentId, place.position);
+      connection.targetId = created.id;
+      // Its bends were drawn for the old path; the new one is short and fresh.
+      const edgeLayout = d.edgeLayouts[connectionId];
+      if (edgeLayout?.points) {
+        delete edgeLayout.points;
+        if (edgeLayout.labelOffset === undefined && edgeLayout.pathType === undefined) {
+          delete d.edgeLayouts[connectionId];
+        }
+      }
+      touchDiagram(d);
+    });
+    return created;
   },
 
   updateComponent: (id: string, patch: ComponentPatch) => {

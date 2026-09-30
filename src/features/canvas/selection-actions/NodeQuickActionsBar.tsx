@@ -11,6 +11,7 @@ import {
   ChevronsUpDown,
   LayoutGrid,
   Link2Off,
+  LocateFixed,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
@@ -33,6 +34,7 @@ import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerMo
 import { OpacityControl } from "./OpacityControl";
 import { CreateRefButton, SharedModeControl } from "./SharedModeControl";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
+import { canBeReferenced } from "@/features/elements/referencing";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 
 interface NodeQuickActionsBarProps {
@@ -47,6 +49,11 @@ interface NodeQuickActionsBarProps {
   onOrganizeChildren?: () => void;
   /** Detach this child from its parent panel — toolbar button. */
   onRemoveFromGroup?: () => void;
+  /**
+   * Select and frame an element, as the finder does — for a reference, its
+   * original.
+   */
+  onFocusElement?: (componentId: string) => void;
 }
 
 function pickColorGroup(component: Component | null): ColorPickerGroup {
@@ -105,11 +112,16 @@ export function NodeQuickActionsBar({
   onFitToChildren,
   onOrganizeChildren,
   onRemoveFromGroup,
+  onFocusElement,
 }: NodeQuickActionsBarProps) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const component = useComponent(nodeId);
+  // A reference's original, when it is still there to be focused on.
+  const refOriginal = useComponent(
+    component && isSharedRefComponent(component) ? component.refOf : "",
+  );
   const { incrementIconUsage, decrementIconUsage } = useIconActions();
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -268,7 +280,9 @@ export function NodeQuickActionsBar({
   const hasOpacity = isPanelComponent(component);
   const isCollapsible = getElement(component.type)?.canvas.collapsible === true;
   const isCollapsed = (component as { collapsed?: boolean }).collapsed === true;
-  const hasIcon = "customIconId" in component;
+  const isRef = isSharedRefComponent(component);
+  // A reference draws the link glyph, never an icon of its own.
+  const hasIcon = "customIconId" in component && !isRef;
   // Show color picker only for components that support color
   const hasColor = supportsColor(component);
 
@@ -310,6 +324,19 @@ export function NodeQuickActionsBar({
             </div>
           )}
 
+          {/* A reference leads to its original, the way the finder does */}
+          {isRef && refOriginal && onFocusElement && (
+            <button
+              type="button"
+              title={t("shared.focusOriginal")}
+              aria-label={t("shared.focusOriginal")}
+              onClick={() => onFocusElement(refOriginal.id)}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+            >
+              <LocateFixed className="h-3.5 w-3.5" />
+            </button>
+          )}
+
           {/* How the edges into it are drawn when many things use it */}
           {!isSharedRefComponent(component) && (
             <SharedModeControl
@@ -317,7 +344,7 @@ export function NodeQuickActionsBar({
               onChange={(patch) => updateComponent(nodeId, patch)}
             />
           )}
-          {component.shared?.mode === "ref" && <CreateRefButton original={component} />}
+          {canBeReferenced(component) && <CreateRefButton original={component} />}
 
           {/* Compact / expanded — only for collapsible typed containers */}
           {isCollapsible && (

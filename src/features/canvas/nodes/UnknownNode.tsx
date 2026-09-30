@@ -4,6 +4,7 @@ import { CircleHelp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
+import { DeployHandles } from "./DeployNodes/DeployParts";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 
 export type UnknownNodeData = {
@@ -12,6 +13,9 @@ export type UnknownNodeData = {
   rawContent?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
+  /** One slot a side per edge; see the element's `buildData`. */
+  incomingCount?: number;
+  outgoingCount?: number;
   versionBadge?: { name: string; color: string };
   compareBadges?: {
     a: { name: string; color: string };
@@ -35,6 +39,11 @@ const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>
         isVisible={isSelected}
         lineClassName="!border-transparent"
         handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
+      />
+      <DeployHandles
+        elementId={d.elementId}
+        incomingCount={d.incomingCount ?? 1}
+        outgoingCount={d.outgoingCount ?? 1}
       />
       <div
         aria-label={t("unknownNode.aria", { name: d.name })}

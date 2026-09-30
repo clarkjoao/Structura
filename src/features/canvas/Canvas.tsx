@@ -476,6 +476,7 @@ const Canvas = (props: CanvasProps = {}) => {
                         : undefined
                     }
                     onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
+                    onFocusElement={handleSearchSelect}
                   />
                 )}
               {/* Zoom, fit, view options and the minimap all move the viewport, and a

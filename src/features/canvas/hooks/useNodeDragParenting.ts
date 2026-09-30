@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { canContain, isCompactContainer, isShownAsTab } from "@/features/elements/containment";
+import { canBeReferenced } from "@/features/elements/referencing";
 import type { Node, OnNodesChange, NodeChange } from "@xyflow/react";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import {
@@ -10,6 +11,7 @@ import {
   buildChildrenIndex,
   getDescendantIdsFromIndex,
   isAncestorLocked,
+  COMPONENT_TYPE_SHARED_REF,
 } from "@/features/diagram";
 import {
   isOutsideParentBounds,
@@ -64,13 +66,57 @@ interface UseNodeDragParentingParams {
       newPosition: { x: number; y: number };
     }>,
   ) => void;
+
+  /**
+   * Alt+drag: instead of moving the node, a reference to it lands where it is
+   * dropped, and the node stays where it was. Absent, Alt+drag is a drag.
+   */
+  addSharedRef?: (
+    elementId: string,
+    parentId: string | null,
+    position: { x: number; y: number },
+  ) => unknown;
 }
 
 interface UseNodeDragParentingResult {
   dragTargetPanelId: string | null;
   unparentCandidatePanelId: string | null;
   onNodesChange: OnNodesChange;
-  onNodeDragStop: (_: unknown, draggedNode: Node) => void;
+  onNodeDragStop: (event: unknown, draggedNode: Node) => void;
+}
+
+/** Whether the gesture ended with Alt (Option) held: a reference is dropped, not the node. */
+function isAltDrag(event: unknown): boolean {
+  return typeof event === "object" && event !== null && "altKey" in event && event.altKey === true;
+}
+
+/**
+ * Marks the document while Alt is held, so the stylesheet can draw a node
+ * being Alt-dragged as the reference it will drop (`[data-alt-held]`).
+ */
+function useAltHeldMarker(enabled: boolean): void {
+  useEffect(() => {
+    if (!enabled) return;
+    const root = document.documentElement;
+    const set = (held: boolean) => {
+      if (held) root.dataset.altHeld = "";
+      else delete root.dataset.altHeld;
+    };
+    const onKey = (event: KeyboardEvent) => set(event.altKey);
+    const onPointer = (event: PointerEvent) => set(event.altKey);
+    const onBlur = () => set(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKey);
+    window.addEventListener("pointerdown", onPointer);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKey);
+      window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("blur", onBlur);
+      set(false);
+    };
+  }, [enabled]);
 }
 
 /** Whether a measured size is the stored one, rounded by the DOM to whole pixels. */
@@ -90,7 +136,9 @@ export function useNodeDragParenting({
   updateNodeLayout,
   batchUpdateNodeLayouts,
   batchCommitNodeDrag,
+  addSharedRef,
 }: UseNodeDragParentingParams): UseNodeDragParentingResult {
+  useAltHeldMarker(addSharedRef !== undefined);
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
   /**
@@ -392,7 +440,7 @@ export function useNodeDragParenting({
   );
 
   const onNodeDragStop = useCallback(
-    (_: unknown, draggedNode: Node) => {
+    (event: unknown, draggedNode: Node) => {
       const nodes = nodesRef.current;
       endGesture();
       // One walk of the node list for the whole commit instead of one per node.
@@ -447,6 +495,42 @@ export function useNodeDragParenting({
         : draggedNode.position;
       const absX = draggedAbsPos.x;
       const absY = draggedAbsPos.y;
+
+      // Alt+drag drops a reference where the node was let go; the node itself
+      // is not moved (the store bumps its layout stamp, and the canvas puts it
+      // back). Nothing else the gesture moved is written either.
+      if (
+        addSharedRef &&
+        isAltDrag(event) &&
+        draggedComponent &&
+        canBeReferenced(draggedComponent)
+      ) {
+        const into = findPanelContainingPoint(
+          nodes,
+          absX,
+          absY,
+          undefined,
+          r.nodeLayouts,
+          components,
+        );
+        const intoType = into ? components[into.id]?.type : undefined;
+        const nested =
+          into && into.id !== draggedNode.id && intoType !== undefined
+            ? canContain(intoType, COMPONENT_TYPE_SHARED_REF) &&
+              !getDescendantIdsFromIndex(draggedNode.id, buildChildrenIndex(components)).has(
+                into.id,
+              )
+            : false;
+        const origin =
+          into && nested
+            ? resolveAbsolutePosition(into.id, into.position, components, r.nodeLayouts)
+            : { x: 0, y: 0 };
+        const created = addSharedRef(draggedNode.id, into && nested ? into.id : null, {
+          x: absX - origin.x,
+          y: absY - origin.y,
+        });
+        if (created) return;
+      }
 
       type DragEntry = {
         nodeId: string;
@@ -608,7 +692,7 @@ export function useNodeDragParenting({
 
       flush();
     },
-    [batchCommitNodeDrag, endGesture],
+    [batchCommitNodeDrag, endGesture, addSharedRef],
   );
 
   return { dragTargetPanelId, unparentCandidatePanelId, onNodesChange, onNodeDragStop };

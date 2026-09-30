@@ -2559,6 +2559,7 @@
     "usedBy_one": "Used by {{count}}",
     "usedBy_other": "Used by {{count}}",
     "goToOriginal": "Go to the original",
+    "focusOriginal": "Focus on the original element",
     "mode": {
       "label": "Shared",
       "edges": "Edges",
@@ -2572,6 +2573,8 @@
     "suggest_one": "Used by {{count}} — draw it as shared?",
     "suggest_other": "Used by {{count}} — draw it as shared?",
     "createRef": "New reference",
+    "createRefHint": "New reference (or Alt+drag the element to where it is used)",
+    "routeThroughRef": "Draw through a reference, beside the source",
     "refsRemoved_one": "{{name}} left with its reference",
     "refsRemoved_other": "{{name}} left with its {{count}} references"
   }

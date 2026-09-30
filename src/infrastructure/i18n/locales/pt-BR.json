@@ -2559,6 +2559,7 @@
     "usedBy_one": "Usado por {{count}}",
     "usedBy_other": "Usado por {{count}}",
     "goToOriginal": "Ir para o original",
+    "focusOriginal": "Focar no elemento principal",
     "mode": {
       "label": "Compartilhado",
       "edges": "Arestas",
@@ -2572,6 +2573,8 @@
     "suggest_one": "Usado por {{count}} — desenhar como compartilhado?",
     "suggest_other": "Usado por {{count}} — desenhar como compartilhado?",
     "createRef": "Nova referência",
+    "createRefHint": "Nova referência (ou Alt+arraste o elemento até onde ele é usado)",
+    "routeThroughRef": "Desenhar por uma referência, ao lado da origem",
     "refsRemoved_one": "{{name}} saiu com a sua referência",
     "refsRemoved_other": "{{name}} saiu com as suas {{count}} referências"
   }

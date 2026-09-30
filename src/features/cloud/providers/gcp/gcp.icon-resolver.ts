@@ -23,7 +23,15 @@ export const gcpIconResolver: IconResolver = {
 
     if (lazyCache.has(iconName)) return lazyCache.get(iconName)!;
 
-    const LazyComp = lazy(async () => {
+    const LazyComp = lazy(() =>
+      load().catch((error: unknown) => {
+        // A failed fetch (a redeploy, Vite's stale optimized deps) must not
+        // stay cached: the next mount tries again.
+        lazyCache.delete(iconName);
+        throw error;
+      }),
+    );
+    async function load() {
       const svgUrl = await loader();
       const GcpSvgIcon: IconComponent = ({ size = 24 }) =>
         React.createElement("img", {
@@ -34,7 +42,7 @@ export const gcpIconResolver: IconResolver = {
           style: { objectFit: "contain" },
         });
       return { default: GcpSvgIcon };
-    });
+    }
 
     lazyCache.set(iconName, LazyComp);
     return LazyComp;

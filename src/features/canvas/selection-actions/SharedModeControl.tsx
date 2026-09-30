@@ -68,29 +68,25 @@ export function SharedModeControl({
 
 /**
  * A new reference to the element, beside it: drawn where its consumers are,
- * standing for it everywhere meaning is read.
+ * standing for it everywhere meaning is read. Making one is what makes the
+ * element shared; the faster way is Alt+drag, which the title says.
  */
 export function CreateRefButton({ original }: { original: Component }) {
   const { t } = useTranslation();
   const layouts = useResolvedNodeLayouts();
-  const { addComponent } = useDiagramActions();
+  const { addSharedRef } = useDiagramActions();
   const at = layouts[original.id];
   return (
     <button
       type="button"
       className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
-      title={t("shared.createRef")}
+      title={t("shared.createRefHint")}
       aria-label={t("shared.createRef")}
       onClick={() =>
-        addComponent(
-          "shared-ref",
-          original.name,
+        addSharedRef(
+          original.id,
           original.parentId,
-          at ? { x: at.x + (at.width ?? 200) + 40, y: at.y } : undefined,
-          undefined,
-          undefined,
-          undefined,
-          { refOf: original.id },
+          at ? { x: at.x + (at.width ?? 200) + 40, y: at.y } : { x: 0, y: 0 },
         )
       }
     >

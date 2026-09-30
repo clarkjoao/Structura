@@ -347,6 +347,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           onReset={() => activeDiagramId && resetEdgeControlPoints(activeDiagramId, connectionId)}
           onDelete={() => removeConnection(connectionId)}
           edgeStyle={edgeStyle}
+          routeConnectionId={connectionId}
           edgeColor={connectionStyle?.color}
           markerStart={connectionStyle?.markerStart}
           markerEnd={connectionStyle?.markerEnd}

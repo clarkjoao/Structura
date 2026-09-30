@@ -456,6 +456,8 @@ export interface K8sContainerComponent extends BaseComponent, SkinParts {
 export interface SharedRefComponent extends BaseComponent {
   type: "shared-ref";
   refOf: string;
+  /** Its own accent; absent means the original's. The one thing a reference owns. */
+  customColor?: string;
 }
 
 export interface ExternalElementComponent extends BaseComponent {

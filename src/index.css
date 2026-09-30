@@ -370,3 +370,17 @@
     animation: none;
   }
 }
+
+/*
+ * Alt+drag drops a reference instead of moving the node (useNodeDragParenting):
+ * while Alt is held, the node being dragged is drawn as the reference it will
+ * leave — dashed and see-through, with the copy cursor.
+ */
+:root[data-alt-held] .react-flow .react-flow__node.dragging {
+  opacity: 0.6;
+  /* React Flow's own node rules set these; the cue has to win over them. */
+  outline: 2px dashed hsl(var(--primary)) !important;
+  outline-offset: 4px;
+  border-radius: 8px;
+  cursor: copy !important;
+}
