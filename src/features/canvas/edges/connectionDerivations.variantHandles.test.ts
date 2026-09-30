@@ -1,62 +1,119 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Component, Connection } from "@/features/diagram";
 import "@/features/elements/bootstrap";
 import "@/features/canvas/nodes/node-types/registry";
+import {
+  SINGLE_PAIR_HANDLES,
+  SPREAD_HANDLES,
+} from "@/features/canvas/nodes/node-types/handle-spec";
+import {
+  hasElement,
+  registerElement,
+  unregisterElement,
+} from "@/features/elements/element.registry";
+import type { ElementCanvasSlice, ElementDescriptor } from "@/features/elements/element.types";
 import { buildConnectionCountPerNode, buildEdgeHandleAssignments } from "./connectionDerivations";
 
 /**
- * Seen on the canvas: two edges into a Step Functions Fail, and the Choice's
- * second branch, were dropped — the slots came from the state type's spread
- * handles, but a Fail and a Choice are drawn by the flow node, which renders
- * one slot a side. The spec now comes from what the component renders.
+ * An element whose base canvas spreads its handles but whose variant renders
+ * one slot a side: React Flow drops an edge whose handle is missing, so the
+ * slots must come from what the component renders, not from its type.
  */
-const state = (id: string, stateType?: string): Component =>
+const TYPE = "test-variant-handles";
+
+const canvas = (handles: ElementCanvasSlice["handles"]): ElementCanvasSlice => ({
+  rfType: TYPE,
+  component: () => null,
+  handles,
+  role: "card",
+  zIndex: 1,
+  connectable: true,
+  canHaveParent: true,
+  canBeParent: false,
+  canBeConnectionSource: true,
+  derivesSize: false,
+  buildData: () => ({}),
+});
+
+const fixture: ElementDescriptor = {
+  id: TYPE as never,
+  family: "structural",
+  labelKey: "canvasToolbar.panel",
+  descriptionKey: "elements.panel.description",
+  model: {
+    createComponent: (base) => ({ ...base, type: TYPE }) as unknown as Component,
+    defaultSize: { width: 160, height: 60 },
+    patchableKeys: [],
+  },
+  canvas: canvas(SPREAD_HANDLES),
+  variants: [
+    {
+      matches: (comp) => (comp as unknown as { flat?: boolean }).flat === true,
+      canvas: canvas(SINGLE_PAIR_HANDLES),
+    },
+  ],
+  palette: {
+    categoryId: "test-variant",
+    icon: { kind: "family", iconName: "x" },
+    accent: { kind: "neutral" },
+    searchKeys: [],
+    hidden: true,
+  },
+  inspector: {},
+  export: {
+    drawio: { toExportNode: (_comp, base) => ({ ...base, kind: "passthrough" }) as never },
+  },
+};
+
+const node = (id: string, flat = false): Component =>
   ({
     id,
     name: id,
     description: "",
     parentId: null,
-    type: "sfn-state",
-    ...(stateType ? { stateType } : {}),
+    type: TYPE,
+    ...(flat ? { flat } : {}),
   }) as unknown as Component;
 
 const link = (id: string, sourceId: string, targetId: string): Connection =>
   ({ id, sourceId, targetId, label: "" }) as Connection;
 
 describe("slots come from the canvas a component is drawn with", () => {
-  const components = {
-    task: state("task"),
-    other: state("other"),
-    choice: state("choice", "Choice"),
-    fail: state("fail", "Fail"),
-  };
-  const connections = [
-    link("a", "task", "fail"),
-    link("b", "other", "fail"),
-    link("yes", "choice", "task"),
-    link("no", "choice", "other"),
-  ];
-  const assigned = buildEdgeHandleAssignments(
-    connections,
-    buildConnectionCountPerNode(connections),
-    components,
-  );
-  const byId = Object.fromEntries(assigned.map((entry) => [entry.connId, entry]));
+  beforeAll(() => {
+    if (!hasElement(TYPE)) registerElement(fixture);
+  });
+  afterAll(() => unregisterElement(TYPE));
 
-  it("a flow-shaped state's edges all use its one slot a side", () => {
-    expect(byId.a.targetHandle).toBe("target-0");
-    expect(byId.b.targetHandle).toBe("target-0");
+  const components = {
+    a: node("a"),
+    b: node("b"),
+    split: node("split", true),
+    join: node("join", true),
+  };
+  const assign = (connections: Connection[]) =>
+    Object.fromEntries(
+      buildEdgeHandleAssignments(
+        connections,
+        buildConnectionCountPerNode(connections),
+        components,
+      ).map((entry) => [entry.connId, entry]),
+    );
+
+  it("a variant with one slot a side takes all its edges on it", () => {
+    const byId = assign([
+      link("x", "a", "join"),
+      link("y", "b", "join"),
+      link("yes", "split", "a"),
+      link("no", "split", "b"),
+    ]);
+    expect(byId.x.targetHandle).toBe("target-0");
+    expect(byId.y.targetHandle).toBe("target-0");
     expect(byId.yes.sourceHandle).toBe("source-0");
     expect(byId.no.sourceHandle).toBe("source-0");
   });
 
-  it("a card-drawn state keeps spreading its slots", () => {
-    const cards = [link("x", "task", "other"), link("y", "task", "fail")];
-    const spread = buildEdgeHandleAssignments(
-      cards,
-      buildConnectionCountPerNode(cards),
-      components,
-    );
-    expect(spread.map((entry) => entry.sourceHandle).sort()).toEqual(["source-0", "source-1"]);
+  it("the base canvas keeps spreading its slots", () => {
+    const byId = assign([link("x", "a", "b"), link("y", "a", "join")]);
+    expect([byId.x.sourceHandle, byId.y.sourceHandle].sort()).toEqual(["source-0", "source-1"]);
   });
 });

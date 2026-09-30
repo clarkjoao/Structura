@@ -84,76 +84,10 @@ export function isK8sContainerType(type: string): type is "k8s-container" {
   return type === COMPONENT_TYPE_K8S_CONTAINER;
 }
 
-export const COMPONENT_TYPE_SFN_STATE_MACHINE = "sfn-state-machine";
-
-export function isSfnStateMachineType(type: string): type is "sfn-state-machine" {
-  return type === COMPONENT_TYPE_SFN_STATE_MACHINE;
-}
-
-export const COMPONENT_TYPE_SFN_STATE = "sfn-state";
-
-export function isSfnStateType(type: string): type is "sfn-state" {
-  return type === COMPONENT_TYPE_SFN_STATE;
-}
-
-export const COMPONENT_TYPE_SFN_PARALLEL = "sfn-parallel";
-
-export function isSfnParallelType(type: string): type is "sfn-parallel" {
-  return type === COMPONENT_TYPE_SFN_PARALLEL;
-}
-
-export const COMPONENT_TYPE_SFN_MAP = "sfn-map";
-
-export function isSfnMapType(type: string): type is "sfn-map" {
-  return type === COMPONENT_TYPE_SFN_MAP;
-}
-
 export const COMPONENT_TYPE_SHARED_REF = "shared-ref";
 
 export function isSharedRefType(type: string): type is "shared-ref" {
   return type === COMPONENT_TYPE_SHARED_REF;
-}
-
-export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
-
-export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";
-
-export function isVsmTimelineType(type: string): type is "vsm-timeline" {
-  return type === COMPONENT_TYPE_VSM_TIMELINE;
-}
-
-export const COMPONENT_TYPE_VSM_KAIZEN = "vsm-kaizen";
-
-export function isVsmKaizenType(type: string): type is "vsm-kaizen" {
-  return type === COMPONENT_TYPE_VSM_KAIZEN;
-}
-
-export const COMPONENT_TYPE_VSM_PUSH = "vsm-push";
-
-export function isVsmPushType(type: string): type is "vsm-push" {
-  return type === COMPONENT_TYPE_VSM_PUSH;
-}
-
-export const COMPONENT_TYPE_VSM_SUPERMARKET = "vsm-supermarket";
-
-export function isVsmSupermarketType(type: string): type is "vsm-supermarket" {
-  return type === COMPONENT_TYPE_VSM_SUPERMARKET;
-}
-
-export const COMPONENT_TYPE_VSM_INVENTORY = "vsm-inventory";
-
-export function isVsmInventoryType(type: string): type is "vsm-inventory" {
-  return type === COMPONENT_TYPE_VSM_INVENTORY;
-}
-
-export const COMPONENT_TYPE_VSM_PROCESS = "vsm-process";
-
-export function isVsmProcessType(type: string): type is "vsm-process" {
-  return type === COMPONENT_TYPE_VSM_PROCESS;
-}
-
-export function isVsmExternalType(type: string): type is "vsm-external" {
-  return type === COMPONENT_TYPE_VSM_EXTERNAL;
 }
 
 /** Legacy type strings; both are migrated to "process-node" by

@@ -16,8 +16,6 @@ import type {
   FlowNodeShape,
   K8sContainerRole,
   NodeStrokeMode,
-  SfnStateType,
-  VsmRole,
 } from "@/features/diagram/model/component.types";
 import type { ExportNode } from "@/lib/export-core";
 
@@ -51,12 +49,7 @@ export type RegisteredElementTypeId =
   | "panel"
   | "process-node"
   | "external-element"
-  | "vsm-external"
   | "shared-ref"
-  | "sfn-map"
-  | "sfn-parallel"
-  | "sfn-state"
-  | "sfn-state-machine"
   | "k8s-container"
   | "k8s-ingress"
   | "k8s-service"
@@ -67,12 +60,6 @@ export type RegisteredElementTypeId =
   | "deploy-shard"
   | "deploy-sharded-store"
   | "flow-divider"
-  | "vsm-timeline"
-  | "vsm-kaizen"
-  | "vsm-push"
-  | "vsm-supermarket"
-  | "vsm-inventory"
-  | "vsm-process"
   | "svg"
   | "unknown"
   | "gcp-compute"
@@ -192,23 +179,12 @@ export interface ElementCreateOptions {
   panelKind?: PanelKind;
   flowShape?: FlowNodeShape;
   serviceId?: string;
-  /** Which end of a value stream an outside source is (`vsm-external`). */
-  vsmRole?: VsmRole;
-  /**
-   * Drawn dashed from the start: the line of visibility, or a lane's outline
-   * (the physical-evidence lane).
-   */
+  /** A named line drawn dashed from the start (the line of visibility). */
   stroke?: NodeStrokeMode;
-  /** A swimlane's accent from a preset (a flow-preset theme token). */
-  laneAccent?: string;
-  /** i18n key of a preset swimlane's label. */
-  laneLabelKey?: string;
   /** What a new k8s container is in its pod; absent (main) is not written. */
   podRole?: K8sContainerRole;
   /** A new init container's place in the run order. */
   order?: number;
-  /** What a new Step Functions state is; absent (Task) is not written. */
-  sfnStateType?: SfnStateType;
   /** The shared element a new reference stands for. */
   refOf?: string;
 }
@@ -431,7 +407,7 @@ export interface ElementCanvasVariant {
 /**
  * The colour-in-parts skin the flowchart shapes introduced — an accent
  * (`customColor`), a fill and a stroke — for every element that wears it (the
- * flow and VSM families). Its presence is what gives an element the flow
+ * flow, deploy and k8s families). Its presence is what gives an element the flow
  * accent presets in the toolbar and the Appearance section in the inspector.
  */
 export interface ElementSkin {

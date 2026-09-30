@@ -72,30 +72,30 @@ describe("hierarchical element catalog (F8)", () => {
     );
     // BEFORE (F7 tip, pre-shrink): types=269 catalogChars=7237 catalogLines=120 promptChars=20381
     // The budget pins the F8 shrink on the vocabulary that existed then.
-    // Vocabularies registered since (VSM, deployment, Kubernetes structure, Step Functions)
+    // Vocabularies registered since (deployment, Kubernetes structure)
     // are meant to reach the catalog — elements are derived, not curated —
     // each under its own heading or block, so they are measured apart from
     // the old budget.
-    let withoutVsm = catalog;
-    for (const familyId of ["vsm", "deploy", "aws-sfn"]) {
+    let withoutNew = catalog;
+    for (const familyId of ["deploy"]) {
       const heading = `### ${i18n.t(`elements.families.${familyId}.label`, { lng: "en" })}`;
-      const start = withoutVsm.indexOf(heading);
+      const start = withoutNew.indexOf(heading);
       if (start === -1) continue;
-      const end = withoutVsm.indexOf("\n### ", start + heading.length);
-      withoutVsm =
-        withoutVsm.slice(0, start) + withoutVsm.slice(end === -1 ? withoutVsm.length : end);
+      const end = withoutNew.indexOf("\n### ", start + heading.length);
+      withoutNew =
+        withoutNew.slice(0, start) + withoutNew.slice(end === -1 ? withoutNew.length : end);
     }
     const ownBlock = "\n\nElements (nodeType = element id, no serviceId):";
     for (
-      let start = withoutVsm.indexOf(ownBlock);
+      let start = withoutNew.indexOf(ownBlock);
       start !== -1;
-      start = withoutVsm.indexOf(ownBlock)
+      start = withoutNew.indexOf(ownBlock)
     ) {
-      const end = withoutVsm.indexOf("\n\n", start + ownBlock.length);
-      withoutVsm =
-        withoutVsm.slice(0, start) + withoutVsm.slice(end === -1 ? withoutVsm.length : end);
+      const end = withoutNew.indexOf("\n\n", start + ownBlock.length);
+      withoutNew =
+        withoutNew.slice(0, start) + withoutNew.slice(end === -1 ? withoutNew.length : end);
     }
-    expect(withoutVsm.length).toBeLessThan(7237);
+    expect(withoutNew.length).toBeLessThan(7237);
     expect(catalog).not.toContain("CATEGORY:");
     expect(catalog).toContain("search_elements");
     expect(catalog).toContain("list_element_families");

@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import type { NodeStrokeMode } from "@/features/diagram/model/component.types";
-import { SkinHandles } from "./VsmNodes/SkinHandles";
+import { SkinHandles } from "./skin/SkinHandles";
 import { ELEMENT_SIZE_LIMITS } from "./elementSizeLimits";
 
 export type FlowDividerNodeData = {

@@ -13,15 +13,13 @@ import type { ElementInspectorProps } from "@/features/elements/element.types";
 import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import Field from "./components/Field";
 import { FlowAppearanceSection, PositionSection } from "./sections";
-import { VsmFieldsSection } from "./sections/VsmFieldsSection";
 import { DeployFieldsSection } from "./sections/DeployFieldsSection";
 import { K8sFieldsSection } from "./sections/K8sFieldsSection";
-import { SfnFieldsSection } from "./sections/SfnFieldsSection";
 import { ELEMENT_SIZE_LIMITS } from "@/features/canvas/nodes/elementSizeLimits";
 
 /**
- * The inspector for every skinned element (VSM, deployment, Kubernetes
- * structure): name and description, the fields that element carries, and the flow skin's
+ * The inspector for every skinned element (deployment, Kubernetes structure):
+ * name and description, the fields that element carries, and the flow skin's
  * Appearance section with the element's own default accent.
  */
 export default function SkinnedElementPanel({
@@ -105,10 +103,8 @@ export default function SkinnedElementPanel({
             update({ description: value });
           }}
         />
-        <VsmFieldsSection component={component} onChange={update} />
         <DeployFieldsSection component={component} onChange={update} />
         <K8sFieldsSection component={component} onChange={update} />
-        <SfnFieldsSection component={component} onChange={update} />
         {descriptor?.skin && (
           <FlowAppearanceSection
             appearance={component as SkinParts}

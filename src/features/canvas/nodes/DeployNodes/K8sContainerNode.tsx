@@ -3,7 +3,7 @@ import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Container } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { K8sContainerRole } from "@/features/diagram/model/component.types";
-import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
+import { useSkinPalette, type SkinNodeData } from "../skin/skin";
 import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 import { Chip, DeployHandles } from "./DeployParts";
 

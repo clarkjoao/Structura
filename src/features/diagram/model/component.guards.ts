@@ -22,12 +22,7 @@ import type {
   JsonViewerComponent,
   ProcessNodeComponent,
   ExternalElementComponent,
-  VsmExternalComponent,
   SharedRefComponent,
-  SfnMapComponent,
-  SfnParallelComponent,
-  SfnStateComponent,
-  SfnStateMachineComponent,
   K8sContainerComponent,
   K8sIngressComponent,
   K8sServiceComponent,
@@ -38,12 +33,6 @@ import type {
   ShardComponent,
   ShardedStoreComponent,
   FlowDividerComponent,
-  VsmTimelineComponent,
-  VsmKaizenComponent,
-  VsmPushComponent,
-  VsmSupermarketComponent,
-  VsmInventoryComponent,
-  VsmProcessComponent,
   PluginTypedComponent,
 } from "./component.types";
 import {
@@ -59,12 +48,7 @@ import {
   isJsonViewerType,
   isProcessNodeType,
   isExternalElementType,
-  isVsmExternalType,
   isSharedRefType,
-  isSfnMapType,
-  isSfnParallelType,
-  isSfnStateType,
-  isSfnStateMachineType,
   isK8sContainerType,
   isK8sIngressType,
   isK8sServiceType,
@@ -75,12 +59,6 @@ import {
   isShardType,
   isShardedStoreType,
   isFlowDividerType,
-  isVsmTimelineType,
-  isVsmKaizenType,
-  isVsmPushType,
-  isVsmSupermarketType,
-  isVsmInventoryType,
-  isVsmProcessType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -127,26 +105,6 @@ export const isFlowNodeComponent = (c: Component): c is ProcessNodeComponent =>
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
   isExternalElementType(c.type);
 
-export const isVsmExternalComponent = (c: Component): c is VsmExternalComponent =>
-  isVsmExternalType(c.type);
-
-export const isVsmProcessComponent = (c: Component): c is VsmProcessComponent =>
-  isVsmProcessType(c.type);
-
-export const isVsmInventoryComponent = (c: Component): c is VsmInventoryComponent =>
-  isVsmInventoryType(c.type);
-
-export const isVsmSupermarketComponent = (c: Component): c is VsmSupermarketComponent =>
-  isVsmSupermarketType(c.type);
-
-export const isVsmPushComponent = (c: Component): c is VsmPushComponent => isVsmPushType(c.type);
-
-export const isVsmKaizenComponent = (c: Component): c is VsmKaizenComponent =>
-  isVsmKaizenType(c.type);
-
-export const isVsmTimelineComponent = (c: Component): c is VsmTimelineComponent =>
-  isVsmTimelineType(c.type);
-
 export const isFlowDividerComponent = (c: Component): c is FlowDividerComponent =>
   isFlowDividerType(c.type);
 
@@ -175,16 +133,6 @@ export const isK8sIngressComponent = (c: Component): c is K8sIngressComponent =>
 
 export const isK8sContainerComponent = (c: Component): c is K8sContainerComponent =>
   isK8sContainerType(c.type);
-
-export const isSfnStateMachineComponent = (c: Component): c is SfnStateMachineComponent =>
-  isSfnStateMachineType(c.type);
-
-export const isSfnStateComponent = (c: Component): c is SfnStateComponent => isSfnStateType(c.type);
-
-export const isSfnParallelComponent = (c: Component): c is SfnParallelComponent =>
-  isSfnParallelType(c.type);
-
-export const isSfnMapComponent = (c: Component): c is SfnMapComponent => isSfnMapType(c.type);
 
 export const isSharedRefComponent = (c: Component): c is SharedRefComponent =>
   isSharedRefType(c.type);

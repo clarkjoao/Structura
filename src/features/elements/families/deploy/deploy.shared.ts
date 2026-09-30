@@ -6,8 +6,8 @@ import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.consta
 import type { Component, SkinParts } from "@/features/diagram/model/component.types";
 
 /**
- * The deployment family: sharded stores (and, in later slices, Kubernetes,
- * Step Functions). Its elements are typed containers and their children,
+ * The deployment family: sharded stores (and, in later slices, Kubernetes).
+ * Its elements are typed containers and their children,
  * drawn with the flow skin and the C4 card's handles.
  */
 export const DEPLOY_FAMILY_ID = "deploy";

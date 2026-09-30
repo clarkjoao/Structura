@@ -239,8 +239,7 @@ function buildLayoutForComponent(
   // instead of a literal repeated here.
   const registered = getElement(type);
   if (registered) {
-    // Everything the element was created with sizes it — a Step Functions
-    // Choice is not a Task's card.
+    // Everything the element was created with sizes it.
     const { width, height } = elementDefaultSize(registered, {
       ...createOptions,
       panelKind: resolvedPanelKind,

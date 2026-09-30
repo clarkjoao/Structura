@@ -32,7 +32,7 @@ export function laneAccentOf(comp: Component, parent: Component | undefined): st
 }
 
 /**
- * The component as an export should see it: a skinned node (flow, VSM) with no
+ * The component as an export should see it: a skinned node (flow, deploy, k8s) with no
  * accent of its own gets its lane's accent on a transient copy, so draw.io
  * shows the colour the canvas draws. The stored component is never touched.
  *

@@ -2,7 +2,7 @@ import { memo, type ReactNode } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Globe, Network } from "lucide-react";
 import { FLOW_DEFAULT_ACCENT } from "../ProcessNode/flowAppearance";
-import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
+import { useSkinPalette, type SkinNodeData } from "../skin/skin";
 import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 import { Chip, DeployHandles } from "./DeployParts";
 

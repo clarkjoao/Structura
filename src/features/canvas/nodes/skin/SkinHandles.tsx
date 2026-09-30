@@ -11,11 +11,10 @@ export interface HandlePoint {
 }
 
 /**
- * The one input on the left and the one output on the right that a VSM
+ * The one input on the left and the one output on the right that a skinned
  * element declares (`SINGLE_PAIR_HANDLES`), placed on its drawn outline.
  *
- * An element that is not connectable (a push arrow, a kaizen burst, the
- * timeline) still renders them, invisible and inert, so an edge that reaches
+ * An element that is not connectable (a named line) still renders them, invisible and inert, so an edge that reaches
  * it by any other path keeps a handle and is not dropped (#008).
  */
 export function SkinHandles({

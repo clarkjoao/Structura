@@ -5,7 +5,7 @@ import type { ElementDescriptor } from "./element.types";
 
 /**
  * A typed container that takes `system` children only, registered for the
- * suite. The real ones (sharded store, cluster, state machine) come with their
+ * suite. The real ones (sharded store, cluster, namespace) come with their
  * slices; this pins the contract they all go through.
  */
 export const TEST_CONTAINER = "test-typed-container";

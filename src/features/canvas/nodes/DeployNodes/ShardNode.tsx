@@ -2,7 +2,7 @@ import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Flame, HardDrive } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
+import { useSkinPalette, type SkinNodeData } from "../skin/skin";
 import { Chip, DeployHandles } from "./DeployParts";
 import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 

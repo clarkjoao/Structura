@@ -9,7 +9,7 @@
 
 /** Edge routing style (source enums map onto these string literals). */
 export type ExportEdgeStyle =
-  "smoothstep" | "step" | "bezier" | "straight" | "editable" | "editable-step" | "zigzag" | "catch";
+  "smoothstep" | "step" | "bezier" | "straight" | "editable" | "editable-step";
 
 /** Line style. */
 export type ExportStrokeStyle = "solid" | "dashed" | "dotted";
@@ -251,10 +251,10 @@ export interface ExportSkinColours {
 }
 
 /**
- * A shape from one of draw.io's own stencil libraries — the VSM family maps to
- * `mxgraph.lean_mapping.*` — coloured with the flow skin's parts.
+ * A shape from one of draw.io's own stencil libraries, coloured with the flow
+ * skin's parts.
  *
- * One kind for the whole family rather than a builder per element: the
+ * One kind for every such element rather than a builder per element: the
  * descriptor names the stencil (each one confirmed against draw.io's sources)
  * and the builder only lays it out.
  */

@@ -21,7 +21,7 @@ export function useSkinPalette(
   return flowPalette(appearance, onAccent);
 }
 
-/** The node data every skinned VSM element receives. */
+/** The node data every skinned element receives. */
 export type SkinNodeData = {
   customColor?: SkinParts["customColor"];
   fill?: SkinParts["fill"];

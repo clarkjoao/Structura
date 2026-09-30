@@ -28,9 +28,7 @@ export type ComponentType =
   | "process-node"
   | "external-element"
   | "flow-divider"
-  | VsmComponentType
   | SharedComponentType
-  | SfnComponentType
   | K8sStructureType
   | DeployComponentType
   | AwsCategoryId
@@ -298,7 +296,7 @@ export interface ProcessNodeComponent extends BaseComponent {
   stroke?: NodeStrokeMode;
 }
 
-/** The three colour parts, for elements that wear the flow skin (flow, VSM). */
+/** The three colour parts, for elements that wear the flow skin (flow, deploy, k8s). */
 export interface SkinParts {
   /** Accent; absent means the element's default, resolved at render. */
   customColor?: string;
@@ -331,92 +329,8 @@ export type K8sStructureType =
   | "k8s-ingress"
   | "k8s-container";
 
-/** AWS Step Functions: a state machine, its states, Parallel and Map (the `aws-sfn` family). */
-export type SfnComponentType = "sfn-state-machine" | "sfn-state" | "sfn-parallel" | "sfn-map";
-
 /** A reference to a shared element, drawn where its consumers are (`shared-ref`). */
 export type SharedComponentType = "shared-ref";
-
-/** The Value Stream Mapping vocabulary (the `vsm` family). */
-export type VsmComponentType =
-  | "vsm-external"
-  | "vsm-process"
-  | "vsm-inventory"
-  | "vsm-supermarket"
-  | "vsm-push"
-  | "vsm-kaizen"
-  | "vsm-timeline";
-
-/** Which side of the stream an outside source sits on. Absent means supplier. */
-export type VsmRole = "supplier" | "customer";
-
-/** A supplier or a customer: the factory icon at either end of the stream. */
-export interface VsmExternalComponent extends BaseComponent, SkinParts {
-  type: "vsm-external";
-  role?: VsmRole;
-}
-
-/** One row of a VSM process's data box: a metric and its value, both as typed. */
-export interface VsmMetric {
-  id: string;
-  key: string;
-  value: string;
-}
-
-/** A process box: a step of the stream with its operators and its data box. */
-export interface VsmProcessComponent extends BaseComponent, SkinParts {
-  type: "vsm-process";
-  /** People working the step; absent shows no count. */
-  operators?: number;
-  /** The data box rows, in order. */
-  metrics?: VsmMetric[];
-}
-
-/** Inventory between two steps: the triangle with an I, and how much waits there. */
-export interface VsmInventoryComponent extends BaseComponent, SkinParts {
-  type: "vsm-inventory";
-  /** As the user writes it: "1,200 pcs". */
-  quantity?: string;
-  /** How long it covers, as the user writes it: "2 days". */
-  duration?: string;
-}
-
-/** A supermarket: a controlled store of parts the downstream step pulls from. */
-export interface VsmSupermarketComponent extends BaseComponent, SkinParts {
-  type: "vsm-supermarket";
-}
-
-/** A push arrow: material pushed downstream whether it is needed or not. */
-export interface VsmPushComponent extends BaseComponent, SkinParts {
-  type: "vsm-push";
-}
-
-/** A kaizen burst: an improvement to make, its text being the node's name. */
-export interface VsmKaizenComponent extends BaseComponent, SkinParts {
-  type: "vsm-kaizen";
-}
-
-/** One step of a VSM timeline: how long work waits, then how long it is worked on. */
-export interface VsmTimelineSegment {
-  id: string;
-  wait: number;
-  process: number;
-}
-
-/** The unit every value on one timeline is in, so its totals can be summed. */
-export type VsmTimeUnit = "s" | "min" | "h" | "d";
-
-/**
- * The timeline under a value stream: a square wave of waits and processing
- * times. Its totals — lead time and value-added time — are computed from the
- * segments, never stored.
- */
-export interface VsmTimelineComponent extends BaseComponent, SkinParts {
-  type: "vsm-timeline";
-  segments?: VsmTimelineSegment[];
-  /** Absent means minutes. */
-  unit?: VsmTimeUnit;
-}
 
 /** How a sharded store spreads its keys. Absent means hash. */
 export type ShardStrategy = "hash" | "consistent-hash" | "range" | "geo" | "directory";
@@ -524,10 +438,6 @@ export type K8sContainerRole = "main" | "sidecar" | "init";
  */
 export interface K8sContainerComponent extends BaseComponent, SkinParts {
   type: "k8s-container";
-  /**
-   * Not `role`: the patch type intersects every component's fields, and the
-   * VSM source already has a `role` of its own.
-   */
   podRole?: K8sContainerRole;
   /** A sidecar's function, free text: "proxy", "logs", "secrets", "metrics"… */
   purpose?: string;
@@ -537,55 +447,6 @@ export interface K8sContainerComponent extends BaseComponent, SkinParts {
   ports?: number[];
   /** "100m / 128Mi". */
   resources?: string;
-}
-
-/** What a state is in its machine. Absent means Task. `Start` is the entry marker, not an ASL state. */
-export type SfnStateType = "Task" | "Choice" | "Wait" | "Pass" | "Succeed" | "Fail" | "Start";
-
-/** One retrier of a state (ASL `Retry`); absent fields mean ASL's defaults. */
-export interface SfnRetry {
-  errors?: string[];
-  maxAttempts?: number;
-  backoffRate?: number;
-  intervalSeconds?: number;
-}
-
-/** A Step Functions state machine: its states are its children. */
-export interface SfnStateMachineComponent extends BaseComponent, SkinParts {
-  type: "sfn-state-machine";
-  /** Absent means Standard. */
-  workflowType?: "Standard" | "Express";
-  xray?: boolean;
-  collapsed?: boolean;
-}
-
-/** A state of a machine (or of a Parallel branch, or of a Map's iterator). */
-export interface SfnStateComponent extends BaseComponent, SkinParts {
-  type: "sfn-state";
-  stateType?: SfnStateType;
-  /** A Task's integrated service: "lambda", "dynamodb", "sqs"… */
-  service?: string;
-  /** A Task's action on it: "Invoke", "PutItem"… */
-  action?: string;
-  /** A Wait's seconds. */
-  waitSeconds?: number;
-  /** A Fail's error name. */
-  errorName?: string;
-  retry?: SfnRetry[];
-}
-
-/** A Parallel state: its branches' states are its children, side by side. */
-export interface SfnParallelComponent extends BaseComponent, SkinParts {
-  type: "sfn-parallel";
-  retry?: SfnRetry[];
-}
-
-/** A Map state: its iterator's states are its children. */
-export interface SfnMapComponent extends BaseComponent, SkinParts {
-  type: "sfn-map";
-  itemsPath?: string;
-  maxConcurrency?: number;
-  retry?: SfnRetry[];
 }
 
 /**
@@ -618,10 +479,6 @@ export interface PluginTypedComponent extends BaseComponent {
 
 export type Component =
   | SharedRefComponent
-  | SfnMapComponent
-  | SfnParallelComponent
-  | SfnStateComponent
-  | SfnStateMachineComponent
   | K8sContainerComponent
   | K8sIngressComponent
   | K8sServiceComponent
@@ -632,13 +489,6 @@ export type Component =
   | ShardComponent
   | ShardedStoreComponent
   | FlowDividerComponent
-  | VsmTimelineComponent
-  | VsmKaizenComponent
-  | VsmPushComponent
-  | VsmSupermarketComponent
-  | VsmInventoryComponent
-  | VsmProcessComponent
-  | VsmExternalComponent
   | C4Component
   | PanelComponent
   | NoteComponent
@@ -673,12 +523,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<SvgComponent, "id">> &
   Partial<Omit<ProcessNodeComponent, "id">> &
   Partial<Omit<ExternalElementComponent, "id">> &
-  Partial<Omit<VsmExternalComponent, "id">> &
   Partial<Omit<SharedRefComponent, "id">> &
-  Partial<Omit<SfnMapComponent, "id">> &
-  Partial<Omit<SfnParallelComponent, "id">> &
-  Partial<Omit<SfnStateComponent, "id">> &
-  Partial<Omit<SfnStateMachineComponent, "id">> &
   Partial<Omit<K8sContainerComponent, "id">> &
   Partial<Omit<K8sIngressComponent, "id">> &
   Partial<Omit<K8sServiceComponent, "id">> &
@@ -688,13 +533,7 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ShardRouterComponent, "id">> &
   Partial<Omit<ShardComponent, "id">> &
   Partial<Omit<ShardedStoreComponent, "id">> &
-  Partial<Omit<FlowDividerComponent, "id">> &
-  Partial<Omit<VsmTimelineComponent, "id">> &
-  Partial<Omit<VsmKaizenComponent, "id">> &
-  Partial<Omit<VsmPushComponent, "id">> &
-  Partial<Omit<VsmSupermarketComponent, "id">> &
-  Partial<Omit<VsmInventoryComponent, "id">> &
-  Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
@@ -714,12 +553,7 @@ export type TypedComponentPatch =
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ProcessNodeComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ExternalElementComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmExternalComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<SharedRefComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<SfnMapComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<SfnParallelComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<SfnStateComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<SfnStateMachineComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sContainerComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sIngressComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<K8sServiceComponent, "id">> & { width?: number; height?: number })
@@ -730,11 +564,5 @@ export type TypedComponentPatch =
   | (Partial<Omit<ShardComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ShardedStoreComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmTimelineComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmKaizenComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmPushComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmSupermarketComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmInventoryComponent, "id">> & { width?: number; height?: number })
-  | (Partial<Omit<VsmProcessComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

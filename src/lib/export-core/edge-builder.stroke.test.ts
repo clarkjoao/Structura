@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildEdgeCell } from "./edge-builder";
 import type { ExportEdge } from "./model";
 
-/** The stroke a cell is written with — pinned while the catch style joined the same lines. */
+/** The stroke a cell is written with. */
 const styleOf = (extra: Partial<ExportEdge>) => {
   const xml = buildEdgeCell({
     id: "e",
@@ -24,12 +24,6 @@ describe("an exported edge's stroke", () => {
     expect(styleOf({})).not.toContain("dashed=1");
     expect(styleOf({ strokeStyle: "dashed" })).toContain("dashed=1;dashPattern=8 4;");
     expect(styleOf({ strokeStyle: "dotted" })).toContain("dashed=1;dashPattern=2 4;");
-  });
-
-  it("a catcher is dashed red whatever its stored stroke", () => {
-    const style = styleOf({ edgeStyle: "catch", strokeStyle: "solid" });
-    expect(style).toContain("dashed=1;dashPattern=8 4;");
-    expect(style).toContain("strokeColor=#dc2828;");
   });
 
   it("writes a start arrow only when there is one, and a width only when it is not 1", () => {

@@ -3,7 +3,7 @@ import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { Shuffle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FLOW_DEFAULT_ACCENT } from "../ProcessNode/flowAppearance";
-import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
+import { useSkinPalette, type SkinNodeData } from "../skin/skin";
 import { DeployHandles } from "./DeployParts";
 import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";
 

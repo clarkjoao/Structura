@@ -1,7 +1,7 @@
 import { memo } from "react";
 import type { Node, NodeProps } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
-import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
+import { useSkinPalette, type SkinNodeData } from "../skin/skin";
 import { Chip } from "./DeployParts";
 import { HelmGlyph, K8sFrame, NamespaceGlyph } from "./K8sParts";
 

@@ -51,7 +51,7 @@ export interface AppActions {
     cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: import("../model/diagram.types").FlowNodeShape,
-    /** Anything else the element's descriptor reads at creation (a VSM role, say). */
+    /** Anything else the element's descriptor reads at creation (a k8s container's role, say). */
     createOptions?: import("@/features/elements/element.types").ElementCreateOptions,
   ) => Component;
   updateComponent: (id: string, patch: ComponentPatch) => void;

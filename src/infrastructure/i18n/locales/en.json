@@ -87,9 +87,7 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Transport type",
     "copySuffix": " (copy)",
-    "defaultNamePrefix": "New",
-    "edgeZigzag": "Zigzag (electronic)",
-    "edgeCatch": "Catch (dashed red)"
+    "defaultNamePrefix": "New"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -1127,9 +1125,6 @@
       }
     },
     "families": {
-      "vsm": {
-        "label": "Value stream map"
-      },
       "structural": {
         "label": "Structural & Canvas"
       },
@@ -1138,38 +1133,7 @@
       },
       "deploy": {
         "label": "Deployment"
-      },
-      "aws-sfn": {
-        "label": "Step Functions"
       }
-    },
-    "vsm-external": {
-      "label": "Supplier / customer",
-      "description": "An outside source at either end of a value stream: the supplier that feeds it or the customer it serves."
-    },
-    "vsm-process": {
-      "label": "Process",
-      "description": "A step of the value stream, with its operators and a data box of metrics (cycle time, changeover, uptime, shifts)."
-    },
-    "vsm-inventory": {
-      "label": "Inventory",
-      "description": "Stock waiting between two steps, with its quantity and how long it lasts."
-    },
-    "vsm-supermarket": {
-      "label": "Supermarket",
-      "description": "A controlled store of parts that the downstream step pulls from."
-    },
-    "vsm-push": {
-      "label": "Push arrow",
-      "description": "Material pushed to the next step whether it needs it or not."
-    },
-    "vsm-kaizen": {
-      "label": "Kaizen burst",
-      "description": "An improvement to make at this point of the stream."
-    },
-    "vsm-timeline": {
-      "label": "Timeline",
-      "description": "The square wave under a value stream: waiting times above, processing times below, with lead time and value-added time totalled."
     },
     "flow-divider": {
       "label": "Named line",
@@ -1210,22 +1174,6 @@
     "k8s-container": {
       "label": "Container",
       "description": "A container of a workload's pod: the main one, a sidecar (proxy, logs, secrets, metrics) or an init container run first, in order."
-    },
-    "sfn-state-machine": {
-      "label": "State machine",
-      "description": "An AWS Step Functions state machine, Standard or Express; its states are drawn inside it."
-    },
-    "sfn-state": {
-      "label": "State",
-      "description": "A Step Functions state: Task (a service and its action), Choice, Wait, Pass, Succeed, Fail, or the start."
-    },
-    "sfn-parallel": {
-      "label": "Parallel",
-      "description": "A Parallel state: branches of states run side by side inside it."
-    },
-    "sfn-map": {
-      "label": "Map",
-      "description": "A Map state: its iterator states run once per item of ItemsPath, up to a concurrency."
     },
     "shared-ref": {
       "label": "Reference",
@@ -2515,45 +2463,6 @@
     "untitledPlaceholder": "Untitled Walkthrough",
     "upNext": "Up next:"
   },
-  "vsm": {
-    "role": {
-      "supplier": "Supplier",
-      "customer": "Customer"
-    },
-    "fields": {
-      "role": "Role",
-      "operators": "Operators",
-      "metrics": "Data box",
-      "metricKey": "Metric",
-      "metricValue": "Value",
-      "addMetric": "Add row",
-      "removeMetric": "Remove row",
-      "quantity": "Quantity",
-      "duration": "Duration",
-      "unit": "Unit",
-      "segments": "Segments",
-      "wait": "Wait",
-      "process": "Process",
-      "addSegment": "Add segment",
-      "removeSegment": "Remove segment"
-    },
-    "metrics": {
-      "cycleTime": "C/T",
-      "changeover": "C/O",
-      "uptime": "Uptime",
-      "shifts": "Shifts"
-    },
-    "timeline": {
-      "leadTime": "Lead time",
-      "valueAdded": "Value-added time"
-    },
-    "units": {
-      "s": "s",
-      "min": "min",
-      "h": "h",
-      "d": "d"
-    }
-  },
   "blueprint": {
     "lines": {
       "interaction": "Line of interaction",
@@ -2562,13 +2471,6 @@
     },
     "fields": {
       "stroke": "Line"
-    },
-    "lanes": {
-      "evidence": "Physical evidence",
-      "customer": "Customer actions",
-      "onstage": "Onstage",
-      "backstage": "Backstage",
-      "support": "Support processes"
     }
   },
   "containers": {
@@ -2648,36 +2550,6 @@
       "main": "Container",
       "sidecar": "Sidecar",
       "init": "Init container"
-    }
-  },
-  "sfn": {
-    "stateMachine": "State machine",
-    "states_one": "{{count}} state",
-    "states_other": "{{count}} states",
-    "fields": {
-      "workflowType": "Workflow type",
-      "xray": "X-Ray tracing",
-      "stateType": "State type",
-      "service": "Service",
-      "action": "Action",
-      "waitSeconds": "Seconds",
-      "errorName": "Error",
-      "itemsPath": "ItemsPath",
-      "maxConcurrency": "Max concurrency",
-      "retry": "Retry",
-      "retryErrors": "Errors (comma separated)",
-      "maxAttempts": "Attempts",
-      "backoffRate": "Backoff",
-      "intervalSeconds": "Interval (s)"
-    },
-    "stateType": {
-      "Task": "Task",
-      "Choice": "Choice",
-      "Wait": "Wait",
-      "Pass": "Pass",
-      "Succeed": "Succeed",
-      "Fail": "Fail",
-      "Start": "Start"
     }
   },
   "shared": {

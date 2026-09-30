@@ -4,7 +4,7 @@ import { Database } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { ShardStrategy } from "@/features/diagram/model/component.types";
 import type { KeySpaceSegment } from "@/features/diagram/utils/sharded-store";
-import { useSkinPalette, type SkinNodeData } from "../VsmNodes/skin";
+import { useSkinPalette, type SkinNodeData } from "../skin/skin";
 import { mix } from "../ProcessNode/flowAppearance";
 import { Chip, DeployHandles } from "./DeployParts";
 import { ELEMENT_SIZE_LIMITS } from "../elementSizeLimits";

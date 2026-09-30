@@ -77,7 +77,7 @@ describe("FlowAppearanceSection", () => {
   });
 
   it("clears to nothing when the element's own default accent is picked", () => {
-    // VSM inventory defaults to amber: picking amber there stores nothing.
+    // An element whose default is amber: picking amber there stores nothing.
     const onChange = vi.fn();
     render(
       <FlowAppearanceSection

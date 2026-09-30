@@ -68,10 +68,6 @@ function mapEdgeStyle(s: EdgeStyle): ExportEdgeStyle {
       return "editable";
     case EdgeStyle.EditableStep:
       return "editable-step";
-    case EdgeStyle.Zigzag:
-      return "zigzag";
-    case EdgeStyle.Catch:
-      return "catch";
   }
 }
 

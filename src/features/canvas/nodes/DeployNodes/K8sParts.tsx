@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { NodeResizer } from "@xyflow/react";
-import { Plus } from "lucide-react";
 import { mix } from "../ProcessNode/flowAppearance";
 import type { FlowPalette } from "../ProcessNode/flowAppearance";
 import { DeployHandles } from "./DeployParts";
@@ -81,7 +80,6 @@ export function K8sFrame({
   incomingCount,
   outgoingCount,
   minWidth,
-  drillDown = false,
 }: {
   palette: FlowPalette;
   icon: ReactNode;
@@ -95,8 +93,6 @@ export function K8sFrame({
   incomingCount: number;
   outgoingCount: number;
   minWidth: number;
-  /** Compact, a "+" at the bottom says there is more inside, as on a subprocess. */
-  drillDown?: boolean;
 }) {
   const accent = palette.accent;
   return (
@@ -114,7 +110,7 @@ export function K8sFrame({
         outgoingCount={outgoingCount}
       />
       <div
-        className={`relative flex h-full w-full flex-col gap-1.5 overflow-hidden rounded-xl px-3 py-2.5 ${
+        className={`flex h-full w-full flex-col gap-1.5 overflow-hidden rounded-xl px-3 py-2.5 ${
           collapsed ? "shadow-sm" : ""
         } ${isSelected ? "ring-2 ring-primary" : ""}`}
         style={{
@@ -138,15 +134,6 @@ export function K8sFrame({
           )}
         </div>
         <div className="flex min-w-0 flex-wrap gap-1">{chips}</div>
-        {collapsed && drillDown && (
-          <span
-            className="absolute bottom-1.5 left-1/2 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded"
-            style={{ border: `1.25px solid ${palette.muted}` }}
-            aria-hidden
-          >
-            <Plus size={12} strokeWidth={1.75} color={palette.muted} />
-          </span>
-        )}
       </div>
     </>
   );

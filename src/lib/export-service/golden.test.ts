@@ -352,86 +352,6 @@ describe("golden — flowchart shapes", () => {
 });
 
 /**
- * One instance of every Value Stream Mapping element, exported through the
- * generic stencil kind onto draw.io's own `mxgraph.lean_mapping.*` shapes.
- */
-describe("golden — value stream map", () => {
-  const vsm = (id: string, extra: Record<string, unknown>): Component =>
-    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
-
-  const components: Record<string, Component> = {
-    supplier: vsm("supplier", { type: "vsm-external" }),
-    customer: vsm("customer", {
-      type: "vsm-external",
-      role: "customer",
-      customColor: "hsl(var(--node-system))",
-      fill: "soft",
-    }),
-    process: vsm("process", {
-      type: "vsm-process",
-      operators: 2,
-      metrics: [
-        { id: "m1", key: "C/T", value: "45 s" },
-        { id: "m2", key: "C/O", value: "10 min" },
-      ],
-      fill: "solid",
-      customColor: "hsl(var(--node-container))",
-    }),
-    inventory: vsm("inventory", { type: "vsm-inventory", quantity: "1200 pcs", duration: "2 d" }),
-    supermarket: vsm("supermarket", { type: "vsm-supermarket", stroke: "dashed" }),
-    push: vsm("push", { type: "vsm-push" }),
-    kaizen: vsm("kaizen", { type: "vsm-kaizen", fill: "solid" }),
-    timeline: vsm("timeline", {
-      type: "vsm-timeline",
-      unit: "d",
-      segments: [
-        { id: "s1", wait: 5, process: 0.5 },
-        { id: "s2", wait: 3, process: 1 },
-      ],
-    }),
-  };
-
-  const ids = Object.keys(components);
-  const layouts: Record<string, NodeLayout> = Object.fromEntries(
-    ids.map((id, index) => [id, { elementId: id, x: index * 260, y: 0, width: 200, height: 100 }]),
-  );
-
-  // Information flow: manual is a plain straight edge, electronic a zigzag.
-  const connections: Record<string, Connection> = {
-    manual: {
-      id: "manual",
-      sourceId: "supplier",
-      targetId: "process",
-      label: "",
-      style: { edgeStyle: EdgeStyle.Straight },
-    },
-    electronic: {
-      id: "electronic",
-      sourceId: "process",
-      targetId: "customer",
-      label: "EDI",
-      style: { edgeStyle: EdgeStyle.Zigzag },
-    },
-  };
-
-  it("freezes every VSM element", () => {
-    const xml = exportDrawio(diagram("VSM", components, connections, layouts), catalog);
-    expect(xml).toMatchSnapshot();
-    expect(xml).toContain("shape=mxgraph.lean_mapping.outside_sources;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.manufacturing_process;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.inventory_box;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.supermarket;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.push_arrow;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.kaizen_lightening_burst;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.timeline2;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.electronic_info_flow_edge;");
-    // The totals are computed from the segments: 5 + 0.5 + 3 + 1 and 0.5 + 1.
-    expect(xml).toContain("Lead time: 9.5 d");
-    expect(xml).toContain("Value-added time: 1.5 d");
-  });
-});
-
-/**
  * A service blueprint: lanes with a flow-preset accent (a theme token, which
  * exports as its light value) and the three named lines.
  */
@@ -461,7 +381,6 @@ describe("golden — service blueprint", () => {
       parentId: "stage",
       customColor: "hsl(var(--node-person))",
     }),
-    vsmInherits: item("vsmInherits", { type: "vsm-process", parentId: "stage" }),
     inLegacyLane: item("inLegacyLane", {
       type: "process-node",
       flowShape: "rectangle",
@@ -488,7 +407,6 @@ describe("golden — service blueprint", () => {
     const styleOf = (id: string) =>
       new RegExp(`id="${id}" value="[^"]*" style="([^"]*)"`).exec(xml)?.[1];
     expect(styleOf("inherits")).toContain("strokeColor=#1d67c9;");
-    expect(styleOf("vsmInherits")).toContain("strokeColor=#1d67c9;");
     expect(styleOf("ownAccent")).toContain("strokeColor=#f59f0a;");
     expect(styleOf("inLegacyLane")).toContain("strokeColor=#65758b;");
     expect(xml).toMatch(/value="LINE OF VISIBILITY" style="line;[^"]*dashed=1;/);
@@ -710,140 +628,6 @@ describe("golden — kubernetes pod", () => {
     expect(xml).toMatch(/id="wl"[^>]*collapsed="1"/);
     expect(xml).toContain("sidecars: envoy · init ×1");
     expect(xml).toMatch(/id="app"[^>]*parent="wl"/);
-  });
-});
-
-/**
- * A state machine with one of each state type, a Parallel of two branches
- * and a Map, joined by plain edges, the Choice's "sim"/"não" and a catcher;
- * expanded and compact.
- */
-describe("golden — step functions", () => {
-  const item = (id: string, extra: Record<string, unknown>): Component =>
-    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
-  const state = (id: string, extra: Record<string, unknown> = {}) =>
-    item(id, { type: "sfn-state", parentId: "sm", ...extra });
-
-  const build = (compact: boolean): Record<string, Component> => ({
-    sm: item("sm", {
-      type: "sfn-state-machine",
-      name: "processar-pedido",
-      xray: true,
-      ...(compact ? { collapsed: true } : {}),
-    }),
-    begin: state("begin", { name: "start", stateType: "Start" }),
-    validate: state("validate", { name: "Validar pedido", service: "lambda", action: "Invoke" }),
-    stock: state("stock", { name: "Tem estoque?", stateType: "Choice" }),
-    charge: state("charge", {
-      name: "Cobrar cartão",
-      service: "lambda",
-      action: "Invoke",
-      retry: [{ maxAttempts: 3, backoffRate: 2 }],
-    }),
-    hold: state("hold", { name: "Aguardar", stateType: "Wait", waitSeconds: 30 }),
-    shape: state("shape", { name: "Formatar", stateType: "Pass" }),
-    fan: item("fan", { type: "sfn-parallel", name: "notificar", parentId: "sm" }),
-    mail: item("mail", {
-      type: "sfn-state",
-      name: "E-mail",
-      parentId: "fan",
-      service: "ses",
-      action: "SendEmail",
-    }),
-    push: item("push", {
-      type: "sfn-state",
-      name: "Push",
-      parentId: "fan",
-      service: "sns",
-      action: "Publish",
-    }),
-    each: item("each", {
-      type: "sfn-map",
-      name: "itens",
-      parentId: "sm",
-      itemsPath: "$.items",
-      maxConcurrency: 5,
-    }),
-    reserve: item("reserve", {
-      type: "sfn-state",
-      name: "Reservar",
-      parentId: "each",
-      service: "dynamodb",
-      action: "UpdateItem",
-    }),
-    done: state("done", { name: "Pronto", stateType: "Succeed" }),
-    out: state("out", { name: "Sem estoque", stateType: "Fail", errorName: "OutOfStock" }),
-  });
-  const box = (id: string, x: number, y: number, width: number, height: number): NodeLayout => ({
-    elementId: id,
-    x,
-    y,
-    width,
-    height,
-  });
-  const layouts: Record<string, NodeLayout> = {
-    sm: box("sm", 0, 0, 1200, 560),
-    begin: box("begin", 20, 124, 56, 56),
-    validate: box("validate", 100, 120, 220, 64),
-    stock: box("stock", 360, 96, 180, 112),
-    charge: box("charge", 580, 60, 220, 64),
-    hold: box("hold", 580, 160, 220, 64),
-    shape: box("shape", 840, 60, 220, 64),
-    fan: box("fan", 100, 280, 500, 200),
-    mail: box("mail", 20, 60, 220, 64),
-    push: box("push", 260, 60, 220, 64),
-    each: box("each", 640, 280, 300, 200),
-    reserve: box("reserve", 40, 60, 220, 64),
-    done: box("done", 1100, 76, 56, 56),
-    out: box("out", 400, 250, 56, 56),
-  };
-  const link = (
-    id: string,
-    sourceId: string,
-    targetId: string,
-    label = "",
-    extra = {},
-  ): Connection => ({ id, sourceId, targetId, label, ...extra }) as Connection;
-  const connections: Record<string, Connection> = {
-    a: link("a", "begin", "validate"),
-    b: link("b", "validate", "stock"),
-    yes: link("yes", "stock", "charge", "sim"),
-    no: link("no", "stock", "out", "não"),
-    caught: link("caught", "charge", "out", "Catch · States.ALL", {
-      style: { edgeStyle: "catch" },
-    }),
-    c: link("c", "charge", "shape"),
-    d: link("d", "shape", "done"),
-  };
-
-  it("freezes the expanded machine", () => {
-    const xml = exportDrawio(diagram("SFN", build(false), connections, layouts), catalog);
-    expect(xml).toMatchSnapshot();
-    expect(xml).toMatch(/id="sm"[^>]*mxgraph\.aws4\.group_aws_step_functions_workflow;/);
-    expect(xml).toContain("Standard · 12 states · X-Ray");
-    expect(xml).toMatch(/id="validate-icon"[^>]*resIcon=mxgraph\.aws4\.lambda;/);
-    expect(xml).toMatch(/id="mail-icon"[^>]*resIcon=mxgraph\.aws4\.simple_email_service;/);
-    expect(xml).toMatch(/id="stock"[^>]*style="rhombus;/);
-    expect(xml).toMatch(/id="begin"[^>]*strokeWidth=2;/);
-    expect(xml).toMatch(/id="out"[^>]*strokeWidth=4;[^>]*strokeColor=#dc2828;/);
-    expect(xml).toContain("Lambda · Invoke");
-    expect(xml).toContain("wait 30s");
-    expect(xml).toMatch(/id="charge-retry" value="retry 3× · backoff 2"/);
-    expect(xml).toMatch(/id="fan"[^>]*dashed=1;/);
-    expect(xml).toMatch(/id="fan-branch-0"/);
-    expect(xml).toMatch(/id="each"[^>]*shadow=1;[^>]*dashed=1;/);
-    expect(xml).toContain("$.items · max 5");
-    expect(xml).toMatch(
-      /id="caught"[^>]*structuraEdge=catch;[^>]*dashed=1;[^>]*strokeColor=#dc2828;/,
-    );
-    expect(xml).toMatch(/id="reserve"[^>]*parent="each"/);
-  });
-
-  it("freezes the compact machine", () => {
-    const xml = exportDrawio(diagram("SFN", build(true), connections, layouts), catalog);
-    expect(xml).toMatchSnapshot();
-    expect(xml).toMatch(/id="sm"[^>]*collapsed="1"/);
-    expect(xml).toContain('width="1200" height="560" as="alternateBounds"');
   });
 });
 

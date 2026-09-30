@@ -87,9 +87,7 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Tipo de transporte",
     "copySuffix": " (cópia)",
-    "defaultNamePrefix": "Novo",
-    "edgeZigzag": "Zigue-zague (eletrônico)",
-    "edgeCatch": "Catch (tracejado vermelho)"
+    "defaultNamePrefix": "Novo"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -1127,9 +1125,6 @@
       }
     },
     "families": {
-      "vsm": {
-        "label": "Mapa de fluxo de valor"
-      },
       "structural": {
         "label": "Estruturais e Canvas"
       },
@@ -1138,38 +1133,7 @@
       },
       "deploy": {
         "label": "Deployment"
-      },
-      "aws-sfn": {
-        "label": "Step Functions"
       }
-    },
-    "vsm-external": {
-      "label": "Fornecedor / cliente",
-      "description": "Uma fonte externa numa das pontas do fluxo de valor: o fornecedor que o alimenta ou o cliente que ele atende."
-    },
-    "vsm-process": {
-      "label": "Processo",
-      "description": "Uma etapa do fluxo de valor, com seus operadores e uma caixa de dados de métricas (tempo de ciclo, setup, disponibilidade, turnos)."
-    },
-    "vsm-inventory": {
-      "label": "Estoque",
-      "description": "Estoque parado entre duas etapas, com a quantidade e quanto tempo ele cobre."
-    },
-    "vsm-supermarket": {
-      "label": "Supermercado",
-      "description": "Um estoque controlado de peças de onde a etapa seguinte puxa."
-    },
-    "vsm-push": {
-      "label": "Seta de empurrar",
-      "description": "Material empurrado para a etapa seguinte, precise ela ou não."
-    },
-    "vsm-kaizen": {
-      "label": "Kaizen",
-      "description": "Uma melhoria a fazer neste ponto do fluxo."
-    },
-    "vsm-timeline": {
-      "label": "Linha do tempo",
-      "description": "A onda quadrada sob o fluxo de valor: tempos de espera acima, tempos de processo abaixo, com lead time e tempo de agregação de valor somados."
     },
     "flow-divider": {
       "label": "Linha nomeada",
@@ -1210,22 +1174,6 @@
     "k8s-container": {
       "label": "Container",
       "description": "Um container do pod de um workload: o principal, um sidecar (proxy, logs, secrets, metrics) ou um init executado antes, em ordem."
-    },
-    "sfn-state-machine": {
-      "label": "State machine",
-      "description": "Uma state machine do AWS Step Functions, Standard ou Express; seus estados ficam dentro dela."
-    },
-    "sfn-state": {
-      "label": "Estado",
-      "description": "Um estado de Step Functions: Task (um serviço e sua ação), Choice, Wait, Pass, Succeed, Fail ou o início."
-    },
-    "sfn-parallel": {
-      "label": "Parallel",
-      "description": "Um estado Parallel: ramos de estados executados lado a lado dentro dele."
-    },
-    "sfn-map": {
-      "label": "Map",
-      "description": "Um estado Map: os estados do iterador rodam uma vez por item de ItemsPath, até uma concorrência."
     },
     "shared-ref": {
       "label": "Referência",
@@ -2515,45 +2463,6 @@
     "untitledPlaceholder": "Workflow sem título",
     "upNext": "A seguir:"
   },
-  "vsm": {
-    "role": {
-      "supplier": "Fornecedor",
-      "customer": "Cliente"
-    },
-    "fields": {
-      "role": "Papel",
-      "operators": "Operadores",
-      "metrics": "Caixa de dados",
-      "metricKey": "Métrica",
-      "metricValue": "Valor",
-      "addMetric": "Adicionar linha",
-      "removeMetric": "Remover linha",
-      "quantity": "Quantidade",
-      "duration": "Duração",
-      "unit": "Unidade",
-      "segments": "Segmentos",
-      "wait": "Espera",
-      "process": "Processo",
-      "addSegment": "Adicionar segmento",
-      "removeSegment": "Remover segmento"
-    },
-    "metrics": {
-      "cycleTime": "C/T",
-      "changeover": "C/O",
-      "uptime": "Disp.",
-      "shifts": "Turnos"
-    },
-    "timeline": {
-      "leadTime": "Lead time",
-      "valueAdded": "Tempo de agregação de valor"
-    },
-    "units": {
-      "s": "s",
-      "min": "min",
-      "h": "h",
-      "d": "d"
-    }
-  },
   "blueprint": {
     "lines": {
       "interaction": "Linha de interação",
@@ -2562,13 +2471,6 @@
     },
     "fields": {
       "stroke": "Linha"
-    },
-    "lanes": {
-      "evidence": "Evidência física",
-      "customer": "Ações do cliente",
-      "onstage": "Palco",
-      "backstage": "Bastidores",
-      "support": "Suporte"
     }
   },
   "containers": {
@@ -2648,36 +2550,6 @@
       "main": "Container",
       "sidecar": "Sidecar",
       "init": "Container init"
-    }
-  },
-  "sfn": {
-    "stateMachine": "State machine",
-    "states_one": "{{count}} estado",
-    "states_other": "{{count}} estados",
-    "fields": {
-      "workflowType": "Tipo de workflow",
-      "xray": "Rastreamento X-Ray",
-      "stateType": "Tipo de estado",
-      "service": "Serviço",
-      "action": "Ação",
-      "waitSeconds": "Segundos",
-      "errorName": "Erro",
-      "itemsPath": "ItemsPath",
-      "maxConcurrency": "Concorrência máxima",
-      "retry": "Retry",
-      "retryErrors": "Erros (separados por vírgula)",
-      "maxAttempts": "Tentativas",
-      "backoffRate": "Backoff",
-      "intervalSeconds": "Intervalo (s)"
-    },
-    "stateType": {
-      "Task": "Task",
-      "Choice": "Choice",
-      "Wait": "Wait",
-      "Pass": "Pass",
-      "Succeed": "Succeed",
-      "Fail": "Fail",
-      "Start": "Início"
     }
   },
   "shared": {

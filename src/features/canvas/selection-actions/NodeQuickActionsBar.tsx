@@ -206,7 +206,7 @@ export function NodeQuickActionsBar({
         });
         return;
       }
-      // Skinned elements (flow, VSM): the element's default accent is stored
+      // Skinned elements (flow, deploy, k8s): the element's default accent is stored
       // as nothing, and a flow node's legacy nodeColor goes with it so it
       // cannot keep winning as the fill.
       const skin = getElement(component.type)?.skin;

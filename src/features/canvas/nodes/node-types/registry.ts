@@ -105,8 +105,7 @@ export function handleSpecForType(type: ComponentType): NodeHandleSpec {
 
 /**
  * The handle set a component renders: its variant's, when its element draws
- * it another way (a Step Functions Choice is the flowchart's diamond, with the
- * flowchart's one slot a side), else its type's.
+ * it another way, else its type's.
  */
 export function handleSpecFor(comp: Component): NodeHandleSpec {
   return resolveNodeDescriptor(comp).handles;
