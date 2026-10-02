@@ -11,6 +11,9 @@ import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
 import { useCanvasNodes } from "../nodes/useCanvasNodes";
 import { resolveNodeDescriptor } from "../nodes/node-types";
 import { EMPTY_VIEW_SNAPSHOT, resolveViewSnapshot } from "../core/resolveViewSnapshot";
+import { remapConnectionsToVisible } from "../core/compactView";
+import { hideSharedEdges } from "@/features/diagram/utils/shared";
+import { useSharedRevealStore } from "../shared/useSharedRevealStore";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
 
@@ -114,6 +117,18 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   } = nodeSelectionState;
 
   const effectiveFlowHighlight = flowState.flowHighlight;
+  // "Show the N edges" of a shared element: a view state, never saved.
+  const revealedOriginals = useSharedRevealStore((state) => state.originals);
+  // …and the edge a flow step is on, while it is being read (F5): hidden by a
+  // shared element, it is drawn for that step and hidden again after.
+  const activeConnId = effectiveFlowHighlight.activeConnId;
+  const sharedReveal = useMemo(
+    () => ({
+      originals: revealedOriginals,
+      ...(activeConnId ? { connections: new Set([activeConnId]) } : {}),
+    }),
+    [revealedOriginals, activeConnId],
+  );
 
   /*
    * What the canvas shows — the rule the viewer uses too (slice 5 of
@@ -133,6 +148,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
             {
               versionId: diagram.activeVersionId ?? null,
               compareVersionId: diagram.compareVersionId ?? null,
+              reveal: sharedReveal,
             },
             resolveNodeDescriptor,
           )
@@ -148,13 +164,33 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
       resolvedComponentsRef,
       resolvedNodeLayoutsRef,
       resolvedConnectionsRef,
+      sharedReveal,
+    ],
+  );
+
+  // Edges into a compact container's children are drawn on the container —
+  // the same remap the view applies for the reader (`remapConnectionsToVisible`).
+  const drawnConnections = useMemo(
+    () =>
+      remapConnectionsToVisible(
+        hideSharedEdges(visibleConnections, resolved?.components ?? {}, sharedReveal),
+        resolved?.components ?? {},
+        view.compactContainerIds,
+        view.compactTabIds,
+      ),
+    [
+      visibleConnections,
+      resolved?.components,
+      view.compactContainerIds,
+      view.compactTabIds,
+      sharedReveal,
     ],
   );
 
   const { panelIds, connectionCountPerNode, edgeHandleAssignments, effectiveHandleOrder } =
     useCanvasConnectionDerivations({
       visibleComponents,
-      visibleConnections,
+      visibleConnections: drawnConnections,
       resolvedComponents: resolved?.components ?? {},
     });
 

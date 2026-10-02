@@ -1,4 +1,5 @@
 import type { ComponentType, NodeLayout, PanelKind } from "../../model/diagram.types";
+import { canContain } from "@/features/elements/containment";
 import {
   isAwsComponent,
   isAzureComponent,
@@ -101,10 +102,15 @@ export const generatedGraphSlice = (
       const scene = resolveActiveVersion(diagram);
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
+      const typeByExternalId = new Map(nodes.map((n) => [n.externalId, n.type]));
       for (const node of nodes) {
         const id = componentIdByExternalId[node.externalId];
+        const parentType =
+          node.parentExternalId === null ? undefined : typeByExternalId.get(node.parentExternalId);
+        // A typed container refuses what it does not take: top level instead.
         const parentId =
-          node.parentExternalId === null
+          node.parentExternalId === null ||
+          (parentType !== undefined && !canContain(parentType, node.type))
             ? null
             : (componentIdByExternalId[node.parentExternalId] ?? null);
 

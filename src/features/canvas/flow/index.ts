@@ -33,3 +33,10 @@ export {
 export { useFlowModePlayback } from "./useFlowModePlayback";
 export { useFrameReadStep } from "./reading/useFrameReadStep";
 export { useFlowReadingKeys } from "./reading/useFlowReadingKeys";
+export {
+  resolveVisibleTarget,
+  visibleTargetIn,
+  compactContainerIdsOf,
+  formatTargetPath,
+} from "./visibleTarget";
+export type { VisibleTarget } from "./visibleTarget";

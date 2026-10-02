@@ -17,6 +17,18 @@ import type {
   ExternalLink,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+
+/**
+ * A reference the auto-layout decided on: `refId` stands for `originalId` in
+ * `parentId`, and the edges from `sourceIds` (layout ids — a component, or
+ * the api-group its endpoints collapse onto) to the original end on it.
+ */
+export interface AutoRefAssignment {
+  refId: string;
+  originalId: string;
+  parentId: string | null;
+  sourceIds: readonly string[];
+}
 import type { FlowCursor } from "../utils/flow-edit";
 import type { MoveStepTarget } from "../utils/flow-move";
 import type { FlowStoreResult, RecordedStepContent } from "./slices/flows.slice";
@@ -51,9 +63,17 @@ export interface AppActions {
     cloudServiceId?: string,
     panelKind?: PanelKind,
     flowShape?: import("../model/diagram.types").FlowNodeShape,
-    /** Anything else the element's descriptor reads at creation (a VSM role, say). */
+    /** Anything else the element's descriptor reads at creation (a k8s container's role, say). */
     createOptions?: import("@/features/elements/element.types").ElementCreateOptions,
   ) => Component;
+  /** A new reference to an element, at a position in a parent; turns the original to ref mode. */
+  addSharedRef: (
+    elementId: string,
+    parentId: string | null,
+    position: { x: number; y: number },
+  ) => Component | null;
+  /** Ends a connection on a new reference to its target, placed beside its source. */
+  routeConnectionThroughRef: (connectionId: string) => Component | null;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   removeElements: (nodeIds: string[], edgeIds: string[]) => void;
@@ -128,6 +148,7 @@ export interface AppActions {
       width?: number;
       height?: number;
     }>,
+    autoRefs?: readonly AutoRefAssignment[],
   ) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;

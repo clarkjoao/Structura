@@ -7,8 +7,11 @@ import {
   RotateCcw,
   Group,
   Maximize2,
+  ChevronsDownUp,
+  ChevronsUpDown,
   LayoutGrid,
   Link2Off,
+  LocateFixed,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/hooks/useTheme";
@@ -29,6 +32,9 @@ import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveD
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
+import { CreateRefButton, SharedModeControl } from "./SharedModeControl";
+import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
+import { canBeReferenced } from "@/features/elements/referencing";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 
 interface NodeQuickActionsBarProps {
@@ -43,6 +49,11 @@ interface NodeQuickActionsBarProps {
   onOrganizeChildren?: () => void;
   /** Detach this child from its parent panel — toolbar button. */
   onRemoveFromGroup?: () => void;
+  /**
+   * Select and frame an element, as the finder does — for a reference, its
+   * original.
+   */
+  onFocusElement?: (componentId: string) => void;
 }
 
 function pickColorGroup(component: Component | null): ColorPickerGroup {
@@ -101,11 +112,16 @@ export function NodeQuickActionsBar({
   onFitToChildren,
   onOrganizeChildren,
   onRemoveFromGroup,
+  onFocusElement,
 }: NodeQuickActionsBarProps) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const component = useComponent(nodeId);
+  // A reference's original, when it is still there to be focused on.
+  const refOriginal = useComponent(
+    component && isSharedRefComponent(component) ? component.refOf : "",
+  );
   const { incrementIconUsage, decrementIconUsage } = useIconActions();
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -202,7 +218,7 @@ export function NodeQuickActionsBar({
         });
         return;
       }
-      // Skinned elements (flow, VSM): the element's default accent is stored
+      // Skinned elements (flow, deploy, k8s): the element's default accent is stored
       // as nothing, and a flow node's legacy nodeColor goes with it so it
       // cannot keep winning as the fill.
       const skin = getElement(component.type)?.skin;
@@ -262,7 +278,11 @@ export function NodeQuickActionsBar({
   if (!component) return null;
 
   const hasOpacity = isPanelComponent(component);
-  const hasIcon = "customIconId" in component;
+  const isCollapsible = getElement(component.type)?.canvas.collapsible === true;
+  const isCollapsed = (component as { collapsed?: boolean }).collapsed === true;
+  const isRef = isSharedRefComponent(component);
+  // A reference draws the link glyph, never an icon of its own.
+  const hasIcon = "customIconId" in component && !isRef;
   // Show color picker only for components that support color
   const hasColor = supportsColor(component);
 
@@ -302,6 +322,49 @@ export function NodeQuickActionsBar({
                 onReset={handleColorReset}
               />
             </div>
+          )}
+
+          {/* A reference leads to its original, the way the finder does */}
+          {isRef && refOriginal && onFocusElement && (
+            <button
+              type="button"
+              title={t("shared.focusOriginal")}
+              aria-label={t("shared.focusOriginal")}
+              onClick={() => onFocusElement(refOriginal.id)}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+            >
+              <LocateFixed className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* How the edges into it are drawn when many things use it */}
+          {!isSharedRefComponent(component) && (
+            <SharedModeControl
+              component={component}
+              onChange={(patch) => updateComponent(nodeId, patch)}
+            />
+          )}
+          {canBeReferenced(component) && <CreateRefButton original={component} />}
+
+          {/* Compact / expanded — only for collapsible typed containers */}
+          {isCollapsible && (
+            <button
+              type="button"
+              onClick={() =>
+                // Expanded is the default: stored as nothing, never `false`.
+                updateComponent(nodeId, { collapsed: isCollapsed ? undefined : true })
+              }
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-surface-hover hover:text-foreground"
+              title={isCollapsed ? t("containers.expand") : t("containers.compact")}
+              aria-label={isCollapsed ? t("containers.expand") : t("containers.compact")}
+              aria-pressed={isCollapsed}
+            >
+              {isCollapsed ? (
+                <ChevronsUpDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronsDownUp className="h-3.5 w-3.5" />
+              )}
+            </button>
           )}
 
           {/* Opacity control — only for panel components */}

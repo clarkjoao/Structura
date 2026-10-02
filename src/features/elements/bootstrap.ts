@@ -15,13 +15,15 @@ import { processNodeElement } from "./structural/process-node.element";
 import { flowDividerElement } from "./structural/flow-divider.element";
 import { svgElement } from "./structural/svg.element";
 import { unknownElement } from "./structural/unknown.element";
+import { sharedRefElement } from "./structural/shared-ref.element";
 import { gcpFamily } from "./families/gcp/gcp.family";
 import { azureFamily } from "./families/azure/azure.family";
 import { awsFamily } from "./families/aws/aws.family";
 import { k8sFamily } from "./families/k8s/k8s.family";
 import { ossFamily } from "./families/oss/oss.family";
 import { c4Elements } from "./families/c4/c4.family";
-import { vsmElements } from "./families/vsm/vsm.family";
+import { deployElements } from "./families/deploy/deploy.family";
+import { k8sStructureElements } from "./families/k8s/structure/k8s-structure.elements";
 
 const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   ...c4Elements,
@@ -36,7 +38,9 @@ const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   externalElementElement,
   svgElement,
   unknownElement,
-  ...vsmElements,
+  sharedRefElement,
+  ...deployElements,
+  ...k8sStructureElements,
 ];
 
 for (const element of BUILT_IN_ELEMENTS) {

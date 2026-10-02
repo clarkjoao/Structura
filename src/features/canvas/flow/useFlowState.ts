@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Flow } from "@/features/diagram";
-import { buildFlowOutline, getBranchRows } from "@/features/diagram";
+import { buildFlowOutline, getBranchRows, useResolvedComponents } from "@/features/diagram";
+import { compactContainerIdsOf } from "./visibleTarget";
 import { useFlowMode } from "./FlowModeContext";
 import { useFlowViewStore } from "./useFlowViewStore";
 import {
@@ -33,10 +34,17 @@ export function useFlowState({ flows, isCompareMode = false }: UseFlowStateParam
     [flows, numberedFlowId],
   );
 
+  // Steps on children of compact containers are drawn on the container.
+  const components = useResolvedComponents();
+  const visibility = useMemo(
+    () => ({ components, compactIds: compactContainerIdsOf(components) }),
+    [components],
+  );
+
   const flowHighlight = useMemo(() => {
     if (!isPlaying || !activeFlow || !currentStepId) return EMPTY_FLOW_HIGHLIGHT;
-    return buildFlowHighlight(activeFlow, currentStepId, history);
-  }, [isPlaying, activeFlow, currentStepId, history]);
+    return buildFlowHighlight(activeFlow, currentStepId, history, visibility);
+  }, [isPlaying, activeFlow, currentStepId, history, visibility]);
 
   const coverage = useMemo(() => {
     if (isPlaying || isRecording || isCompareMode) return null;

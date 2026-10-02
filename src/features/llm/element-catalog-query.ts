@@ -1,9 +1,11 @@
 import { getElement, offeredElements } from "@/features/elements/element.registry";
 import {
   allCloudFamilies,
+  familyOwnElements,
   nonCatalogFamilyIds,
 } from "@/features/elements/families/cloud-family.registry";
 import type { Component } from "@/features/diagram/model/component.types";
+import type { ElementDescriptor } from "@/features/elements/element.types";
 import i18n from "@/infrastructure/i18n";
 
 const CATALOG_LOCALE = "en";
@@ -104,7 +106,7 @@ export function listElementFamilies(
     families.push({
       id: family.id,
       label: t(family.labelKey),
-      elementCount: family.services.length,
+      elementCount: family.services.length + familyOwnElements(family.id).length,
       categories,
     });
   }
@@ -139,10 +141,10 @@ export function searchElements(params: {
     return { results: [], truncated: false };
   }
 
-  const pushNonCatalogFamily = (familyFilter: string) => {
+  const pushElements = (familyFilter: string, elements: readonly ElementDescriptor[]) => {
     if (params.familyId && params.familyId !== familyFilter) return;
     if (params.categoryId) return;
-    for (const element of offeredElements().filter((entry) => entry.family === familyFilter)) {
+    for (const element of elements) {
       const label = t(element.labelKey);
       const description = t(element.descriptionKey);
       const keys = [element.id, label, description, ...(element.palette.searchKeys ?? [])];
@@ -161,11 +163,16 @@ export function searchElements(params: {
   // Every non-catalog family, not just the two that existed when this was
   // written — a new vocabulary is searchable the moment it registers.
   for (const familyId of nonCatalogFamilyIds()) {
-    pushNonCatalogFamily(familyId);
+    pushElements(
+      familyId,
+      offeredElements().filter((entry) => entry.family === familyId),
+    );
   }
 
   for (const family of allCloudFamilies()) {
     if (params.familyId && params.familyId !== family.id) continue;
+    // A catalog family's own elements (typed containers and the like) come first.
+    pushElements(family.id, familyOwnElements(family.id));
     for (const category of family.categories) {
       if (params.categoryId && params.categoryId !== category.id) continue;
       const categoryLabel = t(category.labelKey);

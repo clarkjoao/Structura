@@ -23,6 +23,8 @@ export const LIGHT_THEME_TOKENS: Readonly<Record<string, string>> = {
   "--node-component": "152 60% 38%",
   "--node-person": "38 92% 50%",
   "--gcp-database": "214 75% 45%",
+  "--aws-integration": "330 70% 50%",
+  "--destructive": "0 72% 51%",
 };
 
 const TOKEN_RE = /^hsl\(\s*var\((--[\w-]+)\)\s*\)$/;

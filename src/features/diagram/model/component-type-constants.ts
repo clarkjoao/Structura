@@ -30,46 +30,64 @@ export function isFlowDividerType(type: string): type is "flow-divider" {
   return type === COMPONENT_TYPE_FLOW_DIVIDER;
 }
 
-export const COMPONENT_TYPE_VSM_EXTERNAL = "vsm-external";
+export const COMPONENT_TYPE_SHARDED_STORE = "deploy-sharded-store";
 
-export const COMPONENT_TYPE_VSM_TIMELINE = "vsm-timeline";
-
-export function isVsmTimelineType(type: string): type is "vsm-timeline" {
-  return type === COMPONENT_TYPE_VSM_TIMELINE;
+export function isShardedStoreType(type: string): type is "deploy-sharded-store" {
+  return type === COMPONENT_TYPE_SHARDED_STORE;
 }
 
-export const COMPONENT_TYPE_VSM_KAIZEN = "vsm-kaizen";
+export const COMPONENT_TYPE_SHARD = "deploy-shard";
 
-export function isVsmKaizenType(type: string): type is "vsm-kaizen" {
-  return type === COMPONENT_TYPE_VSM_KAIZEN;
+export function isShardType(type: string): type is "deploy-shard" {
+  return type === COMPONENT_TYPE_SHARD;
 }
 
-export const COMPONENT_TYPE_VSM_PUSH = "vsm-push";
+export const COMPONENT_TYPE_SHARD_ROUTER = "deploy-shard-router";
 
-export function isVsmPushType(type: string): type is "vsm-push" {
-  return type === COMPONENT_TYPE_VSM_PUSH;
+export function isShardRouterType(type: string): type is "deploy-shard-router" {
+  return type === COMPONENT_TYPE_SHARD_ROUTER;
 }
 
-export const COMPONENT_TYPE_VSM_SUPERMARKET = "vsm-supermarket";
+export const COMPONENT_TYPE_K8S_CLUSTER = "k8s-cluster";
 
-export function isVsmSupermarketType(type: string): type is "vsm-supermarket" {
-  return type === COMPONENT_TYPE_VSM_SUPERMARKET;
+export function isK8sClusterType(type: string): type is "k8s-cluster" {
+  return type === COMPONENT_TYPE_K8S_CLUSTER;
 }
 
-export const COMPONENT_TYPE_VSM_INVENTORY = "vsm-inventory";
+export const COMPONENT_TYPE_K8S_NAMESPACE = "k8s-namespace";
 
-export function isVsmInventoryType(type: string): type is "vsm-inventory" {
-  return type === COMPONENT_TYPE_VSM_INVENTORY;
+export function isK8sNamespaceType(type: string): type is "k8s-namespace" {
+  return type === COMPONENT_TYPE_K8S_NAMESPACE;
 }
 
-export const COMPONENT_TYPE_VSM_PROCESS = "vsm-process";
+export const COMPONENT_TYPE_K8S_WORKLOAD = "k8s-workload";
 
-export function isVsmProcessType(type: string): type is "vsm-process" {
-  return type === COMPONENT_TYPE_VSM_PROCESS;
+export function isK8sWorkloadType(type: string): type is "k8s-workload" {
+  return type === COMPONENT_TYPE_K8S_WORKLOAD;
 }
 
-export function isVsmExternalType(type: string): type is "vsm-external" {
-  return type === COMPONENT_TYPE_VSM_EXTERNAL;
+export const COMPONENT_TYPE_K8S_SERVICE = "k8s-service";
+
+export function isK8sServiceType(type: string): type is "k8s-service" {
+  return type === COMPONENT_TYPE_K8S_SERVICE;
+}
+
+export const COMPONENT_TYPE_K8S_INGRESS = "k8s-ingress";
+
+export function isK8sIngressType(type: string): type is "k8s-ingress" {
+  return type === COMPONENT_TYPE_K8S_INGRESS;
+}
+
+export const COMPONENT_TYPE_K8S_CONTAINER = "k8s-container";
+
+export function isK8sContainerType(type: string): type is "k8s-container" {
+  return type === COMPONENT_TYPE_K8S_CONTAINER;
+}
+
+export const COMPONENT_TYPE_SHARED_REF = "shared-ref";
+
+export function isSharedRefType(type: string): type is "shared-ref" {
+  return type === COMPONENT_TYPE_SHARED_REF;
 }
 
 /** Legacy type strings; both are migrated to "process-node" by

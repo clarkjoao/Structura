@@ -87,8 +87,7 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Transport type",
     "copySuffix": " (copy)",
-    "defaultNamePrefix": "New",
-    "edgeZigzag": "Zigzag (electronic)"
+    "defaultNamePrefix": "New"
   },
   "externalLinks": {
     "sectionTitle": "Links",
@@ -1126,47 +1125,59 @@
       }
     },
     "families": {
-      "vsm": {
-        "label": "Value stream map"
-      },
       "structural": {
         "label": "Structural & Canvas"
       },
       "c4": {
         "label": "C4 Model"
+      },
+      "deploy": {
+        "label": "Deployment"
       }
-    },
-    "vsm-external": {
-      "label": "Supplier / customer",
-      "description": "An outside source at either end of a value stream: the supplier that feeds it or the customer it serves."
-    },
-    "vsm-process": {
-      "label": "Process",
-      "description": "A step of the value stream, with its operators and a data box of metrics (cycle time, changeover, uptime, shifts)."
-    },
-    "vsm-inventory": {
-      "label": "Inventory",
-      "description": "Stock waiting between two steps, with its quantity and how long it lasts."
-    },
-    "vsm-supermarket": {
-      "label": "Supermarket",
-      "description": "A controlled store of parts that the downstream step pulls from."
-    },
-    "vsm-push": {
-      "label": "Push arrow",
-      "description": "Material pushed to the next step whether it needs it or not."
-    },
-    "vsm-kaizen": {
-      "label": "Kaizen burst",
-      "description": "An improvement to make at this point of the stream."
-    },
-    "vsm-timeline": {
-      "label": "Timeline",
-      "description": "The square wave under a value stream: waiting times above, processing times below, with lead time and value-added time totalled."
     },
     "flow-divider": {
       "label": "Named line",
       "description": "A labelled line across the diagram — a service blueprint’s line of interaction, visibility or internal interaction."
+    },
+    "deploy-sharded-store": {
+      "label": "Sharded store",
+      "description": "A data store split into shards by a key: its shards and router are its children, and the key-space bar shows how the keys are spread."
+    },
+    "deploy-shard": {
+      "label": "Shard",
+      "description": "One shard of a sharded store, with its key range, region and replicas."
+    },
+    "deploy-shard-router": {
+      "label": "Shard router",
+      "description": "The router in front of a store's shards (mongos, vtgate)."
+    },
+    "k8s-cluster": {
+      "label": "Kubernetes cluster",
+      "description": "A Kubernetes cluster with its distribution, version, nodes and zones; holds namespaces and workloads."
+    },
+    "k8s-namespace": {
+      "label": "Namespace",
+      "description": "A Kubernetes namespace inside a cluster, optionally with mesh sidecar injection."
+    },
+    "k8s-workload": {
+      "label": "Workload",
+      "description": "A Deployment, StatefulSet, DaemonSet, Job, CronJob or Pod, with replicas, autoscaling, image and resources."
+    },
+    "k8s-service": {
+      "label": "Service",
+      "description": "A Kubernetes Service in front of a workload: its type and port."
+    },
+    "k8s-ingress": {
+      "label": "Ingress",
+      "description": "A Kubernetes Ingress: the host and class traffic enters the cluster by."
+    },
+    "k8s-container": {
+      "label": "Container",
+      "description": "A container of a workload's pod: the main one, a sidecar (proxy, logs, secrets, metrics) or an init container run first, in order."
+    },
+    "shared-ref": {
+      "label": "Reference",
+      "description": "A reference to a shared element, drawn near its consumers; edges to it are edges to the element."
     }
   },
   "flowchart": {
@@ -2188,6 +2199,8 @@
   "autoLayout": {
     "contextMenuLabel": "Auto Layout (LR)",
     "applied": "Layout applied successfully",
+    "appliedWithRefs_one": "Layout applied — 1 reference untangles a busy element",
+    "appliedWithRefs_other": "Layout applied — {{count}} references untangle busy elements",
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",
@@ -2452,45 +2465,6 @@
     "untitledPlaceholder": "Untitled Walkthrough",
     "upNext": "Up next:"
   },
-  "vsm": {
-    "role": {
-      "supplier": "Supplier",
-      "customer": "Customer"
-    },
-    "fields": {
-      "role": "Role",
-      "operators": "Operators",
-      "metrics": "Data box",
-      "metricKey": "Metric",
-      "metricValue": "Value",
-      "addMetric": "Add row",
-      "removeMetric": "Remove row",
-      "quantity": "Quantity",
-      "duration": "Duration",
-      "unit": "Unit",
-      "segments": "Segments",
-      "wait": "Wait",
-      "process": "Process",
-      "addSegment": "Add segment",
-      "removeSegment": "Remove segment"
-    },
-    "metrics": {
-      "cycleTime": "C/T",
-      "changeover": "C/O",
-      "uptime": "Uptime",
-      "shifts": "Shifts"
-    },
-    "timeline": {
-      "leadTime": "Lead time",
-      "valueAdded": "Value-added time"
-    },
-    "units": {
-      "s": "s",
-      "min": "min",
-      "h": "h",
-      "d": "d"
-    }
-  },
   "blueprint": {
     "lines": {
       "interaction": "Line of interaction",
@@ -2499,13 +2473,111 @@
     },
     "fields": {
       "stroke": "Line"
-    },
-    "lanes": {
-      "evidence": "Physical evidence",
-      "customer": "Customer actions",
-      "onstage": "Onstage",
-      "backstage": "Backstage",
-      "support": "Support processes"
     }
+  },
+  "containers": {
+    "refusedChild": "{{container}} does not take {{child}}.",
+    "compact": "Compact",
+    "expand": "Expand"
+  },
+  "deploy": {
+    "strategy": {
+      "hash": "hash",
+      "consistent-hash": "consistent hash",
+      "range": "range",
+      "geo": "geo",
+      "directory": "directory"
+    },
+    "shards_one": "{{count}} shard",
+    "shards_other": "{{count}} shards",
+    "replicas_one": "{{count}} copy",
+    "replicas_other": "{{count}} copies",
+    "hot": "hot",
+    "router": "Router",
+    "addShard": "Add shard",
+    "addRouter": "Add router",
+    "fields": {
+      "strategy": "Strategy",
+      "keyExpression": "Shard key",
+      "replicationFactor": "Replication factor",
+      "keyRange": "Range / label",
+      "share": "Range size",
+      "region": "Region",
+      "hot": "Hot shard"
+    }
+  },
+  "k8s": {
+    "cluster": "cluster",
+    "namespace": "namespace",
+    "nodes_one": "{{count}} node",
+    "nodes_other": "{{count}} nodes",
+    "zones_one": "{{count}} zone",
+    "zones_other": "{{count}} zones",
+    "meshInjected": "istio · sidecar injected",
+    "replicas": "Replicas",
+    "onePerNode": "one per node",
+    "fields": {
+      "distribution": "Distribution",
+      "version": "Version",
+      "nodeCount": "Nodes",
+      "zoneCount": "Zones",
+      "meshInjection": "Mesh sidecar injection",
+      "kind": "Kind",
+      "replicas": "Replicas",
+      "hpaMin": "HPA min",
+      "hpaMax": "HPA max",
+      "image": "Image",
+      "resources": "Resources",
+      "zones": "Zones (comma separated)",
+      "schedule": "Schedule",
+      "concurrencyPolicy": "Concurrency policy",
+      "serviceType": "Service type",
+      "port": "Port",
+      "host": "Host",
+      "ingressClass": "Ingress class",
+      "podRole": "Role",
+      "purpose": "Function",
+      "order": "Order",
+      "ports": "Ports (comma separated)"
+    },
+    "role": {
+      "main": "main",
+      "sidecar": "sidecar",
+      "init": "init"
+    },
+    "addContainer": "Add container",
+    "addSidecar": "Add sidecar",
+    "addInit": "Add init",
+    "variant": {
+      "main": "Container",
+      "sidecar": "Sidecar",
+      "init": "Init container"
+    }
+  },
+  "shared": {
+    "chip": "shared",
+    "uses_one": "{{count}} use",
+    "uses_other": "{{count}} uses",
+    "usedBy_one": "Used by {{count}}",
+    "usedBy_other": "Used by {{count}}",
+    "goToOriginal": "Go to the original",
+    "focusOriginal": "Focus on the original element",
+    "mode": {
+      "label": "Shared",
+      "edges": "Edges",
+      "badge": "Badges",
+      "ref": "References"
+    },
+    "showEdges_one": "Show the edge",
+    "showEdges_other": "Show the {{count}} edges",
+    "hideEdges_one": "Hide the edge",
+    "hideEdges_other": "Hide the {{count}} edges",
+    "suggest_one": "Used by {{count}} — draw it as shared?",
+    "suggest_other": "Used by {{count}} — draw it as shared?",
+    "createRef": "New reference",
+    "createRefHint": "New reference (or Alt+drag the element to where it is used)",
+    "routeThroughRef": "Draw through a reference, beside the source",
+    "refsRemoved_one": "{{name}} left with its reference",
+    "refsRemoved_other": "{{name}} left with its {{count}} references"
   }
 }

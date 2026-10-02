@@ -11,6 +11,7 @@ import {
   edgeStyleToDropdown,
 } from "@/features/canvas/selection-actions/edgeStyleMapping";
 import { EdgeLabelPortal } from "../EdgeLabelPortal";
+import { RouteThroughRefButton } from "@/features/canvas/shared/RouteThroughRefButton";
 
 interface EdgeToolbarProps {
   anchor: Point;
@@ -26,6 +27,8 @@ interface EdgeToolbarProps {
   onColorChange?: (color: string) => void;
   onMarkerStartChange?: (cap: EdgeMarker) => void;
   onMarkerEndChange?: (cap: EdgeMarker) => void;
+  /** The edge's connection, to draw it through a reference to its target. */
+  routeConnectionId?: string;
 }
 
 /** Floating actions anchored above a selected edge. */
@@ -42,6 +45,7 @@ export function EdgeToolbar({
   onColorChange,
   onMarkerStartChange,
   onMarkerEndChange,
+  routeConnectionId,
 }: EdgeToolbarProps) {
   const { t } = useTranslation();
 
@@ -79,6 +83,8 @@ export function EdgeToolbar({
             />
           </>
         )}
+
+        {routeConnectionId && <RouteThroughRefButton connectionId={routeConnectionId} />}
 
         {/* Reset path — only when there are control points */}
         {canReset && (

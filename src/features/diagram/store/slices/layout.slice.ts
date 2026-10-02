@@ -1,6 +1,9 @@
 import type { EdgeControlPoint } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import { reconcileAutoRefs } from "./components.slice";
+import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
+import type { AutoRefAssignment } from "../actions.types";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import {
   getActiveComponents,
@@ -323,20 +326,25 @@ export const layoutSlice = (
       width?: number;
       height?: number;
     }>,
+    autoRefs?: readonly AutoRefAssignment[],
   ) => {
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d || layouts.length === 0) return;
 
-      pushHistory(state);
+      const scene = resolveActiveVersion(d);
+      // References the layout made or dissolved are a structural change: the
+      // checkpoint must not be coalesced into an earlier one.
+      const reconcilesRefs = autoRefs !== undefined && scene === null;
+      pushHistory(state, reconcilesRefs ? STRUCTURAL_MUTATION_MARKER : undefined);
+      // Before the positions: a reference made here has no layout to move yet.
+      if (reconcilesRefs) reconcileAutoRefs(d, autoRefs);
 
       // Tells the canvas's local node copy that these positions did not come
       // from the pointer, so its own are stale. Without it the store moved
       // every node and the picture did not change until a reload; see
       // `useLocalNodes.layoutWrite.test.ts`.
       state._lastLayoutWriteAt = (state._lastLayoutWriteAt ?? 0) + 1;
-
-      const scene = resolveActiveVersion(d);
 
       for (const { elementId, x, y, width, height } of layouts) {
         const layout =

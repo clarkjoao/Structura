@@ -65,6 +65,50 @@ function transformCanvasPoint(x: number, y: number, bbox: BoundingBox): { x: num
 }
 
 /**
+ * Carries `structura*` attributes on the node's cell: added to its `<object>`
+ * when it is one, else the cell is promoted to one — draw.io keeps the id and
+ * the label on the object and the rest on the `<mxCell>` inside it. Cells
+ * that follow (representations) are left as they are.
+ */
+export function withMetadata(
+  xml: string,
+  metadata: Readonly<Record<string, string>> | undefined,
+): string {
+  if (!metadata || Object.keys(metadata).length === 0) return xml;
+  const attributes = Object.entries(metadata)
+    .map(([key, value]) => `${key}="${escXml(value)}"`)
+    .join(" ");
+  if (xml.startsWith("<object ")) return `<object ${attributes} ${xml.slice("<object ".length)}`;
+  const head = /^<mxCell id="([^"]*)" value="([^"]*)" /.exec(xml);
+  const end = xml.indexOf("</mxCell>");
+  if (!head || end === -1) return xml;
+  const cell = xml.slice(head[0].length, end + "</mxCell>".length);
+  return (
+    `<object id="${head[1]}" label="${head[2]}" ${attributes}><mxCell ${cell}</object>` +
+    xml.slice(end + "</mxCell>".length)
+  );
+}
+
+/** A node's badges, under it, as plain cells no edge can reach. */
+function badgeCells(node: ExportNode, height: number): string {
+  let x = 0;
+  return (node.badges ?? [])
+    .map((badge) => {
+      const width = 12 + badge.label.length * 6;
+      const cell =
+        `<mxCell id="${escXml(badge.id)}" value="${escXml(badge.label)}" ` +
+        `style="rounded=1;arcSize=20;absoluteArcSize=1;html=1;fontSize=10;fontFamily=monospace;` +
+        `connectable=0;movable=0;resizable=0;structuraBadge=1;fillColor=${badge.accentColor};fillOpacity=10;` +
+        `strokeColor=${badge.accentColor};" vertex="1" parent="${escXml(node.id)}">` +
+        `<mxGeometry x="${x}" y="${(height || 0) + 4}" width="${width}" height="16" as="geometry"/>` +
+        `</mxCell>`;
+      x += width + 4;
+      return cell;
+    })
+    .join("");
+}
+
+/**
  * Turn a neutral `ExportModel` into mxGraph XML.
  *
  * Positions map 1:1: root nodes are shifted into positive space by the
@@ -107,7 +151,10 @@ export function buildMxGraphXml(model: ExportModel, opts: { wrapper: MxGraphWrap
           width: node.width,
           height: node.height,
         };
-    return buildCell(node, geometry, parentMx);
+    return (
+      withMetadata(buildCell(node, geometry, parentMx), node.metadata) +
+      badgeCells(node, geometry.height)
+    );
   });
 
   const edgeCells = edges.map((edge) => {

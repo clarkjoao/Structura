@@ -3,7 +3,7 @@ import { createElement } from "react";
 import FlowDividerNode from "@/features/canvas/nodes/FlowDividerNode";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { flowExportColours } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
-import VsmPanel from "@/features/canvas/panels/ElementPanel/VsmPanel";
+import SkinnedElementPanel from "@/features/canvas/panels/ElementPanel/SkinnedElementPanel";
 import { COMPONENT_TYPE_FLOW_DIVIDER } from "@/features/diagram/model/component-type-constants";
 import { isFlowDividerComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
@@ -12,7 +12,7 @@ const DIVIDER_W = 800;
 const DIVIDER_H = 24;
 
 function FlowDividerInspector(props: ElementInspectorProps) {
-  return createElement(VsmPanel, props);
+  return createElement(SkinnedElementPanel, props);
 }
 
 /**

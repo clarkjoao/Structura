@@ -54,6 +54,41 @@ export function edgeLayoutsFromLayoutResult(
     return cleared;
   }
 
+  const routes = handleAlignedRoutes(graph, result, edgesToStyle, positionOverrides);
+  const layouts: Record<string, EdgeLayout> = {};
+  for (const edge of edgesToStyle) {
+    const storeEdgeId = edgeIdOf(edge.id);
+    if (storeEdgeId === undefined) continue;
+    const route = routes.get(edge.id);
+    layouts[storeEdgeId] = {
+      points: (route?.corners ?? []).map((point) => ({
+        id: generateId("cp"),
+        x: point.x + waypointOffset.x,
+        y: point.y + waypointOffset.y,
+      })),
+    };
+  }
+  return layouts;
+}
+
+/** Where an edge leaves, where it arrives, and the corners the canvas draws it through. */
+export interface HandleAlignedRoute {
+  source: { x: number; y: number };
+  target: { x: number; y: number };
+  corners: Array<{ x: number; y: number }>;
+}
+
+/**
+ * ELK's corridor for each edge, moved onto the handle slots the canvas draws
+ * it from: the path an auto-layout leaves on screen. An edge with an endpoint
+ * the layout did not place has no route.
+ */
+export function handleAlignedRoutes(
+  graph: LayoutGraph,
+  result: LayoutResult,
+  edges: LayoutGraph["edges"] = graph.edges,
+  positionOverrides?: Map<string, { x: number; y: number }>,
+): Map<string, HandleAlignedRoute> {
   const absBoxes = absoluteBoxesFromLayout(graph, result, positionOverrides);
   const outgoingCount = new Map<string, number>();
   const incomingCount = new Map<string, number>();
@@ -62,17 +97,11 @@ export function edgeLayoutsFromLayoutResult(
     incomingCount.set(edge.targetId, (incomingCount.get(edge.targetId) ?? 0) + 1);
   }
 
-  const layouts: Record<string, EdgeLayout> = {};
-  for (const edge of edgesToStyle) {
-    const storeEdgeId = edgeIdOf(edge.id);
-    if (storeEdgeId === undefined) continue;
-
+  const routes = new Map<string, HandleAlignedRoute>();
+  for (const edge of edges) {
     const sourceBox = absBoxes.get(edge.sourceId);
     const targetBox = absBoxes.get(edge.targetId);
-    if (!sourceBox || !targetBox) {
-      layouts[storeEdgeId] = { points: [] };
-      continue;
-    }
+    if (!sourceBox || !targetBox) continue;
 
     const sourceCount = clampHandleCount(outgoingCount.get(edge.sourceId) ?? 1);
     const targetCount = clampHandleCount(incomingCount.get(edge.targetId) ?? 1);
@@ -89,18 +118,10 @@ export function edgeLayoutsFromLayoutResult(
 
     const source = handleAnchor(sourceBox, "source", sourceSlot, sourceCount);
     const target = handleAnchor(targetBox, "target", targetSlot, targetCount);
-    const route = result.edgeRoutes.get(edge.id);
-    const corners = alignElkRouteToHandles(route, source, target);
-
-    layouts[storeEdgeId] = {
-      points: corners.map((point) => ({
-        id: generateId("cp"),
-        x: point.x + waypointOffset.x,
-        y: point.y + waypointOffset.y,
-      })),
-    };
+    const corners = alignElkRouteToHandles(result.edgeRoutes.get(edge.id), source, target);
+    routes.set(edge.id, { source, target, corners });
   }
-  return layouts;
+  return routes;
 }
 
 function clampHandleCount(count: number): number {

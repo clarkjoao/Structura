@@ -45,6 +45,9 @@ function adaptElement(element: ElementDescriptor, canvas = element.canvas): Node
     handles: canvas.handles,
     canHaveParent: canvas.canHaveParent,
     canBeParent: canvas.canBeParent,
+    acceptsChildren: canvas.acceptsChildren,
+    collapsible: canvas.collapsible,
+    tabOnCompactParent: canvas.tabOnCompactParent,
     buildData: canvas.buildData,
     buildStyle: canvas.buildStyle,
     // NodeTypeDescriptor still wants both dimensions; an element that leaves
@@ -98,6 +101,14 @@ export function getDescriptor(type: ComponentType): NodeTypeDescriptor {
  */
 export function handleSpecForType(type: ComponentType): NodeHandleSpec {
   return getDescriptor(type).handles;
+}
+
+/**
+ * The handle set a component renders: its variant's, when its element draws
+ * it another way, else its type's.
+ */
+export function handleSpecFor(comp: Component): NodeHandleSpec {
+  return resolveNodeDescriptor(comp).handles;
 }
 
 export function resolveNodeDescriptor(comp: Component): NodeTypeDescriptor {

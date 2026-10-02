@@ -206,7 +206,6 @@ const EDGE_STYLE_BASE: Record<ExportEdgeStyle, string> = {
   "editable-step":
     "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
   // draw.io's own edge shape for it, registered in mxLeanMap.js.
-  zigzag: "edgeStyle=none;shape=mxgraph.lean_mapping.electronic_info_flow_edge;html=1;",
 };
 
 export function buildEdgeStyle(

@@ -1,3 +1,5 @@
+import { useSharedRefNotices } from "./shared/useSharedRefNotices";
+import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -124,6 +126,7 @@ const PendingNodeToolbars = React.memo(function PendingNodeToolbars({
 
 const Canvas = (props: CanvasProps = {}) => {
   useFlowSewNotices();
+  useSharedRefNotices();
   const nodeTypes = useNodeTypes();
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -425,6 +428,16 @@ const Canvas = (props: CanvasProps = {}) => {
               fitView={!hasSavedViewport(initialViewport)}
               onMoveEnd={eventHandlers.onMoveEnd}
             >
+              <SharedLayer
+                suggest={interactionMode.canEditCanvas}
+                components={resolvedSnapshot.components}
+                connections={resolvedSnapshot.connections}
+                onPick={(originalId) => {
+                  // A badge stands for its original: picking it is picking the original.
+                  const node = nodes.find((candidate) => candidate.id === originalId);
+                  if (node) eventHandlers.onNodeClick?.({} as never, node);
+                }}
+              />
               <PendingNodeToolbars
                 pendingNodeIds={pendingNodeIds}
                 pendingPreviews={pendingPreviews}
@@ -463,6 +476,7 @@ const Canvas = (props: CanvasProps = {}) => {
                         : undefined
                     }
                     onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
+                    onFocusElement={handleSearchSelect}
                   />
                 )}
               {/* Zoom, fit, view options and the minimap all move the viewport, and a

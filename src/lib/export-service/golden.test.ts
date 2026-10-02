@@ -352,86 +352,6 @@ describe("golden — flowchart shapes", () => {
 });
 
 /**
- * One instance of every Value Stream Mapping element, exported through the
- * generic stencil kind onto draw.io's own `mxgraph.lean_mapping.*` shapes.
- */
-describe("golden — value stream map", () => {
-  const vsm = (id: string, extra: Record<string, unknown>): Component =>
-    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
-
-  const components: Record<string, Component> = {
-    supplier: vsm("supplier", { type: "vsm-external" }),
-    customer: vsm("customer", {
-      type: "vsm-external",
-      role: "customer",
-      customColor: "hsl(var(--node-system))",
-      fill: "soft",
-    }),
-    process: vsm("process", {
-      type: "vsm-process",
-      operators: 2,
-      metrics: [
-        { id: "m1", key: "C/T", value: "45 s" },
-        { id: "m2", key: "C/O", value: "10 min" },
-      ],
-      fill: "solid",
-      customColor: "hsl(var(--node-container))",
-    }),
-    inventory: vsm("inventory", { type: "vsm-inventory", quantity: "1200 pcs", duration: "2 d" }),
-    supermarket: vsm("supermarket", { type: "vsm-supermarket", stroke: "dashed" }),
-    push: vsm("push", { type: "vsm-push" }),
-    kaizen: vsm("kaizen", { type: "vsm-kaizen", fill: "solid" }),
-    timeline: vsm("timeline", {
-      type: "vsm-timeline",
-      unit: "d",
-      segments: [
-        { id: "s1", wait: 5, process: 0.5 },
-        { id: "s2", wait: 3, process: 1 },
-      ],
-    }),
-  };
-
-  const ids = Object.keys(components);
-  const layouts: Record<string, NodeLayout> = Object.fromEntries(
-    ids.map((id, index) => [id, { elementId: id, x: index * 260, y: 0, width: 200, height: 100 }]),
-  );
-
-  // Information flow: manual is a plain straight edge, electronic a zigzag.
-  const connections: Record<string, Connection> = {
-    manual: {
-      id: "manual",
-      sourceId: "supplier",
-      targetId: "process",
-      label: "",
-      style: { edgeStyle: EdgeStyle.Straight },
-    },
-    electronic: {
-      id: "electronic",
-      sourceId: "process",
-      targetId: "customer",
-      label: "EDI",
-      style: { edgeStyle: EdgeStyle.Zigzag },
-    },
-  };
-
-  it("freezes every VSM element", () => {
-    const xml = exportDrawio(diagram("VSM", components, connections, layouts), catalog);
-    expect(xml).toMatchSnapshot();
-    expect(xml).toContain("shape=mxgraph.lean_mapping.outside_sources;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.manufacturing_process;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.inventory_box;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.supermarket;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.push_arrow;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.kaizen_lightening_burst;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.timeline2;");
-    expect(xml).toContain("shape=mxgraph.lean_mapping.electronic_info_flow_edge;");
-    // The totals are computed from the segments: 5 + 0.5 + 3 + 1 and 0.5 + 1.
-    expect(xml).toContain("Lead time: 9.5 d");
-    expect(xml).toContain("Value-added time: 1.5 d");
-  });
-});
-
-/**
  * A service blueprint: lanes with a flow-preset accent (a theme token, which
  * exports as its light value) and the three named lines.
  */
@@ -461,7 +381,6 @@ describe("golden — service blueprint", () => {
       parentId: "stage",
       customColor: "hsl(var(--node-person))",
     }),
-    vsmInherits: item("vsmInherits", { type: "vsm-process", parentId: "stage" }),
     inLegacyLane: item("inLegacyLane", {
       type: "process-node",
       flowShape: "rectangle",
@@ -488,9 +407,297 @@ describe("golden — service blueprint", () => {
     const styleOf = (id: string) =>
       new RegExp(`id="${id}" value="[^"]*" style="([^"]*)"`).exec(xml)?.[1];
     expect(styleOf("inherits")).toContain("strokeColor=#1d67c9;");
-    expect(styleOf("vsmInherits")).toContain("strokeColor=#1d67c9;");
     expect(styleOf("ownAccent")).toContain("strokeColor=#f59f0a;");
     expect(styleOf("inLegacyLane")).toContain("strokeColor=#65758b;");
     expect(xml).toMatch(/value="LINE OF VISIBILITY" style="line;[^"]*dashed=1;/);
+  });
+});
+
+/**
+ * A sharded store with its router and shards (one hot), expanded and compact:
+ * a draw.io container with the key bar as plain cells and the children as the
+ * container's own cells; compact is a collapsed container keeping its box.
+ */
+describe("golden — sharded store", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const build = (collapsed: boolean): Record<string, Component> => ({
+    app: item("app", { type: "container" }),
+    store: item("store", {
+      type: "deploy-sharded-store",
+      name: "Pedidos",
+      technology: "MongoDB 7",
+      keyExpression: "hash(customer_id)",
+      replicationFactor: 3,
+      ...(collapsed ? { collapsed: true } : {}),
+    }),
+    router: item("router", { type: "deploy-shard-router", name: "mongos", parentId: "store" }),
+    s1: item("s1", { type: "deploy-shard", name: "shard-1", parentId: "store", keyRange: "0–50%" }),
+    s2: item("s2", {
+      type: "deploy-shard",
+      name: "shard-2",
+      parentId: "store",
+      keyRange: "50–100%",
+      region: "sa-east-1",
+      hot: true,
+    }),
+  });
+  const layouts: Record<string, NodeLayout> = {
+    app: { elementId: "app", x: 0, y: 0, width: 200, height: 80 },
+    store: { elementId: "store", x: 320, y: 0, width: 600, height: 320 },
+    router: { elementId: "router", x: 16, y: 104, width: 160, height: 56 },
+    s1: { elementId: "s1", x: 16, y: 200, width: 180, height: 80 },
+    s2: { elementId: "s2", x: 208, y: 200, width: 180, height: 80 },
+  };
+  const connections: Record<string, Connection> = {
+    q: { id: "q", sourceId: "app", targetId: "router", label: "query" },
+    r: { id: "r", sourceId: "router", targetId: "s2", label: "route" },
+  };
+
+  it("freezes the expanded store", () => {
+    const xml = exportDrawio(diagram("Store", build(false), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="store"[^>]*style="swimlane;container=1;/);
+    expect(xml).toMatch(/id="s2"[^>]*parent="store"/);
+    expect(xml).toContain("hash · 2 shards");
+    expect(xml).toMatch(/id="store-key-0"[^>]*connectable=0;/);
+  });
+
+  it("freezes the compact store", () => {
+    const xml = exportDrawio(diagram("Store", build(true), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="store"[^>]*collapsed="1"/);
+    expect(xml).toContain('as="alternateBounds"');
+  });
+});
+
+/**
+ * A cluster with a meshed namespace holding ingress → service → Deployment,
+ * and a StatefulSet beside it; expanded and with the namespace compact. The
+ * glyphs are draw.io's `mxgraph.kubernetes.icon2`, the pods plain cells.
+ */
+describe("golden — kubernetes", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const build = (compact: boolean): Record<string, Component> => ({
+    cluster: item("cluster", {
+      type: "k8s-cluster",
+      name: "prod",
+      distribution: "EKS",
+      version: "1.30",
+      nodeCount: 6,
+      zoneCount: 3,
+    }),
+    ns: item("ns", {
+      type: "k8s-namespace",
+      name: "checkout",
+      parentId: "cluster",
+      meshInjection: true,
+      ...(compact ? { collapsed: true } : {}),
+    }),
+    ing: item("ing", {
+      type: "k8s-ingress",
+      name: "api",
+      parentId: "ns",
+      host: "api.shop.com",
+      ingressClass: "nginx",
+    }),
+    svc: item("svc", { type: "k8s-service", name: "checkout-svc", parentId: "ns", port: 8080 }),
+    deploy: item("deploy", {
+      type: "k8s-workload",
+      name: "checkout",
+      parentId: "ns",
+      replicas: 3,
+      hpaMin: 3,
+      hpaMax: 10,
+      image: "checkout:2.4",
+      resources: "250m / 512Mi",
+    }),
+    db: item("db", {
+      type: "k8s-workload",
+      name: "pg",
+      parentId: "cluster",
+      kind: "StatefulSet",
+      replicas: 2,
+    }),
+  });
+  const layouts: Record<string, NodeLayout> = {
+    cluster: { elementId: "cluster", x: 0, y: 0, width: 900, height: 480 },
+    ns: { elementId: "ns", x: 20, y: 80, width: 600, height: 360 },
+    ing: { elementId: "ing", x: 20, y: 80, width: 200, height: 56 },
+    svc: { elementId: "svc", x: 20, y: 180, width: 200, height: 56 },
+    deploy: { elementId: "deploy", x: 300, y: 150, width: 260, height: 120 },
+    db: { elementId: "db", x: 640, y: 150, width: 240, height: 120 },
+  };
+  const connections: Record<string, Connection> = {
+    a: { id: "a", sourceId: "ing", targetId: "svc", label: "/checkout" },
+    b: { id: "b", sourceId: "svc", targetId: "deploy", label: "8080" },
+  };
+
+  it("freezes the expanded cluster", () => {
+    const xml = exportDrawio(diagram("K8s", build(false), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="cluster"[^>]*style="swimlane;container=1;/);
+    expect(xml).toMatch(/id="ns"[^>]*dashed=1;[^>]*parent="cluster"/);
+    expect(xml).toMatch(/id="deploy"[^>]*shadow=1;[^>]*parent="ns"/);
+    expect(xml).toMatch(/id="deploy-icon"[^>]*shape=mxgraph\.kubernetes\.icon2;prIcon=deploy;/);
+    expect(xml).toMatch(/id="db-icon"[^>]*prIcon=sts;/);
+    expect(xml).toMatch(/id="svc-icon"[^>]*prIcon=svc;[^>]*connectable=0;/);
+    expect(xml).toMatch(/id="ing-icon"[^>]*prIcon=ing;/);
+    expect(xml).toContain("ClusterIP :8080");
+    expect(xml).toContain("Deployment · ×3 · HPA 3–10");
+    expect(xml).toContain("pg-1 · pvc-1");
+  });
+
+  it("freezes the compact namespace", () => {
+    const xml = exportDrawio(diagram("K8s", build(true), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="ns"[^>]*collapsed="1"/);
+    expect(xml).toMatch(/id="deploy"[^>]*parent="ns"/);
+  });
+});
+
+/**
+ * A workload as its pod: an init, the envoy sidecar and the main container,
+ * ingress → envoy → main; expanded and compact (drawn as a collapsed
+ * container whose label says its sidecars and inits).
+ */
+describe("golden — kubernetes pod", () => {
+  const item = (id: string, extra: Record<string, unknown>): Component =>
+    ({ id, name: id, description: "", parentId: null, ...extra }) as unknown as Component;
+
+  const build = (compact: boolean): Record<string, Component> => ({
+    ing: item("ing", { type: "k8s-ingress", name: "api", host: "api.shop.com" }),
+    wl: item("wl", {
+      type: "k8s-workload",
+      name: "checkout",
+      replicas: 2,
+      ...(compact ? { collapsed: true } : {}),
+    }),
+    wait: item("wait", {
+      type: "k8s-container",
+      name: "wait-db",
+      parentId: "wl",
+      podRole: "init",
+      order: 1,
+    }),
+    envoy: item("envoy", {
+      type: "k8s-container",
+      name: "envoy",
+      parentId: "wl",
+      podRole: "sidecar",
+      purpose: "proxy",
+      ports: [15001],
+    }),
+    app: item("app", {
+      type: "k8s-container",
+      name: "checkout-api",
+      parentId: "wl",
+      image: "checkout:2.4",
+      ports: [8080],
+    }),
+  });
+  const layouts: Record<string, NodeLayout> = {
+    ing: { elementId: "ing", x: 0, y: 120, width: 200, height: 56 },
+    wl: { elementId: "wl", x: 280, y: 0, width: 420, height: 280 },
+    wait: { elementId: "wait", x: 12, y: 116, width: 160, height: 56 },
+    envoy: { elementId: "envoy", x: 12, y: 184, width: 180, height: 72 },
+    app: { elementId: "app", x: 204, y: 184, width: 180, height: 72 },
+  };
+  const connections: Record<string, Connection> = {
+    a: { id: "a", sourceId: "ing", targetId: "envoy", label: "http" },
+    b: { id: "b", sourceId: "envoy", targetId: "app", label: "localhost:8080" },
+  };
+
+  it("freezes the expanded pod", () => {
+    const xml = exportDrawio(diagram("Pod", build(false), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="envoy"[^>]*parent="wl"/);
+    expect(xml).toContain("sidecar · proxy");
+    expect(xml).toMatch(/id="wait" value="1\. wait-db[^"]*"[^>]*dashed=1;/);
+    // The in-pod link is dashed; the ingress link is not.
+    expect(xml).toMatch(/id="b"[^>]*dashed=1;/);
+    expect(xml).not.toMatch(/id="a"[^>]*dashed=1;/);
+  });
+
+  it("freezes the compact pod", () => {
+    const xml = exportDrawio(diagram("Pod", build(true), connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(/id="wl"[^>]*collapsed="1"/);
+    expect(xml).toContain("sidecars: envoy · init ×1");
+    expect(xml).toMatch(/id="app"[^>]*parent="wl"/);
+  });
+});
+
+/**
+ * A shared element in each mode, faithful to the drawing: in badge mode its
+ * incoming edges are not exported, its object lists its consumers and each
+ * consumer wears its badge; in ref mode its references are dashed cells
+ * that carry what they stand for, and the edges end on them.
+ */
+describe("golden — shared", () => {
+  const item = (id: string, extra: Record<string, unknown> = {}): Component =>
+    ({
+      id,
+      name: id,
+      description: "",
+      parentId: null,
+      type: "container",
+      ...extra,
+    }) as unknown as Component;
+  const layouts: Record<string, NodeLayout> = {
+    auth: { elementId: "auth", x: 400, y: 0, width: 200, height: 80 },
+    orders: { elementId: "orders", x: 0, y: 0, width: 200, height: 80 },
+    billing: { elementId: "billing", x: 0, y: 200, width: 200, height: 80 },
+    db: { elementId: "db", x: 800, y: 0, width: 200, height: 80 },
+    r1: { elementId: "r1", x: 250, y: 200, width: 200, height: 48 },
+  };
+
+  it("freezes badge mode", () => {
+    const components = {
+      auth: item("auth", { name: "Auth", shared: { mode: "badge" } }),
+      orders: item("orders", { name: "Orders" }),
+      billing: item("billing", { name: "Billing" }),
+      db: item("db", { name: "DB" }),
+    };
+    const connections: Record<string, Connection> = {
+      e1: { id: "e1", sourceId: "orders", targetId: "auth", label: "gRPC" },
+      e2: { id: "e2", sourceId: "billing", targetId: "auth", label: "HTTP" },
+      e3: { id: "e3", sourceId: "auth", targetId: "db", label: "SQL" },
+    };
+    const xml = exportDrawio(diagram("Shared", components, connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).not.toMatch(/id="e1"/);
+    expect(xml).not.toMatch(/id="e2"/);
+    expect(xml).toMatch(/id="e3"/);
+    expect(xml).toMatch(
+      /<object structuraShared="badge" structuraConsumers="orders,billing"[^>]*id="auth"/,
+    );
+    expect(xml).toMatch(
+      /id="orders-shared-auth" value="Auth"[^>]*structuraBadge=1;[^>]*parent="orders"/,
+    );
+    expect(xml).toMatch(/id="billing-shared-auth"[^>]*parent="billing"/);
+  });
+
+  it("freezes ref mode", () => {
+    const components = {
+      auth: item("auth", { name: "Auth", shared: { mode: "ref" } }),
+      orders: item("orders", { name: "Orders" }),
+      billing: item("billing", { name: "Billing" }),
+      r1: item("r1", { name: "Auth", type: "shared-ref", refOf: "auth" }),
+    };
+    const connections: Record<string, Connection> = {
+      e1: { id: "e1", sourceId: "orders", targetId: "auth", label: "gRPC" },
+      e2: { id: "e2", sourceId: "billing", targetId: "r1", label: "HTTP" },
+    };
+    const xml = exportDrawio(diagram("Shared", components, connections, layouts), catalog);
+    expect(xml).toMatchSnapshot();
+    expect(xml).toMatch(
+      /<object id="r1" label="Auth \(ref\)" structuraRefOf="auth"><mxCell style="[^"]*dashed=1;/,
+    );
+    expect(xml).toMatch(/id="e2"[^>]*target="r1"/);
+    expect(xml).toMatch(/structuraShared="ref"/);
   });
 });

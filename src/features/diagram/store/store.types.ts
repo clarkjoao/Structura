@@ -74,6 +74,11 @@ export interface AppState {
    * cleared by whoever shows it.
    */
   _flowSewNotices: { id: number; notices: import("../utils/flow-repair").FlowSewNotice[] } | null;
+  /**
+   * References removed with the shared element they stood for, for the UI to
+   * say. Not persisted; a new id means a new removal.
+   */
+  _sharedRefNotice: { id: number; name: string; count: number } | null;
   clipboard: ClipboardEntry | null;
 }
 

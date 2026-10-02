@@ -2,6 +2,37 @@ import type { Component } from "../model/component.types";
 import type { Connection, ConnectionIntent } from "../model/connection.types";
 import type { Flow, FlowStep } from "../model/flow.types";
 import { conditionKindOf } from "./flow-condition-kind";
+import { isTypedContainerType } from "@/features/elements/containment";
+
+/**
+ * How a participant is named: a child of a typed container by its path,
+ * "Pedidos › shard-2", so two shards called shard-1 in two stores stay two
+ * participants; anything else by its name.
+ */
+export function participantName(
+  componentId: string,
+  components: Record<string, Component>,
+): string | undefined {
+  const component = components[componentId];
+  if (!component) return undefined;
+  const path = [component.name];
+  let parentId = component.parentId;
+  const seen = new Set<string>([componentId]);
+  while (parentId && !seen.has(parentId)) {
+    seen.add(parentId);
+    const parent = components[parentId];
+    if (!parent || !isTypedContainerType(parent.type)) break;
+    path.unshift(parent.name);
+    parentId = parent.parentId;
+  }
+  return path.join(" › ");
+}
+
+/** The alias comes from the element's own name, the last part of its path. */
+function ownName(participant: string): string {
+  const parts = participant.split(" › ");
+  return parts[parts.length - 1];
+}
 
 const INTENT_ARROW: Record<ConnectionIntent, string> = {
   dependency: "-->",
@@ -46,14 +77,14 @@ function buildParticipantAliasMap(
 
   for (const step of steps) {
     if (step.componentId) {
-      const name = components[step.componentId]?.name;
+      const name = participantName(step.componentId, components);
       if (name) addName(name);
     }
     if (step.connectionId) {
       const conn = connections[step.connectionId];
       if (conn) {
-        const srcName = components[conn.sourceId]?.name;
-        const tgtName = components[conn.targetId]?.name;
+        const srcName = participantName(conn.sourceId, components);
+        const tgtName = participantName(conn.targetId, components);
         if (srcName) addName(srcName);
         if (tgtName) addName(tgtName);
       }
@@ -64,10 +95,10 @@ function buildParticipantAliasMap(
   const usedAliases = new Set<string>();
 
   for (const name of namesOrdered) {
-    let alias = toAlias(name);
+    let alias = toAlias(ownName(name));
     let counter = 2;
     while (usedAliases.has(alias)) {
-      alias = `${toAlias(name)}${counter}`;
+      alias = `${toAlias(ownName(name))}${counter}`;
       counter += 1;
     }
     usedAliases.add(alias);
@@ -117,8 +148,8 @@ export function stepsToMermaid(
         const isResponse = step.payloadDirection === "response";
         const sourceId = isResponse ? connection.targetId : connection.sourceId;
         const targetId = isResponse ? connection.sourceId : connection.targetId;
-        const sourceName = components[sourceId]?.name ?? "?";
-        const targetName = components[targetId]?.name ?? "?";
+        const sourceName = participantName(sourceId, components) ?? "?";
+        const targetName = participantName(targetId, components) ?? "?";
         const intent = step.connectionIntent ?? connection.intent ?? "call";
         /**
          * The glyph carries two facts, and both have to survive the trip: a
@@ -151,7 +182,7 @@ export function stepsToMermaid(
         }
       }
     } else if (step.componentId) {
-      const componentName = components[step.componentId]?.name ?? "?";
+      const componentName = participantName(step.componentId, components) ?? "?";
       const content = step.note ?? step.description;
       if (content) {
         lines.push(`${indent}Note over ${alias(componentName)}: ${content}`);

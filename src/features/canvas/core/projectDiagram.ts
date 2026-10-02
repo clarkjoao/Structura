@@ -6,6 +6,8 @@ import { buildEdge, type EdgeBuildParams } from "../edges/data/buildEdges";
 import type { NodeBuildContext, NodeTypeDescriptor } from "../nodes/node-types/types";
 import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 import type { ViewNode, ViewSnapshot } from "./resolveViewSnapshot";
+import { compactTabBox } from "./compactView";
+import { withPodLinkStyle } from "@/features/diagram/utils/k8s-pod";
 
 /*
  * The whole projection, Diagram view → React Flow arrays, as one pure step.
@@ -94,15 +96,24 @@ function projectNode(
 ): Node {
   const { component, layout } = viewNode;
   const descriptor = describe(component);
+  // A tab on a compact parent is drawn at a box derived from the parent's
+  // width, sticking out of its right edge; its stored layout is left alone.
+  const tab =
+    viewNode.tabIndex !== undefined && component.parentId
+      ? compactTabBox(viewNode.tabIndex, view.nodeLayouts[component.parentId]?.width ?? 0)
+      : undefined;
   const common = {
     id: component.id,
     type: descriptor.rfType,
-    position: { x: layout?.x ?? 0, y: layout?.y ?? 0 },
+    position: tab ? { x: tab.x, y: tab.y } : { x: layout?.x ?? 0, y: layout?.y ?? 0 },
     zIndex: viewNode.zIndex,
-    ...(viewNode.isChild ? { parentId: component.parentId!, extent: "parent" as const } : {}),
+    ...(viewNode.isChild
+      ? { parentId: component.parentId!, ...(tab ? {} : { extent: "parent" as const }) }
+      : {}),
     hidden: viewNode.isHidden,
     data: descriptor.buildData(component, ctx) as Record<string, unknown>,
   };
+  const tabSize = tab ? { width: tab.width, height: tab.height } : {};
 
   if (policy.kind === "read") {
     return {
@@ -111,7 +122,9 @@ function projectNode(
       draggable: false,
       selectable: false,
       connectable: false,
-      style: descriptor.buildStyle?.(component, ctx),
+      style: tab
+        ? { ...descriptor.buildStyle?.(component, ctx), ...tabSize }
+        : descriptor.buildStyle?.(component, ctx),
     };
   }
 
@@ -120,13 +133,14 @@ function projectNode(
     ...common,
     connectable: descriptor.connectable,
     selected: false,
-    draggable: descriptor.draggable ?? !lockedInGroup,
+    // A tab's place is derived from its parent: dragging it would write a position nobody sees.
+    draggable: tab ? false : (descriptor.draggable ?? !lockedInGroup),
     selectable: descriptor.selectable ?? !lockedInGroup,
     focusable: descriptor.focusable ?? !lockedInGroup,
     className: undefined,
     ...(descriptor.dragHandle ? { dragHandle: descriptor.dragHandle } : {}),
     // Always an object on the editor path: overlays write opacity into it.
-    style: { ...descriptor.buildStyle?.(component, ctx) } as CSSProperties,
+    style: { ...descriptor.buildStyle?.(component, ctx), ...tabSize } as CSSProperties,
   };
 }
 
@@ -155,7 +169,8 @@ export function projectEdges(
   const assignmentById = new Map(handleAssignments.map((entry) => [entry.connId, entry]));
   const reading = policy.kind === "read";
   return view.shownConnections.map((connection) => {
-    const edge = buildEdge(connection, assignmentById.get(connection.id), {
+    const drawn = withPodLinkStyle(connection, view.components);
+    const edge = buildEdge(drawn, assignmentById.get(connection.id), {
       diagram: ctx.diagram,
       selectedEdgeId: null,
       isPlaying: ctx.isPlaying,

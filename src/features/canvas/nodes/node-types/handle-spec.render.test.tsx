@@ -163,14 +163,7 @@ const NARROW_TYPES = [
   "external-element",
   "svg",
   "endpoint",
-  "vsm-external",
   "flow-divider",
-  "vsm-timeline",
-  "vsm-kaizen",
-  "vsm-push",
-  "vsm-supermarket",
-  "vsm-inventory",
-  "vsm-process",
 ] as const;
 
 describe("declared handles reach the DOM", () => {

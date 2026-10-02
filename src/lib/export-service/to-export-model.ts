@@ -1,3 +1,6 @@
+import { hideSharedEdges, sharedMode, sharedUses } from "@/features/diagram/utils/shared";
+import { elementAccent } from "@/features/canvas/shared/sharedLayerModel";
+import { exportColorHex } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import {
   diagramWithResolvedScene,
   EdgeMarker,
@@ -29,10 +32,12 @@ import type {
   ExportStrokeStyle,
 } from "../export-core";
 import { getElement, isRegisteredElementComponent } from "@/features/elements/element.registry";
+import type { ExportContext } from "@/features/elements/element.types";
 import { validateDiagram } from "./validate-diagram";
 import { withInheritedAccent } from "@/features/canvas/nodes/laneAccent";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
 import { edgeSides, resolveEdgeRouting } from "./edge-routing";
+import { withPodLinkStyle } from "@/features/diagram/utils/k8s-pod";
 import type { HandleSlots } from "./edge-routing";
 
 /**
@@ -63,8 +68,6 @@ function mapEdgeStyle(s: EdgeStyle): ExportEdgeStyle {
       return "editable";
     case EdgeStyle.EditableStep:
       return "editable-step";
-    case EdgeStyle.Zigzag:
-      return "zigzag";
   }
 }
 
@@ -223,6 +226,7 @@ function mapNode(
   c: Component,
   nl: NodeLayout,
   services: Record<string, ServiceDefinition>,
+  context: ExportContext,
 ): ExportNode {
   const base: BaseGeometry = {
     id: c.id,
@@ -236,7 +240,7 @@ function mapNode(
   // Registered elements declare their own draw.io mapping (decision 6); the
   // guard chain below still owns every type that has not migrated.
   if (isRegisteredElementComponent(c)) {
-    const node = getElement(c.type)!.export.drawio.toExportNode(c, base);
+    const node = getElement(c.type)!.export.drawio.toExportNode(c, base, context);
     // Business-catalog service names live outside the descriptor contract; the
     // adapter fills them in for C4 cards the way the legacy branch did.
     if (node.kind === "c4" && node.serviceId) {
@@ -406,11 +410,46 @@ export function diagramToExportModel(
     const comp = components[id];
     const parent = comp.parentId ? components[comp.parentId] : undefined;
     const exported = withInheritedAccent(comp, parent, !!getElement(comp.type)?.skin);
-    nodes.push(mapNode(exported, nl, services));
+    nodes.push(mapNode(exported, nl, services, { components, layouts: layoutMap }));
   }
 
-  const edges: ExportEdge[] = Object.values(connections).map((conn) =>
-    mapEdge(conn, edgeLayouts[conn.id], layoutMap, components, handleSlots.get(conn.id)),
+  // Shared elements, fiel ao desenho: a badge-mode element's hidden edges are
+  // not exported as edges; its consumers go on its object and each consumer
+  // wears its badge. The model keeps everything; the importer reads it back.
+  const byNodeId = new Map(nodes.map((node) => [node.id, node]));
+  for (const component of Object.values(components)) {
+    const mode = sharedMode(component);
+    if (mode === "edges") continue;
+    const node = byNodeId.get(component.id);
+    if (!node) continue;
+    const consumers = [
+      ...new Set(sharedUses(component.id, components, connections).map((use) => use.consumerId)),
+    ];
+    node.metadata = {
+      ...node.metadata,
+      structuraShared: mode,
+      ...(mode === "badge" ? { structuraConsumers: consumers.join(",") } : {}),
+    };
+    if (mode !== "badge") continue;
+    const accentColor = exportColorHex(elementAccent(component)) ?? "#64748b";
+    for (const consumerId of consumers) {
+      const consumer = byNodeId.get(consumerId);
+      if (!consumer) continue;
+      consumer.badges = [
+        ...(consumer.badges ?? []),
+        { id: `${consumerId}-shared-${component.id}`, label: component.name, accentColor },
+      ];
+    }
+  }
+
+  const edges: ExportEdge[] = hideSharedEdges(Object.values(connections), components).map((conn) =>
+    mapEdge(
+      withPodLinkStyle(conn, components),
+      edgeLayouts[conn.id],
+      layoutMap,
+      components,
+      handleSlots.get(conn.id),
+    ),
   );
 
   return { name: diagramForExport.name, nodes, edges };
