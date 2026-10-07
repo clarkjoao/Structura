@@ -204,3 +204,80 @@ describe("insertGeneratedGraph", () => {
     });
   });
 });
+
+describe("insertGeneratedGraph — linking to existing components", () => {
+  const leaf = (externalId: string, parentExternalId: string | null): GeneratedNodeInput => ({
+    externalId,
+    type: "container",
+    name: externalId,
+    parentExternalId,
+    x: 10,
+    y: 10,
+  });
+
+  it("ignores ids outside the batch by default", () => {
+    const { store, diagramId } = storeWithDiagram();
+    const panel = store.getState().addComponent("panel", "Existing", null);
+
+    const result = store
+      .getState()
+      .insertGeneratedGraph(
+        [leaf("a", panel.id)],
+        [{ sourceExternalId: "a", targetExternalId: panel.id, label: "" }],
+      );
+
+    const diagram = store.getState().diagrams[diagramId];
+    expect(diagram.snapshot.components[result.componentIdByExternalId.a].parentId).toBeNull();
+    expect(result.connectionIds).toEqual([]);
+  });
+
+  it("nests in and connects to existing components with linkExisting", () => {
+    const { store, diagramId } = storeWithDiagram();
+    const panel = store.getState().addComponent("panel", "Existing", null);
+    const system = store.getState().addComponent("system", "Billing", null);
+
+    const result = store
+      .getState()
+      .insertGeneratedGraph(
+        [leaf("a", panel.id)],
+        [{ sourceExternalId: "a", targetExternalId: system.id, label: "calls" }],
+        { linkExisting: true },
+      );
+
+    const diagram = store.getState().diagrams[diagramId];
+    expect(diagram.snapshot.components[result.componentIdByExternalId.a].parentId).toBe(panel.id);
+    const [connectionId] = result.connectionIds;
+    expect(diagram.snapshot.connections[connectionId]).toMatchObject({
+      sourceId: result.componentIdByExternalId.a,
+      targetId: system.id,
+      label: "calls",
+    });
+  });
+
+  it("lands edges between existing components alone, as one undo step", () => {
+    const { store, diagramId } = storeWithDiagram();
+    const a = store.getState().addComponent("system", "A", null);
+    const b = store.getState().addComponent("system", "B", null);
+
+    const result = store
+      .getState()
+      .insertGeneratedGraph([], [{ sourceExternalId: a.id, targetExternalId: b.id, label: "" }], {
+        linkExisting: true,
+      });
+
+    expect(result.connectionIds).toHaveLength(1);
+    store.getState().undo();
+    expect(Object.keys(store.getState().diagrams[diagramId].snapshot.connections)).toEqual([]);
+  });
+
+  it("carries a description", () => {
+    const { store, diagramId } = storeWithDiagram();
+    const { componentIdByExternalId } = store
+      .getState()
+      .insertGeneratedGraph([{ ...leaf("a", null), description: "Orders API" }], []);
+    expect(
+      store.getState().diagrams[diagramId].snapshot.components[componentIdByExternalId.a]
+        .description,
+    ).toBe("Orders API");
+  });
+});
