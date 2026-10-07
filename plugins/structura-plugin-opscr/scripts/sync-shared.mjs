@@ -1,76 +1,71 @@
 #!/usr/bin/env node
 /**
- * Sync the framework-agnostic opscr mapping into this plugin as the single source
- * of truth for how an opscr workspace is drawn.
+ * Sync the host's framework-agnostic opscr libraries into this plugin, as the single source
+ * of truth for how an opscr workspace is drawn and laid out.
  *
- * Copies every file from the host's `src/lib/opscr-mapping` (except tests) into
- * `src/generated/opscr-mapping` here, verbatim + a DO-NOT-EDIT banner. The plugin
- * is a separate Vite IIFE bundle with no `@` alias, so it cannot import the host
- * core directly — this mirrors the `sync-types` mechanism for runtime code.
+ * Copies every non-test file of `src/lib/opscr-mapping` and `src/lib/opscr-layout` from the
+ * host into `src/generated/<name>/` here, verbatim + a DO-NOT-EDIT banner. The plugin is a
+ * separate Vite IIFE bundle with no `@` alias, so it cannot import the host directly — the
+ * same mechanism the LeanIX plugin uses for `export-core`. The folders stay siblings, so the
+ * layout's `../opscr-mapping` import resolves the same way here.
  *
  *   node scripts/sync-shared.mjs          # write the generated files
- *   node scripts/sync-shared.mjs --check  # fail if any is stale (for CI)
+ *   node scripts/sync-shared.mjs --check  # fail if any is stale
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const SOURCE_DIR = resolve(here, "../../../src/lib/opscr-mapping");
-const TARGET_DIR = resolve(here, "../src/generated/opscr-mapping");
+const LIBS = ["opscr-mapping", "opscr-layout"];
+const sourceDir = (lib) => resolve(here, "../../../src/lib", lib);
+const targetDir = (lib) => resolve(here, "../src/generated", lib);
 
-const BANNER = `/**
+const banner = (lib) => `/**
  * AUTO-GENERATED — DO NOT EDIT BY HAND.
- * Verbatim copy of the host opscr mapping (src/lib/opscr-mapping), synced via
- * \`npm run sync-shared\`. It is the single source of truth for opscr
- * projection shared by the app and this plugin; edit the host files and re-sync.
+ * Verbatim copy of the host's src/lib/${lib}, synced via \`npm run sync-shared\`.
+ * Edit the host files and re-sync instead of changing this file.
  */
 `;
 
-const sourceFiles = readdirSync(SOURCE_DIR)
-  .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
-  .sort();
+const sourceFiles = (lib) =>
+  readdirSync(sourceDir(lib))
+    .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
+    .sort();
+const generate = (lib, file) =>
+  banner(lib) + "\n" + readFileSync(join(sourceDir(lib), file), "utf8");
 
-function generate(file) {
-  return BANNER + "\n" + readFileSync(join(SOURCE_DIR, file), "utf8");
-}
-
-const isCheck = process.argv.includes("--check");
-
-if (isCheck) {
+if (process.argv.includes("--check")) {
   let stale = false;
-  const existing = existsSync(TARGET_DIR)
-    ? readdirSync(TARGET_DIR).filter((f) => f.endsWith(".ts"))
-    : [];
-  const expected = new Set(sourceFiles);
-  for (const f of existing) {
-    if (!expected.has(f)) {
-      stale = true;
-      console.error(`[sync-shared] stray generated file: ${f}`);
+  for (const lib of LIBS) {
+    const expected = new Set(sourceFiles(lib));
+    const existing = existsSync(targetDir(lib))
+      ? readdirSync(targetDir(lib)).filter((f) => f.endsWith(".ts"))
+      : [];
+    for (const f of existing) {
+      if (!expected.has(f)) {
+        stale = true;
+        console.error(`[sync-shared] stray generated file: ${lib}/${f}`);
+      }
     }
-  }
-  for (const f of sourceFiles) {
-    let current = "";
-    try {
-      current = readFileSync(join(TARGET_DIR, f), "utf8");
-    } catch {
-      // missing counts as stale
-    }
-    if (current !== generate(f)) {
-      stale = true;
-      console.error(`[sync-shared] out of date: ${f}`);
+    for (const f of expected) {
+      const path = join(targetDir(lib), f);
+      if (!existsSync(path) || readFileSync(path, "utf8") !== generate(lib, f)) {
+        stale = true;
+        console.error(`[sync-shared] out of date: ${lib}/${f}`);
+      }
     }
   }
   if (stale) {
-    console.error("[sync-shared] generated opscr mapping is stale. Run: npm run sync-shared");
+    console.error("[sync-shared] generated opscr libraries are stale. Run: npm run sync-shared");
     process.exit(1);
   }
-  console.log("[sync-shared] generated opscr mapping is in sync.");
+  console.log("[sync-shared] generated opscr libraries are in sync.");
 } else {
-  rmSync(TARGET_DIR, { recursive: true, force: true });
-  mkdirSync(TARGET_DIR, { recursive: true });
-  for (const f of sourceFiles) {
-    writeFileSync(join(TARGET_DIR, f), generate(f));
+  for (const lib of LIBS) {
+    rmSync(targetDir(lib), { recursive: true, force: true });
+    mkdirSync(targetDir(lib), { recursive: true });
+    for (const f of sourceFiles(lib)) writeFileSync(join(targetDir(lib), f), generate(lib, f));
+    console.log(`[sync-shared] wrote ${sourceFiles(lib).length} files to src/generated/${lib}`);
   }
-  console.log(`[sync-shared] wrote ${sourceFiles.length} files to src/generated/opscr-mapping`);
 }
