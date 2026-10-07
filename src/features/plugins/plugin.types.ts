@@ -8,7 +8,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.5.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.6.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -22,6 +22,7 @@ export const KNOWN_PLUGIN_CAPABILITIES = [
   "storage",
   "network",
   "files:folder",
+  "llm:context",
 ] as const;
 
 export type PluginCapability = (typeof KNOWN_PLUGIN_CAPABILITIES)[number];
@@ -355,6 +356,41 @@ export interface PluginFolder {
   write(fileName: string, text: string): Promise<void>;
 }
 
+/** v1.6 — what a chat context is told about the turn. */
+export interface PluginChatTurnInput {
+  diagramId: string;
+  /** The app language the reply should be written in. */
+  locale: "en" | "pt-BR";
+  /** 0 for the user's message; 1, 2… for retries the context asked for. */
+  attempt: number;
+  maxAttempts: number;
+}
+
+/** v1.6 — the outcome of one model reply. */
+export interface PluginChatTurnResult {
+  /** Text shown in the thread as the assistant's message. */
+  reply: string;
+  /**
+   * Sent back to the model as the next user turn (not shown), e.g. validation errors to fix.
+   * Ignored once `attempt` reaches `maxAttempts - 1`.
+   */
+  retry?: string;
+}
+
+/**
+ * v1.6 — capability "llm:context". Takes over the chat for the diagrams it applies to: its
+ * system prompt replaces the built-in one and it handles the model's replies itself.
+ */
+export interface PluginChatContext {
+  id: string;
+  appliesTo(diagramId: string): boolean;
+  systemPrompt(input: PluginChatTurnInput): string | Promise<string>;
+  handleReply(
+    text: string,
+    input: PluginChatTurnInput,
+  ): PluginChatTurnResult | Promise<PluginChatTurnResult>;
+}
+
 /** v1.4 — capability "files:folder". Folders are remembered per plugin and binding id. */
 export interface PluginFiles {
   /** False where the browser cannot pick folders (no File System Access API). */
@@ -446,6 +482,12 @@ export interface StructuraPluginApi {
 
   /** v1.4 — capability "files:folder". Folders the user picked for this plugin. */
   readonly files: PluginFiles;
+
+  /**
+   * v1.6 — capability "llm:context". Provide the chat's context and reply handling for the
+   * diagrams `context.appliesTo` accepts. Unregistered when the plugin deactivates.
+   */
+  registerChatContext(context: PluginChatContext): void;
 
   /** v1.4 — host UI building blocks plugins render instead of bundling their own. */
   readonly ui: {
