@@ -131,6 +131,11 @@ to the page (there is no sandbox), so only install plugins you trust.
 
 See [plugins/README.md](plugins/README.md) for the API and how to build and bundle plugins.
 
+For [opscr](plugins/structura-plugin-opscr/README.md) architecture-as-code manifests, Structura has
+an importer plugin ([`plugins/structura-plugin-opscr/`](plugins/structura-plugin-opscr/)) and a VSCode
+extension with a live preview ([`extensions/vscode-opscr/`](extensions/vscode-opscr/)). Both need a
+local opscr checkout until it is published.
+
 ## Documentation
 
 - [docs/README.md](docs/README.md) — map of the documentation and reading order.
