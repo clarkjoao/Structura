@@ -11,6 +11,7 @@ plugins/
 │   └── mermaid-import/ # Mermaid flowchart importer
 ├── structura-plugin-example-ui/  # React/TypeScript plugin example
 ├── structura-plugin-leanix/      # LeanIX integration (export diagrams to LeanIX)
+├── structura-plugin-opscr/       # opscr manifests importer (needs a local opscr: see its README)
 └── README.md           # This file
 ```
 
