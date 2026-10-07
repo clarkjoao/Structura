@@ -281,3 +281,87 @@ describe("insertGeneratedGraph — linking to existing components", () => {
     ).toBe("Orders API");
   });
 });
+
+describe("applyGraphChanges", () => {
+  const node = (
+    externalId: string,
+    parentExternalId: string | null = null,
+  ): GeneratedNodeInput => ({
+    externalId,
+    type: "container",
+    name: externalId,
+    parentExternalId,
+    x: 10,
+    y: 10,
+  });
+
+  it("removes, updates, moves, adds and connects in one undo step", () => {
+    const { store, diagramId } = storeWithDiagram();
+    const keep = store.getState().addComponent("system", "Keep", null);
+    const gone = store.getState().addComponent("system", "Gone", null);
+    const panel = store.getState().addComponent("panel", "Panel", null);
+    const snapshotBefore = JSON.stringify(store.getState().diagrams[diagramId].snapshot);
+
+    const result = store.getState().applyGraphChanges({
+      remove: [gone.id],
+      update: [{ id: keep.id, name: "Kept", description: "updated", technology: "Go" }],
+      move: [{ id: keep.id, x: 500, y: 600 }],
+      add: [node("new", panel.id)],
+      connect: [
+        { sourceExternalId: "new", targetExternalId: keep.id, label: "calls" },
+        { sourceExternalId: "new", targetExternalId: "ghost", label: "" },
+      ],
+    });
+
+    const diagram = store.getState().diagrams[diagramId];
+    const components = diagram.snapshot.components;
+    expect(components[gone.id]).toBeUndefined();
+    expect(components[keep.id]).toMatchObject({
+      name: "Kept",
+      description: "updated",
+      technology: "Go",
+    });
+    expect(diagram.nodeLayouts[keep.id]).toMatchObject({ x: 500, y: 600 });
+    const created = result.componentIdByExternalId.new;
+    expect(components[created].parentId).toBe(panel.id);
+    expect(result.connectionIds[1]).toBeNull();
+    expect(diagram.snapshot.connections[result.connectionIds[0]!]).toMatchObject({
+      sourceId: created,
+      targetId: keep.id,
+    });
+
+    store.getState().undo();
+    expect(JSON.stringify(store.getState().diagrams[diagramId].snapshot)).toBe(snapshotBefore);
+  });
+
+  it("skips ids that are not in the diagram", () => {
+    const { store, diagramId } = storeWithDiagram();
+    const keep = store.getState().addComponent("system", "Keep", null);
+    store.getState().applyGraphChanges({
+      remove: ["nope"],
+      disconnect: ["nope"],
+      update: [{ id: "nope", name: "x" }],
+      move: [{ id: "nope", x: 1, y: 1 }],
+    });
+    expect(Object.keys(store.getState().diagrams[diagramId].snapshot.components)).toEqual([
+      keep.id,
+    ]);
+  });
+
+  it("sets and clears a catalog service", () => {
+    const { store, diagramId } = storeWithDiagram();
+    const { componentIdByExternalId } = store.getState().applyGraphChanges({
+      add: [{ ...node("db"), type: "aws-database", cloudServiceId: "rds" }],
+    });
+    const id = componentIdByExternalId.db;
+    store.getState().applyGraphChanges({ update: [{ id, cloudServiceId: "dynamodb" }] });
+    expect(store.getState().diagrams[diagramId].snapshot.components[id]).toMatchObject({
+      cloudServiceId: "dynamodb",
+    });
+    store.getState().applyGraphChanges({ update: [{ id, cloudServiceId: "" }] });
+    expect(
+      (store.getState().diagrams[diagramId].snapshot.components[id] as { cloudServiceId?: string })
+        .cloudServiceId,
+    ).toBeUndefined();
+  });
+});

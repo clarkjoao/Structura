@@ -102,6 +102,9 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   if (el.isContentEditable) return true;
   // Monaco renders div[role="textbox"] as its main editor
   if (el.getAttribute?.("role") === "textbox") return true;
+  // Newer Monaco takes keys on a `div.native-edit-context` (EditContext API) that has no
+  // textbox role; anything inside an editor is typing, not a canvas shortcut.
+  if (el.closest?.(".monaco-editor")) return true;
   // Walk up to 5 levels to catch editors that delegate focus to children
   let parent = el.parentElement;
   let depth = 0;

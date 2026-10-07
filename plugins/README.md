@@ -78,6 +78,7 @@ See [docs/architecture/extension-points.md](../docs/architecture/extension-point
 | `ui:panels`         | Add panels to toolbar or inspector via `registerPanel()`                |
 | `ui:overlays`       | Show toasts and modals via `overlay.showToast()`, `overlay.openModal()` |
 | `canvas:node-types` | Register custom node types via `registerNodeType()`                     |
+| `files:folder`      | Read and write a folder the user picked via `files` (API 1.4)           |
 
 ## Developing Plugins
 
@@ -148,6 +149,48 @@ StructuraPlugin.registerImporter({
 A `parentKey` that is missing, names a component that cannot hold this type, or closes a cycle
 puts the component at the top level. Connections whose ends cannot be resolved are skipped and
 counted.
+
+### Editing diagrams and folders (API 1.4)
+
+```javascript
+// A pane docked beside the canvas, toggled from the canvas toolbar.
+api.registerPanel({
+  id: "my-plugin/pane",
+  slot: "document-pane",
+  title: "My pane",
+  component: Pane,
+});
+
+function Pane() {
+  const { CodeEditor } = api.ui; // the host's Monaco; no need to bundle an editor
+  return (
+    <CodeEditor
+      value={text}
+      language="yaml"
+      onChange={setText}
+      onSave={save}
+      markers={[{ line: 3, message: "unknown field", severity: "error" }]}
+    />
+  );
+}
+
+// A folder the user picks, remembered per binding id (re-asks permission after a reload).
+const folder = (await api.files.open(diagramId)) ?? (await api.files.pick(diagramId));
+const names = await folder.list(); // top-level file names
+await folder.write("a.yaml", await folder.read("a.yaml"));
+
+// Several diagram changes as one undo step; returns the ids created per key.
+const { idsByKey, connectionIds } = api.applyChanges({
+  remove: [oldId],
+  update: [{ id, name: "orders", technology: "Go", cloudServiceId: "lambda" }],
+  move: [{ id, x: 10, y: 20 }],
+  add: [{ key: "db", name: "orders-db", type: "aws-database", x: 0, y: 0 }],
+  connect: [{ source: id, target: "db", label: "writes" }],
+});
+```
+
+`files` never exposes the directory handle; names that would leave the folder are rejected.
+`applyChanges` normalizes `add` like importer results and ignores ids that are not in the diagram.
 
 ### React Plugin Setup
 
