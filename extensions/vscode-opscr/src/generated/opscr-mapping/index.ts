@@ -18,6 +18,7 @@ export { BOUNDARY_KINDS, LEAF_KINDS, PROVIDER_SERVICES, elementFor, isDrawnKind 
 export { placeView, toLayoutGraph } from "./layout";
 export { stabilizeLayout } from "./stable-layout";
 export { toImporterGraph } from "./importer-graph";
+export { LAYOUT_FILE, overlayLayouts, parseLayoutFile, serializeLayoutFile } from "./layout-file";
 export type {
   ImporterGraph,
   ImporterGraphComponent,
