@@ -410,3 +410,42 @@ export function restoreElement(
 export function hasEdge(files: readonly SourceText[], edge: Omit<EdgeMatch, "n">): boolean {
   return countEdges(files, edge) > 0;
 }
+
+/** A name the editor can rename (F2): a manifest's `metadata.name`, or an edge end's `id`. */
+export interface NameAt {
+  ref: ElementRef;
+  start: number;
+  end: number;
+}
+
+/** The renameable name at `offset` in file `fileName` (the cursor may sit right after it). */
+export function nameAt(
+  files: readonly SourceText[],
+  fileName: string,
+  offset: number,
+): NameAt | null {
+  const file = files.find((f) => f.name === fileName);
+  const docs = file && parseDocuments(file.text);
+  if (!docs) return null;
+  const within = (node: { range?: [number, number, number] | null } | null) =>
+    !!node?.range && node.range[0] <= offset && offset <= node.range[1];
+  for (const doc of docs) {
+    const kind = kindOf(doc);
+    const name = nameNode(doc);
+    if (typeof kind === "string" && typeof name?.value === "string" && within(name)) {
+      return { ref: { kind, name: name.value }, start: name.range![0], end: name.range![1] };
+    }
+    if (kind !== "Relationship") continue;
+    const edges = doc.getIn(["spec", "edges"], true);
+    if (!isSeq(edges)) continue;
+    for (const item of edges.items) {
+      for (const side of ["from", "to"] as const) {
+        const end = isMap(item) ? item.get(side, true) : null;
+        const ref = endRef(end);
+        const id = scalarAt(end, "id");
+        if (ref && id && within(id)) return { ref, start: id.range![0], end: id.range![1] };
+      }
+    }
+  }
+  return null;
+}

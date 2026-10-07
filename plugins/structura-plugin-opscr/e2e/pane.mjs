@@ -213,6 +213,40 @@ await setEditorText(SAMPLE["commerce.opscr.yaml"]);
 await waitNodes(22).catch(() => fail("removing the Cache's manifest did not remove it"));
 await check(true, "deleting a manifest removes its element");
 
+// F2 on a manifest name renames it everywhere and keeps the canvas element.
+const trackerBefore = await nodeBox("order-tracker");
+const line = SAMPLE["commerce.opscr.yaml"].split("\n").indexOf("  name: order-tracker");
+await page.locator(".monaco-editor .view-lines").first().click();
+// To the first line: Ctrl+Home elsewhere, Cmd+Up on macOS.
+await page.keyboard.press("ControlOrMeta+Home");
+await page.keyboard.press("ControlOrMeta+ArrowUp");
+await page.keyboard.press("Home");
+for (let i = 0; i < line; i++) await page.keyboard.press("ArrowDown");
+await page.keyboard.press("End");
+await page.keyboard.press("F2");
+// The rename box opens once the plugin resolved the name: wait for it to take focus.
+await page
+  .waitForFunction(() => !!document.activeElement?.closest(".rename-box"), null, { timeout: 5000 })
+  .catch(() => fail("F2 did not open the rename box"));
+await page.screenshot({ path: join(OUT, "4a-f2-open.png") });
+await page.keyboard.press("ControlOrMeta+a");
+await page.keyboard.type("order-relay");
+await page.keyboard.press("Enter");
+await page
+  .locator(".react-flow__node", { hasText: "order-relay" })
+  .first()
+  .waitFor({ timeout: 10000 })
+  .catch(() => fail("F2 rename did not reach the canvas"));
+const trackerAfter = await nodeBox("order-relay");
+await check(
+  (await nodes()) === 22 &&
+    Math.abs(trackerAfter.x - trackerBefore.x) < 2 &&
+    Math.abs(trackerAfter.y - trackerBefore.y) < 2,
+  "F2 renames the element in place on the canvas",
+);
+commerce = commerce.replace("name: order-tracker", "name: order-relay");
+await page.screenshot({ path: join(OUT, "4a-f2-rename.png") });
+
 await appendToEditor(
   "\n---\napiVersion: opscr.dev/v1\nkind: Database\nmetadata: { name: bad }\nspec: { provider: DynamoDB, description: x, inventedField: 1 }\n",
 );

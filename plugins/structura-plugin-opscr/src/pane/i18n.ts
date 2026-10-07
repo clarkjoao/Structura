@@ -27,6 +27,7 @@ const en = {
       ? "A name cannot be empty — rename reverted"
       : `“${name}” is already taken — rename reverted`,
   notInYaml: (n: number) => `${n} element${n === 1 ? "" : "s"} not in the YAML`,
+  renameGone: "The text changed under the cursor — try the rename again",
 };
 
 const ptBR: typeof en = {
@@ -53,6 +54,7 @@ const ptBR: typeof en = {
       ? "O nome não pode ficar vazio — renomeação desfeita"
       : `“${name}” já está em uso — renomeação desfeita`,
   notInYaml: (n: number) => `${n} elemento${n === 1 ? "" : "s"} fora do YAML`,
+  renameGone: "O texto mudou sob o cursor — tente renomear de novo",
 };
 
 export const text = (locale: Locale) => (locale === "pt-BR" ? ptBR : en);
