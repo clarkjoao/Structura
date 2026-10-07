@@ -9,7 +9,8 @@ import type {
 import { CONFIG_FILE, isManifest, projectWorkspace } from "../project";
 import type { SourceText } from "../patches";
 import { reconcile, retire } from "../reconcile";
-import { canvasLayout, emptyBinding, planSync, type BindingState } from "../sync";
+import { LAYOUT_FILE } from "../generated/opscr-mapping";
+import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "../sync";
 import { text, type Locale } from "./i18n";
 
 const SYNC_DELAY_MS = 300;
@@ -115,6 +116,19 @@ export function createOpscrPane(api: StructuraPluginApi) {
       return result.changed;
     }, [diagramId, persist, t]);
 
+    /** Rewrites the layout sidecar buffer from the canvas, when the arrangement changed. */
+    const writeSidecar = useCallback(() => {
+      const binding = bindingRef.current;
+      const diagram = api.getDiagram();
+      if (!binding || !diagram || diagram.id !== diagramId) return;
+      const text = sidecarText(binding.state, diagram);
+      const current = buffersRef.current.find((b) => b.name === LAYOUT_FILE);
+      if (!current || current.text === text) return;
+      const next = buffersRef.current.map((b) => (b.name === LAYOUT_FILE ? { ...b, text } : b));
+      buffersRef.current = next;
+      setBuffers(next);
+    }, [diagramId]);
+
     /** YAML → canvas. */
     const syncNow = useCallback(async () => {
       const binding = bindingRef.current;
@@ -126,7 +140,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       const projection = await projectWorkspace(
         manifests.map((f) => ({ path: f.name, content: f.text })),
         config ? { path: config.name, content: config.text } : undefined,
-        canvasLayout(binding.state, diagram),
+        previousLayout(binding.state, diagram, current.find((b) => b.name === LAYOUT_FILE)?.text),
       );
       setDiagnostics(projection.diagnostics);
       if (!projection.graph) return setStatus(t.parseError);
@@ -139,8 +153,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
         state: retire(binding.state, plan.commit(result), synced.current),
       });
       synced.current = manifests;
+      writeSidecar();
       setStatus(t.synced(projection.graph.components.length));
-    }, [diagramId, persist, t]);
+    }, [diagramId, persist, t, writeSidecar]);
 
     /** Runs after every queued step: canvas edits first, so a sync never takes them back. */
     const enqueue = useCallback((step: () => Promise<void>) => {
@@ -166,16 +181,20 @@ export function createOpscrPane(api: StructuraPluginApi) {
         if (changed !== diagramId) return;
         void enqueue(async () => {
           if (await reconcileNow()) await syncNow();
+          else writeSidecar();
         });
       });
-    }, [folder, diagramId, enqueue, reconcileNow, syncNow]);
+    }, [folder, diagramId, enqueue, reconcileNow, syncNow, writeSidecar]);
 
     const load = useCallback(
       async (opened: PluginFolder) => {
-        const names = (await opened.list()).filter((n) => isManifest(n) || n === CONFIG_FILE);
+        const listed = await opened.list();
+        const names = listed.filter((n) => isManifest(n) || n === CONFIG_FILE);
         const loaded = await Promise.all(
-          names.map(async (name) => {
-            const content = await opened.read(name);
+          [...names, LAYOUT_FILE].map(async (name) => {
+            // The sidecar may not exist yet: it is created on the first save.
+            const content =
+              name === LAYOUT_FILE && !listed.includes(name) ? "" : await opened.read(name);
             return { name, disk: content, text: content };
           }),
         );
@@ -325,19 +344,21 @@ export function createOpscrPane(api: StructuraPluginApi) {
           </button>
         </div>
         <div role="tablist" className="flex flex-wrap gap-1 border-b px-2 py-1">
-          {buffers.map((b) => (
-            <button
-              key={b.name}
-              type="button"
-              role="tab"
-              aria-selected={b.name === selected}
-              onClick={() => setSelected(b.name)}
-              className={`rounded px-2 py-0.5 ${b.name === selected ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-            >
-              {b.name}
-              {b.text !== b.disk ? " •" : ""}
-            </button>
-          ))}
+          {buffers
+            .filter((b) => b.name !== LAYOUT_FILE)
+            .map((b) => (
+              <button
+                key={b.name}
+                type="button"
+                role="tab"
+                aria-selected={b.name === selected}
+                onClick={() => setSelected(b.name)}
+                className={`rounded px-2 py-0.5 ${b.name === selected ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              >
+                {b.name}
+                {b.text !== b.disk ? " •" : ""}
+              </button>
+            ))}
         </div>
         <div className="min-h-0 flex-1">
           {current && (

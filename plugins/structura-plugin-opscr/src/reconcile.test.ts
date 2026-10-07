@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { countEdges, hasManifest, type SourceText } from "./patches";
 import { projectWorkspace } from "./project";
 import { reconcile, retire } from "./reconcile";
-import { canvasLayout, emptyBinding, planSync, type BindingState } from "./sync";
+import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "./sync";
 import type {
   DiagramSnapshot,
   PluginComponentSnapshot,
@@ -152,6 +152,7 @@ class Session {
   files: SourceText[] = structuredClone(SAMPLE);
   synced: SourceText[] = [];
   refused: string[] = [];
+  sidecar: string | undefined;
 
   async pump() {
     const r = reconcile(this.canvas.snapshot(), this.binding, this.files);
@@ -167,12 +168,13 @@ class Session {
     const projection = await projectWorkspace(
       this.files.map((f) => ({ path: f.name, content: f.text })),
       CONFIG,
-      canvasLayout(this.binding, diagram),
+      previousLayout(this.binding, diagram, this.sidecar),
     );
     const plan = planSync(projection.graph!, this.binding, diagram);
     const result = this.canvas.apply(plan.changes);
     this.binding = retire(this.binding, plan.commit(result), this.synced);
     this.synced = structuredClone(this.files);
+    this.sidecar = sidecarText(this.binding, this.canvas.snapshot());
     return plan;
   }
 
@@ -377,5 +379,42 @@ describe("reconcile", () => {
     const r = reconcile(s.canvas.snapshot(), s.binding, broken);
     expect(r.skipped).toBe(true);
     expect(r.files).toEqual(broken);
+  });
+});
+
+describe("layout sidecar", () => {
+  const box = (session: Session, name: string) => {
+    const c = session.canvas.components.find((x) => x.label === name)!;
+    return { ...c.position!, parentId: c.parentId };
+  };
+
+  it("a fresh diagram bound to the folder takes the sidecar's arrangement", async () => {
+    s.canvas.step(
+      () =>
+        (s.canvas.components.find((c) => c.label === "orders-db")!.position = { x: 900, y: 300 }),
+    );
+    s.sidecar = sidecarText(s.binding, s.canvas.snapshot());
+    expect(s.sidecar).toContain('"Database/orders-db": { "x": 900, "y": 300');
+
+    const fresh = new Session();
+    fresh.sidecar = s.sidecar;
+    await fresh.pump();
+    expect(box(fresh, "orders-db")).toMatchObject({ x: 900, y: 300 });
+    // The sidecar keeps whole numbers.
+    for (const name of ["public-api", "orders-api", "commerce"]) {
+      expect(Math.abs(box(fresh, name).x - box(s, name).x)).toBeLessThanOrEqual(0.5);
+      expect(Math.abs(box(fresh, name).y - box(s, name).y)).toBeLessThanOrEqual(0.5);
+    }
+  });
+
+  it("follows a canvas rename and delete", async () => {
+    s.canvas.step(
+      () => (s.canvas.components.find((c) => c.label === "orders-db")!.label = "order-store"),
+    );
+    s.canvas.step(() => s.canvas.remove([s.id("cart-cache")]));
+    await s.pump();
+    expect(s.sidecar).toContain('"Database/order-store"');
+    expect(s.sidecar).not.toContain("orders-db");
+    expect(s.sidecar).not.toContain("cart-cache");
   });
 });

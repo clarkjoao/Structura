@@ -1,6 +1,9 @@
 import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
 import {
+  LAYOUT_FILE,
   buildTechnicalView,
+  overlayLayouts,
+  parseLayoutFile,
   placeView,
   stabilizeLayout,
   toImporterGraph,
@@ -14,6 +17,8 @@ import { layoutView } from "./generated/opscr-layout";
 export interface WorkspaceText {
   files: SourceFile[];
   config?: SourceFile;
+  /** The folder's layout sidecar (`opscr.layout.json`) text, when there is one. */
+  layout?: string;
 }
 
 export interface PreviewUpdate {
@@ -32,14 +37,27 @@ const PARSE_ERROR = "loader/yaml-parse-error";
  */
 export class PreviewPipeline {
   private previous: ViewLayoutResult | undefined;
+  /** The sidecar text last applied, so an unchanged sidecar is not re-applied. */
+  private sidecar: string | undefined;
 
-  /** Forget the current picture: the next update lays everything out from scratch. */
+  /**
+   * Forget the current picture: the next update lays everything out from scratch, ignoring
+   * the sidecar until it changes.
+   */
   relayout(): void {
     this.previous = undefined;
   }
 
   async update(workspace: WorkspaceText): Promise<PreviewUpdate> {
-    const { workspace: compiled, result } = await compileSources(workspace);
+    if (workspace.layout !== undefined && workspace.layout !== this.sidecar) {
+      // A new or changed sidecar (Structura saved it): its boxes win over the current picture.
+      this.previous = overlayLayouts(this.previous, parseLayoutFile(workspace.layout));
+    }
+    this.sidecar = workspace.layout;
+    const { files, config } = workspace;
+    const { workspace: compiled, result } = await compileSources(
+      config ? { files, config } : { files },
+    );
     const diagnostics = result.diagnostics;
     if (diagnostics.some((d) => d.ruleId === PARSE_ERROR)) return { diagnostics };
 
@@ -73,11 +91,18 @@ export async function collectWorkspace(
   const configText = fileNames.includes(CONFIG_FILE)
     ? await readText(join(CONFIG_FILE))
     : undefined;
-  return configText === undefined
-    ? { files }
-    : { files, config: { path: join(CONFIG_FILE), content: configText } };
+  const layout = fileNames.includes(LAYOUT_FILE) ? await readText(join(LAYOUT_FILE)) : undefined;
+  return {
+    files,
+    ...(configText === undefined
+      ? {}
+      : { config: { path: join(CONFIG_FILE), content: configText } }),
+    ...(layout === undefined ? {} : { layout }),
+  };
 }
 
 export function isManifestPath(path: string): boolean {
-  return MANIFEST.test(path) || path.endsWith(`/${CONFIG_FILE}`);
+  return (
+    MANIFEST.test(path) || path.endsWith(`/${CONFIG_FILE}`) || path.endsWith(`/${LAYOUT_FILE}`)
+  );
 }

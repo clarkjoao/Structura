@@ -12,6 +12,9 @@ workspace, next to the YAML you are editing.
 - **Still:** elements already drawn keep their place when you add, remove or edit others; new ones
   are placed next to their neighbours. **opscr: Re-layout Preview** arranges everything from
   scratch.
+- **Layout sidecar:** when the folder has an `opscr.layout.json` (Structura writes it when you save a
+  bound folder), elements are drawn where it puts them; the preview redraws when the file changes.
+  Re-layout ignores it until it changes again.
 - **Problems:** opscr errors and warnings appear in the Problems panel, on their file and line.
 - **Theme:** dark or light, following VSCode.
 
