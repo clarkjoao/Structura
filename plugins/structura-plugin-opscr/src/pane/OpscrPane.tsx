@@ -7,6 +7,8 @@ import type {
   StructuraPluginApi,
 } from "../types/plugin.types";
 import { CONFIG_FILE, isManifest, projectWorkspace } from "../project";
+import type { SourceText } from "../patches";
+import { reconcile, retire } from "../reconcile";
 import { canvasLayout, emptyBinding, planSync, type BindingState } from "../sync";
 import { text, type Locale } from "./i18n";
 
@@ -26,6 +28,9 @@ interface StoredBinding {
 }
 
 const storageKey = (diagramId: string) => `binding:${diagramId}`;
+
+const manifestsOf = (buffers: readonly Buffer[]): SourceText[] =>
+  buffers.filter((b) => isManifest(b.name)).map((b) => ({ name: b.name, text: b.text }));
 
 const toMarker = (d: Diagnostic): PluginEditorMarker => ({
   line: d.line ?? 1,
@@ -51,11 +56,14 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const [selected, setSelected] = useState<string | null>(null);
     const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
     const [status, setStatus] = useState<string>("");
+    const [notInYaml, setNotInYaml] = useState(0);
     const bindingRef = useRef<StoredBinding | null>(null);
     const buffersRef = useRef<Buffer[]>([]);
     buffersRef.current = buffers;
     const timer = useRef<ReturnType<typeof setTimeout>>();
     const syncing = useRef<Promise<void>>(Promise.resolve());
+    /** The manifests as of the last sync: the text a canvas undo of that sync brings back. */
+    const synced = useRef<SourceText[]>([]);
 
     // Follow the active diagram.
     useEffect(() => api.onDiagramChange(() => setDiagramId(api.getActiveDiagramId())), []);
@@ -66,6 +74,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       setBuffers([]);
       setSelected(null);
       setDiagnostics([]);
+      synced.current = [];
       if (!diagramId) return setStored(null);
       void api.storage.get<StoredBinding>(storageKey(diagramId)).then((value) => {
         bindingRef.current = value;
@@ -83,30 +92,83 @@ export function createOpscrPane(api: StructuraPluginApi) {
       [diagramId],
     );
 
-    const sync = useCallback(() => {
-      syncing.current = syncing.current.then(async () => {
-        const binding = bindingRef.current;
-        const diagram = api.getDiagram();
-        if (!binding || !diagram || diagram.id !== diagramId) return;
-        const current = buffersRef.current;
-        const manifests = current.filter((b) => isManifest(b.name));
-        const config = current.find((b) => b.name === CONFIG_FILE);
-        const projection = await projectWorkspace(
-          manifests.map((b) => ({ path: b.name, content: b.text })),
-          config ? { path: config.name, content: config.text } : undefined,
-          canvasLayout(binding.state, diagram),
-        );
-        setDiagnostics(projection.diagnostics);
-        if (!projection.graph) return setStatus(t.parseError);
-        const plan = planSync(projection.graph, binding.state, diagram);
-        const result = plan.empty
-          ? { idsByKey: {}, connectionIds: [] }
-          : api.applyChanges(plan.changes);
-        await persist({ ...binding, state: plan.commit(result) });
-        setStatus(t.synced(projection.graph.components.length));
+    const setTexts = (files: readonly SourceText[]) => {
+      const byName = new Map(files.map((f) => [f.name, f.text]));
+      const next = buffersRef.current.map((b) => ({ ...b, text: byName.get(b.name) ?? b.text }));
+      buffersRef.current = next;
+      setBuffers(next);
+    };
+
+    /** Canvas → YAML: patches the buffers with what was changed on the canvas. */
+    const reconcileNow = useCallback(async (): Promise<boolean> => {
+      const binding = bindingRef.current;
+      const diagram = api.getDiagram();
+      if (!binding || !diagram || diagram.id !== diagramId) return false;
+      const result = reconcile(diagram, binding.state, manifestsOf(buffersRef.current));
+      if (result.skipped) return false;
+      if (result.changed) setTexts(result.files);
+      await persist({ ...binding, state: result.binding });
+      const { remove, disconnect, update } = result.revert;
+      if (remove.length + disconnect.length + update.length > 0) api.applyChanges(result.revert);
+      setNotInYaml(result.notInYaml);
+      if (result.refused.length > 0) setStatus(t.renameRefused(result.refused[0]!));
+      return result.changed;
+    }, [diagramId, persist, t]);
+
+    /** YAML → canvas. */
+    const syncNow = useCallback(async () => {
+      const binding = bindingRef.current;
+      const diagram = api.getDiagram();
+      if (!binding || !diagram || diagram.id !== diagramId) return;
+      const current = buffersRef.current;
+      const manifests = manifestsOf(current);
+      const config = current.find((b) => b.name === CONFIG_FILE);
+      const projection = await projectWorkspace(
+        manifests.map((f) => ({ path: f.name, content: f.text })),
+        config ? { path: config.name, content: config.text } : undefined,
+        canvasLayout(binding.state, diagram),
+      );
+      setDiagnostics(projection.diagnostics);
+      if (!projection.graph) return setStatus(t.parseError);
+      const plan = planSync(projection.graph, binding.state, diagram);
+      const result = plan.empty
+        ? { idsByKey: {}, connectionIds: [] }
+        : api.applyChanges(plan.changes);
+      await persist({
+        ...binding,
+        state: retire(binding.state, plan.commit(result), synced.current),
+      });
+      synced.current = manifests;
+      setStatus(t.synced(projection.graph.components.length));
+    }, [diagramId, persist, t]);
+
+    /** Runs after every queued step: canvas edits first, so a sync never takes them back. */
+    const enqueue = useCallback((step: () => Promise<void>) => {
+      syncing.current = syncing.current.then(step).catch((error: unknown) => {
+        console.error("[opscr] sync failed:", error);
       });
       return syncing.current;
-    }, [diagramId, persist, t]);
+    }, []);
+
+    const sync = useCallback(
+      () =>
+        enqueue(async () => {
+          await reconcileNow();
+          await syncNow();
+        }),
+      [enqueue, reconcileNow, syncNow],
+    );
+
+    // Canvas edits (and undo/redo) of the bound diagram reach the YAML while the folder is open.
+    useEffect(() => {
+      if (!folder || !diagramId) return;
+      return api.onDiagramChange((changed) => {
+        if (changed !== diagramId) return;
+        void enqueue(async () => {
+          if (await reconcileNow()) await syncNow();
+        });
+      });
+    }, [folder, diagramId, enqueue, reconcileNow, syncNow]);
 
     const load = useCallback(
       async (opened: PluginFolder) => {
@@ -290,6 +352,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         </div>
         <div className="border-t px-2 py-1 text-muted-foreground" aria-live="polite">
           {status}
+          {notInYaml > 0 ? ` · ${t.notInYaml(notInYaml)}` : ""}
           {problemsElsewhere > 0 ? ` · ${t.problemsElsewhere(problemsElsewhere)}` : ""}
         </div>
       </div>
