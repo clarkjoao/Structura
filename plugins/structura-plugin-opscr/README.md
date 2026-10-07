@@ -25,6 +25,12 @@ Two ways to bring opscr into Structura:
   | Delete a connection                    | its edge                                                            |
   | Undo / redo (of either side)           | the text change it reverts                                          |
 
+  **The chat** (bottom-right) on a bound diagram, while the folder is open in the pane, is an
+  opscr editing assistant: its context is the opscr-architect skill (bundled at build time from
+  the linked `opscr`, `npm run build-skill`) and the current manifests. The model writes whole
+  manifest documents; they are applied as text patches (unsaved), validated by opscr, and errors
+  they introduce are sent back to the model to fix, up to three attempts.
+
   **F2** on a manifest's `metadata.name`, or on an edge end's `id`, renames that element in every
   file; the canvas element keeps its place.
 
