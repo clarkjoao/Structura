@@ -10,6 +10,7 @@ import type {
 import { CONFIG_FILE, isManifest, projectWorkspace } from "../project";
 import { keyOf, nameAt, renameElement, type SourceText } from "../patches";
 import { reconcile, renameInBinding, retire } from "../reconcile";
+import { openSession } from "../session";
 import { LAYOUT_FILE } from "../generated/opscr-mapping";
 import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "../sync";
 import { text, type Locale } from "./i18n";
@@ -96,9 +97,16 @@ export function createOpscrPane(api: StructuraPluginApi) {
       [diagramId],
     );
 
+    /** New texts for the buffers; names the folder does not have yet become new, unsaved files. */
     const setTexts = (files: readonly SourceText[]) => {
       const byName = new Map(files.map((f) => [f.name, f.text]));
-      const next = buffersRef.current.map((b) => ({ ...b, text: byName.get(b.name) ?? b.text }));
+      const known = new Set(buffersRef.current.map((b) => b.name));
+      const next = [
+        ...buffersRef.current.map((b) => ({ ...b, text: byName.get(b.name) ?? b.text })),
+        ...files
+          .filter((f) => !known.has(f.name))
+          .map((f) => ({ name: f.name, disk: "", text: f.text })),
+      ];
       buffersRef.current = next;
       setBuffers(next);
     };
@@ -226,6 +234,23 @@ export function createOpscrPane(api: StructuraPluginApi) {
       }),
       [enqueue, persist, reconcileNow, syncNow, t],
     );
+
+    // While the folder is open, the chat context (API 1.6) reads and edits these buffers.
+    useEffect(() => {
+      if (!folder || !diagramId) return;
+      return openSession({
+        diagramId,
+        manifests: () => manifestsOf(buffersRef.current),
+        config: () => {
+          const config = buffersRef.current.find((b) => b.name === CONFIG_FILE);
+          return config && { name: config.name, text: config.text };
+        },
+        apply: (files) => {
+          setTexts(files);
+          void sync();
+        },
+      });
+    }, [folder, diagramId, sync]);
 
     const load = useCallback(
       async (opened: PluginFolder) => {

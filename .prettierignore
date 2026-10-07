@@ -8,3 +8,5 @@ cypress/reports
 CHANGELOG.md
 src/fixtures/seeds
 .claude/worktrees
+# Generated from the linked opscr package (build-skill)
+plugins/structura-plugin-opscr/src/generated/opscr-skill.ts

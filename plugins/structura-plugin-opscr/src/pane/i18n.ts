@@ -28,6 +28,17 @@ const en = {
       : `“${name}” is already taken — rename reverted`,
   notInYaml: (n: number) => `${n} element${n === 1 ? "" : "s"} not in the YAML`,
   renameGone: "The text changed under the cursor — try the rename again",
+  chatClosed: "The opscr pane closed the folder before the reply arrived; nothing was changed.",
+  chatChanged: (added: string[], replaced: string[], deleted: string[]) =>
+    [
+      added.length ? `Added ${added.join(", ")}.` : "",
+      replaced.length ? `Updated ${replaced.join(", ")}.` : "",
+      deleted.length ? `Removed ${deleted.join(", ")}.` : "",
+      "Unsaved — review it in the opscr pane.",
+    ]
+      .filter(Boolean)
+      .join(" "),
+  chatRemainingErrors: "opscr still reports these errors:",
 };
 
 const ptBR: typeof en = {
@@ -55,6 +66,17 @@ const ptBR: typeof en = {
       : `“${name}” já está em uso — renomeação desfeita`,
   notInYaml: (n: number) => `${n} elemento${n === 1 ? "" : "s"} fora do YAML`,
   renameGone: "O texto mudou sob o cursor — tente renomear de novo",
+  chatClosed: "O painel opscr fechou a pasta antes da resposta chegar; nada foi alterado.",
+  chatChanged: (added: string[], replaced: string[], deleted: string[]) =>
+    [
+      added.length ? `Adicionado: ${added.join(", ")}.` : "",
+      replaced.length ? `Atualizado: ${replaced.join(", ")}.` : "",
+      deleted.length ? `Removido: ${deleted.join(", ")}.` : "",
+      "Não salvo — revise no painel opscr.",
+    ]
+      .filter(Boolean)
+      .join(" "),
+  chatRemainingErrors: "O opscr ainda aponta estes erros:",
 };
 
 export const text = (locale: Locale) => (locale === "pt-BR" ? ptBR : en);

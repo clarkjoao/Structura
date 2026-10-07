@@ -113,6 +113,23 @@ page.on("console", (m) => m.type() === "error" && console.log(`console: ${m.text
 await page.addInitScript(
   ([storeKey, payload, files]) => {
     if (!localStorage.getItem(storeKey)) localStorage.setItem(storeKey, payload);
+    // A chat connection whose endpoint the test answers (see the chat step).
+    localStorage.setItem(
+      "structura:llm:connections",
+      JSON.stringify({
+        connections: [
+          {
+            id: "e2e",
+            name: "e2e",
+            mode: "direct",
+            provider: "openai",
+            apiKey: "k",
+            model: "gpt-4.1",
+          },
+        ],
+        activeConnectionId: "e2e",
+      }),
+    );
     window.showDirectoryPicker = async () => {
       const root = await navigator.storage.getDirectory();
       const dir = await root.getDirectoryHandle("opscr-sample", { create: true });
@@ -317,6 +334,52 @@ await check(
 );
 await check((await nodes()) === count, "the renamed element keeps its place (no remove/re-add)");
 await page.screenshot({ path: join(OUT, "5-canvas-to-yaml.png") });
+
+// The chat on the bound diagram answers with the opscr context and edits the YAML.
+const prompts = [];
+const CHAT_REPLY = [
+  "Added a cache for search results.",
+  "",
+  "```yaml file=commerce.opscr.yaml",
+  "apiVersion: opscr.dev/v1",
+  "kind: Cache",
+  "metadata:",
+  "  name: search-cache",
+  "spec:",
+  "  provider: ElastiCache Redis",
+  "  description: Search results",
+  "```",
+].join("\n");
+await page.route("https://api.openai.com/**", async (route) => {
+  prompts.push(route.request().postDataJSON().messages[0].content);
+  const chunk = (content) => `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`;
+  await route.fulfill({
+    status: 200,
+    headers: { "content-type": "text/event-stream" },
+    body: chunk(CHAT_REPLY.slice(0, 40)) + chunk(CHAT_REPLY.slice(40)) + "data: [DONE]\n\n",
+  });
+});
+const chatCount = await nodes();
+await page.getByRole("button", { name: /Open chat assistant|Abrir assistente de chat/ }).click();
+const input = page.getByLabel(/Type your message|Digite sua mensagem/);
+await input.waitFor({ timeout: 10000 }).catch(() => fail("the chat did not open"));
+await input.fill("Add a Redis cache for search results");
+await page.keyboard.press("ControlOrMeta+Enter");
+await waitNodes(chatCount + 1).catch(() => fail("the chat's manifest did not reach the canvas"));
+await check(
+  prompts[0]?.includes("opscr editing assistant") &&
+    prompts[0]?.includes('<file name="commerce.opscr.yaml">'),
+  "the chat uses the opscr skill and the manifests as its context",
+);
+await waitFor(
+  async () => (await saveAndRead("commerce.opscr.yaml")).includes("name: search-cache"),
+  "the chat's change lands in the manifest (saved on demand)",
+);
+await check(
+  (await page.getByText(/Added Cache\/search-cache|Adicionado: Cache\/search-cache/).count()) > 0,
+  "the chat reply says what changed",
+);
+await page.screenshot({ path: join(OUT, "6-chat.png") });
 
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 await browser.close();

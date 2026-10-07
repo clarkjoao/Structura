@@ -8,6 +8,7 @@ import {
   isMap,
   isSeq,
   parseDocuments,
+  replaceDocument,
   renderScalar,
   replaceScalar,
   scalarAt,
@@ -448,4 +449,50 @@ export function nameAt(
     }
   }
   return null;
+}
+
+/** A manifest document's identity, read from its source; null when it has no kind or name. */
+export function manifestRef(source: string): ElementRef | null {
+  const doc = parseDocuments(source)?.[0];
+  const kind = doc && kindOf(doc);
+  const name = doc && nameNode(doc)?.value;
+  return typeof kind === "string" && typeof name === "string" ? { kind, name } : null;
+}
+
+const MANIFEST_NAME = /^[\w.-]+\.opscr\.ya?ml$/i;
+
+/**
+ * Writes a whole manifest document: in place of the one with the same kind and name (only its
+ * range changes), else appended to `file` — created when it is a new `*.opscr.yaml` name — or
+ * to the first file. Null when the source is not a manifest or a file does not parse.
+ */
+export function upsertDocument(
+  files: readonly SourceText[],
+  source: string,
+  file?: string,
+): { files: SourceText[]; replaced: boolean; ref: ElementRef } | null {
+  const ref = manifestRef(source);
+  const parsed = parseAll(files);
+  if (!ref || !parsed) return null;
+  const found = findManifest(parsed, ref);
+  if (found) {
+    const { file: target, docs } = parsed[found.at]!;
+    const edit = replaceDocument(target.text, docs[found.doc]!, source);
+    return { files: commit(files, new Map([[found.at, [edit]]])), replaced: true, ref };
+  }
+  const home = files.findIndex((f) => f.name === file);
+  if (home >= 0 || !file || !MANIFEST_NAME.test(file)) {
+    const at = Math.max(0, home);
+    if (files.length === 0) return null;
+    return {
+      files: files.map((f, i) => (i === at ? { ...f, text: appendDocument(f.text, source) } : f)),
+      replaced: false,
+      ref,
+    };
+  }
+  return {
+    files: [...files, { name: file, text: appendDocument("", source) }],
+    replaced: false,
+    ref,
+  };
 }

@@ -129,6 +129,18 @@ export function documentSource(text: string, doc: ParsedDocument): string {
   return source.endsWith("\n") ? source : `${source}\n`;
 }
 
+/**
+ * Replaces a document's own text (after its `---` marker) with `source`, keeping the blank
+ * lines that separated it from the next document.
+ */
+export function replaceDocument(text: string, doc: ParsedDocument, source: string): TextEdit {
+  const start = contentStart(text, doc);
+  const end = doc.range[2];
+  const trailing = /\n(\s*)$/.exec(text.slice(start, end))?.[1] ?? "";
+  const body = source.replace(/\s+$/, "");
+  return { start, end, insert: `${body}\n${trailing.replace(/[^\n]/g, "")}` };
+}
+
 /** Cuts document `index`; the first document also takes the next one's `---` marker. */
 export function cutDocument(
   text: string,
