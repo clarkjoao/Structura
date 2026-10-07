@@ -1,0 +1,298 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Diagnostic } from "opscr/core";
+import type {
+  PluginEditorMarker,
+  PluginFolder,
+  PluginPanelProps,
+  StructuraPluginApi,
+} from "../types/plugin.types";
+import { CONFIG_FILE, isManifest, projectWorkspace } from "../project";
+import { canvasLayout, emptyBinding, planSync, type BindingState } from "../sync";
+import { text, type Locale } from "./i18n";
+
+const SYNC_DELAY_MS = 300;
+
+interface Buffer {
+  name: string;
+  /** Text on disk, as last read or saved. */
+  disk: string;
+  /** Text in the editor. */
+  text: string;
+}
+
+interface StoredBinding {
+  folderName: string;
+  state: BindingState;
+}
+
+const storageKey = (diagramId: string) => `binding:${diagramId}`;
+
+const toMarker = (d: Diagnostic): PluginEditorMarker => ({
+  line: d.line ?? 1,
+  message: [d.fieldPath ? `${d.fieldPath}: ${d.message}` : d.message, d.suggestion]
+    .filter(Boolean)
+    .join("\n"),
+  severity: d.severity === "error" ? "error" : d.severity === "warning" ? "warning" : "info",
+});
+
+/**
+ * The opscr document pane: binds the active diagram to a folder of manifests, edits them
+ * in the host editor, saves them, and keeps the diagram in sync as the user types.
+ */
+export function createOpscrPane(api: StructuraPluginApi) {
+  const { CodeEditor } = api.ui;
+
+  return function OpscrPane({ context }: PluginPanelProps) {
+    const t = useMemo(() => text(context.locale as Locale), [context.locale]);
+    const [diagramId, setDiagramId] = useState(() => api.getActiveDiagramId());
+    const [stored, setStored] = useState<StoredBinding | null>(null);
+    const [folder, setFolder] = useState<PluginFolder | null>(null);
+    const [buffers, setBuffers] = useState<Buffer[]>([]);
+    const [selected, setSelected] = useState<string | null>(null);
+    const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
+    const [status, setStatus] = useState<string>("");
+    const bindingRef = useRef<StoredBinding | null>(null);
+    const buffersRef = useRef<Buffer[]>([]);
+    buffersRef.current = buffers;
+    const timer = useRef<ReturnType<typeof setTimeout>>();
+    const syncing = useRef<Promise<void>>(Promise.resolve());
+
+    // Follow the active diagram.
+    useEffect(() => api.onDiagramChange(() => setDiagramId(api.getActiveDiagramId())), []);
+
+    // Load what the plugin remembers about this diagram; the folder needs a user gesture.
+    useEffect(() => {
+      setFolder(null);
+      setBuffers([]);
+      setSelected(null);
+      setDiagnostics([]);
+      if (!diagramId) return setStored(null);
+      void api.storage.get<StoredBinding>(storageKey(diagramId)).then((value) => {
+        bindingRef.current = value;
+        setStored(value);
+      });
+    }, [diagramId]);
+
+    const persist = useCallback(
+      async (binding: StoredBinding) => {
+        if (!diagramId) return;
+        bindingRef.current = binding;
+        setStored(binding);
+        await api.storage.set(storageKey(diagramId), binding);
+      },
+      [diagramId],
+    );
+
+    const sync = useCallback(() => {
+      syncing.current = syncing.current.then(async () => {
+        const binding = bindingRef.current;
+        const diagram = api.getDiagram();
+        if (!binding || !diagram || diagram.id !== diagramId) return;
+        const current = buffersRef.current;
+        const manifests = current.filter((b) => isManifest(b.name));
+        const config = current.find((b) => b.name === CONFIG_FILE);
+        const projection = await projectWorkspace(
+          manifests.map((b) => ({ path: b.name, content: b.text })),
+          config ? { path: config.name, content: config.text } : undefined,
+          canvasLayout(binding.state, diagram),
+        );
+        setDiagnostics(projection.diagnostics);
+        if (!projection.graph) return setStatus(t.parseError);
+        const plan = planSync(projection.graph, binding.state, diagram);
+        const result = plan.empty
+          ? { idsByKey: {}, connectionIds: [] }
+          : api.applyChanges(plan.changes);
+        await persist({ ...binding, state: plan.commit(result) });
+        setStatus(t.synced(projection.graph.components.length));
+      });
+      return syncing.current;
+    }, [diagramId, persist, t]);
+
+    const load = useCallback(
+      async (opened: PluginFolder) => {
+        const names = (await opened.list()).filter((n) => isManifest(n) || n === CONFIG_FILE);
+        const loaded = await Promise.all(
+          names.map(async (name) => {
+            const content = await opened.read(name);
+            return { name, disk: content, text: content };
+          }),
+        );
+        buffersRef.current = loaded;
+        setFolder(opened);
+        setBuffers(loaded);
+        setSelected((previous) =>
+          previous && names.includes(previous) ? previous : (names.find(isManifest) ?? null),
+        );
+        await sync();
+      },
+      [sync],
+    );
+
+    const bind = async () => {
+      if (!diagramId) return;
+      const picked = await api.files.pick(diagramId);
+      if (!picked) return;
+      await persist({
+        folderName: picked.name,
+        state: bindingRef.current?.state ?? emptyBinding(),
+      });
+      await load(picked);
+    };
+
+    const reconnect = async () => {
+      if (!diagramId) return;
+      const opened = await api.files.open(diagramId);
+      if (opened) await load(opened);
+      else setStatus(t.permissionDenied);
+    };
+
+    const unbind = async () => {
+      if (!diagramId) return;
+      await api.files.forget(diagramId);
+      await api.storage.remove(storageKey(diagramId));
+      bindingRef.current = null;
+      setStored(null);
+      setFolder(null);
+      setBuffers([]);
+      setSelected(null);
+    };
+
+    const edit = (value: string) => {
+      setBuffers((list) => list.map((b) => (b.name === selected ? { ...b, text: value } : b)));
+      buffersRef.current = buffersRef.current.map((b) =>
+        b.name === selected ? { ...b, text: value } : b,
+      );
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => void sync(), SYNC_DELAY_MS);
+    };
+
+    const save = async () => {
+      if (!folder) return;
+      const dirty = buffersRef.current.filter((b) => b.text !== b.disk);
+      for (const b of dirty) await folder.write(b.name, b.text);
+      const saved = new Set(dirty.map((b) => b.name));
+      setBuffers((list) => list.map((b) => (saved.has(b.name) ? { ...b, disk: b.text } : b)));
+      setStatus(t.saved(dirty.length));
+    };
+
+    const reload = async () => {
+      if (folder) await load(folder);
+    };
+
+    useEffect(() => () => clearTimeout(timer.current), []);
+
+    if (!diagramId) return <p className="p-3 text-xs text-muted-foreground">{t.noDiagram}</p>;
+
+    if (!stored) {
+      return (
+        <div className="space-y-2 p-3 text-xs">
+          <p className="text-muted-foreground">{t.intro}</p>
+          {api.files.isSupported() ? (
+            <button
+              type="button"
+              className="rounded-md border px-3 py-1.5"
+              onClick={() => void bind()}
+            >
+              {t.bind}
+            </button>
+          ) : (
+            <p className="text-destructive">{t.unsupported}</p>
+          )}
+        </div>
+      );
+    }
+
+    if (!folder) {
+      return (
+        <div className="space-y-2 p-3 text-xs">
+          <p>{t.boundTo(stored.folderName)}</p>
+          <button
+            type="button"
+            className="rounded-md border px-3 py-1.5"
+            onClick={() => void reconnect()}
+          >
+            {t.reconnect}
+          </button>
+          <button
+            type="button"
+            className="ml-2 text-muted-foreground underline"
+            onClick={() => void unbind()}
+          >
+            {t.unbind}
+          </button>
+          {status && <p className="text-muted-foreground">{status}</p>}
+        </div>
+      );
+    }
+
+    const current = buffers.find((b) => b.name === selected);
+    const dirtyCount = buffers.filter((b) => b.text !== b.disk).length;
+    const problemsHere = diagnostics.filter((d) => d.file === selected);
+    const problemsElsewhere = diagnostics.filter(
+      (d) => d.file !== selected && d.severity === "error",
+    ).length;
+
+    return (
+      <div className="flex h-full min-h-0 flex-col text-xs">
+        <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1">
+          <span className="mr-auto font-medium" title={stored.folderName}>
+            {stored.folderName}
+          </span>
+          <button
+            type="button"
+            className="rounded border px-2 py-0.5 disabled:opacity-50"
+            disabled={dirtyCount === 0}
+            onClick={() => void save()}
+          >
+            {t.save}
+          </button>
+          <button
+            type="button"
+            className="rounded border px-2 py-0.5"
+            onClick={() => void reload()}
+            title={dirtyCount > 0 ? t.reloadDiscards : undefined}
+          >
+            {t.reload}
+          </button>
+          <button
+            type="button"
+            className="px-2 py-0.5 text-muted-foreground underline"
+            onClick={() => void unbind()}
+          >
+            {t.unbind}
+          </button>
+        </div>
+        <div role="tablist" className="flex flex-wrap gap-1 border-b px-2 py-1">
+          {buffers.map((b) => (
+            <button
+              key={b.name}
+              type="button"
+              role="tab"
+              aria-selected={b.name === selected}
+              onClick={() => setSelected(b.name)}
+              className={`rounded px-2 py-0.5 ${b.name === selected ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+            >
+              {b.name}
+              {b.text !== b.disk ? " •" : ""}
+            </button>
+          ))}
+        </div>
+        <div className="min-h-0 flex-1">
+          {current && (
+            <CodeEditor
+              value={current.text}
+              language="yaml"
+              onChange={edit}
+              onSave={() => void save()}
+              markers={problemsHere.map(toMarker)}
+            />
+          )}
+        </div>
+        <div className="border-t px-2 py-1 text-muted-foreground" aria-live="polite">
+          {status}
+          {problemsElsewhere > 0 ? ` · ${t.problemsElsewhere(problemsElsewhere)}` : ""}
+        </div>
+      </div>
+    );
+  };
+}

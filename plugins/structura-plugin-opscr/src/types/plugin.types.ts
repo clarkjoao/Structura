@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.3.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.4.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -29,6 +29,7 @@ export const KNOWN_PLUGIN_CAPABILITIES = [
   "diagram:write",
   "storage",
   "network",
+  "files:folder",
 ] as const;
 
 export type PluginCapability = (typeof KNOWN_PLUGIN_CAPABILITIES)[number];
@@ -205,7 +206,12 @@ export type PluginPanelSlot =
   | "services-import"
   /** @deprecated Prefer `services-import`. Accepted for one release. */
   | "service-registry-import"
-  | "canvas-toolbar";
+  | "canvas-toolbar"
+  /**
+   * v1.4 — a pane docked beside the canvas, opened from a canvas-toolbar toggle titled with
+   * the contribution's `title`. One document pane is open at a time.
+   */
+  | "document-pane";
 
 /**
  * Context handed to every plugin panel, whatever slot it fills. v1.2 unified the former
@@ -305,6 +311,80 @@ export interface PluginNodeTypeDescriptor {
   selectable?: boolean;
 }
 
+/** v1.4 — a problem shown on a line of `CodeEditor`. Lines are 1-based. */
+export interface PluginEditorMarker {
+  line: number;
+  message: string;
+  severity: "error" | "warning" | "info";
+}
+
+/** v1.4 — props of the host's code editor (`api.ui.CodeEditor`). */
+export interface PluginCodeEditorProps {
+  value: string;
+  /** Monaco language id, e.g. "yaml". */
+  language?: string;
+  onChange?: (value: string) => void;
+  /** Called on Ctrl/Cmd+S inside the editor. */
+  onSave?: () => void;
+  readOnly?: boolean;
+  markers?: readonly PluginEditorMarker[];
+  /** CSS height; fills its container by default. */
+  height?: string | number;
+}
+
+/**
+ * v1.4 — capability "files:folder". One folder the user picked: its top-level text files.
+ * Names are plain file names; anything that would leave the folder is rejected.
+ */
+export interface PluginFolder {
+  readonly name: string;
+  list(): Promise<string[]>;
+  read(fileName: string): Promise<string>;
+  write(fileName: string, text: string): Promise<void>;
+}
+
+/** v1.4 — capability "files:folder". Folders are remembered per plugin and binding id. */
+export interface PluginFiles {
+  /** False where the browser cannot pick folders (no File System Access API). */
+  isSupported(): boolean;
+  /** Ask the user for a folder and remember it under `bindingId`. Null if cancelled. */
+  pick(bindingId: string): Promise<PluginFolder | null>;
+  /**
+   * The folder remembered under `bindingId`, once the user grants permission again (the
+   * browser may prompt, so call it from a user gesture). Null when there is none.
+   */
+  open(bindingId: string): Promise<PluginFolder | null>;
+  forget(bindingId: string): Promise<void>;
+}
+
+/** v1.4 — changes to the ACTIVE diagram applied as one history step (`applyChanges`). */
+export interface PluginDiagramChanges {
+  /** Component ids to remove, with their connections. */
+  remove?: string[];
+  /** Connection ids to remove. */
+  disconnect?: string[];
+  update?: Array<{
+    id: string;
+    name?: string;
+    description?: string;
+    technology?: string;
+    /** Catalog service; "" clears it. */
+    cloudServiceId?: string;
+  }>;
+  move?: Array<{ id: string; x: number; y: number; width?: number; height?: number }>;
+  /** New components, as importers return them (type policy and nesting included). */
+  add?: PluginComponentInput[];
+  /** New connections; ends are `add` keys or existing component ids. */
+  connect?: PluginConnectionInput[];
+}
+
+export interface PluginDiagramChangesResult {
+  /** The component id created for each `add` key. */
+  idsByKey: Record<string, string>;
+  /** Per `connect` entry, in order: the connection created, or null when its ends did not resolve. */
+  connectionIds: Array<string | null>;
+}
+
 /** Plugin-scoped persistent key-value storage, namespaced per plugin id. */
 export interface PluginStorage {
   get<T>(key: string): Promise<T | null>;
@@ -345,6 +425,21 @@ export interface StructuraPluginApi {
    * are ignored.
    */
   moveComponents(moves: Array<{ id: string; x: number; y: number }>): void;
+
+  /**
+   * v1.4 — capability "diagram:write". Remove, update, move, add and connect on the ACTIVE
+   * diagram as one history step. Ids not in the diagram are ignored.
+   */
+  applyChanges(changes: PluginDiagramChanges): PluginDiagramChangesResult;
+
+  /** v1.4 — capability "files:folder". Folders the user picked for this plugin. */
+  readonly files: PluginFiles;
+
+  /** v1.4 — host UI building blocks plugins render instead of bundling their own. */
+  readonly ui: {
+    /** The host's code editor (Monaco, loaded on first render). */
+    CodeEditor: ReactComponentType<PluginCodeEditorProps>;
+  };
 
   /** Plugin-scoped persistent key-value storage. */
   readonly storage: PluginStorage;
