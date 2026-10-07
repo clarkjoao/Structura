@@ -1,17 +1,19 @@
 {
   "name": "structura-plugin-opscr",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Import opscr architecture-as-code manifests as a laid-out Structura diagram",
   "main": "dist/plugin.js",
   "type": "module",
   "scripts": {
-    "build": "npm run sync-types && npm run sync-shared && vite build",
+    "build": "npm run sync-types && npm run sync-shared && npm run build-skill && vite build",
     "sync-types": "node scripts/sync-types.mjs",
     "sync-types:check": "node scripts/sync-types.mjs --check",
     "sync-shared": "node scripts/sync-shared.mjs",
     "sync-shared:check": "node scripts/sync-shared.mjs --check",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build-skill": "node scripts/build-skill.mjs",
+    "build-skill:check": "node scripts/build-skill.mjs --check"
   },
   "dependencies": {
     "elkjs": "^0.12.0",
