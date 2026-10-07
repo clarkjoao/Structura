@@ -1,6 +1,6 @@
 # Spike: a read-only Structura preview for a VSCode webview
 
-Date: 2026-10-06 · Branch: `spike/vscode-viewer` (throwaway code under `spike/vscode-viewer/`)
+Date: 2026-10-06 · Branch: `spike/vscode-viewer` (throwaway code, since removed; the real entry is `src/embed/`)
 
 **Question.** How much of the viewer has to be extracted for a VSCode extension to render an opscr
 file live, read-only, with autolayout?
