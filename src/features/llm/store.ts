@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
+import { findChatContext } from "@/features/plugins/chat-context-registry";
+import { runPluginChatTurn } from "./plugin-chat-turn";
 import { parseLLMResponse } from "./patch-parser";
 import { LLMProviderError, type LLMErrorKind } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
@@ -599,6 +601,34 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       });
 
       try {
+        // A plugin that owns this diagram (API 1.6, e.g. one bound to YAML) answers instead.
+        const activeDiagramId = useDiagramStore.getState().activeDiagramId;
+        const pluginContext = activeDiagramId ? findChatContext(activeDiagramId) : null;
+        if (pluginContext && activeDiagramId) {
+          const setAssistant = (content: string) =>
+            set((current) => ({
+              messages: current.messages.map((message) =>
+                message.id === assistantMessageId ? { ...message, content } : message,
+              ),
+            }));
+          const reply = await runPluginChatTurn({
+            context: pluginContext,
+            diagramId: activeDiagramId,
+            locale: getResolvedAppLanguage().startsWith("pt") ? "pt-BR" : "en",
+            history: sanitizeMessagesForLLM(outgoingMessages),
+            send: (messages, systemPrompt, onChunk) =>
+              executeLLMMessage(state.config, messages, systemPrompt, onChunk),
+            onText: (text) => {
+              set({ streamingContent: text });
+              setAssistant(text);
+            },
+          });
+          setAssistant(reply);
+          set({ streamingContent: null, isLoading: false, error: null, pendingAnalysis: null });
+          persistThread();
+          return;
+        }
+
         const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
         const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
         let fullResponse = "";

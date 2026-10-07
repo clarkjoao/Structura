@@ -68,17 +68,18 @@ uninstall them. A plain `npm run build` ships zero built-in plugins.
 
 See [docs/architecture/extension-points.md](../docs/architecture/extension-points.md) for the full extension point inventory.
 
-| Capability          | Description                                                             |
-| ------------------- | ----------------------------------------------------------------------- |
-| `events:diagram`    | Subscribe to diagram changes via `onDiagramChange`                      |
-| `diagram:read`      | Read diagram data via `getDiagram()`                                    |
-| `diagram:write`     | Modify diagrams via `updateComponent()`, `moveComponents()`             |
-| `io:importers`      | Register file importers via `registerImporter()`                        |
-| `io:exporters`      | Register file exporters via `registerExporter()`                        |
-| `ui:panels`         | Add panels to toolbar or inspector via `registerPanel()`                |
-| `ui:overlays`       | Show toasts and modals via `overlay.showToast()`, `overlay.openModal()` |
-| `canvas:node-types` | Register custom node types via `registerNodeType()`                     |
-| `files:folder`      | Read and write a folder the user picked via `files` (API 1.4)           |
+| Capability          | Description                                                                   |
+| ------------------- | ----------------------------------------------------------------------------- |
+| `events:diagram`    | Subscribe to diagram changes via `onDiagramChange`                            |
+| `diagram:read`      | Read diagram data via `getDiagram()`                                          |
+| `diagram:write`     | Modify diagrams via `updateComponent()`, `moveComponents()`                   |
+| `io:importers`      | Register file importers via `registerImporter()`                              |
+| `io:exporters`      | Register file exporters via `registerExporter()`                              |
+| `ui:panels`         | Add panels to toolbar or inspector via `registerPanel()`                      |
+| `ui:overlays`       | Show toasts and modals via `overlay.showToast()`, `overlay.openModal()`       |
+| `canvas:node-types` | Register custom node types via `registerNodeType()`                           |
+| `files:folder`      | Read and write a folder the user picked via `files` (API 1.4)                 |
+| `llm:context`       | Answer the chat for diagrams the plugin owns (`registerChatContext`, API 1.6) |
 
 ## Developing Plugins
 
@@ -207,6 +208,28 @@ const { idsByKey, connectionIds } = api.applyChanges({
 ```
 
 F2 opens Monaco's rename box on the symbol; the provider only answers for this editor.
+
+### Chat context (API 1.6)
+
+```javascript
+api.registerChatContext({
+  id: "my-plugin/chat",
+  // Take over the chat of the diagrams you own (e.g. bound to your files).
+  appliesTo: (diagramId) => owned.has(diagramId),
+  // Replaces the built-in diagram prompt. `input`: { diagramId, locale, attempt, maxAttempts }.
+  systemPrompt: (input) => `You edit my files…\n${currentFiles()}`,
+  // The model's full reply: apply it, say what to show, or ask the model to fix something.
+  handleReply: async (text, input) => {
+    const problems = await applyAndValidate(text);
+    return problems.length > 0
+      ? { reply: "", retry: `Fix these:\n${problems.join("\n")}` }
+      : { reply: "Done." };
+  },
+});
+```
+
+The host calls the model at most 3 times per user message (`retry` is ignored on the last
+attempt). Retry turns are not shown; the thread keeps the user's message and the final `reply`.
 
 ### React Plugin Setup
 
