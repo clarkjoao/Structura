@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.2.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.3.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -134,9 +134,24 @@ export interface PluginServicePatch {
 export interface PluginComponentInput {
   key: string;
   name: string;
-  /** Defaults to "unknown" when omitted; plugin node types must be "<pluginId>/<name>". */
+  /**
+   * Kept when it is a C4 type, `"panel"`, a catalog family category (`"aws-database"`,
+   * `"gcp-compute"`, `"oss-messaging"`, …) or a plugin node type `"<pluginId>/<name>"`;
+   * anything else, or omitted, becomes `"unknown"`.
+   */
   type?: string;
   description?: string;
+  /**
+   * The component to nest this one in (since 1.3): another input's `key`, or an existing
+   * component id from ImportContext. Ignored — the component lands at the top level — when
+   * the parent is missing, cannot hold this type, or the parent keys form a cycle.
+   */
+  parentKey?: string;
+  /** Catalog service of a catalog family component, e.g. "dynamodb" (since 1.3). */
+  cloudServiceId?: string;
+  /** Technology label of a C4 or catalog component (since 1.3). */
+  technology?: string;
+  /** Relative to the parent when `parentKey` is honoured; otherwise canvas coordinates. */
   x: number;
   y: number;
   width?: number;
