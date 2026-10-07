@@ -128,6 +128,53 @@ describe("PreviewPipeline", () => {
   });
 });
 
+describe("layout sidecar", () => {
+  const withSidecar = async (layout: string) => ({ ...(await sample()), layout });
+  const sidecarOf = (boxes: Record<string, { x: number; y: number }>) =>
+    JSON.stringify({
+      version: 1,
+      elements: Object.fromEntries(
+        Object.entries(boxes).map(([k, b]) => [k, { ...b, width: 180, height: 80 }]),
+      ),
+    });
+
+  it("collects the folder's sidecar", async () => {
+    const workspace = await collectWorkspace(
+      "/w",
+      ["a.opscr.yaml", "opscr.layout.json"],
+      async (p) => p,
+    );
+    expect(workspace.layout).toBe("/w/opscr.layout.json");
+  });
+
+  it("draws elements at their sidecar box, others by the stable layout", async () => {
+    const { graph } = await new PreviewPipeline().update(
+      await withSidecar(sidecarOf({ "Database/orders-db": { x: 900, y: 300 } })),
+    );
+    const db = graph!.components.find((c) => c.key === "Database/orders-db")!;
+    expect([db.x, db.y]).toEqual([900, 300]);
+  });
+
+  it("re-applies a changed sidecar, and ignores an unchanged one after relayout()", async () => {
+    const pipeline = new PreviewPipeline();
+    const first = await withSidecar(sidecarOf({ "Database/orders-db": { x: 900, y: 300 } }));
+    await pipeline.update(first);
+    const moved = await pipeline.update(
+      await withSidecar(sidecarOf({ "Database/orders-db": { x: 50, y: 700 } })),
+    );
+    const at = (g: typeof moved) => {
+      const db = g.graph!.components.find((c) => c.key === "Database/orders-db")!;
+      return [db.x, db.y];
+    };
+    expect(at(moved)).toEqual([50, 700]);
+    pipeline.relayout();
+    const fresh = await pipeline.update(
+      await withSidecar(sidecarOf({ "Database/orders-db": { x: 50, y: 700 } })),
+    );
+    expect(at(fresh)).not.toEqual([50, 700]);
+  });
+});
+
 describe("previewHtml", () => {
   it("adds a CSP and a base to the embed page", () => {
     const html = previewHtml(

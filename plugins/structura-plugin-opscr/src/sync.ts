@@ -4,6 +4,7 @@ import type {
   ViewBox,
   ViewLayoutResult,
 } from "./generated/opscr-mapping";
+import { overlayLayouts, parseLayoutFile, serializeLayoutFile } from "./generated/opscr-mapping";
 import type {
   DiagramSnapshot,
   PluginDiagramChanges,
@@ -86,6 +87,24 @@ export function canvasLayout(binding: BindingState, diagram: DiagramSnapshot): V
   }
   return { boxes, edgeRoutes: new Map() };
 }
+
+/**
+ * The layout a sync starts from: the sidecar's boxes (`opscr.layout.json`) with the canvas's
+ * on top — so elements the canvas does not have yet land where the sidecar put them, and
+ * what the reader sees always wins.
+ */
+export function previousLayout(
+  binding: BindingState,
+  diagram: DiagramSnapshot,
+  sidecar: string | undefined,
+): ViewLayoutResult | undefined {
+  const fromFile = sidecar ? parseLayoutFile(sidecar) : null;
+  return overlayLayouts(fromFile, canvasLayout(binding, diagram));
+}
+
+/** The sidecar text for what the canvas shows now (bound elements only). */
+export const sidecarText = (binding: BindingState, diagram: DiagramSnapshot) =>
+  serializeLayoutFile(canvasLayout(binding, diagram).boxes);
 
 export interface SyncPlan {
   changes: PluginDiagramChanges;

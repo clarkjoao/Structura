@@ -143,6 +143,8 @@ const setEditorText = async (text) => {
   await page.keyboard.press("ControlOrMeta+a");
   await page.evaluate((t) => navigator.clipboard.writeText(t), text);
   await page.keyboard.press("ControlOrMeta+v");
+  // Monaco reads the clipboard asynchronously: let the paste land before the next key.
+  await page.waitForTimeout(400);
 };
 const appendToEditor = (text) => setEditorText(commerce + text);
 
@@ -194,6 +196,17 @@ const onDisk = await page.evaluate(async () => {
 await check(
   onDisk.includes("price-cache") && !onDisk.includes("name: exports"),
   "Ctrl/Cmd+S writes the edited file to the folder",
+);
+const sidecar = await page
+  .evaluate(async () => {
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle("opscr-sample");
+    return (await (await dir.getFileHandle("opscr.layout.json")).getFile()).text();
+  })
+  .catch(() => "");
+const savedApi = JSON.parse(sidecar || "{}").elements?.["APIGateway/public-api"];
+await check(
+  Number.isFinite(savedApi?.x) && Number.isFinite(savedApi?.y),
+  "saving writes the layout sidecar",
 );
 
 await setEditorText(SAMPLE["commerce.opscr.yaml"]);
@@ -264,6 +277,10 @@ await waitFor(async () => {
     !relationships.includes("orders-db")
   );
 }, "a canvas rename renames the manifest and every edge end");
+await check(
+  (await saveAndRead("opscr.layout.json")).includes('"Database/order-store"'),
+  "the rename re-keys the layout sidecar",
+);
 await check((await nodes()) === count, "the renamed element keeps its place (no remove/re-add)");
 await page.screenshot({ path: join(OUT, "5-canvas-to-yaml.png") });
 

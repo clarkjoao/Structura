@@ -7,6 +7,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import * as vscode from "vscode";
 import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
+import { LAYOUT_FILE } from "./generated/opscr-mapping";
 import { collectWorkspace, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
@@ -157,7 +158,15 @@ export function activate(context: vscode.ExtensionContext): void {
     );
     const preview = new Preview(folder, panel, diagnostics);
     previews.set(folder, preview);
+    // The layout sidecar is written by Structura, outside any editor: watch the file itself.
+    const sidecar = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(folder), LAYOUT_FILE),
+    );
+    sidecar.onDidChange(() => preview.schedule());
+    sidecar.onDidCreate(() => preview.schedule());
+    sidecar.onDidDelete(() => preview.schedule());
     panel.onDidDispose(() => {
+      sidecar.dispose();
       preview.dispose();
       previews.delete(folder);
     });
