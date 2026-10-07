@@ -40,6 +40,11 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.3.0**: importer results can nest components (`parentKey`, to a
+  new or an existing component), create panels and catalog components (AWS,
+  GCP, Azure, OSS…) with `cloudServiceId` and `technology`. Plugin imports now
+  commit through the same path as generated diagrams, so they also land in an
+  open diagram version. Additive: 1.2 importers behave as before.
 - **`ServiceCatalog` → `Services`** (`PERSIST_SCHEMA_VERSION` 13 → 14).
   Canonical product name is **Services** / **Serviços**. Persist field
   `serviceCatalog` → `services` (still migrates legacy `serviceRegistry`);

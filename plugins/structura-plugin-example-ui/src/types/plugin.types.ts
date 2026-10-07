@@ -7,7 +7,7 @@
  */
 
 import type { ComponentType as ReactComponentType } from "react";
-import type { NodeTypes } from "@xyflow/react";
+import type { DiagramNodeComponent } from "@/features/canvas";
 
 /**
  * Public surface of the Structura plugin system (RFC:
@@ -16,7 +16,7 @@ import type { NodeTypes } from "@xyflow/react";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.2.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.3.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -134,9 +134,24 @@ export interface PluginServicePatch {
 export interface PluginComponentInput {
   key: string;
   name: string;
-  /** Defaults to "unknown" when omitted; plugin node types must be "<pluginId>/<name>". */
+  /**
+   * Kept when it is a C4 type, `"panel"`, a catalog family category (`"aws-database"`,
+   * `"gcp-compute"`, `"oss-messaging"`, …) or a plugin node type `"<pluginId>/<name>"`;
+   * anything else, or omitted, becomes `"unknown"`.
+   */
   type?: string;
   description?: string;
+  /**
+   * The component to nest this one in (since 1.3): another input's `key`, or an existing
+   * component id from ImportContext. Ignored — the component lands at the top level — when
+   * the parent is missing, cannot hold this type, or the parent keys form a cycle.
+   */
+  parentKey?: string;
+  /** Catalog service of a catalog family component, e.g. "dynamodb" (since 1.3). */
+  cloudServiceId?: string;
+  /** Technology label of a C4 or catalog component (since 1.3). */
+  technology?: string;
+  /** Relative to the parent when `parentKey` is honoured; otherwise canvas coordinates. */
   x: number;
   y: number;
   width?: number;
@@ -185,7 +200,12 @@ export interface ExporterContribution {
   export(diagram: DiagramSnapshot): string | Promise<string>;
 }
 
-export type PluginPanelSlot = "element-inspector" | "service-registry-import" | "canvas-toolbar";
+export type PluginPanelSlot =
+  | "element-inspector"
+  | "services-import"
+  /** @deprecated Prefer `services-import`. Accepted for one release. */
+  | "service-registry-import"
+  | "canvas-toolbar";
 
 /**
  * Context handed to every plugin panel, whatever slot it fills. v1.2 unified the former
@@ -196,7 +216,7 @@ export type PluginPanelSlot = "element-inspector" | "service-registry-import" | 
 export interface PluginPanelContext {
   /** Read-only snapshot of the current selection (element-inspector slot; [] elsewhere). */
   selection: readonly PluginComponentSnapshot[];
-  /** Read-only snapshot of the service being viewed (service-registry slot; null elsewhere). */
+  /** Read-only snapshot of the service being viewed (services-import slot; null elsewhere). */
   service: PluginServiceSnapshot | null;
   /** Sanctioned mutations — routed through store actions, pushHistory included. */
   updateComponent(id: string, patch: PluginComponentPatch): void;
@@ -270,8 +290,8 @@ export interface PluginNodeTypeDescriptor {
    * so plugin types can never collide with built-ins or other plugins.
    */
   rfType: string;
-  /** React component rendered for the node (same contract as NodeTypes[string]). */
-  component: NodeTypes[string];
+  /** React component rendered for the node (canvas node-type contract). */
+  component: DiagramNodeComponent;
   /** Domain component type this descriptor matches, namespaced the same way. */
   componentType: string;
   zIndex?: number;

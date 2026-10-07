@@ -224,6 +224,7 @@ export interface AppActions {
   insertGeneratedGraph: (
     nodes: import("./slices/generated-graph.slice").GeneratedNodeInput[],
     edges: import("./slices/generated-graph.slice").GeneratedEdgeInput[],
+    options?: import("./slices/generated-graph.slice").InsertGeneratedGraphOptions,
   ) => import("./slices/generated-graph.slice").GeneratedGraphResult;
 
   undo: () => void;
