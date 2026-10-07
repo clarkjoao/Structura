@@ -10,6 +10,7 @@
 import type { StructuraPluginGlobal } from "./types/plugin.types";
 import { canImportOpscr, importOpscr } from "./import-opscr";
 import { createOpscrPane } from "./pane/OpscrPane";
+import { createChatContext } from "./chat-context";
 
 declare global {
   interface Window {
@@ -21,10 +22,10 @@ window.StructuraPlugin.define({
   manifest: {
     id: "structura-plugin-opscr",
     name: "opscr",
-    version: "0.5.0",
+    version: "0.6.0",
     author: "Structura",
     description: "Import opscr manifests, or edit a folder of them beside a diagram that follows",
-    apiVersion: "^1.4",
+    apiVersion: "^1.6",
     capabilities: [
       "io:importers",
       "ui:panels",
@@ -33,6 +34,7 @@ window.StructuraPlugin.define({
       "events:diagram",
       "storage",
       "files:folder",
+      "llm:context",
     ],
   },
   activate(api) {
@@ -49,5 +51,7 @@ window.StructuraPlugin.define({
       title: "opscr",
       component: createOpscrPane(api),
     });
+    // On a bound diagram whose folder is open, the chat edits its YAML with the opscr skill.
+    api.registerChatContext(createChatContext());
   },
 });
