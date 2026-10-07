@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Diagnostic } from "opscr/core";
 import type {
   PluginEditorMarker,
+  PluginEditorRename,
   PluginFolder,
   PluginPanelProps,
   StructuraPluginApi,
 } from "../types/plugin.types";
 import { CONFIG_FILE, isManifest, projectWorkspace } from "../project";
-import type { SourceText } from "../patches";
-import { reconcile, retire } from "../reconcile";
+import { keyOf, nameAt, renameElement, type SourceText } from "../patches";
+import { reconcile, renameInBinding, retire } from "../reconcile";
 import { LAYOUT_FILE } from "../generated/opscr-mapping";
 import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "../sync";
 import { text, type Locale } from "./i18n";
@@ -55,6 +56,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const [folder, setFolder] = useState<PluginFolder | null>(null);
     const [buffers, setBuffers] = useState<Buffer[]>([]);
     const [selected, setSelected] = useState<string | null>(null);
+    const selectedRef = useRef(selected);
+    selectedRef.current = selected;
     const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
     const [status, setStatus] = useState<string>("");
     const [notInYaml, setNotInYaml] = useState(0);
@@ -185,6 +188,44 @@ export function createOpscrPane(api: StructuraPluginApi) {
         });
       });
     }, [folder, diagramId, enqueue, reconcileNow, syncNow, writeSidecar]);
+
+    // F2 in the editor: rename an element (its manifest or an edge end naming it) across every
+    // file, keeping its canvas id — the same rename a canvas edit makes, started from the text.
+    const renameSymbol = useMemo<PluginEditorRename>(
+      () => ({
+        resolve(offset) {
+          const file = selectedRef.current;
+          const at = file ? nameAt(manifestsOf(buffersRef.current), file, offset) : null;
+          return at && { start: at.start, end: at.end, text: at.ref.name };
+        },
+        async rename(offset, newName) {
+          let refusal: string | undefined;
+          await enqueue(async () => {
+            await reconcileNow();
+            const file = selectedRef.current;
+            const manifests = manifestsOf(buffersRef.current);
+            const at = file ? nameAt(manifests, file, offset) : null;
+            const to = newName.trim();
+            if (!at) return void (refusal = t.renameGone);
+            if (to === at.ref.name) return;
+            const files = to ? renameElement(manifests, at.ref, to) : null;
+            if (!files) return void (refusal = t.renameRefused(to));
+            setTexts(files);
+            const binding = bindingRef.current;
+            if (binding) {
+              const from = keyOf(at.ref);
+              const id = binding.state.ids[from];
+              const state = renameInBinding(binding.state, from, keyOf({ ...at.ref, name: to }));
+              await persist({ ...binding, state });
+              if (id) api.applyChanges({ update: [{ id, name: to }] });
+            }
+            await syncNow();
+          });
+          return refusal;
+        },
+      }),
+      [enqueue, persist, reconcileNow, syncNow, t],
+    );
 
     const load = useCallback(
       async (opened: PluginFolder) => {
@@ -367,6 +408,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
               language="yaml"
               onChange={edit}
               onSave={() => void save()}
+              rename={renameSymbol}
               markers={problemsHere.map(toMarker)}
             />
           )}

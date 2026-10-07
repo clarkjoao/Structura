@@ -2,9 +2,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { countEdges, hasManifest, type SourceText } from "./patches";
+import { countEdges, hasManifest, renameElement, type SourceText } from "./patches";
 import { projectWorkspace } from "./project";
-import { reconcile, retire } from "./reconcile";
+import { reconcile, renameInBinding, retire } from "./reconcile";
 import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "./sync";
 import type {
   DiagramSnapshot,
@@ -416,5 +416,30 @@ describe("layout sidecar", () => {
     expect(s.sidecar).toContain('"Database/order-store"');
     expect(s.sidecar).not.toContain("orders-db");
     expect(s.sidecar).not.toContain("cart-cache");
+  });
+});
+
+describe("F2 rename (from the text)", () => {
+  it("renames everywhere and keeps the canvas element, children included", async () => {
+    const id = s.id("orders");
+    const children = s.canvas.components.filter((c) => c.parentId === id).map((c) => c.id);
+    s.files = renameElement(
+      s.files,
+      { kind: "ApplicationService", name: "orders" },
+      "ordering-app",
+    )!;
+    s.binding = renameInBinding(
+      s.binding,
+      "ApplicationService/orders",
+      "ApplicationService/ordering-app",
+    );
+    s.canvas.apply({ update: [{ id, name: "ordering-app" }] });
+    const plan = await s.pump();
+    expect(plan.changes.remove).toEqual([]);
+    expect(plan.changes.add).toEqual([]);
+    expect(s.canvas.components.find((c) => c.id === id)?.label).toBe("ordering-app");
+    for (const child of children)
+      expect(s.canvas.components.find((c) => c.id === child)?.parentId).toBe(id);
+    await s.expectSettled();
   });
 });
