@@ -27,7 +27,12 @@ import { buildTechnicalView, placeView, toLayoutGraph } from "./opscr-mapping";
 const { workspace } = await compileSources({ files });
 const view = buildTechnicalView(workspace);
 const placed = placeView(view, await layout(toLayoutGraph(view))); // app's ELK engine
+const graph = toImporterGraph(placed); // plugin importer result / embed preview input
 ```
+
+Hosts that cannot import the app's layout engine use `src/lib/opscr-layout` (`layoutView`, same
+ELK options). To keep a picture still across edits, seed it with the previous boxes and pass the
+result through `stabilizeLayout(view, fresh, previous)`: surviving elements keep their place.
 
 ## The technical view
 
