@@ -250,6 +250,10 @@ export interface AppActions {
     options?: import("./slices/generated-graph.slice").InsertGeneratedGraphOptions,
   ) => import("./slices/generated-graph.slice").GeneratedGraphResult;
 
+  applyGraphChanges: (
+    changes: import("./slices/generated-graph.slice").GraphChanges,
+  ) => import("./slices/generated-graph.slice").GraphChangesResult;
+
   undo: () => void;
   redo: () => void;
   pushHistoryBoundary: () => void;
