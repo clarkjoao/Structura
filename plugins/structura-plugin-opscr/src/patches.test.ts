@@ -8,6 +8,7 @@ import {
   countEdges,
   edgeSource,
   hasManifest,
+  nameAt,
   removeEdge,
   removeElements,
   renameElement,
@@ -210,5 +211,33 @@ describe("edges", () => {
       ),
     ).toEqual(["-      type: calls", "+      type: relatedTo"]);
     expect(await errors(removed.files)).toEqual(await errors(SAMPLE));
+  });
+});
+
+describe("nameAt", () => {
+  const commerce = text(SAMPLE, "commerce.opscr.yaml");
+  const relationships = text(SAMPLE, "relationships.opscr.yaml");
+
+  it("finds a manifest's name, cursor inside or right after it", () => {
+    const start = commerce.indexOf("name: orders-db") + "name: ".length;
+    for (const offset of [start, start + 3, start + "orders-db".length]) {
+      expect(nameAt(SAMPLE, "commerce.opscr.yaml", offset)).toEqual({
+        ref: DB,
+        start,
+        end: start + "orders-db".length,
+      });
+    }
+  });
+
+  it("finds an edge end's id, with the end's kind", () => {
+    const at = relationships.indexOf("id: orders-db") + "id: ".length + 2;
+    expect(nameAt(SAMPLE, "relationships.opscr.yaml", at)?.ref).toEqual(DB);
+  });
+
+  it("finds nothing elsewhere", () => {
+    expect(
+      nameAt(SAMPLE, "commerce.opscr.yaml", commerce.indexOf("provider: DynamoDB") + 3),
+    ).toBeNull();
+    expect(nameAt(SAMPLE, "missing.opscr.yaml", 0)).toBeNull();
   });
 });
