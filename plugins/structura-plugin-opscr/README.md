@@ -25,6 +25,9 @@ Two ways to bring opscr into Structura:
   | Delete a connection                    | its edge                                                            |
   | Undo / redo (of either side)           | the text change it reverts                                          |
 
+  **F2** on a manifest's `metadata.name`, or on an edge end's `id`, renames that element in every
+  file; the canvas element keeps its place.
+
   Catalog services, technology and elements added from the palette stay canvas-only; the pane
   counts the elements that are not in the YAML.
 
