@@ -1,9 +1,17 @@
 {
   "id": "structura-plugin-opscr",
-  "name": "opscr Import",
-  "version": "0.1.0",
+  "name": "opscr",
+  "version": "0.2.0",
   "author": "Structura",
-  "description": "Import opscr architecture-as-code manifests as a laid-out diagram",
-  "apiVersion": "^1.3",
-  "capabilities": ["io:importers"]
+  "description": "Import opscr manifests, or edit a folder of them beside a diagram that follows",
+  "apiVersion": "^1.4",
+  "capabilities": [
+    "io:importers",
+    "ui:panels",
+    "diagram:read",
+    "diagram:write",
+    "events:diagram",
+    "storage",
+    "files:folder"
+  ]
 }

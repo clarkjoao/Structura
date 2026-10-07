@@ -1,14 +1,15 @@
 /**
- * Structura opscr plugin — imports opscr architecture-as-code manifests.
+ * Structura opscr plugin — opscr architecture-as-code manifests in Structura.
  *
- * One `*.opscr.yaml` file in, a laid-out technical diagram out: Domains and bounded
- * contexts as panels, technical Kinds as their cloud catalog components, flow edges as
- * connections. See README.md.
+ * - Importer: one `*.opscr.yaml` file → a laid-out technical diagram.
+ * - Document pane (API 1.4): bind the active diagram to a folder of manifests, edit them
+ *   beside the canvas, and the diagram follows as you type.
  *
  * Build: npm link opscr && npm run build
  */
 import type { StructuraPluginGlobal } from "./types/plugin.types";
 import { canImportOpscr, importOpscr } from "./import-opscr";
+import { createOpscrPane } from "./pane/OpscrPane";
 
 declare global {
   interface Window {
@@ -19,12 +20,20 @@ declare global {
 window.StructuraPlugin.define({
   manifest: {
     id: "structura-plugin-opscr",
-    name: "opscr Import",
-    version: "0.1.0",
+    name: "opscr",
+    version: "0.2.0",
     author: "Structura",
-    description: "Import opscr architecture-as-code manifests as a laid-out diagram",
-    apiVersion: "^1.3",
-    capabilities: ["io:importers"],
+    description: "Import opscr manifests, or edit a folder of them beside a diagram that follows",
+    apiVersion: "^1.4",
+    capabilities: [
+      "io:importers",
+      "ui:panels",
+      "diagram:read",
+      "diagram:write",
+      "events:diagram",
+      "storage",
+      "files:folder",
+    ],
   },
   activate(api) {
     api.registerImporter({
@@ -33,6 +42,12 @@ window.StructuraPlugin.define({
       extensions: ["yaml", "yml"],
       canImport: canImportOpscr,
       import: importOpscr,
+    });
+    api.registerPanel({
+      id: "structura-plugin-opscr/pane",
+      slot: "document-pane",
+      title: "opscr",
+      component: createOpscrPane(api),
     });
   },
 });
