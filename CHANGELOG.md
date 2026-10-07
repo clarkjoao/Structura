@@ -40,6 +40,10 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.4.0**: a `document-pane` slot docked beside the canvas, the
+  host code editor as `api.ui.CodeEditor`, folder access (`files:folder`,
+  `api.files`) remembered per binding, and `api.applyChanges` for several
+  diagram changes as one undo step. Additive.
 - **Plugin API 1.3.0**: importer results can nest components (`parentKey`, to a
   new or an existing component), create panels and catalog components (AWS,
   GCP, Azure, OSS…) with `cloudServiceId` and `technology`. Plugin imports now
