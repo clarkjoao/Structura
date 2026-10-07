@@ -40,6 +40,12 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.5.0**: `api.ui.CodeEditor` takes a `rename` handler, so F2
+  ("Rename symbol") in a plugin's editor is answered by the plugin. Additive.
+- **opscr plugin**: canvas edits patch the bound YAML (rename, description,
+  delete, connections, undo/redo), the arrangement is kept in an
+  `opscr.layout.json` sidecar shared with the VSCode preview, and F2 renames an
+  element across every file while it keeps its place on the canvas.
 - **Plugin API 1.4.0**: a `document-pane` slot docked beside the canvas, the
   host code editor as `api.ui.CodeEditor`, folder access (`files:folder`,
   `api.files`) remembered per binding, and `api.applyChanges` for several
