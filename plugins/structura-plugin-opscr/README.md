@@ -45,6 +45,6 @@ folder-binding work, not to this plugin.
 
 - `npm run sync-types` — the host plugin API types (`src/types/plugin.types.ts`).
 - `npm run sync-shared` — the host projection (`src/generated/opscr-mapping`).
-- `src/elk-layout.ts` mirrors the host's ELK options by hand; keep them in step.
+- `npm run sync-shared` also copies the host ELK runner (`src/generated/opscr-layout`).
 
 Neither runs in CI: this plugin depends on an unpublished package.

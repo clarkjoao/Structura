@@ -1,14 +1,13 @@
 import ELK from "elkjs/lib/elk.bundled.js";
 import type { ElkNode } from "elkjs/lib/elk-api";
-import type { ViewBox, ViewLayoutGraph, ViewLayoutResult } from "./generated/opscr-mapping";
+import type { ViewBox, ViewLayoutGraph, ViewLayoutResult } from "../opscr-mapping";
 
 /**
  * Mirrors `ELK_OPTIONS_INTERACTIVE` in the host's
- * `src/features/canvas/layout/layoutEngine.ts`: a plugin cannot import the host, and a
- * dozen constants are cheaper to copy than a shared module with one consumer. Keep them
- * in step when the host's change.
+ * `src/features/canvas/layout/layoutEngine.ts`, which plugins and the VSCode extension
+ * cannot import. Keep them in step when the host's change.
  */
-const ELK_OPTIONS: Record<string, string> = {
+const ELK_OPTIONS: Readonly<Record<string, string>> = {
   "elk.algorithm": "layered",
   "elk.direction": "RIGHT",
   "elk.edgeRouting": "ORTHOGONAL",
@@ -21,6 +20,16 @@ const ELK_OPTIONS: Record<string, string> = {
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
 };
 
+/**
+ * With a seed, ELK reads the nodes' current coordinates to choose layers and the order
+ * within them, so the result stays close to the picture the reader already has.
+ */
+const SEEDED_OPTIONS: Readonly<Record<string, string>> = {
+  "elk.layered.layering.strategy": "INTERACTIVE",
+  "elk.layered.crossingMinimization.strategy": "INTERACTIVE",
+  "elk.layered.nodePlacement.strategy": "INTERACTIVE",
+};
+
 const ROOT_ID = "__opscr_layout_root__";
 
 /** Input order is not information: sorting by id makes the layout deterministic. */
@@ -29,9 +38,16 @@ const byId = <T extends { id: string }>(items: readonly T[]): T[] =>
 
 /**
  * Lays out the view's graph and returns each node's box relative to its parent. Edge routes
- * are not returned: the import API has nowhere to put them, the canvas routes connections.
+ * are not returned: hosts hand positions to the canvas, which routes connections itself.
+ *
+ * `seed` — boxes from a previous layout, by node id — switches ELK to its interactive
+ * strategies; feed the result to `stabilizeLayout` to keep surviving nodes exactly in place.
  */
-export async function layoutView(graph: ViewLayoutGraph): Promise<ViewLayoutResult> {
+export async function layoutView(
+  graph: ViewLayoutGraph,
+  seed?: ReadonlyMap<string, ViewBox>,
+): Promise<ViewLayoutResult> {
+  const options = seed ? { ...ELK_OPTIONS, ...SEEDED_OPTIONS } : ELK_OPTIONS;
   const nodes = byId(graph.nodes);
   const present = new Set(nodes.map((n) => n.id));
   const children = new Map<string | null, typeof nodes>();
@@ -44,20 +60,19 @@ export async function layoutView(graph: ViewLayoutGraph): Promise<ViewLayoutResu
   const build = (node: (typeof nodes)[number]): ElkNode => {
     const kids = visited.has(node.id) ? [] : (children.get(node.id) ?? []);
     visited.add(node.id);
-    return kids.length === 0
-      ? { id: node.id, width: node.width, height: node.height }
-      : {
-          id: node.id,
-          width: node.width,
-          height: node.height,
-          layoutOptions: ELK_OPTIONS,
-          children: kids.map(build),
-        };
+    const at = seed?.get(node.id);
+    return {
+      id: node.id,
+      width: node.width,
+      height: node.height,
+      ...(at ? { x: at.x, y: at.y } : {}),
+      ...(kids.length > 0 ? { layoutOptions: options, children: kids.map(build) } : {}),
+    };
   };
 
   const laidOut = await new ELK().layout({
     id: ROOT_ID,
-    layoutOptions: ELK_OPTIONS,
+    layoutOptions: options,
     children: (children.get(null) ?? []).map(build),
     edges: byId(graph.edges)
       .filter((e) => present.has(e.sourceId) && present.has(e.targetId))

@@ -7,7 +7,16 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   // `.claude/worktrees` holds nested git worktrees created by local tooling; they
   // are separate checkouts and must not be linted as part of this one.
-  { ignores: ["dist", "cypress", ".claude/worktrees"] },
+  {
+    ignores: [
+      "dist",
+      "dist-embed",
+      "cypress",
+      ".claude/worktrees",
+      "extensions/*/dist",
+      "extensions/*/media",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

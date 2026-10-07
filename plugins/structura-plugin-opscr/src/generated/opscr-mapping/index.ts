@@ -1,8 +1,7 @@
 /**
  * AUTO-GENERATED — DO NOT EDIT BY HAND.
- * Verbatim copy of the host opscr mapping (src/lib/opscr-mapping), synced via
- * `npm run sync-shared`. It is the single source of truth for opscr
- * projection shared by the app and this plugin; edit the host files and re-sync.
+ * Verbatim copy of the host's src/lib/opscr-mapping, synced via `npm run sync-shared`.
+ * Edit the host files and re-sync instead of changing this file.
  */
 
 /**
@@ -17,6 +16,13 @@
 export { buildTechnicalView, nodeId } from "./technical-view";
 export { BOUNDARY_KINDS, LEAF_KINDS, PROVIDER_SERVICES, elementFor, isDrawnKind } from "./elements";
 export { placeView, toLayoutGraph } from "./layout";
+export { stabilizeLayout } from "./stable-layout";
+export { toImporterGraph } from "./importer-graph";
+export type {
+  ImporterGraph,
+  ImporterGraphComponent,
+  ImporterGraphConnection,
+} from "./importer-graph";
 export type {
   PlacedEdge,
   PlacedNode,

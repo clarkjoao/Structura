@@ -10,6 +10,13 @@
 export { buildTechnicalView, nodeId } from "./technical-view";
 export { BOUNDARY_KINDS, LEAF_KINDS, PROVIDER_SERVICES, elementFor, isDrawnKind } from "./elements";
 export { placeView, toLayoutGraph } from "./layout";
+export { stabilizeLayout } from "./stable-layout";
+export { toImporterGraph } from "./importer-graph";
+export type {
+  ImporterGraph,
+  ImporterGraphComponent,
+  ImporterGraphConnection,
+} from "./importer-graph";
 export type {
   PlacedEdge,
   PlacedNode,
