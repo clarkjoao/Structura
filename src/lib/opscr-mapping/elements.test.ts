@@ -39,9 +39,10 @@ describe("PROVIDER_SERVICES", () => {
   it("names only services that exist in Structura's catalogs", () => {
     for (const [kind, providers] of Object.entries(PROVIDER_SERVICES)) {
       for (const [provider, service] of Object.entries(providers)) {
-        expect(known.has(`${service.type}/${service.cloudServiceId}`), `${kind} ${provider}`).toBe(
-          true,
-        );
+        expect(
+          known.has(`${service.type}/${service.catalogServiceId}`),
+          `${kind} ${provider}`,
+        ).toBe(true);
       }
     }
   });
@@ -51,12 +52,12 @@ describe("elementFor", () => {
   it("uses the catalog service of a known provider", () => {
     expect(elementFor(manifest("Database", { provider: "DynamoDB" }))).toEqual({
       type: "aws-database",
-      cloudServiceId: "dynamodb",
+      catalogServiceId: "dynamodb",
       technology: "DynamoDB",
     });
     expect(elementFor(manifest("Topic", { provider: "Kafka" }))).toMatchObject({
       type: "oss-messaging",
-      cloudServiceId: "kafka",
+      catalogServiceId: "kafka",
     });
   });
 
