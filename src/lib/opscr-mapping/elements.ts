@@ -27,10 +27,13 @@ export function isDrawnKind(kind: string): boolean {
 
 interface CatalogService {
   type: string;
-  cloudServiceId: string;
+  catalogServiceId: string;
 }
 
-const svc = (type: string, cloudServiceId: string): CatalogService => ({ type, cloudServiceId });
+const svc = (type: string, catalogServiceId: string): CatalogService => ({
+  type,
+  catalogServiceId,
+});
 
 /**
  * opscr `spec.provider` → Structura catalog service, per Kind. Only providers with a
@@ -143,6 +146,6 @@ export function elementFor(manifest: OpscrManifestInput): ViewElement {
   const provider = text(spec["provider"]);
   const service = provider ? PROVIDER_SERVICES[kind]?.[provider] : undefined;
   if (service)
-    return { type: service.type, cloudServiceId: service.cloudServiceId, technology: provider };
+    return { type: service.type, catalogServiceId: service.catalogServiceId, technology: provider };
   return provider ? { type: "container", technology: provider } : { type: "container" };
 }

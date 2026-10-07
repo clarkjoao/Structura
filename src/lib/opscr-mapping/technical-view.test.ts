@@ -216,11 +216,11 @@ describe("the opscr sample", () => {
     const element = (id: string) => v.nodes.find((n) => n.id === id)?.element;
     expect(element("Database/orders-db")).toMatchObject({
       type: "aws-database",
-      cloudServiceId: "dynamodb",
+      catalogServiceId: "dynamodb",
     });
     expect(element("Queue/payment-requests")).toMatchObject({
       type: "aws-integration",
-      cloudServiceId: "sqs",
+      catalogServiceId: "sqs",
     });
   });
 

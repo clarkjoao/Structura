@@ -15,11 +15,12 @@ export interface OpscrWorkspaceInput {
 /**
  * What a node is drawn as, in Structura's vocabulary. `type` is a component type
  * string ("panel", "container", "aws-database", …); adapters check it with the
- * app's guards when they build components.
+ * app's guards when they build components. `catalogServiceId` becomes the
+ * component's `cloudServiceId`, which only `cloudServiceIdWrite()` may write (ADR-0010).
  */
 export interface ViewElement {
   type: string;
-  cloudServiceId?: string;
+  catalogServiceId?: string;
   technology?: string;
 }
 
