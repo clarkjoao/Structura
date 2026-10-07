@@ -1,0 +1,72 @@
+{
+  "name": "vscode-opscr",
+  "displayName": "opscr Preview",
+  "description": "Live, read-only Structura diagram of opscr architecture-as-code manifests",
+  "version": "0.1.0",
+  "publisher": "structura",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Visualization"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/*.opscr.yaml",
+    "workspaceContains:**/*.opscr.yml"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "opscr.openPreview",
+        "title": "Open Preview to the Side",
+        "category": "opscr",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "opscr.relayoutPreview",
+        "title": "Re-layout Preview",
+        "category": "opscr"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "opscr.openPreview",
+          "when": "resourceFilename =~ /\\.opscr\\.ya?ml$/",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "opscr.openPreview",
+          "when": "resourceFilename =~ /\\.opscr\\.ya?ml$/"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "sync-shared": "node scripts/sync-shared.mjs",
+    "sync-shared:check": "node scripts/sync-shared.mjs --check",
+    "copy-embed": "node scripts/copy-embed.mjs",
+    "build": "npm run sync-shared && npm run copy-embed && node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "e2e": "node e2e/run.mjs",
+    "package": "npm run build && vsce package --no-dependencies --allow-missing-repository"
+  },
+  "dependencies": {
+    "elkjs": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "~1.90.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.8"
+  }
+}
