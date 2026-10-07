@@ -192,6 +192,22 @@ const { idsByKey, connectionIds } = api.applyChanges({
 `files` never exposes the directory handle; names that would leave the folder are rejected.
 `applyChanges` normalizes `add` like importer results and ignores ids that are not in the diagram.
 
+### Rename in the code editor (API 1.5)
+
+```javascript
+<CodeEditor
+  value={text}
+  rename={{
+    // The renameable symbol at a text offset, or null ("Nothing here can be renamed").
+    resolve: (offset) => symbolAt(text, offset), // { start, end, text }
+    // Apply it yourself (it may span files); return a message to refuse.
+    rename: async (offset, newName) => (taken(newName) ? "Already used" : apply(offset, newName)),
+  }}
+/>
+```
+
+F2 opens Monaco's rename box on the symbol; the provider only answers for this editor.
+
 ### React Plugin Setup
 
 See [structura-plugin-example-ui/README.md](structura-plugin-example-ui/README.md)

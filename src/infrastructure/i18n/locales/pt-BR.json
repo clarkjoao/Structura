@@ -2274,6 +2274,9 @@
     "importNoActiveDiagram": "Abra um diagrama antes de importar com um plugin.",
     "importSkippedConnections": "{{count}} conexões foram ignoradas (extremidades desconhecidas).",
     "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin.",
+    "editor": {
+      "nothingToRename": "Nada aqui pode ser renomeado"
+    },
     "documentPane": {
       "resize": "Redimensionar o painel",
       "close": "Fechar o painel"

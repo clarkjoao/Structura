@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.4.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.5.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -330,6 +330,26 @@ export interface PluginCodeEditorProps {
   markers?: readonly PluginEditorMarker[];
   /** CSS height; fills its container by default. */
   height?: string | number;
+  /** v1.5 — F2 "Rename symbol" in this editor, answered by the plugin. */
+  rename?: PluginEditorRename;
+}
+
+/** v1.5 — a symbol the editor can rename, as UTF-16 offsets into the editor's text. */
+export interface PluginRenameSymbol {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/** v1.5 — what F2 does in a plugin's code editor. */
+export interface PluginEditorRename {
+  /** The renameable symbol at `offset`, or null when there is none. */
+  resolve(offset: number): PluginRenameSymbol | null;
+  /**
+   * Renames the symbol at `offset` (the plugin applies the change itself, e.g. across files).
+   * Resolves to a message to refuse the rename, shown in the editor, or to nothing.
+   */
+  rename(offset: number, newName: string): void | string | Promise<void | string>;
 }
 
 /**
