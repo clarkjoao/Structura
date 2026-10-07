@@ -115,6 +115,19 @@ function rekey(state: BindingState, from: string, to: string) {
   state.connections = connections;
 }
 
+/**
+ * The binding after a rename made in the text (F2): the element keeps its canvas id, so the
+ * sync that follows updates it in place instead of replacing it.
+ */
+export function renameInBinding(binding: BindingState, from: string, to: string): BindingState {
+  const state: BindingState = structuredClone(binding);
+  if (!state.ids[from]) return state;
+  rekey(state, from, to);
+  const [, ...rest] = readSignature(state.signatures[to]);
+  state.signatures[to] = JSON.stringify([refOf(to).name, ...rest]);
+  return state;
+}
+
 export interface ReconcileResult {
   files: SourceText[];
   binding: BindingState;
