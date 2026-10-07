@@ -25,8 +25,13 @@ Two ways to bring opscr into Structura:
   | Delete a connection                    | its edge                                                            |
   | Undo / redo (of either side)           | the text change it reverts                                          |
 
-  Positions, catalog services, technology and elements added from the palette stay canvas-only; the
-  pane counts the elements that are not in the YAML.
+  Catalog services, technology and elements added from the palette stay canvas-only; the pane
+  counts the elements that are not in the YAML.
+
+  Positions go to the **layout sidecar** `opscr.layout.json` beside the manifests (one
+  `"Kind/name": { x, y, width, height }` per line, parent-relative), saved with them. Binding a
+  fresh diagram — or opening the VSCode preview — restores that arrangement; elements the sidecar
+  does not list are placed by the stable layout.
 
 - **Import one file**, described below.
 
