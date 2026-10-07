@@ -109,6 +109,45 @@ See [docs/architecture/extension-points.md](../docs/architecture/extension-point
 })();
 ```
 
+### Importer results
+
+An importer returns plain data; the host mints ids, normalizes, and commits the whole import as one
+undo step.
+
+```javascript
+StructuraPlugin.registerImporter({
+  id: "my-plugin/format",
+  label: "My format",
+  extensions: ["txt"],
+  import(contents, ctx) {
+    return {
+      components: [
+        // C4 types, "panel", catalog categories ("aws-database", "oss-messaging", …) and
+        // "<pluginId>/<name>" are kept; any other type becomes "unknown".
+        { key: "orders", name: "Orders", type: "panel", x: ctx.anchor.x, y: ctx.anchor.y },
+        {
+          key: "db",
+          name: "orders-db",
+          type: "aws-database",
+          cloudServiceId: "dynamodb", // picks the icon (API 1.3)
+          technology: "DynamoDB", // C4 and catalog components (API 1.3)
+          parentKey: "orders", // nest in a new or existing component (API 1.3)
+          x: 40, // relative to the parent when nested
+          y: 40,
+        },
+      ],
+      // source/target: a component key, or an existing component id from ctx.
+      connections: [{ source: "db", target: "orders", label: "" }],
+      warnings: [],
+    };
+  },
+});
+```
+
+A `parentKey` that is missing, names a component that cannot hold this type, or closes a cycle
+puts the component at the top level. Connections whose ends cannot be resolved are skipped and
+counted.
+
 ### React Plugin Setup
 
 See [structura-plugin-example-ui/README.md](structura-plugin-example-ui/README.md)

@@ -1,4 +1,4 @@
-import type { ComponentType, NodeLayout, PanelKind } from "../../model/diagram.types";
+import type { ComponentType, Connection, NodeLayout, PanelKind } from "../../model/diagram.types";
 import { canContain } from "@/features/elements/containment";
 import {
   isAwsComponent,
@@ -12,18 +12,23 @@ import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
-import { resolveActiveVersion, writeComponentAndLayout } from "../helpers/version-helpers";
+import {
+  resolveActiveVersion,
+  resolveComponent,
+  writeComponentAndLayout,
+} from "../helpers/version-helpers";
 import { buildComponentForType } from "./components.slice";
 
 /**
- * A node of a graph produced outside the store — today, the LLM diagram
- * generator. `externalId` is the producer's own id; the store mints the real
- * component id and reports the mapping back.
+ * A node of a graph produced outside the store — the LLM diagram generator and
+ * plugin importers. `externalId` is the producer's own id; the store mints the
+ * real component id and reports the mapping back.
  */
 export interface GeneratedNodeInput {
   externalId: string;
   type: ComponentType;
   name: string;
+  description?: string;
   parentExternalId: string | null;
   panelKind?: PanelKind;
   technology?: string;
@@ -40,6 +45,16 @@ export interface GeneratedEdgeInput {
   sourceExternalId: string;
   targetExternalId: string;
   label: string;
+}
+
+export interface InsertGeneratedGraphOptions {
+  /**
+   * Resolve a parent or edge endpoint that is not in the batch against the
+   * active diagram's existing component ids (plugin imports connect to what is
+   * already drawn). Off by default: a generator's ids are its own, and must
+   * never bind to an existing component by coincidence.
+   */
+  linkExisting?: boolean;
 }
 
 export interface GeneratedGraphResult {
@@ -67,8 +82,10 @@ export const generatedGraphSlice = (
   insertGeneratedGraph: (
     nodes: GeneratedNodeInput[],
     edges: GeneratedEdgeInput[],
+    options: InsertGeneratedGraphOptions = {},
   ): GeneratedGraphResult => {
-    if (nodes.length === 0) {
+    // Edges alone can only land when they may connect components already drawn.
+    if (nodes.length === 0 && (edges.length === 0 || !options.linkExisting)) {
       return EMPTY_RESULT;
     }
 
@@ -76,22 +93,7 @@ export const generatedGraphSlice = (
     for (const node of nodes) {
       componentIdByExternalId[node.externalId] = generateId("el");
     }
-    const typeByExternalId: Record<string, string> = {};
-    for (const node of nodes) typeByExternalId[node.externalId] = node.type;
-
-    const resolvedEdges = edges.flatMap((edge) => {
-      const sourceId = componentIdByExternalId[edge.sourceExternalId];
-      const targetId = componentIdByExternalId[edge.targetExternalId];
-      if (!sourceId || !targetId) return [];
-      // An edge out of a note, a JSON viewer or a db-table is one the canvas
-      // can never draw — it would be created and then silently dropped by
-      // React Flow. A generated graph is the path that produced these in
-      // practice, so it is dropped here with the unresolvable endpoints.
-      const sourceType = typeByExternalId[edge.sourceExternalId];
-      if (sourceType !== undefined && !canBeConnectionSource(sourceType)) return [];
-      return [{ id: generateId("conn"), sourceId, targetId, label: edge.label }];
-    });
-
+    const resolvedEdges: Connection[] = [];
     let committed = false;
 
     set((state) => {
@@ -103,16 +105,20 @@ export const generatedGraphSlice = (
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
       const typeByExternalId = new Map(nodes.map((n) => [n.externalId, n.type]));
+      /** Store id and type of an external id: in the batch, else (if allowed) already drawn. */
+      const resolve = (externalId: string): { id: string; type: string } | null => {
+        const batchId = componentIdByExternalId[externalId];
+        if (batchId) return { id: batchId, type: typeByExternalId.get(externalId)! };
+        if (!options.linkExisting) return null;
+        const existing = resolveComponent(diagram, scene, externalId);
+        return existing ? { id: existing.id, type: existing.type } : null;
+      };
+
       for (const node of nodes) {
         const id = componentIdByExternalId[node.externalId];
-        const parentType =
-          node.parentExternalId === null ? undefined : typeByExternalId.get(node.parentExternalId);
+        const parent = node.parentExternalId === null ? null : resolve(node.parentExternalId);
         // A typed container refuses what it does not take: top level instead.
-        const parentId =
-          node.parentExternalId === null ||
-          (parentType !== undefined && !canContain(parentType, node.type))
-            ? null
-            : (componentIdByExternalId[node.parentExternalId] ?? null);
+        const parentId = parent && canContain(parent.type, node.type) ? parent.id : null;
 
         const { component } = buildComponentForType(
           id,
@@ -126,6 +132,7 @@ export const generatedGraphSlice = (
         // Type-based guards, not `isCloudComponent`: that one asks the cloud
         // registry, which is only populated once `features/cloud/bootstrap`
         // has run — so it answers differently in the app and under test.
+        if (node.description !== undefined) component.description = node.description;
         if (
           node.technology !== undefined &&
           (isC4Component(component) ||
@@ -145,6 +152,23 @@ export const generatedGraphSlice = (
         };
 
         writeComponentAndLayout(diagram, scene, component, layout);
+      }
+
+      for (const edge of edges) {
+        const source = resolve(edge.sourceExternalId);
+        const target = resolve(edge.targetExternalId);
+        if (!source || !target) continue;
+        // An edge out of a note, a JSON viewer or a db-table is one the canvas
+        // can never draw — it would be created and then silently dropped by
+        // React Flow. A generated graph is the path that produced these in
+        // practice, so it is dropped here with the unresolvable endpoints.
+        if (!canBeConnectionSource(source.type)) continue;
+        resolvedEdges.push({
+          id: generateId("conn"),
+          sourceId: source.id,
+          targetId: target.id,
+          label: edge.label,
+        });
       }
 
       for (const connection of resolvedEdges) {
