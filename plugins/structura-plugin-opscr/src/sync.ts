@@ -9,6 +9,7 @@ import type {
   PluginDiagramChanges,
   PluginDiagramChangesResult,
 } from "./types/plugin.types";
+import type { EdgeSource } from "./patches";
 
 /** Default leaf size when the canvas has not measured one — the mapping's LEAF size. */
 const LEAF = { width: 180, height: 80 };
@@ -22,18 +23,40 @@ export interface BindingState {
   ids: Record<string, string>;
   connections: Record<string, string>;
   signatures: Record<string, string>;
+  /** What left the binding, by canvas id, so an undo that brings it back restores its text. */
+  tombstones?: Tombstones;
+}
+
+export interface ElementTombstone {
+  key: string;
+  signature: string;
+  identity: string;
+  file: string;
+  source: string;
+  edges: EdgeSource[];
+}
+
+export interface ConnectionTombstone {
+  key: string;
+  edge: EdgeSource;
+}
+
+export interface Tombstones {
+  elements: Record<string, ElementTombstone>;
+  connections: Record<string, ConnectionTombstone>;
 }
 
 export const emptyBinding = (): BindingState => ({ ids: {}, connections: {}, signatures: {} });
 
 /** Everything about an element that, when it changes, must reach the canvas. */
-const signature = (c: ImporterGraphComponent) =>
+export const signature = (c: ImporterGraphComponent) =>
   JSON.stringify([c.name, c.description, c.technology ?? "", c.cloudServiceId ?? ""]);
 /** What cannot be updated in place: changing it means removing and re-adding the element. */
-const identity = (c: ImporterGraphComponent) => JSON.stringify([c.type, c.parentKey ?? null]);
+export const identity = (c: ImporterGraphComponent) =>
+  JSON.stringify([c.type, c.parentKey ?? null]);
 
 /** Connections are keyed by ends and label, numbered when the same pair repeats. */
-function connectionKeys(graph: ImporterGraph): string[] {
+export function connectionKeys(graph: ImporterGraph): string[] {
   const seen = new Map<string, number>();
   return graph.connections.map((c) => {
     const base = `${c.source}->${c.target}:${c.label}`;
@@ -177,7 +200,10 @@ export function planSync(
     changes,
     empty,
     commit(result) {
-      const next = emptyBinding();
+      const next: BindingState = {
+        ...emptyBinding(),
+        ...(binding.tombstones ? { tombstones: binding.tombstones } : {}),
+      };
       for (const component of graph.components) {
         const id = kept.get(component.key) ?? result.idsByKey[component.key];
         if (!id) continue;
