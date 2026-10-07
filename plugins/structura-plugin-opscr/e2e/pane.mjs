@@ -6,7 +6,8 @@
  * folder in the origin-private file system holding the opscr sample — the same
  * FileSystemDirectoryHandle API the real picker returns. Then: bind, wait for the diagram,
  * add a Cache in the editor, drag an element, edit again, check the dragged element stayed,
- * undo one sync, remove the Cache again, save, and read the file back.
+ * undo one sync, remove the Cache again, save, and read the file back. Then the other way:
+ * delete, undo and rename on the canvas, and read the patched files back.
  *
  *   (in the repo root) npm run build:plugins -- --no-build structura-plugin-opscr
  *   (here)             node e2e/pane.mjs
@@ -107,6 +108,7 @@ await context.grantPermissions(["clipboard-read", "clipboard-write"], {
 const page = await context.newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
+page.on("console", (m) => m.type() === "error" && console.log(`console: ${m.text()}`));
 
 await page.addInitScript(
   ([storeKey, payload, files]) => {
@@ -206,6 +208,64 @@ await page
   .catch(() => fail("no error marker for an unknown field"));
 await check(true, "an opscr error shows as a marker in the editor");
 await page.screenshot({ path: join(OUT, "4-marker.png") });
+
+// Canvas → YAML: edits on the canvas reach the text (read back from disk after saving).
+const saveAndRead = async (name) => {
+  const save = page.getByRole("button", { name: /^(Save|Salvar)$/ });
+  if (await save.isEnabled()) await save.click();
+  await page.waitForTimeout(500);
+  return page.evaluate(async (file) => {
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle("opscr-sample");
+    return (await (await dir.getFileHandle(file)).getFile()).text();
+  }, name);
+};
+const waitFor = async (predicate, message) => {
+  for (let i = 0; i < 20; i++) {
+    if (await predicate()) return check(true, message);
+    await page.waitForTimeout(500);
+  }
+  return fail(message);
+};
+const count = await nodes();
+const cache = page.locator(".react-flow__node", { hasText: "cart-cache" }).first();
+await cache.click();
+await page.keyboard.press("Delete");
+await waitNodes(count - 1).catch(() => fail("deleting cart-cache on the canvas did not remove it"));
+await waitFor(
+  async () =>
+    !(await saveAndRead("commerce.opscr.yaml")).includes("cart-cache") &&
+    !(await saveAndRead("relationships.opscr.yaml")).includes("cart-cache"),
+  "a canvas delete removes the manifest and its edges",
+);
+await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+await page.keyboard.press("ControlOrMeta+z");
+await waitNodes(count).catch(() => fail("undo did not bring cart-cache back"));
+await waitFor(
+  async () =>
+    (await saveAndRead("commerce.opscr.yaml")).includes("name: cart-cache") &&
+    (await saveAndRead("relationships.opscr.yaml")).includes("id: cart-cache"),
+  "undo of the canvas delete restores the manifest and its edges",
+);
+
+await page.locator(".react-flow__node", { hasText: "orders-db" }).first().click();
+const nameField = page.getByLabel(/^(Name|Nome)$/).first();
+await nameField
+  .waitFor({ timeout: 10000 })
+  .catch(() => fail("no name field for the selected element"));
+await nameField.fill("order-store");
+// The panel commits the name on a debounce; closing it right away would drop the edit.
+await page.waitForTimeout(1000);
+await waitFor(async () => {
+  const commerceText = await saveAndRead("commerce.opscr.yaml");
+  const relationships = await saveAndRead("relationships.opscr.yaml");
+  return (
+    commerceText.includes("name: order-store") &&
+    relationships.includes("id: order-store") &&
+    !relationships.includes("orders-db")
+  );
+}, "a canvas rename renames the manifest and every edge end");
+await check((await nodes()) === count, "the renamed element keeps its place (no remove/re-add)");
+await page.screenshot({ path: join(OUT, "5-canvas-to-yaml.png") });
 
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 await browser.close();

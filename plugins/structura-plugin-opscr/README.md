@@ -9,8 +9,25 @@ Two ways to bring opscr into Structura:
   are; new ones are placed next to their neighbours; removed ones disappear. Each sync is one undo
   step. **Save** (or Ctrl/Cmd+S in the editor) writes the files back; **Reload** re-reads the folder
   and discards unsaved edits. After a page reload, **Reconnect folder** asks the browser for
-  permission again. Needs a Chromium-based browser (File System Access API). Canvas edits are not
-  written back to the YAML yet.
+  permission again. Needs a Chromium-based browser (File System Access API).
+
+  The other way works too, while the folder is open: canvas edits of what the YAML declares are
+  patched into the text (unsaved until you save), touching only the lines they change — comments
+  and formatting elsewhere stay as they are.
+
+  | On the canvas                          | In the YAML                                                         |
+  | -------------------------------------- | ------------------------------------------------------------------- |
+  | Rename an element                      | `metadata.name` and every edge end naming it (refused if taken)     |
+  | Edit its description                   | `spec.description`                                                  |
+  | Delete elements                        | their manifests and the edges naming them                           |
+  | Draw a connection between two elements | a new edge (`type` = the label if it is an edge type, else `calls`) |
+  | Relabel a connection with an edge type | the edge's `type`                                                   |
+  | Delete a connection                    | its edge                                                            |
+  | Undo / redo (of either side)           | the text change it reverts                                          |
+
+  Positions, catalog services, technology and elements added from the palette stay canvas-only; the
+  pane counts the elements that are not in the YAML.
+
 - **Import one file**, described below.
 
 ## Importer
