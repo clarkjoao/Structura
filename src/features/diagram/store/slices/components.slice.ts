@@ -539,6 +539,30 @@ function getActiveComponentById(state: AppState, id: string): Component | undefi
   return resolveComponent(d, scene, id);
 }
 
+/**
+ * The body of `removeElements` for callers that already opened a `set()` and pushed
+ * history — a batch that removes as one of several changes in a single undo step.
+ */
+export function removeElementsInDraft(
+  state: AppState,
+  d: Diagram,
+  nodeIds: string[],
+  edgeIds: string[],
+): void {
+  const scene = resolveActiveVersion(d);
+  const refs = refsRemovedWith(d, nodeIds);
+  const allNodeIds = [...nodeIds, ...refs.ids];
+  if (scene) {
+    publishSewNotices(state, [
+      ...allNodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
+      ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
+    ]);
+  } else {
+    publishSewNotices(state, removeElementsFromSnapshot(d, allNodeIds, edgeIds));
+  }
+  publishRefNotice(state, refs);
+}
+
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
@@ -780,23 +804,8 @@ export const componentsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveVersion(d);
-      const refs = refsRemovedWith(d, nodeIds);
-      const allNodeIds = [...nodeIds, ...refs.ids];
-      if (scene) {
-        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-        publishSewNotices(state, [
-          ...allNodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
-          ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
-        ]);
-        publishRefNotice(state, refs);
-        touchDiagram(d);
-        return;
-      }
-
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      publishSewNotices(state, removeElementsFromSnapshot(d, allNodeIds, edgeIds));
-      publishRefNotice(state, refs);
+      removeElementsInDraft(state, d, nodeIds, edgeIds);
       touchDiagram(d);
     });
   },

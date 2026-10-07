@@ -2273,7 +2273,11 @@
     "importFailed": "Este arquivo não pôde ser importado pelo plugin.",
     "importNoActiveDiagram": "Abra um diagrama antes de importar com um plugin.",
     "importSkippedConnections": "{{count}} conexões foram ignoradas (extremidades desconhecidas).",
-    "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin."
+    "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin.",
+    "documentPane": {
+      "resize": "Redimensionar o painel",
+      "close": "Fechar o painel"
+    }
   },
   "panelKinds": {
     "default": {

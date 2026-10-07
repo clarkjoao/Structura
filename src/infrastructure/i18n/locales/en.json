@@ -2273,7 +2273,11 @@
     "importFailed": "This file could not be imported by the plugin.",
     "importNoActiveDiagram": "Open a diagram before importing with a plugin.",
     "importSkippedConnections": "{{count}} connections were skipped (unknown endpoints).",
-    "importHint": "Import a file ({{extensions}}) into the current diagram via this plugin."
+    "importHint": "Import a file ({{extensions}}) into the current diagram via this plugin.",
+    "documentPane": {
+      "resize": "Resize the pane",
+      "close": "Close the pane"
+    }
   },
   "panelKinds": {
     "default": {

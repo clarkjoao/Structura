@@ -42,6 +42,10 @@ import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadin
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
 import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
+import {
+  DocumentPaneSlot,
+  DocumentPaneToggles,
+} from "@/features/plugins/components/DocumentPaneSlot";
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { WorkspaceContentProps } from "./types";
@@ -299,6 +303,7 @@ export function WorkspaceContent({
               >
                 <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
               </button>
+              <DocumentPaneToggles />
               <button
                 type="button"
                 disabled={canvasInteractionLocked}
@@ -445,6 +450,7 @@ export function WorkspaceContent({
               )}
             </div>
           </DiagramFlowProvider>
+          <DocumentPaneSlot isEditMode={!canvasInteractionLocked} />
           {isRecording && recordingState && (
             <FlowRecorderPanel
               flowId={recordingState.flowId}
