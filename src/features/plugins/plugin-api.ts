@@ -38,6 +38,7 @@ import { sanitizeComponentPatch, toComponentSnapshot, toDiagramSnapshot } from "
 import { overlayRegistry } from "./overlay-registry";
 import { toGeneratedGraph } from "./import-graph";
 import { PluginCodeEditor } from "./components/PluginCodeEditor";
+import { registerChatContextContribution } from "./chat-context-registry";
 import { createPluginFolders } from "@/infrastructure/persistence/pluginFolders";
 
 /**
@@ -161,6 +162,18 @@ export function createScopedPluginApi(
       warnUndeclaredCapability(manifest, "ui:panels");
       registerPanelContribution(section);
       tracker.panelIds.push(section.id);
+    },
+
+    registerChatContext(context) {
+      warnUndeclaredCapability(manifest, "llm:context");
+      const valid =
+        typeof context?.id === "string" &&
+        typeof context.appliesTo === "function" &&
+        typeof context.systemPrompt === "function" &&
+        typeof context.handleReply === "function";
+      if (!valid)
+        throw new Error("[plugins] registerChatContext: id and three functions required.");
+      tracker.unsubscribers.push(registerChatContextContribution(context));
     },
 
     onDiagramChange(callback: (diagramId: string) => void): () => void {

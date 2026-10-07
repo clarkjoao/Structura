@@ -40,6 +40,11 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.6.0**: `llm:context` capability and `api.registerChatContext`:
+  a plugin can answer the chat for the diagrams it owns, with its own system
+  prompt, reply handling and validation retries. Additive.
+- **opscr plugin**: on a bound diagram whose folder is open, the chat edits the
+  YAML with the opscr-architect skill as context, validated by opscr.
 - **Plugin API 1.5.0**: `api.ui.CodeEditor` takes a `rename` handler, so F2
   ("Rename symbol") in a plugin's editor is answered by the plugin. Additive.
 - **opscr plugin**: canvas edits patch the bound YAML (rename, description,
