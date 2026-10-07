@@ -6,7 +6,7 @@
   workspace from YAML text. It is not on npm yet; local development uses `npm link`, so nothing under
   `src/` that CI typechecks or tests may import it.
 - Structura already has the pieces a projection lands on: panels (`type: "panel"`), cloud components
-  (`aws-*`, `gcp-*`, `azure-*`, `oss-*` categories with `cloudServiceId`), C4 shapes, a plain layout
+  (`aws-*`, `gcp-*`, `azure-*`, `oss-*` categories with `catalogServiceId`), C4 shapes, a plain layout
   contract (`features/canvas/layout/contract.ts`) and an ELK engine behind `layout(graph)`.
 - ADR-0009 already solved "the app and a plugin need the same pure code": a framework-agnostic module
   in `src/lib/` with an import guard, copied into plugins by a `sync-shared` script.
@@ -48,7 +48,7 @@ TechnicalView {
   omitted: { kind, name }[]
   dropped: { from, to, type, reason }[]        // edges not drawn, and ignored containments
 }
-element = { type: ComponentType-compatible string, cloudServiceId?, technology?, panelKind? }
+element = { type: ComponentType-compatible string, catalogServiceId?, technology?, panelKind? }
 ```
 
 The view carries Structura type strings (`"aws-database"`, `"panel"`, `"container"`) as plain strings
