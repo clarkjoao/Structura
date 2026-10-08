@@ -40,10 +40,12 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
-- **VSCode extension 0.2.0**: _opscr: Open Diagram Editor_ — Structura's canvas
-  in a webview (new editable embed, `embed-editor.html`), bound to the folder's
-  documents by the opscr binding engine: typing redraws the diagram, diagram
-  edits become unsaved document edits, positions go to `opscr.layout.json`.
+- **VSCode extension 0.2.0**: the preview draws only YAML that opscr validates
+  without errors — changes typed, saved or written to disk by other tools
+  (Claude Code, git) — keeping the last valid picture and saying why in the
+  status bar meanwhile. The diagram stays a read-only view in VSCode.
+- **Embed**: `embed-editor.html`, Structura's canvas on an in-memory diagram,
+  driven over `postMessage` like a remote plugin API (not used by the extension).
 - **opscr plugin**: the document pane's orchestration is now a UI-free
   `OpscrEngine` (`src/engine/`), shared with the VSCode extension.
 - Fixed: an element dragged out of its panel, or into another one (a sibling, a

@@ -109,7 +109,7 @@ describe("PreviewPipeline", () => {
     expect(result.diagnostics.map((d) => d.ruleId)).toContain("loader/yaml-parse-error");
   });
 
-  it("reports schema errors on their file and line, and still draws", async () => {
+  it("reports schema errors on their file and line, and does not draw until they are fixed", async () => {
     const result = await new PreviewPipeline().update(
       await edited("finance.opscr.yaml", (t) =>
         t.replace(/(\n\s+description:)/, "\n  inventedField: 1$1"),
@@ -118,7 +118,8 @@ describe("PreviewPipeline", () => {
     const error = result.diagnostics.find((d) => d.message.includes("inventedField"));
     expect(error?.file).toMatch(/finance\.opscr\.yaml$/);
     expect(error?.line).toBeGreaterThan(0);
-    expect(result.graph).toBeDefined();
+    expect(result.graph).toBeUndefined();
+    expect(result.blocked).toMatchObject({ reason: "errors" });
   });
 
   it("lays everything out again after relayout()", async () => {
