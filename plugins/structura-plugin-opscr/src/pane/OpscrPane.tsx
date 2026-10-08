@@ -245,9 +245,20 @@ export function createOpscrPane(api: StructuraPluginApi) {
           const config = buffersRef.current.find((b) => b.name === CONFIG_FILE);
           return config && { name: config.name, text: config.text };
         },
-        apply: (files) => {
+        apply: async (files, touched) => {
+          const before = bindingRef.current?.state;
           setTexts(files);
-          void sync();
+          await sync();
+          const after = bindingRef.current?.state;
+          if (!after) return { componentIds: [], connectionIds: [] };
+          const oldIds = new Set(Object.values(before?.ids ?? {}));
+          const oldConnections = new Set(Object.values(before?.connections ?? {}));
+          const touchedIds = touched.flatMap((key) => after.ids[key] ?? []);
+          const createdIds = Object.values(after.ids).filter((id) => !oldIds.has(id));
+          return {
+            componentIds: [...new Set([...createdIds, ...touchedIds])],
+            connectionIds: Object.values(after.connections).filter((id) => !oldConnections.has(id)),
+          };
         },
       });
     }, [folder, diagramId, sync]);

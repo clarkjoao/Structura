@@ -9,8 +9,17 @@ export interface PaneSession {
   /** The manifests, unsaved edits included. */
   manifests(): SourceText[];
   config(): SourceText | undefined;
-  /** Puts new manifest texts (and new files) in the pane, unsaved, and syncs the canvas. */
-  apply(files: readonly SourceText[]): void;
+  /**
+   * Puts new manifest texts (and new files) in the pane, unsaved, and syncs the canvas. Resolves
+   * after the sync with the canvas ids of what changed: components created by it or bound to a
+   * `touched` element key, and connections created by it.
+   */
+  apply(files: readonly SourceText[], touched: readonly string[]): Promise<AppliedIds>;
+}
+
+export interface AppliedIds {
+  componentIds: string[];
+  connectionIds: string[];
 }
 
 let current: PaneSession | null = null;

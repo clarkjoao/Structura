@@ -26,14 +26,22 @@ afterEach(() => close?.());
 
 function bind() {
   let files = structuredClone(SAMPLE);
-  const apply = vi.fn((next: readonly SourceText[]) => (files = [...next]));
+  const apply = vi.fn(async (next: readonly SourceText[], touched: readonly string[]) => {
+    files = [...next];
+    return { componentIds: touched.map((k) => `id:${k}`), connectionIds: [] };
+  });
   close = openSession({
     diagramId: "d",
     manifests: () => files,
     config: () => ({ name: "opscr.config.yaml", text: read("opscr.config.yaml") }),
     apply,
   });
-  return { apply, files: () => files };
+  return {
+    apply,
+    files: () => files,
+    edit: (name: string, text: string) =>
+      (files = files.map((f) => (f.name === name ? { ...f, text } : f))),
+  };
 }
 const input = (attempt: number) => ({
   diagramId: "d",
@@ -95,5 +103,36 @@ describe("opscr chat context", () => {
       "orders-db is DynamoDB.",
     );
     expect(session.apply).not.toHaveBeenCalled();
+  });
+});
+
+describe("chat reply preview (API 1.7)", () => {
+  it("previews what the reply touched, and Discard restores the text before it", async () => {
+    const context = createChatContext();
+    const session = bind();
+    const result = await context.handleReply(cache(), input(0));
+    expect(result.preview?.componentIds).toEqual(["id:Cache/price-cache"]);
+    expect(result.preview?.title).toContain("Cache/price-cache");
+    expect(await result.preview!.discard!()).toBeUndefined();
+    expect(session.files().map((f) => f.text)).toEqual(SAMPLE.map((f) => f.text));
+  });
+
+  it("refuses to discard once the manifests changed since", async () => {
+    const context = createChatContext();
+    const session = bind();
+    const result = await context.handleReply(cache(), input(0));
+    session.edit("shared.opscr.yaml", "# edited by hand\n");
+    expect(await result.preview!.discard!()).toMatch(/changed after this reply/);
+    expect(hasManifest(session.files(), { kind: "Cache", name: "price-cache" })).toBe(true);
+  });
+
+  it("empties a file the reply created when discarding", async () => {
+    const context = createChatContext();
+    const session = bind();
+    const reply = cache().replace("file=commerce.opscr.yaml", "file=cache.opscr.yaml");
+    const result = await context.handleReply(reply, input(0));
+    expect(session.files().map((f) => f.name)).toContain("cache.opscr.yaml");
+    await result.preview!.discard!();
+    expect(session.files().find((f) => f.name === "cache.opscr.yaml")?.text).toBe("");
   });
 });

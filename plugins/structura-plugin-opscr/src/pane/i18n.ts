@@ -34,11 +34,13 @@ const en = {
       added.length ? `Added ${added.join(", ")}.` : "",
       replaced.length ? `Updated ${replaced.join(", ")}.` : "",
       deleted.length ? `Removed ${deleted.join(", ")}.` : "",
-      "Unsaved — review it in the opscr pane.",
     ]
       .filter(Boolean)
       .join(" "),
+  chatUnsaved: "Unsaved — keep or discard it on the canvas, and save in the opscr pane.",
   chatRemainingErrors: "opscr still reports these errors:",
+  chatDiscardEdited:
+    "The manifests changed after this reply, so it was kept — undo it in the text or on the canvas.",
 };
 
 const ptBR: typeof en = {
@@ -72,11 +74,13 @@ const ptBR: typeof en = {
       added.length ? `Adicionado: ${added.join(", ")}.` : "",
       replaced.length ? `Atualizado: ${replaced.join(", ")}.` : "",
       deleted.length ? `Removido: ${deleted.join(", ")}.` : "",
-      "Não salvo — revise no painel opscr.",
     ]
       .filter(Boolean)
       .join(" "),
+  chatUnsaved: "Não salvo — mantenha ou descarte no canvas e salve no painel opscr.",
   chatRemainingErrors: "O opscr ainda aponta estes erros:",
+  chatDiscardEdited:
+    "Os manifestos mudaram depois desta resposta, então ela foi mantida — desfaça pelo texto ou pelo canvas.",
 };
 
 export const text = (locale: Locale) => (locale === "pt-BR" ? ptBR : en);
