@@ -2,7 +2,7 @@
   "name": "vscode-opscr",
   "displayName": "opscr Preview",
   "description": "Live, read-only Structura diagram of opscr architecture-as-code manifests, drawn when opscr validates them",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "structura",
   "license": "MIT",
   "private": true,
