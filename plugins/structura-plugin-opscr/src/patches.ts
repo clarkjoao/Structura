@@ -501,3 +501,35 @@ export function upsertDocument(
     ref,
   };
 }
+
+/**
+ * Moves an element to another parent: its first `belongsTo` (the one that draws it nested) now
+ * points at `parent` — retargeted in place, added when it has none, cut when `parent` is null
+ * (moved to the top level). Null when the element has no manifest or a file does not parse.
+ */
+export function setParent(
+  files: readonly SourceText[],
+  ref: ElementRef,
+  parent: ElementRef | null,
+): SourceText[] | null {
+  const parsed = parseAll(files);
+  if (!parsed || !findManifest(parsed, ref)) return null;
+  const edge = edgesOf(parsed).find(
+    (e) => e.source.type === "belongsTo" && same(e.source.from, ref),
+  );
+  if (!parent) {
+    if (!edge) return [...files];
+    const edits = new Map<number, TextEdit[]>();
+    return cutEdges(parsed, [edge], edits) ? commit(files, edits) : null;
+  }
+  if (!edge) return addEdge(files, { from: ref, to: parent, type: "belongsTo" });
+  if (same(edge.source.to, parent)) return [...files];
+  const to = parsed[edge.at]!.docs[edge.doc]!.getIn(["spec", "edges", edge.item, "to"], true);
+  const kind = scalarAt(to, "kind");
+  const id = scalarAt(to, "id");
+  if (!kind || !id) return null;
+  return commit(
+    files,
+    new Map([[edge.at, [replaceScalar(kind, parent.kind), replaceScalar(id, parent.name)]]]),
+  );
+}
