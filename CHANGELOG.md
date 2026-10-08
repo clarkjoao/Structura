@@ -40,6 +40,9 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.8.0**: chat contexts can present the chat (title, subtitle,
+  suggestions) and notify the host when they start or stop applying. The opscr
+  chat introduces itself as "opscr · <folder>" with opscr suggestions. Additive.
 - **Plugin API 1.7.0**: a plugin chat reply can return a `preview`: the host
   shows its elements as pending (highlight, Keep / Discard), focuses the canvas
   on them, and asks the plugin to undo the reply on Discard. The opscr chat uses
