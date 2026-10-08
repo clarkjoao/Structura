@@ -8,7 +8,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.9.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.10.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -74,6 +74,10 @@ export interface PluginComponentSnapshot {
   size: { width: number; height: number } | null;
   tags: readonly string[];
   serviceId: string | null;
+  /** v1.10 — the catalog service drawn (lambda, dynamodb, …), or null. */
+  cloudServiceId: string | null;
+  /** v1.10 — the technology label, or null. */
+  technology: string | null;
 }
 
 export interface PluginConnectionSnapshot {
