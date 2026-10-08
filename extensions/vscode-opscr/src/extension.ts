@@ -50,6 +50,15 @@ class Preview {
     void this.update();
   }
 
+  isActive(): boolean {
+    return this.panel.active;
+  }
+
+  /** Opens the element search inside the preview. */
+  search(): void {
+    this.post({ type: "STRUCTURA_SEARCH" });
+  }
+
   postTheme(): void {
     const kind = vscode.window.activeColorTheme.kind;
     const dark = kind === vscode.ColorThemeKind.Dark || kind === vscode.ColorThemeKind.HighContrast;
@@ -202,6 +211,11 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     diagnostics,
     vscode.commands.registerCommand("opscr.openPreview", open),
+    vscode.commands.registerCommand("opscr.searchPreview", () => {
+      // The focused preview: VSCode's own find does not reach into a webview.
+      const preview = [...previews.values()].find((p) => p.isActive()) ?? [...previews.values()][0];
+      preview?.search();
+    }),
     vscode.commands.registerCommand("opscr.relayoutPreview", () => {
       const uri = vscode.window.activeTextEditor?.document.uri;
       const preview = (uri && forDocument(uri)) ?? [...previews.values()][0];

@@ -18,6 +18,10 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
 - **Layout sidecar:** when the folder has an `opscr.layout.json` (Structura writes it when you save a
   bound folder), elements are drawn where it puts them; the preview redraws when the file changes.
   Re-layout ignores it until it changes again.
+- **Find:** Ctrl/Cmd+F in the preview searches its elements (name, description, technology, tags);
+  picking one zooms to it — handy on large diagrams. Also **opscr: Find Element in Preview**.
+- **Follows changes:** when an update adds or changes elements (or connects them), the preview
+  zooms to them; moving things alone does not.
 - **Problems:** opscr errors and warnings appear in the Problems panel, on their file and line.
 - **Theme:** dark or light, following VSCode.
 
