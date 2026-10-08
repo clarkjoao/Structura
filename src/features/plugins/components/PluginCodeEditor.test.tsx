@@ -20,4 +20,9 @@ describe("PluginCodeEditor", () => {
     fireEvent.keyDown(document.body, { key: "s", ctrlKey: true });
     expect(onSave).not.toHaveBeenCalled();
   });
+
+  it("marks itself so React Flow does not treat keys typed in it as canvas shortcuts", () => {
+    render(<PluginCodeEditor value="a: 1" />);
+    expect(screen.getByTestId("monaco-stand-in").closest(".nokey")).not.toBeNull();
+  });
 });

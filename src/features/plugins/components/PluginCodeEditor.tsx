@@ -86,7 +86,10 @@ export function PluginCodeEditor({
   }, []);
 
   return (
-    <div ref={wrapper} className="h-full w-full">
+    // `nokey`: React Flow's marker for "keys typed here are not canvas shortcuts". Monaco's
+    // native edit context is a plain div, which React Flow does not see as an input, so without
+    // it Space (pan) is swallowed and Delete/Backspace could reach the selected elements.
+    <div ref={wrapper} className="nokey h-full w-full">
       <LazyMonacoEditor
         height={height}
         language={language}
