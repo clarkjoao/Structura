@@ -38,8 +38,11 @@ Two ways to bring opscr into Structura:
   **F2** on a manifest's `metadata.name`, or on an edge end's `id`, renames that element in every
   file; the canvas element keeps its place.
 
-  Catalog services, technology and elements added from the palette stay canvas-only; the pane
-  counts the elements that are not in the YAML.
+  **Elements drawn from the palette** are listed in the pane as "not in the YAML", with a
+  suggested Kind and provider (a DynamoDB → `Database`/`DynamoDB`, a panel → `Domain`). _Add to
+  YAML_ writes the manifest (named after the label, kebab-case), its `belongsTo` and its edges.
+
+  Changing an element's catalog service or technology on the canvas stays canvas-only.
 
   Positions go to the **layout sidecar** `opscr.layout.json` beside the manifests (one
   `"Kind/name": { x, y, width, height }` per line, parent-relative), saved with them. Binding a

@@ -155,3 +155,46 @@ export function elementFor(manifest: OpscrManifestInput): ViewElement {
     return { type: service.type, catalogServiceId: service.catalogServiceId, technology: provider };
   return provider ? { type: "container", technology: provider } : { type: "container" };
 }
+
+/** Every Kind the technical view draws: panels first, then leaves. */
+export const DRAWN_KINDS: readonly string[] = [...BOUNDARY_KINDS, ...LEAF_KINDS];
+
+/** The providers this mapping knows a catalog service for, per Kind. */
+export function providersFor(kind: string): string[] {
+  return Object.keys(PROVIDER_SERVICES[kind] ?? {});
+}
+
+/** A manifest that would draw an element: its Kind and, when known, its `spec.provider`. */
+export interface KindGuess {
+  kind: string;
+  provider?: string;
+}
+
+/**
+ * The inverse of `elementFor`, for an element drawn on the canvas (from the palette): which Kind
+ * and provider would draw it this way. A panel is a Domain, or an ApplicationService inside a
+ * Domain; a catalog service picks the Kind listing it (the technology breaks ties between
+ * providers sharing a service). Null when nothing in the technical view draws it so (notes,
+ * people, other shapes).
+ */
+export function kindFor(
+  element: { type: string; catalogServiceId?: string | null; technology?: string | null },
+  parentKind?: string | null,
+): KindGuess | null {
+  const technology = text(element.technology);
+  const withProvider = (kind: string): KindGuess =>
+    technology ? { kind, provider: technology } : { kind };
+  if (element.type === "panel") {
+    return { kind: parentKind === "Domain" ? "ApplicationService" : "Domain" };
+  }
+  if (element.type === "system") return withProvider("ExternalSystem");
+  if (element.type === "container") return withProvider("Application");
+  const serviceId = text(element.catalogServiceId);
+  if (!serviceId) return null;
+  const matches = Object.entries(PROVIDER_SERVICES).flatMap(([kind, providers]) =>
+    Object.entries(providers)
+      .filter(([, s]) => s.type === element.type && s.catalogServiceId === serviceId)
+      .map(([provider]) => ({ kind, provider })),
+  );
+  return matches.find((m) => m.provider === technology) ?? matches[0] ?? null;
+}
