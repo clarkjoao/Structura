@@ -31,8 +31,11 @@ exports.run = async function run() {
     return s && s.ready && s.components > 0 && s.rendered === s.components ? s : undefined;
   });
   console.log(`[e2e] webview drew ${first.rendered} of ${first.components} elements`);
+  const probe = () => vscode.commands.executeCommand("opscr._previewProbe", folder);
+  const start = await probe();
   await vscode.commands.executeCommand("opscr.searchPreview");
-  console.log("[e2e] find in preview runs");
+  await until("the search to open in the preview", async () => (await probe()).searchOpen);
+  console.log("[e2e] find in preview opens the element search");
 
   const cache = [
     "",
@@ -66,7 +69,9 @@ exports.run = async function run() {
   );
 
   // The search took the focus into the preview: back to the file before reverting it.
-  await vscode.window.showTextDocument(doc);
+  // In the first column: the active one is the preview's now, and covering it would hide it.
+  await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+  await sleep(500);
   await vscode.commands.executeCommand("workbench.action.files.revert");
   await until(
     "the problem to clear after revert",
@@ -86,4 +91,9 @@ exports.run = async function run() {
     return s.blocked === 0 && s.components === first.components + 1 && s.rendered > 0;
   });
   console.log("[e2e] a valid file written to disk is drawn");
+  await until("the preview to zoom to the new element", async () => {
+    const now = await probe();
+    return now.viewport && now.viewport !== start.viewport && now.viewport.endsWith("scale(1)");
+  });
+  console.log("[e2e] the preview zooms to the element the file added");
 };

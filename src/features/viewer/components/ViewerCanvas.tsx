@@ -432,14 +432,23 @@ const ViewerCanvasContent = ({
     [reactFlowInstance],
   );
 
-  // What the host just changed: two frames, so the update is drawn and measured first.
+  // What the host just changed, once React Flow has drawn and measured it: the update reaches
+  // the canvas a moment later, more under load. Timers, not animation frames: a webview in a
+  // window that is not in front gets no frames, and the zoom should be there when it comes back.
   useEffect(() => {
     if (!focus || focus.ids.length === 0) return;
-    let frame = requestAnimationFrame(() => {
-      frame = requestAnimationFrame(() => frameNodes(focus.ids));
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [focus, frameNodes]);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let tries = 0;
+    const attempt = () => {
+      const measured = focus.ids.some(
+        (id) => reactFlowInstance.getInternalNode(id)?.measured?.width !== undefined,
+      );
+      if (measured) frameNodes(focus.ids);
+      else if (++tries < 60) timer = setTimeout(attempt, 50);
+    };
+    timer = setTimeout(attempt, 50);
+    return () => clearTimeout(timer);
+  }, [focus, frameNodes, reactFlowInstance]);
 
   const [searchOpen, setSearchOpen] = useState(false);
   useEffect(() => {
@@ -557,7 +566,7 @@ const ViewerCanvasContent = ({
             onSelectResult={(id) => {
               setSearchOpen(false);
               // After the search has closed and the canvas re-rendered.
-              requestAnimationFrame(() => frameNodes([id]));
+              setTimeout(() => frameNodes([id]), 0);
             }}
           />
         )}
