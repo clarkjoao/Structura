@@ -32,6 +32,7 @@ function bind() {
   });
   close = openSession({
     diagramId: "d",
+    folderName: "sample",
     manifests: () => files,
     config: () => ({ name: "opscr.config.yaml", text: read("opscr.config.yaml") }),
     apply,
@@ -134,5 +135,23 @@ describe("chat reply preview (API 1.7)", () => {
     expect(session.files().map((f) => f.name)).toContain("cache.opscr.yaml");
     await result.preview!.discard!();
     expect(session.files().find((f) => f.name === "cache.opscr.yaml")?.text).toBe("");
+  });
+});
+
+describe("chat presentation (API 1.8)", () => {
+  it("names the folder and tells the host when the session opens or closes", () => {
+    const context = createChatContext();
+    const listener = vi.fn();
+    const unsubscribe = context.subscribe!(listener);
+    bind();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(context.presentation!({ diagramId: "d", locale: "pt-BR" })).toMatchObject({
+      title: "opscr · sample",
+      subtitle: expect.stringContaining("manifestos"),
+    });
+    close?.();
+    close = undefined;
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
   });
 });

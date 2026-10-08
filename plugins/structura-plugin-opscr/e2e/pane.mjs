@@ -371,6 +371,13 @@ await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
 await page.getByRole("button", { name: /Open chat assistant|Abrir assistente de chat/ }).click();
 const input = page.getByLabel(/Type your message|Digite sua mensagem/);
 await input.waitFor({ timeout: 10000 }).catch(() => fail("the chat did not open"));
+await check(
+  (await page.getByText("opscr · opscr-sample").count()) > 0 &&
+    (await page.getByText(/Add a Redis cache in front|Adicione um cache Redis na frente/).count()) >
+      0,
+  "the chat names the bound folder and offers opscr suggestions",
+);
+await page.screenshot({ path: join(OUT, "6-chat-empty.png") });
 await input.fill("Add a Redis cache for search results");
 await page.keyboard.press("ControlOrMeta+Enter");
 await waitNodes(chatCount + 1).catch(() => fail("the chat's manifest did not reach the canvas"));
