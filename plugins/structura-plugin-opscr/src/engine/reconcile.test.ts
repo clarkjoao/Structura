@@ -1,17 +1,19 @@
-import { SAMPLE_FILES } from "./test-sample";
+import { SAMPLE_FILES } from "../test-sample";
 import { beforeEach, describe, expect, it } from "vitest";
 import { countEdges, hasManifest, renameElement, type SourceText } from "./patches";
-import { projectWorkspace } from "./project";
-import { reconcile, renameInBinding, retire } from "./reconcile";
+import { projectWorkspace } from "../project";
+import { reconcile, renameInBinding } from "./reconcile";
 import { addElementsToYaml, slugName } from "./adopt";
-import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "./sync";
+import { emptyBinding, sidecarText, type BindingState } from "./sync";
+import { OpscrEngine } from "./engine";
+import { LAYOUT_FILE } from "../generated/opscr-mapping";
 import type {
   DiagramSnapshot,
   PluginComponentSnapshot,
   PluginConnectionSnapshot,
   PluginDiagramChanges,
   PluginDiagramChangesResult,
-} from "./types/plugin.types";
+} from "../types/plugin.types";
 
 const SAMPLE: SourceText[] = Object.keys(SAMPLE_FILES)
   .filter((f) => f.endsWith(".opscr.yaml"))
@@ -145,36 +147,64 @@ class FakeCanvas {
 }
 
 /** The pane's loop without React: reconcile, then sync, with tombstones for sync removals. */
+/** The binding engine over the fake canvas, the sample files and an in-memory binding. */
 class Session {
   canvas = new FakeCanvas();
   binding: BindingState = emptyBinding();
   files: SourceText[] = structuredClone(SAMPLE);
-  synced: SourceText[] = [];
   refused: string[] = [];
-  sidecar: string | undefined;
+  sidecar = "";
+  /** Every change set the engine applied during the last pump. */
+  applied: PluginDiagramChanges[] = [];
+  engine = new OpscrEngine({
+    texts: {
+      get: () => [...this.files, { name: LAYOUT_FILE, text: this.sidecar }],
+      set: (files) => {
+        for (const file of files) {
+          if (file.name === LAYOUT_FILE) this.sidecar = file.text;
+          else if (this.files.some((f) => f.name === file.name)) {
+            this.files = this.files.map((f) => (f.name === file.name ? { ...file } : f));
+          } else this.files = [...this.files, { ...file }];
+        }
+      },
+    },
+    diagram: {
+      get: () => this.canvas.snapshot(),
+      apply: (changes) => {
+        this.applied.push(changes);
+        return this.canvas.apply(changes);
+      },
+    },
+    binding: { get: () => this.binding, set: (state) => void (this.binding = state) },
+    project: (manifests, _config, previous) =>
+      projectWorkspace(
+        manifests.map((f) => ({ path: f.name, content: f.text })),
+        CONFIG,
+        previous,
+      ),
+    isManifest: (name) => name.endsWith(".opscr.yaml"),
+    configFile: CONFIG.path,
+    onEvent: (event) => {
+      if (event.type === "rename-refused") this.refused.push(event.name);
+    },
+  });
 
+  /** One engine sync (reconcile, then YAML → canvas); returns what it changed on the canvas. */
   async pump() {
-    const r = reconcile(this.canvas.snapshot(), this.binding, this.files);
-    this.files = r.files;
-    this.binding = r.binding;
-    this.refused = r.refused;
-    this.canvas.apply(r.revert);
-    return this.sync();
-  }
-
-  async sync() {
-    const diagram = this.canvas.snapshot();
-    const projection = await projectWorkspace(
-      this.files.map((f) => ({ path: f.name, content: f.text })),
-      CONFIG,
-      previousLayout(this.binding, diagram, this.sidecar),
-    );
-    const plan = planSync(projection.graph!, this.binding, diagram);
-    const result = this.canvas.apply(plan.changes);
-    this.binding = retire(this.binding, plan.commit(result), this.synced);
-    this.synced = structuredClone(this.files);
-    this.sidecar = sidecarText(this.binding, this.canvas.snapshot());
-    return plan;
+    this.applied = [];
+    this.refused = [];
+    await this.engine.sync();
+    const all = <T>(pick: (c: PluginDiagramChanges) => T[] | undefined): T[] =>
+      this.applied.flatMap((c) => pick(c) ?? []);
+    return {
+      empty: this.applied.length === 0,
+      changes: {
+        add: all((c) => c.add),
+        remove: all((c) => c.remove),
+        connect: all((c) => c.connect),
+        disconnect: all((c) => c.disconnect),
+      },
+    };
   }
 
   id(name: string) {

@@ -6,8 +6,8 @@
 
 ## 2. Shared engine
 
-- [ ] 2.1 Move the pure modules to `src/lib/opscr-sync`, synced into plugin and extension; verify plugin tests and e2e unchanged
-- [ ] 2.2 `OpscrEngine` with ports; the pane uses it; verify plugin tests and e2e
+- [x] 2.1 Move the pure modules to the plugin's `src/engine/` (they need `yaml` and stay out of the host); the extension copies them in 3.1; verify plugin tests and e2e unchanged
+- [x] 2.2 `OpscrEngine` with ports; the pane uses it; verify plugin tests and e2e
 
 ## 3. VSCode editor
 

@@ -8,7 +8,7 @@ import {
   retryMessage,
 } from "./chat";
 import { OPSCR_SKILL } from "./generated/opscr-skill";
-import type { SourceText } from "./patches";
+import type { SourceText } from "./engine/patches";
 import { text, type Locale } from "./pane/i18n";
 import { getSession, onSessionChange, type PaneSession } from "./session";
 import type { PluginChatContext } from "./types/plugin.types";

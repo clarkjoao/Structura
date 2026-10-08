@@ -1,4 +1,4 @@
-import { elementFor } from "./generated/opscr-mapping";
+import { elementFor } from "../generated/opscr-mapping";
 import {
   addEdge,
   elementSource,
@@ -9,7 +9,7 @@ import {
   type SourceText,
 } from "./patches";
 import type { BindingState } from "./sync";
-import type { DiagramSnapshot } from "./types/plugin.types";
+import type { DiagramSnapshot } from "../types/plugin.types";
 
 /**
  * Elements drawn on the canvas from the palette, written into the YAML (the user picks the Kind;

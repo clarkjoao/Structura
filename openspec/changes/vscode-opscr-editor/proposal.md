@@ -15,9 +15,11 @@ Claude Code sessions working in the same folder, should get the same editor with
    in-memory diagram, driven over `postMessage` like a remote plugin API — the host applies batched
    changes and receives a snapshot after every committed change (canvas edits, undo/redo).
 2. **Shared binding engine**: the plugin's pure modules (YAML text patches, sync plan, reconcile,
-   tombstones, folder watch merge, palette adoption) move to `src/lib/opscr-sync`, synced into the
-   plugin and the extension (ADR-0009), and the pane's orchestration becomes a headless
-   `OpscrEngine` with ports (files, diagram, storage) that both the pane and the extension use.
+   tombstones, folder watch merge, palette adoption) move to the plugin's `src/engine/`, and the
+   pane's orchestration becomes a headless `OpscrEngine` with ports (texts, diagram, binding,
+   projector) that both the pane and the extension use; the extension copies `src/engine/` the way
+   it copies the shared mapping (ADR-0009). They stay out of the host: they need `yaml`, which the
+   app does not ship.
 3. **VSCode editor**: "opscr: Open Diagram Editor" opens the folder's workspace in the editable
    embed. The extension host runs the engine: files are the VSCode documents (unsaved text
    included; canvas edits are `WorkspaceEdit`s, so they are undoable and saved by VSCode), the
@@ -38,7 +40,6 @@ Claude Code sessions working in the same folder, should get the same editor with
 
 ## Impact
 
-- Host: `src/embed/editor/*`, `embed-editor.html`, embed build; `src/lib/opscr-sync` (moved from the
-  plugin), sync scripts.
+- Host: `src/embed/editor/*`, `embed-editor.html`, embed build.
 - Plugin: imports the engine, pane becomes a view over it.
 - Extension: new editor panel, engine wiring, e2e.

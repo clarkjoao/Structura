@@ -9,6 +9,7 @@ import {
   type ViewLayoutResult,
 } from "./generated/opscr-mapping";
 import { layoutView } from "./generated/opscr-layout";
+import type { Projector } from "./engine/engine";
 
 export interface Projection {
   diagnostics: Diagnostic[];
@@ -46,3 +47,11 @@ export async function projectWorkspace(
     graph: toImporterGraph(placeView(view, stable), seeded ? { x: 0, y: 0 } : ORIGIN),
   };
 }
+
+/** `projectWorkspace` as the engine calls it (file name + text). */
+export const projector: Projector = (manifests, config, previous) =>
+  projectWorkspace(
+    manifests.map((f) => ({ path: f.name, content: f.text })),
+    config ? { path: config.name, content: config.text } : undefined,
+    previous,
+  );
