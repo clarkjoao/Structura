@@ -170,7 +170,9 @@ export function createScopedPluginApi(
         typeof context?.id === "string" &&
         typeof context.appliesTo === "function" &&
         typeof context.systemPrompt === "function" &&
-        typeof context.handleReply === "function";
+        typeof context.handleReply === "function" &&
+        (context.presentation === undefined || typeof context.presentation === "function") &&
+        (context.subscribe === undefined || typeof context.subscribe === "function");
       if (!valid)
         throw new Error("[plugins] registerChatContext: id and three functions required.");
       tracker.unsubscribers.push(registerChatContextContribution(context));
