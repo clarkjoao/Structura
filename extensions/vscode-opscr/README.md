@@ -9,8 +9,11 @@ With a `*.opscr.yaml` active, run **opscr: Open Diagram Editor** (or its icon in
 Structura's own canvas opens beside the YAML, bound to the folder by the same engine as the
 Structura plugin's document pane:
 
-- **YAML → diagram:** typing in any manifest of the folder (unsaved text included) redraws the
-  diagram ~300 ms after you stop. Changes on disk (git, other tools) too.
+- **YAML → diagram:** typing in any manifest of the folder (unsaved text included), or a file
+  written by another tool — Claude Code, git — is validated with opscr ~300 ms later and, when it
+  has no errors, drawn: elements already on the diagram keep their place, new ones are laid out
+  automatically next to their neighbours. While there are errors the diagram keeps its last valid
+  state and the status bar says why (click it for the Problems panel).
 - **Diagram → YAML:** renames (every edge end follows), descriptions, deletions, connections,
   moves between panels, cloud service / technology, and palette elements added from the pane-less
   canvas become edits of the documents — unsaved, so you review and save them. Comments and

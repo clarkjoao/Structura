@@ -64,6 +64,9 @@ export class DiagramEditor {
   private readonly disposables: vscode.Disposable[] = [];
   private ready = false;
   private elements = 0;
+  private invalid = 0;
+  /** Says why the diagram is not following the YAML, while it is not. */
+  private readonly statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 
   constructor(
     readonly folder: string,
@@ -82,8 +85,24 @@ export class DiagramEditor {
       project: projector,
       isManifest,
       configFile: CONFIG_FILE,
+      // Files here change whole (Claude Code, git, another editor's save): draw only what opscr
+      // validates, and keep the last valid diagram meanwhile.
+      requireValid: true,
       onEvent: (event) => {
-        if (event.type === "synced") this.elements = event.elements;
+        if (event.type === "synced") {
+          this.elements = event.elements;
+          this.invalid = 0;
+          this.statusItem.hide();
+        }
+        if (event.type === "invalid" || event.type === "parse-error") {
+          this.invalid = event.type === "invalid" ? event.errors : 1;
+          this.statusItem.text =
+            event.type === "invalid"
+              ? `$(warning) opscr: ${event.errors} error${event.errors === 1 ? "" : "s"} — diagram not updated`
+              : "$(warning) opscr: the YAML does not parse — diagram not updated";
+          this.statusItem.command = "workbench.actions.view.problems";
+          this.statusItem.show();
+        }
         if (event.type === "diagnostics") {
           const files = this.texts
             .get()
@@ -149,6 +168,7 @@ export class DiagramEditor {
     return {
       ready: this.ready,
       elements: this.elements,
+      invalid: this.invalid,
       components: this.diagram.get()?.components.length ?? 0,
     };
   }
@@ -165,6 +185,7 @@ export class DiagramEditor {
 
   dispose() {
     clearTimeout(this.timer);
+    this.statusItem.dispose();
     for (const d of this.disposables) d.dispose();
   }
 }
