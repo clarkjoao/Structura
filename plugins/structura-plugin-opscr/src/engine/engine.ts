@@ -55,6 +55,8 @@ export type Projector = (
 export type EngineEvent =
   | { type: "synced"; elements: number }
   | { type: "parse-error" }
+  /** `requireValid`: the YAML has opscr errors, so the diagram was left as it was. */
+  | { type: "invalid"; errors: number }
   | { type: "diagnostics"; diagnostics: unknown[] }
   | { type: "outside"; ids: string[] }
   | { type: "rename-refused"; name: string }
@@ -68,6 +70,12 @@ export interface EngineOptions {
   project: Projector;
   isManifest: (name: string) => boolean;
   configFile: string;
+  /**
+   * Draw only YAML that opscr validates without errors: until then the diagram keeps its last
+   * valid picture (warnings do not block). For hosts where whole files change at once — another
+   * tool, an agent writing them — rather than as the user types.
+   */
+  requireValid?: boolean;
   onEvent?: (event: EngineEvent) => void;
 }
 
@@ -148,6 +156,12 @@ export class OpscrEngine {
     );
     this.emit({ type: "diagnostics", diagnostics: projection.diagnostics });
     if (!projection.graph) return this.emit({ type: "parse-error" });
+    if (this.options.requireValid) {
+      const errors = projection.diagnostics.filter(
+        (d) => (d as { severity?: unknown }).severity === "error",
+      ).length;
+      if (errors > 0) return this.emit({ type: "invalid", errors });
+    }
     const plan = planSync(projection.graph, binding, diagram);
     const result = plan.empty
       ? { idsByKey: {}, connectionIds: [] }

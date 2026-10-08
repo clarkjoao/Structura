@@ -124,7 +124,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const onEvent = useRef<(event: EngineEvent) => void>(() => {});
     onEvent.current = (event) => {
       if (event.type === "synced") setStatus(t.synced(event.elements));
-      else if (event.type === "parse-error") setStatus(t.parseError);
+      else if (event.type === "parse-error" || event.type === "invalid") setStatus(t.parseError);
       else if (event.type === "diagnostics") setDiagnostics(event.diagnostics as Diagnostic[]);
       else if (event.type === "outside") setOutside(event.ids);
       else if (event.type === "rename-refused") setStatus(t.renameRefused(event.name));

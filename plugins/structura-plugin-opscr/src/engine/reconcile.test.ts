@@ -5,7 +5,7 @@ import { projectWorkspace } from "../project";
 import { reconcile, renameInBinding } from "./reconcile";
 import { addElementsToYaml, slugName } from "./adopt";
 import { emptyBinding, sidecarText, type BindingState } from "./sync";
-import { OpscrEngine } from "./engine";
+import { OpscrEngine, type EngineOptions } from "./engine";
 import { LAYOUT_FILE } from "../generated/opscr-mapping";
 import type {
   DiagramSnapshot,
@@ -156,7 +156,7 @@ class Session {
   sidecar = "";
   /** Every change set the engine applied during the last pump. */
   applied: PluginDiagramChanges[] = [];
-  engine = new OpscrEngine({
+  engineOptions = (): EngineOptions => ({
     texts: {
       get: () => [...this.files, { name: LAYOUT_FILE, text: this.sidecar }],
       set: (files) => {
@@ -188,6 +188,7 @@ class Session {
       if (event.type === "rename-refused") this.refused.push(event.name);
     },
   });
+  engine = new OpscrEngine(this.engineOptions());
 
   /** One engine sync (reconcile, then YAML → canvas); returns what it changed on the canvas. */
   async pump() {
@@ -695,5 +696,32 @@ describe("changing an element's catalog service or technology", () => {
       "lambda",
     );
     await s.expectSettled();
+  });
+});
+
+describe("requireValid", () => {
+  it("leaves the diagram as it was while the YAML has opscr errors, then draws it", async () => {
+    const events: string[] = [];
+    const engine = new OpscrEngine({
+      ...s.engineOptions(),
+      requireValid: true,
+      onEvent: (event) => void events.push(event.type),
+    });
+    const count = s.canvas.components.length;
+    const bad =
+      "\n---\napiVersion: opscr.dev/v1\nkind: Cache\nmetadata:\n  name: price-cache\nspec:\n  provider: ElastiCache Redis\n  description: Prices\n  inventedField: 1\n";
+    s.files = s.files.map((f) =>
+      f.name === "commerce.opscr.yaml" ? { ...f, text: f.text + bad } : f,
+    );
+    await engine.sync();
+    expect(events).toContain("invalid");
+    expect(s.canvas.components).toHaveLength(count);
+    s.files = s.files.map((f) =>
+      f.name === "commerce.opscr.yaml"
+        ? { ...f, text: f.text.replace("  inventedField: 1\n", "") }
+        : f,
+    );
+    await engine.sync();
+    expect(s.canvas.components).toHaveLength(count + 1);
   });
 });
