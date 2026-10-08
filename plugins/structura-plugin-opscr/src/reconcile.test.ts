@@ -443,3 +443,36 @@ describe("F2 rename (from the text)", () => {
     await s.expectSettled();
   });
 });
+
+describe("binding again", () => {
+  it("adopts what the canvas already shows instead of drawing duplicates", async () => {
+    const components = s.canvas.components.map((c) => c.id).sort();
+    const connections = s.canvas.connections.map((c) => c.id).sort();
+    s.canvas.step(
+      () => (s.canvas.components.find((c) => c.label === "orders-db")!.position = { x: 5, y: 5 }),
+    );
+    s.binding = emptyBinding(); // unbind, then bind the same folder again
+    const plan = await s.pump();
+    expect(plan.changes.add).toEqual([]);
+    expect(plan.changes.connect).toEqual([]);
+    expect(plan.changes.remove).toEqual([]);
+    expect(s.canvas.components.map((c) => c.id).sort()).toEqual(components);
+    expect(s.canvas.connections.map((c) => c.id).sort()).toEqual(connections);
+    expect(s.canvas.components.find((c) => c.label === "orders-db")!.position).toEqual({
+      x: 5,
+      y: 5,
+    });
+    await s.expectSettled();
+  });
+
+  it("adds what the canvas lacks, nested in an adopted panel", async () => {
+    s.canvas.step(() => s.canvas.remove([s.id("orders-api")]));
+    s.binding = emptyBinding();
+    const plan = await s.pump();
+    expect(plan.changes.add?.map((c) => c.name)).toEqual(["orders-api"]);
+    expect(s.canvas.components.find((c) => c.label === "orders-api")?.parentId).toBe(
+      s.id("orders"),
+    );
+    await s.expectSettled();
+  });
+});
