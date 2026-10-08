@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildPreviewDiagram, changedComponentIds, PREVIEW_DIAGRAM_ID } from "./build-diagram";
-import { LOAD_GRAPH, SEARCH, THEME, readEmbedMessage, type PreviewGraph } from "./protocol";
+import { LOAD_GRAPH, PROBE, SEARCH, THEME, readEmbedMessage, type PreviewGraph } from "./protocol";
 
 const graph: PreviewGraph = {
   components: [
@@ -112,5 +112,6 @@ describe("changedComponentIds", () => {
 describe("search request", () => {
   it("reads the host's request to open the element search", () => {
     expect(readEmbedMessage({ type: SEARCH })).toEqual({ type: SEARCH });
+    expect(readEmbedMessage({ type: PROBE })).toEqual({ type: PROBE });
   });
 });
