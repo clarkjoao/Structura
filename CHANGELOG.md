@@ -40,6 +40,10 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- Fixed: an element dragged out of its panel, or into another one (a sibling, a
+  nested panel), now lands in the panel under it; children were clamped to their
+  panel before.
+- Fixed: the element and pattern pickers were drawn under the chat panel.
 - **opscr plugin**: picking another cloud service or technology for a bound
   element sets its `spec.provider` (or is reverted when the Kind has no such
   provider).
