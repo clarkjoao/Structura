@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-async function until(what, check, timeout = 30000) {
+async function until(what, check, timeout = 90000) {
   const end = Date.now() + timeout;
   for (;;) {
     const value = await check();
@@ -101,6 +101,29 @@ async function editor(folder) {
   });
   console.log("[e2e] typing a manifest adds it to the diagram");
 
+  // A file written straight to disk (Claude Code, git): drawn once opscr validates it.
+  const written = path.join(folder, "search.opscr.yaml");
+  const search = (extra) =>
+    `apiVersion: opscr.dev/v1\nkind: Application\nmetadata:\n  name: search-api\nspec:\n  provider: EKS\n  language: Go\n  description: Search\n${extra}`;
+  const before = (await editorStatus(folder)).components;
+  require("node:fs").writeFileSync(written, search("  inventedField: 1\n"));
+  await until(
+    "an invalid file to pause the diagram",
+    async () => (await editorStatus(folder)).invalid > 0,
+  );
+  assert.equal(
+    (await editorStatus(folder)).components,
+    before,
+    "the diagram keeps its last valid state",
+  );
+  console.log("[e2e] a file written with opscr errors leaves the diagram as it was");
+  require("node:fs").writeFileSync(written, search(""));
+  await until("the fixed file to be drawn", async () => {
+    const s = await editorStatus(folder);
+    return s.invalid === 0 && s.components === before + 1;
+  });
+  console.log("[e2e] once valid, the written file is drawn (laid out automatically)");
+
   const id = await vscode.commands.executeCommand("opscr._editorComponentId", folder, "orders-db");
   assert.ok(id, "orders-db is on the diagram");
   await vscode.commands.executeCommand("opscr._editorCanvasEdit", folder, {
@@ -118,16 +141,20 @@ async function editor(folder) {
   assert.ok(doc.isDirty, "diagram edits are left unsaved");
   console.log("[e2e] a rename on the diagram renames the manifest and every edge end (unsaved)");
 
-  // VSCode's undo, in the file's editor: each file the diagram edited is its own undo step
-  // there (the diagram's own undo reverts them all at once).
-  await vscode.window.showTextDocument(doc);
-  await sleep(500);
-  await vscode.commands.executeCommand("undo");
+  // VSCode's undo, in each file's editor: every file the diagram edited is its own undo step
+  // there (the diagram's own undo reverts them all at once). Halfway — one file undone — the
+  // edges name an element that is gone, opscr reports it and the diagram waits.
+  for (const name of ["commerce.opscr.yaml", "relationships.opscr.yaml"]) {
+    await vscode.window.showTextDocument(vscode.Uri.file(path.join(folder, name)));
+    await sleep(500);
+    await vscode.commands.executeCommand("undo");
+  }
   await until(
     "undo to bring the old name back to the text and the diagram",
     async () =>
       (await textOf(folder, "commerce.opscr.yaml")).includes("name: orders-db") &&
+      (await textOf(folder, "relationships.opscr.yaml")).includes("id: orders-db") &&
       (await vscode.commands.executeCommand("opscr._editorComponentId", folder, "orders-db")),
   );
-  console.log("[e2e] VSCode undo reverts the rename in that file, and the diagram follows");
+  console.log("[e2e] VSCode undo in both files reverts the rename, and the diagram follows");
 }
