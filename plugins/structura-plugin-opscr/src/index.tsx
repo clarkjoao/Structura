@@ -22,10 +22,10 @@ window.StructuraPlugin.define({
   manifest: {
     id: "structura-plugin-opscr",
     name: "opscr",
-    version: "0.7.1",
+    version: "0.8.0",
     author: "Structura",
     description: "Import opscr manifests, or edit a folder of them beside a diagram that follows",
-    apiVersion: "^1.7",
+    apiVersion: "^1.8",
     capabilities: [
       "io:importers",
       "ui:panels",

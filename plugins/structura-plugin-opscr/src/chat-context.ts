@@ -10,7 +10,7 @@ import {
 import { OPSCR_SKILL } from "./generated/opscr-skill";
 import type { SourceText } from "./patches";
 import { text, type Locale } from "./pane/i18n";
-import { getSession, type PaneSession } from "./session";
+import { getSession, onSessionChange, type PaneSession } from "./session";
 import type { PluginChatContext } from "./types/plugin.types";
 
 async function errorsOf(session: PaneSession, files: readonly SourceText[]): Promise<Diagnostic[]> {
@@ -46,6 +46,19 @@ export function createChatContext(): PluginChatContext {
     id: "structura-plugin-opscr/chat",
 
     appliesTo: (diagramId) => getSession()?.diagramId === diagramId,
+
+    // The chat names the folder and offers opscr edits while it applies (API 1.8).
+    presentation({ diagramId, locale }) {
+      const t = text(locale as Locale);
+      const session = getSession();
+      return {
+        title: t.chatTitle(session?.diagramId === diagramId ? session.folderName : ""),
+        subtitle: t.chatSubtitle,
+        suggestions: t.chatSuggestions,
+      };
+    },
+
+    subscribe: onSessionChange,
 
     systemPrompt({ diagramId, locale, attempt }) {
       const session = getSession();

@@ -6,6 +6,8 @@ import type { SourceText } from "./patches";
  */
 export interface PaneSession {
   diagramId: string;
+  /** The bound folder's name, for display. */
+  folderName: string;
   /** The manifests, unsaved edits included. */
   manifests(): SourceText[];
   config(): SourceText | undefined;
@@ -23,13 +25,28 @@ export interface AppliedIds {
 }
 
 let current: PaneSession | null = null;
+const listeners = new Set<() => void>();
+const notify = () => {
+  for (const listener of [...listeners]) listener();
+};
 
 export const getSession = () => current;
+
+/** Called whenever a session opens or closes. */
+export function onSessionChange(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
 
 /** Opens a session; the returned function closes it if it is still the current one. */
 export function openSession(session: PaneSession): () => void {
   current = session;
+  notify();
   return () => {
-    if (current === session) current = null;
+    if (current !== session) return;
+    current = null;
+    notify();
   };
 }
