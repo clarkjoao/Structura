@@ -559,6 +559,21 @@ await waitFor(
 );
 await page.screenshot({ path: join(OUT, "8-ungroup.png") });
 
+// A new catalog service on the canvas becomes the manifest's provider.
+await page.locator(".react-flow__node", { hasText: "order-relay" }).first().click();
+const serviceSelect = page
+  .locator("select")
+  .filter({ has: page.locator('option[value="ecs"]') })
+  .first();
+await serviceSelect.waitFor({ timeout: 8000 }).catch(() => fail("no cloud service field"));
+await serviceSelect.selectOption("ecs");
+await waitFor(
+  async () =>
+    /name: order-relay\nspec:\n {2}provider: ECS\n/.test(await saveAndRead("commerce.opscr.yaml")),
+  "changing the catalog service on the canvas sets spec.provider",
+);
+await page.keyboard.press("Escape");
+
 // Unbind and bind the same folder again: what the canvas shows is adopted, not duplicated.
 await saveAndRead("commerce.opscr.yaml"); // the folder holds what the canvas shows
 const beforeRebind = await nodes();
