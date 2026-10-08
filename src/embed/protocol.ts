@@ -8,6 +8,7 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  *   host  → embed  STRUCTURA_LOAD_GRAPH { components, connections }  replace the picture
  *   host  → embed  STRUCTURA_THEME { theme: "light" | "dark" }      follow the host's theme
  *   host  → embed  STRUCTURA_SEARCH                                  open the element search
+ *   host  → embed  STRUCTURA_BLOCKED { reason, errors, problems }    why there is no (new) picture
  *   host  → embed  STRUCTURA_PROBE                                   say what is on screen
  *   embed → host   STRUCTURA_PROBE_RESULT { viewport, searchOpen, visible }   …the answer (for tests)
  *
@@ -22,6 +23,7 @@ export const RENDERED = "STRUCTURA_RENDERED";
 export const LOAD_GRAPH = "STRUCTURA_LOAD_GRAPH";
 export const THEME = "STRUCTURA_THEME";
 export const SEARCH = "STRUCTURA_SEARCH";
+export const BLOCKED = "STRUCTURA_BLOCKED";
 export const PROBE = "STRUCTURA_PROBE";
 export const PROBE_RESULT = "STRUCTURA_PROBE_RESULT";
 
@@ -31,7 +33,14 @@ export type EmbedMessage =
   | { type: typeof LOAD_GRAPH; graph: PreviewGraph }
   | { type: typeof THEME; theme: "light" | "dark" }
   | { type: typeof SEARCH }
-  | { type: typeof PROBE };
+  | { type: typeof PROBE }
+  | {
+      type: typeof BLOCKED;
+      reason: "parse" | "errors";
+      errors: number;
+      /** A few of the errors, as one line each ("file:line message"). */
+      problems: string[];
+    };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -46,6 +55,14 @@ export function readEmbedMessage(data: unknown): EmbedMessage | null {
   }
   if (data["type"] === SEARCH) return { type: SEARCH };
   if (data["type"] === PROBE) return { type: PROBE };
+  if (data["type"] === BLOCKED) {
+    const reason = data["reason"] === "parse" ? "parse" : "errors";
+    const errors = typeof data["errors"] === "number" ? data["errors"] : 0;
+    const problems = Array.isArray(data["problems"])
+      ? data["problems"].filter((p): p is string => typeof p === "string").slice(0, 5)
+      : [];
+    return { type: BLOCKED, reason, errors, problems };
+  }
   if (data["type"] === LOAD_GRAPH) {
     const { components, connections } = data;
     if (!Array.isArray(components) || !Array.isArray(connections)) return null;

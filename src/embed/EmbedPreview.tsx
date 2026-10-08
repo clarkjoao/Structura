@@ -5,6 +5,7 @@ import { ViewerCanvas } from "@/features/viewer/components/ViewerCanvas";
 import { buildPreviewDiagram, changedComponentIds } from "./build-diagram";
 import type { PreviewGraph } from "./protocol";
 import {
+  BLOCKED,
   LOAD_GRAPH,
   PROBE,
   PROBE_RESULT,
@@ -27,6 +28,12 @@ export function EmbedPreview() {
   const [focus, setFocus] = useState<{ ids: string[]; token: number } | null>(null);
   const lastGraph = useRef<PreviewGraph | null>(null);
   const [searchRequest, setSearchRequest] = useState(0);
+  /** Why the picture is not (or no longer) following the YAML; null while it is. */
+  const [blocked, setBlocked] = useState<{
+    reason: "parse" | "errors";
+    errors: number;
+    problems: string[];
+  } | null>(null);
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -36,9 +43,12 @@ export function EmbedPreview() {
         const changed = changedComponentIds(lastGraph.current, message.graph);
         lastGraph.current = message.graph;
         setDiagram(buildPreviewDiagram(message.graph));
+        setBlocked(null);
         if (changed.length > 0) setFocus((f) => ({ ids: changed, token: (f?.token ?? 0) + 1 }));
       } else if (message.type === SEARCH) setSearchRequest((n) => n + 1);
-      else if (message.type === PROBE) {
+      else if (message.type === BLOCKED) {
+        setBlocked({ reason: message.reason, errors: message.errors, problems: message.problems });
+      } else if (message.type === PROBE) {
         // What a host's test cannot see inside the frame: where the canvas looks, and whether
         // the search is open.
         postToHost({
@@ -47,6 +57,7 @@ export function EmbedPreview() {
             document.querySelector<HTMLElement>(".react-flow__viewport")?.style.transform ?? "",
           searchOpen: document.querySelector(".viewer-canvas input") !== null,
           visible: document.visibilityState === "visible",
+          blocked: document.querySelector('[role="status"]') !== null,
         });
       } else document.documentElement.classList.toggle("dark", message.theme === "dark");
     };
@@ -70,6 +81,27 @@ export function EmbedPreview() {
   }, [diagram]);
 
   if (!diagram) {
+    if (blocked) {
+      return (
+        <div className="flex h-screen items-center justify-center p-6">
+          <div className="max-w-xl space-y-3 text-sm">
+            <p className="font-medium text-destructive">
+              {blocked.reason === "parse"
+                ? t("embedPage.blockedParse")
+                : t("embedPage.blockedTitle", { count: blocked.errors })}
+            </p>
+            {blocked.problems.length > 0 && (
+              <ul className="list-disc space-y-1 pl-5 font-mono text-xs text-muted-foreground">
+                {blocked.problems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            )}
+            <p className="text-muted-foreground">{t("embedPage.blockedHint")}</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex h-screen items-center justify-center text-sm text-muted-foreground">
         {t("embedPage.waiting")}
@@ -77,7 +109,17 @@ export function EmbedPreview() {
     );
   }
   return (
-    <div style={{ width: "100vw", height: "100vh" }}>
+    <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
+      {blocked && (
+        <div
+          role="status"
+          className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-md border border-destructive/40 bg-card px-3 py-1.5 text-xs text-destructive shadow"
+        >
+          {blocked.reason === "parse"
+            ? t("embedPage.blockedStaleParse")
+            : t("embedPage.blockedStale", { count: blocked.errors })}
+        </div>
+      )}
       <ViewerCanvas
         diagram={diagram}
         showOpenInStructuraButton={false}

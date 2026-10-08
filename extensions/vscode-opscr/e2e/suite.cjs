@@ -57,6 +57,7 @@ exports.run = async function run() {
     return s.blocked > 0;
   });
   assert.equal((await status(folder)).components, first.components);
+  await until("the preview to say it is not updated", async () => (await probe()).blocked);
   console.log("[e2e] an edit with opscr errors is not drawn; the last valid picture stays");
 
   const problems = await until("an opscr problem on the edited file", () =>
