@@ -64,4 +64,70 @@ exports.run = async function run() {
     () => !vscode.languages.getDiagnostics(file).some((d) => d.message.includes("inventedField")),
   );
   console.log("[e2e] problem cleared");
+
+  await vscode.commands.executeCommand("workbench.action.closeAllEditors");
+  await editor(folder);
 };
+
+const editorStatus = async (folder) =>
+  (await vscode.commands.executeCommand("opscr._editorStatus"))[folder];
+const textOf = async (folder, name) =>
+  (await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(folder, name)))).getText();
+
+/** The diagram editor: YAML → diagram as you type, diagram → YAML as document edits, undo. */
+async function editor(folder) {
+  const commerce = vscode.Uri.file(path.join(folder, "commerce.opscr.yaml"));
+  const doc = await vscode.workspace.openTextDocument(commerce);
+  await vscode.window.showTextDocument(doc);
+  await vscode.commands.executeCommand("opscr.openEditor");
+  const first = await until(
+    "the diagram editor to draw the sample",
+    async () => {
+      const s = await editorStatus(folder);
+      return s && s.ready && s.elements > 0 && s.components === s.elements ? s : undefined;
+    },
+    60000,
+  );
+  console.log(`[e2e] editor drew ${first.components} elements`);
+
+  const cache =
+    "\n---\napiVersion: opscr.dev/v1\nkind: Cache\nmetadata:\n  name: price-cache\nspec:\n  provider: ElastiCache Redis\n  description: Prices\n";
+  const edit = new vscode.WorkspaceEdit();
+  edit.insert(commerce, doc.lineAt(doc.lineCount - 1).range.end, cache);
+  assert.ok(await vscode.workspace.applyEdit(edit));
+  await until("the editor to draw the typed Cache", async () => {
+    const s = await editorStatus(folder);
+    return s.components === first.components + 1;
+  });
+  console.log("[e2e] typing a manifest adds it to the diagram");
+
+  const id = await vscode.commands.executeCommand("opscr._editorComponentId", folder, "orders-db");
+  assert.ok(id, "orders-db is on the diagram");
+  await vscode.commands.executeCommand("opscr._editorCanvasEdit", folder, {
+    update: [{ id, name: "order-store" }],
+  });
+  await until("the rename on the diagram to reach both documents", async () => {
+    const [c, r] = [
+      await textOf(folder, "commerce.opscr.yaml"),
+      await textOf(folder, "relationships.opscr.yaml"),
+    ];
+    return (
+      c.includes("name: order-store") && r.includes("id: order-store") && !r.includes("orders-db")
+    );
+  });
+  assert.ok(doc.isDirty, "diagram edits are left unsaved");
+  console.log("[e2e] a rename on the diagram renames the manifest and every edge end (unsaved)");
+
+  // VSCode's undo, in the file's editor: each file the diagram edited is its own undo step
+  // there (the diagram's own undo reverts them all at once).
+  await vscode.window.showTextDocument(doc);
+  await sleep(500);
+  await vscode.commands.executeCommand("undo");
+  await until(
+    "undo to bring the old name back to the text and the diagram",
+    async () =>
+      (await textOf(folder, "commerce.opscr.yaml")).includes("name: orders-db") &&
+      (await vscode.commands.executeCommand("opscr._editorComponentId", folder, "orders-db")),
+  );
+  console.log("[e2e] VSCode undo reverts the rename in that file, and the diagram follows");
+}

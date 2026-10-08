@@ -1,7 +1,8 @@
 /**
- * opscr Preview — a live, read-only Structura diagram of the opscr workspace of the active
- * `*.opscr.yaml`. The extension host turns YAML into a graph (opscr/core, the technical
- * view, ELK, stable placement); the webview is Structura's embed preview, which draws it.
+ * opscr for VSCode — a live, read-only Structura diagram of the opscr workspace of the active
+ * `*.opscr.yaml` (the preview: the extension host turns YAML into a graph, the webview is
+ * Structura's embed preview), and an editable one (the diagram editor: Structura's canvas,
+ * bound to the folder's documents by the opscr binding engine).
  */
 import { readFile, readdir } from "node:fs/promises";
 import { dirname } from "node:path";
@@ -10,6 +11,7 @@ import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
 import { LAYOUT_FILE } from "./generated/opscr-mapping";
 import { collectWorkspace, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
+import { DiagramEditor } from "./editor/diagram-editor";
 
 const UPDATE_DELAY_MS = 300;
 
@@ -173,12 +175,50 @@ export function activate(context: vscode.ExtensionContext): void {
     preview.schedule();
   };
 
+  const editors = new Map<string, DiagramEditor>();
+  const openEditor = async (uri?: vscode.Uri) => {
+    const target = uri ?? vscode.window.activeTextEditor?.document.uri;
+    if (!target || !isManifestPath(target.fsPath)) {
+      void vscode.window.showInformationMessage(
+        "Open an *.opscr.yaml file to edit its workspace as a diagram.",
+      );
+      return;
+    }
+    const folder = dirname(target.fsPath);
+    const existing = editors.get(folder);
+    if (existing) return;
+    const panel = vscode.window.createWebviewPanel(
+      "opscr.editor",
+      `Diagram: ${folder.split("/").pop()}`,
+      { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
+      { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [embedRoot] },
+    );
+    const html = new TextDecoder().decode(
+      await vscode.workspace.fs.readFile(vscode.Uri.joinPath(embedRoot, "embed-editor.html")),
+    );
+    const editor = new DiagramEditor(folder, panel, (files, found) =>
+      publishDiagnostics(diagnostics, files, found),
+    );
+    editors.set(folder, editor);
+    panel.onDidDispose(() => {
+      editor.dispose();
+      editors.delete(folder);
+    });
+    // After the listener is in place: the embed says READY as soon as it loads.
+    panel.webview.html = previewHtml(
+      html,
+      panel.webview.asWebviewUri(embedRoot).toString(),
+      panel.webview.cspSource,
+    );
+  };
+
   const forDocument = (uri: vscode.Uri) =>
     isManifestPath(uri.fsPath) ? previews.get(dirname(uri.fsPath)) : undefined;
 
   context.subscriptions.push(
     diagnostics,
     vscode.commands.registerCommand("opscr.openPreview", open),
+    vscode.commands.registerCommand("opscr.openEditor", openEditor),
     vscode.commands.registerCommand("opscr.relayoutPreview", () => {
       const uri = vscode.window.activeTextEditor?.document.uri;
       const preview = (uri && forDocument(uri)) ?? [...previews.values()][0];
@@ -191,6 +231,16 @@ export function activate(context: vscode.ExtensionContext): void {
     // Not contributed to the palette: lets the end-to-end test observe the preview.
     vscode.commands.registerCommand("opscr._previewStatus", () =>
       Object.fromEntries([...previews].map(([folder, p]) => [folder, p.status()])),
+    ),
+    // Not contributed either: let the end-to-end test observe and drive the diagram editor.
+    vscode.commands.registerCommand("opscr._editorStatus", () =>
+      Object.fromEntries([...editors].map(([folder, e]) => [folder, e.status()])),
+    ),
+    vscode.commands.registerCommand("opscr._editorCanvasEdit", (folder: string, changes: unknown) =>
+      editors.get(folder)?.canvasEdit(changes),
+    ),
+    vscode.commands.registerCommand("opscr._editorComponentId", (folder: string, label: string) =>
+      editors.get(folder)?.componentId(label),
     ),
   );
 }

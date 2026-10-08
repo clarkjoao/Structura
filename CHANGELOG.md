@@ -40,6 +40,12 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **VSCode extension 0.2.0**: _opscr: Open Diagram Editor_ — Structura's canvas
+  in a webview (new editable embed, `embed-editor.html`), bound to the folder's
+  documents by the opscr binding engine: typing redraws the diagram, diagram
+  edits become unsaved document edits, positions go to `opscr.layout.json`.
+- **opscr plugin**: the document pane's orchestration is now a UI-free
+  `OpscrEngine` (`src/engine/`), shared with the VSCode extension.
 - Fixed: an element dragged out of its panel, or into another one (a sibling, a
   nested panel), now lands in the panel under it; children were clamped to their
   panel before.

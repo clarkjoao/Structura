@@ -11,5 +11,5 @@
 
 ## 3. VSCode editor
 
-- [ ] 3.1 Editor panel, engine over documents + webview bridge, binding in workspace state; verify unit tests of the document port
-- [ ] 3.2 End to end in VSCode: open, type a manifest, rename on the diagram, undo; verify the e2e suite
+- [x] 3.1 Editor panel, engine over documents + webview bridge, binding in memory (each editor starts from a fresh canvas); verify unit tests of the document port
+- [x] 3.2 End to end in VSCode: open, type a manifest, rename on the diagram, undo; verify the e2e suite

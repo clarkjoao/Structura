@@ -2,13 +2,15 @@
 /**
  * End-to-end test in a real VSCode: opens a copy of the opscr sample, runs the preview,
  * edits a file without saving, and checks that the webview loaded, followed the edit and that
- * an opscr error reached the Problems panel. Uses an isolated user-data and extensions
+ * an opscr error reached the Problems panel; then opens the diagram editor, types a manifest,
+ * renames an element on the diagram and undoes it. Uses an isolated user-data and extensions
  * directory, so the user's VSCode settings and extensions are untouched.
  *
  *   npm run build && node e2e/run.mjs
  *   VSCODE_PATH=/path/to/Code node e2e/run.mjs   # another VSCode binary
  */
-import { cpSync, mkdtempSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -17,9 +19,15 @@ import { runTests } from "@vscode/test-electron";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
-const sample = join(dirname(require.resolve("opscr/package.json")), "examples/sample");
+// The sample as committed in the opscr checkout: local edits there must not change the test.
+const opscrRoot = dirname(require.resolve("opscr/package.json"));
+const git = (...args) => execFileSync("git", ["-C", opscrRoot, ...args], { encoding: "utf8" });
 const workspace = mkdtempSync(join(tmpdir(), "opscr-e2e-"));
-for (const f of readdirSync(sample)) cpSync(join(sample, f), join(workspace, f));
+for (const path of git("ls-tree", "--name-only", "HEAD", "examples/sample/")
+  .split("\n")
+  .filter(Boolean)) {
+  writeFileSync(join(workspace, path.split("/").pop()), git("show", `HEAD:${path}`));
+}
 const profile = mkdtempSync(join(tmpdir(), "opscr-e2e-profile-"));
 
 await runTests({
