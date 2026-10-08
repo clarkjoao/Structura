@@ -1,6 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { SAMPLE_FILES } from "./test-sample";
 import { beforeEach, describe, expect, it } from "vitest";
 import { countEdges, hasManifest, renameElement, type SourceText } from "./patches";
 import { projectWorkspace } from "./project";
@@ -15,17 +13,13 @@ import type {
   PluginDiagramChangesResult,
 } from "./types/plugin.types";
 
-const sampleDir = join(
-  dirname(createRequire(import.meta.url).resolve("opscr/package.json")),
-  "examples/sample",
-);
-const SAMPLE: SourceText[] = readdirSync(sampleDir)
+const SAMPLE: SourceText[] = Object.keys(SAMPLE_FILES)
   .filter((f) => f.endsWith(".opscr.yaml"))
   .sort()
-  .map((name) => ({ name, text: readFileSync(join(sampleDir, name), "utf8") }));
+  .map((name) => ({ name, text: SAMPLE_FILES[name]! }));
 const CONFIG = {
   path: "opscr.config.yaml",
-  content: readFileSync(join(sampleDir, "opscr.config.yaml"), "utf8"),
+  content: SAMPLE_FILES["opscr.config.yaml"]!,
 };
 
 /** A canvas that applies plugin changes the way the host does, close enough for diffs. */
@@ -630,5 +624,46 @@ describe("moving an element into another panel", () => {
     const before = s.text();
     await s.pump();
     expect(s.text()).toBe(before);
+  });
+});
+
+describe("changing an element's catalog service or technology", () => {
+  const change = (name: string, patch: Partial<PluginComponentSnapshot>) =>
+    s.canvas.step(() =>
+      Object.assign(
+        s.canvas.components.find((c) => c.label === name)!,
+        patch,
+      ),
+    );
+
+  it("a new service of the same Kind sets spec.provider, keeping the element", async () => {
+    const id = s.id("order-tracker");
+    change("order-tracker", { cloudServiceId: "ecs", technology: "Lambda" });
+    const plan = await s.pump();
+    expect(s.text()).toMatch(/name: order-tracker\nspec:\n {2}provider: ECS\n/);
+    expect(plan.changes.remove).toEqual([]);
+    const tracker = s.canvas.components.find((c) => c.id === id)!;
+    expect([tracker.cloudServiceId, tracker.technology]).toEqual(["ecs", "ECS"]);
+    await s.expectSettled();
+  });
+
+  it("a technology naming another provider of the same service sets it", async () => {
+    change("catalog-db", { technology: "AuroraMySQL" });
+    await s.pump();
+    expect(s.text()).toMatch(/name: catalog-db\nspec:\n {2}provider: AuroraMySQL\n/);
+    await s.expectSettled();
+  });
+
+  it("what the manifest cannot say is reverted on the canvas", async () => {
+    const before = s.text();
+    change("order-tracker", { cloudServiceId: "dynamodb" }); // a Database service on an Application
+    const r = reconcile(s.canvas.snapshot(), s.binding, s.files);
+    expect(r.refusedProviders).toEqual(["order-tracker"]);
+    await s.pump();
+    expect(s.text()).toBe(before);
+    expect(s.canvas.components.find((c) => c.label === "order-tracker")?.cloudServiceId).toBe(
+      "lambda",
+    );
+    await s.expectSettled();
   });
 });
