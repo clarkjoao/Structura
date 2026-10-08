@@ -55,7 +55,12 @@ export function EmbedEditor() {
       if (!message) return;
       if (message.type === EDITOR_APPLY) {
         const result = api.applyChanges(message.changes);
-        postToHost({ type: EDITOR_APPLIED, requestId: message.requestId, result });
+        postToHost({
+          type: EDITOR_APPLIED,
+          requestId: message.requestId,
+          result,
+          diagram: api.getDiagram(diagramId),
+        });
       } else {
         document.documentElement.classList.toggle("dark", message.theme === "dark");
       }
