@@ -23,8 +23,8 @@ Claude Code sessions working in the same folder, should get the same editor with
 3. **VSCode editor**: "opscr: Open Diagram Editor" opens the folder's workspace in the editable
    embed. The extension host runs the engine: files are the VSCode documents (unsaved text
    included; canvas edits are `WorkspaceEdit`s, so they are undoable and saved by VSCode), the
-   diagram is the webview, the binding lives in the workspace state, and the layout sidecar is
-   written next to the manifests.
+   diagram is the webview, the binding lives in memory (each editor starts from a fresh canvas and
+   the layout sidecar), and the sidecar is written next to the manifests.
 
 ## Non-Goals
 
