@@ -1,17 +1,11 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { SAMPLE_FILES } from "./test-sample";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createChatContext } from "./chat-context";
 import { hasManifest, type SourceText } from "./patches";
 import { openSession } from "./session";
 
-const sampleDir = join(
-  dirname(createRequire(import.meta.url).resolve("opscr/package.json")),
-  "examples/sample",
-);
-const read = (name: string) => readFileSync(join(sampleDir, name), "utf8");
-const SAMPLE: SourceText[] = readdirSync(sampleDir)
+const read = (name: string) => SAMPLE_FILES[name]!;
+const SAMPLE: SourceText[] = Object.keys(SAMPLE_FILES)
   .filter((f) => f.endsWith(".opscr.yaml"))
   .sort()
   .map((name) => ({ name, text: read(name) }));

@@ -1,22 +1,16 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { SAMPLE_FILES } from "./test-sample";
 import { compileSources } from "opscr/core";
 import { describe, expect, it } from "vitest";
 import { applyChatEdits, chatSystemPrompt, newErrors, parseChatReply, retryMessage } from "./chat";
 import { countEdges, hasManifest, type SourceText } from "./patches";
 
-const sampleDir = join(
-  dirname(createRequire(import.meta.url).resolve("opscr/package.json")),
-  "examples/sample",
-);
-const SAMPLE: SourceText[] = readdirSync(sampleDir)
+const SAMPLE: SourceText[] = Object.keys(SAMPLE_FILES)
   .filter((f) => f.endsWith(".opscr.yaml"))
   .sort()
-  .map((name) => ({ name, text: readFileSync(join(sampleDir, name), "utf8") }));
+  .map((name) => ({ name, text: SAMPLE_FILES[name]! }));
 const CONFIG = {
   path: "opscr.config.yaml",
-  content: readFileSync(join(sampleDir, "opscr.config.yaml"), "utf8"),
+  content: SAMPLE_FILES["opscr.config.yaml"]!,
 };
 const diagnostics = async (files: SourceText[]) =>
   (

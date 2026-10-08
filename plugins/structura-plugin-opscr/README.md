@@ -15,16 +15,17 @@ Two ways to bring opscr into Structura:
   patched into the text (unsaved until you save), touching only the lines they change — comments
   and formatting elsewhere stay as they are.
 
-  | On the canvas                          | In the YAML                                                         |
-  | -------------------------------------- | ------------------------------------------------------------------- |
-  | Rename an element                      | `metadata.name` and every edge end naming it (refused if taken)     |
-  | Edit its description                   | `spec.description`                                                  |
-  | Delete elements                        | their manifests and the edges naming them                           |
-  | Draw a connection between two elements | a new edge (`type` = the label if it is an edge type, else `calls`) |
-  | Relabel a connection with an edge type | the edge's `type`                                                   |
-  | Move an element into / out of a panel  | its `belongsTo` (retargeted, added or removed)                      |
-  | Delete a connection                    | its edge                                                            |
-  | Undo / redo (of either side)           | the text change it reverts                                          |
+  | On the canvas                           | In the YAML                                                         |
+  | --------------------------------------- | ------------------------------------------------------------------- |
+  | Rename an element                       | `metadata.name` and every edge end naming it (refused if taken)     |
+  | Edit its description                    | `spec.description`                                                  |
+  | Delete elements                         | their manifests and the edges naming them                           |
+  | Draw a connection between two elements  | a new edge (`type` = the label if it is an edge type, else `calls`) |
+  | Relabel a connection with an edge type  | the edge's `type`                                                   |
+  | Pick another cloud service / technology | `spec.provider` (reverted when it is not a provider of the Kind)    |
+  | Move an element into / out of a panel   | its `belongsTo` (retargeted, added or removed)                      |
+  | Delete a connection                     | its edge                                                            |
+  | Undo / redo (of either side)            | the text change it reverts                                          |
 
   **Outside changes** (VSCode, `git pull`) reach the pane within ~2 s: files without unsaved edits
   reload and the diagram follows; a file you are editing keeps your text and shows the conflict
@@ -42,8 +43,6 @@ Two ways to bring opscr into Structura:
   **Elements drawn from the palette** are listed in the pane as "not in the YAML", with a
   suggested Kind and provider (a DynamoDB → `Database`/`DynamoDB`, a panel → `Domain`). _Add to
   YAML_ writes the manifest (named after the label, kebab-case), its `belongsTo` and its edges.
-
-  Changing an element's catalog service or technology on the canvas stays canvas-only.
 
   Positions go to the **layout sidecar** `opscr.layout.json` beside the manifests (one
   `"Kind/name": { x, y, width, height }` per line, parent-relative), saved with them. Binding a
