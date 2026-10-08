@@ -1,4 +1,4 @@
-import type { SourceText } from "./patches";
+import type { SourceText } from "./engine/patches";
 
 /**
  * The folder the pane has open, as other parts of the plugin (the chat context) see it. Set

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { ImporterGraph } from "./generated/opscr-mapping";
+import type { ImporterGraph } from "../generated/opscr-mapping";
 import { canvasLayout, emptyBinding, planSync, sidecarMoves, type BindingState } from "./sync";
-import type { DiagramSnapshot, PluginComponentSnapshot } from "./types/plugin.types";
+import type { DiagramSnapshot, PluginComponentSnapshot } from "../types/plugin.types";
 
 const graph = (
   over: Record<string, Partial<ImporterGraph["components"][number]> | null> = {},

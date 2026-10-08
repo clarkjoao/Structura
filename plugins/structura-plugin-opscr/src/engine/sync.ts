@@ -3,13 +3,13 @@ import type {
   ImporterGraphComponent,
   ViewBox,
   ViewLayoutResult,
-} from "./generated/opscr-mapping";
-import { overlayLayouts, parseLayoutFile, serializeLayoutFile } from "./generated/opscr-mapping";
+} from "../generated/opscr-mapping";
+import { overlayLayouts, parseLayoutFile, serializeLayoutFile } from "../generated/opscr-mapping";
 import type {
   DiagramSnapshot,
   PluginDiagramChanges,
   PluginDiagramChangesResult,
-} from "./types/plugin.types";
+} from "../types/plugin.types";
 import type { EdgeSource } from "./patches";
 
 /** Default leaf size when the canvas has not measured one — the mapping's LEAF size. */

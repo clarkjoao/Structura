@@ -6,8 +6,8 @@ import {
   upsertDocument,
   type ElementRef,
   type SourceText,
-} from "./patches";
-import { documentSource, parseDocuments } from "./yaml-text";
+} from "./engine/patches";
+import { documentSource, parseDocuments } from "./engine/yaml-text";
 
 /**
  * The chat on a bound diagram (plugin API 1.6): what the model is told, how its reply is read,
