@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.7.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.8.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -411,9 +411,26 @@ export interface PluginChatTurnResult {
  * v1.6 — capability "llm:context". Takes over the chat for the diagrams it applies to: its
  * system prompt replaces the built-in one and it handles the model's replies itself.
  */
+/** v1.8 — how the chat presents itself while a context applies. */
+export interface PluginChatPresentation {
+  /** Shown in the chat header instead of "Diagram assistant", e.g. "opscr · my-folder". */
+  title: string;
+  /** Empty-state line under the title. */
+  subtitle?: string;
+  /** Empty-state suggestions; clicking one sends it as the user's message. */
+  suggestions?: string[];
+}
+
 export interface PluginChatContext {
   id: string;
   appliesTo(diagramId: string): boolean;
+  /** v1.8 — the chat's title and suggestions while this context applies. */
+  presentation?(input: { diagramId: string; locale: "en" | "pt-BR" }): PluginChatPresentation;
+  /**
+   * v1.8 — call `listener` whenever `appliesTo` or `presentation` may answer differently (e.g.
+   * a folder was opened), so the chat updates. Returns an unsubscribe function.
+   */
+  subscribe?(listener: () => void): () => void;
   systemPrompt(input: PluginChatTurnInput): string | Promise<string>;
   handleReply(
     text: string,
