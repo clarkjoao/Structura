@@ -616,24 +616,26 @@ const Canvas = (props: CanvasProps = {}) => {
                 </button>
               </div>
             ) : null}
-            <div className="mt-auto flex pb-5 pr-4">
-              <div className="pointer-events-auto">
-                <FloatingChatButton
-                  isOpen={isChatOpen}
-                  hasUnread={hasUnread}
-                  onClick={() => {
-                    if (isFlowActive) return;
-                    setIsChatOpen((previous) => {
-                      const next = !previous;
-                      if (next) {
-                        setHasUnread(false);
-                      }
-                      return next;
-                    });
-                  }}
-                />
+            {props.showChat !== false && (
+              <div className="mt-auto flex pb-5 pr-4">
+                <div className="pointer-events-auto">
+                  <FloatingChatButton
+                    isOpen={isChatOpen}
+                    hasUnread={hasUnread}
+                    onClick={() => {
+                      if (isFlowActive) return;
+                      setIsChatOpen((previous) => {
+                        const next = !previous;
+                        if (next) {
+                          setHasUnread(false);
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
           {showElementPanel && (
             <ElementPanel
@@ -646,7 +648,7 @@ const Canvas = (props: CanvasProps = {}) => {
               onClose={eventHandlers.closePanel}
             />
           )}
-          {isChatOpen ? (
+          {isChatOpen && props.showChat !== false ? (
             <AssistantUIChatPanel
               onClose={() => setIsChatOpen(false)}
               selectedNodeIds={visualState.selectedNodeIds}
