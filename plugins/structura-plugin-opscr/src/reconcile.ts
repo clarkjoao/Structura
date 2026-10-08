@@ -14,12 +14,18 @@ import {
   setDescription,
   setEdgeType,
   setParent,
+  setSpecField,
   type EdgeMatch,
   type EdgeSource,
   type SourceText,
 } from "./patches";
+import { PROVIDER_SERVICES, kindFor } from "./generated/opscr-mapping";
 import type { BindingState, Tombstones } from "./sync";
-import type { DiagramSnapshot, PluginDiagramChanges } from "./types/plugin.types";
+import type {
+  DiagramSnapshot,
+  PluginComponentSnapshot,
+  PluginDiagramChanges,
+} from "./types/plugin.types";
 import { parseDocuments } from "./yaml-text";
 
 /** Tombstones kept per binding; the oldest go first. */
@@ -56,6 +62,31 @@ const emptyTombstones = (): Tombstones => ({ elements: {}, connections: {} });
 function cap<T>(record: Record<string, T>, max: number): Record<string, T> {
   const entries = Object.entries(record);
   return entries.length <= max ? record : Object.fromEntries(entries.slice(entries.length - max));
+}
+
+/**
+ * The `spec.provider` a canvas change of catalog service or technology stands for, or null when
+ * the manifest cannot say it (another Kind's service, a cleared service, free text on a catalog
+ * element). A new catalog service picks the provider listing it; a new technology is a provider
+ * of the same service, or — for Applications and external systems without one — itself.
+ */
+export function providerFromCanvas(
+  kind: string,
+  component: Pick<PluginComponentSnapshot, "type" | "cloudServiceId" | "technology">,
+  serviceChanged: boolean,
+): string | null {
+  const technology = component.technology?.trim() ?? "";
+  const service = component.cloudServiceId ?? "";
+  if (serviceChanged) {
+    if (!service) return null;
+    const guess = kindFor({ type: component.type, catalogServiceId: service, technology });
+    return guess?.kind === kind && guess.provider ? guess.provider : null;
+  }
+  if (!technology) return null;
+  if (service) {
+    return PROVIDER_SERVICES[kind]?.[technology]?.catalogServiceId === service ? technology : null;
+  }
+  return kind === "Application" || kind === "ExternalSystem" ? technology : null;
 }
 
 /** Signature fields: [name, description, technology, catalog service]. */
@@ -138,6 +169,8 @@ export interface ReconcileResult {
   revert: Required<Pick<PluginDiagramChanges, "remove" | "disconnect" | "update">>;
   /** Canvas names a rename could not take (empty, or already used by that Kind). */
   refused: string[];
+  /** Elements whose new catalog service or technology the manifest cannot express (reverted). */
+  refusedProviders: string[];
   /** Canvas elements the YAML does not declare (drawn from the palette, say). */
   notInYaml: number;
   /** Their ids. */
@@ -164,6 +197,7 @@ export function reconcile(
     changed: false,
     revert,
     refused: [],
+    refusedProviders: [],
     notInYaml: 0,
     outside: [],
   };
@@ -175,9 +209,11 @@ export function reconcile(
   const refused: string[] = [];
   const live = new Map(diagram.components.map((c) => [c.id, c]));
   const liveConnections = new Map(diagram.connections.map((c) => [c.id, c]));
-  const updates = new Map<string, { id: string; name?: string; description?: string }>();
-  const revertUpdate = (id: string, patch: { name?: string; description?: string }) =>
+  type Revert = NonNullable<PluginDiagramChanges["update"]>[number];
+  const updates = new Map<string, Revert>();
+  const revertUpdate = (id: string, patch: Omit<Revert, "id">) =>
     updates.set(id, { ...(updates.get(id) ?? { id }), ...patch });
+  const refusedProviders: string[] = [];
 
   // 1. Elements deleted on the canvas: their manifests and the edges naming them go.
   const gone = Object.entries(state.ids).filter(([, id]) => !live.has(id));
@@ -244,7 +280,28 @@ export function reconcile(
         nextDescription = component.description;
       } else revertUpdate(id, { description });
     }
-    state.signatures[current] = JSON.stringify([nextName, nextDescription, ...rest]);
+    // A new catalog service or technology is a new `spec.provider`, when the Kind has one for it.
+    let [technology = "", service = ""] = rest;
+    const canvasTechnology = component.technology ?? "";
+    const canvasService = component.cloudServiceId ?? "";
+    if (canvasTechnology !== technology || canvasService !== service) {
+      const provider = providerFromCanvas(
+        refOf(current).kind,
+        component,
+        canvasService !== service,
+      );
+      const changed =
+        provider !== null ? setSpecField(files, refOf(current), "provider", provider) : null;
+      if (changed) {
+        files = changed;
+        technology = canvasTechnology;
+        service = canvasService;
+      } else {
+        revertUpdate(id, { technology, cloudServiceId: service });
+        refusedProviders.push(component.label);
+      }
+    }
+    state.signatures[current] = JSON.stringify([nextName, nextDescription, technology, service]);
   }
 
   // 3b. Elements moved into another panel (or out to the top level): their belongsTo follows.
@@ -359,6 +416,7 @@ export function reconcile(
     changed: files.some((f, i) => f.text !== input[i]!.text),
     revert,
     refused,
+    refusedProviders,
     notInYaml: outside.length,
     outside,
     skipped: false,
