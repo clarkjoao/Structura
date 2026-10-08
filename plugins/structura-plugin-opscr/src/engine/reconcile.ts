@@ -19,13 +19,13 @@ import {
   type EdgeSource,
   type SourceText,
 } from "./patches";
-import { PROVIDER_SERVICES, kindFor } from "./generated/opscr-mapping";
+import { PROVIDER_SERVICES, kindFor } from "../generated/opscr-mapping";
 import type { BindingState, Tombstones } from "./sync";
 import type {
   DiagramSnapshot,
   PluginComponentSnapshot,
   PluginDiagramChanges,
-} from "./types/plugin.types";
+} from "../types/plugin.types";
 import { parseDocuments } from "./yaml-text";
 
 /** Tombstones kept per binding; the oldest go first. */

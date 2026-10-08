@@ -2,7 +2,7 @@ import { SAMPLE_FILES } from "./test-sample";
 import { compileSources } from "opscr/core";
 import { describe, expect, it } from "vitest";
 import { applyChatEdits, chatSystemPrompt, newErrors, parseChatReply, retryMessage } from "./chat";
-import { countEdges, hasManifest, type SourceText } from "./patches";
+import { countEdges, hasManifest, type SourceText } from "./engine/patches";
 
 const SAMPLE: SourceText[] = Object.keys(SAMPLE_FILES)
   .filter((f) => f.endsWith(".opscr.yaml"))
