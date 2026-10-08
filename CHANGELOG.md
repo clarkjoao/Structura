@@ -40,6 +40,11 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.9.0**: `PluginFolder.stats()` (last-modified time and size).
+  The opscr pane follows changes made to the bound folder outside Structura:
+  clean files reload, unsaved edits are never overwritten (a conflict offers
+  both versions), and a changed layout sidecar moves the canvas.
+- Fixed: Space typed in a plugin code editor was swallowed by the canvas.
 - **Plugin API 1.8.0**: chat contexts can present the chat (title, subtitle,
   suggestions) and notify the host when they start or stop applying. The opscr
   chat introduces itself as "opscr · <folder>" with opscr suggestions. Additive.

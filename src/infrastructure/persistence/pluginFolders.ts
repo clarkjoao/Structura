@@ -17,6 +17,8 @@ export interface PluginFolderAccess {
   name: string;
   /** Top-level file names, sorted. */
   list(): Promise<string[]>;
+  /** Top-level files with their last-modified time (ms) and size, sorted by name. */
+  stats(): Promise<Array<{ name: string; lastModified: number; size: number }>>;
   read(fileName: string): Promise<string>;
   write(fileName: string, text: string): Promise<void>;
 }
@@ -63,6 +65,22 @@ function access(handle: PermissionedHandle): PluginFolderAccess {
         if (entry.kind === "file") names.push(name);
       }
       return names.sort();
+    },
+    async stats() {
+      const names: string[] = [];
+      if (handle.entries) {
+        for await (const [name, entry] of handle.entries()) {
+          if (entry.kind === "file") names.push(name);
+        }
+      }
+      const stats = await Promise.all(
+        names.sort().map(async (name) => {
+          // A file removed between listing and reading is simply absent.
+          const file = await (await handle.getFileHandle(name)).getFile().catch(() => null);
+          return file ? { name, lastModified: file.lastModified, size: file.size } : null;
+        }),
+      );
+      return stats.filter((s): s is NonNullable<typeof s> => s !== null);
     },
     async read(fileName) {
       assertFileName(fileName);

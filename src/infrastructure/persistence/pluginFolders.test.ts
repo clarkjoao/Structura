@@ -8,15 +8,23 @@ function fakeDirectory(
   permission: PermissionState = "granted",
 ) {
   const contents = new Map(Object.entries(files));
+  const modified = new Map([...contents.keys()].map((file) => [file, 1]));
   const fileHandle = (file: string) => ({
     kind: "file" as const,
     name: file,
-    getFile: async () => ({ text: async () => contents.get(file) ?? "" }),
+    getFile: async () => ({
+      text: async () => contents.get(file) ?? "",
+      lastModified: modified.get(file) ?? 0,
+      size: (contents.get(file) ?? "").length,
+    }),
     createWritable: async () => {
       let buffer = "";
       return {
         write: async (text: string) => void (buffer += text),
-        close: async () => void contents.set(file, buffer),
+        close: async () => {
+          contents.set(file, buffer);
+          modified.set(file, (modified.get(file) ?? 0) + 1);
+        },
       };
     },
   });
@@ -48,6 +56,17 @@ function memoryStore(): FolderHandleStore {
 }
 
 describe("plugin folders", () => {
+  it("reports each file's last-modified time and size, and sees writes", async () => {
+    const { handle } = fakeDirectory("shop", { "b.yaml": "bb", "a.yaml": "a" });
+    const folder = (await createPluginFolders("p", async () => handle, memoryStore()).pick("d1"))!;
+    expect(await folder.stats()).toEqual([
+      { name: "a.yaml", lastModified: 1, size: 1 },
+      { name: "b.yaml", lastModified: 1, size: 2 },
+    ]);
+    await folder.write("a.yaml", "aaa");
+    expect((await folder.stats())[0]).toEqual({ name: "a.yaml", lastModified: 2, size: 3 });
+  });
+
   it("picks a folder, lists its files, reads and writes them", async () => {
     const { handle, contents } = fakeDirectory("shop", {
       "b.opscr.yaml": "b",

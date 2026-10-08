@@ -178,6 +178,7 @@ function Pane() {
 // A folder the user picks, remembered per binding id (re-asks permission after a reload).
 const folder = (await api.files.open(diagramId)) ?? (await api.files.pick(diagramId));
 const names = await folder.list(); // top-level file names
+const stats = await folder.stats(); // API 1.9: [{ name, lastModified, size }] — poll for outside changes
 await folder.write("a.yaml", await folder.read("a.yaml"));
 
 // Several diagram changes as one undo step; returns the ids created per key.
