@@ -13,6 +13,7 @@ import {
   restoreElement,
   setDescription,
   setEdgeType,
+  setParent,
   type EdgeMatch,
   type EdgeSource,
   type SourceText,
@@ -244,6 +245,24 @@ export function reconcile(
       } else revertUpdate(id, { description });
     }
     state.signatures[current] = JSON.stringify([nextName, nextDescription, ...rest]);
+  }
+
+  // 3b. Elements moved into another panel (or out to the top level): their belongsTo follows.
+  //     A panel outside the YAML cannot be a parent yet; the move waits until it is added.
+  {
+    const keyOfId = new Map(Object.entries(state.ids).map(([key, id]) => [id, key]));
+    for (const [key, id] of Object.entries(state.ids)) {
+      const component = live.get(id);
+      const identity = state.signatures[`${key}#id`];
+      if (!component || !identity) continue;
+      const [type, parentKey] = JSON.parse(identity) as [string, string | null];
+      const canvasParent = component.parentId ? keyOfId.get(component.parentId) : null;
+      if (canvasParent === undefined || canvasParent === parentKey) continue;
+      const moved = setParent(files, refOf(key), canvasParent ? refOf(canvasParent) : null);
+      if (!moved) continue;
+      files = moved;
+      state.signatures[`${key}#id`] = JSON.stringify([type, canvasParent]);
+    }
   }
 
   // 4. Elements back on the canvas (undo of a removal, either side): their text comes back.

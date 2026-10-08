@@ -569,3 +569,66 @@ describe("palette elements into the YAML", () => {
     expect(slugName("!!!")).toBe("element");
   });
 });
+
+describe("moving an element into another panel", () => {
+  const tracker = { kind: "Application", name: "order-tracker" };
+  const belongsTo = (parent: string) =>
+    countEdges(s.files, {
+      from: tracker,
+      to: { kind: "ApplicationService", name: parent },
+      type: "belongsTo",
+    });
+  const move = (parentId: string | null) =>
+    s.canvas.step(
+      () => (s.canvas.components.find((c) => c.label === "order-tracker")!.parentId = parentId),
+    );
+
+  it("retargets its belongsTo and keeps the element", async () => {
+    const id = s.id("order-tracker");
+    expect(belongsTo("orders")).toBe(1);
+    move(s.id("catalog"));
+    const plan = await s.pump();
+    expect(belongsTo("orders")).toBe(0);
+    expect(belongsTo("catalog")).toBe(1);
+    expect(plan.changes.remove).toEqual([]);
+    expect(s.canvas.components.find((c) => c.label === "order-tracker")?.id).toBe(id);
+    await s.expectSettled();
+
+    // Undo past the sync's own step (the panel that grew) back to the move.
+    const ordersId = s.id("orders");
+    while (s.canvas.components.find((c) => c.id === id)?.parentId !== ordersId) s.canvas.undo();
+    await s.pump();
+    expect(belongsTo("orders")).toBe(1);
+    expect(belongsTo("catalog")).toBe(0);
+    await s.expectSettled();
+  });
+
+  it("moved to the top level, loses its belongsTo", async () => {
+    move(null);
+    await s.pump();
+    expect(belongsTo("orders")).toBe(0);
+    await s.expectSettled();
+  });
+
+  it("waits while the target panel is outside the YAML", async () => {
+    s.canvas.step(() =>
+      s.canvas.components.push({
+        id: "free-panel",
+        type: "panel",
+        label: "Draft",
+        description: "",
+        parentId: null,
+        position: { x: 0, y: 900 },
+        size: { width: 400, height: 300 },
+        tags: [],
+        serviceId: null,
+        cloudServiceId: null,
+        technology: null,
+      }),
+    );
+    move("free-panel");
+    const before = s.text();
+    await s.pump();
+    expect(s.text()).toBe(before);
+  });
+});
