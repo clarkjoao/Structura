@@ -8,7 +8,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.8.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.9.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -352,6 +352,11 @@ export interface PluginEditorRename {
 export interface PluginFolder {
   readonly name: string;
   list(): Promise<string[]>;
+  /**
+   * v1.9 — top-level files with last-modified time (ms) and size, sorted by name: a cheap way
+   * to notice changes made outside the app (another editor, git) without reading every file.
+   */
+  stats(): Promise<Array<{ name: string; lastModified: number; size: number }>>;
   read(fileName: string): Promise<string>;
   write(fileName: string, text: string): Promise<void>;
 }
