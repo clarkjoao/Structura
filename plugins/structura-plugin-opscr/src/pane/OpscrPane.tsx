@@ -12,7 +12,15 @@ import { keyOf, nameAt, renameElement, type SourceText } from "../patches";
 import { reconcile, renameInBinding, retire } from "../reconcile";
 import { openSession } from "../session";
 import { LAYOUT_FILE } from "../generated/opscr-mapping";
-import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "../sync";
+import {
+  emptyBinding,
+  planSync,
+  previousLayout,
+  sidecarMoves,
+  sidecarText,
+  type BindingState,
+} from "../sync";
+import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../watch";
 import { text, type Locale } from "./i18n";
 
 const SYNC_DELAY_MS = 300;
@@ -23,7 +31,14 @@ interface Buffer {
   disk: string;
   /** Text in the editor. */
   text: string;
+  /** Disk text that changed under an unsaved edit, until the user picks a side. */
+  conflict?: string;
 }
+
+/** How often the folder is checked for changes made outside Structura. */
+const WATCH_INTERVAL_MS = 2000;
+const isTracked = (name: string) =>
+  isManifest(name) || name === CONFIG_FILE || name === LAYOUT_FILE;
 
 interface StoredBinding {
   folderName: string;
@@ -67,6 +82,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
     buffersRef.current = buffers;
     const timer = useRef<ReturnType<typeof setTimeout>>();
     const syncing = useRef<Promise<void>>(Promise.resolve());
+    /** The folder's file stats as of the last read or save, to notice outside changes. */
+    const knownStats = useRef<Stats>({});
     /** The manifests as of the last sync: the text a canvas undo of that sync brings back. */
     const synced = useRef<SourceText[]>([]);
 
@@ -264,6 +281,66 @@ export function createOpscrPane(api: StructuraPluginApi) {
       });
     }, [folder, diagramId, sync]);
 
+    // Changes made to the folder outside Structura (another editor, git): clean files reload and
+    // the canvas follows; a file with unsaved edits keeps them and shows a conflict instead.
+    const checking = useRef(false);
+    const checkFolder = useCallback(async () => {
+      if (!folder || checking.current || document.hidden) return;
+      checking.current = true;
+      try {
+        const stats = await folder.stats();
+        const { read, removed } = changedFiles(knownStats.current, stats, isTracked);
+        if (read.length === 0 && removed.length === 0) return;
+        const disk = Object.fromEntries(
+          await Promise.all(read.map(async (name) => [name, await folder.read(name)] as const)),
+        );
+        knownStats.current = toStats(stats.filter((f) => isTracked(f.name)));
+        const merged = mergeDisk(buffersRef.current, disk, removed, (n) => n === LAYOUT_FILE);
+        buffersRef.current = merged.buffers;
+        setBuffers(merged.buffers);
+        if (merged.conflicts.length > 0) setStatus(t.diskConflict(merged.conflicts));
+        else if (merged.reloaded.length > 0) setStatus(t.diskReloaded(merged.reloaded));
+        const sidecar = merged.reloaded.includes(LAYOUT_FILE)
+          ? merged.buffers.find((b) => b.name === LAYOUT_FILE)?.text
+          : undefined;
+        const manifestsChanged = merged.reloaded.some((n) => n !== LAYOUT_FILE);
+        if (!sidecar && !manifestsChanged) return;
+        await enqueue(async () => {
+          const binding = bindingRef.current;
+          const diagram = api.getDiagram();
+          if (sidecar && binding && diagram?.id === diagramId) {
+            // Before the sync, which rewrites the sidecar from the canvas.
+            const move = sidecarMoves(binding.state, diagram, sidecar);
+            if (move.length > 0) api.applyChanges({ move });
+          }
+          await reconcileNow();
+          await syncNow();
+        });
+      } catch (error) {
+        console.error("[opscr] checking the folder failed:", error);
+      } finally {
+        checking.current = false;
+      }
+    }, [folder, diagramId, enqueue, reconcileNow, syncNow, t]);
+
+    useEffect(() => {
+      if (!folder) return;
+      const timer = setInterval(() => void checkFolder(), WATCH_INTERVAL_MS);
+      const onFocus = () => void checkFolder();
+      window.addEventListener("focus", onFocus);
+      return () => {
+        clearInterval(timer);
+        window.removeEventListener("focus", onFocus);
+      };
+    }, [folder, checkFolder]);
+
+    const resolve = (name: string, side: "disk" | "mine") => {
+      const next = buffersRef.current.map((b) => (b.name === name ? resolveConflict(b, side) : b));
+      buffersRef.current = next;
+      setBuffers(next);
+      if (side === "disk") void sync();
+    };
+
     const load = useCallback(
       async (opened: PluginFolder) => {
         const listed = await opened.list();
@@ -276,6 +353,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
             return { name, disk: content, text: content };
           }),
         );
+        knownStats.current = toStats(await opened.stats());
         buffersRef.current = loaded;
         setFolder(opened);
         setBuffers(loaded);
@@ -330,6 +408,12 @@ export function createOpscrPane(api: StructuraPluginApi) {
       const dirty = buffersRef.current.filter((b) => b.text !== b.disk);
       for (const b of dirty) await folder.write(b.name, b.text);
       const saved = new Set(dirty.map((b) => b.name));
+      // Our own writes are not outside changes.
+      const stats = toStats(await folder.stats());
+      for (const name of saved) if (stats[name]) knownStats.current[name] = stats[name]!;
+      buffersRef.current = buffersRef.current.map((b) =>
+        saved.has(b.name) ? { ...b, disk: b.text } : b,
+      );
       setBuffers((list) => list.map((b) => (saved.has(b.name) ? { ...b, disk: b.text } : b)));
       setStatus(t.saved(dirty.length));
     };
@@ -434,10 +518,35 @@ export function createOpscrPane(api: StructuraPluginApi) {
                 className={`rounded px-2 py-0.5 ${b.name === selected ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
               >
                 {b.name}
-                {b.text !== b.disk ? " •" : ""}
+                {b.conflict !== undefined ? " ⚠" : b.text !== b.disk ? " •" : ""}
               </button>
             ))}
         </div>
+        {buffers
+          .filter((b) => b.conflict !== undefined)
+          .map((b) => (
+            <div
+              key={`conflict-${b.name}`}
+              role="alert"
+              className="flex flex-wrap items-center gap-2 border-b bg-amber-500/10 px-2 py-1"
+            >
+              <span className="mr-auto">{t.conflictBanner(b.name)}</span>
+              <button
+                type="button"
+                className="rounded border px-2 py-0.5"
+                onClick={() => resolve(b.name, "disk")}
+              >
+                {t.useDisk}
+              </button>
+              <button
+                type="button"
+                className="rounded border px-2 py-0.5"
+                onClick={() => resolve(b.name, "mine")}
+              >
+                {t.keepMine}
+              </button>
+            </div>
+          ))}
         <div className="min-h-0 flex-1">
           {current && (
             <CodeEditor

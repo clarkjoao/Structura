@@ -25,6 +25,10 @@ Two ways to bring opscr into Structura:
   | Delete a connection                    | its edge                                                            |
   | Undo / redo (of either side)           | the text change it reverts                                          |
 
+  **Outside changes** (VSCode, `git pull`) reach the pane within ~2 s: files without unsaved edits
+  reload and the diagram follows; a file you are editing keeps your text and shows the conflict
+  with _Use the folder's version_ / _Keep mine_. A changed `opscr.layout.json` moves the canvas.
+
   **The chat** (bottom-right) on a bound diagram, while the folder is open in the pane, is an
   opscr editing assistant: its context is the opscr-architect skill (bundled at build time from
   the linked `opscr`, `npm run build-skill`) and the current manifests. The model writes whole
