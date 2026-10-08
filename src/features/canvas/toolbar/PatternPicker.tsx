@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useState, useMemo, useRef, useEffect, type ChangeEvent } from "react";
 import { Search, X, Layers, Bookmark, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -208,7 +209,9 @@ const PatternPicker = ({
     </div>
   );
 
-  return (
+  // A portal: rendered in place, the overlay shared the toolbar's stacking context and the
+  // chat panel (a later sibling layer of the canvas) was drawn on top of it.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex min-h-full items-center justify-center overflow-y-auto p-4 bg-black/40 backdrop-blur-sm"
       onMouseDown={(e) => {
@@ -395,7 +398,8 @@ const PatternPicker = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
