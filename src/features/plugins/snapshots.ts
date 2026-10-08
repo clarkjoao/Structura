@@ -6,6 +6,7 @@ import type {
   NodeLayout,
   ServiceDefinition,
 } from "@/features/diagram";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
 import type {
   DiagramSnapshot,
   PluginComponentPatch,
@@ -27,6 +28,12 @@ export function toComponentSnapshot(
 ): PluginComponentSnapshot {
   const x = layout?.x ?? component.x;
   const y = layout?.y ?? component.y;
+  // Read only: plugins change the catalog service through applyChanges, never here.
+  const cloudServiceId = resolveCloudServiceId(component) ?? null;
+  const technology =
+    "technology" in component && typeof component.technology === "string"
+      ? component.technology
+      : null;
   return {
     id: component.id,
     type: component.type,
@@ -40,6 +47,8 @@ export function toComponentSnapshot(
         : null,
     tags: [...(component.tags ?? [])],
     serviceId: component.serviceId ?? null,
+    cloudServiceId,
+    technology,
   };
 }
 

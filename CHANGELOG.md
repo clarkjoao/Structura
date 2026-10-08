@@ -40,6 +40,10 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.10.0**: component snapshots carry `cloudServiceId` and
+  `technology`. The opscr pane lists canvas elements that are not in the YAML
+  with a suggested Kind and provider, and adds them (manifest, `belongsTo`,
+  edges) without redrawing them.
 - **Plugin API 1.9.0**: `PluginFolder.stats()` (last-modified time and size).
   The opscr pane follows changes made to the bound folder outside Structura:
   clean files reload, unsaved edits are never overwritten (a conflict offers
