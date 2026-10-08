@@ -106,6 +106,48 @@ export function previousLayout(
 export const sidecarText = (binding: BindingState, diagram: DiagramSnapshot) =>
   serializeLayoutFile(canvasLayout(binding, diagram).boxes);
 
+/**
+ * Elements the binding does not know but the canvas already shows — the diagram was bound
+ * before, unbound, and bound again, say: an unbound component with the element's name, type
+ * and (adopted or kept) parent is that element. Adopting it keeps the user's arrangement and
+ * avoids drawing a duplicate; its fields are then updated like any survivor's.
+ */
+function adoptUnbound(
+  graph: ImporterGraph,
+  binding: BindingState,
+  diagram: DiagramSnapshot,
+  candidates: Map<string, string>,
+) {
+  const bound = new Set(Object.values(binding.ids));
+  const free = diagram.components.filter((c) => !bound.has(c.id));
+  if (free.length === 0) return;
+  const byKey = new Map(graph.components.map((c) => [c.key, c]));
+  const depth = (key: string) => {
+    let d = 0;
+    for (let k = byKey.get(key)?.parentKey; k !== undefined && d < 64; k = byKey.get(k)?.parentKey)
+      d++;
+    return d;
+  };
+  const claimed = new Set<string>();
+  // Parents first, so a child can only be adopted inside its adopted parent.
+  for (const component of [...graph.components].sort((a, b) => depth(a.key) - depth(b.key))) {
+    if (candidates.has(component.key)) continue;
+    const parentId =
+      component.parentKey === undefined ? null : (candidates.get(component.parentKey) ?? null);
+    if (component.parentKey !== undefined && parentId === null) continue;
+    const match = free.find(
+      (c) =>
+        !claimed.has(c.id) &&
+        c.label === component.name &&
+        c.type === component.type &&
+        c.parentId === parentId,
+    );
+    if (!match) continue;
+    claimed.add(match.id);
+    candidates.set(component.key, match.id);
+  }
+}
+
 export interface SyncPlan {
   changes: PluginDiagramChanges;
   /** Whether there is anything to apply (an empty plan pushes no history). */
@@ -138,6 +180,7 @@ export function planSync(
       candidates.set(key, id);
     }
   }
+  adoptUnbound(graph, binding, diagram, candidates);
   const kept = new Map<string, string>();
   const staysWithAncestors = (key: string, seen = new Set<string>()): boolean => {
     if (!candidates.has(key) || seen.has(key)) return false;
@@ -201,10 +244,26 @@ export function planSync(
     if (liveConnections.has(id) && endsKept && keys.includes(key)) keepConnections.set(key, id);
     else if (liveConnections.has(id)) changes.disconnect.push(id);
   }
+  // Unbound canvas connections between the same ends with the same label are this edge.
+  const boundConnections = new Set(Object.values(binding.connections));
+  const claimedConnections = new Set<string>();
   const added: string[] = [];
   graph.connections.forEach((c, i) => {
     const key = keys[i]!;
     if (keepConnections.has(key)) return;
+    const existing = diagram.connections.find(
+      (l) =>
+        !boundConnections.has(l.id) &&
+        !claimedConnections.has(l.id) &&
+        l.sourceId === kept.get(c.source) &&
+        l.targetId === kept.get(c.target) &&
+        l.label === c.label,
+    );
+    if (existing) {
+      claimedConnections.add(existing.id);
+      keepConnections.set(key, existing.id);
+      return;
+    }
     added.push(key);
     changes.connect.push({
       source: kept.get(c.source) ?? c.source,

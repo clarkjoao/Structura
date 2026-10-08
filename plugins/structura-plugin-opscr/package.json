@@ -1,6 +1,6 @@
 {
   "name": "structura-plugin-opscr",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Import opscr architecture-as-code manifests as a laid-out Structura diagram",
   "main": "dist/plugin.js",
   "type": "module",
