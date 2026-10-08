@@ -490,6 +490,46 @@ await check(
   "keeping mine saves over the outside edit",
 );
 
+// An element drawn from the palette is offered for the YAML, with a suggested Kind.
+await page
+  .getByRole("button", { name: /^(Close chat assistant|Fechar assistente de chat)$/ })
+  .click();
+const paletteCount = await nodes();
+await page
+  .getByRole("button", { name: /^(Add element|Adicionar elemento)$/ })
+  .first()
+  .click();
+await page.getByPlaceholder(/Search elements|Buscar elementos/).fill("DynamoDB");
+await page.waitForTimeout(600);
+await page.screenshot({ path: join(OUT, "7a-picker.png") });
+await page
+  .getByRole("button", { name: /DynamoDB/ })
+  .first()
+  .click();
+await waitNodes(paletteCount + 1).catch(() => fail("the palette did not add an element"));
+await page.keyboard.press("Escape");
+const kindSelect = page.getByLabel(/^(Kind for|Kind de) /).first();
+await kindSelect
+  .waitFor({ timeout: 8000 })
+  .catch(() => fail("the palette element is not offered for the YAML"));
+await check(
+  (await kindSelect.inputValue()) === "Database",
+  "the palette element's Kind is suggested (Database)",
+);
+await page.screenshot({ path: join(OUT, "7b-outside.png") });
+await page
+  .getByRole("button", { name: /^(Add to YAML|Adicionar ao YAML)$/ })
+  .first()
+  .click();
+await waitFor(
+  async () =>
+    /kind: Database\n[\s\S]*provider: "?DynamoDB/.test(await saveAndRead("commerce.opscr.yaml")) &&
+    (await page.getByLabel(/^(Kind for|Kind de) /).count()) === 0,
+  "adding it writes a Database manifest and it leaves the outside list",
+);
+await check((await nodes()) === paletteCount + 1, "the palette element is kept, not duplicated");
+await page.screenshot({ path: join(OUT, "7c-added.png") });
+
 // Unbind and bind the same folder again: what the canvas shows is adopted, not duplicated.
 await saveAndRead("commerce.opscr.yaml"); // the folder holds what the canvas shows
 const beforeRebind = await nodes();

@@ -26,8 +26,15 @@ const en = {
     name.trim() === ""
       ? "A name cannot be empty — rename reverted"
       : `“${name}” is already taken — rename reverted`,
-  notInYaml: (n: number) => `${n} element${n === 1 ? "" : "s"} not in the YAML`,
   renameGone: "The text changed under the cursor — try the rename again",
+  outsideTitle: (n: number) => `${n} element${n === 1 ? "" : "s"} on the canvas not in the YAML`,
+  kindFor: (name: string) => `Kind for ${name}`,
+  providerFor: (name: string) => `Provider for ${name}`,
+  pickKind: "Kind…",
+  noProvider: "No provider",
+  addToYaml: "Add to YAML",
+  addAllToYaml: "Add all to YAML",
+  addedToYaml: (keys: string[]) => `Added to the YAML: ${keys.join(", ")}`,
   diskReloaded: (files: string[]) => `Updated from the folder: ${files.join(", ")}`,
   diskConflict: (files: string[]) =>
     `Changed in the folder while you had unsaved edits: ${files.join(", ")}`,
@@ -80,8 +87,15 @@ const ptBR: typeof en = {
     name.trim() === ""
       ? "O nome não pode ficar vazio — renomeação desfeita"
       : `“${name}” já está em uso — renomeação desfeita`,
-  notInYaml: (n: number) => `${n} elemento${n === 1 ? "" : "s"} fora do YAML`,
   renameGone: "O texto mudou sob o cursor — tente renomear de novo",
+  outsideTitle: (n: number) => `${n} elemento${n === 1 ? "" : "s"} no canvas fora do YAML`,
+  kindFor: (name: string) => `Kind de ${name}`,
+  providerFor: (name: string) => `Provider de ${name}`,
+  pickKind: "Kind…",
+  noProvider: "Sem provider",
+  addToYaml: "Adicionar ao YAML",
+  addAllToYaml: "Adicionar todos ao YAML",
+  addedToYaml: (keys: string[]) => `Adicionado ao YAML: ${keys.join(", ")}`,
   diskReloaded: (files: string[]) => `Atualizado a partir da pasta: ${files.join(", ")}`,
   diskConflict: (files: string[]) =>
     `Mudou na pasta enquanto você tinha edições não salvas: ${files.join(", ")}`,

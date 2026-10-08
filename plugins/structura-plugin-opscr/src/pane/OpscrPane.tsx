@@ -8,10 +8,11 @@ import type {
   StructuraPluginApi,
 } from "../types/plugin.types";
 import { CONFIG_FILE, isManifest, projectWorkspace } from "../project";
-import { keyOf, nameAt, renameElement, type SourceText } from "../patches";
+import { keyOf, nameAt, refOf, renameElement, type SourceText } from "../patches";
 import { reconcile, renameInBinding, retire } from "../reconcile";
 import { openSession } from "../session";
-import { LAYOUT_FILE } from "../generated/opscr-mapping";
+import { DRAWN_KINDS, LAYOUT_FILE, kindFor, providersFor } from "../generated/opscr-mapping";
+import { addElementsToYaml, type AddChoice } from "../adopt";
 import {
   emptyBinding,
   planSync,
@@ -76,7 +77,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
     selectedRef.current = selected;
     const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
     const [status, setStatus] = useState<string>("");
-    const [notInYaml, setNotInYaml] = useState(0);
+    /** Canvas elements the YAML does not declare, and the Kind/provider picked for each. */
+    const [outside, setOutside] = useState<string[]>([]);
+    const [picks, setPicks] = useState<Record<string, { kind: string; provider: string }>>({});
     const bindingRef = useRef<StoredBinding | null>(null);
     const buffersRef = useRef<Buffer[]>([]);
     buffersRef.current = buffers;
@@ -139,7 +142,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       await persist({ ...binding, state: result.binding });
       const { remove, disconnect, update } = result.revert;
       if (remove.length + disconnect.length + update.length > 0) api.applyChanges(result.revert);
-      setNotInYaml(result.notInYaml);
+      setOutside(result.outside);
       if (result.refused.length > 0) setStatus(t.renameRefused(result.refused[0]!));
       return result.changed;
     }, [diagramId, persist, t]);
@@ -334,6 +337,71 @@ export function createOpscrPane(api: StructuraPluginApi) {
       };
     }, [folder, checkFolder]);
 
+    /** The Kind/provider shown for an element outside the YAML: the user's pick, else a guess. */
+    const pickFor = (id: string): { kind: string; provider: string } => {
+      if (picks[id]) return picks[id]!;
+      const diagram = api.getDiagram();
+      const byId = new Map(diagram?.components.map((c) => [c.id, c]) ?? []);
+      const component = byId.get(id);
+      if (!component) return { kind: "", provider: "" };
+      const parent = component.parentId ? byId.get(component.parentId) : undefined;
+      const parentKey = parent
+        ? Object.entries(bindingRef.current?.state.ids ?? {}).find(([, v]) => v === parent.id)?.[0]
+        : undefined;
+      const parentKind = parentKey
+        ? refOf(parentKey).kind
+        : parent?.type === "panel"
+          ? (kindFor({ type: "panel" })?.kind ?? null)
+          : null;
+      const guess = kindFor(
+        {
+          type: component.type,
+          catalogServiceId: component.cloudServiceId,
+          technology: component.technology,
+        },
+        parentKind,
+      );
+      return { kind: guess?.kind ?? "", provider: guess?.provider ?? "" };
+    };
+
+    /** Writes the chosen elements (and any panel they sit in that is outside too) into the YAML. */
+    const addToYaml = (ids: readonly string[]) =>
+      enqueue(async () => {
+        await reconcileNow();
+        const binding = bindingRef.current;
+        const diagram = api.getDiagram();
+        if (!binding || !diagram || diagram.id !== diagramId) return;
+        const bound = new Set(Object.values(binding.state.ids));
+        const parentOf = new Map(diagram.components.map((c) => [c.id, c.parentId]));
+        const wanted = new Set<string>();
+        for (const id of ids) {
+          for (
+            let at: string | null | undefined = id;
+            at && !bound.has(at);
+            at = parentOf.get(at)
+          ) {
+            wanted.add(at);
+          }
+        }
+        const choices: AddChoice[] = [...wanted].flatMap((id) => {
+          const { kind, provider } = pickFor(id);
+          return kind ? [{ id, kind, ...(provider ? { provider } : {}) }] : [];
+        });
+        if (choices.length === 0) return;
+        const result = addElementsToYaml(
+          manifestsOf(buffersRef.current),
+          binding.state,
+          diagram,
+          choices,
+        );
+        setTexts(result.files);
+        await persist({ ...binding, state: result.binding });
+        // Connections drawn to the new elements become edges now that both ends are bound.
+        await reconcileNow();
+        await syncNow();
+        setStatus(t.addedToYaml(result.added));
+      });
+
     const resolve = (name: string, side: "disk" | "mine") => {
       const next = buffersRef.current.map((b) => (b.name === name ? resolveConflict(b, side) : b));
       buffersRef.current = next;
@@ -522,6 +590,76 @@ export function createOpscrPane(api: StructuraPluginApi) {
               </button>
             ))}
         </div>
+        {outside.length > 0 && (
+          <details className="border-b px-2 py-1" open>
+            <summary className="cursor-pointer">{t.outsideTitle(outside.length)}</summary>
+            <div className="mt-1 space-y-1">
+              {outside.map((id) => {
+                const component = api.getDiagram()?.components.find((c) => c.id === id);
+                if (!component) return null;
+                const pick = pickFor(id);
+                const providers = providersFor(pick.kind);
+                const setPick = (next: Partial<typeof pick>) =>
+                  setPicks((all) => ({ ...all, [id]: { ...pick, ...next } }));
+                return (
+                  <div key={id} className="flex flex-wrap items-center gap-1">
+                    <span className="mr-auto truncate" title={component.label}>
+                      {component.label}
+                    </span>
+                    <select
+                      aria-label={t.kindFor(component.label)}
+                      className="rounded border bg-background px-1 py-0.5"
+                      value={pick.kind}
+                      onChange={(e) => setPick({ kind: e.target.value, provider: "" })}
+                    >
+                      <option value="">{t.pickKind}</option>
+                      {DRAWN_KINDS.map((kind) => (
+                        <option key={kind} value={kind}>
+                          {kind}
+                        </option>
+                      ))}
+                    </select>
+                    {providers.length > 0 && (
+                      <select
+                        aria-label={t.providerFor(component.label)}
+                        className="rounded border bg-background px-1 py-0.5"
+                        value={pick.provider}
+                        onChange={(e) => setPick({ provider: e.target.value })}
+                      >
+                        <option value="">{t.noProvider}</option>
+                        {pick.provider && !providers.includes(pick.provider) && (
+                          <option value={pick.provider}>{pick.provider}</option>
+                        )}
+                        {providers.map((provider) => (
+                          <option key={provider} value={provider}>
+                            {provider}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-0.5 disabled:opacity-50"
+                      disabled={!pick.kind}
+                      onClick={() => void addToYaml([id])}
+                    >
+                      {t.addToYaml}
+                    </button>
+                  </div>
+                );
+              })}
+              {outside.length > 1 && (
+                <button
+                  type="button"
+                  className="rounded border px-2 py-0.5"
+                  onClick={() => void addToYaml(outside)}
+                >
+                  {t.addAllToYaml}
+                </button>
+              )}
+            </div>
+          </details>
+        )}
         {buffers
           .filter((b) => b.conflict !== undefined)
           .map((b) => (
@@ -561,7 +699,6 @@ export function createOpscrPane(api: StructuraPluginApi) {
         </div>
         <div className="border-t px-2 py-1 text-muted-foreground" aria-live="polite">
           {status}
-          {notInYaml > 0 ? ` · ${t.notInYaml(notInYaml)}` : ""}
           {problemsElsewhere > 0 ? ` · ${t.problemsElsewhere(problemsElsewhere)}` : ""}
         </div>
       </div>

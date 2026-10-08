@@ -354,7 +354,8 @@ function edgeLines(edge: Omit<EdgeSource, "relationship" | "file">): string[] {
 
 /**
  * Adds an edge: to `relationship` when it exists, else to the Relationship already holding a
- * flow edge from the source, else one naming the source, else to a new Relationship
+ * flow edge from the source, else one naming the source, else one holding edges of the same
+ * type into the target, else one naming the target, else to a new Relationship
  * `<source>-relationships` in the source's file (or the first file).
  */
 export function addEdge(
@@ -368,7 +369,11 @@ export function addEdge(
   const target =
     edges.find((e) => e.source.relationship === relationship) ??
     edges.find((e) => same(e.source.from, edge.from) && e.source.type !== "belongsTo") ??
-    edges.find((e) => same(e.source.from, edge.from) || same(e.source.to, edge.from));
+    edges.find((e) => same(e.source.from, edge.from) || same(e.source.to, edge.from)) ??
+    // A new element: next to the edges of the same type into its target (its siblings'
+    // belongsTo), else any edge naming the target.
+    edges.find((e) => same(e.source.to, edge.to) && e.source.type === edge.type) ??
+    edges.find((e) => same(e.source.from, edge.to) || same(e.source.to, edge.to));
   if (target) {
     const { file, docs } = parsed[target.at]!;
     const seq = docs[target.doc]!.getIn(["spec", "edges"], true);
