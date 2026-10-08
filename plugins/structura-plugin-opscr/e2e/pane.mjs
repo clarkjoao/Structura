@@ -133,7 +133,13 @@ await page.addInitScript(
     window.showDirectoryPicker = async () => {
       const root = await navigator.storage.getDirectory();
       const dir = await root.getDirectoryHandle("opscr-sample", { create: true });
+      // Seed the sample once: picking the folder again must find what was saved in it.
       for (const [name, content] of Object.entries(files)) {
+        const exists = await dir.getFileHandle(name).then(
+          () => true,
+          () => false,
+        );
+        if (exists) continue;
         const writable = await (await dir.getFileHandle(name, { create: true })).createWritable();
         await writable.write(content);
         await writable.close();
@@ -410,6 +416,18 @@ await waitNodes(chatCount).catch(() => fail("Discard did not remove the chat's e
 await waitFor(
   async () => !(await saveAndRead("commerce.opscr.yaml")).includes("search-cache"),
   "Discard restores the manifests from before the reply",
+);
+
+// Unbind and bind the same folder again: what the canvas shows is adopted, not duplicated.
+await saveAndRead("commerce.opscr.yaml"); // the folder holds what the canvas shows
+const beforeRebind = await nodes();
+await page.getByRole("button", { name: /^(Unbind|Desvincular)$/ }).click();
+await page.getByRole("button", { name: /Bind to opscr folder|Vincular a uma pasta opscr/ }).click();
+await page.getByRole("button", { name: /^(Unbind|Desvincular)$/ }).waitFor({ timeout: 10000 });
+await page.waitForTimeout(1500);
+await check(
+  (await nodes()) === beforeRebind,
+  "binding again adopts the drawn elements (no duplicates)",
 );
 
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
