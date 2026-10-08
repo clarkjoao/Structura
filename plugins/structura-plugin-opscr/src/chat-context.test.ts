@@ -1,7 +1,7 @@
 import { SAMPLE_FILES } from "./test-sample";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createChatContext } from "./chat-context";
-import { hasManifest, type SourceText } from "./patches";
+import { hasManifest, type SourceText } from "./engine/patches";
 import { openSession } from "./session";
 
 const read = (name: string) => SAMPLE_FILES[name]!;

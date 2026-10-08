@@ -1,4 +1,4 @@
-import { SAMPLE_FILES } from "./test-sample";
+import { SAMPLE_FILES } from "../test-sample";
 import { compileSources } from "opscr/core";
 import { describe, expect, it } from "vitest";
 import {

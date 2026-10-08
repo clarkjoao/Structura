@@ -7,21 +7,14 @@ import type {
   PluginPanelProps,
   StructuraPluginApi,
 } from "../types/plugin.types";
-import { CONFIG_FILE, isManifest, projectWorkspace } from "../project";
-import { keyOf, nameAt, refOf, renameElement, type SourceText } from "../patches";
-import { reconcile, renameInBinding, retire } from "../reconcile";
+import { CONFIG_FILE, isManifest, projector } from "../project";
+import { nameAt, refOf, type SourceText } from "../engine/patches";
 import { openSession } from "../session";
 import { DRAWN_KINDS, LAYOUT_FILE, kindFor, providersFor } from "../generated/opscr-mapping";
-import { addElementsToYaml, type AddChoice } from "../adopt";
-import {
-  emptyBinding,
-  planSync,
-  previousLayout,
-  sidecarMoves,
-  sidecarText,
-  type BindingState,
-} from "../sync";
-import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../watch";
+import type { AddChoice } from "../engine/adopt";
+import { OpscrEngine, type EngineEvent } from "../engine/engine";
+import { emptyBinding, type BindingState } from "../engine/sync";
+import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../engine/watch";
 import { text, type Locale } from "./i18n";
 
 const SYNC_DELAY_MS = 300;
@@ -84,11 +77,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const buffersRef = useRef<Buffer[]>([]);
     buffersRef.current = buffers;
     const timer = useRef<ReturnType<typeof setTimeout>>();
-    const syncing = useRef<Promise<void>>(Promise.resolve());
     /** The folder's file stats as of the last read or save, to notice outside changes. */
     const knownStats = useRef<Stats>({});
-    /** The manifests as of the last sync: the text a canvas undo of that sync brings back. */
-    const synced = useRef<SourceText[]>([]);
 
     // Follow the active diagram.
     useEffect(() => api.onDiagramChange(() => setDiagramId(api.getActiveDiagramId())), []);
@@ -99,7 +89,6 @@ export function createOpscrPane(api: StructuraPluginApi) {
       setBuffers([]);
       setSelected(null);
       setDiagnostics([]);
-      synced.current = [];
       if (!diagramId) return setStored(null);
       void api.storage.get<StoredBinding>(storageKey(diagramId)).then((value) => {
         bindingRef.current = value;
@@ -118,7 +107,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
     );
 
     /** New texts for the buffers; names the folder does not have yet become new, unsaved files. */
-    const setTexts = (files: readonly SourceText[]) => {
+    const setTexts = useCallback((files: readonly SourceText[]) => {
       const byName = new Map(files.map((f) => [f.name, f.text]));
       const known = new Set(buffersRef.current.map((b) => b.name));
       const next = [
@@ -129,96 +118,55 @@ export function createOpscrPane(api: StructuraPluginApi) {
       ];
       buffersRef.current = next;
       setBuffers(next);
-    };
-
-    /** Canvas → YAML: patches the buffers with what was changed on the canvas. */
-    const reconcileNow = useCallback(async (): Promise<boolean> => {
-      const binding = bindingRef.current;
-      const diagram = api.getDiagram();
-      if (!binding || !diagram || diagram.id !== diagramId) return false;
-      const result = reconcile(diagram, binding.state, manifestsOf(buffersRef.current));
-      if (result.skipped) return false;
-      if (result.changed) setTexts(result.files);
-      await persist({ ...binding, state: result.binding });
-      const { remove, disconnect, update } = result.revert;
-      if (remove.length + disconnect.length + update.length > 0) api.applyChanges(result.revert);
-      setOutside(result.outside);
-      if (result.refused.length > 0) setStatus(t.renameRefused(result.refused[0]!));
-      if (result.refusedProviders.length > 0) {
-        setStatus(t.providerRefused(result.refusedProviders));
-      }
-      return result.changed;
-    }, [diagramId, persist, t]);
-
-    /** Rewrites the layout sidecar buffer from the canvas, when the arrangement changed. */
-    const writeSidecar = useCallback(() => {
-      const binding = bindingRef.current;
-      const diagram = api.getDiagram();
-      if (!binding || !diagram || diagram.id !== diagramId) return;
-      const text = sidecarText(binding.state, diagram);
-      const current = buffersRef.current.find((b) => b.name === LAYOUT_FILE);
-      if (!current || current.text === text) return;
-      const next = buffersRef.current.map((b) => (b.name === LAYOUT_FILE ? { ...b, text } : b));
-      buffersRef.current = next;
-      setBuffers(next);
-    }, [diagramId]);
-
-    /** YAML → canvas. */
-    const syncNow = useCallback(async () => {
-      const binding = bindingRef.current;
-      const diagram = api.getDiagram();
-      if (!binding || !diagram || diagram.id !== diagramId) return;
-      const current = buffersRef.current;
-      const manifests = manifestsOf(current);
-      const config = current.find((b) => b.name === CONFIG_FILE);
-      const projection = await projectWorkspace(
-        manifests.map((f) => ({ path: f.name, content: f.text })),
-        config ? { path: config.name, content: config.text } : undefined,
-        previousLayout(binding.state, diagram, current.find((b) => b.name === LAYOUT_FILE)?.text),
-      );
-      setDiagnostics(projection.diagnostics);
-      if (!projection.graph) return setStatus(t.parseError);
-      const plan = planSync(projection.graph, binding.state, diagram);
-      const result = plan.empty
-        ? { idsByKey: {}, connectionIds: [] }
-        : api.applyChanges(plan.changes);
-      await persist({
-        ...binding,
-        state: retire(binding.state, plan.commit(result), synced.current),
-      });
-      synced.current = manifests;
-      writeSidecar();
-      setStatus(t.synced(projection.graph.components.length));
-    }, [diagramId, persist, t, writeSidecar]);
-
-    /** Runs after every queued step: canvas edits first, so a sync never takes them back. */
-    const enqueue = useCallback((step: () => Promise<void>) => {
-      syncing.current = syncing.current.then(step).catch((error: unknown) => {
-        console.error("[opscr] sync failed:", error);
-      });
-      return syncing.current;
     }, []);
 
-    const sync = useCallback(
+    // The binding engine over this pane's buffers, the active diagram and the plugin storage.
+    const onEvent = useRef<(event: EngineEvent) => void>(() => {});
+    onEvent.current = (event) => {
+      if (event.type === "synced") setStatus(t.synced(event.elements));
+      else if (event.type === "parse-error") setStatus(t.parseError);
+      else if (event.type === "diagnostics") setDiagnostics(event.diagnostics as Diagnostic[]);
+      else if (event.type === "outside") setOutside(event.ids);
+      else if (event.type === "rename-refused") setStatus(t.renameRefused(event.name));
+      else if (event.type === "provider-refused") setStatus(t.providerRefused(event.names));
+      else setStatus(t.addedToYaml(event.keys));
+    };
+    const engine = useMemo(
       () =>
-        enqueue(async () => {
-          await reconcileNow();
-          await syncNow();
+        new OpscrEngine({
+          texts: {
+            get: () => buffersRef.current.map((b) => ({ name: b.name, text: b.text })),
+            set: (files) => setTexts(files),
+          },
+          diagram: {
+            get: () => {
+              const diagram = api.getDiagram();
+              return diagram && diagram.id === diagramId ? diagram : null;
+            },
+            apply: (changes) => api.applyChanges(changes),
+          },
+          binding: {
+            get: () => bindingRef.current?.state ?? emptyBinding(),
+            set: (state) =>
+              bindingRef.current ? persist({ ...bindingRef.current, state }) : undefined,
+          },
+          project: projector,
+          isManifest,
+          configFile: CONFIG_FILE,
+          onEvent: (event) => onEvent.current(event),
         }),
-      [enqueue, reconcileNow, syncNow],
+      [diagramId, persist, setTexts],
     );
+
+    const sync = useCallback(() => engine.sync(), [engine]);
 
     // Canvas edits (and undo/redo) of the bound diagram reach the YAML while the folder is open.
     useEffect(() => {
       if (!folder || !diagramId) return;
       return api.onDiagramChange((changed) => {
-        if (changed !== diagramId) return;
-        void enqueue(async () => {
-          if (await reconcileNow()) await syncNow();
-          else writeSidecar();
-        });
+        if (changed === diagramId) void engine.canvasChanged();
       });
-    }, [folder, diagramId, enqueue, reconcileNow, syncNow, writeSidecar]);
+    }, [folder, diagramId, engine]);
 
     // F2 in the editor: rename an element (its manifest or an edge end naming it) across every
     // file, keeping its canvas id — the same rename a canvas edit makes, started from the text.
@@ -230,32 +178,17 @@ export function createOpscrPane(api: StructuraPluginApi) {
           return at && { start: at.start, end: at.end, text: at.ref.name };
         },
         async rename(offset, newName) {
-          let refusal: string | undefined;
-          await enqueue(async () => {
-            await reconcileNow();
-            const file = selectedRef.current;
-            const manifests = manifestsOf(buffersRef.current);
-            const at = file ? nameAt(manifests, file, offset) : null;
-            const to = newName.trim();
-            if (!at) return void (refusal = t.renameGone);
-            if (to === at.ref.name) return;
-            const files = to ? renameElement(manifests, at.ref, to) : null;
-            if (!files) return void (refusal = t.renameRefused(to));
-            setTexts(files);
-            const binding = bindingRef.current;
-            if (binding) {
-              const from = keyOf(at.ref);
-              const id = binding.state.ids[from];
-              const state = renameInBinding(binding.state, from, keyOf({ ...at.ref, name: to }));
-              await persist({ ...binding, state });
-              if (id) api.applyChanges({ update: [{ id, name: to }] });
-            }
-            await syncNow();
-          });
-          return refusal;
+          const file = selectedRef.current;
+          if (!file) return t.renameGone;
+          const outcome = await engine.rename(file, offset, newName);
+          return outcome === "gone"
+            ? t.renameGone
+            : outcome === "refused"
+              ? t.renameRefused(newName.trim())
+              : undefined;
         },
       }),
-      [enqueue, persist, reconcileNow, syncNow, t],
+      [engine, t],
     );
 
     // While the folder is open, the chat context (API 1.6) reads and edits these buffers.
@@ -269,23 +202,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
           const config = buffersRef.current.find((b) => b.name === CONFIG_FILE);
           return config && { name: config.name, text: config.text };
         },
-        apply: async (files, touched) => {
-          const before = bindingRef.current?.state;
-          setTexts(files);
-          await sync();
-          const after = bindingRef.current?.state;
-          if (!after) return { componentIds: [], connectionIds: [] };
-          const oldIds = new Set(Object.values(before?.ids ?? {}));
-          const oldConnections = new Set(Object.values(before?.connections ?? {}));
-          const touchedIds = touched.flatMap((key) => after.ids[key] ?? []);
-          const createdIds = Object.values(after.ids).filter((id) => !oldIds.has(id));
-          return {
-            componentIds: [...new Set([...createdIds, ...touchedIds])],
-            connectionIds: Object.values(after.connections).filter((id) => !oldConnections.has(id)),
-          };
-        },
+        apply: (files, touched) => engine.applyFiles(files, touched),
       });
-    }, [folder, diagramId, sync]);
+    }, [folder, diagramId, engine]);
 
     // Changes made to the folder outside Structura (another editor, git): clean files reload and
     // the canvas follows; a file with unsaved edits keeps them and shows a conflict instead.
@@ -311,23 +230,14 @@ export function createOpscrPane(api: StructuraPluginApi) {
           : undefined;
         const manifestsChanged = merged.reloaded.some((n) => n !== LAYOUT_FILE);
         if (!sidecar && !manifestsChanged) return;
-        await enqueue(async () => {
-          const binding = bindingRef.current;
-          const diagram = api.getDiagram();
-          if (sidecar && binding && diagram?.id === diagramId) {
-            // Before the sync, which rewrites the sidecar from the canvas.
-            const move = sidecarMoves(binding.state, diagram, sidecar);
-            if (move.length > 0) api.applyChanges({ move });
-          }
-          await reconcileNow();
-          await syncNow();
-        });
+        if (sidecar) await engine.sidecarChanged(sidecar);
+        else await engine.sync();
       } catch (error) {
         console.error("[opscr] checking the folder failed:", error);
       } finally {
         checking.current = false;
       }
-    }, [folder, diagramId, enqueue, reconcileNow, syncNow, t]);
+    }, [folder, engine, t]);
 
     useEffect(() => {
       if (!folder) return;
@@ -368,42 +278,23 @@ export function createOpscrPane(api: StructuraPluginApi) {
     };
 
     /** Writes the chosen elements (and any panel they sit in that is outside too) into the YAML. */
-    const addToYaml = (ids: readonly string[]) =>
-      enqueue(async () => {
-        await reconcileNow();
-        const binding = bindingRef.current;
-        const diagram = api.getDiagram();
-        if (!binding || !diagram || diagram.id !== diagramId) return;
-        const bound = new Set(Object.values(binding.state.ids));
-        const parentOf = new Map(diagram.components.map((c) => [c.id, c.parentId]));
-        const wanted = new Set<string>();
-        for (const id of ids) {
-          for (
-            let at: string | null | undefined = id;
-            at && !bound.has(at);
-            at = parentOf.get(at)
-          ) {
-            wanted.add(at);
-          }
+    const addToYaml = (ids: readonly string[]) => {
+      const diagram = api.getDiagram();
+      if (!diagram || diagram.id !== diagramId) return;
+      const bound = new Set(Object.values(bindingRef.current?.state.ids ?? {}));
+      const parentOf = new Map(diagram.components.map((c) => [c.id, c.parentId]));
+      const wanted = new Set<string>();
+      for (const id of ids) {
+        for (let at: string | null | undefined = id; at && !bound.has(at); at = parentOf.get(at)) {
+          wanted.add(at);
         }
-        const choices: AddChoice[] = [...wanted].flatMap((id) => {
-          const { kind, provider } = pickFor(id);
-          return kind ? [{ id, kind, ...(provider ? { provider } : {}) }] : [];
-        });
-        if (choices.length === 0) return;
-        const result = addElementsToYaml(
-          manifestsOf(buffersRef.current),
-          binding.state,
-          diagram,
-          choices,
-        );
-        setTexts(result.files);
-        await persist({ ...binding, state: result.binding });
-        // Connections drawn to the new elements become edges now that both ends are bound.
-        await reconcileNow();
-        await syncNow();
-        setStatus(t.addedToYaml(result.added));
+      }
+      const choices: AddChoice[] = [...wanted].flatMap((id) => {
+        const { kind, provider } = pickFor(id);
+        return kind ? [{ id, kind, ...(provider ? { provider } : {}) }] : [];
       });
+      return engine.addToYaml(choices);
+    };
 
     const resolve = (name: string, side: "disk" | "mine") => {
       const next = buffersRef.current.map((b) => (b.name === name ? resolveConflict(b, side) : b));
@@ -425,6 +316,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
           }),
         );
         knownStats.current = toStats(await opened.stats());
+        engine.reset();
         buffersRef.current = loaded;
         setFolder(opened);
         setBuffers(loaded);
@@ -433,7 +325,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         );
         await sync();
       },
-      [sync],
+      [engine, sync],
     );
 
     const bind = async () => {
