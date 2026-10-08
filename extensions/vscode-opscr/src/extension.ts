@@ -19,6 +19,7 @@ class Preview {
   private ready = false;
   private rendered = 0;
   private lastGraph: { components: unknown[] } | undefined;
+  private readonly probes: Array<(result: unknown) => void> = [];
   /** Opscr errors keeping the last picture on screen (0 while it follows the YAML). */
   private blocked = 0;
   /** Says why the preview is not following the YAML, while it is not. */
@@ -33,6 +34,9 @@ class Preview {
   ) {
     panel.webview.onDidReceiveMessage((message: { type?: string; nodes?: number }) => {
       if (message?.type === "STRUCTURA_RENDERED") this.rendered = message.nodes ?? 0;
+      if (message?.type === "STRUCTURA_PROBE_RESULT") {
+        for (const resolve of this.probes.splice(0)) resolve(message);
+      }
       if (message?.type !== "STRUCTURA_READY") return;
       this.ready = true;
       this.postTheme();
@@ -52,6 +56,14 @@ class Preview {
 
   isActive(): boolean {
     return this.panel.active;
+  }
+
+  /** For the end-to-end test: where the canvas looks and whether the search is open. */
+  probe(): Promise<unknown> {
+    return new Promise((resolve) => {
+      this.probes.push(resolve);
+      this.post({ type: "STRUCTURA_PROBE" });
+    });
   }
 
   /** Opens the element search inside the preview. */
@@ -226,6 +238,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidCloseTextDocument((d) => forDocument(d.uri)?.schedule()),
     vscode.window.onDidChangeActiveColorTheme(() => previews.forEach((p) => p.postTheme())),
     // Not contributed to the palette: lets the end-to-end test observe the preview.
+    vscode.commands.registerCommand("opscr._previewProbe", (folder: string) =>
+      previews.get(folder)?.probe(),
+    ),
     vscode.commands.registerCommand("opscr._previewStatus", () =>
       Object.fromEntries([...previews].map(([folder, p]) => [folder, p.status()])),
     ),
