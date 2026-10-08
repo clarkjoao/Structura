@@ -7,7 +7,9 @@ import { previewHtml } from "./webview-html";
 
 const require = createRequire(import.meta.url);
 const SAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/sample");
-const NAMES = readdirSync(SAMPLE_DIR);
+// Manifests and config only: a layout sidecar left in the sample by a manual test would seed the
+// layout; the sidecar has its own tests below.
+const NAMES = readdirSync(SAMPLE_DIR).filter((name) => name !== "opscr.layout.json");
 const fromDisk = async (path: string) => readFileSync(path, "utf8");
 
 const CACHE = `
