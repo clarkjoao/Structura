@@ -1,17 +1,15 @@
 /**
- * opscr for VSCode — a live, read-only Structura diagram of the opscr workspace of the active
- * `*.opscr.yaml` (the preview: the extension host turns YAML into a graph, the webview is
- * Structura's embed preview), and an editable one (the diagram editor: Structura's canvas,
- * bound to the folder's documents by the opscr binding engine).
+ * opscr Preview — a live, read-only Structura diagram of the opscr workspace of the active
+ * `*.opscr.yaml`. The extension host validates the YAML with opscr and turns it into a graph
+ * (the technical view, ELK, stable placement); the webview is Structura's embed preview, which
+ * draws it. The YAML is edited in VSCode — by the user or Claude Code — never from the diagram.
  */
 import { readFile, readdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import * as vscode from "vscode";
 import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
-import { LAYOUT_FILE } from "./generated/opscr-mapping";
 import { collectWorkspace, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
-import { DiagramEditor } from "./editor/diagram-editor";
 
 const UPDATE_DELAY_MS = 300;
 
@@ -21,6 +19,10 @@ class Preview {
   private ready = false;
   private rendered = 0;
   private lastGraph: { components: unknown[] } | undefined;
+  /** Opscr errors keeping the last picture on screen (0 while it follows the YAML). */
+  private blocked = 0;
+  /** Says why the preview is not following the YAML, while it is not. */
+  private readonly statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
   /** Monotonic: an update that finishes after a newer one started is dropped. */
   private generation = 0;
 
@@ -56,14 +58,16 @@ class Preview {
 
   dispose(): void {
     clearTimeout(this.timer);
+    this.statusItem.dispose();
   }
 
   /** For the end-to-end test: did the webview load, and what did it last receive. */
-  status(): { ready: boolean; components: number; rendered: number } {
+  status(): { ready: boolean; components: number; rendered: number; blocked: number } {
     return {
       ready: this.ready,
       components: this.lastGraph?.components.length ?? 0,
       rendered: this.rendered,
+      blocked: this.blocked,
     };
   }
 
@@ -82,7 +86,20 @@ class Preview {
       workspace.files.map((f) => f.path),
       result.diagnostics,
     );
-    if (!result.graph) return; // the YAML does not parse: keep the last picture
+    if (result.blocked) {
+      // Keep the last valid picture, and say why it is not following.
+      this.blocked = result.blocked.reason === "errors" ? result.blocked.errors : 1;
+      this.statusItem.text =
+        result.blocked.reason === "errors"
+          ? `$(warning) opscr: ${this.blocked} error${this.blocked === 1 ? "" : "s"} — preview not updated`
+          : "$(warning) opscr: the YAML does not parse — preview not updated";
+      this.statusItem.command = "workbench.actions.view.problems";
+      this.statusItem.show();
+      return;
+    }
+    this.blocked = 0;
+    this.statusItem.hide();
+    if (!result.graph) return;
     this.lastGraph = result.graph;
     this.post({ type: "STRUCTURA_LOAD_GRAPH", ...result.graph });
   }
@@ -160,56 +177,23 @@ export function activate(context: vscode.ExtensionContext): void {
     );
     const preview = new Preview(folder, panel, diagnostics);
     previews.set(folder, preview);
-    // The layout sidecar is written by Structura, outside any editor: watch the file itself.
-    const sidecar = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(vscode.Uri.file(folder), LAYOUT_FILE),
+    // Files written outside any editor — Claude Code, git, Structura's layout sidecar — come
+    // from disk: watch the folder itself.
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(folder), "*"),
     );
-    sidecar.onDidChange(() => preview.schedule());
-    sidecar.onDidCreate(() => preview.schedule());
-    sidecar.onDidDelete(() => preview.schedule());
+    const onDisk = (uri: vscode.Uri) => {
+      if (isManifestPath(uri.fsPath)) preview.schedule();
+    };
+    watcher.onDidChange(onDisk);
+    watcher.onDidCreate(onDisk);
+    watcher.onDidDelete(onDisk);
     panel.onDidDispose(() => {
-      sidecar.dispose();
+      watcher.dispose();
       preview.dispose();
       previews.delete(folder);
     });
     preview.schedule();
-  };
-
-  const editors = new Map<string, DiagramEditor>();
-  const openEditor = async (uri?: vscode.Uri) => {
-    const target = uri ?? vscode.window.activeTextEditor?.document.uri;
-    if (!target || !isManifestPath(target.fsPath)) {
-      void vscode.window.showInformationMessage(
-        "Open an *.opscr.yaml file to edit its workspace as a diagram.",
-      );
-      return;
-    }
-    const folder = dirname(target.fsPath);
-    const existing = editors.get(folder);
-    if (existing) return;
-    const panel = vscode.window.createWebviewPanel(
-      "opscr.editor",
-      `Diagram: ${folder.split("/").pop()}`,
-      { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
-      { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [embedRoot] },
-    );
-    const html = new TextDecoder().decode(
-      await vscode.workspace.fs.readFile(vscode.Uri.joinPath(embedRoot, "embed-editor.html")),
-    );
-    const editor = new DiagramEditor(folder, panel, (files, found) =>
-      publishDiagnostics(diagnostics, files, found),
-    );
-    editors.set(folder, editor);
-    panel.onDidDispose(() => {
-      editor.dispose();
-      editors.delete(folder);
-    });
-    // After the listener is in place: the embed says READY as soon as it loads.
-    panel.webview.html = previewHtml(
-      html,
-      panel.webview.asWebviewUri(embedRoot).toString(),
-      panel.webview.cspSource,
-    );
   };
 
   const forDocument = (uri: vscode.Uri) =>
@@ -218,7 +202,6 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     diagnostics,
     vscode.commands.registerCommand("opscr.openPreview", open),
-    vscode.commands.registerCommand("opscr.openEditor", openEditor),
     vscode.commands.registerCommand("opscr.relayoutPreview", () => {
       const uri = vscode.window.activeTextEditor?.document.uri;
       const preview = (uri && forDocument(uri)) ?? [...previews.values()][0];
@@ -231,16 +214,6 @@ export function activate(context: vscode.ExtensionContext): void {
     // Not contributed to the palette: lets the end-to-end test observe the preview.
     vscode.commands.registerCommand("opscr._previewStatus", () =>
       Object.fromEntries([...previews].map(([folder, p]) => [folder, p.status()])),
-    ),
-    // Not contributed either: let the end-to-end test observe and drive the diagram editor.
-    vscode.commands.registerCommand("opscr._editorStatus", () =>
-      Object.fromEntries([...editors].map(([folder, e]) => [folder, e.status()])),
-    ),
-    vscode.commands.registerCommand("opscr._editorCanvasEdit", (folder: string, changes: unknown) =>
-      editors.get(folder)?.canvasEdit(changes),
-    ),
-    vscode.commands.registerCommand("opscr._editorComponentId", (folder: string, label: string) =>
-      editors.get(folder)?.componentId(label),
     ),
   );
 }

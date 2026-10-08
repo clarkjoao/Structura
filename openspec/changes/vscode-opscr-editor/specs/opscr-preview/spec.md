@@ -2,21 +2,22 @@
 
 ## ADDED Requirements
 
-### Requirement: Editable diagram in VSCode
+### Requirement: The preview draws only validated YAML
 
-The VSCode extension SHALL open an editable diagram of an opscr folder's workspace. Edits of the
-manifests in VSCode editors SHALL update the diagram as they are typed, and edits on the diagram
-SHALL be applied to the manifests' documents as undoable edits, using the same rules as the
-Structura platform (patches, not regeneration; name is identity; positions in the layout sidecar).
+The VSCode preview SHALL draw the folder's workspace only when opscr validates it without errors,
+whether the change was typed, saved or written to disk by another tool. While the YAML does not
+parse or has errors, the preview SHALL keep its last valid picture and say why in the status bar;
+warnings SHALL NOT block. Elements already drawn keep their place and new ones are laid out
+automatically.
 
-#### Scenario: Rename on the diagram
+#### Scenario: Claude Code writes a file
 
-- **GIVEN** the editor is open on the opscr sample
-- **WHEN** the user renames `orders-db` on the diagram
-- **THEN** the open `commerce.opscr.yaml` and `relationships.opscr.yaml` documents read `order-store`
-  as unsaved edits, and VSCode's undo reverts them
+- **GIVEN** an open preview of the opscr sample
+- **WHEN** another tool writes a valid `search.opscr.yaml` to the folder
+- **THEN** the preview draws `search-api` without the file being opened
 
-#### Scenario: Typing in the YAML
+#### Scenario: An edit with an opscr error
 
-- **WHEN** the user adds a Cache manifest in a VSCode editor
-- **THEN** the diagram shows the Cache without saving
+- **WHEN** the user adds a manifest with an unknown field
+- **THEN** the preview keeps its picture, the error is in the Problems panel and the status bar says
+  the preview is not updated

@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 /**
  * End-to-end test in a real VSCode: opens a copy of the opscr sample, runs the preview,
- * edits a file without saving, and checks that the webview loaded, followed the edit and that
- * an opscr error reached the Problems panel; then opens the diagram editor, types a manifest,
- * renames an element on the diagram and undoes it. Uses an isolated user-data and extensions
+ * makes an edit with an opscr error (not drawn; reported in the Problems panel), reverts it,
+ * and writes a valid file straight to disk, as Claude Code would (drawn). Uses an isolated user-data and extensions
  * directory, so the user's VSCode settings and extensions are untouched.
  *
  *   npm run build && node e2e/run.mjs

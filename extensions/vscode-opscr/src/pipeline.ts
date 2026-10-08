@@ -24,16 +24,23 @@ export interface WorkspaceText {
 export interface PreviewUpdate {
   /** Every opscr diagnostic for the workspace, for the Problems panel. */
   diagnostics: Diagnostic[];
-  /** The picture to post; absent while the YAML does not parse (keep the last one). */
+  /**
+   * The picture to post; absent while the YAML does not parse or opscr reports errors (keep the
+   * last one).
+   */
   graph?: ImporterGraph;
+  /** Why there is no picture: the YAML does not parse, or how many opscr errors it has. */
+  blocked?: { reason: "parse" } | { reason: "errors"; errors: number };
 }
 
 const PARSE_ERROR = "loader/yaml-parse-error";
 
 /**
  * YAML text → the graph the preview draws, keeping the previous picture still: every
- * element that survives an edit keeps its place (`stabilizeLayout`). No VSCode API here, so
- * the whole path is unit-testable.
+ * element that survives an edit keeps its place (`stabilizeLayout`), new ones are laid out
+ * next to their neighbours. Only YAML that opscr validates without errors is drawn — files here
+ * change whole (Claude Code, git, a save), and a half-valid picture would mislead; warnings do
+ * not block. No VSCode API here, so the whole path is unit-testable.
  */
 export class PreviewPipeline {
   private previous: ViewLayoutResult | undefined;
@@ -59,7 +66,11 @@ export class PreviewPipeline {
       config ? { files, config } : { files },
     );
     const diagnostics = result.diagnostics;
-    if (diagnostics.some((d) => d.ruleId === PARSE_ERROR)) return { diagnostics };
+    if (diagnostics.some((d) => d.ruleId === PARSE_ERROR)) {
+      return { diagnostics, blocked: { reason: "parse" } };
+    }
+    const errors = diagnostics.filter((d) => d.severity === "error").length;
+    if (errors > 0) return { diagnostics, blocked: { reason: "errors", errors } };
 
     const view = buildTechnicalView(compiled);
     const fresh = await layoutView(toLayoutGraph(view), this.previous?.boxes);
