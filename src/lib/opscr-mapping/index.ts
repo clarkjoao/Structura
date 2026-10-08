@@ -8,7 +8,17 @@
  */
 
 export { buildTechnicalView, nodeId } from "./technical-view";
-export { BOUNDARY_KINDS, LEAF_KINDS, PROVIDER_SERVICES, elementFor, isDrawnKind } from "./elements";
+export {
+  BOUNDARY_KINDS,
+  DRAWN_KINDS,
+  LEAF_KINDS,
+  PROVIDER_SERVICES,
+  elementFor,
+  isDrawnKind,
+  kindFor,
+  providersFor,
+} from "./elements";
+export type { KindGuess } from "./elements";
 export { placeView, toLayoutGraph } from "./layout";
 export { stabilizeLayout } from "./stable-layout";
 export { toImporterGraph } from "./importer-graph";
