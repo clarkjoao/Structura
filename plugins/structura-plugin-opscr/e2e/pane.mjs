@@ -360,6 +360,8 @@ await page.route("https://api.openai.com/**", async (route) => {
   });
 });
 const chatCount = await nodes();
+await page.keyboard.press("Escape"); // close the element panel left open by the rename step
+await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
 await page.getByRole("button", { name: /Open chat assistant|Abrir assistente de chat/ }).click();
 const input = page.getByLabel(/Type your message|Digite sua mensagem/);
 await input.waitFor({ timeout: 10000 }).catch(() => fail("the chat did not open"));
@@ -380,6 +382,35 @@ await check(
   "the chat reply says what changed",
 );
 await page.screenshot({ path: join(OUT, "6-chat.png") });
+
+// The reply is pending: highlighted with Keep / Discard, and brought into view.
+const keep = page.getByRole("button", { name: /^(Keep|Manter)$/ });
+await keep
+  .first()
+  .waitFor({ timeout: 5000 })
+  .catch(() => fail("the chat's change is not pending"));
+await page.waitForTimeout(800); // the focus animation
+const cacheBox = await nodeBox("search-cache");
+const pane = await page.locator(".react-flow__pane").boundingBox();
+// The visible canvas ends where the chat panel starts.
+const chatLeft = (await input.boundingBox()).x - 16;
+await check(
+  cacheBox.x >= pane.x &&
+    cacheBox.x + cacheBox.width <= chatLeft &&
+    cacheBox.y >= pane.y &&
+    cacheBox.y + cacheBox.height <= pane.y + pane.height,
+  "the canvas focuses the chat's new element",
+);
+await page.screenshot({ path: join(OUT, "6a-chat-pending.png") });
+await page
+  .getByRole("button", { name: /^(Discard|Descartar)$/ })
+  .first()
+  .click();
+await waitNodes(chatCount).catch(() => fail("Discard did not remove the chat's element"));
+await waitFor(
+  async () => !(await saveAndRead("commerce.opscr.yaml")).includes("search-cache"),
+  "Discard restores the manifests from before the reply",
+);
 
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 await browser.close();
