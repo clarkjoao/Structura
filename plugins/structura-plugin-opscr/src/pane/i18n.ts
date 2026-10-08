@@ -28,6 +28,14 @@ const en = {
       : `“${name}” is already taken — rename reverted`,
   notInYaml: (n: number) => `${n} element${n === 1 ? "" : "s"} not in the YAML`,
   renameGone: "The text changed under the cursor — try the rename again",
+  chatTitle: (folder: string) => (folder ? `opscr · ${folder}` : "opscr"),
+  chatSubtitle: "Ask for changes to the manifests; the diagram follows.",
+  chatSuggestions: [
+    "Add a Redis cache in front of the busiest database",
+    "Publish an event when an order changes status, for other areas to consume",
+    "Review the relationships against the opscr topology and EDA rules",
+    "Which elements have no owner or description?",
+  ],
   chatClosed: "The opscr pane closed the folder before the reply arrived; nothing was changed.",
   chatChanged: (added: string[], replaced: string[], deleted: string[]) =>
     [
@@ -68,6 +76,14 @@ const ptBR: typeof en = {
       : `“${name}” já está em uso — renomeação desfeita`,
   notInYaml: (n: number) => `${n} elemento${n === 1 ? "" : "s"} fora do YAML`,
   renameGone: "O texto mudou sob o cursor — tente renomear de novo",
+  chatTitle: (folder: string) => (folder ? `opscr · ${folder}` : "opscr"),
+  chatSubtitle: "Peça mudanças nos manifestos; o diagrama acompanha.",
+  chatSuggestions: [
+    "Adicione um cache Redis na frente do banco mais acessado",
+    "Publique um evento quando um pedido mudar de status, para outras áreas consumirem",
+    "Revise as relações contra as regras de topologia e EDA do opscr",
+    "Quais elementos estão sem dono ou sem descrição?",
+  ],
   chatClosed: "O painel opscr fechou a pasta antes da resposta chegar; nada foi alterado.",
   chatChanged: (added: string[], replaced: string[], deleted: string[]) =>
     [

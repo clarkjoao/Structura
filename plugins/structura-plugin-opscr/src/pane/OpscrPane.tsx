@@ -240,6 +240,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       if (!folder || !diagramId) return;
       return openSession({
         diagramId,
+        folderName: folder.name,
         manifests: () => manifestsOf(buffersRef.current),
         config: () => {
           const config = buffersRef.current.find((b) => b.name === CONFIG_FILE);
