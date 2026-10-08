@@ -2,44 +2,39 @@
 
 ## Why
 
-The moonshot of the opscr integration: edit `.opscr.yaml` in VSCode and see the diagram — and edit
-the diagram there too. The grill first kept VSCode read-only because Structura had no embeddable
-editable canvas (`.grill/opscr-yaml-diagram-integration.md`). Since then the platform side has
-everything a bidirectional binding needs — canvas → YAML patches, undo across both sides, the layout
-sidecar, palette and reparenting — but it lives in the plugin's document pane. VSCode users, and the
-Claude Code sessions working in the same folder, should get the same editor without leaving it.
+The moonshot of the opscr integration: edit `.opscr.yaml` in VSCode and see the diagram live. In
+VSCode the YAML is changed by the user or, more and more, by Claude Code writing whole files — so the
+diagram there is a view (decided 2026-10-08, after a first cut that made it editable): it must only
+show what opscr validates, laid out automatically, and never be edited from the diagram. Diagram
+editing stays the Structura platform's job.
+
+Along the way the platform side gained two reusable pieces: an editable embed of the canvas and a
+UI-free binding engine.
 
 ## What Changes
 
-1. **Editable embed** (`embed-editor.html`, built with the preview): the full Structura canvas on an
-   in-memory diagram, driven over `postMessage` like a remote plugin API — the host applies batched
-   changes and receives a snapshot after every committed change (canvas edits, undo/redo).
-2. **Shared binding engine**: the plugin's pure modules (YAML text patches, sync plan, reconcile,
-   tombstones, folder watch merge, palette adoption) move to the plugin's `src/engine/`, and the
-   pane's orchestration becomes a headless `OpscrEngine` with ports (texts, diagram, binding,
-   projector) that both the pane and the extension use; the extension copies `src/engine/` the way
-   it copies the shared mapping (ADR-0009). They stay out of the host: they need `yaml`, which the
-   app does not ship.
-3. **VSCode editor**: "opscr: Open Diagram Editor" opens the folder's workspace in the editable
-   embed. The extension host runs the engine: files are the VSCode documents (unsaved text
-   included; canvas edits are `WorkspaceEdit`s, so they are undoable and saved by VSCode), the
-   diagram is the webview, the binding lives in memory (each editor starts from a fresh canvas and
-   the layout sidecar), and the sidecar is written next to the manifests.
+1. **VSCode preview, validated:** the preview draws only YAML that opscr validates without errors
+   (warnings do not block) — typed, saved or written to disk by another tool, which it now watches.
+   Meanwhile it keeps the last valid picture and the status bar says why. Layout stays automatic
+   (stable layout, re-layout command, the `opscr.layout.json` sidecar). No chat.
+2. **Editable embed** (`embed-editor.html`, built with the preview): the full Structura canvas on an
+   in-memory diagram, driven over `postMessage` like a remote plugin API — kept for hosts that need
+   an editable diagram; the extension does not use it.
+3. **Binding engine**: the opscr plugin's document pane orchestration becomes `OpscrEngine`
+   (`plugins/structura-plugin-opscr/src/engine/`), with ports (texts, diagram, binding, projector)
+   and a `requireValid` option.
 
 ## Non-Goals
 
-- The chat, the plugin document pane and the palette's Kind list inside VSCode (v1 uses the canvas's
-  own element panel; Claude Code is the assistant there).
-- Several editors on the same folder at once.
+- Editing the diagram in VSCode; the chat in VSCode.
 
 ## Capabilities
 
 ### Modified Capabilities
 
-- `opscr-preview`: the VSCode extension also offers an editable diagram of a folder.
+- `opscr-preview`: the preview draws only validated YAML and follows files written to disk.
 
 ## Impact
 
-- Host: `src/embed/editor/*`, `embed-editor.html`, embed build.
-- Plugin: imports the engine, pane becomes a view over it.
-- Extension: new editor panel, engine wiring, e2e.
+- Extension: pipeline gating, folder watcher, status bar item, e2e. Host: `src/embed/editor/*`,
+  `embed-editor.html`, `Canvas` `showChat`. Plugin: `src/engine/`.

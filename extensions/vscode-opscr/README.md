@@ -1,40 +1,17 @@
-# opscr Preview & Diagram Editor for VSCode
+# opscr Preview for VSCode
 
-A live Structura diagram of an [opscr](../../plugins/structura-plugin-opscr/README.md) workspace,
-next to the YAML you are editing: a read-only **preview**, and an editable **diagram editor**.
-
-## Diagram editor
-
-With a `*.opscr.yaml` active, run **opscr: Open Diagram Editor** (or its icon in the editor title).
-Structura's own canvas opens beside the YAML, bound to the folder by the same engine as the
-Structura plugin's document pane:
-
-- **YAML → diagram:** typing in any manifest of the folder (unsaved text included), or a file
-  written by another tool — Claude Code, git — is validated with opscr ~300 ms later and, when it
-  has no errors, drawn: elements already on the diagram keep their place, new ones are laid out
-  automatically next to their neighbours. While there are errors the diagram keeps its last valid
-  state and the status bar says why (click it for the Problems panel).
-- **Diagram → YAML:** renames (every edge end follows), descriptions, deletions, connections,
-  moves between panels, cloud service / technology, and palette elements added from the pane-less
-  canvas become edits of the documents — unsaved, so you review and save them. Comments and
-  formatting elsewhere are kept byte for byte. Undo a diagram edit in the diagram (Cmd/Ctrl+Z
-  there reverts every file it touched); VSCode's undo in an editor reverts that file only, and the
-  diagram follows the text.
-- **Layout:** positions are written to `opscr.layout.json` next to the manifests, straight to disk.
-- **Problems:** opscr diagnostics appear in the Problems panel.
-
-Each editor starts from the YAML and the layout sidecar; nothing else is remembered between
-sessions. The chat and the Structura plugin pane are not part of the editor — in VSCode, Claude
-Code is the assistant.
-
-## Preview
+A live, read-only Structura diagram of an [opscr](../../plugins/structura-plugin-opscr/README.md)
+workspace, next to the YAML you — or Claude Code — are editing. The diagram is a view: the YAML
+is the only thing edited, in VSCode; diagram editing is the Structura platform's job.
 
 - **Open:** with a `*.opscr.yaml` active, run **opscr: Open Preview to the Side** (or the preview
   icon in the editor title).
 - **Workspace:** every `*.opscr.yaml` / `*.opscr.yml` in that file's folder, plus its
   `opscr.config.yaml`. Unsaved text in open editors is used as it is.
-- **Live:** the preview follows edits ~300 ms after you stop typing. While the YAML does not parse,
-  it keeps the last picture.
+- **Live, validated:** ~300 ms after a change — typed, saved, or written to disk by another tool
+  (Claude Code, git) — the folder is validated with opscr and, when it has no errors, drawn.
+  While the YAML does not parse or has opscr errors, the preview keeps its last valid picture and
+  the status bar says why (click it for the Problems panel). Warnings do not block.
 - **Still:** elements already drawn keep their place when you add, remove or edit others; new ones
   are placed next to their neighbours. **opscr: Re-layout Preview** arranges everything from
   scratch.
