@@ -15,7 +15,7 @@ function withoutMonaco(): Plugin {
 }
 
 /**
- * The embeddable preview (`embed.html` → `dist-embed/`): its own entry, relative asset
+ * The embeddable preview (`embed.html`) and editor (`embed-editor.html`) → `dist-embed/`: their own entries, relative asset
  * paths — hosts such as a VSCode webview serve it from a base unknown at build time — no
  * public files and no Monaco. Everything else is the app's configuration.
  */
@@ -27,7 +27,12 @@ export default defineConfig((env) =>
     build: {
       outDir: "dist-embed",
       emptyOutDir: true,
-      rollupOptions: { input: path.resolve(import.meta.dirname, "embed.html") },
+      rollupOptions: {
+        input: {
+          embed: path.resolve(import.meta.dirname, "embed.html"),
+          "embed-editor": path.resolve(import.meta.dirname, "embed-editor.html"),
+        },
+      },
     },
   }),
 );
