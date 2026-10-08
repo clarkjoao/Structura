@@ -335,6 +335,7 @@ const Canvas = (props: CanvasProps = {}) => {
             focusMode={props.focusMode}
             onToggleFocusMode={props.onToggleFocusMode}
             chat={chat}
+            showChat={props.showChat !== false}
             showElementPanel={controller.showElementPanel}
             visualState={visualState}
             selectedNodes={selectedNodes}

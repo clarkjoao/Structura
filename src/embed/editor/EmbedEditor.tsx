@@ -78,7 +78,8 @@ export function EmbedEditor() {
     <div style={{ width: "100vw", height: "100vh", position: "relative" }}>
       <FlowModeProvider>
         <DiagramFlowProvider>
-          <Canvas />
+          {/* No chat: the hosts (VSCode) have their own assistant editing the files. */}
+          <Canvas showChat={false} />
         </DiagramFlowProvider>
       </FlowModeProvider>
     </div>
