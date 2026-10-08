@@ -221,9 +221,12 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
 
           {/* Summary badges */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-              {summaryText}
-            </span>
+            {/* A plugin's reply (API 1.7) has no patch actions; its title says what changed. */}
+            {suggestion.patch.actions.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                {summaryText}
+              </span>
+            )}
 
             {/* Node preview badges */}
             {nodePreview.map(({ actionIndex, name }) => (
