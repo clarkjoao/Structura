@@ -1,6 +1,6 @@
 # opscr Preview for VSCode
 
-A live, read-only Structura diagram of an [opscr](../../plugins/structura-plugin-opscr/README.md)
+A live, read-only Structura diagram of an [opscr](https://github.com/clarkjoao/Structura/blob/main/plugins/structura-plugin-opscr/README.md)
 workspace, next to the YAML you — or Claude Code — are editing. The diagram is a view: the YAML
 is the only thing edited, in VSCode; diagram editing is the Structura platform's job.
 
