@@ -12,6 +12,8 @@ vi.mock("@/features/diagram", () => ({
 }));
 
 const sendOpenAIMessage = vi.fn();
+vi.mock("sonner", () => ({ toast: { info: vi.fn() } }));
+
 vi.mock("./providers/openai", () => ({
   sendMessage: (...args: unknown[]) => sendOpenAIMessage(...args),
 }));
@@ -76,5 +78,77 @@ describe("chat on a diagram a plugin owns (API 1.6)", () => {
     sendOpenAIMessage.mockResolvedValue({ text: "Just text." });
     await useLLMStore.getState().sendMessage("hi", "DIAGRAM CONTEXT");
     expect(sendOpenAIMessage.mock.calls[0]![2]).not.toBe("OPSCR SYSTEM");
+  });
+});
+
+describe("previewing a plugin reply (API 1.7)", () => {
+  const register = (discard?: () => string | void) => {
+    const keep = vi.fn();
+    const discardSpy = discard ? vi.fn(discard) : undefined;
+    unregister = registerChatContextContribution({
+      id: "opscr/chat",
+      appliesTo: () => true,
+      systemPrompt: () => "S",
+      handleReply: () => ({
+        reply: "Added.",
+        preview: {
+          componentIds: ["c1"],
+          connectionIds: ["e1"],
+          title: "Added Cache/c",
+          keep,
+          ...(discardSpy ? { discard: discardSpy } : {}),
+        },
+      }),
+    });
+    sendOpenAIMessage.mockResolvedValue({ text: "x" });
+    return { keep, discard: discardSpy };
+  };
+  const flush = () => new Promise((r) => setTimeout(r, 0));
+
+  it("shows the change as pending, focused and discardable", async () => {
+    register(() => undefined);
+    await useLLMStore.getState().sendMessage("add", "");
+    const { pendingSuggestions, pendingPreviews } = useLLMStore.getState();
+    expect(pendingSuggestions).toHaveLength(1);
+    expect(pendingSuggestions[0]!.patch.description).toBe("Added Cache/c");
+    expect(pendingPreviews).toEqual([
+      {
+        suggestionId: pendingSuggestions[0]!.id,
+        nodeIds: ["c1"],
+        edgeIds: ["e1"],
+        focus: true,
+        discardable: true,
+      },
+    ]);
+  });
+
+  it("Discard asks the plugin, and a refusal keeps the change", async () => {
+    const { discard, keep } = register(() => "The text changed since");
+    await useLLMStore.getState().sendMessage("add", "");
+    const id = useLLMStore.getState().pendingSuggestions[0]!.id;
+    useLLMStore.getState().rejectSuggestion(id);
+    await flush();
+    expect(discard).toHaveBeenCalledTimes(1);
+    expect(keep).toHaveBeenCalledTimes(1);
+    expect(useLLMStore.getState().pendingSuggestions[0]!.status).toBe("accepted");
+    expect(useLLMStore.getState().pendingPreviews).toEqual([]);
+  });
+
+  it("Discard that succeeds marks it rejected without touching the diagram itself", async () => {
+    const { discard } = register(() => undefined);
+    await useLLMStore.getState().sendMessage("add", "");
+    useLLMStore.getState().rejectSuggestion(useLLMStore.getState().pendingSuggestions[0]!.id);
+    await flush();
+    expect(discard).toHaveBeenCalledTimes(1);
+    expect(useLLMStore.getState().pendingSuggestions[0]!.status).toBe("rejected");
+  });
+
+  it("a new message keeps the previous pending reply", async () => {
+    const { keep } = register(() => undefined);
+    await useLLMStore.getState().sendMessage("add", "");
+    await useLLMStore.getState().sendMessage("and another", "");
+    const statuses = useLLMStore.getState().pendingSuggestions.map((s) => s.status);
+    expect(statuses).toEqual(["accepted", "pending"]);
+    expect(keep).toHaveBeenCalledTimes(1);
   });
 });
