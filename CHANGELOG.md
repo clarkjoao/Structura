@@ -40,6 +40,10 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **Plugin API 1.7.0**: a plugin chat reply can return a `preview`: the host
+  shows its elements as pending (highlight, Keep / Discard), focuses the canvas
+  on them, and asks the plugin to undo the reply on Discard. The opscr chat uses
+  it: Discard restores the manifests unless they changed since. Additive.
 - **Plugin API 1.6.0**: `llm:context` capability and `api.registerChatContext`:
   a plugin can answer the chat for the diagrams it owns, with its own system
   prompt, reply handling and validation retries. Additive.

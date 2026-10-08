@@ -1,8 +1,9 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { getPendingNodeIds, getSuggestionIdForNode, type PendingNodePreview } from "@/features/llm";
 import { useLLMChat } from "../chat";
 import { PendingNodeToolbar } from "../selection-actions/PendingNodeToolbar";
+import { FIT_VIEW_DURATION_MS, FIT_VIEW_PADDING } from "../canvas.constants";
 
 interface PendingNodeToolbarsProps {
   pendingNodeIds: string[];
@@ -22,11 +23,13 @@ const PendingNodeToolbars = React.memo(function PendingNodeToolbars({
       {pendingNodeIds.map((nodeId) => {
         const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
         if (!suggestionId) return null;
+        const preview = pendingPreviews.find((p) => p.suggestionId === suggestionId);
         return (
           <PendingNodeToolbar
             key={nodeId}
             nodeId={nodeId}
             suggestionId={suggestionId}
+            canDiscard={preview?.discardable !== false}
             onKeep={onKeep}
             onDiscard={onDiscard}
           />
@@ -58,6 +61,25 @@ export function PendingSuggestionToolbars({
     () => Array.from(getPendingNodeIds(pendingPreviews)),
     [pendingPreviews],
   );
+
+  // A plugin's chat reply (API 1.7) arrives already on the canvas: bring it into view once.
+  const focusedPreviews = useRef(new Set<string>());
+  useEffect(() => {
+    const preview = pendingPreviews.find(
+      (p) => p.focus && p.nodeIds.length > 0 && !focusedPreviews.current.has(p.suggestionId),
+    );
+    if (!preview) return;
+    focusedPreviews.current.add(preview.suggestionId);
+    // Next frame: React Flow has rendered and measured the new nodes by then.
+    requestAnimationFrame(() => {
+      void reactFlowInstance.fitView({
+        nodes: preview.nodeIds.map((id) => ({ id })),
+        duration: FIT_VIEW_DURATION_MS,
+        padding: FIT_VIEW_PADDING,
+        maxZoom: 1,
+      });
+    });
+  }, [pendingPreviews, reactFlowInstance]);
   const accept = useCallback(
     (suggestionId: string) => {
       acceptSuggestion(suggestionId);
