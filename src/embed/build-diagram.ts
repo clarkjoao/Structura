@@ -54,3 +54,34 @@ export function buildPreviewDiagram(graph: PreviewGraph): Diagram {
     edgeLayouts: {},
   };
 }
+
+/**
+ * What changed between two graphs, as node ids to bring into view: components that are new or
+ * whose content changed (not their position), and both ends of new connections. Nothing for the
+ * first graph — the whole picture is new then.
+ */
+export function changedComponentIds(previous: PreviewGraph | null, next: PreviewGraph): string[] {
+  if (!previous) return [];
+  const content = (c: PreviewGraph["components"][number]) =>
+    JSON.stringify([c.name, c.description, c.type, c.cloudServiceId, c.technology, c.parentKey]);
+  const before = new Map(previous.components.map((c) => [c.key, content(c)]));
+  const changed = new Set(
+    next.components.filter((c) => before.get(c.key) !== content(c)).map((c) => c.key),
+  );
+  const keysOf = (graph: PreviewGraph) => {
+    const seen = new Map<string, number>();
+    return graph.connections.map((c) => {
+      const base = `${c.source}->${c.target}:${c.label ?? ""}`;
+      const n = seen.get(base) ?? 0;
+      seen.set(base, n + 1);
+      return `${base}#${n}`;
+    });
+  };
+  const old = new Set(keysOf(previous));
+  keysOf(next).forEach((key, i) => {
+    if (old.has(key)) return;
+    changed.add(next.connections[i]!.source);
+    changed.add(next.connections[i]!.target);
+  });
+  return [...changed];
+}
