@@ -9,7 +9,10 @@ async function until(what, check, timeout = 90000) {
   for (;;) {
     const value = await check();
     if (value) return value;
-    if (Date.now() > end) throw new Error(`timed out waiting for ${what}`);
+    if (Date.now() > end) {
+      const folder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+      throw new Error(`timed out waiting for ${what}: ${JSON.stringify(await status(folder))}`);
+    }
     await sleep(200);
   }
 }
@@ -28,6 +31,8 @@ exports.run = async function run() {
     return s && s.ready && s.components > 0 && s.rendered === s.components ? s : undefined;
   });
   console.log(`[e2e] webview drew ${first.rendered} of ${first.components} elements`);
+  await vscode.commands.executeCommand("opscr.searchPreview");
+  console.log("[e2e] find in preview runs");
 
   const cache = [
     "",
@@ -60,6 +65,8 @@ exports.run = async function run() {
     `[e2e] Problems panel: line ${problems.range.start.line + 1}: ${problems.message.split("\n")[0]}`,
   );
 
+  // The search took the focus into the preview: back to the file before reverting it.
+  await vscode.window.showTextDocument(doc);
   await vscode.commands.executeCommand("workbench.action.files.revert");
   await until(
     "the problem to clear after revert",
@@ -74,7 +81,9 @@ exports.run = async function run() {
   );
   await until("the file written to disk to be drawn", async () => {
     const s = await status(folder);
-    return s.blocked === 0 && s.components === first.components + 1 && s.rendered === s.components;
+    // Not `rendered === components`: the preview zooms to the new element, and React Flow only
+    // puts on-screen nodes in the page.
+    return s.blocked === 0 && s.components === first.components + 1 && s.rendered > 0;
   });
   console.log("[e2e] a valid file written to disk is drawn");
 };

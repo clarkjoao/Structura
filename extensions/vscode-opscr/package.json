@@ -2,7 +2,7 @@
   "name": "vscode-opscr",
   "displayName": "opscr Preview",
   "description": "Live, read-only Structura diagram of opscr architecture-as-code manifests, drawn when opscr validates them",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "structura",
   "license": "MIT",
   "private": true,
@@ -29,6 +29,11 @@
         "command": "opscr.relayoutPreview",
         "title": "Re-layout Preview",
         "category": "opscr"
+      },
+      {
+        "command": "opscr.searchPreview",
+        "title": "Find Element in Preview",
+        "category": "opscr"
       }
     ],
     "menus": {
@@ -43,9 +48,21 @@
         {
           "command": "opscr.openPreview",
           "when": "resourceFilename =~ /\\.opscr\\.ya?ml$/"
+        },
+        {
+          "command": "opscr.searchPreview",
+          "when": "activeWebviewPanelId == 'opscr.preview'"
         }
       ]
-    }
+    },
+    "keybindings": [
+      {
+        "command": "opscr.searchPreview",
+        "key": "ctrl+f",
+        "mac": "cmd+f",
+        "when": "activeWebviewPanelId == 'opscr.preview'"
+      }
+    ]
   },
   "scripts": {
     "sync-shared": "node scripts/sync-shared.mjs",
