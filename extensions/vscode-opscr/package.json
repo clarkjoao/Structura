@@ -1,8 +1,8 @@
 {
   "name": "vscode-opscr",
-  "displayName": "opscr Preview",
-  "description": "Live, read-only Structura diagram of opscr architecture-as-code manifests",
-  "version": "0.1.0",
+  "displayName": "opscr Preview & Diagram Editor",
+  "description": "Live Structura diagram of opscr architecture-as-code manifests: a read-only preview, and an editor bound to the YAML",
+  "version": "0.2.0",
   "publisher": "structura",
   "license": "MIT",
   "private": true,
@@ -26,6 +26,12 @@
         "icon": "$(open-preview)"
       },
       {
+        "command": "opscr.openEditor",
+        "title": "Open Diagram Editor",
+        "category": "opscr",
+        "icon": "$(type-hierarchy)"
+      },
+      {
         "command": "opscr.relayoutPreview",
         "title": "Re-layout Preview",
         "category": "opscr"
@@ -37,11 +43,20 @@
           "command": "opscr.openPreview",
           "when": "resourceFilename =~ /\\.opscr\\.ya?ml$/",
           "group": "navigation"
+        },
+        {
+          "command": "opscr.openEditor",
+          "when": "resourceFilename =~ /\\.opscr\\.ya?ml$/",
+          "group": "navigation"
         }
       ],
       "commandPalette": [
         {
           "command": "opscr.openPreview",
+          "when": "resourceFilename =~ /\\.opscr\\.ya?ml$/"
+        },
+        {
+          "command": "opscr.openEditor",
           "when": "resourceFilename =~ /\\.opscr\\.ya?ml$/"
         }
       ]
@@ -58,7 +73,8 @@
     "package": "npm run build && vsce package --no-dependencies --allow-missing-repository"
   },
   "dependencies": {
-    "elkjs": "^0.12.0"
+    "elkjs": "^0.12.0",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
