@@ -233,6 +233,10 @@ The host shows those as pending (highlighted, Keep / Discard), fits the canvas t
 suggestion card. Discard calls `discard`, which may return a message to refuse (shown; the change is
 kept); without `discard` only Keep is offered. A new message keeps the previous pending reply.
 
+Since API 1.8 a context may also present the chat while it applies — `presentation({ diagramId,
+locale })` returns `{ title, subtitle?, suggestions? }` for the header and empty state — and
+`subscribe(listener)` tells the host when `appliesTo` or the presentation may have changed.
+
 The host calls the model at most 3 times per user message (`retry` is ignored on the last
 attempt). Retry turns are not shown; the thread keeps the user's message and the final `reply`.
 

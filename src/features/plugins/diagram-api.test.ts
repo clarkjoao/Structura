@@ -46,7 +46,7 @@ describe("v1.1 diagram read/write API", () => {
 
   it("exposes the bumped apiVersion", () => {
     expect(api.apiVersion).toBe(STRUCTURA_PLUGIN_API_VERSION);
-    expect(api.apiVersion).toBe("1.7.0");
+    expect(api.apiVersion).toBe("1.8.0");
   });
 
   it("reads the active diagram as a detached snapshot (spec scenario)", () => {
