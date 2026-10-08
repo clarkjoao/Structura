@@ -5,7 +5,7 @@
  * draws it. The YAML is edited in VSCode — by the user or Claude Code — never from the diagram.
  */
 import { readFile, readdir } from "node:fs/promises";
-import { dirname } from "node:path";
+import { basename, dirname } from "node:path";
 import * as vscode from "vscode";
 import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
 import { collectWorkspace, isManifestPath, PreviewPipeline } from "./pipeline";
@@ -20,6 +20,8 @@ class Preview {
   private rendered = 0;
   private lastGraph: { components: unknown[] } | undefined;
   private readonly probes: Array<(result: unknown) => void> = [];
+  /** The last STRUCTURA_BLOCKED sent, re-sent when the webview reloads; null while drawing. */
+  private lastBlocked: object | null = null;
   /** Opscr errors keeping the last picture on screen (0 while it follows the YAML). */
   private blocked = 0;
   /** Says why the preview is not following the YAML, while it is not. */
@@ -41,6 +43,7 @@ class Preview {
       this.ready = true;
       this.postTheme();
       if (this.lastGraph) this.post({ type: "STRUCTURA_LOAD_GRAPH", ...this.lastGraph });
+      if (this.lastBlocked) this.post(this.lastBlocked);
     });
   }
 
@@ -116,8 +119,22 @@ class Preview {
           : "$(warning) opscr: the YAML does not parse — preview not updated";
       this.statusItem.command = "workbench.actions.view.problems";
       this.statusItem.show();
+      // Inside the preview too: with nothing drawn yet it would otherwise just say "waiting".
+      this.lastBlocked = {
+        type: "STRUCTURA_BLOCKED",
+        reason: result.blocked.reason,
+        errors: result.blocked.reason === "errors" ? result.blocked.errors : 0,
+        problems: result.diagnostics
+          .filter((d) => d.severity === "error")
+          .slice(0, 5)
+          .map((d) =>
+            `${d.file ? basename(d.file) : ""}${d.line ? `:${d.line}` : ""} ${d.message}`.trim(),
+          ),
+      };
+      this.post(this.lastBlocked);
       return;
     }
+    this.lastBlocked = null;
     this.blocked = 0;
     this.statusItem.hide();
     if (!result.graph) return;

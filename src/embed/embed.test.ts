@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { buildPreviewDiagram, changedComponentIds, PREVIEW_DIAGRAM_ID } from "./build-diagram";
-import { LOAD_GRAPH, PROBE, SEARCH, THEME, readEmbedMessage, type PreviewGraph } from "./protocol";
+import {
+  BLOCKED,
+  LOAD_GRAPH,
+  PROBE,
+  SEARCH,
+  THEME,
+  readEmbedMessage,
+  type PreviewGraph,
+} from "./protocol";
 
 const graph: PreviewGraph = {
   components: [
@@ -113,5 +121,19 @@ describe("search request", () => {
   it("reads the host's request to open the element search", () => {
     expect(readEmbedMessage({ type: SEARCH })).toEqual({ type: SEARCH });
     expect(readEmbedMessage({ type: PROBE })).toEqual({ type: PROBE });
+  });
+});
+
+describe("blocked", () => {
+  it("reads why the host has no picture, with a few problems", () => {
+    expect(
+      readEmbedMessage({ type: BLOCKED, reason: "errors", errors: 2, problems: ["a.yaml:3 x", 4] }),
+    ).toEqual({ type: BLOCKED, reason: "errors", errors: 2, problems: ["a.yaml:3 x"] });
+    expect(readEmbedMessage({ type: BLOCKED, reason: "parse" })).toEqual({
+      type: BLOCKED,
+      reason: "parse",
+      errors: 0,
+      problems: [],
+    });
   });
 });
