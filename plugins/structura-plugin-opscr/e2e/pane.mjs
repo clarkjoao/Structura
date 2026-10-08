@@ -530,6 +530,35 @@ await waitFor(
 await check((await nodes()) === paletteCount + 1, "the palette element is kept, not duplicated");
 await page.screenshot({ path: join(OUT, "7c-added.png") });
 
+// Taking an element out of its panel (Ungroup) drops its belongsTo. (Moving it into another
+// panel retargets it instead — covered by the unit tests; dragging between nested panels is
+// the canvas's own gesture.)
+const relayBelongsTo =
+  /- from: \{ kind: Application, id: order-relay \}\n\s+to: \{ kind: ApplicationService, id: orders \}\n\s+type: belongsTo/;
+await check(
+  relayBelongsTo.test(await saveAndRead("relationships.opscr.yaml")),
+  "order-relay sits in orders",
+);
+await page
+  .locator(".react-flow__node", { hasText: "order-relay" })
+  .first()
+  .click({ button: "right" });
+await page
+  .getByRole("menuitem", { name: /Ungroup|Desagrupar/ })
+  .first()
+  .click()
+  .catch(() =>
+    page
+      .getByText(/^(Ungroup|Desagrupar)$/)
+      .first()
+      .click(),
+  );
+await waitFor(
+  async () => !relayBelongsTo.test(await saveAndRead("relationships.opscr.yaml")),
+  "taking an element out of its panel drops its belongsTo",
+);
+await page.screenshot({ path: join(OUT, "8-ungroup.png") });
+
 // Unbind and bind the same folder again: what the canvas shows is adopted, not duplicated.
 await saveAndRead("commerce.opscr.yaml"); // the folder holds what the canvas shows
 const beforeRebind = await nodes();

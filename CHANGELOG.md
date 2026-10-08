@@ -40,6 +40,8 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **opscr plugin**: moving an element into another panel, or out of every panel,
+  on a bound diagram updates its `belongsTo`.
 - **Plugin API 1.10.0**: component snapshots carry `cloudServiceId` and
   `technology`. The opscr pane lists canvas elements that are not in the YAML
   with a suggested Kind and provider, and adds them (manifest, `belongsTo`,

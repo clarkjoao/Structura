@@ -22,6 +22,7 @@ Two ways to bring opscr into Structura:
   | Delete elements                        | their manifests and the edges naming them                           |
   | Draw a connection between two elements | a new edge (`type` = the label if it is an edge type, else `calls`) |
   | Relabel a connection with an edge type | the edge's `type`                                                   |
+  | Move an element into / out of a panel  | its `belongsTo` (retargeted, added or removed)                      |
   | Delete a connection                    | its edge                                                            |
   | Undo / redo (of either side)           | the text change it reverts                                          |
 
