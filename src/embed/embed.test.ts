@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildPreviewDiagram, PREVIEW_DIAGRAM_ID } from "./build-diagram";
-import { LOAD_GRAPH, THEME, readEmbedMessage, type PreviewGraph } from "./protocol";
+import { buildPreviewDiagram, changedComponentIds, PREVIEW_DIAGRAM_ID } from "./build-diagram";
+import { LOAD_GRAPH, SEARCH, THEME, readEmbedMessage, type PreviewGraph } from "./protocol";
 
 const graph: PreviewGraph = {
   components: [
@@ -84,5 +84,33 @@ describe("buildPreviewDiagram", () => {
     const b = buildPreviewDiagram(graph);
     expect(Object.keys(b.snapshot.components)).toEqual(Object.keys(a.snapshot.components));
     expect(Object.keys(b.snapshot.connections)).toEqual(Object.keys(a.snapshot.connections));
+  });
+});
+
+describe("changedComponentIds", () => {
+  const graph = (over: { name?: string; x?: number; extra?: boolean; edge?: boolean } = {}) => ({
+    components: [
+      { key: "a", name: over.name ?? "a", type: "container", x: over.x ?? 0, y: 0 },
+      { key: "b", name: "b", type: "container", x: 300, y: 0 },
+      ...(over.extra ? [{ key: "c", name: "c", type: "container", x: 600, y: 0 }] : []),
+    ],
+    connections: over.edge ? [{ source: "a", target: "b", label: "calls" }] : [],
+  });
+
+  it("is empty for the first graph and for moves only", () => {
+    expect(changedComponentIds(null, graph())).toEqual([]);
+    expect(changedComponentIds(graph(), graph({ x: 50 }))).toEqual([]);
+  });
+
+  it("names new and edited components and the ends of new connections", () => {
+    expect(changedComponentIds(graph(), graph({ extra: true }))).toEqual(["c"]);
+    expect(changedComponentIds(graph(), graph({ name: "renamed" }))).toEqual(["a"]);
+    expect(changedComponentIds(graph(), graph({ edge: true })).sort()).toEqual(["a", "b"]);
+  });
+});
+
+describe("search request", () => {
+  it("reads the host's request to open the element search", () => {
+    expect(readEmbedMessage({ type: SEARCH })).toEqual({ type: SEARCH });
   });
 });

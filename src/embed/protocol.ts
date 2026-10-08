@@ -7,6 +7,7 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  *   embed → host   STRUCTURA_RENDERED { nodes }                    a graph is on screen
  *   host  → embed  STRUCTURA_LOAD_GRAPH { components, connections }  replace the picture
  *   host  → embed  STRUCTURA_THEME { theme: "light" | "dark" }      follow the host's theme
+ *   host  → embed  STRUCTURA_SEARCH                                  open the element search
  *
  * The graph is the plugin importer result (API 1.3), so a host that can write an importer
  * can drive the preview, and both draw the same thing.
@@ -18,12 +19,14 @@ export const READY = "STRUCTURA_READY";
 export const RENDERED = "STRUCTURA_RENDERED";
 export const LOAD_GRAPH = "STRUCTURA_LOAD_GRAPH";
 export const THEME = "STRUCTURA_THEME";
+export const SEARCH = "STRUCTURA_SEARCH";
 
 export type PreviewGraph = Pick<ImportResult, "components" | "connections">;
 
 export type EmbedMessage =
   | { type: typeof LOAD_GRAPH; graph: PreviewGraph }
-  | { type: typeof THEME; theme: "light" | "dark" };
+  | { type: typeof THEME; theme: "light" | "dark" }
+  | { type: typeof SEARCH };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -36,6 +39,7 @@ export function readEmbedMessage(data: unknown): EmbedMessage | null {
       ? { type: THEME, theme: data["theme"] }
       : null;
   }
+  if (data["type"] === SEARCH) return { type: SEARCH };
   if (data["type"] === LOAD_GRAPH) {
     const { components, connections } = data;
     if (!Array.isArray(components) || !Array.isArray(connections)) return null;
