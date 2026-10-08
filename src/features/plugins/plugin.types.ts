@@ -8,7 +8,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.6.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.7.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -366,10 +366,32 @@ export interface PluginChatTurnInput {
   maxAttempts: number;
 }
 
+/**
+ * v1.7 — what a reply changed, shown as pending (highlighted, Keep / Discard) and focused on
+ * the canvas until the user decides.
+ */
+export interface PluginChatPreview {
+  /** Components the reply created or changed. */
+  componentIds: string[];
+  /** Connections the reply created. */
+  connectionIds: string[];
+  /** Title of the suggestion card in the chat. */
+  title: string;
+  /** Called on Keep. */
+  keep?: () => void;
+  /**
+   * Called on Discard: undo the reply. Resolve to a message to refuse (it is shown, and the
+   * change is kept). Without it, Discard is not offered.
+   */
+  discard?: () => void | string | Promise<void | string>;
+}
+
 /** v1.6 — the outcome of one model reply. */
 export interface PluginChatTurnResult {
   /** Text shown in the thread as the assistant's message. */
   reply: string;
+  /** v1.7 — the change to show as pending. */
+  preview?: PluginChatPreview;
   /**
    * Sent back to the model as the next user turn (not shown), e.g. validation errors to fix.
    * Ignored once `attempt` reaches `maxAttempts - 1`.

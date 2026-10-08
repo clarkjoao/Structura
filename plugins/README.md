@@ -228,6 +228,11 @@ api.registerChatContext({
 });
 ```
 
+Since API 1.7 a result may carry a `preview`: `{ componentIds, connectionIds, title, keep?, discard? }`.
+The host shows those as pending (highlighted, Keep / Discard), fits the canvas to them and adds a
+suggestion card. Discard calls `discard`, which may return a message to refuse (shown; the change is
+kept); without `discard` only Keep is offered. A new message keeps the previous pending reply.
+
 The host calls the model at most 3 times per user message (`retry` is ignored on the last
 attempt). Retry turns are not shown; the thread keeps the user's message and the final `reply`.
 

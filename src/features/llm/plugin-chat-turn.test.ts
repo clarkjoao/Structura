@@ -26,7 +26,7 @@ function setup(results: Array<{ reply: string; retry?: string }>) {
 describe("runPluginChatTurn", () => {
   it("uses the plugin's system prompt and shows its reply", async () => {
     const { context, send, onText, run } = setup([{ reply: "Done" }]);
-    expect(await run()).toBe("Done");
+    expect((await run()).reply).toBe("Done");
     expect(send).toHaveBeenCalledTimes(1);
     expect(send.mock.calls[0]![0]).toEqual([user]);
     expect(send.mock.calls[0]![1]).toBe("system #0");
@@ -41,7 +41,7 @@ describe("runPluginChatTurn", () => {
 
   it("sends the retry back with the model's reply, then shows the final reply", async () => {
     const { send, run } = setup([{ reply: "x", retry: "fix line 3" }, { reply: "Fixed" }]);
-    expect(await run()).toBe("Fixed");
+    expect((await run()).reply).toBe("Fixed");
     const second = send.mock.calls[1]![0];
     expect(second.map((m) => [m.role, m.content])).toEqual([
       ["user", "add a cache"],
@@ -54,7 +54,7 @@ describe("runPluginChatTurn", () => {
     const { send, run } = setup(
       Array.from({ length: 5 }, (_, i) => ({ reply: `r${i}`, retry: "again" })),
     );
-    expect(await run()).toBe(`r${PLUGIN_TURN_MAX_ATTEMPTS - 1}`);
+    expect((await run()).reply).toBe(`r${PLUGIN_TURN_MAX_ATTEMPTS - 1}`);
     expect(send).toHaveBeenCalledTimes(PLUGIN_TURN_MAX_ATTEMPTS);
   });
 });

@@ -27,7 +27,12 @@ import { useFlowSewNotices } from "./flow/useFlowSewNotices";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
+import {
+  CANVAS_STYLES,
+  FIT_VIEW_DURATION_MS,
+  FIT_VIEW_PADDING,
+  isSnapToGridDisabledForE2E,
+} from "./canvas.constants";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
@@ -109,11 +114,13 @@ const PendingNodeToolbars = React.memo(function PendingNodeToolbars({
       {pendingNodeIds.map((nodeId) => {
         const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
         if (!suggestionId) return null;
+        const preview = pendingPreviews.find((p) => p.suggestionId === suggestionId);
         return (
           <PendingNodeToolbar
             key={nodeId}
             nodeId={nodeId}
             suggestionId={suggestionId}
+            canDiscard={preview?.discardable !== false}
             onKeep={onKeep}
             onDiscard={onDiscard}
           />
@@ -198,6 +205,25 @@ const Canvas = (props: CanvasProps = {}) => {
   );
 
   useServiceFocusFromUrl(visualState);
+
+  // A plugin's chat reply (API 1.7) arrives already on the canvas: bring it into view once.
+  const focusedPreviews = useRef(new Set<string>());
+  useEffect(() => {
+    const preview = pendingPreviews.find(
+      (p) => p.focus && p.nodeIds.length > 0 && !focusedPreviews.current.has(p.suggestionId),
+    );
+    if (!preview) return;
+    focusedPreviews.current.add(preview.suggestionId);
+    // Next frame: React Flow has rendered and measured the new nodes by then.
+    requestAnimationFrame(() => {
+      void reactFlowInstance.fitView({
+        nodes: preview.nodeIds.map((id) => ({ id })),
+        duration: FIT_VIEW_DURATION_MS,
+        padding: FIT_VIEW_PADDING,
+        maxZoom: 1,
+      });
+    });
+  }, [pendingPreviews, reactFlowInstance]);
   useElementFocusFromUrl(visualState);
 
   const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);

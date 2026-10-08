@@ -6,6 +6,8 @@ import { DiagramNodeToolbar, DiagramPosition } from "../core/DiagramFlowProvider
 interface PendingNodeToolbarProps {
   nodeId: string;
   suggestionId: string;
+  /** False when the change cannot be undone from here: only Keep is offered. */
+  canDiscard?: boolean;
   onKeep: (suggestionId: string) => void;
   onDiscard: (suggestionId: string) => void;
 }
@@ -17,6 +19,7 @@ interface PendingNodeToolbarProps {
 export function PendingNodeToolbar({
   nodeId,
   suggestionId,
+  canDiscard = true,
   onKeep,
   onDiscard,
 }: PendingNodeToolbarProps) {
@@ -34,16 +37,18 @@ export function PendingNodeToolbar({
           <Check className="h-3.5 w-3.5" />
           {t("llmChat.preview.keep")}
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-7 px-2.5"
-          onClick={() => onDiscard(suggestionId)}
-        >
-          <X className="h-3.5 w-3.5" />
-          {t("llmChat.preview.discard")}
-        </Button>
+        {canDiscard && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 px-2.5"
+            onClick={() => onDiscard(suggestionId)}
+          >
+            <X className="h-3.5 w-3.5" />
+            {t("llmChat.preview.discard")}
+          </Button>
+        )}
       </div>
     </DiagramNodeToolbar>
   );
