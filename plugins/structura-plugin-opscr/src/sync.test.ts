@@ -64,6 +64,8 @@ function diagramFor(
       size: c.width !== undefined ? { width: c.width, height: c.height! } : null,
       tags: [],
       serviceId: null,
+      cloudServiceId: null,
+      technology: null,
     }));
   edits(components);
   return {
@@ -196,6 +198,8 @@ describe("sidecarMoves", () => {
       size,
       tags: [],
       serviceId: null,
+      cloudServiceId: null,
+      technology: null,
     });
     const diagram: DiagramSnapshot = {
       id: "d",

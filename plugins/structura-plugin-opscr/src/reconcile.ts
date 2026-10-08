@@ -139,6 +139,8 @@ export interface ReconcileResult {
   refused: string[];
   /** Canvas elements the YAML does not declare (drawn from the palette, say). */
   notInYaml: number;
+  /** Their ids. */
+  outside: string[];
   /** True when a file did not parse and nothing was looked at. */
   skipped: boolean;
 }
@@ -162,6 +164,7 @@ export function reconcile(
     revert,
     refused: [],
     notInYaml: 0,
+    outside: [],
   };
   if (input.some((f) => !parseDocuments(f.text))) return { ...unchanged, skipped: true };
 
@@ -324,6 +327,9 @@ export function reconcile(
   revert.update.push(...updates.values());
   const boundNow = bound();
   const removing = new Set(revert.remove);
+  const outside = diagram.components
+    .filter((c) => !boundNow.has(c.id) && !removing.has(c.id))
+    .map((c) => c.id);
   state.tombstones = {
     elements: cap(tombs.elements, MAX_ELEMENT_TOMBSTONES),
     connections: cap(tombs.connections, MAX_CONNECTION_TOMBSTONES),
@@ -334,7 +340,8 @@ export function reconcile(
     changed: files.some((f, i) => f.text !== input[i]!.text),
     revert,
     refused,
-    notInYaml: diagram.components.filter((c) => !boundNow.has(c.id) && !removing.has(c.id)).length,
+    notInYaml: outside.length,
+    outside,
     skipped: false,
   };
 }

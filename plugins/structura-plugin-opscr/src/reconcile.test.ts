@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { countEdges, hasManifest, renameElement, type SourceText } from "./patches";
 import { projectWorkspace } from "./project";
 import { reconcile, renameInBinding, retire } from "./reconcile";
+import { addElementsToYaml, slugName } from "./adopt";
 import { emptyBinding, planSync, previousLayout, sidecarText, type BindingState } from "./sync";
 import type {
   DiagramSnapshot,
@@ -98,6 +99,8 @@ class FakeCanvas {
         if (!c) continue;
         if (u.name !== undefined) c.label = u.name;
         if (u.description !== undefined) c.description = u.description;
+        if (u.technology !== undefined) c.technology = u.technology || null;
+        if (u.cloudServiceId !== undefined) c.cloudServiceId = u.cloudServiceId || null;
       }
       for (const m of changes.move ?? []) {
         const c = this.components.find((x) => x.id === m.id);
@@ -124,6 +127,8 @@ class FakeCanvas {
               : null,
           tags: [],
           serviceId: null,
+          cloudServiceId: a.cloudServiceId ?? null,
+          technology: a.technology ?? null,
         });
       }
       for (const c of changes.connect ?? []) {
@@ -366,6 +371,8 @@ describe("reconcile", () => {
         size: null,
         tags: [],
         serviceId: null,
+        cloudServiceId: null,
+        technology: null,
       }),
     );
     const r = reconcile(s.canvas.snapshot(), s.binding, s.files);
@@ -474,5 +481,91 @@ describe("binding again", () => {
       s.id("orders"),
     );
     await s.expectSettled();
+  });
+});
+
+describe("palette elements into the YAML", () => {
+  const draw = (over: Partial<PluginComponentSnapshot>) => {
+    const component: PluginComponentSnapshot = {
+      id: "p1",
+      type: "aws-database",
+      label: "Price Store",
+      description: "Prices",
+      parentId: s.id("orders"),
+      position: { x: 20, y: 300 },
+      size: null,
+      tags: [],
+      serviceId: null,
+      cloudServiceId: "dynamodb",
+      technology: "DynamoDB",
+      ...over,
+    };
+    s.canvas.step(() => s.canvas.components.push(component));
+    return component;
+  };
+
+  it("are counted as outside the YAML until added", () => {
+    draw({});
+    const r = reconcile(s.canvas.snapshot(), s.binding, s.files);
+    expect(r.outside).toEqual(["p1"]);
+  });
+
+  it("an added element gets a manifest, its belongsTo and its connections, and keeps its id", async () => {
+    draw({});
+    let connection = "";
+    s.canvas.step(() => (connection = s.canvas.connect(s.id("orders-api"), "p1", "")));
+    const result = addElementsToYaml(s.files, s.binding, s.canvas.snapshot(), [
+      { id: "p1", kind: "Database", provider: "DynamoDB" },
+    ]);
+    expect(result.added).toEqual(["Database/price-store"]);
+    s.files = result.files;
+    s.binding = result.binding;
+    const plan = await s.pump();
+    expect(plan.changes.add).toEqual([]);
+    expect(plan.changes.remove).toEqual([]);
+    const ref = { kind: "Database", name: "price-store" };
+    expect(hasManifest(s.files, ref)).toBe(true);
+    expect(
+      countEdges(s.files, {
+        from: ref,
+        to: { kind: "ApplicationService", name: "orders" },
+        type: "belongsTo",
+      }),
+    ).toBe(1);
+    expect(
+      countEdges(s.files, {
+        from: { kind: "Application", name: "orders-api" },
+        to: ref,
+        type: "calls",
+      }),
+    ).toBe(1);
+    expect(s.canvas.components.find((c) => c.id === "p1")?.label).toBe("price-store");
+    expect(s.canvas.connections.some((c) => c.id === connection)).toBe(true);
+    await s.expectSettled();
+  });
+
+  it("an element whose Kind draws another shape is redrawn in its place", async () => {
+    draw({
+      type: "container",
+      cloudServiceId: null,
+      technology: null,
+      parentId: null,
+      label: "Search",
+    });
+    const result = addElementsToYaml(s.files, s.binding, s.canvas.snapshot(), [
+      { id: "p1", kind: "Cache", provider: "ElastiCache Redis" },
+    ]);
+    s.files = result.files;
+    s.binding = result.binding;
+    const plan = await s.pump();
+    expect(plan.changes.remove).toEqual(["p1"]);
+    expect(plan.changes.add?.map((c) => [c.name, c.type])).toEqual([["search", "aws-database"]]);
+    await s.expectSettled();
+  });
+
+  it("names elements in kebab-case", () => {
+    expect(slugName("Price Store (v2)")).toBe("price-store-v2");
+    expect(slugName("Pagamentos Ação")).toBe("pagamentos-acao");
+    expect(slugName("!!!")).toBe("element");
   });
 });
