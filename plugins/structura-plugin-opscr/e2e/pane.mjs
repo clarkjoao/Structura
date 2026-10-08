@@ -491,9 +491,7 @@ await check(
 );
 
 // An element drawn from the palette is offered for the YAML, with a suggested Kind.
-await page
-  .getByRole("button", { name: /^(Close chat assistant|Fechar assistente de chat)$/ })
-  .click();
+// The chat stays open: the picker must be drawn above it.
 const paletteCount = await nodes();
 await page
   .getByRole("button", { name: /^(Add element|Adicionar elemento)$/ })
@@ -529,10 +527,11 @@ await waitFor(
 );
 await check((await nodes()) === paletteCount + 1, "the palette element is kept, not duplicated");
 await page.screenshot({ path: join(OUT, "7c-added.png") });
+await page
+  .getByRole("button", { name: /^(Close chat assistant|Fechar assistente de chat)$/ })
+  .click();
 
-// Taking an element out of its panel (Ungroup) drops its belongsTo. (Moving it into another
-// panel retargets it instead — covered by the unit tests; dragging between nested panels is
-// the canvas's own gesture.)
+// Taking an element out of its panel (Ungroup) drops its belongsTo…
 const relayBelongsTo =
   /- from: \{ kind: Application, id: order-relay \}\n\s+to: \{ kind: ApplicationService, id: orders \}\n\s+type: belongsTo/;
 await check(
@@ -558,6 +557,33 @@ await waitFor(
   "taking an element out of its panel drops its belongsTo",
 );
 await page.screenshot({ path: join(OUT, "8-ungroup.png") });
+
+// …and dragging it into a panel gives it that panel's belongsTo.
+await page.keyboard.press("Escape");
+await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+await page.locator(".react-flow__controls-fitview").first().click();
+await page.waitForTimeout(1500); // the fit animation
+const relayNode = page.locator(".react-flow__node", { hasText: "order-relay" }).first();
+const catalogPanel = page
+  .locator(".react-flow__node")
+  .filter({ has: page.getByText("catalog", { exact: true }) })
+  .first();
+const relayBox = await relayNode.boundingBox();
+const catalogBox = await catalogPanel.boundingBox();
+await page.mouse.move(relayBox.x + relayBox.width / 2, relayBox.y + relayBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(catalogBox.x + catalogBox.width / 2, catalogBox.y + catalogBox.height / 2, {
+  steps: 25,
+});
+await page.mouse.up();
+await page.screenshot({ path: join(OUT, "8b-into-catalog.png") });
+await waitFor(
+  async () =>
+    /- from: \{ kind: Application, id: order-relay \}\n\s+to: \{ kind: ApplicationService, id: catalog \}\n\s+type: belongsTo/.test(
+      await saveAndRead("relationships.opscr.yaml"),
+    ),
+  "dragging an element into a panel gives it that panel's belongsTo",
+);
 
 // A new catalog service on the canvas becomes the manifest's provider.
 await page.locator(".react-flow__node", { hasText: "order-relay" }).first().click();
