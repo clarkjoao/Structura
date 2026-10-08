@@ -4,7 +4,16 @@ import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { ViewerCanvas } from "@/features/viewer/components/ViewerCanvas";
 import { buildPreviewDiagram, changedComponentIds } from "./build-diagram";
 import type { PreviewGraph } from "./protocol";
-import { LOAD_GRAPH, READY, RENDERED, SEARCH, postToHost, readEmbedMessage } from "./protocol";
+import {
+  LOAD_GRAPH,
+  PROBE,
+  PROBE_RESULT,
+  READY,
+  RENDERED,
+  SEARCH,
+  postToHost,
+  readEmbedMessage,
+} from "./protocol";
 
 /**
  * The read-only preview: waits for a graph from its host and draws it with the viewer.
@@ -29,7 +38,17 @@ export function EmbedPreview() {
         setDiagram(buildPreviewDiagram(message.graph));
         if (changed.length > 0) setFocus((f) => ({ ids: changed, token: (f?.token ?? 0) + 1 }));
       } else if (message.type === SEARCH) setSearchRequest((n) => n + 1);
-      else document.documentElement.classList.toggle("dark", message.theme === "dark");
+      else if (message.type === PROBE) {
+        // What a host's test cannot see inside the frame: where the canvas looks, and whether
+        // the search is open.
+        postToHost({
+          type: PROBE_RESULT,
+          viewport:
+            document.querySelector<HTMLElement>(".react-flow__viewport")?.style.transform ?? "",
+          searchOpen: document.querySelector(".viewer-canvas input") !== null,
+          visible: document.visibilityState === "visible",
+        });
+      } else document.documentElement.classList.toggle("dark", message.theme === "dark");
     };
     window.addEventListener("message", onMessage);
     postToHost({ type: READY });
