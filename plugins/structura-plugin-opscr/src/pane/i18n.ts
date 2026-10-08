@@ -28,6 +28,12 @@ const en = {
       : `“${name}” is already taken — rename reverted`,
   notInYaml: (n: number) => `${n} element${n === 1 ? "" : "s"} not in the YAML`,
   renameGone: "The text changed under the cursor — try the rename again",
+  diskReloaded: (files: string[]) => `Updated from the folder: ${files.join(", ")}`,
+  diskConflict: (files: string[]) =>
+    `Changed in the folder while you had unsaved edits: ${files.join(", ")}`,
+  conflictBanner: (file: string) => `${file} changed in the folder. Your edits are not saved.`,
+  useDisk: "Use the folder's version",
+  keepMine: "Keep mine",
   chatTitle: (folder: string) => (folder ? `opscr · ${folder}` : "opscr"),
   chatSubtitle: "Ask for changes to the manifests; the diagram follows.",
   chatSuggestions: [
@@ -76,6 +82,12 @@ const ptBR: typeof en = {
       : `“${name}” já está em uso — renomeação desfeita`,
   notInYaml: (n: number) => `${n} elemento${n === 1 ? "" : "s"} fora do YAML`,
   renameGone: "O texto mudou sob o cursor — tente renomear de novo",
+  diskReloaded: (files: string[]) => `Atualizado a partir da pasta: ${files.join(", ")}`,
+  diskConflict: (files: string[]) =>
+    `Mudou na pasta enquanto você tinha edições não salvas: ${files.join(", ")}`,
+  conflictBanner: (file: string) => `${file} mudou na pasta. Suas edições não estão salvas.`,
+  useDisk: "Usar a versão da pasta",
+  keepMine: "Manter a minha",
   chatTitle: (folder: string) => (folder ? `opscr · ${folder}` : "opscr"),
   chatSubtitle: "Peça mudanças nos manifestos; o diagrama acompanha.",
   chatSuggestions: [

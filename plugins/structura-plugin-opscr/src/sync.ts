@@ -102,6 +102,40 @@ export function previousLayout(
   return overlayLayouts(fromFile, canvasLayout(binding, diagram));
 }
 
+/**
+ * Moves that put the canvas where a sidecar says (it changed on disk — a `git pull`, say): every
+ * bound element whose box differs. Panels get their size too.
+ */
+export function sidecarMoves(
+  binding: BindingState,
+  diagram: DiagramSnapshot,
+  sidecar: string,
+): NonNullable<PluginDiagramChanges["move"]> {
+  const boxes = parseLayoutFile(sidecar)?.boxes;
+  if (!boxes) return [];
+  const byId = new Map(diagram.components.map((c) => [c.id, c]));
+  const moves: NonNullable<PluginDiagramChanges["move"]> = [];
+  for (const [key, id] of Object.entries(binding.ids)) {
+    const box = boxes.get(key);
+    const component = byId.get(id);
+    if (!box || !component?.position) continue;
+    const moved =
+      Math.abs(component.position.x - box.x) > 0.5 || Math.abs(component.position.y - box.y) > 0.5;
+    const resized =
+      !!component.size &&
+      (Math.abs(component.size.width - box.width) > 0.5 ||
+        Math.abs(component.size.height - box.height) > 0.5);
+    if (!moved && !resized) continue;
+    moves.push({
+      id,
+      x: box.x,
+      y: box.y,
+      ...(component.size ? { width: box.width, height: box.height } : {}),
+    });
+  }
+  return moves;
+}
+
 /** The sidecar text for what the canvas shows now (bound elements only). */
 export const sidecarText = (binding: BindingState, diagram: DiagramSnapshot) =>
   serializeLayoutFile(canvasLayout(binding, diagram).boxes);

@@ -14,8 +14,8 @@
  *
  * Screenshots land in e2e/out/.
  */
-import { spawn } from "node:child_process";
-import { mkdirSync, readFileSync, readdirSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -26,12 +26,15 @@ const OUT = join(here, "out");
 mkdirSync(OUT, { recursive: true });
 const require = createRequire(join(ROOT, "package.json"));
 const { chromium } = require("playwright");
-const sampleDir = join(
-  dirname(createRequire(import.meta.url).resolve("opscr/package.json")),
-  "examples/sample",
-);
+// The sample as committed in the opscr checkout, so local edits there (a manual test bound to
+// that folder, say) do not change what this script expects.
+const opscrRoot = dirname(createRequire(import.meta.url).resolve("opscr/package.json"));
+const git = (...args) => execFileSync("git", ["-C", opscrRoot, ...args], { encoding: "utf8" });
 const SAMPLE = Object.fromEntries(
-  readdirSync(sampleDir).map((f) => [f, readFileSync(join(sampleDir, f), "utf8")]),
+  git("ls-tree", "--name-only", "HEAD", "examples/sample/")
+    .split("\n")
+    .filter(Boolean)
+    .map((path) => [path.split("/").pop(), git("show", `HEAD:${path}`)]),
 );
 
 const PORT = 4179;
@@ -423,6 +426,68 @@ await waitNodes(chatCount).catch(() => fail("Discard did not remove the chat's e
 await waitFor(
   async () => !(await saveAndRead("commerce.opscr.yaml")).includes("search-cache"),
   "Discard restores the manifests from before the reply",
+);
+
+// Changes made to the folder outside Structura (another editor, git).
+const writeOnDisk = (name, content) =>
+  page.evaluate(
+    async ([file, text]) => {
+      const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle("opscr-sample");
+      const writable = await (await dir.getFileHandle(file, { create: true })).createWritable();
+      await writable.write(text);
+      await writable.close();
+    },
+    [name, content],
+  );
+const readOnDisk = (name) =>
+  page.evaluate(async (file) => {
+    const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle("opscr-sample");
+    return (await (await dir.getFileHandle(file)).getFile()).text();
+  }, name);
+await saveAndRead("commerce.opscr.yaml");
+const outsideCount = await nodes();
+await writeOnDisk(
+  "finance.opscr.yaml",
+  (await readOnDisk("finance.opscr.yaml")) +
+    "\n---\napiVersion: opscr.dev/v1\nkind: Storage\nmetadata:\n  name: statements\nspec:\n  provider: S3\n  description: Monthly statements\n",
+);
+await waitNodes(outsideCount + 1).catch(() =>
+  fail("an outside edit of a clean file did not reach the canvas"),
+);
+await check(true, "an outside edit of a clean file reloads it and the canvas follows");
+
+const apiBefore = await nodeBox("public-api");
+const layout = JSON.parse(await readOnDisk("opscr.layout.json"));
+layout.elements["APIGateway/public-api"].y += 200;
+await writeOnDisk("opscr.layout.json", JSON.stringify(layout, null, 2));
+await waitFor(
+  async () => Math.abs((await nodeBox("public-api")).y - apiBefore.y) > 50,
+  "an outside change of the layout sidecar moves the element",
+);
+
+await page.locator(".monaco-editor .view-lines").first().click();
+await page.keyboard.press("ControlOrMeta+End");
+await page.keyboard.press("ControlOrMeta+ArrowDown"); // the end, on macOS
+await page.keyboard.type("\n# my unsaved note\n");
+await writeOnDisk(
+  "commerce.opscr.yaml",
+  (await readOnDisk("commerce.opscr.yaml")) + "\n# edited elsewhere\n",
+);
+const keepMine = page.getByRole("button", { name: /^(Keep mine|Manter a minha)$/ });
+await keepMine
+  .waitFor({ timeout: 8000 })
+  .catch(() => fail("no conflict shown for a file with unsaved edits"));
+await page.screenshot({ path: join(OUT, "5b-conflict.png") });
+await keepMine.click();
+await check(
+  (await keepMine.count()) === 0 &&
+    !(await readOnDisk("commerce.opscr.yaml")).includes("my unsaved note"),
+  "an outside edit never overwrites unsaved edits; the user picks a side",
+);
+await saveAndRead("commerce.opscr.yaml");
+await check(
+  (await readOnDisk("commerce.opscr.yaml")).includes("my unsaved note"),
+  "keeping mine saves over the outside edit",
 );
 
 // Unbind and bind the same folder again: what the canvas shows is adopted, not duplicated.

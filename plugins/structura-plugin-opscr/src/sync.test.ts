@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ImporterGraph } from "./generated/opscr-mapping";
-import { canvasLayout, emptyBinding, planSync, type BindingState } from "./sync";
+import { canvasLayout, emptyBinding, planSync, sidecarMoves, type BindingState } from "./sync";
 import type { DiagramSnapshot, PluginComponentSnapshot } from "./types/plugin.types";
 
 const graph = (
@@ -177,5 +177,49 @@ describe("canvasLayout", () => {
     const { boxes } = canvasLayout(first, diagram);
     expect(boxes.get("Database/db")).toEqual({ x: 999, y: 5, width: 180, height: 80 });
     expect(boxes.get("ApplicationService/orders")).toMatchObject({ width: 400, height: 300 });
+  });
+});
+
+describe("sidecarMoves", () => {
+  it("moves bound elements to the sidecar's boxes, panels with their size", () => {
+    const binding: BindingState = {
+      ...emptyBinding(),
+      ids: { "Application/api": "c1", "ApplicationService/orders": "c2", "Database/db": "c3" },
+    };
+    const component = (id: string, x: number, size: { width: number; height: number } | null) => ({
+      id,
+      type: "x",
+      label: id,
+      description: "",
+      parentId: null,
+      position: { x, y: 0 },
+      size,
+      tags: [],
+      serviceId: null,
+    });
+    const diagram: DiagramSnapshot = {
+      id: "d",
+      name: "d",
+      description: null,
+      connections: [],
+      components: [
+        component("c1", 10, null),
+        component("c2", 0, { width: 400, height: 300 }),
+        component("c3", 50, null),
+      ],
+    };
+    const sidecar = JSON.stringify({
+      version: 1,
+      elements: {
+        "Application/api": { x: 90, y: 0, width: 180, height: 80 },
+        "ApplicationService/orders": { x: 0, y: 0, width: 500, height: 300 },
+        "Database/db": { x: 50, y: 0, width: 180, height: 80 },
+      },
+    });
+    expect(sidecarMoves(binding, diagram, sidecar)).toEqual([
+      { id: "c1", x: 90, y: 0 },
+      { id: "c2", x: 0, y: 0, width: 500, height: 300 },
+    ]);
+    expect(sidecarMoves(binding, diagram, "not json")).toEqual([]);
   });
 });
