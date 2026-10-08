@@ -22,6 +22,14 @@ async function errorsOf(session: PaneSession, files: readonly SourceText[]): Pro
   return result.diagnostics;
 }
 
+/** Whether two file lists hold the same texts by name (a file missing counts as empty). */
+function sameTexts(a: readonly SourceText[], b: readonly SourceText[]): boolean {
+  const names = new Set([...a, ...b].map((f) => f.name));
+  const textOf = (list: readonly SourceText[], name: string) =>
+    list.find((f) => f.name === name)?.text ?? "";
+  return [...names].every((name) => textOf(a, name) === textOf(b, name));
+}
+
 /**
  * The chat on a diagram bound to an opscr folder (plugin API 1.6): the skill and the manifests
  * as context; the model's documents applied as text patches, validated by opscr, and the
@@ -65,13 +73,33 @@ export function createChatContext(): PluginChatContext {
         return { reply: edits.message, retry: retryMessage(fresh) };
       }
       pending.delete(diagramId);
-      session.apply(applied.files);
+      const changed = await session.apply(applied.files, [...applied.added, ...applied.replaced]);
       const summary = t.chatChanged(applied.added, applied.replaced, applied.deleted);
+      const after = applied.files;
       const remaining =
         fresh.length > 0
           ? `\n\n${t.chatRemainingErrors}\n${fresh.map((d) => `- ${describeError(d)}`).join("\n")}`
           : "";
-      return { reply: [edits.message, summary].filter(Boolean).join("\n\n") + remaining };
+      return {
+        reply:
+          [edits.message, `${summary} ${t.chatUnsaved}`].filter(Boolean).join("\n\n") + remaining,
+        preview: {
+          ...changed,
+          title: summary,
+          // Undo the reply — only while the manifests are still exactly what it left, so
+          // edits made since (typed, or from the canvas) are never thrown away.
+          discard: async () => {
+            const live = getSession();
+            if (!live || live.diagramId !== diagramId) return t.chatClosed;
+            if (!sameTexts(live.manifests(), after)) return t.chatDiscardEdited;
+            const restored = after.map((f) => ({
+              name: f.name,
+              text: original.find((o) => o.name === f.name)?.text ?? "",
+            }));
+            await live.apply(restored, []);
+          },
+        },
+      };
     },
   };
 }
