@@ -185,12 +185,22 @@ export function setDescription(
   ref: ElementRef,
   description: string,
 ): SourceText[] | null {
+  return setSpecField(files, ref, "description", description);
+}
+
+/** Sets a scalar field of `spec` (in place, or as a new line in the spec's indentation). */
+export function setSpecField(
+  files: readonly SourceText[],
+  ref: ElementRef,
+  field: string,
+  value: string,
+): SourceText[] | null {
   const parsed = parseAll(files);
   const found = parsed && findManifest(parsed, ref);
   if (!parsed || !found) return null;
   const { file, docs } = parsed[found.at]!;
   const spec = docs[found.doc]!.get("spec", true);
-  const edit = isMap(spec) ? setMapValue(file.text, spec, "description", description) : null;
+  const edit = isMap(spec) ? setMapValue(file.text, spec, field, value) : null;
   return edit ? commit(files, new Map([[found.at, [edit]]])) : null;
 }
 

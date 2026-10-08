@@ -27,6 +27,8 @@ const en = {
       ? "A name cannot be empty — rename reverted"
       : `“${name}” is already taken — rename reverted`,
   renameGone: "The text changed under the cursor — try the rename again",
+  providerRefused: (names: string[]) =>
+    `${names.join(", ")}: that service or technology is not a provider of its Kind — reverted`,
   outsideTitle: (n: number) => `${n} element${n === 1 ? "" : "s"} on the canvas not in the YAML`,
   kindFor: (name: string) => `Kind for ${name}`,
   providerFor: (name: string) => `Provider for ${name}`,
@@ -88,6 +90,8 @@ const ptBR: typeof en = {
       ? "O nome não pode ficar vazio — renomeação desfeita"
       : `“${name}” já está em uso — renomeação desfeita`,
   renameGone: "O texto mudou sob o cursor — tente renomear de novo",
+  providerRefused: (names: string[]) =>
+    `${names.join(", ")}: esse serviço ou tecnologia não é um provider do seu Kind — desfeito`,
   outsideTitle: (n: number) => `${n} elemento${n === 1 ? "" : "s"} no canvas fora do YAML`,
   kindFor: (name: string) => `Kind de ${name}`,
   providerFor: (name: string) => `Provider de ${name}`,

@@ -1,18 +1,13 @@
+import { SAMPLE_FILES } from "./test-sample";
 import { beforeAll, describe, expect, it } from "vitest";
-import { readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { createRequire } from "node:module";
 import { canImportOpscr, importOpscr } from "./import-opscr";
 import type { ImportResult, PluginComponentInput } from "./types/plugin.types";
 
-const require = createRequire(import.meta.url);
-const SAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/sample");
-
 /** The sample's manifests as one multi-document file — how a workspace is imported today. */
-const SAMPLE = readdirSync(SAMPLE_DIR)
+const SAMPLE = Object.keys(SAMPLE_FILES)
   .filter((f) => f.endsWith(".opscr.yaml"))
   .sort()
-  .map((f) => readFileSync(join(SAMPLE_DIR, f), "utf8"))
+  .map((f) => SAMPLE_FILES[f]!)
   .join("\n---\n");
 
 const anchor = { x: 1000, y: 500 };

@@ -144,6 +144,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
       if (remove.length + disconnect.length + update.length > 0) api.applyChanges(result.revert);
       setOutside(result.outside);
       if (result.refused.length > 0) setStatus(t.renameRefused(result.refused[0]!));
+      if (result.refusedProviders.length > 0) {
+        setStatus(t.providerRefused(result.refusedProviders));
+      }
       return result.changed;
     }, [diagramId, persist, t]);
 
