@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import type { ElementCreateOptions } from "@/features/elements/element.types";
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { Search, X } from "lucide-react";
@@ -579,7 +580,9 @@ const ElementPickerModal = memo(function ElementPickerModal({
     }
   };
 
-  return (
+  // A portal: rendered in place, the overlay shared the toolbar's stacking context and the
+  // chat panel (a later sibling layer of the canvas) was drawn on top of it.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
       onMouseDown={(e) => {
@@ -660,7 +663,8 @@ const ElementPickerModal = memo(function ElementPickerModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 });
 

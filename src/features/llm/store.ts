@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
+import { findChatContext } from "@/features/plugins/chat-context-registry";
+import { runPluginChatTurn } from "./plugin-chat-turn";
+import { toast } from "sonner";
+import type { PluginChatPreview } from "@/features/plugins/plugin.types";
 import { parseLLMResponse } from "./patch-parser";
 import { LLMProviderError, type LLMErrorKind } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
@@ -178,6 +182,12 @@ async function executeLLMMessage(
   return sendOpenAIMessage(config, messages, systemPrompt, onChunk);
 }
 
+/**
+ * Keep / Discard handlers of pending plugin chat replies (API 1.7), by suggestion id. Outside
+ * the store state: they are functions, and only messages are persisted.
+ */
+const pluginSuggestionHandlers = new Map<string, Pick<PluginChatPreview, "keep" | "discard">>();
+
 export interface LLMStoreState {
   connections: LLMConnection[];
   activeConnectionId: string;
@@ -273,6 +283,16 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
   }
 
   const persistThread = () => persistActiveThread(get());
+  /** Marks a suggestion kept or discarded and clears its canvas preview. */
+  const settleSuggestion = (suggestionId: string, status: PendingSuggestion["status"]) =>
+    set((state) => ({
+      pendingSuggestions: state.pendingSuggestions.map((candidate) =>
+        candidate.id === suggestionId ? { ...candidate, status } : candidate,
+      ),
+      pendingPreviews: state.pendingPreviews.filter(
+        (pendingPreview) => pendingPreview.suggestionId !== suggestionId,
+      ),
+    }));
   const setWithPersist = (partial: Partial<LLMStoreState>) => set(partial);
 
   return {
@@ -599,6 +619,69 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       });
 
       try {
+        // A plugin that owns this diagram (API 1.6, e.g. one bound to YAML) answers instead.
+        const activeDiagramId = useDiagramStore.getState().activeDiagramId;
+        const pluginContext = activeDiagramId ? findChatContext(activeDiagramId) : null;
+        if (pluginContext && activeDiagramId) {
+          const setAssistant = (content: string) =>
+            set((current) => ({
+              messages: current.messages.map((message) =>
+                message.id === assistantMessageId ? { ...message, content } : message,
+              ),
+            }));
+          // One pending plugin reply at a time: discarding an older one would revert newer ones.
+          for (const suggestion of get().pendingSuggestions) {
+            if (suggestion.status === "pending" && pluginSuggestionHandlers.has(suggestion.id)) {
+              get().acceptSuggestion(suggestion.id);
+            }
+          }
+          const result = await runPluginChatTurn({
+            context: pluginContext,
+            diagramId: activeDiagramId,
+            locale: getResolvedAppLanguage().startsWith("pt") ? "pt-BR" : "en",
+            history: sanitizeMessagesForLLM(outgoingMessages),
+            send: (messages, systemPrompt, onChunk) =>
+              executeLLMMessage(state.config, messages, systemPrompt, onChunk),
+            onText: (text) => {
+              set({ streamingContent: text });
+              setAssistant(text);
+            },
+          });
+          setAssistant(result.reply);
+          const preview = result.preview;
+          if (preview) {
+            const suggestionId = crypto.randomUUID();
+            pluginSuggestionHandlers.set(suggestionId, {
+              ...(preview.keep ? { keep: preview.keep } : {}),
+              ...(preview.discard ? { discard: preview.discard } : {}),
+            });
+            set((current) => ({
+              pendingSuggestions: [
+                ...current.pendingSuggestions,
+                {
+                  id: suggestionId,
+                  messageId: assistantMessageId,
+                  patch: { id: suggestionId, description: preview.title, actions: [] },
+                  status: "pending",
+                },
+              ],
+              pendingPreviews: [
+                ...current.pendingPreviews,
+                {
+                  suggestionId,
+                  nodeIds: [...preview.componentIds],
+                  edgeIds: [...preview.connectionIds],
+                  focus: true,
+                  discardable: !!preview.discard,
+                },
+              ],
+            }));
+          }
+          set({ streamingContent: null, isLoading: false, error: null, pendingAnalysis: null });
+          persistThread();
+          return;
+        }
+
         const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
         const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
         let fullResponse = "";
@@ -961,6 +1044,18 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         return;
       }
 
+      const settle = (status: PendingSuggestion["status"]) =>
+        settleSuggestion(suggestionId, status);
+
+      // A plugin's reply (API 1.7) is already applied: keeping it only tells the plugin.
+      const pluginHandlers = pluginSuggestionHandlers.get(suggestionId);
+      if (pluginHandlers) {
+        pluginSuggestionHandlers.delete(suggestionId);
+        pluginHandlers.keep?.();
+        settle("accepted");
+        return;
+      }
+
       ensureHistoryBoundary();
 
       const patchActions = suggestion.patch.actions;
@@ -988,6 +1083,33 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         (candidateSuggestion) => candidateSuggestion.id === suggestionId,
       );
       if (!suggestion || suggestion.status !== "pending") {
+        return;
+      }
+
+      // A plugin's reply is undone by the plugin (it restores its source; its sync removes the
+      // elements). It may refuse — then the change stays, as if kept.
+      const pluginHandlers = pluginSuggestionHandlers.get(suggestionId);
+      if (pluginHandlers) {
+        if (!pluginHandlers.discard) {
+          get().acceptSuggestion(suggestionId);
+          return;
+        }
+        pluginSuggestionHandlers.delete(suggestionId);
+        const settle = (status: PendingSuggestion["status"]) =>
+          settleSuggestion(suggestionId, status);
+        void Promise.resolve()
+          .then(() => pluginHandlers.discard?.())
+          .then((refusal) => {
+            if (typeof refusal === "string" && refusal) {
+              toast.info(refusal);
+              pluginHandlers.keep?.();
+              settle("accepted");
+            } else settle("rejected");
+          })
+          .catch((error: unknown) => {
+            console.error("[llm] plugin discard failed:", error);
+            settle("accepted");
+          });
         return;
       }
 

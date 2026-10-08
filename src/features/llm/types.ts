@@ -121,6 +121,10 @@ export interface PendingNodePreview {
   suggestionId: string;
   nodeIds: string[];
   edgeIds: string[];
+  /** Fit the canvas to these nodes when the preview arrives (plugin chat replies). */
+  focus?: boolean;
+  /** Whether Discard is offered (false when the plugin cannot undo the change). */
+  discardable?: boolean;
 }
 
 export type AnalysisSeverity = "critical" | "high" | "medium" | "low" | "info";

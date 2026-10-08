@@ -32,6 +32,7 @@
     "copy-404": "node -e \"require('fs').copyFileSync('public/404.html','dist/404.html')\"",
     "build:dev": "vite build --mode development",
     "build:plugins": "node tools/build-with-plugins.mjs",
+    "build:embed": "vite build --config vite.embed.config.ts",
     "proxy:install": "npm --prefix server install",
     "proxy:dev": "npm --prefix server run dev",
     "proxy": "npm run proxy:install && npm run proxy:dev",

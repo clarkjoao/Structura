@@ -46,7 +46,7 @@ describe("v1.1 diagram read/write API", () => {
 
   it("exposes the bumped apiVersion", () => {
     expect(api.apiVersion).toBe(STRUCTURA_PLUGIN_API_VERSION);
-    expect(api.apiVersion).toBe("1.2.0");
+    expect(api.apiVersion).toBe("1.10.0");
   });
 
   it("reads the active diagram as a detached snapshot (spec scenario)", () => {
@@ -101,5 +101,52 @@ describe("v1.1 diagram read/write API", () => {
     const reverted = useDiagramStore.getState().diagrams[diagramId].nodeLayouts;
     expect(reverted[componentA]).toMatchObject({ x: 10, y: 20 });
     expect(reverted[componentB]).toMatchObject({ x: 300, y: 20 });
+  });
+
+  it("applies a batch of changes as one history step (API 1.4)", () => {
+    const result = api.applyChanges({
+      remove: [componentB, "ghost"],
+      update: [{ id: componentA, name: "Alpha 2", description: "d" }],
+      add: [
+        { key: "p", name: "Panel", type: "panel", x: 0, y: 0, width: 400, height: 300 },
+        {
+          key: "db",
+          name: "DB",
+          type: "aws-database",
+          cloudServiceId: "dynamodb",
+          parentKey: "p",
+          x: 40,
+          y: 40,
+        },
+      ],
+      connect: [{ source: componentA, target: "db", label: "writes" }],
+    });
+
+    const diagram = useDiagramStore.getState().diagrams[diagramId];
+    expect(diagram.snapshot.components[componentB]).toBeUndefined();
+    expect(diagram.snapshot.components[componentA]).toMatchObject({
+      name: "Alpha 2",
+      description: "d",
+    });
+    expect(diagram.snapshot.components[result.idsByKey.db]).toMatchObject({
+      type: "aws-database",
+      cloudServiceId: "dynamodb",
+      parentId: result.idsByKey.p,
+    });
+    expect(diagram.snapshot.connections[result.connectionIds[0]!]).toMatchObject({
+      sourceId: componentA,
+      targetId: result.idsByKey.db,
+    });
+
+    vi.advanceTimersByTime(100);
+    useDiagramStore.getState().undo();
+    const reverted = useDiagramStore.getState().diagrams[diagramId].snapshot;
+    expect(Object.keys(reverted.components).sort()).toEqual([componentA, componentB].sort());
+    expect(reverted.components[componentA]).toMatchObject({ name: "Alpha" });
+  });
+
+  it("exposes the host code editor and folder access (API 1.4)", () => {
+    expect(typeof api.ui.CodeEditor).toBe("function");
+    expect(typeof api.files.isSupported()).toBe("boolean");
   });
 });

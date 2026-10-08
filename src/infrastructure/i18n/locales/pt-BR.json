@@ -1670,7 +1670,12 @@
     "waiting": "Aguardando diagrama...",
     "errors": {
       "invalidDiagram": "Diagrama inválido"
-    }
+    },
+    "blockedTitle": "O YAML tem {{count}} erro(s) do opscr",
+    "blockedParse": "O YAML não faz parse",
+    "blockedHint": "O diagrama é desenhado assim que o opscr valida o workspace. O painel Problems lista todos os erros.",
+    "blockedStale": "Não atualizado: {{count}} erro(s) do opscr — veja Problems",
+    "blockedStaleParse": "Não atualizado: o YAML não faz parse — veja Problems"
   },
   "viewPage": {
     "openInStructura": {
@@ -2273,7 +2278,14 @@
     "importFailed": "Este arquivo não pôde ser importado pelo plugin.",
     "importNoActiveDiagram": "Abra um diagrama antes de importar com um plugin.",
     "importSkippedConnections": "{{count}} conexões foram ignoradas (extremidades desconhecidas).",
-    "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin."
+    "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin.",
+    "editor": {
+      "nothingToRename": "Nada aqui pode ser renomeado"
+    },
+    "documentPane": {
+      "resize": "Redimensionar o painel",
+      "close": "Fechar o painel"
+    }
   },
   "panelKinds": {
     "default": {

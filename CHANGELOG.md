@@ -40,6 +40,60 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **VSCode extension 0.2.0**: the preview draws only YAML that opscr validates
+  without errors — changes typed, saved or written to disk by other tools
+  (Claude Code, git) — keeping the last valid picture and saying why in the
+  status bar meanwhile. The diagram stays a read-only view in VSCode. Ctrl/Cmd+F
+  finds elements in the preview, and an update zooms to what it changed.
+- **Embed**: `embed-editor.html`, Structura's canvas on an in-memory diagram,
+  driven over `postMessage` like a remote plugin API (not used by the extension).
+- **opscr plugin**: the document pane's orchestration is now a UI-free
+  `OpscrEngine` (`src/engine/`), shared with the VSCode extension.
+- Fixed: an element dragged out of its panel, or into another one (a sibling, a
+  nested panel), now lands in the panel under it; children were clamped to their
+  panel before.
+- Fixed: the element and pattern pickers were drawn under the chat panel.
+- **opscr plugin**: picking another cloud service or technology for a bound
+  element sets its `spec.provider` (or is reverted when the Kind has no such
+  provider).
+- **opscr plugin**: moving an element into another panel, or out of every panel,
+  on a bound diagram updates its `belongsTo`.
+- **Plugin API 1.10.0**: component snapshots carry `cloudServiceId` and
+  `technology`. The opscr pane lists canvas elements that are not in the YAML
+  with a suggested Kind and provider, and adds them (manifest, `belongsTo`,
+  edges) without redrawing them.
+- **Plugin API 1.9.0**: `PluginFolder.stats()` (last-modified time and size).
+  The opscr pane follows changes made to the bound folder outside Structura:
+  clean files reload, unsaved edits are never overwritten (a conflict offers
+  both versions), and a changed layout sidecar moves the canvas.
+- Fixed: Space typed in a plugin code editor was swallowed by the canvas.
+- **Plugin API 1.8.0**: chat contexts can present the chat (title, subtitle,
+  suggestions) and notify the host when they start or stop applying. The opscr
+  chat introduces itself as "opscr · <folder>" with opscr suggestions. Additive.
+- **Plugin API 1.7.0**: a plugin chat reply can return a `preview`: the host
+  shows its elements as pending (highlight, Keep / Discard), focuses the canvas
+  on them, and asks the plugin to undo the reply on Discard. The opscr chat uses
+  it: Discard restores the manifests unless they changed since. Additive.
+- **Plugin API 1.6.0**: `llm:context` capability and `api.registerChatContext`:
+  a plugin can answer the chat for the diagrams it owns, with its own system
+  prompt, reply handling and validation retries. Additive.
+- **opscr plugin**: on a bound diagram whose folder is open, the chat edits the
+  YAML with the opscr-architect skill as context, validated by opscr.
+- **Plugin API 1.5.0**: `api.ui.CodeEditor` takes a `rename` handler, so F2
+  ("Rename symbol") in a plugin's editor is answered by the plugin. Additive.
+- **opscr plugin**: canvas edits patch the bound YAML (rename, description,
+  delete, connections, undo/redo), the arrangement is kept in an
+  `opscr.layout.json` sidecar shared with the VSCode preview, and F2 renames an
+  element across every file while it keeps its place on the canvas.
+- **Plugin API 1.4.0**: a `document-pane` slot docked beside the canvas, the
+  host code editor as `api.ui.CodeEditor`, folder access (`files:folder`,
+  `api.files`) remembered per binding, and `api.applyChanges` for several
+  diagram changes as one undo step. Additive.
+- **Plugin API 1.3.0**: importer results can nest components (`parentKey`, to a
+  new or an existing component), create panels and catalog components (AWS,
+  GCP, Azure, OSS…) with `cloudServiceId` and `technology`. Plugin imports now
+  commit through the same path as generated diagrams, so they also land in an
+  open diagram version. Additive: 1.2 importers behave as before.
 - **`ServiceCatalog` → `Services`** (`PERSIST_SCHEMA_VERSION` 13 → 14).
   Canonical product name is **Services** / **Serviços**. Persist field
   `serviceCatalog` → `services` (still migrates legacy `serviceRegistry`);

@@ -32,6 +32,8 @@ import {
   type FlowMode,
 } from "@/features/canvas/flow";
 import { useNodeTypes } from "@/features/canvas/nodes/node-types";
+import CanvasSearch from "@/features/canvas/toolbar/CanvasSearch";
+import { FIT_VIEW_DURATION_MS, FIT_VIEW_PADDING } from "@/features/canvas/canvas.constants";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
 import { iconLookupForDiagram } from "../icons/diagramIconLookup";
@@ -100,7 +102,19 @@ interface ViewerCanvasProps {
    * report an ending for a scene the reader never finished.
    */
   lockedToInitialFlow?: boolean;
+  /** Ctrl/Cmd+F opens a search of the diagram's elements; picking one brings it into view. */
+  searchable?: boolean;
+  /** Opens the search when it changes — for hosts that own the shortcut (a VSCode keybinding). */
+  searchRequest?: number;
+  /**
+   * Elements to bring into view — what a host just changed. A new `token` frames them again,
+   * so the same ids can be focused twice.
+   */
+  focus?: { ids: readonly string[]; token: number } | null;
 }
+
+/** How far a focused element is zoomed at most: readable, not filling the screen. */
+const FOCUS_MAX_ZOOM = 1;
 
 const ViewerCanvasContent = ({
   diagram,
@@ -113,6 +127,9 @@ const ViewerCanvasContent = ({
   onReachedFlowEnd,
   onReachedFlowStart,
   lockedToInitialFlow = false,
+  searchable = false,
+  searchRequest = 0,
+  focus = null,
 }: ViewerCanvasProps) => {
   const flows = useMemo(() => Object.values(diagram.snapshot.flows ?? {}), [diagram]);
 
@@ -400,6 +417,55 @@ const ViewerCanvasContent = ({
     return () => cancelAnimationFrame(id);
   }, [framesPreviewEntry, previewFlow, previewEntryStepId, reactFlowInstance]);
 
+  /** Brings elements into view, once React Flow has drawn and measured them. */
+  const frameNodes = useCallback(
+    (ids: readonly string[]) => {
+      const present = ids.filter((id) => reactFlowInstance.getNode(id));
+      if (present.length === 0) return;
+      void reactFlowInstance.fitView({
+        nodes: present.map((id) => ({ id })),
+        duration: FIT_VIEW_DURATION_MS,
+        padding: FIT_VIEW_PADDING,
+        maxZoom: FOCUS_MAX_ZOOM,
+      });
+    },
+    [reactFlowInstance],
+  );
+
+  // What the host just changed, once React Flow has drawn and measured it: the update reaches
+  // the canvas a moment later, more under load. Timers, not animation frames: a webview in a
+  // window that is not in front gets no frames, and the zoom should be there when it comes back.
+  useEffect(() => {
+    if (!focus || focus.ids.length === 0) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let tries = 0;
+    const attempt = () => {
+      const measured = focus.ids.some(
+        (id) => reactFlowInstance.getInternalNode(id)?.measured?.width !== undefined,
+      );
+      if (measured) frameNodes(focus.ids);
+      else if (++tries < 60) timer = setTimeout(attempt, 50);
+    };
+    timer = setTimeout(attempt, 50);
+    return () => clearTimeout(timer);
+  }, [focus, frameNodes, reactFlowInstance]);
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  useEffect(() => {
+    if (!searchable) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [searchable]);
+  useEffect(() => {
+    if (searchable && searchRequest > 0) setSearchOpen(true);
+  }, [searchable, searchRequest]);
+
   /** The same keys the editor's reading answers to. Skipped under `previewMode`:
    * there is no rail, and the keys would step through state the author never
    * opened. */
@@ -493,6 +559,18 @@ const ViewerCanvasContent = ({
           </DiagramSurface>
         </HandleHighlightProvider>
 
+        {searchable && searchOpen && (
+          <CanvasSearch
+            components={diagram.snapshot.components}
+            onClose={() => setSearchOpen(false)}
+            onSelectResult={(id) => {
+              setSearchOpen(false);
+              // After the search has closed and the canvas re-rendered.
+              setTimeout(() => frameNodes([id]), 0);
+            }}
+          />
+        )}
+
         {!readingFlow && !previewMode && <FlowInvite flows={flows} onSelect={startFlow} />}
 
         {showOpenInStructuraButton && <OpenInStructuraButton diagram={diagram} catalog={catalog} />}
@@ -512,6 +590,9 @@ export const ViewerCanvas = ({
   onReachedFlowEnd,
   onReachedFlowStart,
   lockedToInitialFlow = false,
+  searchable = false,
+  searchRequest = 0,
+  focus = null,
 }: ViewerCanvasProps) => (
   <DiagramFlowProvider>
     <ViewerCanvasContent
@@ -525,6 +606,9 @@ export const ViewerCanvas = ({
       lockedToInitialFlow={lockedToInitialFlow}
       previewMode={previewMode}
       previewFlowId={previewFlowId}
+      searchable={searchable}
+      searchRequest={searchRequest}
+      focus={focus}
     />
   </DiagramFlowProvider>
 );
