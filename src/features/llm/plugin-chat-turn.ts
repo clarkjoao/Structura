@@ -1,4 +1,4 @@
-import type { PluginChatContext } from "@/features/plugins/plugin.types";
+import type { PluginChatContext, PluginChatTurnResult } from "@/features/plugins/plugin.types";
 import type { ChatMessage } from "./types";
 
 /** Model calls per user message on a plugin-owned diagram: the reply plus two fixes. */
@@ -29,9 +29,9 @@ const turnMessage = (role: ChatMessage["role"], content: string): ChatMessage =>
 /**
  * One user message on a diagram a plugin's chat context owns (API 1.6): the plugin's system
  * prompt, the model's reply handed to the plugin, and — while the plugin asks for a retry and
- * attempts remain — its retry text sent back with the model's reply. Returns the text to show.
+ * attempts remain — its retry text sent back with the model's reply. Returns the final result.
  */
-export async function runPluginChatTurn(turn: PluginChatTurn): Promise<string> {
+export async function runPluginChatTurn(turn: PluginChatTurn): Promise<PluginChatTurnResult> {
   let messages = turn.history;
   for (let attempt = 0; ; attempt += 1) {
     const input = {
@@ -48,7 +48,7 @@ export async function runPluginChatTurn(turn: PluginChatTurn): Promise<string> {
       turn.onText(streamed);
     });
     const result = await turn.context.handleReply(text, input);
-    if (!result.retry || attempt >= PLUGIN_TURN_MAX_ATTEMPTS - 1) return result.reply;
+    if (!result.retry || attempt >= PLUGIN_TURN_MAX_ATTEMPTS - 1) return result;
     messages = [...messages, turnMessage("assistant", text), turnMessage("user", result.retry)];
   }
 }
