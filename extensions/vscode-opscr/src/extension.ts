@@ -12,6 +12,16 @@ import { collectWorkspace, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
 const UPDATE_DELAY_MS = 300;
+/** How long a probe waits for the webview's answer before answering "nothing seen". */
+const PROBE_TIMEOUT_MS = 2000;
+/** A probe's answer when the webview cannot answer — not loaded yet, reloading or closed. */
+const PROBE_UNANSWERED = {
+  type: "STRUCTURA_PROBE_RESULT",
+  viewport: "",
+  searchOpen: false,
+  visible: false,
+  blocked: false,
+} as const;
 
 class Preview {
   private readonly pipeline = new PreviewPipeline();
@@ -61,10 +71,24 @@ class Preview {
     return this.panel.active;
   }
 
-  /** For the end-to-end test: where the canvas looks and whether the search is open. */
+  /**
+   * For the end-to-end test: where the canvas looks and whether the search is open. Always
+   * settles — with PROBE_UNANSWERED when the webview is not there to answer — so a test waiting
+   * on it reaches its own timeout instead of hanging.
+   */
   probe(): Promise<unknown> {
+    if (!this.ready) return Promise.resolve(PROBE_UNANSWERED);
     return new Promise((resolve) => {
-      this.probes.push(resolve);
+      const timer = setTimeout(() => {
+        const i = this.probes.indexOf(answer);
+        if (i !== -1) this.probes.splice(i, 1);
+        resolve(PROBE_UNANSWERED);
+      }, PROBE_TIMEOUT_MS);
+      const answer = (result: unknown) => {
+        clearTimeout(timer);
+        resolve(result);
+      };
+      this.probes.push(answer);
       this.post({ type: "STRUCTURA_PROBE" });
     });
   }
@@ -82,6 +106,8 @@ class Preview {
 
   dispose(): void {
     clearTimeout(this.timer);
+    this.ready = false;
+    for (const resolve of this.probes.splice(0)) resolve(PROBE_UNANSWERED);
     this.statusItem.dispose();
   }
 

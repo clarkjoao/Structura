@@ -57,7 +57,7 @@ export function EmbedPreview() {
             document.querySelector<HTMLElement>(".react-flow__viewport")?.style.transform ?? "",
           searchOpen: document.querySelector(".viewer-canvas input") !== null,
           visible: document.visibilityState === "visible",
-          blocked: document.querySelector('[role="status"]') !== null,
+          blocked: document.querySelector("[data-embed-blocked]") !== null,
         });
       } else document.documentElement.classList.toggle("dark", message.theme === "dark");
     };
@@ -83,7 +83,7 @@ export function EmbedPreview() {
   if (!diagram) {
     if (blocked) {
       return (
-        <div className="flex h-screen items-center justify-center p-6">
+        <div data-embed-blocked className="flex h-screen items-center justify-center p-6">
           <div className="max-w-xl space-y-3 text-sm">
             <p className="font-medium text-destructive">
               {blocked.reason === "parse"
@@ -113,6 +113,7 @@ export function EmbedPreview() {
       {blocked && (
         <div
           role="status"
+          data-embed-blocked
           className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-md border border-destructive/40 bg-card px-3 py-1.5 text-xs text-destructive shadow"
         >
           {blocked.reason === "parse"
