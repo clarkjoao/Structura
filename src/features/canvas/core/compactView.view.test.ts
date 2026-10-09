@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Component, Diagram } from "@/features/diagram";
-import { snapshotChecksum } from "@/features/collaboration/utils/snapshotChecksum";
+import { stateFingerprint } from "@/test/stateFingerprint";
 import { resolveViewSnapshot, type DescribeNode } from "./resolveViewSnapshot";
 
 /**
@@ -86,11 +86,11 @@ describe("a compact typed container", () => {
     for (const collapsed of [false, true]) {
       const d = diagram(collapsed);
       const surface = () => ({ ...d.snapshot, nodeLayouts: d.nodeLayouts, edgeLayouts: {} });
-      const before = snapshotChecksum(surface());
+      const before = stateFingerprint(surface());
       const json = JSON.stringify(d);
       view(d);
       expect(JSON.stringify(d)).toBe(json);
-      expect(snapshotChecksum(surface())).toBe(before);
+      expect(stateFingerprint(surface())).toBe(before);
     }
   });
 

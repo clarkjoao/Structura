@@ -11,11 +11,11 @@ import {
 
 interface CollabRoomFullModalProps {
   isOpen: boolean;
-  reason: string | null;
+  limit: number;
   onClose: () => void;
 }
 
-export function CollabRoomFullModal({ isOpen, reason, onClose }: CollabRoomFullModalProps) {
+export function CollabRoomFullModal({ isOpen, limit, onClose }: CollabRoomFullModalProps) {
   const { t } = useTranslation();
 
   return (
@@ -31,7 +31,7 @@ export function CollabRoomFullModal({ isOpen, reason, onClose }: CollabRoomFullM
             </div>
           </div>
           <AlertDialogDescription className="pt-2">
-            {reason || t("collaboration.roomFullDesc")}
+            {t("collaboration.roomFullDesc", { limit })}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -1,0 +1,44 @@
+# Several collaboration relays sharing one Redis behind a round-robin balancer with no session
+# affinity — the shape the relay must survive in production. Used for local development of the
+# multi-instance path and by the acceptance harness (scripts/collab-*.mjs, server/loadtest/).
+#
+#   docker compose -f deploy/compose/docker-compose.yml up --build -d
+#   # clients connect to ws://localhost:3000/ws
+#   docker compose -f deploy/compose/docker-compose.yml kill relay-2   # a pod dies
+#
+name: structura-collab
+
+x-relay: &relay
+  build: ../../server
+  environment:
+    NODE_ENV: production
+    PORT: "3000"
+    WS_PATH: /ws
+    REDIS_URL: redis://redis:6379
+    COLLAB_HOST_GRACE_MS: ${COLLAB_HOST_GRACE_MS:-30000}
+  depends_on:
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  relay-1: *relay
+  relay-2: *relay
+  relay-3: *relay
+
+  balancer:
+    image: haproxy:2.9-alpine
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "${COLLAB_PORT:-3000}:3000"
+    depends_on: [relay-1, relay-2, relay-3]

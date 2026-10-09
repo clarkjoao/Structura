@@ -200,6 +200,7 @@ export default function WorkspacePage() {
           reserveEphemeralRoomId={showStartModal}
           userName={collabUserName}
           signalingUrl={collabServerUrl}
+          onHostSessionEnded={() => setCollabActive(false)}
         >
           <WorkspaceContent
             showFlows={showFlows}

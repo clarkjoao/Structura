@@ -8,8 +8,8 @@ single long-form reference they point to.
 
 Open source C4-model architecture diagramming SPA. No backend and no database:
 all state is client-side (localStorage and, optionally, a local folder via the
-File System Access API). A small optional Node server in `server/` provides
-collaboration relay and proxying only.
+File System Access API). A small optional Node server in `server/` provides the
+collaboration relay only.
 
 ## Tech stack
 
@@ -51,7 +51,7 @@ src/
 │   ├── elements/           # element registry — what canvas types exist (ElementDescriptor,
 │   │                       # CloudFamilyDefinition, families/, bootstrap). Single owner; see ADR-0010
 │   ├── cloud/              # derived view of the element families: icon resolvers + AWS/GCP/Azure catalogs
-│   ├── collaboration/      # WebSocket/Yjs collab, presence, patches
+│   ├── collaboration/      # live sessions: protocol client, store bridge, presence, locks
 │   ├── element-presets/    # user-saved presets (an existing type + pre-filled data)
 │   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
 │   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)

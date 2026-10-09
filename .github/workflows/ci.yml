@@ -68,6 +68,108 @@ jobs:
       - name: Run Vitest
         run: npm run test
 
+  server:
+    name: Collaboration relay
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # Every store test runs twice: against the in-memory store and against Redis.
+      - name: Test (memory + Redis)
+        run: npm test
+        env:
+          REDIS_URL: redis://localhost:6379
+
+      - name: Build
+        run: npm run build
+
+  collab-acceptance:
+    name: Collaboration acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      # Three relays on one Redis behind a round-robin balancer with no affinity.
+      - name: Start the multi-relay stack
+        run: docker compose -f deploy/compose/docker-compose.yml up --build -d
+
+      - name: Install relay dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Wait for the balancer
+        run: |
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:3000/health && exit 0
+            sleep 1
+          done
+          exit 1
+
+      # 500 participants in 35 rooms; relay kill; Redis restart; host drop.
+      - name: Load and resilience acceptance
+        working-directory: server
+        run: npm run loadtest
+        env:
+          DURATION_MS: "20000"
+
+      - name: Install app dependencies and browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # Real browsers: drops, a drag lock, a background host tab, reconnect chaos.
+      - name: Browser reconnect acceptance
+        run: |
+          npm run dev -- --port 8080 > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 90); do curl -fs http://localhost:8080/ > /dev/null && break; sleep 1; done
+          node scripts/collab-reconnect.mjs
+        env:
+          SCENARIO: all
+          CYCLES: "5"
+          BACKGROUND_MS: "20000"
+
+      - name: Relay logs
+        if: failure()
+        run: docker compose -f deploy/compose/docker-compose.yml logs --tail 200
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f deploy/compose/docker-compose.yml down
+
   build:
     name: Build
     runs-on: ubuntu-latest

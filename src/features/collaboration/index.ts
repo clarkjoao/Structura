@@ -10,13 +10,14 @@ export { CollabStartModal } from "./components/CollabStartModal";
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────────
 export { useCollabHighlight } from "./hooks/useCollabHighlight";
+export { useElementTextLock, useLockedBy, useNodeDragLocks } from "./hooks/useElementLocks";
 export { useCollabStore } from "./store/collab.store";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-export type { PeerState } from "./types";
+export type { PeerState, ElementLock } from "./types";
 
 // Internal — use relative imports within the feature:
 //   CollabJoinModal, CollabSessionClosedModal → ./components/
 //   CollabStatusIndicator → ./components/
-//   remoteLayoutUpdates → ./hooks/useCollabStoreSync
 //   CollabElementHighlight → ./hooks/useCollabHighlight
+//   the protocol client and store bridge → ./sync/

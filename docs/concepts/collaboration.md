@@ -1,54 +1,81 @@
 # Collaboration
 
-Real-time collaboration (`src/features/collaboration/` + `server/`) is
-**optional and additive**: Structura works fully offline, and turning
-collaboration on must never change what the app can do alone.
+Live sessions (`src/features/collaboration/` + `server/`) are **optional and additive**:
+Structura works fully offline, and turning collaboration on must never change what the app can do
+alone. The decision behind the shape is [ADR-0011](../adr/0011-collaboration-server-authority.md);
+the wire contract is [collab-protocol-v3.md](../collab-protocol-v3.md).
 
-## Architecture
+## Who owns the diagram
 
-- **CRDT sync via Yjs.** Diagram state replicates as a Yjs document;
-  concurrent edits merge without a central authority deciding winners.
-- **The server is a relay, not a source of truth.** `server/src/collab.ts`
-  forwards Yjs updates between peers in a room. It stores nothing durable —
-  consistent with the local-first stance ([persistence.md](persistence.md)).
-  The same optional server hosts the LLM proxy (`proxy.ts`); both are
-  conveniences, not dependencies.
-- **Sessions are rooms** (`CollabSession`: roomId, host flag, peers).
-  Presence (`PeerState`: cursor, active element) flows through Yjs awareness,
-  rendered by `CollabPeerPresence` and `usePeerOnNode`.
+- **Outside a session, the host's workspace.** A session starts by seeding a room from the host's
+  diagram.
+- **During a session, the room in the relay's store.** The relay orders every edit (gapless room
+  versions) and sends each accepted one to everyone, the sender included. Equal versions therefore
+  mean equal state.
+- **The host keeps the latest copy.** It applies every entry like any participant, so when the
+  session ends its local diagram already holds the result, persisted through the normal storage
+  port.
 
-## Why CRDT rather than OT or locking
+## Server
 
-- No backend to run OT transformation on — a relay is all we can assume.
-- Offline-first: a peer can edit disconnected and converge on reconnect.
-- Yjs is the battle-tested implementation; writing merge logic for a
-  diagram model by hand is a research project, not a feature.
+`server/src/collab/`:
 
-Trade-off accepted: CRDT convergence is *syntactic*. Two peers can produce a
-merged state that is structurally valid but semantically odd (e.g. both
-re-parent the same node). The model's repair utilities
-(`flow-repair`, parenting invariants) act as the semantic safety net after
-merges.
+- `relay.ts`: session handlers. A relay holds sockets and nothing it cannot lose.
+- `store/`: the `RoomStore` interface and its two implementations.
+  - `memory.ts`: single instance; also the executable reference.
+  - `redis.ts` + `lua/`: any number of relays share rooms. Each patch is one atomic script; a
+    per-room Stream carries order and resume; pub/sub carries presence.
+- `merge.ts`: the merge rules.
+  - field-level last-writer-wins;
+  - removal wins over an edit composed before it;
+  - fields guarded by a soft lock are writable only by its holder.
 
-## Scope of sync
+  `apply.lua` implements the same rules. `store/__fixtures__/merge.fixtures.ts` holds both stores
+  to them.
+- `protocol.ts`: messages and guards, imported by the browser through `@collab-protocol`.
 
-Synced: the active diagram's model state and presence.
-Not synced: undo history (local per peer — undo undoes *your* work),
-viewport (each peer pans freely), save status, LLM threads.
+## Client
 
-## Interaction with the store
+`src/features/collaboration/sync/`:
 
-Collaboration observes store changes and applies remote changes back through
-store mechanisms (patches in `collaboration/utils`), so history, selectors,
-and rendering treat remote edits like local ones. Keep it this way: any code
-path that writes state *around* the store breaks undo and persistence
-invariants.
+- **`CollabClient`**: the socket as a state machine (`connecting → seeding | joining → ready ⇄
+  reconnecting → closed`). "Ready" has exactly one entry: the room state arriving, as a catch-up
+  or a snapshot.
+- **`StoreBridge`**: connects one diagram in the store.
+  - Local edits are captured as field-level diffs and sent at most every 100 ms.
+  - Remote entries are applied as they arrive, never on animation frames, so a background tab
+    stays current.
+  - Remote entries are written through a store update that skips undo history and touches only
+    synchronised fields: never folder, viewport or timestamps.
+- **`rebase.ts`**: optimistic editing. Unconfirmed local patches sit on top of the confirmed
+  state and are re-applied after every entry, so your own in-flight edit never snaps back. A
+  patch the relay refuses (a lock, a removal) reverts.
+- **`CollabSession`**: wires those two to presence and status in the collaboration store.
 
-## Future considerations (tracked in vision §9)
+Undo stays local. A peer's entry is also applied to this diagram's undo checkpoints, so undo
+reverts only your own work.
 
-The planned workspace-level Model Index adds a second consistency domain:
-today rooms are per-diagram, but a model element rename touches many
-diagrams. The architecture-model spec must decide whether the model becomes
-its own Yjs document, or whether model edits stay host-authoritative while
-only diagrams use CRDT. Do not extend collaboration scope before that
-decision is recorded.
+## Session lifecycle
+
+- **Host leaves on purpose.** The session ends for everyone. Guests can import their copy.
+- **Host drops.** The room keeps working. Guests see "reconnecting" and can keep editing. After 30
+  s without the host, the session closes. A reload of the host tab resumes within that window,
+  through the `hostToken` in `sessionStorage`.
+- **Guest drops.** It resumes from its version when it can vouch for its state, otherwise it gets
+  the snapshot. Unconfirmed local edits are discarded.
+- **Storage loses a room.** Every client is told to reconnect. The host reseeds from its copy and
+  the guests rejoin.
+
+## Presence
+
+- **Cursors**: coalesced per relay every 50 ms; lossy under backpressure.
+- **Selection**: shown on the element.
+- **Soft locks**: dragging a node or editing its name or description takes a 3 s lock, renewed
+  while the gesture lasts. Peers see who holds it (a dashed ring with a lock badge), and the canvas
+  will not start a drag on a held node. Everything else is last-writer-wins per field.
+
+## Not synced
+
+Undo history, viewport, save status and LLM threads are not synced. Rooms are per diagram.
+Workspace-level data (folders, the service catalog, a future model index) is outside sessions, and
+extending them there needs its own decision.
