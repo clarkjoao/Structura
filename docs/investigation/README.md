@@ -19,6 +19,5 @@ measured, read in the code or hypothesized during a session, and the fix that fo
 
 Related logs elsewhere in `docs/`: [../epico-virtualizacao/](../epico-virtualizacao/) (canvas
 virtualization and the post-drag commit loop), [../epico-layout-visualization/](../epico-layout-visualization/)
-(layout quality and the viewer foundation), [../discovery/](../discovery/) (file-system
-persistence instability) and [../collab-entity-patches.md](../collab-entity-patches.md)
-(per-entity patches in the collaboration relay).
+(layout quality and the viewer foundation) and [../discovery/](../discovery/) (file-system
+persistence instability).

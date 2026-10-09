@@ -134,9 +134,11 @@ A storage warning appears when the browser quota is close to full. See
 
 ## Live sessions (experimental)
 
-Real-time editing through a self-hosted WebSocket relay (`server/`): shared cursors, presence,
-editing warnings, and room limits. The wire protocol is documented in
-[collab-websocket-protocol.md](collab-websocket-protocol.md).
+Real-time editing through a self-hosted relay (`server/`): up to 50 people per room, shared
+cursors, presence, soft locks while someone drags or retypes an element, and automatic reconnect.
+It runs single-instance out of the box, or as many pods on Kubernetes with Redis
+([deploy/k8s](../deploy/k8s/README.md)). See [concepts/collaboration.md](concepts/collaboration.md)
+and the wire protocol, [collab-protocol-v3.md](collab-protocol-v3.md).
 
 ## Services catalog
 

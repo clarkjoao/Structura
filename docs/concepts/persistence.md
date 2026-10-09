@@ -93,7 +93,7 @@ store:
 
 The design stance: **conflicts surface to the user** rather than resolving by
 timestamp heuristics. Crude but honest; real multi-writer convergence is
-collaboration's job (Yjs), not file sync's.
+collaboration's job (a relay-ordered live session), not file sync's.
 
 ## What persists where
 

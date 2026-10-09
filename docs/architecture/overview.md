@@ -52,7 +52,8 @@ subscribed selectors recompute → `useCanvasNodes` rebuilds React Flow nodes
 via the **node-type descriptor registry** → React Flow re-renders. A
 persistence subscription serializes the store through the active
 `IStoragePort` adapter (with schema version + migrations). Collaboration,
-when active, replicates store changes through Yjs via the relay server.
+when active, sends field-level patches to the relay, which orders them and fans them out
+(see [collaboration](../concepts/collaboration.md)).
 
 Details per stage: [rendering-pipeline](../concepts/rendering-pipeline.md),
 [state-management](../concepts/state-management.md),
