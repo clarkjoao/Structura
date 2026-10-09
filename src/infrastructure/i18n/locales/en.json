@@ -472,7 +472,6 @@
   },
   "canvasToolbar": {
     "drillUp": "Level up",
-    "patterns": "Patterns",
     "panel": "Panel",
     "note": "Note",
     "awsServices": "AWS services",
@@ -484,8 +483,6 @@
     "levelContainer": "Level 2",
     "levelComponent": "Level 3",
     "levelDeployment": "Level 4",
-    "collapse": "Minimize toolbar",
-    "expand": "Expand toolbar",
     "enterFocusMode": "Focus mode",
     "exitFocusMode": "Exit focus",
     "moreMenuAria": "More options",
@@ -498,7 +495,9 @@
     "scrollBehaviorZoom": "Zoom in and out",
     "scrollBehaviorZoomHint": "Scrolling zooms on the pointer.",
     "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways.",
-    "autoHideBottomToolbar": "Automatically hide the bottom toolbar"
+    "autoHideBottomToolbar": "Automatically hide the bottom toolbar",
+    "renameDiagram": "Diagram name",
+    "renameDiagramHint": "Double-click to rename"
   },
   "diagram": {
     "deleteConfirmTitle": "Delete diagram?",
@@ -1191,9 +1190,7 @@
     }
   },
   "patterns": {
-    "searchPlaceholder": "Search patterns by name, description or components...",
     "noneFound": "No patterns found",
-    "subtitle": "Insert a pre-configured set of elements on the canvas",
     "modalTitle": "Architecture patterns",
     "categoryAll": "All",
     "category": {
@@ -2566,7 +2563,8 @@
       "gcp": "GCP",
       "azure": "Azure",
       "k8s": "Kubernetes",
-      "oss": "Open source"
+      "oss": "Open source",
+      "patterns": "Patterns"
     },
     "concepts": {
       "queue": "queue|message queue|messaging|broker",
@@ -2596,7 +2594,8 @@
       "catalogAria": "Open the element catalog",
       "withShortcut": "{{label}} ({{shortcut}})",
       "autoHide": "Automatically hide the toolbar",
-      "keepVisible": "Keep the toolbar visible"
+      "keepVisible": "Keep the toolbar visible",
+      "plugins": "Plugins"
     },
     "title": "Element catalog",
     "searchPlaceholder": "Search {{count}} elements…",

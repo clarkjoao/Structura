@@ -472,7 +472,6 @@
   },
   "canvasToolbar": {
     "drillUp": "Nível acima",
-    "patterns": "Patterns",
     "panel": "Painel",
     "note": "Nota",
     "awsServices": "AWS Services",
@@ -484,8 +483,6 @@
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3",
     "levelDeployment": "Nível 4",
-    "collapse": "Minimizar barra",
-    "expand": "Expandir barra",
     "enterFocusMode": "Modo foco",
     "exitFocusMode": "Sair do foco",
     "moreMenuAria": "Mais opções",
@@ -498,7 +495,9 @@
     "scrollBehaviorZoom": "Aproximar e afastar",
     "scrollBehaviorZoomHint": "A rolagem dá zoom no ponteiro.",
     "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal.",
-    "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente"
+    "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente",
+    "renameDiagram": "Nome do diagrama",
+    "renameDiagramHint": "Clique duas vezes para renomear"
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",
@@ -1191,9 +1190,7 @@
     }
   },
   "patterns": {
-    "searchPlaceholder": "Buscar patterns por nome, descrição ou componentes...",
     "noneFound": "Nenhum pattern encontrado",
-    "subtitle": "Insira um conjunto pré-configurado de elementos no canvas",
     "modalTitle": "Architecture Patterns",
     "categoryAll": "Todos",
     "category": {
@@ -2566,7 +2563,8 @@
       "gcp": "GCP",
       "azure": "Azure",
       "k8s": "Kubernetes",
-      "oss": "Open source"
+      "oss": "Open source",
+      "patterns": "Patterns"
     },
     "concepts": {
       "queue": "fila|filas|mensageria|mensagens|broker",
@@ -2596,7 +2594,8 @@
       "catalogAria": "Abrir o catálogo de elementos",
       "withShortcut": "{{label}} ({{shortcut}})",
       "autoHide": "Ocultar a barra automaticamente",
-      "keepVisible": "Manter a barra sempre visível"
+      "keepVisible": "Manter a barra sempre visível",
+      "plugins": "Plugins"
     },
     "title": "Catálogo de elementos",
     "searchPlaceholder": "Buscar em {{count}} elementos…",

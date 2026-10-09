@@ -17,7 +17,7 @@ alwaysApply: false
   that still touch `localStorage` directly are a known, tracked exception
   pending a sync-port decision (see `docs/audit/AUDIT.md`, findings 2/3/10):
   `collab-preferences`, `recent-diagrams`, `useLastEdgeStyle`,
-  `sidebarFolderStorage`, `CanvasToolbar`. Do not add new direct-`localStorage` call sites — route
+  `sidebarFolderStorage`. Do not add new direct-`localStorage` call sites — route
   through the port.
 
 ```ts

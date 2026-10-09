@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import {
@@ -10,6 +10,9 @@ import {
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { cn } from "@/lib/utils";
 import { useCanvasPreferencesStore } from "../preferences";
+import { PatternBrowser, usePatternMatchCount, type PatternBrowserHandle } from "../patterns";
+import type { PatternTemplate } from "@/lib/catalogs/patterns";
+import type { UserTemplate } from "@/features/diagram";
 import { CatalogEntryIcon } from "./CatalogEntryIcon";
 import { CatalogPreview } from "./CatalogPreview";
 import { CatalogResultRow } from "./CatalogResultRow";
@@ -32,7 +35,12 @@ import { useCanvasCatalogIndex } from "./useCanvasCatalogIndex";
 export interface ElementCatalogProps {
   /** Insert at the viewport center. `keepOpen` is ⇧↵. */
   onInsert: (entry: CatalogEntry, keepOpen: boolean) => void;
+  /** Insert a pattern or saved template; they live under their own chip. */
+  onInsertPattern: (template: PatternTemplate | UserTemplate) => void;
 }
+
+/** The chip for patterns. Not a catalog group: patterns are browsed by `PatternBrowser`. */
+const PATTERNS_CHIP = "patterns";
 
 const SECTION_LABEL_CLASS =
   "font-mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground";
@@ -53,7 +61,7 @@ function keepInputFocus(event: React.MouseEvent) {
  * The element catalog: browse by group or search everything, keyboard first.
  * Focus stays in the search field; the list follows `aria-activedescendant`.
  */
-export function ElementCatalog({ onInsert }: ElementCatalogProps) {
+export function ElementCatalog({ onInsert, onInsertPattern }: ElementCatalogProps) {
   const { t } = useTranslation();
   const listId = useId();
   const { index, byId } = useCanvasCatalogIndex();
@@ -62,6 +70,11 @@ export function ElementCatalog({ onInsert }: ElementCatalogProps) {
   const [activeGroup, setActiveGroup] = useState<string>(ALL_GROUPS);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const chipsRef = useRef<HTMLDivElement>(null);
+  const patternsRef = useRef<PatternBrowserHandle>(null);
+  const [patternActiveId, setPatternActiveId] = useState<string | null>(null);
+  const onPatternActiveIdChange = useCallback((id: string | null) => setPatternActiveId(id), []);
+  const patternCount = usePatternMatchCount(query);
+  const showingPatterns = activeGroup === PATTERNS_CHIP;
   const inputRef = useRef<HTMLInputElement>(null);
 
   const counts = useMemo(() => catalogGroupCounts(index), [index]);
@@ -100,7 +113,7 @@ export function ElementCatalog({ onInsert }: ElementCatalogProps) {
     return {
       all: result ? result.hits.length : index.entries.length,
       groups,
-      order: [ALL_GROUPS, ...groups.map(({ group }) => group.id)],
+      order: [ALL_GROUPS, ...groups.map(({ group }) => group.id), PATTERNS_CHIP],
     };
   }, [index, counts, result, activeGroup]);
 
@@ -127,6 +140,10 @@ export function ElementCatalog({ onInsert }: ElementCatalogProps) {
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (showingPatterns && !keyIs(event, KEY.TAB)) {
+      if (patternsRef.current?.handleKey(event)) event.preventDefault();
+      return;
+    }
     for (const [key, move] of ARROWS) {
       if (!keyIs(event, key)) continue;
       // In a result list, ← and → stay with the text caret.
@@ -306,7 +323,13 @@ export function ElementCatalog({ onInsert }: ElementCatalogProps) {
             aria-expanded
             aria-controls={listId}
             aria-autocomplete="list"
-            aria-activedescendant={activeKey ? `${listId}-${activeKey}` : undefined}
+            aria-activedescendant={
+              showingPatterns
+                ? (patternActiveId ?? undefined)
+                : activeKey
+                  ? `${listId}-${activeKey}`
+                  : undefined
+            }
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
@@ -326,6 +349,7 @@ export function ElementCatalog({ onInsert }: ElementCatalogProps) {
         {[
           { id: ALL_GROUPS, label: t("elementCatalog.all"), count: chips.all },
           ...chips.groups.map(({ group, count }) => ({ ...group, count })),
+          { id: PATTERNS_CHIP, label: t("elementCatalog.groups.patterns"), count: patternCount },
         ].map((chip) => {
           const pressed = chip.id === activeGroup;
           return (
@@ -357,7 +381,15 @@ export function ElementCatalog({ onInsert }: ElementCatalogProps) {
           aria-label={t("elementCatalog.title")}
           className="min-w-0 flex-1 overflow-y-auto p-3"
         >
-          {sections.length === 0 && trimmed ? (
+          {showingPatterns ? (
+            <PatternBrowser
+              ref={patternsRef}
+              query={query}
+              idPrefix={`${listId}-pattern`}
+              onActiveIdChange={onPatternActiveIdChange}
+              onInsert={onInsertPattern}
+            />
+          ) : sections.length === 0 && trimmed ? (
             <div className="flex h-full flex-col items-center justify-center gap-1 px-6 text-center">
               <p className="text-sm text-foreground">
                 {t("elementCatalog.noResultsFor", { query: trimmed })}
@@ -368,7 +400,7 @@ export function ElementCatalog({ onInsert }: ElementCatalogProps) {
             sections.map(renderSection)
           )}
         </div>
-        {result && active && (
+        {result && active && !showingPatterns && (
           <CatalogPreview
             entry={active.entry}
             groupLabel={index.groups.find((g) => g.id === active.entry.groupId)?.label}

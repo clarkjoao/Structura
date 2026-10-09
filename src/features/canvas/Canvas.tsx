@@ -3,7 +3,6 @@ import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { ConnectedVersionDrawer } from "./toolbar/VersionDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
@@ -166,7 +165,6 @@ const Canvas = (props: CanvasProps = {}) => {
     isPanelOpen,
     selectedNodes,
     showElementPanel,
-    onDrillUp,
     isCompareMode,
     allDiagramTags,
     handleAutoLayout,
@@ -197,6 +195,15 @@ const Canvas = (props: CanvasProps = {}) => {
     (nodeId: string) => {
       setSelectedNodeId(nodeId);
       setSelectedNodeIds(new Set([nodeId]));
+      setSelectedEdgeId(null);
+    },
+    [setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId],
+  );
+  const selectInsertedNodes = useCallback(
+    (nodeIds: string[]) => {
+      if (nodeIds.length === 0) return;
+      setSelectedNodeId(nodeIds[0]);
+      setSelectedNodeIds(new Set(nodeIds));
       setSelectedEdgeId(null);
     },
     [setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId],
@@ -332,29 +339,26 @@ const Canvas = (props: CanvasProps = {}) => {
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
           {showVersions && <ConnectedVersionDrawer onClose={() => setShowVersions(false)} />}
-          <CanvasToolbar
-            onDrillUp={onDrillUp}
-            isPanelOpen={isPanelOpen}
-            onClearSelection={visualState.clearCanvasSelection}
-            setSelectedNodeId={visualState.setSelectedNodeId}
-            setSelectedNodeIds={visualState.setSelectedNodeIds}
-            setSelectedEdgeId={visualState.setSelectedEdgeId}
-            onOpenVersions={() => setShowVersions(true)}
-            isFlowActive={isFlowActive}
-            allTags={allDiagramTags}
-            visibleTags={visualState.visibleTags}
-            onToggleTag={visualState.toggleTag}
-            onShowAllTags={visualState.showAllTags}
-            onShowNoTags={visualState.showNoTags}
-            focusMode={props.focusMode}
-            onToggleFocusMode={props.onToggleFocusMode}
-          />
-          {interactionMode.canEditCanvas &&
-            !isFlowActive &&
-            !interactionMode.isPlaying &&
-            !isCompareMode && (
-              <CanvasBottomToolbar isPanelOpen={isPanelOpen} onInserted={selectInsertedNode} />
-            )}
+          {!interactionMode.isPlaying && (
+            <CanvasBottomToolbar
+              diagram={diagram}
+              isPanelOpen={isPanelOpen}
+              canInsert={interactionMode.canEditCanvas && !isFlowActive && !isCompareMode}
+              onInserted={selectInsertedNodes}
+              versions={{
+                locked: !interactionMode.canEditVersions || isFlowActive,
+                onOpen: () => setShowVersions(true),
+              }}
+              tags={{
+                allTags: allDiagramTags,
+                visibleTags: visualState.visibleTags,
+                locked: !interactionMode.canEditVersions || isFlowActive,
+                onToggle: visualState.toggleTag,
+                onShowAll: visualState.showAllTags,
+                onShowNoTags: visualState.showNoTags,
+              }}
+            />
+          )}
           {showSearch && diagram && (
             <CanvasSearch
               onClose={() => setShowSearch(false)}

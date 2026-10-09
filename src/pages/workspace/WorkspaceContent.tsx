@@ -36,7 +36,7 @@ import {
 } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
-import { EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
+import { DiagramTitle, EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
 import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
 import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
@@ -261,7 +261,13 @@ export function WorkspaceContent({
                 <ArrowLeft className="h-4 w-4" />
               </Link>
               {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
-              <span className="font-medium">{diagram?.name}</span>
+              {diagram && (
+                <DiagramTitle
+                  diagram={diagram}
+                  editLocked={canvasInteractionLocked}
+                  onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
+                />
+              )}
               {isRecording && (
                 <span
                   className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
@@ -415,7 +421,6 @@ export function WorkspaceContent({
               <Canvas
                 onOpenDiagram={handleOpenDiagram}
                 onDrillDownToDiagram={handleDrillDownToDiagram}
-                onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
                 isViewingCoverage={isViewingCoverage}
                 isFlowPanelOpen={showFlows}
                 diagramSidebarOpen={diagramSidebarOpen}

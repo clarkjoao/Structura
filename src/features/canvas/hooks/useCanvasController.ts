@@ -173,7 +173,6 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     selectedNodes,
     selectedCount,
     showElementPanel,
-    onDrillUp: canvasProps.onDrillUp,
     isCompareMode: compareState.isCompareMode,
     allDiagramTags,
     handleAutoLayout,
