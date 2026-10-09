@@ -7,6 +7,7 @@ import { getPattern } from "@/lib/catalogs/patterns";
 import { resolvePattern } from "@/features/elements/patterns";
 import type { DiagramPatchAction } from "./types";
 import { listElementFamilies, searchElements } from "./element-catalog-query";
+import { listPatterns } from "./pattern-catalog-query";
 import { validateAddNodeAgainstRegistry } from "./add-node-validation";
 
 export interface AppliedPatchResult {
@@ -16,7 +17,12 @@ export interface AppliedPatchResult {
   skipReason?: string;
   toolResult?: {
     type:
-      "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS" | "LIST_ELEMENT_FAMILIES" | "SEARCH_ELEMENTS";
+      | "INSERT_PATTERN"
+      | "AUTO_LAYOUT"
+      | "GET_TAGS"
+      | "LIST_ELEMENT_FAMILIES"
+      | "SEARCH_ELEMENTS"
+      | "LIST_PATTERNS";
     data?: unknown;
   };
 }
@@ -190,6 +196,12 @@ export function applyDiagramPatchAction(
         },
       };
     }
+    case "LIST_PATTERNS":
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        toolResult: { type: "LIST_PATTERNS", data: listPatterns() },
+      };
     case "SEARCH_ELEMENTS": {
       return {
         addedNodeId: null,
@@ -222,7 +234,11 @@ export function runCatalogReadActions(actions: DiagramPatchAction[]): {
   const catalogToolResults: NonNullable<AppliedPatchResult["toolResult"]>[] = [];
 
   for (const action of actions) {
-    if (action.type !== "LIST_ELEMENT_FAMILIES" && action.type !== "SEARCH_ELEMENTS") {
+    if (
+      action.type !== "LIST_ELEMENT_FAMILIES" &&
+      action.type !== "SEARCH_ELEMENTS" &&
+      action.type !== "LIST_PATTERNS"
+    ) {
       continue;
     }
     const applied = applyDiagramPatchAction(action);

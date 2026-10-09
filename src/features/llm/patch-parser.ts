@@ -194,6 +194,8 @@ function mapToolCallToAction(toolCall: LLMToolCall): DiagramPatchAction | null {
         type: "GET_TAGS",
         payload: {},
       } as DiagramPatchAction;
+    case "list_patterns":
+      return { type: "LIST_PATTERNS", payload: {} };
     case "list_element_families":
       return {
         type: "LIST_ELEMENT_FAMILIES",

@@ -31,7 +31,7 @@ export const ALL_TOOLS: LLMTool[] = [
   {
     name: "list_patterns",
     description:
-      "Returns all available architectural patterns that can be inserted into the diagram. Use this to help users choose which pattern to add.",
+      "Returns the architectural patterns that can be inserted (id, name, category, description, infrastructure roles) and the providers insert_pattern accepts. Use it to pick a pattern before calling insert_pattern.",
     parametersSchema: { type: "object", properties: {}, required: [] },
   },
   {
@@ -192,7 +192,11 @@ export const WRITE_TOOL_NAMES: string[] = [
 ];
 
 /** Catalog discovery tools — executable reads, never confirmation-gated writes. */
-export const CATALOG_READ_TOOL_NAMES: string[] = ["list_element_families", "search_elements"];
+export const CATALOG_READ_TOOL_NAMES: string[] = [
+  "list_element_families",
+  "search_elements",
+  "list_patterns",
+];
 
 export function isWriteTool(toolName: string): boolean {
   return WRITE_TOOL_NAMES.includes(toolName);

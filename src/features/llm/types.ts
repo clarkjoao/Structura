@@ -93,6 +93,7 @@ export type DiagramPatchAction =
   | { type: "AUTO_LAYOUT"; payload: Record<string, never> }
   | { type: "GET_TAGS"; payload: Record<string, never> }
   | { type: "LIST_ELEMENT_FAMILIES"; payload: Record<string, never> }
+  | { type: "LIST_PATTERNS"; payload: Record<string, never> }
   | {
       type: "SEARCH_ELEMENTS";
       payload: {

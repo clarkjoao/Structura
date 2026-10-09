@@ -235,7 +235,7 @@ export function buildPatternCatalogCompact(): string {
     "",
     "### Architectural Patterns",
     "",
-    "Use insert_pattern tool with the pattern ID.",
+    'Use insert_pattern with the pattern ID (list_patterns describes each one). Pass provider "aws", "gcp" or "azure" to draw its infrastructure roles as that cloud\'s services; omit it for neutral.',
     "",
   ];
 
