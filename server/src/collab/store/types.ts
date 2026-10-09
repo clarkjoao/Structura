@@ -60,6 +60,8 @@ export type Unsubscribe = () => void;
 
 export interface RoomStore {
   readonly kind: "memory" | "redis";
+  /** Whether the store can serve requests right now (health checks gate traffic on it). */
+  isAvailable(): boolean;
 
   /** Create a room in `seeding` state. `exists` when the id is taken. */
   createRoom(input: {

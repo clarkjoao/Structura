@@ -52,6 +52,10 @@ export class MemoryRoomStore implements RoomStore {
 
   constructor(private readonly now: () => number = Date.now) {}
 
+  isAvailable(): boolean {
+    return true;
+  }
+
   async createRoom(input: {
     roomId: string;
     hostTokenHash: string;

@@ -67,6 +67,7 @@ async function redisCommit(): Promise<boolean> {
   }
   const admin = new Redis(REDIS_URL);
   const store = new RedisRoomStore(REDIS_URL, { namespace: "measure:" });
+  await store.ready();
   const roomId = randomUUID();
   const chunks = chunkString(JSON.stringify(makeDiagram(NODES)));
   await store.createRoom({

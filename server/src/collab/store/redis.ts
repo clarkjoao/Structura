@@ -207,7 +207,13 @@ export class RedisRoomStore implements RoomStore {
     this.namespace = options.namespace ?? "";
     this.now = options.now ?? Date.now;
     this.hostLeaseKey = `${this.namespace}collab:hostlease`;
-    this.cmd = new Redis(url, { maxRetriesPerRequest: null, enableAutoPipelining: true });
+    // Fail fast while Redis is unreachable instead of queueing: an edit applied seconds later, to
+    // a room that may have been recreated meanwhile, is worse than an edit refused now.
+    this.cmd = new Redis(url, {
+      enableAutoPipelining: true,
+      enableOfflineQueue: false,
+      maxRetriesPerRequest: 1,
+    });
     this.reader = new Redis(url, { maxRetriesPerRequest: null });
     // No ready check: on a reconnect it would send INFO on a connection still in subscriber mode.
     this.sub = new Redis(url, { maxRetriesPerRequest: null, enableReadyCheck: false });
@@ -238,6 +244,22 @@ export class RedisRoomStore implements RoomStore {
     if (now - this.lastErrorLog < 5_000) return;
     this.lastErrorLog = now;
     console.warn(`[collab] redis ${role} connection: ${err.message}`);
+  }
+
+  isAvailable(): boolean {
+    return this.cmd.status === "ready";
+  }
+
+  /** Resolves once the command connection is up (the store refuses requests before that). */
+  async ready(timeoutMs = 10_000): Promise<void> {
+    if (this.cmd.status === "ready") return;
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("redis: not ready")), timeoutMs);
+      this.cmd.once("ready", () => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
   }
 
   /** Run a script by hash, loading it on first use or after a Redis restart. */

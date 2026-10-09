@@ -20,7 +20,7 @@ docker build -t structura-collab-relay:latest "$root/server"
 kind load docker-image structura-collab-relay:latest --name "$cluster"
 
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.3/deploy/static/provider/kind/deploy.yaml
-kubectl -n ingress-nginx wait --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=180s
+kubectl -n ingress-nginx rollout status deployment/ingress-nginx-controller --timeout=180s
 
 kubectl apply -k "$root/deploy/k8s"
 kubectl -n "$ns" rollout status statefulset/collab-redis --timeout=120s

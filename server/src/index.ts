@@ -15,7 +15,7 @@ const store: RoomStore = REDIS_URL
   ? new RedisRoomStore(REDIS_URL, { namespace: REDIS_NAMESPACE })
   : new MemoryRoomStore();
 
-const app = createApp(() => ({ collab: { store: store.kind } }));
+const app = createApp(() => ({ ready: store.isAvailable(), collab: { store: store.kind } }));
 
 const httpServer = createServer(app);
 const collab = attachCollabServer(httpServer, {

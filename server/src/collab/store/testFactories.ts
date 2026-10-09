@@ -22,7 +22,11 @@ export function storeFactories(): StoreFactory[] {
   if (url) {
     factories.push({
       name: "redis",
-      make: async () => new RedisRoomStore(url, { namespace: `test-${process.pid}:` }),
+      make: async () => {
+        const store = new RedisRoomStore(url, { namespace: `test-${process.pid}:` });
+        await store.ready();
+        return store;
+      },
       // Stream fan-out polls with a short block; give it a few rounds.
       settle: () => new Promise((resolve) => setTimeout(resolve, 300)),
     });

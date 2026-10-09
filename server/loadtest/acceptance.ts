@@ -12,7 +12,8 @@
  *   redis-restart the same load, and Redis restarts with no persistence
  *   host-drop     a host vanishes: its room keeps working, then closes after the grace period
  *
- * Asserted: fan-out p95 < 150 ms; zero participants whose state differs from a fresh joiner's;
+ * Asserted: fan-out p95 < 150 ms in steady state (outage windows are measured as recovery time
+ * instead); zero participants whose state differs from a fresh joiner's;
  * everyone editing again within 5 s of a relay kill; rooms back after a Redis restart.
  * Exits non-zero on any miss and prints the measurements.
  *
@@ -301,6 +302,8 @@ for (const scenario of SCENARIOS) {
       await sleep(DURATION_MS / 3);
       const before = new Map(rooms.flatMap((r) => r.members).map((m) => [m, m.outagesMs.length]));
       console.log("  killing a relay");
+      // Fan-out latency is a steady-state target; the outage is measured as recovery time.
+      measuring = false;
       killRelay();
       await sleep(8000);
       const outages = [...before].flatMap(([m, n]) => m.outagesMs.slice(n));
@@ -308,6 +311,7 @@ for (const scenario of SCENARIOS) {
       console.log(`  ${outages.length} participants reconnected; worst outage ${worst} ms`);
       check(outages.length > 0, "kill-relay: the relay's participants were actually cut");
       check(worst <= 5000, "kill-relay: everyone editing again within 5 s");
+      measuring = true;
       reviveRelay();
     });
   }
@@ -315,6 +319,8 @@ for (const scenario of SCENARIOS) {
     await loadScenario("redis-restart", async (rooms) => {
       await sleep(DURATION_MS / 3);
       console.log("  restarting redis (no persistence)");
+      measuring = false;
+      const restartedAt = Date.now();
       restartRedis();
       const deadline = Date.now() + 20_000;
       const everyone = rooms.flatMap((r) => r.members);
