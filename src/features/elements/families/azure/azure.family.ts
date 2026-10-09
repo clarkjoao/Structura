@@ -19,11 +19,37 @@ import {
 import { azureIconResolver } from "@/features/cloud/providers/azure/azure.icon-resolver";
 import i18n from "@/infrastructure/i18n";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
+import type { CatalogConceptId } from "../../search/concepts";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
 
 function accentFor(categoryId: AzureCategoryId) {
   return { kind: "token" as const, cssVar: `--${categoryId}` };
 }
+
+/** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
+const AZURE_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
+  servicebus: ["queue"],
+  storagequeue: ["queue"],
+  eventgrid: ["events"],
+  eventhubs: ["events"],
+  sqldatabase: ["database"],
+  cosmosdb: ["database"],
+  storagetable: ["database"],
+  datawarehouse: ["database"],
+  rediscache: ["cache"],
+  storageblob: ["object-storage"],
+  apimanagement: ["api-gateway"],
+  loadbalancer: ["load-balancer"],
+  appgateway: ["load-balancer"],
+  cdn: ["cdn"],
+  dns: ["dns"],
+  activedirectory: ["identity"],
+  mfa: ["identity"],
+  keyvault: ["secrets"],
+  functions: ["serverless"],
+  monitor: ["monitoring"],
+  appinsights: ["monitoring"],
+};
 
 /**
  * Microsoft Azure as a `CloudFamilyDefinition`.
@@ -57,6 +83,9 @@ export const azureFamily: CloudFamilyDefinition = {
       name: service.name,
       iconName: service.iconName,
       categoryId: category.id,
+      ...(AZURE_SERVICE_CONCEPTS[service.id]
+        ? { concepts: AZURE_SERVICE_CONCEPTS[service.id] }
+        : {}),
     })),
   ),
 

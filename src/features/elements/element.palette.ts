@@ -3,6 +3,7 @@ import { Shapes } from "lucide-react";
 import i18n from "@/infrastructure/i18n";
 import { offeredElements } from "./element.registry";
 import type { ElementCreateOptions, ElementDescriptor, ElementTypeId } from "./element.types";
+import type { CatalogConceptId } from "./search/concepts";
 
 /**
  * Palette entries derived from the registry.
@@ -19,6 +20,8 @@ export interface ElementPaletteEntry {
   icon: LucideIcon;
   /** Extra words the search matches on, beyond the label. */
   searchKeys: string[];
+  /** What the entry is, for the catalog search; see `CATALOG_CONCEPTS`. */
+  concepts: readonly CatalogConceptId[];
   categoryId: string;
   spotlight?: number;
   /** What to create with when this entry is picked. */
@@ -52,6 +55,7 @@ function entriesFor(element: ElementDescriptor): ElementPaletteEntry[] {
       label: i18n.t(variant.labelKey),
       icon: iconOf(variant.icon),
       searchKeys: [...(variant.searchKeys ?? palette.searchKeys)],
+      concepts: variant.concepts ?? palette.concepts ?? [],
       categoryId: palette.categoryId,
       spotlight: palette.spotlight,
       createOptions: variant.createOptions,
@@ -70,6 +74,7 @@ function entriesFor(element: ElementDescriptor): ElementPaletteEntry[] {
       label: i18n.t(element.labelKey),
       icon: iconOf(palette.icon),
       searchKeys: [...palette.searchKeys],
+      concepts: palette.concepts ?? [],
       categoryId: palette.categoryId,
       spotlight: palette.spotlight,
       createOptions: {},

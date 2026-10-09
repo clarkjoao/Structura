@@ -5,7 +5,7 @@ import { buildComponentTypeCatalog, isValidNodeType } from "@/features/llm/compo
 import { paletteEntriesForCategory } from "@/features/elements/element.palette";
 import { getElement } from "@/features/elements/element.registry";
 import { canContain } from "@/features/elements/containment";
-import { buildCategoryNavItems } from "@/features/canvas/toolbar/element-picker/buildCategoryNav";
+import { registryCatalogEntries } from "@/features/elements/search";
 import { buildFlowHighlight, flowPlaybackOpacity } from "@/features/canvas/flow/flowState";
 import { compactContainerIdsOf, resolveVisibleTarget } from "@/features/canvas/flow/visibleTarget";
 import { projectReadDiagram } from "@/features/canvas/core/projectReadDiagram";
@@ -14,22 +14,14 @@ import { deployElements } from "./deploy.family";
 const IDS = deployElements.map((element) => element.id);
 
 describe("the deployment family", () => {
-  it("is registered, reaches the LLM catalog and has a picker tab", () => {
+  it("is registered, reaches the LLM catalog and has a catalog group", () => {
     const catalog = buildComponentTypeCatalog();
     for (const id of IDS) {
       expect(getElement(id)?.family, id).toBe("deploy");
       expect(isValidNodeType(id), id).toBe(true);
       expect(catalog, id).toContain(`nodeType: "${id}"`);
     }
-    const tabs = buildCategoryNavItems((key) => key, {
-      all: 0,
-      c4: 0,
-      canvas: 0,
-      registry: 0,
-      nodeTemplates: 0,
-      flowchart: 0,
-      byFamily: {},
-    }).map((item) => item.id);
+    const tabs = registryCatalogEntries().groups.map((item) => item.id);
     expect(tabs).toContain("deploy");
     expect(paletteEntriesForCategory("deploy").length).toBe(IDS.length);
   });

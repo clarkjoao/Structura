@@ -38,6 +38,7 @@ export { useFlowModePlayback } from "./flow/useFlowModePlayback";
 export { useFrameReadStep } from "./flow/reading/useFrameReadStep";
 export { useFlowReadingKeys } from "./flow/reading/useFlowReadingKeys";
 export { EmbedModal } from "./components/EmbedModal";
+export { DiagramTitle } from "./toolbar/components/DiagramTitle";
 export { useInteractionMode } from "./hooks/useInteractionMode";
 export type { InteractionMode } from "./hooks/useInteractionMode";
 export { AnalysisPanel, useLLMChat } from "./chat";

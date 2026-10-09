@@ -32,6 +32,7 @@ export interface AutoRefAssignment {
 import type { FlowCursor } from "../utils/flow-edit";
 import type { MoveStepTarget } from "../utils/flow-move";
 import type { FlowStoreResult, RecordedStepContent } from "./slices/flows.slice";
+import type { NewConnectedComponent, NewConnectedEdge } from "./slices/components.slice";
 import type { EdgeStyle } from "../model/connection.types";
 import type { ClipboardEntry } from "./store.types";
 
@@ -66,6 +67,12 @@ export interface AppActions {
     /** Anything else the element's descriptor reads at creation (a k8s container's role, say). */
     createOptions?: import("@/features/elements/element.types").ElementCreateOptions,
   ) => Component;
+  /** A new top-level component and an edge to it from `sourceId`, as one undo step. */
+  addComponentConnectedFrom: (
+    sourceId: string,
+    request: NewConnectedComponent,
+    edge: NewConnectedEdge,
+  ) => { component: Component; connection: Connection | null };
   /** A new reference to an element, at a position in a parent; turns the original to ref mode. */
   addSharedRef: (
     elementId: string,

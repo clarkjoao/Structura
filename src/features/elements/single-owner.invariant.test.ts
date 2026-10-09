@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { NODE_TYPE_REGISTRY } from "@/features/canvas/nodes/node-types/registry";
 import { buildComponentForType } from "@/features/diagram/store/slices/components.slice";
 import { sanitizeComponentType } from "@/features/diagram";
-import { buildCanvasPickerOptions } from "@/features/canvas/toolbar/element-picker/buildPickerOptions";
 import { isValidNodeType } from "@/features/llm/component-catalog";
 import {
   allElements,
@@ -93,11 +92,6 @@ describe.each(registeredIds)("%s has a single owner", (type) => {
     );
 
     expect(built.component).toEqual(fromDescriptor);
-  });
-
-  it("is not listed by the legacy canvas palette", () => {
-    const legacyOptions = buildCanvasPickerOptions();
-    expect(legacyOptions.map((option) => option.type)).not.toContain(type);
   });
 
   it("is still accepted by the type sanitizer", () => {

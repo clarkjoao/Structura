@@ -12,7 +12,7 @@ import {
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import { sanitizeComponentType } from "@/features/diagram/model/sanitize-component-type";
 import { paletteEntriesForCategory } from "./element.palette";
-import { buildCategoryNavItems } from "@/features/canvas/toolbar/element-picker/buildCategoryNav";
+import { registryCatalogEntries } from "@/features/elements/search";
 import { listElementFamilies, searchElements } from "@/features/llm/element-catalog-query";
 import { isValidNodeType } from "@/features/llm/component-catalog";
 import type { Component } from "@/features/diagram/model/component.types";
@@ -126,20 +126,12 @@ describe("a non-cloud family reaches every surface", () => {
     expect(isValidNodeType(TEST_ELEMENT_ID)).toBe(true);
   });
 
-  it("gets its own palette tab in the element picker", () => {
-    const items = buildCategoryNavItems((key) => key, {
-      all: 0,
-      c4: 0,
-      canvas: 0,
-      flowchart: 0,
-      byFamily: {},
-      registry: 0,
-      nodeTemplates: 0,
-    });
+  it("gets its own group in the element catalog", () => {
+    const items = registryCatalogEntries().groups;
 
     expect(
       items.some((item) => item.id === TEST_FAMILY_ID),
-      "the picker grew no tab for the family",
+      "the catalog grew no group for the family",
     ).toBe(true);
   });
 

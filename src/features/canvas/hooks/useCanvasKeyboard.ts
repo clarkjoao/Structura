@@ -81,6 +81,8 @@ interface UseCanvasKeyboardParams {
   isCommandPaletteOpen?: boolean;
   onToggleDiagramSidebar?: () => void;
   onOpenCommandPalette?: () => void;
+  onOpenCatalog?: () => void;
+  onInsertTool?: (key: string) => boolean;
   onOpenQuickInsert?: (params: {
     screenPos: { x: number; y: number };
     flowPos: { x: number; y: number };
@@ -155,6 +157,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     onOpenSearch,
     onToggleDiagramSidebar,
     onOpenCommandPalette,
+    onOpenCatalog,
+    onInsertTool,
     onOpenQuickInsert,
     onAutoLayout,
     forceSaveToFolder,
@@ -302,6 +306,8 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
       lastPointerScreenRef,
       onOpenSearch,
       onOpenCommandPalette,
+      onOpenCatalog,
+      onInsertTool,
       onToggleDiagramSidebar,
       onOpenQuickInsert,
       addComponent,

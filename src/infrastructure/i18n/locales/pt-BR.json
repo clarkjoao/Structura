@@ -472,8 +472,6 @@
   },
   "canvasToolbar": {
     "drillUp": "Nível acima",
-    "patterns": "Patterns",
-    "addElement": "Adicionar Elemento",
     "panel": "Painel",
     "note": "Nota",
     "awsServices": "AWS Services",
@@ -485,8 +483,6 @@
     "levelContainer": "Nível 2",
     "levelComponent": "Nível 3",
     "levelDeployment": "Nível 4",
-    "collapse": "Minimizar barra",
-    "expand": "Expandir barra",
     "enterFocusMode": "Modo foco",
     "exitFocusMode": "Sair do foco",
     "moreMenuAria": "Mais opções",
@@ -498,7 +494,10 @@
     "scrollBehaviorPanHint": "A rolagem desliza em qualquer direção, como no draw.io.",
     "scrollBehaviorZoom": "Aproximar e afastar",
     "scrollBehaviorZoomHint": "A rolagem dá zoom no ponteiro.",
-    "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal."
+    "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal.",
+    "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente",
+    "renameDiagram": "Nome do diagrama",
+    "renameDiagramHint": "Clique duas vezes para renomear"
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",
@@ -770,10 +769,6 @@
     "folderHitHint": "pasta"
   },
   "quickInsert": {
-    "searchPlaceholder": "Buscar elemento...",
-    "sectionCanvasGroups": "Canvas e Agrupamentos",
-    "sectionCloud": "Cloud (GCP / Azure)",
-    "noResults": "Nenhum resultado",
     "typePerson": "Person",
     "typeSystem": "System",
     "typeContainer": "Container",
@@ -781,13 +776,6 @@
     "typeApiGroup": "API Group",
     "typeEndpoint": "Endpoint",
     "newNamed": "Novo {{name}}",
-    "searchHelpPanel": "painel|panel",
-    "searchHelpNote": "nota|note|sticky|postit",
-    "searchHelpDbTable": "tabela|banco de dados|db|schema|sql|colunas",
-    "searchHelpJsonViewer": "json|payload|contrato|schema|evento|api",
-    "searchHelpApiGroup": "api|grupo|group|openapi",
-    "searchHelpEndpoint": "endpoint|http|rest",
-    "searchHelpSwimlane": "swimlane|faixa|atores|domínio|time|pool|raia",
     "typeExternalElement": "Elemento Externo"
   },
   "externalElement": {
@@ -1201,29 +1189,8 @@
       "subroutine": "Sub-Processo"
     }
   },
-  "elementPicker": {
-    "categoryAll": "Todos",
-    "viewAll": "Ver todos",
-    "modalTitle": "Adicionar elemento",
-    "searchPlaceholderUnified": "Buscar elementos, AWS, GCP, Azure, serviços…",
-    "cloudOther": "Outros",
-    "noResultsFor": "Nenhum elemento encontrado para “{{query}}”",
-    "addButton": "+ Adicionar",
-    "addAnotherInstance": "Adicionar outra instância ao canvas",
-    "c4Model": "C4 Model",
-    "flowchart": "Fluxograma",
-    "canvasGroups": "Canvas e Agrupamentos",
-    "awsOther": "Outros",
-    "categories": {},
-    "viewAllServices": "Ver todos os serviços",
-    "services": "Serviços",
-    "servicesEmpty": "Nenhum serviço cadastrado",
-    "openServices": "Abrir serviços"
-  },
   "patterns": {
-    "searchPlaceholder": "Buscar patterns por nome, descrição ou componentes...",
     "noneFound": "Nenhum pattern encontrado",
-    "subtitle": "Insira um conjunto pré-configurado de elementos no canvas",
     "modalTitle": "Architecture Patterns",
     "categoryAll": "Todos",
     "category": {
@@ -1943,8 +1910,6 @@
     "ungroup": "Desagrupar painel",
     "ungroupDesc": "Quando um painel está selecionado",
     "quickC4": "Criação rápida (C4)",
-    "quickInsertOpen": "Abrir Quick Insert no canvas",
-    "quickInsertDesc": "Shift+E perto do cursor, ou clique com o direito em área vazia (sem seleção e fora de fluxo play/record)",
     "addPerson": "Adicionar Person",
     "addSystem": "Adicionar System",
     "addContainer": "Adicionar Container",
@@ -1966,7 +1931,14 @@
     "spacePanDesc": "Segure Space e arraste no canvas",
     "flowExit": "Sair da leitura do fluxo",
     "flowStepOver": "Step over",
-    "flowStepOut": "Step out"
+    "flowStepOut": "Step out",
+    "catalogOpen": "Abrir o catálogo de elementos",
+    "catalogOpenDesc": "Busca em todos os elementos, serviços de nuvem, serviços e presets",
+    "quickInsertSlash": "Inserção rápida no ponteiro",
+    "quickInsertSlashDesc": "Também Shift+E, duplo clique ou clique direito no canvas vazio, ou soltar uma conexão no canvas vazio (sem seleção, fora de reprodução/gravação de fluxo)",
+    "insertNote": "Inserir nota",
+    "insertPanel": "Inserir painel",
+    "insertSwimlane": "Inserir raia"
   },
   "github": {
     "configNote": "Os serviços importados do GitHub serão mantidos em Serviços.",
@@ -2579,5 +2551,83 @@
     "routeThroughRef": "Desenhar por uma referência, ao lado da origem",
     "refsRemoved_one": "{{name}} saiu com a sua referência",
     "refsRemoved_other": "{{name}} saiu com as suas {{count}} referências"
+  },
+  "elementCatalog": {
+    "groups": {
+      "c4": "C4",
+      "flowchart": "Fluxograma",
+      "canvas": "Canvas e estrutura",
+      "services": "Serviços",
+      "presets": "Meus presets",
+      "aws": "AWS",
+      "gcp": "GCP",
+      "azure": "Azure",
+      "k8s": "Kubernetes",
+      "oss": "Open source",
+      "patterns": "Patterns"
+    },
+    "concepts": {
+      "queue": "fila|filas|mensageria|mensagens|broker",
+      "events": "evento|eventos|pub/sub|stream|streaming|tópico|notificação",
+      "database": "banco de dados|banco|bd|sql|nosql|base de dados",
+      "cache": "cache|memória|chave-valor",
+      "object-storage": "armazenamento de objetos|armazenamento|bucket|arquivos",
+      "api-gateway": "gateway de api|gateway|gerenciamento de api",
+      "load-balancer": "balanceador de carga|balanceador|lb|ingress",
+      "cdn": "cdn|distribuição de conteúdo|borda",
+      "identity": "identidade|autenticação|login|sso|iam",
+      "secrets": "segredos|cofre|chaves|criptografia",
+      "serverless": "serverless|função|funções|faas",
+      "monitoring": "monitoramento|observabilidade|logs|métricas|rastreamento",
+      "dns": "dns|domínio"
+    },
+    "toolbar": {
+      "label": "Ferramentas do canvas",
+      "note": "Nota",
+      "panel": "Painel",
+      "swimlane": "Raia",
+      "c4": "C4",
+      "flowchart": "Fluxograma",
+      "c4Menu": "Inserir elemento C4",
+      "flowchartMenu": "Inserir forma de fluxograma",
+      "catalog": "Catálogo",
+      "catalogAria": "Abrir o catálogo de elementos",
+      "withShortcut": "{{label}} ({{shortcut}})",
+      "autoHide": "Ocultar a barra automaticamente",
+      "keepVisible": "Manter a barra sempre visível",
+      "plugins": "Plugins"
+    },
+    "title": "Catálogo de elementos",
+    "searchPlaceholder": "Buscar em {{count}} elementos…",
+    "searchLabel": "Buscar elementos",
+    "categoriesLabel": "Categorias",
+    "all": "Todos",
+    "recents": "Recentes",
+    "viewAll": "Ver todos {{count}}",
+    "bestMatch": "Melhor resultado",
+    "results": "Resultados",
+    "matchedOn": {
+      "name": "nome",
+      "synonym": "sinônimo",
+      "tag": "tag"
+    },
+    "insertAtCenter": "Inserir no centro",
+    "noResultsFor": "Nada encontrado para “{{query}}”",
+    "noResultsHint": "Salve qualquer elemento do canvas como preset pelo menu do botão direito, e ele aparece aqui.",
+    "presetsEmpty": "Nenhum preset ainda. Clique com o botão direito em um elemento do canvas e escolha “Salvar como preset”.",
+    "hints": {
+      "navigate": "navegar",
+      "insert": "inserir",
+      "keepOpen": "inserir e manter aberto",
+      "category": "categoria",
+      "close": "fechar",
+      "drag": "arraste para posicionar"
+    },
+    "quickInsert": {
+      "label": "Inserção rápida",
+      "connectTo": "Conectar {{name}} a…",
+      "top": "C4",
+      "openCatalog": "Abrir catálogo completo"
+    }
   }
 }

@@ -16,6 +16,26 @@ export interface CanvasPreferencesStore {
   /** The minimap costs screen space on small viewports, so it is opt-out rather than fixed. */
   showMiniMap: boolean;
   setShowMiniMap: (show: boolean) => void;
+  /**
+   * Catalog entries the user inserted last, most recent first. A UI preference
+   * of this browser — not diagram data, so not in undo history or collab.
+   */
+  recentCatalogEntryIds: string[];
+  recordCatalogEntryUse: (entryId: string) => void;
+  /**
+   * The bottom toolbar hides itself and comes back when the pointer reaches
+   * the bottom edge, like the macOS Dock. Off: it stays put.
+   */
+  autoHideBottomToolbar: boolean;
+  setAutoHideBottomToolbar: (autoHide: boolean) => void;
+}
+
+/** How many recent catalog entries are kept. */
+export const RECENT_CATALOG_ENTRIES_MAX = 8;
+
+/** `recent` with `entryId` moved to the front, capped. */
+export function withRecentCatalogEntry(recent: readonly string[], entryId: string): string[] {
+  return [entryId, ...recent.filter((id) => id !== entryId)].slice(0, RECENT_CATALOG_ENTRIES_MAX);
 }
 
 export const CANVAS_PREFERENCES_KEY = "structura:canvas-preferences";
@@ -27,6 +47,13 @@ export const useCanvasPreferencesStore = create<CanvasPreferencesStore>()(
       setScrollMode: (mode) => set({ scrollMode: mode }),
       showMiniMap: true,
       setShowMiniMap: (show) => set({ showMiniMap: show }),
+      recentCatalogEntryIds: [],
+      recordCatalogEntryUse: (entryId) =>
+        set((state) => ({
+          recentCatalogEntryIds: withRecentCatalogEntry(state.recentCatalogEntryIds, entryId),
+        })),
+      autoHideBottomToolbar: false,
+      setAutoHideBottomToolbar: (autoHide) => set({ autoHideBottomToolbar: autoHide }),
     }),
     {
       name: CANVAS_PREFERENCES_KEY,

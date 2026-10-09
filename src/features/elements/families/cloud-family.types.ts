@@ -13,6 +13,7 @@ import type {
   ExportGeometry,
 } from "../element.types";
 import type { ExportNode } from "@/lib/export-core";
+import type { CatalogConceptId } from "../search/concepts";
 
 /**
  * Catalog-shaped family id (`aws`, `gcp`, `azure`, …).
@@ -45,6 +46,8 @@ export interface CloudFamilyService {
    * as the description of both EC2 and Lambda. Read by `searchElements`.
    */
   descriptionKey?: string;
+  /** What the service is, for the catalog search ("fila" finds SQS); see `CATALOG_CONCEPTS`. */
+  concepts?: readonly CatalogConceptId[];
 }
 
 /** One category — becomes one `ElementDescriptor` (the type is the category id). */
@@ -117,6 +120,11 @@ export interface CloudFamilyDefinition {
    * is listed in order with no "Other" split.
    */
   primaryCategoryIds?: readonly string[];
+  /**
+   * Services the element catalog lists first for this family, in this order —
+   * what its "All" view shows before "View all". Absent: catalog order.
+   */
+  spotlightServiceIds?: readonly string[];
   categories: readonly CloudFamilyCategory[];
   services: readonly CloudFamilyService[];
   icons: IconResolver;

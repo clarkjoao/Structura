@@ -37,6 +37,10 @@ import { canBeReferenced } from "@/features/elements/referencing";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
+import { buildConnection, sourceTypeIn, writeConnection } from "./connections.slice";
+import { canBeConnectionSource } from "../../model/connection-rules";
+import type { Connection } from "../../model/diagram.types";
+import type { EdgeStyle } from "../../model/connection.types";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
 import {
@@ -539,6 +543,96 @@ function getActiveComponentById(state: AppState, id: string): Component | undefi
   return resolveComponent(d, scene, id);
 }
 
+/** The node `addComponentConnectedFrom` creates; same inputs as `addComponent`. */
+export interface NewConnectedComponent {
+  type: ComponentType;
+  name: string;
+  position: { x: number; y: number };
+  /** The catalog service the node stands for; `addComponent`'s `cloudServiceId` argument. */
+  serviceId?: string;
+  panelKind?: PanelKind;
+  flowShape?: FlowNodeShape;
+  createOptions?: ElementCreateOptions;
+}
+
+/** The edge `addComponentConnectedFrom` draws to it; same inputs as `addConnection`. */
+export interface NewConnectedEdge {
+  label: string;
+  edgeStyle?: EdgeStyle;
+  sides?: Pick<Connection, "sourceSide" | "targetSide">;
+}
+
+/** What `placeNewComponent` writes: a component built by `buildComponentForType`. */
+interface NewComponentPlacement {
+  /** The type asked for; drives layout and endpoint handling, as it always did. */
+  type: ComponentType;
+  component: Component;
+  resolvedPanelKind: PanelKind | undefined;
+  parentId: string | null;
+  position?: { x: number; y: number };
+  flowShape?: FlowNodeShape;
+  createOptions?: ElementCreateOptions;
+}
+
+/**
+ * Writes a new component and its layout into the active diagram or scene.
+ * The caller owns the `set()` and the history checkpoint, so one gesture that
+ * creates more than a node (a node and the edge to it) stays one undo step.
+ */
+function placeNewComponent(
+  state: AppState,
+  d: Diagram,
+  scene: VersionDiff | null,
+  placement: NewComponentPlacement,
+): void {
+  const { type, component, resolvedPanelKind, parentId, position, flowShape, createOptions } =
+    placement;
+  const resolveComp = (pid: string | null | undefined) =>
+    pid ? resolveComponent(d, scene, pid) : undefined;
+
+  const parentComp = parentId ? resolveComp(parentId) : undefined;
+  const parentLayout = parentId
+    ? (scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId])
+    : undefined;
+
+  if (
+    isEndpointType(type) &&
+    parentId &&
+    handleEndpointInsertion(state, d, scene, component, parentId)
+  ) {
+    return;
+  }
+
+  const resolvedPosition = resolveInsertPosition({
+    parentId,
+    position,
+    parentLayout,
+    parentComp,
+  });
+  const layout = buildLayoutForComponent(
+    component.id,
+    type,
+    resolvedPanelKind,
+    resolvedPosition,
+    flowShape,
+    createOptions,
+  );
+  writeComponentAndLayout(d, scene, component, layout);
+
+  touchDiagram(d);
+
+  const p = parentId ? resolveComp(parentId) : undefined;
+  if (parentId && p && isApiGroupComponent(p)) {
+    const childCount = countEndpointsUnderParent(d, scene, parentId);
+    const { width, height } = computeApiGroupSize(childCount);
+    const groupLayout = resolveNodeLayout(d, scene, parentId);
+    if (groupLayout) {
+      groupLayout.width = width;
+      groupLayout.height = height;
+    }
+  }
+}
+
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
@@ -576,52 +670,69 @@ export const componentsSlice = (
 
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
-      const resolveComp = (pid: string | null | undefined) =>
-        pid ? resolveComponent(d, scene, pid) : undefined;
-
-      const parentComp = parentId ? resolveComp(parentId) : undefined;
-      const parentLayout = parentId
-        ? (scene?.nodeLayouts[parentId] ?? d.nodeLayouts[parentId])
-        : undefined;
-
-      if (
-        isEndpointType(type) &&
-        parentId &&
-        handleEndpointInsertion(state, d, scene, component, parentId)
-      ) {
-        return;
-      }
-
-      const resolvedPosition = resolveInsertPosition({
+      placeNewComponent(state, d, scene, {
+        type,
+        component,
+        resolvedPanelKind,
         parentId,
         position,
-        parentLayout,
-        parentComp,
-      });
-      const layout = buildLayoutForComponent(
-        component.id,
-        type,
-        resolvedPanelKind,
-        resolvedPosition,
         flowShape,
         createOptions,
-      );
-      writeComponentAndLayout(d, scene, component, layout);
-
-      touchDiagram(d);
-
-      const p = parentId ? resolveComp(parentId) : undefined;
-      if (parentId && p && isApiGroupComponent(p)) {
-        const childCount = countEndpointsUnderParent(d, scene, parentId);
-        const { width, height } = computeApiGroupSize(childCount);
-        const groupLayout = resolveNodeLayout(d, scene, parentId);
-        if (groupLayout) {
-          groupLayout.width = width;
-          groupLayout.height = height;
-        }
-      }
+      });
     });
     return component;
+  },
+
+  /**
+   * A new component with an edge to it from `sourceId` — what dropping a
+   * connection on empty canvas and picking an element asks for. One `set()`,
+   * one undo step for both. When nothing may leave the source (see
+   * `canBeConnectionSource`) the node is still made and the edge is not, the
+   * same answer `addConnection` gives.
+   */
+  addComponentConnectedFrom: (
+    sourceId: string,
+    request: NewConnectedComponent,
+    edge: NewConnectedEdge,
+  ): { component: Component; connection: Connection | null } => {
+    const { type, name, position, serviceId, panelKind, flowShape, createOptions } = request;
+    const { component, resolvedPanelKind } = buildComponentForType(
+      generateId("el"),
+      type,
+      name,
+      null,
+      panelKind,
+      serviceId,
+      flowShape,
+      createOptions,
+    );
+    const state = get();
+    const active = state.diagrams[state.activeDiagramId ?? ""];
+    const connection =
+      active && canBeConnectionSource(sourceTypeIn(active, sourceId) ?? "")
+        ? buildConnection(sourceId, component.id, edge.label, edge.edgeStyle, edge.sides)
+        : null;
+
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveVersion(d);
+
+      if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+
+      placeNewComponent(state, d, scene, {
+        type,
+        component,
+        resolvedPanelKind,
+        parentId: null,
+        position,
+        flowShape,
+        createOptions,
+      });
+      if (connection) writeConnection(d, scene, connection);
+      touchDiagram(d);
+    });
+    return { component, connection };
   },
 
   /**

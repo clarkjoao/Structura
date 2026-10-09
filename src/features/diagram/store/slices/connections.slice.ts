@@ -1,4 +1,4 @@
-import type { Connection, Diagram } from "../../model/diagram.types";
+import type { Connection, Diagram, VersionDiff } from "../../model/diagram.types";
 import type { EdgeStyle } from "../../model/connection.types";
 import { EdgeStyle as EdgeStyleEnum } from "../../enums";
 import { generateId } from "../../utils/generate-id";
@@ -17,9 +17,46 @@ import { canBeConnectionSource } from "../../model/connection-rules";
  * node added by a scene lives in the scene, not in the base snapshot, and a
  * connection drawn from it has to be judged by the same rule.
  */
-function sourceTypeIn(diagram: Diagram, sourceId: string): string | undefined {
+export function sourceTypeIn(diagram: Diagram, sourceId: string): string | undefined {
   const scene = resolveActiveVersion(diagram);
   return scene?.addedComponents?.[sourceId]?.type ?? diagram.snapshot.components[sourceId]?.type;
+}
+
+/**
+ * A new connection, before it is written anywhere. Only a side the user
+ * actually drew from/to is stored; the defaults stay unwritten.
+ */
+export function buildConnection(
+  sourceId: string,
+  targetId: string,
+  label: string,
+  edgeStyle: EdgeStyle = EdgeStyleEnum.EditableStep,
+  sides: Pick<Connection, "sourceSide" | "targetSide"> = {},
+): Connection {
+  return {
+    id: generateId("conn"),
+    sourceId,
+    targetId,
+    label,
+    style: {
+      edgeStyle,
+    },
+    ...(sides.sourceSide ? { sourceSide: sides.sourceSide } : {}),
+    ...(sides.targetSide ? { targetSide: sides.targetSide } : {}),
+  };
+}
+
+/** Writes `connection` into the active scene when there is one, else the base snapshot. */
+export function writeConnection(
+  d: Diagram,
+  scene: VersionDiff | null,
+  connection: Connection,
+): void {
+  if (scene) {
+    scene.addedConnections[connection.id] = connection;
+  } else {
+    d.snapshot.connections[connection.id] = connection;
+  }
 }
 
 export const connectionsSlice = (
@@ -43,28 +80,13 @@ export const connectionsSlice = (
     const active = state.diagrams[state.activeDiagramId ?? ""];
     if (active && !canBeConnectionSource(sourceTypeIn(active, sourceId) ?? "")) return null;
 
-    const connection: Connection = {
-      id: generateId("conn"),
-      sourceId,
-      targetId,
-      label,
-      style: {
-        edgeStyle,
-      },
-      // Only a side the user actually drew from/to; the defaults stay unwritten.
-      ...(sides.sourceSide ? { sourceSide: sides.sourceSide } : {}),
-      ...(sides.targetSide ? { targetSide: sides.targetSide } : {}),
-    };
+    const connection = buildConnection(sourceId, targetId, label, edgeStyle, sides);
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      if (scene) {
-        scene.addedConnections[connection.id] = connection;
-      } else {
-        d.snapshot.connections[connection.id] = connection;
-      }
+      writeConnection(d, scene, connection);
       touchDiagram(d);
     });
     return connection;

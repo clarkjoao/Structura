@@ -18,6 +18,7 @@ import type {
   NodeStrokeMode,
 } from "@/features/diagram/model/component.types";
 import type { ExportNode } from "@/lib/export-core";
+import type { CatalogConceptId } from "./search/concepts";
 
 /**
  * The id of a registered element — the same string that lives in
@@ -336,6 +337,8 @@ export interface ElementPaletteVariant {
   /** Passed to `createComponent` when this entry is picked. */
   createOptions: ElementCreateOptions;
   searchKeys?: readonly string[];
+  /** What this entry is, for the catalog search; replaces the element's own when present. */
+  concepts?: readonly CatalogConceptId[];
   /**
    * An icon from the AWS pack, rendered instead of `icon` when present.
    *
@@ -353,6 +356,8 @@ export interface ElementPaletteSlice {
   accent: AccentToken;
   /** Extra words the search matches on, beyond the label. */
   searchKeys: readonly string[];
+  /** What the element is, for the catalog search; see `CATALOG_CONCEPTS`. */
+  concepts?: readonly CatalogConceptId[];
   /** Lower sorts earlier in "spotlight" strips; absent means not featured. */
   spotlight?: number;
   /** One palette entry each, instead of a single entry for the element. */

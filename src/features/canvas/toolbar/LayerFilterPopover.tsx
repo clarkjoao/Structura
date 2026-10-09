@@ -11,6 +11,9 @@ export interface LayerFilterPopoverProps {
   onToggle: (tag: string) => void;
   onShowAll: () => void;
   onShowNoTags: () => void;
+  /** Trigger classes, so the host toolbar can style it like its other buttons. */
+  className?: string;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export function LayerFilterPopover({
@@ -20,16 +23,19 @@ export function LayerFilterPopover({
   onToggle,
   onShowAll,
   onShowNoTags,
+  className,
+  onOpenChange,
 }: LayerFilterPopoverProps) {
   const { t } = useTranslation();
   const noTags = allTags.length === 0;
 
   return (
-    <Popover>
+    <Popover onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <button
           type="button"
           disabled={noTags || versionsPickerLocked}
+          aria-label={t("canvas.toolbar.filterByTag")}
           title={
             noTags
               ? t("canvas.toolbar.noTags")
@@ -38,12 +44,13 @@ export function LayerFilterPopover({
                 : t("canvas.toolbar.filterByTag")
           }
           className={cn(
-            "relative flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors",
+            "relative",
+            className,
             (noTags || versionsPickerLocked) && "opacity-50 pointer-events-none",
           )}
         >
-          <Tag className="h-3.5 w-3.5 shrink-0" aria-hidden />
-          {t("canvas.toolbar.filterByTag")}
+          <Tag className="h-4 w-4 shrink-0" aria-hidden />
+
           {visibleTags !== null && visibleTags.size > 0 ? (
             <span
               className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[9px] font-medium text-primary-foreground"
@@ -54,7 +61,7 @@ export function LayerFilterPopover({
           ) : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-3">
+      <PopoverContent side="top" align="center" className="w-72 p-3">
         <ul className="flex max-h-[min(50vh,280px)] flex-col gap-2 overflow-y-auto pr-1">
           <li>
             <label className="flex cursor-pointer items-center gap-2 text-xs">

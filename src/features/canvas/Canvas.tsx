@@ -3,13 +3,14 @@ import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import CanvasToolbar from "./toolbar/CanvasToolbar";
 import { ConnectedVersionDrawer } from "./toolbar/VersionDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { useNodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
+import { CanvasBottomToolbar } from "./catalog/CanvasBottomToolbar";
+import { useCatalogDrop } from "./catalog/useCatalogDrop";
 import { CanvasViewOptions } from "./toolbar/components/CanvasViewOptions";
 import { NothingInViewCard } from "./components/NothingInViewCard";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
@@ -164,7 +165,6 @@ const Canvas = (props: CanvasProps = {}) => {
     isPanelOpen,
     selectedNodes,
     showElementPanel,
-    onDrillUp,
     isCompareMode,
     allDiagramTags,
     handleAutoLayout,
@@ -190,6 +190,25 @@ const Canvas = (props: CanvasProps = {}) => {
     [pendingPreviews],
   );
   const { isFlowActive } = interactionMode;
+  const { setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId } = visualState;
+  const selectInsertedNode = useCallback(
+    (nodeId: string) => {
+      setSelectedNodeId(nodeId);
+      setSelectedNodeIds(new Set([nodeId]));
+      setSelectedEdgeId(null);
+    },
+    [setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId],
+  );
+  const selectInsertedNodes = useCallback(
+    (nodeIds: string[]) => {
+      if (nodeIds.length === 0) return;
+      setSelectedNodeId(nodeIds[0]);
+      setSelectedNodeIds(new Set(nodeIds));
+      setSelectedEdgeId(null);
+    },
+    [setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId],
+  );
+  const catalogDrop = useCatalogDrop(interactionMode.canEditCanvas, selectInsertedNode);
   const initialViewport = useDiagramStore(
     useCallback((state) => {
       const activeDiagramId = state.activeDiagramId;
@@ -320,23 +339,26 @@ const Canvas = (props: CanvasProps = {}) => {
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
           {showVersions && <ConnectedVersionDrawer onClose={() => setShowVersions(false)} />}
-          <CanvasToolbar
-            onDrillUp={onDrillUp}
-            isPanelOpen={isPanelOpen}
-            onClearSelection={visualState.clearCanvasSelection}
-            setSelectedNodeId={visualState.setSelectedNodeId}
-            setSelectedNodeIds={visualState.setSelectedNodeIds}
-            setSelectedEdgeId={visualState.setSelectedEdgeId}
-            onOpenVersions={() => setShowVersions(true)}
-            isFlowActive={isFlowActive}
-            allTags={allDiagramTags}
-            visibleTags={visualState.visibleTags}
-            onToggleTag={visualState.toggleTag}
-            onShowAllTags={visualState.showAllTags}
-            onShowNoTags={visualState.showNoTags}
-            focusMode={props.focusMode}
-            onToggleFocusMode={props.onToggleFocusMode}
-          />
+          {!interactionMode.isPlaying && (
+            <CanvasBottomToolbar
+              diagram={diagram}
+              isPanelOpen={isPanelOpen}
+              canInsert={interactionMode.canEditCanvas && !isFlowActive && !isCompareMode}
+              onInserted={selectInsertedNodes}
+              versions={{
+                locked: !interactionMode.canEditVersions || isFlowActive,
+                onOpen: () => setShowVersions(true),
+              }}
+              tags={{
+                allTags: allDiagramTags,
+                visibleTags: visualState.visibleTags,
+                locked: !interactionMode.canEditVersions || isFlowActive,
+                onToggle: visualState.toggleTag,
+                onShowAll: visualState.showAllTags,
+                onShowNoTags: visualState.showNoTags,
+              }}
+            />
+          )}
           {showSearch && diagram && (
             <CanvasSearch
               onClose={() => setShowSearch(false)}
@@ -356,6 +378,7 @@ const Canvas = (props: CanvasProps = {}) => {
             onContextMenu={(e) => e.preventDefault()}
             onDragOver={(event) => {
               onSvgDragOver(event);
+              if (catalogDrop.onDragOver(event)) return;
               if (!interactionMode.canEditCanvas) return;
               if (event.dataTransfer.types.includes(ELEMENT_PRESET_DRAG_MIME)) {
                 event.preventDefault();
@@ -363,6 +386,8 @@ const Canvas = (props: CanvasProps = {}) => {
               }
             }}
             onDrop={(event) => {
+              // Synchronously: the drag data is only readable while the drop is dispatched.
+              if (catalogDrop.onDrop(event)) return;
               void (async () => {
                 if (await onSvgDropFiles(event)) return;
                 if (!interactionMode.canEditCanvas) return;
@@ -375,6 +400,9 @@ const Canvas = (props: CanvasProps = {}) => {
                 });
                 instantiatePreset({ presetId, position });
               })();
+            }}
+            onDoubleClick={(event) => {
+              if (interactionMode.canEditCanvas) eventHandlers.onPaneDoubleClick(event);
             }}
             className="w-full h-full"
           >
@@ -529,6 +557,11 @@ const Canvas = (props: CanvasProps = {}) => {
             screenPos={visualState.quickInsert.screenPos}
             flowPos={visualState.quickInsert.flowPos}
             sourceNodeId={visualState.quickInsert.sourceNodeId}
+            sourceName={
+              visualState.quickInsert.sourceNodeId
+                ? resolvedSnapshot.components[visualState.quickInsert.sourceNodeId]?.name
+                : undefined
+            }
             onInsert={eventHandlers.handleQuickInsert}
             onClose={() => visualState.setQuickInsert(null)}
           />

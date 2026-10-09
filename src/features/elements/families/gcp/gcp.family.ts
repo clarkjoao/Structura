@@ -19,6 +19,7 @@ import {
 import { gcpIconResolver } from "@/features/cloud/providers/gcp/gcp.icon-resolver";
 import i18n from "@/infrastructure/i18n";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
+import type { CatalogConceptId } from "../../search/concepts";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
 import { gcpIconDataUri } from "./gcp.export-icons";
 
@@ -32,6 +33,20 @@ import { gcpIconDataUri } from "./gcp.export-icons";
 function accentFor(categoryId: GcpCategoryId) {
   return { kind: "token" as const, cssVar: `--${categoryId}` };
 }
+
+/** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
+const GCP_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
+  cloudsql: ["database"],
+  cloudspanner: ["database"],
+  alloydb: ["database"],
+  bigquery: ["database"],
+  "cloud-storage": ["object-storage"],
+  apigee: ["api-gateway"],
+  cloudrun: ["serverless"],
+  serverlesscomputing: ["serverless"],
+  observability: ["monitoring"],
+  operations: ["monitoring"],
+};
 
 /**
  * Google Cloud Platform as a `CloudFamilyDefinition`.
@@ -59,6 +74,7 @@ export const gcpFamily: CloudFamilyDefinition = {
       name: service.name,
       iconName: service.iconName,
       categoryId: category.id,
+      ...(GCP_SERVICE_CONCEPTS[service.id] ? { concepts: GCP_SERVICE_CONCEPTS[service.id] } : {}),
     })),
   ),
 

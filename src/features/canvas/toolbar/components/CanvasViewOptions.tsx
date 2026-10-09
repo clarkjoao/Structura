@@ -34,6 +34,8 @@ export function CanvasViewOptions() {
   const setScrollMode = useCanvasPreferencesStore((state) => state.setScrollMode);
   const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);
   const setShowMiniMap = useCanvasPreferencesStore((state) => state.setShowMiniMap);
+  const autoHideToolbar = useCanvasPreferencesStore((state) => state.autoHideBottomToolbar);
+  const setAutoHideToolbar = useCanvasPreferencesStore((state) => state.setAutoHideBottomToolbar);
 
   return (
     <Popover>
@@ -84,6 +86,10 @@ export function CanvasViewOptions() {
         <label className="mt-3 flex cursor-pointer items-center justify-between gap-2 border-t border-border pt-3 text-xs font-medium text-foreground">
           {t("canvasToolbar.showMiniMap")}
           <Switch checked={showMiniMap} onCheckedChange={setShowMiniMap} />
+        </label>
+        <label className="mt-2 flex cursor-pointer items-center justify-between gap-2 text-xs font-medium text-foreground">
+          {t("canvasToolbar.autoHideBottomToolbar")}
+          <Switch checked={autoHideToolbar} onCheckedChange={setAutoHideToolbar} />
         </label>
       </PopoverContent>
     </Popover>

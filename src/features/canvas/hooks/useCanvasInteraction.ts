@@ -27,6 +27,9 @@ import { useCanvasKeyboard } from "./useCanvasKeyboard";
 import { useCanvasEffects } from "./useCanvasEffects";
 import { useNodeDragParenting } from "./useNodeDragParenting";
 import { forceSaveToConnectedFolder } from "@/infrastructure/persistence";
+import { useCatalogUiStore } from "../catalog/catalogUi.store";
+import { registryCatalog, TOOLBAR_TOOLS } from "../catalog/toolbarTools";
+import { useInsertAtCenter } from "../catalog/useInsertAtCenter";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -229,6 +232,29 @@ export function useCanvasInteraction(
     visualState.noteInlineEditingId === null &&
     visualState.jsonViewerInlineEditingId === null;
 
+  const selectInsertedNode = useCallback(
+    (nodeId: string) => {
+      visualState.setSelectedNodeId(nodeId);
+      visualState.setSelectedNodeIds(new Set([nodeId]));
+      visualState.setSelectedEdgeId(null);
+    },
+    [visualState],
+  );
+  const insertAtCenter = useInsertAtCenter(isPanelOpen, selectInsertedNode);
+
+  /** A toolbar insert (N, P, L); false when the key is not one, so the key stays free. */
+  const insertToolByKey = useCallback(
+    (key: string) => {
+      const tool = TOOLBAR_TOOLS.find((candidate) => candidate.key === key);
+      if (!tool) return false;
+      const entry = registryCatalog().byId.get(tool.entryId);
+      if (!entry) return false;
+      insertAtCenter(entry);
+      return true;
+    },
+    [insertAtCenter],
+  );
+
   const handleSearchSelect = useCallback(
     (componentId: string) => {
       setShowSearch(false);
@@ -285,6 +311,12 @@ export function useCanvasInteraction(
       setShowSearch(false);
       setShowCommandPalette(true);
     },
+    onOpenCatalog: () => {
+      if (diagramNavLocked || !!canvasProps.isFlowPanelOpen) return;
+      visualState.setQuickInsert(null);
+      useCatalogUiStore.getState().setOpen(true);
+    },
+    onInsertTool: insertToolByKey,
     onOpenQuickInsert: ({ screenPos, flowPos }) => {
       if (diagramNavLocked || !!canvasProps.isFlowPanelOpen) return;
       visualState.setQuickInsert({ screenPos, flowPos });

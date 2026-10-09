@@ -92,12 +92,22 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
+                label={t("shortcutsModal.catalogOpen")}
+                description={t("shortcutsModal.catalogOpenDesc")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Cmd/Ctrl</Kbd>
+                    <Kbd>K</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
                 label={t("shortcutsModal.commandPalette")}
                 description={t("shortcutsModal.commandPaletteDesc")}
                 keys={
                   <span className="inline-flex items-center gap-1">
                     <Kbd>Cmd/Ctrl</Kbd>
-                    <Kbd>K</Kbd>
+                    <Kbd>P</Kbd>
                   </span>
                 }
               />
@@ -271,15 +281,13 @@ export default function ShortcutsModal({
 
             <ShortcutCard title={t("shortcutsModal.quickC4")}>
               <ShortcutRow
-                label={t("shortcutsModal.quickInsertOpen")}
-                description={t("shortcutsModal.quickInsertDesc")}
-                keys={
-                  <span className="inline-flex items-center gap-1">
-                    <Kbd>Shift</Kbd>
-                    <Kbd>E</Kbd>
-                  </span>
-                }
+                label={t("shortcutsModal.quickInsertSlash")}
+                description={t("shortcutsModal.quickInsertSlashDesc")}
+                keys={<Kbd>/</Kbd>}
               />
+              <ShortcutRow label={t("shortcutsModal.insertNote")} keys={<Kbd>N</Kbd>} />
+              <ShortcutRow label={t("shortcutsModal.insertPanel")} keys={<Kbd>P</Kbd>} />
+              <ShortcutRow label={t("shortcutsModal.insertSwimlane")} keys={<Kbd>L</Kbd>} />
               <ShortcutRow
                 label={t("shortcutsModal.addPerson")}
                 keys={

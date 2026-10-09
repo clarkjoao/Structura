@@ -177,6 +177,7 @@ const selectDiagramActions = pickFromStore([
   "groupNodes",
   "ungroupNodes",
   "addComponent",
+  "addComponentConnectedFrom",
   "addSharedRef",
   "routeConnectionThroughRef",
   "updateComponent",
@@ -252,6 +253,7 @@ const selectDiagramActions = pickFromStore([
 
 const selectComponentActions = pickFromStore([
   "addComponent",
+  "addComponentConnectedFrom",
   "addSharedRef",
   "routeConnectionThroughRef",
   "updateComponent",
