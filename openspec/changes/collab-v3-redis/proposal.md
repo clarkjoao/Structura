@@ -75,7 +75,7 @@ meet that target, because its room state lives in one process.
   - a Docker Compose harness (several relay replicas, Redis and a round-robin proxy) runs the
     acceptance suite in CI;
   - Kubernetes manifests and a kind run ship in the standalone relay project
-    (`structura-wbsocket-server`, which syncs the relay source from `server/`).
+    (`structura-wbsocket-server`, deploy-only: it builds the image from `server/`).
 - **Removed:** the Go port (`server/go/`). It mirrors v2 and would document a protocol that no
   longer exists. A Go server is rebuilt later from the v3 spec and the shared Lua script.
 

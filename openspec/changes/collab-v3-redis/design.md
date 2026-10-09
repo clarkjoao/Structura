@@ -259,9 +259,9 @@ and resumes.
 
 A CI job runs the Compose suite on every PR. The Kubernetes manifests (Deployment with HPA,
 PodDisruptionBudget and a preStop drain, Service, an ingress-nginx Ingress with WebSocket timeouts,
-and a Redis StatefulSet with optional AOF) live in the standalone relay project
+and a Redis StatefulSet with optional AOF) live in the separate deployment project
 `structura-wbsocket-server`, together with the kind scripts that run the suite against them. That
-project syncs the relay source from `server/`, which stays the source of truth.
+project holds no relay code: it builds the image from `server/` and runs the harness from there.
 
 ## Risks / Trade-offs
 
