@@ -17,6 +17,7 @@ measured, read in the code or hypothesized during a session, and the fix that fo
 | [divergencia-edicao-visualizacao.md](divergencia-edicao-visualizacao.md) | Rendering divergences between the editor and the viewer |
 | [paridade-editor-viewer-caixa-do-no.md](paridade-editor-viewer-caixa-do-no.md) | Editor/viewer parity: the node box |
 | [element-catalog-audit.md](element-catalog-audit.md) | Element catalog redesign: audit of the picker, quick insert and shortcuts |
+| [pattern-catalog-audit.md](pattern-catalog-audit.md) | Pattern catalog refresh: inventory, gaps, provider roles, placement |
 
 Related logs elsewhere in `docs/`: [../epico-virtualizacao/](../epico-virtualizacao/) (canvas
 virtualization and the post-drag commit loop), [../epico-layout-visualization/](../epico-layout-visualization/)
