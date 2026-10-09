@@ -1453,6 +1453,114 @@
           "instance2": "API Instance 2",
           "instance3": "API Instance 3"
         }
+      },
+      "cqrs": {
+        "name": "CQRS",
+        "description": "Commands and queries use separate models and stores: writes go to a normalized store, and change events build a read model shaped for queries. Each side scales and evolves on its own; reads are eventually consistent.",
+        "nodes": {
+          "client": "Client",
+          "commandApi": "Command API",
+          "writeDb": "Write DB",
+          "projector": "Projector",
+          "readDb": "Read Model",
+          "queryApi": "Query API"
+        }
+      },
+      "event-sourcing": {
+        "name": "Event Sourcing",
+        "description": "State is stored as an append-only log of events; projections replay the log into read models. You get a full audit trail and can rebuild views; queries need projections and event schemas must evolve carefully.",
+        "nodes": {
+          "client": "Client",
+          "commandApi": "Command API",
+          "eventStore": "Event Store",
+          "projector": "Projector",
+          "readModel": "Read Model",
+          "queryApi": "Query API"
+        }
+      },
+      "transactional-outbox": {
+        "name": "Transactional Outbox",
+        "description": "The service writes its data and the event to publish in one local transaction (an outbox table); a relay or CDC process then publishes the outbox to the broker. Avoids dual writes; delivery is at-least-once, so consumers must be idempotent.",
+        "nodes": {
+          "service": "Order Service",
+          "database": "Orders DB (+ outbox)",
+          "relay": "Outbox Relay (CDC)",
+          "broker": "Event Broker",
+          "consumer": "Billing Service"
+        }
+      },
+      "saga-orchestration": {
+        "name": "Saga — Orchestration",
+        "description": "An orchestrator runs a business transaction as a sequence of local steps and, when one fails, sends compensating commands to undo the steps already done. The flow is explicit and observable; the orchestrator must be durable and stay free of business rules that belong to the services.",
+        "nodes": {
+          "client": "Client",
+          "orchestrator": "Checkout Orchestrator",
+          "inventory": "Inventory Service",
+          "payment": "Payment Service",
+          "shipping": "Shipping Service",
+          "stateStore": "Saga State Store"
+        }
+      },
+      "saga-choreography": {
+        "name": "Saga — Choreography",
+        "description": "There is no coordinator: each service reacts to the previous step's event and emits its own, compensating on failure events. Services stay decoupled; the overall flow is implicit and harder to follow and test.",
+        "nodes": {
+          "orders": "Order Service",
+          "bus": "Event Bus",
+          "payment": "Payment Service",
+          "inventory": "Inventory Service",
+          "shipping": "Shipping Service"
+        }
+      },
+      "cache-aside": {
+        "name": "Cache-Aside",
+        "description": "The application reads from the cache first; on a miss it reads the database and populates the cache. Simple and resilient to cache loss; data can be stale until expiry or explicit invalidation.",
+        "nodes": {
+          "app": "Product Service",
+          "cache": "Product Cache",
+          "database": "Products DB"
+        }
+      },
+      "cache-write-through-behind": {
+        "name": "Write-Through / Write-Behind Cache",
+        "description": "Writes go to the cache, which persists them to the database synchronously (write-through) or asynchronously in batches (write-behind). Reads are always warm; write-behind risks losing writes if the cache fails.",
+        "nodes": {
+          "app": "Cart Service",
+          "cache": "Cart Cache",
+          "database": "Carts DB"
+        }
+      },
+      "materialized-view": {
+        "name": "Materialized View",
+        "description": "A builder listens to changes in the source stores and keeps a precomputed view shaped for one query. Expensive joins become a single read; the view lags behind its sources.",
+        "nodes": {
+          "ordersDb": "Orders DB",
+          "customersDb": "Customers DB",
+          "viewBuilder": "View Builder",
+          "view": "Order Summary View",
+          "queryApi": "Dashboard API"
+        }
+      },
+      "data-replication": {
+        "name": "Data Replication (Primary-Replica)",
+        "description": "Writes go to the primary, which replicates to read replicas that take the read traffic. Scales reads and adds failover candidates; asynchronous replicas can serve stale data.",
+        "nodes": {
+          "app": "Application",
+          "primary": "Primary DB",
+          "replica1": "Read Replica 1",
+          "replica2": "Read Replica 2"
+        }
+      },
+      "sharding": {
+        "name": "Sharding",
+        "description": "Data is split across shards by a partition key and a router sends each request to the shard that owns its key. Scales writes and storage beyond one node; cross-shard queries and rebalancing get hard.",
+        "nodes": {
+          "app": "Application",
+          "router": "Shard Router",
+          "shardA": "Shard A (keys a–h)",
+          "shardB": "Shard B (keys i–p)",
+          "shardC": "Shard C (keys q–z)"
+        }
       }
     }
   },

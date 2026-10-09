@@ -1453,6 +1453,114 @@
           "instance2": "Instância da API 2",
           "instance3": "Instância da API 3"
         }
+      },
+      "cqrs": {
+        "name": "CQRS",
+        "description": "Comandos e consultas usam modelos e bancos separados: as escritas vão para um banco normalizado e os eventos de mudança montam um modelo de leitura moldado para as consultas. Cada lado escala e evolui sozinho; a leitura é eventualmente consistente.",
+        "nodes": {
+          "client": "Cliente",
+          "commandApi": "API de Comandos",
+          "writeDb": "Banco de Escrita",
+          "projector": "Projetor",
+          "readDb": "Modelo de Leitura",
+          "queryApi": "API de Consultas"
+        }
+      },
+      "event-sourcing": {
+        "name": "Event Sourcing",
+        "description": "O estado é guardado como um log de eventos só de inclusão; projeções reprocessam o log em modelos de leitura. Ganha-se trilha de auditoria completa e a possibilidade de reconstruir visões; consultas dependem de projeções e o esquema dos eventos precisa evoluir com cuidado.",
+        "nodes": {
+          "client": "Cliente",
+          "commandApi": "API de Comandos",
+          "eventStore": "Event Store",
+          "projector": "Projetor",
+          "readModel": "Modelo de Leitura",
+          "queryApi": "API de Consultas"
+        }
+      },
+      "transactional-outbox": {
+        "name": "Transactional Outbox",
+        "description": "O serviço grava seus dados e o evento a publicar na mesma transação local (uma tabela outbox); um relay ou processo de CDC publica a outbox no broker. Evita a escrita dupla; a entrega é at-least-once, então os consumidores precisam ser idempotentes.",
+        "nodes": {
+          "service": "Serviço de Pedidos",
+          "database": "Banco de Pedidos (+ outbox)",
+          "relay": "Relay da Outbox (CDC)",
+          "broker": "Broker de Eventos",
+          "consumer": "Serviço de Cobrança"
+        }
+      },
+      "saga-orchestration": {
+        "name": "Saga — Orquestração",
+        "description": "Um orquestrador conduz a transação de negócio como uma sequência de passos locais e, quando um falha, envia comandos de compensação para desfazer os já concluídos. O fluxo fica explícito e observável; o orquestrador precisa ser durável e não absorver regras que são dos serviços.",
+        "nodes": {
+          "client": "Cliente",
+          "orchestrator": "Orquestrador do Checkout",
+          "inventory": "Serviço de Estoque",
+          "payment": "Serviço de Pagamentos",
+          "shipping": "Serviço de Entregas",
+          "stateStore": "Estado da Saga"
+        }
+      },
+      "saga-choreography": {
+        "name": "Saga — Coreografia",
+        "description": "Não há coordenador: cada serviço reage ao evento do passo anterior e emite o seu, compensando em eventos de falha. Os serviços ficam desacoplados; o fluxo como um todo fica implícito, mais difícil de acompanhar e testar.",
+        "nodes": {
+          "orders": "Serviço de Pedidos",
+          "bus": "Barramento de Eventos",
+          "payment": "Serviço de Pagamentos",
+          "inventory": "Serviço de Estoque",
+          "shipping": "Serviço de Entregas"
+        }
+      },
+      "cache-aside": {
+        "name": "Cache-Aside (Lazy Loading)",
+        "description": "A aplicação lê primeiro do cache; no miss, lê do banco e popula o cache. Simples e tolerante à perda do cache; o dado pode ficar desatualizado até expirar ou ser invalidado.",
+        "nodes": {
+          "app": "Serviço de Produtos",
+          "cache": "Cache de Produtos",
+          "database": "Banco de Produtos"
+        }
+      },
+      "cache-write-through-behind": {
+        "name": "Cache Write-Through / Write-Behind",
+        "description": "As escritas vão para o cache, que as persiste no banco de forma síncrona (write-through) ou assíncrona em lotes (write-behind). A leitura está sempre quente; no write-behind há risco de perder escritas se o cache cair.",
+        "nodes": {
+          "app": "Serviço de Carrinho",
+          "cache": "Cache de Carrinhos",
+          "database": "Banco de Carrinhos"
+        }
+      },
+      "materialized-view": {
+        "name": "Visão Materializada",
+        "description": "Um construtor escuta as mudanças nos bancos de origem e mantém uma visão pré-calculada para uma consulta específica. Joins caros viram uma leitura só; a visão fica atrás das origens.",
+        "nodes": {
+          "ordersDb": "Banco de Pedidos",
+          "customersDb": "Banco de Clientes",
+          "viewBuilder": "Construtor da Visão",
+          "view": "Visão de Resumo de Pedidos",
+          "queryApi": "API do Dashboard"
+        }
+      },
+      "data-replication": {
+        "name": "Replicação de Dados (Primário-Réplica)",
+        "description": "As escritas vão para o primário, que replica para réplicas de leitura que absorvem o tráfego de consulta. Escala as leituras e cria candidatos a failover; réplicas assíncronas podem servir dado defasado.",
+        "nodes": {
+          "app": "Aplicação",
+          "primary": "Banco Primário",
+          "replica1": "Réplica de Leitura 1",
+          "replica2": "Réplica de Leitura 2"
+        }
+      },
+      "sharding": {
+        "name": "Sharding",
+        "description": "Os dados são divididos entre shards por uma chave de partição e um roteador envia cada requisição ao shard dono da chave. Escala escrita e armazenamento além de um nó; consultas entre shards e rebalanceamento ficam difíceis.",
+        "nodes": {
+          "app": "Aplicação",
+          "router": "Roteador de Shards",
+          "shardA": "Shard A (chaves a–h)",
+          "shardB": "Shard B (chaves i–p)",
+          "shardC": "Shard C (chaves q–z)"
+        }
       }
     }
   },
