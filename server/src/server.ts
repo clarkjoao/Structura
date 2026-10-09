@@ -5,7 +5,7 @@ import https from "https";
 import fs from "fs";
 import { SSL_KEY_PATH, SSL_CERT_PATH } from "./config.js";
 
-export function createApp(): express.Application {
+export function createApp(health: () => Record<string, unknown> = () => ({})): express.Application {
   const app = express();
 
   // Enable CORS for proxy routes (development only)
@@ -20,7 +20,7 @@ export function createApp(): express.Application {
   );
 
   app.get("/health", (_req, res) => {
-    res.json({ status: "ok", uptime: process.uptime() });
+    res.json({ status: "ok", uptime: process.uptime(), ...health() });
   });
 
   return app;

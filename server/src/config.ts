@@ -28,6 +28,20 @@ export const WS_PATH = (() => {
 
 // ─── HTTPS (optional) ────────────────────────────────────────────────────────
 
+/** Shared room storage. Unset: single instance, rooms in memory. */
+export const REDIS_URL = process.env.REDIS_URL?.trim() || undefined;
+/** Prefix for every collaboration key, so deployments can share one Redis. */
+export const REDIS_NAMESPACE = process.env.REDIS_NAMESPACE?.trim() ?? "";
+
+/** How long a dropped host has to come back before its session closes (default 30 s). */
+export const COLLAB_HOST_GRACE_MS = process.env.COLLAB_HOST_GRACE_MS
+  ? Number(process.env.COLLAB_HOST_GRACE_MS)
+  : undefined;
+/** Participants per room (default 50). */
+export const COLLAB_MAX_PARTICIPANTS = process.env.COLLAB_MAX_PARTICIPANTS
+  ? Number(process.env.COLLAB_MAX_PARTICIPANTS)
+  : undefined;
+
 export const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
 export const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
 

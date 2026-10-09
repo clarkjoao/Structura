@@ -1,8 +1,21 @@
-import { PORT, WS_PATH, IS_PRODUCTION } from "./config.js";
+import {
+  PORT,
+  WS_PATH,
+  IS_PRODUCTION,
+  REDIS_URL,
+  REDIS_NAMESPACE,
+  COLLAB_HOST_GRACE_MS,
+  COLLAB_MAX_PARTICIPANTS,
+} from "./config.js";
 import { createApp, createServer, isTLS } from "./server.js";
-import { attachCollabServer } from "./collab.js";
+import { attachCollabServer, MemoryRoomStore, type RoomStore } from "./collab/index.js";
+import { RedisRoomStore } from "./collab/store/redis.js";
 
-const app = createApp();
+const store: RoomStore = REDIS_URL
+  ? new RedisRoomStore(REDIS_URL, { namespace: REDIS_NAMESPACE })
+  : new MemoryRoomStore();
+
+const app = createApp(() => ({ collab: { store: store.kind } }));
 
 if (!IS_PRODUCTION) {
   const { createProxyRouter } = await import("./proxy.js");
@@ -11,7 +24,10 @@ if (!IS_PRODUCTION) {
 }
 
 const httpServer = createServer(app);
-const collab = attachCollabServer(httpServer);
+const collab = attachCollabServer(httpServer, {
+  store,
+  relay: { hostGraceMs: COLLAB_HOST_GRACE_MS, maxParticipants: COLLAB_MAX_PARTICIPANTS },
+});
 
 const proto = isTLS ? "https" : "http";
 const wsProto = isTLS ? "wss" : "ws";
@@ -20,6 +36,9 @@ httpServer.listen(PORT, () => {
   console.log(`[server] ${proto.toUpperCase()} → ${proto}://localhost:${PORT}`);
   console.log(`[server] WS   → ${wsProto}://localhost:${PORT}${WS_PATH}`);
   console.log(`[server] ENV  → ${IS_PRODUCTION ? "production" : "development"}`);
+  console.log(
+    `[server] ROOMS → ${store.kind === "redis" ? "redis (shared)" : "memory (single instance)"}`,
+  );
 });
 
 async function shutdown(signal: string): Promise<void> {
