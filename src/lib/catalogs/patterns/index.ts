@@ -1,6 +1,8 @@
 import { API_EDGE_PATTERNS } from "./api-edge";
 import { DATA_CONSISTENCY_PATTERNS } from "./data-consistency";
+import { DEPLOYMENT_SCALE_PATTERNS } from "./deployment-scale";
 import { INTEGRATION_MESSAGING_PATTERNS } from "./integration-messaging";
+import { MIGRATION_MODERNIZATION_PATTERNS } from "./migration-modernization";
 import { RESILIENCE_PATTERNS } from "./resilience";
 import { PATTERN_CATEGORIES, type PatternCategory, type PatternTemplate } from "./types";
 
@@ -12,6 +14,8 @@ export const PATTERNS: readonly PatternTemplate[] = [
   ...API_EDGE_PATTERNS,
   ...DATA_CONSISTENCY_PATTERNS,
   ...RESILIENCE_PATTERNS,
+  ...MIGRATION_MODERNIZATION_PATTERNS,
+  ...DEPLOYMENT_SCALE_PATTERNS,
 ];
 
 export const PATTERNS_BY_CATEGORY = Object.fromEntries(

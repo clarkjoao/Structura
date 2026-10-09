@@ -1602,6 +1602,62 @@
           "appB": "Aplicação (Região B)",
           "dbB": "Banco (Região B)"
         }
+      },
+      "strangler-fig": {
+        "name": "Strangler Fig",
+        "description": "Uma fachada fica na frente do sistema legado e roteia cada funcionalidade migrada para o seu novo serviço, até não sobrar nada do lado legado. Migra aos poucos e com caminho de volta; os dois sistemas convivem, e dividem dados, durante a migração.",
+        "nodes": {
+          "client": "Cliente",
+          "facade": "Fachada de Roteamento",
+          "legacy": "Monolito Legado",
+          "newService": "Novo Serviço de Cobrança",
+          "newDb": "Banco de Cobrança"
+        }
+      },
+      "anti-corruption-layer": {
+        "name": "Camada Anticorrupção",
+        "description": "Uma camada de tradução entre o serviço novo e o sistema legado impede que o modelo legado vaze para o novo domínio. O desenho novo fica limpo; a camada é código e latência a mais para manter.",
+        "nodes": {
+          "newService": "Serviço de Pedidos",
+          "acl": "Camada Anticorrupção",
+          "legacy": "ERP Legado"
+        }
+      },
+      "blue-green-deployment": {
+        "name": "Blue-Green Deployment",
+        "description": "Dois ambientes idênticos: um (blue) recebe o tráfego enquanto a nova versão é publicada no outro (green); o roteador vira a chave no release e volta se der problema. Rollback instantâneo; dobra a infraestrutura durante o release e exige esquemas compatíveis.",
+        "nodes": {
+          "users": "Usuários",
+          "balancer": "Roteador",
+          "blue": "Blue (v1)",
+          "green": "Green (v2)",
+          "database": "Banco da Aplicação"
+        }
+      },
+      "canary-release": {
+        "name": "Canary Release",
+        "description": "A versão nova recebe primeiro uma fatia pequena do tráfego enquanto suas métricas são comparadas com a estável, e a fatia só cresce se elas se mantêm. Limita o estrago de um release ruim; exige boas métricas e versões que convivem. O shadowing (espelhar tráfego sem responder) é uma variação.",
+        "nodes": {
+          "users": "Usuários",
+          "balancer": "Divisor de Tráfego",
+          "stable": "Estável (v1)",
+          "canary": "Canário (v2)",
+          "monitoring": "Métricas"
+        }
+      },
+      "cell-based": {
+        "name": "Arquitetura Baseada em Células",
+        "description": "O sistema é replicado em células independentes, cada uma com a stack completa e seus próprios dados, e um roteador fino fixa cada tenant numa célula. Uma falha fica restrita a uma célula; operar muitas células e mover tenants entre elas exige ferramental. Deployment Stamps têm a mesma forma.",
+        "nodes": {
+          "users": "Usuários",
+          "cellRouter": "Roteador de Células",
+          "cell1": "Célula 1",
+          "app1": "Aplicação (Célula 1)",
+          "db1": "Banco (Célula 1)",
+          "cell2": "Célula 2",
+          "app2": "Aplicação (Célula 2)",
+          "db2": "Banco (Célula 2)"
+        }
       }
     }
   },

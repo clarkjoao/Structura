@@ -1602,6 +1602,62 @@
           "appB": "App (Region B)",
           "dbB": "DB (Region B)"
         }
+      },
+      "strangler-fig": {
+        "name": "Strangler Fig",
+        "description": "A façade sits in front of the legacy system and routes each migrated capability to its new service, until nothing is left on the legacy side. Migrates incrementally with a way back; both systems run, and share data, for the duration.",
+        "nodes": {
+          "client": "Client",
+          "facade": "Routing Façade",
+          "legacy": "Legacy Monolith",
+          "newService": "New Billing Service",
+          "newDb": "Billing DB"
+        }
+      },
+      "anti-corruption-layer": {
+        "name": "Anti-Corruption Layer",
+        "description": "A translation layer between a new service and a legacy system keeps the legacy model out of the new domain. The new design stays clean; the layer is extra code and latency to maintain.",
+        "nodes": {
+          "newService": "Order Service",
+          "acl": "Anti-Corruption Layer",
+          "legacy": "Legacy ERP"
+        }
+      },
+      "blue-green-deployment": {
+        "name": "Blue-Green Deployment",
+        "description": "Two identical environments: one (blue) takes live traffic while the new version is deployed to the other (green); the router switches over at release and back on trouble. Instant rollback; doubles the infrastructure during the release and needs compatible schemas.",
+        "nodes": {
+          "users": "Users",
+          "balancer": "Router",
+          "blue": "Blue (v1)",
+          "green": "Green (v2)",
+          "database": "App DB"
+        }
+      },
+      "canary-release": {
+        "name": "Canary Release",
+        "description": "The new version gets a small share of traffic first while its metrics are compared with the stable one, and the share grows only if they hold. Limits the blast radius of a bad release; needs good metrics and versions that can run side by side. Shadowing (mirroring traffic without serving it) is a variant.",
+        "nodes": {
+          "users": "Users",
+          "balancer": "Traffic Splitter",
+          "stable": "Stable (v1)",
+          "canary": "Canary (v2)",
+          "monitoring": "Metrics"
+        }
+      },
+      "cell-based": {
+        "name": "Cell-Based Architecture",
+        "description": "The system is replicated as independent cells, each with its full stack and its own data, and a thin router pins each tenant to one cell. A failure stays within one cell; operating many cells and moving tenants between them takes tooling. Deployment Stamps are the same shape.",
+        "nodes": {
+          "users": "Users",
+          "cellRouter": "Cell Router",
+          "cell1": "Cell 1",
+          "app1": "App (Cell 1)",
+          "db1": "DB (Cell 1)",
+          "cell2": "Cell 2",
+          "app2": "App (Cell 2)",
+          "db2": "DB (Cell 2)"
+        }
       }
     }
   },
