@@ -11,7 +11,7 @@ import {
   type CatalogEntry,
   type CatalogIndex,
 } from "./catalog-index";
-import { fold, foldWithMap, toSourceRange } from "./normalize";
+import { findMatchRanges, fold, foldWithMap, toSourceRange } from "./normalize";
 
 function registryIndex(): CatalogIndex {
   const { groups, entries } = registryCatalogEntries();
@@ -95,6 +95,8 @@ describe("searchCatalog", () => {
     const { hits, countsByGroup } = searchCatalog(index, "fila");
     const services = hits.map(serviceIdOf);
     expect(services).toEqual(expect.arrayContaining(["sqs", "servicebus", "kafka"]));
+    // A queue and nothing else beats a queue that is also an event stream.
+    expect(services.indexOf("sqs")).toBeLessThan(services.indexOf("msk"));
     for (const hit of hits.filter((candidate) => serviceIdOf(candidate) === "sqs")) {
       expect(hit.matchedOn).toBe("tag");
       expect(hit.matchedText).toBe("fila");
@@ -183,5 +185,16 @@ describe("createCatalogIndex", () => {
       base.entries,
     );
     expect(index.entries.every((entry) => entry.groupId === "c4")).toBe(true);
+  });
+});
+
+describe("findMatchRanges", () => {
+  it("finds every occurrence, accent-insensitive, in source positions", () => {
+    expect(findMatchRanges("Fila de filas — FILÁ", "fila")).toEqual([
+      [0, 4],
+      [8, 12],
+      [16, 20],
+    ]);
+    expect(findMatchRanges("anything", "  ")).toEqual([]);
   });
 });

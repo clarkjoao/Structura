@@ -37,3 +37,17 @@ export type MatchRange = readonly [start: number, end: number];
 export function toSourceRange(text: FoldedText, start: number, end: number): MatchRange {
   return [text.sourceIndex[start], text.sourceIndex[end - 1] + 1];
 }
+
+/** Every occurrence of `query` in `text`, accent- and case-insensitive, as source ranges. */
+export function findMatchRanges(text: string, query: string): MatchRange[] {
+  const needle = fold(query.trim());
+  if (!needle) return [];
+  const folded = foldWithMap(text);
+  const ranges: MatchRange[] = [];
+  let at = folded.folded.indexOf(needle);
+  while (at !== -1) {
+    ranges.push(toSourceRange(folded, at, at + needle.length));
+    at = folded.folded.indexOf(needle, at + needle.length);
+  }
+  return ranges;
+}

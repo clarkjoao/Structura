@@ -14,6 +14,10 @@ import {
 export interface ToolShortcutCallbacks {
   onOpenSearch?: () => void;
   onOpenCommandPalette?: () => void;
+  /** The element catalog (⌘K). */
+  onOpenCatalog?: () => void;
+  /** A toolbar insert by its plain-letter shortcut (N, P, L). */
+  onInsertTool?: (key: string) => boolean;
   onToggleDiagramSidebar?: () => void;
   onOpenQuickInsert?: (params: {
     screenPos: { x: number; y: number };
@@ -71,10 +75,13 @@ function createC4Element(params: CreateToolShortcutsParams, event: KeyboardEvent
 }
 
 /**
- * Canvas tool chords: search, palette, sidebar, C4 quick-create, Quick Insert.
+ * Canvas tool chords: search, catalog, diagram palette, sidebar, C4
+ * quick-create, Quick Insert, toolbar inserts.
  *
- * Quick Insert is Shift+E (no Cmd/Ctrl). Cmd+E and Cmd+Shift+E belong to Chrome
- * DevTools Performance; plain Shift+E still yields to focused inputs as typing.
+ * Quick Insert is Shift+E or `/` (no Cmd/Ctrl). Cmd+E and Cmd+Shift+E belong to
+ * Chrome DevTools Performance; plain keys still yield to focused inputs as typing.
+ * The catalog has Cmd+K; the diagram palette moved to Cmd+P (VS Code's "go to
+ * file"), whose print default the claim cancels.
  */
 export function createToolShortcuts(params: CreateToolShortcutsParams): KeyHandler {
   return (event: KeyboardEvent): boolean => {
@@ -99,7 +106,32 @@ export function createToolShortcuts(params: CreateToolShortcutsParams): KeyHandl
       return true;
     }
 
+    // Plain `/`, whatever modifier the layout needs to type it (Shift on some).
+    if (!mod && !event.ctrlKey && !event.metaKey && keyIs(event, KEY.SLASH)) {
+      openQuickInsert(params, event);
+      return true;
+    }
+
+    if (
+      !mod &&
+      !event.shiftKey &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      event.key.length === 1 &&
+      params.onInsertTool?.(event.key.toLowerCase())
+    ) {
+      claimShortcutEvent(event);
+      return true;
+    }
+
     if (mod && !event.shiftKey && keyMatchesLetter(event, KEY.K)) {
+      claimShortcutEvent(event);
+      params.onOpenCatalog?.();
+      return true;
+    }
+
+    if (mod && !event.shiftKey && keyMatchesLetter(event, KEY.P)) {
       claimShortcutEvent(event);
       params.onOpenCommandPalette?.();
       return true;

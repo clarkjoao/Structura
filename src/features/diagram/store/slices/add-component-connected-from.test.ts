@@ -22,18 +22,16 @@ describe("addComponentConnectedFrom", () => {
     const { store, diagramId, sourceId } = seed();
     const before = store.getState().past.length;
 
-    const { component, connection } = store
-      .getState()
-      .addComponentConnectedFrom(
-        sourceId,
-        {
-          type: "aws-integration",
-          name: "Amazon SQS",
-          position: { x: 300, y: 40 },
-          cloudServiceId: "sqs",
-        },
-        { label: "uses", edgeStyle: EdgeStyle.Smoothstep, sides: { sourceSide: "bottom" } },
-      );
+    const { component, connection } = store.getState().addComponentConnectedFrom(
+      sourceId,
+      {
+        type: "aws-integration",
+        name: "Amazon SQS",
+        position: { x: 300, y: 40 },
+        cloudServiceId: "sqs",
+      },
+      { label: "uses", edgeStyle: EdgeStyle.Smoothstep, sides: { sourceSide: "bottom" } },
+    );
 
     expect(store.getState().past.length).toBe(before + 1);
     const d = store.getState().diagrams[diagramId]!;

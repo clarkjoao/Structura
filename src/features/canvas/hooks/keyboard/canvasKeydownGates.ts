@@ -23,9 +23,19 @@ export function isCanvasEditingLocked(flags: CanvasKeydownModeFlags): boolean {
   return flags.isFlowPanelOpen || flags.isPlaying || flags.isCompareMode || flags.isRecording;
 }
 
-/** True when search or command palette owns the keyboard surface. */
+/**
+ * True when search, the command palette, the element catalog or quick insert
+ * owns the keyboard surface. The last two mark themselves in the DOM
+ * (`data-canvas-overlay="open"`) instead of a flag, so opening them does not
+ * re-render the canvas that computes these flags.
+ */
 export function isCanvasOverlayOpen(flags: CanvasKeydownModeFlags): boolean {
-  return Boolean(flags.isSearchOpen || flags.isCommandPaletteOpen);
+  return Boolean(flags.isSearchOpen || flags.isCommandPaletteOpen) || isCanvasOverlayLayerOpen();
+}
+
+export function isCanvasOverlayLayerOpen(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.querySelector('[data-canvas-overlay="open"]') !== null;
 }
 
 export function handleVersionsDrawerKey(

@@ -1966,7 +1966,14 @@
     "spacePanDesc": "Hold Space and drag on the canvas",
     "flowExit": "Exit flow reading",
     "flowStepOver": "Step over",
-    "flowStepOut": "Step out"
+    "flowStepOut": "Step out",
+    "catalogOpen": "Open the element catalog",
+    "catalogOpenDesc": "Search every element, cloud service, service and preset",
+    "quickInsertSlash": "Quick insert at the pointer",
+    "quickInsertSlashDesc": "Also Shift+E, a double-click or right-click on empty canvas, or dropping a connection on empty canvas (no selection, outside flow play/record)",
+    "insertNote": "Insert a note",
+    "insertPanel": "Insert a panel",
+    "insertSwimlane": "Insert a swimlane"
   },
   "github": {
     "configNote": "Services imported from GitHub are kept in Services.",
@@ -2586,7 +2593,12 @@
       "flowchart": "Flowchart",
       "canvas": "Canvas & structure",
       "services": "Services",
-      "presets": "My presets"
+      "presets": "My presets",
+      "aws": "AWS",
+      "gcp": "GCP",
+      "azure": "Azure",
+      "k8s": "Kubernetes",
+      "oss": "Open source"
     },
     "concepts": {
       "queue": "queue|message queue|messaging|broker",
@@ -2602,6 +2614,51 @@
       "serverless": "serverless|function|faas",
       "monitoring": "monitoring|observability|logs|metrics|tracing",
       "dns": "dns|domain"
+    },
+    "toolbar": {
+      "label": "Canvas tools",
+      "note": "Note",
+      "panel": "Panel",
+      "swimlane": "Swimlane",
+      "c4": "C4",
+      "flowchart": "Flowchart",
+      "c4Menu": "Insert a C4 element",
+      "flowchartMenu": "Insert a flowchart shape",
+      "catalog": "Catalog",
+      "catalogAria": "Open the element catalog",
+      "withShortcut": "{{label}} ({{shortcut}})"
+    },
+    "title": "Element catalog",
+    "searchPlaceholder": "Search {{count}} elements…",
+    "searchLabel": "Search elements",
+    "categoriesLabel": "Categories",
+    "all": "All",
+    "recents": "Recent",
+    "viewAll": "View all {{count}}",
+    "bestMatch": "Best match",
+    "results": "Results",
+    "matchedOn": {
+      "name": "name",
+      "synonym": "synonym",
+      "tag": "tag"
+    },
+    "insertAtCenter": "Insert at center",
+    "noResultsFor": "Nothing found for “{{query}}”",
+    "noResultsHint": "Save any element on the canvas as a preset from its right-click menu, and it shows up here.",
+    "presetsEmpty": "No presets yet. Right-click an element on the canvas and choose “Save as preset”.",
+    "hints": {
+      "navigate": "navigate",
+      "insert": "insert",
+      "keepOpen": "insert and keep open",
+      "category": "category",
+      "close": "close",
+      "drag": "drag to position"
+    },
+    "quickInsert": {
+      "label": "Quick insert",
+      "connectTo": "Connect {{name}} to…",
+      "top": "C4",
+      "openCatalog": "Open full catalog"
     }
   }
 }

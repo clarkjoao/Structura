@@ -284,7 +284,8 @@ function firstMatch(
  * Ranked search over name, synonyms and concept tags, accent- and
  * case-insensitive. Rank: exact name, name prefix, a word of the name, inside
  * the name, exact synonym, synonym, tag. Ties keep index order (group, then
- * position within the group), so the first hit is the "best match".
+ * position within the group) — tag ties prefer the more specific entry — so
+ * the first hit is the "best match".
  *
  * An empty query matches nothing: browsing is the caller's job.
  */
@@ -329,7 +330,12 @@ export function searchCatalog(index: CatalogIndex, rawQuery: string): CatalogSea
     countsByGroup.set(entry.groupId, (countsByGroup.get(entry.groupId) ?? 0) + 1);
   });
 
-  // Stable: equal ranks keep index order.
-  hits.sort((a, b) => a.rank - b.rank);
+  // Stable: equal ranks keep index order — except between two tag hits, where
+  // the entry that is fewer things wins: "fila" is SQS before MSK, which is
+  // also an event stream.
+  hits.sort(
+    (a, b) =>
+      a.rank - b.rank || (a.rank === RANK.tag ? a.entry.tags.length - b.entry.tags.length : 0),
+  );
   return { hits, countsByGroup };
 }

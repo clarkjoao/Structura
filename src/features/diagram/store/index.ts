@@ -73,6 +73,7 @@ export type {
   GeneratedGraphResult,
   GeneratedNodeInput,
 } from "./slices/generated-graph.slice";
+export type { NewConnectedComponent, NewConnectedEdge } from "./slices/components.slice";
 
 // ─── Store constants ──────────────────────────────────────────────────────────
 export {

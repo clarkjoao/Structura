@@ -1966,7 +1966,14 @@
     "spacePanDesc": "Segure Space e arraste no canvas",
     "flowExit": "Sair da leitura do fluxo",
     "flowStepOver": "Step over",
-    "flowStepOut": "Step out"
+    "flowStepOut": "Step out",
+    "catalogOpen": "Abrir o catálogo de elementos",
+    "catalogOpenDesc": "Busca em todos os elementos, serviços de nuvem, serviços e presets",
+    "quickInsertSlash": "Inserção rápida no ponteiro",
+    "quickInsertSlashDesc": "Também Shift+E, duplo clique ou clique direito no canvas vazio, ou soltar uma conexão no canvas vazio (sem seleção, fora de reprodução/gravação de fluxo)",
+    "insertNote": "Inserir nota",
+    "insertPanel": "Inserir painel",
+    "insertSwimlane": "Inserir raia"
   },
   "github": {
     "configNote": "Os serviços importados do GitHub serão mantidos em Serviços.",
@@ -2586,7 +2593,12 @@
       "flowchart": "Fluxograma",
       "canvas": "Canvas e estrutura",
       "services": "Serviços",
-      "presets": "Meus presets"
+      "presets": "Meus presets",
+      "aws": "AWS",
+      "gcp": "GCP",
+      "azure": "Azure",
+      "k8s": "Kubernetes",
+      "oss": "Open source"
     },
     "concepts": {
       "queue": "fila|filas|mensageria|mensagens|broker",
@@ -2602,6 +2614,51 @@
       "serverless": "serverless|função|funções|faas",
       "monitoring": "monitoramento|observabilidade|logs|métricas|rastreamento",
       "dns": "dns|domínio"
+    },
+    "toolbar": {
+      "label": "Ferramentas do canvas",
+      "note": "Nota",
+      "panel": "Painel",
+      "swimlane": "Raia",
+      "c4": "C4",
+      "flowchart": "Fluxograma",
+      "c4Menu": "Inserir elemento C4",
+      "flowchartMenu": "Inserir forma de fluxograma",
+      "catalog": "Catálogo",
+      "catalogAria": "Abrir o catálogo de elementos",
+      "withShortcut": "{{label}} ({{shortcut}})"
+    },
+    "title": "Catálogo de elementos",
+    "searchPlaceholder": "Buscar em {{count}} elementos…",
+    "searchLabel": "Buscar elementos",
+    "categoriesLabel": "Categorias",
+    "all": "Todos",
+    "recents": "Recentes",
+    "viewAll": "Ver todos {{count}}",
+    "bestMatch": "Melhor resultado",
+    "results": "Resultados",
+    "matchedOn": {
+      "name": "nome",
+      "synonym": "sinônimo",
+      "tag": "tag"
+    },
+    "insertAtCenter": "Inserir no centro",
+    "noResultsFor": "Nada encontrado para “{{query}}”",
+    "noResultsHint": "Salve qualquer elemento do canvas como preset pelo menu do botão direito, e ele aparece aqui.",
+    "presetsEmpty": "Nenhum preset ainda. Clique com o botão direito em um elemento do canvas e escolha “Salvar como preset”.",
+    "hints": {
+      "navigate": "navegar",
+      "insert": "inserir",
+      "keepOpen": "inserir e manter aberto",
+      "category": "categoria",
+      "close": "fechar",
+      "drag": "arraste para posicionar"
+    },
+    "quickInsert": {
+      "label": "Inserção rápida",
+      "connectTo": "Conectar {{name}} a…",
+      "top": "C4",
+      "openCatalog": "Abrir catálogo completo"
     }
   }
 }

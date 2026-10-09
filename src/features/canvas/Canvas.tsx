@@ -10,6 +10,8 @@ import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { useNodeTypes } from "./nodes/node-types";
 import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
+import { CanvasBottomToolbar } from "./catalog/CanvasBottomToolbar";
+import { useCatalogDrop } from "./catalog/useCatalogDrop";
 import { CanvasViewOptions } from "./toolbar/components/CanvasViewOptions";
 import { NothingInViewCard } from "./components/NothingInViewCard";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
@@ -190,6 +192,16 @@ const Canvas = (props: CanvasProps = {}) => {
     [pendingPreviews],
   );
   const { isFlowActive } = interactionMode;
+  const { setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId } = visualState;
+  const selectInsertedNode = useCallback(
+    (nodeId: string) => {
+      setSelectedNodeId(nodeId);
+      setSelectedNodeIds(new Set([nodeId]));
+      setSelectedEdgeId(null);
+    },
+    [setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId],
+  );
+  const catalogDrop = useCatalogDrop(interactionMode.canEditCanvas, selectInsertedNode);
   const initialViewport = useDiagramStore(
     useCallback((state) => {
       const activeDiagramId = state.activeDiagramId;
@@ -337,6 +349,12 @@ const Canvas = (props: CanvasProps = {}) => {
             focusMode={props.focusMode}
             onToggleFocusMode={props.onToggleFocusMode}
           />
+          {interactionMode.canEditCanvas &&
+            !isFlowActive &&
+            !interactionMode.isPlaying &&
+            !isCompareMode && (
+              <CanvasBottomToolbar isPanelOpen={isPanelOpen} onInserted={selectInsertedNode} />
+            )}
           {showSearch && diagram && (
             <CanvasSearch
               onClose={() => setShowSearch(false)}
@@ -356,6 +374,7 @@ const Canvas = (props: CanvasProps = {}) => {
             onContextMenu={(e) => e.preventDefault()}
             onDragOver={(event) => {
               onSvgDragOver(event);
+              if (catalogDrop.onDragOver(event)) return;
               if (!interactionMode.canEditCanvas) return;
               if (event.dataTransfer.types.includes(ELEMENT_PRESET_DRAG_MIME)) {
                 event.preventDefault();
@@ -363,6 +382,8 @@ const Canvas = (props: CanvasProps = {}) => {
               }
             }}
             onDrop={(event) => {
+              // Synchronously: the drag data is only readable while the drop is dispatched.
+              if (catalogDrop.onDrop(event)) return;
               void (async () => {
                 if (await onSvgDropFiles(event)) return;
                 if (!interactionMode.canEditCanvas) return;
