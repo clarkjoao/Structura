@@ -310,3 +310,41 @@ That is two above the 35–40 target. The cut candidates are `database-per-servi
 - Q4: GCP `function` → `cloudrun`; umbrella ids are gaps.
 - Q5: 40 patterns — `database-per-service` and `dead-letter-queue` are cut.
 - Q6: `list_patterns` is implemented as a read tool.
+
+## Outcome (build)
+
+| Category | Before (old categories) | After |
+| --- | --- | --- |
+| Integration & Messaging | messaging 5 | 8 |
+| API & Edge | api 3 | 5 |
+| Data & Consistency | data 8 + event-driven 4 | 10 |
+| Resilience | resilience 8 | 3 |
+| Migration & Modernization | — | 2 |
+| Deployment & Scale | — (in resilience) | 3 |
+| Security & Identity | security 2 | 3 |
+| Structure | — | 6 |
+| **Total** | **30** | **40** |
+
+Removed (Tier C, behavioral): fifo-queue-aws, fifo-queue-kafka, feature-flag-rollout,
+circuit-breaker, retry-with-fallback. Cut by size (Q5): database-per-service, dead-letter-queue.
+Merged: backpressure-buffer → queue-based-load-leveling, event-sourcing-cqrs → event-sourcing,
+event-carried-state-transfer → materialized-view, multi-tier-cache → cache-write-through-behind,
+shadow-deployment → canary-release, rbac-with-opa → policy-enforcement-point.
+
+Deviations from the plan:
+
+- **No P1 pin test.** Every kept pattern was rewritten in roles, so "same nodes as before" could
+  not hold. P1 shipped the new model with the first category instead, and the integrity test
+  (ids, keys, edges, registered types, i18n in both locales, Tier C deny-list, provider × role
+  fallbacks only on declared gaps, no overlaps on the grid) replaced it.
+- **Fewer commits than categories.** Categories whose i18n landed together share a commit.
+- **Boundaries are panels.** Pod, cell, region and pool are default panels, not the typed
+  containers of the deploy/k8s families (`deploy-sharded-store`, `k8s-workload`). Those size
+  themselves from their children, which the grid sizing can't predict.
+- **Providers are derived.** The list is Neutral + every family that resolves at least one role,
+  so **Open source** (Kafka, Redis) appears beside AWS / GCP / Azure.
+
+Browser check (Vite + one Playwright instance): each of the 40 patterns was inserted beside an
+existing node. Result: 0 overlapping nodes, and one undo restored the canvas every time, in
+pt-BR and en. AWS, GCP and Azure resolved the expected number of service cards. GCP falls back
+to neutral on its declared gaps.
