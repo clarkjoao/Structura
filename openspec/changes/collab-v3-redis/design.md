@@ -257,9 +257,11 @@ and resumes.
   `collab-reconnect` harness.
 - `server/loadtest/`: the protocol-level load driver for 500 connections in 35 rooms.
 
-A CI job runs the Compose suite on every PR. A manual workflow runs the kind suite against
-`deploy/k8s/`, which covers the Deployment, HPA, PodDisruptionBudget, Service, an ingress-nginx
-Ingress with WebSocket timeouts, and a Redis StatefulSet with optional AOF.
+A CI job runs the Compose suite on every PR. The Kubernetes manifests (Deployment with HPA,
+PodDisruptionBudget and a preStop drain, Service, an ingress-nginx Ingress with WebSocket timeouts,
+and a Redis StatefulSet with optional AOF) live in the standalone relay project
+`structura-wbsocket-server`, together with the kind scripts that run the suite against them. That
+project syncs the relay source from `server/`, which stays the source of truth.
 
 ## Risks / Trade-offs
 
@@ -278,7 +280,7 @@ Ingress with WebSocket timeouts, and a Redis StatefulSet with optional AOF.
 - **[Root cause of the React Flow loop unknown]** → D10 removes the trigger in collaboration. A
   separate task reproduces the remount loop in isolation and fixes or reports it.
 - **[Redis as a critical dependency]** → Host reseed makes a Redis loss recoverable. HA is an
-  operator choice documented in `deploy/k8s/README`.
+  operator choice documented in the relay project's README.
 
 ## Migration Plan
 

@@ -83,12 +83,12 @@ assert these targets:
 
 ### Requirement: The relay ships with Kubernetes manifests
 
-The repository SHALL provide manifests that deploy several relay replicas with autoscaling,
-shared storage, health checks, and a WebSocket-capable ingress. The resilience scenarios SHALL
-pass against a local Kubernetes cluster built from them.
+The relay's deployment project SHALL provide manifests that deploy several relay replicas with
+autoscaling, shared storage, health checks, and a WebSocket-capable ingress. The resilience
+scenarios SHALL pass against a local Kubernetes cluster built from them.
 
 #### Scenario: Local cluster run
 
-- **GIVEN** a local cluster created from the repository manifests
+- **GIVEN** a local cluster created from the deployment project's manifests
 - **WHEN** the instance-kill scenario runs against it
 - **THEN** participants are editing again within 5 seconds

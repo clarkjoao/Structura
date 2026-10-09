@@ -74,7 +74,8 @@ meet that target, because its room state lives in one process.
 - **Deployment and proof:**
   - a Docker Compose harness (several relay replicas, Redis and a round-robin proxy) runs the
     acceptance suite in CI;
-  - Kubernetes manifests go under `deploy/k8s/`, with a kind run.
+  - Kubernetes manifests and a kind run ship in the standalone relay project
+    (`structura-wbsocket-server`, which syncs the relay source from `server/`).
 - **Removed:** the Go port (`server/go/`). It mirrors v2 and would document a protocol that no
   longer exists. A Go server is rebuilt later from the v3 spec and the shared Lua script.
 
