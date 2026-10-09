@@ -235,13 +235,13 @@ export function WorkspaceContent({
     <>
       {!focusMode ? (
         <div className="border-b border-border bg-card shrink-0">
-          <div className="container flex items-center justify-between h-12">
-            <div className="flex items-center gap-3 text-sm">
+          <div className="container flex h-12 items-center justify-between gap-4">
+            <div className="flex min-w-0 flex-1 items-center gap-3 text-sm">
               <button
                 type="button"
                 disabled={canvasInteractionLocked}
                 onClick={() => setDiagramSidebarOpen((open) => !open)}
-                className={`rounded-md p-1 text-muted-foreground transition-colors ${
+                className={`shrink-0 rounded-md p-1 text-muted-foreground transition-colors ${
                   canvasInteractionLocked ? "opacity-50" : "hover:bg-muted hover:text-foreground"
                 }`}
                 title={
@@ -256,11 +256,18 @@ export function WorkspaceContent({
               </button>
               <Link
                 to={backHref}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Link>
-              {diagram?.domain && <span className="text-muted-foreground">{diagram.domain}</span>}
+              {diagram?.domain && (
+                <span
+                  title={diagram.domain}
+                  className="min-w-0 max-w-[10rem] shrink truncate text-muted-foreground"
+                >
+                  {diagram.domain}
+                </span>
+              )}
               {diagram && (
                 <DiagramTitle
                   diagram={diagram}
@@ -270,7 +277,7 @@ export function WorkspaceContent({
               )}
               {isRecording && (
                 <span
-                  className={`text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
+                  className={`shrink-0 text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
                     isEditingFlow ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
                   }`}
                 >
@@ -278,7 +285,7 @@ export function WorkspaceContent({
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <SaveStatusIndicator />
               <FileSystemStatus compact hideActions />
               <CollabToolbar
