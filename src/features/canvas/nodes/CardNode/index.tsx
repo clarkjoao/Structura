@@ -2,7 +2,7 @@ import { memo, useLayoutEffect, useRef, type CSSProperties, type ReactNode } fro
 import { Position, type Node, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
-import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
+import { useIsNodeLocked, usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
 import { cloudRegistry, CloudIcon } from "@/features/cloud";
@@ -128,6 +128,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const customDiagramIcon = useResolvedComponentIcon(d.elementId);
   const collabHighlight = useCollabHighlight(d.elementId);
   const activePeer = usePeerOnNode(d.elementId);
+  const peerLocked = useIsNodeLocked(d.elementId);
 
   const cloudProvider = cloudRegistry.forType(d.type);
   const registered = getElement(d.type);
@@ -214,7 +215,13 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
           style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
         />
       )}
-      {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />}
+      {activePeer && (
+        <CollabPeerPresence
+          activePeer={activePeer}
+          locked={peerLocked}
+          roundedClassName="rounded-lg"
+        />
+      )}
       {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
       {!d.compareBadges && d.versionBadge && (
         <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />

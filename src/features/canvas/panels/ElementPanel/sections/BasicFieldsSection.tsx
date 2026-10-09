@@ -25,6 +25,8 @@ export interface BasicFieldsSectionProps {
   onChangeTagInput: (value: string) => void;
   onRemoveTag: (tag: string) => void;
   onCommitTagInput: () => void;
+  /** In a live session: take the element's text lock while name or description has focus. */
+  textLock?: { onFocus: () => void; onBlur: () => void; lockedBy: string | null };
 }
 
 export function BasicFieldsSection({
@@ -45,29 +47,37 @@ export function BasicFieldsSection({
   onChangeTagInput,
   onRemoveTag,
   onCommitTagInput,
+  textLock,
 }: BasicFieldsSectionProps) {
   const { t } = useTranslation();
 
   return (
     <>
-      {showName && (
-        <Field
-          label={t("common.name")}
-          value={name}
-          onChange={onChangeName}
-          inputRef={titleInputRef}
-        />
-      )}
-      {showDescription && (
-        <Field
-          label={isNote ? t("endpointPanel.content") : t("common.description")}
-          value={desc}
-          onChange={onChangeDesc}
-          multiline
-          placeholder={isNote ? t("elementPanel.notePlaceholder") : undefined}
-          hint={isNote ? t("endpointPanel.markdownHint") : undefined}
-        />
-      )}
+      <div className="contents" onFocusCapture={textLock?.onFocus} onBlurCapture={textLock?.onBlur}>
+        {textLock?.lockedBy && (
+          <p role="status" className="text-[11px] text-amber-600 dark:text-amber-400">
+            {t("collaboration.lockedBy", { name: textLock.lockedBy })}
+          </p>
+        )}
+        {showName && (
+          <Field
+            label={t("common.name")}
+            value={name}
+            onChange={onChangeName}
+            inputRef={titleInputRef}
+          />
+        )}
+        {showDescription && (
+          <Field
+            label={isNote ? t("endpointPanel.content") : t("common.description")}
+            value={desc}
+            onChange={onChangeDesc}
+            multiline
+            placeholder={isNote ? t("elementPanel.notePlaceholder") : undefined}
+            hint={isNote ? t("endpointPanel.markdownHint") : undefined}
+          />
+        )}
+      </div>
       {showTechnology && (
         <Field label={t("common.technology")} value={tech} onChange={onChangeTech} />
       )}

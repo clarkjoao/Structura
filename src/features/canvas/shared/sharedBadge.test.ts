@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Component, Diagram } from "@/features/diagram";
 import "@/features/elements/bootstrap";
-import { snapshotChecksum } from "@/features/collaboration/utils/snapshotChecksum";
+import { stateFingerprint } from "@/test/stateFingerprint";
 import { projectReadDiagram } from "../core/projectReadDiagram";
 import { buildSharedLayer } from "./sharedLayerModel";
 
@@ -57,11 +57,11 @@ describe("badge mode", () => {
   it("hides the edges into it, keeps its own and the others, and changes no data", () => {
     const d = diagram("badge");
     const surface = () => ({ ...d.snapshot, nodeLayouts: d.nodeLayouts, edgeLayouts: {} });
-    const before = snapshotChecksum(surface());
+    const before = stateFingerprint(surface());
     const { edges } = projectReadDiagram(d);
     expect(edges.map((e) => e.id).sort()).toEqual(["e3", "e4"]);
     expect(Object.keys(d.snapshot.connections)).toHaveLength(4);
-    expect(snapshotChecksum(surface())).toBe(before);
+    expect(stateFingerprint(surface())).toBe(before);
   });
 
   it("shows them again while revealed", () => {

@@ -322,10 +322,10 @@ describe("kubernetes structure — nothing written by default", () => {
   });
 
   it("render and export read the diagram and leave its checksum alone", async () => {
-    const { snapshotChecksum } = await import("@/features/collaboration/utils/snapshotChecksum");
+    const { stateFingerprint } = await import("@/test/stateFingerprint");
     const d = diagram(true);
     const surface = () => ({ ...d.snapshot, nodeLayouts: d.nodeLayouts, edgeLayouts: {} });
-    const before = snapshotChecksum(surface());
+    const before = stateFingerprint(surface());
     const json = JSON.stringify(d);
     const components = d.snapshot.components;
     const ctx = {
@@ -345,6 +345,6 @@ describe("kubernetes structure — nothing written by default", () => {
     }
     projectReadDiagram(d, readingAt(d, "s3", ["s1", "s2"]));
     expect(JSON.stringify(d)).toBe(json);
-    expect(snapshotChecksum(surface())).toBe(before);
+    expect(stateFingerprint(surface())).toBe(before);
   });
 });

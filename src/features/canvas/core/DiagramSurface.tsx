@@ -34,6 +34,7 @@ type FlowHandlerProps = Pick<
   | "onPaneClick"
   | "onPaneContextMenu"
   | "onNodeContextMenu"
+  | "onNodeDragStart"
   | "onNodeDragStop"
   | "onSelectionChange"
   | "onMoveEnd"
@@ -93,6 +94,7 @@ export function DiagramSurface({
   onPaneClick,
   onPaneContextMenu,
   onNodeContextMenu,
+  onNodeDragStart,
   onNodeDragStop,
   onSelectionChange,
   children,
@@ -122,6 +124,7 @@ export function DiagramSurface({
           onPaneClick={onPaneClick}
           onPaneContextMenu={onPaneContextMenu}
           onNodeContextMenu={onNodeContextMenu}
+          onNodeDragStart={onNodeDragStart}
           onNodeDragStop={onNodeDragStop}
           onSelectionChange={onSelectionChange}
           panOnDrag={shell.panOnDrag}

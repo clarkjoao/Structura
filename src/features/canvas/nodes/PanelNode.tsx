@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
-import { usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
+import { useIsNodeLocked, usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { contrastLabelColor } from "@/features/diagram";
 import { useCanvasBackdrop } from "./use-canvas-backdrop";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
@@ -125,6 +125,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const isTransparent = opacity === 0;
   const collabHighlight = useCollabHighlight(d.elementId);
   const activePeer = usePeerOnNode(d.elementId);
+  const peerLocked = useIsNodeLocked(d.elementId);
   const backgroundColor = isTransparent
     ? "transparent"
     : colorWithAlpha(color, isDragTarget ? bgAlpha : collapsed ? Math.max(bgAlpha, 0.12) : bgAlpha);
@@ -157,7 +158,13 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-lg" />}
+        {activePeer && (
+          <CollabPeerPresence
+            activePeer={activePeer}
+            locked={peerLocked}
+            roundedClassName="rounded-lg"
+          />
+        )}
         {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.versionBadge && (
           <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
@@ -229,7 +236,13 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
             style={{ boxShadow: `inset 0 0 0 2px ${collabHighlight.color}` }}
           />
         )}
-        {activePeer && <CollabPeerPresence activePeer={activePeer} roundedClassName="rounded-xl" />}
+        {activePeer && (
+          <CollabPeerPresence
+            activePeer={activePeer}
+            locked={peerLocked}
+            roundedClassName="rounded-xl"
+          />
+        )}
         {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.versionBadge && (
           <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />

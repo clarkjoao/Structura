@@ -1432,7 +1432,7 @@
     "waitingPeers": "Esperando convidados",
     "peerLimitReached": "Limite de convidados atingido",
     "roomFull": "Sala cheia",
-    "roomFullDesc": "Esta sessão atingiu o máximo de 15 participantes. Tente novamente mais tarde ou entre em contato com o host.",
+    "roomFullDesc": "Esta sessão atingiu o máximo de {{limit}} participantes. Tente novamente mais tarde ou entre em contato com o host.",
     "endSession": "Encerrar sessão",
     "endSessionForEveryone": "Encerrar a sessão para todos?",
     "endSessionForEveryoneDesc": "Os convidados vão ser desconectados e a sessão ao vivo termina.",
@@ -1469,7 +1469,18 @@
       "reconnecting": "Reconectando",
       "disconnected": "Desconectado",
       "closed": "Encerrado"
-    }
+    },
+    "reconnectingBanner": "Conexão perdida — reconectando…",
+    "hostReconnectingBanner": "{{host}} está reconectando — você pode continuar editando.",
+    "ended": {
+      "roomUnknown": "Esta sessão não existe mais.",
+      "updateRequired": "Este app está desatualizado para o servidor da sessão. Recarregue a página para atualizar.",
+      "tooLarge": "Este diagrama é grande demais para uma sessão ao vivo ({{size}} MB, limite {{limit}} MB).",
+      "invalidSeed": "Não foi possível compartilhar o diagrama. Tente novamente.",
+      "unauthorized": "A sessão recusou sua credencial de host.",
+      "unreachable": "A conexão com a sessão foi perdida."
+    },
+    "lockedBy": "{{name}} está editando isto"
   },
   "elementPresets": {
     "myPresets": "Meus presets",

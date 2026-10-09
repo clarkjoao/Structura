@@ -25,6 +25,9 @@ export default defineConfig({
     retry: 2,
   },
   resolve: {
-    alias: { "@": path.resolve(import.meta.dirname, "./src") },
+    alias: {
+      "@": path.resolve(import.meta.dirname, "./src"),
+      "@collab-protocol": path.resolve(import.meta.dirname, "./server/src/collab/protocol.ts"),
+    },
   },
 });
