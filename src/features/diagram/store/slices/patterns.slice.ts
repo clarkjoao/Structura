@@ -1,39 +1,31 @@
-import type { PatternComponent, PatternTemplate } from "@/lib/catalogs/patterns";
 import type { Connection } from "../../model/connection.types";
-import type { Component, UserTemplate, UserTemplateComponent } from "../../model/diagram.types";
-import { cloudServiceIdWrite } from "../../model/cloud-service-id";
+import type {
+  Component,
+  NodeLayout,
+  UserTemplate,
+  UserTemplateComponent,
+} from "../../model/diagram.types";
+import type { PatternFragment } from "../../model/pattern-fragment.types";
+import { isC4Component } from "../../model/component.guards";
+import { canBeConnectionSource } from "../../model/connection-rules";
+import { UNSIZED_NODE_EXTENT_H, UNSIZED_NODE_EXTENT_W } from "../../model/layout.constants";
 import { generateId } from "../../utils/generate-id";
+import { freeInsertOrigin, type Box } from "../../utils/free-insert-origin";
 import { computeUserTemplateNodeLayouts } from "../../utils/user-template-insert-layout";
 import type { AppState } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
+import { resolveActiveVersion, writeComponentAndLayout } from "../helpers/version-helpers";
+import { buildComponentForType, buildLayoutForComponent } from "./components.slice";
+import { buildConnection, writeConnection } from "./connections.slice";
 
-type InsertablePattern = PatternTemplate | UserTemplate;
-
-function getConnectionEndpoints(
-  conn: PatternTemplate["connections"][number] | UserTemplate["connections"][number],
-): { from: number; to: number } {
-  if ("fromIndex" in conn) {
-    return { from: conn.fromIndex, to: conn.toIndex };
-  }
-  return { from: conn.sourceIndex, to: conn.targetIndex };
-}
-
-function buildConnectionRecord(
-  conn: InsertablePattern["connections"][number],
+function buildUserTemplateConnection(
+  conn: UserTemplate["connections"][number],
   connId: string,
   sourceId: string,
   targetId: string,
 ): Connection {
-  if ("fromIndex" in conn) {
-    return {
-      id: connId,
-      sourceId,
-      targetId,
-      label: conn.label,
-    };
-  }
   const { sourceIndex, targetIndex, ...rest } = conn;
   return {
     ...(rest as Omit<Connection, "id" | "sourceId" | "targetId">),
@@ -43,8 +35,8 @@ function buildConnectionRecord(
   };
 }
 
-function isUserTemplatePayload(template: InsertablePattern): template is UserTemplate {
-  return "createdAt" in template && typeof template.createdAt === "number";
+function isPatternFragment(template: UserTemplate | PatternFragment): template is PatternFragment {
+  return "patternId" in template;
 }
 
 function buildUserTemplateComponentPayload(
@@ -79,43 +71,113 @@ function buildUserTemplateComponentPayload(
   } as Component;
 }
 
-function buildCatalogPatternComponentAndLayout(
-  raw: PatternComponent,
-  newId: string,
-  index: number,
+/** Top-level nodes of the active scene, as the boxes a new fragment must not cover. */
+function occupiedBoxes(state: AppState): Box[] {
+  const d = getActiveDiagram(state);
+  if (!d) return [];
+  const scene = resolveActiveVersion(d);
+  const components = { ...d.snapshot.components, ...(scene?.addedComponents ?? {}) };
+  const layouts = { ...d.nodeLayouts, ...(scene?.nodeLayouts ?? {}) };
+  return Object.values(components).flatMap((component) => {
+    if (component.parentId) return [];
+    const layout = layouts[component.id];
+    if (!layout) return [];
+    return [
+      {
+        x: layout.x,
+        y: layout.y,
+        width: layout.width ?? UNSIZED_NODE_EXTENT_W,
+        height: layout.height ?? UNSIZED_NODE_EXTENT_H,
+      },
+    ];
+  });
+}
+
+/**
+ * Writes a resolved catalog pattern. Every node is built the way `addComponent`
+ * builds one — the descriptor creates it and sizes it — so a pattern node is
+ * the same as one inserted from the catalog. A boundary keeps the size the
+ * resolver gave it, to fit its children.
+ */
+function insertFragment(
+  state: AppState,
+  fragment: PatternFragment,
   position: { x: number; y: number },
-  gridX: number,
-): { component: Component; layout: { elementId: string; x: number; y: number } } {
-  const component = {
-    id: newId,
-    name: raw.name,
-    type: raw.type,
-    description: raw.description ?? "",
-    parentId: null,
-    technology: raw.technology,
-    ...cloudServiceIdWrite(raw.cloudServiceId ?? raw.awsService),
-  } as Component;
+  ids: string[],
+): void {
+  const d = getActiveDiagram(state);
+  if (!d) return;
+  const scene = resolveActiveVersion(d);
+  const origin = freeInsertOrigin(position, fragment, occupiedBoxes(state));
 
-  const x = raw.x !== undefined ? position.x + raw.x : position.x + index * gridX;
-  const y = raw.y !== undefined ? position.y + raw.y : position.y;
+  fragment.nodes.forEach((node, i) => {
+    const parentId = node.parentIndex === null ? null : ids[node.parentIndex];
+    const { component, resolvedPanelKind } = buildComponentForType(
+      ids[i],
+      node.type,
+      node.name,
+      parentId,
+      node.createOptions.panelKind,
+      node.createOptions.serviceId,
+      node.createOptions.flowShape,
+      node.createOptions,
+    );
+    if (node.technology !== undefined && isC4Component(component)) {
+      component.technology = node.technology;
+    }
+    const at = parentId ? { x: node.x, y: node.y } : { x: origin.x + node.x, y: origin.y + node.y };
+    const layout: NodeLayout = {
+      ...buildLayoutForComponent(
+        ids[i],
+        node.type,
+        resolvedPanelKind,
+        at,
+        node.createOptions.flowShape,
+        node.createOptions,
+      ),
+      ...(node.width !== undefined ? { width: node.width } : {}),
+      ...(node.height !== undefined ? { height: node.height } : {}),
+    };
+    writeComponentAndLayout(d, scene, component, layout);
+  });
 
-  return {
-    component,
-    layout: { elementId: newId, x, y },
-  };
+  for (const edge of fragment.edges) {
+    // An edge out of a note or a table can never be drawn; the catalog test keeps
+    // them out, and this keeps a bad entry from writing one.
+    if (!canBeConnectionSource(fragment.nodes[edge.from].type)) continue;
+    writeConnection(d, scene, buildConnection(ids[edge.from], ids[edge.to], edge.label));
+  }
 }
 
 export const patternsSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-  insertPattern: (template: InsertablePattern, position: { x: number; y: number }): string[] => {
-    const GRID_X = 220;
-    const userComponents = isUserTemplatePayload(template) ? template.components : null;
+  /**
+   * Inserts a resolved catalog pattern or a saved template, as one undo step.
+   * A pattern is moved right, as a whole, when it would cover existing nodes.
+   */
+  insertPattern: (
+    template: UserTemplate | PatternFragment,
+    position: { x: number; y: number },
+  ): string[] => {
+    if (isPatternFragment(template)) {
+      const ids = template.nodes.map(() => generateId("el"));
+      let committed = false;
+      set((state) => {
+        const d = getActiveDiagram(state);
+        if (!d) return;
+        committed = true;
+        if (!resolveActiveVersion(d)) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+        insertFragment(state, template, position, ids);
+        touchDiagram(d);
+      });
+      return committed ? ids : [];
+    }
+
+    const userComponents = template.components;
     const ids: string[] = template.components.map(() => generateId("el"));
-    const userLayouts = userComponents
-      ? computeUserTemplateNodeLayouts(userComponents, position)
-      : null;
+    const userLayouts = computeUserTemplateNodeLayouts(userComponents, position);
 
     let committed = false;
     set((state) => {
@@ -125,31 +187,16 @@ export const patternsSlice = (
       const sid = d.activeVersionId ?? null;
       const scene = sid && d.versions?.[sid] ? d.versions[sid] : null;
       if (!scene) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      template.components.forEach((raw, i) => {
-        let component: Component;
-        let layout: { elementId: string; x: number; y: number; width?: number; height?: number };
-
-        if (userComponents && userLayouts) {
-          component = buildUserTemplateComponentPayload(userComponents[i], ids[i], ids);
-          const dims = userLayouts[i];
-          layout = {
-            elementId: ids[i],
-            x: dims.x,
-            y: dims.y,
-            ...(dims.width !== undefined ? { width: dims.width } : {}),
-            ...(dims.height !== undefined ? { height: dims.height } : {}),
-          };
-        } else {
-          const built = buildCatalogPatternComponentAndLayout(
-            raw as PatternComponent,
-            ids[i],
-            i,
-            position,
-            GRID_X,
-          );
-          component = built.component;
-          layout = built.layout;
-        }
+      userComponents.forEach((raw, i) => {
+        const component = buildUserTemplateComponentPayload(raw, ids[i], ids);
+        const dims = userLayouts[i];
+        const layout = {
+          elementId: ids[i],
+          x: dims.x,
+          y: dims.y,
+          ...(dims.width !== undefined ? { width: dims.width } : {}),
+          ...(dims.height !== undefined ? { height: dims.height } : {}),
+        };
 
         if (scene) {
           scene.addedComponents[component.id] = component;
@@ -160,9 +207,13 @@ export const patternsSlice = (
         }
       });
       template.connections.forEach((rawConn) => {
-        const { from, to } = getConnectionEndpoints(rawConn);
         const connId = generateId("conn");
-        const next = buildConnectionRecord(rawConn, connId, ids[from], ids[to]);
+        const next = buildUserTemplateConnection(
+          rawConn,
+          connId,
+          ids[rawConn.sourceIndex],
+          ids[rawConn.targetIndex],
+        );
         if (scene) {
           scene.addedConnections[connId] = next;
         } else {

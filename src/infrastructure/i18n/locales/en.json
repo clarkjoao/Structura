@@ -1194,12 +1194,14 @@
     "modalTitle": "Architecture patterns",
     "categoryAll": "All",
     "category": {
-      "messaging": "Messaging",
-      "api": "API",
+      "integration-messaging": "Integration & Messaging",
+      "api-edge": "API & Edge",
+      "data-consistency": "Data & Consistency",
       "resilience": "Resilience",
-      "data": "Data",
-      "event-driven": "Event-Driven",
-      "security": "Security"
+      "migration-modernization": "Migration & Modernization",
+      "deployment-scale": "Deployment & Scale",
+      "security-identity": "Security & Identity",
+      "structure": "Structure"
     },
     "noneFoundForQuery": "No patterns found for “{{query}}”",
     "elementAbbrev": "{{count}} elem.",
@@ -1216,6 +1218,186 @@
       "importTemplate": "Import template (.json)",
       "importSuccess": "Template \"{{name}}\" imported successfully",
       "importError": "Invalid or corrupted file"
+    },
+    "reference": "Reference",
+    "roles": {
+      "queue": "Message queue",
+      "events": "Events",
+      "database": "Database",
+      "cache": "Cache",
+      "object-storage": "Object storage",
+      "api-gateway": "API gateway",
+      "load-balancer": "Load balancer",
+      "cdn": "CDN",
+      "identity": "Identity provider",
+      "secrets": "Secrets store",
+      "serverless": "Function",
+      "monitoring": "Observability backend",
+      "dns": "DNS / global routing",
+      "topic": "Topic (pub/sub)",
+      "event-bus": "Event bus",
+      "stream": "Event stream",
+      "relational-db": "Relational database",
+      "nosql-db": "NoSQL database",
+      "warehouse": "Data warehouse",
+      "workflow": "Workflow engine"
+    },
+    "edges": {
+      "request": "request",
+      "route": "route",
+      "call": "call",
+      "forward": "forward",
+      "publish": "publish",
+      "deliver": "deliver",
+      "enqueue": "enqueue",
+      "consume": "consume",
+      "pipe": "pipe",
+      "scatter": "scatter / gather",
+      "store-payload": "store payload",
+      "send-reference": "send reference",
+      "fetch-payload": "fetch payload",
+      "write": "write",
+      "read": "read",
+      "read-write": "read / write",
+      "write-status": "write status",
+      "read-status": "read status",
+      "poll-status": "request, then poll status",
+      "command": "command",
+      "query": "query",
+      "append": "append event",
+      "stream-events": "stream events",
+      "project": "project",
+      "change-events": "change events",
+      "poll-outbox": "poll outbox",
+      "command-compensate": "execute / compensate",
+      "persist-state": "persist saga state",
+      "emit-event": "emit event",
+      "read-or-populate": "read / populate",
+      "read-on-miss": "read on miss",
+      "persist": "persist (sync or async)",
+      "replicate": "replicate",
+      "route-by-key": "route by key",
+      "serve-static": "static assets",
+      "origin-fetch": "origin fetch",
+      "resolve": "resolve",
+      "failover": "failover",
+      "live-traffic": "live traffic",
+      "switch-on-release": "switch on release",
+      "majority-traffic": "most traffic",
+      "canary-traffic": "canary traffic",
+      "metrics": "metrics",
+      "route-legacy": "not yet migrated",
+      "route-migrated": "migrated routes",
+      "translate": "translate",
+      "sign-in": "sign in",
+      "redirect-to-idp": "redirect to IdP",
+      "issue-token": "issue token",
+      "request-key": "request key",
+      "scoped-key": "scoped key",
+      "upload-direct": "upload directly",
+      "check-policy": "check policy",
+      "load-policies": "load policies",
+      "forward-if-allowed": "forward if allowed",
+      "localhost": "localhost",
+      "telemetry": "telemetry",
+      "proxy": "proxy",
+      "mtls": "mTLS",
+      "configure": "configure",
+      "call-port": "call (port)",
+      "implement-port": "implement (port)",
+      "invoke": "invoke",
+      "route-by-tenant": "route by tenant",
+      "route-critical": "critical",
+      "route-batch": "batch"
+    },
+    "items": {
+      "publisher-subscriber": {
+        "name": "Publisher-Subscriber",
+        "description": "A publisher sends each event once to a topic and every subscriber gets its own copy. Use it to add consumers without touching the producer; the trade-off is eventual consistency and harder end-to-end tracing.",
+        "nodes": {
+          "publisher": "Order Service",
+          "topic": "Order Events",
+          "billing": "Billing Service",
+          "shipping": "Shipping Service",
+          "analytics": "Analytics Service"
+        }
+      },
+      "fan-out": {
+        "name": "Fan-out (topic → queues)",
+        "description": "A topic delivers each message to one queue per consumer, so every consumer reads at its own pace, retries independently and can fail without affecting the others. Costs one queue per consumer to operate.",
+        "nodes": {
+          "publisher": "Order Service",
+          "topic": "Order Events",
+          "queueA": "Invoicing Queue",
+          "queueB": "Notifications Queue",
+          "workerA": "Invoicing Worker",
+          "workerB": "Notification Worker"
+        }
+      },
+      "queue-based-load-leveling": {
+        "name": "Queue-Based Load Leveling",
+        "description": "A queue absorbs bursts between the callers and a service that can only work at a steady rate, protecting it and its database. Responses become asynchronous and the queue can build a backlog.",
+        "nodes": {
+          "producer": "Checkout API",
+          "queue": "Orders Queue",
+          "service": "Order Processor",
+          "database": "Orders DB"
+        }
+      },
+      "competing-consumers": {
+        "name": "Competing Consumers",
+        "description": "Several identical workers read from the same queue; each message is handled by exactly one of them. Scales throughput horizontally; ordering across messages is lost and handlers must be idempotent.",
+        "nodes": {
+          "producer": "Order Service",
+          "queue": "Jobs Queue",
+          "worker1": "Worker 1",
+          "worker2": "Worker 2",
+          "worker3": "Worker 3"
+        }
+      },
+      "async-request-reply": {
+        "name": "Asynchronous Request-Reply",
+        "description": "The API accepts a long-running request with 202 Accepted and a status URL, hands the work to a queue, and the client polls until a worker records the result. Keeps the API responsive at the cost of polling and a status store.",
+        "nodes": {
+          "client": "Client",
+          "api": "Reports API",
+          "statusStore": "Job Status Store",
+          "queue": "Report Jobs Queue",
+          "worker": "Report Worker"
+        }
+      },
+      "claim-check": {
+        "name": "Claim Check",
+        "description": "A large payload is stored in object storage and only a reference travels through the broker; the receiver fetches the payload with it. Keeps messages small and cheap; adds a storage round trip and payload lifecycle to manage.",
+        "nodes": {
+          "sender": "Upload Service",
+          "storage": "Payload Storage",
+          "queue": "Documents Queue",
+          "receiver": "Processing Service"
+        }
+      },
+      "pipes-and-filters": {
+        "name": "Pipes and Filters",
+        "description": "Processing is split into independent stages connected in sequence, each doing one transformation. Stages scale and deploy separately; the whole pipeline adds latency and needs per-stage error handling.",
+        "nodes": {
+          "source": "Ingestion",
+          "validate": "Validate",
+          "enrich": "Enrich",
+          "transform": "Transform",
+          "sink": "Analytics Warehouse"
+        }
+      },
+      "scatter-gather": {
+        "name": "Scatter-Gather",
+        "description": "An aggregator sends the same request to several services in parallel and combines their replies into one answer, with a timeout for slow responders. Good for quotes and searches; the slowest reply bounds latency.",
+        "nodes": {
+          "client": "Client",
+          "aggregator": "Quote Aggregator",
+          "supplierA": "Supplier A",
+          "supplierB": "Supplier B",
+          "supplierC": "Supplier C"
+        }
+      }
     }
   },
   "connectionPanel": {

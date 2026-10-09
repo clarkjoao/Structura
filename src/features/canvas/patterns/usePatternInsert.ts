@@ -2,6 +2,11 @@ import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
 import type { PatternTemplate } from "@/lib/catalogs/patterns";
 import { useDiagramActions, type UserTemplate } from "@/features/diagram";
+import {
+  NEUTRAL_PROVIDER,
+  resolvePattern,
+  type PatternProvider,
+} from "@/features/elements/patterns";
 import { getViewportCenter } from "../viewport-utils";
 
 /**
@@ -11,13 +16,16 @@ import { getViewportCenter } from "../viewport-utils";
 export function usePatternInsert(
   isPanelOpen: boolean,
   onInserted: (nodeIds: string[]) => void,
+  provider: PatternProvider = NEUTRAL_PROVIDER,
 ): (template: PatternTemplate | UserTemplate) => void {
   const reactFlow = useReactFlow();
   const { insertPattern } = useDiagramActions();
   return useCallback(
     (template) => {
-      onInserted(insertPattern(template, getViewportCenter(reactFlow, isPanelOpen)));
+      // A saved template is inserted as saved; a built-in one is made concrete first.
+      const insertable = "createdAt" in template ? template : resolvePattern(template, provider);
+      onInserted(insertPattern(insertable, getViewportCenter(reactFlow, isPanelOpen)));
     },
-    [insertPattern, reactFlow, isPanelOpen, onInserted],
+    [insertPattern, reactFlow, isPanelOpen, onInserted, provider],
   );
 }

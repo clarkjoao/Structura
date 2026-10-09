@@ -1194,12 +1194,14 @@
     "modalTitle": "Architecture Patterns",
     "categoryAll": "Todos",
     "category": {
-      "messaging": "Mensagens",
-      "api": "API",
+      "integration-messaging": "Integração e Mensageria",
+      "api-edge": "API e Borda",
+      "data-consistency": "Dados e Consistência",
       "resilience": "Resiliência",
-      "data": "Dados",
-      "event-driven": "Orientado a eventos",
-      "security": "Segurança"
+      "migration-modernization": "Migração e Modernização",
+      "deployment-scale": "Deploy e Escala",
+      "security-identity": "Segurança e Identidade",
+      "structure": "Estrutura"
     },
     "noneFoundForQuery": "Nenhum pattern encontrado para “{{query}}”",
     "elementAbbrev": "{{count}} elem.",
@@ -1216,6 +1218,186 @@
       "importTemplate": "Importar template (.json)",
       "importSuccess": "Template \"{{name}}\" importado com sucesso",
       "importError": "Arquivo inválido ou corrompido"
+    },
+    "reference": "Referência",
+    "roles": {
+      "queue": "Fila de mensagens",
+      "events": "Eventos",
+      "database": "Banco de dados",
+      "cache": "Cache",
+      "object-storage": "Armazenamento de objetos",
+      "api-gateway": "API gateway",
+      "load-balancer": "Balanceador de carga",
+      "cdn": "CDN",
+      "identity": "Provedor de identidade",
+      "secrets": "Cofre de segredos",
+      "serverless": "Função",
+      "monitoring": "Backend de observabilidade",
+      "dns": "DNS / roteamento global",
+      "topic": "Tópico (pub/sub)",
+      "event-bus": "Barramento de eventos",
+      "stream": "Stream de eventos",
+      "relational-db": "Banco relacional",
+      "nosql-db": "Banco NoSQL",
+      "warehouse": "Data warehouse",
+      "workflow": "Motor de workflow"
+    },
+    "edges": {
+      "request": "requisição",
+      "route": "roteia",
+      "call": "chama",
+      "forward": "encaminha",
+      "publish": "publica",
+      "deliver": "entrega",
+      "enqueue": "enfileira",
+      "consume": "consome",
+      "pipe": "pipe",
+      "scatter": "distribui / agrega",
+      "store-payload": "grava payload",
+      "send-reference": "envia referência",
+      "fetch-payload": "busca payload",
+      "write": "escreve",
+      "read": "lê",
+      "read-write": "lê / escreve",
+      "write-status": "grava status",
+      "read-status": "lê status",
+      "poll-status": "requisita e consulta status",
+      "command": "comando",
+      "query": "consulta",
+      "append": "anexa evento",
+      "stream-events": "transmite eventos",
+      "project": "projeta",
+      "change-events": "eventos de mudança",
+      "poll-outbox": "lê a outbox",
+      "command-compensate": "executa / compensa",
+      "persist-state": "persiste estado da saga",
+      "emit-event": "emite evento",
+      "read-or-populate": "lê / popula",
+      "read-on-miss": "lê no miss",
+      "persist": "persiste (síncrono ou assíncrono)",
+      "replicate": "replica",
+      "route-by-key": "roteia pela chave",
+      "serve-static": "conteúdo estático",
+      "origin-fetch": "busca na origem",
+      "resolve": "resolve",
+      "failover": "failover",
+      "live-traffic": "tráfego ativo",
+      "switch-on-release": "vira no release",
+      "majority-traffic": "maior parte do tráfego",
+      "canary-traffic": "tráfego canário",
+      "metrics": "métricas",
+      "route-legacy": "ainda não migrado",
+      "route-migrated": "rotas migradas",
+      "translate": "traduz",
+      "sign-in": "login",
+      "redirect-to-idp": "redireciona ao IdP",
+      "issue-token": "emite token",
+      "request-key": "pede chave",
+      "scoped-key": "chave restrita",
+      "upload-direct": "upload direto",
+      "check-policy": "avalia política",
+      "load-policies": "carrega políticas",
+      "forward-if-allowed": "encaminha se permitido",
+      "localhost": "localhost",
+      "telemetry": "telemetria",
+      "proxy": "proxy",
+      "mtls": "mTLS",
+      "configure": "configura",
+      "call-port": "chama (porta)",
+      "implement-port": "implementa (porta)",
+      "invoke": "invoca",
+      "route-by-tenant": "roteia por tenant",
+      "route-critical": "crítico",
+      "route-batch": "lote"
+    },
+    "items": {
+      "publisher-subscriber": {
+        "name": "Publisher-Subscriber (Pub/Sub)",
+        "description": "O publicador envia cada evento uma vez a um tópico e cada assinante recebe sua própria cópia. Use para adicionar consumidores sem mexer no produtor; o custo é a consistência eventual e um rastreamento ponta a ponta mais difícil.",
+        "nodes": {
+          "publisher": "Serviço de Pedidos",
+          "topic": "Eventos de Pedido",
+          "billing": "Serviço de Cobrança",
+          "shipping": "Serviço de Entrega",
+          "analytics": "Serviço de Analytics"
+        }
+      },
+      "fan-out": {
+        "name": "Fan-out (tópico → filas)",
+        "description": "O tópico entrega cada mensagem a uma fila por consumidor, para que cada um leia no seu ritmo, faça retry de forma independente e falhe sem afetar os outros. Custa uma fila por consumidor para operar.",
+        "nodes": {
+          "publisher": "Serviço de Pedidos",
+          "topic": "Eventos de Pedido",
+          "queueA": "Fila de Faturamento",
+          "queueB": "Fila de Notificações",
+          "workerA": "Worker de Faturamento",
+          "workerB": "Worker de Notificações"
+        }
+      },
+      "queue-based-load-leveling": {
+        "name": "Nivelamento de Carga com Fila",
+        "description": "Uma fila absorve picos entre os chamadores e um serviço que só consegue trabalhar em ritmo constante, protegendo-o e ao seu banco. As respostas viram assíncronas e a fila pode acumular backlog.",
+        "nodes": {
+          "producer": "API de Checkout",
+          "queue": "Fila de Pedidos",
+          "service": "Processador de Pedidos",
+          "database": "Banco de Pedidos"
+        }
+      },
+      "competing-consumers": {
+        "name": "Consumidores Concorrentes",
+        "description": "Vários workers idênticos leem da mesma fila; cada mensagem é tratada por exatamente um deles. Escala a vazão horizontalmente; perde-se a ordem entre mensagens e o processamento precisa ser idempotente.",
+        "nodes": {
+          "producer": "Serviço de Pedidos",
+          "queue": "Fila de Jobs",
+          "worker1": "Worker 1",
+          "worker2": "Worker 2",
+          "worker3": "Worker 3"
+        }
+      },
+      "async-request-reply": {
+        "name": "Requisição-Resposta Assíncrona",
+        "description": "A API aceita uma requisição demorada com 202 Accepted e uma URL de status, entrega o trabalho a uma fila e o cliente consulta até um worker gravar o resultado. Mantém a API responsiva ao custo de polling e de um armazenamento de status.",
+        "nodes": {
+          "client": "Cliente",
+          "api": "API de Relatórios",
+          "statusStore": "Status dos Jobs",
+          "queue": "Fila de Relatórios",
+          "worker": "Worker de Relatórios"
+        }
+      },
+      "claim-check": {
+        "name": "Claim Check",
+        "description": "O payload grande fica no armazenamento de objetos e só uma referência trafega pelo broker; o receptor busca o payload com ela. Mantém as mensagens pequenas e baratas; acrescenta uma ida ao storage e o ciclo de vida do payload.",
+        "nodes": {
+          "sender": "Serviço de Upload",
+          "storage": "Armazenamento de Payloads",
+          "queue": "Fila de Documentos",
+          "receiver": "Serviço de Processamento"
+        }
+      },
+      "pipes-and-filters": {
+        "name": "Pipes and Filters",
+        "description": "O processamento é dividido em etapas independentes ligadas em sequência, cada uma fazendo uma transformação. As etapas escalam e são publicadas separadamente; o pipeline soma latência e exige tratamento de erro por etapa.",
+        "nodes": {
+          "source": "Ingestão",
+          "validate": "Validação",
+          "enrich": "Enriquecimento",
+          "transform": "Transformação",
+          "sink": "Data Warehouse"
+        }
+      },
+      "scatter-gather": {
+        "name": "Scatter-Gather",
+        "description": "Um agregador envia a mesma requisição a vários serviços em paralelo e combina as respostas numa só, com timeout para quem demora. Bom para cotações e buscas; a resposta mais lenta limita a latência.",
+        "nodes": {
+          "client": "Cliente",
+          "aggregator": "Agregador de Cotações",
+          "supplierA": "Fornecedor A",
+          "supplierB": "Fornecedor B",
+          "supplierC": "Fornecedor C"
+        }
+      }
     }
   },
   "connectionPanel": {

@@ -20,15 +20,17 @@ describe("pattern search", () => {
   });
 
   it("reads a concept word in any locale: 'fila' finds the English queue patterns", () => {
-    const names = searchPatterns("fila", []).builtins.map((pattern) => pattern.name);
-    expect(names).toContain("FIFO Queue (AWS SQS)");
+    const ids = searchPatterns("fila", []).builtins.map((pattern) => pattern.id);
+    expect(ids).toContain("competing-consumers");
   });
 
   it("counts every chip, and 'all' is built-ins plus saved templates", () => {
     const result = searchPatterns("", [saved]);
     expect(result.counts.all).toBe(PATTERNS.length + 1);
     expect(result.counts["user-templates"]).toBe(1);
-    expect(result.counts.messaging).toBe(PATTERNS.filter((p) => p.category === "messaging").length);
+    expect(result.counts["integration-messaging"]).toBe(
+      PATTERNS.filter((p) => p.category === "integration-messaging").length,
+    );
   });
 
   it("narrows to a chip", () => {
@@ -37,8 +39,8 @@ describe("pattern search", () => {
       builtins: [],
       userTemplates: [saved],
     });
-    const api = patternsForFilter(result, "api");
-    expect(api.userTemplates).toEqual([]);
-    expect(api.builtins.every((pattern) => pattern.category === "api")).toBe(true);
+    const messaging = patternsForFilter(result, "integration-messaging");
+    expect(messaging.userTemplates).toEqual([]);
+    expect(messaging.builtins.every((p) => p.category === "integration-messaging")).toBe(true);
   });
 });

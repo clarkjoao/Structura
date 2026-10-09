@@ -3,7 +3,8 @@ import { layout } from "@/features/canvas/layout/layoutEngine";
 import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
 import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
-import { PATTERNS } from "@/lib/catalogs/patterns";
+import { getPattern } from "@/lib/catalogs/patterns";
+import { resolvePattern } from "@/features/elements/patterns";
 import type { DiagramPatchAction } from "./types";
 import { listElementFamilies, searchElements } from "./element-catalog-query";
 import { validateAddNodeAgainstRegistry } from "./add-node-validation";
@@ -122,12 +123,12 @@ export function applyDiagramPatchAction(
       diagramState.removeConnection(action.payload.edgeId);
       return { addedNodeId: null, addedEdgeId: null };
     case "INSERT_PATTERN": {
-      const pattern = PATTERNS.find((p) => p.id === action.payload.patternId);
+      const pattern = getPattern(action.payload.patternId);
       if (!pattern) {
         console.warn(`[LLM] Pattern not found: ${action.payload.patternId}`);
         return { addedNodeId: null, addedEdgeId: null };
       }
-      const insertedIds = diagramState.insertPattern(pattern, { x: 300, y: 300 });
+      const insertedIds = diagramState.insertPattern(resolvePattern(pattern), { x: 300, y: 300 });
       return {
         addedNodeId: insertedIds[0] ?? null,
         addedEdgeId: null,

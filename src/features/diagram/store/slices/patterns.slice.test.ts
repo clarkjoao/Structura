@@ -1,52 +1,93 @@
 import { describe, expect, it } from "vitest";
-import type { PatternTemplate } from "@/lib/catalogs/patterns";
+import type { PatternFragment } from "../../model/pattern-fragment.types";
 import { createTestDiagramStore } from "../test-utils";
 
-describe("insertPattern", () => {
-  const minimalTemplate: PatternTemplate = {
-    id: "test-pattern",
-    name: "Test",
-    description: "d",
-    category: "api",
-    components: [
-      { type: "system", name: "A", description: "" },
-      { type: "system", name: "B", description: "" },
-    ],
-    connections: [{ fromIndex: 0, toIndex: 1, label: "link" }],
-  };
+/** Two cards and a boundary holding a third, as the resolver hands them over. */
+const fragment: PatternFragment = {
+  patternId: "test-pattern",
+  nodes: [
+    { type: "system", name: "A", createOptions: {}, parentIndex: null, x: 0, y: 0 },
+    {
+      type: "aws-integration",
+      name: "Orders queue",
+      createOptions: { serviceId: "sqs" },
+      parentIndex: null,
+      x: 300,
+      y: 0,
+    },
+    {
+      type: "panel",
+      name: "Cell",
+      createOptions: {},
+      parentIndex: null,
+      x: 600,
+      y: 0,
+      width: 320,
+      height: 206,
+    },
+    { type: "container", name: "Inside", createOptions: {}, parentIndex: 2, x: 30, y: 56 },
+  ],
+  edges: [
+    { from: 0, to: 1, label: "publish" },
+    { from: 1, to: 3, label: "consume" },
+  ],
+  width: 920,
+  height: 206,
+};
 
-  it("returns string IDs with length equal to template.components.length", () => {
-    const store = createTestDiagramStore();
-    const diagram = store.getState().addDiagram("P", "context");
-    store.getState().openDiagram(diagram.id);
+function seed() {
+  const store = createTestDiagramStore();
+  const diagram = store.getState().addDiagram("P", "context");
+  store.getState().openDiagram(diagram.id);
+  return { store, diagramId: diagram.id };
+}
 
-    const ids = store.getState().insertPattern(minimalTemplate, { x: 0, y: 0 });
+describe("insertPattern (catalog fragment)", () => {
+  it("writes every node and edge, built and sized like an inserted element", () => {
+    const { store, diagramId } = seed();
+    const ids = store.getState().insertPattern(fragment, { x: 10, y: 20 });
+    const d = store.getState().diagrams[diagramId]!;
 
-    expect(ids).toHaveLength(minimalTemplate.components.length);
-    expect(ids.every((id) => typeof id === "string" && id.length > 0)).toBe(true);
+    expect(ids).toHaveLength(4);
+    expect(d.snapshot.components[ids[1]]).toMatchObject({
+      type: "aws-integration",
+      cloudServiceId: "sqs",
+    });
+    expect(d.nodeLayouts[ids[0]]).toMatchObject({ x: 10, y: 20 });
+    expect(d.nodeLayouts[ids[0]].width).toBeGreaterThan(0);
+    expect(d.nodeLayouts[ids[2]]).toMatchObject({ width: 320, height: 206 });
+    expect(d.snapshot.components[ids[3]].parentId).toBe(ids[2]);
+    expect(d.nodeLayouts[ids[3]]).toMatchObject({ x: 30, y: 56 });
+    expect(Object.values(d.snapshot.connections).map((c) => c.label)).toEqual([
+      "publish",
+      "consume",
+    ]);
   });
 
-  it("returned IDs match component IDs on the diagram snapshot", () => {
-    const store = createTestDiagramStore();
-    const diagram = store.getState().addDiagram("P2", "context");
-    store.getState().openDiagram(diagram.id);
+  it("is one undo step", () => {
+    const { store, diagramId } = seed();
+    const before = store.getState().past.length;
+    const ids = store.getState().insertPattern(fragment, { x: 0, y: 0 });
+    expect(store.getState().past.length).toBe(before + 1);
+    store.getState().undo();
+    const d = store.getState().diagrams[diagramId]!;
+    for (const id of ids) expect(d.snapshot.components[id]).toBeUndefined();
+    expect(Object.keys(d.snapshot.connections)).toHaveLength(0);
+  });
 
-    const ids = store.getState().insertPattern(minimalTemplate, { x: 10, y: 20 });
-    const snapshot = store.getState().diagrams[diagram.id]!.snapshot;
-
-    for (const id of ids) {
-      expect(snapshot.components[id]).toBeDefined();
-      expect(snapshot.components[id]!.id).toBe(id);
-    }
-    expect(Object.keys(snapshot.connections)).toHaveLength(1);
+  it("moves right of existing nodes instead of covering them", () => {
+    const { store, diagramId } = seed();
+    const existing = store.getState().addComponent("system", "Existing", null, { x: 100, y: 50 });
+    const ids = store.getState().insertPattern(fragment, { x: 0, y: 0 });
+    const d = store.getState().diagrams[diagramId]!;
+    const occupied = d.nodeLayouts[existing.id];
+    expect(d.nodeLayouts[ids[0]].x).toBeGreaterThanOrEqual(occupied.x + (occupied.width ?? 0));
+    expect(d.nodeLayouts[ids[0]].y).toBe(0);
   });
 
   it("returns empty array when no diagram is active", () => {
     const store = createTestDiagramStore();
     store.getState().addDiagram("Orphan", "context");
-
-    const ids = store.getState().insertPattern(minimalTemplate, { x: 0, y: 0 });
-
-    expect(ids).toEqual([]);
+    expect(store.getState().insertPattern(fragment, { x: 0, y: 0 })).toEqual([]);
   });
 });
