@@ -1397,6 +1397,62 @@
           "supplierB": "Fornecedor B",
           "supplierC": "Fornecedor C"
         }
+      },
+      "api-gateway": {
+        "name": "API Gateway (Gateway Routing)",
+        "description": "Um ponto de entrada único roteia cada requisição para o serviço certo pelo path ou host e concentra preocupações transversais (autenticação, TLS, rate limit). O cliente enxerga uma API só; o gateway vira um componente crítico, que precisa escalar e continuar enxuto.",
+        "nodes": {
+          "client": "Cliente",
+          "gateway": "API Gateway",
+          "orders": "Serviço de Pedidos",
+          "catalog": "Serviço de Catálogo",
+          "users": "Serviço de Usuários"
+        }
+      },
+      "backends-for-frontends": {
+        "name": "Backend for Frontends (BFF)",
+        "description": "Cada tipo de cliente ganha um backend próprio, moldado para suas telas e chamadas, na frente dos serviços compartilhados. Os frontends evoluem de forma independente; parte da lógica se repete entre os BFFs.",
+        "nodes": {
+          "web": "App Web",
+          "mobile": "App Mobile",
+          "webBff": "BFF Web",
+          "mobileBff": "BFF Mobile",
+          "orders": "Serviço de Pedidos",
+          "catalog": "Serviço de Catálogo"
+        }
+      },
+      "gateway-aggregation": {
+        "name": "Agregação no Gateway",
+        "description": "O gateway transforma uma requisição do cliente em várias chamadas aos backends e devolve uma resposta única, economizando idas e voltas em redes lentas. O gateway assume lógica de composição e a latência da chamada mais lenta.",
+        "nodes": {
+          "client": "App Mobile",
+          "gateway": "API Gateway",
+          "orders": "Serviço de Pedidos",
+          "profile": "Serviço de Perfil",
+          "recommendations": "Serviço de Recomendações"
+        }
+      },
+      "static-content-hosting": {
+        "name": "Hospedagem de Conteúdo Estático",
+        "description": "Os arquivos estáticos saem do armazenamento de objetos por uma CDN, e a aplicação só atende requisições dinâmicas. Mais barato e rápido na borda; cada deploy precisa invalidar o cache.",
+        "nodes": {
+          "user": "Usuário",
+          "cdn": "CDN",
+          "storage": "Arquivos Estáticos",
+          "app": "Aplicação Web",
+          "database": "Banco da Aplicação"
+        }
+      },
+      "load-balancer-reverse-proxy": {
+        "name": "Load Balancer / Proxy Reverso",
+        "description": "O balanceador distribui as requisições entre instâncias idênticas e tira de rotação as que não estão saudáveis. Dá escala horizontal e disponibilidade; as instâncias devem ser stateless ou guardar estado em outro lugar.",
+        "nodes": {
+          "client": "Cliente",
+          "balancer": "Load Balancer",
+          "instance1": "Instância da API 1",
+          "instance2": "Instância da API 2",
+          "instance3": "Instância da API 3"
+        }
       }
     }
   },

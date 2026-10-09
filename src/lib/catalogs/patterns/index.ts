@@ -1,10 +1,14 @@
+import { API_EDGE_PATTERNS } from "./api-edge";
 import { INTEGRATION_MESSAGING_PATTERNS } from "./integration-messaging";
 import { PATTERN_CATEGORIES, type PatternCategory, type PatternTemplate } from "./types";
 
 export * from "./types";
 
 /** Every built-in pattern, grouped by category in `PATTERN_CATEGORIES` order. */
-export const PATTERNS: readonly PatternTemplate[] = [...INTEGRATION_MESSAGING_PATTERNS];
+export const PATTERNS: readonly PatternTemplate[] = [
+  ...INTEGRATION_MESSAGING_PATTERNS,
+  ...API_EDGE_PATTERNS,
+];
 
 export const PATTERNS_BY_CATEGORY = Object.fromEntries(
   PATTERN_CATEGORIES.map((category) => [

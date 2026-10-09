@@ -1397,6 +1397,62 @@
           "supplierB": "Supplier B",
           "supplierC": "Supplier C"
         }
+      },
+      "api-gateway": {
+        "name": "API Gateway (Gateway Routing)",
+        "description": "One entry point routes each request to the right service by path or host and handles cross-cutting concerns (auth, TLS, rate limits). Clients see one API; the gateway becomes a critical component to scale and keep thin.",
+        "nodes": {
+          "client": "Client",
+          "gateway": "API Gateway",
+          "orders": "Order Service",
+          "catalog": "Catalog Service",
+          "users": "User Service"
+        }
+      },
+      "backends-for-frontends": {
+        "name": "Backends for Frontends (BFF)",
+        "description": "Each kind of client gets its own backend shaped for its screens and calls, in front of shared services. Frontends evolve independently; some logic is duplicated across BFFs.",
+        "nodes": {
+          "web": "Web App",
+          "mobile": "Mobile App",
+          "webBff": "Web BFF",
+          "mobileBff": "Mobile BFF",
+          "orders": "Order Service",
+          "catalog": "Catalog Service"
+        }
+      },
+      "gateway-aggregation": {
+        "name": "Gateway Aggregation",
+        "description": "The gateway turns one client request into several backend calls and returns a single combined response, saving round trips on slow networks. The gateway takes on composition logic and the slowest call's latency.",
+        "nodes": {
+          "client": "Mobile App",
+          "gateway": "API Gateway",
+          "orders": "Order Service",
+          "profile": "Profile Service",
+          "recommendations": "Recommendation Service"
+        }
+      },
+      "static-content-hosting": {
+        "name": "Static Content Hosting",
+        "description": "Static assets are served from object storage through a CDN, so the application only handles dynamic requests. Cheaper and faster at the edge; deploys must invalidate cached content.",
+        "nodes": {
+          "user": "User",
+          "cdn": "CDN",
+          "storage": "Static Assets",
+          "app": "Web App",
+          "database": "App DB"
+        }
+      },
+      "load-balancer-reverse-proxy": {
+        "name": "Load Balancer / Reverse Proxy",
+        "description": "A load balancer spreads requests across identical instances and takes unhealthy ones out of rotation. Gives horizontal scale and availability; instances should be stateless or share state elsewhere.",
+        "nodes": {
+          "client": "Client",
+          "balancer": "Load Balancer",
+          "instance1": "API Instance 1",
+          "instance2": "API Instance 2",
+          "instance3": "API Instance 3"
+        }
       }
     }
   },
