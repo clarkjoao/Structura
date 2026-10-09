@@ -2579,7 +2579,14 @@
       "secrets": "segredos|cofre|chaves|criptografia",
       "serverless": "serverless|função|funções|faas",
       "monitoring": "monitoramento|observabilidade|logs|métricas|rastreamento",
-      "dns": "dns|domínio"
+      "dns": "dns|domínio",
+      "topic": "tópico|pub/sub|publicação e assinatura|fan-out",
+      "event-bus": "barramento de eventos|roteador de eventos|event bus",
+      "stream": "stream|streaming|log de eventos|partição",
+      "relational-db": "banco relacional|banco de dados relacional|sql|sgbd",
+      "nosql-db": "nosql|banco de documentos|chave-valor|banco não relacional",
+      "warehouse": "data warehouse|armazém de dados|banco analítico|olap",
+      "workflow": "fluxo de trabalho|orquestração|máquina de estados|orquestrador|workflow"
     },
     "toolbar": {
       "label": "Ferramentas do canvas",

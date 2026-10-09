@@ -24,6 +24,16 @@ export const CATALOG_CONCEPTS = [
   "serverless",
   "monitoring",
   "dns",
+  // Finer roles the pattern catalog resolves to a provider service: one
+  // service each, where the coarse ones above ("events", "database") would
+  // not say which.
+  "topic",
+  "event-bus",
+  "stream",
+  "relational-db",
+  "nosql-db",
+  "warehouse",
+  "workflow",
 ] as const;
 
 export type CatalogConceptId = (typeof CATALOG_CONCEPTS)[number];

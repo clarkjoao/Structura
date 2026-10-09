@@ -2579,7 +2579,14 @@
       "secrets": "secrets|vault|keys|encryption",
       "serverless": "serverless|function|faas",
       "monitoring": "monitoring|observability|logs|metrics|tracing",
-      "dns": "dns|domain"
+      "dns": "dns|domain",
+      "topic": "topic|pub/sub|pubsub|publish subscribe|fan-out",
+      "event-bus": "event bus|event router|event broker",
+      "stream": "stream|streaming|event log|log|partition",
+      "relational-db": "relational database|sql database|rdbms|sql",
+      "nosql-db": "nosql|document database|key-value store|wide column",
+      "warehouse": "data warehouse|warehouse|analytics database|olap",
+      "workflow": "workflow|orchestration|state machine|orchestrator"
     },
     "toolbar": {
       "label": "Canvas tools",
