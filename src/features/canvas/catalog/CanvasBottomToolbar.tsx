@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, LayoutGrid } from "lucide-react";
+import { ChevronDown, LayoutGrid, PanelBottomClose, PanelBottomOpen } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -10,12 +10,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { CatalogEntry } from "@/features/elements/search";
 import { cn } from "@/lib/utils";
+import { useCanvasPreferencesStore } from "../preferences";
 import { CatalogEntryIcon } from "./CatalogEntryIcon";
 import { CANVAS_OVERLAY_ATTRIBUTE, useCatalogUiStore } from "./catalogUi.store";
 import { ElementCatalog } from "./ElementCatalog";
 import { Kbd } from "./Kbd";
 import { catalogShortcutLabel } from "./shortcutLabels";
 import { registryCatalog, TOOLBAR_TOOLS } from "./toolbarTools";
+import { useDockAutoHide } from "./useDockAutoHide";
 import { useInsertAtCenter } from "./useInsertAtCenter";
 
 interface CanvasBottomToolbarProps {
@@ -33,7 +35,8 @@ function Separator() {
 
 /**
  * The floating toolbar at the bottom of the canvas: one-click inserts, the C4
- * and flowchart menus, and the element catalog.
+ * and flowchart menus, and the element catalog. Fixed, or hiding itself like
+ * the macOS Dock (`autoHideBottomToolbar`).
  */
 export function CanvasBottomToolbar({ isPanelOpen, onInserted }: CanvasBottomToolbarProps) {
   const { t, i18n } = useTranslation();
@@ -41,6 +44,10 @@ export function CanvasBottomToolbar({ isPanelOpen, onInserted }: CanvasBottomToo
   const setOpen = useCatalogUiStore((state) => state.setOpen);
   const setAvailable = useCatalogUiStore((state) => state.setAvailable);
   const insertAtCenter = useInsertAtCenter(isPanelOpen, onInserted);
+  const autoHide = useCanvasPreferencesStore((state) => state.autoHideBottomToolbar);
+  const setAutoHide = useCanvasPreferencesStore((state) => state.setAutoHideBottomToolbar);
+  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const dock = useDockAutoHide(autoHide, open || menuOpen !== null);
 
   useEffect(() => {
     setAvailable(true);
@@ -65,7 +72,11 @@ export function CanvasBottomToolbar({ isPanelOpen, onInserted }: CanvasBottomToo
 
   const renderMenu = (labelKey: string, menuLabelKey: string, entries: CatalogEntry[]) =>
     entries.length > 0 && (
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChange={(isOpen) =>
+          setMenuOpen((current) => (isOpen ? labelKey : current === labelKey ? null : current))
+        }
+      >
         <DropdownMenuTrigger asChild>
           <button type="button" aria-label={t(menuLabelKey)} className={TOOL_BUTTON_CLASS}>
             {t(labelKey)}
@@ -94,10 +105,25 @@ export function CanvasBottomToolbar({ isPanelOpen, onInserted }: CanvasBottomToo
         // canvas, and lets the pointer through so a tile can be dropped there.
         <div aria-hidden className="pointer-events-none fixed inset-0 z-40 bg-foreground/5" />
       )}
+      {autoHide && (
+        // The edge the pointer reaches to bring a hidden toolbar back.
+        <div
+          aria-hidden
+          data-testid="bottom-toolbar-reveal"
+          {...dock.pointerHandlers}
+          className="absolute bottom-0 left-1/2 z-10 h-3 w-[min(40rem,100%)] -translate-x-1/2"
+        />
+      )}
       <div
         role="toolbar"
         aria-label={t("elementCatalog.toolbar.label")}
-        className="absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center rounded-xl border border-border bg-card/95 p-1 shadow-lg backdrop-blur-sm"
+        data-state={dock.visible ? "visible" : "hidden"}
+        {...dock.pointerHandlers}
+        {...dock.focusHandlers}
+        className={cn(
+          "absolute bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center rounded-xl border border-border bg-card/95 p-1 shadow-lg backdrop-blur-sm transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none",
+          !dock.visible && "pointer-events-none translate-y-[calc(100%+1.5rem)] opacity-0",
+        )}
       >
         {tools.map(({ tool, entry }) => {
           const label = t(tool.labelKey);
@@ -162,6 +188,27 @@ export function CanvasBottomToolbar({ isPanelOpen, onInserted }: CanvasBottomToo
             />
           </PopoverContent>
         </Popover>
+        <Separator />
+        <button
+          type="button"
+          aria-pressed={autoHide}
+          title={t(
+            autoHide ? "elementCatalog.toolbar.keepVisible" : "elementCatalog.toolbar.autoHide",
+          )}
+          aria-label={t(
+            autoHide ? "elementCatalog.toolbar.keepVisible" : "elementCatalog.toolbar.autoHide",
+          )}
+          onClick={() => setAutoHide(!autoHide)}
+          className={TOOL_BUTTON_CLASS}
+        >
+          {/* Not hit-testable: the icon swaps on click, and a removed node under
+              the pointer would cost the toolbar its pointerleave. */}
+          {autoHide ? (
+            <PanelBottomOpen aria-hidden className="pointer-events-none h-4 w-4" />
+          ) : (
+            <PanelBottomClose aria-hidden className="pointer-events-none h-4 w-4" />
+          )}
+        </button>
       </div>
     </>
   );

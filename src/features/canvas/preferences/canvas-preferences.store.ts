@@ -22,6 +22,12 @@ export interface CanvasPreferencesStore {
    */
   recentCatalogEntryIds: string[];
   recordCatalogEntryUse: (entryId: string) => void;
+  /**
+   * The bottom toolbar hides itself and comes back when the pointer reaches
+   * the bottom edge, like the macOS Dock. Off: it stays put.
+   */
+  autoHideBottomToolbar: boolean;
+  setAutoHideBottomToolbar: (autoHide: boolean) => void;
 }
 
 /** How many recent catalog entries are kept. */
@@ -46,6 +52,8 @@ export const useCanvasPreferencesStore = create<CanvasPreferencesStore>()(
         set((state) => ({
           recentCatalogEntryIds: withRecentCatalogEntry(state.recentCatalogEntryIds, entryId),
         })),
+      autoHideBottomToolbar: false,
+      setAutoHideBottomToolbar: (autoHide) => set({ autoHideBottomToolbar: autoHide }),
     }),
     {
       name: CANVAS_PREFERENCES_KEY,

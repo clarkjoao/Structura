@@ -497,7 +497,8 @@
     "scrollBehaviorPanHint": "Scrolling pans in every direction, like draw.io.",
     "scrollBehaviorZoom": "Zoom in and out",
     "scrollBehaviorZoomHint": "Scrolling zooms on the pointer.",
-    "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways."
+    "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways.",
+    "autoHideBottomToolbar": "Automatically hide the bottom toolbar"
   },
   "diagram": {
     "deleteConfirmTitle": "Delete diagram?",
@@ -2593,7 +2594,9 @@
       "flowchartMenu": "Insert a flowchart shape",
       "catalog": "Catalog",
       "catalogAria": "Open the element catalog",
-      "withShortcut": "{{label}} ({{shortcut}})"
+      "withShortcut": "{{label}} ({{shortcut}})",
+      "autoHide": "Automatically hide the toolbar",
+      "keepVisible": "Keep the toolbar visible"
     },
     "title": "Element catalog",
     "searchPlaceholder": "Search {{count}} elements…",

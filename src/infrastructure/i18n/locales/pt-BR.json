@@ -497,7 +497,8 @@
     "scrollBehaviorPanHint": "A rolagem desliza em qualquer direção, como no draw.io.",
     "scrollBehaviorZoom": "Aproximar e afastar",
     "scrollBehaviorZoomHint": "A rolagem dá zoom no ponteiro.",
-    "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal."
+    "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal.",
+    "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente"
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",
@@ -2593,7 +2594,9 @@
       "flowchartMenu": "Inserir forma de fluxograma",
       "catalog": "Catálogo",
       "catalogAria": "Abrir o catálogo de elementos",
-      "withShortcut": "{{label}} ({{shortcut}})"
+      "withShortcut": "{{label}} ({{shortcut}})",
+      "autoHide": "Ocultar a barra automaticamente",
+      "keepVisible": "Manter a barra sempre visível"
     },
     "title": "Catálogo de elementos",
     "searchPlaceholder": "Buscar em {{count}} elementos…",
