@@ -28,7 +28,7 @@ describe("addComponentConnectedFrom", () => {
         type: "aws-integration",
         name: "Amazon SQS",
         position: { x: 300, y: 40 },
-        cloudServiceId: "sqs",
+        serviceId: "sqs",
       },
       { label: "uses", edgeStyle: EdgeStyle.Smoothstep, sides: { sourceSide: "bottom" } },
     );

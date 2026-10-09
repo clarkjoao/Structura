@@ -548,7 +548,8 @@ export interface NewConnectedComponent {
   type: ComponentType;
   name: string;
   position: { x: number; y: number };
-  cloudServiceId?: string;
+  /** The catalog service the node stands for; `addComponent`'s `cloudServiceId` argument. */
+  serviceId?: string;
   panelKind?: PanelKind;
   flowShape?: FlowNodeShape;
   createOptions?: ElementCreateOptions;
@@ -694,14 +695,14 @@ export const componentsSlice = (
     request: NewConnectedComponent,
     edge: NewConnectedEdge,
   ): { component: Component; connection: Connection | null } => {
-    const { type, name, position, cloudServiceId, panelKind, flowShape, createOptions } = request;
+    const { type, name, position, serviceId, panelKind, flowShape, createOptions } = request;
     const { component, resolvedPanelKind } = buildComponentForType(
       generateId("el"),
       type,
       name,
       null,
       panelKind,
-      cloudServiceId,
+      serviceId,
       flowShape,
       createOptions,
     );

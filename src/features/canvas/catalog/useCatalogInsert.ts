@@ -64,7 +64,7 @@ export function useCatalogInsert(): (
                   type,
                   name,
                   position,
-                  cloudServiceId: createOptions.serviceId,
+                  serviceId: createOptions.serviceId,
                   panelKind: createOptions.panelKind,
                   flowShape: createOptions.flowShape,
                   createOptions,
