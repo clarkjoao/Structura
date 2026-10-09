@@ -1,0 +1,86 @@
+# The collaboration relay. Pods hold sockets and nothing else: any pod serves any room through
+# Redis, so pods can come, go and scale without session affinity.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: collab-relay
+  namespace: structura-collab
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: collab-relay
+  template:
+    metadata:
+      labels:
+        app: collab-relay
+    spec:
+      # On SIGTERM the relay closes its sockets (1001); clients reconnect to another pod.
+      terminationGracePeriodSeconds: 15
+      containers:
+        - name: relay
+          image: structura-collab-relay:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: NODE_ENV, value: production }
+            - { name: PORT, value: "3000" }
+            - { name: WS_PATH, value: /ws }
+            - { name: REDIS_URL, value: redis://collab-redis:6379 }
+            - { name: COLLAB_HOST_GRACE_MS, value: "30000" }
+            - { name: COLLAB_MAX_PARTICIPANTS, value: "50" }
+          ports:
+            - name: http
+              containerPort: 3000
+          readinessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 2
+            failureThreshold: 2
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 250m, memory: 128Mi }
+            limits: { memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: collab-relay
+  namespace: structura-collab
+spec:
+  selector:
+    app: collab-relay
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: collab-relay
+  namespace: structura-collab
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: collab-relay
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: collab-relay
+  namespace: structura-collab
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: collab-relay
