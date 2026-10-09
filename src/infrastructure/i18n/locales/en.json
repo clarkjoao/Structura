@@ -1194,12 +1194,14 @@
     "modalTitle": "Architecture patterns",
     "categoryAll": "All",
     "category": {
-      "messaging": "Messaging",
-      "api": "API",
+      "integration-messaging": "Integration & Messaging",
+      "api-edge": "API & Edge",
+      "data-consistency": "Data & Consistency",
       "resilience": "Resilience",
-      "data": "Data",
-      "event-driven": "Event-Driven",
-      "security": "Security"
+      "migration-modernization": "Migration & Modernization",
+      "deployment-scale": "Deployment & Scale",
+      "security-identity": "Security & Identity",
+      "structure": "Structure"
     },
     "noneFoundForQuery": "No patterns found for “{{query}}”",
     "elementAbbrev": "{{count}} elem.",
@@ -1216,6 +1218,548 @@
       "importTemplate": "Import template (.json)",
       "importSuccess": "Template \"{{name}}\" imported successfully",
       "importError": "Invalid or corrupted file"
+    },
+    "reference": "Reference",
+    "roles": {
+      "queue": "Message queue",
+      "events": "Events",
+      "database": "Database",
+      "cache": "Cache",
+      "object-storage": "Object storage",
+      "api-gateway": "API gateway",
+      "load-balancer": "Load balancer",
+      "cdn": "CDN",
+      "identity": "Identity provider",
+      "secrets": "Secrets store",
+      "serverless": "Function",
+      "monitoring": "Observability backend",
+      "dns": "DNS / global routing",
+      "topic": "Topic (pub/sub)",
+      "event-bus": "Event bus",
+      "stream": "Event stream",
+      "relational-db": "Relational database",
+      "nosql-db": "NoSQL database",
+      "warehouse": "Data warehouse",
+      "workflow": "Workflow engine"
+    },
+    "edges": {
+      "request": "request",
+      "route": "route",
+      "call": "call",
+      "forward": "forward",
+      "publish": "publish",
+      "deliver": "deliver",
+      "enqueue": "enqueue",
+      "consume": "consume",
+      "pipe": "pipe",
+      "scatter": "scatter / gather",
+      "store-payload": "store payload",
+      "send-reference": "send reference",
+      "fetch-payload": "fetch payload",
+      "write": "write",
+      "read": "read",
+      "read-write": "read / write",
+      "write-status": "write status",
+      "read-status": "read status",
+      "poll-status": "request, then poll status",
+      "command": "command",
+      "query": "query",
+      "append": "append event",
+      "stream-events": "stream events",
+      "project": "project",
+      "change-events": "change events",
+      "poll-outbox": "poll outbox",
+      "command-compensate": "execute / compensate",
+      "persist-state": "persist saga state",
+      "emit-event": "emit event",
+      "read-or-populate": "read / populate",
+      "read-on-miss": "read on miss",
+      "persist": "persist (sync or async)",
+      "replicate": "replicate",
+      "route-by-key": "route by key",
+      "serve-static": "static assets",
+      "origin-fetch": "origin fetch",
+      "resolve": "resolve",
+      "failover": "failover",
+      "live-traffic": "live traffic",
+      "switch-on-release": "switch on release",
+      "majority-traffic": "most traffic",
+      "canary-traffic": "canary traffic",
+      "metrics": "metrics",
+      "route-legacy": "not yet migrated",
+      "route-migrated": "migrated routes",
+      "translate": "translate",
+      "sign-in": "sign in",
+      "issue-token": "issue token",
+      "request-key": "request key",
+      "upload-direct": "upload directly",
+      "check-policy": "check policy",
+      "load-policies": "load policies",
+      "forward-if-allowed": "forward if allowed",
+      "localhost": "localhost",
+      "telemetry": "telemetry",
+      "proxy": "proxy",
+      "mtls": "mTLS",
+      "configure": "configure",
+      "call-port": "call (port)",
+      "invoke": "invoke",
+      "route-by-tenant": "route by tenant",
+      "route-critical": "critical",
+      "route-batch": "batch"
+    },
+    "items": {
+      "publisher-subscriber": {
+        "name": "Publisher-Subscriber",
+        "description": "A publisher sends each event once to a topic and every subscriber gets its own copy. Use it to add consumers without touching the producer; the trade-off is eventual consistency and harder end-to-end tracing.",
+        "nodes": {
+          "publisher": "Order Service",
+          "topic": "Order Events",
+          "billing": "Billing Service",
+          "shipping": "Shipping Service",
+          "analytics": "Analytics Service"
+        }
+      },
+      "fan-out": {
+        "name": "Fan-out (topic → queues)",
+        "description": "A topic delivers each message to one queue per consumer, so every consumer reads at its own pace, retries independently and can fail without affecting the others. Costs one queue per consumer to operate.",
+        "nodes": {
+          "publisher": "Order Service",
+          "topic": "Order Events",
+          "queueA": "Invoicing Queue",
+          "queueB": "Notifications Queue",
+          "workerA": "Invoicing Worker",
+          "workerB": "Notification Worker"
+        }
+      },
+      "queue-based-load-leveling": {
+        "name": "Queue-Based Load Leveling",
+        "description": "A queue absorbs bursts between the callers and a service that can only work at a steady rate, protecting it and its database. Responses become asynchronous and the queue can build a backlog.",
+        "nodes": {
+          "producer": "Checkout API",
+          "queue": "Orders Queue",
+          "service": "Order Processor",
+          "database": "Orders DB"
+        }
+      },
+      "competing-consumers": {
+        "name": "Competing Consumers",
+        "description": "Several identical workers read from the same queue; each message is handled by exactly one of them. Scales throughput horizontally; ordering across messages is lost and handlers must be idempotent.",
+        "nodes": {
+          "producer": "Order Service",
+          "queue": "Jobs Queue",
+          "worker1": "Worker 1",
+          "worker2": "Worker 2",
+          "worker3": "Worker 3"
+        }
+      },
+      "async-request-reply": {
+        "name": "Asynchronous Request-Reply",
+        "description": "The API accepts a long-running request with 202 Accepted and a status URL, hands the work to a queue, and the client polls until a worker records the result. Keeps the API responsive at the cost of polling and a status store.",
+        "nodes": {
+          "client": "Client",
+          "api": "Reports API",
+          "statusStore": "Job Status Store",
+          "queue": "Report Jobs Queue",
+          "worker": "Report Worker"
+        }
+      },
+      "claim-check": {
+        "name": "Claim Check",
+        "description": "A large payload is stored in object storage and only a reference travels through the broker; the receiver fetches the payload with it. Keeps messages small and cheap; adds a storage round trip and payload lifecycle to manage.",
+        "nodes": {
+          "sender": "Upload Service",
+          "storage": "Payload Storage",
+          "queue": "Documents Queue",
+          "receiver": "Processing Service"
+        }
+      },
+      "pipes-and-filters": {
+        "name": "Pipes and Filters",
+        "description": "Processing is split into independent stages connected in sequence, each doing one transformation. Stages scale and deploy separately; the whole pipeline adds latency and needs per-stage error handling.",
+        "nodes": {
+          "source": "Ingestion",
+          "validate": "Validate",
+          "enrich": "Enrich",
+          "transform": "Transform",
+          "sink": "Analytics Warehouse"
+        }
+      },
+      "scatter-gather": {
+        "name": "Scatter-Gather",
+        "description": "An aggregator sends the same request to several services in parallel and combines their replies into one answer, with a timeout for slow responders. Good for quotes and searches; the slowest reply bounds latency.",
+        "nodes": {
+          "client": "Client",
+          "aggregator": "Quote Aggregator",
+          "supplierA": "Supplier A",
+          "supplierB": "Supplier B",
+          "supplierC": "Supplier C"
+        }
+      },
+      "api-gateway": {
+        "name": "API Gateway (Gateway Routing)",
+        "description": "One entry point routes each request to the right service by path or host and handles cross-cutting concerns (auth, TLS, rate limits). Clients see one API; the gateway becomes a critical component to scale and keep thin.",
+        "nodes": {
+          "client": "Client",
+          "gateway": "API Gateway",
+          "orders": "Order Service",
+          "catalog": "Catalog Service",
+          "users": "User Service"
+        }
+      },
+      "backends-for-frontends": {
+        "name": "Backends for Frontends (BFF)",
+        "description": "Each kind of client gets its own backend shaped for its screens and calls, in front of shared services. Frontends evolve independently; some logic is duplicated across BFFs.",
+        "nodes": {
+          "web": "Web App",
+          "mobile": "Mobile App",
+          "webBff": "Web BFF",
+          "mobileBff": "Mobile BFF",
+          "orders": "Order Service",
+          "catalog": "Catalog Service"
+        }
+      },
+      "gateway-aggregation": {
+        "name": "Gateway Aggregation",
+        "description": "The gateway turns one client request into several backend calls and returns a single combined response, saving round trips on slow networks. The gateway takes on composition logic and the slowest call's latency.",
+        "nodes": {
+          "client": "Mobile App",
+          "gateway": "API Gateway",
+          "orders": "Order Service",
+          "profile": "Profile Service",
+          "recommendations": "Recommendation Service"
+        }
+      },
+      "static-content-hosting": {
+        "name": "Static Content Hosting",
+        "description": "Static assets are served from object storage through a CDN, so the application only handles dynamic requests. Cheaper and faster at the edge; deploys must invalidate cached content.",
+        "nodes": {
+          "user": "User",
+          "cdn": "CDN",
+          "storage": "Static Assets",
+          "app": "Web App",
+          "database": "App DB"
+        }
+      },
+      "load-balancer-reverse-proxy": {
+        "name": "Load Balancer / Reverse Proxy",
+        "description": "A load balancer spreads requests across identical instances and takes unhealthy ones out of rotation. Gives horizontal scale and availability; instances should be stateless or share state elsewhere.",
+        "nodes": {
+          "client": "Client",
+          "balancer": "Load Balancer",
+          "instance1": "API Instance 1",
+          "instance2": "API Instance 2",
+          "instance3": "API Instance 3"
+        }
+      },
+      "cqrs": {
+        "name": "CQRS",
+        "description": "Commands and queries use separate models and stores: writes go to a normalized store, and change events build a read model shaped for queries. Each side scales and evolves on its own; reads are eventually consistent.",
+        "nodes": {
+          "client": "Client",
+          "commandApi": "Command API",
+          "writeDb": "Write DB",
+          "projector": "Projector",
+          "readDb": "Read Model",
+          "queryApi": "Query API"
+        }
+      },
+      "event-sourcing": {
+        "name": "Event Sourcing",
+        "description": "State is stored as an append-only log of events; projections replay the log into read models. You get a full audit trail and can rebuild views; queries need projections and event schemas must evolve carefully.",
+        "nodes": {
+          "client": "Client",
+          "commandApi": "Command API",
+          "eventStore": "Event Store",
+          "projector": "Projector",
+          "readModel": "Read Model",
+          "queryApi": "Query API"
+        }
+      },
+      "transactional-outbox": {
+        "name": "Transactional Outbox",
+        "description": "The service writes its data and the event to publish in one local transaction (an outbox table); a relay or CDC process then publishes the outbox to the broker. Avoids dual writes; delivery is at-least-once, so consumers must be idempotent.",
+        "nodes": {
+          "service": "Order Service",
+          "database": "Orders DB (+ outbox)",
+          "relay": "Outbox Relay (CDC)",
+          "broker": "Event Broker",
+          "consumer": "Billing Service"
+        }
+      },
+      "saga-orchestration": {
+        "name": "Saga — Orchestration",
+        "description": "An orchestrator runs a business transaction as a sequence of local steps and, when one fails, sends compensating commands to undo the steps already done. The flow is explicit and observable; the orchestrator must be durable and stay free of business rules that belong to the services.",
+        "nodes": {
+          "client": "Client",
+          "orchestrator": "Checkout Orchestrator",
+          "inventory": "Inventory Service",
+          "payment": "Payment Service",
+          "shipping": "Shipping Service",
+          "stateStore": "Saga State Store"
+        }
+      },
+      "saga-choreography": {
+        "name": "Saga — Choreography",
+        "description": "There is no coordinator: each service reacts to the previous step's event and emits its own, compensating on failure events. Services stay decoupled; the overall flow is implicit and harder to follow and test.",
+        "nodes": {
+          "orders": "Order Service",
+          "bus": "Event Bus",
+          "payment": "Payment Service",
+          "inventory": "Inventory Service",
+          "shipping": "Shipping Service"
+        }
+      },
+      "cache-aside": {
+        "name": "Cache-Aside",
+        "description": "The application reads from the cache first; on a miss it reads the database and populates the cache. Simple and resilient to cache loss; data can be stale until expiry or explicit invalidation.",
+        "nodes": {
+          "app": "Product Service",
+          "cache": "Product Cache",
+          "database": "Products DB"
+        }
+      },
+      "cache-write-through-behind": {
+        "name": "Write-Through / Write-Behind Cache",
+        "description": "Writes go to the cache, which persists them to the database synchronously (write-through) or asynchronously in batches (write-behind). Reads are always warm; write-behind risks losing writes if the cache fails.",
+        "nodes": {
+          "app": "Cart Service",
+          "cache": "Cart Cache",
+          "database": "Carts DB"
+        }
+      },
+      "materialized-view": {
+        "name": "Materialized View",
+        "description": "A builder listens to changes in the source stores and keeps a precomputed view shaped for one query. Expensive joins become a single read; the view lags behind its sources.",
+        "nodes": {
+          "ordersDb": "Orders DB",
+          "customersDb": "Customers DB",
+          "viewBuilder": "View Builder",
+          "view": "Order Summary View",
+          "queryApi": "Dashboard API"
+        }
+      },
+      "data-replication": {
+        "name": "Data Replication (Primary-Replica)",
+        "description": "Writes go to the primary, which replicates to read replicas that take the read traffic. Scales reads and adds failover candidates; asynchronous replicas can serve stale data.",
+        "nodes": {
+          "app": "Application",
+          "primary": "Primary DB",
+          "replica1": "Read Replica 1",
+          "replica2": "Read Replica 2"
+        }
+      },
+      "sharding": {
+        "name": "Sharding",
+        "description": "Data is split across shards by a partition key and a router sends each request to the shard that owns its key. Scales writes and storage beyond one node; cross-shard queries and rebalancing get hard.",
+        "nodes": {
+          "app": "Application",
+          "router": "Shard Router",
+          "shardA": "Shard A (keys a–h)",
+          "shardB": "Shard B (keys i–p)",
+          "shardC": "Shard C (keys q–z)"
+        }
+      },
+      "bulkhead": {
+        "name": "Bulkhead",
+        "description": "Workloads are split into isolated pools (workers, connections, threads) by criticality or tenant, so one overloaded or failing pool cannot drain the others. Contains failures; each pool is sized separately and can sit idle.",
+        "nodes": {
+          "client": "Clients",
+          "router": "Request Classifier",
+          "criticalPool": "Critical Pool",
+          "criticalWorker": "Checkout Workers",
+          "batchPool": "Batch Pool",
+          "batchWorker": "Report Workers",
+          "database": "Orders DB"
+        }
+      },
+      "multi-region-active-passive": {
+        "name": "Multi-region — Active-Passive (DR)",
+        "description": "One region serves traffic while a standby region receives replicated data and takes over on failover. Backup & restore, pilot light and warm standby are this shape with less running in the standby; recovery time grows as the standby shrinks.",
+        "nodes": {
+          "users": "Users",
+          "router": "Global Router",
+          "regionA": "Region A",
+          "appA": "App (Region A)",
+          "dbA": "DB (Region A)",
+          "regionB": "Region B",
+          "appB": "App (Region B)",
+          "dbB": "DB (Region B)"
+        }
+      },
+      "multi-region-active-active": {
+        "name": "Multi-region — Active-Active",
+        "description": "Every region serves traffic and data is replicated between them, so users hit the nearest healthy region (the Geode pattern). Lowest latency and recovery time; writes need conflict handling across regions.",
+        "nodes": {
+          "users": "Users",
+          "router": "Global Router",
+          "regionA": "Region A",
+          "appA": "App (Region A)",
+          "dbA": "DB (Region A)",
+          "regionB": "Region B",
+          "appB": "App (Region B)",
+          "dbB": "DB (Region B)"
+        }
+      },
+      "strangler-fig": {
+        "name": "Strangler Fig",
+        "description": "A façade sits in front of the legacy system and routes each migrated capability to its new service, until nothing is left on the legacy side. Migrates incrementally with a way back; both systems run, and share data, for the duration.",
+        "nodes": {
+          "client": "Client",
+          "facade": "Routing Façade",
+          "legacy": "Legacy Monolith",
+          "newService": "New Billing Service",
+          "newDb": "Billing DB"
+        }
+      },
+      "anti-corruption-layer": {
+        "name": "Anti-Corruption Layer",
+        "description": "A translation layer between a new service and a legacy system keeps the legacy model out of the new domain. The new design stays clean; the layer is extra code and latency to maintain.",
+        "nodes": {
+          "newService": "Order Service",
+          "acl": "Anti-Corruption Layer",
+          "legacy": "Legacy ERP"
+        }
+      },
+      "blue-green-deployment": {
+        "name": "Blue-Green Deployment",
+        "description": "Two identical environments: one (blue) takes live traffic while the new version is deployed to the other (green); the router switches over at release and back on trouble. Instant rollback; doubles the infrastructure during the release and needs compatible schemas.",
+        "nodes": {
+          "users": "Users",
+          "balancer": "Router",
+          "blue": "Blue (v1)",
+          "green": "Green (v2)",
+          "database": "App DB"
+        }
+      },
+      "canary-release": {
+        "name": "Canary Release",
+        "description": "The new version gets a small share of traffic first while its metrics are compared with the stable one, and the share grows only if they hold. Limits the blast radius of a bad release; needs good metrics and versions that can run side by side. Shadowing (mirroring traffic without serving it) is a variant.",
+        "nodes": {
+          "users": "Users",
+          "balancer": "Traffic Splitter",
+          "stable": "Stable (v1)",
+          "canary": "Canary (v2)",
+          "monitoring": "Metrics"
+        }
+      },
+      "cell-based": {
+        "name": "Cell-Based Architecture",
+        "description": "The system is replicated as independent cells, each with its full stack and its own data, and a thin router pins each tenant to one cell. A failure stays within one cell; operating many cells and moving tenants between them takes tooling. Deployment Stamps are the same shape.",
+        "nodes": {
+          "users": "Users",
+          "cellRouter": "Cell Router",
+          "cell1": "Cell 1",
+          "app1": "App (Cell 1)",
+          "db1": "DB (Cell 1)",
+          "cell2": "Cell 2",
+          "app2": "App (Cell 2)",
+          "db2": "DB (Cell 2)"
+        }
+      },
+      "federated-identity": {
+        "name": "Federated Identity",
+        "description": "Users sign in with an external identity provider, which issues a token the application trusts; the application stores no passwords. Single sign-on and less credential handling; the IdP becomes a dependency for every login.",
+        "nodes": {
+          "user": "User",
+          "idp": "Identity Provider",
+          "app": "Web App"
+        }
+      },
+      "valet-key": {
+        "name": "Valet Key",
+        "description": "The application hands the client a short-lived key scoped to one storage operation, and the client uploads or downloads directly. Large transfers bypass the application; the key's scope and expiry must be tight.",
+        "nodes": {
+          "client": "Client",
+          "app": "Upload API",
+          "storage": "File Storage"
+        }
+      },
+      "policy-enforcement-point": {
+        "name": "Policy Enforcement Point (OPA)",
+        "description": "The gateway asks a policy decision point (such as Open Policy Agent) whether each request is allowed, from policies managed outside the code, and only forwards allowed ones. Authorization is central and auditable; every request pays a decision call.",
+        "nodes": {
+          "client": "Client",
+          "gateway": "API Gateway (PEP)",
+          "pdp": "Policy Decision Point (OPA)",
+          "policyStore": "Policy Bundles",
+          "service": "Order Service",
+          "database": "Orders DB"
+        }
+      },
+      "sidecar": {
+        "name": "Sidecar",
+        "description": "A helper process runs next to the application in the same pod or host and takes on cross-cutting work (telemetry, proxying, config) without changing the app. Language-agnostic reuse; one more process per instance.",
+        "nodes": {
+          "caller": "Caller",
+          "pod": "Pod",
+          "app": "Application",
+          "sidecar": "Sidecar Agent",
+          "monitoring": "Observability"
+        }
+      },
+      "ambassador": {
+        "name": "Ambassador",
+        "description": "A local proxy calls a remote service on the application's behalf, adding retries, timeouts, circuit breaking and TLS. Network resilience without changing the app; a hop and a component to run.",
+        "nodes": {
+          "app": "Application",
+          "ambassador": "Ambassador Proxy",
+          "remote": "Payment Provider"
+        }
+      },
+      "service-mesh": {
+        "name": "Service Mesh",
+        "description": "Every service gets a sidecar proxy, and a control plane configures them all: traffic between services goes proxy to proxy with mTLS, retries and telemetry. Uniform security and observability; adds latency and a platform to operate. Circuit breaking lives here.",
+        "nodes": {
+          "podA": "Pod A",
+          "serviceA": "Order Service",
+          "proxyA": "Proxy (A)",
+          "podB": "Pod B",
+          "proxyB": "Proxy (B)",
+          "serviceB": "Inventory Service",
+          "controlPlane": "Mesh Control Plane"
+        }
+      },
+      "hexagonal": {
+        "name": "Hexagonal Architecture (Ports & Adapters)",
+        "description": "The domain sits in the center and talks to the outside only through ports; adapters at the edge implement them (REST, messaging, database). The core is testable and swaps infrastructure freely; more interfaces to write.",
+        "nodes": {
+          "restAdapter": "REST Adapter",
+          "consumerAdapter": "Event Consumer Adapter",
+          "core": "Application Core",
+          "domain": "Domain Model",
+          "repositoryAdapter": "Repository Adapter",
+          "messagingAdapter": "Messaging Adapter",
+          "database": "Orders DB",
+          "broker": "Domain Events"
+        }
+      },
+      "serverless-api": {
+        "name": "Serverless API",
+        "description": "An API gateway invokes functions that read and write a managed NoSQL table and publish events, with no servers to manage. Scales to zero and with demand; cold starts and per-invocation limits shape the design.",
+        "nodes": {
+          "client": "Client",
+          "gateway": "API Gateway",
+          "function": "Orders Function",
+          "table": "Orders Table",
+          "topic": "Order Events"
+        }
+      },
+      "observability-pipeline": {
+        "name": "Observability Pipeline",
+        "description": "Services send metrics, logs and traces to a collector, which processes them and forwards each signal to its backend. Backends can change without touching services; the collector must scale with telemetry volume.",
+        "nodes": {
+          "serviceA": "Order Service",
+          "serviceB": "Payment Service",
+          "collector": "Telemetry Collector",
+          "metrics": "Metrics",
+          "logs": "Logs",
+          "traces": "Traces"
+        }
+      }
+    },
+    "provider": {
+      "label": "Provider",
+      "neutral": "Neutral"
     }
   },
   "connectionPanel": {
@@ -2579,7 +3123,14 @@
       "secrets": "secrets|vault|keys|encryption",
       "serverless": "serverless|function|faas",
       "monitoring": "monitoring|observability|logs|metrics|tracing",
-      "dns": "dns|domain"
+      "dns": "dns|domain",
+      "topic": "topic|pub/sub|pubsub|publish subscribe|fan-out",
+      "event-bus": "event bus|event router|event broker",
+      "stream": "stream|streaming|event log|log|partition",
+      "relational-db": "relational database|sql database|rdbms|sql",
+      "nosql-db": "nosql|document database|key-value store|wide column",
+      "warehouse": "data warehouse|warehouse|analytics database|olap",
+      "workflow": "workflow|orchestration|state machine|orchestrator"
     },
     "toolbar": {
       "label": "Canvas tools",

@@ -125,6 +125,12 @@ export interface CloudFamilyDefinition {
    * what its "All" view shows before "View all". Absent: catalog order.
    */
   spotlightServiceIds?: readonly string[];
+  /**
+   * The service that stands for a concept when several of the family's do —
+   * AWS has SQS, MQ and MSK for "queue". Without an entry the first service in
+   * catalog order wins. Read by `serviceForConcept`.
+   */
+  preferredServiceByConcept?: Readonly<Partial<Record<CatalogConceptId, string>>>;
   categories: readonly CloudFamilyCategory[];
   services: readonly CloudFamilyService[];
   icons: IconResolver;

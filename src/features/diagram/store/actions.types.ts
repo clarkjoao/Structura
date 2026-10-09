@@ -223,7 +223,7 @@ export interface AppActions {
 
   insertPattern: (
     template:
-      | import("@/lib/catalogs/patterns").PatternTemplate
+      | import("../model/pattern-fragment.types").PatternFragment
       | import("../model/diagram.types").UserTemplate,
     position: { x: number; y: number },
   ) => string[];

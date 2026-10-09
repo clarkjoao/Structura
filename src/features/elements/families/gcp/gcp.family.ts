@@ -36,10 +36,10 @@ function accentFor(categoryId: GcpCategoryId) {
 
 /** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
 const GCP_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
-  cloudsql: ["database"],
-  cloudspanner: ["database"],
-  alloydb: ["database"],
-  bigquery: ["database"],
+  cloudsql: ["database", "relational-db"],
+  cloudspanner: ["database", "relational-db"],
+  alloydb: ["database", "relational-db"],
+  bigquery: ["database", "warehouse"],
   "cloud-storage": ["object-storage"],
   apigee: ["api-gateway"],
   cloudrun: ["serverless"],

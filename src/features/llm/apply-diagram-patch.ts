@@ -3,9 +3,11 @@ import { layout } from "@/features/canvas/layout/layoutEngine";
 import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
 import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
-import { PATTERNS } from "@/lib/catalogs/patterns";
+import { getPattern } from "@/lib/catalogs/patterns";
+import { resolvePattern } from "@/features/elements/patterns";
 import type { DiagramPatchAction } from "./types";
 import { listElementFamilies, searchElements } from "./element-catalog-query";
+import { listPatterns } from "./pattern-catalog-query";
 import { validateAddNodeAgainstRegistry } from "./add-node-validation";
 
 export interface AppliedPatchResult {
@@ -15,7 +17,12 @@ export interface AppliedPatchResult {
   skipReason?: string;
   toolResult?: {
     type:
-      "INSERT_PATTERN" | "AUTO_LAYOUT" | "GET_TAGS" | "LIST_ELEMENT_FAMILIES" | "SEARCH_ELEMENTS";
+      | "INSERT_PATTERN"
+      | "AUTO_LAYOUT"
+      | "GET_TAGS"
+      | "LIST_ELEMENT_FAMILIES"
+      | "SEARCH_ELEMENTS"
+      | "LIST_PATTERNS";
     data?: unknown;
   };
 }
@@ -122,12 +129,15 @@ export function applyDiagramPatchAction(
       diagramState.removeConnection(action.payload.edgeId);
       return { addedNodeId: null, addedEdgeId: null };
     case "INSERT_PATTERN": {
-      const pattern = PATTERNS.find((p) => p.id === action.payload.patternId);
+      const pattern = getPattern(action.payload.patternId);
       if (!pattern) {
         console.warn(`[LLM] Pattern not found: ${action.payload.patternId}`);
         return { addedNodeId: null, addedEdgeId: null };
       }
-      const insertedIds = diagramState.insertPattern(pattern, { x: 300, y: 300 });
+      const insertedIds = diagramState.insertPattern(
+        resolvePattern(pattern, action.payload.provider),
+        { x: 300, y: 300 },
+      );
       return {
         addedNodeId: insertedIds[0] ?? null,
         addedEdgeId: null,
@@ -186,6 +196,12 @@ export function applyDiagramPatchAction(
         },
       };
     }
+    case "LIST_PATTERNS":
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        toolResult: { type: "LIST_PATTERNS", data: listPatterns() },
+      };
     case "SEARCH_ELEMENTS": {
       return {
         addedNodeId: null,
@@ -218,7 +234,11 @@ export function runCatalogReadActions(actions: DiagramPatchAction[]): {
   const catalogToolResults: NonNullable<AppliedPatchResult["toolResult"]>[] = [];
 
   for (const action of actions) {
-    if (action.type !== "LIST_ELEMENT_FAMILIES" && action.type !== "SEARCH_ELEMENTS") {
+    if (
+      action.type !== "LIST_ELEMENT_FAMILIES" &&
+      action.type !== "SEARCH_ELEMENTS" &&
+      action.type !== "LIST_PATTERNS"
+    ) {
       continue;
     }
     const applied = applyDiagramPatchAction(action);

@@ -5,8 +5,8 @@ export { LayerFilterPopover, type LayerFilterPopoverProps } from "./LayerFilterP
 export { MergeVersionDialog, type MergeVersionDialogProps } from "./MergeVersionDialog";
 export { default as QuickInsertPopover } from "./QuickInsertPopover";
 export {
-  ConnectedVersionDrawer,
-  VersionDrawer,
-  type VersionDrawerProps,
-  type VersionDrawerVersion,
-} from "./VersionDrawer";
+  ConnectedVersionPanel,
+  VersionPanel,
+  type VersionPanelProps,
+  type VersionPanelVersion,
+} from "./VersionPanel";

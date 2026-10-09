@@ -3,7 +3,6 @@ import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { ConnectedVersionDrawer } from "./toolbar/VersionDrawer";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
 import { useNodeTypes } from "./nodes/node-types";
@@ -338,7 +337,6 @@ const Canvas = (props: CanvasProps = {}) => {
       <div className="flex-1 flex relative h-full min-h-0">
         <style>{CANVAS_STYLES}</style>
         <div ref={reactFlowWrapperRef} className="flex-1 relative">
-          {showVersions && <ConnectedVersionDrawer onClose={() => setShowVersions(false)} />}
           {!interactionMode.isPlaying && (
             <CanvasBottomToolbar
               diagram={diagram}
@@ -347,7 +345,8 @@ const Canvas = (props: CanvasProps = {}) => {
               onInserted={selectInsertedNodes}
               versions={{
                 locked: !interactionMode.canEditVersions || isFlowActive,
-                onOpen: () => setShowVersions(true),
+                open: showVersions,
+                onOpenChange: setShowVersions,
               }}
               tags={{
                 allTags: allDiagramTags,

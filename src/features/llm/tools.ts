@@ -31,7 +31,7 @@ export const ALL_TOOLS: LLMTool[] = [
   {
     name: "list_patterns",
     description:
-      "Returns all available architectural patterns that can be inserted into the diagram. Use this to help users choose which pattern to add.",
+      "Returns the architectural patterns that can be inserted (id, name, category, description, infrastructure roles) and the providers insert_pattern accepts. Use it to pick a pattern before calling insert_pattern.",
     parametersSchema: { type: "object", properties: {}, required: [] },
   },
   {
@@ -162,7 +162,12 @@ export const ALL_TOOLS: LLMTool[] = [
         patternId: {
           type: "string",
           description:
-            'The pattern ID from the patterns catalog (e.g. "circuit-breaker", "cqrs", "fifo-queue-aws", "retry-with-fallback", "saga-orchestration")',
+            'The pattern ID from the patterns catalog (e.g. "api-gateway", "cqrs", "saga-orchestration", "fan-out", "cell-based")',
+        },
+        provider: {
+          type: "string",
+          description:
+            'Optional. "neutral" (default) draws infrastructure roles (queue, cache, CDN…) as generic containers; a cloud family id such as "aws", "gcp" or "azure" draws each role as that family\'s service. Roles the family has no service for stay neutral. Match the provider already used in the diagram.',
         },
       },
       required: ["patternId"],
@@ -187,7 +192,11 @@ export const WRITE_TOOL_NAMES: string[] = [
 ];
 
 /** Catalog discovery tools — executable reads, never confirmation-gated writes. */
-export const CATALOG_READ_TOOL_NAMES: string[] = ["list_element_families", "search_elements"];
+export const CATALOG_READ_TOOL_NAMES: string[] = [
+  "list_element_families",
+  "search_elements",
+  "list_patterns",
+];
 
 export function isWriteTool(toolName: string): boolean {
   return WRITE_TOOL_NAMES.includes(toolName);

@@ -30,7 +30,7 @@ function accentFor(categoryId: OssCategoryId) {
 
 /** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
 const OSS_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
-  kafka: ["queue", "events"],
+  kafka: ["queue", "events", "stream"],
   redis: ["cache", "database"],
 };
 

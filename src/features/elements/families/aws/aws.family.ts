@@ -55,18 +55,18 @@ function accentFor(categoryId: AwsCategoryId) {
 const AWS_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
   sqs: ["queue"],
   mq: ["queue"],
-  sns: ["events"],
-  eventbridge: ["events"],
-  kinesis: ["events"],
-  msk: ["queue", "events"],
-  rds: ["database"],
-  aurora: ["database"],
-  dynamodb: ["database"],
-  documentdb: ["database"],
+  sns: ["events", "topic"],
+  eventbridge: ["events", "event-bus"],
+  kinesis: ["events", "stream"],
+  msk: ["queue", "events", "stream"],
+  rds: ["database", "relational-db"],
+  aurora: ["database", "relational-db"],
+  dynamodb: ["database", "nosql-db"],
+  documentdb: ["database", "nosql-db"],
   neptune: ["database"],
-  keyspaces: ["database"],
+  keyspaces: ["database", "nosql-db"],
   timestream: ["database"],
-  redshift: ["database"],
+  redshift: ["database", "warehouse"],
   elasticache: ["cache"],
   memorydb: ["cache", "database"],
   s3: ["object-storage"],
@@ -83,6 +83,7 @@ const AWS_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>
   lambda: ["serverless"],
   cloudwatch: ["monitoring"],
   xray: ["monitoring"],
+  "step-functions": ["workflow"],
 };
 
 /**
@@ -99,6 +100,7 @@ export const awsFamily: CloudFamilyDefinition = {
   paletteCategoryId: "aws",
   primaryCategoryIds: AWS_FAMILY_PRIMARY_CATEGORY_IDS,
   spotlightServiceIds: AWS_FAMILY_SPOTLIGHT_SERVICE_IDS,
+  preferredServiceByConcept: { queue: "sqs", identity: "cognito", secrets: "secrets-manager" },
 
   categories: AWS_CATEGORIES.map((category) => {
     const id = category.id as AwsCategoryId;

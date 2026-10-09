@@ -8,7 +8,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Upload } from "lucide-react";
+import { ExternalLink, Upload } from "lucide-react";
 import { toast } from "sonner";
 import type { PatternCategory, PatternTemplate } from "@/lib/catalogs/patterns";
 import {
@@ -19,6 +19,16 @@ import {
   type UserTemplate,
 } from "@/features/diagram";
 import { KEY, keyIs } from "@/lib/core/keyboard";
+import {
+  NEUTRAL_PROVIDER,
+  patternDescriptionKey,
+  patternNameKey,
+  patternNodeKey,
+  patternProviders,
+  patternReference,
+} from "@/features/elements/patterns";
+import { getCloudFamily } from "@/features/elements/families/cloud-family.registry";
+import { usePatternProvider } from "./usePatternProvider";
 import { cn } from "@/lib/utils";
 import { PatternFlowPreview } from "./PatternFlowPreview";
 import {
@@ -30,12 +40,14 @@ import {
 import { UserTemplateCard } from "./UserTemplateCard";
 
 const CATEGORY_ICONS: Record<PatternCategory, string> = {
-  messaging: "📨",
-  api: "🔌",
+  "integration-messaging": "📨",
+  "api-edge": "🔌",
+  "data-consistency": "🗄️",
   resilience: "🛡️",
-  data: "🗄️",
-  "event-driven": "⚡",
-  security: "🔐",
+  "migration-modernization": "🧭",
+  "deployment-scale": "🚀",
+  "security-identity": "🔐",
+  structure: "🧩",
 };
 
 /** What the host's search field forwards: ↑↓ and ↵ while the patterns are shown. */
@@ -69,7 +81,7 @@ const SUB_CHIP_CLASS =
  */
 export const PatternBrowser = forwardRef<PatternBrowserHandle, PatternBrowserProps>(
   function PatternBrowser({ query, idPrefix, onActiveIdChange, onInsert }, ref) {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const userTemplates = useAllUserTemplates();
     const { deleteUserTemplate, updateUserTemplate } = useDiagramActions();
     const [filter, setFilter] = useState<PatternFilter>("all");
@@ -77,6 +89,20 @@ export const PatternBrowser = forwardRef<PatternBrowserHandle, PatternBrowserPro
     const importInputRef = useRef<HTMLInputElement>(null);
 
     const result = useMemo(() => searchPatterns(query, userTemplates), [query, userTemplates]);
+    const [provider, setProvider] = usePatternProvider();
+    const providers = useMemo(
+      () =>
+        patternProviders().map((id) => {
+          if (id === NEUTRAL_PROVIDER) return { id, label: t("patterns.provider.neutral") };
+          const family = getCloudFamily(id);
+          const groupKey = `elementCatalog.groups.${family?.paletteCategoryId ?? id}`;
+          const label = i18n.exists(groupKey) ? t(groupKey) : family ? t(family.labelKey) : id;
+          return { id, label };
+        }),
+      // Labels follow the language.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [t, i18n.language],
+    );
     const shown = useMemo(() => patternsForFilter(result, filter), [result, filter]);
     const options = useMemo(
       (): PatternOption[] => [
@@ -163,6 +189,37 @@ export const PatternBrowser = forwardRef<PatternBrowserHandle, PatternBrowserPro
 
     return (
       <div className="flex flex-col gap-3">
+        <div
+          role="radiogroup"
+          aria-label={t("patterns.provider.label")}
+          className="flex items-center gap-1 self-start rounded-lg border border-border p-0.5"
+        >
+          <span className="px-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            {t("patterns.provider.label")}
+          </span>
+          {providers.map((option) => {
+            const checked = option.id === provider;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={checked}
+                tabIndex={-1}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setProvider(option.id)}
+                className={cn(
+                  "h-6 rounded-md px-2 text-[11px] transition-colors",
+                  checked
+                    ? "bg-primary/10 text-foreground ring-1 ring-primary"
+                    : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
         <div role="group" aria-label={t("patterns.modalTitle")} className="flex flex-wrap gap-1.5">
           {PATTERN_FILTERS.map((value) => {
             const pressed = value === filter;
@@ -252,18 +309,18 @@ export const PatternBrowser = forwardRef<PatternBrowserHandle, PatternBrowserPro
                 );
               }
               const { pattern } = option;
+              const leaves = pattern.nodes.filter(
+                (node) => !pattern.nodes.some((other) => other.parent === node.key),
+              );
               return (
-                <button
+                <div
                   key={option.key}
                   id={optionId(option.key)}
-                  type="button"
                   role="option"
                   aria-selected={active}
-                  tabIndex={-1}
-                  onMouseDown={(event) => event.preventDefault()}
                   onMouseMove={() => !active && setActiveKey(option.key)}
                   onClick={() => insert(option)}
-                  className={cn(frame, "p-3 text-left hover:bg-surface-hover")}
+                  className={cn(frame, "cursor-pointer p-3 text-left hover:bg-surface-hover")}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -271,23 +328,35 @@ export const PatternBrowser = forwardRef<PatternBrowserHandle, PatternBrowserPro
                         <span aria-hidden className="mr-1">
                           {CATEGORY_ICONS[pattern.category]}
                         </span>
-                        {pattern.name}
+                        {t(patternNameKey(pattern))}
                       </p>
-                      <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-muted-foreground">
-                        {pattern.description}
+                      <p className="mt-1 line-clamp-3 text-[11px] leading-relaxed text-muted-foreground">
+                        {t(patternDescriptionKey(pattern))}
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
                       <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {t("patterns.elementAbbrev", { count: pattern.components.length })}
+                        {t("patterns.elementAbbrev", { count: leaves.length })}
                       </span>
                       <span className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        {t("patterns.connAbbrev", { count: pattern.connections.length })}
+                        {t("patterns.connAbbrev", { count: pattern.edges.length })}
                       </span>
                     </div>
                   </div>
-                  <PatternFlowPreview components={pattern.components} />
-                </button>
+                  <PatternFlowPreview
+                    components={leaves.map((node) => ({ name: t(patternNodeKey(pattern, node)) }))}
+                  />
+                  <a
+                    href={patternReference(pattern, i18n.language)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(event) => event.stopPropagation()}
+                    className="mt-1 inline-flex items-center gap-1 text-[10px] text-primary hover:underline"
+                  >
+                    <ExternalLink aria-hidden className="h-3 w-3" />
+                    {t("patterns.reference")}
+                  </a>
+                </div>
               );
             })}
           </div>

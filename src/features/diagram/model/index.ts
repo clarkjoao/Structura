@@ -241,3 +241,8 @@ export {
   isFlowDividerComponent,
   isPluginTypedComponent,
 } from "./component.guards";
+export type {
+  PatternFragment,
+  PatternFragmentEdge,
+  PatternFragmentNode,
+} from "./pattern-fragment.types";

@@ -6,6 +6,13 @@ import {
 } from "@/lib/catalogs/patterns";
 import type { UserTemplate } from "@/features/diagram";
 import { CATALOG_CONCEPTS, conceptTerms, fold } from "@/features/elements/search";
+import {
+  patternDescriptionKey,
+  patternNameKey,
+  patternNodeKey,
+  patternRoleKey,
+} from "@/features/elements/patterns";
+import i18n from "@/infrastructure/i18n";
 
 /** A pattern sub-filter: every pattern, the user's saved templates, or one built-in category. */
 export type PatternFilter = "all" | "user-templates" | PatternCategory;
@@ -62,6 +69,19 @@ export function patternMatches(pattern: Searchable, query: string): boolean {
   return matchesNeedles(pattern, needlesFor(query));
 }
 
+/** A built-in pattern as the search reads it: its texts in the active language. */
+export function builtinSearchable(pattern: PatternTemplate): Searchable {
+  return {
+    name: i18n.t(patternNameKey(pattern)),
+    description: i18n.t(patternDescriptionKey(pattern)),
+    category: i18n.t(`patterns.category.${pattern.category}`),
+    components: pattern.nodes.flatMap((node) => [
+      { name: i18n.t(patternNodeKey(pattern, node)) },
+      ...(node.role ? [{ name: i18n.t(patternRoleKey(node.role)) }] : []),
+    ]),
+  };
+}
+
 export interface PatternSearchResult {
   builtins: PatternTemplate[];
   userTemplates: UserTemplate[];
@@ -75,7 +95,9 @@ export function searchPatterns(
   userTemplates: readonly UserTemplate[],
 ): PatternSearchResult {
   const needles = needlesFor(query);
-  const builtins = PATTERNS.filter((pattern) => matchesNeedles(pattern, needles));
+  const builtins = PATTERNS.filter((pattern) =>
+    matchesNeedles(builtinSearchable(pattern), needles),
+  );
   const user = userTemplates.filter((template) => matchesNeedles(template, needles));
   const counts = {
     all: builtins.length + user.length,

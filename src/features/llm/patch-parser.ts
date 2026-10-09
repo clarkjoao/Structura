@@ -1,5 +1,6 @@
 import { isWriteTool, isCatalogReadTool } from "./tools";
 import { isValidNodeType, isValidPatternId } from "./component-catalog";
+import { isPatternProvider } from "@/features/elements/patterns";
 import type {
   AnalysisFinding,
   AnalysisResponse,
@@ -168,9 +169,19 @@ function mapToolCallToAction(toolCall: LLMToolCall): DiagramPatchAction | null {
         console.warn(`[LLM] Invalid patternId "${patternId}" - action skipped`);
         return null;
       }
+      const provider = toolCall.parameters.provider;
+      if (
+        provider !== undefined &&
+        (typeof provider !== "string" || !isPatternProvider(provider))
+      ) {
+        console.warn(`[LLM] Unknown pattern provider "${provider}" - inserting neutral`);
+      }
       return {
         type: "INSERT_PATTERN",
-        payload: { patternId },
+        payload: {
+          patternId,
+          ...(typeof provider === "string" && isPatternProvider(provider) ? { provider } : {}),
+        },
       } as DiagramPatchAction;
     }
     case "auto_layout":
@@ -183,6 +194,8 @@ function mapToolCallToAction(toolCall: LLMToolCall): DiagramPatchAction | null {
         type: "GET_TAGS",
         payload: {},
       } as DiagramPatchAction;
+    case "list_patterns":
+      return { type: "LIST_PATTERNS", payload: {} };
     case "list_element_families":
       return {
         type: "LIST_ELEMENT_FAMILIES",

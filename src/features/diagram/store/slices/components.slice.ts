@@ -237,7 +237,7 @@ function resolveInsertPosition(params: {
   return position;
 }
 
-function buildLayoutForComponent(
+export function buildLayoutForComponent(
   componentId: string,
   type: ComponentType,
   resolvedPanelKind: PanelKind | undefined,

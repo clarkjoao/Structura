@@ -28,6 +28,12 @@ export interface CanvasPreferencesStore {
    */
   autoHideBottomToolbar: boolean;
   setAutoHideBottomToolbar: (autoHide: boolean) => void;
+  /**
+   * The provider patterns were last inserted with ("neutral", "aws"…): a UI
+   * preference, not diagram data. Checked against the registry when read.
+   */
+  patternProvider: string;
+  setPatternProvider: (provider: string) => void;
 }
 
 /** How many recent catalog entries are kept. */
@@ -54,6 +60,8 @@ export const useCanvasPreferencesStore = create<CanvasPreferencesStore>()(
         })),
       autoHideBottomToolbar: false,
       setAutoHideBottomToolbar: (autoHide) => set({ autoHideBottomToolbar: autoHide }),
+      patternProvider: "neutral",
+      setPatternProvider: (provider) => set({ patternProvider: provider }),
     }),
     {
       name: CANVAS_PREFERENCES_KEY,

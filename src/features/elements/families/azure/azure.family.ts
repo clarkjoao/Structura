@@ -28,14 +28,14 @@ function accentFor(categoryId: AzureCategoryId) {
 
 /** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
 const AZURE_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
-  servicebus: ["queue"],
+  servicebus: ["queue", "topic"],
   storagequeue: ["queue"],
-  eventgrid: ["events"],
-  eventhubs: ["events"],
-  sqldatabase: ["database"],
-  cosmosdb: ["database"],
-  storagetable: ["database"],
-  datawarehouse: ["database"],
+  eventgrid: ["events", "event-bus"],
+  eventhubs: ["events", "stream"],
+  sqldatabase: ["database", "relational-db"],
+  cosmosdb: ["database", "nosql-db"],
+  storagetable: ["database", "nosql-db"],
+  datawarehouse: ["database", "warehouse"],
   rediscache: ["cache"],
   storageblob: ["object-storage"],
   apimanagement: ["api-gateway"],
@@ -49,6 +49,7 @@ const AZURE_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[
   functions: ["serverless"],
   monitor: ["monitoring"],
   appinsights: ["monitoring"],
+  logicapps: ["workflow"],
 };
 
 /**
@@ -69,6 +70,7 @@ export const azureFamily: CloudFamilyDefinition = {
     "azure-networking",
     "azure-security",
   ],
+  preferredServiceByConcept: { queue: "servicebus", "nosql-db": "cosmosdb" },
 
   categories: AZURE_CATEGORIES.map((category) => ({
     id: category.id,
