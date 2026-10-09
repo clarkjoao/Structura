@@ -16,6 +16,8 @@ const HEARTBEAT_MS = 30_000;
 export interface CollabServer {
   relay: CollabRelay;
   store: RoomStore;
+  /** True once shutdown began: health must stop advertising this relay. */
+  isDraining(): boolean;
   shutdown(): Promise<void>;
 }
 
@@ -37,8 +39,14 @@ export function attachCollabServer(
   });
 
   const alive = new WeakMap<WebSocket, boolean>();
+  let draining = false;
 
   wss.on("connection", (ws) => {
+    if (draining) {
+      // Shutting down: send the client straight on to another relay.
+      ws.close(1012, "restarting");
+      return;
+    }
     alive.set(ws, true);
     const handlers = relay.connect({
       send: (text) => {
@@ -73,7 +81,11 @@ export function attachCollabServer(
   return {
     relay,
     store,
+    isDraining: () => draining,
     async shutdown() {
+      // Stop taking sockets first, then hand the open ones back to their clients, which
+      // reconnect to another relay.
+      draining = true;
       clearInterval(heartbeat);
       await relay.stop();
       await new Promise<void>((resolve) => wss.close(() => resolve()));

@@ -28,6 +28,12 @@ spec:
             - { name: REDIS_URL, value: redis://collab-redis:6379 }
             - { name: COLLAB_HOST_GRACE_MS, value: "30000" }
             - { name: COLLAB_MAX_PARTICIPANTS, value: "50" }
+          # Let the endpoint removal reach the ingress before the relay drains, so the clients it
+          # hands back reconnect to other pods rather than to this one.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "3"]
           ports:
             - name: http
               containerPort: 3000

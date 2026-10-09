@@ -15,13 +15,18 @@ const store: RoomStore = REDIS_URL
   ? new RedisRoomStore(REDIS_URL, { namespace: REDIS_NAMESPACE })
   : new MemoryRoomStore();
 
-const app = createApp(() => ({ ready: store.isAvailable(), collab: { store: store.kind } }));
+let draining = (): boolean => false;
+const app = createApp(() => ({
+  ready: store.isAvailable() && !draining(),
+  collab: { store: store.kind },
+}));
 
 const httpServer = createServer(app);
 const collab = attachCollabServer(httpServer, {
   store,
   relay: { hostGraceMs: COLLAB_HOST_GRACE_MS, maxParticipants: COLLAB_MAX_PARTICIPANTS },
 });
+draining = collab.isDraining;
 
 const proto = isTLS ? "https" : "http";
 const wsProto = isTLS ? "wss" : "ws";
