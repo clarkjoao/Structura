@@ -1561,6 +1561,47 @@
           "shardB": "Shard B (keys i–p)",
           "shardC": "Shard C (keys q–z)"
         }
+      },
+      "bulkhead": {
+        "name": "Bulkhead",
+        "description": "Workloads are split into isolated pools (workers, connections, threads) by criticality or tenant, so one overloaded or failing pool cannot drain the others. Contains failures; each pool is sized separately and can sit idle.",
+        "nodes": {
+          "client": "Clients",
+          "router": "Request Classifier",
+          "criticalPool": "Critical Pool",
+          "criticalWorker": "Checkout Workers",
+          "batchPool": "Batch Pool",
+          "batchWorker": "Report Workers",
+          "database": "Orders DB"
+        }
+      },
+      "multi-region-active-passive": {
+        "name": "Multi-region — Active-Passive (DR)",
+        "description": "One region serves traffic while a standby region receives replicated data and takes over on failover. Backup & restore, pilot light and warm standby are this shape with less running in the standby; recovery time grows as the standby shrinks.",
+        "nodes": {
+          "users": "Users",
+          "router": "Global Router",
+          "regionA": "Region A",
+          "appA": "App (Region A)",
+          "dbA": "DB (Region A)",
+          "regionB": "Region B",
+          "appB": "App (Region B)",
+          "dbB": "DB (Region B)"
+        }
+      },
+      "multi-region-active-active": {
+        "name": "Multi-region — Active-Active",
+        "description": "Every region serves traffic and data is replicated between them, so users hit the nearest healthy region (the Geode pattern). Lowest latency and recovery time; writes need conflict handling across regions.",
+        "nodes": {
+          "users": "Users",
+          "router": "Global Router",
+          "regionA": "Region A",
+          "appA": "App (Region A)",
+          "dbA": "DB (Region A)",
+          "regionB": "Region B",
+          "appB": "App (Region B)",
+          "dbB": "DB (Region B)"
+        }
       }
     }
   },

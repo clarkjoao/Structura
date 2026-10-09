@@ -1561,6 +1561,47 @@
           "shardB": "Shard B (chaves i–p)",
           "shardC": "Shard C (chaves q–z)"
         }
+      },
+      "bulkhead": {
+        "name": "Bulkhead",
+        "description": "As cargas são divididas em pools isolados (workers, conexões, threads) por criticidade ou cliente, para que um pool sobrecarregado ou com falha não esgote os outros. Contém as falhas; cada pool é dimensionado à parte e pode ficar ocioso.",
+        "nodes": {
+          "client": "Clientes",
+          "router": "Classificador de Requisições",
+          "criticalPool": "Pool Crítico",
+          "criticalWorker": "Workers de Checkout",
+          "batchPool": "Pool de Lote",
+          "batchWorker": "Workers de Relatórios",
+          "database": "Banco de Pedidos"
+        }
+      },
+      "multi-region-active-passive": {
+        "name": "Multi-região — Ativo-Passivo (DR)",
+        "description": "Uma região atende o tráfego enquanto uma região de standby recebe os dados replicados e assume no failover. Backup e restore, pilot light e warm standby têm essa forma com menos coisa rodando no standby; o tempo de recuperação cresce quanto menor o standby.",
+        "nodes": {
+          "users": "Usuários",
+          "router": "Roteador Global",
+          "regionA": "Região A",
+          "appA": "Aplicação (Região A)",
+          "dbA": "Banco (Região A)",
+          "regionB": "Região B",
+          "appB": "Aplicação (Região B)",
+          "dbB": "Banco (Região B)"
+        }
+      },
+      "multi-region-active-active": {
+        "name": "Multi-região — Ativo-Ativo",
+        "description": "Todas as regiões atendem tráfego e os dados são replicados entre elas, então o usuário cai na região saudável mais próxima (o padrão Geode). Menor latência e tempo de recuperação; as escritas exigem tratamento de conflito entre regiões.",
+        "nodes": {
+          "users": "Usuários",
+          "router": "Roteador Global",
+          "regionA": "Região A",
+          "appA": "Aplicação (Região A)",
+          "dbA": "Banco (Região A)",
+          "regionB": "Região B",
+          "appB": "Aplicação (Região B)",
+          "dbB": "Banco (Região B)"
+        }
       }
     }
   },
