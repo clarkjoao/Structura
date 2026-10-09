@@ -17,6 +17,7 @@ import { usePatternInsert } from "../patterns";
 import { useCanvasPreferencesStore } from "../preferences";
 import { LayerFilterPopover } from "../toolbar/LayerFilterPopover";
 import { VersionsButton } from "../toolbar/components/VersionsButton";
+import { ConnectedVersionPanel } from "../toolbar/VersionPanel";
 import { CatalogEntryIcon } from "./CatalogEntryIcon";
 import { CANVAS_OVERLAY_ATTRIBUTE, useCatalogUiStore } from "./catalogUi.store";
 import { ElementCatalog } from "./ElementCatalog";
@@ -33,7 +34,8 @@ export interface CanvasBottomToolbarProps {
   canInsert: boolean;
   /** Selects what an insert created. */
   onInserted: (nodeIds: string[]) => void;
-  versions: { locked: boolean; onOpen: () => void };
+  /** The versions panel opens above the toolbar, like the catalog. */
+  versions: { locked: boolean; open: boolean; onOpenChange: (open: boolean) => void };
   tags: {
     allTags: string[];
     visibleTags: Set<string> | null;
@@ -78,7 +80,7 @@ export function CanvasBottomToolbar({
   const autoHide = useCanvasPreferencesStore((state) => state.autoHideBottomToolbar);
   const setAutoHide = useCanvasPreferencesStore((state) => state.setAutoHideBottomToolbar);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const dock = useDockAutoHide(autoHide, open || menuOpen !== null);
+  const dock = useDockAutoHide(autoHide, open || versions.open || menuOpen !== null);
 
   useEffect(() => {
     setAvailable(canInsert);
@@ -203,9 +205,10 @@ export function CanvasBottomToolbar({
 
   return (
     <>
-      {open && (
-        // A light scrim: it marks the catalog as the focus without hiding the
-        // canvas, and lets the pointer through so a tile can be dropped there.
+      {(open || versions.open) && (
+        // A light scrim: it marks the catalog or the versions as the focus
+        // without hiding the canvas, and lets the pointer through so a catalog
+        // tile can be dropped there.
         <div aria-hidden className="pointer-events-none fixed inset-0 z-40 bg-foreground/5" />
       )}
       {autoHide && (
@@ -229,12 +232,36 @@ export function CanvasBottomToolbar({
         )}
       >
         {insertGroup}
-        <VersionsButton
-          diagram={diagram}
-          locked={versions.locked}
-          onOpenVersions={versions.onOpen}
-          className={TOOL_BUTTON_CLASS}
-        />
+        <Popover open={versions.open} onOpenChange={versions.onOpenChange}>
+          <PopoverTrigger asChild>
+            <VersionsButton
+              diagram={diagram}
+              locked={versions.locked}
+              open={versions.open}
+              className={TOOL_BUTTON_CLASS}
+            />
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="center"
+            sideOffset={10}
+            aria-label={t("versions.drawerTitle")}
+            {...{ [CANVAS_OVERLAY_ATTRIBUTE]: versions.open ? "open" : "closed" }}
+            // The merge confirmation is a dialog of its own, outside the popover:
+            // interacting with it must not close the panel that opened it.
+            onInteractOutside={(event) => {
+              if (
+                event.target instanceof Element &&
+                event.target.closest('[role="alertdialog"], [role="dialog"]')
+              ) {
+                event.preventDefault();
+              }
+            }}
+            className="w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
+          >
+            <ConnectedVersionPanel onClose={() => versions.onOpenChange(false)} />
+          </PopoverContent>
+        </Popover>
         <LayerFilterPopover
           allTags={tags.allTags}
           visibleTags={tags.visibleTags}
