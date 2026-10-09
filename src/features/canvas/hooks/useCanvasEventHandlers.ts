@@ -496,6 +496,40 @@ export function useCanvasEventHandlers({
   );
 
   /**
+   * A double-click on the empty pane opens quick insert there. React Flow has
+   * no pane double-click (and `zoomOnDoubleClick` is off), so the canvas
+   * wrapper forwards the native `dblclick`; only the pane itself counts — a
+   * double-click on a node, an edge or a panel body is theirs.
+   */
+  const onPaneDoubleClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      if (!event.target.classList.contains("react-flow__pane")) return;
+      if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
+      clearHighlight();
+      setContextMenu(null);
+      setPaneContextMenu(null);
+      const atScreen = { x: event.clientX, y: event.clientY };
+      setQuickInsert({
+        screenPos: atScreen,
+        flowPos: screenToFlowPosition(atScreen),
+        sourceNodeId: null,
+      });
+    },
+    [
+      isRecording,
+      isCompareMode,
+      isPlaying,
+      isFlowPanelOpen,
+      clearHighlight,
+      setContextMenu,
+      setPaneContextMenu,
+      setQuickInsert,
+      screenToFlowPosition,
+    ],
+  );
+
+  /**
    * Decision #7 — the node context menu must open on RELEASE of the right
    * button, never on press: "se clicar e segurar, o usuário quer arrastar".
    *
@@ -540,6 +574,7 @@ export function useCanvasEventHandlers({
     onSelectionChange,
     onPaneClick,
     onPaneContextMenu,
+    onPaneDoubleClick,
     onNodeContextMenu,
     handleQuickInsert,
     closePanel,

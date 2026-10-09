@@ -397,6 +397,9 @@ const Canvas = (props: CanvasProps = {}) => {
                 instantiatePreset({ presetId, position });
               })();
             }}
+            onDoubleClick={(event) => {
+              if (interactionMode.canEditCanvas) eventHandlers.onPaneDoubleClick(event);
+            }}
             className="w-full h-full"
           >
             {isCompareMode && (
@@ -550,6 +553,11 @@ const Canvas = (props: CanvasProps = {}) => {
             screenPos={visualState.quickInsert.screenPos}
             flowPos={visualState.quickInsert.flowPos}
             sourceNodeId={visualState.quickInsert.sourceNodeId}
+            sourceName={
+              visualState.quickInsert.sourceNodeId
+                ? resolvedSnapshot.components[visualState.quickInsert.sourceNodeId]?.name
+                : undefined
+            }
             onInsert={eventHandlers.handleQuickInsert}
             onClose={() => visualState.setQuickInsert(null)}
           />

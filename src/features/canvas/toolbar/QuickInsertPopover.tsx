@@ -1,749 +1,289 @@
-import { useCallback, useEffect, useRef, useState, useMemo, memo } from "react";
-import type { ElementCreateOptions } from "@/features/elements/element.types";
-import { useDiagramActions, useAllServices } from "@/features/diagram";
-import { PanelKind, COMPONENT_TYPE_PANEL } from "@/features/diagram";
-import type { ComponentType, FlowNodeShape } from "@/features/diagram";
-import { getDefaultNameForNewComponent, getLastEdgeStyle } from "@/features/diagram";
-import {
-  buildC4PickerOptions,
-  buildFlowchartPickerOptions,
-} from "./element-picker/buildPickerOptions";
-import { getPanelKindForAwsService, panelKindDefaultName } from "@/lib/catalogs/panels";
-import { paletteEntriesForCategory } from "@/features/elements/element.palette";
-import { ElementCategory } from "../enums";
-import { AWS_CATEGORIES, type AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
-import { KEY, keyIs } from "@/lib/core/keyboard";
-import { cloudRegistry, CloudIcon } from "@/features/cloud";
-import { filterCloudServicesForQuery } from "./element-picker/pickerFilters";
+import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useElementPresetLibrary } from "@/features/element-presets";
+import { Search } from "lucide-react";
+import { searchCatalog, type CatalogEntry, type CatalogHit } from "@/features/elements/search";
+import { KEY, keyIs } from "@/lib/core/keyboard";
+import { cn } from "@/lib/utils";
+import { useCanvasPreferencesStore } from "../preferences";
+import { CatalogEntryIcon } from "../catalog/CatalogEntryIcon";
+import { CANVAS_OVERLAY_ATTRIBUTE, useCatalogUiStore } from "../catalog/catalogUi.store";
+import { HighlightedText } from "../catalog/HighlightedText";
+import { Kbd } from "../catalog/Kbd";
+import { catalogShortcutLabel } from "../catalog/shortcutLabels";
+import { useCanvasCatalogIndex } from "../catalog/useCanvasCatalogIndex";
+import { useCatalogInsert } from "../catalog/useCatalogInsert";
 
-type CanvasInsertOption = {
-  /** Unique per entry: one element may offer several (a named line's three). */
-  key?: string;
-  type: ComponentType;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  panelKind?: PanelKind;
-  awsIconName?: string;
-  flowShape?: FlowNodeShape;
-  /** Search synonyms carried by the option itself (registry-derived entries). */
-  searchKeys?: string[];
-  /** Everything else the palette entry creates with. */
-  createOptions?: ElementCreateOptions;
-};
-
-type FlatOption =
-  | { kind: "c4"; type: ComponentType; label: string }
-  | { kind: "canvas"; opt: CanvasInsertOption }
-  | { kind: "aws"; categoryId: AwsCategoryId; serviceId: string; serviceName: string }
-  | { kind: "cloud"; categoryId: string; serviceId: string; serviceName: string; iconName: string }
-  | { kind: "service"; id: string; name: string }
-  | { kind: "template"; id: string };
-
-type SearchSynonyms = {
-  panel: string[];
-  swimlane: string[];
-};
-
-type AwsSearchRow = {
-  categoryId: AwsCategoryId;
-  serviceId: string;
-  serviceName: string;
-  iconName: string;
-};
-
-function splitSearchHelp(raw: string): string[] {
-  return raw
-    .split("|")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-function canvasOptionMatchesQuery(
-  opt: CanvasInsertOption,
-  q: string,
-  synonyms: SearchSynonyms,
-): boolean {
-  const fields: string[] = [opt.label.toLowerCase()];
-  if (opt.searchKeys) fields.push(...opt.searchKeys);
-  if (opt.panelKind) {
-    fields.push(panelKindDefaultName(opt.panelKind).toLowerCase());
-  }
-  if (opt.type === COMPONENT_TYPE_PANEL) {
-    fields.push(...synonyms.panel);
-    if (opt.panelKind === PanelKind.Swimlane) {
-      fields.push(...synonyms.swimlane);
-    }
-  }
-  return fields.some((f) => f.includes(q));
-}
-
-type CloudSearchRow = {
-  categoryId: string;
-  serviceId: string;
-  serviceName: string;
-  iconName: string;
-};
-
-function toFlatOptions(
-  filteredC4: { type: ComponentType; label: string }[],
-  filteredCanvas: CanvasInsertOption[],
-  filteredAws: AwsSearchRow[],
-  filteredCloud: CloudSearchRow[],
-  filteredServices: { id: string; name: string }[],
-  filteredTemplates: { id: string }[],
-): FlatOption[] {
-  const result: FlatOption[] = [];
-  for (const option of filteredC4) {
-    result.push({ kind: "c4", type: option.type, label: option.label });
-  }
-  for (const option of filteredCanvas) {
-    result.push({ kind: "canvas", opt: option });
-  }
-  for (const option of filteredAws) {
-    result.push({
-      kind: "aws",
-      categoryId: option.categoryId,
-      serviceId: option.serviceId,
-      serviceName: option.serviceName,
-    });
-  }
-  for (const option of filteredCloud) {
-    result.push({
-      kind: "cloud",
-      categoryId: option.categoryId,
-      serviceId: option.serviceId,
-      serviceName: option.serviceName,
-      iconName: option.iconName,
-    });
-  }
-  for (const option of filteredServices) {
-    result.push({ kind: "service", id: option.id, name: option.name });
-  }
-  for (const option of filteredTemplates) {
-    result.push({ kind: "template", id: option.id });
-  }
-  return result;
-}
-
-const POPOVER_W = 240;
-const POPOVER_H_MAX = 320;
+const POPOVER_W = 320;
+const POPOVER_H_MAX = 400;
+/** Search hits listed; the full catalog is one click away for the rest. */
+const MAX_HITS = 30;
+/** The group offered when the field is empty, after Recents. */
+const TOP_GROUP_ID = "c4";
 
 interface QuickInsertPopoverProps {
   screenPos: { x: number; y: number };
   flowPos: { x: number; y: number };
+  /** Set when a connection was dropped on empty canvas: the new node is connected from it. */
   sourceNodeId?: string | null;
+  sourceName?: string;
   onInsert: (newNodeId: string) => void;
   onClose: () => void;
 }
 
+interface QuickOption {
+  key: string;
+  entry: CatalogEntry;
+  hit?: CatalogHit;
+}
+
+interface QuickSection {
+  key: string;
+  label: string;
+  options: QuickOption[];
+}
+
+const SECTION_LABEL_CLASS =
+  "px-3 pb-1 pt-2 font-mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground";
+
+/**
+ * Compact insert at a point: Recents and the C4 elements when empty, the
+ * catalog search when typing. Picking an entry after a dropped connection
+ * creates the node and the edge as one undo step.
+ */
 const QuickInsertPopover = memo(function QuickInsertPopover({
   screenPos,
   flowPos,
   sourceNodeId,
+  sourceName,
   onInsert,
   onClose,
 }: QuickInsertPopoverProps) {
   const { t } = useTranslation();
-  const [search, setSearch] = useState("");
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const listId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const { addComponent, addConnection, linkComponentToService } = useDiagramActions();
-  const services = useAllServices();
-  const { presets, instantiatePreset } = useElementPresetLibrary();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const { index, byId } = useCanvasCatalogIndex();
+  const recentIds = useCanvasPreferencesStore((state) => state.recentCatalogEntryIds);
+  const insert = useCatalogInsert();
 
-  const C4_OPTIONS = useMemo(() => buildC4PickerOptions(t), [t]);
+  const restoreFocusRef = useRef(true);
 
-  const FLOWCHART_QUICK_OPTIONS = useMemo(() => {
-    const shapes = new Set<FlowNodeShape>(["rectangle", "rounded", "diamond"]);
-    return buildFlowchartPickerOptions(t).filter(
-      (opt) => opt.flowShape && shapes.has(opt.flowShape),
-    );
-  }, [t]);
-
-  // Registry-derived entries join the legacy list, which no longer holds the
-  // types that have migrated -- each element is offered by exactly one path.
-  const REGISTRY_OPTIONS = useMemo(
-    (): CanvasInsertOption[] =>
-      paletteEntriesForCategory(ElementCategory.Canvas).map((entry) => ({
-        key: entry.key,
-        type: entry.type,
-        label: entry.label,
-        icon: entry.icon,
-        searchKeys: entry.searchKeys,
-        panelKind: entry.createOptions.panelKind,
-        awsIconName: entry.awsIconName,
-        createOptions: entry.createOptions,
-      })),
-    // `t` is deliberate: rebuilds the labels on a language change.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t],
-  );
-
-  // Empty: every canvas type now arrives through REGISTRY_OPTIONS.
-  // `t` is deliberate: rebuilds the labels on a language change.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const CANVAS_OPTIONS = useMemo((): CanvasInsertOption[] => [], [t]);
-
-  const CANVAS_OPTIONS_ALL = useMemo(
-    (): CanvasInsertOption[] => [...CANVAS_OPTIONS, ...REGISTRY_OPTIONS],
-    [CANVAS_OPTIONS, REGISTRY_OPTIONS],
-  );
-
+  // Hand focus back to whatever had it — the canvas, usually — on close;
+  // not when the full catalog takes over, which focuses its own field.
   useEffect(() => {
+    const previous = document.activeElement;
     inputRef.current?.focus();
+    return () => {
+      if (!restoreFocusRef.current) return;
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
   }, []);
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (keyIs(e, KEY.ESCAPE)) onClose();
-    };
-    const onMouseDown = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    const onMouseDown = (event: MouseEvent) => {
+      if (event.target instanceof Node && !containerRef.current?.contains(event.target)) {
         onClose();
       }
     };
-    document.addEventListener("keydown", onKeyDown);
     document.addEventListener("mousedown", onMouseDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      document.removeEventListener("mousedown", onMouseDown);
-    };
+    return () => document.removeEventListener("mousedown", onMouseDown);
   }, [onClose]);
 
-  const q = search.trim().toLowerCase();
-
-  const searchSynonyms = useMemo(
-    (): SearchSynonyms => ({
-      panel: splitSearchHelp(t("quickInsert.searchHelpPanel")),
-      swimlane: splitSearchHelp(t("quickInsert.searchHelpSwimlane")),
-    }),
-    [t],
-  );
-
-  const filteredC4 = useMemo(() => {
-    if (!q) return C4_OPTIONS;
-    return C4_OPTIONS.filter((o) => o.label.toLowerCase().includes(q));
-  }, [q, C4_OPTIONS]);
-
-  const filteredCanvas = useMemo(() => {
-    if (!q) return [];
-    return CANVAS_OPTIONS_ALL.filter((o) => canvasOptionMatchesQuery(o, q, searchSynonyms));
-  }, [q, CANVAS_OPTIONS_ALL, searchSynonyms]);
-
-  const filteredFlowchart = useMemo(() => {
-    if (!q) return [];
-    return FLOWCHART_QUICK_OPTIONS.filter((o) => o.label.toLowerCase().includes(q));
-  }, [q, FLOWCHART_QUICK_OPTIONS]);
-
-  const filteredAws = useMemo(() => {
-    if (!q) return [];
-    const rows: AwsSearchRow[] = [];
-    for (const cat of AWS_CATEGORIES) {
-      const catMatch = cat.name.toLowerCase().includes(q);
-      for (const s of cat.services) {
-        if (s.name.toLowerCase().includes(q) || s.id.includes(q) || catMatch) {
-          rows.push({
-            categoryId: cat.id as AwsCategoryId,
-            serviceId: s.id,
-            serviceName: s.name,
-            iconName: s.iconName,
-          });
-        }
-      }
+  const sections = useMemo((): QuickSection[] => {
+    if (query.trim()) {
+      const hits = searchCatalog(index, query).hits.slice(0, MAX_HITS);
+      if (hits.length === 0) return [];
+      return [
+        {
+          key: "results",
+          label: t("elementCatalog.results"),
+          options: hits.map((hit) => ({ key: `results:${hit.entry.id}`, entry: hit.entry, hit })),
+        },
+      ];
     }
-    rows.sort((a, b) => a.serviceName.localeCompare(b.serviceName, "pt-BR"));
-    return rows;
-  }, [q]);
-
-  const filteredCloud = useMemo((): CloudSearchRow[] => {
-    if (!q) return [];
-    const rows: CloudSearchRow[] = [];
-    for (const provider of cloudRegistry.allProviders()) {
-      // AWS keeps its own filteredAws path (panel-kind remapping).
-      if (provider.id === "aws") continue;
-      for (const service of filterCloudServicesForQuery(q, provider)) {
-        rows.push({
-          categoryId: service.categoryId,
-          serviceId: service.id,
-          serviceName: service.name,
-          iconName: service.iconName,
-        });
-      }
-    }
-    return rows;
-  }, [q]);
-
-  const filteredServices = useMemo(() => {
-    if (!q) return [];
-    return services.filter(
-      (s) =>
-        s.name.toLowerCase().includes(q) ||
-        s.technology.some((t) => t.toLowerCase().includes(q)) ||
-        (s.tags ?? []).some((t) => t.toLowerCase().includes(q)),
-    );
-  }, [q, services]);
-
-  const filteredTemplates = useMemo(() => {
-    if (!q) return [];
-    return presets.filter((template) => {
-      const normalizedBaseType = String(template.baseType).toLowerCase();
-      return (
-        template.name.toLowerCase().includes(q) ||
-        (template.description?.toLowerCase().includes(q) ?? false) ||
-        normalizedBaseType.includes(q)
-      );
-    });
-  }, [q, presets]);
-
-  const flatOptions = useMemo((): FlatOption[] => {
-    const flowchartAsCanvas: CanvasInsertOption[] = filteredFlowchart.map((opt) => ({
-      type: opt.type,
-      label: opt.label,
-      icon: opt.icon,
-      flowShape: opt.flowShape,
-    }));
-    return toFlatOptions(
-      filteredC4,
-      [...filteredCanvas, ...flowchartAsCanvas],
-      filteredAws,
-      filteredCloud,
-      filteredServices,
-      filteredTemplates,
-    );
-  }, [
-    filteredC4,
-    filteredCanvas,
-    filteredFlowchart,
-    filteredAws,
-    filteredCloud,
-    filteredServices,
-    filteredTemplates,
-  ]);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [flatOptions.length]);
-
-  const insertPos = useMemo(
-    () => ({ x: flowPos.x + 20, y: flowPos.y + 20 }),
-    [flowPos.x, flowPos.y],
-  );
-
-  const connectFromSource = useCallback(
-    (targetNodeId: string) => {
-      if (!sourceNodeId) return;
-      // The return is deliberately ignored. `addConnection` refuses a source
-      // nothing may leave (a note, a JSON viewer, a table), but `sourceNodeId`
-      // only ever comes from dragging off a source handle — which those types
-      // do not render — so the refusal is unreachable from here. Reporting it
-      // would be UI for a state the user cannot get into.
-      addConnection(sourceNodeId, targetNodeId, t("canvas.usesEdgeLabel"), getLastEdgeStyle());
-    },
-    [addConnection, sourceNodeId, t],
-  );
-
-  const finalizeInsertion = useCallback(
-    (newNodeId: string) => {
-      connectFromSource(newNodeId);
-      onInsert(newNodeId);
-    },
-    [connectFromSource, onInsert],
-  );
-
-  const handleSelectC4 = useCallback(
-    (type: ComponentType, label: string) => {
-      const comp = addComponent(type, t("quickInsert.newNamed", { name: label }), null, insertPos);
-      finalizeInsertion(comp.id);
-    },
-    [addComponent, t, insertPos, finalizeInsertion],
-  );
-
-  const handleSelectCanvas = useCallback(
-    (
-      type: ComponentType,
-      label: string,
-      panelKind?: PanelKind,
-      flowShape?: FlowNodeShape,
-      createOptions?: ElementCreateOptions,
-    ) => {
-      const panelDefaultName = panelKind ? panelKindDefaultName(panelKind) : undefined;
-      const name = getDefaultNameForNewComponent(type, label, panelDefaultName);
-      const comp = addComponent(
-        type,
-        name,
-        null,
-        insertPos,
-        undefined,
-        panelKind,
-        flowShape,
-        createOptions,
-      );
-      finalizeInsertion(comp.id);
-    },
-    [addComponent, insertPos, finalizeInsertion],
-  );
-
-  const handleSelectAws = useCallback(
-    (categoryId: AwsCategoryId, serviceId: string, serviceName: string) => {
-      const panelKind = getPanelKindForAwsService(serviceId);
-      const comp = panelKind
-        ? addComponent(
-            COMPONENT_TYPE_PANEL,
-            panelKindDefaultName(panelKind),
-            null,
-            insertPos,
-            undefined,
-            panelKind,
-          )
-        : addComponent(categoryId, serviceName, null, insertPos, serviceId);
-      finalizeInsertion(comp.id);
-    },
-    [addComponent, insertPos, finalizeInsertion],
-  );
-
-  const handleSelectCloud = useCallback(
-    (categoryId: string, serviceId: string, serviceName: string) => {
-      const comp = addComponent(
-        categoryId as ComponentType,
-        serviceName,
-        null,
-        insertPos,
-        serviceId,
-      );
-      finalizeInsertion(comp.id);
-    },
-    [addComponent, insertPos, finalizeInsertion],
-  );
-
-  const handleSelectService = useCallback(
-    (serviceId: string, name: string) => {
-      const comp = addComponent("system", name, null, insertPos);
-      linkComponentToService(comp.id, serviceId);
-      finalizeInsertion(comp.id);
-    },
-    [addComponent, insertPos, linkComponentToService, finalizeInsertion],
-  );
-
-  const handleSelectTemplate = useCallback(
-    (presetId: string) => {
-      const insertedNodeId = instantiatePreset({
-        presetId,
-        position: insertPos,
+    const recents = recentIds
+      .map((id) => byId.get(id))
+      .filter((entry): entry is CatalogEntry => !!entry);
+    const top = index.entries.filter((entry) => entry.groupId === TOP_GROUP_ID);
+    const result: QuickSection[] = [];
+    if (recents.length > 0) {
+      result.push({
+        key: "recents",
+        label: t("elementCatalog.recents"),
+        options: recents.map((entry) => ({ key: `recents:${entry.id}`, entry })),
       });
-      if (!insertedNodeId) return;
-      finalizeInsertion(insertedNodeId);
-    },
-    [instantiatePreset, insertPos, finalizeInsertion],
-  );
+    }
+    result.push({
+      key: "top",
+      label: t("elementCatalog.quickInsert.top"),
+      options: top.map((entry) => ({ key: `top:${entry.id}`, entry })),
+    });
+    return result;
+  }, [query, index, byId, recentIds, t]);
 
-  const selectOption = useCallback(
-    (option: FlatOption) => {
-      switch (option.kind) {
-        case "c4":
-          handleSelectC4(option.type, option.label);
-          break;
-        case "canvas":
-          handleSelectCanvas(
-            option.opt.type,
-            option.opt.label,
-            option.opt.panelKind,
-            option.opt.flowShape,
-            option.opt.createOptions,
-          );
-          break;
-        case "aws":
-          handleSelectAws(option.categoryId, option.serviceId, option.serviceName);
-          break;
-        case "cloud":
-          handleSelectCloud(option.categoryId, option.serviceId, option.serviceName);
-          break;
-        case "service":
-          handleSelectService(option.id, option.name);
-          break;
-        case "template":
-          handleSelectTemplate(option.id);
-          break;
-      }
-    },
-    [
-      handleSelectC4,
-      handleSelectCanvas,
-      handleSelectAws,
-      handleSelectCloud,
-      handleSelectService,
-      handleSelectTemplate,
-    ],
-  );
+  const options = useMemo(() => sections.flatMap((section) => section.options), [sections]);
 
   useEffect(() => {
-    const container = listRef.current;
-    if (!container) return;
-    const selectedItem = container.querySelector('[data-selected="true"]');
-    selectedItem?.scrollIntoView({ block: "nearest" });
-  }, [selectedIndex]);
+    setActiveKey(options[0]?.key ?? null);
+  }, [options]);
 
-  const left = Math.min(screenPos.x + 8, window.innerWidth - POPOVER_W - 8);
-  const top = Math.min(screenPos.y + 8, window.innerHeight - POPOVER_H_MAX - 8);
+  useEffect(() => {
+    if (!activeKey) return;
+    document.getElementById(`${listId}-${activeKey}`)?.scrollIntoView({ block: "nearest" });
+  }, [activeKey, listId]);
 
-  const showEmpty =
-    !!search.trim() &&
-    filteredC4.length === 0 &&
-    filteredCanvas.length === 0 &&
-    filteredFlowchart.length === 0 &&
-    filteredAws.length === 0 &&
-    filteredCloud.length === 0 &&
-    filteredServices.length === 0 &&
-    filteredTemplates.length === 0;
+  const pick = (entry: CatalogEntry) => {
+    const nodeId = insert(entry, {
+      position: { x: flowPos.x + 20, y: flowPos.y + 20 },
+      sourceNodeId,
+    });
+    if (nodeId) onInsert(nodeId);
+  };
 
-  const c4Offset = 0;
-  const canvasOffset = filteredC4.length;
-  const awsOffset = canvasOffset + filteredCanvas.length;
-  const cloudOffset = awsOffset + filteredAws.length;
-  const servicesOffset = cloudOffset + filteredCloud.length;
-  const templatesOffset = servicesOffset + filteredServices.length;
+  const openFullCatalog = () => {
+    restoreFocusRef.current = false;
+    onClose();
+    useCatalogUiStore.getState().setOpen(true);
+  };
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (keyIs(event, KEY.ESCAPE)) {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    if (keyIs(event, KEY.ARROW_DOWN) || keyIs(event, KEY.ARROW_UP)) {
+      event.preventDefault();
+      const at = options.findIndex((option) => option.key === activeKey);
+      const next = keyIs(event, KEY.ARROW_DOWN)
+        ? Math.min(at + 1, options.length - 1)
+        : Math.max(at - 1, 0);
+      setActiveKey(options[next]?.key ?? null);
+      return;
+    }
+    if (keyIs(event, KEY.ENTER)) {
+      event.preventDefault();
+      const active = options.find((option) => option.key === activeKey);
+      if (active) pick(active.entry);
+    }
+  };
+
+  const left = Math.max(8, Math.min(screenPos.x + 8, window.innerWidth - POPOVER_W - 8));
+  const top = Math.max(8, Math.min(screenPos.y + 8, window.innerHeight - POPOVER_H_MAX - 8));
+  const trimmed = query.trim();
 
   return (
     <div
       ref={containerRef}
-      className="fixed z-50 rounded-lg border border-border bg-card shadow-xl"
-      style={{ left, top, width: POPOVER_W }}
+      role="dialog"
+      aria-label={t("elementCatalog.quickInsert.label")}
+      {...{ [CANVAS_OVERLAY_ATTRIBUTE]: "open" }}
+      className="fixed z-50 flex flex-col overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-xl"
+      style={{ left, top, width: POPOVER_W, maxHeight: POPOVER_H_MAX }}
     >
+      {sourceNodeId && sourceName !== undefined && (
+        <p className="truncate border-b border-border px-3 py-2 text-xs font-medium text-foreground">
+          {t("elementCatalog.quickInsert.connectTo", { name: sourceName })}
+        </p>
+      )}
       <div className="p-2">
-        <input
-          ref={inputRef}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={(e) => {
-            if (keyIs(e, KEY.ESCAPE)) {
-              onClose();
-              return;
-            }
-            if (keyIs(e, KEY.ARROW_DOWN)) {
-              e.preventDefault();
-              setSelectedIndex((index) => Math.min(index + 1, flatOptions.length - 1));
-              return;
-            }
-            if (keyIs(e, KEY.ARROW_UP)) {
-              e.preventDefault();
-              setSelectedIndex((index) => Math.max(index - 1, 0));
-              return;
-            }
-            if (keyIs(e, KEY.ENTER)) {
-              e.preventDefault();
-              const option = flatOptions[selectedIndex];
-              if (option) selectOption(option);
-            }
-          }}
-          placeholder={t("quickInsert.searchPlaceholder")}
-          className="w-full rounded-md border border-border bg-secondary px-2 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
+        <label className="relative block">
+          <span className="sr-only">{t("elementCatalog.searchLabel")}</span>
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+          />
+          <input
+            ref={inputRef}
+            type="text"
+            role="combobox"
+            aria-expanded
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-activedescendant={activeKey ? `${listId}-${activeKey}` : undefined}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={t("elementCatalog.searchPlaceholder", { count: index.entries.length })}
+            className="w-full rounded-md border border-border bg-background py-1.5 pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </label>
       </div>
-      <div ref={listRef} className="max-h-64 overflow-y-auto pb-1">
-        {filteredC4.length > 0 && (
-          <>
-            <div className="px-3 py-1">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("elementPicker.c4Model")}
-              </span>
+      <div
+        id={listId}
+        role="listbox"
+        aria-label={t("elementCatalog.quickInsert.label")}
+        className="min-h-0 flex-1 overflow-y-auto pb-1"
+      >
+        {sections.length === 0 && trimmed ? (
+          <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+            {t("elementCatalog.noResultsFor", { query: trimmed })}
+          </p>
+        ) : (
+          sections.map((section) => (
+            <div key={section.key} role="group" aria-label={section.label}>
+              <p className={SECTION_LABEL_CLASS}>{section.label}</p>
+              {section.options.map((option) => {
+                const active = option.key === activeKey;
+                const { hit } = option;
+                return (
+                  <button
+                    key={option.key}
+                    id={`${listId}-${option.key}`}
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    tabIndex={-1}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onMouseMove={() => {
+                      if (!active) setActiveKey(option.key);
+                    }}
+                    onClick={() => pick(option.entry)}
+                    className={cn(
+                      "mx-1 flex w-[calc(100%-0.5rem)] items-center gap-2 rounded-md border px-2 py-1.5 text-left text-xs transition-colors",
+                      active ? "border-primary bg-primary/10" : "border-transparent",
+                    )}
+                  >
+                    <CatalogEntryIcon entry={option.entry} size={16} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-foreground">
+                        <HighlightedText
+                          text={option.entry.label}
+                          ranges={hit?.matchedOn === "name" ? hit.ranges : []}
+                        />
+                      </span>
+                      {hit && hit.matchedOn !== "name" && (
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {t(`elementCatalog.matchedOn.${hit.matchedOn}`)}:{" "}
+                          <HighlightedText text={hit.matchedText} ranges={hit.ranges} />
+                        </span>
+                      )}
+                    </span>
+                    {hit && (
+                      <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                        {index.groups.find((group) => group.id === option.entry.groupId)?.label}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            {filteredC4.map((opt, index) => (
-              <button
-                key={opt.type}
-                data-selected={selectedIndex === c4Offset + index}
-                onClick={() => handleSelectC4(opt.type, opt.label)}
-                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
-                  selectedIndex === c4Offset + index
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-surface-hover"
-                }`}
-              >
-                <opt.icon className="h-3.5 w-3.5 text-muted-foreground" />
-                {opt.label}
-              </button>
-            ))}
-          </>
-        )}
-        {filteredCanvas.length > 0 && (
-          <>
-            {filteredC4.length > 0 && <div className="border-t border-border my-1" />}
-            <div className="px-3 py-1">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("quickInsert.sectionCanvasGroups")}
-              </span>
-            </div>
-            {filteredCanvas.map((opt, index) => (
-              <button
-                key={
-                  opt.key ??
-                  (opt.type === COMPONENT_TYPE_PANEL
-                    ? `panel-${opt.panelKind ?? PanelKind.Default}`
-                    : opt.type)
-                }
-                data-selected={selectedIndex === canvasOffset + index}
-                onClick={() =>
-                  handleSelectCanvas(
-                    opt.type,
-                    opt.label,
-                    opt.panelKind,
-                    undefined,
-                    opt.createOptions,
-                  )
-                }
-                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
-                  selectedIndex === canvasOffset + index
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-surface-hover"
-                }`}
-              >
-                {opt.awsIconName ? (
-                  <CloudIcon
-                    familyId="aws"
-                    iconName={opt.awsIconName}
-                    size={14}
-                    className="shrink-0 text-muted-foreground"
-                  />
-                ) : (
-                  <opt.icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                )}
-                <span className="truncate">{opt.label}</span>
-              </button>
-            ))}
-          </>
-        )}
-        {filteredAws.length > 0 && (
-          <>
-            {(filteredC4.length > 0 || filteredCanvas.length > 0) && (
-              <div className="border-t border-border my-1" />
-            )}
-            <div className="px-3 py-1">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("canvasToolbar.awsServices")}
-              </span>
-            </div>
-            {filteredAws.map((row, index) => (
-              <button
-                key={row.serviceId}
-                data-selected={selectedIndex === awsOffset + index}
-                onClick={() => handleSelectAws(row.categoryId, row.serviceId, row.serviceName)}
-                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
-                  selectedIndex === awsOffset + index
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-surface-hover"
-                }`}
-              >
-                <CloudIcon familyId="aws" iconName={row.iconName} size={14} className="shrink-0" />
-                <span className="truncate text-foreground">{row.serviceName}</span>
-              </button>
-            ))}
-          </>
-        )}
-        {filteredCloud.length > 0 && (
-          <>
-            {(filteredC4.length > 0 || filteredCanvas.length > 0 || filteredAws.length > 0) && (
-              <div className="border-t border-border my-1" />
-            )}
-            <div className="px-3 py-1">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("quickInsert.sectionCloud")}
-              </span>
-            </div>
-            {filteredCloud.map((row, index) => (
-              <button
-                key={`${row.categoryId}-${row.serviceId}`}
-                data-selected={selectedIndex === cloudOffset + index}
-                onClick={() => handleSelectCloud(row.categoryId, row.serviceId, row.serviceName)}
-                className={`flex items-center gap-2 w-full px-3 py-2 text-xs transition-colors text-left ${
-                  selectedIndex === cloudOffset + index
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-surface-hover"
-                }`}
-              >
-                <CloudIcon
-                  componentType={row.categoryId}
-                  serviceIconName={row.iconName}
-                  size={14}
-                />
-                <span className="truncate text-foreground">{row.serviceName}</span>
-              </button>
-            ))}
-          </>
-        )}
-        {filteredServices.length > 0 && (
-          <>
-            {(filteredC4.length > 0 ||
-              filteredCanvas.length > 0 ||
-              filteredAws.length > 0 ||
-              filteredCloud.length > 0) && <div className="border-t border-border my-1" />}
-            <div className="px-3 py-1">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("elementPicker.services")}
-              </span>
-            </div>
-            {filteredServices.map((svc, index) => (
-              <button
-                key={svc.id}
-                data-selected={selectedIndex === servicesOffset + index}
-                onClick={() => handleSelectService(svc.id, svc.name)}
-                className={`flex flex-col w-full px-3 py-2 text-xs transition-colors text-left ${
-                  selectedIndex === servicesOffset + index
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-surface-hover"
-                }`}
-              >
-                <span className="font-medium text-foreground">{svc.name}</span>
-                {svc.technology.length > 0 && (
-                  <span className="text-muted-foreground">
-                    {svc.technology.slice(0, 2).join(", ")}
-                  </span>
-                )}
-              </button>
-            ))}
-          </>
-        )}
-        {filteredTemplates.length > 0 && (
-          <>
-            {(filteredC4.length > 0 ||
-              filteredCanvas.length > 0 ||
-              filteredAws.length > 0 ||
-              filteredServices.length > 0) && <div className="border-t border-border my-1" />}
-            <div className="px-3 py-1">
-              <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">
-                {t("elementPresets.myPresets")}
-              </span>
-            </div>
-            {filteredTemplates.map((template, index) => (
-              <button
-                key={template.id}
-                data-selected={selectedIndex === templatesOffset + index}
-                onClick={() => handleSelectTemplate(template.id)}
-                className={`flex flex-col w-full px-3 py-2 text-xs transition-colors text-left ${
-                  selectedIndex === templatesOffset + index
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-surface-hover"
-                }`}
-              >
-                <span className="font-medium text-foreground">{template.name}</span>
-                {template.description ? (
-                  <span className="text-muted-foreground line-clamp-1">{template.description}</span>
-                ) : (
-                  <span className="text-muted-foreground">{template.baseType}</span>
-                )}
-              </button>
-            ))}
-          </>
-        )}
-        {showEmpty && (
-          <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-            {t("quickInsert.noResults")}
-          </div>
+          ))
         )}
       </div>
+      <button
+        type="button"
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={openFullCatalog}
+        className="flex items-center justify-between border-t border-border px-3 py-2 text-xs text-primary transition-colors hover:bg-surface-hover"
+      >
+        {t("elementCatalog.quickInsert.openCatalog")}
+        <Kbd>{catalogShortcutLabel()}</Kbd>
+      </button>
     </div>
   );
 });
 
-export default memo(QuickInsertPopover);
+export default QuickInsertPopover;
