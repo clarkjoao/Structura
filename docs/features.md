@@ -152,7 +152,7 @@ they reference and can relink them on import.
 A chat panel grounded in the open diagram. It can explain and analyze the diagram, generate
 diagrams, and propose changes that are previewed on the canvas and applied only after
 confirmation. Providers: OpenAI, Anthropic or a custom endpoint, called directly from the browser
-or through the proxy in `server/`. API keys stay in the browser. Conversations are stored in
+or through an HTTP proxy you run (`VITE_LLM_PROXY_URL`). API keys stay in the browser. Conversations are stored in
 IndexedDB. See [concepts/ai-integration.md](concepts/ai-integration.md).
 
 ## Plugins

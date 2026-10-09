@@ -22,6 +22,7 @@
  * KILL_RELAY_CMD / RESTART_REDIS_CMD (shell commands replacing the compose ones, e.g. kubectl).
  */
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,8 +33,14 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const env = (key: string, fallback: number) => Number(process.env[key] ?? fallback);
 
 const WS_URL = process.env.WS_URL ?? "ws://localhost:3000/ws";
+/** The compose stack: deploy/ next to the relay (standalone repo) or one level up (Structura). */
 const COMPOSE_FILE =
-  process.env.COMPOSE_FILE ?? path.resolve(here, "../../deploy/compose/docker-compose.yml");
+  process.env.COMPOSE_FILE ??
+  [
+    path.resolve(here, "../deploy/compose/docker-compose.yml"),
+    path.resolve(here, "../../deploy/compose/docker-compose.yml"),
+  ].find((candidate) => existsSync(candidate)) ??
+  path.resolve(here, "../../deploy/compose/docker-compose.yml");
 const TOTAL = env("TOTAL", 500);
 const ROOMS = env("ROOMS", 35);
 const BIG_ROOMS = env("BIG_ROOMS", 3);

@@ -8,8 +8,8 @@ single long-form reference they point to.
 
 Open source C4-model architecture diagramming SPA. No backend and no database:
 all state is client-side (localStorage and, optionally, a local folder via the
-File System Access API). A small optional Node server in `server/` provides
-collaboration relay and proxying only.
+File System Access API). A small optional Node server in `server/` provides the
+collaboration relay only.
 
 ## Tech stack
 

@@ -8,8 +8,8 @@ in the code.
 
 Structura is a client-only SPA. There is no backend and no database: all state
 is client-side (localStorage, or a local folder via the File System Access
-API). A small optional Node server (`server/`) provides only a collaboration
-relay and an LLM proxy — it never stores data.
+API). A small optional Node server (`server/`) provides only the collaboration
+relay; it keeps a live session's room while the session lasts, never the workspace.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

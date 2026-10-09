@@ -17,12 +17,6 @@ const store: RoomStore = REDIS_URL
 
 const app = createApp(() => ({ collab: { store: store.kind } }));
 
-if (!IS_PRODUCTION) {
-  const { createProxyRouter } = await import("./proxy.js");
-  app.use("/proxy", createProxyRouter());
-  console.log("[server] Generic proxy mounted at /proxy (development only)");
-}
-
 const httpServer = createServer(app);
 const collab = attachCollabServer(httpServer, {
   store,
