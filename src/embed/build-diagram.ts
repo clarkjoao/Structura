@@ -8,6 +8,22 @@ import type { PreviewGraph } from "./protocol";
 export const PREVIEW_DIAGRAM_ID = "structura-embed-preview";
 
 /**
+ * The stable id of each connection: its ends, its label and which occurrence of that triple it
+ * is. Shared by the canvas ids and change detection, so both name a connection the same way.
+ */
+export function connectionKeys(
+  connections: readonly { source: string; target: string; label?: string | null }[],
+): string[] {
+  const seen = new Map<string, number>();
+  return connections.map((c) => {
+    const base = `${c.source}->${c.target}:${c.label ?? ""}`;
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return `${base}#${n}`;
+  });
+}
+
+/**
  * Builds the diagram for a posted graph, in a throwaway in-memory store — nothing is
  * persisted. Ids are made stable (`key` for components, ends + label + occurrence for
  * connections), so an update that keeps an element keeps its node: React Flow updates it in
@@ -34,17 +50,18 @@ export function buildPreviewDiagram(graph: PreviewGraph): Diagram {
     if (layout) nodeLayouts[key] = { ...layout, elementId: key };
   }
 
-  const seen = new Map<string, number>();
+  const values = Object.values(diagram.snapshot.connections).map((value) => ({
+    ...value,
+    sourceId: component(value.sourceId)!,
+    targetId: component(value.targetId)!,
+  }));
+  const ids = connectionKeys(
+    values.map((v) => ({ source: v.sourceId, target: v.targetId, label: v.label })),
+  );
   const connections: Diagram["snapshot"]["connections"] = {};
-  for (const value of Object.values(diagram.snapshot.connections)) {
-    const sourceId = component(value.sourceId)!;
-    const targetId = component(value.targetId)!;
-    const base = `${sourceId}->${targetId}:${value.label}`;
-    const n = seen.get(base) ?? 0;
-    seen.set(base, n + 1);
-    const id = `${base}#${n}`;
-    connections[id] = { ...value, id, sourceId, targetId };
-  }
+  values.forEach((value, i) => {
+    connections[ids[i]!] = { ...value, id: ids[i]! };
+  });
 
   return {
     ...diagram,
@@ -68,17 +85,8 @@ export function changedComponentIds(previous: PreviewGraph | null, next: Preview
   const changed = new Set(
     next.components.filter((c) => before.get(c.key) !== content(c)).map((c) => c.key),
   );
-  const keysOf = (graph: PreviewGraph) => {
-    const seen = new Map<string, number>();
-    return graph.connections.map((c) => {
-      const base = `${c.source}->${c.target}:${c.label ?? ""}`;
-      const n = seen.get(base) ?? 0;
-      seen.set(base, n + 1);
-      return `${base}#${n}`;
-    });
-  };
-  const old = new Set(keysOf(previous));
-  keysOf(next).forEach((key, i) => {
+  const old = new Set(connectionKeys(previous.connections));
+  connectionKeys(next.connections).forEach((key, i) => {
     if (old.has(key)) return;
     changed.add(next.connections[i]!.source);
     changed.add(next.connections[i]!.target);

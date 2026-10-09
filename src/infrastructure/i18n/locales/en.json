@@ -1671,10 +1671,12 @@
     "errors": {
       "invalidDiagram": "Invalid diagram"
     },
-    "blockedTitle": "The YAML has {{count}} opscr error(s)",
+    "blockedTitle_one": "The YAML has {{count}} opscr error",
+    "blockedTitle_other": "The YAML has {{count}} opscr errors",
     "blockedParse": "The YAML does not parse",
     "blockedHint": "The diagram is drawn once opscr validates the workspace. The Problems panel lists every error.",
-    "blockedStale": "Not updated: {{count}} opscr error(s) — see Problems",
+    "blockedStale_one": "Not updated: {{count}} opscr error — see Problems",
+    "blockedStale_other": "Not updated: {{count}} opscr errors — see Problems",
     "blockedStaleParse": "Not updated: the YAML does not parse — see Problems"
   },
   "viewPage": {

@@ -33,7 +33,9 @@ import {
 } from "@/features/canvas/flow";
 import { useNodeTypes } from "@/features/canvas/nodes/node-types";
 import CanvasSearch from "@/features/canvas/toolbar/CanvasSearch";
-import { FIT_VIEW_DURATION_MS, FIT_VIEW_PADDING } from "@/features/canvas/canvas.constants";
+import { frameComponents } from "@/features/canvas/focus/focusComponents";
+import { KEY, keyMatchesLetter } from "@/lib/core/keyboard";
+import { framingSignature } from "./framing";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
 import { iconLookupForDiagram } from "../icons/diagramIconLookup";
@@ -112,9 +114,6 @@ interface ViewerCanvasProps {
    */
   focus?: { ids: readonly string[]; token: number } | null;
 }
-
-/** How far a focused element is zoomed at most: readable, not filling the screen. */
-const FOCUS_MAX_ZOOM = 1;
 
 const ViewerCanvasContent = ({
   diagram,
@@ -419,52 +418,64 @@ const ViewerCanvasContent = ({
 
   /** Brings elements into view, once React Flow has drawn and measured them. */
   const frameNodes = useCallback(
-    (ids: readonly string[]) => {
-      const present = ids.filter((id) => reactFlowInstance.getNode(id));
-      if (present.length === 0) return;
-      void reactFlowInstance.fitView({
-        nodes: present.map((id) => ({ id })),
-        duration: FIT_VIEW_DURATION_MS,
-        padding: FIT_VIEW_PADDING,
-        maxZoom: FOCUS_MAX_ZOOM,
-      });
-    },
+    (ids: readonly string[]) =>
+      frameComponents(
+        reactFlowInstance,
+        ids.filter((id) => reactFlowInstance.getNode(id)),
+      ),
     [reactFlowInstance],
   );
 
-  // What the host just changed, once React Flow has drawn and measured it: the update reaches
-  // the canvas a moment later, more under load. Timers, not animation frames: a webview in a
-  // window that is not in front gets no frames, and the zoom should be there when it comes back.
+  // What the host just changed, once React Flow has drawn and measured all of it: the update
+  // reaches the canvas a moment later, more under load, and an edited element is measured
+  // again after that — so the sizes must hold still for one tick. Timers, not animation frames:
+  // a webview in a window that is not in front gets no frames, and the zoom should be there
+  // when it comes back.
   useEffect(() => {
     if (!focus || focus.ids.length === 0) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let tries = 0;
+    let previous: string | null = null;
     const attempt = () => {
-      const measured = focus.ids.some(
-        (id) => reactFlowInstance.getInternalNode(id)?.measured?.width !== undefined,
+      const signature = framingSignature(focus.ids, (id) =>
+        reactFlowInstance.getNode(id) ? reactFlowInstance.getInternalNode(id)?.measured : null,
       );
-      if (measured) frameNodes(focus.ids);
-      else if (++tries < 60) timer = setTimeout(attempt, 50);
+      if (signature !== null && signature === previous) frameNodes(focus.ids);
+      else if (++tries < 60) {
+        previous = signature;
+        timer = setTimeout(attempt, 50);
+      } else if (signature !== null) frameNodes(focus.ids);
     };
     timer = setTimeout(attempt, 50);
     return () => clearTimeout(timer);
   }, [focus, frameNodes, reactFlowInstance]);
 
   const [searchOpen, setSearchOpen] = useState(false);
+  /** Bumped on every request, so asking again while the search is open takes focus back. */
+  const [searchFocus, setSearchFocus] = useState(0);
+  const openSearch = useCallback(() => {
+    setSearchOpen(true);
+    setSearchFocus((n) => n + 1);
+  }, []);
   useEffect(() => {
     if (!searchable) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "f") {
+      if ((event.metaKey || event.ctrlKey) && keyMatchesLetter(event, KEY.F)) {
         event.preventDefault();
-        setSearchOpen(true);
+        openSearch();
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [searchable]);
+  }, [searchable, openSearch]);
+  // Only requests made while this canvas is up: one made before it (with nothing drawn yet)
+  // must not open the search later, unasked.
+  const handledSearchRequest = useRef(searchRequest);
   useEffect(() => {
-    if (searchable && searchRequest > 0) setSearchOpen(true);
-  }, [searchable, searchRequest]);
+    if (searchRequest === handledSearchRequest.current) return;
+    handledSearchRequest.current = searchRequest;
+    if (searchable) openSearch();
+  }, [searchable, searchRequest, openSearch]);
 
   /** The same keys the editor's reading answers to. Skipped under `previewMode`:
    * there is no rail, and the keys would step through state the author never
@@ -562,6 +573,7 @@ const ViewerCanvasContent = ({
         {searchable && searchOpen && (
           <CanvasSearch
             components={diagram.snapshot.components}
+            focusRequest={searchFocus}
             onClose={() => setSearchOpen(false)}
             onSelectResult={(id) => {
               setSearchOpen(false);

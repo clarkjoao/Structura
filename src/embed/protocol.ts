@@ -10,7 +10,7 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  *   host  → embed  STRUCTURA_SEARCH                                  open the element search
  *   host  → embed  STRUCTURA_BLOCKED { reason, errors, problems }    why there is no (new) picture
  *   host  → embed  STRUCTURA_PROBE                                   say what is on screen
- *   embed → host   STRUCTURA_PROBE_RESULT { viewport, searchOpen, visible }   …the answer (for tests)
+ *   embed → host   STRUCTURA_PROBE_RESULT { viewport, searchOpen, visible, blocked }   …the answer (for tests)
  *
  * The graph is the plugin importer result (API 1.3), so a host that can write an importer
  * can drive the preview, and both draw the same thing.

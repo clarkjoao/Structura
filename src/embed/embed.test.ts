@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildPreviewDiagram, changedComponentIds, PREVIEW_DIAGRAM_ID } from "./build-diagram";
+import {
+  buildPreviewDiagram,
+  changedComponentIds,
+  connectionKeys,
+  PREVIEW_DIAGRAM_ID,
+} from "./build-diagram";
 import {
   BLOCKED,
   LOAD_GRAPH,
@@ -114,6 +119,24 @@ describe("changedComponentIds", () => {
     expect(changedComponentIds(graph(), graph({ extra: true }))).toEqual(["c"]);
     expect(changedComponentIds(graph(), graph({ name: "renamed" }))).toEqual(["a"]);
     expect(changedComponentIds(graph(), graph({ edge: true })).sort()).toEqual(["a", "b"]);
+  });
+});
+
+describe("connectionKeys", () => {
+  it("numbers repeats and names the canvas edges the same way", () => {
+    const connections = [
+      { source: "Application/api", target: "Database/db" },
+      { source: "Application/api", target: "Database/db" },
+      { source: "Application/api", target: "Database/db", label: "writes" },
+    ];
+    const keys = connectionKeys(connections);
+    expect(keys).toEqual([
+      "Application/api->Database/db:#0",
+      "Application/api->Database/db:#1",
+      "Application/api->Database/db:writes#0",
+    ]);
+    const diagram = buildPreviewDiagram({ ...graph, connections });
+    expect(Object.keys(diagram.snapshot.connections).sort()).toEqual([...keys].sort());
   });
 });
 
