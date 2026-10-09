@@ -13,6 +13,11 @@ import {
 } from "./catalog-index";
 import { findMatchRanges, fold, foldWithMap, toSourceRange } from "./normalize";
 
+/** The AWS service an entry stands for, through the panel remap too (its id is `<category>:<service>`). */
+function serviceIdOrPanel(entry: CatalogEntry): string {
+  return entry.id.split(":")[1] ?? entry.id;
+}
+
 function registryIndex(): CatalogIndex {
   const { groups, entries } = registryCatalogEntries();
   return createCatalogIndex(groups, entries);
@@ -58,6 +63,30 @@ describe("registryCatalogEntries", () => {
       expect(group.label, group.id).not.toMatch(/^elementCatalog\.|^elements\./);
       expect(group.label.length, group.id).toBeGreaterThan(0);
     }
+  });
+
+  it("lists a family's spotlight services first, in its order", () => {
+    const aws = registryCatalogEntries().entries.filter((entry) => entry.groupId === "aws");
+    const spotlight = allCloudFamilies().find(
+      (family) => family.id === "aws",
+    )!.spotlightServiceIds!;
+    expect(aws.slice(0, spotlight.length).map(serviceIdOrPanel)).toEqual([...spotlight]);
+  });
+
+  it("keeps the flowchart shapes in the order the palette declares them", () => {
+    const shapes = registryCatalogEntries()
+      .entries.filter((entry) => entry.groupId === "flowchart")
+      .map((entry) =>
+        entry.insert.kind === "element" ? entry.insert.createOptions.flowShape : null,
+      );
+    expect(shapes.slice(0, 5)).toEqual([
+      "rectangle",
+      "rounded",
+      "subroutine",
+      "stadium",
+      "diamond",
+    ]);
+    expect(shapes).not.toContain("circle");
   });
 
   it("creates AWS container services as the panel kind that draws them", () => {

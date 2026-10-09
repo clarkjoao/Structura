@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cloudRegistry } from "@/features/cloud";
 import { getElement, isRegisteredElementType } from "@/features/elements/element.registry";
 import { isValidNodeType } from "@/features/llm/component-catalog";
-import { buildCategoryNavItems } from "@/features/canvas/toolbar/element-picker/buildCategoryNav";
+import { registryCatalogEntries } from "@/features/elements/search";
 import { isRegisteredCloudFamily } from "../cloud-family.registry";
 import { k8sElements, k8sFamily } from "./k8s.family";
 import { K8S_CATEGORIES, K8S_SERVICE_MAP } from "./k8s.catalog";
@@ -19,20 +19,12 @@ describe("k8s family", () => {
     expect(k8sElements.every((element) => element.family === "k8s")).toBe(true);
   });
 
-  it("appears in palette nav and LLM catalog without consumer edits", () => {
+  it("appears in the element catalog and LLM catalog without consumer edits", () => {
     for (const category of K8S_CATEGORIES) {
       expect(isRegisteredElementType(category.id)).toBe(true);
       expect(isValidNodeType(category.id)).toBe(true);
     }
-    const nav = buildCategoryNavItems((key) => key, {
-      all: 0,
-      c4: 0,
-      canvas: 0,
-      flowchart: 0,
-      byFamily: { k8s: K8S_SERVICE_MAP.size },
-      registry: 0,
-      nodeTemplates: 0,
-    });
+    const nav = registryCatalogEntries().groups;
     expect(nav.some((item) => item.id === "k8s")).toBe(true);
   });
 

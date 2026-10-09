@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import ElementPickerModal from "./ElementPickerModal";
-import { Plus, ChevronUp, Puzzle } from "lucide-react";
+import { ChevronUp, Puzzle } from "lucide-react";
 import { useActiveDiagram } from "@/features/diagram";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import PatternPicker from "./PatternPicker";
@@ -14,7 +13,6 @@ import { PluginToolbarSlot } from "@/features/plugins/components/PluginToolbarSl
 interface CanvasToolbarProps {
   onDrillUp?: () => void;
   isPanelOpen?: boolean;
-  onInsert?: (nodeId: string) => void;
   onClearSelection?: () => void;
   setSelectedNodeId: (id: string | null) => void;
   setSelectedNodeIds: (ids: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
@@ -33,7 +31,6 @@ interface CanvasToolbarProps {
 
 const CanvasToolbar = ({
   onDrillUp,
-  onInsert,
   onClearSelection,
   setSelectedNodeId,
   setSelectedNodeIds,
@@ -53,7 +50,6 @@ const CanvasToolbar = ({
   const toolbarEditLocked = !canEditCanvas;
   const versionsPickerLocked = !canEditVersions;
   const [showPatterns, setShowPatterns] = useState(false);
-  const [showModal, setShowModal] = useState(false);
 
   const STORAGE_KEY = "structura:toolbar-collapsed";
 
@@ -80,7 +76,6 @@ const CanvasToolbar = ({
   useEffect(() => {
     if (isFlowActive) {
       setShowPatterns(false);
-      setShowModal(false);
     }
   }, [isFlowActive]);
 
@@ -91,24 +86,6 @@ const CanvasToolbar = ({
   }, [focusMode]);
 
   if (!diagram) return null;
-
-  const addButton = (
-    <button
-      type="button"
-      onClick={() => {
-        if (toolbarEditLocked) return;
-        onClearSelection?.();
-        setShowModal(true);
-      }}
-      disabled={toolbarEditLocked}
-      className={cn(
-        "flex items-center gap-1.5 rounded-lg border border-border bg-card/90 backdrop-blur-sm px-3 py-2 text-xs font-medium text-primary hover:bg-surface-hover transition-colors",
-        toolbarEditLocked && "opacity-50 pointer-events-none",
-      )}
-    >
-      <Plus className="h-3.5 w-3.5" /> {t("canvasToolbar.addElement")}
-    </button>
-  );
 
   return (
     <div className="absolute top-4 left-4 z-10 flex w-[220px] flex-col gap-2">
@@ -173,7 +150,6 @@ const CanvasToolbar = ({
           />
         </>
       )}
-      {addButton}
 
       {showPatterns && (
         <PatternPicker
@@ -182,17 +158,6 @@ const CanvasToolbar = ({
           setSelectedNodeId={setSelectedNodeId}
           setSelectedNodeIds={setSelectedNodeIds}
           setSelectedEdgeId={setSelectedEdgeId}
-        />
-      )}
-      {showModal && (
-        <ElementPickerModal
-          onClose={() => setShowModal(false)}
-          onInsert={(nodeId) => {
-            onInsert?.(nodeId);
-            setSelectedNodeId(nodeId);
-            setSelectedNodeIds(new Set([nodeId]));
-            setSelectedEdgeId(null);
-          }}
         />
       )}
     </div>

@@ -120,6 +120,11 @@ export interface CloudFamilyDefinition {
    * is listed in order with no "Other" split.
    */
   primaryCategoryIds?: readonly string[];
+  /**
+   * Services the element catalog lists first for this family, in this order —
+   * what its "All" view shows before "View all". Absent: catalog order.
+   */
+  spotlightServiceIds?: readonly string[];
   categories: readonly CloudFamilyCategory[];
   services: readonly CloudFamilyService[];
   icons: IconResolver;

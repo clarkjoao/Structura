@@ -105,13 +105,23 @@ function tagsFor(concepts: readonly CatalogConceptId[]): string[] {
 }
 
 /**
- * Within a catalog family, the primary categories first, in the order the
- * family lists them; the rest after, in catalog order.
+ * Within a catalog family: its spotlight services first, in the order it
+ * lists them; then the primary categories, in theirs; the rest after, in
+ * catalog order.
  */
-function categoryRank(family: CloudFamilyDefinition | undefined, elementId: string): number {
+function entryRank(
+  family: CloudFamilyDefinition | undefined,
+  elementId: string,
+  serviceId: string | undefined,
+): number {
+  const spotlight = serviceId ? (family?.spotlightServiceIds?.indexOf(serviceId) ?? -1) : -1;
+  if (spotlight !== -1) return spotlight - SPOTLIGHT_OFFSET;
   const primary = family?.primaryCategoryIds?.indexOf(elementId) ?? -1;
   return primary === -1 ? Number.MAX_SAFE_INTEGER : primary;
 }
+
+/** Puts every spotlight rank below every category rank. */
+const SPOTLIGHT_OFFSET = 1_000_000;
 
 /**
  * Every entry the element registry offers, label-resolved in the active
@@ -131,9 +141,9 @@ export function registryCatalogEntries(): {
 
   for (const element of offeredElements()) {
     const family = familiesById.get(element.family);
-    const rank = categoryRank(family, element.id);
     for (const palette of paletteEntriesForElements([element])) {
       const { serviceId } = palette.createOptions;
+      const rank = entryRank(family, element.id, serviceId);
       const service = serviceId
         ? family?.services.find((candidate) => candidate.id === serviceId)
         : undefined;

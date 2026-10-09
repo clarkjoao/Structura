@@ -15,7 +15,7 @@ import {
   allCloudFamilies,
   isRegisteredCloudFamily,
 } from "./cloud-family.registry";
-import { buildCategoryNavItems } from "@/features/canvas/toolbar/element-picker/buildCategoryNav";
+import { registryCatalogEntries } from "@/features/elements/search";
 import {
   allComponentTypes,
   buildComponentTypeCatalog,
@@ -111,16 +111,8 @@ describe("cloud family contract (fictional family)", () => {
     expect(cloudRegistry.isCloudType(TEST_CATEGORY_ID)).toBe(true);
   });
 
-  it("appears as a palette nav tab from allCloudFamilies()", () => {
-    const items = buildCategoryNavItems((key) => key, {
-      all: 0,
-      c4: 0,
-      canvas: 0,
-      flowchart: 0,
-      byFamily: { [TEST_FAMILY_ID]: 1 },
-      registry: 0,
-      nodeTemplates: 0,
-    });
+  it("appears as a catalog group from allCloudFamilies()", () => {
+    const items = registryCatalogEntries().groups;
     expect(items.some((item) => item.id === TEST_FAMILY_ID)).toBe(true);
   });
 

@@ -473,7 +473,6 @@
   "canvasToolbar": {
     "drillUp": "Nível acima",
     "patterns": "Patterns",
-    "addElement": "Adicionar Elemento",
     "panel": "Painel",
     "note": "Nota",
     "awsServices": "AWS Services",
@@ -770,10 +769,6 @@
     "folderHitHint": "pasta"
   },
   "quickInsert": {
-    "searchPlaceholder": "Buscar elemento...",
-    "sectionCanvasGroups": "Canvas e Agrupamentos",
-    "sectionCloud": "Cloud (GCP / Azure)",
-    "noResults": "Nenhum resultado",
     "typePerson": "Person",
     "typeSystem": "System",
     "typeContainer": "Container",
@@ -781,13 +776,6 @@
     "typeApiGroup": "API Group",
     "typeEndpoint": "Endpoint",
     "newNamed": "Novo {{name}}",
-    "searchHelpPanel": "painel|panel",
-    "searchHelpNote": "nota|note|sticky|postit",
-    "searchHelpDbTable": "tabela|banco de dados|db|schema|sql|colunas",
-    "searchHelpJsonViewer": "json|payload|contrato|schema|evento|api",
-    "searchHelpApiGroup": "api|grupo|group|openapi",
-    "searchHelpEndpoint": "endpoint|http|rest",
-    "searchHelpSwimlane": "swimlane|faixa|atores|domínio|time|pool|raia",
     "typeExternalElement": "Elemento Externo"
   },
   "externalElement": {
@@ -1200,25 +1188,6 @@
       "circle": "Início / Fim",
       "subroutine": "Sub-Processo"
     }
-  },
-  "elementPicker": {
-    "categoryAll": "Todos",
-    "viewAll": "Ver todos",
-    "modalTitle": "Adicionar elemento",
-    "searchPlaceholderUnified": "Buscar elementos, AWS, GCP, Azure, serviços…",
-    "cloudOther": "Outros",
-    "noResultsFor": "Nenhum elemento encontrado para “{{query}}”",
-    "addButton": "+ Adicionar",
-    "addAnotherInstance": "Adicionar outra instância ao canvas",
-    "c4Model": "C4 Model",
-    "flowchart": "Fluxograma",
-    "canvasGroups": "Canvas e Agrupamentos",
-    "awsOther": "Outros",
-    "categories": {},
-    "viewAllServices": "Ver todos os serviços",
-    "services": "Serviços",
-    "servicesEmpty": "Nenhum serviço cadastrado",
-    "openServices": "Abrir serviços"
   },
   "patterns": {
     "searchPlaceholder": "Buscar patterns por nome, descrição ou componentes...",
@@ -1943,8 +1912,6 @@
     "ungroup": "Desagrupar painel",
     "ungroupDesc": "Quando um painel está selecionado",
     "quickC4": "Criação rápida (C4)",
-    "quickInsertOpen": "Abrir Quick Insert no canvas",
-    "quickInsertDesc": "Shift+E perto do cursor, ou clique com o direito em área vazia (sem seleção e fora de fluxo play/record)",
     "addPerson": "Adicionar Person",
     "addSystem": "Adicionar System",
     "addContainer": "Adicionar Container",

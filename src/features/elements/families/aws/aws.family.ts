@@ -21,12 +21,7 @@ import type { CloudFamilyDefinition } from "../cloud-family.types";
 import type { CatalogConceptId } from "../../search/concepts";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
 
-/**
- * Services featured in the "All" / spotlight strips of the picker.
- *
- * Kept next to the family so the catalog and the spotlight stay one source;
- * `element-picker/constants.ts` re-exports for existing call sites.
- */
+/** Services the element catalog lists first for AWS (see `spotlightServiceIds`). */
 export const AWS_FAMILY_SPOTLIGHT_SERVICE_IDS: readonly string[] = [
   "ec2",
   "lambda",
@@ -103,6 +98,7 @@ export const awsFamily: CloudFamilyDefinition = {
   labelKey: "canvasToolbar.awsServices",
   paletteCategoryId: "aws",
   primaryCategoryIds: AWS_FAMILY_PRIMARY_CATEGORY_IDS,
+  spotlightServiceIds: AWS_FAMILY_SPOTLIGHT_SERVICE_IDS,
 
   categories: AWS_CATEGORIES.map((category) => {
     const id = category.id as AwsCategoryId;
