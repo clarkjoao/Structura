@@ -20,11 +20,15 @@ import {
 } from "@/features/diagram";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import {
+  NEUTRAL_PROVIDER,
   patternDescriptionKey,
   patternNameKey,
   patternNodeKey,
+  patternProviders,
   patternReference,
 } from "@/features/elements/patterns";
+import { getCloudFamily } from "@/features/elements/families/cloud-family.registry";
+import { usePatternProvider } from "./usePatternProvider";
 import { cn } from "@/lib/utils";
 import { PatternFlowPreview } from "./PatternFlowPreview";
 import {
@@ -85,6 +89,20 @@ export const PatternBrowser = forwardRef<PatternBrowserHandle, PatternBrowserPro
     const importInputRef = useRef<HTMLInputElement>(null);
 
     const result = useMemo(() => searchPatterns(query, userTemplates), [query, userTemplates]);
+    const [provider, setProvider] = usePatternProvider();
+    const providers = useMemo(
+      () =>
+        patternProviders().map((id) => {
+          if (id === NEUTRAL_PROVIDER) return { id, label: t("patterns.provider.neutral") };
+          const family = getCloudFamily(id);
+          const groupKey = `elementCatalog.groups.${family?.paletteCategoryId ?? id}`;
+          const label = i18n.exists(groupKey) ? t(groupKey) : family ? t(family.labelKey) : id;
+          return { id, label };
+        }),
+      // Labels follow the language.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [t, i18n.language],
+    );
     const shown = useMemo(() => patternsForFilter(result, filter), [result, filter]);
     const options = useMemo(
       (): PatternOption[] => [
@@ -171,6 +189,37 @@ export const PatternBrowser = forwardRef<PatternBrowserHandle, PatternBrowserPro
 
     return (
       <div className="flex flex-col gap-3">
+        <div
+          role="radiogroup"
+          aria-label={t("patterns.provider.label")}
+          className="flex items-center gap-1 self-start rounded-lg border border-border p-0.5"
+        >
+          <span className="px-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            {t("patterns.provider.label")}
+          </span>
+          {providers.map((option) => {
+            const checked = option.id === provider;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={checked}
+                tabIndex={-1}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setProvider(option.id)}
+                className={cn(
+                  "h-6 rounded-md px-2 text-[11px] transition-colors",
+                  checked
+                    ? "bg-primary/10 text-foreground ring-1 ring-primary"
+                    : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
+                )}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
         <div role="group" aria-label={t("patterns.modalTitle")} className="flex flex-wrap gap-1.5">
           {PATTERN_FILTERS.map((value) => {
             const pressed = value === filter;

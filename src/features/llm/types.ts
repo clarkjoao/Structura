@@ -89,7 +89,7 @@ export type DiagramPatchAction =
       };
     }
   | { type: "REMOVE_EDGE"; payload: { edgeId: string } }
-  | { type: "INSERT_PATTERN"; payload: { patternId: string } }
+  | { type: "INSERT_PATTERN"; payload: { patternId: string; provider?: string } }
   | { type: "AUTO_LAYOUT"; payload: Record<string, never> }
   | { type: "GET_TAGS"; payload: Record<string, never> }
   | { type: "LIST_ELEMENT_FAMILIES"; payload: Record<string, never> }

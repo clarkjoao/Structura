@@ -15,6 +15,7 @@ import {
   patternDescriptionKey,
   patternNameKey,
   patternNodeKey,
+  patternProviders,
   patternRoleKey,
   resolvePattern,
 } from "./resolvePattern";
@@ -102,6 +103,13 @@ describe("the pattern catalog", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.filter((id) => TIER_C.includes(id))).toEqual([]);
     expect(PATTERNS.every((pattern) => PATTERN_CATEGORIES.includes(pattern.category))).toBe(true);
+  });
+
+  it("offers neutral and every family that can stand in for its roles", () => {
+    const providers = patternProviders();
+    expect(providers[0]).toBe(NEUTRAL_PROVIDER);
+    expect(providers).toEqual(expect.arrayContaining(["aws", "gcp", "azure"]));
+    expect(providers).not.toContain("k8s");
   });
 
   describe.each(PATTERNS.map((pattern) => [pattern.id, pattern] as const))("%s", (_, pattern) => {

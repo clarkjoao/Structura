@@ -128,7 +128,10 @@ export function applyDiagramPatchAction(
         console.warn(`[LLM] Pattern not found: ${action.payload.patternId}`);
         return { addedNodeId: null, addedEdgeId: null };
       }
-      const insertedIds = diagramState.insertPattern(resolvePattern(pattern), { x: 300, y: 300 });
+      const insertedIds = diagramState.insertPattern(
+        resolvePattern(pattern, action.payload.provider),
+        { x: 300, y: 300 },
+      );
       return {
         addedNodeId: insertedIds[0] ?? null,
         addedEdgeId: null,

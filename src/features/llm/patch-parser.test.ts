@@ -95,6 +95,30 @@ describe("parseLLMResponse", () => {
     }
   });
 
+  it("passes a known pattern provider through insert_pattern, and drops an unknown one", () => {
+    const actionsFor = (provider: string) => {
+      const result = parseLLMResponse(
+        JSON.stringify({
+          message: "m",
+          patch: {
+            id: "p",
+            description: "d",
+            actions: [],
+            toolCalls: [{ tool: "insert_pattern", parameters: { patternId: "fan-out", provider } }],
+          },
+        }),
+      );
+      return result.kind === "patch" ? (result.patch?.actions ?? []) : [];
+    };
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(actionsFor("aws")).toEqual([
+      { type: "INSERT_PATTERN", payload: { patternId: "fan-out", provider: "aws" } },
+    ]);
+    expect(actionsFor("ibm")).toEqual([
+      { type: "INSERT_PATTERN", payload: { patternId: "fan-out" } },
+    ]);
+  });
+
   it("logs non-catalog read toolCalls and does not append them as actions", () => {
     const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
     const raw = JSON.stringify({

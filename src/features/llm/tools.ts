@@ -162,7 +162,12 @@ export const ALL_TOOLS: LLMTool[] = [
         patternId: {
           type: "string",
           description:
-            'The pattern ID from the patterns catalog (e.g. "circuit-breaker", "cqrs", "fifo-queue-aws", "retry-with-fallback", "saga-orchestration")',
+            'The pattern ID from the patterns catalog (e.g. "api-gateway", "cqrs", "saga-orchestration", "fan-out", "cell-based")',
+        },
+        provider: {
+          type: "string",
+          description:
+            'Optional. "neutral" (default) draws infrastructure roles (queue, cache, CDN…) as generic containers; a cloud family id such as "aws", "gcp" or "azure" draws each role as that family\'s service. Roles the family has no service for stay neutral. Match the provider already used in the diagram.',
         },
       },
       required: ["patternId"],

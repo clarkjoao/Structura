@@ -1756,6 +1756,10 @@
           "traces": "Traces"
         }
       }
+    },
+    "provider": {
+      "label": "Provedor",
+      "neutral": "Neutro"
     }
   },
   "connectionPanel": {

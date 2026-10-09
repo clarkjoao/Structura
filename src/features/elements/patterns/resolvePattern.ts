@@ -12,9 +12,14 @@ import type {
   PatternFragment,
   PatternFragmentNode,
 } from "@/features/diagram/model/pattern-fragment.types";
-import type { PatternNode, PatternRole, PatternTemplate } from "@/lib/catalogs/patterns";
+import {
+  PATTERNS,
+  type PatternNode,
+  type PatternRole,
+  type PatternTemplate,
+} from "@/lib/catalogs/patterns";
 import type { ComponentType } from "@/features/diagram/model/component.types";
-import { serviceForConcept } from "../roles";
+import { familiesResolving, serviceForConcept } from "../roles";
 
 /** What a role or an untyped node is without a provider: a C4 container. */
 const NEUTRAL_TYPE: ComponentType = "container";
@@ -124,4 +129,22 @@ export function resolvePattern(
     width,
     height,
   };
+}
+
+/**
+ * The providers a pattern can be inserted with: neutral, then every catalog
+ * family that has a service for at least one role the catalog uses. Read at
+ * call time — the registry is filled at boot.
+ */
+export function patternProviders(): PatternProvider[] {
+  const roles = [
+    ...new Set(
+      PATTERNS.flatMap((pattern) => pattern.nodes.flatMap((n) => (n.role ? [n.role] : []))),
+    ),
+  ];
+  return [NEUTRAL_PROVIDER, ...familiesResolving(roles).map((family) => family.id)];
+}
+
+export function isPatternProvider(value: string): boolean {
+  return patternProviders().includes(value);
 }
