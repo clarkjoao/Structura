@@ -1290,10 +1290,8 @@
       "route-migrated": "migrated routes",
       "translate": "translate",
       "sign-in": "sign in",
-      "redirect-to-idp": "redirect to IdP",
       "issue-token": "issue token",
       "request-key": "request key",
-      "scoped-key": "scoped key",
       "upload-direct": "upload directly",
       "check-policy": "check policy",
       "load-policies": "load policies",
@@ -1304,7 +1302,6 @@
       "mtls": "mTLS",
       "configure": "configure",
       "call-port": "call (port)",
-      "implement-port": "implement (port)",
       "invoke": "invoke",
       "route-by-tenant": "route by tenant",
       "route-critical": "critical",
@@ -1657,6 +1654,106 @@
           "cell2": "Cell 2",
           "app2": "App (Cell 2)",
           "db2": "DB (Cell 2)"
+        }
+      },
+      "federated-identity": {
+        "name": "Federated Identity",
+        "description": "Users sign in with an external identity provider, which issues a token the application trusts; the application stores no passwords. Single sign-on and less credential handling; the IdP becomes a dependency for every login.",
+        "nodes": {
+          "user": "User",
+          "idp": "Identity Provider",
+          "app": "Web App"
+        }
+      },
+      "valet-key": {
+        "name": "Valet Key",
+        "description": "The application hands the client a short-lived key scoped to one storage operation, and the client uploads or downloads directly. Large transfers bypass the application; the key's scope and expiry must be tight.",
+        "nodes": {
+          "client": "Client",
+          "app": "Upload API",
+          "storage": "File Storage"
+        }
+      },
+      "policy-enforcement-point": {
+        "name": "Policy Enforcement Point (OPA)",
+        "description": "The gateway asks a policy decision point (such as Open Policy Agent) whether each request is allowed, from policies managed outside the code, and only forwards allowed ones. Authorization is central and auditable; every request pays a decision call.",
+        "nodes": {
+          "client": "Client",
+          "gateway": "API Gateway (PEP)",
+          "pdp": "Policy Decision Point (OPA)",
+          "policyStore": "Policy Bundles",
+          "service": "Order Service",
+          "database": "Orders DB"
+        }
+      },
+      "sidecar": {
+        "name": "Sidecar",
+        "description": "A helper process runs next to the application in the same pod or host and takes on cross-cutting work (telemetry, proxying, config) without changing the app. Language-agnostic reuse; one more process per instance.",
+        "nodes": {
+          "caller": "Caller",
+          "pod": "Pod",
+          "app": "Application",
+          "sidecar": "Sidecar Agent",
+          "monitoring": "Observability"
+        }
+      },
+      "ambassador": {
+        "name": "Ambassador",
+        "description": "A local proxy calls a remote service on the application's behalf, adding retries, timeouts, circuit breaking and TLS. Network resilience without changing the app; a hop and a component to run.",
+        "nodes": {
+          "app": "Application",
+          "ambassador": "Ambassador Proxy",
+          "remote": "Payment Provider"
+        }
+      },
+      "service-mesh": {
+        "name": "Service Mesh",
+        "description": "Every service gets a sidecar proxy, and a control plane configures them all: traffic between services goes proxy to proxy with mTLS, retries and telemetry. Uniform security and observability; adds latency and a platform to operate. Circuit breaking lives here.",
+        "nodes": {
+          "podA": "Pod A",
+          "serviceA": "Order Service",
+          "proxyA": "Proxy (A)",
+          "podB": "Pod B",
+          "proxyB": "Proxy (B)",
+          "serviceB": "Inventory Service",
+          "controlPlane": "Mesh Control Plane"
+        }
+      },
+      "hexagonal": {
+        "name": "Hexagonal Architecture (Ports & Adapters)",
+        "description": "The domain sits in the center and talks to the outside only through ports; adapters at the edge implement them (REST, messaging, database). The core is testable and swaps infrastructure freely; more interfaces to write.",
+        "nodes": {
+          "restAdapter": "REST Adapter",
+          "consumerAdapter": "Event Consumer Adapter",
+          "core": "Application Core",
+          "domain": "Domain Model",
+          "repositoryAdapter": "Repository Adapter",
+          "messagingAdapter": "Messaging Adapter",
+          "database": "Orders DB",
+          "broker": "Domain Events"
+        }
+      },
+      "serverless-api": {
+        "name": "Serverless API",
+        "description": "An API gateway invokes functions that read and write a managed NoSQL table and publish events, with no servers to manage. Scales to zero and with demand; cold starts and per-invocation limits shape the design.",
+        "nodes": {
+          "client": "Client",
+          "gateway": "API Gateway",
+          "function": "Orders Function",
+          "table": "Orders Table",
+          "topic": "Order Events"
+        }
+      },
+      "observability-pipeline": {
+        "name": "Observability Pipeline",
+        "description": "Services send metrics, logs and traces to a collector, which processes them and forwards each signal to its backend. Backends can change without touching services; the collector must scale with telemetry volume.",
+        "nodes": {
+          "serviceA": "Order Service",
+          "serviceB": "Payment Service",
+          "collector": "Telemetry Collector",
+          "metrics": "Metrics",
+          "logs": "Logs",
+          "traces": "Traces"
         }
       }
     }

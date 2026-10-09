@@ -4,6 +4,8 @@ import { DEPLOYMENT_SCALE_PATTERNS } from "./deployment-scale";
 import { INTEGRATION_MESSAGING_PATTERNS } from "./integration-messaging";
 import { MIGRATION_MODERNIZATION_PATTERNS } from "./migration-modernization";
 import { RESILIENCE_PATTERNS } from "./resilience";
+import { SECURITY_IDENTITY_PATTERNS } from "./security-identity";
+import { STRUCTURE_PATTERNS } from "./structure";
 import { PATTERN_CATEGORIES, type PatternCategory, type PatternTemplate } from "./types";
 
 export * from "./types";
@@ -16,6 +18,8 @@ export const PATTERNS: readonly PatternTemplate[] = [
   ...RESILIENCE_PATTERNS,
   ...MIGRATION_MODERNIZATION_PATTERNS,
   ...DEPLOYMENT_SCALE_PATTERNS,
+  ...SECURITY_IDENTITY_PATTERNS,
+  ...STRUCTURE_PATTERNS,
 ];
 
 export const PATTERNS_BY_CATEGORY = Object.fromEntries(

@@ -1290,10 +1290,8 @@
       "route-migrated": "rotas migradas",
       "translate": "traduz",
       "sign-in": "login",
-      "redirect-to-idp": "redireciona ao IdP",
       "issue-token": "emite token",
       "request-key": "pede chave",
-      "scoped-key": "chave restrita",
       "upload-direct": "upload direto",
       "check-policy": "avalia política",
       "load-policies": "carrega políticas",
@@ -1304,7 +1302,6 @@
       "mtls": "mTLS",
       "configure": "configura",
       "call-port": "chama (porta)",
-      "implement-port": "implementa (porta)",
       "invoke": "invoca",
       "route-by-tenant": "roteia por tenant",
       "route-critical": "crítico",
@@ -1657,6 +1654,106 @@
           "cell2": "Célula 2",
           "app2": "Aplicação (Célula 2)",
           "db2": "Banco (Célula 2)"
+        }
+      },
+      "federated-identity": {
+        "name": "Identidade Federada",
+        "description": "O usuário entra por um provedor de identidade externo, que emite um token em que a aplicação confia; a aplicação não guarda senhas. Single sign-on e menos credenciais para cuidar; o IdP vira dependência de todo login.",
+        "nodes": {
+          "user": "Usuário",
+          "idp": "Provedor de Identidade",
+          "app": "Aplicação Web"
+        }
+      },
+      "valet-key": {
+        "name": "Valet Key",
+        "description": "A aplicação entrega ao cliente uma chave de curta duração, restrita a uma operação no storage, e o cliente faz upload ou download direto. Transferências grandes não passam pela aplicação; escopo e validade da chave precisam ser apertados.",
+        "nodes": {
+          "client": "Cliente",
+          "app": "API de Upload",
+          "storage": "Armazenamento de Arquivos"
+        }
+      },
+      "policy-enforcement-point": {
+        "name": "Policy Enforcement Point (OPA)",
+        "description": "O gateway pergunta a um ponto de decisão de políticas (como o Open Policy Agent) se cada requisição é permitida, com políticas mantidas fora do código, e só encaminha as permitidas. A autorização fica central e auditável; cada requisição paga uma chamada de decisão.",
+        "nodes": {
+          "client": "Cliente",
+          "gateway": "API Gateway (PEP)",
+          "pdp": "Ponto de Decisão (OPA)",
+          "policyStore": "Pacotes de Políticas",
+          "service": "Serviço de Pedidos",
+          "database": "Banco de Pedidos"
+        }
+      },
+      "sidecar": {
+        "name": "Sidecar",
+        "description": "Um processo auxiliar roda ao lado da aplicação, no mesmo pod ou host, e assume trabalho transversal (telemetria, proxy, configuração) sem mudar a aplicação. Reuso independente de linguagem; um processo a mais por instância.",
+        "nodes": {
+          "caller": "Chamador",
+          "pod": "Pod",
+          "app": "Aplicação",
+          "sidecar": "Agente Sidecar",
+          "monitoring": "Observabilidade"
+        }
+      },
+      "ambassador": {
+        "name": "Ambassador",
+        "description": "Um proxy local chama um serviço remoto em nome da aplicação, adicionando retries, timeouts, circuit breaker e TLS. Resiliência de rede sem mexer na aplicação; um salto e um componente a mais para operar.",
+        "nodes": {
+          "app": "Aplicação",
+          "ambassador": "Proxy Ambassador",
+          "remote": "Provedor de Pagamentos"
+        }
+      },
+      "service-mesh": {
+        "name": "Service Mesh",
+        "description": "Cada serviço ganha um proxy sidecar e um control plane configura todos eles: o tráfego entre serviços vai de proxy a proxy com mTLS, retries e telemetria. Segurança e observabilidade uniformes; adiciona latência e uma plataforma para operar. O circuit breaker mora aqui.",
+        "nodes": {
+          "podA": "Pod A",
+          "serviceA": "Serviço de Pedidos",
+          "proxyA": "Proxy (A)",
+          "podB": "Pod B",
+          "proxyB": "Proxy (B)",
+          "serviceB": "Serviço de Estoque",
+          "controlPlane": "Control Plane da Mesh"
+        }
+      },
+      "hexagonal": {
+        "name": "Arquitetura Hexagonal (Ports & Adapters)",
+        "description": "O domínio fica no centro e só fala com o exterior por portas; adaptadores na borda as implementam (REST, mensageria, banco). O núcleo fica testável e troca infraestrutura com facilidade; mais interfaces para escrever.",
+        "nodes": {
+          "restAdapter": "Adaptador REST",
+          "consumerAdapter": "Adaptador de Consumo de Eventos",
+          "core": "Núcleo da Aplicação",
+          "domain": "Modelo de Domínio",
+          "repositoryAdapter": "Adaptador de Repositório",
+          "messagingAdapter": "Adaptador de Mensageria",
+          "database": "Banco de Pedidos",
+          "broker": "Eventos de Domínio"
+        }
+      },
+      "serverless-api": {
+        "name": "API Serverless",
+        "description": "Um API gateway invoca funções que leem e escrevem numa tabela NoSQL gerenciada e publicam eventos, sem servidores para administrar. Escala até zero e com a demanda; cold start e limites por invocação moldam o desenho.",
+        "nodes": {
+          "client": "Cliente",
+          "gateway": "API Gateway",
+          "function": "Função de Pedidos",
+          "table": "Tabela de Pedidos",
+          "topic": "Eventos de Pedido"
+        }
+      },
+      "observability-pipeline": {
+        "name": "Pipeline de Observabilidade",
+        "description": "Os serviços enviam métricas, logs e traces a um coletor, que processa e encaminha cada sinal ao seu backend. Os backends mudam sem tocar nos serviços; o coletor precisa escalar com o volume de telemetria.",
+        "nodes": {
+          "serviceA": "Serviço de Pedidos",
+          "serviceB": "Serviço de Pagamentos",
+          "collector": "Coletor de Telemetria",
+          "metrics": "Métricas",
+          "logs": "Logs",
+          "traces": "Traces"
         }
       }
     }
