@@ -15,10 +15,15 @@ import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { MergeVersionDialog } from "./MergeVersionDialog";
 
-export type VersionDrawerVersion = VersionDiff;
+export type VersionPanelVersion = VersionDiff;
 
-export interface VersionDrawerProps {
-  versions: VersionDrawerVersion[];
+/**
+ * The diagram's versions: switch, compare, create, rename, duplicate, merge.
+ * Content only — the host (the bottom toolbar's popover) positions it and
+ * closes it on Escape or an outside click.
+ */
+export interface VersionPanelProps {
+  versions: VersionPanelVersion[];
   activeVersionId: string | null;
   compareVersionId: string | null;
   onClose: () => void;
@@ -47,7 +52,7 @@ function VersionRow({
   onDelete,
   onMerge,
 }: {
-  version: VersionDrawerVersion;
+  version: VersionPanelVersion;
   isActive: boolean;
   isCompare: boolean;
   versionsLocked?: boolean;
@@ -160,7 +165,7 @@ function VersionRow({
   );
 }
 
-export function VersionDrawer({
+export function VersionPanel({
   versions,
   activeVersionId,
   compareVersionId,
@@ -174,7 +179,7 @@ export function VersionDrawer({
   onSelectBase,
   versionsLocked = false,
   versionsGuestReadOnly = false,
-}: VersionDrawerProps) {
+}: VersionPanelProps) {
   const { t } = useTranslation();
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
@@ -206,19 +211,7 @@ export function VersionDrawer({
 
   return (
     <>
-      <div
-        className="absolute inset-0 z-20 bg-background/40 backdrop-blur-[1px]"
-        onClick={onClose}
-        aria-hidden
-      />
-
-      <div
-        className="absolute top-14 left-4 z-30 w-[420px] rounded-xl border border-border bg-card/95 backdrop-blur-sm shadow-2xl overflow-hidden animate-in slide-in-from-top-2 fade-in-0 duration-200"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("versions.drawerTitle")}
-      >
+      <div className="flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2 min-w-0">
             <GitBranch className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -394,7 +387,8 @@ export function VersionDrawer({
   );
 }
 
-export function ConnectedVersionDrawer({ onClose }: { onClose: () => void }) {
+/** `VersionPanel` wired to the active diagram and the store. */
+export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
   const { canEditVersions, isCollabGuest } = useInteractionMode(diagram);
@@ -454,7 +448,7 @@ export function ConnectedVersionDrawer({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <VersionDrawer
+    <VersionPanel
       versions={versions}
       activeVersionId={activeId}
       compareVersionId={compareId}
