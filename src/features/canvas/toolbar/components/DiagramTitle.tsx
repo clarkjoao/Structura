@@ -59,7 +59,7 @@ export function DiagramTitle({ diagram, editLocked, onDrillUp }: DiagramTitlePro
           onClick={onDrillUp}
           title={t("canvasToolbar.drillUp")}
           aria-label={t("canvasToolbar.drillUp")}
-          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="shrink-0 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <ChevronUp aria-hidden className="h-4 w-4" />
         </button>
@@ -76,7 +76,7 @@ export function DiagramTitle({ diagram, editLocked, onDrillUp }: DiagramTitlePro
             if (keyIs(event, KEY.ENTER)) commit();
             if (keyIs(event, KEY.ESCAPE)) setEditing(false);
           }}
-          className="min-w-0 rounded border border-primary/50 bg-transparent px-1 text-sm font-medium outline-none"
+          className="w-full min-w-0 max-w-[32rem] rounded border border-primary/50 bg-transparent px-1 text-sm font-medium outline-none"
         />
       ) : (
         <span
@@ -85,8 +85,14 @@ export function DiagramTitle({ diagram, editLocked, onDrillUp }: DiagramTitlePro
             setDraft(diagram.name);
             setEditing(true);
           }}
-          title={editLocked ? diagram.name : t("canvasToolbar.renameDiagramHint")}
-          className={cn("truncate font-medium", !editLocked && "cursor-text hover:text-primary/80")}
+          // The full name, since a long one is cut short here.
+          title={
+            editLocked ? diagram.name : `${diagram.name} — ${t("canvasToolbar.renameDiagramHint")}`
+          }
+          className={cn(
+            "min-w-0 truncate font-medium",
+            !editLocked && "cursor-text hover:text-primary/80",
+          )}
         >
           {diagram.name}
         </span>
@@ -99,7 +105,8 @@ export function DiagramTitle({ diagram, editLocked, onDrillUp }: DiagramTitlePro
       {description && (
         <span
           title={description}
-          className="hidden min-w-0 max-w-[24rem] truncate text-xs text-muted-foreground lg:inline"
+          // Gives up its room before the name does.
+          className="hidden min-w-0 max-w-[24rem] shrink-[4] truncate text-xs text-muted-foreground lg:inline"
         >
           {description}
         </span>
