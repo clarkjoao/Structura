@@ -2579,5 +2579,29 @@
     "routeThroughRef": "Desenhar por uma referência, ao lado da origem",
     "refsRemoved_one": "{{name}} saiu com a sua referência",
     "refsRemoved_other": "{{name}} saiu com as suas {{count}} referências"
+  },
+  "elementCatalog": {
+    "groups": {
+      "c4": "C4",
+      "flowchart": "Fluxograma",
+      "canvas": "Canvas e estrutura",
+      "services": "Serviços",
+      "presets": "Meus presets"
+    },
+    "concepts": {
+      "queue": "fila|filas|mensageria|mensagens|broker",
+      "events": "evento|eventos|pub/sub|stream|streaming|tópico|notificação",
+      "database": "banco de dados|banco|bd|sql|nosql|base de dados",
+      "cache": "cache|memória|chave-valor",
+      "object-storage": "armazenamento de objetos|armazenamento|bucket|arquivos",
+      "api-gateway": "gateway de api|gateway|gerenciamento de api",
+      "load-balancer": "balanceador de carga|balanceador|lb|ingress",
+      "cdn": "cdn|distribuição de conteúdo|borda",
+      "identity": "identidade|autenticação|login|sso|iam",
+      "secrets": "segredos|cofre|chaves|criptografia",
+      "serverless": "serverless|função|funções|faas",
+      "monitoring": "monitoramento|observabilidade|logs|métricas|rastreamento",
+      "dns": "dns|domínio"
+    }
   }
 }

@@ -12,6 +12,7 @@ import {
 import { isOssComponent } from "@/features/diagram/model/component.guards";
 import i18n from "@/infrastructure/i18n";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
+import type { CatalogConceptId } from "../../search/concepts";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
 import {
   OSS_CATEGORIES,
@@ -26,6 +27,12 @@ import { ossIconDataUri } from "./oss.export-icons";
 function accentFor(categoryId: OssCategoryId) {
   return { kind: "token" as const, cssVar: `--${categoryId}` };
 }
+
+/** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
+const OSS_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
+  kafka: ["queue", "events"],
+  redis: ["cache", "database"],
+};
 
 /**
  * Open-source technologies as a flat `CloudFamilyDefinition`.
@@ -53,6 +60,7 @@ export const ossFamily: CloudFamilyDefinition = {
       name: service.name,
       iconName: service.iconName,
       categoryId: asOssCategoryType(category.id),
+      ...(OSS_SERVICE_CONCEPTS[service.id] ? { concepts: OSS_SERVICE_CONCEPTS[service.id] } : {}),
       // Per-service line for the LLM catalog. The hyperscaler families have
       // hundreds of services and still inherit their category's description;
       // `oss` has two, so it is where the field earns its keep first.

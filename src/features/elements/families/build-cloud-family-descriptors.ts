@@ -28,6 +28,7 @@ function paletteVariantsFor(
     icon: { kind: "family" as const, iconName: service.iconName },
     createOptions: { serviceId: service.id },
     searchKeys: [service.id, service.name, service.iconName],
+    ...(service.concepts ? { concepts: service.concepts } : {}),
   }));
 }
 

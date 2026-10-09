@@ -18,6 +18,7 @@ import {
 import { awsIconResolver } from "@/features/cloud/providers/aws/aws.icon-resolver";
 import { awsServiceCache } from "@/lib/export-service/aws-cache";
 import type { CloudFamilyDefinition } from "../cloud-family.types";
+import type { CatalogConceptId } from "../../search/concepts";
 import { buildCloudFamilyDescriptors } from "../build-cloud-family-descriptors";
 
 /**
@@ -55,6 +56,40 @@ function accentFor(categoryId: AwsCategoryId) {
   return { kind: "token" as const, cssVar: `--${categoryId}` };
 }
 
+/** What each service is, for the catalog search ("fila" finds a queue); see `CATALOG_CONCEPTS`. */
+const AWS_SERVICE_CONCEPTS: Readonly<Record<string, readonly CatalogConceptId[]>> = {
+  sqs: ["queue"],
+  mq: ["queue"],
+  sns: ["events"],
+  eventbridge: ["events"],
+  kinesis: ["events"],
+  msk: ["queue", "events"],
+  rds: ["database"],
+  aurora: ["database"],
+  dynamodb: ["database"],
+  documentdb: ["database"],
+  neptune: ["database"],
+  keyspaces: ["database"],
+  timestream: ["database"],
+  redshift: ["database"],
+  elasticache: ["cache"],
+  memorydb: ["cache", "database"],
+  s3: ["object-storage"],
+  "s3-glacier": ["object-storage"],
+  "api-gateway": ["api-gateway"],
+  elb: ["load-balancer"],
+  cloudfront: ["cdn"],
+  route53: ["dns"],
+  iam: ["identity"],
+  cognito: ["identity"],
+  "iam-identity-center": ["identity"],
+  "secrets-manager": ["secrets"],
+  kms: ["secrets"],
+  lambda: ["serverless"],
+  cloudwatch: ["monitoring"],
+  xray: ["monitoring"],
+};
+
 /**
  * Amazon Web Services as a `CloudFamilyDefinition`.
  *
@@ -85,6 +120,7 @@ export const awsFamily: CloudFamilyDefinition = {
       name: service.name,
       iconName: service.iconName,
       categoryId: category.id as AwsCategoryId,
+      ...(AWS_SERVICE_CONCEPTS[service.id] ? { concepts: AWS_SERVICE_CONCEPTS[service.id] } : {}),
     })),
   ),
 

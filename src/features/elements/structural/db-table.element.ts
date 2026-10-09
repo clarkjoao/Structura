@@ -130,6 +130,7 @@ export const dbTableElement: ElementDescriptor = {
     icon: { kind: "lucide", icon: Table },
     accent: { kind: "neutral" },
     searchKeys: ["table", "database", "db", "schema", "sql", "columns"],
+    concepts: ["database"],
   },
 
   inspector: {

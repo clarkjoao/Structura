@@ -2579,5 +2579,29 @@
     "routeThroughRef": "Draw through a reference, beside the source",
     "refsRemoved_one": "{{name}} left with its reference",
     "refsRemoved_other": "{{name}} left with its {{count}} references"
+  },
+  "elementCatalog": {
+    "groups": {
+      "c4": "C4",
+      "flowchart": "Flowchart",
+      "canvas": "Canvas & structure",
+      "services": "Services",
+      "presets": "My presets"
+    },
+    "concepts": {
+      "queue": "queue|message queue|messaging|broker",
+      "events": "event|events|pub/sub|pubsub|stream|streaming|topic|notification",
+      "database": "database|db|sql|nosql|datastore",
+      "cache": "cache|in-memory|key-value",
+      "object-storage": "object storage|bucket|blob|files",
+      "api-gateway": "api gateway|gateway|api management",
+      "load-balancer": "load balancer|balancer|lb|ingress",
+      "cdn": "cdn|content delivery|edge",
+      "identity": "identity|auth|authentication|login|sso|iam",
+      "secrets": "secrets|vault|keys|encryption",
+      "serverless": "serverless|function|faas",
+      "monitoring": "monitoring|observability|logs|metrics|tracing",
+      "dns": "dns|domain"
+    }
   }
 }
