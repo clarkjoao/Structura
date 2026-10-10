@@ -106,13 +106,18 @@ async function hasPermission(handle: PermissionedHandle): Promise<boolean> {
 }
 
 function indexedDbStore(): FolderHandleStore {
+  // One connection for the store's life, opened on first use; a failed open is retried.
+  let db: Promise<IDBDatabase> | undefined;
   const open = () =>
-    new Promise<IDBDatabase>((resolve, reject) => {
+    (db ??= new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, 1);
       request.onupgradeneeded = () => request.result.createObjectStore(DB_STORE);
       request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+      request.onerror = () => {
+        db = undefined;
+        reject(request.error);
+      };
+    }));
   const run = async <T>(
     mode: IDBTransactionMode,
     body: (store: IDBObjectStore) => IDBRequest<T>,

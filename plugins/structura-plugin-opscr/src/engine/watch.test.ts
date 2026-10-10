@@ -43,6 +43,13 @@ describe("mergeDisk", () => {
     expect(merged.conflicts).toEqual(["b.yaml"]);
   });
 
+  it("drops the conflict when the disk goes back to the text the edit started from", () => {
+    const conflicted = { ...dirty, conflict: "b2" };
+    const merged = mergeDisk([conflicted], { "b.yaml": "b1" }, []);
+    expect(merged.buffers).toEqual([{ ...dirty, conflict: undefined }]);
+    expect(merged.conflicts).toEqual([]);
+  });
+
   it("settles when the disk already holds the user's text", () => {
     expect(mergeDisk([dirty], { "b.yaml": "b-mine" }, []).buffers).toEqual([
       { ...dirty, disk: "b-mine", conflict: undefined },
