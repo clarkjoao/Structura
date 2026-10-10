@@ -1,8 +1,10 @@
 /**
  * Entry of the editable embed (`embed-editor.html`, built with `npm run build:embed`): the
- * Structura canvas on one in-memory diagram, for hosts such as the VSCode extension that bind
+ * Structura canvas on one in-memory diagram (its storage is in memory too), for hosts such as the VSCode extension that bind
  * it to files. Protocol: ./protocol.ts.
  */
+// First: everything after it must see the in-memory storage.
+import "./memory-storage";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import "@/infrastructure/i18n/i18n";

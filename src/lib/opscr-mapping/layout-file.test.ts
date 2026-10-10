@@ -54,4 +54,23 @@ describe("layout sidecar", () => {
     expect(overlayLayouts(null, over)).toBe(over);
     expect(overlayLayouts(base, undefined)).toBe(base);
   });
+
+  it("takes each box's parent from the layout its box came from", () => {
+    const base = {
+      boxes: new Map([
+        ["A/a", box(1, 1)],
+        ["B/b", box(2, 2)],
+      ]),
+      edgeRoutes: new Map(),
+      parents: new Map([
+        ["A/a", "P/old"],
+        ["B/b", null],
+      ]),
+    };
+    // A sidecar, say: boxes without parents.
+    const over = { boxes: new Map([["A/a", box(9, 9)]]), edgeRoutes: new Map() };
+    const merged = overlayLayouts(base, over)!;
+    expect(merged.parents?.has("A/a")).toBe(false);
+    expect(merged.parents?.get("B/b")).toBeNull();
+  });
 });

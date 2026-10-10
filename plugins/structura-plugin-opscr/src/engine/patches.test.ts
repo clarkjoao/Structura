@@ -106,6 +106,19 @@ describe("setDescription", () => {
 });
 
 describe("removeElements", () => {
+  it("removes adjacent manifests without eating the next one", () => {
+    const m = (n: string) => `kind: Database\nmetadata:\n  name: ${n}\n`;
+    const text = m("a") + "--- # second\n" + m("b") + "---\n" + m("c");
+    const result = removeElements(
+      [{ name: "x.opscr.yaml", text }],
+      [
+        { kind: "Database", name: "a" },
+        { kind: "Database", name: "b" },
+      ],
+    );
+    expect(result!.files[0]!.text).toBe(m("c"));
+  });
+
   it("removes the manifest and the edges naming it, and the files still compile", async () => {
     const result = removeElements(SAMPLE, [{ kind: "Cache", name: "cart-cache" }])!;
     expect(hasManifest(result.files, { kind: "Cache", name: "cart-cache" })).toBe(false);
@@ -196,7 +209,8 @@ describe("edges", () => {
         text(removed.files, "relationships.opscr.yaml"),
       ).length,
     ).toBeGreaterThan(0);
-    const retyped = setEdgeType(SAMPLE, match, "relatedTo")!;
+    const { files: retyped, n } = setEdgeType(SAMPLE, match, "relatedTo")!;
+    expect(n).toBe(0);
     expect(countEdges(retyped, { ...match, type: "relatedTo" })).toBe(1);
     expect(
       changedLines(
@@ -205,6 +219,33 @@ describe("edges", () => {
       ),
     ).toEqual(["-      type: calls", "+      type: relatedTo"]);
     expect(await errors(removed.files)).toEqual(await errors(SAMPLE));
+  });
+});
+
+describe("setEdgeType", () => {
+  it("gives the edge's index among its new type by its place in the text", () => {
+    const files = [
+      {
+        name: "r.opscr.yaml",
+        text: [
+          "kind: Relationship",
+          "metadata:",
+          "  name: r",
+          "spec:",
+          "  edges:",
+          "    - from: { kind: A, id: a }",
+          "      to: { kind: B, id: b }",
+          "      type: calls",
+          "    - from: { kind: A, id: a }",
+          "      to: { kind: B, id: b }",
+          "      type: reads",
+          "",
+        ].join("\n"),
+      },
+    ];
+    const from = { kind: "A", name: "a" };
+    const to = { kind: "B", name: "b" };
+    expect(setEdgeType(files, { from, to, type: "calls", n: 0 }, "reads")?.n).toBe(0);
   });
 });
 
