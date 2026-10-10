@@ -339,6 +339,67 @@ describe("reconcile", () => {
     await s.expectSettled();
   });
 
+  it("deletes two equal connections at once", async () => {
+    const from = { kind: "Application", name: "order-tracker" };
+    const to = { kind: "Database", name: "catalog-db" };
+    const ids: string[] = [];
+    s.canvas.step(() => {
+      ids.push(s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), ""));
+      ids.push(s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), ""));
+    });
+    await s.pump();
+    expect(countEdges(s.files, { from, to, type: "calls" })).toBe(2);
+    await s.expectSettled();
+
+    s.canvas.step(
+      () => (s.canvas.connections = s.canvas.connections.filter((c) => !ids.includes(c.id))),
+    );
+    await s.pump();
+    expect(countEdges(s.files, { from, to, type: "calls" })).toBe(0);
+    expect(
+      s.canvas.connections.filter(
+        (c) => c.sourceId === s.id("order-tracker") && c.targetId === s.id("catalog-db"),
+      ),
+    ).toHaveLength(0);
+    await s.expectSettled();
+  });
+
+  it("relabels two equal connections at once", async () => {
+    const from = { kind: "Application", name: "order-tracker" };
+    const to = { kind: "Database", name: "catalog-db" };
+    const ids: string[] = [];
+    s.canvas.step(() => {
+      ids.push(s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), ""));
+      ids.push(s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), ""));
+    });
+    await s.pump();
+    s.canvas.step(() => {
+      for (const c of s.canvas.connections) if (ids.includes(c.id)) c.label = "reads";
+    });
+    await s.pump();
+    expect(countEdges(s.files, { from, to, type: "reads" })).toBe(2);
+    expect(countEdges(s.files, { from, to, type: "calls" })).toBe(0);
+    await s.expectSettled();
+  });
+
+  it("a retyped edge is keyed by its place among the edges of its new type", async () => {
+    let first = "";
+    let second = "";
+    s.canvas.step(() => (first = s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), "")));
+    await s.pump();
+    s.canvas.step(
+      () => (second = s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), "reads")),
+    );
+    await s.pump();
+    s.canvas.step(() => (s.canvas.connections.find((c) => c.id === first)!.label = "reads"));
+    await s.pump();
+    const base = "Application/order-tracker->Database/catalog-db:reads";
+    // The first edge comes first in the text.
+    expect(s.binding.connections[`${base}#0`]).toBe(first);
+    expect(s.binding.connections[`${base}#1`]).toBe(second);
+    await s.expectSettled();
+  });
+
   it("undoing a sync that added an element removes it from the text, redo puts it back", async () => {
     s.files = s.files.map((f) =>
       f.name === "commerce.opscr.yaml"

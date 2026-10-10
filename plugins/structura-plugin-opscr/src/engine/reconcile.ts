@@ -238,10 +238,13 @@ export function reconcile(
     }
   }
 
-  // 2. Connections deleted on the canvas.
-  for (const [key, id] of Object.entries(state.connections)) {
-    if (liveConnections.has(id)) continue;
-    const parsed = parseConnectionKey(key);
+  // 2. Connections deleted on the canvas. Highest index first: removing an edge moves the
+  //    equal edges after it down one, which would leave the keys of the rest pointing one off.
+  const deleted = Object.entries(state.connections)
+    .filter(([, id]) => !liveConnections.has(id))
+    .map(([key, id]) => ({ key, id, parsed: parseConnectionKey(key) }))
+    .sort((a, b) => (b.parsed?.n ?? 0) - (a.parsed?.n ?? 0));
+  for (const { key, id, parsed } of deleted) {
     delete state.connections[key];
     if (!parsed) continue;
     const result = removeEdge(files, parsed);
@@ -386,18 +389,44 @@ export function reconcile(
     state.connections[connectionKey(source, target, type, n)] = connection.id;
   }
 
-  // 6. Connections relabelled with an edge type.
-  for (const [key, id] of Object.entries(state.connections)) {
-    const label = liveConnections.get(id)?.label.trim() ?? "";
-    const parsed = parseConnectionKey(key);
-    if (!parsed || label === parsed.type || !isFlowType(label)) continue;
+  const unretyped = new Set<string>();
+  // 6. Connections relabelled with an edge type, one at a time: each retype moves the indexes
+  //    of the edges equal to it, so the keys are read again after every one.
+  for (;;) {
+    const relabelled = Object.entries(state.connections)
+      .map(([key, id]) => ({
+        key,
+        id,
+        parsed: parseConnectionKey(key),
+        label: liveConnections.get(id)?.label.trim() ?? "",
+      }))
+      .find(
+        ({ id, parsed, label }) =>
+          parsed && label !== parsed.type && isFlowType(label) && !unretyped.has(id),
+      );
+    if (!relabelled) break;
+    const { key, id, label } = relabelled;
+    const parsed = relabelled.parsed!;
     const retyped = setEdgeType(files, parsed, label);
-    if (!retyped) continue;
-    files = retyped;
+    if (!retyped) {
+      unretyped.add(id);
+      continue;
+    }
+    files = retyped.files;
     delete state.connections[key];
     shiftDown(state, parsed);
-    const n = countEdges(files, { ...parsed, type: label }) - 1;
-    state.connections[connectionKey(parsed.source, parsed.target, label, n)] = id;
+    // The retyped edge takes its place among the equal edges of its new type: those after it
+    // move up one.
+    const base = { source: parsed.source, target: parsed.target, type: label };
+    const shifted: Record<string, string> = {};
+    for (const [k, v] of Object.entries(state.connections)) {
+      const p = parseConnectionKey(k);
+      const same = p && p.source === base.source && p.target === base.target && p.type === label;
+      shifted[same && p.n >= retyped.n ? connectionKey(p.source, p.target, p.type, p.n + 1) : k] =
+        v;
+    }
+    state.connections = shifted;
+    state.connections[connectionKey(parsed.source, parsed.target, label, retyped.n)] = id;
   }
 
   revert.update.push(...updates.values());
