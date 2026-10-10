@@ -11,7 +11,7 @@ import type {
 import { cloudServiceIdWrite } from "@/features/diagram/model/cloud-service-id";
 import { getElement } from "@/features/elements/element.registry";
 import { getCloudFamily } from "@/features/elements/families/cloud-family.registry";
-import type { ImportResult, PluginComponentInput } from "./plugin.types";
+import type { ImportResult, PluginComponentInput, PluginConnectionInput } from "./plugin.types";
 
 // Leaf imports, not the `@/features/diagram` barrel: the embed preview uses this module and
 // must not pull the store's whole surface (or the editor) into its entry.
@@ -33,6 +33,48 @@ function importedType(type: string | undefined): ComponentType {
   if (isC4Type(type) || isPanelType(type) || isPluginComponentType(type)) return type;
   if (isCatalogCategoryType(type)) return type as ComponentType;
   return "unknown";
+}
+
+const finite = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+/**
+ * The inputs a plugin's untrusted data can be drawn from: a string key and a finite position;
+ * a missing name falls back to the key, a non-finite size is dropped.
+ */
+function validComponents(inputs: readonly unknown[]): PluginComponentInput[] {
+  return inputs.flatMap((input): PluginComponentInput[] => {
+    if (!isRecord(input) || typeof input.key !== "string" || input.key === "") return [];
+    if (!finite(input.x) || !finite(input.y)) return [];
+    const { width, height, ...rest } = input as unknown as PluginComponentInput;
+    return [
+      {
+        ...rest,
+        name: typeof input.name === "string" ? input.name : input.key,
+        type: typeof input.type === "string" ? input.type : undefined,
+        description: typeof input.description === "string" ? input.description : undefined,
+        parentKey: typeof input.parentKey === "string" ? input.parentKey : undefined,
+        ...(finite(width) ? { width } : {}),
+        ...(finite(height) ? { height } : {}),
+      },
+    ];
+  });
+}
+
+function validConnections(inputs: readonly unknown[]): PluginConnectionInput[] {
+  return inputs.flatMap((input): PluginConnectionInput[] =>
+    isRecord(input) && typeof input.source === "string" && typeof input.target === "string"
+      ? [
+          {
+            source: input.source,
+            target: input.target,
+            ...(typeof input.label === "string" ? { label: input.label } : {}),
+          },
+        ]
+      : [],
+  );
 }
 
 /**
@@ -60,16 +102,17 @@ function parentKeysWithoutCycles(inputs: readonly PluginComponentInput[]): Map<s
 }
 
 /**
- * Importer-shaped data (plugin API 1.3) as store input for `insertGeneratedGraph`: the type
- * policy applied, parent cycles cut, keys as external ids. Shared by plugin imports and the
+ * Importer-shaped data (plugin API 1.3) as store input for `insertGeneratedGraph`: malformed
+ * entries dropped, the type policy applied, parent cycles cut, keys as external ids. Shared by plugin imports and the
  * embed preview, so a graph posted to the preview draws exactly what importing it would.
  */
 export function toGeneratedGraph(result: Pick<ImportResult, "components" | "connections">): {
   nodes: GeneratedNodeInput[];
   edges: GeneratedEdgeInput[];
 } {
-  const parentOf = parentKeysWithoutCycles(result.components);
-  const nodes = result.components.map((input): GeneratedNodeInput => {
+  const components = validComponents(Array.isArray(result.components) ? result.components : []);
+  const parentOf = parentKeysWithoutCycles(components);
+  const nodes = components.map((input): GeneratedNodeInput => {
     const technology = typeof input.technology === "string" ? input.technology : undefined;
     return {
       externalId: input.key,
@@ -87,7 +130,8 @@ export function toGeneratedGraph(result: Pick<ImportResult, "components" | "conn
       ...(input.height !== undefined ? { height: input.height } : {}),
     };
   });
-  const edges = result.connections.map((connection): GeneratedEdgeInput => ({
+  const connections = validConnections(Array.isArray(result.connections) ? result.connections : []);
+  const edges = connections.map((connection): GeneratedEdgeInput => ({
     sourceExternalId: connection.source,
     targetExternalId: connection.target,
     label: connection.label ?? "",

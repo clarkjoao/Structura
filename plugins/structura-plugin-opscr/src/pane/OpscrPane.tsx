@@ -58,12 +58,22 @@ const toMarker = (d: Diagnostic): PluginEditorMarker => ({
  */
 export function createOpscrPane(api: StructuraPluginApi) {
   const { CodeEditor } = api.ui;
+  /**
+   * The open folder and its buffers per diagram, kept when the pane closes or another diagram
+   * opens: the buffers hold unsaved edits — the user's and the canvas's — that are not on disk.
+   */
+  const sessions = new Map<
+    string,
+    { folder: PluginFolder; buffers: Buffer[]; selected: string | null; knownStats: Stats }
+  >();
 
   return function OpscrPane({ context }: PluginPanelProps) {
     const t = useMemo(() => text(context.locale as Locale), [context.locale]);
     const [diagramId, setDiagramId] = useState(() => api.getActiveDiagramId());
     const [stored, setStored] = useState<StoredBinding | null>(null);
     const [folder, setFolder] = useState<PluginFolder | null>(null);
+    const folderRef = useRef(folder);
+    folderRef.current = folder;
     const [buffers, setBuffers] = useState<Buffer[]>([]);
     const [selected, setSelected] = useState<string | null>(null);
     const selectedRef = useRef(selected);
@@ -79,21 +89,43 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const timer = useRef<ReturnType<typeof setTimeout>>();
     /** The folder's file stats as of the last read or save, to notice outside changes. */
     const knownStats = useRef<Stats>({});
+    /** The folder came back from `sessions`: canvas edits made meanwhile are not in the YAML yet. */
+    const restored = useRef(false);
 
     // Follow the active diagram.
     useEffect(() => api.onDiagramChange(() => setDiagramId(api.getActiveDiagramId())), []);
 
-    // Load what the plugin remembers about this diagram; the folder needs a user gesture.
+    // Load what the plugin remembers about this diagram; the folder needs a user gesture —
+    // unless it is still open from before the pane closed or the diagram changed.
     useEffect(() => {
-      setFolder(null);
-      setBuffers([]);
-      setSelected(null);
+      const session = diagramId ? sessions.get(diagramId) : undefined;
+      setFolder(session?.folder ?? null);
+      setBuffers(session?.buffers ?? []);
+      buffersRef.current = session?.buffers ?? [];
+      setSelected(session?.selected ?? null);
+      knownStats.current = session?.knownStats ?? {};
+      restored.current = session !== undefined;
       setDiagnostics([]);
-      if (!diagramId) return setStored(null);
+      if (!diagramId) {
+        setStored(null);
+        return;
+      }
       void api.storage.get<StoredBinding>(storageKey(diagramId)).then((value) => {
         bindingRef.current = value;
         setStored(value);
       });
+      return () => {
+        const open = folderRef.current;
+        if (!open) sessions.delete(diagramId);
+        else {
+          sessions.set(diagramId, {
+            folder: open,
+            buffers: buffersRef.current,
+            selected: selectedRef.current,
+            knownStats: knownStats.current,
+          });
+        }
+      };
     }, [diagramId]);
 
     const persist = useCallback(
@@ -163,6 +195,10 @@ export function createOpscrPane(api: StructuraPluginApi) {
     // Canvas edits (and undo/redo) of the bound diagram reach the YAML while the folder is open.
     useEffect(() => {
       if (!folder || !diagramId) return;
+      if (restored.current) {
+        restored.current = false;
+        void engine.canvasChanged();
+      }
       return api.onDiagramChange((changed) => {
         if (changed === diagramId) void engine.canvasChanged();
       });
@@ -348,6 +384,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
 
     const unbind = async () => {
       if (!diagramId) return;
+      sessions.delete(diagramId);
       await api.files.forget(diagramId);
       await api.storage.remove(storageKey(diagramId));
       bindingRef.current = null;
@@ -368,17 +405,20 @@ export function createOpscrPane(api: StructuraPluginApi) {
 
     const save = async () => {
       if (!folder) return;
-      const dirty = buffersRef.current.filter((b) => b.text !== b.disk);
-      for (const b of dirty) await folder.write(b.name, b.text);
-      const saved = new Set(dirty.map((b) => b.name));
+      // What is written, as of now: text typed while the writes run stays unsaved.
+      const written = new Map(
+        buffersRef.current.filter((b) => b.text !== b.disk).map((b) => [b.name, b.text]),
+      );
+      for (const [name, text] of written) await folder.write(name, text);
       // Our own writes are not outside changes.
       const stats = toStats(await folder.stats());
-      for (const name of saved) if (stats[name]) knownStats.current[name] = stats[name]!;
-      buffersRef.current = buffersRef.current.map((b) =>
-        saved.has(b.name) ? { ...b, disk: b.text } : b,
-      );
-      setBuffers((list) => list.map((b) => (saved.has(b.name) ? { ...b, disk: b.text } : b)));
-      setStatus(t.saved(dirty.length));
+      for (const name of written.keys()) if (stats[name]) knownStats.current[name] = stats[name]!;
+      // The file on disk is now this text: any conflict with an older disk text is settled.
+      const settle = (b: Buffer): Buffer =>
+        written.has(b.name) ? { ...b, disk: written.get(b.name)!, conflict: undefined } : b;
+      buffersRef.current = buffersRef.current.map(settle);
+      setBuffers(buffersRef.current);
+      setStatus(t.saved(written.size));
     };
 
     const reload = async () => {
@@ -583,6 +623,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
         <div className="min-h-0 flex-1">
           {current && (
             <CodeEditor
+              // One editor per file: a shared one would carry its undo history across files,
+              // and Cmd+Z after switching would write the previous file's text into this one.
+              key={current.name}
               value={current.text}
               language="yaml"
               onChange={edit}

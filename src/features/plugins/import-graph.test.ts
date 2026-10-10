@@ -4,6 +4,26 @@ import { toGeneratedGraph } from "./import-graph";
 const at = { x: 1, y: 2 };
 
 describe("toGeneratedGraph", () => {
+  it("drops what a plugin cannot mean: no key, no position, ends that are not strings", () => {
+    const { nodes, edges } = toGeneratedGraph({
+      components: [
+        null,
+        { key: "a", name: "a", x: Number.NaN, y: 0 },
+        { name: "no key", ...at },
+        { key: "b", ...at, width: "wide", height: Infinity },
+      ] as never,
+      connections: [
+        null,
+        { source: "b", target: 3 },
+        { source: "b", target: "b", label: 7 },
+      ] as never,
+    });
+    expect(nodes).toEqual([
+      { externalId: "b", type: "unknown", name: "b", parentExternalId: null, x: 1, y: 2 },
+    ]);
+    expect(edges).toEqual([{ sourceExternalId: "b", targetExternalId: "b", label: "" }]);
+  });
+
   it("maps keys, parents, catalog fields and labels to store input", () => {
     const { nodes, edges } = toGeneratedGraph({
       components: [

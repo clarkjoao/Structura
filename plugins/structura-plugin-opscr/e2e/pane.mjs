@@ -490,6 +490,42 @@ await check(
   "keeping mine saves over the outside edit",
 );
 
+// Saving a file in conflict settles the conflict: the disk now holds the user's text.
+await page.locator(".monaco-editor .view-lines").first().click();
+await page.keyboard.press("ControlOrMeta+End");
+await page.keyboard.press("ControlOrMeta+ArrowDown");
+await page.keyboard.type("\n# second note\n");
+await writeOnDisk(
+  "commerce.opscr.yaml",
+  (await readOnDisk("commerce.opscr.yaml")) + "\n# elsewhere again\n",
+);
+await keepMine
+  .waitFor({ timeout: 8000 })
+  .catch(() => fail("no conflict shown for the second outside edit"));
+await saveAndRead("commerce.opscr.yaml");
+await check(
+  (await keepMine.count()) === 0 &&
+    (await readOnDisk("commerce.opscr.yaml")).includes("second note"),
+  "saving a file in conflict writes it and clears the conflict",
+);
+
+// Closing the pane keeps unsaved edits: they come back when it opens again.
+await page.locator(".monaco-editor .view-lines").first().click();
+await page.keyboard.press("ControlOrMeta+End");
+await page.keyboard.press("ControlOrMeta+ArrowDown");
+await page.keyboard.type("\n# kept while closed\n");
+await page.waitForTimeout(400);
+const paneToggle = page.getByRole("button", { name: "opscr", exact: true });
+await paneToggle.click();
+await page.locator(".monaco-editor").first().waitFor({ state: "detached", timeout: 5000 });
+await paneToggle.click();
+await editor.waitFor({ timeout: 20000 });
+await check(
+  !(await readOnDisk("commerce.opscr.yaml")).includes("kept while closed") &&
+    (await saveAndRead("commerce.opscr.yaml")).includes("kept while closed"),
+  "closing the pane keeps unsaved edits",
+);
+
 // An element drawn from the palette is offered for the YAML, with a suggested Kind.
 // The chat stays open: the picker must be drawn above it.
 const paletteCount = await nodes();

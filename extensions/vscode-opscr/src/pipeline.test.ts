@@ -1,9 +1,26 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createRequire } from "node:module";
 import { collectWorkspace, PreviewPipeline, type WorkspaceText } from "./pipeline";
 import { previewHtml } from "./webview-html";
+
+/** How many compiles run at once, to see that updates do not overlap. */
+const compiling = vi.hoisted(() => ({ now: 0, most: 0 }));
+vi.mock("opscr/core", async (original) => {
+  const core = await original<typeof import("opscr/core")>();
+  return {
+    ...core,
+    compileSources: async (...args: Parameters<typeof core.compileSources>) => {
+      compiling.most = Math.max(compiling.most, ++compiling.now);
+      try {
+        return await core.compileSources(...args);
+      } finally {
+        compiling.now -= 1;
+      }
+    },
+  };
+});
 
 const require = createRequire(import.meta.url);
 const SAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/sample");
@@ -120,6 +137,19 @@ describe("PreviewPipeline", () => {
     expect(error?.line).toBeGreaterThan(0);
     expect(result.graph).toBeUndefined();
     expect(result.blocked).toMatchObject({ reason: "errors" });
+  });
+
+  it("runs overlapping updates one after another, each from the picture before it", async () => {
+    compiling.most = 0;
+    const pipeline = new PreviewPipeline();
+    const [first, second] = await Promise.all([
+      pipeline.update(await sample()),
+      pipeline.update(await edited("relationships.opscr.yaml", (t) => t + CACHE)),
+    ]);
+    expect(compiling.most).toBe(1);
+    const before = boxesOf(first.graph!);
+    const after = boxesOf(second.graph!);
+    for (const [key, at] of before) expect(after.get(key), key).toEqual(at);
   });
 
   it("lays everything out again after relayout()", async () => {
