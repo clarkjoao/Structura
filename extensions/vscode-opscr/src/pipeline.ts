@@ -46,16 +46,27 @@ export class PreviewPipeline {
   private previous: ViewLayoutResult | undefined;
   /** The sidecar text last applied, so an unchanged sidecar is not re-applied. */
   private sidecar: string | undefined;
+  /** Updates run one at a time: each builds on the picture the one before left. */
+  private queue: Promise<unknown> = Promise.resolve();
 
   /**
    * Forget the current picture: the next update lays everything out from scratch, ignoring
    * the sidecar until it changes.
    */
   relayout(): void {
-    this.previous = undefined;
+    // After any update in flight, which would otherwise put its picture back.
+    this.queue = this.queue.then(() => {
+      this.previous = undefined;
+    });
   }
 
-  async update(workspace: WorkspaceText): Promise<PreviewUpdate> {
+  update(workspace: WorkspaceText): Promise<PreviewUpdate> {
+    const next = this.queue.then(() => this.run(workspace));
+    this.queue = next.catch(() => undefined);
+    return next;
+  }
+
+  private async run(workspace: WorkspaceText): Promise<PreviewUpdate> {
     if (workspace.layout !== undefined && workspace.layout !== this.sidecar) {
       // A new or changed sidecar (Structura saved it): its boxes win over the current picture.
       this.previous = overlayLayouts(this.previous, parseLayoutFile(workspace.layout));

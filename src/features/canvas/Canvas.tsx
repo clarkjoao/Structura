@@ -27,12 +27,8 @@ import { useFlowSewNotices } from "./flow/useFlowSewNotices";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import {
-  CANVAS_STYLES,
-  FIT_VIEW_DURATION_MS,
-  FIT_VIEW_PADDING,
-  isSnapToGridDisabledForE2E,
-} from "./canvas.constants";
+import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
+import { frameComponents } from "./focus/focusComponents";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
@@ -215,14 +211,7 @@ const Canvas = (props: CanvasProps = {}) => {
     if (!preview) return;
     focusedPreviews.current.add(preview.suggestionId);
     // Next frame: React Flow has rendered and measured the new nodes by then.
-    requestAnimationFrame(() => {
-      void reactFlowInstance.fitView({
-        nodes: preview.nodeIds.map((id) => ({ id })),
-        duration: FIT_VIEW_DURATION_MS,
-        padding: FIT_VIEW_PADDING,
-        maxZoom: 1,
-      });
-    });
+    requestAnimationFrame(() => frameComponents(reactFlowInstance, preview.nodeIds));
   }, [pendingPreviews, reactFlowInstance]);
   useElementFocusFromUrl(visualState);
 

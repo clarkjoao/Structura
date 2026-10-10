@@ -80,8 +80,13 @@ export function mergeDisk<B extends WatchedBuffer>(
       } else next.push({ ...buffer, disk: "" });
       continue;
     }
-    if (text === undefined || text === buffer.disk) {
+    if (text === undefined) {
       next.push(buffer);
+      continue;
+    }
+    if (text === buffer.disk) {
+      // Back to the text the edit started from (a checkout): nothing conflicts any more.
+      next.push(buffer.conflict === undefined ? buffer : { ...buffer, conflict: undefined });
       continue;
     }
     if (buffer.text === buffer.disk || machine(buffer.name)) {
