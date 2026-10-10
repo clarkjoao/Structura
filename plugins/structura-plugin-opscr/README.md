@@ -8,8 +8,9 @@ Two ways to bring opscr into Structura:
   you stop typing. Elements already on the canvas — including ones you dragged — stay where they
   are; new ones are placed next to their neighbours; removed ones disappear. Each sync is one undo
   step. **Save** (or Ctrl/Cmd+S in the editor) writes the files back; **Reload** re-reads the folder
-  and discards unsaved edits. After a page reload, **Reconnect folder** asks the browser for
-  permission again. Needs a Chromium-based browser (File System Access API).
+  and discards unsaved edits. Closing the pane or opening another diagram keeps the folder open
+  and its unsaved edits until you come back. After a page reload, **Reconnect folder** asks the
+  browser for permission again. Needs a Chromium-based browser (File System Access API).
 
   The other way works too, while the folder is open: canvas edits of what the YAML declares are
   patched into the text (unsaved until you save), touching only the lines they change — comments

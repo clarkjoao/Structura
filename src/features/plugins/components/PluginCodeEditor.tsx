@@ -5,6 +5,7 @@ import { LazyMonacoEditor } from "@/lib/monaco/LazyMonacoEditor";
 import { useTheme } from "@/hooks/useTheme";
 import type { PluginCodeEditorProps, PluginEditorMarker } from "../plugin.types";
 import { createRenameProvider } from "./editor-rename";
+import { KEY, keyMatchesLetter } from "@/lib/core/keyboard";
 
 type Editor = Parameters<OnMount>[0];
 type Monaco = Parameters<OnMount>[1];
@@ -74,7 +75,7 @@ export function PluginCodeEditor({
   const wrapper = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!saveRef.current || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== "s")
+      if (!saveRef.current || !(event.metaKey || event.ctrlKey) || !keyMatchesLetter(event, KEY.S))
         return;
       if (!(event.target instanceof Node) || !wrapper.current?.contains(event.target)) return;
       event.preventDefault();

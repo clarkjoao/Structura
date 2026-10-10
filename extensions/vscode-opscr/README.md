@@ -45,7 +45,7 @@ npm install
 npm link opscr        # again after every npm install: install drops the link
 npm test
 npm run package       # → vscode-opscr-<version>.vsix
-code --install-extension vscode-opscr-0.1.0.vsix
+code --install-extension vscode-opscr-<version>.vsix
 ```
 
 ## How it works
@@ -57,7 +57,8 @@ code --install-extension vscode-opscr-0.1.0.vsix
   opscr-layout: ELK, seeded with the previous picture                       │
   stabilizeLayout: survivors keep their boxes ──► importer-shaped graph ────┤
                                                                             ▼
-webview: Structura's embed preview (dist-embed) ◄── postMessage STRUCTURA_LOAD_GRAPH / THEME
+webview: Structura's embed preview (dist-embed) ◄── postMessage (src/embed/protocol.ts):
+         LOAD_GRAPH, BLOCKED (why there is no new picture), SEARCH, THEME
 ```
 
 - `src/pipeline.ts` — YAML → graph, no VSCode API (unit-tested).
@@ -70,7 +71,8 @@ webview: Structura's embed preview (dist-embed) ◄── postMessage STRUCTURA_
 - `npm test` — the pipeline: multi-file workspace, stability across an edit, parse failures,
   diagnostics.
 - `npm run e2e` — a real VSCode (isolated profile, your settings untouched) opens the opscr sample,
-  checks the webview drew every element, follows an unsaved edit and reports a problem. Set
+  checks the webview drew every element, opens the find, keeps its picture while an edit has opscr
+  errors (Problems panel, banner), draws a file written to disk and zooms to what it added. Set
   `VSCODE_PATH` when VSCode is not in `/Applications`.
 
 Neither runs in CI: the extension depends on unpublished opscr.
