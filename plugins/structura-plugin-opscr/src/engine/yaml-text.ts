@@ -57,9 +57,16 @@ export function renderScalar(value: string, original?: Scalar): string {
   return plain === value ? value : JSON.stringify(value);
 }
 
-export function replaceScalar(node: Scalar, value: string): TextEdit {
+/**
+ * Replaces a scalar's text. A key with no value (`description:`) has an empty node right after
+ * the colon, so the value is written after a space there — `description:hello` would not be
+ * YAML. With `text`, the space is added only when there is none already.
+ */
+export function replaceScalar(node: Scalar, value: string, text?: string): TextEdit {
   const [start, end] = node.range!;
-  return { start, end, insert: renderScalar(value, node) };
+  const rendered = renderScalar(value, node);
+  const needsSpace = start === end && (text === undefined || !/\s/.test(text[start - 1] ?? ""));
+  return { start, end, insert: needsSpace ? ` ${rendered}` : rendered };
 }
 
 /** The pair's string value node, if the map holds `key` with a scalar value. */
@@ -80,7 +87,7 @@ export function setMapValue(
   value: string,
 ): TextEdit | null {
   const current = scalarAt(map, key);
-  if (current) return replaceScalar(current, value);
+  if (current) return replaceScalar(current, value, text);
   const first = map.items[0]?.key as Node | undefined;
   if (map.flow || !first?.range) return null;
   const indent = text.slice(lineStart(text, first.range[0]), first.range[0]);
