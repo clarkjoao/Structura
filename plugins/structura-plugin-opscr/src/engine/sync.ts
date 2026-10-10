@@ -74,7 +74,9 @@ export function connectionKeys(graph: ImporterGraph): string[] {
  */
 export function canvasLayout(binding: BindingState, diagram: DiagramSnapshot): ViewLayoutResult {
   const byId = new Map(diagram.components.map((c) => [c.id, c]));
+  const keyOfId = new Map(Object.entries(binding.ids).map(([key, id]) => [id, key]));
   const boxes = new Map<string, ViewBox>();
+  const parents = new Map<string, string | null>();
   for (const [key, id] of Object.entries(binding.ids)) {
     const component = byId.get(id);
     if (!component?.position) continue;
@@ -84,8 +86,13 @@ export function canvasLayout(binding: BindingState, diagram: DiagramSnapshot): V
       width: component.size?.width ?? LEAF.width,
       height: component.size?.height ?? LEAF.height,
     });
+    // Positions are relative to the canvas parent; one outside the binding has no key.
+    parents.set(
+      key,
+      component.parentId ? (keyOfId.get(component.parentId) ?? `#${component.parentId}`) : null,
+    );
   }
-  return { boxes, edgeRoutes: new Map() };
+  return { boxes, edgeRoutes: new Map(), parents };
 }
 
 /**

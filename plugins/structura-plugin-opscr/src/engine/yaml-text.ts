@@ -31,11 +31,23 @@ export function parseDocuments(text: string): ParsedDocument[] | null {
   return docs.some((d) => d.errors.length > 0) ? null : docs;
 }
 
-/** Applies non-overlapping edits given in original-text positions. */
+/**
+ * Applies edits given in original-text positions. Cuts that overlap — two adjacent documents
+ * removed together both claim the `---` line between them — are merged into one; any other
+ * overlap is a bug in the caller and throws rather than corrupting the text.
+ */
 export function applyEdits(text: string, edits: readonly TextEdit[]): string {
-  return [...edits]
-    .sort((a, b) => b.start - a.start)
-    .reduce((acc, e) => acc.slice(0, e.start) + e.insert + acc.slice(e.end), text);
+  const merged: TextEdit[] = [];
+  for (const edit of [...edits].sort((a, b) => a.start - b.start || a.end - b.end)) {
+    const last = merged[merged.length - 1];
+    if (last && edit.start < last.end) {
+      if (last.insert !== "" || edit.insert !== "") {
+        throw new Error(`[opscr] overlapping edits at ${edit.start}`);
+      }
+      last.end = Math.max(last.end, edit.end);
+    } else merged.push({ ...edit });
+  }
+  return merged.reduceRight((acc, e) => acc.slice(0, e.start) + e.insert + acc.slice(e.end), text);
 }
 
 const lineStart = (text: string, pos: number) => text.lastIndexOf("\n", pos - 1) + 1;
@@ -154,12 +166,33 @@ export function cutDocument(
   docs: readonly ParsedDocument[],
   index: number,
 ): TextEdit {
-  const doc = docs[index]!;
-  const next = docs[index + 1];
-  if (text.startsWith("---", doc.range[0]) || !next) {
-    return { start: doc.range[0], end: doc.range[2], insert: "" };
+  return cutDocuments(text, docs, [index])[0]!;
+}
+
+/**
+ * Cuts several documents, one edit per run of adjacent ones. A run the file starts with, when
+ * its first document has no `---` marker, also takes the marker of the document after it — so
+ * what is left starts as the file did.
+ */
+export function cutDocuments(
+  text: string,
+  docs: readonly ParsedDocument[],
+  indexes: readonly number[],
+): TextEdit[] {
+  const sorted = [...new Set(indexes)].sort((a, b) => a - b);
+  const edits: TextEdit[] = [];
+  for (let i = 0; i < sorted.length;) {
+    let j = i;
+    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j]! + 1) j += 1;
+    const first = docs[sorted[i]!]!;
+    const last = docs[sorted[j]!]!;
+    const next = docs[sorted[j]! + 1];
+    const end =
+      text.startsWith("---", first.range[0]) || !next ? last.range[2] : contentStart(text, next);
+    edits.push({ start: first.range[0], end, insert: "" });
+    i = j + 1;
   }
-  return { start: doc.range[0], end: contentStart(text, next), insert: "" };
+  return edits;
 }
 
 /** Appends a document (its source without a marker) at the end of the file. */

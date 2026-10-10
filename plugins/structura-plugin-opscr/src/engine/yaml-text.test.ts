@@ -37,3 +37,32 @@ describe("replaceScalar", () => {
     expect(applyEdits(text, [replaceScalar(node, "x")])).toBe("spec:\n  name: x\n");
   });
 });
+
+describe("applyEdits", () => {
+  it("merges cuts that overlap", () => {
+    expect(
+      applyEdits("aaa---bbb---ccc", [
+        { start: 0, end: 6, insert: "" },
+        { start: 3, end: 12, insert: "" },
+      ]),
+    ).toBe("ccc");
+  });
+
+  it("refuses an overlap that writes text", () => {
+    expect(() =>
+      applyEdits("abcdef", [
+        { start: 0, end: 4, insert: "x" },
+        { start: 2, end: 5, insert: "" },
+      ]),
+    ).toThrow(/overlapping/);
+  });
+
+  it("keeps insertions at the same point in order", () => {
+    expect(
+      applyEdits("ab", [
+        { start: 1, end: 1, insert: "1" },
+        { start: 1, end: 1, insert: "2" },
+      ]),
+    ).toBe("a12b");
+  });
+});

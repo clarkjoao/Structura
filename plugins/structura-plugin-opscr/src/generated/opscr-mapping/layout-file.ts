@@ -61,8 +61,15 @@ export function overlayLayouts(
 ): ViewLayoutResult | undefined {
   if (!base) return over ?? undefined;
   if (!over) return base;
+  // A box's parent comes from the layer its box came from.
+  const parents = new Map<string, string | null>();
+  for (const id of new Set([...base.boxes.keys(), ...over.boxes.keys()])) {
+    const layer = over.boxes.has(id) ? over : base;
+    if (layer.parents?.has(id)) parents.set(id, layer.parents.get(id)!);
+  }
   return {
     boxes: new Map([...base.boxes, ...over.boxes]),
     edgeRoutes: new Map([...base.edgeRoutes, ...over.edgeRoutes]),
+    ...(parents.size > 0 ? { parents } : {}),
   };
 }

@@ -28,14 +28,24 @@ export function stabilizeLayout(
   fresh: ViewLayoutResult,
   previous: ViewLayoutResult | undefined,
 ): ViewLayoutResult {
-  if (!previous) return fresh;
+  const parentOf = new Map(view.nodes.map((n) => [n.id, n.parentId]));
+  if (!previous) return { ...fresh, parents: parentOf };
 
   const childrenOf = new Map<string | null, string[]>();
   for (const node of view.nodes) {
     childrenOf.set(node.parentId, [...(childrenOf.get(node.parentId) ?? []), node.id]);
   }
   const depth = new Map<string, number>();
-  const parentOf = new Map(view.nodes.map((n) => [n.id, n.parentId]));
+  /**
+   * Boxes that still mean something: an element moved to another parent keeps its size, but
+   * its old position was relative to the old parent — it is placed like a new one.
+   */
+  const kept = new Map(
+    [...previous.boxes].filter(
+      ([id]) =>
+        !previous.parents?.has(id) || previous.parents.get(id) === (parentOf.get(id) ?? null),
+    ),
+  );
   const depthOf = (id: string): number => {
     const known = depth.get(id);
     if (known !== undefined) return known;
@@ -63,16 +73,16 @@ export function stabilizeLayout(
   }
 
   const placeSiblings = (ids: readonly string[], insidePanel: boolean): void => {
-    const survivors = ids.filter((id) => previous.boxes.has(id));
+    const survivors = ids.filter((id) => kept.has(id));
     const placed: ViewBox[] = [];
     for (const id of survivors) {
-      const before = previous.boxes.get(id)!;
+      const before = kept.get(id)!;
       const box = { ...boxes.get(id)!, x: before.x, y: before.y };
       boxes.set(id, box);
       placed.push(box);
     }
     const newcomers = ids
-      .filter((id) => !previous.boxes.has(id))
+      .filter((id) => !kept.has(id))
       .sort((a, b) => freshBox(a).y - freshBox(b).y || a.localeCompare(b));
     for (const id of newcomers) {
       const target = freshBox(id);
@@ -81,8 +91,8 @@ export function stabilizeLayout(
         .sort((a, b) => distance(freshBox(a), target) - distance(freshBox(b), target))[0];
       const shift = anchor
         ? {
-            x: previous.boxes.get(anchor)!.x - freshBox(anchor).x,
-            y: previous.boxes.get(anchor)!.y - freshBox(anchor).y,
+            x: kept.get(anchor)!.x - freshBox(anchor).x,
+            y: kept.get(anchor)!.y - freshBox(anchor).y,
           }
         : { x: 0, y: 0 };
       const floor = insidePanel ? PANEL_PADDING : -Infinity;
@@ -119,5 +129,5 @@ export function stabilizeLayout(
   placeSiblings(childrenOf.get(null) ?? [], false);
 
   // Routes were computed for other positions; the canvas routes connections itself.
-  return { boxes, edgeRoutes: new Map() };
+  return { boxes, edgeRoutes: new Map(), parents: parentOf };
 }
