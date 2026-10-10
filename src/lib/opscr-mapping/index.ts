@@ -19,9 +19,10 @@ export {
   providersFor,
 } from "./elements";
 export type { KindGuess } from "./elements";
-export { placeView, toLayoutGraph } from "./layout";
+export { LEAF_H, LEAF_W, placeView, toLayoutGraph } from "./layout";
 export { stabilizeLayout } from "./stable-layout";
 export { toImporterGraph } from "./importer-graph";
+export { CONFIG_FILE, isManifestName } from "./files";
 export { LAYOUT_FILE, overlayLayouts, parseLayoutFile, serializeLayoutFile } from "./layout-file";
 export type {
   ImporterGraph,

@@ -38,8 +38,9 @@ workspace's YAML does not parse, the preview SHALL keep the last picture it drew
 
 ### Requirement: Existing elements keep their place
 
-On an update, every element whose Kind and name existed in the previous picture SHALL keep its
-position relative to its parent. New elements SHALL be placed without overlapping existing siblings,
+On an update, every element whose Kind and name existed in the previous picture under the same
+parent SHALL keep its position relative to that parent; an element whose parent changed SHALL be
+placed like a new one. New elements SHALL be placed without overlapping existing siblings,
 and panels SHALL grow to contain their children. _opscr: Re-layout Preview_ SHALL lay everything
 out from scratch.
 
@@ -49,6 +50,11 @@ out from scratch.
 - **WHEN** a Cache and an edge to it are added
 - **THEN** every element of the sample has the same position as before and the Cache overlaps no
   sibling
+
+#### Scenario: An element moves to another panel
+
+- **WHEN** an element's `belongsTo` changes to another panel
+- **THEN** it is placed inside that panel next to its new siblings, not at its old offset
 
 #### Scenario: Description change
 
