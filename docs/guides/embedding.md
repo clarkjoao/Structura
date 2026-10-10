@@ -72,6 +72,14 @@ export function ArchitectureDiagram() {
 }
 ```
 
+## 3. A graph from your own tool: `embed.html`
+
+`npm run build:embed` builds `dist-embed/embed.html`, a preview that takes a graph instead of a
+diagram: components and connections in the shape plugin importers return (keys, names, types,
+positions, `parentKey`), posted as `STRUCTURA_LOAD_GRAPH`. Every graph replaces the picture while
+the reader's pan and zoom stay, and what changed is brought into view. The VSCode opscr preview is
+built on it. The messages are listed in `src/embed/protocol.ts`.
+
 ## Opening a flow
 
 Add `flow=<flow id>` to the URL fragment (`/viewer#flow=<id>`, or `#data=…&flow=<id>` with an

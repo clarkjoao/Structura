@@ -32,13 +32,15 @@ npm run lint         # eslint
 npm run format       # prettier --write
 npm run test         # vitest run
 npm run build        # npm run typecheck && vite build
+npm run build:embed  # dist-embed/: embed.html (graph preview) and embed-editor.html
 ```
 
 `npx tsc --noEmit` at the root checks `src`, because the root tsconfig is the
 app project. It does **not** cover `vite.config.ts`, which is a project of its
 own so it can be checked against a Node lib with no DOM — `npm run typecheck`
 runs both, and is the gate CI runs. The plugins under `plugins/` have their own
-`typecheck` scripts that no workflow calls.
+`typecheck` scripts that no workflow calls, and so does the VSCode extension under
+`extensions/vscode-opscr` (which loads `dist-embed`).
 
 ## Folder structure
 
@@ -60,9 +62,12 @@ src/
 ├── infrastructure/
 │   ├── persistence/        # IStoragePort, LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
 │   └── i18n/               # i18next setup + locales
+├── embed/                  # embed.html / embed-editor.html entries and their postMessage protocols
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
-├── lib/                    # export-service (drawio/mermaid/structurizr), catalogs, utils
+├── lib/                    # export-service (drawio/mermaid/structurizr), catalogs, utils;
+│                           # opscr-mapping / opscr-layout are copied into plugins and the
+│                           # VSCode extension by their `sync-shared` scripts
 └── fixtures/seeds/         # demo workspace content (Portuguese demo data is intentional)
 ```
 

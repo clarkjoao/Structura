@@ -4,7 +4,13 @@ import type {
   ViewBox,
   ViewLayoutResult,
 } from "../generated/opscr-mapping";
-import { overlayLayouts, parseLayoutFile, serializeLayoutFile } from "../generated/opscr-mapping";
+import {
+  LEAF_H,
+  LEAF_W,
+  overlayLayouts,
+  parseLayoutFile,
+  serializeLayoutFile,
+} from "../generated/opscr-mapping";
 import type {
   DiagramSnapshot,
   PluginDiagramChanges,
@@ -12,8 +18,8 @@ import type {
 } from "../types/plugin.types";
 import type { EdgeSource } from "./patches";
 
-/** Default leaf size when the canvas has not measured one — the mapping's LEAF size. */
-const LEAF = { width: 180, height: 80 };
+/** Default leaf size when the canvas has not measured one. */
+const LEAF = { width: LEAF_W, height: LEAF_H };
 
 /**
  * What the plugin remembers about a bound diagram, between syncs and sessions: the

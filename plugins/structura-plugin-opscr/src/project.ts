@@ -1,6 +1,8 @@
 import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
 import {
+  CONFIG_FILE,
   buildTechnicalView,
+  isManifestName,
   placeView,
   stabilizeLayout,
   toImporterGraph,
@@ -17,9 +19,8 @@ export interface Projection {
   graph?: ImporterGraph;
 }
 
-const MANIFEST = /\.opscr\.ya?ml$/i;
-export const CONFIG_FILE = "opscr.config.yaml";
-export const isManifest = (name: string) => MANIFEST.test(name);
+export { CONFIG_FILE };
+export const isManifest = isManifestName;
 
 /** Where a first sync puts the diagram's top-left corner. */
 const ORIGIN = { x: 40, y: 40 };

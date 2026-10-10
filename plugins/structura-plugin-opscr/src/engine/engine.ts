@@ -20,8 +20,9 @@ import type { ImporterGraph, ViewLayoutResult } from "../generated/opscr-mapping
 /**
  * The binding between a diagram and a folder of opscr manifests, without any UI: YAML → canvas
  * (sync), canvas → YAML (reconcile), the layout sidecar, renames, palette adoption and outside
- * changes, serialized in one queue. The Structura document pane and the VSCode editor run it over
- * their own files, diagram and storage.
+ * changes, serialized in one queue. The Structura document pane runs it over its buffers, the
+ * active diagram and the plugin storage; another host (the editable embed, say) can run it over
+ * its own.
  */
 
 /** The text the engine reads and edits: manifests, the config and the layout sidecar. */
