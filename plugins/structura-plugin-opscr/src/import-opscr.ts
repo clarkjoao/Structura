@@ -1,6 +1,7 @@
 import { compileSources, Severity, type Diagnostic } from "opscr/core";
 import {
   buildTechnicalView,
+  isManifestName,
   placeView,
   toImporterGraph,
   toLayoutGraph,
@@ -9,14 +10,13 @@ import {
 import type { ImportContext, ImportResult } from "./types/plugin.types";
 import { layoutView } from "./generated/opscr-layout";
 
-const OPSCR_FILE = /\.opscr\.ya?ml$/i;
 const OPSCR_API_VERSION = /^\s*apiVersion:\s*["']?opscr\.dev\//m;
 /** opscr errors listed one by one before the rest are only counted. */
 const MAX_LISTED_ERRORS = 10;
 
 /** An `*.opscr.yaml` file, or any YAML whose content declares an opscr apiVersion. */
 export function canImportOpscr(fileName: string, contents: string): boolean {
-  return OPSCR_FILE.test(fileName) || OPSCR_API_VERSION.test(contents);
+  return isManifestName(fileName) || OPSCR_API_VERSION.test(contents);
 }
 
 function describe(d: Diagnostic): string {
