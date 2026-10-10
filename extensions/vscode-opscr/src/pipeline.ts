@@ -1,7 +1,9 @@
 import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
 import {
+  CONFIG_FILE,
   LAYOUT_FILE,
   buildTechnicalView,
+  isManifestName,
   overlayLayouts,
   parseLayoutFile,
   placeView,
@@ -91,8 +93,7 @@ export class PreviewPipeline {
   }
 }
 
-const MANIFEST = /\.opscr\.ya?ml$/i;
-export const CONFIG_FILE = "opscr.config.yaml";
+export { CONFIG_FILE };
 
 /**
  * The workspace a file belongs to: every opscr manifest in its folder plus the folder's
@@ -106,7 +107,7 @@ export async function collectWorkspace(
 ): Promise<WorkspaceText> {
   const join = (name: string) => `${folder.replace(/\/$/, "")}/${name}`;
   const files: SourceFile[] = [];
-  for (const name of [...fileNames].filter((n) => MANIFEST.test(n)).sort()) {
+  for (const name of [...fileNames].filter(isManifestName).sort()) {
     const content = await readText(join(name));
     if (content !== undefined) files.push({ path: join(name), content });
   }
@@ -125,6 +126,6 @@ export async function collectWorkspace(
 
 export function isManifestPath(path: string): boolean {
   return (
-    MANIFEST.test(path) || path.endsWith(`/${CONFIG_FILE}`) || path.endsWith(`/${LAYOUT_FILE}`)
+    isManifestName(path) || path.endsWith(`/${CONFIG_FILE}`) || path.endsWith(`/${LAYOUT_FILE}`)
   );
 }

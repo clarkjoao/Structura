@@ -40,7 +40,7 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
-- **VSCode extension 0.2.0**: the preview draws only YAML that opscr validates
+- **VSCode extension 0.3.2**: the preview draws only YAML that opscr validates
   without errors — changes typed, saved or written to disk by other tools
   (Claude Code, git) — keeping the last valid picture and saying why in the
   status bar meanwhile. The diagram stays a read-only view in VSCode. Ctrl/Cmd+F
@@ -48,7 +48,8 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 - **Embed**: `embed-editor.html`, Structura's canvas on an in-memory diagram,
   driven over `postMessage` like a remote plugin API (not used by the extension).
 - **opscr plugin**: the document pane's orchestration is now a UI-free
-  `OpscrEngine` (`src/engine/`), shared with the VSCode extension.
+  `OpscrEngine` (`src/engine/`), which other hosts can run too (the VSCode
+  extension, a read-only preview, does not).
 - Fixed: an element dragged out of its panel, or into another one (a sibling, a
   nested panel), now lands in the panel under it; children were clamped to their
   panel before.
