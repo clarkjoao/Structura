@@ -247,9 +247,15 @@ export function createScopedPluginApi(
               cloudServiceId,
             };
           }),
-        move: (Array.isArray(changes.move) ? changes.move : []).filter(
-          (m) => typeof m?.id === "string" && Number.isFinite(m.x) && Number.isFinite(m.y),
-        ),
+        move: (Array.isArray(changes.move) ? changes.move : [])
+          .filter((m) => typeof m?.id === "string" && Number.isFinite(m.x) && Number.isFinite(m.y))
+          .map(({ id, x, y, width, height }) => ({
+            id,
+            x,
+            y,
+            ...(Number.isFinite(width) ? { width } : {}),
+            ...(Number.isFinite(height) ? { height } : {}),
+          })),
         add: graph.nodes,
         connect: graph.edges,
       });

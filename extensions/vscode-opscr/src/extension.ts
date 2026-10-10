@@ -36,6 +36,8 @@ class Preview {
   private blocked = 0;
   /** Says why the preview is not following the YAML, while it is not. */
   private readonly statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
+  /** Files this preview put in the Problems panel, cleared when they leave the workspace. */
+  private published = new Set<string>();
   /** Monotonic: an update that finishes after a newer one started is dropped. */
   private generation = 0;
 
@@ -108,6 +110,9 @@ class Preview {
     clearTimeout(this.timer);
     this.ready = false;
     for (const resolve of this.probes.splice(0)) resolve(PROBE_UNANSWERED);
+    // Nothing keeps these up to date once the preview is gone.
+    for (const file of this.published) this.diagnostics.delete(vscode.Uri.file(file));
+    this.published.clear();
     this.statusItem.dispose();
   }
 
@@ -131,11 +136,15 @@ class Preview {
     const workspace = await collectWorkspace(this.folder, names, readText);
     const result = await this.pipeline.update(workspace);
     if (generation !== this.generation) return;
-    publishDiagnostics(
+    const published = publishDiagnostics(
       this.diagnostics,
       workspace.files.map((f) => f.path),
       result.diagnostics,
     );
+    for (const file of this.published) {
+      if (!published.has(file)) this.diagnostics.delete(vscode.Uri.file(file));
+    }
+    this.published = published;
     if (result.blocked) {
       // Keep the last valid picture, and say why it is not following.
       this.blocked = result.blocked.reason === "errors" ? result.blocked.errors : 1;
@@ -176,11 +185,12 @@ async function readText(path: string): Promise<string | undefined> {
   return readFile(path, "utf8").catch(() => undefined);
 }
 
+/** Sets the Problems entries of `files` (and any file a diagnostic names); returns those files. */
 function publishDiagnostics(
   collection: vscode.DiagnosticCollection,
   files: readonly string[],
   diagnostics: readonly OpscrDiagnostic[],
-): void {
+): Set<string> {
   const byFile = new Map<string, vscode.Diagnostic[]>(files.map((f) => [f, []]));
   for (const d of diagnostics) {
     if (!d.file) continue;
@@ -204,6 +214,7 @@ function publishDiagnostics(
     byFile.set(d.file, [...(byFile.get(d.file) ?? []), diagnostic]);
   }
   for (const [file, list] of byFile) collection.set(vscode.Uri.file(file), list);
+  return new Set(byFile.keys());
 }
 
 export function activate(context: vscode.ExtensionContext): void {

@@ -3,7 +3,7 @@ import { useReactFlow } from "@xyflow/react";
 import { getPendingNodeIds, getSuggestionIdForNode, type PendingNodePreview } from "@/features/llm";
 import { useLLMChat } from "../chat";
 import { PendingNodeToolbar } from "../selection-actions/PendingNodeToolbar";
-import { FIT_VIEW_DURATION_MS, FIT_VIEW_PADDING } from "../canvas.constants";
+import { frameComponents } from "../focus/focusComponents";
 
 interface PendingNodeToolbarsProps {
   pendingNodeIds: string[];
@@ -71,14 +71,7 @@ export function PendingSuggestionToolbars({
     if (!preview) return;
     focusedPreviews.current.add(preview.suggestionId);
     // Next frame: React Flow has rendered and measured the new nodes by then.
-    requestAnimationFrame(() => {
-      void reactFlowInstance.fitView({
-        nodes: preview.nodeIds.map((id) => ({ id })),
-        duration: FIT_VIEW_DURATION_MS,
-        padding: FIT_VIEW_PADDING,
-        maxZoom: 1,
-      });
-    });
+    requestAnimationFrame(() => frameComponents(reactFlowInstance, preview.nodeIds));
   }, [pendingPreviews, reactFlowInstance]);
   const accept = useCallback(
     (suggestionId: string) => {
