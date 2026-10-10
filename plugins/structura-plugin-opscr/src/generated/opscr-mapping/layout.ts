@@ -26,6 +26,11 @@ export interface ViewBox {
 export interface ViewLayoutResult {
   boxes: ReadonlyMap<string, ViewBox>;
   edgeRoutes: ReadonlyMap<string, ReadonlyArray<{ x: number; y: number }>>;
+  /**
+   * The parent each box is relative to (null: the root), when known. A box moved to another
+   * parent no longer means anything there — see `stabilizeLayout`.
+   */
+  parents?: ReadonlyMap<string, string | null>;
 }
 
 /** Leaf size — Structura's `DEFAULT_NODE_W`/`DEFAULT_NODE_H`. */

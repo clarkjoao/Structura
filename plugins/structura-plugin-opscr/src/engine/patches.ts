@@ -2,7 +2,7 @@ import {
   appendDocument,
   appendSeqItem,
   applyEdits,
-  cutDocument,
+  cutDocuments,
   cutSeqItem,
   documentSource,
   isMap,
@@ -155,6 +155,21 @@ function push(edits: Map<number, TextEdit[]>, at: number, edit: TextEdit) {
   edits.set(at, [...(edits.get(at) ?? []), edit]);
 }
 
+/** Documents to cut, by file index then document index — cut together, see `cutDocuments`. */
+type DocCuts = Map<number, number[]>;
+
+function cutDoc(cuts: DocCuts, at: number, doc: number) {
+  cuts.set(at, [...(cuts.get(at) ?? []), doc]);
+}
+
+/** The documents in `cuts` as edits, run by run, so adjacent cuts never overlap. */
+function pushDocCuts(parsed: readonly Parsed[], cuts: DocCuts, edits: Map<number, TextEdit[]>) {
+  for (const [at, docs] of cuts) {
+    const { file, docs: all } = parsed[at]!;
+    for (const edit of cutDocuments(file.text, all, docs)) push(edits, at, edit);
+  }
+}
+
 /** Renames an element and every edge end naming it. Null when unknown or `to` is taken. */
 export function renameElement(
   files: readonly SourceText[],
@@ -212,6 +227,7 @@ function cutEdges(
   parsed: readonly Parsed[],
   cut: readonly FoundEdge[],
   edits: Map<number, TextEdit[]>,
+  docCuts: DocCuts,
 ) {
   const byDoc = new Map<string, FoundEdge[]>();
   for (const edge of cut) {
@@ -224,7 +240,7 @@ function cutEdges(
     const seq = docs[doc]!.getIn(["spec", "edges"], true);
     if (!isSeq(seq)) return false;
     if (list.length === seq.items.length) {
-      push(edits, at, cutDocument(file.text, docs, doc));
+      cutDoc(docCuts, at, doc);
       continue;
     }
     for (const edge of list) {
@@ -261,9 +277,10 @@ export function removeElements(
   const cut = edges.filter((e) =>
     found.some(({ ref }) => same(e.source.from, ref) || same(e.source.to, ref)),
   );
+  const docCuts: DocCuts = new Map();
   for (const { ref, at, doc } of found) {
     const { file, docs } = parsed[at]!;
-    push(edits, at, cutDocument(file.text, docs, doc));
+    cutDoc(docCuts, at, doc);
     removed.set(keyOf(ref), {
       file: file.name,
       source: documentSource(file.text, docs[doc]!),
@@ -272,7 +289,8 @@ export function removeElements(
         .map((e) => e.source),
     });
   }
-  if (!cutEdges(parsed, cut, edits)) return null;
+  if (!cutEdges(parsed, cut, edits, docCuts)) return null;
+  pushDocCuts(parsed, docCuts, edits);
   return { files: commit(files, edits), removed };
 }
 
@@ -328,21 +346,33 @@ export function removeEdge(
   const found = parsed && findEdge(parsed, match);
   if (!parsed || !found) return null;
   const edits = new Map<number, TextEdit[]>();
-  if (!cutEdges(parsed, [found], edits)) return null;
+  const docCuts: DocCuts = new Map();
+  if (!cutEdges(parsed, [found], edits, docCuts)) return null;
+  pushDocCuts(parsed, docCuts, edits);
   return { files: commit(files, edits), edge: found.source };
 }
 
+/**
+ * Retypes an edge in place. Returns the files and the edge's index among the edges with its
+ * ends and new type — where it sits in the text, not necessarily last.
+ */
 export function setEdgeType(
   files: readonly SourceText[],
   match: EdgeMatch,
   type: string,
-): SourceText[] | null {
+): { files: SourceText[]; n: number } | null {
   const parsed = parseAll(files);
   const found = parsed && findEdge(parsed, match);
   if (!parsed || !found) return null;
   const item = parsed[found.at]!.docs[found.doc]!.getIn(["spec", "edges", found.item], true);
   const node = scalarAt(item, "type");
-  return node ? commit(files, new Map([[found.at, [replaceScalar(node, type)]]])) : null;
+  if (!node) return null;
+  const next = commit(files, new Map([[found.at, [replaceScalar(node, type)]]]));
+  // A scalar changed in place: every edge keeps its file, document and item.
+  const n = edgesOf(parseAll(next)!)
+    .filter((e) => matches(e.source, { ...match, type }))
+    .findIndex((e) => e.at === found.at && e.doc === found.doc && e.item === found.item);
+  return { files: next, n };
 }
 
 /** A flow-map scalar: plain when nothing in it would end or open a flow collection. */
@@ -530,7 +560,10 @@ export function setParent(
   if (!parent) {
     if (!edge) return [...files];
     const edits = new Map<number, TextEdit[]>();
-    return cutEdges(parsed, [edge], edits) ? commit(files, edits) : null;
+    const docCuts: DocCuts = new Map();
+    if (!cutEdges(parsed, [edge], edits, docCuts)) return null;
+    pushDocCuts(parsed, docCuts, edits);
+    return commit(files, edits);
   }
   if (!edge) return addEdge(files, { from: ref, to: parent, type: "belongsTo" });
   if (same(edge.source.to, parent)) return [...files];

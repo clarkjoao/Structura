@@ -56,7 +56,9 @@ const previous = result({
 describe("stabilizeLayout", () => {
   it("returns the fresh layout when there is nothing to keep", () => {
     const fresh = result({ "Application/api": box(1, 2) });
-    expect(stabilizeLayout(before, fresh, undefined)).toBe(fresh);
+    const stable = stabilizeLayout(before, fresh, undefined);
+    expect(stable.boxes).toBe(fresh.boxes);
+    expect(stable.parents?.get("Application/api")).toBe("ApplicationService/orders");
   });
 
   it("keeps every surviving element where it was, whatever the engine says now", () => {
@@ -70,6 +72,26 @@ describe("stabilizeLayout", () => {
     const boxes = stabilizeLayout(after, fresh, previous).boxes;
     expect(boxes.get("ApplicationService/orders")).toMatchObject({ x: 100, y: 100 });
     expect(boxes.get("Application/api")).toMatchObject({ x: 40, y: 40, width: 180, height: 80 });
+  });
+
+  it("places an element moved to another parent like a new one", () => {
+    // api leaves the orders panel for the root; its old box was relative to the panel.
+    const moved = buildTechnicalView({
+      manifests: [m("ApplicationService", "orders"), m("Application", "api")],
+    });
+    const known = { ...previous, parents: stabilizeLayout(before, previous, undefined).parents };
+    const fresh = result({
+      "ApplicationService/orders": box(0, 0, 360, 200),
+      "Application/api": box(400, 0),
+    });
+    const boxes = stabilizeLayout(moved, fresh, known).boxes;
+    // Next to the panel as the engine placed it (shifted with the panel), not at (40, 40).
+    expect(boxes.get("Application/api")).toMatchObject({ x: 500, y: 100 });
+    // Without parents (a sidecar, say), the old box is kept as before.
+    expect(stabilizeLayout(moved, fresh, previous).boxes.get("Application/api")).toMatchObject({
+      x: 40,
+      y: 40,
+    });
   });
 
   it("moves nothing when only text changed", () => {
