@@ -1,13 +1,16 @@
 import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
 import {
   CONFIG_FILE,
+  SourceIndex,
   buildTechnicalView,
   isManifestName,
   placeView,
   stabilizeLayout,
   toImporterGraph,
   toLayoutGraph,
+  type DroppedEdge,
   type ImporterGraph,
+  type OmittedManifest,
   type ViewLayoutResult,
 } from "./generated/opscr-mapping";
 import { layoutView } from "./generated/opscr-layout";
@@ -17,6 +20,11 @@ export interface Projection {
   diagnostics: Diagnostic[];
   /** Absent while the YAML does not parse: the diagram stays as it is. */
   graph?: ImporterGraph;
+  /** Where each element of `graph` is written (file names as given), with `graph`. */
+  sources?: SourceIndex;
+  /** Manifests of Kinds the diagram does not draw, and edges it cannot draw, with `graph`. */
+  omitted?: OmittedManifest[];
+  dropped?: DroppedEdge[];
 }
 
 export { CONFIG_FILE };
@@ -46,13 +54,16 @@ export async function projectWorkspace(
   return {
     diagnostics: result.diagnostics,
     graph: toImporterGraph(placeView(view, stable), seeded ? { x: 0, y: 0 } : ORIGIN),
+    sources: new SourceIndex(workspace.manifests, view),
+    omitted: view.omitted,
+    dropped: view.dropped,
   };
 }
 
 /** `projectWorkspace` as the engine calls it (file name + text). */
-export const projector: Projector = (manifests, config, previous) =>
+export const projector = ((manifests, config, previous) =>
   projectWorkspace(
     manifests.map((f) => ({ path: f.name, content: f.text })),
     config ? { path: config.name, content: config.text } : undefined,
     previous,
-  );
+  )) satisfies Projector;

@@ -43,6 +43,40 @@ const en = {
   conflictBanner: (file: string) => `${file} changed in the folder. Your edits are not saved.`,
   useDisk: "Use the folder's version",
   keepMine: "Keep mine",
+  compare: "Compare",
+  closeCompare: "Close comparison",
+  compareHint:
+    "The folder's version (red) against yours (green). Edit yours here, then pick a side.",
+  emptyFolder: "This folder has no opscr manifests yet.",
+  createFirst: "Create a first manifest",
+  notCarriedTitle: (n: number) =>
+    `${n} thing${n === 1 ? "" : "s"} not carried between the YAML and the diagram`,
+  onCanvasOnly: "On the canvas, not in the YAML",
+  inYamlOnly: "In the YAML, not on the canvas",
+  unwritten: (
+    reason: "end-outside" | "not-a-type" | "not-written",
+    label: string,
+    type?: string,
+  ) =>
+    reason === "end-outside"
+      ? `${label ? `“${label}”` : "A connection"}: an end is not in the YAML yet — written once it is`
+      : reason === "not-a-type"
+        ? `“${label}” is not an opscr edge type — the YAML says ${type}`
+        : `“${label}” could not be written to a Relationship`,
+  omitted: (kind: string, name: string) => `${kind} ${name}: this view does not draw ${kind}`,
+  dropped: (
+    type: string,
+    from: string,
+    to: string,
+    reason: "not-drawn" | "missing" | "second-parent" | "cycle",
+  ) =>
+    `${from} ${type} ${to}: ` +
+    {
+      "not-drawn": "an end is not drawn in this view",
+      missing: "an end is not declared",
+      "second-parent": "a second belongsTo — the first one places it",
+      cycle: "it would put an element inside itself",
+    }[reason],
   chatTitle: (folder: string) => (folder ? `opscr · ${folder}` : "opscr"),
   chatSubtitle: "Ask for changes to the manifests; the diagram follows.",
   chatSuggestions: [
@@ -106,6 +140,40 @@ const ptBR: typeof en = {
   conflictBanner: (file: string) => `${file} mudou na pasta. Suas edições não estão salvas.`,
   useDisk: "Usar a versão da pasta",
   keepMine: "Manter a minha",
+  compare: "Comparar",
+  closeCompare: "Fechar comparação",
+  compareHint:
+    "A versão da pasta (vermelho) contra a sua (verde). Edite a sua aqui e depois escolha um lado.",
+  emptyFolder: "Esta pasta ainda não tem manifestos opscr.",
+  createFirst: "Criar um primeiro manifesto",
+  notCarriedTitle: (n: number) =>
+    `${n} ${n === 1 ? "item não levado" : "itens não levados"} entre o YAML e o diagrama`,
+  onCanvasOnly: "No canvas, fora do YAML",
+  inYamlOnly: "No YAML, fora do canvas",
+  unwritten: (
+    reason: "end-outside" | "not-a-type" | "not-written",
+    label: string,
+    type?: string,
+  ) =>
+    reason === "end-outside"
+      ? `${label ? `“${label}”` : "Uma conexão"}: uma ponta ainda não está no YAML — entra quando estiver`
+      : reason === "not-a-type"
+        ? `“${label}” não é um tipo de aresta do opscr — o YAML diz ${type}`
+        : `“${label}” não pôde ser escrita num Relationship`,
+  omitted: (kind: string, name: string) => `${kind} ${name}: esta visão não desenha ${kind}`,
+  dropped: (
+    type: string,
+    from: string,
+    to: string,
+    reason: "not-drawn" | "missing" | "second-parent" | "cycle",
+  ) =>
+    `${from} ${type} ${to}: ` +
+    {
+      "not-drawn": "uma ponta não é desenhada nesta visão",
+      missing: "uma ponta não está declarada",
+      "second-parent": "um segundo belongsTo — o primeiro é que o posiciona",
+      cycle: "colocaria um elemento dentro de si mesmo",
+    }[reason],
   chatTitle: (folder: string) => (folder ? `opscr · ${folder}` : "opscr"),
   chatSubtitle: "Peça mudanças nos manifestos; o diagrama acompanha.",
   chatSuggestions: [
