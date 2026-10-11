@@ -52,4 +52,12 @@ describe("v1.11 canvas API", () => {
       token: before + 1,
     });
   });
+
+  it("stops tracking a subscription the plugin ended itself", () => {
+    const tracker = createContributionTracker();
+    const api = createScopedPluginApi(manifest, tracker, new InMemoryAdapter());
+    for (let i = 0; i < 3; i++) api.canvas.onSelectionChange(() => {})();
+    api.onDiagramChange(() => {})();
+    expect(tracker.unsubscribers).toHaveLength(0);
+  });
 });

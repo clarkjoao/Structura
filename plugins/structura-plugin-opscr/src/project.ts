@@ -5,6 +5,7 @@ import {
   buildTechnicalView,
   isManifestName,
   placeView,
+  previousCoversView,
   stabilizeLayout,
   toImporterGraph,
   toLayoutGraph,
@@ -48,7 +49,10 @@ export async function projectWorkspace(
   }
   const view = buildTechnicalView(workspace);
   const seeded = previous && previous.boxes.size > 0 ? previous : undefined;
-  const fresh = await layoutView(toLayoutGraph(view), seeded?.boxes);
+  // An edit of text alone moves nothing: the layout engine would only be ignored.
+  const fresh = previousCoversView(view, seeded)
+    ? { boxes: new Map(), edgeRoutes: new Map() }
+    : await layoutView(toLayoutGraph(view), seeded?.boxes);
   const stable = stabilizeLayout(view, fresh, seeded);
   // A first sync is anchored at ORIGIN; later ones keep the canvas's own coordinates.
   return {
