@@ -25,4 +25,13 @@ describe("PluginCodeEditor", () => {
     render(<PluginCodeEditor value="a: 1" />);
     expect(screen.getByTestId("monaco-stand-in").closest(".nokey")).not.toBeNull();
   });
+
+  it("compares `original` with the value side by side, still saving on Ctrl/Cmd+S", () => {
+    const onSave = vi.fn();
+    render(<PluginCodeEditor value="a: 2" original="a: 1" onSave={onSave} />);
+    expect(screen.getByTestId("monaco-diff-original").textContent).toBe("a: 1");
+    expect(screen.getByTestId("monaco-diff-modified").textContent).toBe("a: 2");
+    fireEvent.keyDown(screen.getByTestId("monaco-diff-modified"), { key: "s", metaKey: true });
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
 });

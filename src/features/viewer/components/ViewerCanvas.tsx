@@ -34,9 +34,9 @@ import {
 } from "@/features/canvas/flow";
 import { useNodeTypes } from "@/features/canvas/nodes/node-types";
 import CanvasSearch from "@/features/canvas/toolbar/CanvasSearch";
-import { frameComponents } from "@/features/canvas/focus/focusComponents";
+import { frameComponents, frameUnlessInView } from "@/features/canvas/focus/focusComponents";
 import { KEY, keyMatchesLetter } from "@/lib/core/keyboard";
-import { allInView, framingSignature } from "./framing";
+import { framingSignature } from "./framing";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
 import { iconLookupForDiagram } from "../icons/diagramIconLookup";
@@ -507,14 +507,8 @@ const ViewerCanvasContent = ({
       setHighlight(edge.id, [edge.source, edge.target]);
       ids = [edge.source, edge.target];
     }
-    const rects = ids.flatMap((id) => {
-      const node = reactFlowInstance.getInternalNode(id);
-      const { width, height } = node?.measured ?? {};
-      if (!node || width === undefined || height === undefined) return [];
-      return [{ ...node.internals.positionAbsolute, width, height }];
-    });
-    const { transform, width, height } = flowStore.getState();
-    if (!allInView(rects, transform, width, height)) frameNodes(ids);
+    const { width, height } = flowStore.getState();
+    frameUnlessInView(reactFlowInstance, ids, { width, height });
     // Only a new pointing: not when the highlight it set changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [select]);

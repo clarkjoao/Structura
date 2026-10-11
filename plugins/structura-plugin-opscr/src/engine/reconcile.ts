@@ -175,8 +175,23 @@ export interface ReconcileResult {
   notInYaml: number;
   /** Their ids. */
   outside: string[];
+  /** Canvas connections the YAML does not say as drawn (see `UnwrittenConnection`). */
+  unwritten: UnwrittenConnection[];
   /** True when a file did not parse and nothing was looked at. */
   skipped: boolean;
+}
+
+/**
+ * A canvas connection the YAML does not carry as it is drawn: an end is outside the YAML (it is
+ * written once both ends are), its label is not an opscr edge type (the edge keeps `type`), or
+ * no Relationship could take it.
+ */
+export interface UnwrittenConnection {
+  id: string;
+  reason: "end-outside" | "not-a-type" | "not-written";
+  label: string;
+  /** The edge type the YAML has for it, when it has the edge. */
+  type?: string;
 }
 
 /**
@@ -200,6 +215,7 @@ export function reconcile(
     refusedProviders: [],
     notInYaml: 0,
     outside: [],
+    unwritten: [],
   };
   if (input.some((f) => !parseDocuments(f.text))) return { ...unchanged, skipped: true };
 
@@ -351,11 +367,15 @@ export function reconcile(
   //    undo. Adopt an equal edge the binding has not claimed, else add one.
   const keyById = new Map(Object.entries(state.ids).map(([key, id]) => [id, key]));
   const claimed = new Set(Object.values(state.connections));
+  const unwritten: UnwrittenConnection[] = [];
   for (const connection of diagram.connections) {
     if (claimed.has(connection.id)) continue;
     const source = keyById.get(connection.sourceId);
     const target = keyById.get(connection.targetId);
-    if (!source || !target) continue;
+    if (!source || !target) {
+      unwritten.push({ id: connection.id, reason: "end-outside", label: connection.label.trim() });
+      continue;
+    }
     const tomb = tombs.connections[connection.id];
     delete tombs.connections[connection.id];
     const label = connection.label.trim();
@@ -382,7 +402,10 @@ export function reconcile(
         },
         tomb?.edge.relationship,
       );
-      if (!added) continue;
+      if (!added) {
+        unwritten.push({ id: connection.id, reason: "not-written", label, type });
+        continue;
+      }
       files = added;
       n = count;
     }
@@ -429,6 +452,15 @@ export function reconcile(
     state.connections[connectionKey(parsed.source, parsed.target, label, retyped.n)] = id;
   }
 
+  // Bound connections whose label the edge type cannot follow: not a type, or not retyped.
+  for (const [key, id] of Object.entries(state.connections)) {
+    const label = liveConnections.get(id)?.label.trim() ?? "";
+    const type = parseConnectionKey(key)?.type;
+    if (!label || !type || label === type) continue;
+    if (!isFlowType(label)) unwritten.push({ id, reason: "not-a-type", label, type });
+    else if (unretyped.has(id)) unwritten.push({ id, reason: "not-written", label, type });
+  }
+
   revert.update.push(...updates.values());
   const boundNow = bound();
   const removing = new Set(revert.remove);
@@ -448,6 +480,7 @@ export function reconcile(
     refusedProviders,
     notInYaml: outside.length,
     outside,
+    unwritten,
     skipped: false,
   };
 }
