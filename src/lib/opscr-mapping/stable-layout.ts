@@ -11,6 +11,29 @@ const overlaps = (a: ViewBox, b: ViewBox): boolean =>
 
 const distance = (a: ViewBox, b: ViewBox): number => Math.hypot(a.x - b.x, a.y - b.y);
 
+/** Whether `previous` still places `id`: it has a box there, under the same parent. */
+const keeps = (
+  previous: ViewLayoutResult,
+  id: string,
+  parentOf: ReadonlyMap<string, string | null>,
+): boolean =>
+  previous.boxes.has(id) &&
+  (!previous.parents?.has(id) || previous.parents.get(id) === (parentOf.get(id) ?? null));
+
+/**
+ * Whether `stabilizeLayout` would place every element of `view` from `previous` alone — no new
+ * element, none under another parent. The layout engine's result is not read then, so a host
+ * can skip running it: an edit of text alone (a description, a provider) costs no layout.
+ */
+export function previousCoversView(
+  view: TechnicalView,
+  previous: ViewLayoutResult | undefined,
+): boolean {
+  if (!previous) return false;
+  const parentOf = new Map(view.nodes.map((n) => [n.id, n.parentId]));
+  return view.nodes.every((n) => keeps(previous, n.id, parentOf));
+}
+
 /**
  * Keeps a picture still across an edit.
  *
@@ -33,19 +56,16 @@ export function stabilizeLayout(
 
   const childrenOf = new Map<string | null, string[]>();
   for (const node of view.nodes) {
-    childrenOf.set(node.parentId, [...(childrenOf.get(node.parentId) ?? []), node.id]);
+    const siblings = childrenOf.get(node.parentId);
+    if (siblings) siblings.push(node.id);
+    else childrenOf.set(node.parentId, [node.id]);
   }
   const depth = new Map<string, number>();
   /**
    * Boxes that still mean something: an element moved to another parent keeps its size, but
    * its old position was relative to the old parent — it is placed like a new one.
    */
-  const kept = new Map(
-    [...previous.boxes].filter(
-      ([id]) =>
-        !previous.parents?.has(id) || previous.parents.get(id) === (parentOf.get(id) ?? null),
-    ),
-  );
+  const kept = new Map([...previous.boxes].filter(([id]) => keeps(previous, id, parentOf)));
   const depthOf = (id: string): number => {
     const known = depth.get(id);
     if (known !== undefined) return known;
