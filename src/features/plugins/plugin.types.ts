@@ -336,7 +336,10 @@ export interface PluginCodeEditorProps {
   path?: string;
   /** v1.11 — puts the cursor on this 1-based line and scrolls to it; a new `token` does it again. */
   revealLine?: { line: number; token: number } | null;
-  /** v1.11 — the user moved the cursor to this 1-based line (not `revealLine`, not a new value). */
+  /**
+   * v1.11 — the user moved the cursor to this 1-based line, with a click or the arrow keys: not
+   * by typing, pasting or undoing, nor through `revealLine` or a new value.
+   */
   onCursorLine?: (line: number) => void;
   /**
    * v1.11 — shows a comparison instead: this text, read-only, against `value`, editable — side

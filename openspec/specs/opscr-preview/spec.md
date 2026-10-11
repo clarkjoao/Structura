@@ -1,6 +1,7 @@
 # opscr-preview Specification
 
 ## Purpose
+
 A live, read-only preview of an opscr workspace inside VSCode, rendered by Structura, that follows
 the text as it is edited without rearranging what the reader has already seen.
 
