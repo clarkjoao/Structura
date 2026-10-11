@@ -1481,7 +1481,11 @@
       "unauthorized": "A sessão recusou sua credencial de host.",
       "unreachable": "A conexão com a sessão foi perdida."
     },
-    "lockedBy": "{{name}} está editando isto"
+    "lockedBy": "{{name}} está editando isto",
+    "following": "Seguindo {{name}}",
+    "stopFollowing": "Parar de seguir",
+    "followPeer": "Seguir {{name}}",
+    "stopFollowingPeer": "Parar de seguir {{name}}"
   },
   "elementPresets": {
     "myPresets": "Meus presets",

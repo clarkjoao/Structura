@@ -68,7 +68,7 @@ reverts only your own work.
 
 ## Presence
 
-- **Cursors**: coalesced per relay every 50 ms; lossy under backpressure.
+- **Cursors**: sent in diagram (flow) coordinates, so they land on the same element at any zoom; coalesced per relay every 50 ms; lossy under backpressure. A participant can follow another's cursor from the toolbar avatars.
 - **Selection**: shown on the element.
 - **Soft locks**: dragging a node or editing its name or description takes a 3 s lock, renewed
   while the gesture lasts. Peers see who holds it (a dashed ring with a lock badge), and the canvas

@@ -485,3 +485,51 @@ export async function movePeerOnce(options: {
   await Promise.race([done, new Promise((r) => setTimeout(r, 10_000))]);
   return { applied };
 }
+
+/** One peer that stays in the room and points where the spec tells it to. */
+let pointer: Peer | null = null;
+/** Cursors the pointer peer received from others, last one per client. */
+let seenCursors: Record<string, { x: number; y: number } | null> = {};
+
+export async function startPointerPeer(options: {
+  url: string;
+  roomId: string;
+  name: string;
+}): Promise<null> {
+  pointer?.close();
+  seenCursors = {};
+  pointer = new Peer(
+    options.url,
+    options.roomId,
+    { id: `pointer-${Date.now()}`, name: options.name, color: "#e11d48" },
+    (m) => {
+      if (m.type !== "cursors" || !Array.isArray(m.entries)) return;
+      for (const entry of m.entries) {
+        const e = record(entry);
+        if (String(e.clientId) === pointer?.user.id) continue;
+        const cursor = record(e.cursor);
+        seenCursors[String(e.clientId)] =
+          e.cursor === null ? null : { x: Number(cursor.x), y: Number(cursor.y) };
+      }
+    },
+  );
+  await pointer.open();
+  return null;
+}
+
+/** Put the pointer peer's cursor at a flow point (the diagram's own coordinates). */
+export function movePointerPeer(options: { x: number; y: number }): null {
+  pointer?.send({ type: "cursor", cursor: { x: options.x, y: options.y }, activeElementId: null });
+  return null;
+}
+
+export function stopPointerPeer(): null {
+  pointer?.close();
+  pointer = null;
+  return null;
+}
+
+/** The cursors the pointer peer has seen, by client id. */
+export function pointerPeerSeen(): Record<string, { x: number; y: number } | null> {
+  return seenCursors;
+}

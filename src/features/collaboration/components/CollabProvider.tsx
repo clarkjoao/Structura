@@ -1,13 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useActiveDiagramId, useDiagramStore } from "@/features/diagram";
@@ -17,65 +8,10 @@ import { readPrefs } from "../utils/collab-preferences";
 import { clearHostSession, readHostSession, writeHostSession } from "../utils/hostSession";
 import { randomColor } from "../utils/collab-colors";
 import { useCollabStore } from "../store/collab.store";
-import type { CollabSession as CollabSessionInfo, CollabStatus, CollabUser } from "../types";
+import type { CollabSession as CollabSessionInfo, CollabUser } from "../types";
 import { CollabRoomFullModal } from "./CollabRoomFullModal";
+import { CollabContext, type CollabContextValue } from "./collab-context";
 import { endReasonMessage } from "../utils/endReasonMessage";
-
-interface CollabContextValue {
-  /**
-   * The session as the UI around the canvas needs it. Peers' cursor positions are left out of
-   * its identity — they change many times a second per person, and every consumer of this
-   * context would re-render with them. Read live cursors from `useCollabStore`.
-   */
-  session: CollabSessionInfo | null;
-  isReady: boolean;
-  status: CollabStatus;
-  isGuest: boolean;
-  hostOnline: boolean;
-  sessionClosedByHost: boolean;
-  hostDisconnected: boolean;
-  roomFullReason: string | null;
-  participantCount: number;
-  maxParticipants: number;
-  closeSession: () => void;
-  collabUrl: string;
-  updateCursor: (cursor: { x: number; y: number } | null) => void;
-  updateSelectedNode: (id: string | null) => void;
-  updateEditingComponent: (id: string | null) => void;
-  editingComponents: Map<string, CollabUser>;
-  peerLimitReached: boolean;
-  /** Ask for the soft locks on elements for a drag or text edit (see collab-presence). */
-  lockElements: (ids: string[]) => void;
-  renewElementLocks: (ids: string[]) => void;
-  unlockElements: (ids: string[]) => void;
-}
-
-const CollabContext = createContext<CollabContextValue>({
-  session: null,
-  isReady: false,
-  isGuest: false,
-  hostOnline: true,
-  status: "idle",
-  sessionClosedByHost: false,
-  hostDisconnected: false,
-  roomFullReason: null,
-  participantCount: 0,
-  maxParticipants: 50,
-  closeSession: () => {},
-  collabUrl: "",
-  updateCursor: () => {},
-  updateSelectedNode: () => {},
-  updateEditingComponent: () => {},
-  editingComponents: new Map(),
-  peerLimitReached: false,
-  lockElements: () => {},
-  renewElementLocks: () => {},
-  unlockElements: () => {},
-});
-
-export function useCollab() {
-  return useContext(CollabContext);
-}
 
 interface CollabProviderProps {
   children: ReactNode;
@@ -276,14 +212,6 @@ export function CollabProvider({
     sessionRef.current?.client.sendLock("release", ids);
   }, []);
 
-  const editingComponents = useMemo(() => {
-    const map = new Map<string, CollabUser>();
-    for (const peer of session?.peers ?? []) {
-      if (peer.activeElementId) map.set(peer.activeElementId, peer.user);
-    }
-    return map;
-  }, [session]);
-
   const handleCloseRoomFullModal = useCallback(() => {
     useCollabStore.getState().setRoomFullReason(null);
   }, []);
@@ -304,8 +232,6 @@ export function CollabProvider({
       collabUrl,
       updateCursor,
       updateSelectedNode: updateActive,
-      updateEditingComponent: updateActive,
-      editingComponents,
       peerLimitReached: participantCount >= maxParticipants,
       lockElements,
       renewElementLocks,
@@ -326,7 +252,6 @@ export function CollabProvider({
       collabUrl,
       updateCursor,
       updateActive,
-      editingComponents,
       lockElements,
       renewElementLocks,
       unlockElements,

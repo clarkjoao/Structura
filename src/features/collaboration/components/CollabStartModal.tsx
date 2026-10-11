@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { readPrefs, writePrefs } from "../utils/collab-preferences";
 import { testServer } from "../utils/collab.utils";
 import { copyText } from "../utils/copyText";
-import { useCollab } from "./CollabProvider";
+import { useCollab } from "./collab-context";
 
 interface CollabStartModalProps {
   open: boolean;

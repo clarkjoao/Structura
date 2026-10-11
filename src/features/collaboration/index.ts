@@ -1,7 +1,7 @@
 // ─── Components ─────────────────────────────────────────────────────────────────
-export { CollabProvider, useCollab } from "./components/CollabProvider";
+export { CollabProvider } from "./components/CollabProvider";
+export { useCollab } from "./components/collab-context";
 export { CollabEditingWarning } from "./components/CollabEditingWarning";
-export { CollabCursors } from "./components/CollabCursors";
 export { CollabToolbar } from "./components/CollabToolbar";
 export { CollabStartModal } from "./components/CollabStartModal";
 // Not `CollabRoom`: it mounts the whole editor, and anything that imports this

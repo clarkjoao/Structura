@@ -12,6 +12,7 @@ import QuickInsertPopover from "./toolbar/QuickInsertPopover";
 import CanvasSearch from "./toolbar/CanvasSearch";
 import { CanvasViewOptions } from "./toolbar/components/CanvasViewOptions";
 import { NothingInViewCard } from "./components/NothingInViewCard";
+import { CollabPresenceLayer } from "./components/CollabPresenceLayer";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
 import { useViewportOccupancy } from "./hooks/useViewportOccupancy";
 import { useCanvasPreferencesStore } from "./preferences";
@@ -514,6 +515,7 @@ const Canvas = (props: CanvasProps = {}) => {
                   )}
                 </>
               )}
+              <CollabPresenceLayer />
               {occupancy.hasNodes && !occupancy.anyNodeVisible && (
                 <NothingInViewCard elementCount={occupancy.nodeCount} />
               )}

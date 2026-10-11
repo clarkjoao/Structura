@@ -1,11 +1,11 @@
-import { useCallback, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useState } from "react";
 import { Loader2, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Canvas, DiagramFlowProvider, FlowModeProvider } from "@/features/canvas";
-import { CollabProvider, useCollab } from "./CollabProvider";
-import { CollabCursors } from "./CollabCursors";
+import { CollabProvider } from "./CollabProvider";
+import { useCollab } from "./collab-context";
 import { CollabJoinModal } from "./CollabJoinModal";
 import { CollabSessionClosedModal } from "./CollabSessionClosedModal";
 import { useActiveDiagram, useDiagramActions } from "@/features/diagram";
@@ -15,36 +15,13 @@ import { useCollabStore } from "../store/collab.store";
 function CollabRoomInner() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { session, isReady, status, hostOnline, updateCursor } = useCollab();
+  const { session, isReady, status, hostOnline } = useCollab();
   const endReason = useCollabStore((s) => s.endReason);
   const endDetail = useCollabStore((s) => s.endDetail);
   const { importDiagram } = useDiagramActions();
   const diagram = useActiveDiagram();
   const hostName = useCollabStore((s) => s.hostName) ?? t("collaboration.hostFallback");
   const isSessionClosed = endReason !== null;
-  const lastCursorAtRef = useRef(0);
-
-  const handleCanvasPointerMove = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      if (!session) return;
-
-      const now = performance.now();
-      if (now - lastCursorAtRef.current >= 33) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        updateCursor({
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-        });
-        lastCursorAtRef.current = now;
-      }
-    },
-    [session, updateCursor],
-  );
-
-  const handleCanvasPointerLeave = useCallback(() => {
-    if (!session) return;
-    updateCursor(null);
-  }, [session, updateCursor]);
 
   const handleImportAndContinue = () => {
     if (!diagram) {
@@ -99,17 +76,12 @@ function CollabRoomInner() {
       {diagram ? (
         <>
           <CollabRoomToolbar diagram={diagram} />
-          <div
-            className="flex flex-1 min-h-0 relative"
-            onPointerMove={handleCanvasPointerMove}
-            onPointerLeave={handleCanvasPointerLeave}
-          >
+          <div className="flex flex-1 min-h-0 relative">
             <FlowModeProvider>
               <DiagramFlowProvider>
                 <Canvas />
               </DiagramFlowProvider>
             </FlowModeProvider>
-            {session && <CollabCursors />}
             {banner && !isSessionClosed && (
               <div
                 role="status"

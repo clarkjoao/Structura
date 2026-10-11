@@ -326,6 +326,7 @@ for (const scenario of SCENARIOS) {
       const everyone = rooms.flatMap((r) => r.members);
       await sleep(3000);
       while (Date.now() < deadline && !everyone.every((m) => m.ready)) await sleep(250);
+      console.log(`  rooms back ${Date.now() - restartedAt} ms after the restart`);
       check(
         everyone.every((m) => m.ready),
         "redis-restart: every room is back (hosts reseeded)",

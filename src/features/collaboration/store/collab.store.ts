@@ -3,7 +3,6 @@ import type {
   CollabEndReason,
   CollabSession,
   CollabStatus,
-  CollabUser,
   ElementLock,
   PeerState,
 } from "../types";
@@ -25,6 +24,8 @@ export interface CollabStoreState {
   maxParticipants: number;
   /** Soft locks held by other participants, by element id. */
   locks: Record<string, ElementLock>;
+  /** The peer (client id) whose cursor this canvas follows, or null. */
+  following: string | null;
 
   setSession: (session: CollabSession | null) => void;
   setStatus: (status: CollabStatus) => void;
@@ -37,13 +38,6 @@ export interface CollabStoreState {
   setPeers: (peers: PeerState[]) => void;
   upsertPeer: (peer: PeerState) => void;
   removePeer: (clientId: string) => void;
-  applyPeerCursorPayload: (input: {
-    clientId: string;
-    user: CollabUser;
-    cursor: { x: number; y: number } | null;
-    activeElementId: string | null;
-    preserveCursorIfMessageNull: boolean;
-  }) => void;
   setLock: (entityId: string, lock: ElementLock | null) => void;
   /** Several lock changes in one update (`null` frees); a multi-selection moves many at once. */
   applyLocks: (changes: ReadonlyMap<string, ElementLock | null>) => void;
@@ -55,6 +49,7 @@ export interface CollabStoreState {
       activeElementId: string | null;
     }>,
   ) => void;
+  setFollowing: (clientId: string | null) => void;
   reset: () => void;
 }
 
@@ -72,6 +67,7 @@ const INITIAL = {
   participantCount: 0,
   maxParticipants: 50,
   locks: {},
+  following: null,
 };
 
 export const createCollabStore = () =>
@@ -131,39 +127,12 @@ export const createCollabStore = () =>
       set((state) => {
         if (!state.session) return state;
         return {
+          following: state.following === clientId ? null : state.following,
           session: {
             ...state.session,
             peers: state.session.peers.filter((peer) => peer.clientId !== clientId),
           },
         };
-      }),
-
-    applyPeerCursorPayload: ({
-      clientId,
-      user,
-      cursor,
-      activeElementId,
-      preserveCursorIfMessageNull,
-    }) =>
-      set((state) => {
-        if (!state.session) return state;
-        const index = state.session.peers.findIndex((peer) => peer.clientId === clientId);
-        const existingCursor = index >= 0 ? state.session.peers[index]!.cursor : null;
-        const resolvedCursor =
-          cursor !== null ? cursor : preserveCursorIfMessageNull ? existingCursor : null;
-        const updatedPeer: PeerState = {
-          clientId,
-          user,
-          cursor: resolvedCursor,
-          activeElementId,
-        };
-        const peers =
-          index === -1
-            ? [...state.session.peers, updatedPeer]
-            : state.session.peers.map((peer, peerIndex) =>
-                peerIndex === index ? updatedPeer : peer,
-              );
-        return { session: { ...state.session, peers } };
       }),
 
     setLock: (entityId, lock) =>
@@ -198,6 +167,8 @@ export const createCollabStore = () =>
         });
         return changed ? { session: { ...state.session, peers } } : state;
       }),
+
+    setFollowing: (following) => set({ following }),
 
     reset: () => set({ ...INITIAL }),
   }));

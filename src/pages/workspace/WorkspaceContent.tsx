@@ -42,7 +42,7 @@ import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandove
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
 import { useDiagramStore, useStorageMonitor, type Diagram, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
-import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
+import { CollabToolbar, useCollab } from "@/features/collaboration";
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { WorkspaceContentProps } from "./types";
@@ -123,7 +123,6 @@ export function WorkspaceContent({
     maxParticipants,
     peerLimitReached,
     closeSession,
-    updateCursor,
     updateSelectedNode,
   } = useCollab();
   // Only what this page draws. The whole diagram changes on every edit — a peer's included — and
@@ -244,23 +243,12 @@ export function WorkspaceContent({
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const lastCursorAtRef = useRef(0);
   const reactFlowInstanceRef = useRef<DiagramFlowInstance | null>(null);
 
+  // The cursor itself is sent from inside the canvas, in flow coordinates (CollabPresenceLayer).
   const handleCanvasPointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!session) return;
-
-      const now = performance.now();
-      if (now - lastCursorAtRef.current >= 33) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        updateCursor({
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-        });
-        lastCursorAtRef.current = now;
-      }
-
       const target = event.target as HTMLElement | null;
       const nodeElement = target?.closest?.(".react-flow__node");
       const edgeElement = target?.closest?.(".react-flow__edge");
@@ -268,14 +256,13 @@ export function WorkspaceContent({
         nodeElement?.getAttribute("data-id") ?? edgeElement?.getAttribute("data-id") ?? null;
       updateSelectedNode(activeId);
     },
-    [session, updateCursor, updateSelectedNode],
+    [session, updateSelectedNode],
   );
 
   const handleCanvasPointerLeave = useCallback(() => {
     if (!session) return;
-    updateCursor(null);
     updateSelectedNode(null);
-  }, [session, updateCursor, updateSelectedNode]);
+  }, [session, updateSelectedNode]);
 
   return (
     <>
@@ -473,7 +460,6 @@ export function WorkspaceContent({
                   if (targetFlow) play(targetFlow);
                 }}
               />
-              {session && <CollabCursors />}
               {showFlows && !activeFlow && !isRecording && (
                 <FlowPanel
                   onClose={() => setShowFlows(false)}

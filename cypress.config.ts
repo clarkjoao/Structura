@@ -5,6 +5,10 @@ import {
   readRoom,
   startSwarm,
   stopSwarm,
+  movePointerPeer,
+  pointerPeerSeen,
+  startPointerPeer,
+  stopPointerPeer,
 } from "./cypress/support/collab-swarm";
 
 export default defineConfig({
@@ -39,6 +43,10 @@ export default defineConfig({
         "collab:stopSwarm": stopSwarm,
         "collab:readRoom": readRoom,
         "collab:movePeerOnce": movePeerOnce,
+        "collab:startPointerPeer": startPointerPeer,
+        "collab:movePointerPeer": movePointerPeer,
+        "collab:stopPointerPeer": stopPointerPeer,
+        "collab:pointerPeerSeen": pointerPeerSeen,
       });
     },
     specPattern: "cypress/e2e/**/*.cy.{js,jsx,ts,tsx}",

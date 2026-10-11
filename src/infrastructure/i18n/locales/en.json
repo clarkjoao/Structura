@@ -1481,7 +1481,11 @@
       "unauthorized": "The session refused your host credential.",
       "unreachable": "The connection to the session was lost."
     },
-    "lockedBy": "{{name}} is editing this"
+    "lockedBy": "{{name}} is editing this",
+    "following": "Following {{name}}",
+    "stopFollowing": "Stop following",
+    "followPeer": "Follow {{name}}",
+    "stopFollowingPeer": "Stop following {{name}}"
   },
   "elementPresets": {
     "myPresets": "My presets",

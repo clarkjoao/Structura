@@ -19,6 +19,45 @@ Cursor updates MAY be dropped under backpressure, because the next update supers
 - **WHEN** a participant's pointer leaves the canvas
 - **THEN** the other participants stop showing that cursor
 
+#### Scenario: Cursor lands on the same element at any zoom
+
+- **GIVEN** A and B view the same diagram with different pan, zoom and window size
+- **WHEN** A points at node N
+- **THEN** B sees A's cursor over N, because cursors travel in diagram (flow) coordinates and
+  each viewer maps them through its own viewport
+- **AND** the cursor keeps the same size on B's screen whatever B's zoom
+
+#### Scenario: Cursor label names the element being edited
+
+- **GIVEN** A has element N selected
+- **WHEN** B sees A's cursor
+- **THEN** the cursor's label shows A's name and N's name
+
+### Requirement: A participant can follow another's cursor
+
+A participant SHALL be able to follow another participant from that participant's avatar in the
+session toolbar. While following, the follower's view SHALL pan to keep the followed cursor in
+the central part of the pane, keeping the follower's zoom, and SHALL NOT move while the cursor
+stays inside that part. The follower SHALL see whom they follow and a way to stop.
+
+#### Scenario: Followed cursor goes off screen
+
+- **GIVEN** B follows A
+- **WHEN** A's cursor moves outside the centre of B's view
+- **THEN** B's view pans to bring it back, at B's zoom
+
+#### Scenario: Taking the canvas back stops following
+
+- **GIVEN** B follows A
+- **WHEN** B clicks or scrolls the canvas, presses Escape, or uses the stop control
+- **THEN** B stops following and B's view no longer moves with A
+
+#### Scenario: Followed participant leaves
+
+- **GIVEN** B follows A
+- **WHEN** A leaves the session
+- **THEN** B stops following
+
 ### Requirement: Dragging or retyping an element takes a soft lock
 
 Starting to drag a node or to edit an element's text SHALL take a lock on that element for the
@@ -52,7 +91,7 @@ element, on the element itself.
 
 ### Requirement: Presence text is localised
 
-Lock and editing indications SHALL be rendered through i18n with `en` and `pt-BR` entries.
+Lock, editing and following indications SHALL be rendered through i18n with `en` and `pt-BR` entries.
 
 #### Scenario: Lock message in English
 

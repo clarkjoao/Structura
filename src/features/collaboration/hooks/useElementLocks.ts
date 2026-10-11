@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { Node } from "@xyflow/react";
 import { LIMITS } from "@collab-protocol";
-import { useCollab } from "../components/CollabProvider";
+import { useCollab } from "../components/collab-context";
 import { useCollabStore } from "../store/collab.store";
 
 /**

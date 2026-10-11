@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useCollab } from "./CollabProvider";
+import { useCollab } from "./collab-context";
 import type { CollabUser } from "../types";
 
 interface CollabEditingWarningProps {
