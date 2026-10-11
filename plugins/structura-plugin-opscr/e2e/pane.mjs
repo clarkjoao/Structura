@@ -40,6 +40,8 @@ const SAMPLE = Object.fromEntries(
 
 const PORT = 4179;
 const DIAGRAM = "opscr-e2e";
+/** An empty diagram to switch to while the folder is open. */
+const OTHER = "opscr-e2e-other";
 const CACHE = `
 ---
 apiVersion: opscr.dev/v1
@@ -61,23 +63,25 @@ spec:
   description: Exports
 `;
 
+const emptyDiagram = (id, name) => ({
+  id,
+  name,
+  domain: "",
+  level: "container",
+  description: "",
+  snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
+  nodeLayouts: {},
+  edgeLayouts: {},
+  viewport: { x: 0, y: 0, zoom: 0.5 },
+  versions: {},
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
 const seed = JSON.stringify({
   state: {
     diagrams: {
-      [DIAGRAM]: {
-        id: DIAGRAM,
-        name: "opscr e2e",
-        domain: "",
-        level: "container",
-        description: "",
-        snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
-        nodeLayouts: {},
-        edgeLayouts: {},
-        viewport: { x: 0, y: 0, zoom: 0.5 },
-        versions: {},
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      },
+      [DIAGRAM]: emptyDiagram(DIAGRAM, "opscr e2e"),
+      [OTHER]: emptyDiagram(OTHER, "opscr e2e other"),
     },
     folders: {},
     userTemplates: {},
@@ -533,10 +537,17 @@ await check(
 );
 
 // Saving a file in conflict settles the conflict: the disk now holds the user's text.
+// The editor is mounted again after the comparison: wait until it has the focus to type.
 await page.locator(".monaco-editor .view-lines").first().click();
+await page.locator(".monaco-editor.focused").first().waitFor({ timeout: 5000 });
 await page.keyboard.press("ControlOrMeta+End");
 await page.keyboard.press("ControlOrMeta+ArrowDown");
 await page.keyboard.type("\n# second note\n");
+await page
+  .locator(".monaco-editor .view-lines", { hasText: "# second note" })
+  .first()
+  .waitFor({ timeout: 5000 })
+  .catch(() => fail("typing in the editor after a save did not land"));
 await writeOnDisk(
   "commerce.opscr.yaml",
   (await readOnDisk("commerce.opscr.yaml")) + "\n# elsewhere again\n",
@@ -748,6 +759,68 @@ await page.waitForTimeout(1500);
 await check(
   (await nodes()) === beforeRebind,
   "binding again adopts the drawn elements (no duplicates)",
+);
+
+// Undo is per file: undoing in one file leaves another file's edits alone.
+const tab = (name) =>
+  page.getByRole("tab", { name: new RegExp(`^${name.replaceAll(".", "\\.")}`) });
+const typeAtEnd = async (text) => {
+  await page.locator(".monaco-editor .view-lines").first().click();
+  await page.keyboard.press("ControlOrMeta+End");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type(text);
+  await page.waitForTimeout(800); // the sync after an edit
+};
+await tab("commerce.opscr.yaml").click();
+await typeAtEnd("# kept in commerce");
+await tab("finance.opscr.yaml").click();
+await typeAtEnd("# undone in finance");
+for (let i = 0; i < 4; i++) await page.keyboard.press("ControlOrMeta+z");
+await page.waitForTimeout(800);
+await check(
+  !(await saveAndRead("finance.opscr.yaml")).includes("# undone in finance"),
+  "undo takes back the edit in the open file",
+);
+await tab("commerce.opscr.yaml").click();
+await check(
+  (await saveAndRead("commerce.opscr.yaml")).includes("# kept in commerce"),
+  "undo in one file leaves another file's edits alone",
+);
+
+// Opening another diagram with the folder open, even in the middle of a sync: nothing of the
+// bound diagram lands on it, and back on the bound one the pane goes on where it was.
+const openDiagram = async (id) => {
+  await page.evaluate((id) => {
+    history.pushState({}, "", `/model/${id}`);
+    dispatchEvent(new PopStateEvent("popstate"));
+  }, id);
+  await page.waitForTimeout(1500);
+};
+const boundCount = await nodes();
+await openDiagram(OTHER);
+await check((await nodes()) === 0, "another diagram opens empty while the folder is open");
+await openDiagram(DIAGRAM);
+await waitNodes(boundCount).catch(() => fail("back on the bound diagram, its elements changed"));
+await check(
+  (await page.getByRole("button", { name: /^(Unbind|Desvincular)$/ }).count()) === 1,
+  "back on the bound diagram, the folder is still open",
+);
+await setEditorText((await saveAndRead("commerce.opscr.yaml")) + EXTRA.replace("exports", "late"));
+// The edit's sync is still to run: the diagram changes under it.
+await openDiagram(OTHER);
+await page.waitForTimeout(2000);
+await check(
+  (await nodes()) === 0,
+  "a sync under way does not draw on the diagram opened meanwhile",
+);
+await openDiagram(DIAGRAM);
+await waitNodes(boundCount + 1).catch(() =>
+  fail("back on the bound diagram, the edit made before leaving was not drawn"),
+);
+await page.waitForTimeout(1500);
+await check(
+  (await nodes()) === boundCount + 1,
+  "back on the bound diagram, the edit is drawn once (no duplicates)",
 );
 
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
