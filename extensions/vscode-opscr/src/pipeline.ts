@@ -116,10 +116,12 @@ export async function collectWorkspace(
   folder: string,
   fileNames: readonly string[],
   readText: (path: string) => Promise<string | undefined>,
+  /** The platform's path join; another platform's in tests. */
+  platformJoin: (...parts: string[]) => string = joinPath,
 ): Promise<WorkspaceText> {
   // The platform's separator: these paths are compared with VSCode's `fsPath` (the cursor's
   // file, the Problems panel's), which uses backslashes on Windows.
-  const join = (name: string) => joinPath(folder, name);
+  const join = (name: string) => platformJoin(folder, name);
   const files: SourceFile[] = [];
   for (const name of [...fileNames].filter(isManifestName).sort()) {
     const content = await readText(join(name));

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join, win32 } from "node:path";
 import { createRequire } from "node:module";
 import { connectionKeys } from "./generated/opscr-mapping";
 import { collectWorkspace, PreviewPipeline, type WorkspaceText } from "./pipeline";
@@ -71,6 +71,34 @@ describe("collectWorkspace", () => {
       path: "/w/opscr.config.yaml",
       content: "disk:/w/opscr.config.yaml",
     });
+  });
+});
+
+describe("on Windows", () => {
+  it("keeps backslash paths, so the cursor's and the Problems panel's files match", async () => {
+    const folder = "C:\\work\\shop";
+    const workspace = await collectWorkspace(
+      folder,
+      NAMES,
+      async (path) => readFileSync(join(SAMPLE_DIR, win32.basename(path)), "utf8"),
+      win32.join,
+    );
+    const commerce = `${folder}\\commerce.opscr.yaml`;
+    expect(workspace.files.map((f) => f.path)).toContain(commerce);
+    const { graph, sources, diagnostics } = await new PreviewPipeline().update(workspace);
+    expect(graph).toBeDefined();
+    for (const d of diagnostics) if (d.file) expect(d.file.startsWith(`${folder}\\`)).toBe(true);
+    const line =
+      readFileSync(join(SAMPLE_DIR, basename(commerce.replaceAll("\\", "/"))), "utf8")
+        .split("\n")
+        .indexOf("  name: orders-api") + 1;
+    expect(sources!.elementAt(commerce, line)).toEqual({
+      kind: "component",
+      key: "Application/orders-api",
+    });
+    expect(sources!.locate({ kind: "component", key: "Application/orders-api" })?.file).toBe(
+      commerce,
+    );
   });
 });
 
