@@ -22,6 +22,11 @@ import { CollabRoomFullModal } from "./CollabRoomFullModal";
 import { endReasonMessage } from "../utils/endReasonMessage";
 
 interface CollabContextValue {
+  /**
+   * The session as the UI around the canvas needs it. Peers' cursor positions are left out of
+   * its identity — they change many times a second per person, and every consumer of this
+   * context would re-render with them. Read live cursors from `useCollabStore`.
+   */
   session: CollabSessionInfo | null;
   isReady: boolean;
   status: CollabStatus;
@@ -39,10 +44,10 @@ interface CollabContextValue {
   updateEditingComponent: (id: string | null) => void;
   editingComponents: Map<string, CollabUser>;
   peerLimitReached: boolean;
-  /** Ask for the soft lock on an element for a drag or text edit (see collab-presence). */
-  lockElement: (id: string) => void;
-  renewElementLock: (id: string) => void;
-  unlockElement: (id: string) => void;
+  /** Ask for the soft locks on elements for a drag or text edit (see collab-presence). */
+  lockElements: (ids: string[]) => void;
+  renewElementLocks: (ids: string[]) => void;
+  unlockElements: (ids: string[]) => void;
 }
 
 const CollabContext = createContext<CollabContextValue>({
@@ -63,9 +68,9 @@ const CollabContext = createContext<CollabContextValue>({
   updateEditingComponent: () => {},
   editingComponents: new Map(),
   peerLimitReached: false,
-  lockElement: () => {},
-  renewElementLock: () => {},
-  unlockElement: () => {},
+  lockElements: () => {},
+  renewElementLocks: () => {},
+  unlockElements: () => {},
 });
 
 export function useCollab() {
@@ -82,6 +87,38 @@ interface CollabProviderProps {
   signalingUrl?: string;
   /** Host: the session ended on its own (refused, too large, unreachable…), not by the host. */
   onHostSessionEnded?: () => void;
+}
+
+function sameIgnoringCursors(a: CollabSessionInfo | null, b: CollabSessionInfo | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  if (
+    a.roomId !== b.roomId ||
+    a.isHost !== b.isHost ||
+    a.localUser !== b.localUser ||
+    a.status !== b.status ||
+    a.peers.length !== b.peers.length
+  ) {
+    return false;
+  }
+  return a.peers.every((peer, index) => {
+    const other = b.peers[index]!;
+    return (
+      peer.clientId === other.clientId &&
+      peer.user === other.user &&
+      peer.activeElementId === other.activeElementId
+    );
+  });
+}
+
+/** The store's session, keeping its previous identity while only cursors moved. */
+function useSessionIgnoringCursors(): CollabSessionInfo | null {
+  const previous = useRef<CollabSessionInfo | null>(null);
+  return useCollabStore((state) => {
+    if (sameIgnoringCursors(previous.current, state.session)) return previous.current;
+    previous.current = state.session;
+    return state.session;
+  });
 }
 
 function makeUser(id: string | undefined, name: string, color: string | undefined): CollabUser {
@@ -166,7 +203,10 @@ export function CollabProvider({
         });
       },
       onLockDenied: (_entityId, holderName) => {
-        toast.info(tRef.current("collaboration.lockedBy", { name: holderName }));
+        // One toast per holder, however many of a multi-selection's locks were refused.
+        toast.info(tRef.current("collaboration.lockedBy", { name: holderName }), {
+          id: `collab-lock-denied:${holderName}`,
+        });
       },
       onEnded: (reason) => {
         if (diagramId) clearHostSession(diagramId);
@@ -194,7 +234,7 @@ export function CollabProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, roomId, serverUrl, isHost]);
 
-  const session = useCollabStore((s) => s.session);
+  const session = useSessionIgnoringCursors();
   const status = useCollabStore((s) => s.status);
   const isReady = useCollabStore((s) => s.isReady);
   const hostOnline = useCollabStore((s) => s.hostOnline);
@@ -226,14 +266,14 @@ export function CollabProvider({
   const updateActive = useCallback((id: string | null) => {
     sessionRef.current?.updateActiveElement(id);
   }, []);
-  const lockElement = useCallback((id: string) => {
-    sessionRef.current?.client.sendLock("acquire", id);
+  const lockElements = useCallback((ids: string[]) => {
+    sessionRef.current?.client.sendLock("acquire", ids);
   }, []);
-  const renewElementLock = useCallback((id: string) => {
-    sessionRef.current?.client.sendLock("renew", id);
+  const renewElementLocks = useCallback((ids: string[]) => {
+    sessionRef.current?.client.sendLock("renew", ids);
   }, []);
-  const unlockElement = useCallback((id: string) => {
-    sessionRef.current?.client.sendLock("release", id);
+  const unlockElements = useCallback((ids: string[]) => {
+    sessionRef.current?.client.sendLock("release", ids);
   }, []);
 
   const editingComponents = useMemo(() => {
@@ -267,9 +307,9 @@ export function CollabProvider({
       updateEditingComponent: updateActive,
       editingComponents,
       peerLimitReached: participantCount >= maxParticipants,
-      lockElement,
-      renewElementLock,
-      unlockElement,
+      lockElements,
+      renewElementLocks,
+      unlockElements,
     }),
     [
       session,
@@ -287,9 +327,9 @@ export function CollabProvider({
       updateCursor,
       updateActive,
       editingComponents,
-      lockElement,
-      renewElementLock,
-      unlockElement,
+      lockElements,
+      renewElementLocks,
+      unlockElements,
     ],
   );
 

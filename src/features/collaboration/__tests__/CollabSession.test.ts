@@ -200,7 +200,7 @@ describe("CollabSession end to end", () => {
     const id = Object.keys(layouts(hostStore, diagramId))[0]!;
     const original = layouts(guestStore, diagramId)[id]!.x;
 
-    host.session.client.sendLock("acquire", id);
+    host.session.client.sendLock("acquire", [id]);
     await until(() => guest.collabStore.getState().locks[id] !== undefined, 3_000, "lock seen");
     expect(guest.collabStore.getState().locks[id]!.holder).toBe("host-id");
 
@@ -210,10 +210,58 @@ describe("CollabSession end to end", () => {
     await until(() => layouts(guestStore, diagramId)[id]?.x === original, 3_000, "revert");
     expect(layouts(hostStore, diagramId)[id]!.x).toBe(original);
 
-    host.session.client.sendLock("release", id);
+    host.session.client.sendLock("release", [id]);
     await until(() => guest.collabStore.getState().locks[id] === undefined, 3_000, "release seen");
     guestStore.getState().updateNodeLayout(id, { x: original + 5, y: 0 });
     await until(() => layouts(hostStore, diagramId)[id]?.x === original + 5, 3_000, "free move");
+  });
+
+  it("locks and frees a whole multi-selection, past the per-message rate limit", async () => {
+    const { host, guest } = await pair();
+    // More than the relay's lock burst (20): one message per entity would have been refused.
+    const ids = Array.from({ length: 60 }, (_, i) => `n${i}`);
+    const allSeen = (present: boolean) => () =>
+      ids.every((id) => (host.collabStore.getState().locks[id] !== undefined) === present);
+
+    guest.session.client.sendLock("acquire", ids);
+    await until(allSeen(true), 3_000, "every lock seen");
+    guest.session.client.sendLock("release", ids);
+    await until(allSeen(false), 3_000, "every lock freed");
+
+    const lockMessages = rig.sockets.flatMap((s) => s.sentTypes()).filter((t) => t === "lock");
+    expect(lockMessages).toHaveLength(2);
+  });
+
+  it("puts a burst of lock frames in the store with one update, not one per element", async () => {
+    const { host, guest } = await pair();
+    const ids = Array.from({ length: 60 }, (_, i) => `n${i}`);
+    const updates = vi.fn();
+    const stop = host.collabStore.subscribe((state, previous) => {
+      if (state.locks !== previous.locks) updates();
+    });
+    guest.session.client.sendLock("acquire", ids);
+    await until(
+      () => ids.every((id) => host.collabStore.getState().locks[id] !== undefined),
+      3_000,
+      "every lock seen",
+    );
+    stop();
+    // The relay sends one frame per element; they land together.
+    expect(updates.mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
+  it("counts the room from its peers, not from a peer event that arrives late", async () => {
+    const { host, guest } = await pair();
+    await until(() => host.collabStore.getState().participantCount === 2);
+    guest.session.disconnect();
+    await until(() => host.collabStore.getState().participantCount === 1, 3_000, "guest left");
+
+    // Another relay instance's event, computed before the guest left, delivered after.
+    const hostSocket = rig.sockets.find((s) => s.sentTypes().includes("create"))!;
+    hostSocket.onmessage?.({
+      data: JSON.stringify({ type: "peer:left", clientId: "someone-else", participantCount: 2 }),
+    });
+    expect(host.collabStore.getState().participantCount).toBe(1);
   });
 
   it("shows peers' cursors but never my own", async () => {

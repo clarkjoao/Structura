@@ -109,7 +109,7 @@ function CollabRoomInner() {
                 <Canvas />
               </DiagramFlowProvider>
             </FlowModeProvider>
-            {session && <CollabCursors peers={session.peers} />}
+            {session && <CollabCursors />}
             {banner && !isSessionClosed && (
               <div
                 role="status"

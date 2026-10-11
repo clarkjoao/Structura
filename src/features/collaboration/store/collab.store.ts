@@ -45,6 +45,16 @@ export interface CollabStoreState {
     preserveCursorIfMessageNull: boolean;
   }) => void;
   setLock: (entityId: string, lock: ElementLock | null) => void;
+  /** Several lock changes in one update (`null` frees); a multi-selection moves many at once. */
+  applyLocks: (changes: ReadonlyMap<string, ElementLock | null>) => void;
+  /** Several peers' cursors in one update; peers not in the session are ignored. */
+  applyCursors: (
+    entries: ReadonlyArray<{
+      clientId: string;
+      cursor: { x: number; y: number } | null;
+      activeElementId: string | null;
+    }>,
+  ) => void;
   reset: () => void;
 }
 
@@ -162,6 +172,31 @@ export const createCollabStore = () =>
         if (lock) locks[entityId] = lock;
         else delete locks[entityId];
         return { locks };
+      }),
+
+    applyLocks: (changes) =>
+      set((state) => {
+        if (changes.size === 0) return state;
+        const locks = { ...state.locks };
+        for (const [entityId, lock] of changes) {
+          if (lock) locks[entityId] = lock;
+          else delete locks[entityId];
+        }
+        return { locks };
+      }),
+
+    applyCursors: (entries) =>
+      set((state) => {
+        if (!state.session || entries.length === 0) return state;
+        const byId = new Map(entries.map((entry) => [entry.clientId, entry]));
+        let changed = false;
+        const peers = state.session.peers.map((peer) => {
+          const entry = byId.get(peer.clientId);
+          if (!entry) return peer;
+          changed = true;
+          return { ...peer, cursor: entry.cursor, activeElementId: entry.activeElementId };
+        });
+        return changed ? { session: { ...state.session, peers } } : state;
       }),
 
     reset: () => set({ ...INITIAL }),

@@ -151,3 +151,45 @@ export async function until(
     await tick(5);
   }
 }
+
+/**
+ * A relay of the previous protocol (v2): it accepts the socket and answers pings, but refuses
+ * every v3 message as `unsupported_message` — what a stale deployment looks like to this client.
+ */
+export class LegacyRelaySocket implements SocketLike {
+  readyState = 0;
+  onopen: ((event: unknown) => void) | null = null;
+  onmessage: ((event: { data: unknown }) => void) | null = null;
+  onclose: ((event: unknown) => void) | null = null;
+  onerror: ((event: unknown) => void) | null = null;
+
+  constructor(readonly url: string) {
+    queueMicrotask(() => {
+      if (this.readyState === 3) return;
+      this.readyState = 1;
+      this.onopen?.({});
+    });
+  }
+
+  send(data: string): void {
+    if (this.readyState !== 1) return;
+    const { type } = JSON.parse(data) as { type: string };
+    const reply =
+      type === "ping"
+        ? { type: "pong" }
+        : {
+            type: "error",
+            code: "unsupported_message",
+            message: `Unsupported message type: ${type}`,
+          };
+    queueMicrotask(() => {
+      if (this.readyState === 1) this.onmessage?.({ data: JSON.stringify(reply) });
+    });
+  }
+
+  close(): void {
+    if (this.readyState === 3) return;
+    this.readyState = 3;
+    queueMicrotask(() => this.onclose?.({}));
+  }
+}

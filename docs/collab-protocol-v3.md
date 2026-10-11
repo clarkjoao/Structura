@@ -122,7 +122,7 @@ has a different epoch, has its sockets closed with code `4004` (`room_lost`). Cl
 | `seed:commit` | — | parses and validates the seed; opens the room at version 0 |
 | `join` | `protocol`, `roomId`, `user`, `hostToken?`, `resumeFrom?`, `resumeEpoch?` | `resumeEpoch` must match the room's epoch for a replay |
 | `patch` | `opId`, `baseVersion`, `patch` | `baseVersion`: last version applied when composing |
-| `lock` | `action` (`acquire`/`renew`/`release`), `entityId` | TTL 3 s; holders renew every second |
+| `lock` | `action` (`acquire`/`renew`/`release`), `entityId` or `entityIds` (1–500) | TTL 3 s; holders renew every second. A multi-selection's locks go in one message; at most 1000 held per connection |
 | `cursor` | `cursor` (`{x,y}` or `null`), `activeElementId` | `null` cursor = left the canvas |
 | `close` | — | host only; ends the session for everyone |
 | `ping` / `pong` | — | application-level liveness; the relay also pings at the transport level every 30 s |
@@ -178,7 +178,7 @@ participant's reconnects.
 | seed | 8M chars |
 | edits per participant | 30/s sustained, burst 60 |
 | cursor updates | 20/s |
-| lock requests | 10/s, burst 20 |
+| lock requests | 10/s, burst 20 (per message, whatever its entity count) |
 | lossy frames dropped above | 1 MB queued for that socket |
 | socket closed above | 8 MB queued (the client reconnects and resumes) |
 | entry log | 2,000 entries per room |

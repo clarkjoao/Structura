@@ -2,7 +2,7 @@ import type { CollabUser, CursorEntry, DiagramState, Participant } from "@collab
 import type { DiagramStore } from "@/features/diagram";
 import type { StoreApi } from "zustand";
 import type { CollabStoreState } from "../store/collab.store";
-import type { CollabStatus, PeerState } from "../types";
+import type { CollabStatus, ElementLock, PeerState } from "../types";
 import { CollabClient, type ClientPhase, type ClosedReason, type SocketLike } from "./CollabClient";
 import { StoreBridge } from "./StoreBridge";
 
@@ -29,6 +29,8 @@ export interface CollabSessionOptions {
   onEnded?: (reason: ClosedReason) => void;
   createSocket?: (url: string) => SocketLike;
   sendIntervalMs?: number;
+  /** Longest incoming diagram entries, cursors and locks wait to be applied together. */
+  inboundBatchMs?: number;
   reconnectDelaysMs?: number[];
 }
 
@@ -66,6 +68,14 @@ export class CollabSession {
   private cursor: { x: number; y: number } | null = null;
   private activeElementId: string | null = null;
   private lockExpiry = new Map<string, ReturnType<typeof setTimeout>>();
+  /**
+   * Presence waiting to reach the collaboration store. A crowd sends a cursor frame per person
+   * and a lock frame per element of every selection they drag; one store update each re-rendered
+   * the canvas hundreds of times a second. They are applied together, like diagram entries.
+   */
+  private pendingLocks = new Map<string, ElementLock | null>();
+  private pendingCursors = new Map<string, CursorEntry>();
+  private presenceTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly opts: CollabSessionOptions;
 
   constructor(options: CollabSessionOptions) {
@@ -106,16 +116,16 @@ export class CollabSession {
         },
         onEntry: (entry) => this.bridge?.onEntry(entry),
         onAck: (opId, applied) => this.bridge?.onAck(opId, applied),
-        onPeerJoined: (participant, count) => {
+        onPeerJoined: (participant) => {
           const collab = this.collab();
           if (participant.clientId !== this.selfId) collab.upsertPeer(toPeer(participant));
           if (participant.role === "host") collab.setHostName(participant.user.name);
-          collab.setParticipantCount(count, collab.maxParticipants);
+          this.countParticipants();
         },
-        onPeerLeft: (clientId, count) => {
-          const collab = this.collab();
-          collab.removePeer(clientId);
-          collab.setParticipantCount(count, collab.maxParticipants);
+        onPeerLeft: (clientId) => {
+          this.pendingCursors.delete(clientId);
+          this.collab().removePeer(clientId);
+          this.countParticipants();
         },
         onHostStatus: (online) => this.collab().setHostOnline(online),
         onCursors: (entries) => this.onCursors(entries),
@@ -187,6 +197,7 @@ export class CollabSession {
       diagramId,
       selfId: this.opts.user.id,
       sendIntervalMs: this.opts.sendIntervalMs,
+      inboundBatchMs: this.opts.inboundBatchMs,
       transport: { sendPatch: (patch, base) => this.client.sendPatch(patch, base) },
     });
     bridge.attach();
@@ -217,44 +228,75 @@ export class CollabSession {
     this.collab().setIsReady(true);
   }
 
-  private onCursors(entries: CursorEntry[]): void {
+  /**
+   * Everyone in the room is the peers this client tracks, plus itself. The count a `peer:*` event
+   * carries is the room's size when that relay instance handled it; events from several instances
+   * arrive in any order, so trusting the last one left a stale count after a crowd left at once.
+   */
+  private countParticipants(): void {
     const collab = this.collab();
-    const peers = collab.session?.peers ?? [];
+    collab.setParticipantCount((collab.session?.peers.length ?? 0) + 1, collab.maxParticipants);
+  }
+
+  private onCursors(entries: CursorEntry[]): void {
     for (const entry of entries) {
       if (entry.clientId === this.selfId) continue;
-      const peer = peers.find((p) => p.clientId === entry.clientId);
-      if (!peer) continue;
-      collab.applyPeerCursorPayload({
-        clientId: entry.clientId,
-        user: peer.user,
-        cursor: entry.cursor,
-        activeElementId: entry.activeElementId,
-        preserveCursorIfMessageNull: false,
-      });
+      this.pendingCursors.set(entry.clientId, entry);
     }
+    this.schedulePresence();
   }
 
   private onLock(entityId: string, holder: string | null, ttlMs: number): void {
-    const collab = this.collab();
     const pending = this.lockExpiry.get(entityId);
     if (pending) clearTimeout(pending);
     this.lockExpiry.delete(entityId);
     if (holder === null || holder === this.selfId) {
-      collab.setLock(entityId, null);
+      this.pendingLocks.set(entityId, null);
+      this.schedulePresence();
       return;
     }
-    collab.setLock(entityId, { holder, expiresAt: Date.now() + ttlMs });
+    this.pendingLocks.set(entityId, { holder, expiresAt: Date.now() + ttlMs });
+    this.schedulePresence();
     // A holder that vanished stops renewing; forget the lock when its ttl runs out.
     this.lockExpiry.set(
       entityId,
       setTimeout(() => {
         this.lockExpiry.delete(entityId);
-        this.collab().setLock(entityId, null);
+        this.pendingLocks.set(entityId, null);
+        this.schedulePresence();
       }, ttlMs),
     );
   }
 
+  private schedulePresence(): void {
+    const batchMs = this.opts.inboundBatchMs ?? 32;
+    const hidden = typeof document !== "undefined" && document.hidden;
+    if (batchMs <= 0 || hidden) {
+      this.flushPresence();
+      return;
+    }
+    this.presenceTimer ??= setTimeout(() => this.flushPresence(), batchMs);
+  }
+
+  private flushPresence(): void {
+    if (this.presenceTimer) clearTimeout(this.presenceTimer);
+    this.presenceTimer = null;
+    const collab = this.collab();
+    if (this.pendingLocks.size > 0) {
+      collab.applyLocks(this.pendingLocks);
+      this.pendingLocks = new Map();
+    }
+    if (this.pendingCursors.size > 0) {
+      collab.applyCursors([...this.pendingCursors.values()]);
+      this.pendingCursors = new Map();
+    }
+  }
+
   private dispose(): void {
+    if (this.presenceTimer) clearTimeout(this.presenceTimer);
+    this.presenceTimer = null;
+    this.pendingLocks.clear();
+    this.pendingCursors.clear();
     this.bridge?.detach();
     for (const timer of this.lockExpiry.values()) clearTimeout(timer);
     this.lockExpiry.clear();

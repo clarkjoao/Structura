@@ -1,13 +1,14 @@
 import { useTranslation } from "react-i18next";
 import { useActiveDiagram } from "@/features/diagram";
+import { useCollabStore } from "../store/collab.store";
 import type { PeerState } from "../types";
 
-interface CollabCursorsProps {
-  peers: PeerState[];
-}
+const NO_PEERS: PeerState[] = [];
 
-export function CollabCursors({ peers }: CollabCursorsProps) {
+/** Peers' live cursors, read straight from the store: the collab context leaves them out. */
+export function CollabCursors() {
   const { t } = useTranslation();
+  const peers = useCollabStore((state) => state.session?.peers ?? NO_PEERS);
   const activeDiagram = useActiveDiagram();
 
   if (peers.length === 0) return null;

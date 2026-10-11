@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { COLLAB_PROTOCOL_VERSION, LIMITS } from "./protocol.js";
+import { COLLAB_PROTOCOL_VERSION, LIMITS, parseClientMessage } from "./protocol.js";
 import type { CollabRelay, RelayOptions } from "./relay.js";
 import { makeState } from "./store/__fixtures__/merge.fixtures.js";
 import { storeFactories } from "./store/testFactories.js";
@@ -542,6 +542,51 @@ for (const factory of storeFactories()) {
         expect(await b.next("lock:result")).toMatchObject({ granted: false, holder: "a-id" });
         const blocked = patch(b, { entities: { nodeLayouts: { c1: { set: { x: 7 } } } } }, 0);
         expect(await b.next("ack", (x) => x.opId === blocked)).toMatchObject({ applied: false });
+      });
+
+      it("takes, renews and frees a multi-selection's locks in one message each", async () => {
+        const { relay } = await setup({ lockRate: { rate: 1, burst: 1 } });
+        const roomId = nextRoomId();
+        const { host } = await hostRoom(relay, roomId, SEED);
+        const a = new FakeClient(user("a"));
+        await joinRoom(relay, roomId, a);
+        const ids = Array.from({ length: 40 }, (_, i) => `n${i}`);
+
+        a.write({ type: "lock", action: "acquire", entityIds: ids });
+        for (const id of ids) {
+          expect(await a.next("lock:result", (r) => r.entityId === id)).toMatchObject({
+            granted: true,
+          });
+        }
+        const blocked = patch(host, { entities: { nodeLayouts: { n39: { set: { x: 7 } } } } }, 0);
+        expect(await host.next("ack", (x) => x.opId === blocked)).toMatchObject({
+          applied: false,
+        });
+
+        await sleep(1_050); // one token per second
+        a.write({ type: "lock", action: "release", entityIds: ids });
+        for (const id of ids) {
+          expect(
+            await host.next("lock", (l) => l.entityId === id && l.holder === null),
+          ).toBeTruthy();
+        }
+        const moved = patch(host, { entities: { nodeLayouts: { n39: { set: { x: 7 } } } } }, 0);
+        expect(await host.next("ack", (x) => x.opId === moved)).toMatchObject({ applied: true });
+      });
+
+      it("refuses a lock message naming no entity, or too many", () => {
+        expect(
+          parseClientMessage(JSON.stringify({ type: "lock", action: "acquire", entityIds: [] })),
+        ).toBeNull();
+        const many = Array.from({ length: LIMITS.maxLockBatch + 1 }, (_, i) => `n${i}`);
+        expect(
+          parseClientMessage(JSON.stringify({ type: "lock", action: "acquire", entityIds: many })),
+        ).toBeNull();
+        expect(
+          parseClientMessage(
+            JSON.stringify({ type: "lock", action: "acquire", entityId: "a", entityIds: ["b"] }),
+          ),
+        ).toBeNull();
       });
 
       it("frees a disconnected holder's locks", async () => {

@@ -26,30 +26,27 @@ export function useLockedBy(elementId: string | null): string | null {
 }
 
 function useLockLifecycle() {
-  const { session, lockElement, renewElementLock, unlockElement } = useCollab();
-  const held = useRef(new Set<string>());
+  const { session, lockElements, renewElementLocks, unlockElements } = useCollab();
+  const held = useRef<string[]>([]);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // A multi-selection's locks travel together: one message to take, renew or free them all.
   const release = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
-    for (const id of held.current) unlockElement(id);
-    held.current.clear();
-  }, [unlockElement]);
+    if (held.current.length > 0) unlockElements(held.current);
+    held.current = [];
+  }, [unlockElements]);
 
   const take = useCallback(
     (ids: string[]) => {
       if (!session) return;
       release();
-      for (const id of ids) {
-        held.current.add(id);
-        lockElement(id);
-      }
-      timer.current = setInterval(() => {
-        for (const id of held.current) renewElementLock(id);
-      }, RENEW_MS);
+      held.current = [...new Set(ids)];
+      lockElements(held.current);
+      timer.current = setInterval(() => renewElementLocks(held.current), RENEW_MS);
     },
-    [lockElement, release, renewElementLock, session],
+    [lockElements, release, renewElementLocks, session],
   );
 
   useEffect(() => release, [release]);

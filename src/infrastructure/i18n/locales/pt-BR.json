@@ -1419,6 +1419,7 @@
     "testServer": "Testar conexão",
     "serverOnline": "Servidor no ar",
     "serverOffline": "Servidor fora do ar",
+    "serverIncompatible": "Servidor no ar, mas com outra versão da colaboração",
     "signalingHint": "URL WebSocket do servidor de colaboração (normalmente o mesmo host do app, salvo se usar um relay próprio).",
     "localhostWarning": "Quem está em outro aparelho não acessa localhost — usa o IP da rede local ou um servidor publicado.",
     "inviteLink": "Link de convite",
@@ -1474,7 +1475,7 @@
     "hostReconnectingBanner": "{{host}} está reconectando — você pode continuar editando.",
     "ended": {
       "roomUnknown": "Esta sessão não existe mais.",
-      "updateRequired": "Este app está desatualizado para o servidor da sessão. Recarregue a página para atualizar.",
+      "updateRequired": "Este app e o servidor da sessão usam versões diferentes da colaboração. Recarregue a página; se continuar, o servidor precisa ser atualizado.",
       "tooLarge": "Este diagrama é grande demais para uma sessão ao vivo ({{size}} MB, limite {{limit}} MB).",
       "invalidSeed": "Não foi possível compartilhar o diagrama. Tente novamente.",
       "unauthorized": "A sessão recusou sua credencial de host.",

@@ -1419,6 +1419,7 @@
     "testServer": "Test connection",
     "serverOnline": "Server online",
     "serverOffline": "Server offline",
+    "serverIncompatible": "Server online, but it runs a different collaboration version",
     "signalingHint": "WebSocket URL of the collaboration server (same host as the app unless you use a custom relay).",
     "localhostWarning": "Guests on other devices can’t reach localhost — use your machine’s LAN IP or a deployed server.",
     "inviteLink": "Invite link",
@@ -1474,7 +1475,7 @@
     "hostReconnectingBanner": "{{host}} is reconnecting — you can keep editing.",
     "ended": {
       "roomUnknown": "This session no longer exists.",
-      "updateRequired": "This app is out of date for the session server. Reload the page to update.",
+      "updateRequired": "This app and the session server speak different collaboration versions. Reload the page; if it keeps happening, the server needs updating.",
       "tooLarge": "This diagram is too large for a live session ({{size}} MB, limit {{limit}} MB).",
       "invalidSeed": "The diagram could not be shared. Try again.",
       "unauthorized": "The session refused your host credential.",

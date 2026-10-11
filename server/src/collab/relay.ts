@@ -3,6 +3,7 @@ import {
   chunkString,
   COLLAB_PROTOCOL_VERSION,
   LIMITS,
+  lockTargets,
   parseClientMessage,
   type ClientMessage,
   type CollabUser,
@@ -213,7 +214,7 @@ export class CollabRelay {
       case "patch":
         return this.handlePatch(state, message);
       case "lock":
-        return this.handleLock(state, message.action, message.entityId);
+        return this.handleLock(state, message.action, lockTargets(message));
       case "cursor":
         return this.handleCursor(state, message.cursor, message.activeElementId);
       case "close":
@@ -468,44 +469,66 @@ export class CollabRelay {
     });
   }
 
+  /**
+   * One message names one entity or a whole multi-selection, and costs one rate-limit token
+   * either way: a drag of many nodes takes, renews and frees all their locks together.
+   */
   private async handleLock(
     state: ConnState,
     action: "acquire" | "renew" | "release",
-    entityId: string,
+    entityIds: string[],
   ): Promise<void> {
     if (state.phase !== "joined" || !state.roomId || !state.clientId) {
       return this.sendError(state, "not_joined", "Join a room first");
     }
     if (!state.lockBucket.take()) return this.sendError(state, "rate_limited", "Too many locks");
     const roomId = state.roomId;
+    const clientId = state.clientId;
     const ttlMs = LIMITS.lockTtlMs;
 
     if (action === "release") {
-      state.locks.delete(entityId);
-      if (await this.store.releaseLock(roomId, entityId, state.clientId)) {
-        await this.store.publishPresence(roomId, { kind: "lock", entityId, holder: null, ttlMs });
-      }
+      await Promise.all(
+        entityIds.map(async (entityId) => {
+          state.locks.delete(entityId);
+          if (await this.store.releaseLock(roomId, entityId, clientId)) {
+            await this.store.publishPresence(roomId, {
+              kind: "lock",
+              entityId,
+              holder: null,
+              ttlMs,
+            });
+          }
+        }),
+      );
       return;
     }
 
-    const result = await this.store.acquireLock(roomId, entityId, state.clientId, ttlMs);
-    if (result.granted) state.locks.add(entityId);
-    if (action === "acquire" || !result.granted) {
-      this.send(state, {
-        type: "lock:result",
-        entityId,
-        granted: result.granted,
-        holder: result.holder,
-      });
-    }
-    if (result.granted) {
-      await this.store.publishPresence(roomId, {
-        kind: "lock",
-        entityId,
-        holder: state.clientId,
-        ttlMs,
-      });
-    }
+    await Promise.all(
+      entityIds.map(async (entityId) => {
+        const result =
+          state.locks.has(entityId) || state.locks.size < LIMITS.maxLocksPerClient
+            ? await this.store.acquireLock(roomId, entityId, clientId, ttlMs)
+            : { granted: false, holder: null };
+        if (result.granted) state.locks.add(entityId);
+        else state.locks.delete(entityId);
+        if (action === "acquire" || !result.granted) {
+          this.send(state, {
+            type: "lock:result",
+            entityId,
+            granted: result.granted,
+            holder: result.holder,
+          });
+        }
+        if (result.granted) {
+          await this.store.publishPresence(roomId, {
+            kind: "lock",
+            entityId,
+            holder: clientId,
+            ttlMs,
+          });
+        }
+      }),
+    );
   }
 
   private handleCursor(

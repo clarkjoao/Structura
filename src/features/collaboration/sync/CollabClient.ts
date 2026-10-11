@@ -182,8 +182,16 @@ export class CollabClient {
     if (this.phase === "ready") this.send({ type: "cursor", cursor, activeElementId });
   }
 
-  sendLock(action: "acquire" | "renew" | "release", entityId: string): void {
-    if (this.phase === "ready") this.send({ type: "lock", action, entityId });
+  /** Lock, renew or free several entities (a multi-selection) in as few messages as the relay allows. */
+  sendLock(action: "acquire" | "renew" | "release", entityIds: string[]): void {
+    if (this.phase !== "ready" || entityIds.length === 0) return;
+    if (entityIds.length === 1) {
+      this.send({ type: "lock", action, entityId: entityIds[0] });
+      return;
+    }
+    for (let i = 0; i < entityIds.length; i += LIMITS.maxLockBatch) {
+      this.send({ type: "lock", action, entityIds: entityIds.slice(i, i + LIMITS.maxLockBatch) });
+    }
   }
 
   // ── Connection ──────────────────────────────────────────────────────────
@@ -498,7 +506,16 @@ export class CollabClient {
           this.later(this.opts.notReadyRetryMs, () => this.socket?.close(4002, "retry"));
         }
         return;
+      case "not_joined":
+      case "already_joined":
+      case "rate_limited":
+        return;
+      case "invalid_message":
       default:
+        // The relay could not read the handshake, or answered with a code outside this protocol
+        // (a v2 relay answers `join` with `unsupported_message`). Nothing else will come, and the
+        // relay still answers pings, so waiting would spin forever.
+        if (this.phase === "joining" || this.phase === "seeding") this.finish("protocol_mismatch");
         return;
     }
   }

@@ -159,11 +159,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           />
         )}
         {activePeer && (
-          <CollabPeerPresence
-            activePeer={activePeer}
-            locked={peerLocked}
-            roundedClassName="rounded-lg"
-          />
+          <CollabPeerPresence user={activePeer} locked={peerLocked} roundedClassName="rounded-lg" />
         )}
         {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.versionBadge && (
@@ -237,11 +233,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
           />
         )}
         {activePeer && (
-          <CollabPeerPresence
-            activePeer={activePeer}
-            locked={peerLocked}
-            roundedClassName="rounded-xl"
-          />
+          <CollabPeerPresence user={activePeer} locked={peerLocked} roundedClassName="rounded-xl" />
         )}
         {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
         {!d.compareBadges && d.versionBadge && (

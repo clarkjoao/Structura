@@ -54,6 +54,10 @@ export const LIMITS = {
   chunkChars: 64 * 1024,
   maxSeedChars: 8 * 1024 * 1024,
   lockTtlMs: 3_000,
+  /** Entities one `lock` message may name: a whole multi-selection drag goes in one message. */
+  maxLockBatch: 500,
+  /** Locks one connection may hold at once. */
+  maxLocksPerClient: 1_000,
   hostGraceMs: 30_000,
 } as const;
 
@@ -132,7 +136,13 @@ export type ClientMessage =
       resumeEpoch?: string;
     }
   | { type: "patch"; opId: string; baseVersion: number; patch: DiagramPatch }
-  | { type: "lock"; action: "acquire" | "renew" | "release"; entityId: string }
+  | {
+      type: "lock";
+      action: "acquire" | "renew" | "release";
+      /** One entity; `entityIds` names several (a multi-selection) in one message. */
+      entityId?: string;
+      entityIds?: string[];
+    }
   | { type: "cursor"; cursor: { x: number; y: number } | null; activeElementId: string | null }
   | { type: "close" }
   | { type: "ping" }
@@ -261,6 +271,28 @@ function isEntityPatch(value: unknown): value is EntityPatch {
   return true;
 }
 
+/** Exactly one of `entityId` or a non-empty, bounded `entityIds`. */
+function isLockTarget(value: Record<string, unknown>): boolean {
+  if (value.entityId !== undefined) {
+    return (
+      value.entityIds === undefined &&
+      typeof value.entityId === "string" &&
+      isSafeKey(value.entityId)
+    );
+  }
+  return (
+    Array.isArray(value.entityIds) &&
+    value.entityIds.length > 0 &&
+    value.entityIds.length <= LIMITS.maxLockBatch &&
+    value.entityIds.every((id) => typeof id === "string" && isSafeKey(id))
+  );
+}
+
+/** The entities a `lock` message names, without repeats. */
+export function lockTargets(message: { entityId?: string; entityIds?: string[] }): string[] {
+  return message.entityId !== undefined ? [message.entityId] : [...new Set(message.entityIds)];
+}
+
 export function isDiagramPatch(value: unknown): value is DiagramPatch {
   if (!isRecord(value)) return false;
   for (const key of Object.keys(value)) if (key !== "doc" && key !== "entities") return false;
@@ -365,8 +397,7 @@ export function parseClientMessage(raw: string): ClientMessage | null {
       return (value.action === "acquire" ||
         value.action === "renew" ||
         value.action === "release") &&
-        typeof value.entityId === "string" &&
-        isSafeKey(value.entityId)
+        isLockTarget(value)
         ? (value as ClientMessage)
         : null;
     case "cursor":

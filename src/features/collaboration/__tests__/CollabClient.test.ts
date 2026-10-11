@@ -1,8 +1,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { makeState } from "../../../../server/src/collab/store/__fixtures__/merge.fixtures";
 import type { DiagramState, Entry } from "@collab-protocol";
-import { CollabClient, type ClientPhase, type ClosedReason } from "../sync/CollabClient";
-import { createRig, tick, until, type Rig } from "./collabTestRig";
+import {
+  CollabClient,
+  type ClientPhase,
+  type ClosedReason,
+  type SocketLike,
+} from "../sync/CollabClient";
+import { LegacyRelaySocket, createRig, tick, until, type Rig } from "./collabTestRig";
 
 const SEED: DiagramState = makeState(
   {
@@ -34,7 +39,12 @@ interface Probe {
 function probe(
   role: "host" | "guest",
   room: string,
-  extra: { hostToken?: string | null; seed?: DiagramState; name?: string } = {},
+  extra: {
+    hostToken?: string | null;
+    seed?: DiagramState;
+    name?: string;
+    createSocket?: (url: string) => SocketLike;
+  } = {},
 ): Probe {
   const p: Probe = {
     client: null as unknown as CollabClient,
@@ -55,7 +65,7 @@ function probe(
     hostToken: extra.hostToken ?? null,
     getSeed: role === "host" ? () => extra.seed ?? SEED : undefined,
     getResumeVersion: () => p.resumeVersion,
-    createSocket: rig.createSocket,
+    createSocket: extra.createSocket ?? rig.createSocket,
     reconnectDelaysMs: [10, 20],
     notReadyRetryMs: 20,
     callbacks: {
@@ -269,5 +279,19 @@ describe("CollabClient", () => {
     expect(host.closed).toBeNull();
     // The host reseeded: the guest got the host's copy as a fresh snapshot.
     expect(guest.snapshots[guest.snapshots.length - 1]?.state).toEqual(SEED);
+  });
+
+  it("stops on a relay of another protocol instead of waiting forever", async () => {
+    rig = await createRig();
+    const room = roomId();
+    const guest = probe("guest", room, { createSocket: (url) => new LegacyRelaySocket(url) });
+    const host = probe("host", room, { createSocket: (url) => new LegacyRelaySocket(url) });
+    guest.client.start();
+    host.client.start();
+
+    await until(() => guest.closed !== null && host.closed !== null, 1_000, "both closed");
+    expect(guest.closed).toBe("protocol_mismatch");
+    expect(host.closed).toBe("protocol_mismatch");
+    expect(guest.phases).not.toContain("ready");
   });
 });

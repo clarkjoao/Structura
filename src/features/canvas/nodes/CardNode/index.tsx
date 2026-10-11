@@ -19,7 +19,7 @@ import { EmbedButton } from "./EmbedButton";
 import { StepBadge } from "./StepBadge";
 import { useTranslation } from "react-i18next";
 import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
-import { useCollab } from "@/features/collaboration/components/CollabProvider";
+import { useIsCollabGuest } from "@/features/collaboration/hooks/useIsCollabGuest";
 import { CARD_MAX_W, CARD_MIN_W } from "./constants";
 
 /**
@@ -121,7 +121,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const { t } = useTranslation();
   const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
     useNodeState(data, selected);
-  const { isGuest } = useCollab();
+  const isGuest = useIsCollabGuest();
   const rootRef = useRef<HTMLDivElement>(null);
   const expandStyle = useExpandMaxHeight(isActive, rootRef);
 
@@ -216,11 +216,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
         />
       )}
       {activePeer && (
-        <CollabPeerPresence
-          activePeer={activePeer}
-          locked={peerLocked}
-          roundedClassName="rounded-lg"
-        />
+        <CollabPeerPresence user={activePeer} locked={peerLocked} roundedClassName="rounded-lg" />
       )}
       {d.compareBadges && <CompareVersionBadges a={d.compareBadges.a} b={d.compareBadges.b} />}
       {!d.compareBadges && d.versionBadge && (
