@@ -133,6 +133,20 @@ function scopedFiles(manifest: PluginManifest): PluginFiles {
   };
 }
 
+/**
+ * Tracks an unsubscribe for rollback, and stops tracking it once the plugin calls it: a pane
+ * that subscribes on every mount would otherwise grow the list for as long as the plugin runs.
+ */
+function trackUnsubscribe(tracker: PluginContributionTracker, unsubscribe: () => void) {
+  const tracked = () => {
+    const i = tracker.unsubscribers.indexOf(tracked);
+    if (i !== -1) tracker.unsubscribers.splice(i, 1);
+    unsubscribe();
+  };
+  tracker.unsubscribers.push(tracked);
+  return tracked;
+}
+
 /** The canvas selection as plugins see it: plain arrays, never the store's own sets. */
 function canvasSelection(): PluginCanvasSelection {
   const { selectedNodeIds, selectedEdgeId } = useCanvasSelectionStore.getState();
@@ -147,17 +161,18 @@ function scopedCanvas(manifest: PluginManifest, tracker: PluginContributionTrack
     getSelection: () => (check(), canvasSelection()),
     onSelectionChange(listener) {
       check();
-      const unsubscribe = useCanvasSelectionStore.subscribe((state, previous) => {
-        if (
-          state.selectedNodeIds === previous.selectedNodeIds &&
-          state.selectedEdgeId === previous.selectedEdgeId
-        ) {
-          return;
-        }
-        listener(canvasSelection());
-      });
-      tracker.unsubscribers.push(unsubscribe);
-      return unsubscribe;
+      return trackUnsubscribe(
+        tracker,
+        useCanvasSelectionStore.subscribe((state, previous) => {
+          if (
+            state.selectedNodeIds === previous.selectedNodeIds &&
+            state.selectedEdgeId === previous.selectedEdgeId
+          ) {
+            return;
+          }
+          listener(canvasSelection());
+        }),
+      );
     },
     highlight(target) {
       check();
@@ -220,9 +235,7 @@ export function createScopedPluginApi(
 
     onDiagramChange(callback: (diagramId: string) => void): () => void {
       warnUndeclaredCapability(manifest, "events:diagram");
-      const unsubscribe = subscribeDiagramChange(callback);
-      tracker.unsubscribers.push(unsubscribe);
-      return unsubscribe;
+      return trackUnsubscribe(tracker, subscribeDiagramChange(callback));
     },
 
     getActiveDiagramId(): string | null {
