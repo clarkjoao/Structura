@@ -15,6 +15,8 @@ import {
   type ImporterContribution,
   type ModalOptions,
   type PanelContribution,
+  type PluginCanvas,
+  type PluginCanvasSelection,
   type PluginCapability,
   type PluginComponentPatch,
   type PluginDiagramChanges,
@@ -40,6 +42,8 @@ import { toGeneratedGraph } from "./import-graph";
 import { PluginCodeEditor } from "./components/PluginCodeEditor";
 import { registerChatContextContribution } from "./chat-context-registry";
 import { createPluginFolders } from "@/infrastructure/persistence/pluginFolders";
+import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
+import { useHighlightRequests } from "@/features/canvas/focus/highlightRequests";
 
 /**
  * Everything a plugin registered, tracked by the host so deactivation can bulk-unregister
@@ -126,6 +130,42 @@ function scopedFiles(manifest: PluginManifest): PluginFiles {
     pick: (bindingId) => (check(), folders.pick(String(bindingId))),
     open: (bindingId) => (check(), folders.open(String(bindingId))),
     forget: (bindingId) => (check(), folders.forget(String(bindingId))),
+  };
+}
+
+/** The canvas selection as plugins see it: plain arrays, never the store's own sets. */
+function canvasSelection(): PluginCanvasSelection {
+  const { selectedNodeIds, selectedEdgeId } = useCanvasSelectionStore.getState();
+  return { componentIds: [...selectedNodeIds], connectionId: selectedEdgeId };
+}
+
+function scopedCanvas(manifest: PluginManifest, tracker: PluginContributionTracker): PluginCanvas {
+  const check = () => warnUndeclaredCapability(manifest, "diagram:read");
+  const ids = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+  return {
+    getSelection: () => (check(), canvasSelection()),
+    onSelectionChange(listener) {
+      check();
+      const unsubscribe = useCanvasSelectionStore.subscribe((state, previous) => {
+        if (
+          state.selectedNodeIds === previous.selectedNodeIds &&
+          state.selectedEdgeId === previous.selectedEdgeId
+        ) {
+          return;
+        }
+        listener(canvasSelection());
+      });
+      tracker.unsubscribers.push(unsubscribe);
+      return unsubscribe;
+    },
+    highlight(target) {
+      check();
+      useHighlightRequests.getState().requestHighlight({
+        componentIds: ids(target?.componentIds),
+        connectionIds: ids(target?.connectionIds),
+      });
+    },
   };
 }
 
@@ -263,6 +303,8 @@ export function createScopedPluginApi(
     },
 
     files: scopedFiles(manifest),
+
+    canvas: scopedCanvas(manifest, tracker),
 
     ui: { CodeEditor: PluginCodeEditor },
 

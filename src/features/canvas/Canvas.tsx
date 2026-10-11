@@ -1,7 +1,7 @@
 import { useSharedRefNotices } from "./shared/useSharedRefNotices";
 import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
+import { useReactFlow, useStoreApi, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
@@ -33,7 +33,8 @@ import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
 import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
-import { frameComponents } from "./focus/focusComponents";
+import { frameComponents, frameUnlessInView } from "./focus/focusComponents";
+import { useHighlightRequests } from "./focus/highlightRequests";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
@@ -246,6 +247,30 @@ const Canvas = (props: CanvasProps = {}) => {
     requestAnimationFrame(() => frameComponents(reactFlowInstance, preview.nodeIds));
   }, [pendingPreviews, reactFlowInstance]);
   useElementFocusFromUrl(visualState);
+
+  // A plugin lights elements it points at (API 1.11): brought into view only when they are not.
+  const highlightRequest = useHighlightRequests((state) => state.request);
+  const flowStore = useStoreApi();
+  const handledHighlight = useRef(highlightRequest?.token ?? 0);
+  useEffect(() => {
+    if (!highlightRequest || highlightRequest.token === handledHighlight.current) return;
+    handledHighlight.current = highlightRequest.token;
+    const nodeIds = new Set(
+      highlightRequest.componentIds.filter((id) => reactFlowInstance.getNode(id)),
+    );
+    const connectionIds = highlightRequest.connectionIds.filter((id) => {
+      const edge = reactFlowInstance.getEdge(id);
+      if (edge) [edge.source, edge.target].forEach((end) => nodeIds.add(end));
+      return edge !== undefined;
+    });
+    if (nodeIds.size === 0) {
+      visualState.clearHighlight();
+      return;
+    }
+    visualState.setHighlight(connectionIds, [...nodeIds]);
+    const { width, height } = flowStore.getState();
+    frameUnlessInView(reactFlowInstance, [...nodeIds], { width, height });
+  }, [highlightRequest, reactFlowInstance, flowStore, visualState]);
 
   const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);
   const occupancy = useViewportOccupancy();

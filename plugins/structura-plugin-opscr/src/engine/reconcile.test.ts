@@ -466,6 +466,52 @@ describe("reconcile", () => {
     expect(r.notInYaml).toBe(1);
   });
 
+  it("reports connections the YAML does not carry as drawn", async () => {
+    const from = { kind: "Application", name: "order-tracker" };
+    const to = { kind: "Database", name: "catalog-db" };
+    let http = "";
+    let loose = "";
+    s.canvas.step(() => {
+      s.canvas.components.push({
+        id: "x",
+        type: "container",
+        label: "Free",
+        description: "",
+        parentId: null,
+        position: { x: 0, y: 0 },
+        size: null,
+        tags: [],
+        serviceId: null,
+        cloudServiceId: null,
+        technology: null,
+      });
+      http = s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), "HTTP");
+      loose = s.canvas.connect(s.id("order-tracker"), "x", "calls");
+    });
+    const r = reconcile(s.canvas.snapshot(), s.binding, s.files);
+    // A label that is not an edge type is written as the default type, and said so.
+    expect(countEdges(r.files, { from, to, type: "calls" })).toBe(1);
+    expect(r.unwritten).toEqual(
+      expect.arrayContaining([
+        { id: http, reason: "not-a-type", label: "HTTP", type: "calls" },
+        { id: loose, reason: "end-outside", label: "calls" },
+      ]),
+    );
+    expect(r.unwritten).toHaveLength(2);
+  });
+
+  it("reports a relabel the edge type cannot follow, and nothing once it can", async () => {
+    let id = "";
+    s.canvas.step(() => (id = s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), "")));
+    await s.pump();
+    s.canvas.step(() => (s.canvas.connections.find((c) => c.id === id)!.label = "maybe"));
+    expect(reconcile(s.canvas.snapshot(), s.binding, s.files).unwritten).toEqual([
+      { id, reason: "not-a-type", label: "maybe", type: "calls" },
+    ]);
+    s.canvas.step(() => (s.canvas.connections.find((c) => c.id === id)!.label = "reads"));
+    expect(reconcile(s.canvas.snapshot(), s.binding, s.files).unwritten).toEqual([]);
+  });
+
   it("skips while a file does not parse", () => {
     const broken = s.files.map((f, i) => (i === 0 ? { ...f, text: `${f.text}\n  bad: [\n` } : f));
     s.canvas.step(() => s.canvas.remove([s.id("cart-cache")]));
