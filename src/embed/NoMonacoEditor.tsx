@@ -1,6 +1,6 @@
-import type { EditorProps } from "@monaco-editor/react";
+import type { DiffEditorProps, EditorProps } from "@monaco-editor/react";
 
-export type { EditorProps } from "@monaco-editor/react";
+export type { DiffEditorProps, EditorProps } from "@monaco-editor/react";
 
 /**
  * Stands in for `LazyMonacoEditor` in the embed build (see vite.embed.config.ts): a
@@ -13,4 +13,9 @@ export function LazyMonacoEditor(props: EditorProps) {
       {props.value ?? props.defaultValue}
     </pre>
   );
+}
+
+/** Stands in for `LazyMonacoDiffEditor` the same way: the text being compared, as it is. */
+export function LazyMonacoDiffEditor(props: DiffEditorProps) {
+  return <pre className="h-full w-full overflow-auto p-2 text-xs">{props.modified}</pre>;
 }

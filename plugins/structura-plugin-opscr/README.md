@@ -30,7 +30,17 @@ Two ways to bring opscr into Structura:
 
   **Outside changes** (VSCode, `git pull`) reach the pane within ~2 s: files without unsaved edits
   reload and the diagram follows; a file you are editing keeps your text and shows the conflict
-  with _Use the folder's version_ / _Keep mine_. A changed `opscr.layout.json` moves the canvas.
+  with _Compare_ (the folder's version against yours) / _Use the folder's version_ / _Keep mine_. A
+  changed `opscr.layout.json` moves the canvas.
+
+  **From the canvas to the text and back:** selecting an element or a connection opens the file of
+  its manifest or edge, at its line; the element the cursor is in is lit on the canvas (brought
+  into view when off screen). Each file keeps its own undo history.
+
+  **What does not carry** between the two sides is listed in the pane: connections whose label is
+  not an edge type, or with an end outside the YAML, and the Kinds and edges this view does not
+  draw — each entry lights its connection or opens its line. An empty folder offers a first
+  manifest to start from.
 
   **The chat** (bottom-right) on a bound diagram, while the folder is open in the pane, is an
   opscr editing assistant: its context is the opscr-architect skill (bundled at build time from

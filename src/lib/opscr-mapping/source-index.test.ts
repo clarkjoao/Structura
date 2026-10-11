@@ -92,4 +92,10 @@ describe("SourceIndex", () => {
     expect(index.elementAt("rel", 13)).toBeNull(); // an edge to a missing manifest
     expect(index.elementAt("other", 1)).toBeNull();
   });
+
+  it("locates every manifest and edge, drawn or not", () => {
+    expect(index.locateWritten("BusinessCapability/selling")).toEqual({ file: "apps", line: 16 });
+    expect(index.locateWritten("r#2")).toEqual({ file: "rel", line: 12 });
+    expect(index.locateWritten("r#9")).toBeUndefined();
+  });
 });

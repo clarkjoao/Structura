@@ -6,7 +6,7 @@ import type {
 } from "../types/plugin.types";
 import { addElementsToYaml, type AddChoice } from "./adopt";
 import { keyOf, nameAt, renameElement, type SourceText } from "./patches";
-import { reconcile, renameInBinding, retire } from "./reconcile";
+import { reconcile, renameInBinding, retire, type UnwrittenConnection } from "./reconcile";
 import {
   emptyBinding,
   planSync,
@@ -60,6 +60,8 @@ export type EngineEvent =
   | { type: "invalid"; errors: number }
   | { type: "diagnostics"; diagnostics: unknown[] }
   | { type: "outside"; ids: string[] }
+  /** Canvas connections the YAML does not carry as drawn (`reconcile`). */
+  | { type: "unwritten"; connections: UnwrittenConnection[] }
   | { type: "rename-refused"; name: string }
   | { type: "provider-refused"; names: string[] }
   | { type: "added"; keys: string[] };
@@ -127,6 +129,7 @@ export class OpscrEngine {
       await this.options.diagram.apply(result.revert);
     }
     this.emit({ type: "outside", ids: result.outside });
+    this.emit({ type: "unwritten", connections: result.unwritten });
     if (result.refused.length > 0) this.emit({ type: "rename-refused", name: result.refused[0]! });
     if (result.refusedProviders.length > 0) {
       this.emit({ type: "provider-refused", names: result.refusedProviders });

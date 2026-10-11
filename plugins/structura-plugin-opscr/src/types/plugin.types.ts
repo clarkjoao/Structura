@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.10.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.11.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -337,6 +337,39 @@ export interface PluginCodeEditorProps {
   height?: string | number;
   /** v1.5 — F2 "Rename symbol" in this editor, answered by the plugin. */
   rename?: PluginEditorRename;
+  /**
+   * v1.11 — the file the text is. Each path keeps its own undo history, cursor and scroll, so
+   * one editor can switch between files; make it unique to the plugin and the document.
+   */
+  path?: string;
+  /** v1.11 — puts the cursor on this 1-based line and scrolls to it; a new `token` does it again. */
+  revealLine?: { line: number; token: number } | null;
+  /** v1.11 — the user moved the cursor to this 1-based line (not `revealLine`, not a new value). */
+  onCursorLine?: (line: number) => void;
+  /**
+   * v1.11 — shows a comparison instead: this text, read-only, against `value`, editable — side
+   * by side when there is room, interleaved in one column when not.
+   */
+  original?: string;
+}
+
+/** v1.11 — what is selected on the canvas of the active diagram. */
+export interface PluginCanvasSelection {
+  componentIds: readonly string[];
+  connectionId: string | null;
+}
+
+/** v1.11 — capability "diagram:read". The editor canvas, for plugins that show where its elements come from. */
+export interface PluginCanvas {
+  getSelection(): PluginCanvasSelection;
+  /** Called on every change of the selection. Returns unsubscribe. */
+  onSelectionChange(listener: (selection: PluginCanvasSelection) => void): () => void;
+  /**
+   * Lights these elements, as a click on a connection lights its ends (the rest dims), and
+   * brings them into view when they are not. Ids not on the canvas are ignored; nothing clears
+   * it. The selection is left as it is.
+   */
+  highlight(target: { componentIds?: readonly string[]; connectionIds?: readonly string[] }): void;
 }
 
 /** v1.5 — a symbol the editor can rename, as UTF-16 offsets into the editor's text. */
@@ -538,6 +571,9 @@ export interface StructuraPluginApi {
 
   /** v1.4 — capability "files:folder". Folders the user picked for this plugin. */
   readonly files: PluginFiles;
+
+  /** v1.11 — capability "diagram:read". The canvas's selection, and lighting elements on it. */
+  readonly canvas: PluginCanvas;
 
   /**
    * v1.6 — capability "llm:context". Provide the chat's context and reply handling for the

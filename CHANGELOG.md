@@ -47,6 +47,14 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
   finds elements in the preview, and an update zooms to what it changed.
   Clicking an element opens the YAML that writes it, the element under the
   cursor is lit in the preview, and a listed problem opens its line.
+- **Plugin API 1.11.0**: `api.canvas` (the canvas selection, and `highlight()`
+  to light elements and bring them into view), and `CodeEditor` `path` (a model
+  per file, with its own undo history), `revealLine`, `onCursorLine` and
+  `original` (a comparison). **opscr plugin 0.13.0**: selecting an element on
+  the canvas opens the YAML that writes it and the element under the cursor is
+  lit on the canvas; the pane lists what does not carry between the YAML and the
+  diagram; a conflict can be compared with the folder's version; an empty
+  folder offers a first manifest.
 - **Embed**: `embed-editor.html`, Structura's canvas on an in-memory diagram,
   driven over `postMessage` like a remote plugin API (not used by the extension).
 - **opscr plugin**: the document pane's orchestration is now a UI-free

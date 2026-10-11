@@ -33,6 +33,7 @@ import { SelectionToolbars } from "./chrome/SelectionToolbars";
 import { useSelectedComponent } from "./chrome/useSelectedComponent";
 import { useCanvasArrangeControl } from "./chrome/useCanvasArrangeControl";
 import { useCanvasChat } from "./chrome/useCanvasChat";
+import { usePluginHighlightRequests } from "./chrome/usePluginHighlightRequests";
 import { useCanvasDropTarget } from "./chrome/useCanvasDropTarget";
 import { useCanvasFocusFromUrl, useCanvasNotices } from "./chrome/useCanvasNotices";
 import { useFlowModeClosesChrome } from "./chrome/useFlowModeClosesChrome";
@@ -128,6 +129,7 @@ const Canvas = (props: CanvasProps = {}) => {
   );
 
   useCanvasFocusFromUrl(visualState);
+  usePluginHighlightRequests(visualState);
 
   const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);
   const occupancy = useViewportOccupancy();

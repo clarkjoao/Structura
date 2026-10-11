@@ -7,7 +7,8 @@
  * FileSystemDirectoryHandle API the real picker returns. Then: bind, wait for the diagram,
  * add a Cache in the editor, drag an element, edit again, check the dragged element stayed,
  * undo one sync, remove the Cache again, save, and read the file back. Then the other way:
- * delete, undo and rename on the canvas, and read the patched files back.
+ * delete, undo and rename on the canvas, and read the patched files back. Then outside changes
+ * and conflicts (with the comparison), and the way between canvas and text both ways.
  *
  *   (in the repo root) npm run build:plugins -- --no-build structura-plugin-opscr
  *   (here)             node e2e/pane.mjs
@@ -110,7 +111,10 @@ await context.grantPermissions(["clipboard-read", "clipboard-write"], {
 });
 const page = await context.newPage();
 const errors = [];
-page.on("pageerror", (e) => errors.push(String(e)));
+page.on("pageerror", (e) => {
+  errors.push(String(e));
+  console.log(`pageerror: ${e.stack ?? e}`);
+});
 page.on("console", (m) => m.type() === "error" && console.log(`console: ${m.text()}`));
 
 await page.addInitScript(
@@ -160,6 +164,18 @@ const waitNodes = (n) =>
   });
 const nodeBox = (name) =>
   page.locator(".react-flow__node", { hasText: name }).first().boundingBox();
+/**
+ * Where an element is on the diagram (React Flow's own position), not on screen: the canvas pans
+ * to the element the editor's cursor is in, which moves every box on screen.
+ */
+const nodePos = (name) =>
+  page
+    .locator(".react-flow__node", { hasText: name })
+    .first()
+    .evaluate((node) => {
+      const [, x, y] = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(node.style.transform);
+      return { x: Number(x), y: Number(y) };
+    });
 const editor = page.locator(".monaco-editor textarea").first();
 /** Replaces the open file's text by pasting it: typing would go through auto-indent. */
 let commerce = SAMPLE["commerce.opscr.yaml"];
@@ -189,17 +205,20 @@ await check(true, "an edit adds the Cache without saving");
 await page.screenshot({ path: join(OUT, "2-cache.png") });
 
 const before = await nodeBox("public-api");
+const beforePos = await nodePos("public-api");
 await page.mouse.move(before.x + 20, before.y + 15);
 await page.mouse.down();
 await page.mouse.move(before.x + 120, before.y + 135, { steps: 12 });
 await page.mouse.up();
 await page.waitForTimeout(500);
-const dragged = await nodeBox("public-api");
-await check(Math.abs(dragged.y - before.y) > 50, "public-api was dragged");
+const dragged = await nodePos("public-api");
+await check(Math.abs(dragged.y - beforePos.y) > 50, "public-api was dragged");
+// Selecting it opened its manifest, in another file: back to the one being edited.
+await page.getByRole("tab", { name: /^commerce\.opscr\.yaml/ }).click();
 
 await appendToEditor(EXTRA);
 await waitNodes(24).catch(() => fail("a second edit did not reach the canvas"));
-const after = await nodeBox("public-api");
+const after = await nodePos("public-api");
 await check(
   Math.abs(after.x - dragged.x) < 2 && Math.abs(after.y - dragged.y) < 2,
   "the dragged element stays put on the next sync",
@@ -240,7 +259,7 @@ await waitNodes(22).catch(() => fail("removing the Cache's manifest did not remo
 await check(true, "deleting a manifest removes its element");
 
 // F2 on a manifest name renames it everywhere and keeps the canvas element.
-const trackerBefore = await nodeBox("order-tracker");
+const trackerBefore = await nodePos("order-tracker");
 const line = SAMPLE["commerce.opscr.yaml"].split("\n").indexOf("  name: order-tracker");
 await page.locator(".monaco-editor .view-lines").first().click();
 // To the first line: Ctrl+Home elsewhere, Cmd+Up on macOS.
@@ -263,7 +282,7 @@ await page
   .first()
   .waitFor({ timeout: 10000 })
   .catch(() => fail("F2 rename did not reach the canvas"));
-const trackerAfter = await nodeBox("order-relay");
+const trackerAfter = await nodePos("order-relay");
 await check(
   (await nodes()) === 22 &&
     Math.abs(trackerAfter.x - trackerBefore.x) < 2 &&
@@ -456,12 +475,12 @@ await waitNodes(outsideCount + 1).catch(() =>
 );
 await check(true, "an outside edit of a clean file reloads it and the canvas follows");
 
-const apiBefore = await nodeBox("public-api");
+const apiBefore = await nodePos("public-api");
 const layout = JSON.parse(await readOnDisk("opscr.layout.json"));
 layout.elements["APIGateway/public-api"].y += 200;
 await writeOnDisk("opscr.layout.json", JSON.stringify(layout, null, 2));
 await waitFor(
-  async () => Math.abs((await nodeBox("public-api")).y - apiBefore.y) > 50,
+  async () => Math.abs((await nodePos("public-api")).y - apiBefore.y) > 50,
   "an outside change of the layout sidecar moves the element",
 );
 
@@ -478,7 +497,26 @@ await keepMine
   .waitFor({ timeout: 8000 })
   .catch(() => fail("no conflict shown for a file with unsaved edits"));
 await page.screenshot({ path: join(OUT, "5b-conflict.png") });
+await page.getByRole("button", { name: /^(Compare|Comparar)$/ }).click();
+await page
+  .locator(".monaco-diff-editor")
+  .first()
+  .waitFor({ timeout: 10000 })
+  .catch(() => fail("Compare did not show the folder's version beside the user's"));
+await check(
+  // Monaco draws spaces as no-break spaces.
+  (await page.locator(".monaco-diff-editor").first().textContent())
+    .replaceAll("\u00a0", " ")
+    .includes("edited elsewhere"),
+  "Compare shows the folder's version beside the user's",
+);
+await page.screenshot({ path: join(OUT, "5c-compare.png") });
 await keepMine.click();
+await page
+  .locator(".monaco-diff-editor")
+  .first()
+  .waitFor({ state: "detached", timeout: 5000 })
+  .catch(() => fail("picking a side did not close the comparison"));
 await check(
   (await keepMine.count()) === 0 &&
     !(await readOnDisk("commerce.opscr.yaml")).includes("my unsaved note"),
@@ -525,6 +563,66 @@ await check(
     (await saveAndRead("commerce.opscr.yaml")).includes("kept while closed"),
   "closing the pane keeps unsaved edits",
 );
+
+// The canvas and the YAML point at each other: selecting an element opens the manifest that
+// writes it, and the element the cursor is in is lit on the canvas.
+const activeTab = async () =>
+  (await page.locator('[role="tab"][aria-selected="true"]').first().textContent()) ?? "";
+const activeLine = async () =>
+  Number(
+    await page
+      .locator(".monaco-editor .line-numbers.active-line-number")
+      .first()
+      .textContent()
+      .catch(() => "0"),
+  );
+const statementsLine =
+  (await readOnDisk("finance.opscr.yaml")).split("\n").indexOf("  name: statements") + 1;
+await page.locator(".react-flow__controls-fitview").first().click();
+await page.waitForTimeout(1500); // the fit animation
+await page.locator(".react-flow__node", { hasText: "statements" }).first().click();
+await waitFor(async () => {
+  const line = await activeLine();
+  return (
+    (await activeTab()).startsWith("finance.opscr.yaml") &&
+    line <= statementsLine &&
+    line >= statementsLine - 4
+  );
+}, "selecting an element opens the manifest that writes it, at its line");
+await page.keyboard.press("Escape");
+await page.screenshot({ path: join(OUT, "7-canvas-to-source.png") });
+
+const workerLine = SAMPLE["finance.opscr.yaml"].split("\n").indexOf("  name: payment-worker");
+await page.locator(".monaco-editor .view-lines").first().click();
+await page.keyboard.press("ControlOrMeta+Home");
+await page.keyboard.press("ControlOrMeta+ArrowUp");
+for (let i = 0; i < workerLine; i++) await page.keyboard.press("ArrowDown");
+const opacityOf = (name) =>
+  page
+    .locator(".react-flow__node", { hasText: name })
+    .first()
+    .evaluate((node) => Number(getComputedStyle(node).opacity));
+await waitFor(
+  async () => (await opacityOf("payment-worker")) === 1 && (await opacityOf("invoices")) < 1,
+  "the element the cursor is in is lit on the canvas",
+);
+await page.screenshot({ path: join(OUT, "7-source-to-canvas.png") });
+await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+
+// What does not carry between the two sides is listed; an entry opens where it is written.
+const notCarried = page.locator("summary", { hasText: /not carried|não levad/ });
+await check((await notCarried.count()) === 1, "the pane lists what the diagram does not draw");
+await notCarried.click();
+await page
+  .getByRole("button", { name: /Subdomain payment-processing/ })
+  .first()
+  .click();
+await waitFor(
+  async () => (await activeTab()).startsWith("finance.opscr.yaml") && (await activeLine()) >= 12,
+  "an entry of that list opens the manifest",
+);
+await notCarried.click();
+await page.getByRole("tab", { name: /^commerce\.opscr\.yaml/ }).click();
 
 // An element drawn from the palette is offered for the YAML, with a suggested Kind.
 // The chat stays open: the picker must be drawn above it.

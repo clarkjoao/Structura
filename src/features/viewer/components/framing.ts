@@ -20,30 +20,3 @@ export function framingSignature(
   }
   return sizes.length > 0 ? sizes.join("|") : null;
 }
-
-/** A rectangle in flow coordinates. */
-export interface FlowRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * Whether every rectangle is wholly on screen, for a viewport `[x, y, zoom]` over a canvas of
- * `width` × `height` pixels. Nothing to show counts as shown.
- */
-export function allInView(
-  rects: readonly FlowRect[],
-  [x, y, zoom]: readonly [number, number, number],
-  width: number,
-  height: number,
-): boolean {
-  const left = -x / zoom;
-  const top = -y / zoom;
-  const right = left + width / zoom;
-  const bottom = top + height / zoom;
-  return rects.every(
-    (r) => r.x >= left && r.y >= top && r.x + r.width <= right && r.y + r.height <= bottom,
-  );
-}

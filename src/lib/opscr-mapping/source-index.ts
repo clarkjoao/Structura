@@ -41,6 +41,8 @@ export class SourceIndex {
   private readonly locations = new Map<string, SourceLocation>();
   /** Per file, the lines where a manifest or an edge starts, in order. */
   private readonly marks = new Map<string, Mark[]>();
+  /** Every manifest by `Kind/name`, and every edge by `relationship#index`, drawn or not. */
+  private readonly written = new Map<string, SourceLocation>();
 
   constructor(manifests: readonly LocatedManifestInput[], view: TechnicalView) {
     const drawn = new Set(view.nodes.map((n) => n.id));
@@ -68,6 +70,7 @@ export class SourceIndex {
     for (const m of manifests) {
       const id = nodeId(m.kind, m.metadata.name);
       const first = byId.get(id) === m;
+      if (first) this.written.set(id, { file: m.sourceFile, line: m.line });
       mark(m.sourceFile, m.line, first && drawn.has(id) ? { kind: "component", key: id } : null);
       if (!first || m.kind !== "Relationship") continue;
       const edges = m.spec["edges"];
@@ -75,6 +78,7 @@ export class SourceIndex {
       edges.forEach((edge: unknown, index) => {
         const line = m.edgeLines.get(index);
         if (line === undefined) return;
+        this.written.set(`${m.metadata.name}#${index}`, { file: m.sourceFile, line });
         const key = keyOfEdge.get(`${m.metadata.name}#${index}`);
         // A drawn edge is its connection; a belongsTo is drawn as its child's place.
         const child = belongsToChild(edge);
@@ -90,6 +94,11 @@ export class SourceIndex {
   /** Where the element is written: its manifest's first line, or its edge's. */
   locate(element: GraphElementRef): SourceLocation | undefined {
     return this.locations.get(refId(element));
+  }
+
+  /** Where a manifest (`Kind/name`) or a Relationship edge (`relationship#index`) is written. */
+  locateWritten(id: string): SourceLocation | undefined {
+    return this.written.get(id);
   }
 
   /** The drawn element whose manifest or edge `line` of `file` is in, if any. */

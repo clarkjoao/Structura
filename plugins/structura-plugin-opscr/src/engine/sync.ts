@@ -7,6 +7,7 @@ import type {
 import {
   LEAF_H,
   LEAF_W,
+  connectionKeys as importerConnectionKeys,
   overlayLayouts,
   parseLayoutFile,
   serializeLayoutFile,
@@ -63,15 +64,8 @@ export const identity = (c: ImporterGraphComponent) =>
   JSON.stringify([c.type, c.parentKey ?? null]);
 
 /** Connections are keyed by ends and label, numbered when the same pair repeats. */
-export function connectionKeys(graph: ImporterGraph): string[] {
-  const seen = new Map<string, number>();
-  return graph.connections.map((c) => {
-    const base = `${c.source}->${c.target}:${c.label}`;
-    const n = seen.get(base) ?? 0;
-    seen.set(base, n + 1);
-    return `${base}#${n}`;
-  });
-}
+export const connectionKeys = (graph: ImporterGraph): string[] =>
+  importerConnectionKeys(graph.connections);
 
 /**
  * The layout the reader currently sees, by element key — the canvas's positions and sizes of

@@ -7,17 +7,45 @@ import type {
   PluginPanelProps,
   StructuraPluginApi,
 } from "../types/plugin.types";
-import { CONFIG_FILE, isManifest, projector } from "../project";
+import { CONFIG_FILE, isManifest, projector, type Projection } from "../project";
 import { nameAt, refOf, type SourceText } from "../engine/patches";
 import { openSession } from "../session";
-import { DRAWN_KINDS, LAYOUT_FILE, kindFor, providersFor } from "../generated/opscr-mapping";
+import {
+  DRAWN_KINDS,
+  LAYOUT_FILE,
+  kindFor,
+  providersFor,
+  type GraphElementRef,
+  type SourceLocation,
+} from "../generated/opscr-mapping";
 import type { AddChoice } from "../engine/adopt";
-import { OpscrEngine, type EngineEvent } from "../engine/engine";
+import { OpscrEngine, type EngineEvent, type Projector } from "../engine/engine";
+import type { UnwrittenConnection } from "../engine/reconcile";
 import { emptyBinding, type BindingState } from "../engine/sync";
 import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../engine/watch";
 import { text, type Locale } from "./i18n";
 
 const SYNC_DELAY_MS = 300;
+
+/** What an empty folder starts with: one valid manifest to copy from. */
+const FIRST_MANIFEST = {
+  name: "architecture.opscr.yaml",
+  key: "Application/my-app",
+  text: [
+    "apiVersion: opscr.dev/v1",
+    "kind: Application",
+    "metadata:",
+    "  name: my-app",
+    "spec:",
+    "  provider: EKS",
+    "  language: Go",
+    "  description: What this application does",
+    "",
+  ].join("\n"),
+};
+
+const sameElement = (a: GraphElementRef | null, b: GraphElementRef | null) =>
+  a === b || (a !== null && b !== null && a.kind === b.kind && a.key === b.key);
 
 interface Buffer {
   name: string;
@@ -91,6 +119,18 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const knownStats = useRef<Stats>({});
     /** The folder came back from `sessions`: canvas edits made meanwhile are not in the YAML yet. */
     const restored = useRef(false);
+    /** Canvas connections the YAML does not carry as drawn. */
+    const [unwritten, setUnwritten] = useState<UnwrittenConnection[]>([]);
+    /** The last projection with a graph: where elements are written, and what is not drawn. */
+    const [projection, setProjection] = useState<Projection | null>(null);
+    const projectionRef = useRef(projection);
+    projectionRef.current = projection;
+    /** A line for the editor to go to; a new token goes again. */
+    const [reveal, setReveal] = useState<{ line: number; token: number } | null>(null);
+    /** The element last pointed at from either side, so neither side echoes the other. */
+    const pointed = useRef<GraphElementRef | null>(null);
+    /** The file whose folder version is shown beside the user's, while comparing. */
+    const [comparing, setComparing] = useState<string | null>(null);
 
     // Follow the active diagram.
     useEffect(() => api.onDiagramChange(() => setDiagramId(api.getActiveDiagramId())), []);
@@ -106,6 +146,10 @@ export function createOpscrPane(api: StructuraPluginApi) {
       knownStats.current = session?.knownStats ?? {};
       restored.current = session !== undefined;
       setDiagnostics([]);
+      setProjection(null);
+      setUnwritten([]);
+      setComparing(null);
+      pointed.current = null;
       if (!diagramId) {
         setStored(null);
         return;
@@ -159,10 +203,17 @@ export function createOpscrPane(api: StructuraPluginApi) {
       else if (event.type === "parse-error" || event.type === "invalid") setStatus(t.parseError);
       else if (event.type === "diagnostics") setDiagnostics(event.diagnostics as Diagnostic[]);
       else if (event.type === "outside") setOutside(event.ids);
+      else if (event.type === "unwritten") setUnwritten(event.connections);
       else if (event.type === "rename-refused") setStatus(t.renameRefused(event.name));
       else if (event.type === "provider-refused") setStatus(t.providerRefused(event.names));
-      else setStatus(t.addedToYaml(event.keys));
+      else if (event.type === "added") setStatus(t.addedToYaml(event.keys));
     };
+    // The projector, keeping what the pane shows besides the graph: sources and what is not drawn.
+    const project = useCallback<Projector>(async (...args) => {
+      const result = await projector(...args);
+      if (result.graph) setProjection(result);
+      return result;
+    }, []);
     const engine = useMemo(
       () =>
         new OpscrEngine({
@@ -182,12 +233,12 @@ export function createOpscrPane(api: StructuraPluginApi) {
             set: (state) =>
               bindingRef.current ? persist({ ...bindingRef.current, state }) : undefined,
           },
-          project: projector,
+          project,
           isManifest,
           configFile: CONFIG_FILE,
           onEvent: (event) => onEvent.current(event),
         }),
-      [diagramId, persist, setTexts],
+      [diagramId, persist, setTexts, project],
     );
 
     const sync = useCallback(() => engine.sync(), [engine]);
@@ -197,12 +248,59 @@ export function createOpscrPane(api: StructuraPluginApi) {
       if (!folder || !diagramId) return;
       if (restored.current) {
         restored.current = false;
-        void engine.canvasChanged();
+        // Canvas edits made meanwhile reach the YAML; the sync after it gives the pane its
+        // projection again (where elements are written, what is not drawn).
+        void engine.sync();
       }
       return api.onDiagramChange((changed) => {
         if (changed === diagramId) void engine.canvasChanged();
       });
     }, [folder, diagramId, engine]);
+
+    /** Opens `at` in the editor: its file, its line. */
+    const showSource = useCallback((at: SourceLocation) => {
+      setSelected(at.file);
+      setReveal((r) => ({ line: at.line, token: (r?.token ?? 0) + 1 }));
+    }, []);
+
+    // The canvas and the YAML point at each other: selecting an element opens the YAML that
+    // writes it, and the element the cursor is in is lit on the canvas.
+    useEffect(() => {
+      if (!folder || !diagramId) return;
+      return api.canvas.onSelectionChange(({ componentIds, connectionId }) => {
+        const binding = bindingRef.current?.state;
+        const sources = projectionRef.current?.sources;
+        if (!binding || !sources || api.getActiveDiagramId() !== diagramId) return;
+        const keyOf = (ids: Record<string, string>, id: string) =>
+          Object.entries(ids).find(([, v]) => v === id)?.[0];
+        const key = connectionId
+          ? keyOf(binding.connections, connectionId)
+          : componentIds.length === 1
+            ? keyOf(binding.ids, componentIds[0]!)
+            : undefined;
+        if (!key) return;
+        const element: GraphElementRef = { kind: connectionId ? "connection" : "component", key };
+        const at = sources.locate(element);
+        if (!at || sameElement(element, pointed.current)) return;
+        pointed.current = element;
+        showSource(at);
+      });
+    }, [folder, diagramId, showSource]);
+
+    const cursorAt = useCallback((line: number) => {
+      const file = selectedRef.current;
+      const binding = bindingRef.current?.state;
+      const sources = projectionRef.current?.sources;
+      if (!file || !binding || !sources) return;
+      const element = sources.elementAt(file, line);
+      if (sameElement(element, pointed.current)) return;
+      pointed.current = element;
+      const id =
+        element && (element.kind === "component" ? binding.ids : binding.connections)[element.key];
+      if (!element || !id) api.canvas.highlight({});
+      else if (element.kind === "component") api.canvas.highlight({ componentIds: [id] });
+      else api.canvas.highlight({ connectionIds: [id] });
+    }, []);
 
     // F2 in the editor: rename an element (its manifest or an edge end naming it) across every
     // file, keeping its canvas id — the same rename a canvas edit makes, started from the text.
@@ -333,6 +431,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
     };
 
     const resolve = (name: string, side: "disk" | "mine") => {
+      if (comparing === name) setComparing(null);
       const next = buffersRef.current.map((b) => (b.name === name ? resolveConflict(b, side) : b));
       buffersRef.current = next;
       setBuffers(next);
@@ -421,6 +520,17 @@ export function createOpscrPane(api: StructuraPluginApi) {
       setStatus(t.saved(written.size));
     };
 
+    /** An empty folder starts with one manifest, unsaved, to copy from. */
+    const createFirst = async () => {
+      const { name, text } = FIRST_MANIFEST;
+      setTexts([{ name, text }]);
+      setSelected(name);
+      await sync();
+      // Where it was drawn: an empty canvas may be looking anywhere.
+      const id = bindingRef.current?.state.ids[FIRST_MANIFEST.key];
+      if (id) api.canvas.highlight({ componentIds: [id] });
+    };
+
     const reload = async () => {
       if (folder) await load(folder);
     };
@@ -477,6 +587,13 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const problemsElsewhere = diagnostics.filter(
       (d) => d.file !== selected && d.severity === "error",
     ).length;
+    const omitted = projection?.omitted ?? [];
+    const dropped = projection?.dropped ?? [];
+    const notCarried = unwritten.length + omitted.length + dropped.length;
+    const openWritten = (id: string) => {
+      const at = projection?.sources?.locateWritten(id);
+      if (at) showSource(at);
+    };
 
     return (
       <div className="flex h-full min-h-0 flex-col text-xs">
@@ -607,6 +724,17 @@ export function createOpscrPane(api: StructuraPluginApi) {
               <button
                 type="button"
                 className="rounded border px-2 py-0.5"
+                aria-pressed={comparing === b.name}
+                onClick={() => {
+                  setSelected(b.name);
+                  setComparing((c) => (c === b.name ? null : b.name));
+                }}
+              >
+                {comparing === b.name ? t.closeCompare : t.compare}
+              </button>
+              <button
+                type="button"
+                className="rounded border px-2 py-0.5"
                 onClick={() => resolve(b.name, "disk")}
               >
                 {t.useDisk}
@@ -620,19 +748,96 @@ export function createOpscrPane(api: StructuraPluginApi) {
               </button>
             </div>
           ))}
+        {notCarried > 0 && (
+          // Open when something needs a look: a canvas edit the YAML does not carry, or an edge
+          // the YAML gets wrong — not for Kinds and edges this view leaves out by design.
+          <details
+            className="max-h-40 overflow-auto border-b px-2 py-1"
+            open={unwritten.length > 0 || dropped.some((d) => d.reason !== "not-drawn")}
+          >
+            <summary className="cursor-pointer">{t.notCarriedTitle(notCarried)}</summary>
+            {unwritten.length > 0 && (
+              <div className="mt-1">
+                <p className="text-muted-foreground">{t.onCanvasOnly}</p>
+                <ul className="space-y-0.5">
+                  {unwritten.map((u) => (
+                    <li key={`${u.id}-${u.reason}`}>
+                      <button
+                        type="button"
+                        className="text-left hover:underline"
+                        onClick={() => api.canvas.highlight({ connectionIds: [u.id] })}
+                      >
+                        {t.unwritten(u.reason, u.label, u.type)}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {omitted.length + dropped.length > 0 && (
+              <div className="mt-1">
+                <p className="text-muted-foreground">{t.inYamlOnly}</p>
+                <ul className="space-y-0.5">
+                  {dropped.map((d) => (
+                    <li key={`${d.relationship}#${d.index}`}>
+                      <button
+                        type="button"
+                        className="text-left hover:underline"
+                        onClick={() => openWritten(`${d.relationship}#${d.index}`)}
+                      >
+                        {t.dropped(d.type, d.from, d.to, d.reason)}
+                      </button>
+                    </li>
+                  ))}
+                  {omitted.map((o) => (
+                    <li key={`${o.kind}/${o.name}`}>
+                      <button
+                        type="button"
+                        className="text-left hover:underline"
+                        onClick={() => openWritten(`${o.kind}/${o.name}`)}
+                      >
+                        {t.omitted(o.kind, o.name)}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </details>
+        )}
+        {current && comparing === current.name && current.conflict !== undefined && (
+          <p className="border-b px-2 py-1 text-muted-foreground">{t.compareHint}</p>
+        )}
         <div className="min-h-0 flex-1">
-          {current && (
+          {current ? (
             <CodeEditor
-              // One editor per file: a shared one would carry its undo history across files,
-              // and Cmd+Z after switching would write the previous file's text into this one.
-              key={current.name}
+              // A model per file: each keeps its own undo history, cursor and scroll.
+              path={`structura-plugin-opscr/${diagramId}/${current.name}`}
               value={current.text}
               language="yaml"
               onChange={edit}
               onSave={() => void save()}
               rename={renameSymbol}
               markers={problemsHere.map(toMarker)}
+              revealLine={reveal}
+              onCursorLine={cursorAt}
+              {...(comparing === current.name && current.conflict !== undefined
+                ? { original: current.conflict }
+                : {})}
             />
+          ) : (
+            !buffers.some((b) => isManifest(b.name)) && (
+              <div className="space-y-2 p-3">
+                <p className="text-muted-foreground">{t.emptyFolder}</p>
+                <button
+                  type="button"
+                  className="rounded-md border px-3 py-1.5"
+                  onClick={() => void createFirst()}
+                >
+                  {t.createFirst}
+                </button>
+              </div>
+            )
           )}
         </div>
         <div className="border-t px-2 py-1 text-muted-foreground" aria-live="polite">
