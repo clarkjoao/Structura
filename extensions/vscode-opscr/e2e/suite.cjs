@@ -97,4 +97,34 @@ exports.run = async function run() {
     return now.viewport && now.viewport !== start.viewport && now.viewport.endsWith("scale(1)");
   });
   console.log("[e2e] the preview zooms to the element the file added");
+
+  // A click on an element opens the YAML that writes it (posed as the webview's message: a test
+  // cannot click inside the webview).
+  await vscode.commands.executeCommand("opscr._previewMessage", folder, {
+    type: "STRUCTURA_REVEAL",
+    element: { kind: "component", key: "Database/orders-db" },
+  });
+  const editor = await until("the clicked element's YAML to open at its manifest", () => {
+    const e = vscode.window.activeTextEditor;
+    if (!e || !e.document.uri.fsPath.endsWith("commerce.opscr.yaml")) return undefined;
+    const line = e.selection.active.line;
+    const near = Array.from({ length: 4 }, (_, i) =>
+      line + i < e.document.lineCount ? e.document.lineAt(line + i).text : "",
+    );
+    return near.some((t) => t.includes("orders-db")) ? e : undefined;
+  });
+  console.log(
+    `[e2e] clicking an element opens commerce.opscr.yaml:${editor.selection.active.line + 1}`,
+  );
+
+  // The cursor in another manifest lights that element in the preview.
+  const api = editor.document
+    .getText()
+    .split("\n")
+    .findIndex((t) => t.includes("name: orders-api"));
+  editor.selection = new vscode.Selection(api, 0, api, 0);
+  await until("the element under the cursor to be lit in the preview", async () =>
+    (await probe()).selected?.includes("Application/orders-api"),
+  );
+  console.log("[e2e] the cursor's element is lit in the preview");
 };

@@ -1,6 +1,6 @@
 import { SharedLayer } from "@/features/canvas/shared/SharedLayer";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
-import type { Edge, Node } from "@xyflow/react";
+import { useStoreApi, type Edge, type Node } from "@xyflow/react";
 import type { Diagram } from "@/features/diagram/model";
 import {
   EMPTY_READER_CATALOG,
@@ -36,7 +36,7 @@ import { useNodeTypes } from "@/features/canvas/nodes/node-types";
 import CanvasSearch from "@/features/canvas/toolbar/CanvasSearch";
 import { frameComponents } from "@/features/canvas/focus/focusComponents";
 import { KEY, keyMatchesLetter } from "@/lib/core/keyboard";
-import { framingSignature } from "./framing";
+import { allInView, framingSignature } from "./framing";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
 import { iconLookupForDiagram } from "../icons/diagramIconLookup";
@@ -114,6 +114,19 @@ interface ViewerCanvasProps {
    * so the same ids can be focused twice.
    */
   focus?: { ids: readonly string[]; token: number } | null;
+  /** A click on an element — for a host that shows where the element comes from. */
+  onElementClick?: (element: ViewerElementRef) => void;
+  /**
+   * An element the host points at (null: none): lit as a click would light it, and brought into
+   * view when it is not. A new `token` points again.
+   */
+  select?: { element: ViewerElementRef | null; token: number } | null;
+}
+
+/** A node or an edge of the viewer, by its id. */
+export interface ViewerElementRef {
+  kind: "component" | "connection";
+  id: string;
 }
 
 const ViewerCanvasContent = ({
@@ -130,6 +143,8 @@ const ViewerCanvasContent = ({
   searchable = false,
   searchRequest = 0,
   focus = null,
+  onElementClick,
+  select = null,
 }: ViewerCanvasProps) => {
   const flows = useMemo(() => Object.values(diagram.snapshot.flows ?? {}), [diagram]);
 
@@ -237,20 +252,22 @@ const ViewerCanvasContent = ({
     (_: MouseEvent, node: Node) => {
       clearHighlight();
       setFocusedNodeId((prev) => (prev === node.id ? null : node.id));
+      onElementClick?.({ kind: "component", id: node.id });
     },
-    [clearHighlight],
+    [clearHighlight, onElementClick],
   );
 
   const handleEdgeClick = useCallback(
     (_: MouseEvent, edge: Edge) => {
       setFocusedNodeId(null);
+      onElementClick?.({ kind: "connection", id: edge.id });
       if (highlightedConnectionIds.size === 1 && highlightedConnectionIds.has(edge.id)) {
         clearHighlight();
         return;
       }
       setHighlight(edge.id, [edge.source, edge.target]);
     },
-    [highlightedConnectionIds, setHighlight, clearHighlight],
+    [highlightedConnectionIds, setHighlight, clearHighlight, onElementClick],
   );
 
   const handlePaneClick = useCallback(() => {
@@ -466,6 +483,42 @@ const ViewerCanvasContent = ({
     return () => clearTimeout(timer);
   }, [focus, frameNodes, reactFlowInstance]);
 
+  // What the host points at: lit like a click, and brought into view only when it is not — the
+  // reader's pan and zoom stay while it is on screen.
+  const flowStore = useStoreApi();
+  useEffect(() => {
+    if (!select) return;
+    const element = select.element;
+    if (!element) {
+      setFocusedNodeId(null);
+      clearHighlight();
+      return;
+    }
+    let ids: string[];
+    if (element.kind === "component") {
+      if (!reactFlowInstance.getNode(element.id)) return;
+      clearHighlight();
+      setFocusedNodeId(element.id);
+      ids = [element.id];
+    } else {
+      const edge = reactFlowInstance.getEdge(element.id);
+      if (!edge) return;
+      setFocusedNodeId(null);
+      setHighlight(edge.id, [edge.source, edge.target]);
+      ids = [edge.source, edge.target];
+    }
+    const rects = ids.flatMap((id) => {
+      const node = reactFlowInstance.getInternalNode(id);
+      const { width, height } = node?.measured ?? {};
+      if (!node || width === undefined || height === undefined) return [];
+      return [{ ...node.internals.positionAbsolute, width, height }];
+    });
+    const { transform, width, height } = flowStore.getState();
+    if (!allInView(rects, transform, width, height)) frameNodes(ids);
+    // Only a new pointing: not when the highlight it set changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [select]);
+
   const [searchOpen, setSearchOpen] = useState(false);
   /** Bumped on every request, so asking again while the search is open takes focus back. */
   const [searchFocus, setSearchFocus] = useState(0);
@@ -624,6 +677,8 @@ export const ViewerCanvas = ({
   searchable = false,
   searchRequest = 0,
   focus = null,
+  onElementClick,
+  select = null,
 }: ViewerCanvasProps) => (
   <DiagramFlowProvider>
     <ViewerCanvasContent
@@ -640,6 +695,8 @@ export const ViewerCanvas = ({
       searchable={searchable}
       searchRequest={searchRequest}
       focus={focus}
+      onElementClick={onElementClick}
+      select={select}
     />
   </DiagramFlowProvider>
 );

@@ -9,11 +9,15 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  *   host  → embed  STRUCTURA_THEME { theme: "light" | "dark" }      follow the host's theme
  *   host  → embed  STRUCTURA_SEARCH                                  open the element search
  *   host  → embed  STRUCTURA_BLOCKED { reason, errors, problems }    why there is no (new) picture
+ *   host  → embed  STRUCTURA_SELECT { element: { kind, key } | null }  light an element, in view
+ *   embed → host   STRUCTURA_REVEAL { element: { kind, key } }      the reader clicked an element
+ *   embed → host   STRUCTURA_OPEN_PROBLEM { index }                 the reader clicked a BLOCKED problem
  *   host  → embed  STRUCTURA_PROBE                                   say what is on screen
- *   embed → host   STRUCTURA_PROBE_RESULT { viewport, searchOpen, visible, blocked }   …the answer (for tests)
+ *   embed → host   STRUCTURA_PROBE_RESULT { viewport, searchOpen, visible, blocked, selected }   …the answer (for tests)
  *
  * The graph is the plugin importer result (API 1.3), so a host that can write an importer
- * can drive the preview, and both draw the same thing.
+ * can drive the preview, and both draw the same thing. An element is named by its component
+ * `key`, or for a connection by its key from `connectionKeys` (ends, label, occurrence).
  *
  * Messages to the host go to the embedding page (`window.parent`), or — inside a VSCode
  * webview, where the parent is not the extension — through `acquireVsCodeApi()`.
@@ -26,6 +30,15 @@ export const SEARCH = "STRUCTURA_SEARCH";
 export const BLOCKED = "STRUCTURA_BLOCKED";
 export const PROBE = "STRUCTURA_PROBE";
 export const PROBE_RESULT = "STRUCTURA_PROBE_RESULT";
+export const SELECT = "STRUCTURA_SELECT";
+export const REVEAL = "STRUCTURA_REVEAL";
+export const OPEN_PROBLEM = "STRUCTURA_OPEN_PROBLEM";
+
+/** A component by its key, or a connection by its `connectionKeys` key. */
+export interface PreviewElementRef {
+  kind: "component" | "connection";
+  key: string;
+}
 
 export type PreviewGraph = Pick<ImportResult, "components" | "connections">;
 
@@ -34,6 +47,7 @@ export type EmbedMessage =
   | { type: typeof THEME; theme: "light" | "dark" }
   | { type: typeof SEARCH }
   | { type: typeof PROBE }
+  | { type: typeof SELECT; element: PreviewElementRef | null }
   | {
       type: typeof BLOCKED;
       reason: "parse" | "errors";
@@ -55,6 +69,13 @@ export function readEmbedMessage(data: unknown): EmbedMessage | null {
   }
   if (data["type"] === SEARCH) return { type: SEARCH };
   if (data["type"] === PROBE) return { type: PROBE };
+  if (data["type"] === SELECT) {
+    const element = data["element"];
+    if (element === null) return { type: SELECT, element: null };
+    if (!isRecord(element) || typeof element["key"] !== "string") return null;
+    if (element["kind"] !== "component" && element["kind"] !== "connection") return null;
+    return { type: SELECT, element: { kind: element["kind"], key: element["key"] } };
+  }
   if (data["type"] === BLOCKED) {
     const reason = data["reason"] === "parse" ? "parse" : "errors";
     const errors = typeof data["errors"] === "number" ? data["errors"] : 0;

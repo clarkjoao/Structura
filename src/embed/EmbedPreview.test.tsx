@@ -3,7 +3,17 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/infrastructure/i18n";
 import { EmbedPreview } from "./EmbedPreview";
-import { BLOCKED, LOAD_GRAPH, PROBE, PROBE_RESULT, SEARCH, postToHost } from "./protocol";
+import {
+  BLOCKED,
+  LOAD_GRAPH,
+  OPEN_PROBLEM,
+  PROBE,
+  PROBE_RESULT,
+  REVEAL,
+  SEARCH,
+  SELECT,
+  postToHost,
+} from "./protocol";
 
 vi.mock("./protocol", async (original) => ({
   ...(await original<typeof import("./protocol")>()),
@@ -77,10 +87,46 @@ describe("EmbedPreview", () => {
     );
     await send(graph);
     await send({ ...blocked, errors: 2 });
-    expect(screen.getByText("Not updated: 2 opscr errors — see Problems")).toBeTruthy();
+    expect(screen.getByText("Not updated: 2 opscr errors — click to open the first")).toBeTruthy();
     await send({ type: PROBE });
     expect(postToHost).toHaveBeenLastCalledWith(
       expect.objectContaining({ type: PROBE_RESULT, blocked: true }),
     );
+  });
+
+  it("asks the host to open a problem the reader clicks", async () => {
+    render(<EmbedPreview />, { wrapper: MemoryRouter });
+    await send({ ...blocked, errors: 2, problems: ["a.yaml:3 bad", "b.yaml:9 worse"] });
+    await act(async () => screen.getByText("b.yaml:9 worse").click());
+    expect(postToHost).toHaveBeenLastCalledWith({ type: OPEN_PROBLEM, index: 1 });
+    await send(graph);
+    await send(blocked);
+    await act(async () =>
+      screen.getByText("Not updated: 1 opscr error — click to open it").click(),
+    );
+    expect(postToHost).toHaveBeenLastCalledWith({ type: OPEN_PROBLEM, index: 0 });
+  });
+
+  it("tells the host which element was clicked, and lights the one the host selects", async () => {
+    render(<EmbedPreview />, { wrapper: MemoryRouter });
+    await send(graph);
+    const node = await screen.findByText("orders");
+    await act(async () => {
+      node.click();
+    });
+    expect(postToHost).toHaveBeenCalledWith({
+      type: REVEAL,
+      element: { kind: "component", key: "a" },
+    });
+
+    await act(async () => {
+      node.click(); // a second click drops the light
+    });
+    const selected = () => document.querySelector(".react-flow__node.selected");
+    expect(selected()).toBeNull();
+    await send({ type: SELECT, element: { kind: "component", key: "a" } });
+    expect(selected()?.getAttribute("data-id")).toBe("a");
+    await send({ type: SELECT, element: null });
+    expect(selected()).toBeNull();
   });
 });

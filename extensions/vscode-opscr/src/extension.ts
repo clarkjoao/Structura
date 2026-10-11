@@ -3,11 +3,14 @@
  * `*.opscr.yaml`. The extension host validates the YAML with opscr and turns it into a graph
  * (the technical view, ELK, stable placement); the webview is Structura's embed preview, which
  * draws it. The YAML is edited in VSCode — by the user or Claude Code — never from the diagram.
+ * The two point at each other: a click on an element opens the YAML that writes it, and the
+ * element the cursor is in is lit in the preview.
  */
 import { readFile, readdir } from "node:fs/promises";
 import { basename, dirname } from "node:path";
 import * as vscode from "vscode";
 import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
+import type { GraphElementRef, SourceIndex, SourceLocation } from "./generated/opscr-mapping";
 import { collectWorkspace, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
@@ -21,7 +24,16 @@ const PROBE_UNANSWERED = {
   searchOpen: false,
   visible: false,
   blocked: false,
+  selected: [],
 } as const;
+
+/** What the webview sends: see the protocol in the host's `src/embed/protocol.ts`. */
+interface WebviewMessage {
+  type?: string;
+  nodes?: number;
+  element?: GraphElementRef;
+  index?: number;
+}
 
 class Preview {
   private readonly pipeline = new PreviewPipeline();
@@ -40,23 +52,57 @@ class Preview {
   private published = new Set<string>();
   /** Monotonic: an update that finishes after a newer one started is dropped. */
   private generation = 0;
+  /** Where the drawn elements are written — from the YAML of the picture on screen. */
+  private sources: SourceIndex | undefined;
+  /** The element last lit or clicked, so the cursor moving inside it posts nothing. */
+  private selected: GraphElementRef | null = null;
+  /** Where each problem listed in the preview is, by its place in the list. */
+  private problemLocations: Array<SourceLocation | null> = [];
 
   constructor(
     readonly folder: string,
     private readonly panel: vscode.WebviewPanel,
     private readonly diagnostics: vscode.DiagnosticCollection,
   ) {
-    panel.webview.onDidReceiveMessage((message: { type?: string; nodes?: number }) => {
-      if (message?.type === "STRUCTURA_RENDERED") this.rendered = message.nodes ?? 0;
-      if (message?.type === "STRUCTURA_PROBE_RESULT") {
-        for (const resolve of this.probes.splice(0)) resolve(message);
-      }
-      if (message?.type !== "STRUCTURA_READY") return;
-      this.ready = true;
-      this.postTheme();
-      if (this.lastGraph) this.post({ type: "STRUCTURA_LOAD_GRAPH", ...this.lastGraph });
-      if (this.lastBlocked) this.post(this.lastBlocked);
-    });
+    panel.webview.onDidReceiveMessage((message: WebviewMessage) => void this.receive(message));
+  }
+
+  /** A message from the webview (or, for the end-to-end test, one posed as it). */
+  async receive(message: WebviewMessage): Promise<void> {
+    if (message?.type === "STRUCTURA_RENDERED") this.rendered = message.nodes ?? 0;
+    if (message?.type === "STRUCTURA_PROBE_RESULT") {
+      for (const resolve of this.probes.splice(0)) resolve(message);
+    }
+    if (message?.type === "STRUCTURA_REVEAL" && message.element) {
+      const at = this.sources?.locate(message.element);
+      if (!at) return;
+      // The cursor lands in the element: that must not light it again.
+      this.selected = message.element;
+      await showSource(at);
+    }
+    if (message?.type === "STRUCTURA_OPEN_PROBLEM" && typeof message.index === "number") {
+      const at = this.problemLocations[message.index];
+      if (at) await showSource(at);
+      else await vscode.commands.executeCommand("workbench.actions.view.problems");
+    }
+    if (message?.type !== "STRUCTURA_READY") return;
+    this.ready = true;
+    this.postTheme();
+    if (this.lastGraph) this.post({ type: "STRUCTURA_LOAD_GRAPH", ...this.lastGraph });
+    if (this.lastBlocked) this.post(this.lastBlocked);
+    if (this.selected) this.post({ type: "STRUCTURA_SELECT", element: this.selected });
+  }
+
+  /**
+   * The cursor is on `line` (1-based) of `file`: light the element written there. Not while the
+   * picture is held back by errors — its lines are not the ones in the editor.
+   */
+  cursorAt(file: string, line: number): void {
+    if (!this.sources || this.blocked) return;
+    const element = this.sources.elementAt(file, line);
+    if (sameElement(element, this.selected)) return;
+    this.selected = element;
+    this.post({ type: "STRUCTURA_SELECT", element });
   }
 
   schedule(): void {
@@ -146,6 +192,10 @@ class Preview {
     }
     this.published = published;
     if (result.blocked) {
+      const errors = result.diagnostics.filter((d) => d.severity === "error").slice(0, 5);
+      this.problemLocations = errors.map((d) =>
+        d.file ? { file: d.file, line: d.line ?? 1 } : null,
+      );
       // Keep the last valid picture, and say why it is not following.
       this.blocked = result.blocked.reason === "errors" ? result.blocked.errors : 1;
       this.statusItem.text =
@@ -159,23 +209,40 @@ class Preview {
         type: "STRUCTURA_BLOCKED",
         reason: result.blocked.reason,
         errors: result.blocked.reason === "errors" ? result.blocked.errors : 0,
-        problems: result.diagnostics
-          .filter((d) => d.severity === "error")
-          .slice(0, 5)
-          .map((d) =>
-            `${d.file ? basename(d.file) : ""}${d.line ? `:${d.line}` : ""} ${d.message}`.trim(),
-          ),
+        problems: errors.map((d) =>
+          `${d.file ? basename(d.file) : ""}${d.line ? `:${d.line}` : ""} ${d.message}`.trim(),
+        ),
       };
       this.post(this.lastBlocked);
       return;
     }
     this.lastBlocked = null;
+    this.problemLocations = [];
     this.blocked = 0;
     this.statusItem.hide();
     if (!result.graph) return;
     this.lastGraph = result.graph;
+    this.sources = result.sources;
     this.post({ type: "STRUCTURA_LOAD_GRAPH", ...result.graph });
   }
+}
+
+const sameElement = (a: GraphElementRef | null, b: GraphElementRef | null) =>
+  a === b || (a !== null && b !== null && a.kind === b.kind && a.key === b.key);
+
+/**
+ * Opens `at` in the editor already showing its file, or in the first editor column — not over
+ * the preview — with the cursor on its line.
+ */
+async function showSource(at: SourceLocation): Promise<void> {
+  const editors = vscode.window.visibleTextEditors;
+  const shown = editors.find((e) => e.document.uri.fsPath === at.file);
+  const position = new vscode.Position(Math.max(0, at.line - 1), 0);
+  const editor = await vscode.window.showTextDocument(vscode.Uri.file(at.file), {
+    viewColumn: shown?.viewColumn ?? editors[0]?.viewColumn ?? vscode.ViewColumn.One,
+    selection: new vscode.Range(position, position),
+  });
+  editor.revealRange(editor.selection, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 }
 
 /** An open editor's unsaved text wins over the file on disk. */
@@ -290,10 +357,17 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeTextDocument((e) => forDocument(e.document.uri)?.schedule()),
     vscode.workspace.onDidSaveTextDocument((d) => forDocument(d.uri)?.schedule()),
     vscode.workspace.onDidCloseTextDocument((d) => forDocument(d.uri)?.schedule()),
+    vscode.window.onDidChangeTextEditorSelection(({ textEditor, selections }) => {
+      const uri = textEditor.document.uri;
+      forDocument(uri)?.cursorAt(uri.fsPath, (selections[0]?.active.line ?? 0) + 1);
+    }),
     vscode.window.onDidChangeActiveColorTheme(() => previews.forEach((p) => p.postTheme())),
     // Not contributed to the palette: lets the end-to-end test observe the preview.
     vscode.commands.registerCommand("opscr._previewProbe", (folder: string) =>
       previews.get(folder)?.probe(),
+    ),
+    vscode.commands.registerCommand("opscr._previewMessage", (folder: string, message: object) =>
+      previews.get(folder)?.receive(message),
     ),
     vscode.commands.registerCommand("opscr._previewStatus", () =>
       Object.fromEntries([...previews].map(([folder, p]) => [folder, p.status()])),
