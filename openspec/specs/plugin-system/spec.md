@@ -496,7 +496,7 @@ not, leaving the selection as it is.
 
 `CodeEditor` SHALL keep a separate model per `path` (undo history, cursor and scroll), move the
 cursor to `revealLine` when its token changes, report the user's cursor moves through
-`onCursorLine` (not those made by `revealLine`), and show a comparison of `original` against the
+`onCursorLine` (clicks and arrow keys; not typing, nor the moves `revealLine` makes), and show a comparison of `original` against the
 editable `value` when `original` is given.
 
 #### Scenario: Undo after switching files

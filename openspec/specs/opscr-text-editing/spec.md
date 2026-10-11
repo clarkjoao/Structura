@@ -1,6 +1,7 @@
 # opscr-text-editing Specification
 
 ## Purpose
+
 Lets a user edit an opscr workspace's YAML inside Structura, on the files in their own folder, with
 the diagram bound to that folder following every edit while keeping the arrangement they made.
 
@@ -250,12 +251,19 @@ the change on the canvas and say why.
 
 While a folder is open, selecting a bound element or connection on the canvas SHALL open the file
 of its manifest or edge in the pane with the cursor on its line, and moving the cursor into a
-manifest or edge SHALL light the element it writes on the canvas.
+manifest or edge SHALL light the element it writes on the canvas. Dragging an element SHALL NOT
+open its file, and typing SHALL NOT light what the cursor is in.
 
 #### Scenario: Selecting an element
 
 - **WHEN** the user selects `statements` on the canvas
 - **THEN** the pane shows `finance.opscr.yaml` with the cursor on the `statements` manifest
+
+#### Scenario: Dragging an element
+
+- **GIVEN** the pane shows `commerce.opscr.yaml`
+- **WHEN** the user drags `statements` to another position
+- **THEN** the pane still shows `commerce.opscr.yaml`
 
 #### Scenario: Moving the cursor
 
