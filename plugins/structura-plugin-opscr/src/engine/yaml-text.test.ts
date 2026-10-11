@@ -66,3 +66,12 @@ describe("applyEdits", () => {
     ).toBe("a12b");
   });
 });
+
+describe("parseDocuments", () => {
+  it("parses a text once, and still tells a broken text", () => {
+    const text = "kind: A\nmetadata: { name: a }\n";
+    expect(parseDocuments(text)).toBe(parseDocuments(`${"kind: A\n"}metadata: { name: a }\n`));
+    expect(parseDocuments("kind: [\n")).toBeNull();
+    expect(parseDocuments("kind: [\n")).toBeNull();
+  });
+});

@@ -742,6 +742,16 @@ describe("moving an element into another panel", () => {
     await s.expectSettled();
   });
 
+  it("taken out of its panel and then into another, gets that one's belongsTo", async () => {
+    move(null);
+    await s.pump();
+    move(s.id("catalog"));
+    await s.pump();
+    expect(belongsTo("orders")).toBe(0);
+    expect(belongsTo("catalog")).toBe(1);
+    await s.expectSettled();
+  });
+
   it("waits while the target panel is outside the YAML", async () => {
     s.canvas.step(() =>
       s.canvas.components.push({

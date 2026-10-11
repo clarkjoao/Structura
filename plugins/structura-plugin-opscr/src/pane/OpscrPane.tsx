@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Diagnostic } from "opscr/core";
 import type {
   PluginEditorMarker,
@@ -19,7 +19,7 @@ import {
   type SourceLocation,
 } from "../generated/opscr-mapping";
 import type { AddChoice } from "../engine/adopt";
-import { OpscrEngine, type EngineEvent, type Projector } from "../engine/engine";
+import { OpscrEngine, type EngineEvent } from "../engine/engine";
 import type { UnwrittenConnection } from "../engine/reconcile";
 import { emptyBinding, type BindingState } from "../engine/sync";
 import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../engine/watch";
@@ -98,22 +98,34 @@ export function createOpscrPane(api: StructuraPluginApi) {
   return function OpscrPane({ context }: PluginPanelProps) {
     const t = useMemo(() => text(context.locale as Locale), [context.locale]);
     const [diagramId, setDiagramId] = useState(() => api.getActiveDiagramId());
+    /** The diagram the pane is on now — work started for another one must not land here. */
+    const currentDiagram = useRef(diagramId);
+    /** The diagram whose binding `bindingRef` holds, once read from storage. */
+    const [loadedFor, setLoadedFor] = useState<string | null>(null);
+    /** Written with `loadedFor`, never from a render (see `buffersRef`). */
+    const loadedForRef = useRef(loadedFor);
     const [stored, setStored] = useState<StoredBinding | null>(null);
     const [folder, setFolder] = useState<PluginFolder | null>(null);
     const folderRef = useRef(folder);
-    folderRef.current = folder;
     const [buffers, setBuffers] = useState<Buffer[]>([]);
     const [selected, setSelected] = useState<string | null>(null);
     const selectedRef = useRef(selected);
-    selectedRef.current = selected;
     const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
     const [status, setStatus] = useState<string>("");
     /** Canvas elements the YAML does not declare, and the Kind/provider picked for each. */
     const [outside, setOutside] = useState<string[]>([]);
     const [picks, setPicks] = useState<Record<string, { kind: string; provider: string }>>({});
     const bindingRef = useRef<StoredBinding | null>(null);
+    /**
+     * The buffers as of the last change, ahead of the render that shows them: the engine reads
+     * and writes them between renders. Every change goes through `commitBuffers`; a render never
+     * writes it back — one for an earlier, more urgent update (a click) would carry stale text.
+     */
     const buffersRef = useRef<Buffer[]>([]);
-    buffersRef.current = buffers;
+    const commitBuffers = useCallback((next: Buffer[]) => {
+      buffersRef.current = next;
+      setBuffers(next);
+    }, []);
     const timer = useRef<ReturnType<typeof setTimeout>>();
     /** The folder's file stats as of the last read or save, to notice outside changes. */
     const knownStats = useRef<Stats>({});
@@ -124,7 +136,14 @@ export function createOpscrPane(api: StructuraPluginApi) {
     /** The last projection with a graph: where elements are written, and what is not drawn. */
     const [projection, setProjection] = useState<Projection | null>(null);
     const projectionRef = useRef(projection);
-    projectionRef.current = projection;
+    // Read by callbacks: the values the user sees, i.e. the committed ones. Not written while
+    // rendering, where an urgent update can render ahead of a pending one with older state.
+    useLayoutEffect(() => {
+      currentDiagram.current = diagramId;
+      folderRef.current = folder;
+      selectedRef.current = selected;
+      projectionRef.current = projection;
+    });
     /** A line for the editor to go to; a new token goes again. */
     const [reveal, setReveal] = useState<{ line: number; token: number } | null>(null);
     /** The element last pointed at from either side, so neither side echoes the other. */
@@ -140,8 +159,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
     useEffect(() => {
       const session = diagramId ? sessions.get(diagramId) : undefined;
       setFolder(session?.folder ?? null);
-      setBuffers(session?.buffers ?? []);
-      buffersRef.current = session?.buffers ?? [];
+      commitBuffers(session?.buffers ?? []);
       setSelected(session?.selected ?? null);
       knownStats.current = session?.knownStats ?? {};
       restored.current = session !== undefined;
@@ -150,15 +168,25 @@ export function createOpscrPane(api: StructuraPluginApi) {
       setUnwritten([]);
       setComparing(null);
       pointed.current = null;
+      // Until this diagram's binding is read, the engine has none to work with: syncing then
+      // would draw everything again beside what the canvas already shows.
+      bindingRef.current = null;
+      loadedForRef.current = null;
+      setLoadedFor(null);
       if (!diagramId) {
         setStored(null);
         return;
       }
+      let current = true;
       void api.storage.get<StoredBinding>(storageKey(diagramId)).then((value) => {
+        if (!current) return; // another diagram since
         bindingRef.current = value;
+        loadedForRef.current = diagramId;
         setStored(value);
+        setLoadedFor(diagramId);
       });
       return () => {
+        current = false;
         const open = folderRef.current;
         if (!open) sessions.delete(diagramId);
         else {
@@ -170,31 +198,43 @@ export function createOpscrPane(api: StructuraPluginApi) {
           });
         }
       };
-    }, [diagramId]);
+    }, [diagramId, commitBuffers]);
+
+    // A comparison ends with its conflict, however it ended (a side picked, a save, the folder
+    // going back to the saved text).
+    useEffect(() => {
+      if (comparing && buffers.find((b) => b.name === comparing)?.conflict === undefined) {
+        setComparing(null);
+      }
+    }, [buffers, comparing]);
 
     const persist = useCallback(
       async (binding: StoredBinding) => {
         if (!diagramId) return;
         bindingRef.current = binding;
+        loadedForRef.current = diagramId;
         setStored(binding);
+        setLoadedFor(diagramId);
         await api.storage.set(storageKey(diagramId), binding);
       },
       [diagramId],
     );
 
     /** New texts for the buffers; names the folder does not have yet become new, unsaved files. */
-    const setTexts = useCallback((files: readonly SourceText[]) => {
-      const byName = new Map(files.map((f) => [f.name, f.text]));
-      const known = new Set(buffersRef.current.map((b) => b.name));
-      const next = [
-        ...buffersRef.current.map((b) => ({ ...b, text: byName.get(b.name) ?? b.text })),
-        ...files
-          .filter((f) => !known.has(f.name))
-          .map((f) => ({ name: f.name, disk: "", text: f.text })),
-      ];
-      buffersRef.current = next;
-      setBuffers(next);
-    }, []);
+    const setTexts = useCallback(
+      (files: readonly SourceText[]) => {
+        const byName = new Map(files.map((f) => [f.name, f.text]));
+        const known = new Set(buffersRef.current.map((b) => b.name));
+        const next = [
+          ...buffersRef.current.map((b) => ({ ...b, text: byName.get(b.name) ?? b.text })),
+          ...files
+            .filter((f) => !known.has(f.name))
+            .map((f) => ({ name: f.name, disk: "", text: f.text })),
+        ];
+        commitBuffers(next);
+      },
+      [commitBuffers],
+    );
 
     // The binding engine over this pane's buffers, the active diagram and the plugin storage.
     const onEvent = useRef<(event: EngineEvent) => void>(() => {});
@@ -208,44 +248,56 @@ export function createOpscrPane(api: StructuraPluginApi) {
       else if (event.type === "provider-refused") setStatus(t.providerRefused(event.names));
       else if (event.type === "added") setStatus(t.addedToYaml(event.keys));
     };
-    // The projector, keeping what the pane shows besides the graph: sources and what is not drawn.
-    const project = useCallback<Projector>(async (...args) => {
-      const result = await projector(...args);
-      if (result.graph) setProjection(result);
-      return result;
-    }, []);
-    const engine = useMemo(
-      () =>
-        new OpscrEngine({
-          texts: {
-            get: () => buffersRef.current.map((b) => ({ name: b.name, text: b.text })),
-            set: (files) => setTexts(files),
+    const engine = useMemo(() => {
+      /**
+       * Whether the pane is still on this engine's diagram, with its binding read. A step that
+       * was running when the user opened another diagram finishes for this one: its texts and
+       * events are not the pane's any more, and its binding goes to this diagram's own key.
+       */
+      const live = () => currentDiagram.current === diagramId && loadedForRef.current === diagramId;
+      let folderName: string | undefined;
+      return new OpscrEngine({
+        texts: {
+          get: () => buffersRef.current.map((b) => ({ name: b.name, text: b.text })),
+          set: (files) => (live() ? setTexts(files) : undefined),
+        },
+        diagram: {
+          get: () => {
+            if (!live()) return null;
+            const diagram = api.getDiagram();
+            return diagram && diagram.id === diagramId ? diagram : null;
           },
-          diagram: {
-            get: () => {
-              const diagram = api.getDiagram();
-              return diagram && diagram.id === diagramId ? diagram : null;
-            },
-            apply: (changes) => api.applyChanges(changes),
+          apply: (changes) => api.applyChanges(changes),
+        },
+        binding: {
+          get: () => {
+            folderName = bindingRef.current?.folderName ?? folderName;
+            return bindingRef.current?.state ?? emptyBinding();
           },
-          binding: {
-            get: () => bindingRef.current?.state ?? emptyBinding(),
-            set: (state) =>
-              bindingRef.current ? persist({ ...bindingRef.current, state }) : undefined,
+          set: (state) => {
+            if (live() && bindingRef.current) return persist({ ...bindingRef.current, state });
+            if (diagramId && folderName) {
+              return api.storage.set(storageKey(diagramId), { folderName, state });
+            }
           },
-          project,
-          isManifest,
-          configFile: CONFIG_FILE,
-          onEvent: (event) => onEvent.current(event),
-        }),
-      [diagramId, persist, setTexts, project],
-    );
+        },
+        // Keeps what the pane shows besides the graph: sources and what is not drawn.
+        project: async (...args) => {
+          const result = await projector(...args);
+          if (result.graph && live()) setProjection(result);
+          return result;
+        },
+        isManifest,
+        configFile: CONFIG_FILE,
+        onEvent: (event) => (live() ? onEvent.current(event) : undefined),
+      });
+    }, [diagramId, persist, setTexts]);
 
     const sync = useCallback(() => engine.sync(), [engine]);
 
     // Canvas edits (and undo/redo) of the bound diagram reach the YAML while the folder is open.
     useEffect(() => {
-      if (!folder || !diagramId) return;
+      if (!folder || !diagramId || loadedFor !== diagramId) return;
       if (restored.current) {
         restored.current = false;
         // Canvas edits made meanwhile reach the YAML; the sync after it gives the pane its
@@ -255,7 +307,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       return api.onDiagramChange((changed) => {
         if (changed === diagramId) void engine.canvasChanged();
       });
-    }, [folder, diagramId, engine]);
+    }, [folder, diagramId, engine, loadedFor]);
 
     /** Opens `at` in the editor: its file, its line. */
     const showSource = useCallback((at: SourceLocation) => {
@@ -278,7 +330,11 @@ export function createOpscrPane(api: StructuraPluginApi) {
           : componentIds.length === 1
             ? keyOf(binding.ids, componentIds[0]!)
             : undefined;
-        if (!key) return;
+        if (!key) {
+          // Nothing (or several) selected: the next selection of that element opens it again.
+          if (componentIds.length === 0 && !connectionId) pointed.current = null;
+          return;
+        }
         const element: GraphElementRef = { kind: connectionId ? "connection" : "component", key };
         const at = sources.locate(element);
         if (!at || sameElement(element, pointed.current)) return;
@@ -355,8 +411,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         );
         knownStats.current = toStats(stats.filter((f) => isTracked(f.name)));
         const merged = mergeDisk(buffersRef.current, disk, removed, (n) => n === LAYOUT_FILE);
-        buffersRef.current = merged.buffers;
-        setBuffers(merged.buffers);
+        commitBuffers(merged.buffers);
         if (merged.conflicts.length > 0) setStatus(t.diskConflict(merged.conflicts));
         else if (merged.reloaded.length > 0) setStatus(t.diskReloaded(merged.reloaded));
         const sidecar = merged.reloaded.includes(LAYOUT_FILE)
@@ -371,7 +426,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       } finally {
         checking.current = false;
       }
-    }, [folder, engine, t]);
+    }, [folder, engine, t, commitBuffers]);
 
     useEffect(() => {
       if (!folder) return;
@@ -384,11 +439,18 @@ export function createOpscrPane(api: StructuraPluginApi) {
       };
     }, [folder, checkFolder]);
 
+    /**
+     * The canvas's components, read once per render while some are outside the YAML: the pane
+     * renders on every keystroke, and each read is a copy of the whole diagram.
+     */
+    const outsideComponents = new Map(
+      outside.length > 0 ? (api.getDiagram()?.components.map((c) => [c.id, c]) ?? []) : [],
+    );
+
     /** The Kind/provider shown for an element outside the YAML: the user's pick, else a guess. */
     const pickFor = (id: string): { kind: string; provider: string } => {
       if (picks[id]) return picks[id]!;
-      const diagram = api.getDiagram();
-      const byId = new Map(diagram?.components.map((c) => [c.id, c]) ?? []);
+      const byId = outsideComponents;
       const component = byId.get(id);
       if (!component) return { kind: "", provider: "" };
       const parent = component.parentId ? byId.get(component.parentId) : undefined;
@@ -432,9 +494,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
 
     const resolve = (name: string, side: "disk" | "mine") => {
       if (comparing === name) setComparing(null);
-      const next = buffersRef.current.map((b) => (b.name === name ? resolveConflict(b, side) : b));
-      buffersRef.current = next;
-      setBuffers(next);
+      commitBuffers(
+        buffersRef.current.map((b) => (b.name === name ? resolveConflict(b, side) : b)),
+      );
       if (side === "disk") void sync();
     };
 
@@ -452,15 +514,14 @@ export function createOpscrPane(api: StructuraPluginApi) {
         );
         knownStats.current = toStats(await opened.stats());
         engine.reset();
-        buffersRef.current = loaded;
         setFolder(opened);
-        setBuffers(loaded);
+        commitBuffers(loaded);
         setSelected((previous) =>
           previous && names.includes(previous) ? previous : (names.find(isManifest) ?? null),
         );
         await sync();
       },
-      [engine, sync],
+      [engine, sync, commitBuffers],
     );
 
     const bind = async () => {
@@ -489,14 +550,13 @@ export function createOpscrPane(api: StructuraPluginApi) {
       bindingRef.current = null;
       setStored(null);
       setFolder(null);
-      setBuffers([]);
+      commitBuffers([]);
       setSelected(null);
     };
 
     const edit = (value: string) => {
-      setBuffers((list) => list.map((b) => (b.name === selected ? { ...b, text: value } : b)));
-      buffersRef.current = buffersRef.current.map((b) =>
-        b.name === selected ? { ...b, text: value } : b,
+      commitBuffers(
+        buffersRef.current.map((b) => (b.name === selected ? { ...b, text: value } : b)),
       );
       clearTimeout(timer.current);
       timer.current = setTimeout(() => void sync(), SYNC_DELAY_MS);
@@ -515,8 +575,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       // The file on disk is now this text: any conflict with an older disk text is settled.
       const settle = (b: Buffer): Buffer =>
         written.has(b.name) ? { ...b, disk: written.get(b.name)!, conflict: undefined } : b;
-      buffersRef.current = buffersRef.current.map(settle);
-      setBuffers(buffersRef.current);
+      commitBuffers(buffersRef.current.map(settle));
       setStatus(t.saved(written.size));
     };
 
@@ -647,7 +706,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
             <summary className="cursor-pointer">{t.outsideTitle(outside.length)}</summary>
             <div className="mt-1 space-y-1">
               {outside.map((id) => {
-                const component = api.getDiagram()?.components.find((c) => c.id === id);
+                const component = outsideComponents.get(id);
                 if (!component) return null;
                 const pick = pickFor(id);
                 const providers = providersFor(pick.kind);

@@ -25,10 +25,26 @@ export interface TextEdit {
 
 export type ParsedDocument = Document.Parsed;
 
-/** The file's documents, or null when any of them has a parse error. */
+/** Texts parsed lately, most recent last: a reconcile reads every file once per patch. */
+const parsedTexts = new Map<string, ParsedDocument[] | null>();
+const PARSED_TEXTS_KEPT = 64;
+
+/**
+ * The file's documents, or null when any of them has a parse error. Cached by text: callers
+ * read the documents (ranges, values) and never change them.
+ */
 export function parseDocuments(text: string): ParsedDocument[] | null {
+  const known = parsedTexts.get(text);
+  if (known !== undefined) {
+    parsedTexts.delete(text);
+    parsedTexts.set(text, known);
+    return known;
+  }
   const docs: ParsedDocument[] = Array.from(parseAllDocuments(text));
-  return docs.some((d) => d.errors.length > 0) ? null : docs;
+  const result = docs.some((d) => d.errors.length > 0) ? null : docs;
+  parsedTexts.set(text, result);
+  if (parsedTexts.size > PARSED_TEXTS_KEPT) parsedTexts.delete(parsedTexts.keys().next().value!);
+  return result;
 }
 
 /**

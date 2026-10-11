@@ -20,7 +20,7 @@ export {
 } from "./elements";
 export type { KindGuess } from "./elements";
 export { LEAF_H, LEAF_W, placeView, toLayoutGraph } from "./layout";
-export { stabilizeLayout } from "./stable-layout";
+export { previousCoversView, stabilizeLayout } from "./stable-layout";
 export { connectionKeys, toImporterGraph } from "./importer-graph";
 export { SourceIndex } from "./source-index";
 export type { GraphElementRef, LocatedManifestInput, SourceLocation } from "./source-index";

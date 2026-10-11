@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ViewBox, ViewLayoutResult } from "./layout";
-import { stabilizeLayout } from "./stable-layout";
+import { previousCoversView, stabilizeLayout } from "./stable-layout";
 import { buildTechnicalView } from "./technical-view";
 import type { OpscrManifestInput } from "./types";
 
@@ -134,5 +134,21 @@ describe("stabilizeLayout", () => {
       expect(child.y + child.height).toBeLessThanOrEqual(panel.height);
     }
     expect(panel.width).toBeGreaterThanOrEqual(260);
+  });
+
+  it("needs no layout engine when the previous picture places every element", () => {
+    const empty = result({});
+    const known = { ...previous, parents: stabilizeLayout(before, previous, undefined).parents };
+    expect(previousCoversView(before, known)).toBe(true);
+    // Same boxes from an empty engine result: nothing in it is read.
+    expect(stabilizeLayout(before, empty, known).boxes).toEqual(
+      stabilizeLayout(before, result({ "Application/api": box(900, 900) }), known).boxes,
+    );
+    expect(previousCoversView(after, known)).toBe(false); // worker and db are new
+    expect(previousCoversView(before, undefined)).toBe(false);
+    const moved = buildTechnicalView({
+      manifests: [m("ApplicationService", "orders"), m("Application", "api")],
+    });
+    expect(previousCoversView(moved, known)).toBe(false); // api left its panel
   });
 });

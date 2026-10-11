@@ -64,7 +64,10 @@ class Preview {
     private readonly panel: vscode.WebviewPanel,
     private readonly diagnostics: vscode.DiagnosticCollection,
   ) {
-    panel.webview.onDidReceiveMessage((message: WebviewMessage) => void this.receive(message));
+    panel.webview.onDidReceiveMessage((message: WebviewMessage) =>
+      // Opening a file can fail (deleted meanwhile): nothing to do but say so in the log.
+      this.receive(message).catch((error: unknown) => console.error("[opscr] preview:", error)),
+    );
   }
 
   /** A message from the webview (or, for the end-to-end test, one posed as it). */

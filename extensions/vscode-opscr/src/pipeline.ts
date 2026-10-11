@@ -1,3 +1,4 @@
+import { join as joinPath } from "node:path";
 import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
 import {
   CONFIG_FILE,
@@ -8,6 +9,7 @@ import {
   overlayLayouts,
   parseLayoutFile,
   placeView,
+  previousCoversView,
   stabilizeLayout,
   toImporterGraph,
   toLayoutGraph,
@@ -89,7 +91,10 @@ export class PreviewPipeline {
     if (errors > 0) return { diagnostics, blocked: { reason: "errors", errors } };
 
     const view = buildTechnicalView(compiled);
-    const fresh = await layoutView(toLayoutGraph(view), this.previous?.boxes);
+    // An edit of text alone moves nothing: the layout engine would only be ignored.
+    const fresh = previousCoversView(view, this.previous)
+      ? { boxes: new Map(), edgeRoutes: new Map() }
+      : await layoutView(toLayoutGraph(view), this.previous?.boxes);
     const stable = stabilizeLayout(view, fresh, this.previous);
     this.previous = stable;
     return {
@@ -112,7 +117,9 @@ export async function collectWorkspace(
   fileNames: readonly string[],
   readText: (path: string) => Promise<string | undefined>,
 ): Promise<WorkspaceText> {
-  const join = (name: string) => `${folder.replace(/\/$/, "")}/${name}`;
+  // The platform's separator: these paths are compared with VSCode's `fsPath` (the cursor's
+  // file, the Problems panel's), which uses backslashes on Windows.
+  const join = (name: string) => joinPath(folder, name);
   const files: SourceFile[] = [];
   for (const name of [...fileNames].filter(isManifestName).sort()) {
     const content = await readText(join(name));
