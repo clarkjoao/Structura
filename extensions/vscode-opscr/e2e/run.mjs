@@ -2,7 +2,8 @@
 /**
  * End-to-end test in a real VSCode: opens a copy of the opscr sample, runs the preview,
  * makes an edit with an opscr error (not drawn; reported in the Problems panel), reverts it,
- * and writes a valid file straight to disk, as Claude Code would (drawn). Uses an isolated user-data and extensions
+ * writes a valid file straight to disk, as Claude Code would (drawn), then goes from an element
+ * to its YAML and from the cursor back to the element. Uses an isolated user-data and extensions
  * directory, so the user's VSCode settings and extensions are untouched.
  *
  *   npm run build && node e2e/run.mjs

@@ -20,6 +20,10 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
   Re-layout ignores it until it changes again.
 - **Find:** Ctrl/Cmd+F in the preview searches its elements (name, description, technology, tags);
   picking one zooms to it — handy on large diagrams. Also **opscr: Find Element in Preview**.
+- **From the picture to the YAML and back:** clicking an element or a connection opens the
+  manifest or edge that writes it, at its line; the element the cursor is in is lit in the preview
+  (brought into view when it is off screen). While the YAML has errors, each problem listed in the
+  preview, and its "Not updated" banner, opens the line to fix.
 - **Follows changes:** when an update adds or changes elements (or connects them), the preview
   zooms to them; moving things alone does not.
 - **Problems:** opscr errors and warnings appear in the Problems panel, on their file and line.
@@ -58,7 +62,8 @@ code --install-extension vscode-opscr-<version>.vsix
   stabilizeLayout: survivors keep their boxes ──► importer-shaped graph ────┤
                                                                             ▼
 webview: Structura's embed preview (dist-embed) ◄── postMessage (src/embed/protocol.ts):
-         LOAD_GRAPH, BLOCKED (why there is no new picture), SEARCH, THEME
+         LOAD_GRAPH, BLOCKED (why there is no new picture), SEARCH, THEME, SELECT ──►
+                                               ◄── REVEAL (a click), OPEN_PROBLEM
 ```
 
 - `src/pipeline.ts` — YAML → graph, no VSCode API (unit-tested).
@@ -69,10 +74,11 @@ webview: Structura's embed preview (dist-embed) ◄── postMessage (src/embed
 ## Tests
 
 - `npm test` — the pipeline: multi-file workspace, stability across an edit, parse failures,
-  diagnostics.
+  diagnostics, where each element is written.
 - `npm run e2e` — a real VSCode (isolated profile, your settings untouched) opens the opscr sample,
   checks the webview drew every element, opens the find, keeps its picture while an edit has opscr
-  errors (Problems panel, banner), draws a file written to disk and zooms to what it added. Set
+  errors (Problems panel, banner), draws a file written to disk and zooms to what it added, opens
+  the YAML of a clicked element and lights the element under the cursor. Set
   `VSCODE_PATH` when VSCode is not in `/Applications`.
 
 Neither runs in CI: the extension depends on unpublished opscr.
