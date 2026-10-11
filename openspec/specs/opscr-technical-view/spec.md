@@ -1,6 +1,7 @@
 # opscr-technical-view Specification
 
 ## Purpose
+
 Projects an opscr architecture workspace (YAML manifests and their Relationship edges) into the
 elements, nesting and edges of a Structura technical diagram, ready for autolayout, so every consumer
 draws the same workspace the same way.

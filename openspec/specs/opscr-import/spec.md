@@ -1,6 +1,7 @@
 # opscr-import Specification
 
 ## Purpose
+
 Lets a user open an opscr architecture file in Structura and get the technical diagram it describes,
 laid out and nested, with anything that could not be drawn reported instead of silently lost.
 

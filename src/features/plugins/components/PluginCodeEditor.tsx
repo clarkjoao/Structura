@@ -135,11 +135,13 @@ function SingleEditor({
           }
           applyMarkers(editor, monaco, markers);
           if (revealRef.current) revealLineIn(editor, revealRef.current.line);
-          // The user's moves only: not `revealLine` (source "api"), nor a new value or model.
+          // The user's moves only — a click, the arrow keys — not `revealLine` (source "api"),
+          // a new value or model, nor typing: the cursor follows the text there, and a host
+          // pointing at what it is in would move under the user as they type.
           editor.onDidChangeCursorPosition((event) => {
             if (
               event.source === "api" ||
-              event.reason === monaco.editor.CursorChangeReason.ContentFlush
+              event.reason !== monaco.editor.CursorChangeReason.Explicit
             )
               return;
             cursorRef.current?.(event.position.lineNumber);
