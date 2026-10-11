@@ -72,6 +72,24 @@ on the file and line they refer to, and clear them when fixed.
 - **THEN** the Problems panel shows the opscr error on that line, and it disappears when the field is
   removed
 
+### Requirement: The preview and the YAML point at each other
+
+Clicking an element or a connection in the preview SHALL open, in an editor beside it, the file of
+the manifest or edge that writes it with the cursor on its line. Moving the cursor into a manifest
+or edge SHALL light the element it writes in the preview, bringing it into view when it is off
+screen, and SHALL leave the preview as it is while the picture is held back by errors. While the
+YAML has errors, each problem the preview lists SHALL open its line when clicked.
+
+#### Scenario: Click to source
+
+- **WHEN** the user clicks the `orders-db` Database in the preview
+- **THEN** its manifest opens with the cursor on it
+
+#### Scenario: Cursor to element
+
+- **WHEN** the cursor moves into the `orders-api` manifest
+- **THEN** `orders-api` is lit in the preview; a `belongsTo` edge lights the element it places
+
 ### Requirement: The preview is read-only and follows the theme
 
 The preview SHALL NOT edit any file, and SHALL render dark when VSCode uses a dark or high-contrast

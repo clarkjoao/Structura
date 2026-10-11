@@ -65,3 +65,20 @@ export function toImporterGraph(view: PlacedView, anchor = { x: 0, y: 0 }): Impo
   }));
   return { components, connections };
 }
+
+/**
+ * The stable key of each connection of an importer graph: its ends, its label and which
+ * occurrence of that triple it is. The embed preview names connections this way, so a host can
+ * say which one it means.
+ */
+export function connectionKeys(
+  connections: readonly { source: string; target: string; label?: string | null }[],
+): string[] {
+  const seen = new Map<string, number>();
+  return connections.map((c) => {
+    const base = `${c.source}->${c.target}:${c.label ?? ""}`;
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return `${base}#${n}`;
+  });
+}

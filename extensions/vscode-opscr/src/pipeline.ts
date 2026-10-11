@@ -2,6 +2,7 @@ import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
 import {
   CONFIG_FILE,
   LAYOUT_FILE,
+  SourceIndex,
   buildTechnicalView,
   isManifestName,
   overlayLayouts,
@@ -31,6 +32,8 @@ export interface PreviewUpdate {
    * last one).
    */
   graph?: ImporterGraph;
+  /** Where each element of `graph` is written, and which element a line writes. */
+  sources?: SourceIndex;
   /** Why there is no picture: the YAML does not parse, or how many opscr errors it has. */
   blocked?: { reason: "parse" } | { reason: "errors"; errors: number };
 }
@@ -89,7 +92,11 @@ export class PreviewPipeline {
     const fresh = await layoutView(toLayoutGraph(view), this.previous?.boxes);
     const stable = stabilizeLayout(view, fresh, this.previous);
     this.previous = stable;
-    return { diagnostics, graph: toImporterGraph(placeView(view, stable)) };
+    return {
+      diagnostics,
+      graph: toImporterGraph(placeView(view, stable)),
+      sources: new SourceIndex(compiled.manifests, view),
+    };
   }
 }
 

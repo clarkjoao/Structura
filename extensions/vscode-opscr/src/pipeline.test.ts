@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { createRequire } from "node:module";
+import { connectionKeys } from "./generated/opscr-mapping";
 import { collectWorkspace, PreviewPipeline, type WorkspaceText } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
@@ -89,6 +90,32 @@ describe("PreviewPipeline", () => {
       source: "Application/orders-api",
       target: "Database/orders-db",
       label: "writes",
+    });
+  });
+
+  it("knows where each element is written, and which element a line writes", async () => {
+    const { graph, sources } = await new PreviewPipeline().update(await sample());
+    const lineOf = (file: string, pattern: RegExp) =>
+      readFileSync(join(SAMPLE_DIR, file), "utf8")
+        .split("\n")
+        .findIndex((line) => pattern.test(line)) + 1;
+    const db = sources!.locate({ kind: "component", key: "Database/orders-db" })!;
+    expect(db.file).toMatch(/commerce\.opscr\.yaml$/);
+    expect(sources!.elementAt(db.file, db.line)).toEqual({
+      kind: "component",
+      key: "Database/orders-db",
+    });
+    // The writes edge: its connection key, located on its `- from:` line.
+    const keys = connectionKeys(graph!.connections);
+    const i = graph!.connections.findIndex(
+      (c) => c.source === "Application/orders-api" && c.target === "Database/orders-db",
+    );
+    const edge = sources!.locate({ kind: "connection", key: keys[i]! })!;
+    expect(edge.file).toMatch(/relationships\.opscr\.yaml$/);
+    expect(edge.line).toBeGreaterThan(lineOf("relationships.opscr.yaml", /kind: Relationship/));
+    expect(sources!.elementAt(edge.file, edge.line + 1)).toEqual({
+      kind: "connection",
+      key: keys[i],
     });
   });
 

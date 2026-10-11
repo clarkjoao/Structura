@@ -10,6 +10,7 @@ import {
   LOAD_GRAPH,
   PROBE,
   SEARCH,
+  SELECT,
   THEME,
   readEmbedMessage,
   type PreviewGraph,
@@ -48,6 +49,17 @@ const graph: PreviewGraph = {
 };
 
 describe("readEmbedMessage", () => {
+  it("reads an element to select, or none, and rejects a malformed one", () => {
+    const element = { kind: "connection", key: "a->b:calls#0" };
+    expect(readEmbedMessage({ type: SELECT, element })).toEqual({ type: SELECT, element });
+    expect(readEmbedMessage({ type: SELECT, element: null })).toEqual({
+      type: SELECT,
+      element: null,
+    });
+    expect(readEmbedMessage({ type: SELECT, element: { kind: "edge", key: "x" } })).toBeNull();
+    expect(readEmbedMessage({ type: SELECT })).toBeNull();
+  });
+
   it("reads a graph and a theme", () => {
     expect(readEmbedMessage({ type: LOAD_GRAPH, components: [], connections: [] })).toEqual({
       type: LOAD_GRAPH,
