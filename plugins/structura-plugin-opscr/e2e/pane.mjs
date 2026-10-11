@@ -213,8 +213,12 @@ await page.mouse.up();
 await page.waitForTimeout(500);
 const dragged = await nodePos("public-api");
 await check(Math.abs(dragged.y - beforePos.y) > 50, "public-api was dragged");
-// Selecting it opened its manifest, in another file: back to the one being edited.
-await page.getByRole("tab", { name: /^commerce\.opscr\.yaml/ }).click();
+await check(
+  (
+    (await page.locator('[role="tab"][aria-selected="true"]').first().textContent()) ?? ""
+  ).startsWith("commerce.opscr.yaml"),
+  "dragging an element leaves the file being edited open",
+);
 
 await appendToEditor(EXTRA);
 await waitNodes(24).catch(() => fail("a second edit did not reach the canvas"));
@@ -624,18 +628,18 @@ await waitFor(
 await notCarried.click();
 await page.getByRole("tab", { name: /^commerce\.opscr\.yaml/ }).click();
 
-// An element drawn from the palette is offered for the YAML, with a suggested Kind.
-// The chat stays open: the picker must be drawn above it.
+// An element drawn from the catalog is offered for the YAML, with a suggested Kind.
+// The chat stays open: the catalog must be drawn above it.
 const paletteCount = await nodes();
 await page
-  .getByRole("button", { name: /^(Add element|Adicionar elemento)$/ })
+  .getByRole("button", { name: /^(Open the element catalog|Abrir o catálogo de elementos)$/ })
   .first()
   .click();
-await page.getByPlaceholder(/Search elements|Buscar elementos/).fill("DynamoDB");
+await page.getByPlaceholder(/Search .* elements|Buscar em .* elementos/).fill("DynamoDB");
 await page.waitForTimeout(600);
 await page.screenshot({ path: join(OUT, "7a-picker.png") });
 await page
-  .getByRole("button", { name: /DynamoDB/ })
+  .getByRole("option", { name: /DynamoDB/ })
   .first()
   .click();
 await waitNodes(paletteCount + 1).catch(() => fail("the palette did not add an element"));

@@ -842,3 +842,31 @@ describe("requireValid", () => {
     expect(s.canvas.components).toHaveLength(count + 1);
   });
 });
+
+describe("another diagram opened while projecting", () => {
+  it("draws nothing and keeps the binding: the changes would land on the other diagram", async () => {
+    let open = true;
+    const options = s.engineOptions();
+    const engine = new OpscrEngine({
+      ...options,
+      diagram: { ...options.diagram, get: () => (open ? s.canvas.snapshot() : null) },
+      project: async (...args) => {
+        const result = await options.project(...args);
+        open = false;
+        return result;
+      },
+    });
+    const count = s.canvas.components.length;
+    const binding = structuredClone(s.binding);
+    const cache =
+      "\n---\napiVersion: opscr.dev/v1\nkind: Cache\nmetadata:\n  name: price-cache\nspec:\n  provider: ElastiCache Redis\n  description: Prices\n";
+    s.files = s.files.map((f) =>
+      f.name === "commerce.opscr.yaml" ? { ...f, text: f.text + cache } : f,
+    );
+    s.applied = [];
+    await engine.sync();
+    expect(s.applied).toEqual([]);
+    expect(s.canvas.components).toHaveLength(count);
+    expect(s.binding).toEqual(binding);
+  });
+});

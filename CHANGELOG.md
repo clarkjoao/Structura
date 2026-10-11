@@ -50,8 +50,9 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 - **Plugin API 1.11.0**: `api.canvas` (the canvas selection, and `highlight()`
   to light elements and bring them into view), and `CodeEditor` `path` (a model
   per file, with its own undo history), `revealLine`, `onCursorLine` and
-  `original` (a comparison). **opscr plugin 0.13.0**: selecting an element on
-  the canvas opens the YAML that writes it and the element under the cursor is
+  `original` (a comparison; `onCursorLine` reports clicks and arrow keys, not
+  typing). **opscr plugin 0.13.0**: selecting an element on the canvas opens the
+  YAML that writes it (dragging it does not) and the element under the cursor is
   lit on the canvas; the pane lists what does not carry between the YAML and the
   diagram; a conflict can be compared with the folder's version; an empty
   folder offers a first manifest.
@@ -152,6 +153,10 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Fixed
 
+- **opscr plugin: a sync could draw on the wrong diagram.** Opening another
+  diagram while the pane was projecting the YAML applied the changes to the one
+  just opened. A sync now stops when its diagram is no longer the open one, and
+  the pane reads a diagram's binding only after its pending writes.
 - **Canvas node selection could describe one node while another kept the
   focus ring.** `selectedNodeId` (element panel, quick-actions toolbar)
   and `selectedNodeIds` (dimming, React Flow's `selected` flag) are one

@@ -166,7 +166,11 @@ export class OpscrEngine {
       ).length;
       if (errors > 0) return this.emit({ type: "invalid", errors });
     }
-    const plan = planSync(projection.graph, binding, diagram);
+    // The projection takes a while: the user may have opened another diagram meanwhile —
+    // changes go to the active one, so the plan must not — or edited this one.
+    const now = this.options.diagram.get();
+    if (!now || now.id !== diagram.id) return;
+    const plan = planSync(projection.graph, binding, now);
     const result = plan.empty
       ? { idsByKey: {}, connectionIds: [] }
       : await this.options.diagram.apply(plan.changes);

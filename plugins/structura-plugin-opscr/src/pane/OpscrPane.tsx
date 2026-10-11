@@ -94,6 +94,25 @@ export function createOpscrPane(api: StructuraPluginApi) {
     string,
     { folder: PluginFolder; buffers: Buffer[]; selected: string | null; knownStats: Stats }
   >();
+  /**
+   * Bindings in storage, in order per diagram: a read waits for the writes before it, so going
+   * back to a diagram while a step of its engine is still saving reads what that step saved.
+   */
+  const saving = new Map<string, Promise<void>>();
+  const bindings = {
+    get: (diagramId: string) =>
+      (saving.get(diagramId) ?? Promise.resolve()).then(() =>
+        api.storage.get<StoredBinding>(storageKey(diagramId)),
+      ),
+    write: (diagramId: string, write: () => Promise<void>): Promise<void> => {
+      const done = (saving.get(diagramId) ?? Promise.resolve()).then(write, write);
+      saving.set(
+        diagramId,
+        done.catch(() => undefined),
+      );
+      return done;
+    },
+  };
 
   return function OpscrPane({ context }: PluginPanelProps) {
     const t = useMemo(() => text(context.locale as Locale), [context.locale]);
@@ -178,7 +197,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         return;
       }
       let current = true;
-      void api.storage.get<StoredBinding>(storageKey(diagramId)).then((value) => {
+      void bindings.get(diagramId).then((value) => {
         if (!current) return; // another diagram since
         bindingRef.current = value;
         loadedForRef.current = diagramId;
@@ -215,7 +234,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         loadedForRef.current = diagramId;
         setStored(binding);
         setLoadedFor(diagramId);
-        await api.storage.set(storageKey(diagramId), binding);
+        await bindings.write(diagramId, () => api.storage.set(storageKey(diagramId), binding));
       },
       [diagramId],
     );
@@ -277,7 +296,10 @@ export function createOpscrPane(api: StructuraPluginApi) {
           set: (state) => {
             if (live() && bindingRef.current) return persist({ ...bindingRef.current, state });
             if (diagramId && folderName) {
-              return api.storage.set(storageKey(diagramId), { folderName, state });
+              const name = folderName;
+              return bindings.write(diagramId, () =>
+                api.storage.set(storageKey(diagramId), { folderName: name, state }),
+              );
             }
           },
         },
@@ -319,7 +341,30 @@ export function createOpscrPane(api: StructuraPluginApi) {
     // writes it, and the element the cursor is in is lit on the canvas.
     useEffect(() => {
       if (!folder || !diagramId) return;
-      return api.canvas.onSelectionChange(({ componentIds, connectionId }) => {
+      // Pressing on an element to drag it selects it too, and a drag is not a request to read
+      // its YAML: a selection made with the pointer down waits for it to come up, and opens
+      // only if the element stayed where it was.
+      let down = false;
+      let waiting: (() => void) | null = null;
+      const press = () => {
+        down = true;
+        waiting = null;
+      };
+      const release = () => {
+        down = false;
+        const open = waiting;
+        waiting = null;
+        // After the canvas has handled the release, a drag included.
+        if (open) setTimeout(open, 0);
+      };
+      window.addEventListener("pointerdown", press, true);
+      window.addEventListener("pointerup", release, true);
+      window.addEventListener("pointercancel", release, true);
+      const positionOf = (id: string | undefined) => {
+        const at = id ? api.getDiagram()?.components.find((c) => c.id === id)?.position : null;
+        return at ? `${at.x},${at.y}` : "";
+      };
+      const stop = api.canvas.onSelectionChange(({ componentIds, connectionId }) => {
         const binding = bindingRef.current?.state;
         const sources = projectionRef.current?.sources;
         if (!binding || !sources || api.getActiveDiagramId() !== diagramId) return;
@@ -338,9 +383,23 @@ export function createOpscrPane(api: StructuraPluginApi) {
         const element: GraphElementRef = { kind: connectionId ? "connection" : "component", key };
         const at = sources.locate(element);
         if (!at || sameElement(element, pointed.current)) return;
-        pointed.current = element;
-        showSource(at);
+        const open = () => {
+          pointed.current = element;
+          showSource(at);
+        };
+        if (!down) return open();
+        const id = connectionId ? undefined : componentIds[0];
+        const before = positionOf(id);
+        waiting = () => {
+          if (positionOf(id) === before && !sameElement(element, pointed.current)) open();
+        };
       });
+      return () => {
+        stop();
+        window.removeEventListener("pointerdown", press, true);
+        window.removeEventListener("pointerup", release, true);
+        window.removeEventListener("pointercancel", release, true);
+      };
     }, [folder, diagramId, showSource]);
 
     const cursorAt = useCallback((line: number) => {
@@ -546,7 +605,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       if (!diagramId) return;
       sessions.delete(diagramId);
       await api.files.forget(diagramId);
-      await api.storage.remove(storageKey(diagramId));
+      await bindings.write(diagramId, () => api.storage.remove(storageKey(diagramId)));
       bindingRef.current = null;
       setStored(null);
       setFolder(null);
