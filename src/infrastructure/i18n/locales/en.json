@@ -2235,10 +2235,10 @@
     "blockedTitle_one": "The YAML has {{count}} opscr error",
     "blockedTitle_other": "The YAML has {{count}} opscr errors",
     "blockedParse": "The YAML does not parse",
-    "blockedHint": "The diagram is drawn once opscr validates the workspace. The Problems panel lists every error.",
-    "blockedStale_one": "Not updated: {{count}} opscr error — see Problems",
-    "blockedStale_other": "Not updated: {{count}} opscr errors — see Problems",
-    "blockedStaleParse": "Not updated: the YAML does not parse — see Problems"
+    "blockedHint": "The diagram is drawn once opscr validates the workspace. Click a problem to open its line; the Problems panel lists every error.",
+    "blockedStale_one": "Not updated: {{count}} opscr error — click to open it",
+    "blockedStale_other": "Not updated: {{count}} opscr errors — click to open the first",
+    "blockedStaleParse": "Not updated: the YAML does not parse — click to open where"
   },
   "viewPage": {
     "openInStructura": {

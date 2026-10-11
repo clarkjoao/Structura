@@ -40,11 +40,13 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
-- **VSCode extension 0.3.2**: the preview draws only YAML that opscr validates
+- **VSCode extension 0.4.0**: the preview draws only YAML that opscr validates
   without errors — changes typed, saved or written to disk by other tools
   (Claude Code, git) — keeping the last valid picture and saying why in the
   status bar meanwhile. The diagram stays a read-only view in VSCode. Ctrl/Cmd+F
   finds elements in the preview, and an update zooms to what it changed.
+  Clicking an element opens the YAML that writes it, the element under the
+  cursor is lit in the preview, and a listed problem opens its line.
 - **Embed**: `embed-editor.html`, Structura's canvas on an in-memory diagram,
   driven over `postMessage` like a remote plugin API (not used by the extension).
 - **opscr plugin**: the document pane's orchestration is now a UI-free

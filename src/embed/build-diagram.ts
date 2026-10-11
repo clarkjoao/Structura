@@ -2,26 +2,17 @@ import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { createDiagramStore } from "@/features/diagram/store/diagram.store";
 import { toGeneratedGraph } from "@/features/plugins/import-graph";
 import { InMemoryAdapter } from "@/infrastructure/persistence";
+import { connectionKeys } from "@/lib/opscr-mapping/importer-graph";
 import type { PreviewGraph } from "./protocol";
 
 /** One id for every picture, so the canvas treats an update as the same diagram. */
 export const PREVIEW_DIAGRAM_ID = "structura-embed-preview";
 
 /**
- * The stable id of each connection: its ends, its label and which occurrence of that triple it
- * is. Shared by the canvas ids and change detection, so both name a connection the same way.
+ * Connections are named by `connectionKeys` — ends, label and occurrence — in the canvas ids and
+ * in change detection, and a host names them the same way (`STRUCTURA_REVEAL`, `STRUCTURA_SELECT`).
  */
-export function connectionKeys(
-  connections: readonly { source: string; target: string; label?: string | null }[],
-): string[] {
-  const seen = new Map<string, number>();
-  return connections.map((c) => {
-    const base = `${c.source}->${c.target}:${c.label ?? ""}`;
-    const n = seen.get(base) ?? 0;
-    seen.set(base, n + 1);
-    return `${base}#${n}`;
-  });
-}
+export { connectionKeys };
 
 /**
  * Builds the diagram for a posted graph, in a throwaway in-memory store — nothing is
