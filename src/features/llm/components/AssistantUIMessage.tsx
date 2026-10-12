@@ -9,10 +9,13 @@ import { useAuiState, MessagePrimitive } from "@assistant-ui/react";
 import { SUGGESTION_DATA_PART } from "@/features/llm/adapters/useAssistantUIAdapter";
 import { MarkdownText } from "./MarkdownText";
 import { SuggestionPartView } from "./SuggestionPartView";
+import { ToolCallGroup, ToolCallPartView } from "./ToolCallPart";
 
 /** Text as Markdown; the Structura parts assistant-ui has no type for, by name. */
 const ASSISTANT_PART_COMPONENTS = {
   Text: MarkdownText,
+  tools: { Override: ToolCallPartView },
+  ToolGroup: ToolCallGroup,
   data: {
     by_name: {
       [SUGGESTION_DATA_PART]: SuggestionPartView,

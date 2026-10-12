@@ -742,7 +742,13 @@
         "error": "Failed",
         "awaitingApproval": "Awaiting approval",
         "denied": "Denied"
-      }
+      },
+      "showDetails": "Show details for {{name}}",
+      "hideDetails": "Hide details for {{name}}",
+      "arguments": "Arguments",
+      "result": "Result",
+      "error": "Error",
+      "mcpBadge": "MCP · {{server}}"
     },
     "markdown": {
       "copyCode": "Copy code"
