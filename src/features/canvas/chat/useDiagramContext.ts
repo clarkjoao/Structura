@@ -31,10 +31,18 @@ export function useDiagramContext(params: {
       ...activeModel,
       viewport: { x: 0, y: 0, zoom: 1 },
     };
-    const resolvedDiagram = {
+    // The serializer reads components and connections; take them from the
+    // resolved canvas snapshot (active version applied) and keep the rest of
+    // the draft as it is.
+    const resolved = getCachedCanvasSnapshot(activeDiagram);
+    const resolvedDiagram: Diagram = {
       ...activeDiagram,
-      snapshot: getCachedCanvasSnapshot(activeDiagram),
-    } as unknown as Diagram;
+      snapshot: {
+        ...activeDiagram.snapshot,
+        components: resolved.components,
+        connections: resolved.connections,
+      },
+    };
 
     const activeVersion = resolveActiveVersion(activeDiagram);
 
