@@ -61,6 +61,12 @@
         "key": "ctrl+f",
         "mac": "cmd+f",
         "when": "activeWebviewPanelId == 'opscr.preview'"
+      },
+      {
+        "command": "opscr.relayoutPreview",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l",
+        "when": "activeWebviewPanelId == 'opscr.preview'"
       }
     ]
   },

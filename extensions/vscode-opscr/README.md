@@ -13,8 +13,8 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
   While the YAML does not parse or has opscr errors, the preview keeps its last valid picture and
   the status bar says why (click it for the Problems panel). Warnings do not block.
 - **Still:** elements already drawn keep their place when you add, remove or edit others; new ones
-  are placed next to their neighbours. **opscr: Re-layout Preview** arranges everything from
-  scratch.
+  are placed next to their neighbours. **opscr: Re-layout Preview** (Ctrl/Cmd+Shift+L in the
+  preview) arranges everything from scratch.
 - **Layout sidecar:** when the folder has an `opscr.layout.json` (Structura writes it when you save a
   bound folder), elements are drawn where it puts them; the preview redraws when the file changes.
   Re-layout ignores it until it changes again.

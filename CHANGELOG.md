@@ -44,7 +44,8 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
   without errors — changes typed, saved or written to disk by other tools
   (Claude Code, git) — keeping the last valid picture and saying why in the
   status bar meanwhile. The diagram stays a read-only view in VSCode. Ctrl/Cmd+F
-  finds elements in the preview, and an update zooms to what it changed.
+  finds elements in the preview, Ctrl/Cmd+Shift+L re-lays it out, and an update
+  zooms to what it changed.
   Clicking an element opens the YAML that writes it, the element under the
   cursor is lit in the preview, and a listed problem opens its line.
 - **Plugin API 1.11.0**: `api.canvas` (the canvas selection, and `highlight()`
