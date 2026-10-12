@@ -224,14 +224,23 @@ export interface LLMStoreState {
   clearHistory: () => void;
 }
 
-function persistActiveThread(state: LLMStoreState): void {
-  const { activeDiagramId, activeThreadId, messages, threadsByDiagram } = state;
+/**
+ * Writes `messages` into the active thread and returns the next
+ * `threadsByDiagram`, or null when there is no active thread to write to. The
+ * caller commits the result through `set()` so subscribers (the history drawer)
+ * see the change.
+ */
+function persistActiveThread(
+  state: LLMStoreState,
+  messages: ChatMessage[] = state.messages,
+): Record<string, DiagramThreadState> | null {
+  const { activeDiagramId, activeThreadId, threadsByDiagram } = state;
   if (!activeDiagramId || !activeThreadId) {
-    return;
+    return null;
   }
   const entry = threadsByDiagram[activeDiagramId];
   if (!entry) {
-    return;
+    return null;
   }
   const updatedThreads = entry.threads.map((thread) =>
     thread.id === activeThreadId
@@ -248,7 +257,18 @@ function persistActiveThread(state: LLMStoreState): void {
     activeThreadId: entry.activeThreadId,
   };
   saveThreadsForDiagram(activeDiagramId, nextEntry);
-  state.threadsByDiagram = { ...state.threadsByDiagram, [activeDiagramId]: nextEntry };
+  return { ...threadsByDiagram, [activeDiagramId]: nextEntry };
+}
+
+function hasActiveThread(state: LLMStoreState): boolean {
+  const { activeDiagramId, activeThreadId, threadsByDiagram } = state;
+  if (!activeDiagramId || !activeThreadId) {
+    return false;
+  }
+  return (
+    threadsByDiagram[activeDiagramId]?.threads.some((thread) => thread.id === activeThreadId) ??
+    false
+  );
 }
 
 function freshThreadState(): DiagramThreadState {
@@ -266,7 +286,26 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     throw new Error("loadConnections returned no connections");
   }
 
-  const persistThread = () => persistActiveThread(get());
+  const persistThread = (messages?: ChatMessage[]) => {
+    const next = persistActiveThread(get(), messages);
+    if (next) {
+      set({ threadsByDiagram: next });
+    }
+  };
+
+  /**
+   * A conversation started from the empty state has no thread yet. Create one
+   * before the request so the first message is persisted like any other.
+   */
+  const ensureActiveThread = (firstUserMessage: string) => {
+    if (hasActiveThread(get())) {
+      return;
+    }
+    const diagramId = get().activeDiagramId ?? useDiagramStore.getState().activeDiagramId;
+    if (diagramId) {
+      get().createThread(diagramId, firstUserMessage);
+    }
+  };
   const setWithPersist = (partial: Partial<LLMStoreState>) => set(partial);
 
   return {
@@ -561,6 +600,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       if (!userText.trim()) {
         return;
       }
+      ensureActiveThread(userText.trim());
       const state = get();
 
       // If hydration hasn't run yet (panel mounted before App shell's
@@ -590,6 +630,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         isLoading: true,
         error: null,
       });
+      // Persist the user's message now, not only when the response lands: a
+      // slow or failing request must not leave the thread looking empty.
+      persistThread(outgoingMessages);
 
       try {
         const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());

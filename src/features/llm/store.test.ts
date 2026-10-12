@@ -219,3 +219,72 @@ describe("LLM store — thread lifecycle", () => {
     expect(entry.threads[0]?.id).not.toBe(only.id);
   });
 });
+
+describe("LLM store — first send persists the conversation", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function stubProxyReply(reply: string): void {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ message: reply })),
+    );
+  }
+
+  it("creates a thread on the first send from the empty state", async () => {
+    stubProxyReply("Hello");
+    expect(useLLMStore.getState().activeThreadId).toBe("");
+
+    await useLLMStore.getState().sendMessage("Explain this architecture", "ctx");
+
+    const state = useLLMStore.getState();
+    expect(state.activeThreadId).not.toBe("");
+    const thread = state.threadsByDiagram["diagram-store"]?.threads.find(
+      (candidate) => candidate.id === state.activeThreadId,
+    );
+    expect(thread?.title).toBe("Explain this architecture");
+    expect(thread?.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+  });
+
+  it("persists the user message before the response arrives", async () => {
+    let release: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            release = resolve;
+          }),
+      ),
+    );
+
+    const pending = useLLMStore.getState().sendMessage("Add a cache", "ctx");
+    const inFlight = useLLMStore.getState();
+    const thread = inFlight.threadsByDiagram["diagram-store"]?.threads.find(
+      (candidate) => candidate.id === inFlight.activeThreadId,
+    );
+    expect(thread?.messages).toHaveLength(1);
+    expect(thread?.messages[0]?.content).toBe("Add a cache");
+
+    release(Response.json({ message: "Done" }));
+    await pending;
+  });
+
+  it("keeps the previous conversation in history when a new one starts (/clear)", async () => {
+    stubProxyReply("Hello");
+    await useLLMStore.getState().sendMessage("First question", "ctx");
+    const firstId = useLLMStore.getState().activeThreadId;
+
+    useLLMStore.getState().createThread("diagram-store");
+
+    const threads = useLLMStore.getState().threadsByDiagram["diagram-store"]?.threads ?? [];
+    expect(threads).toHaveLength(2);
+    expect(threads.find((thread) => thread.id === firstId)?.messages).toHaveLength(2);
+  });
+});

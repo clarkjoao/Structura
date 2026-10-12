@@ -71,6 +71,7 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
   const activeDiagram = useActiveDiagramModel();
 
   const {
+    messages,
     threads,
     activeThread,
     createThread,
@@ -242,7 +243,9 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
                             <span className="line-clamp-1 w-full font-medium">{thread.title}</span>
                             <span className="text-[10px] text-muted-foreground">
                               {t("llmChat.threads.messageCount", {
-                                count: thread.messages.length,
+                                // The active thread's live messages lead its
+                                // persisted snapshot while a request runs.
+                                count: isActive ? messages.length : thread.messages.length,
                               })}{" "}
                               · {timeAgo}
                             </span>
