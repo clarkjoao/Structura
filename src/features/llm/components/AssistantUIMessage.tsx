@@ -6,7 +6,11 @@ import { enUS, ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useAuiState, MessagePrimitive } from "@assistant-ui/react";
-import { SUGGESTION_DATA_PART } from "@/features/llm/adapters/useAssistantUIAdapter";
+import {
+  ERROR_DATA_PART,
+  SUGGESTION_DATA_PART,
+} from "@/features/llm/adapters/useAssistantUIAdapter";
+import { ErrorPartView } from "./ErrorPart";
 import { MarkdownText } from "./MarkdownText";
 import { SuggestionPartView } from "./SuggestionPartView";
 import { ToolCallGroup, ToolCallPartView } from "./ToolCallPart";
@@ -19,6 +23,7 @@ const ASSISTANT_PART_COMPONENTS = {
   data: {
     by_name: {
       [SUGGESTION_DATA_PART]: SuggestionPartView,
+      [ERROR_DATA_PART]: ErrorPartView,
     },
   },
 };

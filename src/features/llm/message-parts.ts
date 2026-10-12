@@ -115,6 +115,10 @@ export function textPart(text: string): TextPart {
   return { type: "text", text };
 }
 
+export function errorPart(error: LLMError): ErrorPart {
+  return { type: "error", error };
+}
+
 export function suggestionPart(suggestionId: string): SuggestionPart {
   return { type: "suggestion", suggestionId };
 }

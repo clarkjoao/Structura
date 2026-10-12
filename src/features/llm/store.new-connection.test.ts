@@ -41,7 +41,6 @@ beforeEach(() => {
     pendingAnalysis: null,
     streamingContent: null,
     isLoading: false,
-    error: null,
   });
 });
 

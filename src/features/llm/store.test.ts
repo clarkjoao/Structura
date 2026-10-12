@@ -15,6 +15,7 @@ vi.mock("@/features/diagram", () => ({
 }));
 
 import { countConversationMessages, useLLMStore } from "./store";
+import { isErrorPart } from "./message-parts";
 import { resetLLMStorageForTests } from "./llm-storage";
 
 beforeEach(() => {
@@ -46,7 +47,6 @@ function resetStore(): void {
     pendingAnalysis: null,
     streamingContent: null,
     isLoading: false,
-    error: null,
   });
 }
 
@@ -411,11 +411,56 @@ describe("LLM store — message parts", () => {
     expect(last?.status).toBe("cancelled");
     expect(last?.parts).toEqual([{ type: "text", text: "Partial" }]);
     expect(state.isLoading).toBe(false);
-    expect(state.error).toBeNull();
+    expect(last?.parts.some(isErrorPart)).toBe(false);
     const thread = state.threadsByDiagram["diagram-store"]?.threads.find(
       (candidate) => candidate.id === state.activeThreadId,
     );
     expect(lastMessage(thread?.messages ?? [])?.status).toBe("cancelled");
+  });
+
+  it("stores a failed request as an error part on that turn and persists it", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("down", { status: 503 })),
+    );
+
+    await useLLMStore.getState().sendMessage("Review this", "ctx");
+
+    const state = useLLMStore.getState();
+    const last = lastMessage(state.messages);
+    expect(last?.role).toBe("assistant");
+    expect(last?.status).toBe("error");
+    const errorPart = last?.parts.find(isErrorPart);
+    expect(errorPart?.error).toMatchObject({ kind: "server", status: 503, mode: "proxy" });
+    const thread = state.threadsByDiagram["diagram-store"]?.threads.find(
+      (candidate) => candidate.id === state.activeThreadId,
+    );
+    expect(lastMessage(thread?.messages ?? [])?.parts.some(isErrorPart)).toBe(true);
+  });
+
+  it("Retry re-sends the same user message and replaces the failed reply", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("down", { status: 503 })),
+    );
+    await useLLMStore.getState().sendMessage("Review this", "ctx");
+    const failed = lastMessage(useLLMStore.getState().messages);
+    expect(failed?.status).toBe("error");
+
+    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) =>
+      Response.json({ message: "All good" }),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+    await useLLMStore.getState().rerunAssistantMessage(failed?.id ?? "", "ctx");
+
+    const messages = useLLMStore.getState().messages;
+    expect(messages).toHaveLength(2);
+    expect(messages[0]?.parts).toEqual([{ type: "text", text: "Review this" }]);
+    expect(messages[1]?.id).not.toBe(failed?.id);
+    expect(messages[1]?.parts).toEqual([{ type: "text", text: "All good" }]);
+    expect(messages[1]?.status).toBe("complete");
+    const body = JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body ?? "{}"));
+    expect(body.messages).toEqual([{ role: "user", content: "Review this" }]);
   });
 
   it("references the pending suggestion from the assistant message", async () => {

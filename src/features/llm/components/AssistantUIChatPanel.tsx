@@ -16,9 +16,9 @@ import { ThreadDrawer } from "./ThreadDrawer";
 import { LLMSelector } from "./LLMSelector";
 import { LLMSettings } from "./LLMSettings";
 import { AnalysisPanel } from "@/features/canvas/chat";
-import { buildContextualSuggestions, getLLMErrorI18nKey } from "@/features/llm";
-import { isSettingsFixableError } from "@/features/llm/errors";
+import { buildContextualSuggestions } from "@/features/llm";
 import { isUsableConnection } from "@/features/llm/llm-storage";
+import { ChatActionsContext, type ChatActions } from "./chat-actions";
 import type { ChatSuggestion } from "@/features/llm/suggestions";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
@@ -76,11 +76,11 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     messages,
     send,
     cancel,
+    rerun,
     isLoading,
     streamingContent,
     pendingAnalysis,
     dismissPendingAnalysis,
-    error,
     activeThread,
     activeConnection,
     config,
@@ -191,6 +191,21 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     [config, send],
   );
 
+  const chatActions = useMemo<ChatActions>(
+    () => ({
+      openSettings: () => setShowSettings(true),
+      rerun: (assistantMessageId) => {
+        // A retry fails the same way without a usable connection.
+        if (!isUsableConnection(config)) {
+          setShowSettings(true);
+          return;
+        }
+        void rerun(assistantMessageId);
+      },
+    }),
+    [config, rerun],
+  );
+
   const handleCreateThread = useCallback(() => {
     if (activeDiagram) {
       createThread(activeDiagram.id);
@@ -210,100 +225,84 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div
-        ref={panelRef}
-        className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl"
-      >
-        {/* Header */}
-        <ChatHeader
-          title={threadedTitle}
-          connectionName={connectionName}
-          onOpenThreads={() => setShowThreadDrawer(true)}
-          onCreateThread={handleCreateThread}
-          onOpenSettings={() => setShowSettings(true)}
-          onClose={onClose}
-        />
+      <ChatActionsContext.Provider value={chatActions}>
+        <div
+          ref={panelRef}
+          className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl"
+        >
+          {/* Header */}
+          <ChatHeader
+            title={threadedTitle}
+            connectionName={connectionName}
+            onOpenThreads={() => setShowThreadDrawer(true)}
+            onCreateThread={handleCreateThread}
+            onOpenSettings={() => setShowSettings(true)}
+            onClose={onClose}
+          />
 
-        {/* Thread drawer */}
-        <ThreadDrawer open={showThreadDrawer} onClose={() => setShowThreadDrawer(false)} />
+          {/* Thread drawer */}
+          <ThreadDrawer open={showThreadDrawer} onClose={() => setShowThreadDrawer(false)} />
 
-        {/* Messages — fixed-height scroll container */}
-        {/* min-h-0 + flex-1 are required so the scrollable viewport actually
+          {/* Messages — fixed-height scroll container */}
+          {/* min-h-0 + flex-1 are required so the scrollable viewport actually
             constrains its height instead of letting flex children grow
             indefinitely (which was the previous bug). */}
-        <div className="relative min-h-0 flex-1 overflow-hidden">
-          <ThreadPrimitive.Root className="flex h-full flex-col">
-            <ThreadPrimitive.Viewport ref={viewportRef} className="h-full w-full overflow-y-auto">
-              <div className="flex flex-col gap-3 p-4">
-                {pendingAnalysis ? (
-                  <AnalysisPanel analysis={pendingAnalysis} onDismiss={dismissPendingAnalysis} />
-                ) : null}
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <ThreadPrimitive.Root className="flex h-full flex-col">
+              <ThreadPrimitive.Viewport ref={viewportRef} className="h-full w-full overflow-y-auto">
+                <div className="flex flex-col gap-3 p-4">
+                  {pendingAnalysis ? (
+                    <AnalysisPanel analysis={pendingAnalysis} onDismiss={dismissPendingAnalysis} />
+                  ) : null}
 
-                {showSkeleton ? (
-                  <SkeletonLoader />
-                ) : showTyping ? (
-                  <TypingIndicator />
-                ) : hasMessages ? (
-                  <ThreadPrimitive.Messages>
-                    {({ message }) => {
-                      if (message.role === "user") {
-                        return <UserMessageComponent />;
-                      }
-                      return <AssistantMessageComponent />;
-                    }}
-                  </ThreadPrimitive.Messages>
-                ) : (
-                  <EmptyState
-                    suggestions={contextualSuggestions}
-                    onSelectSuggestion={(text) => {
-                      void handleSend(text, []);
-                    }}
-                  />
-                )}
-              </div>
-            </ThreadPrimitive.Viewport>
+                  {showSkeleton ? (
+                    <SkeletonLoader />
+                  ) : showTyping ? (
+                    <TypingIndicator />
+                  ) : hasMessages ? (
+                    <ThreadPrimitive.Messages>
+                      {({ message }) => {
+                        if (message.role === "user") {
+                          return <UserMessageComponent />;
+                        }
+                        return <AssistantMessageComponent />;
+                      }}
+                    </ThreadPrimitive.Messages>
+                  ) : (
+                    <EmptyState
+                      suggestions={contextualSuggestions}
+                      onSelectSuggestion={(text) => {
+                        void handleSend(text, []);
+                      }}
+                    />
+                  )}
+                </div>
+              </ThreadPrimitive.Viewport>
 
-            <ScrollToBottomAffordance viewportRef={viewportRef} />
-          </ThreadPrimitive.Root>
-        </div>
-
-        {/* Error */}
-        {error ? (
-          <div className="mx-3 mb-2 space-y-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-            <p className="text-xs font-medium text-destructive">
-              {t(getLLMErrorI18nKey(error), { status: error.status })}
-            </p>
-            {isSettingsFixableError(error) ? (
-              <button
-                type="button"
-                className="text-xs text-primary underline"
-                onClick={() => setShowSettings(true)}
-              >
-                {t("llmChat.error.action.settings")}
-              </button>
-            ) : null}
+              <ScrollToBottomAffordance viewportRef={viewportRef} />
+            </ThreadPrimitive.Root>
           </div>
-        ) : null}
 
-        {/* Composer */}
-        <div className="shrink-0 border-t border-border bg-card/60 p-3">
-          <AssistantUIComposer
-            ref={composerRef}
-            onSend={handleSend}
-            onCancel={cancel}
-            isLoading={isLoading}
-            onClearHistory={clearHistory}
-            onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}
-          />
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>
-            <LLMSelector onOpenSettings={() => setShowSettings(true)} />
+          {/* Composer */}
+          <div className="shrink-0 border-t border-border bg-card/60 p-3">
+            <AssistantUIComposer
+              ref={composerRef}
+              onSend={handleSend}
+              onCancel={cancel}
+              isLoading={isLoading}
+              onClearHistory={clearHistory}
+              onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}
+            />
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>
+              <LLMSelector onOpenSettings={() => setShowSettings(true)} />
+            </div>
           </div>
-        </div>
 
-        {/* Settings */}
-        {showSettings ? <LLMSettings onClose={() => setShowSettings(false)} /> : null}
-      </div>
+          {/* Settings */}
+          {showSettings ? <LLMSettings onClose={() => setShowSettings(false)} /> : null}
+        </div>
+      </ChatActionsContext.Provider>
     </AssistantRuntimeProvider>
   );
 });

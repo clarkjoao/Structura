@@ -23,7 +23,6 @@ import {
   type MessagePart,
   type MessageStatus,
 } from "@/features/llm/message-parts";
-import { getLLMErrorI18nKey } from "@/features/llm/errors";
 
 /** Data-part names for the Structura parts assistant-ui has no type for. */
 export const SUGGESTION_DATA_PART = "structura-suggestion";
@@ -125,10 +124,10 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
   const {
     send,
     cancel,
+    rerun,
     messages: chatMessages,
     isLoading,
     streamingContent,
-    error: llmError,
     pendingSuggestions,
   } = useLLMChat({
     selectedNodeIds: new Set(),
@@ -148,11 +147,6 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
         prompt: `Accept suggestion ${s.id}`,
       }));
   }, [pendingSuggestions, t]);
-
-  const errorMessage = useMemo((): string | null => {
-    if (!llmError) return null;
-    return t(getLLMErrorI18nKey(llmError), { status: llmError.status });
-  }, [llmError, t]);
 
   const onNew = useCallback(
     async (message: AppendMessage): Promise<void> => {
@@ -174,14 +168,16 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
     [onNew],
   );
 
+  // Errors are shown inside the conversation (error parts), so the adapter
+  // reports none of its own. Reload regenerates the last assistant message.
   const onReload = useCallback(
     async (_parentId: string | null, _config: StartRunConfig): Promise<void> => {
-      const lastUserMessage = [...chatMessages].reverse().find((msg) => msg.role === "user");
-      if (lastUserMessage) {
-        await send(getMessageText(lastUserMessage), []);
+      const lastAssistant = [...chatMessages].reverse().find((msg) => msg.role === "assistant");
+      if (lastAssistant) {
+        await rerun(lastAssistant.id);
       }
     },
-    [chatMessages, send],
+    [chatMessages, rerun],
   );
 
   const setMessages = useCallback((_messages: readonly ThreadMessage[]) => {
@@ -194,7 +190,6 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
       suggestions,
       isLoading,
       isRunning: isLoading && streamingContent !== null,
-      error: errorMessage,
       onNew,
       onCancel,
       onEdit,
@@ -208,7 +203,6 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
       suggestions,
       isLoading,
       streamingContent,
-      errorMessage,
       onNew,
       onCancel,
       onEdit,

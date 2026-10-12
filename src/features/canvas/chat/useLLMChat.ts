@@ -29,7 +29,6 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingAnalysis = useLLMStore((state) => state.pendingAnalysis);
   const streamingContent = useLLMStore((state) => state.streamingContent);
-  const error = useLLMStore((state) => state.error);
   const config = useLLMStore((state) => state.config);
   const activeDiagramId = useLLMStore((state) => state.activeDiagramId);
   const activeThreadId = useLLMStore((state) => state.activeThreadId);
@@ -41,6 +40,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const setActiveConnection = useLLMStore((state) => state.setActiveConnection);
   const sendMessage = useLLMStore((state) => state.sendMessage);
   const cancelRequest = useLLMStore((state) => state.cancelRequest);
+  const rerunAssistantMessage = useLLMStore((state) => state.rerunAssistantMessage);
   const acceptSuggestion = useLLMStore((state) => state.acceptSuggestion);
   const rejectSuggestion = useLLMStore((state) => state.rejectSuggestion);
   const dismissPendingAnalysis = useLLMStore((state) => state.dismissPendingAnalysis);
@@ -56,8 +56,9 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     }
   }, [activeDiagram?.id, activeDiagramId, loadHistoryForDiagram]);
 
-  const send = useCallback(
-    async (userText: string, mentions: ActiveMention[]) => {
+  /** The diagram, what the user is looking at, and any @-mentioned elements. */
+  const buildContext = useCallback(
+    (mentions: ActiveMention[]): string => {
       const mentionContext = buildMentionContextBlock(mentions, allItems);
 
       const visualContextLines: string[] = [];
@@ -80,17 +81,30 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
           ? `\nCurrent user focus:\n${visualContextLines.join("\n")}`
           : "";
 
-      const enrichedContext = [
-        diagramText,
-        visualContext,
-        mentionContext ? `\n${mentionContext}` : "",
-      ]
+      return [diagramText, visualContext, mentionContext ? `\n${mentionContext}` : ""]
         .filter(Boolean)
         .join("");
-
-      await sendMessage(userText, enrichedContext);
     },
-    [allItems, diagramText, selIds, focusedNodeId, activeDiagram, sendMessage],
+    [allItems, diagramText, selIds, focusedNodeId, activeDiagram],
+  );
+
+  const send = useCallback(
+    async (userText: string, mentions: ActiveMention[]) => {
+      await sendMessage(userText, buildContext(mentions));
+    },
+    [buildContext, sendMessage],
+  );
+
+  /**
+   * Asks again for the reply that `assistantMessageId` holds, replacing it.
+   * Mentions are not stored with a message, so the context is the current
+   * diagram and selection.
+   */
+  const rerun = useCallback(
+    async (assistantMessageId: string) => {
+      await rerunAssistantMessage(assistantMessageId, buildContext([]));
+    },
+    [buildContext, rerunAssistantMessage],
   );
 
   const threads = activeDiagramId ? (threadsByDiagram[activeDiagramId]?.threads ?? []) : [];
@@ -103,13 +117,13 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     messages,
     send,
     cancel: cancelRequest,
+    rerun,
     isLoading,
     pendingSuggestions,
     pendingPreviews,
     pendingAnalysis,
     dismissPendingAnalysis,
     streamingContent,
-    error,
     accept: acceptSuggestion,
     reject: rejectSuggestion,
     config,
