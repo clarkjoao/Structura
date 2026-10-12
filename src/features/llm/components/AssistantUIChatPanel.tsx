@@ -2,18 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ChevronDown,
-  Download,
-  History,
-  MessageSquarePlus,
-  Plus,
-  Settings,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { ChevronDown, History, MessageSquarePlus, Plus, Settings, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLLMStore } from "@/features/llm";
 import { useLLMChat } from "@/features/canvas/chat";
 import {
   AssistantRuntimeProvider,
@@ -26,7 +16,7 @@ import { ThreadDrawer } from "./ThreadDrawer";
 import { LLMSelector } from "./LLMSelector";
 import { LLMSettings } from "./LLMSettings";
 import { AnalysisPanel } from "@/features/canvas/chat";
-import { buildContextualSuggestions, downloadIR, getLLMErrorI18nKey } from "@/features/llm";
+import { buildContextualSuggestions, getLLMErrorI18nKey } from "@/features/llm";
 import { isSettingsFixableError } from "@/features/llm/errors";
 import { isUsableConnection } from "@/features/llm/llm-storage";
 import type { ChatSuggestion } from "@/features/llm/suggestions";
@@ -79,7 +69,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   const [showThreadDrawer, setShowThreadDrawer] = useState(false);
 
   const activeDiagram = useActiveDiagramModel();
-  const lastGeneratedIR = useLLMStore((s) => s.lastGeneratedIR);
 
   const adapter = useAssistantUIAdapter();
   const runtime = useExternalStoreRuntime(adapter);
@@ -232,12 +221,8 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
         <ChatHeader
           title={threadedTitle}
           connectionName={connectionName}
-          hasExportableIR={Boolean(lastGeneratedIR)}
           onOpenThreads={() => setShowThreadDrawer(true)}
           onCreateThread={handleCreateThread}
-          onExportIR={() => {
-            if (lastGeneratedIR) downloadIR(lastGeneratedIR);
-          }}
           onOpenSettings={() => setShowSettings(true)}
           onClose={onClose}
         />
@@ -321,7 +306,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
             ref={composerRef}
             onSend={handleSend}
             isLoading={isLoading}
-            onExportIR={lastGeneratedIR ? () => downloadIR(lastGeneratedIR) : undefined}
             onClearHistory={clearHistory}
             onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}
           />
@@ -343,10 +327,8 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
 interface ChatHeaderProps {
   title: string;
   connectionName: string;
-  hasExportableIR: boolean;
   onOpenThreads: () => void;
   onCreateThread: () => void;
-  onExportIR: () => void;
   onOpenSettings: () => void;
   onClose: () => void;
 }
@@ -354,10 +336,8 @@ interface ChatHeaderProps {
 function ChatHeader({
   title,
   connectionName,
-  hasExportableIR,
   onOpenThreads,
   onCreateThread,
-  onExportIR,
   onOpenSettings,
   onClose,
 }: ChatHeaderProps) {
@@ -381,11 +361,6 @@ function ChatHeader({
         <IconButton label={t("llmChat.threads.historyAria")} onClick={onOpenThreads}>
           <History className="h-4 w-4" />
         </IconButton>
-        {hasExportableIR && (
-          <IconButton label={t("llmChat.ir.export")} onClick={onExportIR}>
-            <Download className="h-4 w-4" />
-          </IconButton>
-        )}
         <IconButton label={t("llmChat.threads.newThread")} onClick={onCreateThread}>
           <MessageSquarePlus className="h-4 w-4" />
         </IconButton>

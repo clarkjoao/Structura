@@ -700,7 +700,6 @@
     },
     "ir": {
       "commandHint": "Descreva o diagrama depois do comando, por exemplo: /gerar diagrama C4 de contêineres para um e-commerce com microsserviços.",
-      "export": "Baixar o IR gerado em JSON",
       "invalid": "O modelo devolveu um diagrama fora do schema do IR:",
       "moreIssues": "e mais {{count}} problema(s).",
       "applied": "Gerados {{nodeCount}} nó(s) e {{edgeCount}} conexão(ões) — revise e aceite abaixo.",
@@ -737,8 +736,6 @@
       "analyze": "Analisar diagrama",
       "analyzeDesc": "Revisar a estrutura e sugerir melhorias",
       "analyzePrompt": "Analise o diagrama atual e sugira melhorias na estrutura.",
-      "export": "Exportar IR",
-      "exportDesc": "Baixar a representação intermediária em JSON",
       "clear": "Limpar conversa",
       "clearDesc": "Apagar todo o histórico desta conversa",
       "clearConfirm": "Iniciar nova conversa? O chat atual será salvo no histórico.",
@@ -748,8 +745,6 @@
       "copyFailed": "Falha ao copiar.",
       "noMessages": "Nenhuma mensagem para copiar.",
       "newChat": "Nova conversa iniciada.",
-      "exported": "IR exportado!",
-      "noIR": "Nenhum IR gerado ainda. Use /generate primeiro.",
       "analyzing": "Analisando…",
       "cleared": "Chat limpo."
     },

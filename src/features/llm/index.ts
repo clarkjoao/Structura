@@ -27,7 +27,6 @@ export { useLLMStore, getPendingNodeIds, getPendingEdgeIds, getSuggestionIdForNo
 // ─── Serializers ──────────────────────────────────────────────────────────────
 export { serializeDiagramContext } from "./serializer";
 export { serializeMentionItem, buildMentionContextBlock } from "./mention-serializer";
-export { parseGenerateCommand } from "./ir";
 export type { DiagramSerializerOptions } from "./serializer";
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
@@ -44,13 +43,8 @@ export type { LLMError, LLMErrorKind } from "./errors";
 export { buildContextualSuggestions } from "./suggestions";
 export type { ChatSuggestion } from "./suggestions";
 
-// ─── IR ───────────────────────────────────────────────────────────────────────
-// Used internally by LLM components via dynamic import.
-export { downloadIR, buildIRFilename } from "./ir";
-
 // ─── Internal sub-modules — import directly: ──────────────────────────────────
 //   import { ... } from "@/features/llm/component-catalog";
 //   import { ... } from "@/features/llm/prompt-builder";
 //   import { ... } from "@/features/llm/patch-parser";
 //   import { ... } from "@/features/llm/tools";
-//   import { ... } from "@/features/llm/ir";
