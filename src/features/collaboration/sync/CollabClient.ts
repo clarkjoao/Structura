@@ -228,8 +228,12 @@ export class CollabClient {
       } catch {
         return;
       }
-      if (isRecord(parsed) && typeof parsed.type === "string") {
-        this.handle(parsed as ServerMessage);
+      // A serverless relay batches several messages into one frame, as an array, in order.
+      for (const message of Array.isArray(parsed) ? parsed : [parsed]) {
+        if (this.socket !== socket) return;
+        if (isRecord(message) && typeof message.type === "string") {
+          this.handle(message as ServerMessage);
+        }
       }
     };
     socket.onclose = () => {

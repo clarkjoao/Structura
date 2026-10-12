@@ -446,12 +446,25 @@ export class CollabRelay {
       });
       return this.sendError(state, "rate_limited", "Too many edits");
     }
-    const result = await this.store.applyPatch(state.roomId, {
-      patch: message.patch,
-      senderVersion: message.baseVersion,
-      senderId: state.clientId,
-      opId: message.opId,
-    });
+    let result: Awaited<ReturnType<RoomStore["applyPatch"]>>;
+    try {
+      result = await this.store.applyPatch(state.roomId, {
+        patch: message.patch,
+        senderVersion: message.baseVersion,
+        senderId: state.clientId,
+        opId: message.opId,
+      });
+    } catch (err) {
+      // Refused, whether or not it landed: if it did, its entry still arrives and the client
+      // takes it as a remote change, so the sender never waits on an answer that never comes.
+      this.send(state, {
+        type: "ack",
+        opId: message.opId,
+        applied: false,
+        version: state.delivered,
+      });
+      throw err;
+    }
     if (result.status === "not_open") {
       this.send(state, {
         type: "ack",

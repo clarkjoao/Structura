@@ -1,0 +1,5806 @@
+[
+  {
+    "name": "rename the diagram",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "doc": {
+            "diagramName": "Billing"
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Billing",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "renaming to the same name takes no version",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "doc": {
+            "diagramName": "Payments"
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "diagramId cannot be changed",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "doc": {
+            "diagramId": "other"
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "doc field set to null keeps null",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "doc": {
+            "activeVersionId": null
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context",
+        "activeVersionId": null
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "several doc fields in one patch take one version",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "doc": {
+            "diagramName": "X",
+            "domain": "fin",
+            "description": "d"
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "X",
+        "level": "context",
+        "domain": "fin",
+        "description": "d"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "unchanged doc field is left out of the effective patch",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "doc": {
+            "diagramName": "Payments",
+            "domain": "fin"
+          }
+        },
+        "expect": "applied",
+        "effective": {
+          "doc": {
+            "domain": "fin"
+          }
+        }
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context",
+        "domain": "fin"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "create an entity in components",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c3": {
+                "set": {
+                  "id": "c3",
+                  "name": "Queue"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          },
+          "c3": {
+            "id": "c3",
+            "name": "Queue"
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "create an entity in connections",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "connections": {
+              "c3": {
+                "set": {
+                  "id": "c3",
+                  "sourceId": "c1",
+                  "targetId": "c2"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {
+          "c3": {
+            "id": "c3",
+            "sourceId": "c1",
+            "targetId": "c2"
+          }
+        },
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "create an entity in flows",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "flows": {
+              "c3": {
+                "set": {
+                  "id": "c3",
+                  "name": "Checkout",
+                  "steps": []
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {
+          "c3": {
+            "id": "c3",
+            "name": "Checkout",
+            "steps": []
+          }
+        },
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "create an entity in iconLibrary",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "iconLibrary": {
+              "c3": {
+                "set": {
+                  "id": "c3",
+                  "svg": "<svg/>"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {
+          "c3": {
+            "id": "c3",
+            "svg": "<svg/>"
+          }
+        },
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "create an entity in nodeLayouts",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c3": {
+                "set": {
+                  "elementId": "c3",
+                  "x": 1,
+                  "y": 2
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c3": {
+            "elementId": "c3",
+            "x": 1,
+            "y": 2
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "create an entity in edgeLayouts",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "edgeLayouts": {
+              "c3": {
+                "set": {
+                  "id": "c3",
+                  "waypoints": [
+                    {
+                      "x": 1,
+                      "y": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {
+          "c3": {
+            "id": "c3",
+            "waypoints": [
+              {
+                "x": 1,
+                "y": 1
+              }
+            ]
+          }
+        },
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "create an entity in versions",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "versions": {
+              "c3": {
+                "set": {
+                  "id": "c3",
+                  "name": "v2",
+                  "addedComponents": {}
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {
+          "c3": {
+            "id": "c3",
+            "name": "v2",
+            "addedComponents": {}
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "an empty set creates nothing",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c9": {
+                "set": {}
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "removing fields of a missing entity creates nothing",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c9": {
+                "unset": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "setting one field keeps the others",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "name": "Gateway"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "Gateway",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "concurrent edits to different fields both survive",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "name": "Gateway"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "description": "Public"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 2,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "Gateway",
+            "description": "Public",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "concurrent edits to the same field: the later one wins",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 100
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 200
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 2,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 200,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "setting a field to its current value takes no version",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 10
+                }
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "only the fields that changed are in the effective patch",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 10,
+                  "y": 99
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied",
+        "effective": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "y": 99
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 99,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a field set to null keeps null",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "description": null
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": null,
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "parentId null stays distinguishable from absent",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "parentId": null
+                }
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "unset removes a field",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "unset": [
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "unset of a missing field takes no version",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "unset": [
+                  "technology"
+                ]
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "nested object values are replaced whole",
+    "seed": {
+      "doc": {},
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "meta": {
+              "a": 1,
+              "b": 2
+            }
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {},
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "meta": {
+                    "a": 5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {},
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "meta": {
+              "a": 5
+            }
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {},
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "array values are replaced whole",
+    "seed": {
+      "doc": {},
+      "entities": {
+        "components": {},
+        "connections": {},
+        "flows": {
+          "f1": {
+            "id": "f1",
+            "steps": [
+              "a",
+              "b"
+            ]
+          }
+        },
+        "iconLibrary": {},
+        "nodeLayouts": {},
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "flows": {
+              "f1": {
+                "set": {
+                  "steps": [
+                    "b"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {},
+      "entities": {
+        "components": {},
+        "connections": {},
+        "flows": {
+          "f1": {
+            "id": "f1",
+            "steps": [
+              "b"
+            ]
+          }
+        },
+        "iconLibrary": {},
+        "nodeLayouts": {},
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "set and unset in one entity patch",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "name": "Edge"
+                },
+                "unset": [
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "Edge",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "one patch across collections takes one version",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c3": {
+                "set": {
+                  "id": "c3",
+                  "name": "Cache"
+                }
+              }
+            },
+            "nodeLayouts": {
+              "c3": {
+                "set": {
+                  "elementId": "c3",
+                  "x": 5,
+                  "y": 5
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          },
+          "c3": {
+            "id": "c3",
+            "name": "Cache"
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c3": {
+            "elementId": "c3",
+            "x": 5,
+            "y": 5
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a no-op does not consume a version between two edits",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 11
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 11
+                }
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      },
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 12
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 2,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 12,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "remove an entity",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": null
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "removing a missing entity takes no version",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c9": null
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a stale edit of a removed entity is dropped",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c2": null
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c2": {
+                "set": {
+                  "x": 1
+                }
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a stale field removal on a removed entity is dropped",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": null
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": {
+                "unset": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "an informed re-creation after removal is accepted",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": null
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 1,
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": {
+                "set": {
+                  "id": "c2",
+                  "name": "DB2"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 2,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB2"
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "re-creation clears the removal, so a later stale edit of the old one applies",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": null
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "a",
+        "senderVersion": 1,
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": {
+                "set": {
+                  "id": "c2"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": {
+                "set": {
+                  "name": "late"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 3,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "late"
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "removal in one collection does not affect the same id elsewhere",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": null
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 50
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 2,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 50,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "removal of component and layout together",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": null
+            },
+            "nodeLayouts": {
+              "c1": null
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a stale drag after a delete leaves no orphan layout",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": null
+            },
+            "nodeLayouts": {
+              "c1": null
+            }
+          }
+        },
+        "expect": "applied"
+      },
+      {
+        "sender": "b",
+        "senderVersion": 0,
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 77
+                }
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "remove an entity and create another in one patch",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c2": null,
+              "c3": {
+                "set": {
+                  "id": "c3"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c3": {
+            "id": "c3"
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "the lock holder may move the node",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "c1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 5
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 5,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "another participant cannot move a locked node",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "c1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "b",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 5,
+                  "y": 6
+                }
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "unguarded fields of a locked entity still apply",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "c1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "b",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "name": "Nope",
+                  "type": "container"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied",
+        "effective": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "type": "container"
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "container",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a guarded unset from a non-holder is dropped",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "c1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "b",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "unset": [
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      }
+    ],
+    "finalVersion": 0,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a connection label is guarded by its lock",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {
+          "k1": {
+            "id": "k1",
+            "sourceId": "c1",
+            "targetId": "c2",
+            "label": "reads"
+          }
+        },
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "k1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "b",
+        "patch": {
+          "entities": {
+            "connections": {
+              "k1": {
+                "set": {
+                  "label": "writes"
+                }
+              }
+            }
+          }
+        },
+        "expect": "noop"
+      },
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "connections": {
+              "k1": {
+                "set": {
+                  "label": "writes"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {
+          "k1": {
+            "id": "k1",
+            "sourceId": "c1",
+            "targetId": "c2",
+            "label": "writes"
+          }
+        },
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a lock on one node does not guard another",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "c1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "b",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c2": {
+                "set": {
+                  "x": 1
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 1,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a lock does not stop removal",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "c1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "b",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": null
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "a non-holder's mixed patch keeps only what the lock allows",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "locks": [
+      {
+        "entityId": "c1",
+        "holder": "a"
+      }
+    ],
+    "steps": [
+      {
+        "sender": "b",
+        "patch": {
+          "doc": {
+            "diagramName": "Mixed"
+          },
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": 9
+                }
+              },
+              "c2": {
+                "set": {
+                  "x": 9
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied",
+        "effective": {
+          "doc": {
+            "diagramName": "Mixed"
+          },
+          "entities": {
+            "nodeLayouts": {
+              "c2": {
+                "set": {
+                  "x": 9
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Mixed",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 9,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "unicode and HTML-ish text survive verbatim",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "description": "coração 🇧🇷 <b>&"
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "coração 🇧🇷 <b>&",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "numbers keep their value",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "nodeLayouts": {
+              "c1": {
+                "set": {
+                  "x": -2.5,
+                  "y": 1000000
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": -2.5,
+            "y": 1000000,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  },
+  {
+    "name": "booleans and empty strings are values, not removals",
+    "seed": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "Edge API",
+            "type": "system",
+            "parentId": null
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    },
+    "steps": [
+      {
+        "sender": "a",
+        "patch": {
+          "entities": {
+            "components": {
+              "c1": {
+                "set": {
+                  "hidden": false,
+                  "description": ""
+                }
+              }
+            }
+          }
+        },
+        "expect": "applied"
+      }
+    ],
+    "finalVersion": 1,
+    "finalState": {
+      "doc": {
+        "diagramId": "d1",
+        "diagramName": "Payments",
+        "level": "context"
+      },
+      "entities": {
+        "components": {
+          "c1": {
+            "id": "c1",
+            "name": "API",
+            "description": "",
+            "type": "system",
+            "parentId": null,
+            "hidden": false
+          },
+          "c2": {
+            "id": "c2",
+            "name": "DB",
+            "description": "",
+            "type": "database",
+            "parentId": null
+          }
+        },
+        "connections": {},
+        "flows": {},
+        "iconLibrary": {},
+        "nodeLayouts": {
+          "c1": {
+            "elementId": "c1",
+            "x": 10,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          },
+          "c2": {
+            "elementId": "c2",
+            "x": 300,
+            "y": 20,
+            "width": 180,
+            "height": 90
+          }
+        },
+        "edgeLayouts": {},
+        "versions": {}
+      }
+    }
+  }
+]

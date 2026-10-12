@@ -1,6 +1,6 @@
 # Collaboration
 
-Live sessions (`src/features/collaboration/` + `server/`) are **optional and additive**:
+Live sessions (`src/features/collaboration/` + `server/` or `go-server/`) are **optional and additive**:
 Structura works fully offline, and turning collaboration on must never change what the app can do
 alone. The decision behind the shape is [ADR-0011](../adr/0011-collaboration-server-authority.md);
 the wire contract is [collab-protocol-v3.md](../collab-protocol-v3.md).
@@ -33,6 +33,18 @@ the wire contract is [collab-protocol-v3.md](../collab-protocol-v3.md).
   `apply.lua` implements the same rules. `store/__fixtures__/merge.fixtures.ts` holds both stores
   to them.
 - `protocol.ts`: messages and guards, imported by the browser through `@collab-protocol`.
+
+### Go relay
+
+`go-server/` is the same relay in Go, wire-compatible with `server/` (same merge fixtures, same
+Redis layout and Lua scripts), in two shapes ([ADR-0012](../adr/0012-go-relay-and-serverless.md),
+[go-server/README.md](../../go-server/README.md)):
+
+- **long-lived** (`cmd/relay`): ECS, Kubernetes or one host; rooms in memory or Redis;
+- **serverless** (`cmd/lambda`): Lambda behind an API Gateway WebSocket API; rooms in DynamoDB or
+  Redis. Socket state lives in the store, a per-room delivery lease keeps entries ordered and
+  gap-free, and a scheduled reaper replaces the relay's timers. Frames may carry several messages
+  as a JSON array, which the client reads.
 
 ## Client
 

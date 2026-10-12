@@ -9,7 +9,8 @@ single long-form reference they point to.
 Open source C4-model architecture diagramming SPA. No backend and no database:
 all state is client-side (localStorage and, optionally, a local folder via the
 File System Access API). A small optional Node server in `server/` provides the
-collaboration relay only.
+collaboration relay only; `go-server/` is the same relay in Go, long-lived (ECS, Kubernetes) or
+serverless (AWS Lambda + API Gateway), see ADR-0012.
 
 ## Tech stack
 

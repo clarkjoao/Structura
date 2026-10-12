@@ -5,11 +5,12 @@
 #   docker compose -f deploy/compose/docker-compose.yml up --build -d
 #   # clients connect to ws://localhost:3000/ws
 #   docker compose -f deploy/compose/docker-compose.yml kill relay-2   # a pod dies
+#   RELAY_BUILD=../../go-server docker compose … up --build -d         # the Go relay instead
 #
 name: structura-collab
 
 x-relay: &relay
-  build: ../../server
+  build: ${RELAY_BUILD:-../../server}
   environment:
     NODE_ENV: production
     PORT: "3000"

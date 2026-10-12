@@ -19,7 +19,7 @@
  *
  * Env: WS_URL, COMPOSE_FILE, TOTAL (500), ROOMS (35), BIG_ROOMS (3), BIG_SIZE (50),
  * BIG_DRAGGERS (20), DRAG_HZ (10), SMALL_EDITORS (3), SMALL_HZ (2), NODES (100),
- * DURATION_MS (30000), SCENARIOS (load,kill-relay,redis-restart,host-drop), HOST_GRACE_MS (30000),
+ * DURATION_MS (30000), SETTLE_MS (4000), SCENARIOS (load,kill-relay,redis-restart,host-drop), HOST_GRACE_MS (30000),
  * KILL_RELAY_CMD / RESTART_REDIS_CMD (shell commands replacing the compose ones, e.g. kubectl).
  */
 import { execFileSync } from "node:child_process";
@@ -53,6 +53,8 @@ const SMALL_HZ = env("SMALL_HZ", 2);
 const NODES = env("NODES", 100);
 const DURATION_MS = env("DURATION_MS", 30_000);
 const HOST_GRACE_MS = env("HOST_GRACE_MS", 30_000);
+/** Quiet time before convergence is checked. */
+const SETTLE_MS = env("SETTLE_MS", 4_000);
 const SCENARIOS = (process.env.SCENARIOS ?? "load,kill-relay,redis-restart,host-drop").split(",");
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -197,7 +199,7 @@ function edit(rooms: Room[], durationMs: number): Promise<number> {
 
 /** Wait for quiet, then compare every member with what a fresh joiner receives. */
 async function convergence(rooms: Room[], label: string): Promise<void> {
-  await sleep(4000);
+  await sleep(SETTLE_MS);
   let divergent = 0;
   let notReady = 0;
   for (const room of rooms) {

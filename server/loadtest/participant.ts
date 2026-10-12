@@ -25,6 +25,8 @@ export interface ParticipantOptions {
   /** Called for every entry, with the local receive time. */
   onEntry?: (entry: Extract<ServerMessage, { type: "entry" }>, receivedAt: number) => void;
   reconnectDelayMs?: number;
+  /** Ping interval, as the browser client's heartbeat (15 s). */
+  heartbeatMs?: number;
 }
 
 export class Participant {
@@ -100,9 +102,22 @@ export class Participant {
     const ws = new WebSocket(this.opts.url, { perMessageDeflate: false });
     this.ws = ws;
     ws.on("open", () => this.handshake());
-    ws.on("message", (data) => this.onMessage(JSON.parse(data.toString()) as ServerMessage));
+    // The browser client pings every 15 s; a serverless relay only learns that it forgot a socket
+    // (its storage restarted) when that socket next speaks.
+    const heartbeat = setInterval(
+      () => this.send({ type: "ping" }),
+      this.opts.heartbeatMs ?? 15_000,
+    );
+    heartbeat.unref();
+    ws.on("message", (data) => {
+      // A serverless relay batches several messages into one frame, as an array.
+      const parsed: unknown = JSON.parse(data.toString());
+      for (const message of (Array.isArray(parsed) ? parsed : [parsed]) as ServerMessage[])
+        this.onMessage(message);
+    });
     ws.on("error", () => {});
     ws.on("close", () => {
+      clearInterval(heartbeat);
       if (this.ws !== ws) return;
       this.ready = false;
       if (this.stopped || this.ended) return;

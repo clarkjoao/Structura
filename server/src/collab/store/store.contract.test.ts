@@ -151,6 +151,21 @@ for (const factory of storeFactories()) {
       expect((await store.readSnapshot(roomId))?.state).toEqual(seed);
     });
 
+    it("keeps a character split between two seed chunks", async () => {
+      const store = await make();
+      const roomId = nextRoomId();
+      const seed = makeState({ components: { c1: { id: "c1", name: "Rocket 🚀 ok" } } });
+      const text = JSON.stringify(seed);
+      // Cut inside the surrogate pair, as the browser's UTF-16 chunking can.
+      const at = text.indexOf("🚀") + 1;
+      const chunks = [text.slice(0, at), text.slice(at)];
+      await store.createRoom({ roomId, hostTokenHash: "h", hostUser: HOST, seedChunks: 2, now: 0 });
+      for (const [index, data] of chunks.entries())
+        await store.appendSeedChunk(roomId, index, data);
+      expect(await store.commitSeed(roomId)).toEqual({ ok: true });
+      expect((await store.readSnapshot(roomId))?.state).toEqual(seed);
+    });
+
     it("replays exactly the entries after a version, and refuses what it no longer holds", async () => {
       const store = await make();
       const roomId = nextRoomId();

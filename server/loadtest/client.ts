@@ -42,31 +42,36 @@ export class Probe {
       this.ws.on("close", () => (this.closed = true));
       this.ws.on("message", (data) => {
         const at = performance.now();
-        const message = JSON.parse(data.toString()) as ServerMessage;
-        if (message.type === "entry" && message.version > this.version)
-          this.version = message.version;
-        if (message.type === "joined") {
-          this.clientId = message.clientId;
-          this.version = message.version;
-          this.snapshot = [];
-        }
-        if (message.type === "snapshot:chunk") this.snapshot[message.index] = message.data;
-        if (message.type === "snapshot:end") {
-          this.state = JSON.parse(this.snapshot.join("")) as DiagramState;
-          this.snapshot = [];
-          this.version = message.version;
-        }
-        if (message.type === "created") this.hostToken = message.hostToken;
-        if (message.type === "ping") this.send({ type: "pong" });
-        this.opts.onMessage?.(message, at);
-        for (const w of [...this.waiters]) {
-          if (w.match(message)) {
-            this.waiters.splice(this.waiters.indexOf(w), 1);
-            w.resolve(message);
-          }
-        }
+        // A serverless relay batches several messages into one frame, as an array.
+        const parsed: unknown = JSON.parse(data.toString());
+        for (const message of (Array.isArray(parsed) ? parsed : [parsed]) as ServerMessage[])
+          this.receive(message, at);
       });
     });
+  }
+
+  private receive(message: ServerMessage, at: number): void {
+    if (message.type === "entry" && message.version > this.version) this.version = message.version;
+    if (message.type === "joined") {
+      this.clientId = message.clientId;
+      this.version = message.version;
+      this.snapshot = [];
+    }
+    if (message.type === "snapshot:chunk") this.snapshot[message.index] = message.data;
+    if (message.type === "snapshot:end") {
+      this.state = JSON.parse(this.snapshot.join("")) as DiagramState;
+      this.snapshot = [];
+      this.version = message.version;
+    }
+    if (message.type === "created") this.hostToken = message.hostToken;
+    if (message.type === "ping") this.send({ type: "pong" });
+    this.opts.onMessage?.(message, at);
+    for (const w of [...this.waiters]) {
+      if (w.match(message)) {
+        this.waiters.splice(this.waiters.indexOf(w), 1);
+        w.resolve(message);
+      }
+    }
   }
 
   send(message: Record<string, unknown>): void {

@@ -1,0 +1,14 @@
+# Lambda function image (provided.al2023, the OS-only runtime). Deploy it as a container image,
+# or extract /var/runtime/bootstrap into a zip (see Makefile `lambda-zip`). Run locally, the base
+# image's runtime interface emulator answers on :8080 — cmd/apigw-local can drive it (LAMBDA_URL).
+FROM golang:1.27-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -tags lambda.norpc -trimpath -ldflags="-s -w" -o /out/bootstrap ./cmd/lambda
+
+FROM public.ecr.aws/lambda/provided:al2023
+COPY --from=build /out/bootstrap /var/runtime/bootstrap
+CMD ["bootstrap"]

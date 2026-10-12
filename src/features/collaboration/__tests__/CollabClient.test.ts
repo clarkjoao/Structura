@@ -114,6 +114,25 @@ describe("CollabClient", () => {
     });
   });
 
+  it("reads frames that batch several messages, as a serverless relay sends them", async () => {
+    rig = await createRig();
+    const room = roomId();
+    const host = probe("host", room);
+    host.client.start();
+    await ready(host);
+    const guest = probe("guest", room, {
+      createSocket: (url) => new BatchingSocket(rig.createSocket(url)),
+    });
+    guest.client.start();
+    await ready(guest);
+    expect(guest.snapshots).toEqual([{ version: 0, state: SEED }]);
+
+    host.client.sendPatch({ doc: { diagramName: "Billing" } }, 0);
+    host.client.sendPatch({ doc: { domain: "fin" } }, 1);
+    await until(() => guest.entries.length === 2);
+    expect(guest.entries.map((e) => e.version)).toEqual([1, 2]);
+  });
+
   it("a guest that reconnects having missed nothing is ready again (empty catch-up)", async () => {
     rig = await createRig();
     const room = roomId();
@@ -295,3 +314,37 @@ describe("CollabClient", () => {
     expect(guest.phases).not.toContain("ready");
   });
 });
+
+/** Delivers whatever arrives in one turn as a single JSON-array frame. */
+class BatchingSocket implements SocketLike {
+  onopen: ((event: unknown) => void) | null = null;
+  onmessage: ((event: { data: unknown }) => void) | null = null;
+  onclose: ((event: unknown) => void) | null = null;
+  onerror: ((event: unknown) => void) | null = null;
+  private pending: unknown[] = [];
+
+  constructor(private readonly inner: SocketLike) {
+    inner.onopen = (event) => this.onopen?.(event);
+    inner.onclose = (event) => this.onclose?.(event);
+    inner.onerror = (event) => this.onerror?.(event);
+    inner.onmessage = (event) => {
+      this.pending.push(JSON.parse(String(event.data)));
+      if (this.pending.length > 1) return;
+      setTimeout(() => {
+        const batch = this.pending;
+        this.pending = [];
+        this.onmessage?.({ data: JSON.stringify(batch) });
+      }, 0);
+    };
+  }
+
+  get readyState(): number {
+    return this.inner.readyState;
+  }
+  send(data: string): void {
+    this.inner.send(data);
+  }
+  close(code?: number, reason?: string): void {
+    this.inner.close(code, reason);
+  }
+}

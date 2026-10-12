@@ -298,8 +298,13 @@ export class RedisRoomStore implements RoomStore {
     return "created";
   }
 
+  /**
+   * The browser cuts the seed at UTF-16 offsets, so a chunk can end in half a surrogate pair,
+   * which Redis (UTF-8) would turn into U+FFFD. Chunks are stored JSON-encoded, which escapes a
+   * lone surrogate, and joined only after decoding — the same form the Go relay stores.
+   */
   async appendSeedChunk(roomId: string, index: number, data: string): Promise<void> {
-    await this.cmd.hset(`${this.prefix(roomId)}:seed`, String(index), data);
+    await this.cmd.hset(`${this.prefix(roomId)}:seed`, String(index), JSON.stringify(data));
   }
 
   async commitSeed(roomId: string): Promise<CommitResult> {
@@ -314,7 +319,7 @@ export class RedisRoomStore implements RoomStore {
     }
     let parsed: unknown;
     try {
-      parsed = JSON.parse(parts.join(""));
+      parsed = JSON.parse(parts.map((part) => JSON.parse(part) as string).join(""));
     } catch {
       return { ok: false, code: "invalid_seed" };
     }

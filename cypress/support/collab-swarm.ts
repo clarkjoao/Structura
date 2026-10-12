@@ -122,9 +122,12 @@ class Peer {
         this.closed = true;
       };
       ws.onmessage = (event) => {
-        const m = JSON.parse(String(event.data)) as Msg;
-        this.handle(m);
-        this.onMessage(m);
+        // A serverless relay batches several messages into one frame, as an array.
+        const parsed: unknown = JSON.parse(String(event.data));
+        for (const m of (Array.isArray(parsed) ? parsed : [parsed]) as Msg[]) {
+          this.handle(m);
+          this.onMessage(m);
+        }
       };
     });
   }

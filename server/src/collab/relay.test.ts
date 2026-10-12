@@ -293,6 +293,20 @@ for (const factory of storeFactories()) {
         expect(host.closed).toBeNull();
       });
 
+      it("refuses an edit the store failed to apply, so the sender is never left waiting", async () => {
+        const { relay, store } = await setup();
+        const roomId = nextRoomId();
+        const { host } = await hostRoom(relay, roomId, SEED);
+        const apply = store.applyPatch.bind(store);
+        store.applyPatch = async () => {
+          throw new Error("storage down");
+        };
+        const opId = patch(host, { doc: { diagramName: "X" } }, 0);
+        expect(await host.next("ack", (m) => m.opId === opId)).toMatchObject({ applied: false });
+        expect((await host.next("error")).code).toBe("unavailable");
+        store.applyPatch = apply;
+      });
+
       it("hands a joiner during a burst exactly the room's state, then only newer entries", async () => {
         const { relay } = await setup();
         const roomId = nextRoomId();

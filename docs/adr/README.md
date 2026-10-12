@@ -34,3 +34,4 @@ review like code.
 | [0009](0009-export-core-sharing.md) | Shared draw.io export core with a neutral IR | Accepted |
 | [0010](0010-element-registry.md) | Element registry as the single owner of canvas types | Accepted |
 | [0011](0011-collaboration-server-authority.md) | Live sessions: the relay's store is the source of truth during a session | Accepted |
+| [0012](0012-go-relay-and-serverless.md) | A Go relay, long-lived or serverless, with Redis optional | Accepted |
