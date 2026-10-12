@@ -3,7 +3,7 @@ import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
-import { toLLMError, type LLMError } from "./errors";
+import { LLMRequestCancelledError, toLLMError, type LLMError } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
 import { appendTextDelta, getMessageText, suggestionPart, textPart } from "./message-parts";
 import type {
@@ -125,17 +125,18 @@ async function executeLLMMessage(
   messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
+  signal: AbortSignal,
 ): Promise<LLMCompletion> {
   if (config.mode === "proxy") {
-    return sendProxyMessage(config, messages, systemPrompt, onChunk);
+    return sendProxyMessage(config, messages, systemPrompt, onChunk, signal);
   }
   if (config.provider === "anthropic") {
-    return sendAnthropicMessage(config, messages, systemPrompt, onChunk);
+    return sendAnthropicMessage(config, messages, systemPrompt, onChunk, signal);
   }
   if (config.provider === "custom") {
-    return sendCustomMessage(config, messages, systemPrompt, onChunk);
+    return sendCustomMessage(config, messages, systemPrompt, onChunk, signal);
   }
-  return sendOpenAIMessage(config, messages, systemPrompt, onChunk);
+  return sendOpenAIMessage(config, messages, systemPrompt, onChunk, signal);
 }
 
 export interface LLMStoreState {
@@ -174,6 +175,11 @@ export interface LLMStoreState {
   initChatThreads: () => Promise<void>;
 
   sendMessage: (userText: string, diagramContext: string) => Promise<void>;
+  /**
+   * Stops the request in flight. What had streamed stays, the message is
+   * marked cancelled, and no error is recorded.
+   */
+  cancelRequest: () => void;
   acceptSuggestion: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
   dismissPendingAnalysis: () => void;
@@ -244,6 +250,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
   if (!initialConnection) {
     throw new Error("loadConnections returned no connections");
   }
+
+  /** Aborts the request in flight; not state, so it lives outside `set()`. */
+  let inFlight: AbortController | null = null;
 
   const persistThread = (messages?: ChatMessage[]) => {
     const next = persistActiveThread(get(), messages);
@@ -586,6 +595,8 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       // slow or failing request must not leave the thread looking empty.
       persistThread(outgoingMessages);
 
+      const controller = new AbortController();
+      inFlight = controller;
       try {
         const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
         const sanitizedMessages = toRequestMessages(outgoingMessages);
@@ -608,6 +619,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
                   ),
             }));
           },
+          controller.signal,
         );
         const parsedResponse = parseLLMResponse(rawAssistantResponse);
 
@@ -790,6 +802,17 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         });
         persistThread();
       } catch (error) {
+        if (error instanceof LLMRequestCancelledError) {
+          set({
+            messages: get().messages.map((message) =>
+              message.id === assistantMessageId ? { ...message, status: "cancelled" } : message,
+            ),
+            streamingContent: null,
+            isLoading: false,
+          });
+          persistThread();
+          return;
+        }
         const llmError = toLLMError(error, {
           mode: state.config.mode,
           provider: state.config.provider,
@@ -802,7 +825,15 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           error: llmError,
         });
         persistThread();
+      } finally {
+        if (inFlight === controller) {
+          inFlight = null;
+        }
       }
+    },
+
+    cancelRequest: () => {
+      inFlight?.abort();
     },
 
     acceptSuggestion: (suggestionId) => {

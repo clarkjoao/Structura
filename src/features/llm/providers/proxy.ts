@@ -1,5 +1,6 @@
 import type { LLMRequestMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
 import {
+  LLM_REQUEST_TIMEOUT_MS,
   createRequestTimeout,
   fetchLLM,
   readLLMChunk,
@@ -28,8 +29,9 @@ export async function sendMessage(
   messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
+  signal?: AbortSignal,
 ): Promise<LLMCompletion> {
-  const timeout = createRequestTimeout();
+  const timeout = createRequestTimeout(LLM_REQUEST_TIMEOUT_MS, signal);
   try {
     return await sendThroughProxy(config, messages, systemPrompt, onChunk, timeout);
   } finally {

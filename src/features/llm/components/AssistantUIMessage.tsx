@@ -71,6 +71,8 @@ export function AssistantMessageComponent() {
   const message = useAuiState((s) => s.message);
   const text = getPartText(message);
   const isStreaming = message.status?.type === "running";
+  const isCancelled =
+    message.status?.type === "incomplete" && message.status.reason === "cancelled";
   const locale = i18n.language === "pt-BR" ? ptBR : enUS;
   const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true, locale });
   const [isExpanded, setIsExpanded] = useState(false);
@@ -111,6 +113,9 @@ export function AssistantMessageComponent() {
             </button>
           ) : null}
         </div>
+        {isCancelled ? (
+          <p className="mt-1 px-1 text-[11px] text-muted-foreground">{t("llmChat.stopped")}</p>
+        ) : null}
         <span className="absolute -bottom-1 left-0 select-none whitespace-nowrap text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
           {timeAgo}
         </span>

@@ -326,7 +326,11 @@ describe("LLM store — message parts", () => {
     vi.unstubAllGlobals();
   });
 
-  function sseResponse(chunks: string[]): { response: Response; push: () => void } {
+  function sseResponse(chunks: string[]): {
+    response: Response;
+    push: () => void;
+    fail: () => void;
+  } {
     const encoder = new TextEncoder();
     let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
     const body = new ReadableStream<Uint8Array>({
@@ -348,6 +352,8 @@ describe("LLM store — message parts", () => {
           encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: chunk } }] })}\n`),
         );
       },
+      // What a real fetch body does when its request is aborted.
+      fail: () => controller?.error(new DOMException("The operation was aborted.", "AbortError")),
     };
   }
 
@@ -375,6 +381,41 @@ describe("LLM store — message parts", () => {
     const last = lastMessage(useLLMStore.getState().messages);
     expect(last?.parts).toEqual([{ type: "text", text: "Hello world" }]);
     expect(last?.status).toBe("complete");
+  });
+
+  it("cancel mid-stream keeps the partial text and marks the message cancelled", async () => {
+    const stream = sseResponse(["Partial", " never sent"]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        init.signal?.addEventListener("abort", () => stream.fail());
+        return stream.response;
+      }),
+    );
+
+    const pending = useLLMStore.getState().sendMessage("Explain", "ctx");
+    await vi.waitFor(() => {
+      expect(vi.mocked(fetch)).toHaveBeenCalled();
+    });
+    stream.push();
+    await vi.waitFor(() => {
+      expect(lastMessage(useLLMStore.getState().messages)?.parts).toEqual([
+        { type: "text", text: "Partial" },
+      ]);
+    });
+    useLLMStore.getState().cancelRequest();
+    await pending;
+
+    const state = useLLMStore.getState();
+    const last = lastMessage(state.messages);
+    expect(last?.status).toBe("cancelled");
+    expect(last?.parts).toEqual([{ type: "text", text: "Partial" }]);
+    expect(state.isLoading).toBe(false);
+    expect(state.error).toBeNull();
+    const thread = state.threadsByDiagram["diagram-store"]?.threads.find(
+      (candidate) => candidate.id === state.activeThreadId,
+    );
+    expect(lastMessage(thread?.messages ?? [])?.status).toBe("cancelled");
   });
 
   it("references the pending suggestion from the assistant message", async () => {

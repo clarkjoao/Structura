@@ -752,7 +752,9 @@
     },
     "markdown": {
       "copyCode": "Copiar código"
-    }
+    },
+    "stop": "Parar de gerar",
+    "stopped": "Interrompida"
   },
   "versions": {
     "base": "Base",

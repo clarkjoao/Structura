@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   LLM_REQUEST_TIMEOUT_MS,
   LLMProviderError,
+  LLMRequestCancelledError,
   getLLMErrorI18nKey,
   toLLMError,
   type LLMErrorKind,
@@ -143,5 +144,42 @@ describe("Anthropic provider", () => {
         }),
       }),
     );
+  });
+});
+
+describe("cancel vs timeout", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("a caller abort is a cancel, not an error kind", async () => {
+    stubFetch("timeout");
+    const controller = new AbortController();
+    const pending = sendOpenAIMessage(
+      configFor("direct"),
+      [],
+      "system",
+      () => {},
+      controller.signal,
+    )
+      .then(() => null)
+      .catch((error: unknown) => error);
+    controller.abort();
+    const error = await pending;
+    expect(error).toBeInstanceOf(LLMRequestCancelledError);
+    expect(error).not.toBeInstanceOf(LLMProviderError);
+  });
+
+  it("the inactivity timeout still classifies as timeout when a caller signal is passed", async () => {
+    vi.useFakeTimers();
+    stubFetch("timeout");
+    const controller = new AbortController();
+    const pending = sendProxyMessage(configFor("proxy"), [], "system", () => {}, controller.signal)
+      .then(() => null)
+      .catch((error: unknown) => error);
+    await vi.advanceTimersByTimeAsync(LLM_REQUEST_TIMEOUT_MS);
+    const error = await pending;
+    expect(toLLMError(error, { mode: "proxy", provider: "openai" }).kind).toBe("timeout");
   });
 });

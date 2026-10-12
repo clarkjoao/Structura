@@ -23,6 +23,7 @@ export async function sendMessage(
   messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
+  signal?: AbortSignal,
 ): Promise<LLMCompletion> {
   return sendOpenAICompatibleMessage(
     {
@@ -40,6 +41,7 @@ export async function sendMessage(
         ],
       },
       errorOrigin: "openai",
+      signal,
     },
     onChunk,
   );

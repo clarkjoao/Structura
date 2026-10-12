@@ -140,34 +140,92 @@ export function isSettingsFixableError(error: LLMError): boolean {
   );
 }
 
+/**
+ * The user stopped the request. Not an error: the store keeps whatever had
+ * streamed and marks the message cancelled.
+ */
+export class LLMRequestCancelledError extends Error {
+  constructor() {
+    super("Request cancelled by the user");
+    this.name = "LLMRequestCancelledError";
+  }
+}
+
 export interface RequestTimeout {
   signal: AbortSignal;
   /** Restarts the inactivity window; call it whenever data arrives. */
   touch: () => void;
   clear: () => void;
   readonly timedOut: boolean;
+  /** True when the caller's signal aborted the request (a user cancel). */
+  readonly cancelled: boolean;
 }
 
-export function createRequestTimeout(ms: number = LLM_REQUEST_TIMEOUT_MS): RequestTimeout {
+/**
+ * One controller for a request, aborted by whichever comes first: our
+ * inactivity timeout or the caller's signal (the Stop button). Which one fired
+ * is recorded, so a cancel is never reported as a timeout or the reverse.
+ */
+export function createRequestTimeout(
+  ms: number = LLM_REQUEST_TIMEOUT_MS,
+  callerSignal?: AbortSignal,
+): RequestTimeout {
   const controller = new AbortController();
   let timedOut = false;
+  let cancelled = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const arm = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
+      if (cancelled) return;
       timedOut = true;
       controller.abort();
     }, ms);
   };
-  arm();
+  const onCallerAbort = () => {
+    if (timedOut) return;
+    cancelled = true;
+    clearTimeout(timer);
+    controller.abort();
+  };
+  if (callerSignal?.aborted) {
+    onCallerAbort();
+  } else {
+    callerSignal?.addEventListener("abort", onCallerAbort, { once: true });
+    arm();
+  }
   return {
     signal: controller.signal,
-    touch: arm,
-    clear: () => clearTimeout(timer),
+    touch: () => {
+      if (!controller.signal.aborted) arm();
+    },
+    clear: () => {
+      clearTimeout(timer);
+      callerSignal?.removeEventListener("abort", onCallerAbort);
+    },
     get timedOut() {
       return timedOut;
     },
+    get cancelled() {
+      return cancelled;
+    },
   };
+}
+
+function abortError(
+  error: unknown,
+  context: LLMErrorContext,
+  timeout: RequestTimeout,
+): LLMProviderError | LLMRequestCancelledError {
+  if (timeout.cancelled) {
+    return new LLMRequestCancelledError();
+  }
+  return new LLMProviderError({
+    ...context,
+    status: null,
+    detail: error instanceof Error ? error.message : String(error),
+    timedOut: timeout.timedOut,
+  });
 }
 
 /**
@@ -185,12 +243,7 @@ export async function fetchLLM(
   try {
     response = await fetch(url, { ...init, signal: timeout.signal });
   } catch (error) {
-    throw new LLMProviderError({
-      ...context,
-      status: null,
-      detail: error instanceof Error ? error.message : String(error),
-      timedOut: timeout.timedOut,
-    });
+    throw abortError(error, context, timeout);
   }
   timeout.touch();
   if (!response.ok) {
@@ -214,11 +267,6 @@ export async function readLLMChunk(
     timeout.touch();
     return result;
   } catch (error) {
-    throw new LLMProviderError({
-      ...context,
-      status: null,
-      detail: error instanceof Error ? error.message : String(error),
-      timedOut: timeout.timedOut,
-    });
+    throw abortError(error, context, timeout);
   }
 }

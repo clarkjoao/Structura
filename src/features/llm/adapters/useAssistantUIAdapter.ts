@@ -124,6 +124,7 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
   const { t } = useTranslation();
   const {
     send,
+    cancel,
     messages: chatMessages,
     isLoading,
     streamingContent,
@@ -163,8 +164,8 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
   );
 
   const onCancel = useCallback(async (): Promise<void> => {
-    // No-op: the underlying store does not yet expose cancellation.
-  }, []);
+    cancel();
+  }, [cancel]);
 
   const onEdit = useCallback(
     async (message: AppendMessage): Promise<void> => {

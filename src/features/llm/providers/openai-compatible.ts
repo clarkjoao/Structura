@@ -1,4 +1,5 @@
 import {
+  LLM_REQUEST_TIMEOUT_MS,
   createRequestTimeout,
   fetchLLM,
   readLLMChunk,
@@ -16,6 +17,8 @@ interface OpenAICompatibleRequest {
   headers: Record<string, string>;
   body: unknown;
   errorOrigin: "openai" | "custom";
+  /** Aborts the request when the user stops it. */
+  signal?: AbortSignal;
 }
 
 /**
@@ -38,7 +41,7 @@ export async function sendOpenAICompatibleMessage(
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
   const context: LLMErrorContext = { mode: "direct", provider: request.errorOrigin };
-  const timeout = createRequestTimeout();
+  const timeout = createRequestTimeout(LLM_REQUEST_TIMEOUT_MS, request.signal);
   try {
     const response = await fetchLLM(
       request.baseUrl,

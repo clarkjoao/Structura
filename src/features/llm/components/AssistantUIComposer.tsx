@@ -486,7 +486,8 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
                 variant="secondary"
                 onClick={handleCancel}
                 className="h-8 w-8 rounded-full"
-                aria-label={t("common.cancel")}
+                aria-label={t("llmChat.stop")}
+                title={t("llmChat.stop")}
               >
                 <Square className="h-3 w-3 fill-current" />
               </Button>

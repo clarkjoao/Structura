@@ -6,6 +6,7 @@ export async function sendMessage(
   messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
+  signal?: AbortSignal,
 ): Promise<LLMCompletion> {
   if (!config.baseUrl) {
     throw new Error("custom provider requires a baseUrl");
@@ -34,6 +35,7 @@ export async function sendMessage(
       headers,
       body,
       errorOrigin: "custom",
+      signal,
     },
     onChunk,
   );

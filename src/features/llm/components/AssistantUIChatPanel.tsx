@@ -75,6 +75,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   const {
     messages,
     send,
+    cancel,
     isLoading,
     streamingContent,
     pendingAnalysis,
@@ -289,6 +290,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
           <AssistantUIComposer
             ref={composerRef}
             onSend={handleSend}
+            onCancel={cancel}
             isLoading={isLoading}
             onClearHistory={clearHistory}
             onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}

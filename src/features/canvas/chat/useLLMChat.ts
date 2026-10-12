@@ -40,6 +40,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const setLLMConfig = useLLMStore((state) => state.setLLMConfig);
   const setActiveConnection = useLLMStore((state) => state.setActiveConnection);
   const sendMessage = useLLMStore((state) => state.sendMessage);
+  const cancelRequest = useLLMStore((state) => state.cancelRequest);
   const acceptSuggestion = useLLMStore((state) => state.acceptSuggestion);
   const rejectSuggestion = useLLMStore((state) => state.rejectSuggestion);
   const dismissPendingAnalysis = useLLMStore((state) => state.dismissPendingAnalysis);
@@ -101,6 +102,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   return {
     messages,
     send,
+    cancel: cancelRequest,
     isLoading,
     pendingSuggestions,
     pendingPreviews,
