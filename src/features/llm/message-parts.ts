@@ -221,6 +221,11 @@ export function migrateStoredMessage(raw: unknown): MigratedMessage {
   }
 
   const message: ChatMessage = { id, role, parts, timestamp };
+  if (raw.truncated === true) {
+    message.truncated = true;
+  } else if (raw.truncated !== undefined) {
+    changed = true;
+  }
   if (isMessageStatus(raw.status)) {
     message.status = raw.status;
   } else if (raw.status !== undefined) {

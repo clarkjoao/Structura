@@ -760,7 +760,8 @@
     "messageActions": {
       "copy": "Copiar mensagem",
       "regenerate": "Gerar resposta novamente"
-    }
+    },
+    "truncated": "Resposta interrompida no limite de tokens"
   },
   "versions": {
     "base": "Base",

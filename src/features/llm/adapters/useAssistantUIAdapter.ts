@@ -100,7 +100,9 @@ function chatMessageToThreadMessage(msg: ChatMessage): ThreadMessage {
     id: msg.id,
     role: "assistant",
     content: msg.parts.map((part) => toAssistantPart(part, running)),
-    status: toAssistantStatus(msg.status),
+    status: msg.truncated
+      ? { type: "incomplete", reason: "length" }
+      : toAssistantStatus(msg.status),
     createdAt: new Date(msg.timestamp),
     metadata: EMPTY_METADATA,
   };

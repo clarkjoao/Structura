@@ -441,6 +441,18 @@ describe("LLM store — message parts", () => {
     ]);
   });
 
+  it("keeps a reply cut at the token limit and marks it truncated", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => replyWith("Half of the", "length")),
+    );
+    await useLLMStore.getState().sendMessage("Explain everything", "ctx");
+    const last = lastMessage(useLLMStore.getState().messages);
+    expect(last?.parts).toEqual([{ type: "text", text: "Half of the" }]);
+    expect(last?.truncated).toBe(true);
+    expect(last?.status).toBe("complete");
+  });
+
   it("references the pending suggestion from the assistant message", async () => {
     const reply = JSON.stringify({
       mode: "patch",

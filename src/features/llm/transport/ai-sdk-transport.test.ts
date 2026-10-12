@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PROXY_BASE_URL } from "../llm-storage";
 import { replyWith } from "../test-utils/openai-sse";
 import type { LLMConfig } from "../types";
-import { streamChat } from "./ai-sdk-transport";
+import { createRequestTimeout, LLMProviderError, toLLMError } from "../errors";
+import { streamChat, toTransportError } from "./ai-sdk-transport";
 
 function captureRequest(response: () => Response = () => replyWith("ok")) {
   const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) => response());
@@ -117,5 +118,61 @@ describe("AI SDK transport — provider mapping", () => {
     });
     expect(chunks.join("")).toBe("Hello");
     expect(completion).toEqual({ text: "Hello", stopReason: "stop" });
+  });
+});
+
+describe("AI SDK transport — error mapping", () => {
+  const context = { mode: "direct", provider: "openai" } as const;
+
+  it("maps an APICallError to its status code and response body", async () => {
+    const { APICallError } = await import("ai");
+    const error = await toTransportError(
+      new APICallError({
+        message: "Unauthorized",
+        url: "https://api.openai.com/v1/chat/completions",
+        requestBodyValues: {},
+        statusCode: 401,
+        responseBody: '{"error":"bad key"}',
+      }),
+      context,
+      createRequestTimeout(),
+    );
+    expect(error).toBeInstanceOf(LLMProviderError);
+    expect(toLLMError(error, context)).toMatchObject({
+      kind: "auth",
+      status: 401,
+      detail: '{"error":"bad key"}',
+    });
+  });
+
+  it("treats any fetch rejection without a response as unreachable, whatever its message", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        // Safari's wording, with no cause attached.
+        throw new TypeError("Load failed");
+      }),
+    );
+    const error = await streamChat({
+      config: { mode: "proxy", provider: "openai", apiKey: "", model: "m" },
+      messages: [{ role: "user", content: "hi" }],
+      systemPrompt: "s",
+      onChunk: () => {},
+    }).catch((caught: unknown) => caught);
+    expect(toLLMError(error, { mode: "proxy", provider: "openai" }).kind).toBe("proxyUnreachable");
+  });
+
+  it("reports a reply cut at the token limit as a length stop", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => replyWith("Partial answer", "length")),
+    );
+    const completion = await streamChat({
+      config: { mode: "proxy", provider: "openai", apiKey: "", model: "m" },
+      messages: [{ role: "user", content: "hi" }],
+      systemPrompt: "s",
+      onChunk: () => {},
+    });
+    expect(completion).toEqual({ text: "Partial answer", stopReason: "length" });
   });
 });

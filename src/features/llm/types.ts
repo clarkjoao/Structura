@@ -52,6 +52,8 @@ export interface ChatMessage {
   timestamp: number;
   /** Assistant messages only: where the turn that produced it ended up. */
   status?: MessageStatus;
+  /** Assistant messages only: the model stopped at its output-token limit. */
+  truncated?: boolean;
 }
 
 /** What a provider sends for one turn: the role and its text. */

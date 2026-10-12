@@ -312,7 +312,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
       const sanitizedMessages = toRequestMessages(outgoingMessages);
       let fullResponse = "";
-      const { text: rawAssistantResponse } = await executeLLMMessage(
+      const { text: rawAssistantResponse, stopReason } = await executeLLMMessage(
         state.config,
         sanitizedMessages,
         systemPrompt,
@@ -333,6 +333,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         controller.signal,
       );
       const parsedResponse = parseLLMResponse(rawAssistantResponse);
+      // Cut at the output-token ceiling: the reply is kept as it is and the
+      // message says so, instead of passing for a complete answer.
+      const truncation = stopReason === "length" ? { truncated: true } : {};
 
       if (parsedResponse.kind === "analysis") {
         set({
@@ -342,6 +345,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
                   ...message,
                   parts: [textPart(parsedResponse.analysis.summary)],
                   status: "complete",
+                  ...truncation,
                 }
               : message,
           ),
@@ -500,6 +504,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
                   ? [textPart(assistantContent), suggestionPart(suggestionId)]
                   : [textPart(assistantContent)],
                 status: "complete",
+                ...truncation,
               }
             : message,
         ),

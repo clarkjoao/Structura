@@ -83,7 +83,8 @@ export function AssistantMessageComponent() {
   const isStreaming = message.status?.type === "running";
   const isCancelled =
     message.status?.type === "incomplete" && message.status.reason === "cancelled";
-  const isComplete = message.status?.type === "complete";
+  const isTruncated = message.status?.type === "incomplete" && message.status.reason === "length";
+  const isComplete = message.status?.type === "complete" || isTruncated;
   const locale = i18n.language === "pt-BR" ? ptBR : enUS;
   const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true, locale });
   const [isExpanded, setIsExpanded] = useState(false);
@@ -126,6 +127,9 @@ export function AssistantMessageComponent() {
         </div>
         {isCancelled ? (
           <p className="mt-1 px-1 text-[11px] text-muted-foreground">{t("llmChat.stopped")}</p>
+        ) : null}
+        {isTruncated ? (
+          <p className="mt-1 px-1 text-[11px] text-muted-foreground">{t("llmChat.truncated")}</p>
         ) : null}
         <div className="mt-1 flex items-center gap-1 px-1">
           {isComplete || isCancelled ? <MessageActions messageId={message.id} /> : null}
