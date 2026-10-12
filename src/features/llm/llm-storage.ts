@@ -29,11 +29,16 @@ const DEFAULT_LLM_CONFIG: LLMConfig = {
 
 const DEFAULT_LLM_CONNECTION_ID = "default";
 
-function defaultLLMConnection(): LLMConnection {
+/**
+ * The connection a fresh install starts with: direct mode and no API key, so
+ * the chat asks for settings instead of firing a request at a proxy that most
+ * installs do not run. Stored connections are never rewritten to this.
+ */
+export function defaultLLMConnection(): LLMConnection {
   return {
     id: DEFAULT_LLM_CONNECTION_ID,
     name: i18n.t("llmChat.settings.defaultConnectionName"),
-    mode: "proxy",
+    mode: "direct",
     provider: "openai",
     apiKey: "",
     model: "gpt-4o-mini",
@@ -281,6 +286,24 @@ export function deriveThreadTitle(messages: ChatMessage[]): string {
   }
   const MAX = 60;
   return trimmed.length <= MAX ? trimmed : `${trimmed.slice(0, MAX - 1)}…`;
+}
+
+/**
+ * Whether a request on this connection can be attempted at all. A proxy holds
+ * its own credentials; a direct OpenAI/Anthropic call needs a key; a custom
+ * endpoint needs a base URL and a model (its key is optional).
+ */
+export function isUsableConnection(config: LLMConfig): boolean {
+  if (config.mode === "proxy") {
+    return true;
+  }
+  switch (config.provider) {
+    case "custom":
+      return Boolean(config.baseUrl?.trim()) && config.model.trim().length > 0;
+    case "openai":
+    case "anthropic":
+      return config.apiKey.trim().length > 0;
+  }
 }
 
 export function loadConnections(): ConnectionsPayload {

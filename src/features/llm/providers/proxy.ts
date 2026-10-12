@@ -8,7 +8,7 @@ import {
 } from "../errors";
 import { toStopReason } from "./openai-compatible";
 
-const DEFAULT_PROXY_URL = import.meta.env.VITE_LLM_PROXY_URL ?? "http://localhost:3000";
+const DEFAULT_PROXY_URL = import.meta.env.VITE_LLM_PROXY_URL ?? "http://localhost:3001";
 const DEFAULT_PROXY_PATH = import.meta.env.VITE_LLM_PROXY_PATH ?? "/llm/chat";
 
 interface ProxyResponse {

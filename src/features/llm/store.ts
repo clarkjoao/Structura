@@ -17,6 +17,7 @@ import type {
   PendingSuggestion,
 } from "./types";
 import {
+  defaultLLMConnection,
   hydrateChatThreadsCacheFromIdb,
   isChatThreadsHydrated,
   loadConnections,
@@ -408,14 +409,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       }
       const updated = connections.filter((connection) => connection.id !== id);
       if (updated.length === 0) {
-        const fallback: LLMConnection = {
-          id: crypto.randomUUID(),
-          name: i18n.t("llmChat.settings.defaultConnectionName"),
-          mode: "proxy",
-          provider: "openai",
-          apiKey: "",
-          model: "gpt-4o-mini",
-        };
+        const fallback: LLMConnection = { ...defaultLLMConnection(), id: crypto.randomUUID() };
         updated.push(fallback);
         saveConnections({ connections: updated, activeConnectionId: fallback.id });
         set({

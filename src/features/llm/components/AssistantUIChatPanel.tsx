@@ -28,6 +28,7 @@ import { LLMSettings } from "./LLMSettings";
 import { AnalysisPanel } from "@/features/canvas/chat";
 import { buildContextualSuggestions, downloadIR, getLLMErrorI18nKey } from "@/features/llm";
 import { isSettingsFixableError } from "@/features/llm/errors";
+import { isUsableConnection } from "@/features/llm/llm-storage";
 import type { ChatSuggestion } from "@/features/llm/suggestions";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
@@ -94,6 +95,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     error,
     activeThread,
     activeConnection,
+    config,
     createThread,
     accept,
     reject,
@@ -188,11 +190,19 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     [activeDiagram],
   );
 
+  // Without a usable connection a request can only fail, so open the settings
+  // instead. Returns whether the message was sent, so the composer keeps the
+  // draft when it was not.
   const handleSend = useCallback(
-    async (text: string, mentions: Parameters<typeof send>[1]) => {
+    async (text: string, mentions: Parameters<typeof send>[1]): Promise<boolean> => {
+      if (!isUsableConnection(config)) {
+        setShowSettings(true);
+        return false;
+      }
       await send(text, mentions);
+      return true;
     },
-    [send],
+    [config, send],
   );
 
   const handleCreateThread = useCallback(() => {
@@ -264,7 +274,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
                   <EmptyState
                     suggestions={contextualSuggestions}
                     onSelectSuggestion={(text) => {
-                      void send(text, []);
+                      void handleSend(text, []);
                     }}
                   />
                 )}

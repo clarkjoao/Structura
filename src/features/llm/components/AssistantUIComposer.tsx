@@ -140,7 +140,8 @@ function SlashCommandMenu({
 
 /* ── Main composer ────────────────────────────────────────────────────── */
 export interface AssistantUIComposerProps {
-  onSend: (text: string, mentions: ActiveMention[]) => Promise<void>;
+  /** Resolves to `false` when the message was not sent, so the draft is kept. */
+  onSend: (text: string, mentions: ActiveMention[]) => Promise<boolean | void>;
   onCancel?: () => Promise<void> | void;
   isLoading: boolean;
   disabled?: boolean;
@@ -378,7 +379,8 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const handleSend = useCallback(async () => {
       const trimmed = text.trim();
       if (!trimmed || isLoading || disabled) return;
-      await onSend(trimmed, mentions);
+      const sent = await onSend(trimmed, mentions);
+      if (sent === false) return;
       handleClear();
       requestAnimationFrame(() => textareaRef.current?.focus());
     }, [text, isLoading, disabled, onSend, mentions, handleClear]);

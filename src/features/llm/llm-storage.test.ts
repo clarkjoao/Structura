@@ -3,6 +3,7 @@ import {
   deriveThreadTitle,
   getChatThreadsCache,
   isChatThreadsHydrated,
+  isUsableConnection,
   loadConnections,
   loadThreadsForDiagram,
   migrateLegacyConfig,
@@ -143,15 +144,49 @@ describe("llm-storage", () => {
   });
 
   describe("loadConnections / saveConnections", () => {
-    it("returns a single proxy/openai default connection when storage is empty", () => {
+    it("returns a single direct/openai default connection with no key when storage is empty", () => {
       const payload = loadConnections();
       expect(payload.connections).toHaveLength(1);
       expect(payload.connections[0]).toMatchObject({
-        mode: "proxy",
+        mode: "direct",
         provider: "openai",
+        apiKey: "",
         model: "gpt-4o-mini",
       });
       expect(payload.activeConnectionId).toBe(payload.connections[0].id);
+      // A fresh install has nothing to send with, so the chat opens settings.
+      expect(isUsableConnection(payload.connections[0])).toBe(false);
+    });
+
+    it("leaves a stored proxy connection in proxy mode", () => {
+      localStorage.setItem(
+        LLM_CONNECTIONS_KEY,
+        JSON.stringify({
+          connections: [
+            { id: "stored", name: "Team proxy", mode: "proxy", provider: "openai", apiKey: "" },
+          ],
+          activeConnectionId: "stored",
+        }),
+      );
+      expect(loadConnections().connections[0]).toMatchObject({ id: "stored", mode: "proxy" });
+    });
+
+    it("isUsableConnection: proxy always, direct needs a key, custom needs url + model", () => {
+      const base = { apiKey: "", model: "m" } as const;
+      expect(isUsableConnection({ ...base, mode: "proxy", provider: "openai" })).toBe(true);
+      expect(isUsableConnection({ ...base, mode: "direct", provider: "openai" })).toBe(false);
+      expect(
+        isUsableConnection({ ...base, mode: "direct", provider: "anthropic", apiKey: "k" }),
+      ).toBe(true);
+      expect(isUsableConnection({ ...base, mode: "direct", provider: "custom" })).toBe(false);
+      expect(
+        isUsableConnection({
+          ...base,
+          mode: "direct",
+          provider: "custom",
+          baseUrl: "https://llm.example.com/v1",
+        }),
+      ).toBe(true);
     });
 
     it("does not migrate twice once new shape exists", () => {
