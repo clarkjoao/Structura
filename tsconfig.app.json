@@ -14,7 +14,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@collab-protocol": ["./server/src/collab/protocol.ts"]
     },
     "skipLibCheck": true,
     "strict": true,

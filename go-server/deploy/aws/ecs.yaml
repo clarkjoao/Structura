@@ -1,0 +1,343 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+  cfn-lint:
+    config:
+      # Optional parameters default to "" and are only used under the conditions that need them.
+      ignore_checks: [W1030]
+Description: >-
+  Structura collaboration relay on ECS Fargate: the long-lived Go relay behind an Application Load
+  Balancer (WebSockets, no session affinity needed), rooms in ElastiCache Redis — created here or
+  given — or in memory for a single task.
+
+Parameters:
+  Image:
+    Type: String
+    Description: Relay image built from go-server/Dockerfile (pushed to ECR).
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnets for the load balancer (two or more, in different zones).
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: >-
+      Subnets for the tasks and Redis. They need a route to ECR (NAT gateway or VPC endpoints);
+      with AssignPublicIp=ENABLED, public subnets work too.
+  AssignPublicIp:
+    Type: String
+    Default: DISABLED
+    AllowedValues: [ENABLED, DISABLED]
+  Rooms:
+    Type: String
+    Default: create-redis
+    AllowedValues: [create-redis, external-redis, memory]
+    Description: >-
+      Where rooms live. memory keeps them in the one task (DesiredCount must be 1, no autoscaling,
+      a deploy ends the sessions); the Redis options let any number of tasks serve every room.
+  ExternalRedisUrl:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: redis:// or rediss:// URL, with Rooms=external-redis.
+  RedisNodeType:
+    Type: String
+    Default: cache.t4g.small
+  DesiredCount:
+    Type: Number
+    Default: 2
+    MinValue: 1
+  MaxCount:
+    Type: Number
+    Default: 6
+    Description: Autoscaling ceiling (Redis modes only).
+  Cpu:
+    Type: Number
+    Default: 512
+  Memory:
+    Type: Number
+    Default: 1024
+  CertificateArn:
+    Type: String
+    Default: ""
+    Description: ACM certificate for HTTPS/WSS on 443. Without it the relay is served on plain 80.
+  HostGraceMs:
+    Type: Number
+    Default: 30000
+  MaxParticipants:
+    Type: Number
+    Default: 50
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+
+Conditions:
+  CreateRedis: !Equals [!Ref Rooms, create-redis]
+  ExternalRedis: !Equals [!Ref Rooms, external-redis]
+  Shared: !Not [!Equals [!Ref Rooms, memory]]
+  Https: !Not [!Equals [!Ref CertificateArn, ""]]
+
+Rules:
+  MemoryIsOneTask:
+    RuleCondition: !Equals [!Ref Rooms, memory]
+    Assertions:
+      - Assert: !Equals [!Ref DesiredCount, "1"]
+        AssertDescription: With Rooms=memory every room lives in one task; DesiredCount must be 1.
+  ExternalNeedsUrl:
+    RuleCondition: !Equals [!Ref Rooms, external-redis]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref ExternalRedisUrl, ""]]
+        AssertDescription: Rooms=external-redis needs ExternalRedisUrl.
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+
+  Logs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${AWS::StackName}-collab"
+      RetentionInDays: !Ref LogRetentionDays
+
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Collaboration relay load balancer
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Collaboration relay tasks
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateRedis
+    Properties:
+      GroupDescription: Collaboration relay Redis
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref TaskSecurityGroup
+
+  RedisSubnets:
+    Type: AWS::ElastiCache::SubnetGroup
+    Condition: CreateRedis
+    Properties:
+      Description: Collaboration relay Redis
+      SubnetIds: !Ref PrivateSubnetIds
+
+  # Rooms are session state: a primary and a replica with failover, no persistence needed — the
+  # relay reseeds a room from its host if Redis loses it.
+  Redis:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Condition: CreateRedis
+    Properties:
+      ReplicationGroupDescription: Structura collaboration rooms
+      Engine: redis
+      EngineVersion: "7.1"
+      CacheNodeType: !Ref RedisNodeType
+      NumCacheClusters: 2
+      AutomaticFailoverEnabled: true
+      MultiAZEnabled: true
+      TransitEncryptionEnabled: true
+      AtRestEncryptionEnabled: true
+      CacheSubnetGroupName: !Ref RedisSubnets
+      SecurityGroupIds: [!Ref RedisSecurityGroup]
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internet-facing
+      Subnets: !Ref PublicSubnetIds
+      SecurityGroups: [!Ref LoadBalancerSecurityGroup]
+      LoadBalancerAttributes:
+        # A collaboration socket can stay quiet between pings; keep it open.
+        - Key: idle_timeout.timeout_seconds
+          Value: "3600"
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      TargetType: ip
+      Protocol: HTTP
+      Port: 3000
+      HealthCheckPath: /health
+      HealthCheckIntervalSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      TargetGroupAttributes:
+        # A stopping task hands its sockets back at once (they reconnect elsewhere).
+        - Key: deregistration_delay.timeout_seconds
+          Value: "15"
+
+  HttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions: !If
+        - Https
+        - - Type: redirect
+            RedirectConfig:
+              Protocol: HTTPS
+              Port: "443"
+              StatusCode: HTTP_301
+        - - Type: forward
+            TargetGroupArn: !Ref TargetGroup
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: Https
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !Ref CertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${AWS::StackName}-collab"
+      RequiresCompatibilities: [FARGATE]
+      NetworkMode: awsvpc
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      RuntimePlatform:
+        CpuArchitecture: ARM64
+        OperatingSystemFamily: LINUX
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: relay
+          Image: !Ref Image
+          Essential: true
+          PortMappings:
+            - ContainerPort: 3000
+          # SIGTERM drains: the relay stops advertising itself and hands sockets back.
+          StopTimeout: 30
+          Environment:
+            - Name: PORT
+              Value: "3000"
+            - Name: WS_PATH
+              Value: /ws
+            - Name: REDIS_URL
+              Value: !If
+                - CreateRedis
+                - !Sub "rediss://${Redis.PrimaryEndPoint.Address}:${Redis.PrimaryEndPoint.Port}"
+                - !If [ExternalRedis, !Ref ExternalRedisUrl, ""]
+            - Name: COLLAB_HOST_GRACE_MS
+              Value: !Ref HostGraceMs
+            - Name: COLLAB_MAX_PARTICIPANTS
+              Value: !Ref MaxParticipants
+          HealthCheck:
+            Command: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+            Interval: 15
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 10
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref Logs
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: relay
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: HttpListener
+    Properties:
+      Cluster: !Ref Cluster
+      LaunchType: FARGATE
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref DesiredCount
+      HealthCheckGracePeriodSeconds: 20
+      DeploymentConfiguration:
+        MinimumHealthyPercent: !If [Shared, 100, 0]
+        MaximumPercent: !If [Shared, 200, 100]
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: !Ref AssignPublicIp
+          Subnets: !Ref PrivateSubnetIds
+          SecurityGroups: [!Ref TaskSecurityGroup]
+      LoadBalancers:
+        - ContainerName: relay
+          ContainerPort: 3000
+          TargetGroupArn: !Ref TargetGroup
+
+  ScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: Shared
+    Properties:
+      ServiceNamespace: ecs
+      ScalableDimension: ecs:service:DesiredCount
+      ResourceId: !Sub "service/${Cluster}/${Service.Name}"
+      MinCapacity: !Ref DesiredCount
+      MaxCapacity: !Ref MaxCount
+
+  CpuScaling:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: Shared
+    Properties:
+      PolicyName: cpu
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 60
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleInCooldown: 120
+        ScaleOutCooldown: 60
+
+Outputs:
+  WebSocketUrl:
+    Description: What the app's "Live session" dialog takes as the server URL.
+    Value: !If
+      - Https
+      - !Sub "wss://${LoadBalancer.DNSName}/ws"
+      - !Sub "ws://${LoadBalancer.DNSName}/ws"
+  HealthUrl:
+    Value: !Sub "http://${LoadBalancer.DNSName}/health"

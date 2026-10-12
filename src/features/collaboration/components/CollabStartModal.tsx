@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { readPrefs, writePrefs } from "../utils/collab-preferences";
 import { testServer } from "../utils/collab.utils";
 import { copyText } from "../utils/copyText";
-import { useCollab } from "./CollabProvider";
+import { useCollab } from "./collab-context";
 
 interface CollabStartModalProps {
   open: boolean;
@@ -24,7 +24,7 @@ interface CollabStartModalProps {
   onStart: (userName: string, serverUrl: string) => void;
 }
 
-type TestStatus = "idle" | "testing" | "ok" | "fail";
+type TestStatus = "idle" | "testing" | "ok" | "fail" | "incompatible";
 
 function isLocalhostServer(url: string): boolean {
   return url.includes("localhost") || url.includes("127.0.0.1");
@@ -68,8 +68,8 @@ export function CollabStartModal({
 
   const handleTestServer = async () => {
     setTestStatus("testing");
-    const ok = await testServer(serverUrl);
-    setTestStatus(ok ? "ok" : "fail");
+    const result = await testServer(serverUrl);
+    setTestStatus(result === "offline" ? "fail" : result);
     setTimeout(() => setTestStatus("idle"), 4000);
   };
 
@@ -123,7 +123,7 @@ export function CollabStartModal({
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : testStatus === "ok" ? (
                   <Wifi className="h-4 w-4 text-emerald-500" />
-                ) : testStatus === "fail" ? (
+                ) : testStatus === "fail" || testStatus === "incompatible" ? (
                   <WifiOff className="h-4 w-4 text-destructive" />
                 ) : (
                   <Wifi className="h-4 w-4" />
@@ -135,6 +135,11 @@ export function CollabStartModal({
             )}
             {testStatus === "fail" && (
               <p className="text-[11px] text-destructive">{t("collaboration.serverOffline")}</p>
+            )}
+            {testStatus === "incompatible" && (
+              <p className="text-[11px] text-destructive">
+                {t("collaboration.serverIncompatible")}
+              </p>
             )}
             {testStatus === "idle" && (
               <p className="text-[11px] text-muted-foreground">

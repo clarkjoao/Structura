@@ -56,6 +56,8 @@ export default defineConfig(() => ({
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
+      // The collaboration wire contract is one file shared with the relay.
+      "@collab-protocol": path.resolve(import.meta.dirname, "./server/src/collab/protocol.ts"),
     },
     // Force a single React across transitive deps (@assistant-ui,
     // @radix-ui, etc. each ship their own copy otherwise). Without this,

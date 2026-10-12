@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, Check, Link, Users, X } from "lucide-react";
 import type { CollabSession } from "../types";
 import { copyText } from "../utils/copyText";
+import { useCollabStore } from "../store/collab.store";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,8 @@ export function CollabToolbar({
   const { t } = useTranslation();
   const [isCopied, setIsCopied] = useState(false);
   const [endSessionDialogOpen, setEndSessionDialogOpen] = useState(false);
+  const following = useCollabStore((state) => state.following);
+  const setFollowing = useCollabStore((state) => state.setFollowing);
 
   const handleCopyLink = async () => {
     if (!collabUrl) return;
@@ -102,16 +105,30 @@ export function CollabToolbar({
         </div>
 
         <div className="flex items-center gap-1">
-          {session.peers.slice(0, 8).map((peer, index) => (
-            <div
-              key={`${peer.user.id}-${index}`}
-              className="h-5 w-5 rounded-full border-2 border-background flex items-center justify-center text-[8px] text-white font-bold"
-              style={{ backgroundColor: peer.user?.color ?? "#6366f1" }}
-              title={peer.user?.name}
-            >
-              {peer.user?.name?.[0]?.toUpperCase() ?? "?"}
-            </div>
-          ))}
+          {session.peers.slice(0, 8).map((peer, index) => {
+            const isFollowed = following === peer.clientId;
+            const label = isFollowed
+              ? t("collaboration.stopFollowingPeer", { name: peer.user.name })
+              : t("collaboration.followPeer", { name: peer.user.name });
+            return (
+              <button
+                type="button"
+                key={`${peer.user.id}-${index}`}
+                onClick={() => setFollowing(isFollowed ? null : peer.clientId)}
+                aria-pressed={isFollowed}
+                aria-label={label}
+                title={label}
+                className="h-5 w-5 rounded-full border-2 border-background flex items-center justify-center text-[8px] text-white font-bold hover:opacity-90"
+                style={{
+                  backgroundColor: peer.user?.color ?? "#6366f1",
+                  // A ring in the peer's colour marks the one being followed.
+                  boxShadow: isFollowed ? `0 0 0 2px ${peer.user.color}` : undefined,
+                }}
+              >
+                {peer.user?.name?.[0]?.toUpperCase() ?? "?"}
+              </button>
+            );
+          })}
         </div>
 
         {participantCount >= maxParticipants && (

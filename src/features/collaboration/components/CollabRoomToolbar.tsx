@@ -7,7 +7,7 @@ import type { Diagram } from "@/features/diagram";
 import { useDiagramActions } from "@/features/diagram";
 import { CollabStatusIndicator } from "./CollabStatusIndicator";
 import { CollabToolbar } from "./CollabToolbar";
-import { useCollab } from "./CollabProvider";
+import { useCollab } from "./collab-context";
 
 interface CollabRoomToolbarProps {
   diagram: Diagram | null;

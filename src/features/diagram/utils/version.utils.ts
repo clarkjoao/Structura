@@ -309,7 +309,10 @@ export function buildCompareConnectionVisuals(
   return out;
 }
 
-export function isDiagramCompareMode(diagram: VersionDiagram | null | undefined): boolean {
+export function isDiagramCompareMode(
+  diagram:
+    Pick<VersionDiagram, "activeVersionId" | "compareVersionId" | "versions"> | null | undefined,
+): boolean {
   if (!diagram) return false;
   const a = diagram.activeVersionId ?? null;
   const b = diagram.compareVersionId ?? null;

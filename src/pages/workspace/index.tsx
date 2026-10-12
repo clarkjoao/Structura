@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  useActiveDiagram,
   useActiveDiagramId,
   useDiagramActions,
   useDiagramStore,
@@ -20,6 +19,7 @@ import {
   type DiagramExportFormat,
 } from "@/lib/export-service";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { writeDrawioToClipboard } from "@/lib/clipboard";
 import { FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
@@ -27,10 +27,22 @@ import { ImportModal } from "@/pages/ImportModal";
 import type { CopiedClipboardKind } from "./types";
 import { WorkspaceContent } from "./WorkspaceContent";
 
+function readActiveDiagram() {
+  const state = useDiagramStore.getState();
+  return state.activeDiagramId ? (state.diagrams[state.activeDiagramId] ?? null) : null;
+}
+
 export default function WorkspacePage() {
   const { t } = useTranslation();
   const { id: urlId } = useParams<{ id: string }>();
-  const diagram = useActiveDiagram();
+  // What the page draws, not the whole diagram: that changes on every edit (a peer's too) and
+  // re-rendered the page and every modal under it. The export handlers read it when they run.
+  const diagram = useDiagramStore(
+    useShallow((s) => {
+      const active = s.activeDiagramId ? s.diagrams[s.activeDiagramId] : undefined;
+      return active ? { name: active.name, folderId: active.folderId } : null;
+    }),
+  );
   const activeDiagramId = useActiveDiagramId();
   const urlDiagramExists = useDiagramStore((s) => !!(urlId && s.diagrams[urlId]));
   const { openDiagram } = useDiagramActions();
@@ -96,22 +108,25 @@ export default function WorkspacePage() {
   }, []);
 
   const handleCopyDrawio = useCallback(() => {
+    const diagram = readActiveDiagram();
     if (!diagram) return;
     void writeDrawioToClipboard(exportDrawio(diagram, services)).then(() => {
       flashCopied("drawio");
     });
-  }, [diagram, flashCopied, services]);
+  }, [flashCopied, services]);
 
   const handleCopyJson = useCallback(async () => {
+    const diagram = readActiveDiagram();
     if (!diagram) return;
     // Same payload as the downloaded file, service manifest included — otherwise a diagram
     // pasted from the clipboard would lose its service links on import.
     await navigator.clipboard.writeText(exportJson(diagram, services));
     flashCopied("json");
-  }, [diagram, flashCopied, services]);
+  }, [flashCopied, services]);
 
   const handleExportFormats = useCallback(
     async (formats: DiagramExportFormat[], pluginExporterIds: string[]) => {
+      const diagram = readActiveDiagram();
       if (!diagram) return;
       if (formats.length === 0 && pluginExporterIds.length === 0) return;
       try {
@@ -150,7 +165,7 @@ export default function WorkspacePage() {
         toast.error(error instanceof Error ? error.message : t("export.modal.error"));
       }
     },
-    [diagram, flows, services, t],
+    [flows, services, t],
   );
 
   const handleStartCollab = useCallback((name: string, serverUrl: string) => {
@@ -200,6 +215,7 @@ export default function WorkspacePage() {
           reserveEphemeralRoomId={showStartModal}
           userName={collabUserName}
           signalingUrl={collabServerUrl}
+          onHostSessionEnded={() => setCollabActive(false)}
         >
           <WorkspaceContent
             showFlows={showFlows}

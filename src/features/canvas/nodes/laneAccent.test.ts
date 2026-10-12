@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Component } from "@/features/diagram";
 import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
 import { PanelKind } from "@/features/diagram/enums";
-import { snapshotChecksum } from "@/features/collaboration/utils/snapshotChecksum";
+import { stateFingerprint } from "@/test/stateFingerprint";
 import { getElement } from "@/features/elements/element.registry";
 import { emptyNodeBuildContext } from "@/features/elements/node-build-context.fixture";
 import { buildCardNodeData } from "./CardNode/buildCardNodeData";
@@ -104,12 +104,12 @@ describe("inheriting a lane's accent", () => {
       nodeLayouts: {},
       versions: {},
     };
-    const before = snapshotChecksum(surface);
+    const before = stateFingerprint(surface);
     const json = JSON.stringify(surface);
     const ctx = ctxFor(components);
     getElement("process-node")!.canvas.buildData(components[1], ctx);
     expect(JSON.stringify(surface)).toBe(json);
-    expect(snapshotChecksum(surface)).toBe(before);
+    expect(stateFingerprint(surface)).toBe(before);
     expect(components[1]).not.toHaveProperty("customColor");
   });
 });

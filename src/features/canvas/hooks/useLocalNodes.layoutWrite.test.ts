@@ -140,3 +140,54 @@ describe("a layout the store wrote", () => {
     expect(a.position).toEqual({ x: 15, y: 15 });
   });
 });
+
+/**
+ * A peer's move in a live session lands in the store through the collaboration
+ * bridge, with no stamp. It must reach the canvas — before this, it stayed in
+ * the store only, and the local user's next drag of the node wrote the stale
+ * painted position back over it — but must not yank a node the local user is
+ * dragging right now.
+ */
+describe("a position a peer wrote", () => {
+  it("reaches the canvas without a stamp, keeping the other nodes and the measured sizes", () => {
+    const { result, rerender, localNodesRef } = mount({ nodes: storeNodesAt(0, 0) });
+    measureAll(result.current.onNodesChange);
+
+    rerender({ nodes: storeNodesAt(300, 120) });
+
+    const a = localNodesRef.current.find((n) => n.id === "a")!;
+    const b = localNodesRef.current.find((n) => n.id === "b")!;
+    expect(a.position).toEqual({ x: 300, y: 120 });
+    expect(b.position).toEqual({ x: 50, y: 50 });
+    expect(a.measured).toEqual(MEASURED);
+  });
+
+  it("reaches the canvas when nodes were added in the same write", () => {
+    const { result, rerender, localNodesRef } = mount({ nodes: storeNodesAt(0, 0) });
+    measureAll(result.current.onNodesChange);
+
+    rerender({
+      nodes: [
+        ...storeNodesAt(300, 120),
+        { id: "c", position: { x: 9, y: 9 }, data: {}, type: "c4" },
+      ],
+    });
+
+    expect(localNodesRef.current.find((n) => n.id === "a")!.position).toEqual({ x: 300, y: 120 });
+    expect(localNodesRef.current).toHaveLength(3);
+  });
+
+  it("does not move a node the local user is dragging", () => {
+    const { result, rerender, localNodesRef } = mount({ nodes: storeNodesAt(0, 0) });
+    measureAll(result.current.onNodesChange);
+
+    act(() => {
+      result.current.onNodesChange([
+        { id: "a", type: "position", position: { x: 30, y: 30 }, dragging: true },
+      ]);
+    });
+    rerender({ nodes: storeNodesAt(300, 120) });
+
+    expect(localNodesRef.current.find((n) => n.id === "a")!.position).toEqual({ x: 30, y: 30 });
+  });
+});

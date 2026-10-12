@@ -8,6 +8,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import {
   ArrowLeft,
   CircleHelp,
@@ -39,9 +40,9 @@ import { FileSystemStatus } from "@/components/FileSystemStatus";
 import { DiagramTitle, EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
 import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
-import { useActiveDiagram, useStorageMonitor, type Flow } from "@/features/diagram";
+import { useDiagramStore, useStorageMonitor, type Diagram, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
-import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
+import { CollabToolbar, useCollab } from "@/features/collaboration";
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { WorkspaceContentProps } from "./types";
@@ -60,6 +61,36 @@ function DiagramFlowInstanceBridge({
     onReady(reactFlowInstance);
   }, [onReady, reactFlowInstance]);
   return null;
+}
+
+/**
+ * The active diagram while `open`, and the last one seen while closed (so the dialog can animate
+ * out). Closed, it does not subscribe to the diagram at all.
+ */
+function useActiveDiagramWhileOpen(open: boolean): Diagram | null {
+  const live = useDiagramStore((state) =>
+    open && state.activeDiagramId ? (state.diagrams[state.activeDiagramId] ?? null) : null,
+  );
+  const last = useRef<Diagram | null>(null);
+  if (live) last.current = live;
+  return live ?? last.current;
+}
+
+interface DiagramDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function ActiveDiagramEmbedModal({ open, onOpenChange }: DiagramDialogProps) {
+  const diagram = useActiveDiagramWhileOpen(open);
+  if (!diagram) return null;
+  return <EmbedModal open={open} onOpenChange={onOpenChange} diagram={diagram} />;
+}
+
+function ActiveDiagramShareModal({ open, onOpenChange }: DiagramDialogProps) {
+  const diagram = useActiveDiagramWhileOpen(open);
+  if (!diagram) return null;
+  return <ShareModal open={open} onOpenChange={onOpenChange} diagram={diagram} />;
 }
 
 export function WorkspaceContent({
@@ -92,10 +123,24 @@ export function WorkspaceContent({
     maxParticipants,
     peerLimitReached,
     closeSession,
-    updateCursor,
     updateSelectedNode,
   } = useCollab();
-  const diagram = useActiveDiagram();
+  // Only what this page draws. The whole diagram changes on every edit — a peer's included — and
+  // subscribing to it re-rendered the page, every modal with it, many times a second in a session.
+  const diagram = useDiagramStore(
+    useShallow((state) => {
+      const active = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+      if (!active) return null;
+      return {
+        id: active.id,
+        name: active.name,
+        domain: active.domain,
+        activeVersionId: active.activeVersionId,
+        compareVersionId: active.compareVersionId,
+        versions: active.versions,
+      };
+    }),
+  );
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
   const activeFlow = playbackState?.flow ?? null;
@@ -198,23 +243,12 @@ export function WorkspaceContent({
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const lastCursorAtRef = useRef(0);
   const reactFlowInstanceRef = useRef<DiagramFlowInstance | null>(null);
 
+  // The cursor itself is sent from inside the canvas, in flow coordinates (CollabPresenceLayer).
   const handleCanvasPointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
       if (!session) return;
-
-      const now = performance.now();
-      if (now - lastCursorAtRef.current >= 33) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        updateCursor({
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top,
-        });
-        lastCursorAtRef.current = now;
-      }
-
       const target = event.target as HTMLElement | null;
       const nodeElement = target?.closest?.(".react-flow__node");
       const edgeElement = target?.closest?.(".react-flow__edge");
@@ -222,14 +256,13 @@ export function WorkspaceContent({
         nodeElement?.getAttribute("data-id") ?? edgeElement?.getAttribute("data-id") ?? null;
       updateSelectedNode(activeId);
     },
-    [session, updateCursor, updateSelectedNode],
+    [session, updateSelectedNode],
   );
 
   const handleCanvasPointerLeave = useCallback(() => {
     if (!session) return;
-    updateCursor(null);
     updateSelectedNode(null);
-  }, [session, updateCursor, updateSelectedNode]);
+  }, [session, updateSelectedNode]);
 
   return (
     <>
@@ -371,7 +404,7 @@ export function WorkspaceContent({
         <ShortcutsModal open={showShortcuts} onOpenChange={setShowShortcuts} />
         {diagram ? (
           <>
-            <EmbedModal open={embedModalOpen} onOpenChange={setEmbedModalOpen} diagram={diagram} />
+            <ActiveDiagramEmbedModal open={embedModalOpen} onOpenChange={setEmbedModalOpen} />
             <ExportModal
               open={exportModalOpen}
               onOpenChange={setExportModalOpen}
@@ -381,7 +414,7 @@ export function WorkspaceContent({
               onCopyJson={handleCopyJson}
               copiedClipboardKind={copiedClipboardKind}
             />
-            <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} diagram={diagram} />
+            <ActiveDiagramShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} />
           </>
         ) : null}
         <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -439,7 +472,6 @@ export function WorkspaceContent({
                   if (targetFlow) play(targetFlow);
                 }}
               />
-              {session && <CollabCursors peers={session.peers} />}
               {showFlows && !activeFlow && !isRecording && (
                 <FlowPanel
                   onClose={() => setShowFlows(false)}

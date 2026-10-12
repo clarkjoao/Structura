@@ -20,7 +20,7 @@ export {
 export { useIconStore } from "./icon-store";
 export type { IconStore } from "./icon-store";
 
-export type { DiagramStore, ClipboardEntry } from "./store.types";
+export type { DiagramStore, DiagramSnapshot, ClipboardEntry } from "./store.types";
 export type {
   FlowStoreResult,
   FlowStoreRefusal,

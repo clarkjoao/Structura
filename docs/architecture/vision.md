@@ -99,7 +99,7 @@ explicitly, with their responsibilities and allowed dependencies:
 | **Workspace** | `pages/`, `infrastructure/persistence` | Folders, dashboard, model explorer, storage adapters (`IStoragePort`), sync, migrations. | Model |
 | **Interchange** | `lib/export-service`, mermaid import utils | Converting to/from external formats (draw.io, Mermaid, Structurizr, JSON). Boundary converters only — no format knowledge leaks inward. | Model |
 | **Catalogs** | `features/cloud`, `lib/catalogs` | AWS/GCP/Azure service catalogs and icons; pattern and panel catalogs. Data, not behavior. | Model |
-| **Collaboration** | `features/collaboration`, `server/` | Yjs/WebSocket sync, presence, patches. The optional Node server is a relay, never a source of truth. | Model |
+| **Collaboration** | `features/collaboration`, `server/` | Live sessions: field-level patches ordered by the relay, presence, soft locks. The relay's store is the source of truth only while a session lasts (ADR-0011). | Model |
 | **Intelligence** | `features/llm` | Diagram assistant: providers (Anthropic/OpenAI/proxy), prompt building, patch parsing, applying `DiagramPatch` actions to the store. | Model |
 | **Storytelling** | flows in Model | Cross-diagram narrative: flow recording/playback. The cross-diagram *Walkthroughs* feature was removed in 2026-08; see `docs/decisions/2026-08-26-remove-walkthroughs.md`. | Model, Canvas |
 | **Sharing** | `features/viewer`, share/embed utils | Read-only viewer for shared diagrams. | Model, Canvas |
@@ -276,9 +276,9 @@ see the security discussion in
 - **Model Index unification heuristics:** how aggressively should the index
   auto-match components across diagrams (by name? service id only?) before
   asking the user? (→ spec 0001)
-- **Collaboration vs. model identity:** Yjs currently syncs diagram-scoped
-  state; a workspace model adds a second consistency domain. Does the model
-  sync as one Yjs doc, or per-element? (→ spec 0001, risks section)
+- **Collaboration vs. model identity:** live sessions sync diagram-scoped
+  state; a workspace model adds a second consistency domain. Is the model
+  its own room, or are model edits made outside sessions? (→ spec 0001, risks section)
 - **Profile vs. plugin boundary:** is a "diagram type" (VSM) one plugin or a
   bundle of node types + validators + palette entries? (→ spec on plugin
   contribution points)

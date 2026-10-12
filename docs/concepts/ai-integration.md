@@ -48,7 +48,8 @@ severity/category/recommendation) support architecture-review style output.
 common call shape; `model-presets.ts` maps friendly names to model ids.
 Two modes (`LLMMode`): **direct** (user's API key, stored client-side only in
 `llm-storage.ts`, calls the provider from the browser) and **proxy** (via the
-optional local server for teams that don't distribute keys). Conversation
+team-run HTTP proxy at `VITE_LLM_PROXY_URL`, for teams that don't distribute
+keys; Structura's own server no longer ships one). Conversation
 threads are per-diagram (`ConversationThread`) and persist locally.
 
 This provider seam is already a de-facto extension point; the plugin

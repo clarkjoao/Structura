@@ -96,11 +96,11 @@ npm run dev          # http://localhost:8080
 ```
 
 Optional features are switched on with `VITE_*` variables; copy [`.env.example`](.env.example) to
-`.env` to see them. The collaboration relay and the LLM/integration proxy live in
-[`server/`](server/) and are only needed for live sessions and proxied requests:
+`.env` to see them. The collaboration relay lives in [`server/`](server/) and is only needed for
+live sessions:
 
 ```bash
-npm run proxy        # installs and starts server/ in dev mode
+npm run server       # installs and starts server/ in dev mode
 ```
 
 ### Useful scripts

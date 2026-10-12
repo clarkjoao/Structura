@@ -68,6 +68,245 @@ jobs:
       - name: Run Vitest
         run: npm run test
 
+  server:
+    name: Collaboration relay
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      # Every store test runs twice: against the in-memory store and against Redis.
+      - name: Test (memory + Redis)
+        run: npm test
+        env:
+          REDIS_URL: redis://localhost:6379
+
+      - name: Build
+        run: npm run build
+
+  collab-acceptance:
+    name: Collaboration acceptance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+
+      # Three relays on one Redis behind a round-robin balancer with no affinity.
+      - name: Start the multi-relay stack
+        run: docker compose -f deploy/compose/docker-compose.yml up --build -d
+
+      - name: Install relay dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Wait for the balancer
+        run: |
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:3000/health && exit 0
+            sleep 1
+          done
+          exit 1
+
+      # 500 participants in 35 rooms; relay kill; Redis restart; host drop.
+      - name: Load and resilience acceptance
+        working-directory: server
+        run: npm run loadtest
+        env:
+          DURATION_MS: "20000"
+
+      - name: Install app dependencies and browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # Real browsers: drops, a drag lock, a background host tab, reconnect chaos.
+      - name: Browser reconnect acceptance
+        run: |
+          npm run dev -- --port 8080 > /tmp/vite.log 2>&1 &
+          for i in $(seq 1 90); do curl -fs http://localhost:8080/ > /dev/null && break; sleep 1; done
+          node scripts/collab-reconnect.mjs
+        env:
+          SCENARIO: all
+          CYCLES: "5"
+          BACKGROUND_MS: "20000"
+
+      - name: Relay logs
+        if: failure()
+        run: docker compose -f deploy/compose/docker-compose.yml logs --tail 200
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f deploy/compose/docker-compose.yml down
+
+  go-relay:
+    name: Collaboration relay (Go)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+      dynamodb:
+        image: amazon/dynamodb-local
+        ports:
+          - 8000:8000
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go-server/go.mod
+          cache-dependency-path: go-server/go.sum
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Vet
+        working-directory: go-server
+        run: go vet ./...
+
+      # Every store: memory, Redis, DynamoDB Local; long-lived and serverless handlers. Every
+      # package must be fully covered by its own tests.
+      - name: Test and coverage
+        working-directory: go-server
+        run: make cover
+        env:
+          REDIS_URL: redis://localhost:6379
+          DYNAMODB_ENDPOINT: http://localhost:8000
+
+      - name: Coverage report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: go-relay-coverage
+          path: go-server/coverage.out
+          if-no-files-found: ignore
+
+      - name: Lambda package
+        working-directory: go-server
+        run: make lambda-zip
+
+      - name: AWS templates
+        run: |
+          pipx install cfn-lint
+          cfn-lint go-server/deploy/aws/*.yaml
+
+      - name: Install load-harness dependencies
+        working-directory: server
+        run: npm ci
+
+      # Serverless mode end to end: the Lambda handler behind the local API Gateway, with
+      # concurrent, jittered invocations, on DynamoDB Local.
+      - name: Serverless acceptance (DynamoDB)
+        run: |
+          (cd go-server && go build -o /tmp/apigw-local ./cmd/apigw-local)
+          PORT=3300 DYNAMODB_ENDPOINT=http://localhost:8000 INVOKE_JITTER_MS=20 REAP_INTERVAL_MS=5000 \
+            /tmp/apigw-local > /tmp/apigw.log 2>&1 &
+          for i in $(seq 1 30); do curl -fs http://localhost:3300/health && break; sleep 1; done
+          cd server
+          WS_URL=ws://localhost:3300/ws SCENARIOS=load,host-drop TOTAL=60 ROOMS=6 BIG_ROOMS=1 \
+            BIG_SIZE=20 BIG_DRAGGERS=5 NODES=60 DURATION_MS=20000 npm run loadtest
+
+      - name: Serverless acceptance (Redis)
+        run: |
+          PORT=3301 REDIS_URL=redis://localhost:6379 REDIS_NAMESPACE=ci: INVOKE_JITTER_MS=20 \
+            REAP_INTERVAL_MS=5000 /tmp/apigw-local > /tmp/apigw-redis.log 2>&1 &
+          for i in $(seq 1 30); do curl -fs http://localhost:3301/health && break; sleep 1; done
+          cd server
+          WS_URL=ws://localhost:3301/ws SCENARIOS=load,host-drop TOTAL=150 ROOMS=10 BIG_ROOMS=2 \
+            BIG_SIZE=30 BIG_DRAGGERS=10 DURATION_MS=20000 npm run loadtest
+
+      - name: Emulator logs
+        if: failure()
+        run: tail -n 200 /tmp/apigw.log /tmp/apigw-redis.log
+
+  go-relay-acceptance:
+    name: Collaboration acceptance (Go relay)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      # Three Go relays on one Redis behind a round-robin balancer with no affinity.
+      - name: Start the multi-relay stack
+        run: docker compose -f deploy/compose/docker-compose.yml up --build -d
+        env:
+          RELAY_BUILD: ../../go-server
+
+      - name: Install relay dependencies
+        working-directory: server
+        run: npm ci
+
+      - name: Wait for the balancer
+        run: |
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:3000/health && exit 0
+            sleep 1
+          done
+          exit 1
+
+      # 500 participants in 35 rooms; relay kill; Redis restart; host drop.
+      - name: Load and resilience acceptance
+        working-directory: server
+        run: npm run loadtest
+        env:
+          DURATION_MS: "20000"
+
+      - name: Relay logs
+        if: failure()
+        run: docker compose -f deploy/compose/docker-compose.yml logs --tail 200
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f deploy/compose/docker-compose.yml down
+
   build:
     name: Build
     runs-on: ubuntu-latest

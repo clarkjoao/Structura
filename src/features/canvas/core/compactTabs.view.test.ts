@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Component, Diagram } from "@/features/diagram";
-import { snapshotChecksum } from "@/features/collaboration/utils/snapshotChecksum";
+import { stateFingerprint } from "@/test/stateFingerprint";
 import { resolveViewSnapshot, type DescribeNode } from "./resolveViewSnapshot";
 import { projectNodes } from "./projectDiagram";
 import { compactTabBox } from "./compactView";
@@ -132,10 +132,10 @@ describe("tabs on a compact parent", () => {
   it("changes the drawing only", () => {
     const d = diagram(true);
     const surface = () => ({ ...d.snapshot, nodeLayouts: d.nodeLayouts, edgeLayouts: {} });
-    const before = snapshotChecksum(surface());
+    const before = stateFingerprint(surface());
     const json = JSON.stringify(d);
     view(d);
     expect(JSON.stringify(d)).toBe(json);
-    expect(snapshotChecksum(surface())).toBe(before);
+    expect(stateFingerprint(surface())).toBe(before);
   });
 });

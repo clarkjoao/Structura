@@ -1,7 +1,7 @@
 // ─── Components ─────────────────────────────────────────────────────────────────
-export { CollabProvider, useCollab } from "./components/CollabProvider";
+export { CollabProvider } from "./components/CollabProvider";
+export { useCollab } from "./components/collab-context";
 export { CollabEditingWarning } from "./components/CollabEditingWarning";
-export { CollabCursors } from "./components/CollabCursors";
 export { CollabToolbar } from "./components/CollabToolbar";
 export { CollabStartModal } from "./components/CollabStartModal";
 // Not `CollabRoom`: it mounts the whole editor, and anything that imports this
@@ -10,13 +10,15 @@ export { CollabStartModal } from "./components/CollabStartModal";
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────────
 export { useCollabHighlight } from "./hooks/useCollabHighlight";
+export { useIsCollabGuest } from "./hooks/useIsCollabGuest";
+export { useElementTextLock, useLockedBy, useNodeDragLocks } from "./hooks/useElementLocks";
 export { useCollabStore } from "./store/collab.store";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-export type { PeerState } from "./types";
+export type { CollabUser, PeerState, ElementLock } from "./types";
 
 // Internal — use relative imports within the feature:
 //   CollabJoinModal, CollabSessionClosedModal → ./components/
 //   CollabStatusIndicator → ./components/
-//   remoteLayoutUpdates → ./hooks/useCollabStoreSync
 //   CollabElementHighlight → ./hooks/useCollabHighlight
+//   the protocol client and store bridge → ./sync/

@@ -6,7 +6,7 @@
  * the machine survives 15 browsers; SHOW_GUESTS=1 tiles them on screen too.
  *
  *   npm run dev            # terminal 1 — the app
- *   npm run proxy          # terminal 2 — the collab relay
+ *   npm run server         # terminal 2 — the collab relay
  *   node scripts/collab-stress.mjs
  *
  * Env: GUESTS, DURATION_MS, NODES, SHOW_GUESTS, APP_URL, WS_URL, SLOW_MO

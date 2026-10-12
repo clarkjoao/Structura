@@ -12,6 +12,7 @@ import { CanvasBottomToolbar } from "./catalog/CanvasBottomToolbar";
 import { useCatalogDrop } from "./catalog/useCatalogDrop";
 import { CanvasViewOptions } from "./toolbar/components/CanvasViewOptions";
 import { NothingInViewCard } from "./components/NothingInViewCard";
+import { CollabPresenceLayer } from "./components/CollabPresenceLayer";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
 import { useViewportOccupancy } from "./hooks/useViewportOccupancy";
 import { useCanvasPreferencesStore } from "./preferences";
@@ -21,6 +22,7 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { NodeQuickActionsBar } from "./selection-actions/NodeQuickActionsBar";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { useNodeDragLocks } from "@/features/collaboration/hooks/useElementLocks";
 import { hasSavedViewport } from "./hooks/useCanvasEffects";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useFlowSewNotices } from "./flow/useFlowSewNotices";
@@ -170,6 +172,15 @@ const Canvas = (props: CanvasProps = {}) => {
     isAutoLayoutRunning,
     actions,
   } = useCanvasController(props);
+  const dragLocks = useNodeDragLocks();
+  const lockedNodes = useMemo(() => dragLocks.applyLocks(nodes), [dragLocks, nodes]);
+  const handleNodeDragStop = useCallback(
+    (event: Parameters<typeof onNodeDragStop>[0], node: Parameters<typeof onNodeDragStop>[1]) => {
+      dragLocks.onNodeDragStop();
+      onNodeDragStop(event, node);
+    },
+    [dragLocks, onNodeDragStop],
+  );
   const { onDragOver: onSvgDragOver, onDropFiles: onSvgDropFiles } = useCanvasSvgFileDrop({
     canEdit: interactionMode.canEditCanvas,
     reactFlowInstance,
@@ -429,7 +440,7 @@ const Canvas = (props: CanvasProps = {}) => {
             )}
             <DiagramSurface
               policy={writePolicy(interactionMode.canEditCanvas)}
-              nodes={nodes}
+              nodes={lockedNodes}
               edges={edges}
               nodeTypes={nodeTypes}
               inputProfile={inputProfile}
@@ -449,7 +460,8 @@ const Canvas = (props: CanvasProps = {}) => {
               onPaneClick={eventHandlers.onPaneClick}
               onPaneContextMenu={eventHandlers.onPaneContextMenu}
               onNodeContextMenu={eventHandlers.onNodeContextMenu}
-              onNodeDragStop={onNodeDragStop}
+              onNodeDragStart={dragLocks.onNodeDragStart}
+              onNodeDragStop={handleNodeDragStop}
               onSelectionChange={eventHandlers.onSelectionChange}
               defaultViewport={initialViewport}
               fitView={!hasSavedViewport(initialViewport)}
@@ -530,6 +542,7 @@ const Canvas = (props: CanvasProps = {}) => {
                   )}
                 </>
               )}
+              <CollabPresenceLayer />
               {occupancy.hasNodes && !occupancy.anyNodeVisible && (
                 <NothingInViewCard elementCount={occupancy.nodeCount} />
               )}

@@ -48,6 +48,7 @@ import {
 } from "./sections";
 import { isComponentType } from "@/features/diagram";
 import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
+import { useElementTextLock } from "@/features/collaboration/hooks/useElementLocks";
 
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
@@ -143,6 +144,7 @@ const ComponentPanel = ({
     [allServices, component.serviceId],
   );
 
+  const textLock = useElementTextLock(component.id);
   const debouncedUpdate = useMemo(
     () =>
       debounce((patch: ComponentPatch) => updateComponent(component.id, patch), FIELD_DEBOUNCE_MS),
@@ -278,6 +280,7 @@ const ComponentPanel = ({
           )}
           {isSimple ? (
             <BasicFieldsSection
+              textLock={textLock}
               name={name}
               desc={desc}
               tech={tech}
@@ -306,6 +309,7 @@ const ComponentPanel = ({
           ) : (
             <>
               <BasicFieldsSection
+                textLock={textLock}
                 name={name}
                 desc={desc}
                 tech={tech}
@@ -426,6 +430,7 @@ const ComponentPanel = ({
                 </div>
               )}
               <BasicFieldsSection
+                textLock={textLock}
                 name={name}
                 desc={desc}
                 tech={tech}

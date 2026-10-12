@@ -1,0 +1,269 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Metadata:
+  cfn-lint:
+    config:
+      # Optional parameters default to "" and are only used under the conditions that need them.
+      ignore_checks: [W1030]
+Description: >-
+  Structura collaboration relay, serverless: an API Gateway WebSocket API in front of the Go relay
+  as a Lambda function, rooms in DynamoDB (or Redis), and a one-minute reaper schedule.
+
+Parameters:
+  ImageUri:
+    Type: String
+    Default: ""
+    Description: >-
+      ECR image built from go-server/Dockerfile.lambda. Leave empty to deploy the zip instead
+      (CodeS3Bucket and CodeS3Key).
+  CodeS3Bucket:
+    Type: String
+    Default: ""
+    Description: Bucket of the zip holding `bootstrap` (make lambda-zip). Unused with ImageUri.
+  CodeS3Key:
+    Type: String
+    Default: ""
+    Description: Key of that zip.
+  Architecture:
+    Type: String
+    Default: arm64
+    AllowedValues: [arm64, x86_64]
+    Description: Must match how the binary or image was built.
+  StageName:
+    Type: String
+    Default: prod
+    AllowedPattern: "^[A-Za-z0-9_-]+$"
+  HostGraceMs:
+    Type: Number
+    Default: 30000
+    Description: How long a dropped host has to come back before the session closes.
+  MaxParticipants:
+    Type: Number
+    Default: 50
+  RedisUrl:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: >-
+      Optional. rediss://… of an ElastiCache Redis to keep rooms in instead of DynamoDB (higher
+      throughput per room). Requires SubnetIds and SecurityGroupIds, and a NAT gateway in those
+      subnets: the function must still reach the API Gateway management endpoint.
+  SubnetIds:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: Private subnets for the function, only with RedisUrl.
+  SecurityGroupIds:
+    Type: CommaDelimitedList
+    Default: ""
+    Description: Security groups for the function, only with RedisUrl (allow it to reach Redis).
+  ThrottleRate:
+    Type: Number
+    Default: 2000
+    Description: Steady-state messages per second the stage accepts.
+  ThrottleBurst:
+    Type: Number
+    Default: 1000
+  LogRetentionDays:
+    Type: Number
+    Default: 14
+
+Conditions:
+  UseImage: !Not [!Equals [!Ref ImageUri, ""]]
+  UseRedis: !Not [!Equals [!Ref RedisUrl, ""]]
+
+Rules:
+  CodeGiven:
+    Assertions:
+      - Assert: !Or
+          - !Not [!Equals [!Ref ImageUri, ""]]
+          - !And
+            - !Not [!Equals [!Ref CodeS3Bucket, ""]]
+            - !Not [!Equals [!Ref CodeS3Key, ""]]
+        AssertDescription: Give ImageUri, or CodeS3Bucket and CodeS3Key.
+
+Resources:
+  # Rooms, connections and delivery state (see go-server/internal/store/dynamo.go). Session data:
+  # every item expires through `ttl` once its session is over.
+  Table:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+
+  Api:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${AWS::StackName}-collab"
+      ProtocolType: WEBSOCKET
+      # Every frame goes to $default: the relay dispatches on the message's own `type`.
+      RouteSelectionExpression: "$request.body.route"
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !If
+          - UseRedis
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: collab
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:ConditionCheckItem
+                  - dynamodb:DescribeTable
+                Resource: !GetAtt Table.Arn
+              - Effect: Allow
+                Action: execute-api:ManageConnections
+                Resource: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/${StageName}/*/@connections/*"
+
+  FunctionLogs:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-collab"
+      RetentionInDays: !Ref LogRetentionDays
+
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: FunctionLogs
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-collab"
+      Description: Structura collaboration relay (protocol v3)
+      PackageType: !If [UseImage, Image, Zip]
+      Runtime: !If [UseImage, !Ref "AWS::NoValue", provided.al2023]
+      Handler: !If [UseImage, !Ref "AWS::NoValue", bootstrap]
+      Code: !If
+        - UseImage
+        - ImageUri: !Ref ImageUri
+        - S3Bucket: !Ref CodeS3Bucket
+          S3Key: !Ref CodeS3Key
+      Architectures: [!Ref Architecture]
+      MemorySize: 512
+      # API Gateway gives an integration 29 s; the relay keeps its own work under that.
+      Timeout: 29
+      Role: !GetAtt FunctionRole.Arn
+      VpcConfig: !If
+        - UseRedis
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref "AWS::NoValue"
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Table
+          REDIS_URL: !Ref RedisUrl
+          # Where replies go. Also what the scheduled reaper, which has no request, uses.
+          CALLBACK_URL: !Sub "https://${Api}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+          COLLAB_HOST_GRACE_MS: !Ref HostGraceMs
+          COLLAB_MAX_PARTICIPANTS: !Ref MaxParticipants
+
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref Api
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${Function.Arn}/invocations"
+
+  ConnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref Api
+      RouteKey: $connect
+      Target: !Sub "integrations/${Integration}"
+
+  DisconnectRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref Api
+      RouteKey: $disconnect
+      Target: !Sub "integrations/${Integration}"
+
+  DefaultRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref Api
+      RouteKey: $default
+      Target: !Sub "integrations/${Integration}"
+
+  Deployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn: [ConnectRoute, DisconnectRoute, DefaultRoute]
+    Properties:
+      ApiId: !Ref Api
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref Api
+      StageName: !Ref StageName
+      DeploymentId: !Ref Deployment
+      DefaultRouteSettings:
+        ThrottlingRateLimit: !Ref ThrottleRate
+        ThrottlingBurstLimit: !Ref ThrottleBurst
+
+  ApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Function
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${Api}/*"
+
+  # Closes rooms whose host is gone past the grace period, drops sockets whose $disconnect was
+  # lost, and delivers whatever a crashed invocation left behind.
+  ReaperSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(1 minute)
+      State: ENABLED
+      Targets:
+        - Id: reaper
+          Arn: !GetAtt Function.Arn
+
+  ReaperPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Function
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ReaperSchedule.Arn
+
+Outputs:
+  WebSocketUrl:
+    Description: What the app's "Live session" dialog takes as the server URL.
+    Value: !Sub "wss://${Api}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+  TableName:
+    Value: !Ref Table
+  FunctionName:
+    Value: !Ref Function

@@ -143,6 +143,28 @@ export function adoptsStorePosition(
   );
 }
 
+/**
+ * Nodes whose position the store changed between two store-derived arrays.
+ *
+ * A peer's edit in a live session reaches the store through the collaboration
+ * bridge, never through the pointer, and stamps neither `_lastUndoRedoAt` nor
+ * `_lastLayoutWriteAt` — it must not discard the local copy wholesale, since
+ * the local user may be mid-drag on other nodes. Without this, the merge kept
+ * the painted position of a node a peer moved: the peer's move never showed,
+ * and the next local drag of that node wrote the stale position back.
+ */
+function storeMovedNodeIds(previous: Node[], next: Node[]): Set<string> {
+  const moved = new Set<string>();
+  if (previous.length === 0) return moved;
+  const before = new Map(previous.map((node) => [node.id, node.position]));
+  for (const node of next) {
+    const position = before.get(node.id);
+    if (!position || position === node.position) continue;
+    if (position.x !== node.position.x || position.y !== node.position.y) moved.add(node.id);
+  }
+  return moved;
+}
+
 export function useLocalNodes(
   storeNodes: Node[],
   innerOnNodesChange: OnNodesChange,
@@ -197,6 +219,7 @@ export function useLocalNodes(
       prevLastUndoRedoAtRef.current = lastUndoRedoAt;
       prevLastLayoutWriteAtRef.current = lastLayoutWriteAt;
     } else if (storeNodes !== prevStoreNodesRef.current) {
+      const prevStoreNodes = prevStoreNodesRef.current ?? [];
       prevStoreNodesRef.current = storeNodes;
 
       const discardLocal = shouldDiscardLocalNodes(
@@ -212,6 +235,7 @@ export function useLocalNodes(
       prevLastLayoutWriteAtRef.current = lastLayoutWriteAt;
 
       const prev = localNodesStateRef.current;
+      const movedInStore = storeMovedNodeIds(prevStoreNodes, storeNodes);
 
       if (prev.length === 0 || discardLocal) {
         // Positions, parenting and selection come from the store — that is the
@@ -225,7 +249,8 @@ export function useLocalNodes(
         const merged = storeNodes.map((sn) => {
           const ln = localMap.get(sn.id);
           if (!ln) return sn;
-          const useRemotePosition = adoptsStorePosition(sn, ln);
+          const useRemotePosition =
+            adoptsStorePosition(sn, ln) || (movedInStore.has(sn.id) && !ln.dragging);
           const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);
           return {
             ...ln,
@@ -260,7 +285,8 @@ export function useLocalNodes(
             return sn;
           }
 
-          const useRemotePosition = adoptsStorePosition(sn, ln);
+          const useRemotePosition =
+            adoptsStorePosition(sn, ln) || (movedInStore.has(sn.id) && !ln.dragging);
 
           const positionToUse = useRemotePosition ? sn.position : ln.position;
           const keepLocalDimensions = resizingNodeIdsRef.current.has(sn.id);

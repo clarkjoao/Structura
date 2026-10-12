@@ -1,4 +1,15 @@
 import { defineConfig } from "cypress";
+import {
+  movePeerOnce,
+  quietSwarm,
+  readRoom,
+  startSwarm,
+  stopSwarm,
+  movePointerPeer,
+  pointerPeerSeen,
+  startPointerPeer,
+  stopPointerPeer,
+} from "./cypress/support/collab-swarm";
 
 export default defineConfig({
   e2e: {
@@ -26,6 +37,16 @@ export default defineConfig({
           console.log(message);
           return null;
         },
+        // Collaboration stress (collab-load.cy.ts): bots that share the browser's room.
+        "collab:startSwarm": startSwarm,
+        "collab:quietSwarm": quietSwarm,
+        "collab:stopSwarm": stopSwarm,
+        "collab:readRoom": readRoom,
+        "collab:movePeerOnce": movePeerOnce,
+        "collab:startPointerPeer": startPointerPeer,
+        "collab:movePointerPeer": movePointerPeer,
+        "collab:stopPointerPeer": stopPointerPeer,
+        "collab:pointerPeerSeen": pointerPeerSeen,
       });
     },
     specPattern: "cypress/e2e/**/*.cy.{js,jsx,ts,tsx}",

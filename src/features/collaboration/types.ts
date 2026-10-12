@@ -21,3 +21,21 @@ export interface CollabSession {
   peers: PeerState[];
   status: CollabStatus;
 }
+
+/** Why a session ended for this participant; drives the closing dialog. */
+export type CollabEndReason =
+  | "host_closed"
+  | "host_timeout"
+  | "room_unknown"
+  | "room_full"
+  | "protocol_mismatch"
+  | "too_large"
+  | "invalid_seed"
+  | "unauthorized"
+  | "unreachable";
+
+/** A soft lock another participant holds on an element. */
+export interface ElementLock {
+  holder: string;
+  expiresAt: number;
+}

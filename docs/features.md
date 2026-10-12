@@ -134,9 +134,11 @@ A storage warning appears when the browser quota is close to full. See
 
 ## Live sessions (experimental)
 
-Real-time editing through a self-hosted WebSocket relay (`server/`): shared cursors, presence,
-editing warnings, and room limits. The wire protocol is documented in
-[collab-websocket-protocol.md](collab-websocket-protocol.md).
+Real-time editing through a self-hosted relay (`server/`): up to 50 people per room, shared
+cursors, presence, soft locks while someone drags or retypes an element, and automatic reconnect.
+It runs single-instance out of the box, or as many relays sharing one Redis (`REDIS_URL`; the
+Kubernetes and kind deployment lives in the separate `structura-wbsocket-server` project). See [concepts/collaboration.md](concepts/collaboration.md)
+and the wire protocol, [collab-protocol-v3.md](collab-protocol-v3.md).
 
 ## Services catalog
 
@@ -150,7 +152,7 @@ they reference and can relink them on import.
 A chat panel grounded in the open diagram. It can explain and analyze the diagram, generate
 diagrams, and propose changes that are previewed on the canvas and applied only after
 confirmation. Providers: OpenAI, Anthropic or a custom endpoint, called directly from the browser
-or through the proxy in `server/`. API keys stay in the browser. Conversations are stored in
+or through an HTTP proxy you run (`VITE_LLM_PROXY_URL`). API keys stay in the browser. Conversations are stored in
 IndexedDB. See [concepts/ai-integration.md](concepts/ai-integration.md).
 
 ## Plugins
