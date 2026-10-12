@@ -586,7 +586,12 @@
         "extraBodyParams": "Parâmetros extras do body (JSON)",
         "extraBodyParamsHint": "Mesclados ao body da requisição. Ex.: {\"temperature\":0.2}",
         "extraJsonInvalid": "JSON inválido. Corrija antes de salvar."
-      }
+      },
+      "subtitle": "Configure seu provedor de IA e modelo",
+      "connectionsHint": "Gerencie as conexões de provedor salvas",
+      "defaultConnectionName": "Padrão",
+      "fallbackConnectionName": "Conexão",
+      "connectionCopyName": "{{name}} (cópia)"
     },
     "suggestion": {
       "accept": "Aceitar",
@@ -599,7 +604,9 @@
         "removeEdge": "Remover conexão {{edgeId}}",
         "insertPattern": "Inserir pattern {{patternId}}",
         "autoLayout": "Organizar diagrama automaticamente",
-        "getTags": "Listar tags do diagrama"
+        "getTags": "Listar tags do diagrama",
+        "connectionFallback": "conexão",
+        "unknown": "Ação desconhecida"
       },
       "defaultTitle": "Alterações sugeridas",
       "noChanges": "sem alterações",
@@ -625,7 +632,14 @@
       "delete": "Excluir",
       "deleteConfirm": "Excluir esta conversa? Não dá para desfazer.",
       "active": "Atual",
-      "empty": "Nenhuma conversa anterior neste diagrama ainda."
+      "empty": "Nenhuma conversa anterior neste diagrama ainda.",
+      "searchPlaceholder": "Buscar…",
+      "noMatches": "Nenhuma conversa encontrada.",
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "messageCount_one": "{{count}} mensagem",
+      "messageCount_other": "{{count}} mensagens",
+      "defaultTitle": "Conversa · {{date}}"
     },
     "floatingButton": {
       "open": "Abrir assistente de chat",
@@ -734,7 +748,25 @@
       "newChat": "Nova conversa iniciada.",
       "exported": "IR exportado!",
       "noIR": "Nenhum IR gerado ainda. Use /generate primeiro.",
-      "analyzing": "Analisando…"
+      "analyzing": "Analisando…",
+      "cleared": "Chat limpo."
+    },
+    "headerSubtitle": "Usando {{name}}",
+    "emptySubtitle": "Como posso ajudar a moldar este diagrama?",
+    "disclaimer": "A IA pode cometer erros. Verifique alterações importantes.",
+    "thinking": "Pensando",
+    "parseFallback": "[Resposta não processada. Tente novamente.]",
+    "previousSuggestion": "[sugestão anterior de diagrama]",
+    "patch": {
+      "none": "Nenhuma ação proposta.",
+      "proposed_one": "Proponho {{count}} alteração no diagrama.",
+      "proposed_other": "Proponho {{count}} alterações no diagrama.",
+      "catalogResults": "Resultados das ferramentas de catálogo:"
+    },
+    "copyExport": {
+      "title": "Exportação da conversa",
+      "user": "Você",
+      "assistant": "Assistente"
     }
   },
   "versions": {

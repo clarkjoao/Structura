@@ -47,7 +47,7 @@ export function UserMessageComponent() {
 }
 
 export function AssistantMessageComponent() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const message = useAuiState((s) => s.message);
   const text = getPartText(message);
   const isStreaming = message.status?.type === "running";
@@ -87,7 +87,7 @@ export function AssistantMessageComponent() {
               onClick={() => setIsExpanded(!isExpanded)}
               className="mt-1.5 text-[11px] text-primary hover:underline"
             >
-              {isExpanded ? "Show less" : "Show more"}
+              {isExpanded ? t("llmChat.showLess") : t("llmChat.showMore")}
             </button>
           ) : null}
         </div>
@@ -100,8 +100,9 @@ export function AssistantMessageComponent() {
 }
 
 function GeneratingSkeleton() {
+  const { t } = useTranslation();
   return (
-    <div className="space-y-2 py-1.5" aria-label="Generating">
+    <div className="space-y-2 py-1.5" aria-label={t("llmChat.generating")}>
       {[100, 75, 55].map((width) => (
         <div
           key={width}

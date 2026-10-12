@@ -6,6 +6,7 @@ import type {
   LLMConnection,
   LLMProvider,
 } from "./types";
+import i18n from "@/infrastructure/i18n";
 import {
   loadAllThreadsFromIdb,
   migrateThreadsFromLocalStorageToIdb,
@@ -26,14 +27,18 @@ const DEFAULT_LLM_CONFIG: LLMConfig = {
   model: "gpt-4o-mini",
 };
 
-const DEFAULT_LLM_CONNECTION: LLMConnection = {
-  id: "default",
-  name: "Default",
-  mode: "proxy",
-  provider: "openai",
-  apiKey: "",
-  model: "gpt-4o-mini",
-};
+const DEFAULT_LLM_CONNECTION_ID = "default";
+
+function defaultLLMConnection(): LLMConnection {
+  return {
+    id: DEFAULT_LLM_CONNECTION_ID,
+    name: i18n.t("llmChat.settings.defaultConnectionName"),
+    mode: "proxy",
+    provider: "openai",
+    apiKey: "",
+    model: "gpt-4o-mini",
+  };
+}
 
 interface ConnectionsPayload {
   connections: LLMConnection[];
@@ -67,7 +72,10 @@ function normalizeConnection(raw: Partial<LLMConnection>): LLMConnection {
   const mode: LLMConnection["mode"] = raw.mode === "direct" ? "direct" : "proxy";
   return {
     id: isString(raw.id) && raw.id.length > 0 ? raw.id : crypto.randomUUID(),
-    name: isString(raw.name) && raw.name.length > 0 ? raw.name : "Connection",
+    name:
+      isString(raw.name) && raw.name.length > 0
+        ? raw.name
+        : i18n.t("llmChat.settings.fallbackConnectionName"),
     mode,
     provider,
     apiKey: isString(raw.apiKey) ? raw.apiKey : "",
@@ -292,7 +300,7 @@ export function loadConnections(): ConnectionsPayload {
             isString(activeConnectionIdValue) &&
             connections.some((connection) => connection.id === activeConnectionIdValue)
               ? activeConnectionIdValue
-              : (connections[0]?.id ?? DEFAULT_LLM_CONNECTION.id);
+              : (connections[0]?.id ?? DEFAULT_LLM_CONNECTION_ID);
           if (connections.length > 0) {
             return { connections, activeConnectionId };
           }
@@ -321,7 +329,7 @@ export function loadConnections(): ConnectionsPayload {
 
   const id = crypto.randomUUID();
   return {
-    connections: [{ ...DEFAULT_LLM_CONNECTION, id }],
+    connections: [{ ...defaultLLMConnection(), id }],
     activeConnectionId: id,
   };
 }
@@ -333,7 +341,7 @@ export function saveConnections(payload: ConnectionsPayload): void {
       (connection) => connection.id === payload.activeConnectionId,
     )
       ? payload.activeConnectionId
-      : (payload.connections[0]?.id ?? DEFAULT_LLM_CONNECTION.id),
+      : (payload.connections[0]?.id ?? DEFAULT_LLM_CONNECTION_ID),
   };
   localStorage.setItem(LLM_CONNECTIONS_STORAGE_KEY, JSON.stringify(normalized));
 }
@@ -522,7 +530,7 @@ export function saveThreadToStorage(diagramId: string, messages: ChatMessage[]):
 export function loadConfigFromLocalStorage(): LLMConfig {
   const { connections, activeConnectionId } = loadConnections();
   const active = connections.find((connection) => connection.id === activeConnectionId);
-  const fallback = active ?? connections[0] ?? { ...DEFAULT_LLM_CONNECTION };
+  const fallback = active ?? connections[0] ?? defaultLLMConnection();
   return {
     mode: fallback.mode,
     provider:

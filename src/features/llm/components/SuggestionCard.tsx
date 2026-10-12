@@ -98,7 +98,7 @@ function formatActionLabel(action: DiagramPatchAction, translate: TFunction): st
     case "UPDATE_NODE":
       return `${translate("llmChat.suggestion.action.updateNode", { nodeId: action.payload.nodeId })}`;
     case "ADD_EDGE":
-      return `${action.payload.label || "connection"}`;
+      return `${action.payload.label || translate("llmChat.suggestion.action.connectionFallback")}`;
     case "REMOVE_EDGE":
       return `${translate("llmChat.suggestion.action.removeEdge", { edgeId: action.payload.edgeId })}`;
     case "INSERT_PATTERN":
@@ -108,7 +108,7 @@ function formatActionLabel(action: DiagramPatchAction, translate: TFunction): st
     case "GET_TAGS":
       return `${translate("llmChat.suggestion.action.getTags")}`;
     default:
-      return "Unknown action";
+      return translate("llmChat.suggestion.action.unknown");
   }
 }
 
@@ -215,8 +215,7 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
         <div className="min-w-0 flex-1">
           {/* Title */}
           <h4 className="mb-1 text-sm font-semibold text-foreground leading-tight">
-            {suggestion.patch.description ||
-              t("llmChat.suggestion.defaultTitle", { defaultValue: "Suggested changes" })}
+            {suggestion.patch.description || t("llmChat.suggestion.defaultTitle")}
           </h4>
 
           {/* Summary badges */}

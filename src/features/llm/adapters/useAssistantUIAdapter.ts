@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   AppendMessage,
   ExternalStoreAdapter,
@@ -13,7 +14,7 @@ import type {
 } from "@assistant-ui/core";
 import { useLLMChat } from "@/features/canvas/chat";
 import type { ChatMessage } from "@/features/llm/types";
-import type { LLMErrorKind } from "@/features/llm/errors";
+import { getLLMErrorI18nKey } from "@/features/llm/errors";
 
 function isJsonEnvelope(text: string): boolean {
   const trimmed = text.trimStart();
@@ -62,21 +63,8 @@ function extractTextFromAppendMessage(message: AppendMessage): string {
   return "";
 }
 
-function mapErrorToMessage(kind: LLMErrorKind): string {
-  const messages: Record<LLMErrorKind, string> = {
-    auth: "Authentication failed. Please check your API key.",
-    rate_limit: "Rate limit exceeded. Please wait and try again.",
-    cors: "CORS error. Please check your server configuration.",
-    network: "Network error. Please check your connection.",
-    model: "Model not found. Please check your model settings.",
-    server: "Server error. Please try again later.",
-    timeout: "Request timed out. Please try again.",
-    unknown: "An unexpected error occurred.",
-  };
-  return messages[kind] ?? messages.unknown;
-}
-
 export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
+  const { t } = useTranslation();
   const {
     send,
     messages: chatMessages,
@@ -156,15 +144,15 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
     return pendingSuggestions
       .filter((s) => s.status === "pending")
       .map((s): ThreadSuggestion => ({
-        title: s.patch.description || "Suggested change",
+        title: s.patch.description || t("llmChat.suggestion.defaultTitle"),
         prompt: `Accept suggestion ${s.id}`,
       }));
-  }, [pendingSuggestions]);
+  }, [pendingSuggestions, t]);
 
   const errorMessage = useMemo((): string | null => {
     if (!llmError) return null;
-    return mapErrorToMessage(llmError);
-  }, [llmError]);
+    return t(getLLMErrorI18nKey(llmError));
+  }, [llmError, t]);
 
   const onNew = useCallback(
     async (message: AppendMessage): Promise<void> => {

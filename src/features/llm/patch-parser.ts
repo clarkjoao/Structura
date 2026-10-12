@@ -1,3 +1,4 @@
+import i18n from "@/infrastructure/i18n";
 import { isWriteTool, isCatalogReadTool } from "./tools";
 import { isValidNodeType, isValidPatternId } from "./component-catalog";
 import { isPatternProvider } from "@/features/elements/patterns";
@@ -10,8 +11,6 @@ import type {
   LLMToolCall,
   ParsedLLMResponse,
 } from "./types";
-
-const PARSE_FALLBACK_MESSAGE = "[Resposta não processada. Tente novamente.]";
 
 const ANALYSIS_SEVERITIES: readonly AnalysisSeverity[] = [
   "critical",
@@ -369,7 +368,7 @@ export function parseLLMResponse(rawResponse: string): ParsedLLMResponse {
   }
 
   const fallbackMessage =
-    trimmed.startsWith("{") && trimmed.endsWith("}") ? PARSE_FALLBACK_MESSAGE : trimmed;
+    trimmed.startsWith("{") && trimmed.endsWith("}") ? i18n.t("llmChat.parseFallback") : trimmed;
 
   console.warn("[LLM] parseLLMResponse fallback:", rawResponse.slice(0, 200));
   return { kind: "text", message: fallbackMessage };

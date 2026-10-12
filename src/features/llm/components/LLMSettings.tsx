@@ -276,11 +276,7 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
           </div>
           <div>
             <h3 className="text-sm font-semibold tracking-tight">{t("llmChat.settings.title")}</h3>
-            <p className="text-[11px] text-muted-foreground">
-              {t("llmChat.settings.subtitle", {
-                defaultValue: "Configure your AI provider and model",
-              })}
-            </p>
+            <p className="text-[11px] text-muted-foreground">{t("llmChat.settings.subtitle")}</p>
           </div>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>
@@ -299,9 +295,7 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
                   {t("llmChat.settings.connectionsTitle")}
                 </h4>
                 <p className="text-[11px] text-muted-foreground">
-                  {t("llmChat.settings.connectionsHint", {
-                    defaultValue: "Manage saved provider connections",
-                  })}
+                  {t("llmChat.settings.connectionsHint")}
                 </p>
               </div>
               <Button type="button" variant="outline" size="sm" onClick={handleNew}>

@@ -54,17 +54,11 @@ function getResolvedAppLanguage(): string {
   return "pt-BR";
 }
 
-function buildPatchMessage(locale: string, actionCount: number): string {
-  const isPT = locale.toLowerCase().startsWith("pt");
+function buildPatchMessage(actionCount: number): string {
   if (actionCount === 0) {
-    return isPT ? "Nenhuma ação proposta." : "No actions proposed.";
+    return i18n.t("llmChat.patch.none");
   }
-  if (actionCount === 1) {
-    return isPT ? "Proponho 1 alteração no diagrama." : "I propose 1 diagram change.";
-  }
-  return isPT
-    ? `Proponho ${actionCount} alterações no diagrama.`
-    : `I propose ${actionCount} diagram changes.`;
+  return i18n.t("llmChat.patch.proposed", { count: actionCount });
 }
 
 /**
@@ -129,7 +123,7 @@ function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
     } catch (err) {
       console.warn("[llm-store] Failed to parse summary from JSON:", err);
     }
-    return { ...message, content: "[previous diagram suggestion]" };
+    return { ...message, content: i18n.t("llmChat.previousSuggestion") };
   });
 }
 
@@ -157,7 +151,7 @@ function defaultTitleForLanguage(): string {
     day: "2-digit",
     month: "short",
   });
-  return isEN ? `Conversation · ${stamp}` : `Conversa · ${stamp}`;
+  return i18n.t("llmChat.threads.defaultTitle", { date: stamp });
 }
 
 async function executeLLMMessage(
@@ -357,11 +351,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       if (!source) {
         return null;
       }
-      const isPt = getResolvedAppLanguage().startsWith("pt");
       const duplicate: LLMConnection = {
         ...source,
         id: crypto.randomUUID(),
-        name: `${source.name}${isPt ? " (cópia)" : " (copy)"}`,
+        name: i18n.t("llmChat.settings.connectionCopyName", { name: source.name }),
       };
       const updated = [...get().connections, duplicate];
       saveConnections({ connections: updated, activeConnectionId: get().activeConnectionId });
@@ -378,7 +371,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       if (updated.length === 0) {
         const fallback: LLMConnection = {
           id: crypto.randomUUID(),
-          name: "Default",
+          name: i18n.t("llmChat.settings.defaultConnectionName"),
           mode: "proxy",
           provider: "openai",
           apiKey: "",
@@ -759,16 +752,15 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           });
         }
 
-        const locale = getResolvedAppLanguage();
         let assistantContent =
           parsedResponse.kind === "patch"
-            ? buildPatchMessage(locale, parsedResponse.patch?.actions.length ?? 0)
+            ? buildPatchMessage(parsedResponse.patch?.actions.length ?? 0)
             : parsedResponse.kind === "text"
               ? parsedResponse.message
               : "";
         if (catalogToolResults.length > 0) {
           const catalogBlock = [
-            "Catalog tool results:",
+            i18n.t("llmChat.patch.catalogResults"),
             "```json",
             JSON.stringify(catalogToolResults, null, 2),
             "```",

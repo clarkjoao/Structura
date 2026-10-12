@@ -586,7 +586,12 @@
         "extraBodyParams": "Extra body parameters (JSON)",
         "extraBodyParamsHint": "Merged into the request body. Example: {\"temperature\":0.2}",
         "extraJsonInvalid": "Invalid JSON. Fix before saving."
-      }
+      },
+      "subtitle": "Configure your AI provider and model",
+      "connectionsHint": "Manage saved provider connections",
+      "defaultConnectionName": "Default",
+      "fallbackConnectionName": "Connection",
+      "connectionCopyName": "{{name}} (copy)"
     },
     "suggestion": {
       "accept": "Accept",
@@ -599,7 +604,9 @@
         "removeEdge": "Remove edge {{edgeId}}",
         "insertPattern": "Insert pattern {{patternId}}",
         "autoLayout": "Auto layout diagram",
-        "getTags": "List diagram tags"
+        "getTags": "List diagram tags",
+        "connectionFallback": "connection",
+        "unknown": "Unknown action"
       },
       "defaultTitle": "Suggested changes",
       "noChanges": "no changes",
@@ -625,7 +632,14 @@
       "delete": "Delete",
       "deleteConfirm": "Delete this conversation? It cannot be undone.",
       "active": "Current",
-      "empty": "No past conversations in this diagram yet."
+      "empty": "No past conversations in this diagram yet.",
+      "searchPlaceholder": "Search…",
+      "noMatches": "No conversations match.",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "messageCount_one": "{{count}} message",
+      "messageCount_other": "{{count}} messages",
+      "defaultTitle": "Conversation · {{date}}"
     },
     "floatingButton": {
       "open": "Open chat assistant",
@@ -636,18 +650,18 @@
       "discard": "Discard"
     },
     "error": {
-      "auth": "Chave de API inválida. Verifique suas configurações.",
-      "rate_limit": "Limite de requisições atingido. Aguarde alguns segundos.",
-      "cors": "Chamada bloqueada pelo navegador. Use o modo Proxy nas configurações.",
-      "corsCustom": "O endpoint recusou a requisição do navegador (CORS). Verifique se o endpoint libera requisições de origens do browser — o Structura não consegue contornar CORS no servidor do provedor.",
-      "network": "Sem conexão com o servidor. Verifique sua internet.",
-      "model": "Modelo não encontrado. Verifique o nome do modelo nas configurações.",
-      "server": "Erro no servidor do provedor. Tente novamente em instantes.",
-      "timeout": "A requisição demorou muito. Tente novamente.",
-      "unknown": "Erro inesperado. Tente novamente.",
+      "auth": "Invalid API key. Check your settings.",
+      "rate_limit": "Rate limit reached. Wait a few seconds.",
+      "cors": "The browser blocked the call. Use Proxy mode in settings.",
+      "corsCustom": "The endpoint refused the browser request (CORS). Check that the endpoint allows requests from browser origins — Structura cannot work around CORS on the provider's server.",
+      "network": "Could not reach the server. Check your connection.",
+      "model": "Model not found. Check the model name in settings.",
+      "server": "The provider's server returned an error. Try again shortly.",
+      "timeout": "The request took too long. Try again.",
+      "unknown": "Unexpected error. Try again.",
       "action": {
-        "settings": "Abrir configurações",
-        "retry": "Tentar novamente"
+        "settings": "Open settings",
+        "retry": "Try again"
       }
     },
     "analysis": {
@@ -734,7 +748,25 @@
       "newChat": "New conversation started.",
       "exported": "IR exported!",
       "noIR": "No IR generated yet. Use /generate first.",
-      "analyzing": "Analyzing…"
+      "analyzing": "Analyzing…",
+      "cleared": "Chat cleared."
+    },
+    "headerSubtitle": "Using {{name}}",
+    "emptySubtitle": "How can I help you shape this diagram?",
+    "disclaimer": "AI can make mistakes. Verify important changes.",
+    "thinking": "Thinking",
+    "parseFallback": "[The response could not be processed. Try again.]",
+    "previousSuggestion": "[previous diagram suggestion]",
+    "patch": {
+      "none": "No actions proposed.",
+      "proposed_one": "I propose {{count}} diagram change.",
+      "proposed_other": "I propose {{count}} diagram changes.",
+      "catalogResults": "Catalog tool results:"
+    },
+    "copyExport": {
+      "title": "Conversation Export",
+      "user": "You",
+      "assistant": "Assistant"
     }
   },
   "versions": {

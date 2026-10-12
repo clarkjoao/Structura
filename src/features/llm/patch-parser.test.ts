@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import i18n from "@/infrastructure/i18n";
 import { parseLLMResponse } from "./patch-parser";
 
 describe("parseLLMResponse", () => {
@@ -171,7 +172,7 @@ describe("parseLLMResponse", () => {
     const result = parseLLMResponse(raw);
     expect(result.kind).toBe("text");
     if (result.kind === "text") {
-      expect(result.message).toBe("[Resposta não processada. Tente novamente.]");
+      expect(result.message).toBe(i18n.t("llmChat.parseFallback"));
     }
     warnSpy.mockRestore();
   });

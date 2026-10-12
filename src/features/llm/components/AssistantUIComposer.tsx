@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { ArrowDown, Loader2, Square } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -38,10 +39,14 @@ function findMentionTrigger(
 /* ── Copy conversation ────────────────────────────────────────────────── */
 function formatConversationForCopy(
   messages: Array<{ role: string; content: string; timestamp: number }>,
+  t: TFunction,
 ): string {
-  const lines: string[] = ["# Conversation Export\n"];
+  const lines: string[] = [`# ${t("llmChat.copyExport.title")}\n`];
   for (const msg of messages) {
-    const role = msg.role === "user" ? "**You**" : "**Assistant**";
+    const role =
+      msg.role === "user"
+        ? `**${t("llmChat.copyExport.user")}**`
+        : `**${t("llmChat.copyExport.assistant")}**`;
     const time = new Date(msg.timestamp).toLocaleString();
     lines.push(`\n${role} · ${time}\n${msg.content}\n`);
   }
@@ -108,7 +113,7 @@ function SlashCommandMenu({
     <div className="absolute bottom-full left-0 mb-1.5 w-60 rounded-xl border border-border bg-card shadow-lg">
       <div className="px-2.5 py-1.5">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("llmChat.slash.title", { defaultValue: "Commands" })}
+          {t("llmChat.slash.title")}
         </p>
       </div>
       {commands.map((cmd, i) => (
@@ -308,13 +313,8 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         switch (cmdName) {
           case "analisar":
           case "analyze": {
-            void onSend(
-              t("llmChat.slash.analyzePrompt", {
-                defaultValue: "Analyze the current diagram and suggest improvements.",
-              }),
-              [],
-            );
-            toast(t("llmChat.slash.analyzing", { defaultValue: "Analyzing…" }));
+            void onSend(t("llmChat.slash.analyzePrompt"), []);
+            toast(t("llmChat.slash.analyzing"));
             break;
           }
 
@@ -324,32 +324,22 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
               import("@/features/llm").then(({ downloadIR }) => {
                 downloadIR(lastGeneratedIR as DiagramIR);
               });
-              toast(t("llmChat.slash.exported", { defaultValue: "IR exported!" }));
+              toast(t("llmChat.slash.exported"));
             } else {
-              toast(
-                t("llmChat.slash.noIR", {
-                  defaultValue: "No IR generated yet. Use /generate first.",
-                }),
-              );
+              toast(t("llmChat.slash.noIR"));
             }
             break;
           }
 
           case "limpar":
           case "clear": {
-            if (
-              window.confirm(
-                t("llmChat.slash.clearConfirm", {
-                  defaultValue: "Start a new conversation? Current chat will be saved in history.",
-                }),
-              )
-            ) {
+            if (window.confirm(t("llmChat.slash.clearConfirm"))) {
               if (activeDiagramId) {
                 createThread(activeDiagramId);
-                toast(t("llmChat.slash.newChat", { defaultValue: "New conversation started." }));
+                toast(t("llmChat.slash.newChat"));
               } else {
                 onClearHistory?.();
-                toast(t("llmChat.slash.cleared", { defaultValue: "Chat cleared." }));
+                toast(t("llmChat.slash.cleared"));
               }
             }
             break;
@@ -358,17 +348,17 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           case "copiar":
           case "copy": {
             if (messages.length === 0) {
-              toast(t("llmChat.slash.noMessages", { defaultValue: "No messages to copy." }));
+              toast(t("llmChat.slash.noMessages"));
               break;
             }
-            const formatted = formatConversationForCopy(messages);
+            const formatted = formatConversationForCopy(messages, t);
             navigator.clipboard
               .writeText(formatted)
               .then(() => {
-                toast(t("llmChat.slash.copied", { defaultValue: "Conversation copied!" }));
+                toast(t("llmChat.slash.copied"));
               })
               .catch(() => {
-                toast(t("llmChat.slash.copyFailed", { defaultValue: "Failed to copy." }));
+                toast(t("llmChat.slash.copyFailed"));
               });
             break;
           }
@@ -528,9 +518,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           {/* Footer bar */}
           <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
             <p className="text-[11px] text-muted-foreground">
-              {isLoading
-                ? t("llmChat.sending")
-                : t("llmChat.submitHint", { defaultValue: t("llmChat.submitHint") })}
+              {isLoading ? t("llmChat.sending") : t("llmChat.submitHint")}
             </p>
             {canCancel ? (
               <Button

@@ -92,6 +92,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     dismissPendingAnalysis,
     error,
     activeThread,
+    activeConnection,
     createThread,
     accept,
     reject,
@@ -185,7 +186,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     () => buildContextualSuggestions(activeDiagram ?? null),
     [activeDiagram],
   );
-  const diagramName = activeDiagram?.name ?? "";
 
   const handleSend = useCallback(
     async (text: string, mentions: Parameters<typeof send>[1]) => {
@@ -200,16 +200,13 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     }
   }, [activeDiagram, createThread]);
 
-  // Header title: prefer active thread's title; if a thread exists but is
-  // empty, fall back to the default "Diagram assistant" label so the UI
-  // doesn't surface the raw seed title ("Nova conversa") while still
-  // showing it inside the threads drawer for context.
+  // Header title: prefer the active thread's title; without one, fall back to
+  // the assistant's name. The subtitle names the active connection.
   const threadedTitle =
     activeThread && activeThread.title && activeThread.title.length > 0
       ? activeThread.title
-      : t("llmChat.headerSubtitle", {
-          defaultValue: "Diagram assistant",
-        });
+      : t("llmChat.title");
+  const connectionName = activeConnection?.name ?? "";
 
   // Show typing indicator when loading but no streaming content yet.
   const showTyping = isLoading && !streamingContent && hasMessages;
@@ -223,7 +220,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
         {/* Header */}
         <ChatHeader
           title={threadedTitle}
-          diagramName={diagramName}
+          connectionName={connectionName}
           hasExportableIR={Boolean(lastGeneratedIR)}
           onOpenThreads={() => setShowThreadDrawer(true)}
           onCreateThread={handleCreateThread}
@@ -264,7 +261,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
                   </ThreadPrimitive.Messages>
                 ) : (
                   <EmptyState
-                    diagramName={diagramName}
                     suggestions={contextualSuggestions}
                     onSelectSuggestion={(text) => {
                       void send(text, []);
@@ -317,11 +313,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
             onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}
           />
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-[11px] text-muted-foreground">
-              {t("llmChat.disclaimer", {
-                defaultValue: "AI can make mistakes. Verify important changes.",
-              })}
-            </p>
+            <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>
             <LLMSelector onOpenSettings={() => setShowSettings(true)} />
           </div>
         </div>
@@ -337,7 +329,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
 
 interface ChatHeaderProps {
   title: string;
-  diagramName: string;
+  connectionName: string;
   hasExportableIR: boolean;
   onOpenThreads: () => void;
   onCreateThread: () => void;
@@ -348,7 +340,7 @@ interface ChatHeaderProps {
 
 function ChatHeader({
   title,
-  diagramName,
+  connectionName,
   hasExportableIR,
   onOpenThreads,
   onCreateThread,
@@ -368,10 +360,7 @@ function ChatHeader({
             <span className="truncate">{title}</span>
           </h3>
           <p className="truncate text-[11px] text-muted-foreground">
-            {t("llmChat.headerSubtitle", {
-              defaultValue: "Diagram assistant",
-              name: diagramName,
-            })}
+            {t("llmChat.headerSubtitle", { name: connectionName })}
           </p>
         </div>
       </div>
@@ -421,12 +410,11 @@ function IconButton({ label, onClick, children }: IconButtonProps) {
 }
 
 interface EmptyStateProps {
-  diagramName: string;
   suggestions: ChatSuggestion[];
   onSelectSuggestion: (text: string) => void;
 }
 
-function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyStateProps) {
+function EmptyState({ suggestions, onSelectSuggestion }: EmptyStateProps) {
   const { t } = useTranslation();
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto py-8 text-center">
@@ -435,12 +423,7 @@ function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyState
       </div>
       <div className="space-y-1">
         <h4 className="text-base font-semibold text-foreground">{t("llmChat.title")}</h4>
-        <p className="text-xs text-muted-foreground">
-          {t("llmChat.emptySubtitle", {
-            defaultValue: "How can I help you shape this diagram?",
-            name: diagramName,
-          })}
-        </p>
+        <p className="text-xs text-muted-foreground">{t("llmChat.emptySubtitle")}</p>
       </div>
       <div className="w-full space-y-1.5">
         {suggestions.map((s) => (

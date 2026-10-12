@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /**
  * TypingIndicator
@@ -8,6 +9,7 @@ import { useEffect, useState } from "react";
  * gives the user feedback that something is happening.
  */
 export function TypingIndicator() {
+  const { t } = useTranslation();
   const [dots, setDots] = useState(0);
 
   useEffect(() => {
@@ -38,7 +40,9 @@ export function TypingIndicator() {
       </div>
       {/* Text bubble */}
       <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5">
-        <span className="text-xs text-muted-foreground">{"thinking" + ".".repeat(dots)}</span>
+        <span className="text-xs text-muted-foreground">
+          {t("llmChat.thinking") + ".".repeat(dots)}
+        </span>
       </div>
     </div>
   );
