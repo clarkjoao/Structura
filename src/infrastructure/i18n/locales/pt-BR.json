@@ -608,10 +608,12 @@
         "connectionFallback": "conexão",
         "unknown": "Ação desconhecida"
       },
-      "defaultTitle": "Alterações sugeridas",
+      "defaultTitle": "Alteração sugerida",
       "noChanges": "sem alterações",
       "accepted": "Aceito",
-      "rejected": "Rejeitado"
+      "rejected": "Rejeitado",
+      "changeCount_one": "{{count}} alteração",
+      "changeCount_other": "{{count}} alterações"
     },
     "mention": {
       "noResults": "Nenhum nó ou conexão encontrado",
@@ -754,7 +756,11 @@
       "copyCode": "Copiar código"
     },
     "stop": "Parar de gerar",
-    "stopped": "Interrompida"
+    "stopped": "Interrompida",
+    "messageActions": {
+      "copy": "Copiar mensagem",
+      "regenerate": "Gerar resposta novamente"
+    }
   },
   "versions": {
     "base": "Base",

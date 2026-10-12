@@ -608,10 +608,12 @@
         "connectionFallback": "connection",
         "unknown": "Unknown action"
       },
-      "defaultTitle": "Suggested changes",
+      "defaultTitle": "Suggested change",
       "noChanges": "no changes",
       "accepted": "Accepted",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "changeCount_one": "{{count}} change",
+      "changeCount_other": "{{count}} changes"
     },
     "mention": {
       "noResults": "No matching nodes or edges",
@@ -754,7 +756,11 @@
       "copyCode": "Copy code"
     },
     "stop": "Stop generating",
-    "stopped": "Stopped"
+    "stopped": "Stopped",
+    "messageActions": {
+      "copy": "Copy message",
+      "regenerate": "Regenerate response"
+    }
   },
   "versions": {
     "base": "Base",

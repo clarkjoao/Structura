@@ -4,7 +4,12 @@ import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
+import { Check, Copy, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLLMStore } from "@/features/llm";
+import { getSuggestionIds } from "@/features/llm/message-parts";
+import { messageToMarkdown } from "@/features/llm/message-markdown";
+import { useChatActions } from "./chat-actions";
 import { useAuiState, MessagePrimitive } from "@assistant-ui/react";
 import {
   ERROR_DATA_PART,
@@ -78,6 +83,7 @@ export function AssistantMessageComponent() {
   const isStreaming = message.status?.type === "running";
   const isCancelled =
     message.status?.type === "incomplete" && message.status.reason === "cancelled";
+  const isComplete = message.status?.type === "complete";
   const locale = i18n.language === "pt-BR" ? ptBR : enUS;
   const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true, locale });
   const [isExpanded, setIsExpanded] = useState(false);
@@ -99,7 +105,7 @@ export function AssistantMessageComponent() {
 
   return (
     <div className="flex w-full min-w-0 justify-start">
-      <div className="group relative max-w-[90%] min-w-0 pb-5">
+      <div className="group relative max-w-[90%] min-w-0 pb-1">
         <div className="rounded-2xl bg-secondary/60 px-4 py-3 text-secondary-foreground ring-1 ring-border/40">
           <div className={cn("relative", !isExpanded && isLong && "max-h-52 overflow-hidden")}>
             {/* Text parts render as Markdown; suggestion parts as their card. */}
@@ -121,11 +127,91 @@ export function AssistantMessageComponent() {
         {isCancelled ? (
           <p className="mt-1 px-1 text-[11px] text-muted-foreground">{t("llmChat.stopped")}</p>
         ) : null}
-        <span className="absolute -bottom-1 left-0 select-none whitespace-nowrap text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
-          {timeAgo}
-        </span>
+        <div className="mt-1 flex items-center gap-1 px-1">
+          {isComplete || isCancelled ? <MessageActions messageId={message.id} /> : null}
+          <span className="select-none whitespace-nowrap text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+            {timeAgo}
+          </span>
+        </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Under a finished assistant message: copy it as Markdown and, on the last
+ * one, ask for a new reply. Regenerate is not offered while that message's
+ * suggestion is still pending: its preview is on the canvas and replacing the
+ * message would orphan it.
+ */
+function MessageActions({ messageId }: { messageId: string }) {
+  const { t } = useTranslation();
+  const { rerun } = useChatActions();
+  const [copied, setCopied] = useState(false);
+  const message = useLLMStore((state) =>
+    state.messages.find((candidate) => candidate.id === messageId),
+  );
+  const isLastAssistant = useLLMStore((state) => {
+    const assistants = state.messages.filter((candidate) => candidate.role === "assistant");
+    return assistants[assistants.length - 1]?.id === messageId;
+  });
+  const isLoading = useLLMStore((state) => state.isLoading);
+  const pendingSuggestions = useLLMStore((state) => state.pendingSuggestions);
+
+  if (!message) {
+    return null;
+  }
+
+  const findSuggestion = (id: string) =>
+    pendingSuggestions.find((suggestion) => suggestion.id === id);
+  const hasPendingSuggestion = getSuggestionIds(message).some(
+    (id) => findSuggestion(id)?.status === "pending",
+  );
+
+  const copy = () => {
+    const markdown = messageToMarkdown(message, { t, findSuggestion });
+    void navigator.clipboard?.writeText(markdown).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+
+  return (
+    <>
+      <ActionButton label={t("llmChat.messageActions.copy")} onClick={copy}>
+        {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+      </ActionButton>
+      {isLastAssistant && !isLoading && !hasPendingSuggestion ? (
+        <ActionButton
+          label={t("llmChat.messageActions.regenerate")}
+          onClick={() => rerun(messageId)}
+        >
+          <RotateCcw className="h-3 w-3" />
+        </ActionButton>
+      ) : null}
+    </>
+  );
+}
+
+function ActionButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      {children}
+    </button>
   );
 }
 
