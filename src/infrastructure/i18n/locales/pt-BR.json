@@ -652,17 +652,19 @@
     "error": {
       "auth": "Chave de API inválida. Verifique suas configurações.",
       "rate_limit": "Limite de requisições atingido. Aguarde alguns segundos.",
-      "cors": "Chamada bloqueada pelo navegador. Use o modo Proxy nas configurações.",
       "corsCustom": "O endpoint recusou a requisição do navegador (CORS). Verifique se o endpoint libera requisições de origens do browser — o Structura não consegue contornar CORS no servidor do provedor.",
-      "network": "Sem conexão com o servidor. Verifique sua internet.",
-      "model": "Modelo não encontrado. Verifique o nome do modelo nas configurações.",
       "server": "Erro no servidor do provedor. Tente novamente em instantes.",
       "timeout": "A requisição demorou muito. Tente novamente.",
       "unknown": "Erro inesperado. Tente novamente.",
       "action": {
         "settings": "Abrir configurações",
         "retry": "Tentar novamente"
-      }
+      },
+      "networkOrCors": "Não foi possível alcançar o provedor. Verifique sua conexão; se continuar falhando, o navegador pode estar bloqueando a chamada (CORS) — tente o modo Proxy nas configurações.",
+      "proxyUnreachable": "Não foi possível alcançar o proxy de LLM. Verifique se ele está rodando, se a URL está correta e se ele aceita requisições deste site.",
+      "proxyRejected": "O proxy de LLM recusou a requisição ({{status}}). Verifique as credenciais configuradas no proxy.",
+      "proxyEndpointNotFound": "O proxy de LLM não tem endpoint de chat nesta URL (404). Verifique a URL do proxy.",
+      "modelNotFound": "Modelo não encontrado. Verifique o nome do modelo nas configurações."
     },
     "analysis": {
       "summary": "Resumo executivo",

@@ -1,5 +1,13 @@
 import type { ChatMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
-import { LLMProviderError } from "../errors";
+import {
+  createRequestTimeout,
+  fetchLLM,
+  readLLMChunk,
+  type LLMErrorContext,
+  type RequestTimeout,
+} from "../errors";
+
+const ANTHROPIC_CONTEXT: LLMErrorContext = { mode: "direct", provider: "anthropic" };
 
 /**
  * Output ceiling for a single response.
@@ -35,52 +43,61 @@ export async function sendMessage(
   systemPrompt: string,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
-  let response: Response;
+  const timeout = createRequestTimeout();
   try {
-    response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": config.apiKey,
-        "anthropic-version": "2023-06-01",
+    const response = await fetchLLM(
+      "https://api.anthropic.com/v1/messages",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": config.apiKey,
+          "anthropic-version": "2023-06-01",
+          // Without it the API refuses the CORS preflight from a browser origin,
+          // which the browser reports as an opaque network failure.
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: config.model,
+          system: systemPrompt,
+          max_tokens: ANTHROPIC_MAX_OUTPUT_TOKENS,
+          stream: true,
+          messages: messages.map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
+        }),
       },
-      body: JSON.stringify({
-        model: config.model,
-        system: systemPrompt,
-        max_tokens: ANTHROPIC_MAX_OUTPUT_TOKENS,
-        stream: true,
-        messages: messages.map((message) => ({
-          role: message.role,
-          content: message.content,
-        })),
-      }),
-    });
-  } catch (error) {
-    const rawMessage = error instanceof Error ? error.message : "Unknown network error";
-    throw new LLMProviderError(null, "anthropic", rawMessage);
-  }
+      ANTHROPIC_CONTEXT,
+      timeout,
+    );
 
-  if (!response.ok) {
-    throw new LLMProviderError(response.status, "anthropic", await response.text());
-  }
+    if (!response.body) {
+      return { text: "", stopReason: "unknown" };
+    }
 
-  if (!response.body) {
-    return { text: "", stopReason: "unknown" };
+    return await readAnthropicStream(response.body, onChunk, timeout);
+  } finally {
+    timeout.clear();
   }
-
-  return readAnthropicStream(response.body, onChunk);
 }
 
 export async function readAnthropicStreamForTest(
   body: ReadableStream<Uint8Array>,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
-  return readAnthropicStream(body, onChunk);
+  const timeout = createRequestTimeout();
+  try {
+    return await readAnthropicStream(body, onChunk, timeout);
+  } finally {
+    timeout.clear();
+  }
 }
 
 async function readAnthropicStream(
   body: ReadableStream<Uint8Array>,
   onChunk: (chunk: string) => void,
+  timeout: RequestTimeout,
 ): Promise<LLMCompletion> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -91,7 +108,7 @@ async function readAnthropicStream(
   let stopReason: LLMStopReason = "unknown";
 
   while (true) {
-    const { done, value } = await reader.read();
+    const { done, value } = await readLLMChunk(reader, ANTHROPIC_CONTEXT, timeout);
     if (done) {
       break;
     }

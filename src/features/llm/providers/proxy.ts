@@ -1,5 +1,11 @@
 import type { ChatMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
-import { LLMProviderError } from "../errors";
+import {
+  createRequestTimeout,
+  fetchLLM,
+  readLLMChunk,
+  type LLMErrorContext,
+  type RequestTimeout,
+} from "../errors";
 import { toStopReason } from "./openai-compatible";
 
 const DEFAULT_PROXY_URL = import.meta.env.VITE_LLM_PROXY_URL ?? "http://localhost:3000";
@@ -23,9 +29,25 @@ export async function sendMessage(
   systemPrompt: string,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
-  let response: Response;
+  const timeout = createRequestTimeout();
   try {
-    response = await fetch(getProxyEndpoint(), {
+    return await sendThroughProxy(config, messages, systemPrompt, onChunk, timeout);
+  } finally {
+    timeout.clear();
+  }
+}
+
+async function sendThroughProxy(
+  config: LLMConfig,
+  messages: ChatMessage[],
+  systemPrompt: string,
+  onChunk: (chunk: string) => void,
+  timeout: RequestTimeout,
+): Promise<LLMCompletion> {
+  const context: LLMErrorContext = { mode: "proxy", provider: config.provider };
+  const response = await fetchLLM(
+    getProxyEndpoint(),
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -39,15 +61,10 @@ export async function sendMessage(
         })),
         systemPrompt,
       }),
-    });
-  } catch (error) {
-    const rawMessage = error instanceof Error ? error.message : "Unknown network error";
-    throw new LLMProviderError(null, "proxy", rawMessage);
-  }
-
-  if (!response.ok) {
-    throw new LLMProviderError(response.status, "proxy", await response.text());
-  }
+    },
+    context,
+    timeout,
+  );
 
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("text/event-stream")) {
@@ -64,7 +81,7 @@ export async function sendMessage(
     let stopReason: LLMStopReason = "unknown";
 
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readLLMChunk(reader, context, timeout);
       if (done) {
         break;
       }

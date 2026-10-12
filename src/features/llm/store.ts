@@ -3,7 +3,7 @@ import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
-import { LLMProviderError, type LLMErrorKind } from "./errors";
+import { toLLMError, type LLMError } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
 import type {
   AnalysisResponse,
@@ -185,7 +185,7 @@ export interface LLMStoreState {
   pendingAnalysis: AnalysisResponse | null;
   streamingContent: string | null;
   isLoading: boolean;
-  error: LLMErrorKind | null;
+  error: LLMError | null;
   /** Last IR the generator produced and the validator accepted, kept for inspection. */
   lastGeneratedIR: DiagramIR | null;
 
@@ -831,12 +831,16 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         });
         persistThread();
       } catch (error) {
-        const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
+        const llmError = toLLMError(error, {
+          mode: state.config.mode,
+          provider: state.config.provider,
+        });
+        console.error(`[llm] request failed (${llmError.kind})`, error);
         set({
           messages: outgoingMessages,
           streamingContent: null,
           isLoading: false,
-          error: errorKind,
+          error: llmError,
         });
         persistThread();
       }
@@ -977,12 +981,16 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
         finishWith(appliedMessage);
       } catch (error) {
-        const errorKind: LLMErrorKind = error instanceof LLMProviderError ? error.kind : "unknown";
+        const llmError = toLLMError(error, {
+          mode: state.config.mode,
+          provider: state.config.provider,
+        });
+        console.error(`[llm] request failed (${llmError.kind})`, error);
         set({
           messages: outgoingMessages,
           streamingContent: null,
           isLoading: false,
-          error: errorKind,
+          error: llmError,
         });
         persistThread();
       }

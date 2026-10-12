@@ -151,7 +151,7 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
 
   const errorMessage = useMemo((): string | null => {
     if (!llmError) return null;
-    return t(getLLMErrorI18nKey(llmError));
+    return t(getLLMErrorI18nKey(llmError), { status: llmError.status });
   }, [llmError, t]);
 
   const onNew = useCallback(

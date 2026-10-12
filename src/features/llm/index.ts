@@ -37,7 +37,7 @@ export { getLLMErrorI18nKey } from "./errors";
 // Used internally by LLM components and external consumers.
 export { MODEL_PRESETS, getPresetsForProvider } from "./model-presets";
 export type { ModelPreset } from "./model-presets";
-export type { LLMErrorKind } from "./errors";
+export type { LLMError, LLMErrorKind } from "./errors";
 
 // ─── Suggestions ──────────────────────────────────────────────────────────────
 // Used internally by LLM components.

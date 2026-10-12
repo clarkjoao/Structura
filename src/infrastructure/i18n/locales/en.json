@@ -652,17 +652,19 @@
     "error": {
       "auth": "Invalid API key. Check your settings.",
       "rate_limit": "Rate limit reached. Wait a few seconds.",
-      "cors": "The browser blocked the call. Use Proxy mode in settings.",
       "corsCustom": "The endpoint refused the browser request (CORS). Check that the endpoint allows requests from browser origins — Structura cannot work around CORS on the provider's server.",
-      "network": "Could not reach the server. Check your connection.",
-      "model": "Model not found. Check the model name in settings.",
       "server": "The provider's server returned an error. Try again shortly.",
       "timeout": "The request took too long. Try again.",
       "unknown": "Unexpected error. Try again.",
       "action": {
         "settings": "Open settings",
         "retry": "Try again"
-      }
+      },
+      "networkOrCors": "Could not reach the provider. Check your connection; if it keeps failing, the browser may be blocking the call (CORS) — try Proxy mode in settings.",
+      "proxyUnreachable": "Could not reach the LLM proxy. Check that it is running, that its URL is correct and that it allows requests from this site.",
+      "proxyRejected": "The LLM proxy refused the request ({{status}}). Check the credentials configured on the proxy.",
+      "proxyEndpointNotFound": "The LLM proxy has no chat endpoint at this URL (404). Check the proxy URL.",
+      "modelNotFound": "Model not found. Check the model name in settings."
     },
     "analysis": {
       "summary": "Executive summary",

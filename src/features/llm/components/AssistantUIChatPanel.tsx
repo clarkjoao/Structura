@@ -27,6 +27,7 @@ import { LLMSelector } from "./LLMSelector";
 import { LLMSettings } from "./LLMSettings";
 import { AnalysisPanel } from "@/features/canvas/chat";
 import { buildContextualSuggestions, downloadIR, getLLMErrorI18nKey } from "@/features/llm";
+import { isSettingsFixableError } from "@/features/llm/errors";
 import type { ChatSuggestion } from "@/features/llm/suggestions";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
@@ -289,8 +290,10 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
         {/* Error */}
         {error ? (
           <div className="mx-3 mb-2 space-y-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-            <p className="text-xs font-medium text-destructive">{t(getLLMErrorI18nKey(error))}</p>
-            {error === "auth" || error === "cors" || error === "model" ? (
+            <p className="text-xs font-medium text-destructive">
+              {t(getLLMErrorI18nKey(error), { status: error.status })}
+            </p>
+            {isSettingsFixableError(error) ? (
               <button
                 type="button"
                 className="text-xs text-primary underline"

@@ -1,4 +1,10 @@
-import { LLMProviderError } from "../errors";
+import {
+  createRequestTimeout,
+  fetchLLM,
+  readLLMChunk,
+  type LLMErrorContext,
+  type RequestTimeout,
+} from "../errors";
 import type { LLMCompletion, LLMStopReason } from "../types";
 
 interface OpenAICompatibleDelta {
@@ -31,39 +37,52 @@ export async function sendOpenAICompatibleMessage(
   request: OpenAICompatibleRequest,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
-  let response: Response;
+  const context: LLMErrorContext = { mode: "direct", provider: request.errorOrigin };
+  const timeout = createRequestTimeout();
   try {
-    response = await fetch(request.baseUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...request.headers },
-      body: JSON.stringify(request.body),
-    });
-  } catch (error) {
-    const rawMessage = error instanceof Error ? error.message : "Unknown network error";
-    throw new LLMProviderError(null, request.errorOrigin, rawMessage);
-  }
+    const response = await fetchLLM(
+      request.baseUrl,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...request.headers },
+        body: JSON.stringify(request.body),
+      },
+      context,
+      timeout,
+    );
 
-  if (!response.ok) {
-    throw new LLMProviderError(response.status, request.errorOrigin, await response.text());
-  }
+    if (!response.body) {
+      return { text: "", stopReason: "unknown" };
+    }
 
-  if (!response.body) {
-    return { text: "", stopReason: "unknown" };
+    return await readOpenAICompatibleStream(response.body, onChunk, context, timeout);
+  } finally {
+    timeout.clear();
   }
-
-  return readOpenAICompatibleStream(response.body, onChunk);
 }
 
 export async function readOpenAICompatibleStreamForTest(
   body: ReadableStream<Uint8Array>,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
-  return readOpenAICompatibleStream(body, onChunk);
+  const timeout = createRequestTimeout();
+  try {
+    return await readOpenAICompatibleStream(
+      body,
+      onChunk,
+      { mode: "direct", provider: "openai" },
+      timeout,
+    );
+  } finally {
+    timeout.clear();
+  }
 }
 
 async function readOpenAICompatibleStream(
   body: ReadableStream<Uint8Array>,
   onChunk: (chunk: string) => void,
+  context: LLMErrorContext,
+  timeout: RequestTimeout,
 ): Promise<LLMCompletion> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -74,7 +93,7 @@ async function readOpenAICompatibleStream(
   let stopReason: LLMStopReason = "unknown";
 
   while (true) {
-    const { done, value } = await reader.read();
+    const { done, value } = await readLLMChunk(reader, context, timeout);
     if (done) {
       break;
     }
