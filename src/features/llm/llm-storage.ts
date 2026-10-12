@@ -9,6 +9,7 @@ import type {
 import i18n from "@/infrastructure/i18n";
 import { getMessageText, migrateStoredMessages } from "./message-parts";
 import {
+  THREAD_FORMAT_VERSION,
   loadAllThreadsFromIdb,
   migrateThreadsFromLocalStorageToIdb,
   saveThreadsToIdb,
@@ -18,6 +19,8 @@ const LLM_CONFIG_STORAGE_KEY = "structura:llm:config";
 const PROVIDER_KEY_STORAGE = "structura:llm:keys";
 const LLM_CONNECTIONS_STORAGE_KEY = "structura:llm:connections";
 const CHAT_HISTORY_KEY = "structura:llm:history";
+/** Message format of the `CHAT_HISTORY_KEY` snapshot; see `THREAD_FORMAT_VERSION`. */
+const CHAT_HISTORY_FORMAT_KEY = "structura:llm:history:formatVersion";
 const MAX_THREADS = 20;
 const MAX_MESSAGES_PER_THREAD = 50;
 
@@ -451,6 +454,10 @@ export function saveThreadsForDiagram(diagramId: string, state: DiagramThreadSta
 
   // 3. localStorage snapshot — rebuilt from the cache so the fallback path
   //    always reflects the full diagram set.
+  writeThreadsSnapshot();
+}
+
+function writeThreadsSnapshot(): void {
   try {
     const snapshot: Record<string, DiagramThreadState> = {};
     for (const [key, value] of Object.entries(chatThreadsCache)) {
@@ -467,6 +474,7 @@ export function saveThreadsForDiagram(diagramId: string, state: DiagramThreadSta
       };
     }
     localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(snapshot));
+    localStorage.setItem(CHAT_HISTORY_FORMAT_KEY, String(THREAD_FORMAT_VERSION));
   } catch (err) {
     console.warn("[llm-storage] Failed to save threads snapshot:", err);
   }
@@ -484,21 +492,29 @@ export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
   // Merge with any legacy localStorage payload that wasn't migrated yet
   // (covers the case where IDB is empty but the legacy blob is present).
   const merged: Record<string, DiagramThreadState> = { ...idbPayload };
+  let snapshotNeedsRewrite = false;
   try {
     const rawLegacy = localStorage.getItem(CHAT_HISTORY_KEY);
     if (rawLegacy) {
+      // `migrateLegacyThreads` brings messages to the current format.
       const legacy = migrateLegacyThreads(rawLegacy);
       for (const [diagramId, state] of Object.entries(legacy)) {
         if (!(diagramId in merged)) {
           merged[diagramId] = state;
         }
       }
+      snapshotNeedsRewrite =
+        localStorage.getItem(CHAT_HISTORY_FORMAT_KEY) !== String(THREAD_FORMAT_VERSION);
     }
   } catch (err) {
     console.warn("[llm-storage] Failed to migrate legacy threads:", err);
   }
   replaceChatThreadsCache(merged);
   setChatThreadsHydrated(true);
+  // Rewritten only now that the migration above succeeded.
+  if (snapshotNeedsRewrite) {
+    writeThreadsSnapshot();
+  }
 
   // Run the one-shot migration in the background. The flag inside the IDB
   // helper makes this a no-op after the first run.

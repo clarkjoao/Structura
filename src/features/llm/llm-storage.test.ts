@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   deriveThreadTitle,
+  hydrateChatThreadsCacheFromIdb,
   getChatThreadsCache,
   isChatThreadsHydrated,
   isUsableConnection,
@@ -430,5 +431,47 @@ describe("llm-storage", () => {
     it("returns '' when no user message exists", () => {
       expect(deriveThreadTitle([])).toBe("");
     });
+  });
+});
+
+describe("llm-storage — snapshot format migration", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetLLMStorageForTests();
+  });
+
+  it("rewrites a legacy localStorage snapshot in the parts format after hydrating", async () => {
+    localStorage.setItem(
+      "structura:llm:history",
+      JSON.stringify({
+        "diagram-1": {
+          threads: [
+            {
+              id: "t1",
+              diagramId: "diagram-1",
+              title: "Old",
+              messages: [{ id: "u", role: "user", content: "Add a cache", timestamp: 1 }],
+              createdAt: 1,
+              updatedAt: 1,
+            },
+          ],
+          activeThreadId: "t1",
+        },
+      }),
+    );
+
+    await hydrateChatThreadsCacheFromIdb();
+
+    expect(getChatThreadsCache()["diagram-1"]?.threads[0]?.messages[0]?.parts).toEqual([
+      { type: "text", text: "Add a cache" },
+    ]);
+    const snapshot = JSON.parse(localStorage.getItem("structura:llm:history") ?? "{}");
+    expect(snapshot["diagram-1"].threads[0].messages[0]).toEqual({
+      id: "u",
+      role: "user",
+      parts: [{ type: "text", text: "Add a cache" }],
+      timestamp: 1,
+    });
+    expect(localStorage.getItem("structura:llm:history:formatVersion")).toBe("2");
   });
 });
