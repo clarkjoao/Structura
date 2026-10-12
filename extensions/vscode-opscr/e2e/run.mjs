@@ -8,9 +8,11 @@
  *
  *   npm run build && node e2e/run.mjs
  *   VSCODE_PATH=/path/to/Code node e2e/run.mjs   # another VSCode binary
+ *
+ * Without VSCODE_PATH it uses the installed VSCode on macOS, and elsewhere (CI) downloads one.
  */
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
@@ -30,9 +32,12 @@ for (const path of git("ls-tree", "--name-only", "HEAD", "examples/sample/")
 }
 const profile = mkdtempSync(join(tmpdir(), "opscr-e2e-profile-"));
 
+const installed = "/Applications/Visual Studio Code.app/Contents/MacOS/Code";
+const vscodeExecutablePath =
+  process.env.VSCODE_PATH ?? (existsSync(installed) ? installed : undefined);
+
 await runTests({
-  vscodeExecutablePath:
-    process.env.VSCODE_PATH ?? "/Applications/Visual Studio Code.app/Contents/MacOS/Code",
+  vscodeExecutablePath,
   extensionDevelopmentPath: resolve(here, ".."),
   extensionTestsPath: resolve(here, "suite.cjs"),
   launchArgs: [
