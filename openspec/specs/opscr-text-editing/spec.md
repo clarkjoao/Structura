@@ -102,6 +102,12 @@ Comments, ordering and formatting elsewhere SHALL be preserved byte for byte.
 - **WHEN** the user deletes `cart-cache` on the canvas
 - **THEN** its manifest and the edges naming it are gone from the text, and the file still parses
 
+#### Scenario: Delete during a sync
+
+- **GIVEN** a text edit is being synced to the canvas
+- **WHEN** the user deletes `cart-cache` on the canvas before the sync draws
+- **THEN** `cart-cache` stays deleted and its manifest leaves the text, and the edit is drawn
+
 #### Scenario: Connect on the canvas
 
 - **WHEN** the user draws a connection from `order-tracker` to `catalog-db`

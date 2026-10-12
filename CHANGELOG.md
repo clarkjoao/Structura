@@ -157,6 +157,9 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
   diagram while the pane was projecting the YAML applied the changes to the one
   just opened. A sync now stops when its diagram is no longer the open one, and
   the pane reads a diagram's binding only after its pending writes.
+- **opscr plugin: a canvas edit made during a sync could be undone.** An
+  element deleted on the canvas while the pane projected the YAML was drawn
+  back. The sync now writes such an edit into the YAML and projects again.
 - **Canvas node selection could describe one node while another kept the
   focus ring.** `selectedNodeId` (element panel, quick-actions toolbar)
   and `selectedNodeIds` (dimming, React Flow's `selected` flag) are one
