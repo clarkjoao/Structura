@@ -730,7 +730,19 @@
     "copyExport": {
       "title": "Exportação da conversa",
       "user": "Você",
-      "assistant": "Assistente"
+      "assistant": "Assistente",
+      "tool": "Ferramenta",
+      "error": "Erro",
+      "suggestionUnavailable": "Alteração sugerida (não está mais disponível)"
+    },
+    "toolCall": {
+      "status": {
+        "running": "Executando",
+        "done": "Concluída",
+        "error": "Falhou",
+        "awaitingApproval": "Aguardando aprovação",
+        "denied": "Negada"
+      }
     }
   },
   "versions": {

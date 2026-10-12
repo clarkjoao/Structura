@@ -10,7 +10,6 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import type { TFunction } from "i18next";
 import { ArrowDown, Loader2, Square } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,8 +19,8 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useMentionSearch } from "@/features/canvas/chat/useMentionSearch";
 import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";
-import type { ChatMessage, MentionItem, ActiveMention } from "@/features/llm/types";
-import { getMessageText } from "@/features/llm/message-parts";
+import type { MentionItem, ActiveMention } from "@/features/llm/types";
+import { conversationToMarkdown } from "@/features/llm/message-markdown";
 
 const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
 
@@ -34,20 +33,6 @@ function findMentionTrigger(
   const triggerIndex = value.length - query.length - 1;
   const triggerEndIndex = triggerIndex + 1 + query.length;
   return { query, triggerIndex, triggerEndIndex };
-}
-
-/* ── Copy conversation ────────────────────────────────────────────────── */
-function formatConversationForCopy(messages: ChatMessage[], t: TFunction): string {
-  const lines: string[] = [`# ${t("llmChat.copyExport.title")}\n`];
-  for (const msg of messages) {
-    const role =
-      msg.role === "user"
-        ? `**${t("llmChat.copyExport.user")}**`
-        : `**${t("llmChat.copyExport.assistant")}**`;
-    const time = new Date(msg.timestamp).toLocaleString();
-    lines.push(`\n${role} · ${time}\n${getMessageText(msg)}\n`);
-  }
-  return lines.join("");
 }
 
 /* ── Slash commands ───────────────────────────────────────────────────── */
@@ -156,6 +141,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const { t } = useTranslation();
     const { search } = useMentionSearch();
     const messages = useLLMStore((s) => s.messages);
+    const pendingSuggestions = useLLMStore((s) => s.pendingSuggestions);
     const activeDiagramId = useLLMStore((s) => s.activeDiagramId);
     const createThread = useLLMStore((s) => s.createThread);
 
@@ -320,7 +306,10 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
               toast(t("llmChat.slash.noMessages"));
               break;
             }
-            const formatted = formatConversationForCopy(messages, t);
+            const formatted = conversationToMarkdown(messages, {
+              t,
+              findSuggestion: (id) => pendingSuggestions.find((suggestion) => suggestion.id === id),
+            });
             navigator.clipboard
               .writeText(formatted)
               .then(() => {
@@ -333,7 +322,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           }
         }
       },
-      [messages, activeDiagramId, createThread, onClearHistory, onSend, t],
+      [messages, pendingSuggestions, activeDiagramId, createThread, onClearHistory, onSend, t],
     );
 
     const handleClear = useCallback(() => {

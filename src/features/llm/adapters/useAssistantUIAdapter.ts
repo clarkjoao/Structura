@@ -8,46 +8,102 @@ import type {
   StartRunConfig,
   TextMessagePart,
   ThreadAssistantMessage,
+  ThreadAssistantMessagePart,
   ThreadMessage,
   ThreadSuggestion,
   ThreadUserMessage,
 } from "@assistant-ui/core";
 import { useLLMChat } from "@/features/canvas/chat";
 import type { ChatMessage } from "@/features/llm/types";
-import { getMessageText } from "@/features/llm/message-parts";
+import {
+  getMessageText,
+  isErrorPart,
+  isSuggestionPart,
+  isToolCallPart,
+  type MessagePart,
+  type MessageStatus,
+} from "@/features/llm/message-parts";
 import { getLLMErrorI18nKey } from "@/features/llm/errors";
 
-function isJsonEnvelope(text: string): boolean {
-  const trimmed = text.trimStart();
-  return trimmed.startsWith("{") && trimmed.endsWith("}");
+/** Data-part names for the Structura parts assistant-ui has no type for. */
+export const SUGGESTION_DATA_PART = "structura-suggestion";
+export const ERROR_DATA_PART = "structura-error";
+
+const EMPTY_METADATA: ThreadAssistantMessage["metadata"] = {
+  unstable_state: null,
+  unstable_annotations: [],
+  unstable_data: [],
+  steps: [],
+  custom: {},
+};
+
+function toAssistantPart(part: MessagePart, running: boolean): ThreadAssistantMessagePart {
+  if (isToolCallPart(part)) {
+    // The renderer reads the Structura part back from `artifact`; the
+    // assistant-ui fields are filled so the runtime treats it as a tool call.
+    return {
+      type: "tool-call",
+      toolCallId: part.id,
+      toolName: part.name,
+      args: {},
+      argsText: safeStringify(part.args),
+      result: part.result,
+      isError: part.status === "error",
+      artifact: part,
+    };
+  }
+  if (isSuggestionPart(part)) {
+    return { type: "data", name: SUGGESTION_DATA_PART, data: part };
+  }
+  if (isErrorPart(part)) {
+    return { type: "data", name: ERROR_DATA_PART, data: part };
+  }
+  return running
+    ? { type: "text", text: part.text, status: { type: "running" } }
+    : { type: "text", text: part.text };
+}
+
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function toAssistantStatus(status: MessageStatus | undefined): ThreadAssistantMessage["status"] {
+  switch (status) {
+    case "streaming":
+      return { type: "running" };
+    case "cancelled":
+      return { type: "incomplete", reason: "cancelled" };
+    case "error":
+      return { type: "incomplete", reason: "error" };
+    default:
+      return { type: "complete", reason: "stop" };
+  }
 }
 
 function chatMessageToThreadMessage(msg: ChatMessage): ThreadMessage {
-  const textPart: TextMessagePart = { type: "text", text: getMessageText(msg) };
   if (msg.role === "user") {
     const userMsg: ThreadUserMessage = {
       id: msg.id,
       role: "user",
-      content: [textPart],
+      content: [{ type: "text", text: getMessageText(msg) }],
       attachments: [],
       createdAt: new Date(msg.timestamp),
       metadata: { custom: {} },
     };
     return userMsg;
   }
+  const running = msg.status === "streaming";
   const assistantMsg: ThreadAssistantMessage = {
     id: msg.id,
     role: "assistant",
-    content: [textPart],
-    status: { type: "complete", reason: "stop" },
+    content: msg.parts.map((part) => toAssistantPart(part, running)),
+    status: toAssistantStatus(msg.status),
     createdAt: new Date(msg.timestamp),
-    metadata: {
-      unstable_state: null,
-      unstable_annotations: [],
-      unstable_data: [],
-      steps: [],
-      custom: {},
-    },
+    metadata: EMPTY_METADATA,
   };
   return assistantMsg;
 }
@@ -78,68 +134,10 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
     selectedNodeId: null,
   });
 
-  const threadMessages = useMemo((): readonly ThreadMessage[] => {
-    const lastAssistantIndex = [...chatMessages]
-      .reverse()
-      .findIndex((msg) => msg.role === "assistant");
-    const actualAssistantIndex =
-      lastAssistantIndex === -1 ? -1 : chatMessages.length - 1 - lastAssistantIndex;
-
-    const isActivelyStreaming =
-      streamingContent !== null && streamingContent.length > 0 && actualAssistantIndex !== -1;
-
-    const baseMessages = isActivelyStreaming
-      ? chatMessages.slice(0, actualAssistantIndex)
-      : chatMessages;
-
-    const baseThreadMessages = baseMessages.map(chatMessageToThreadMessage);
-
-    if (!isActivelyStreaming || actualAssistantIndex === -1) {
-      return baseThreadMessages;
-    }
-
-    const lastMsg = chatMessages[actualAssistantIndex];
-
-    if (isJsonEnvelope(streamingContent)) {
-      const emptyTextPart: TextMessagePart = { type: "text", text: "" };
-      const streamingAssistant: ThreadAssistantMessage = {
-        id: lastMsg.id,
-        role: "assistant",
-        content: [emptyTextPart],
-        status: { type: "running" },
-        createdAt: new Date(lastMsg.timestamp),
-        metadata: {
-          unstable_state: null,
-          unstable_annotations: [],
-          unstable_data: [],
-          steps: [],
-          custom: {},
-        },
-      };
-      return [...baseThreadMessages, streamingAssistant];
-    }
-
-    const textPart: TextMessagePart = {
-      type: "text",
-      text: streamingContent,
-      status: { type: "running" },
-    };
-    const streamingAssistant: ThreadAssistantMessage = {
-      id: lastMsg.id,
-      role: "assistant",
-      content: [textPart],
-      status: { type: "running" },
-      createdAt: new Date(lastMsg.timestamp),
-      metadata: {
-        unstable_state: null,
-        unstable_annotations: [],
-        unstable_data: [],
-        steps: [],
-        custom: {},
-      },
-    };
-    return [...baseThreadMessages, streamingAssistant];
-  }, [chatMessages, streamingContent]);
+  const threadMessages = useMemo(
+    (): readonly ThreadMessage[] => chatMessages.map(chatMessageToThreadMessage),
+    [chatMessages],
+  );
 
   const suggestions = useMemo((): readonly ThreadSuggestion[] => {
     return pendingSuggestions

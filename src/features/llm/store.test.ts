@@ -311,3 +311,94 @@ describe("LLM store — first send persists the conversation", () => {
     expect(threads.find((thread) => thread.id === firstId)?.messages).toHaveLength(2);
   });
 });
+
+function lastMessage<T>(items: T[]): T | undefined {
+  return items[items.length - 1];
+}
+
+describe("LLM store — message parts", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function sseResponse(chunks: string[]): { response: Response; push: () => void } {
+    const encoder = new TextEncoder();
+    let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        controller = c;
+      },
+    });
+    let index = 0;
+    return {
+      response: new Response(body, { headers: { "content-type": "text/event-stream" } }),
+      push: () => {
+        const chunk = chunks[index];
+        index += 1;
+        if (chunk === undefined) {
+          controller?.close();
+          return;
+        }
+        controller?.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: chunk } }] })}\n`),
+        );
+      },
+    };
+  }
+
+  it("streams the reply into the assistant message's text part", async () => {
+    const stream = sseResponse(["Hello", " world"]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => stream.response),
+    );
+
+    const pending = useLLMStore.getState().sendMessage("Hi", "ctx");
+    await vi.waitFor(() => {
+      expect(vi.mocked(fetch)).toHaveBeenCalled();
+    });
+    stream.push();
+    await vi.waitFor(() => {
+      const last = lastMessage(useLLMStore.getState().messages);
+      expect(last?.parts).toEqual([{ type: "text", text: "Hello" }]);
+      expect(last?.status).toBe("streaming");
+    });
+    stream.push();
+    stream.push();
+    await pending;
+
+    const last = lastMessage(useLLMStore.getState().messages);
+    expect(last?.parts).toEqual([{ type: "text", text: "Hello world" }]);
+    expect(last?.status).toBe("complete");
+  });
+
+  it("references the pending suggestion from the assistant message", async () => {
+    const reply = JSON.stringify({
+      mode: "patch",
+      message: "Removing it",
+      patch: {
+        id: "p-1",
+        description: "Remove the cache",
+        actions: [{ type: "REMOVE_NODE", payload: { nodeId: "n-1" } }],
+      },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ message: reply })),
+    );
+
+    await useLLMStore.getState().sendMessage("Remove the cache", "ctx");
+
+    const state = useLLMStore.getState();
+    const suggestion = state.pendingSuggestions[0];
+    expect(suggestion?.status).toBe("pending");
+    const last = lastMessage(state.messages);
+    expect(last?.parts[last.parts.length - 1]).toEqual({ type: "suggestion", suggestionId: suggestion?.id });
+    expect(last?.status).toBe("complete");
+  });
+});

@@ -730,7 +730,19 @@
     "copyExport": {
       "title": "Conversation Export",
       "user": "You",
-      "assistant": "Assistant"
+      "assistant": "Assistant",
+      "tool": "Tool",
+      "error": "Error",
+      "suggestionUnavailable": "Suggested change (no longer available)"
+    },
+    "toolCall": {
+      "status": {
+        "running": "Running",
+        "done": "Done",
+        "error": "Failed",
+        "awaitingApproval": "Awaiting approval",
+        "denied": "Denied"
+      }
     }
   },
   "versions": {

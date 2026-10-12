@@ -22,7 +22,6 @@ import { isUsableConnection } from "@/features/llm/llm-storage";
 import type { ChatSuggestion } from "@/features/llm/suggestions";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
-import { SuggestionCard } from "./SuggestionCard";
 import { TypingIndicator } from "./TypingIndicator";
 
 interface AssistantUIChatPanelProps {
@@ -78,7 +77,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     send,
     isLoading,
     streamingContent,
-    pendingSuggestions,
     pendingAnalysis,
     dismissPendingAnalysis,
     error,
@@ -86,8 +84,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     activeConnection,
     config,
     createThread,
-    accept,
-    reject,
     clearHistory,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
 
@@ -263,18 +259,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
                     }}
                   />
                 )}
-
-                {messages.map((message) => {
-                  const suggestion = pendingSuggestions.find(
-                    (s) => s.messageId === message.id && s.status === "pending",
-                  );
-                  if (!suggestion) return null;
-                  return (
-                    <div key={`suggestion-${message.id}`} className="mt-1">
-                      <SuggestionCard suggestion={suggestion} onAccept={accept} onReject={reject} />
-                    </div>
-                  );
-                })}
               </div>
             </ThreadPrimitive.Viewport>
 

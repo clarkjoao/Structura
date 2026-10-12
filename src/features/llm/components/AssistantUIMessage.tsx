@@ -6,8 +6,23 @@ import { enUS, ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useAuiState, MessagePrimitive } from "@assistant-ui/react";
+import { SUGGESTION_DATA_PART } from "@/features/llm/adapters/useAssistantUIAdapter";
+import { SuggestionPartView } from "./SuggestionPartView";
+
+/** How the Structura parts that assistant-ui has no type for are rendered. */
+const ASSISTANT_PART_COMPONENTS = {
+  data: {
+    by_name: {
+      [SUGGESTION_DATA_PART]: SuggestionPartView,
+    },
+  },
+};
 
 const COLLAPSE_THRESHOLD = 500;
+
+function isDataPart(part: unknown): boolean {
+  return typeof part === "object" && part !== null && "type" in part && part.type === "data";
+}
 
 function getPartText(message: { parts: readonly unknown[] }): string {
   for (const part of message.parts) {
@@ -54,7 +69,9 @@ export function AssistantMessageComponent() {
   const locale = i18n.language === "pt-BR" ? ptBR : enUS;
   const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true, locale });
   const [isExpanded, setIsExpanded] = useState(false);
-  const isLong = !isStreaming && text.length > COLLAPSE_THRESHOLD;
+  // A suggestion card inside a collapsed bubble would hide its actions.
+  const isLong =
+    !isStreaming && text.length > COLLAPSE_THRESHOLD && !message.parts.some(isDataPart);
 
   if (isStreaming && text.length === 0) {
     return (
@@ -76,7 +93,7 @@ export function AssistantMessageComponent() {
             {/* MessagePrimitive.Parts renders each part with the correct
                 provider context, including the smooth streaming animation
                 and markdown rendering for text parts. */}
-            <MessagePrimitive.Parts />
+            <MessagePrimitive.Parts components={ASSISTANT_PART_COMPONENTS} />
             {!isExpanded && isLong ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-secondary/95 to-transparent" />
             ) : null}

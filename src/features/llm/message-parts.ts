@@ -115,6 +115,10 @@ export function textPart(text: string): TextPart {
   return { type: "text", text };
 }
 
+export function suggestionPart(suggestionId: string): SuggestionPart {
+  return { type: "suggestion", suggestionId };
+}
+
 /** The message's text: every text part, in order, joined. */
 export function getMessageText(message: Pick<ChatMessage, "parts">): string {
   return message.parts

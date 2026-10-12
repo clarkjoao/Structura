@@ -5,7 +5,7 @@ import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
 import { toLLMError, type LLMError } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
-import { getMessageText, textPart } from "./message-parts";
+import { appendTextDelta, getMessageText, suggestionPart, textPart } from "./message-parts";
 import type {
   AnalysisResponse,
   ChatMessage,
@@ -574,6 +574,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         role: "assistant",
         parts: [textPart("")],
         timestamp: Date.now(),
+        status: "streaming",
       };
       set({
         messages: [...outgoingMessages, placeholderMessage],
@@ -595,18 +596,16 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           systemPrompt,
           (chunk) => {
             fullResponse += chunk;
-            const trimmedAccumulated = fullResponse.trim();
-            const looksLikeJsonEnvelope = trimmedAccumulated.startsWith("{");
+            // A JSON envelope (patch or analysis) is not readable while it
+            // streams; its text part stays empty until the response is parsed.
+            const looksLikeJsonEnvelope = fullResponse.trim().startsWith("{");
             set((streamingState) => ({
               streamingContent: fullResponse,
-              messages: streamingState.messages.map((message) =>
-                message.id === assistantMessageId
-                  ? {
-                      ...message,
-                      parts: [textPart(looksLikeJsonEnvelope ? "" : fullResponse)],
-                    }
-                  : message,
-              ),
+              messages: looksLikeJsonEnvelope
+                ? streamingState.messages
+                : streamingState.messages.map((message) =>
+                    message.id === assistantMessageId ? appendTextDelta(message, chunk) : message,
+                  ),
             }));
           },
         );
@@ -616,7 +615,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           set({
             messages: get().messages.map((message) =>
               message.id === assistantMessageId
-                ? { ...message, parts: [textPart(parsedResponse.analysis.summary)] }
+                ? {
+                    ...message,
+                    parts: [textPart(parsedResponse.analysis.summary)],
+                    status: "complete",
+                  }
                 : message,
             ),
             pendingAnalysis: parsedResponse.analysis,
@@ -631,6 +634,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         const nextSuggestions = [...get().pendingSuggestions];
         const nextPreviews = [...get().pendingPreviews];
         const catalogToolResults: unknown[] = [];
+        let suggestionId: string | null = null;
         if (parsedResponse.kind === "patch" && parsedResponse.patch) {
           const suggestion: PendingSuggestion = {
             id: crypto.randomUUID(),
@@ -639,6 +643,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             status: "pending",
           };
           nextSuggestions.push(suggestion);
+          suggestionId = suggestion.id;
 
           const addNodeActions = parsedResponse.patch.actions.filter(
             (action) => action.type === "ADD_NODE",
@@ -769,7 +774,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             message.id === assistantMessageId
               ? {
                   ...message,
-                  parts: [textPart(assistantContent)],
+                  parts: suggestionId
+                    ? [textPart(assistantContent), suggestionPart(suggestionId)]
+                    : [textPart(assistantContent)],
+                  status: "complete",
                 }
               : message,
           ),

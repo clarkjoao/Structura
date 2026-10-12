@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DiagramPatchAction, PendingSuggestion } from "@/features/llm";
+import { formatActionLabel } from "@/features/llm/patch-action-labels";
 
 interface SuggestionCardProps {
   suggestion: PendingSuggestion;
@@ -86,29 +87,6 @@ function getActionColor(type: string): string {
       return "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10";
     default:
       return "text-muted-foreground bg-muted";
-  }
-}
-
-function formatActionLabel(action: DiagramPatchAction, translate: TFunction): string {
-  switch (action.type) {
-    case "ADD_NODE":
-      return `${action.payload.name} (${action.payload.nodeType})`;
-    case "REMOVE_NODE":
-      return `${translate("llmChat.suggestion.action.removeNode", { nodeId: action.payload.nodeId })}`;
-    case "UPDATE_NODE":
-      return `${translate("llmChat.suggestion.action.updateNode", { nodeId: action.payload.nodeId })}`;
-    case "ADD_EDGE":
-      return `${action.payload.label || translate("llmChat.suggestion.action.connectionFallback")}`;
-    case "REMOVE_EDGE":
-      return `${translate("llmChat.suggestion.action.removeEdge", { edgeId: action.payload.edgeId })}`;
-    case "INSERT_PATTERN":
-      return `${translate("llmChat.suggestion.action.insertPattern", { patternId: action.payload.patternId })}`;
-    case "AUTO_LAYOUT":
-      return `${translate("llmChat.suggestion.action.autoLayout")}`;
-    case "GET_TAGS":
-      return `${translate("llmChat.suggestion.action.getTags")}`;
-    default:
-      return translate("llmChat.suggestion.action.unknown");
   }
 }
 
