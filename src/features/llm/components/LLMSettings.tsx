@@ -1,4 +1,4 @@
-import { useMemo, useState, memo } from "react";
+import { useState, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Copy, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   type LLMMode,
   type LLMProvider,
 } from "@/features/llm";
-import { getProxyEndpoint } from "@/features/llm/providers/proxy";
+import { DEFAULT_PROXY_BASE_URL } from "@/features/llm/llm-storage";
 
 const CUSTOM_MODEL_OPTION_VALUE = "__custom__";
 const URL_PATTERN = /^https?:\/\/\S+$/i;
@@ -101,8 +101,6 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
   const duplicateConnection = useLLMStore((state) => state.duplicateConnection);
   const removeConnection = useLLMStore((state) => state.removeConnection);
   const setActiveConnection = useLLMStore((state) => state.setActiveConnection);
-
-  const proxyEndpoint = useMemo(() => getProxyEndpoint(), []);
 
   // The settings overlay always opens in "create" mode: an empty form the user
   // fills in to make a new connection. To edit an existing one, the user
@@ -634,7 +632,7 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
                 <label htmlFor="llm-proxy-url" className="text-xs text-muted-foreground">
                   {t("llmChat.settings.proxyUrl")}
                 </label>
-                <Input id="llm-proxy-url" value={proxyEndpoint} readOnly />
+                <Input id="llm-proxy-url" value={DEFAULT_PROXY_BASE_URL} readOnly />
               </div>
             )}
           </section>

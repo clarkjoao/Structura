@@ -16,6 +16,7 @@ vi.mock("@/features/diagram", () => ({
 
 import { countConversationMessages, useLLMStore } from "./store";
 import { isErrorPart } from "./message-parts";
+import { controllableReply, replyWith } from "./test-utils/openai-sse";
 import { resetLLMStorageForTests } from "./llm-storage";
 
 beforeEach(() => {
@@ -233,7 +234,7 @@ describe("LLM store — first send persists the conversation", () => {
   function stubProxyReply(reply: string): void {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => Response.json({ message: reply })),
+      vi.fn(async () => replyWith(reply)),
     );
   }
 
@@ -272,7 +273,10 @@ describe("LLM store — first send persists the conversation", () => {
     expect(thread?.messages).toHaveLength(1);
     expect(thread?.messages[0]?.parts).toEqual([{ type: "text", text: "Add a cache" }]);
 
-    release(Response.json({ message: "Done" }));
+    await vi.waitFor(() => {
+      expect(vi.mocked(fetch)).toHaveBeenCalled();
+    });
+    release(replyWith("Done"));
     await pending;
   });
 
@@ -293,7 +297,10 @@ describe("LLM store — first send persists the conversation", () => {
     expect(inFlight.isLoading).toBe(true);
     expect(countConversationMessages(inFlight.messages, inFlight.isLoading)).toBe(1);
 
-    release(Response.json({ message: "Done" }));
+    await vi.waitFor(() => {
+      expect(vi.mocked(fetch)).toHaveBeenCalled();
+    });
+    release(replyWith("Done"));
     await pending;
     const done = useLLMStore.getState();
     expect(countConversationMessages(done.messages, done.isLoading)).toBe(2);
@@ -326,36 +333,7 @@ describe("LLM store — message parts", () => {
     vi.unstubAllGlobals();
   });
 
-  function sseResponse(chunks: string[]): {
-    response: Response;
-    push: () => void;
-    fail: () => void;
-  } {
-    const encoder = new TextEncoder();
-    let controller: ReadableStreamDefaultController<Uint8Array> | null = null;
-    const body = new ReadableStream<Uint8Array>({
-      start(c) {
-        controller = c;
-      },
-    });
-    let index = 0;
-    return {
-      response: new Response(body, { headers: { "content-type": "text/event-stream" } }),
-      push: () => {
-        const chunk = chunks[index];
-        index += 1;
-        if (chunk === undefined) {
-          controller?.close();
-          return;
-        }
-        controller?.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: chunk } }] })}\n`),
-        );
-      },
-      // What a real fetch body does when its request is aborted.
-      fail: () => controller?.error(new DOMException("The operation was aborted.", "AbortError")),
-    };
-  }
+  const sseResponse = controllableReply;
 
   it("streams the reply into the assistant message's text part", async () => {
     const stream = sseResponse(["Hello", " world"]);
@@ -447,9 +425,7 @@ describe("LLM store — message parts", () => {
     const failed = lastMessage(useLLMStore.getState().messages);
     expect(failed?.status).toBe("error");
 
-    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) =>
-      Response.json({ message: "All good" }),
-    );
+    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) => replyWith("All good"));
     vi.stubGlobal("fetch", fetchSpy);
     await useLLMStore.getState().rerunAssistantMessage(failed?.id ?? "", "ctx");
 
@@ -460,7 +436,9 @@ describe("LLM store — message parts", () => {
     expect(messages[1]?.parts).toEqual([{ type: "text", text: "All good" }]);
     expect(messages[1]?.status).toBe("complete");
     const body = JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body ?? "{}"));
-    expect(body.messages).toEqual([{ role: "user", content: "Review this" }]);
+    expect(body.messages.filter((m: { role: string }) => m.role !== "system")).toEqual([
+      { role: "user", content: "Review this" },
+    ]);
   });
 
   it("references the pending suggestion from the assistant message", async () => {
@@ -475,7 +453,7 @@ describe("LLM store — message parts", () => {
     });
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => Response.json({ message: reply })),
+      vi.fn(async () => replyWith(reply)),
     );
 
     await useLLMStore.getState().sendMessage("Remove the cache", "ctx");

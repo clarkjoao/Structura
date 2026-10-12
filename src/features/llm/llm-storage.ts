@@ -24,6 +24,38 @@ const CHAT_HISTORY_FORMAT_KEY = "structura:llm:history:formatVersion";
 const MAX_THREADS = 20;
 const MAX_MESSAGES_PER_THREAD = 50;
 
+/**
+ * Where a proxy connection points when it has no base URL of its own. A proxy
+ * is any OpenAI-compatible endpoint (the SDK posts to `<base>/chat/completions`);
+ * `VITE_LLM_PROXY_URL` is only the default for new and migrated connections.
+ */
+export const DEFAULT_PROXY_BASE_URL: string =
+  import.meta.env.VITE_LLM_PROXY_URL ?? "http://localhost:3001";
+
+/** Removes a trailing "/chat/completions" (and slashes): the SDK appends it. */
+export function toOpenAICompatibleBaseUrl(url: string): string {
+  return url
+    .trim()
+    .replace(/\/+$/, "")
+    .replace(/\/chat\/completions$/, "");
+}
+
+/**
+ * Brings a stored base URL to what the AI SDK transport expects. Proxy
+ * connections saved before it had no URL (the proxy endpoint was build-time);
+ * custom endpoints stored the full completions URL.
+ */
+function migrateBaseUrl(mode: LLMConnection["mode"], provider: LLMProvider, raw: unknown) {
+  const stored = isString(raw) && raw.trim().length > 0 ? raw : undefined;
+  if (mode === "proxy") {
+    return toOpenAICompatibleBaseUrl(stored ?? DEFAULT_PROXY_BASE_URL);
+  }
+  if (provider === "custom" && stored) {
+    return toOpenAICompatibleBaseUrl(stored);
+  }
+  return stored;
+}
+
 const DEFAULT_LLM_CONFIG: LLMConfig = {
   mode: "proxy",
   provider: "openai",
@@ -89,7 +121,7 @@ function normalizeConnection(raw: Partial<LLMConnection>): LLMConnection {
     provider,
     apiKey: isString(raw.apiKey) ? raw.apiKey : "",
     model: isString(raw.model) && raw.model.length > 0 ? raw.model : DEFAULT_LLM_CONFIG.model,
-    baseUrl: isString(raw.baseUrl) && raw.baseUrl.length > 0 ? raw.baseUrl : undefined,
+    baseUrl: migrateBaseUrl(mode, provider, raw.baseUrl),
     authHeader: isString(raw.authHeader) && raw.authHeader.length > 0 ? raw.authHeader : undefined,
     extraHeaders: isObject(raw.extraHeaders)
       ? (raw.extraHeaders as Record<string, string>)
@@ -344,7 +376,7 @@ export function loadConnections(): ConnectionsPayload {
   }
 
   if (migrated && migrated.connections.length > 0) {
-    return migrated;
+    return { ...migrated, connections: migrated.connections.map(normalizeConnection) };
   }
 
   const id = crypto.randomUUID();

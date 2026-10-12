@@ -7,10 +7,30 @@ import {
   toLLMError,
   type LLMErrorKind,
 } from "./errors";
-import { sendMessage as sendProxyMessage } from "./providers/proxy";
-import { sendMessage as sendOpenAIMessage } from "./providers/openai";
-import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
-import type { LLMConfig, LLMMode } from "./types";
+import { streamChat } from "./transport/ai-sdk-transport";
+import type { LLMCompletion, LLMConfig, LLMMode, LLMRequestMessage } from "./types";
+
+// Every request now goes through the AI SDK transport; these keep the
+// provider-shaped call the matrix below was written against.
+type Send = (
+  config: LLMConfig,
+  messages: LLMRequestMessage[],
+  systemPrompt: string,
+  onChunk: (chunk: string) => void,
+  signal?: AbortSignal,
+) => Promise<LLMCompletion>;
+
+const viaTransport: Send = (config, messages, systemPrompt, onChunk, signal) =>
+  streamChat({
+    config,
+    messages: messages.length > 0 ? messages : [{ role: "user", content: "hi" }],
+    systemPrompt,
+    onChunk,
+    signal,
+  });
+const sendProxyMessage = viaTransport;
+const sendOpenAIMessage = viaTransport;
+const sendAnthropicMessage = viaTransport;
 
 type Outcome = "fetchRejection" | 401 | 404 | 429 | 500 | "timeout";
 
@@ -43,6 +63,10 @@ function stubFetch(outcome: Outcome): void {
       if (outcome === "timeout") {
         // Never answers; only our abort ends it.
         return new Promise<Response>((_resolve, reject) => {
+          if (init.signal?.aborted) {
+            reject(new DOMException("The operation was aborted.", "AbortError"));
+            return;
+          }
           init.signal?.addEventListener("abort", () =>
             reject(new DOMException("The operation was aborted.", "AbortError")),
           );
@@ -128,21 +152,21 @@ describe("Anthropic provider", () => {
   });
 
   it("sends the browser-access header", async () => {
-    const fetchSpy = vi.fn(async () => new Response("", { status: 200 }));
+    const fetchSpy = vi.fn(
+      async (_url: string, _init: RequestInit) => new Response("", { status: 200 }),
+    );
     vi.stubGlobal("fetch", fetchSpy);
+    // The empty body is not a valid stream; only the request matters here.
     await sendAnthropicMessage(
       { mode: "direct", provider: "anthropic", apiKey: "sk-ant", model: "claude-sonnet-5-5" },
       [],
       "system",
       () => {},
-    );
-    expect(fetchSpy).toHaveBeenCalledWith(
-      "https://api.anthropic.com/v1/messages",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "anthropic-dangerous-direct-browser-access": "true",
-        }),
-      }),
+    ).catch(() => undefined);
+    const [url, init] = fetchSpy.mock.calls[0] ?? [];
+    expect(url).toBe("https://api.anthropic.com/v1/messages");
+    expect(new Headers(init?.headers).get("anthropic-dangerous-direct-browser-access")).toBe(
+      "true",
     );
   });
 });

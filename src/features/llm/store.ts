@@ -40,10 +40,6 @@ import {
   resolveRef,
   runCatalogReadActions,
 } from "./apply-diagram-patch";
-import { sendMessage as sendOpenAIMessage } from "./providers/openai";
-import { sendMessage as sendAnthropicMessage } from "./providers/anthropic";
-import { sendMessage as sendProxyMessage } from "./providers/proxy";
-import { sendMessage as sendCustomMessage } from "./providers/custom";
 
 function getResolvedAppLanguage(): string {
   const lng = i18n.resolvedLanguage ?? i18n.language ?? "pt-BR";
@@ -127,6 +123,10 @@ function defaultTitleForLanguage(): string {
   return i18n.t("llmChat.threads.defaultTitle", { date: stamp });
 }
 
+/**
+ * The single seam between the chat and the model. Routes through the AI SDK
+ * transport, which is loaded on first use.
+ */
 async function executeLLMMessage(
   config: LLMConfig,
   messages: LLMRequestMessage[],
@@ -134,16 +134,8 @@ async function executeLLMMessage(
   onChunk: (chunk: string) => void,
   signal: AbortSignal,
 ): Promise<LLMCompletion> {
-  if (config.mode === "proxy") {
-    return sendProxyMessage(config, messages, systemPrompt, onChunk, signal);
-  }
-  if (config.provider === "anthropic") {
-    return sendAnthropicMessage(config, messages, systemPrompt, onChunk, signal);
-  }
-  if (config.provider === "custom") {
-    return sendCustomMessage(config, messages, systemPrompt, onChunk, signal);
-  }
-  return sendOpenAIMessage(config, messages, systemPrompt, onChunk, signal);
+  const { streamChat } = await import("./transport/ai-sdk-transport");
+  return streamChat({ config, messages, systemPrompt, onChunk, signal });
 }
 
 export interface LLMStoreState {

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  DEFAULT_PROXY_BASE_URL,
   deriveThreadTitle,
   hydrateChatThreadsCacheFromIdb,
   getChatThreadsCache,
@@ -170,6 +171,30 @@ describe("llm-storage", () => {
         }),
       );
       expect(loadConnections().connections[0]).toMatchObject({ id: "stored", mode: "proxy" });
+    });
+
+    it("migrates stored connections to the AI SDK transport's base URLs", () => {
+      localStorage.setItem(
+        LLM_CONNECTIONS_KEY,
+        JSON.stringify({
+          connections: [
+            { id: "p", name: "Proxy", mode: "proxy", provider: "openai", apiKey: "", model: "m" },
+            {
+              id: "c",
+              name: "Local",
+              mode: "direct",
+              provider: "custom",
+              apiKey: "",
+              model: "llama",
+              baseUrl: "http://localhost:11434/v1/chat/completions",
+            },
+          ],
+          activeConnectionId: "p",
+        }),
+      );
+      const [proxy, custom] = loadConnections().connections;
+      expect(proxy?.baseUrl).toBe(DEFAULT_PROXY_BASE_URL);
+      expect(custom?.baseUrl).toBe("http://localhost:11434/v1");
     });
 
     it("isUsableConnection: proxy always, direct needs a key, custom needs url + model", () => {
