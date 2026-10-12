@@ -160,6 +160,9 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 - **opscr plugin: a canvas edit made during a sync could be undone.** An
   element deleted on the canvas while the pane projected the YAML was drawn
   back. The sync now writes such an edit into the YAML and projects again.
+- **opscr plugin: a failed sync went unnoticed.** When a step of the pane's
+  sync threw, the error only reached the console and the diagram silently
+  stopped following the text. The pane now says so and offers to try again.
 - **Canvas node selection could describe one node while another kept the
   focus ring.** `selectedNodeId` (element panel, quick-actions toolbar)
   and `selectedNodeIds` (dimming, React Flow's `selected` flag) are one
