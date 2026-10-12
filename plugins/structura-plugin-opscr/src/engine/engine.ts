@@ -64,7 +64,9 @@ export type EngineEvent =
   | { type: "unwritten"; connections: UnwrittenConnection[] }
   | { type: "rename-refused"; name: string }
   | { type: "provider-refused"; names: string[] }
-  | { type: "added"; keys: string[] };
+  | { type: "added"; keys: string[] }
+  /** A step threw: the diagram may no longer match the text until the next sync. */
+  | { type: "failed"; error: unknown };
 
 export interface EngineOptions {
   texts: TextsPort;
@@ -101,12 +103,15 @@ export class OpscrEngine {
     return this.options.texts.get().find((f) => f.name === name)?.text;
   }
 
-  /** Runs `step` after every queued one; a failing step is logged, the queue goes on. */
+  /** Runs `step` after every queued one; a failing step is logged and reported, the queue goes on. */
   enqueue<T>(step: () => Promise<T>): Promise<T | undefined> {
     const run = this.queue.then(step);
     this.queue = run.then(
       () => undefined,
-      (error: unknown) => console.error("[opscr] engine step failed:", error),
+      (error: unknown) => {
+        console.error("[opscr] engine step failed:", error);
+        this.emit({ type: "failed", error });
+      },
     );
     return run.catch(() => undefined);
   }
