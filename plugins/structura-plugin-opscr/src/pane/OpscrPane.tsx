@@ -131,6 +131,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const selectedRef = useRef(selected);
     const [diagnostics, setDiagnostics] = useState<Diagnostic[]>([]);
     const [status, setStatus] = useState<string>("");
+    /** The last engine step threw: the diagram may not match the text until a sync works. */
+    const [failed, setFailed] = useState(false);
     /** Canvas elements the YAML does not declare, and the Kind/provider picked for each. */
     const [outside, setOutside] = useState<string[]>([]);
     const [picks, setPicks] = useState<Record<string, { kind: string; provider: string }>>({});
@@ -258,9 +260,15 @@ export function createOpscrPane(api: StructuraPluginApi) {
     // The binding engine over this pane's buffers, the active diagram and the plugin storage.
     const onEvent = useRef<(event: EngineEvent) => void>(() => {});
     onEvent.current = (event) => {
-      if (event.type === "synced") setStatus(t.synced(event.elements));
-      else if (event.type === "parse-error" || event.type === "invalid") setStatus(t.parseError);
-      else if (event.type === "diagnostics") setDiagnostics(event.diagnostics as Diagnostic[]);
+      // Only a sync that got through (or stopped at broken YAML) says the diagram is current again.
+      if (event.type === "failed") setFailed(true);
+      else if (event.type === "synced") {
+        setFailed(false);
+        setStatus(t.synced(event.elements));
+      } else if (event.type === "parse-error" || event.type === "invalid") {
+        setFailed(false);
+        setStatus(t.parseError);
+      } else if (event.type === "diagnostics") setDiagnostics(event.diagnostics as Diagnostic[]);
       else if (event.type === "outside") setOutside(event.ids);
       else if (event.type === "unwritten") setUnwritten(event.connections);
       else if (event.type === "rename-refused") setStatus(t.renameRefused(event.name));
@@ -959,7 +967,16 @@ export function createOpscrPane(api: StructuraPluginApi) {
           )}
         </div>
         <div className="border-t px-2 py-1 text-muted-foreground" aria-live="polite">
-          {status}
+          {failed ? (
+            <>
+              {t.syncFailed}{" "}
+              <button type="button" className="underline" onClick={() => void sync()}>
+                {t.retrySync}
+              </button>
+            </>
+          ) : (
+            status
+          )}
           {problemsElsewhere > 0 ? ` · ${t.problemsElsewhere(problemsElsewhere)}` : ""}
         </div>
       </div>

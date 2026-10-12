@@ -19,6 +19,8 @@ const en = {
   reload: "Reload",
   reloadDiscards: "Reloading discards unsaved edits",
   parseError: "The YAML does not parse — the diagram keeps its last state.",
+  syncFailed: "The diagram could not be updated — it may not match the YAML.",
+  retrySync: "Try again",
   synced: (n: number) => `Diagram in sync · ${n} elements`,
   saved: (n: number) => (n === 0 ? "Nothing to save" : `Saved ${n} file${n === 1 ? "" : "s"}`),
   problemsElsewhere: (n: number) => `${n} error${n === 1 ? "" : "s"} in other files`,
@@ -115,6 +117,8 @@ const ptBR: typeof en = {
   reload: "Recarregar",
   reloadDiscards: "Recarregar descarta edições não salvas",
   parseError: "O YAML não faz parse — o diagrama mantém o último estado.",
+  syncFailed: "Não foi possível atualizar o diagrama — ele pode não refletir o YAML.",
+  retrySync: "Tentar de novo",
   synced: (n: number) => `Diagrama sincronizado · ${n} elementos`,
   saved: (n: number) =>
     n === 0 ? "Nada a salvar" : `${n} arquivo${n === 1 ? "" : "s"} salvo${n === 1 ? "" : "s"}`,
