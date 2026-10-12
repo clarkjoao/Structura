@@ -1,5 +1,5 @@
 import { SAMPLE_FILES } from "../test-sample";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { countEdges, hasManifest, renameElement, type SourceText } from "./patches";
 import { projectWorkspace } from "../project";
 import { reconcile, renameInBinding } from "./reconcile";
@@ -895,5 +895,40 @@ describe("the canvas edited while projecting", () => {
     expect(labels).not.toContain("cart-cache");
     expect(s.text()).not.toMatch(/name: cart-cache/);
     await s.expectSettled();
+  });
+});
+
+describe("a failing step", () => {
+  it("is reported, and the next sync draws again", async () => {
+    const events: string[] = [];
+    let fail = true;
+    const options = s.engineOptions();
+    const engine = new OpscrEngine({
+      ...options,
+      diagram: {
+        ...options.diagram,
+        apply: (changes) => {
+          if (fail) throw new Error("the host refused the changes");
+          return options.diagram.apply(changes);
+        },
+      },
+      onEvent: (event) => events.push(event.type),
+    });
+    const cache =
+      "\n---\napiVersion: opscr.dev/v1\nkind: Cache\nmetadata:\n  name: price-cache\nspec:\n  provider: ElastiCache Redis\n  description: Prices\n";
+    s.files = s.files.map((f) =>
+      f.name === "commerce.opscr.yaml" ? { ...f, text: f.text + cache } : f,
+    );
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    await engine.sync();
+    error.mockRestore();
+    expect(events).toContain("failed");
+    expect(events).not.toContain("synced");
+
+    fail = false;
+    events.length = 0;
+    await engine.sync();
+    expect(events).toContain("synced");
+    expect(s.canvas.components.map((c) => c.label)).toContain("price-cache");
   });
 });

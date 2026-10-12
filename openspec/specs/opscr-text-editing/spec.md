@@ -37,6 +37,12 @@ as it was and the pane SHALL show the parse problem.
 - **WHEN** the user deletes a Queue's manifest
 - **THEN** the Queue and its edges leave the canvas
 
+#### Scenario: A sync fails
+
+- **WHEN** updating the canvas for an edit throws an error
+- **THEN** the pane says the diagram may not match the YAML and offers to try again, and a later
+  sync that gets through clears the message
+
 ### Requirement: The user's arrangement is kept
 
 A sync SHALL NOT move an element that was already on the canvas, including elements the user
