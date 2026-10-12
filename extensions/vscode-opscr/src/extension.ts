@@ -353,8 +353,12 @@ export function activate(context: vscode.ExtensionContext): void {
       preview?.search();
     }),
     vscode.commands.registerCommand("opscr.relayoutPreview", () => {
+      // The focused preview (its shortcut), else the one of the file being edited.
       const uri = vscode.window.activeTextEditor?.document.uri;
-      const preview = (uri && forDocument(uri)) ?? [...previews.values()][0];
+      const preview =
+        [...previews.values()].find((p) => p.isActive()) ??
+        (uri && forDocument(uri)) ??
+        [...previews.values()][0];
       preview?.relayout();
     }),
     vscode.workspace.onDidChangeTextDocument((e) => forDocument(e.document.uri)?.schedule()),
