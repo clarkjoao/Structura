@@ -1073,6 +1073,17 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
   };
 });
 
+/**
+ * Messages that count as part of the conversation. While a request runs,
+ * `sendMessage` keeps an assistant placeholder at the end of `messages` for the
+ * streamed reply; it is not a message yet, so it is left out.
+ */
+export function countConversationMessages(messages: ChatMessage[], isLoading: boolean): number {
+  const last = messages[messages.length - 1];
+  const hasInFlightPlaceholder = isLoading && last !== undefined && last.role === "assistant";
+  return hasInFlightPlaceholder ? messages.length - 1 : messages.length;
+}
+
 export function getPendingNodeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
   return new Set(pendingPreviews.flatMap((pendingPreview) => pendingPreview.nodeIds));
 }

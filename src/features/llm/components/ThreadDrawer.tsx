@@ -13,7 +13,7 @@ import type { TFunction } from "i18next";
 import { useLLMChat } from "@/features/canvas/chat";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { ThreadRenameControl } from "./ThreadRenameControl";
-import type { ConversationThread } from "@/features/llm";
+import { countConversationMessages, type ConversationThread } from "@/features/llm";
 
 interface ThreadDrawerProps {
   open: boolean;
@@ -72,6 +72,7 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
 
   const {
     messages,
+    isLoading,
     threads,
     activeThread,
     createThread,
@@ -245,7 +246,9 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
                               {t("llmChat.threads.messageCount", {
                                 // The active thread's live messages lead its
                                 // persisted snapshot while a request runs.
-                                count: isActive ? messages.length : thread.messages.length,
+                                count: isActive
+                                  ? countConversationMessages(messages, isLoading)
+                                  : thread.messages.length,
                               })}{" "}
                               · {timeAgo}
                             </span>

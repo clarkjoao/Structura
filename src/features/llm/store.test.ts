@@ -14,7 +14,7 @@ vi.mock("@/features/diagram", () => ({
   },
 }));
 
-import { useLLMStore } from "./store";
+import { countConversationMessages, useLLMStore } from "./store";
 import { resetLLMStorageForTests } from "./llm-storage";
 
 beforeEach(() => {
@@ -274,6 +274,29 @@ describe("LLM store — first send persists the conversation", () => {
 
     release(Response.json({ message: "Done" }));
     await pending;
+  });
+
+  it("counts one message while the request runs and two after the response", async () => {
+    let release: (value: Response) => void = () => undefined;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            release = resolve;
+          }),
+      ),
+    );
+
+    const pending = useLLMStore.getState().sendMessage("Add a queue", "ctx");
+    const inFlight = useLLMStore.getState();
+    expect(inFlight.isLoading).toBe(true);
+    expect(countConversationMessages(inFlight.messages, inFlight.isLoading)).toBe(1);
+
+    release(Response.json({ message: "Done" }));
+    await pending;
+    const done = useLLMStore.getState();
+    expect(countConversationMessages(done.messages, done.isLoading)).toBe(2);
   });
 
   it("keeps the previous conversation in history when a new one starts (/clear)", async () => {
