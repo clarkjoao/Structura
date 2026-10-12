@@ -348,3 +348,99 @@ jobs:
           name: dist
           path: dist/
           retention-days: 7
+
+  plugins:
+    name: Plugins type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: plugins/*/package-lock.json
+
+      # The plugins' locks pin React 18 under @xyflow/react's React 19 peers, as the app does.
+      - name: LeanIX
+        working-directory: plugins/structura-plugin-leanix
+        run: npm ci --legacy-peer-deps && npm run typecheck
+
+      - name: Example UI
+        working-directory: plugins/structura-plugin-example-ui
+        run: npm ci --legacy-peer-deps && npm run typecheck
+
+  opscr:
+    name: opscr plugin and VSCode extension (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      # opscr is not on npm yet: it comes from its private repository, at the commit these were
+      # built against. Without the token (a fork's pull request) the job only says so.
+      OPSCR_REF: 34c90119e520975a3147b78170f9d651aebe6f61
+      HAS_OPSCR: ${{ secrets.OPSCR_REPO_TOKEN != '' }}
+    steps:
+      - name: No opscr token
+        if: env.HAS_OPSCR != 'true'
+        run: echo "::notice::OPSCR_REPO_TOKEN is not set; the opscr plugin and extension were not checked."
+
+      - uses: actions/checkout@v7
+        if: env.HAS_OPSCR == 'true'
+
+      - uses: actions/checkout@v7
+        if: env.HAS_OPSCR == 'true'
+        with:
+          repository: clarkjoao/opscr
+          ref: ${{ env.OPSCR_REF }}
+          token: ${{ secrets.OPSCR_REPO_TOKEN }}
+          path: opscr
+
+      - uses: actions/setup-node@v6
+        if: env.HAS_OPSCR == 'true'
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            opscr/package-lock.json
+            plugins/structura-plugin-opscr/package-lock.json
+            extensions/vscode-opscr/package-lock.json
+
+      - name: Build opscr
+        if: env.HAS_OPSCR == 'true'
+        working-directory: opscr
+        run: npm ci && npm run build
+
+      - name: Install the app
+        if: env.HAS_OPSCR == 'true'
+        run: npm ci
+
+      - name: opscr plugin
+        if: env.HAS_OPSCR == 'true'
+        working-directory: plugins/structura-plugin-opscr
+        run: |
+          npm ci --legacy-peer-deps
+          npm install --no-save --legacy-peer-deps ../../opscr
+          npm run typecheck
+          npm test
+
+      - name: VSCode extension
+        if: env.HAS_OPSCR == 'true'
+        working-directory: extensions/vscode-opscr
+        run: |
+          npm ci
+          npm install --no-save ../../opscr
+          npm run typecheck
+          npm test
+
+      - name: VSCode extension end to end
+        if: env.HAS_OPSCR == 'true'
+        shell: bash
+        run: |
+          npm run build:embed
+          cd extensions/vscode-opscr
+          npm run build
+          if [ "$RUNNER_OS" = "Linux" ]; then xvfb-run -a npm run e2e; else npm run e2e; fi
