@@ -870,3 +870,30 @@ describe("another diagram opened while projecting", () => {
     expect(s.binding).toEqual(binding);
   });
 });
+
+describe("the canvas edited while projecting", () => {
+  it("a delete made meanwhile is written, not drawn back", async () => {
+    const options = s.engineOptions();
+    const engine = new OpscrEngine({
+      ...options,
+      project: async (...args) => {
+        const result = await options.project(...args);
+        if (s.canvas.components.some((c) => c.label === "cart-cache")) {
+          s.canvas.step(() => s.canvas.remove([s.id("cart-cache")]));
+        }
+        return result;
+      },
+    });
+    const cache =
+      "\n---\napiVersion: opscr.dev/v1\nkind: Cache\nmetadata:\n  name: price-cache\nspec:\n  provider: ElastiCache Redis\n  description: Prices\n";
+    s.files = s.files.map((f) =>
+      f.name === "commerce.opscr.yaml" ? { ...f, text: f.text + cache } : f,
+    );
+    await engine.sync();
+    const labels = s.canvas.components.map((c) => c.label);
+    expect(labels).toContain("price-cache");
+    expect(labels).not.toContain("cart-cache");
+    expect(s.text()).not.toMatch(/name: cart-cache/);
+    await s.expectSettled();
+  });
+});
