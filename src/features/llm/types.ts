@@ -1,4 +1,5 @@
 import type { ComponentPatch, ComponentType, Connection, EdgeStyle } from "@/features/diagram";
+import type { MessagePart, MessageStatus } from "./message-parts";
 
 export type LLMProvider = "openai" | "anthropic" | "custom";
 export type LLMMode = "direct" | "proxy";
@@ -47,8 +48,16 @@ export interface LLMCompletion {
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
-  content: string;
+  parts: MessagePart[];
   timestamp: number;
+  /** Assistant messages only: where the turn that produced it ended up. */
+  status?: MessageStatus;
+}
+
+/** What a provider sends for one turn: the role and its text. */
+export interface LLMRequestMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export interface ConversationThread {

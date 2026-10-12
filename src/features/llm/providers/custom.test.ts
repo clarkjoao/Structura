@@ -72,8 +72,8 @@ describe("custom provider", () => {
         extraParams: { temperature: 0.1, top_p: 0.95 },
       },
       [
-        { id: "u", role: "user", content: "Hello", timestamp: 1 },
-        { id: "a", role: "assistant", content: "previous", timestamp: 2 },
+        { role: "user", content: "Hello" },
+        { role: "assistant", content: "previous" },
       ],
       "system prompt",
       () => {},

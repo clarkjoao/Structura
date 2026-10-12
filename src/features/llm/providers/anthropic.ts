@@ -1,4 +1,4 @@
-import type { ChatMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
+import type { LLMRequestMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
 import {
   createRequestTimeout,
   fetchLLM,
@@ -39,7 +39,7 @@ export function toStopReason(stopReason: unknown): LLMStopReason {
 
 export async function sendMessage(
   config: LLMConfig,
-  messages: ChatMessage[],
+  messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {

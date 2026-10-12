@@ -261,7 +261,9 @@ describe("llm-storage", () => {
             id: "cached-1",
             diagramId: "diagram-cached",
             title: "Cached",
-            messages: [{ id: "m", role: "user", content: "cached", timestamp: 1 }],
+            messages: [
+              { id: "m", role: "user", parts: [{ type: "text", text: "cached" }], timestamp: 1 },
+            ],
             createdAt: 1,
             updatedAt: 1,
           },
@@ -324,7 +326,9 @@ describe("llm-storage", () => {
             id: "t-other",
             diagramId: "other-diagram",
             title: "Other",
-            messages: [{ id: "m1", role: "user", content: "hi", timestamp: 1 }],
+            messages: [
+              { id: "m1", role: "user", parts: [{ type: "text", text: "hi" }], timestamp: 1 },
+            ],
             createdAt: 1,
             updatedAt: 1,
           },
@@ -338,7 +342,9 @@ describe("llm-storage", () => {
             id: threadId,
             diagramId,
             title: "Title",
-            messages: [{ id: "a", role: "user", content: "ask", timestamp: 5 }],
+            messages: [
+              { id: "a", role: "user", parts: [{ type: "text", text: "ask" }], timestamp: 5 },
+            ],
             createdAt: 5,
             updatedAt: 5,
           },
@@ -377,7 +383,9 @@ describe("llm-storage", () => {
             id: "thread-fresh",
             diagramId: "diagram-fresh",
             title: "Fresh",
-            messages: [{ id: "a", role: "user", content: "ask", timestamp: 5 }],
+            messages: [
+              { id: "a", role: "user", parts: [{ type: "text", text: "ask" }], timestamp: 5 },
+            ],
             createdAt: 5,
             updatedAt: 5,
           },
@@ -394,15 +402,27 @@ describe("llm-storage", () => {
     it("returns the first user message trimmed", () => {
       expect(
         deriveThreadTitle([
-          { id: "x", role: "assistant", content: "irrelevant", timestamp: 1 },
-          { id: "u", role: "user", content: "  Hello   World  ", timestamp: 2 },
+          {
+            id: "x",
+            role: "assistant",
+            parts: [{ type: "text", text: "irrelevant" }],
+            timestamp: 1,
+          },
+          {
+            id: "u",
+            role: "user",
+            parts: [{ type: "text", text: "  Hello   World  " }],
+            timestamp: 2,
+          },
         ]),
       ).toBe("Hello World");
     });
 
     it("truncates long titles with an ellipsis at the 60-char boundary", () => {
       const long = "a".repeat(80);
-      const title = deriveThreadTitle([{ id: "u", role: "user", content: long, timestamp: 1 }]);
+      const title = deriveThreadTitle([
+        { id: "u", role: "user", parts: [{ type: "text", text: long }], timestamp: 1 },
+      ]);
       expect(title.length).toBe(60);
       expect(title.endsWith("…")).toBe(true);
     });

@@ -7,6 +7,7 @@ import type {
   LLMProvider,
 } from "./types";
 import i18n from "@/infrastructure/i18n";
+import { getMessageText, migrateStoredMessages } from "./message-parts";
 import {
   loadAllThreadsFromIdb,
   migrateThreadsFromLocalStorageToIdb,
@@ -168,14 +169,7 @@ function migrateLegacyThreadsValue(value: unknown): ConversationThread[] {
   if (!Array.isArray(legacyMessages)) {
     return [];
   }
-  const messages: ChatMessage[] = legacyMessages.filter(
-    (message): message is ChatMessage =>
-      isObject(message) &&
-      isString((message as { id?: unknown }).id) &&
-      ((message as { role?: unknown }).role === "user" ||
-        (message as { role?: unknown }).role === "assistant") &&
-      isString((message as { content?: unknown }).content),
-  );
+  const { messages } = migrateStoredMessages(legacyMessages);
   if (messages.length === 0 && diagramId === "") {
     return [];
   }
@@ -236,8 +230,8 @@ export function migrateLegacyThreads(
               diagramId: (thread as { diagramId: string }).diagramId,
               title:
                 (thread as { title?: string }).title ??
-                deriveThreadTitle((thread as { messages: ChatMessage[] }).messages),
-              messages: (thread as { messages: ChatMessage[] }).messages.slice(
+                deriveThreadTitle(migrateStoredMessages(thread.messages).messages),
+              messages: migrateStoredMessages(thread.messages).messages.slice(
                 -MAX_MESSAGES_PER_THREAD,
               ),
               createdAt:
@@ -280,7 +274,7 @@ export function deriveThreadTitle(messages: ChatMessage[]): string {
   if (!firstUser) {
     return "";
   }
-  const trimmed = firstUser.content.trim().replace(/\s+/g, " ");
+  const trimmed = getMessageText(firstUser).trim().replace(/\s+/g, " ");
   if (trimmed.length === 0) {
     return "";
   }

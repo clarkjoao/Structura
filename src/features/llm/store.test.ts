@@ -270,7 +270,7 @@ describe("LLM store — first send persists the conversation", () => {
       (candidate) => candidate.id === inFlight.activeThreadId,
     );
     expect(thread?.messages).toHaveLength(1);
-    expect(thread?.messages[0]?.content).toBe("Add a cache");
+    expect(thread?.messages[0]?.parts).toEqual([{ type: "text", text: "Add a cache" }]);
 
     release(Response.json({ message: "Done" }));
     await pending;

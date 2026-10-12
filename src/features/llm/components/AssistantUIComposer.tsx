@@ -20,7 +20,8 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useMentionSearch } from "@/features/canvas/chat/useMentionSearch";
 import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";
-import type { MentionItem, ActiveMention } from "@/features/llm/types";
+import type { ChatMessage, MentionItem, ActiveMention } from "@/features/llm/types";
+import { getMessageText } from "@/features/llm/message-parts";
 
 const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
 
@@ -36,10 +37,7 @@ function findMentionTrigger(
 }
 
 /* ── Copy conversation ────────────────────────────────────────────────── */
-function formatConversationForCopy(
-  messages: Array<{ role: string; content: string; timestamp: number }>,
-  t: TFunction,
-): string {
+function formatConversationForCopy(messages: ChatMessage[], t: TFunction): string {
   const lines: string[] = [`# ${t("llmChat.copyExport.title")}\n`];
   for (const msg of messages) {
     const role =
@@ -47,7 +45,7 @@ function formatConversationForCopy(
         ? `**${t("llmChat.copyExport.user")}**`
         : `**${t("llmChat.copyExport.assistant")}**`;
     const time = new Date(msg.timestamp).toLocaleString();
-    lines.push(`\n${role} · ${time}\n${msg.content}\n`);
+    lines.push(`\n${role} · ${time}\n${getMessageText(msg)}\n`);
   }
   return lines.join("");
 }

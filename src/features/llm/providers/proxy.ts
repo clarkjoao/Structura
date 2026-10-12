@@ -1,4 +1,4 @@
-import type { ChatMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
+import type { LLMRequestMessage, LLMCompletion, LLMConfig, LLMStopReason } from "../types";
 import {
   createRequestTimeout,
   fetchLLM,
@@ -25,7 +25,7 @@ export function getProxyEndpoint(): string {
 
 export async function sendMessage(
   config: LLMConfig,
-  messages: ChatMessage[],
+  messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
@@ -39,7 +39,7 @@ export async function sendMessage(
 
 async function sendThroughProxy(
   config: LLMConfig,
-  messages: ChatMessage[],
+  messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
   timeout: RequestTimeout,

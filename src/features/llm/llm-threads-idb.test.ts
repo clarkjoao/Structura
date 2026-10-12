@@ -200,7 +200,7 @@ function makeState(diagramId: string): DiagramThreadState {
         id: `t-${diagramId}`,
         diagramId,
         title: `Title ${diagramId}`,
-        messages: [{ id: "m1", role: "user", content: "hi", timestamp: 1 }],
+        messages: [{ id: "m1", role: "user", parts: [{ type: "text", text: "hi" }], timestamp: 1 }],
         createdAt: 1,
         updatedAt: 1,
       },

@@ -1,9 +1,9 @@
-import type { ChatMessage, LLMCompletion, LLMConfig } from "../types";
+import type { LLMRequestMessage, LLMCompletion, LLMConfig } from "../types";
 import { sendOpenAICompatibleMessage } from "./openai-compatible";
 
 export async function sendMessage(
   config: LLMConfig,
-  messages: ChatMessage[],
+  messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {

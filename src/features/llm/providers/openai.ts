@@ -1,4 +1,4 @@
-import type { ChatMessage, LLMCompletion, LLMConfig } from "../types";
+import type { LLMRequestMessage, LLMCompletion, LLMConfig } from "../types";
 import { sendOpenAICompatibleMessage } from "./openai-compatible";
 
 const OPENAI_BASE_URL = "https://api.openai.com/v1/chat/completions";
@@ -20,7 +20,7 @@ const OPENAI_MAX_OUTPUT_TOKENS = 16000;
 
 export async function sendMessage(
   config: LLMConfig,
-  messages: ChatMessage[],
+  messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {

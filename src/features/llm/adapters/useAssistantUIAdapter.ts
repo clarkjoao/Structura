@@ -14,6 +14,7 @@ import type {
 } from "@assistant-ui/core";
 import { useLLMChat } from "@/features/canvas/chat";
 import type { ChatMessage } from "@/features/llm/types";
+import { getMessageText } from "@/features/llm/message-parts";
 import { getLLMErrorI18nKey } from "@/features/llm/errors";
 
 function isJsonEnvelope(text: string): boolean {
@@ -22,7 +23,7 @@ function isJsonEnvelope(text: string): boolean {
 }
 
 function chatMessageToThreadMessage(msg: ChatMessage): ThreadMessage {
-  const textPart: TextMessagePart = { type: "text", text: msg.content };
+  const textPart: TextMessagePart = { type: "text", text: getMessageText(msg) };
   if (msg.role === "user") {
     const userMsg: ThreadUserMessage = {
       id: msg.id,
@@ -178,7 +179,7 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
     async (_parentId: string | null, _config: StartRunConfig): Promise<void> => {
       const lastUserMessage = [...chatMessages].reverse().find((msg) => msg.role === "user");
       if (lastUserMessage) {
-        await send(lastUserMessage.content, []);
+        await send(getMessageText(lastUserMessage), []);
       }
     },
     [chatMessages, send],

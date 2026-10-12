@@ -5,6 +5,7 @@ import { buildSystemPrompt } from "./prompt-builder";
 import { parseLLMResponse } from "./patch-parser";
 import { toLLMError, type LLMError } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
+import { getMessageText, textPart } from "./message-parts";
 import type {
   AnalysisResponse,
   ChatMessage,
@@ -13,6 +14,7 @@ import type {
   LLMCompletion,
   LLMConfig,
   LLMConnection,
+  LLMRequestMessage,
   PendingNodePreview,
   PendingSuggestion,
 } from "./types";
@@ -55,28 +57,40 @@ function buildPatchMessage(actionCount: number): string {
   return i18n.t("llmChat.patch.proposed", { count: actionCount });
 }
 
-function sanitizeMessagesForLLM(messages: ChatMessage[]): ChatMessage[] {
-  return messages.map((message) => {
-    if (message.role !== "assistant") {
-      return message;
-    }
-    const trimmed = message.content.trim();
-    if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
-      return message;
-    }
-    try {
-      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-      if (parsed.mode === "analysis" && typeof parsed.summary === "string") {
-        return { ...message, content: parsed.summary };
+/**
+ * The conversation as the provider sees it: each message's text. An older
+ * assistant reply stored as a raw JSON envelope is reduced to its summary.
+ * Turns with no text (a failed or a stopped-before-anything turn) are left out.
+ */
+function toRequestMessages(messages: ChatMessage[]): LLMRequestMessage[] {
+  return messages
+    .map((message): LLMRequestMessage => {
+      const text = getMessageText(message);
+      if (message.role !== "assistant") {
+        return { role: message.role, content: text };
       }
-      if (typeof parsed.message === "string") {
-        return { ...message, content: parsed.message };
-      }
-    } catch (err) {
-      console.warn("[llm-store] Failed to parse summary from JSON:", err);
+      return { role: "assistant", content: summarizeAssistantText(text) };
+    })
+    .filter((message) => message.content.trim().length > 0);
+}
+
+function summarizeAssistantText(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+    return text;
+  }
+  try {
+    const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+    if (parsed.mode === "analysis" && typeof parsed.summary === "string") {
+      return parsed.summary;
     }
-    return { ...message, content: i18n.t("llmChat.previousSuggestion") };
-  });
+    if (typeof parsed.message === "string") {
+      return parsed.message;
+    }
+  } catch (err) {
+    console.warn("[llm-store] Failed to parse summary from JSON:", err);
+  }
+  return i18n.t("llmChat.previousSuggestion");
 }
 
 function ensureHistoryBoundary(): void {
@@ -108,7 +122,7 @@ function defaultTitleForLanguage(): string {
 
 async function executeLLMMessage(
   config: LLMConfig,
-  messages: ChatMessage[],
+  messages: LLMRequestMessage[],
   systemPrompt: string,
   onChunk: (chunk: string) => void,
 ): Promise<LLMCompletion> {
@@ -421,7 +435,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             {
               id: "seed",
               role: "user",
-              content: firstUserMessage ?? "",
+              parts: [textPart(firstUserMessage ?? "")],
               timestamp: Date.now(),
             },
           ]) || defaultTitleForLanguage(),
@@ -550,7 +564,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const userMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "user",
-        content: userText.trim(),
+        parts: [textPart(userText.trim())],
         timestamp: Date.now(),
       };
       const outgoingMessages = [...state.messages, userMessage];
@@ -558,7 +572,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const placeholderMessage: ChatMessage = {
         id: assistantMessageId,
         role: "assistant",
-        content: "",
+        parts: [textPart("")],
         timestamp: Date.now(),
       };
       set({
@@ -573,7 +587,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
       try {
         const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
-        const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
+        const sanitizedMessages = toRequestMessages(outgoingMessages);
         let fullResponse = "";
         const { text: rawAssistantResponse } = await executeLLMMessage(
           state.config,
@@ -589,7 +603,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
                 message.id === assistantMessageId
                   ? {
                       ...message,
-                      content: looksLikeJsonEnvelope ? "" : fullResponse,
+                      parts: [textPart(looksLikeJsonEnvelope ? "" : fullResponse)],
                     }
                   : message,
               ),
@@ -602,7 +616,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           set({
             messages: get().messages.map((message) =>
               message.id === assistantMessageId
-                ? { ...message, content: parsedResponse.analysis.summary }
+                ? { ...message, parts: [textPart(parsedResponse.analysis.summary)] }
                 : message,
             ),
             pendingAnalysis: parsedResponse.analysis,
@@ -755,7 +769,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             message.id === assistantMessageId
               ? {
                   ...message,
-                  content: assistantContent,
+                  parts: [textPart(assistantContent)],
                 }
               : message,
           ),
