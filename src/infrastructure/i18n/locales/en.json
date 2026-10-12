@@ -743,6 +743,9 @@
         "awaitingApproval": "Awaiting approval",
         "denied": "Denied"
       }
+    },
+    "markdown": {
+      "copyCode": "Copy code"
     }
   },
   "versions": {

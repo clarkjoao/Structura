@@ -7,10 +7,12 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useAuiState, MessagePrimitive } from "@assistant-ui/react";
 import { SUGGESTION_DATA_PART } from "@/features/llm/adapters/useAssistantUIAdapter";
+import { MarkdownText } from "./MarkdownText";
 import { SuggestionPartView } from "./SuggestionPartView";
 
-/** How the Structura parts that assistant-ui has no type for are rendered. */
+/** Text as Markdown; the Structura parts assistant-ui has no type for, by name. */
 const ASSISTANT_PART_COMPONENTS = {
+  Text: MarkdownText,
   data: {
     by_name: {
       [SUGGESTION_DATA_PART]: SuggestionPartView,
@@ -90,9 +92,7 @@ export function AssistantMessageComponent() {
       <div className="group relative max-w-[90%] min-w-0 pb-5">
         <div className="rounded-2xl bg-secondary/60 px-4 py-3 text-secondary-foreground ring-1 ring-border/40">
           <div className={cn("relative", !isExpanded && isLong && "max-h-52 overflow-hidden")}>
-            {/* MessagePrimitive.Parts renders each part with the correct
-                provider context, including the smooth streaming animation
-                and markdown rendering for text parts. */}
+            {/* Text parts render as Markdown; suggestion parts as their card. */}
             <MessagePrimitive.Parts components={ASSISTANT_PART_COMPONENTS} />
             {!isExpanded && isLong ? (
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-secondary/95 to-transparent" />

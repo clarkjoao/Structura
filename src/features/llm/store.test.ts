@@ -398,7 +398,10 @@ describe("LLM store — message parts", () => {
     const suggestion = state.pendingSuggestions[0];
     expect(suggestion?.status).toBe("pending");
     const last = lastMessage(state.messages);
-    expect(last?.parts[last.parts.length - 1]).toEqual({ type: "suggestion", suggestionId: suggestion?.id });
+    expect(last?.parts[last.parts.length - 1]).toEqual({
+      type: "suggestion",
+      suggestionId: suggestion?.id,
+    });
     expect(last?.status).toBe("complete");
   });
 });
