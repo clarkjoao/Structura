@@ -70,9 +70,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   const activeDiagram = useActiveDiagramModel();
   const resolvedDiagram = useResolvedDiagram();
 
-  const adapter = useAssistantUIAdapter();
-  const runtime = useExternalStoreRuntime(adapter);
-
   const {
     messages,
     send,
@@ -80,6 +77,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     rerun,
     isLoading,
     streamingContent,
+    pendingSuggestions,
     activeThread,
     activeConnection,
     config,
@@ -90,6 +88,15 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
 
   // Empty state is rendered *without* creating a thread — no auto-persistence.
   const hasMessages = messages.length > 0;
+
+  // The slice the assistant-ui adapter needs. Built once and stable across
+  // renders unless its inputs change, so the adapter is cheap to recompute.
+  const adapterDeps = useMemo(
+    () => ({ send, cancel, rerun, messages, isLoading, streamingContent, pendingSuggestions }),
+    [send, cancel, rerun, messages, isLoading, streamingContent, pendingSuggestions],
+  );
+  const adapter = useAssistantUIAdapter(adapterDeps);
+  const runtime = useExternalStoreRuntime(adapter);
 
   // Command suggestions the empty state shows. Filtered by each command's
   // `when(ctx)` for the active selection/diagram. Up to 4 rows.

@@ -13,8 +13,8 @@ import type {
   ThreadSuggestion,
   ThreadUserMessage,
 } from "@assistant-ui/core";
-import { useLLMChat } from "@/features/llm/hooks/useLLMChat";
-import type { ChatMessage } from "@/features/llm/types";
+import type { ChatMessage, CommandRef, PendingSuggestion } from "@/features/llm/types";
+import type { MentionRef } from "@/features/llm/mentions/mention-ref";
 import {
   getMessageText,
   isErrorPart,
@@ -121,20 +121,29 @@ function extractTextFromAppendMessage(message: AppendMessage): string {
   return "";
 }
 
-export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
+/**
+ * The slice of `useLLMChat` the assistant-ui adapter needs. The chat panel
+ * calls `useLLMChat` once and passes the result in, so the hook only runs
+ * once per panel (F25).
+ */
+export interface AssistantUIAdapterDeps {
+  send: (
+    text: string,
+    mentions: MentionRef[],
+    command?: CommandRef,
+  ) => Promise<boolean | void>;
+  cancel: () => void;
+  rerun: (assistantMessageId: string) => Promise<void>;
+  messages: ChatMessage[];
+  isLoading: boolean;
+  streamingContent: string | null;
+  pendingSuggestions: PendingSuggestion[];
+}
+
+export function useAssistantUIAdapter(deps: AssistantUIAdapterDeps): ExternalStoreAdapter<ThreadMessage> {
   const { t } = useTranslation();
-  const {
-    send,
-    cancel,
-    rerun,
-    messages: chatMessages,
-    isLoading,
-    streamingContent,
-    pendingSuggestions,
-  } = useLLMChat({
-    selectedNodeIds: new Set(),
-    selectedNodeId: null,
-  });
+  const { send, cancel, rerun, messages: chatMessages, isLoading, streamingContent, pendingSuggestions } =
+    deps;
 
   const threadMessages = useMemo(
     (): readonly ThreadMessage[] => chatMessages.map(chatMessageToThreadMessage),
