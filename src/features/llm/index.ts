@@ -10,7 +10,6 @@ export type {
   DiagramPatchAction,
   DiagramPatch,
   PendingSuggestion,
-  MentionItem,
 } from "./types";
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -28,11 +27,6 @@ export { getLLMErrorI18nKey } from "./errors";
 export { MODEL_PRESETS, getPresetsForProvider } from "./model-presets";
 export type { ModelPreset } from "./model-presets";
 export type { LLMError, LLMErrorKind } from "./errors";
-
-// ─── Suggestions ──────────────────────────────────────────────────────────────
-// Used internally by LLM components.
-export { buildContextualSuggestions } from "./suggestions";
-export type { ChatSuggestion } from "./suggestions";
 
 // ─── Internal sub-modules — import directly: ──────────────────────────────────
 //   import { ... } from "@/features/llm/component-catalog";

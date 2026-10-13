@@ -48,7 +48,6 @@ import {
 } from "./test-utils/openai-sse";
 import { resetLLMStorageForTests } from "./llm-storage";
 import { fixtureDiagram, fixtureHost } from "./test-utils/fixture-host";
-import { buildContextualSuggestions } from "./suggestions";
 import { conversationToMarkdown } from "./message-markdown";
 import i18n from "@/infrastructure/i18n";
 
@@ -583,21 +582,22 @@ describe("LLM store — review requests are normal turns", () => {
     vi.unstubAllGlobals();
   });
 
-  it("a review quick action sends its label as a normal turn with no analysis state", async () => {
-    const review = buildContextualSuggestions(null).find((s) => s.id === "review");
-    expect(review).toBeDefined();
-    const prompt = i18n.t(review?.labelKey ?? "");
+  it("a review command suggestion sends its label as a normal turn with no analysis state", async () => {
+    const prompt = i18n.t("llmChat.command.review.label");
     const markdown = "**Summary**\n\n### High\n- **Orders DB** has no replica.";
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => replyWith(markdown)),
     );
 
-    await useLLMStore.getState().sendMessage(prompt, "ctx");
+    await useLLMStore.getState().sendMessage(prompt, "ctx", {
+      command: { id: "review", name: "review" },
+    });
 
     const state = useLLMStore.getState();
     expect(state.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
     expect(state.messages[0]?.parts).toEqual([{ type: "text", text: prompt }]);
+    expect(state.messages[0]?.command).toEqual({ id: "review", name: "review" });
     expect(lastMessage(state.messages)?.parts).toEqual([{ type: "text", text: markdown }]);
     expect(state.pendingSuggestions).toEqual([]);
     expect("pendingAnalysis" in state).toBe(false);

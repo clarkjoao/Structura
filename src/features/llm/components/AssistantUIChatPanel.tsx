@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, History, MessageSquarePlus, Plus, Settings, Sparkles, X } from "lucide-react";
+import { ChevronDown, History, MessageSquarePlus, Settings, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLLMChat } from "@/features/llm/hooks/useLLMChat";
 import {
@@ -14,13 +14,13 @@ import { useAssistantUIAdapter } from "@/features/llm/adapters/useAssistantUIAda
 import { AssistantUIComposer } from "./AssistantUIComposer";
 import { ThreadDrawer } from "./ThreadDrawer";
 import { LLMSelector } from "./LLMSelector";
-import { ModelPicker } from "./ModelPicker";
 import { LLMSettings } from "./LLMSettings";
-import { buildContextualSuggestions } from "@/features/llm";
 import { isUsableConnection } from "@/features/llm/llm-storage";
+import { commandRegistry } from "@/features/llm/commands/builtins";
+import type { PromptCommand } from "@/features/llm/commands/registry";
 import { ChatActionsContext, type ChatActions } from "./chat-actions";
-import type { ChatSuggestion } from "@/features/llm/suggestions";
 import { useActiveDiagramModel } from "@/features/diagram";
+import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
 import { TypingIndicator } from "./TypingIndicator";
 
@@ -68,6 +68,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   const [showThreadDrawer, setShowThreadDrawer] = useState(false);
 
   const activeDiagram = useActiveDiagramModel();
+  const resolvedDiagram = useResolvedDiagram();
 
   const adapter = useAssistantUIAdapter();
   const runtime = useExternalStoreRuntime(adapter);
@@ -85,8 +86,21 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     createThread,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
 
+  const selectedNodeIdList = useMemo(() => Array.from(selectedNodeIds), [selectedNodeIds]);
+
   // Empty state is rendered *without* creating a thread — no auto-persistence.
   const hasMessages = messages.length > 0;
+
+  // Command suggestions the empty state shows. Filtered by each command's
+  // `when(ctx)` for the active selection/diagram. Up to 4 rows.
+  const commandSuggestions = useMemo(
+    () =>
+      commandRegistry.suggest(
+        { diagram: resolvedDiagram, selectionIds: selectedNodeIdList },
+        4,
+      ),
+    [resolvedDiagram, selectedNodeIdList],
+  );
 
   // ── Skeleton: briefly shown when switching to a thread that has no
   //    messages in memory yet (IndexedDB fetch is in-flight).
@@ -153,7 +167,10 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   // ── Cmd+K inside the chat focuses the composer. Canvas owns Cmd+K globally
   // (command palette) on /model, so only handle it when the event lands in this panel.
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const composerRef = useRef<{ focusTextarea: () => void } | null>(null);
+  const composerRef = useRef<{
+    focusTextarea: () => void;
+    setCommand: (command: PromptCommand) => void;
+  } | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -167,11 +184,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, []);
-
-  const contextualSuggestions = useMemo(
-    () => buildContextualSuggestions(activeDiagram ?? null),
-    [activeDiagram],
-  );
 
   // Without a usable connection a request can only fail, so open the settings
   // instead. Returns whether the message was sent, so the composer keeps the
@@ -267,9 +279,9 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
                     </ThreadPrimitive.Messages>
                   ) : (
                     <EmptyState
-                      suggestions={contextualSuggestions}
-                      onSelectSuggestion={(text) => {
-                        void handleSend(text, []);
+                      commands={commandSuggestions}
+                      onSelectCommand={(command) => {
+                        composerRef.current?.setCommand(command);
                       }}
                     />
                   )}
@@ -281,19 +293,20 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
           </div>
 
           {/* Composer */}
-          <div className="shrink-0 border-t border-border bg-card/60 p-3">
+          <div className="shrink-0 space-y-2 border-t border-border bg-card/60 p-3">
+            {!isUsableConnection(config) ? (
+              <ConnectionBanner onConfigure={() => setShowSettings(true)} />
+            ) : null}
             <AssistantUIComposer
               ref={composerRef}
               onSend={handleSend}
               onCancel={cancel}
               isLoading={isLoading}
+              selectedNodeIds={selectedNodeIdList}
             />
             <div className="mt-2 flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>
-              <div className="flex items-center">
-                <LLMSelector onOpenSettings={() => setShowSettings(true)} />
-                <ModelPicker />
-              </div>
+              <LLMSelector onOpenSettings={() => setShowSettings(true)} />
             </div>
           </div>
 
@@ -381,11 +394,11 @@ function IconButton({ label, onClick, children }: IconButtonProps) {
 }
 
 interface EmptyStateProps {
-  suggestions: ChatSuggestion[];
-  onSelectSuggestion: (text: string) => void;
+  commands: readonly PromptCommand[];
+  onSelectCommand: (command: PromptCommand) => void;
 }
 
-function EmptyState({ suggestions, onSelectSuggestion }: EmptyStateProps) {
+function EmptyState({ commands, onSelectCommand }: EmptyStateProps) {
   const { t } = useTranslation();
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto py-8 text-center">
@@ -397,18 +410,44 @@ function EmptyState({ suggestions, onSelectSuggestion }: EmptyStateProps) {
         <p className="text-xs text-muted-foreground">{t("llmChat.emptySubtitle")}</p>
       </div>
       <div className="w-full space-y-1.5">
-        {suggestions.map((s) => (
+        {commands.map((command) => (
           <button
-            key={s.id}
+            key={command.id}
             type="button"
-            onClick={() => onSelectSuggestion(t(s.labelKey))}
+            onClick={() => onSelectCommand(command)}
             className="group flex w-full items-center gap-2.5 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-left text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
-            <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-            <span className="truncate">{t(s.labelKey)}</span>
+            <code className="font-mono text-[11px] font-semibold text-primary">/{command.name}</code>
+            <span className="truncate">{t(command.labelKey)}</span>
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Banner above the composer when no usable connection is configured. The
+ * composer still works and still opens settings on send; the banner is just
+ * a heads-up so the user is not surprised by the redirect.
+ */
+function ConnectionBanner({ onConfigure }: { onConfigure: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="status"
+      className="flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-200"
+    >
+      <span className="truncate">{t("llmChat.connectionBanner.message")}</span>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={onConfigure}
+        className="h-7 border-amber-500/40 px-2 text-[11px] hover:bg-amber-500/15"
+      >
+        {t("llmChat.connectionBanner.configure")}
+      </Button>
     </div>
   );
 }

@@ -653,6 +653,10 @@
       "wholeDiagram": "Diagrama inteiro",
       "more": "+{{count}} mais"
     },
+    "connectionBanner": {
+      "message": "Configure um provedor para iniciar o chat.",
+      "configure": "Configurar"
+    },
     "selector": {
       "proxy": "Proxy",
       "label": "Selecionar modelo LLM",
