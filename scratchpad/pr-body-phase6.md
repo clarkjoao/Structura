@@ -28,6 +28,7 @@ The visual reference (Diagram Assistant v1 → "Configurações — MCP" and "MC
 **(a) `@modelcontextprotocol/sdk` 1.31.0 in the browser.** Its `Client` + `StreamableHTTPClientTransport` work in the browser: the package has `"engines": { "node": ">=18" }` but the ESM client bundle imports no Node-only APIs (`dist/esm/client/index.js` and `streamableHttp.js` use the global `fetch`, `URL`, `Headers` and the SDK's own `Protocol` over SSE). The peer dependency allows `zod ^3.25 || ^4.0`; the installed zod 4.4.3 satisfies it (no second zod major is required). It loads lazily through `mcp-runtime.ts` and the SDK is only fetched once the first enabled server needs connecting — the main `index` chunk is unchanged from phase 5.
 
 **(b) Where LLM connections and API keys are read or written today.** All persisted chat state has moved behind `IStoragePort` in this phase:
+
 - `llm-storage.ts`: `loadConnections(port, legacy)` and `saveConnections(port, payload)` are the only paths that touch the new `llmChat.connections` key. A second caller (`localStorage` snapshot for thread history) reads through the port too, and the migration is one-shot on the first run.
 - `legacy-local-store.ts`: a `LocalStorageAdapter("")` is the unprefixed port used to read the old keys for migration, and the delete after a successful write. The old keys are `structura:llm:config`, `structura:llm:keys`, `structura:llm:connections` (and `structura:llm:history` for threads, but that was already on the IDB path).
 - `McpConfigRepository` (`mcp-connections.ts`): the new `llm-mcp-servers` key and `llm-mcp-token:<serverId>` per token, on either the persistent port (when `rememberToken`) or the new `SessionStorageAdapter`.
@@ -47,17 +48,20 @@ The visual reference (Diagram Assistant v1 → "Configurações — MCP" and "MC
 ## Implementation
 
 ### T1 — Storage migration (F18)
+
 - `IStoragePort` already exists (`infrastructure/persistence/IStoragePort.ts`) and now has a `SessionStorageAdapter` sibling.
 - `llm-storage.ts` keeps the existing public API; `loadConnections(port, legacy)` runs the migration on the first call, writes through the port, and only deletes the old keys after the write succeeds. A failed migration keeps the old data and logs once. Second call is a no-op.
 - `McpConfigRepository` stores `llm-mcp-servers` on the persistent port and `llm-mcp-token:<id>` on whichever port the server asks for. `setRememberToken` moves the token between them; turning it off deletes the persisted copy but keeps the session one.
 
 ### T2 — MCP server config and client
+
 - `mcp-connections.ts`: `McpServerConfig` has `{ id, name, url, enabled, rememberToken, toolModes, hasToken }`. `id` is a slug derived from the name at creation: lowercase, diacritics stripped, `[^a-z0-9_]+` collapsed, max 24 chars, falling back to `server`, and unique against the existing ids. Immutable.
 - URL rules: `https://`, or plain `http://` on `localhost` / `127.0.0.1`. Anything else is an i18n error in the form.
 - `mcp-client.ts` uses the SDK's `Client` + `StreamableHTTPClientTransport`. The transport gets `Authorization: Bearer <token>` only when a token exists, and the user's `fetch` (injected for tests). `listTools` follows `nextCursor` until the server stops sending one. A dropped session (404 on a known `mcp-session-id`, or `ConnectionClosed`) reconnects once before giving up. `close` tries `terminateSession` and swallows the typical 405.
 - The connection lifecycle is driven by `useMcpStore` (`mcp-store.ts`): `connectAll` is called when the chat panel opens, `disconnectAll` when it closes, and `pagehide` closes everything on unload. The chat panel is the only thing that opens the SDK.
 
 ### T3 — MCP tools in the registry
+
 - `mcp-tool-adapter.ts`: each listed tool becomes a `ToolDefinition` with `source: "mcp"`, `serverId`, `kind: "read"`, and the registry name `mcp__<serverId>__<toolName>`.
 - Name sanitization: characters outside `[A-Za-z0-9_-]` are replaced with `_`; if the result is over 64 characters, the original name is hashed (FNV-1a, base 36) and the name is shortened deterministically with the hash as a suffix. The reverse map (hash → original) is implicit: the same name always produces the same registry name, and the adapter asserts that two different originals cannot collide.
 - Input schema: the server's JSON Schema is round-tripped through `JSON.parse(JSON.stringify(…))` and passed to the AI SDK's `jsonSchema` helper. A schema that isn't an object, or that can't be converted, is skipped and shown as "unsupported schema" in settings.
@@ -66,6 +70,7 @@ The visual reference (Diagram Assistant v1 → "Configurações — MCP" and "MC
 - The `tools/list_changed` notification re-lists that server's tools; so does the **Refresh** button in settings.
 
 ### T4 — Executing MCP calls in the loop
+
 - The chat loop's tool execution path was extended in `store.ts` and `message-parts.ts` to include MCP definitions in the registry's per-turn snapshot, and to render tool-call parts with the server badge (`source: "mcp"`, `serverId`). `ToolCallPart` gained `source` and `serverId` and `ToolCallPart.tsx` shows an "MCP · `<server>`" badge for `mcp` parts.
 - The system prompt gains the untrusted-result framing.
 - Result formatting (`formatMcpResult`):
@@ -77,6 +82,7 @@ The visual reference (Diagram Assistant v1 → "Configurações — MCP" and "MC
 - `cancelRequest` (Phase 2) aborts the in-flight MCP call. The SDK call's `AbortSignal` is passed through `connection.callTool`.
 
 ### T5 — Settings: "MCP servers" tab
+
 - `McpSettings.tsx` follows the layout described in the artboard brief, using the app's Tailwind tokens and shadcn components:
   - **List** with status dot (green connected, red error, amber for `auth` / `tokenMissing`), name, URL in mono, enable switch, and the classified error text when relevant. The CORS error names the app origin.
   - **Expanded server** lists its tools, each with name in mono, annotation badges (`read-only`, `destructive`, `open world`), a per-tool **Auto / Blocked** select, and a **Refresh** button that re-lists.
@@ -105,10 +111,10 @@ Boundary tests (import + storage): pass.
 
 ## Bundle sizes (gzipped, main entry unchanged from phase 5)
 
-| Chunk | Raw | Gzip |
-|---|---|---|
-| `index-…js` (main) | 410.82 kB | 87.56 kB |
-| `llm-storage-…js` | 13.66 kB | 4.52 kB |
+| Chunk                         | Raw       | Gzip     |
+| ----------------------------- | --------- | -------- |
+| `index-…js` (main)            | 410.82 kB | 87.56 kB |
+| `llm-storage-…js`             | 13.66 kB  | 4.52 kB  |
 | `mcp-runtime-…js` (new, lazy) | 304.00 kB | 87.66 kB |
 
 The MCP runtime is in its own chunk and is only fetched the first time the chat panel opens an enabled server's connection. No enabled server ⇒ no SDK download.

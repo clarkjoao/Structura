@@ -2,14 +2,14 @@
 
 Six stacked local branches from `main`, each with its own PR body. Open and merge in order; each branch is rebased on the previous one, so a phase's PR is small and the diff for the review is what the PR body says.
 
-| # | Branch | Base | Commits | Tip | PR body |
-|---|---|---|---|---|---|
-| 1 | `fix/llm-chat-phase1` | `main` | 10 | `b3bd4dc5` | (none — branch was created before the scratchpad format) |
-| 2 | `feat/llm-chat-phase2` | `fix/llm-chat-phase1` | 8 | `61419cab` | (none) |
-| 3 | `feat/llm-chat-phase3` | `feat/llm-chat-phase2` | 8 | `4e9b989e` | (none) |
-| 4 | `feat/llm-chat-phase4` | `feat/llm-chat-phase3` | 9 | `8cc6a79d` | `scratchpad/pr-body-phase4.md` |
-| 5 | `feat/llm-chat-phase5` | `feat/llm-chat-phase4` | 5 | `843ab81e` | `scratchpad/pr-body-phase5.md` |
-| 6 | `feat/llm-chat-phase6` | `feat/llm-chat-phase5` | 5 | `117e3743` | `scratchpad/pr-body-phase6.md` |
+| #   | Branch                 | Base                   | Commits | Tip        | PR body                                                  |
+| --- | ---------------------- | ---------------------- | ------- | ---------- | -------------------------------------------------------- |
+| 1   | `fix/llm-chat-phase1`  | `main`                 | 10      | `b3bd4dc5` | (none — branch was created before the scratchpad format) |
+| 2   | `feat/llm-chat-phase2` | `fix/llm-chat-phase1`  | 8       | `61419cab` | (none)                                                   |
+| 3   | `feat/llm-chat-phase3` | `feat/llm-chat-phase2` | 8       | `4e9b989e` | (none)                                                   |
+| 4   | `feat/llm-chat-phase4` | `feat/llm-chat-phase3` | 9       | `8cc6a79d` | `scratchpad/pr-body-phase4.md`                           |
+| 5   | `feat/llm-chat-phase5` | `feat/llm-chat-phase4` | 5       | `843ab81e` | `scratchpad/pr-body-phase5.md`                           |
+| 6   | `feat/llm-chat-phase6` | `feat/llm-chat-phase5` | 5       | `117e3743` | `scratchpad/pr-body-phase6.md`                           |
 
 Per `no-pr-without-asking`, none of these are pushed and no PRs are open. The user opens PRs in the order they prefer.
 
