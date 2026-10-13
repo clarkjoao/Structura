@@ -1,5 +1,7 @@
 import { migrateStoredMessages } from "./message-parts";
 import type { ConversationThread, DiagramThreadState } from "./types";
+import type { IStoragePort } from "@/infrastructure/persistence";
+import { legacyLocalStore as rawLocalStore } from "./legacy-local-store";
 
 const DB_NAME = "structura";
 const THREADS_STORE = "llm_threads";
@@ -155,12 +157,13 @@ export async function saveThreadsToIdb(
  */
 export async function migrateThreadsFromLocalStorageToIdb(
   legacyJson: string | null,
+  flagStore: IStoragePort = rawLocalStore,
 ): Promise<boolean> {
   if (!isIndexedDbAvailable() || !legacyJson) {
     return false;
   }
   try {
-    if (localStorage.getItem(MIGRATION_FLAG_KEY) === "1") {
+    if ((await flagStore.getItem(MIGRATION_FLAG_KEY)) === "1") {
       return false;
     }
     let legacy: unknown;
@@ -187,7 +190,7 @@ export async function migrateThreadsFromLocalStorageToIdb(
     } finally {
       db.close();
     }
-    localStorage.setItem(MIGRATION_FLAG_KEY, "1");
+    await flagStore.setItem(MIGRATION_FLAG_KEY, "1");
     return true;
   } catch {
     return false;
@@ -202,7 +205,7 @@ export async function migrateThreadsFromLocalStorageToIdb(
  * semantics and leave a fresh test running against a half-cleared store.
  */
 export function resetThreadsIdbForTests(): void {
-  localStorage.removeItem(MIGRATION_FLAG_KEY);
+  void rawLocalStore.removeItem(MIGRATION_FLAG_KEY);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

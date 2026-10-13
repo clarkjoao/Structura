@@ -44,7 +44,9 @@ import {
   defaultLLMConnection,
   hydrateChatThreadsCacheFromIdb,
   isChatThreadsHydrated,
+  defaultConnectionsPayload,
   loadConnections,
+  type ConnectionsPayload,
   loadThreadsForDiagram,
   saveConnections,
   saveThreadsForDiagram,
@@ -185,6 +187,10 @@ export interface LLMStoreState {
   streamingContent: string | null;
   isLoading: boolean;
 
+  /** True once the stored connections have been read. */
+  connectionsLoaded: boolean;
+  /** Reads the stored connections (migrating the old keys once). Called at startup. */
+  hydrateConnections: () => Promise<void>;
   setLLMConfig: (config: LLMConfig) => void;
   setActiveConnection: (id: string) => void;
   createConnection: (draft: Omit<LLMConnection, "id"> & { id?: string }) => LLMConnection;
@@ -318,15 +324,26 @@ function applyToolEvent(
 }
 
 export const useLLMStore = create<LLMStoreState>((set, get) => {
-  const initialConnections = loadConnections();
+  // A default until `hydrateConnections` reads the stored ones (async: the
+  // storage port is async).
+  const initialConnections = defaultConnectionsPayload();
   const initialConnection =
     initialConnections.connections.find(
       (connection) => connection.id === initialConnections.activeConnectionId,
     ) ?? initialConnections.connections[0];
 
   if (!initialConnection) {
-    throw new Error("loadConnections returned no connections");
+    throw new Error("defaultConnectionsPayload returned no connections");
   }
+
+  /** Set once the user changes connections, so a late hydration cannot undo it. */
+  let connectionsTouched = false;
+  const persistConnections = (payload: ConnectionsPayload) => {
+    connectionsTouched = true;
+    void saveConnections(payload).catch((err: unknown) => {
+      console.warn("[llm] could not save the connections", err);
+    });
+  };
 
   /** Aborts the request in flight; not state, so it lives outside `set()`. */
   let inFlight: AbortController | null = null;
@@ -526,6 +543,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     connections: initialConnections.connections,
     activeConnectionId: initialConnection.id,
     config: connectionToConfig(initialConnection),
+    connectionsLoaded: false,
     threadsByDiagram: {},
     activeDiagramId: null,
     activeThreadId: "",
@@ -533,6 +551,24 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     pendingSuggestions: [],
     streamingContent: null,
     isLoading: false,
+
+    hydrateConnections: async () => {
+      const payload = await loadConnections();
+      if (connectionsTouched) {
+        set({ connectionsLoaded: true });
+        return;
+      }
+      const active =
+        payload.connections.find((connection) => connection.id === payload.activeConnectionId) ??
+        payload.connections[0];
+      if (!active) return;
+      set({
+        connections: payload.connections,
+        activeConnectionId: active.id,
+        config: connectionToConfig(active),
+        connectionsLoaded: true,
+      });
+    },
 
     setLLMConfig: (config) => {
       const { activeConnectionId, connections } = get();
@@ -551,7 +587,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             }
           : connection,
       );
-      saveConnections({ connections: updated, activeConnectionId });
+      persistConnections({ connections: updated, activeConnectionId });
       set({ connections: updated, config });
     },
 
@@ -560,7 +596,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       if (!next) {
         return;
       }
-      saveConnections({ connections: get().connections, activeConnectionId: id });
+      persistConnections({ connections: get().connections, activeConnectionId: id });
       set({ activeConnectionId: id, config: connectionToConfig(next) });
     },
 
@@ -568,7 +604,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const id = draft.id ?? crypto.randomUUID();
       const connection: LLMConnection = { ...draft, id };
       const updated = [...get().connections, connection];
-      saveConnections({ connections: updated, activeConnectionId: id });
+      persistConnections({ connections: updated, activeConnectionId: id });
       set({
         connections: updated,
         activeConnectionId: id,
@@ -581,7 +617,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const updated: LLMConnection[] = get().connections.map((connection) =>
         connection.id === id ? { ...connection, ...patch, id } : connection,
       );
-      saveConnections({ connections: updated, activeConnectionId: get().activeConnectionId });
+      persistConnections({ connections: updated, activeConnectionId: get().activeConnectionId });
       const isActive = get().activeConnectionId === id;
       set({
         connections: updated,
@@ -606,7 +642,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         name: i18n.t("llmChat.settings.connectionCopyName", { name: source.name }),
       };
       const updated = [...get().connections, duplicate];
-      saveConnections({ connections: updated, activeConnectionId: get().activeConnectionId });
+      persistConnections({ connections: updated, activeConnectionId: get().activeConnectionId });
       set({ connections: updated });
       return duplicate;
     },
@@ -620,7 +656,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       if (updated.length === 0) {
         const fallback: LLMConnection = { ...defaultLLMConnection(), id: crypto.randomUUID() };
         updated.push(fallback);
-        saveConnections({ connections: updated, activeConnectionId: fallback.id });
+        persistConnections({ connections: updated, activeConnectionId: fallback.id });
         set({
           connections: updated,
           activeConnectionId: fallback.id,
@@ -628,7 +664,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         });
         return true;
       }
-      saveConnections({ connections: updated, activeConnectionId });
+      persistConnections({ connections: updated, activeConnectionId });
       set({ connections: updated });
       return true;
     },
@@ -782,7 +818,15 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       });
     },
 
-    initChatThreads: () => hydrateChatThreadsCacheFromIdb(),
+    initChatThreads: async () => {
+      const wasHydrated = isChatThreadsHydrated();
+      await hydrateChatThreadsCacheFromIdb();
+      // A panel that opened before hydration read an empty cache: reload it.
+      const { activeDiagramId, messages, isLoading } = get();
+      if (!wasHydrated && activeDiagramId && messages.length === 0 && !isLoading) {
+        get().loadHistoryForDiagram(activeDiagramId);
+      }
+    },
 
     sendMessage: async (userText, diagramContext, attachments = {}) => {
       const mentions = attachments.mentions ?? [];
@@ -803,7 +847,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       // useEffect), kick it off so the next call to `loadThreadsForDiagram`
       // hits the cache.
       if (!isChatThreadsHydrated()) {
-        void hydrateChatThreadsCacheFromIdb();
+        void get().initChatThreads();
       }
 
       const userMessage: ChatMessage = {
@@ -918,3 +962,5 @@ export function countConversationMessages(messages: ChatMessage[], isLoading: bo
   const hasInFlightPlaceholder = isLoading && last !== undefined && last.role === "assistant";
   return hasInFlightPlaceholder ? messages.length - 1 : messages.length;
 }
+
+void useLLMStore.getState().hydrateConnections();

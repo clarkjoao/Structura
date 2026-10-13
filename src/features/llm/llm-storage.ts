@@ -7,6 +7,8 @@ import type {
   LLMProvider,
 } from "./types";
 import i18n from "@/infrastructure/i18n";
+import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence";
+import { legacyLocalStore } from "./legacy-local-store";
 import { getVisibleText, migrateStoredMessages } from "./message-parts";
 import {
   THREAD_FORMAT_VERSION,
@@ -81,7 +83,7 @@ export function defaultLLMConnection(): LLMConnection {
   };
 }
 
-interface ConnectionsPayload {
+export interface ConnectionsPayload {
   connections: LLMConnection[];
   activeConnectionId: string;
 }
@@ -338,58 +340,109 @@ export function isUsableConnection(config: LLMConfig): boolean {
   }
 }
 
-export function loadConnections(): ConnectionsPayload {
+/** Where connections (and their API keys) live on the storage port. */
+export const CONNECTIONS_PORT_KEY = "llm-connections";
+
+const LEGACY_CONNECTION_KEYS = [
+  LLM_CONNECTIONS_STORAGE_KEY,
+  LLM_CONFIG_STORAGE_KEY,
+  PROVIDER_KEY_STORAGE,
+] as const;
+
+function parseConnectionsPayload(value: unknown): ConnectionsPayload | null {
+  if (!isObject(value) || !Array.isArray(value.connections)) return null;
+  const connections = value.connections
+    .filter((entry): entry is Partial<LLMConnection> => isObject(entry))
+    .map((entry) => normalizeConnection(entry));
+  if (connections.length === 0) return null;
+  const activeConnectionId =
+    isString(value.activeConnectionId) &&
+    connections.some((connection) => connection.id === value.activeConnectionId)
+      ? value.activeConnectionId
+      : (connections[0]?.id ?? DEFAULT_LLM_CONNECTION_ID);
+  return { connections, activeConnectionId };
+}
+
+function parseJson(raw: string | null): unknown {
+  if (!raw) return null;
   try {
-    const rawValue = localStorage.getItem(LLM_CONNECTIONS_STORAGE_KEY);
-    if (rawValue) {
-      const parsed: unknown = JSON.parse(rawValue);
-      if (isObject(parsed)) {
-        const connectionsValue = (parsed as { connections?: unknown }).connections;
-        const activeConnectionIdValue = (parsed as { activeConnectionId?: unknown })
-          .activeConnectionId;
-        if (Array.isArray(connectionsValue)) {
-          const connections = connectionsValue
-            .filter((entry): entry is Partial<LLMConnection> => isObject(entry))
-            .map((entry) => normalizeConnection(entry));
-          const activeConnectionId =
-            isString(activeConnectionIdValue) &&
-            connections.some((connection) => connection.id === activeConnectionIdValue)
-              ? activeConnectionIdValue
-              : (connections[0]?.id ?? DEFAULT_LLM_CONNECTION_ID);
-          if (connections.length > 0) {
-            return { connections, activeConnectionId };
-          }
-        }
-      }
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/** Connections under the old keys: the connections list, else the oldest config shape. */
+async function readLegacyConnections(legacy: IStoragePort): Promise<ConnectionsPayload | null> {
+  const stored = parseConnectionsPayload(
+    parseJson(await legacy.getItem(LLM_CONNECTIONS_STORAGE_KEY)),
+  );
+  if (stored) return stored;
+  const legacyConfig = await legacy.getItem(LLM_CONFIG_STORAGE_KEY);
+  const legacyKeys = await legacy.getItem(PROVIDER_KEY_STORAGE);
+  if (!legacyConfig && !legacyKeys) return null;
+  const migrated = migrateLegacyConfig(legacyConfig, legacyKeys);
+  return migrated.connections.length > 0
+    ? { ...migrated, connections: migrated.connections.map(normalizeConnection) }
+    : null;
+}
+
+async function deleteLegacyConnectionKeys(legacy: IStoragePort): Promise<void> {
+  for (const key of LEGACY_CONNECTION_KEYS) {
+    if ((await legacy.getItem(key)) !== null) await legacy.removeItem(key);
+  }
+}
+
+export function defaultConnectionsPayload(): ConnectionsPayload {
+  const id = crypto.randomUUID();
+  return { connections: [{ ...defaultLLMConnection(), id }], activeConnectionId: id };
+}
+
+let migrationFailureLogged = false;
+
+/**
+ * Loads the connections from the port. On the first run after the move to
+ * the port, the old keys are read, written through the port, and deleted only
+ * once the write is confirmed; a failed write keeps the old data (and logs
+ * once) so the next load tries again. Idempotent.
+ */
+export async function loadConnections(
+  port: IStoragePort = defaultStorage,
+  legacy: IStoragePort = legacyLocalStore,
+): Promise<ConnectionsPayload> {
+  try {
+    const stored = parseConnectionsPayload(await port.load<unknown>(CONNECTIONS_PORT_KEY));
+    if (stored) {
+      // A previous migration wrote the new key but could not delete the old ones.
+      await deleteLegacyConnectionKeys(legacy);
+      return stored;
     }
   } catch (err) {
     console.warn("[llm-storage] Failed to load connections:", err);
   }
 
-  // Legacy fallback: migrate from old key shape.
-  let migrated: ConnectionsPayload | null = null;
+  const fromLegacy = await readLegacyConnections(legacy).catch(() => null);
+  if (!fromLegacy) return defaultConnectionsPayload();
+
   try {
-    const legacyConfig = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
-    const legacyKeys = localStorage.getItem(PROVIDER_KEY_STORAGE);
-    if (legacyConfig || legacyKeys) {
-      migrated = migrateLegacyConfig(legacyConfig, legacyKeys);
+    await port.save(CONNECTIONS_PORT_KEY, fromLegacy);
+    if (!parseConnectionsPayload(await port.load<unknown>(CONNECTIONS_PORT_KEY))) {
+      throw new Error("the migrated connections did not read back");
     }
+    await deleteLegacyConnectionKeys(legacy);
   } catch (err) {
-    console.warn("[llm-storage] Failed to migrate legacy config:", err);
+    if (!migrationFailureLogged) {
+      migrationFailureLogged = true;
+      console.warn("[llm-storage] Connection migration failed; keeping the old data:", err);
+    }
   }
-
-  if (migrated && migrated.connections.length > 0) {
-    return { ...migrated, connections: migrated.connections.map(normalizeConnection) };
-  }
-
-  const id = crypto.randomUUID();
-  return {
-    connections: [{ ...defaultLLMConnection(), id }],
-    activeConnectionId: id,
-  };
+  return fromLegacy;
 }
 
-export function saveConnections(payload: ConnectionsPayload): void {
+export async function saveConnections(
+  payload: ConnectionsPayload,
+  port: IStoragePort = defaultStorage,
+): Promise<void> {
   const normalized: ConnectionsPayload = {
     connections: payload.connections.map((connection) => normalizeConnection(connection)),
     activeConnectionId: payload.connections.some(
@@ -398,7 +451,7 @@ export function saveConnections(payload: ConnectionsPayload): void {
       ? payload.activeConnectionId
       : (payload.connections[0]?.id ?? DEFAULT_LLM_CONNECTION_ID),
   };
-  localStorage.setItem(LLM_CONNECTIONS_STORAGE_KEY, JSON.stringify(normalized));
+  await port.save(CONNECTIONS_PORT_KEY, normalized);
 }
 
 // ---------------------------------------------------------------------------
@@ -411,7 +464,8 @@ export function saveConnections(payload: ConnectionsPayload): void {
 // keeps a synchronous in-memory cache (`chatThreadsCache`) populated at app
 // boot by `useLLMStore.initChatThreads()`. The cache is the source of truth
 // during the session; `IndexedDB` (via `llm-threads-idb`) is the durable
-// surface; `localStorage` is a best-effort fallback for runtimes without IDB.
+// surface; a snapshot under the old key, written through the storage port, is
+// a best-effort fallback for runtimes without IDB.
 
 let chatThreadsCache: Record<string, DiagramThreadState> = {};
 let chatThreadsHydrated = false;
@@ -450,23 +504,13 @@ function emptyThreadState(_diagramId: string): DiagramThreadState {
 }
 
 /**
- * Read the persisted thread state for `diagramId`. Returns the in-memory
- * cache when the boot hydration has completed; falls back to the legacy
- * `localStorage` payload otherwise (or to an empty state when neither has
- * data for this diagram).
+ * Read the persisted thread state for `diagramId` from the in-memory cache.
+ * Before the boot hydration completes it is empty; the store reloads the
+ * active diagram's history once hydration lands (`initChatThreads`).
  */
 export function loadThreadsForDiagram(diagramId: string): DiagramThreadState {
   if (chatThreadsHydrated && diagramId in chatThreadsCache) {
     return chatThreadsCache[diagramId];
-  }
-  try {
-    const rawValue = localStorage.getItem(CHAT_HISTORY_KEY);
-    const migrated = migrateLegacyThreads(rawValue);
-    if (isObject(migrated) && diagramId in migrated) {
-      return migrated[diagramId];
-    }
-  } catch (err) {
-    console.warn("[llm-storage] Failed to load threads for diagram:", err);
   }
   return emptyThreadState(diagramId);
 }
@@ -508,8 +552,12 @@ function writeThreadsSnapshot(): void {
           "",
       };
     }
-    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(snapshot));
-    localStorage.setItem(CHAT_HISTORY_FORMAT_KEY, String(THREAD_FORMAT_VERSION));
+    void Promise.all([
+      legacyLocalStore.setItem(CHAT_HISTORY_KEY, JSON.stringify(snapshot)),
+      legacyLocalStore.setItem(CHAT_HISTORY_FORMAT_KEY, String(THREAD_FORMAT_VERSION)),
+    ]).catch((err: unknown) => {
+      console.warn("[llm-storage] Failed to save threads snapshot:", err);
+    });
   } catch (err) {
     console.warn("[llm-storage] Failed to save threads snapshot:", err);
   }
@@ -528,8 +576,8 @@ export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
   // (covers the case where IDB is empty but the legacy blob is present).
   const merged: Record<string, DiagramThreadState> = { ...idbPayload };
   let snapshotNeedsRewrite = false;
+  const rawLegacy = await legacyLocalStore.getItem(CHAT_HISTORY_KEY).catch(() => null);
   try {
-    const rawLegacy = localStorage.getItem(CHAT_HISTORY_KEY);
     if (rawLegacy) {
       // `migrateLegacyThreads` brings messages to the current format.
       const legacy = migrateLegacyThreads(rawLegacy);
@@ -539,7 +587,7 @@ export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
         }
       }
       snapshotNeedsRewrite =
-        localStorage.getItem(CHAT_HISTORY_FORMAT_KEY) !== String(THREAD_FORMAT_VERSION);
+        (await legacyLocalStore.getItem(CHAT_HISTORY_FORMAT_KEY)) !== String(THREAD_FORMAT_VERSION);
     }
   } catch (err) {
     console.warn("[llm-storage] Failed to migrate legacy threads:", err);
@@ -553,7 +601,7 @@ export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
 
   // Run the one-shot migration in the background. The flag inside the IDB
   // helper makes this a no-op after the first run.
-  void migrateThreadsFromLocalStorageToIdb(localStorage.getItem(CHAT_HISTORY_KEY));
+  void migrateThreadsFromLocalStorageToIdb(rawLegacy, legacyLocalStore);
 }
 
 // Compatibility shims for callers still relying on the old shape. These are
@@ -593,35 +641,4 @@ export function saveThreadToStorage(diagramId: string, messages: ChatMessage[]):
     threads,
     activeThreadId: threads[0]?.id ?? "",
   });
-}
-
-export function loadConfigFromLocalStorage(): LLMConfig {
-  const { connections, activeConnectionId } = loadConnections();
-  const active = connections.find((connection) => connection.id === activeConnectionId);
-  const fallback = active ?? connections[0] ?? defaultLLMConnection();
-  return {
-    mode: fallback.mode,
-    provider:
-      fallback.provider === "anthropic" || fallback.provider === "custom"
-        ? fallback.provider
-        : "openai",
-    apiKey: fallback.apiKey,
-    model: fallback.model,
-    ...(fallback.baseUrl ? { baseUrl: fallback.baseUrl } : {}),
-    ...(fallback.authHeader ? { authHeader: fallback.authHeader } : {}),
-    ...(fallback.extraHeaders ? { extraHeaders: fallback.extraHeaders } : {}),
-    ...(fallback.extraParams ? { extraParams: fallback.extraParams } : {}),
-  };
-}
-
-export function saveConfigToLocalStorage(config: LLMConfig): void {
-  const { connections, activeConnectionId } = loadConnections();
-  const active = connections.find((connection) => connection.id === activeConnectionId);
-  const id = active?.id ?? crypto.randomUUID();
-  const updated: LLMConnection[] = active
-    ? connections.map((connection) =>
-        connection.id === id ? normalizeConnection({ ...connection, ...config, id }) : connection,
-      )
-    : [...connections, normalizeConnection({ ...config, id })];
-  saveConnections({ connections: updated, activeConnectionId: id });
 }
