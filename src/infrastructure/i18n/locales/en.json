@@ -599,7 +599,9 @@
       "testConnected_one": "Connected · {{count}} model · {{latency}} ms",
       "testConnected_other": "Connected · {{count}} models · {{latency}} ms",
       "testPresets_one": "{{count}} preset model; the key is checked on the first message",
-      "testPresets_other": "{{count}} preset models; the key is checked on the first message"
+      "testPresets_other": "{{count}} preset models; the key is checked on the first message",
+      "tabConnections": "Connections",
+      "tabSkills": "Skills"
     },
     "suggestion": {
       "accept": "Accept",
@@ -818,7 +820,64 @@
       "allTools": "all tools",
       "removeChip": "Remove skill {{name}}",
       "unavailableChip": "{{name}} (unavailable)",
-      "unavailableHint": "This skill no longer exists. Retrying sends the message without it."
+      "unavailableHint": "This skill no longer exists. Retrying sends the message without it.",
+      "settings": {
+        "title": "Skills",
+        "hint": "Reusable instructions you turn on from the / menu.",
+        "workspaceHint": "Connect a workspace folder to share skills with your team in .structura/skills/.",
+        "new": "New skill",
+        "editTitle": "Edit skill",
+        "import": "Import .md",
+        "importTo": "Import to:",
+        "importDone_one": "Imported {{count}} skill.",
+        "importDone_other": "Imported {{count}} skills.",
+        "importFailed": "{{file}}: {{reason}}",
+        "empty": "No skills yet.",
+        "enable": "Enable {{name}}",
+        "edit": "Edit",
+        "export": "Export as .md",
+        "delete": "Delete",
+        "warningUnknownTools": "Unknown tools are ignored: {{names}}.",
+        "warningUnknownKeys": "Unknown keys are ignored: {{keys}}.",
+        "unknownTool": "No tool has this name; it is ignored.",
+        "problemsTitle": "Files with errors",
+        "problemLine": "Line {{line}}: {{reason}}",
+        "unreadable": "Could not read the file: {{message}}",
+        "showRaw": "Fix the text",
+        "filePath": "Fix it in the file: {{path}}",
+        "rawTitle": "Skill text",
+        "saveTo": "Save to",
+        "name": "Name",
+        "description": "When to use",
+        "instructions": "Instructions",
+        "charCount": "{{count}}/{{max}}",
+        "tools": "Allowed tools",
+        "toolsAll": "None selected: all tools are allowed.",
+        "addTool": "Add tool",
+        "removeTool": "Remove {{name}}",
+        "toolKind": {
+          "read": "read",
+          "write": "write"
+        },
+        "writeNote": "Write tools never change the diagram directly: their changes always go through Accept/Reject.",
+        "saveFailed": "Could not save: {{message}}",
+        "deleteFailed": "Could not delete: {{message}}",
+        "deleteTitle": "Delete {{name}}?",
+        "deleteLocal": "This removes the skill from this browser.",
+        "deleteWorkspace": "This deletes the file {{path}} from the workspace folder, for everyone who uses it.",
+        "confirmDelete": "Delete"
+      },
+      "error": {
+        "fileTooLarge": "The file is larger than {{max}} bytes.",
+        "missingFrontmatter": "The file must start with a front matter block between --- lines.",
+        "unclosedFrontmatter": "The front matter block is not closed with ---.",
+        "invalidLine": "Expected \"key: value\" or a list item.",
+        "duplicateKey": "\"{{field}}\" appears more than once.",
+        "invalidValue": "This value is not valid.",
+        "invalidList": "This list is not valid.",
+        "missingField": "\"{{field}}\" is required.",
+        "tooLong": "\"{{field}}\" is longer than {{max}} characters."
+      }
     }
   },
   "versions": {

@@ -599,7 +599,9 @@
       "testConnected_one": "Conectado · {{count}} modelo · {{latency}} ms",
       "testConnected_other": "Conectado · {{count}} modelos · {{latency}} ms",
       "testPresets_one": "{{count}} modelo predefinido; a chave é verificada na primeira mensagem",
-      "testPresets_other": "{{count}} modelos predefinidos; a chave é verificada na primeira mensagem"
+      "testPresets_other": "{{count}} modelos predefinidos; a chave é verificada na primeira mensagem",
+      "tabConnections": "Conexões",
+      "tabSkills": "Skills"
     },
     "suggestion": {
       "accept": "Aceitar",
@@ -818,7 +820,64 @@
       "allTools": "todas as ferramentas",
       "removeChip": "Remover skill {{name}}",
       "unavailableChip": "{{name}} (indisponível)",
-      "unavailableHint": "Esta skill não existe mais. Tentar de novo envia a mensagem sem ela."
+      "unavailableHint": "Esta skill não existe mais. Tentar de novo envia a mensagem sem ela.",
+      "settings": {
+        "title": "Skills",
+        "hint": "Instruções reutilizáveis que você ativa pelo menu /.",
+        "workspaceHint": "Conecte uma pasta de workspace para compartilhar skills com o time em .structura/skills/.",
+        "new": "Nova skill",
+        "editTitle": "Editar skill",
+        "import": "Importar .md",
+        "importTo": "Importar para:",
+        "importDone_one": "{{count}} skill importada.",
+        "importDone_other": "{{count}} skills importadas.",
+        "importFailed": "{{file}}: {{reason}}",
+        "empty": "Nenhuma skill ainda.",
+        "enable": "Ativar {{name}}",
+        "edit": "Editar",
+        "export": "Exportar como .md",
+        "delete": "Excluir",
+        "warningUnknownTools": "Ferramentas desconhecidas são ignoradas: {{names}}.",
+        "warningUnknownKeys": "Chaves desconhecidas são ignoradas: {{keys}}.",
+        "unknownTool": "Nenhuma ferramenta tem este nome; ele é ignorado.",
+        "problemsTitle": "Arquivos com erro",
+        "problemLine": "Linha {{line}}: {{reason}}",
+        "unreadable": "Não foi possível ler o arquivo: {{message}}",
+        "showRaw": "Corrigir o texto",
+        "filePath": "Corrija no arquivo: {{path}}",
+        "rawTitle": "Texto da skill",
+        "saveTo": "Salvar em",
+        "name": "Nome",
+        "description": "Quando usar",
+        "instructions": "Instruções",
+        "charCount": "{{count}}/{{max}}",
+        "tools": "Ferramentas permitidas",
+        "toolsAll": "Nenhuma selecionada: todas as ferramentas são permitidas.",
+        "addTool": "Adicionar ferramenta",
+        "removeTool": "Remover {{name}}",
+        "toolKind": {
+          "read": "leitura",
+          "write": "escrita"
+        },
+        "writeNote": "Ferramentas de escrita nunca alteram o diagrama diretamente: as mudanças sempre passam por Aceitar/Rejeitar.",
+        "saveFailed": "Não foi possível salvar: {{message}}",
+        "deleteFailed": "Não foi possível excluir: {{message}}",
+        "deleteTitle": "Excluir {{name}}?",
+        "deleteLocal": "Isto remove a skill deste navegador.",
+        "deleteWorkspace": "Isto exclui o arquivo {{path}} da pasta do workspace, para todos que a usam.",
+        "confirmDelete": "Excluir"
+      },
+      "error": {
+        "fileTooLarge": "O arquivo passa de {{max}} bytes.",
+        "missingFrontmatter": "O arquivo deve começar com um bloco de front matter entre linhas ---.",
+        "unclosedFrontmatter": "O bloco de front matter não foi fechado com ---.",
+        "invalidLine": "Esperado \"chave: valor\" ou um item de lista.",
+        "duplicateKey": "\"{{field}}\" aparece mais de uma vez.",
+        "invalidValue": "Este valor não é válido.",
+        "invalidList": "Esta lista não é válida.",
+        "missingField": "\"{{field}}\" é obrigatório.",
+        "tooLong": "\"{{field}}\" passa de {{max}} caracteres."
+      }
     }
   },
   "versions": {

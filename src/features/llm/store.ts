@@ -53,6 +53,7 @@ import { applySuggestion } from "./suggestion-apply";
 import { SuggestionDraft } from "./tools/suggestion-draft";
 import { isToolErrorResult, type ToolRegistry } from "./tools/registry";
 import type { DiagramToolHost } from "./tools/host";
+import { loadInternalTools } from "./tools/load-internal-tools";
 
 function getResolvedAppLanguage(): string {
   const lng = i18n.resolvedLanguage ?? i18n.language ?? "pt-BR";
@@ -314,21 +315,6 @@ function applyToolEvent(
     case "error":
       return updateToolCallPart(message, event.id, { status: "error", error: event.error });
   }
-}
-
-/** The tools every turn offers the model. */
-let internalTools: Promise<ToolRegistry> | null = null;
-
-/**
- * The internal tool registry, loaded on the first turn: the tools carry zod
- * schemas, which stay out of the initial bundle with the rest of the chat
- * runtime.
- */
-function loadInternalTools(): Promise<ToolRegistry> {
-  internalTools ??= import("./tools/internal-tools").then((module) =>
-    module.createInternalToolRegistry(),
-  );
-  return internalTools;
 }
 
 export const useLLMStore = create<LLMStoreState>((set, get) => {

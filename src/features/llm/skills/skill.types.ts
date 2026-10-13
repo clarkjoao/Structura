@@ -40,6 +40,10 @@ export function isSkillSource(value: unknown): value is SkillSource {
   return SKILL_SOURCES.some((source) => source === value);
 }
 
+export function isWorkspaceSource(source: SkillSource): source is "workspace" {
+  return source === "workspace";
+}
+
 export function isWorkspaceSkill(skill: Skill): skill is Skill & { source: "workspace" } {
   return skill.source === "workspace";
 }
