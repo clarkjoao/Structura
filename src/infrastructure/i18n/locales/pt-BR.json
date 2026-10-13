@@ -601,7 +601,8 @@
       "testPresets_one": "{{count}} modelo predefinido; a chave é verificada na primeira mensagem",
       "testPresets_other": "{{count}} modelos predefinidos; a chave é verificada na primeira mensagem",
       "tabConnections": "Conexões",
-      "tabSkills": "Skills"
+      "tabSkills": "Skills",
+      "tabMcp": "Servidores MCP"
     },
     "suggestion": {
       "accept": "Aceitar",
@@ -877,6 +878,66 @@
         "invalidList": "Esta lista não é válida.",
         "missingField": "\"{{field}}\" é obrigatório.",
         "tooLong": "\"{{field}}\" passa de {{max}} caracteres."
+      }
+    },
+    "mcp": {
+      "title": "Servidores MCP",
+      "hint": "Ferramentas remotas que o assistente pode chamar deste navegador (Streamable HTTP). As chamadas rodam sem pedir confirmação; bloqueie uma ferramenta para deixá-la fora do alcance do modelo. Ferramentas MCP nunca alteram o diagrama.",
+      "add": "Adicionar servidor",
+      "editTitle": "Editar servidor",
+      "empty": "Nenhum servidor MCP ainda.",
+      "enable": "Ativar {{name}}",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "showTools": "Mostrar as ferramentas de {{name}}",
+      "enterToken": "Informar token",
+      "status": {
+        "connected": "Conectado",
+        "connecting": "Conectando",
+        "error": "Erro",
+        "disconnected": "Desconectado"
+      },
+      "error": {
+        "cors": "O navegador bloqueou a requisição. O servidor precisa permitir a origem deste app via CORS: {{origin}} (e o cabeçalho Authorization quando houver token).",
+        "auth": "O servidor recusou o acesso. Confira o token.",
+        "notFound": "Nada neste endereço (HTTP 404). Confira o caminho do endpoint MCP do servidor.",
+        "protocol": "O servidor não respondeu como um servidor MCP via Streamable HTTP, ou usa uma versão de protocolo não suportada.",
+        "network": "Não foi possível alcançar o servidor, ou ele falhou. Tente de novo mais tarde.",
+        "tokenMissing": "O token só foi guardado na sessão anterior do navegador. Informe-o de novo."
+      },
+      "toolsTitle_one": "{{count}} ferramenta",
+      "toolsTitle_other": "{{count}} ferramentas",
+      "refresh": "Atualizar",
+      "noTools": "Este servidor não lista ferramentas.",
+      "toolsWhenConnected": "As ferramentas aparecem quando o servidor estiver conectado.",
+      "unsupportedSchema": "schema não suportado",
+      "toolMode": "Modo de {{name}}",
+      "mode": {
+        "auto": "Automático",
+        "blocked": "Bloqueado"
+      },
+      "annotation": {
+        "readOnly": "somente leitura",
+        "destructive": "destrutiva",
+        "openWorld": "mundo aberto"
+      },
+      "deleteTitle": "Excluir {{name}}?",
+      "deleteDescription": "Isto remove as configurações do servidor e o token dele deste navegador.",
+      "confirmDelete": "Excluir",
+      "form": {
+        "name": "Nome",
+        "url": "URL",
+        "urlInvalid": "Informe uma URL válida.",
+        "urlInsecure": "Use https://. http:// simples só funciona para localhost e 127.0.0.1.",
+        "token": "Token bearer (opcional)",
+        "tokenKeep": "Deixe vazio para manter o token atual",
+        "remember": "Lembrar neste navegador",
+        "rememberNote": "Caso contrário, o token dura só esta sessão do navegador.",
+        "test": "Testar conexão",
+        "testing": "Testando…",
+        "testOk_one": "Conectado: {{count}} ferramenta em {{latency}} ms.",
+        "testOk_other": "Conectado: {{count}} ferramentas em {{latency}} ms.",
+        "saveFailed": "Não foi possível salvar: {{message}}"
       }
     }
   },

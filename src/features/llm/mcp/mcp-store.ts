@@ -77,6 +77,8 @@ export interface McpStoreState {
   testConnection: (url: string, token: string | null) => Promise<McpTestResult>;
   /** The tools a turn may offer: connected, enabled servers, supported and not blocked. */
   toolDefinitionsForTurn: () => ToolDefinition[];
+  /** The server's stored token, for testing an edit without retyping it. */
+  getToken: (id: string) => Promise<string | null>;
 }
 
 const DISCONNECTED: McpServerStatus = { state: "disconnected" };
@@ -392,6 +394,11 @@ export function createMcpStore(deps: McpStoreDeps) {
         } finally {
           await connection.close();
         }
+      },
+
+      getToken: async (id) => {
+        const server = findServer(id);
+        return server ? repository.getToken(server) : null;
       },
 
       toolDefinitionsForTurn: () => {

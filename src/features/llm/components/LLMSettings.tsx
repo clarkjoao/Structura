@@ -15,6 +15,7 @@ import { DEFAULT_PROXY_BASE_URL } from "@/features/llm/llm-storage";
 import { getLLMErrorI18nKey } from "@/features/llm/errors";
 import type { ConnectionTestResult } from "@/features/llm/transport/connection-test";
 import { SkillsSettings } from "./skills/SkillsSettings";
+import { McpSettings } from "./mcp/McpSettings";
 
 const CUSTOM_MODEL_OPTION_VALUE = "__custom__";
 const URL_PATTERN = /^https?:\/\/\S+$/i;
@@ -325,12 +326,21 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
             <TabsTrigger value="skills" className="h-6 text-xs">
               {t("llmChat.settings.tabSkills")}
             </TabsTrigger>
+            <TabsTrigger value="mcp" className="h-6 text-xs">
+              {t("llmChat.settings.tabMcp")}
+            </TabsTrigger>
           </TabsList>
         </div>
 
         <TabsContent value="skills" className="mt-0 flex-1 overflow-y-auto p-4">
           <div className="mx-auto max-w-xl">
             <SkillsSettings />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="mcp" className="mt-0 flex-1 overflow-y-auto p-4">
+          <div className="mx-auto max-w-xl">
+            <McpSettings />
           </div>
         </TabsContent>
 

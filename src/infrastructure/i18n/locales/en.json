@@ -601,7 +601,8 @@
       "testPresets_one": "{{count}} preset model; the key is checked on the first message",
       "testPresets_other": "{{count}} preset models; the key is checked on the first message",
       "tabConnections": "Connections",
-      "tabSkills": "Skills"
+      "tabSkills": "Skills",
+      "tabMcp": "MCP servers"
     },
     "suggestion": {
       "accept": "Accept",
@@ -877,6 +878,66 @@
         "invalidList": "This list is not valid.",
         "missingField": "\"{{field}}\" is required.",
         "tooLong": "\"{{field}}\" is longer than {{max}} characters."
+      }
+    },
+    "mcp": {
+      "title": "MCP servers",
+      "hint": "Remote tools the assistant can call from this browser (Streamable HTTP). Calls run without asking; block a tool to keep it away from the model. MCP tools never change the diagram.",
+      "add": "Add server",
+      "editTitle": "Edit server",
+      "empty": "No MCP servers yet.",
+      "enable": "Enable {{name}}",
+      "edit": "Edit",
+      "delete": "Delete",
+      "showTools": "Show the tools of {{name}}",
+      "enterToken": "Enter token",
+      "status": {
+        "connected": "Connected",
+        "connecting": "Connecting",
+        "error": "Error",
+        "disconnected": "Not connected"
+      },
+      "error": {
+        "cors": "The browser blocked the request. The server must allow this app's origin through CORS: {{origin}} (and the Authorization header when you use a token).",
+        "auth": "The server refused access. Check the token.",
+        "notFound": "Nothing at this URL (HTTP 404). Check the path of the server's MCP endpoint.",
+        "protocol": "The server did not answer as an MCP server over Streamable HTTP, or uses an unsupported protocol version.",
+        "network": "Could not reach the server, or it failed. Try again later.",
+        "tokenMissing": "The token was only kept for the last browser session. Enter it again."
+      },
+      "toolsTitle_one": "{{count}} tool",
+      "toolsTitle_other": "{{count}} tools",
+      "refresh": "Refresh",
+      "noTools": "This server lists no tools.",
+      "toolsWhenConnected": "Tools appear once the server is connected.",
+      "unsupportedSchema": "unsupported schema",
+      "toolMode": "Mode for {{name}}",
+      "mode": {
+        "auto": "Auto",
+        "blocked": "Blocked"
+      },
+      "annotation": {
+        "readOnly": "read-only",
+        "destructive": "destructive",
+        "openWorld": "open world"
+      },
+      "deleteTitle": "Delete {{name}}?",
+      "deleteDescription": "This removes the server's settings and its token from this browser.",
+      "confirmDelete": "Delete",
+      "form": {
+        "name": "Name",
+        "url": "URL",
+        "urlInvalid": "Enter a valid URL.",
+        "urlInsecure": "Use https://. Plain http:// only works for localhost and 127.0.0.1.",
+        "token": "Bearer token (optional)",
+        "tokenKeep": "Leave empty to keep the current token",
+        "remember": "Remember on this browser",
+        "rememberNote": "Otherwise the token lasts for this browser session only.",
+        "test": "Test connection",
+        "testing": "Testing…",
+        "testOk_one": "Connected: {{count}} tool in {{latency}} ms.",
+        "testOk_other": "Connected: {{count}} tools in {{latency}} ms.",
+        "saveFailed": "Could not save: {{message}}"
       }
     }
   },
