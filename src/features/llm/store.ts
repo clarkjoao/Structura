@@ -15,7 +15,8 @@ import { commandRegistry } from "./commands/builtins";
 import { isPromptCommand } from "./commands/registry";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
-import { buildSystemPrompt } from "./prompt-builder";
+import { MCP_RESULTS_RULE, buildSystemPrompt } from "./prompt-builder";
+import { useMcpStore } from "./mcp/mcp-store";
 import { LLMRequestCancelledError, toLLMError } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
 import {
@@ -413,6 +414,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const skills = resolveActiveSkills(turnMessage?.skills, useSkillStore.getState().skills);
       const systemPrompt = [
         buildSystemPrompt(diagramContext, getResolvedAppLanguage()),
+        MCP_RESULTS_RULE,
         buildSkillInstructionsBlock(skills),
       ]
         .filter((section) => section.length > 0)
@@ -422,7 +424,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const suggestionDraft = new SuggestionDraft();
       const host = toolHost;
       // Without a host (no canvas mounted) the model answers without tools.
-      const registry = await loadInternalTools();
+      const internalTools = await loadInternalTools();
+      // Connected MCP servers add their (non-blocked) tools to this turn.
+      const mcpTools = useMcpStore.getState().toolDefinitionsForTurn();
+      const registry = mcpTools.length > 0 ? internalTools.with(mcpTools) : internalTools;
       // Skill allowlists narrow the tools on the registry, before the SDK sees them.
       const allowlist = skillToolAllowlist(skills);
       const toolSet = host

@@ -3,6 +3,7 @@ import { InMemoryAdapter } from "@/infrastructure/persistence";
 import { McpConfigRepository } from "./mcp-connections";
 import { createMcpStore } from "./mcp-store";
 import { echoTool, fakeMcpServer } from "./test-utils";
+import { SuggestionDraft } from "../tools/suggestion-draft";
 
 function setup(options: { session?: InMemoryAdapter; port?: InMemoryAdapter } = {}) {
   const server = fakeMcpServer();
@@ -151,6 +152,25 @@ describe("MCP store", () => {
     expect(await store.getState().testConnection(draft.url, null)).toEqual({
       ok: false,
       error: { kind: "notFound", status: 404 },
+    });
+  });
+
+  it("a server failing mid-turn shows its error status", async () => {
+    const { store, server } = setup();
+    await store.getState().addServer(draft, null);
+    await store.getState().connectAll();
+    const [echo] = store.getState().toolDefinitionsForTurn();
+    server.failWith = 502;
+
+    const result = await echo!.execute(
+      {},
+      { host: { readDiagram: () => null }, suggestion: new SuggestionDraft() },
+    );
+
+    expect(result).toEqual({ error: 'The MCP server "fake" is unavailable (network).' });
+    expect(store.getState().runtime.fake?.status).toEqual({
+      state: "error",
+      error: { kind: "network", status: 502 },
     });
   });
 });

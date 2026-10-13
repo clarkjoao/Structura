@@ -85,6 +85,13 @@ export function isToolCallPart(value: unknown): value is ToolCallPart {
   );
 }
 
+/** A tool call that went to an MCP server. */
+export function isMcpToolCall(
+  part: ToolCallPart,
+): part is ToolCallPart & { source: "mcp"; serverId: string } {
+  return part.source === "mcp" && typeof part.serverId === "string";
+}
+
 export function isSuggestionPart(value: unknown): value is SuggestionPart {
   return isRecord(value) && value.type === "suggestion" && typeof value.suggestionId === "string";
 }

@@ -6,6 +6,7 @@ import { Ban, Check, ChevronRight, CircleX, Loader2, Lock } from "lucide-react";
 import type { ToolCallMessagePartProps } from "@assistant-ui/react";
 import { cn } from "@/lib/utils";
 import {
+  isMcpToolCall,
   isToolCallPart,
   type ToolCallPart,
   type ToolCallStatus,
@@ -58,7 +59,7 @@ export function ToolCallRow({ part }: { part: ToolCallPart }) {
         <StatusIcon status={part.status} />
         <span className="shrink-0 text-muted-foreground">{statusLabel}</span>
         <span className="min-w-0 truncate font-mono text-foreground">{part.name}</span>
-        {part.source === "mcp" && part.serverId ? (
+        {isMcpToolCall(part) ? (
           <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             {t("llmChat.toolCall.mcpBadge", { server: part.serverId })}
           </span>

@@ -24,6 +24,7 @@ import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
 import { TypingIndicator } from "./TypingIndicator";
 import { useSkillStore } from "@/features/llm/skills/skill-store";
+import { useMcpStore } from "@/features/llm/mcp/mcp-store";
 
 interface AssistantUIChatPanelProps {
   onClose: () => void;
@@ -91,6 +92,15 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   // the panel was last open.
   useEffect(() => {
     void useSkillStore.getState().load();
+  }, []);
+
+  // MCP sessions live while the panel is open: connect enabled servers now,
+  // close every session when it closes (page unload is handled by the store).
+  useEffect(() => {
+    void useMcpStore.getState().connectAll();
+    return () => {
+      void useMcpStore.getState().disconnectAll();
+    };
   }, []);
 
   // Empty state is rendered *without* creating a thread — no auto-persistence.
