@@ -632,7 +632,26 @@
     "mention": {
       "noResults": "Nenhum nó ou conexão encontrado",
       "removeTag": "Remover menção {{label}}",
-      "pickerLabel": "Seletor de menções"
+      "pickerLabel": "Seletor de menções",
+      "section": {
+        "selection": "Seleção",
+        "nodes": "Nós",
+        "edges": "Conexões",
+        "flows": "Fluxos",
+        "diagram": "Diagrama"
+      },
+      "selectionCount_one": "{{count}} nó",
+      "selectionCount_other": "{{count}} nós",
+      "secondary": {
+        "selected_one": "{{count}} nó selecionado",
+        "selected_other": "{{count}} nós selecionados",
+        "route": "{{source}} → {{target}}",
+        "steps_one": "{{count}} passo",
+        "steps_other": "{{count}} passos",
+        "diagramSize": "{{nodes}} nós · {{edges}} conexões"
+      },
+      "wholeDiagram": "Diagrama inteiro",
+      "more": "+{{count}} mais"
     },
     "selector": {
       "proxy": "Proxy",

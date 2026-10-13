@@ -632,7 +632,26 @@
     "mention": {
       "noResults": "No matching nodes or edges",
       "removeTag": "Remove mention {{label}}",
-      "pickerLabel": "Mention picker"
+      "pickerLabel": "Mention picker",
+      "section": {
+        "selection": "Selection",
+        "nodes": "Nodes",
+        "edges": "Connections",
+        "flows": "Flows",
+        "diagram": "Diagram"
+      },
+      "selectionCount_one": "{{count}} node",
+      "selectionCount_other": "{{count}} nodes",
+      "secondary": {
+        "selected_one": "{{count}} node selected",
+        "selected_other": "{{count}} nodes selected",
+        "route": "{{source}} → {{target}}",
+        "steps_one": "{{count}} step",
+        "steps_other": "{{count}} steps",
+        "diagramSize": "{{nodes}} nodes · {{edges}} connections"
+      },
+      "wholeDiagram": "Whole diagram",
+      "more": "+{{count}} more"
     },
     "selector": {
       "proxy": "Proxy",
