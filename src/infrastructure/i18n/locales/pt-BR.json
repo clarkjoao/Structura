@@ -539,6 +539,7 @@
     "openSettings": "Abrir configurações de LLM",
     "close": "Fechar chat",
     "inputPlaceholder": "Digite sua mensagem...",
+    "inputLabel": "Mensagem",
     "submitHint": "Use Cmd/Ctrl + Enter para enviar",
     "sending": "Enviando...",
     "send": "Enviar",
@@ -632,6 +633,7 @@
     "mention": {
       "noResults": "Nenhum nó ou conexão encontrado",
       "removeTag": "Remover menção {{label}}",
+      "selectionChip": "Seleção · {{label}}",
       "pickerLabel": "Seletor de menções",
       "section": {
         "selection": "Seleção",
@@ -652,10 +654,6 @@
       },
       "wholeDiagram": "Diagrama inteiro",
       "more": "+{{count}} mais"
-    },
-    "connectionBanner": {
-      "message": "Configure um provedor para iniciar o chat.",
-      "configure": "Configurar"
     },
     "selector": {
       "proxy": "Proxy",
@@ -730,6 +728,21 @@
     "thinking": "Pensando",
     "parseFallback": "[Resposta não processada. Tente novamente.]",
     "previousSuggestion": "[sugestão anterior de diagrama]",
+    "menu": {
+      "mentionLabel": "Seletor de menção",
+      "commandLabel": "Seletor de comando",
+      "empty": "Nenhum resultado",
+      "openMention": "Adicionar uma menção de contexto",
+      "openCommand": "Abrir o menu de comandos",
+      "hintNavigate": "↑↓ navegar",
+      "hintChoose": "↵ escolher",
+      "hintComplete": "Tab completar",
+      "hintClose": "Esc fechar"
+    },
+    "connectionBanner": {
+      "message": "Configure um provedor para iniciar o chat.",
+      "configure": "Configurar"
+    },
     "copyExport": {
       "title": "Exportação da conversa",
       "user": "Você",

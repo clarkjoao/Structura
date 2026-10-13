@@ -539,6 +539,7 @@
     "openSettings": "Open LLM settings",
     "close": "Close chat",
     "inputPlaceholder": "Type your message...",
+    "inputLabel": "Message",
     "submitHint": "Use Cmd/Ctrl + Enter to send",
     "sending": "Sending...",
     "send": "Send",
@@ -632,6 +633,7 @@
     "mention": {
       "noResults": "No matching nodes or edges",
       "removeTag": "Remove mention {{label}}",
+      "selectionChip": "Selection · {{label}}",
       "pickerLabel": "Mention picker",
       "section": {
         "selection": "Selection",
@@ -652,10 +654,6 @@
       },
       "wholeDiagram": "Whole diagram",
       "more": "+{{count}} more"
-    },
-    "connectionBanner": {
-      "message": "Configure a provider to start the chat.",
-      "configure": "Configure"
     },
     "selector": {
       "proxy": "Proxy",
@@ -730,6 +728,21 @@
     "thinking": "Thinking",
     "parseFallback": "[The response could not be processed. Try again.]",
     "previousSuggestion": "[previous diagram suggestion]",
+    "menu": {
+      "mentionLabel": "Mention picker",
+      "commandLabel": "Command picker",
+      "empty": "No matches",
+      "openMention": "Add a context mention",
+      "openCommand": "Open the command menu",
+      "hintNavigate": "↑↓ navigate",
+      "hintChoose": "↵ choose",
+      "hintComplete": "Tab complete",
+      "hintClose": "Esc close"
+    },
+    "connectionBanner": {
+      "message": "Configure a provider to start the chat.",
+      "configure": "Configure"
+    },
     "copyExport": {
       "title": "Conversation Export",
       "user": "You",
