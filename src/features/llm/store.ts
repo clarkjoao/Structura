@@ -37,8 +37,7 @@ import {
 } from "./llm-storage";
 import { applySuggestion } from "./suggestion-apply";
 import { SuggestionDraft } from "./tools/suggestion-draft";
-import { createInternalToolRegistry } from "./tools/internal-tools";
-import { isToolErrorResult } from "./tools/registry";
+import { isToolErrorResult, type ToolRegistry } from "./tools/registry";
 import type { DiagramToolHost } from "./tools/host";
 
 function getResolvedAppLanguage(): string {
@@ -238,10 +237,14 @@ function freshThreadState(): DiagramThreadState {
 }
 
 /** Turns a transport tool event into the matching change on the message's tool-call parts. */
-function applyToolEvent(message: ChatMessage, event: ToolEvent): ChatMessage {
+function applyToolEvent(
+  message: ChatMessage,
+  event: ToolEvent,
+  registry: ToolRegistry,
+): ChatMessage {
   switch (event.kind) {
     case "call": {
-      const tool = internalTools.get(event.name);
+      const tool = registry.get(event.name);
       return appendPart(message, {
         type: "tool-call",
         id: event.id,
@@ -266,7 +269,19 @@ function applyToolEvent(message: ChatMessage, event: ToolEvent): ChatMessage {
 }
 
 /** The tools every turn offers the model. */
-const internalTools = createInternalToolRegistry();
+let internalTools: Promise<ToolRegistry> | null = null;
+
+/**
+ * The internal tool registry, loaded on the first turn: the tools carry zod
+ * schemas, which stay out of the initial bundle with the rest of the chat
+ * runtime.
+ */
+function loadInternalTools(): Promise<ToolRegistry> {
+  internalTools ??= import("./tools/internal-tools").then((module) =>
+    module.createInternalToolRegistry(),
+  );
+  return internalTools;
+}
 
 export const useLLMStore = create<LLMStoreState>((set, get) => {
   const initialConnections = loadConnections();
@@ -345,9 +360,8 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const suggestionDraft = new SuggestionDraft();
       const host = toolHost;
       // Without a host (no canvas mounted) the model answers without tools.
-      const tools = host
-        ? internalTools.toToolSet({ host, suggestion: suggestionDraft })
-        : undefined;
+      const registry = await loadInternalTools();
+      const tools = host ? registry.toToolSet({ host, suggestion: suggestionDraft }) : undefined;
       let fullResponse = "";
       const { stopReason } = await executeLLMMessage(
         state.config,
@@ -367,7 +381,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         (event) => {
           set((streamingState) => ({
             messages: streamingState.messages.map((message) =>
-              message.id === assistantMessageId ? applyToolEvent(message, event) : message,
+              message.id === assistantMessageId
+                ? applyToolEvent(message, event, registry)
+                : message,
             ),
           }));
         },
