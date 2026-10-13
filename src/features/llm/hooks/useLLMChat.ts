@@ -3,6 +3,7 @@ import { useActiveDiagramModel } from "@/features/diagram";
 import { useLLMStore } from "../store";
 import type { CommandRef, LLMConnection } from "../types";
 import type { MentionRef } from "../mentions/mention-ref";
+import type { SkillRef } from "../skills/skill.types";
 import { useDiagramContext } from "./useDiagramContext";
 
 interface UseLLMChatParams {
@@ -72,8 +73,17 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   }, [diagramText, selIds, focusedNodeId, activeDiagram]);
 
   const send = useCallback(
-    async (userText: string, mentions: MentionRef[], command?: CommandRef) => {
-      await sendMessage(userText, buildContext(), { mentions, ...(command ? { command } : {}) });
+    async (
+      userText: string,
+      mentions: MentionRef[],
+      command?: CommandRef,
+      skills: SkillRef[] = [],
+    ) => {
+      await sendMessage(userText, buildContext(), {
+        mentions,
+        ...(command ? { command } : {}),
+        ...(skills.length > 0 ? { skills } : {}),
+      });
     },
     [buildContext, sendMessage],
   );

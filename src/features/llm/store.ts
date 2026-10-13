@@ -4,6 +4,7 @@ import type { ToolEvent } from "./transport/ai-sdk-transport";
 import type { Diagram } from "@/features/diagram";
 import { buildMentionContextBlock } from "./mentions/context-block";
 import type { MentionRef } from "./mentions/mention-ref";
+import type { SkillRef } from "./skills/skill.types";
 import { commandRegistry } from "./commands/builtins";
 import { isPromptCommand } from "./commands/registry";
 import { useDiagramStore } from "@/features/diagram";
@@ -161,6 +162,8 @@ export interface MessageAttachments {
   mentions?: MentionRef[];
   /** A prompt command chip; the text is the user's extra text. */
   command?: CommandRef;
+  /** The skill chips active when the message was sent. */
+  skills?: SkillRef[];
 }
 
 export interface LLMStoreState {
@@ -773,12 +776,16 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     sendMessage: async (userText, diagramContext, attachments = {}) => {
       const mentions = attachments.mentions ?? [];
       const command = attachments.command;
+      const skills = attachments.skills ?? [];
       if (!userText.trim() && mentions.length === 0 && !command) {
         return;
       }
-      ensureActiveThread(
-        getVisibleText({ parts: [textPart(userText.trim())], ...(command ? { command } : {}) }),
-      );
+      const attached = {
+        ...(mentions.length > 0 ? { mentions } : {}),
+        ...(command ? { command } : {}),
+        ...(skills.length > 0 ? { skills } : {}),
+      };
+      ensureActiveThread(getVisibleText({ parts: [textPart(userText.trim())], ...attached }));
       const state = get();
 
       // If hydration hasn't run yet (panel mounted before App shell's
@@ -793,8 +800,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         role: "user",
         parts: [textPart(userText.trim())],
         timestamp: Date.now(),
-        ...(mentions.length > 0 ? { mentions } : {}),
-        ...(command ? { command } : {}),
+        ...attached,
       };
       const outgoingMessages = [...state.messages, userMessage];
       await runAssistantTurn(outgoingMessages, diagramContext);

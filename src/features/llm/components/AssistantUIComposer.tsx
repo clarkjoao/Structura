@@ -12,17 +12,24 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowUp, Loader2, MousePointer2, Square, X } from "lucide-react";
+import { ArrowUp, Loader2, MousePointer2, Sparkles, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { commandRegistry } from "@/features/llm/commands/builtins";
-import { isPromptCommand, type PromptCommand } from "@/features/llm/commands/registry";
+import {
+  isPromptCommand,
+  isSkillCommand,
+  type PromptCommand,
+} from "@/features/llm/commands/registry";
 import { useCommandActions } from "@/features/llm/hooks/useCommandActions";
 import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
 import { isSelectionRef, mentionKey, type MentionRef } from "@/features/llm/mentions/mention-ref";
 import { createMentionRegistry } from "@/features/llm/mentions/providers";
 import type { CommandRef } from "@/features/llm/types";
+import { findSkill, useSkillStore } from "@/features/llm/skills/skill-store";
+import { skillKey, toSkillRef, type SkillRef } from "@/features/llm/skills/skill.types";
+import { SkillSourceBadge } from "./skills/SkillSourceBadge";
 import { ComposerMenu } from "./composer/ComposerMenu";
 import {
   buildMenuSections,
@@ -40,13 +47,20 @@ const mentionRegistry = createMentionRegistry();
 
 export interface AssistantUIComposerProps {
   /** Resolves to `false` when the message was not sent, so the draft is kept. */
-  onSend: (text: string, mentions: MentionRef[], command?: CommandRef) => Promise<boolean | void>;
+  onSend: (
+    text: string,
+    mentions: MentionRef[],
+    command?: CommandRef,
+    skills?: SkillRef[],
+  ) => Promise<boolean | void>;
   onCancel?: () => Promise<void> | void;
   isLoading: boolean;
   disabled?: boolean;
   placeholder?: string;
   /** Node ids selected on the canvas, passed down by the panel. */
   selectedNodeIds?: readonly string[];
+  /** The active conversation; skill chips stay until it changes. */
+  conversationId?: string;
 }
 
 export interface AssistantUIComposerRef {
@@ -61,7 +75,15 @@ function isMac(): boolean {
 
 export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantUIComposerProps>(
   function AssistantUIComposer(
-    { onSend, onCancel, isLoading, disabled = false, placeholder, selectedNodeIds = [] },
+    {
+      onSend,
+      onCancel,
+      isLoading,
+      disabled = false,
+      placeholder,
+      selectedNodeIds = [],
+      conversationId = "",
+    },
     ref,
   ) {
     const { t } = useTranslation();
@@ -75,6 +97,10 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const [caret, setCaret] = useState(0);
     const [mentions, setMentions] = useState<MentionRef[]>([]);
     const [command, setCommandState] = useState<PromptCommand | null>(null);
+    /** Sticky: skill chips stay across turns until removed or the conversation changes. */
+    const [skillRefs, setSkillRefs] = useState<SkillRef[]>([]);
+    const allSkills = useSkillStore((state) => state.skills);
+    const skillsLoaded = useSkillStore((state) => state.loaded);
     /** The trigger the user closed with Esc; the menu stays shut until the text changes. */
     const [dismissedAt, setDismissedAt] = useState<string | null>(null);
     const [activeKey, setActiveKey] = useState("");
@@ -87,6 +113,35 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       // A different selection brings the automatic chip back.
       setSelectionChipDismissed(false);
     }, [selectionKey]);
+
+    // Another conversation starts without the previous one's skills. Starting
+    // the first conversation (no id yet) keeps the chips the user just set.
+    const previousConversation = useRef(conversationId);
+    useEffect(() => {
+      if (previousConversation.current && previousConversation.current !== conversationId) {
+        setSkillRefs([]);
+      }
+      previousConversation.current = conversationId;
+    }, [conversationId]);
+
+    // A skill deleted (or disabled) in settings leaves the composer too.
+    useEffect(() => {
+      if (!skillsLoaded) return;
+      setSkillRefs((current) => {
+        const kept = current.filter((ref) => findSkill(allSkills, ref)?.enabled);
+        return kept.length === current.length ? current : kept;
+      });
+    }, [allSkills, skillsLoaded]);
+
+    /** The chips as the skills are now: a rename in settings shows at once. */
+    const activeSkills = useMemo(
+      () =>
+        skillRefs.map((ref) => {
+          const skill = findSkill(allSkills, ref);
+          return skill ? toSkillRef(skill) : ref;
+        }),
+      [skillRefs, allSkills],
+    );
 
     const selectionIdsInDiagram = useMemo(
       () => selectedNodeIds.filter((id) => (diagram ? id in diagram.snapshot.components : false)),
@@ -124,10 +179,10 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
               mentionRegistry,
               { diagram, selectionIds: selectionIdsInDiagram, translate },
               commandRegistry,
-              { diagram, selectionIds: selectionIdsInDiagram },
+              { diagram, selectionIds: selectionIdsInDiagram, skills: allSkills },
             )
           : [],
-      [trigger, diagram, selectionIdsInDiagram, translate],
+      [trigger, diagram, selectionIdsInDiagram, translate, allSkills],
     );
     const items = useMemo(() => flattenItems(sections), [sections]);
     const menuOpen = trigger !== null;
@@ -189,6 +244,13 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         if (isCommandMenuItem(item)) {
           if (isPromptCommand(item.command)) {
             setCommandState(item.command);
+          } else if (isSkillCommand(item.command)) {
+            const ref = toSkillRef(item.command.skill);
+            setSkillRefs((current) =>
+              current.some((existing) => skillKey(existing) === skillKey(ref))
+                ? current
+                : [...current, ref],
+            );
           } else {
             void item.command.run(commandActions);
           }
@@ -214,7 +276,14 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       setMentions((current) => current.filter((ref) => mentionKey(ref) !== key));
     }, []);
 
-    /** Removes the last chip: mentions first (newest last), then the selection, then the command. */
+    const removeSkill = useCallback((key: string) => {
+      setSkillRefs((current) => current.filter((ref) => skillKey(ref) !== key));
+    }, []);
+
+    /**
+     * Removes the last chip: mentions first (newest last), then the selection,
+     * then the command, then the skills.
+     */
     const removeLastChip = useCallback(() => {
       if (mentions.length > 0) {
         setMentions((current) => current.slice(0, -1));
@@ -222,8 +291,10 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         setSelectionChipDismissed(true);
       } else if (command) {
         setCommandState(null);
+      } else if (skillRefs.length > 0) {
+        setSkillRefs((current) => current.slice(0, -1));
       }
-    }, [mentions.length, autoSelection, command]);
+    }, [mentions.length, autoSelection, command, skillRefs.length]);
 
     const reset = useCallback(() => {
       setText("");
@@ -243,11 +314,24 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         trimmed,
         refs,
         command ? { id: command.id, name: command.name } : undefined,
+        activeSkills,
       );
       if (sent === false) return;
+      // Skill chips are not reset: they stay for the rest of the conversation.
       reset();
       focusTextarea();
-    }, [text, autoSelection, mentions, command, isLoading, disabled, onSend, reset, focusTextarea]);
+    }, [
+      text,
+      autoSelection,
+      mentions,
+      command,
+      activeSkills,
+      isLoading,
+      disabled,
+      onSend,
+      reset,
+      focusTextarea,
+    ]);
 
     const moveActive = (step: number) => {
       if (items.length === 0) return;
@@ -349,8 +433,16 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
             (disabled || isLoading) && "opacity-80",
           )}
         >
-          {command || chips.length > 0 ? (
+          {command || chips.length > 0 || skillRefs.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
+              {activeSkills.map((ref) => (
+                <SkillChip
+                  key={skillKey(ref)}
+                  skill={ref}
+                  removeLabel={t("llmChat.skills.removeChip", { name: ref.name })}
+                  onRemove={() => removeSkill(skillKey(ref))}
+                />
+              ))}
               {command ? (
                 <Chip
                   label={`/${command.name}`}
@@ -478,6 +570,34 @@ function Chip({
     >
       {icon ? <MousePointer2 aria-hidden className="h-3 w-3 shrink-0" /> : null}
       <span className="truncate">{label}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={removeLabel}
+        title={removeLabel}
+        className="flex rounded p-0.5 hover:bg-background/60"
+      >
+        <X aria-hidden className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}
+
+/** A skill chip: sticky, so it reads apart from the per-message chips. */
+function SkillChip({
+  skill,
+  removeLabel,
+  onRemove,
+}: {
+  skill: SkillRef;
+  removeLabel: string;
+  onRemove: () => void;
+}) {
+  return (
+    <span className="inline-flex h-6 max-w-full items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 pl-2 pr-1 text-xs font-medium text-primary">
+      <Sparkles aria-hidden className="h-3 w-3 shrink-0" />
+      <span className="truncate">{skill.name}</span>
+      <SkillSourceBadge source={skill.source} className="border-primary/30 text-primary/80" />
       <button
         type="button"
         onClick={onRemove}

@@ -1,6 +1,7 @@
 import type { ComponentPatch, ComponentType, EdgeStyle } from "@/features/diagram";
 import type { MessagePart, MessageStatus } from "./message-parts";
 import type { MentionRef } from "./mentions/mention-ref";
+import type { SkillRef } from "./skills/skill.types";
 import type { SkippedAction } from "./suggestion-apply";
 
 export type LLMProvider = "openai" | "anthropic" | "custom";
@@ -70,6 +71,12 @@ export interface ChatMessage {
    * by id when the request is built. `name` is cached for display.
    */
   command?: CommandRef;
+  /**
+   * User messages only: the skills active when the message was sent, so Retry
+   * and Regenerate reuse them. Resolved by source and id when a request is
+   * built; a skill that no longer exists is left out.
+   */
+  skills?: SkillRef[];
 }
 
 export interface CommandRef {

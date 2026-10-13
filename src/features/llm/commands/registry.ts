@@ -1,9 +1,12 @@
 import type { Diagram } from "@/features/diagram";
+import type { Skill } from "../skills/skill.types";
 
 /** What a command can look at to decide whether it is worth suggesting. */
 export interface CommandContext {
   diagram: Diagram | null;
   selectionIds: readonly string[];
+  /** The user's skills, for the Skills section; absent lists none. */
+  skills?: readonly Skill[];
 }
 
 /** What an action command can do; provided by the chat panel. */
@@ -18,25 +21,38 @@ interface CommandBase {
   id: string;
   /** The `/name` token, without the slash. */
   name: string;
-  labelKey: string;
-  descriptionKey: string;
   /** Whether to suggest the command for this context; absent means always. */
   when?: (context: CommandContext) => boolean;
 }
 
+/** A built-in command: its label and description are i18n keys. */
+interface BuiltInCommandBase extends CommandBase {
+  labelKey: string;
+  descriptionKey: string;
+}
+
 /** Sends a turn: the model receives `instruction` (English), the user's text and the context. */
-export interface PromptCommand extends CommandBase {
+export interface PromptCommand extends BuiltInCommandBase {
   kind: "prompt";
   instruction: string;
 }
 
 /** Does something in the chat instead of sending a turn. */
-export interface ActionCommand extends CommandBase {
+export interface ActionCommand extends BuiltInCommandBase {
   kind: "action";
   run: (context: CommandActionContext) => void | Promise<void>;
 }
 
-export type ChatCommand = PromptCommand | ActionCommand;
+/**
+ * Activates a skill: choosing it adds a sticky skill chip to the composer.
+ * The skill's name and description are user data, shown as written.
+ */
+export interface SkillCommand extends CommandBase {
+  kind: "skill";
+  skill: Skill;
+}
+
+export type ChatCommand = PromptCommand | ActionCommand | SkillCommand;
 
 export function isPromptCommand(command: ChatCommand): command is PromptCommand {
   return command.kind === "prompt";
@@ -46,10 +62,16 @@ export function isActionCommand(command: ChatCommand): command is ActionCommand 
   return command.kind === "action";
 }
 
-/**
- * A group of commands in the `/` menu. Phase 5 adds a "Skills" section by
- * registering another provider; nothing else changes.
- */
+export function isSkillCommand(command: ChatCommand): command is SkillCommand {
+  return command.kind === "skill";
+}
+
+/** What the menu shows and searches as the command's label. */
+export function commandLabel(command: ChatCommand, translate: (key: string) => string): string {
+  return isSkillCommand(command) ? command.skill.name : translate(command.labelKey);
+}
+
+/** A group of commands in the `/` menu, e.g. the built-ins or the user's skills. */
 export interface CommandSectionProvider {
   id: string;
   /** i18n key of the section header. */
@@ -92,7 +114,7 @@ export class CommandRegistry {
           (command) =>
             needle.length === 0 ||
             command.name.toLowerCase().includes(needle) ||
-            translate(command.labelKey).toLowerCase().includes(needle),
+            commandLabel(command, translate).toLowerCase().includes(needle),
         )
         .map((command, order) => ({ command, order }))
         .sort(

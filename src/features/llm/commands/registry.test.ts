@@ -7,9 +7,11 @@ import {
   CommandRegistry,
   isActionCommand,
   isPromptCommand,
+  isSkillCommand,
   type CommandContext,
   type CommandSectionProvider,
 } from "./registry";
+import type { Skill } from "../skills/skill.types";
 
 const t = (key: string) => i18n.t(key);
 
@@ -82,8 +84,8 @@ describe("command registry", () => {
 
   it("lets a later phase add a section through a provider", () => {
     const registry = createCommandRegistry();
-    const skills: CommandSectionProvider = {
-      id: "skills",
+    const extra: CommandSectionProvider = {
+      id: "extra",
       labelKey: "llmChat.command.section.commands",
       list: () => [
         {
@@ -96,13 +98,40 @@ describe("command registry", () => {
         },
       ],
     };
-    registry.registerSection(skills);
+    registry.registerSection(extra);
     expect(registry.sections(context(null), "", t).map((section) => section.id)).toEqual([
       "commands",
-      "skills",
+      "extra",
     ]);
     expect(registry.get("skill-x")?.name).toBe("skill-x");
-    expect(() => registry.registerSection(skills)).toThrow(/already registered/);
+    expect(() => registry.registerSection(extra)).toThrow(/already registered/);
+  });
+
+  it("lists the enabled skills of the context in the Skills section, searchable by name", () => {
+    const registry = createCommandRegistry();
+    const skill = (id: string, name: string, enabled: boolean): Skill => ({
+      id,
+      source: "local",
+      name,
+      description: "d",
+      instructions: "i",
+      enabled,
+    });
+    const withSkills = {
+      ...context(null),
+      skills: [skill("a", "AWS review", true), skill("b", "Off", false)],
+    };
+    const sections = registry.sections(withSkills, "", t);
+    const skillsSection = sections.find((section) => section.id === "skills");
+    expect(skillsSection?.commands.map((command) => command.name)).toEqual(["aws-review"]);
+    expect(skillsSection?.commands.every(isSkillCommand)).toBe(true);
+    // The skill's own name is searched, not an i18n label.
+    expect(registry.sections(withSkills, "review", t).map((section) => section.id)).toContain(
+      "skills",
+    );
+    expect(registry.sections(context(null), "", t).map((section) => section.id)).toEqual([
+      "commands",
+    ]);
   });
 
   it("runs action commands against the context the chat provides", async () => {

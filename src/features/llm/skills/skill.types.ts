@@ -75,3 +75,10 @@ export const SKILL_SOURCE_LABEL_KEYS: Record<SkillSource, string> = {
   workspace: "llmChat.skills.source.workspace",
   local: "llmChat.skills.source.local",
 };
+
+/** i18n key for the tool summary: "N tools" when the skill restricts tools, "all tools" otherwise. */
+export function skillToolsLabelKey(skill: Pick<Skill, "tools">): string {
+  return skill.tools && skill.tools.length > 0
+    ? "llmChat.skills.toolCount"
+    : "llmChat.skills.allTools";
+}

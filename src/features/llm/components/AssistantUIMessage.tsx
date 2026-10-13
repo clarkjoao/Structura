@@ -4,11 +4,13 @@ import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
-import { Check, Copy, RotateCcw } from "lucide-react";
+import { Check, Copy, RotateCcw, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLLMStore } from "@/features/llm";
 import { getSuggestionIds } from "@/features/llm/message-parts";
 import { mentionKey } from "@/features/llm/mentions/mention-ref";
+import { findSkill, useSkillStore } from "@/features/llm/skills/skill-store";
+import { skillKey, type SkillRef } from "@/features/llm/skills/skill.types";
 import { messageToMarkdown } from "@/features/llm/message-markdown";
 import { useChatActions } from "./chat-actions";
 import { useAuiState, MessagePrimitive } from "@assistant-ui/react";
@@ -68,11 +70,19 @@ export function UserMessageComponent() {
   );
   const mentions = stored?.mentions;
   const command = stored?.command;
+  const skills = stored?.skills;
 
   return (
     <div className="flex w-full min-w-0 justify-end">
       <div className="group relative max-w-[85%] min-w-0 pb-5">
         <div className="rounded-2xl bg-primary px-4 py-2.5 text-sm text-primary-foreground whitespace-pre-wrap break-words [overflow-wrap:anywhere] shadow-sm">
+          {skills && skills.length > 0 ? (
+            <span className="mb-1 flex flex-wrap gap-1">
+              {skills.map((ref) => (
+                <BubbleSkillChip key={skillKey(ref)} skill={ref} />
+              ))}
+            </span>
+          ) : null}
           {command ? (
             <span className="mr-1.5 inline-flex items-center rounded bg-primary-foreground/20 px-1.5 font-mono text-xs font-medium">
               /{command.name}
@@ -97,6 +107,27 @@ export function UserMessageComponent() {
         </span>
       </div>
     </div>
+  );
+}
+
+/** A skill the message was sent with; "unavailable" once the skill is gone. */
+function BubbleSkillChip({ skill }: { skill: SkillRef }) {
+  const { t } = useTranslation();
+  const available = useSkillStore(
+    (state) => !state.loaded || findSkill(state.skills, skill) !== undefined,
+  );
+  const label = available ? skill.name : t("llmChat.skills.unavailableChip", { name: skill.name });
+  return (
+    <span
+      title={available ? undefined : t("llmChat.skills.unavailableHint")}
+      className={cn(
+        "inline-flex items-center gap-1 rounded bg-primary-foreground/20 px-1.5 text-xs font-medium",
+        !available && "line-through opacity-70",
+      )}
+    >
+      <Sparkles aria-hidden className="h-3 w-3" />
+      {label}
+    </span>
   );
 }
 

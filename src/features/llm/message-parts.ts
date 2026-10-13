@@ -1,5 +1,6 @@
 import type { LLMError } from "./errors";
 import { isMentionRef } from "./mentions/mention-ref";
+import { isSkillRef } from "./skills/skill.types";
 import type { ChatMessage, CommandRef } from "./types";
 
 /**
@@ -132,14 +133,18 @@ export function isCommandRef(value: unknown): value is CommandRef {
 }
 
 /**
- * What the user sees for a message: a command message reads "/name text".
- * Used for the bubble's copy, /copy and the thread title — never the
- * command's instruction.
+ * What the user sees for a message: active skills as "[Skill name]", then a
+ * command as "/name", then the text. Used for the bubble's copy, /copy and
+ * the thread title — never the command's instruction or the skill's.
  */
-export function getVisibleText(message: Pick<ChatMessage, "parts" | "command">): string {
-  const text = getMessageText(message);
-  if (!message.command) return text;
-  return text.trim().length > 0 ? `/${message.command.name} ${text}` : `/${message.command.name}`;
+export function getVisibleText(message: Pick<ChatMessage, "parts" | "command" | "skills">): string {
+  return [
+    ...(message.skills ?? []).map((skill) => `[${skill.name}]`),
+    message.command ? `/${message.command.name}` : "",
+    getMessageText(message),
+  ]
+    .filter((segment) => segment.trim().length > 0)
+    .join(" ");
 }
 
 /** The message's text: every text part, in order, joined. */
@@ -299,6 +304,13 @@ export function migrateStoredMessage(raw: unknown): MigratedMessage {
     if (mentions.length !== raw.mentions.length) changed = true;
     if (mentions.length > 0) message.mentions = mentions;
   } else if (raw.mentions !== undefined) {
+    changed = true;
+  }
+  if (Array.isArray(raw.skills)) {
+    const skills = raw.skills.filter(isSkillRef);
+    if (skills.length !== raw.skills.length) changed = true;
+    if (skills.length > 0) message.skills = skills;
+  } else if (raw.skills !== undefined) {
     changed = true;
   }
   if (raw.truncated === true) {

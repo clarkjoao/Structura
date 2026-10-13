@@ -23,6 +23,7 @@ import { useActiveDiagramModel } from "@/features/diagram";
 import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
 import { TypingIndicator } from "./TypingIndicator";
+import { useSkillStore } from "@/features/llm/skills/skill-store";
 
 interface AssistantUIChatPanelProps {
   onClose: () => void;
@@ -85,6 +86,12 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
 
   const selectedNodeIdList = useMemo(() => Array.from(selectedNodeIds), [selectedNodeIds]);
+
+  // Skill files may have changed outside the app (git pull, an editor) since
+  // the panel was last open.
+  useEffect(() => {
+    void useSkillStore.getState().load();
+  }, []);
 
   // Empty state is rendered *without* creating a thread — no auto-persistence.
   const hasMessages = messages.length > 0;
@@ -197,12 +204,13 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
       text: string,
       mentions: Parameters<typeof send>[1],
       command?: Parameters<typeof send>[2],
+      skills?: Parameters<typeof send>[3],
     ): Promise<boolean> => {
       if (!isUsableConnection(config)) {
         setShowSettings(true);
         return false;
       }
-      await send(text, mentions, command);
+      await send(text, mentions, command, skills);
       return true;
     },
     [config, send],
@@ -307,6 +315,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
               onCancel={cancel}
               isLoading={isLoading}
               selectedNodeIds={selectedNodeIdList}
+              conversationId={activeThread?.id ?? ""}
             />
             <div className="mt-2 flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>

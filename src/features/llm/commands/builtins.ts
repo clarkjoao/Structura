@@ -6,6 +6,7 @@ import {
   type CommandContext,
   type CommandSectionProvider,
 } from "./registry";
+import { skillsSection } from "../skills/skill-commands";
 
 /**
  * The built-in commands. Instructions are LLM-facing English and are not
@@ -107,6 +108,7 @@ export const commandsSection: CommandSectionProvider = {
 export function createCommandRegistry(): CommandRegistry {
   const registry = new CommandRegistry();
   registry.registerSection(commandsSection);
+  registry.registerSection(skillsSection);
   return registry;
 }
 

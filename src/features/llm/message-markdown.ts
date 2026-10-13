@@ -56,8 +56,8 @@ function partToMarkdown(part: MessagePart, context: MarkdownContext): string {
 
 /** One message as Markdown: text as written, the other parts as short lines. */
 export function messageToMarkdown(message: ChatMessage, context: MarkdownContext): string {
-  // A command message reads as the user typed it: "/name text".
-  if (message.role === "user" && message.command) {
+  // A user message reads as the user sent it: "[Skill] /name text".
+  if (message.role === "user") {
     return getVisibleText(message);
   }
   return message.parts

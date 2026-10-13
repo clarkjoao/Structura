@@ -1,10 +1,13 @@
 import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, GitBranch, LayoutGrid, MousePointer2, Workflow } from "lucide-react";
+import { Box, GitBranch, LayoutGrid, MousePointer2, Sparkles, Workflow } from "lucide-react";
 import { Command as CommandPrimitive } from "cmdk";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import type { MentionIcon, MentionMatch } from "../../mentions/providers";
+import { commandLabel, isSkillCommand, type SkillCommand } from "../../commands/registry";
+import { SkillSourceBadge } from "../skills/SkillSourceBadge";
+import { skillToolsLabelKey } from "../../skills/skill.types";
 import { isCommandMenuItem, type MenuItem, type MenuSection } from "./composer-menu";
 
 const ICONS: Record<MentionIcon, typeof Box> = {
@@ -77,12 +80,14 @@ export const ComposerMenu = forwardRef<HTMLDivElement, ComposerMenuProps>(functi
                 onSelect={() => onChoose(item)}
                 className="gap-2.5 text-[13px]"
               >
-                {isCommandMenuItem(item) ? (
+                {isCommandMenuItem(item) && isSkillCommand(item.command) ? (
+                  <SkillRow command={item.command} match={item.match} />
+                ) : isCommandMenuItem(item) ? (
                   <>
                     <code className="min-w-24 font-mono text-xs font-medium">
                       <Highlighted text={`/${item.command.name}`} match={item.match} />
                     </code>
-                    <span className="truncate">{t(item.command.labelKey)}</span>
+                    <span className="truncate">{commandLabel(item.command, t)}</span>
                   </>
                 ) : (
                   <MentionRow item={item.option} />
@@ -126,6 +131,29 @@ function MentionRow({ item }: { item: Extract<MenuItem, { type: "mention" }>["op
       </span>
       <span className="ml-auto shrink-0 truncate pl-2 text-xs text-muted-foreground">
         {item.secondary}
+      </span>
+    </>
+  );
+}
+
+function SkillRow({ command, match }: { command: SkillCommand; match: MentionMatch | null }) {
+  const { t } = useTranslation();
+  const { skill } = command;
+  const tools = skill.tools?.length ?? 0;
+  return (
+    <>
+      <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+        <Sparkles aria-hidden className="h-3.5 w-3.5" />
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate">
+          <Highlighted text={skill.name} match={match} />
+        </span>
+        <span className="truncate text-xs text-muted-foreground">{skill.description}</span>
+      </span>
+      <span className="ml-auto flex shrink-0 items-center gap-1.5 pl-2 text-xs text-muted-foreground">
+        <span>{t(skillToolsLabelKey(skill), { count: tools })}</span>
+        <SkillSourceBadge source={skill.source} />
       </span>
     </>
   );

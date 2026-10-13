@@ -1,9 +1,15 @@
-import type { ChatCommand, CommandContext, CommandRegistry } from "../../commands/registry";
-import type {
-  MentionMatch,
-  MentionOption,
-  MentionProviderRegistry,
-  MentionSearchData,
+import {
+  isSkillCommand,
+  type ChatCommand,
+  type CommandContext,
+  type CommandRegistry,
+} from "../../commands/registry";
+import {
+  findMatch,
+  type MentionMatch,
+  type MentionOption,
+  type MentionProviderRegistry,
+  type MentionSearchData,
 } from "../../mentions/providers";
 
 /**
@@ -120,8 +126,10 @@ export function buildMenuSections(
         key: `command:${command.id}`,
         type: "command",
         command,
-        // The rendered label is "/name": the match range counts the slash.
-        match: commandMatch(command.name, trigger.query),
+        // A skill shows its name; a command "/name", so the range counts the slash.
+        match: isSkillCommand(command)
+          ? findMatch(command.skill.name, trigger.query)
+          : commandMatch(command.name, trigger.query),
       })),
     }));
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendTextDelta,
   getMessageText,
+  getVisibleText,
   isErrorPart,
   isMessagePart,
   isSuggestionPart,
@@ -160,5 +161,32 @@ describe("migrateStoredMessage", () => {
     const again = migrateStoredMessage(message);
     expect(again.changed).toBe(false);
     expect(again.message.mentions).toEqual(message.mentions);
+  });
+
+  it("keeps a user message's skills and drops invalid ones", () => {
+    const skill = { id: "local-1", source: "local", name: "Tone" };
+    const { message, changed } = migrateStoredMessage({
+      id: "u",
+      role: "user",
+      parts: [textPart("hi")],
+      timestamp: 1,
+      skills: [skill, { id: "x", source: "cloud", name: "Bad" }],
+    });
+    expect(message.skills).toEqual([skill]);
+    expect(changed).toBe(true);
+    expect(migrateStoredMessage(message).changed).toBe(false);
+  });
+});
+
+describe("getVisibleText", () => {
+  it("reads as sent: skills, then the command, then the text", () => {
+    expect(
+      getVisibleText({
+        parts: [textPart("the API")],
+        command: { id: "review", name: "review" },
+        skills: [{ id: ".structura/skills/aws.md", source: "workspace", name: "AWS review" }],
+      }),
+    ).toBe("[AWS review] /review the API");
+    expect(getVisibleText({ parts: [textPart("plain")] })).toBe("plain");
   });
 });

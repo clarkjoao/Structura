@@ -806,6 +806,19 @@
         "label": "Copiar a conversa como Markdown",
         "description": "Copia a conversa inteira"
       }
+    },
+    "skills": {
+      "section": "Skills",
+      "source": {
+        "workspace": "Workspace",
+        "local": "Local"
+      },
+      "toolCount_one": "{{count}} ferramenta",
+      "toolCount_other": "{{count}} ferramentas",
+      "allTools": "todas as ferramentas",
+      "removeChip": "Remover skill {{name}}",
+      "unavailableChip": "{{name}} (indisponível)",
+      "unavailableHint": "Esta skill não existe mais. Tentar de novo envia a mensagem sem ela."
     }
   },
   "versions": {

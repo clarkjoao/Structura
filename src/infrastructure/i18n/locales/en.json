@@ -806,6 +806,19 @@
         "label": "Copy the conversation as Markdown",
         "description": "Copies the whole conversation"
       }
+    },
+    "skills": {
+      "section": "Skills",
+      "source": {
+        "workspace": "Workspace",
+        "local": "Local"
+      },
+      "toolCount_one": "{{count}} tool",
+      "toolCount_other": "{{count}} tools",
+      "allTools": "all tools",
+      "removeChip": "Remove skill {{name}}",
+      "unavailableChip": "{{name}} (unavailable)",
+      "unavailableHint": "This skill no longer exists. Retrying sends the message without it."
     }
   },
   "versions": {
