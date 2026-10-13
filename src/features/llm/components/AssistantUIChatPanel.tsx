@@ -102,10 +102,7 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   // `when(ctx)` for the active selection/diagram. Up to 4 rows.
   const commandSuggestions = useMemo(
     () =>
-      commandRegistry.suggest(
-        { diagram: resolvedDiagram, selectionIds: selectedNodeIdList },
-        4,
-      ),
+      commandRegistry.suggest({ diagram: resolvedDiagram, selectionIds: selectedNodeIdList }, 4),
     [resolvedDiagram, selectedNodeIdList],
   );
 
@@ -424,7 +421,9 @@ function EmptyState({ commands, onSelectCommand }: EmptyStateProps) {
             onClick={() => onSelectCommand(command)}
             className="group flex w-full items-center gap-2.5 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-left text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
-            <code className="font-mono text-[11px] font-semibold text-primary">/{command.name}</code>
+            <code className="font-mono text-[11px] font-semibold text-primary">
+              /{command.name}
+            </code>
             <span className="truncate">{t(command.labelKey)}</span>
           </button>
         ))}

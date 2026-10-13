@@ -539,7 +539,7 @@
     "openSettings": "Abrir configurações de LLM",
     "close": "Fechar chat",
     "inputPlaceholder": "Digite sua mensagem...",
-    "inputLabel": "Mensagem",
+    "inputLabel": "Mensagem para o assistente",
     "submitHint": "Use Cmd/Ctrl + Enter para enviar",
     "sending": "Enviando...",
     "send": "Enviar",
@@ -631,10 +631,8 @@
       }
     },
     "mention": {
-      "noResults": "Nenhum nó ou conexão encontrado",
       "removeTag": "Remover menção {{label}}",
       "selectionChip": "Seleção · {{label}}",
-      "pickerLabel": "Seletor de menções",
       "section": {
         "selection": "Seleção",
         "nodes": "Nós",
@@ -729,11 +727,11 @@
     "parseFallback": "[Resposta não processada. Tente novamente.]",
     "previousSuggestion": "[sugestão anterior de diagrama]",
     "menu": {
-      "mentionLabel": "Seletor de menção",
-      "commandLabel": "Seletor de comando",
+      "mentionLabel": "Elementos do diagrama",
+      "commandLabel": "Comandos",
       "empty": "Nenhum resultado",
-      "openMention": "Adicionar uma menção de contexto",
-      "openCommand": "Abrir o menu de comandos",
+      "openMention": "Mencionar um elemento do diagrama (@)",
+      "openCommand": "Inserir um comando (/)",
       "hintNavigate": "↑↓ navegar",
       "hintChoose": "↵ escolher",
       "hintComplete": "Tab completar",

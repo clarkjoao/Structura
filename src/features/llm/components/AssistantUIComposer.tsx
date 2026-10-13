@@ -20,11 +20,7 @@ import { commandRegistry } from "@/features/llm/commands/builtins";
 import { isPromptCommand, type PromptCommand } from "@/features/llm/commands/registry";
 import { useCommandActions } from "@/features/llm/hooks/useCommandActions";
 import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
-import {
-  isSelectionRef,
-  mentionKey,
-  type MentionRef,
-} from "@/features/llm/mentions/mention-ref";
+import { isSelectionRef, mentionKey, type MentionRef } from "@/features/llm/mentions/mention-ref";
 import { createMentionRegistry } from "@/features/llm/mentions/providers";
 import type { CommandRef } from "@/features/llm/types";
 import { ComposerMenu } from "./composer/ComposerMenu";
@@ -44,11 +40,7 @@ const mentionRegistry = createMentionRegistry();
 
 export interface AssistantUIComposerProps {
   /** Resolves to `false` when the message was not sent, so the draft is kept. */
-  onSend: (
-    text: string,
-    mentions: MentionRef[],
-    command?: CommandRef,
-  ) => Promise<boolean | void>;
+  onSend: (text: string, mentions: MentionRef[], command?: CommandRef) => Promise<boolean | void>;
   onCancel?: () => Promise<void> | void;
   isLoading: boolean;
   disabled?: boolean;
@@ -272,7 +264,11 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           return;
         }
         const active = items.find((item) => item.key === activeKey);
-        if ((keyIs(event, KEY.ENTER) || keyIs(event, KEY.TAB)) && !event.metaKey && !event.ctrlKey) {
+        if (
+          (keyIs(event, KEY.ENTER) || keyIs(event, KEY.TAB)) &&
+          !event.metaKey &&
+          !event.ctrlKey
+        ) {
           if (active) {
             event.preventDefault();
             choose(active);
@@ -328,7 +324,9 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const canCancel = isLoading && Boolean(onCancel);
     const sendHint = isMac() ? "⌘↵" : "Ctrl↵";
     const menuLabelKey =
-      trigger && isMentionTrigger(trigger) ? "llmChat.menu.mentionLabel" : "llmChat.menu.commandLabel";
+      trigger && isMentionTrigger(trigger)
+        ? "llmChat.menu.mentionLabel"
+        : "llmChat.menu.commandLabel";
 
     return (
       <div className="relative">

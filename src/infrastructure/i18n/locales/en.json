@@ -539,7 +539,7 @@
     "openSettings": "Open LLM settings",
     "close": "Close chat",
     "inputPlaceholder": "Type your message...",
-    "inputLabel": "Message",
+    "inputLabel": "Message to the assistant",
     "submitHint": "Use Cmd/Ctrl + Enter to send",
     "sending": "Sending...",
     "send": "Send",
@@ -631,10 +631,8 @@
       }
     },
     "mention": {
-      "noResults": "No matching nodes or edges",
       "removeTag": "Remove mention {{label}}",
       "selectionChip": "Selection · {{label}}",
-      "pickerLabel": "Mention picker",
       "section": {
         "selection": "Selection",
         "nodes": "Nodes",
@@ -729,11 +727,11 @@
     "parseFallback": "[The response could not be processed. Try again.]",
     "previousSuggestion": "[previous diagram suggestion]",
     "menu": {
-      "mentionLabel": "Mention picker",
-      "commandLabel": "Command picker",
+      "mentionLabel": "Diagram elements",
+      "commandLabel": "Commands",
       "empty": "No matches",
-      "openMention": "Add a context mention",
-      "openCommand": "Open the command menu",
+      "openMention": "Mention a diagram element (@)",
+      "openCommand": "Insert a command (/)",
       "hintNavigate": "↑↓ navigate",
       "hintChoose": "↵ choose",
       "hintComplete": "Tab complete",

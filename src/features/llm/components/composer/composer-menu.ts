@@ -1,5 +1,10 @@
 import type { ChatCommand, CommandContext, CommandRegistry } from "../../commands/registry";
-import type { MentionMatch, MentionOption, MentionProviderRegistry, MentionSearchData } from "../../mentions/providers";
+import type {
+  MentionMatch,
+  MentionOption,
+  MentionProviderRegistry,
+  MentionSearchData,
+} from "../../mentions/providers";
 
 /**
  * The composer's one menu: `@` lists context (mention providers), `/` at the

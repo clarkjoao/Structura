@@ -4,7 +4,7 @@ import i18n from "@/infrastructure/i18n";
 import type { Diagram } from "@/features/diagram";
 import { fixtureDiagram } from "../test-utils/fixture-host";
 import { useResolvedDiagram } from "../hooks/useResolvedDiagram";
-import type { MentionRef } from "../mentions/mention-ref";
+import { isSelectionRef, type MentionRef } from "../mentions/mention-ref";
 import type { CommandRef } from "../types";
 import { AssistantUIComposer } from "./AssistantUIComposer";
 
@@ -28,6 +28,11 @@ const diagram = fixtureDiagram({
 
 vi.mock("../hooks/useResolvedDiagram", () => ({
   useResolvedDiagram: vi.fn(),
+}));
+
+const newConversation = vi.fn();
+vi.mock("../hooks/useCommandActions", () => ({
+  useCommandActions: () => ({ newConversation, copyConversation: vi.fn() }),
 }));
 
 const useResolvedDiagramMock = vi.mocked(useResolvedDiagram);
@@ -99,6 +104,7 @@ describe("AssistantUIComposer — / command menu", () => {
     fireEvent.change(textarea, { target: { value: "/cl", selectionStart: 3 } });
     pickFirstMenuItem();
     // /clear is an action; no chip is added.
+    expect(newConversation).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("/clear")).toBeNull();
   });
 });
@@ -112,6 +118,15 @@ describe("AssistantUIComposer — keyboard", () => {
     fireEvent.keyDown(textarea, { key: "Escape" });
     expect(textarea.getAttribute("aria-expanded")).toBe("false");
     expect(textarea.value).toBe("@");
+  });
+
+  it("ArrowDown moves the active item and Enter picks it", () => {
+    render(<AssistantUIComposer onSend={vi.fn()} isLoading={false} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "/", selectionStart: 1 } });
+    fireEvent.keyDown(textarea, { key: "ArrowDown" });
+    fireEvent.keyDown(textarea, { key: "Enter" });
+    expect(screen.getByText("/explain")).toBeTruthy();
   });
 
   it("Backspace in an empty textarea removes the last mention chip", () => {
@@ -130,13 +145,7 @@ describe("AssistantUIComposer — keyboard", () => {
 describe("AssistantUIComposer — selection chip and send", () => {
   it("shows a Selection chip and snapshots its ids on send", () => {
     const onSend = vi.fn().mockResolvedValue(true);
-    render(
-      <AssistantUIComposer
-        onSend={onSend}
-        isLoading={false}
-        selectedNodeIds={["n-1"]}
-      />,
-    );
+    render(<AssistantUIComposer onSend={onSend} isLoading={false} selectedNodeIds={["n-1"]} />);
     expect(
       screen.getByText(i18n.t("llmChat.mention.selectionChip", { label: "API" })),
     ).toBeTruthy();
@@ -148,22 +157,29 @@ describe("AssistantUIComposer — selection chip and send", () => {
     expect(text).toBe("");
     const ref = mentions[0];
     expect(ref).toBeDefined();
-    if (ref && ref.kind === "selection") {
+    if (ref && isSelectionRef(ref)) {
       expect(ref.nodeIds).toEqual(["n-1"]);
     } else {
       throw new Error(`expected a selection ref, got ${JSON.stringify(ref)}`);
     }
   });
 
+  it("follows the canvas selection", () => {
+    const { rerender } = render(
+      <AssistantUIComposer onSend={vi.fn()} isLoading={false} selectedNodeIds={["n-1"]} />,
+    );
+    expect(
+      screen.getByText(i18n.t("llmChat.mention.selectionChip", { label: "API" })),
+    ).toBeTruthy();
+    rerender(<AssistantUIComposer onSend={vi.fn()} isLoading={false} selectedNodeIds={["n-2"]} />);
+    expect(
+      screen.getByText(i18n.t("llmChat.mention.selectionChip", { label: "Orders DB" })),
+    ).toBeTruthy();
+  });
+
   it("dismisses the auto selection chip after send", async () => {
     const onSend = vi.fn().mockResolvedValue(true);
-    render(
-      <AssistantUIComposer
-        onSend={onSend}
-        isLoading={false}
-        selectedNodeIds={["n-1"]}
-      />,
-    );
+    render(<AssistantUIComposer onSend={onSend} isLoading={false} selectedNodeIds={["n-1"]} />);
     const sendButton = screen.getByRole("button", { name: i18n.t("llmChat.send") });
     fireEvent.click(sendButton);
     // onSend resolves asynchronously, then the composer resets.

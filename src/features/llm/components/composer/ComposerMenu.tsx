@@ -5,11 +5,7 @@ import { Command as CommandPrimitive } from "cmdk";
 import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import type { MentionIcon, MentionMatch } from "../../mentions/providers";
-import {
-  isCommandMenuItem,
-  type MenuItem,
-  type MenuSection,
-} from "./composer-menu";
+import { isCommandMenuItem, type MenuItem, type MenuSection } from "./composer-menu";
 
 const ICONS: Record<MentionIcon, typeof Box> = {
   selection: MousePointer2,
@@ -24,7 +20,9 @@ function Highlighted({ text, match }: { text: string; match: MentionMatch | null
   return (
     <>
       {text.slice(0, match.start)}
-      <strong className="font-semibold text-foreground">{text.slice(match.start, match.end)}</strong>
+      <strong className="font-semibold text-foreground">
+        {text.slice(match.start, match.end)}
+      </strong>
       {text.slice(match.end)}
     </>
   );

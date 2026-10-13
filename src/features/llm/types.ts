@@ -144,4 +144,3 @@ export interface PendingSuggestion {
   /** After Accept: the actions that no longer applied (their target was gone). */
   skipped?: SkippedAction[];
 }
-

@@ -127,11 +127,7 @@ function extractTextFromAppendMessage(message: AppendMessage): string {
  * once per panel (F25).
  */
 export interface AssistantUIAdapterDeps {
-  send: (
-    text: string,
-    mentions: MentionRef[],
-    command?: CommandRef,
-  ) => Promise<boolean | void>;
+  send: (text: string, mentions: MentionRef[], command?: CommandRef) => Promise<boolean | void>;
   cancel: () => void;
   rerun: (assistantMessageId: string) => Promise<void>;
   messages: ChatMessage[];
@@ -140,10 +136,19 @@ export interface AssistantUIAdapterDeps {
   pendingSuggestions: PendingSuggestion[];
 }
 
-export function useAssistantUIAdapter(deps: AssistantUIAdapterDeps): ExternalStoreAdapter<ThreadMessage> {
+export function useAssistantUIAdapter(
+  deps: AssistantUIAdapterDeps,
+): ExternalStoreAdapter<ThreadMessage> {
   const { t } = useTranslation();
-  const { send, cancel, rerun, messages: chatMessages, isLoading, streamingContent, pendingSuggestions } =
-    deps;
+  const {
+    send,
+    cancel,
+    rerun,
+    messages: chatMessages,
+    isLoading,
+    streamingContent,
+    pendingSuggestions,
+  } = deps;
 
   const threadMessages = useMemo(
     (): readonly ThreadMessage[] => chatMessages.map(chatMessageToThreadMessage),
