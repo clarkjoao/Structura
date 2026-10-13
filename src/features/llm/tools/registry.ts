@@ -1,4 +1,4 @@
-import type { Tool, ToolSet } from "ai";
+import type { FlexibleSchema, Tool, ToolSet } from "ai";
 import type { z } from "zod";
 import type { DiagramToolHost } from "./host";
 import type { SuggestionDraft } from "./suggestion-draft";
@@ -12,6 +12,8 @@ export interface ToolContext {
   host: Pick<DiagramToolHost, "readDiagram">;
   /** Write tools queue their change here; nothing touches the diagram before Accept. */
   suggestion: SuggestionDraft;
+  /** The turn's abort signal (Stop), for tools that do I/O (MCP calls). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -22,7 +24,8 @@ export interface ToolContext {
 export interface ToolDefinition<TInput = unknown> {
   name: string;
   description: string;
-  inputSchema: z.ZodType<TInput>;
+  /** A zod schema for internal tools; a JSON Schema (via the SDK's helper) for MCP tools. */
+  inputSchema: z.ZodType<TInput> | FlexibleSchema<TInput>;
   kind: ToolKind;
   source: ToolSource;
   /** The MCP server the tool comes from, when `source` is "mcp". */
@@ -93,11 +96,23 @@ export class ToolRegistry {
       const sdkTool: Tool = {
         description: definition.description,
         inputSchema: definition.inputSchema,
-        execute: async (input: unknown) => definition.execute(input, context),
+        execute: async (input: unknown, options) =>
+          definition.execute(input, {
+            ...context,
+            ...(options.abortSignal ? { signal: options.abortSignal } : {}),
+          }),
       };
       toolSet[definition.name] = sdkTool;
     }
     return toolSet;
+  }
+
+  /** A registry with this one's tools plus `extra` (e.g. this turn's MCP tools). */
+  with(extra: readonly ToolDefinition[]): ToolRegistry {
+    const combined = new ToolRegistry();
+    for (const tool of this.tools.values()) combined.register(tool);
+    for (const tool of extra) combined.register(tool);
+    return combined;
   }
 
   list(filter: ToolFilter = {}): ToolDefinition[] {
