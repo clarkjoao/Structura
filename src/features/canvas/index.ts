@@ -72,7 +72,6 @@ export type {
   ReadDiagramRoutePlay,
   ReactFlowShellProps,
 } from "./core";
-export { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
 
 /** Layout engine — public for Reader visualization without deep imports. */
 export { fromDiagram, resizableIds } from "./layout/fromDiagram";

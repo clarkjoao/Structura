@@ -579,7 +579,7 @@ interface NewComponentPlacement {
  * The caller owns the `set()` and the history checkpoint, so one gesture that
  * creates more than a node (a node and the edge to it) stays one undo step.
  */
-function placeNewComponent(
+export function placeNewComponent(
   state: AppState,
   d: Diagram,
   scene: VersionDiff | null,
@@ -631,6 +631,83 @@ function placeNewComponent(
       groupLayout.height = height;
     }
   }
+}
+
+/**
+ * Writes `patch` onto a component of the active diagram or scene. The caller
+ * owns the `set()` and the history checkpoint (see `updateComponent` and
+ * `applyChangeBatch`). `width`/`height` go to the node layout.
+ */
+export function mutateUpdateComponent(d: Diagram, id: string, patch: ComponentPatch): void {
+  const patchAny = patch as Record<string, unknown>;
+  const width = patchAny.width as number | undefined;
+  const height = patchAny.height as number | undefined;
+  const hasDimensions = width !== undefined || height !== undefined;
+
+  const compPatch: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(patchAny)) {
+    if (k !== "width" && k !== "height") compPatch[k] = v;
+  }
+  const shouldDetachTemplate = Object.keys(compPatch).some((key) => key !== "templateId");
+  const scene = resolveActiveVersion(d);
+  const inSceneAdds = !!(scene && scene.addedComponents[id]);
+
+  if (inSceneAdds) {
+    if (Object.keys(compPatch).length > 0) {
+      Object.assign(scene!.addedComponents[id], compPatch);
+      if (shouldDetachTemplate && scene!.addedComponents[id].templateId) {
+        delete scene!.addedComponents[id].templateId;
+      }
+    }
+    if (hasDimensions) {
+      const layout = scene!.nodeLayouts[id];
+      if (layout) {
+        if (width !== undefined) layout.width = width;
+        if (height !== undefined) layout.height = height;
+      }
+    }
+  } else {
+    if (Object.keys(compPatch).length > 0) {
+      Object.assign(d.snapshot.components[id], compPatch);
+      if (shouldDetachTemplate && d.snapshot.components[id].templateId) {
+        delete d.snapshot.components[id].templateId;
+      }
+    }
+    if (hasDimensions) {
+      const layout = d.nodeLayouts[id];
+      if (layout) {
+        if (width !== undefined) layout.width = width;
+        if (height !== undefined) layout.height = height;
+      }
+    }
+  }
+  touchDiagram(d);
+}
+
+/**
+ * Removes components (with the shared references that stand for them) and
+ * connections from the active diagram or scene. The caller owns the `set()`
+ * and the history checkpoint (see `removeElements` and `applyChangeBatch`).
+ */
+export function mutateRemoveElements(
+  state: AppState,
+  d: Diagram,
+  nodeIds: string[],
+  edgeIds: string[],
+): void {
+  const scene = resolveActiveVersion(d);
+  const refs = refsRemovedWith(d, nodeIds);
+  const allNodeIds = [...nodeIds, ...refs.ids];
+  if (scene) {
+    publishSewNotices(state, [
+      ...allNodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
+      ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
+    ]);
+  } else {
+    publishSewNotices(state, removeElementsFromSnapshot(d, allNodeIds, edgeIds));
+  }
+  publishRefNotice(state, refs);
+  touchDiagram(d);
 }
 
 export const componentsSlice = (
@@ -801,18 +878,9 @@ export const componentsSlice = (
   },
 
   updateComponent: (id: string, patch: ComponentPatch) => {
-    const patchAny = patch as Record<string, unknown>;
-    const width = patchAny.width as number | undefined;
-    const height = patchAny.height as number | undefined;
-    const hasDimensions = width !== undefined || height !== undefined;
     const isDimensionOnly =
-      hasDimensions && Object.keys(patch).every((k) => k === "width" || k === "height");
-
-    const compPatch: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(patchAny)) {
-      if (k !== "width" && k !== "height") compPatch[k] = v;
-    }
-    const shouldDetachTemplate = Object.keys(compPatch).some((key) => key !== "templateId");
+      Object.keys(patch).length > 0 &&
+      Object.keys(patch).every((k) => k === "width" || k === "height");
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
@@ -821,37 +889,7 @@ export const componentsSlice = (
       if (!isDimensionOnly) {
         if (!scene || !inSceneAdds) pushHistory(state);
       }
-
-      if (inSceneAdds) {
-        if (Object.keys(compPatch).length > 0) {
-          Object.assign(scene!.addedComponents[id], compPatch);
-          if (shouldDetachTemplate && scene!.addedComponents[id].templateId) {
-            delete scene!.addedComponents[id].templateId;
-          }
-        }
-        if (hasDimensions) {
-          const layout = scene!.nodeLayouts[id];
-          if (layout) {
-            if (width !== undefined) layout.width = width;
-            if (height !== undefined) layout.height = height;
-          }
-        }
-      } else {
-        if (Object.keys(compPatch).length > 0) {
-          Object.assign(d.snapshot.components[id], compPatch);
-          if (shouldDetachTemplate && d.snapshot.components[id].templateId) {
-            delete d.snapshot.components[id].templateId;
-          }
-        }
-        if (hasDimensions) {
-          const layout = d.nodeLayouts[id];
-          if (layout) {
-            if (width !== undefined) layout.width = width;
-            if (height !== undefined) layout.height = height;
-          }
-        }
-      }
-      touchDiagram(d);
+      mutateUpdateComponent(d, id, patch);
     });
   },
 
@@ -891,24 +929,8 @@ export const componentsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveVersion(d);
-      const refs = refsRemovedWith(d, nodeIds);
-      const allNodeIds = [...nodeIds, ...refs.ids];
-      if (scene) {
-        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-        publishSewNotices(state, [
-          ...allNodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
-          ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
-        ]);
-        publishRefNotice(state, refs);
-        touchDiagram(d);
-        return;
-      }
-
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      publishSewNotices(state, removeElementsFromSnapshot(d, allNodeIds, edgeIds));
-      publishRefNotice(state, refs);
-      touchDiagram(d);
+      mutateRemoveElements(state, d, nodeIds, edgeIds);
     });
   },
 });

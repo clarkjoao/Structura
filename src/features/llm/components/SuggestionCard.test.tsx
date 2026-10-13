@@ -48,3 +48,26 @@ describe("SuggestionCard", () => {
     expect(onReject).toHaveBeenCalledWith("s-1");
   });
 });
+
+describe("SuggestionCard — undo step and skipped changes", () => {
+  it("says the suggestion applies as one undo step", () => {
+    render(<SuggestionCard suggestion={suggestion} onAccept={() => {}} onReject={() => {}} />);
+    expect(screen.getByText(i18n.t("llmChat.suggestion.oneUndoStep"))).toBeTruthy();
+  });
+
+  it("marks the changes that were skipped at Accept time", () => {
+    render(
+      <SuggestionCard
+        suggestion={{
+          ...suggestion,
+          status: "accepted",
+          skipped: [{ actionIndex: 1, reason: "missingNode" }],
+        }}
+        onAccept={() => {}}
+        onReject={() => {}}
+      />,
+    );
+    expect(screen.getByText(i18n.t("llmChat.suggestion.skipped.missingNode"))).toBeTruthy();
+    expect(screen.getAllByRole("listitem")[1]?.className).toContain("line-through");
+  });
+});

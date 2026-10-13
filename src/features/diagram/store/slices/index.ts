@@ -13,6 +13,12 @@ export { diagramsSlice } from "./diagram.slice";
 export { foldersSlice } from "./folders.slice";
 export { patternsSlice } from "./patterns.slice";
 export { generatedGraphSlice } from "./generated-graph.slice";
+export { changeBatchSlice } from "./change-batch.slice";
+export type {
+  DiagramChange,
+  DiagramChangeBatchResult,
+  DiagramChangeSkipReason,
+} from "./change-batch.slice";
 export type {
   GeneratedEdgeInput,
   GeneratedGraphResult,

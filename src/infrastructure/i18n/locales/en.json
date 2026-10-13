@@ -612,7 +612,15 @@
       "accepted": "Accepted",
       "rejected": "Rejected",
       "changeCount_one": "{{count}} change",
-      "changeCount_other": "{{count}} changes"
+      "changeCount_other": "{{count}} changes",
+      "oneUndoStep": "Applies as one undo step",
+      "skipped": {
+        "missingNode": "Skipped: element no longer exists",
+        "missingEdge": "Skipped: connection no longer exists",
+        "edgeNotAllowed": "Skipped: this element cannot start a connection",
+        "noDiagram": "Skipped: no diagram open",
+        "unknownPattern": "Skipped: pattern not found"
+      }
     },
     "mention": {
       "noResults": "No matching nodes or edges",
@@ -645,10 +653,6 @@
     "floatingButton": {
       "open": "Open chat assistant",
       "close": "Close chat assistant"
-    },
-    "preview": {
-      "keep": "Keep",
-      "discard": "Discard"
     },
     "error": {
       "auth": "Invalid API key. Check your settings.",

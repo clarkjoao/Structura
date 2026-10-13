@@ -7,8 +7,9 @@ import { SuggestionCard } from "./SuggestionCard";
 
 /**
  * Renders a suggestion part: the pending suggestion it points at, with the
- * existing Accept/Reject actions. Once accepted, rejected, or gone (a reloaded
- * thread no longer holds session suggestions), nothing is shown.
+ * Accept/Reject actions. Once accepted it stays only to list the changes that
+ * no longer applied; rejected or gone (a reloaded thread no longer holds
+ * session suggestions), nothing is shown.
  */
 export function SuggestionPartView({ data }: DataMessagePartProps) {
   const suggestionId = isSuggestionPart(data) ? data.suggestionId : null;
@@ -20,7 +21,9 @@ export function SuggestionPartView({ data }: DataMessagePartProps) {
   const accept = useLLMStore((state) => state.acceptSuggestion);
   const reject = useLLMStore((state) => state.rejectSuggestion);
 
-  if (!suggestion || suggestion.status !== "pending") {
+  // Pending: review it. Accepted with skipped changes: say which did not apply.
+  const hasSkipped = (suggestion?.skipped?.length ?? 0) > 0;
+  if (!suggestion || (suggestion.status !== "pending" && !hasSkipped)) {
     return null;
   }
   return (

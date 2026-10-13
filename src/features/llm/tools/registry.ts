@@ -8,7 +8,8 @@ export type ToolSource = "internal" | "mcp";
 
 /** What a tool can reach while it runs: the diagram, and the turn's suggestion. */
 export interface ToolContext {
-  host: DiagramToolHost;
+  /** Tools only read the diagram; applying changes happens at Accept. */
+  host: Pick<DiagramToolHost, "readDiagram">;
   /** Write tools queue their change here; nothing touches the diagram before Accept. */
   suggestion: SuggestionDraft;
 }

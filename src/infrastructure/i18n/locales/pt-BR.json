@@ -612,7 +612,15 @@
       "accepted": "Aceito",
       "rejected": "Rejeitado",
       "changeCount_one": "{{count}} alteração",
-      "changeCount_other": "{{count}} alterações"
+      "changeCount_other": "{{count}} alterações",
+      "oneUndoStep": "Aplica como um único passo de desfazer",
+      "skipped": {
+        "missingNode": "Ignorada: o elemento não existe mais",
+        "missingEdge": "Ignorada: a conexão não existe mais",
+        "edgeNotAllowed": "Ignorada: este elemento não pode iniciar uma conexão",
+        "noDiagram": "Ignorada: nenhum diagrama aberto",
+        "unknownPattern": "Ignorada: padrão não encontrado"
+      }
     },
     "mention": {
       "noResults": "Nenhum nó ou conexão encontrado",
@@ -645,10 +653,6 @@
     "floatingButton": {
       "open": "Abrir assistente de chat",
       "close": "Fechar assistente de chat"
-    },
-    "preview": {
-      "keep": "Manter",
-      "discard": "Descartar"
     },
     "error": {
       "auth": "Chave de API inválida. Verifique suas configurações.",

@@ -37,7 +37,6 @@ beforeEach(() => {
     activeThreadId: "",
     messages: [],
     pendingSuggestions: [],
-    pendingPreviews: [],
     streamingContent: null,
     isLoading: false,
   });

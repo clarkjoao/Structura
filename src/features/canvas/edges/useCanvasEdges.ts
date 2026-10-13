@@ -3,7 +3,6 @@ import type { Edge } from "@xyflow/react";
 import type { Diagram, DiagramModel, FlowStep } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
-import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
 import { writePolicy } from "../core/canvasInteractionPolicy";
 import { projectEdges } from "../core/projectDiagram";
 import type { ViewSnapshot } from "../core/resolveViewSnapshot";
@@ -91,7 +90,6 @@ export function useCanvasEdges({
     () => (visibleTagsKey ? new Set(visibleTagsKey.split("\x00").filter(Boolean)) : null),
     [visibleTagsKey],
   );
-  const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
 
   /**
    * Per-edge identity cache, mirroring the one useCanvasNodes keeps for nodes.
@@ -147,8 +145,6 @@ export function useCanvasEdges({
       if (!visibleIds.has(cachedId)) prevEdgesByIdRef.current.delete(cachedId);
     }
 
-    const pendingEdgeIds = getPendingEdgeIds(pendingPreviews);
-
     const nextEdges = projected.map((base) => {
       const conn = { id: base.id };
       const edge = applyEditorEdgeOverlays(base, {
@@ -156,7 +152,8 @@ export function useCanvasEdges({
         isCompareMode: isCompareMode ?? false,
         compareConnectionOpacity,
         dimmedByTag: isEndpointHiddenByTag(base.source) || isEndpointHiddenByTag(base.target),
-        pending: pendingEdgeIds.has(base.id),
+        // Chat suggestions no longer put edges on the canvas before Accept.
+        pending: false,
       });
 
       // Reuse the previous nested objects when their contents did not move, so
@@ -237,6 +234,5 @@ export function useCanvasEdges({
     flowBadges,
     coverage,
     visibleTagsSet,
-    pendingPreviews,
   ]);
 }

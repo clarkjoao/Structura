@@ -230,7 +230,7 @@ const addNode = defineTool({
       name,
       parentId,
       ...(position ? { position } : {}),
-      ...(serviceId ? { cloudServiceId: serviceId } : {}),
+      ...(serviceId ? { serviceId } : {}),
     });
     return { queued: true, ref, note: QUEUED_NOTE };
   },

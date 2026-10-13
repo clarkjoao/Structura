@@ -24,7 +24,6 @@ import type {
   LLMConfig,
   LLMConnection,
   LLMRequestMessage,
-  PendingNodePreview,
   PendingSuggestion,
 } from "./types";
 import {
@@ -36,7 +35,7 @@ import {
   saveConnections,
   saveThreadsForDiagram,
 } from "./llm-storage";
-import { applySuggestionActions } from "./apply-diagram-patch";
+import { applySuggestion } from "./suggestion-apply";
 import { SuggestionDraft } from "./tools/suggestion-draft";
 import { createInternalToolRegistry } from "./tools/internal-tools";
 import { isToolErrorResult } from "./tools/registry";
@@ -139,7 +138,6 @@ export interface LLMStoreState {
   activeThreadId: string;
   messages: ChatMessage[];
   pendingSuggestions: PendingSuggestion[];
-  pendingPreviews: PendingNodePreview[];
   streamingContent: string | null;
   isLoading: boolean;
 
@@ -174,7 +172,11 @@ export interface LLMStoreState {
    * replacing that assistant message. Retry (after an error) and Regenerate.
    */
   rerunAssistantMessage: (assistantMessageId: string, diagramContext: string) => Promise<void>;
-  acceptSuggestion: (suggestionId: string) => void;
+  /**
+   * Applies the suggestion as one undo step. Nothing touched the diagram
+   * before this; changes that no longer apply are skipped and recorded.
+   */
+  acceptSuggestion: (suggestionId: string) => Promise<void>;
   rejectSuggestion: (suggestionId: string) => void;
   /**
    * @deprecated Replaced by `createThread`. Kept for the panel until Fase 6.
@@ -452,7 +454,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     activeThreadId: "",
     messages: [],
     pendingSuggestions: [],
-    pendingPreviews: [],
     streamingContent: null,
     isLoading: false,
 
@@ -570,7 +571,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         activeThreadId,
         messages: activeThread?.messages ?? [],
         pendingSuggestions: [],
-        pendingPreviews: [],
         streamingContent: null,
       });
     },
@@ -591,7 +591,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         activeThreadId: threadId,
         messages: thread.messages,
         pendingSuggestions: [],
-        pendingPreviews: [],
         streamingContent: null,
       });
     },
@@ -625,7 +624,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         activeThreadId: draft.id,
         messages: [],
         pendingSuggestions: [],
-        pendingPreviews: [],
         streamingContent: null,
       });
       return draft;
@@ -686,7 +684,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           activeThreadId: fallback.id,
           messages: [],
           pendingSuggestions: [],
-          pendingPreviews: [],
           streamingContent: null,
         });
         return;
@@ -702,7 +699,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           ? {
               messages: remaining.find((thread) => thread.id === nextActiveId)?.messages ?? [],
               pendingSuggestions: [],
-              pendingPreviews: [],
               streamingContent: null,
             }
           : {}),
@@ -754,7 +750,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       inFlight?.abort();
     },
 
-    acceptSuggestion: (suggestionId) => {
+    acceptSuggestion: async (suggestionId) => {
       const suggestion = get().pendingSuggestions.find(
         (candidateSuggestion) => candidateSuggestion.id === suggestionId,
       );
@@ -762,18 +758,25 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         return;
       }
 
-      applySuggestionActions(suggestion.patch.actions);
-
+      // Marked first so a second click cannot apply it twice while the
+      // layout (if any) runs.
       set((state) => ({
         pendingSuggestions: state.pendingSuggestions.map((candidateSuggestion) =>
           candidateSuggestion.id === suggestionId
             ? { ...candidateSuggestion, status: "accepted" }
             : candidateSuggestion,
         ),
-        pendingPreviews: state.pendingPreviews.filter(
-          (pendingPreview) => pendingPreview.suggestionId !== suggestionId,
-        ),
       }));
+      const skipped = await applySuggestion(suggestion.patch.actions, storeDiagramHost);
+      if (skipped.length > 0) {
+        set((state) => ({
+          pendingSuggestions: state.pendingSuggestions.map((candidateSuggestion) =>
+            candidateSuggestion.id === suggestionId
+              ? { ...candidateSuggestion, skipped }
+              : candidateSuggestion,
+          ),
+        }));
+      }
     },
 
     rejectSuggestion: (suggestionId) => {
@@ -790,9 +793,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             ? { ...candidateSuggestion, status: "rejected" }
             : candidateSuggestion,
         ),
-        pendingPreviews: state.pendingPreviews.filter(
-          (pendingPreview) => pendingPreview.suggestionId !== suggestionId,
-        ),
       }));
     },
 
@@ -804,7 +804,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         set({
           messages: [],
           pendingSuggestions: [],
-          pendingPreviews: [],
           streamingContent: null,
           isLoading: false,
         });
@@ -822,22 +821,4 @@ export function countConversationMessages(messages: ChatMessage[], isLoading: bo
   const last = messages[messages.length - 1];
   const hasInFlightPlaceholder = isLoading && last !== undefined && last.role === "assistant";
   return hasInFlightPlaceholder ? messages.length - 1 : messages.length;
-}
-
-export function getPendingNodeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
-  return new Set(pendingPreviews.flatMap((pendingPreview) => pendingPreview.nodeIds));
-}
-
-export function getPendingEdgeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
-  return new Set(pendingPreviews.flatMap((pendingPreview) => pendingPreview.edgeIds));
-}
-
-export function getSuggestionIdForNode(
-  pendingPreviews: PendingNodePreview[],
-  nodeId: string,
-): string | null {
-  return (
-    pendingPreviews.find((pendingPreview) => pendingPreview.nodeIds.includes(nodeId))
-      ?.suggestionId ?? null
-  );
 }

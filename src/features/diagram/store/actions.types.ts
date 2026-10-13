@@ -137,7 +137,11 @@ export interface AppActions {
     index: number,
   ) => void;
   removeEdgeControlPoint: (diagramId: string, connectionId: string, pointId: string) => void;
-  resetEdgeControlPoints: (diagramId: string, connectionId: string) => void;
+  resetEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    options?: { history?: boolean },
+  ) => void;
   setEdgeLabelOffset: (
     diagramId: string,
     connectionId: string,
@@ -157,6 +161,7 @@ export interface AppActions {
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
+    options?: { history?: boolean },
   ) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;
@@ -233,6 +238,10 @@ export interface AppActions {
     nodes: import("./slices/generated-graph.slice").GeneratedNodeInput[],
     edges: import("./slices/generated-graph.slice").GeneratedEdgeInput[],
   ) => import("./slices/generated-graph.slice").GeneratedGraphResult;
+
+  applyChangeBatch: (
+    changes: import("./slices/change-batch.slice").DiagramChange[],
+  ) => import("./slices/change-batch.slice").DiagramChangeBatchResult;
 
   undo: () => void;
   redo: () => void;

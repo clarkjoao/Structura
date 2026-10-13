@@ -26,7 +26,6 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const messages = useLLMStore((state) => state.messages);
   const isLoading = useLLMStore((state) => state.isLoading);
   const pendingSuggestions = useLLMStore((state) => state.pendingSuggestions);
-  const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const streamingContent = useLLMStore((state) => state.streamingContent);
   const config = useLLMStore((state) => state.config);
   const activeDiagramId = useLLMStore((state) => state.activeDiagramId);
@@ -118,7 +117,6 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     rerun,
     isLoading,
     pendingSuggestions,
-    pendingPreviews,
     streamingContent,
     accept: acceptSuggestion,
     reject: rejectSuggestion,

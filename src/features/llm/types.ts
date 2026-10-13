@@ -1,5 +1,6 @@
 import type { ComponentPatch, ComponentType, EdgeStyle } from "@/features/diagram";
 import type { MessagePart, MessageStatus } from "./message-parts";
+import type { SkippedAction } from "./suggestion-apply";
 
 export type LLMProvider = "openai" | "anthropic" | "custom";
 export type LLMMode = "direct" | "proxy";
@@ -90,7 +91,8 @@ export type DiagramPatchAction =
         name: string;
         parentId: string | null;
         position?: { x: number; y: number };
-        cloudServiceId?: string;
+        /** Catalog service id from search_elements; becomes the component's cloud service. */
+        serviceId?: string;
       };
     }
   | { type: "REMOVE_NODE"; payload: { nodeId: string } }
@@ -119,12 +121,8 @@ export interface PendingSuggestion {
   messageId: string;
   patch: DiagramPatch;
   status: "pending" | "accepted" | "rejected";
-}
-
-export interface PendingNodePreview {
-  suggestionId: string;
-  nodeIds: string[];
-  edgeIds: string[];
+  /** After Accept: the actions that no longer applied (their target was gone). */
+  skipped?: SkippedAction[];
 }
 
 export interface MentionItem {

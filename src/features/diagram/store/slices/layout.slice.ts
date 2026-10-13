@@ -171,12 +171,16 @@ export const layoutSlice = (
     });
   },
 
-  resetEdgeControlPoints: (diagramId: string, connectionId: string) => {
+  resetEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    options?: { history?: boolean },
+  ) => {
     set((state) => {
       const diagram = state.diagrams[diagramId];
       const existing = diagram?.edgeLayouts[connectionId];
       if (!diagram || !existing?.points?.length) return;
-      pushHistory(state);
+      if (options?.history !== false) pushHistory(state);
       delete existing.points;
       if (existing.labelOffset === undefined && existing.pathType === undefined) {
         delete diagram.edgeLayouts[connectionId];
@@ -330,6 +334,11 @@ export const layoutSlice = (
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
+    /**
+     * `history: false` when the layout finishes a change that already took its
+     * checkpoint (an accepted suggestion), so it undoes with that change.
+     */
+    options?: { history?: boolean },
   ) => {
     set((state) => {
       const d = getActiveDiagram(state);
@@ -339,7 +348,9 @@ export const layoutSlice = (
       // References the layout made or dissolved are a structural change: the
       // checkpoint must not be coalesced into an earlier one.
       const reconcilesRefs = autoRefs !== undefined && scene === null;
-      pushHistory(state, reconcilesRefs ? STRUCTURAL_MUTATION_MARKER : undefined);
+      if (options?.history !== false) {
+        pushHistory(state, reconcilesRefs ? STRUCTURAL_MUTATION_MARKER : undefined);
+      }
       // Before the positions: a reference made here has no layout to move yet.
       if (reconcilesRefs) reconcileAutoRefs(d, autoRefs);
 

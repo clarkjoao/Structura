@@ -5,6 +5,7 @@ import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PendingSuggestion } from "@/features/llm";
+import type { SkippedAction } from "@/features/llm/suggestion-apply";
 import {
   formatActionLabel,
   patchChangeKind,
@@ -17,6 +18,14 @@ interface SuggestionCardProps {
   onReject: (suggestionId: string) => void;
 }
 
+const SKIP_REASON_KEYS: Record<SkippedAction["reason"], string> = {
+  missingNode: "llmChat.suggestion.skipped.missingNode",
+  missingEdge: "llmChat.suggestion.skipped.missingEdge",
+  edgeNotAllowed: "llmChat.suggestion.skipped.edgeNotAllowed",
+  noDiagram: "llmChat.suggestion.skipped.noDiagram",
+  unknownPattern: "llmChat.suggestion.skipped.unknownPattern",
+};
+
 const MARKERS: Record<PatchChangeKind, { symbol: string; className: string }> = {
   add: { symbol: "+", className: "text-success" },
   update: { symbol: "~", className: "text-warning" },
@@ -28,6 +37,9 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
   const { t } = useTranslation();
   const isPending = suggestion.status === "pending";
   const { actions, description } = suggestion.patch;
+  const skippedByIndex = new Map(
+    (suggestion.skipped ?? []).map((entry) => [entry.actionIndex, entry.reason]),
+  );
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-card text-xs shadow-sm">
@@ -53,17 +65,29 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
         <ul className="space-y-0.5 px-3 py-2">
           {actions.map((action, index) => {
             const marker = MARKERS[patchChangeKind(action)];
+            const skipReason = skippedByIndex.get(index);
             return (
-              <li key={index} className="flex min-w-0 items-baseline gap-2">
+              <li
+                key={index}
+                className={cn(
+                  "flex min-w-0 items-baseline gap-2",
+                  skipReason && "text-muted-foreground line-through",
+                )}
+              >
                 <span
                   aria-hidden
                   className={cn("w-3 shrink-0 font-mono font-bold", marker.className)}
                 >
                   {marker.symbol}
                 </span>
-                <span className="min-w-0 truncate text-foreground">
+                <span className={cn("min-w-0 truncate", !skipReason && "text-foreground")}>
                   {formatActionLabel(action, t)}
                 </span>
+                {skipReason ? (
+                  <span className="ml-auto shrink-0 text-[10px] no-underline">
+                    {t(SKIP_REASON_KEYS[skipReason])}
+                  </span>
+                ) : null}
               </li>
             );
           })}
@@ -75,6 +99,9 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
       {/* Footer */}
       {isPending ? (
         <div className="flex items-center justify-end gap-2 border-t border-border px-3 py-2">
+          <span className="mr-auto text-[10px] text-muted-foreground">
+            {t("llmChat.suggestion.oneUndoStep")}
+          </span>
           <Button
             type="button"
             size="sm"
