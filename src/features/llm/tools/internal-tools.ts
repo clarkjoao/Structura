@@ -97,7 +97,7 @@ const getNodeDetails = defineTool({
     const diagram = host.readDiagram();
     if (!diagram) return noDiagram();
     const node = diagram.snapshot.components[nodeId];
-    if (!node) return toolError(`Unknown node id "${nodeId}".`);
+    if (!node) return toolError(`Unknown node id ${JSON.stringify(nodeId)}.`);
     const edges = Object.values(diagram.snapshot.connections);
     return {
       node,
@@ -216,12 +216,14 @@ const addNode = defineTool({
     const diagram = context.host.readDiagram();
     if (!diagram) return noDiagram();
     if (!isKnownNodeType(nodeType)) {
-      return toolError(`Unknown nodeType "${nodeType}". Use search_elements or the catalog.`);
+      return toolError(
+        `Unknown nodeType ${JSON.stringify(nodeType)}. Use search_elements or the catalog.`,
+      );
     }
     const registryCheck = validateAddNodeAgainstRegistry(nodeType, serviceId);
     if (!registryCheck.ok) return toolError(registryCheck.reason);
     if (parentId !== null && !isKnownNodeRef(parentId, context, diagram)) {
-      return toolError(`Unknown parentId "${parentId}".`);
+      return toolError(`Unknown parentId ${JSON.stringify(parentId)}.`);
     }
     const ref = context.suggestion.addNode({
       nodeType,
@@ -244,7 +246,7 @@ const removeNode = defineTool({
     const diagram = context.host.readDiagram();
     if (!diagram) return noDiagram();
     if (!(nodeId in diagram.snapshot.components)) {
-      return toolError(`Unknown node id "${nodeId}".`);
+      return toolError(`Unknown node id ${JSON.stringify(nodeId)}.`);
     }
     context.suggestion.queue({ type: "REMOVE_NODE", payload: { nodeId } });
     return { queued: true, note: QUEUED_NOTE };
@@ -278,7 +280,7 @@ const updateNode = defineTool({
     const diagram = context.host.readDiagram();
     if (!diagram) return noDiagram();
     if (!(nodeId in diagram.snapshot.components)) {
-      return toolError(`Unknown node id "${nodeId}".`);
+      return toolError(`Unknown node id ${JSON.stringify(nodeId)}.`);
     }
     const parsed = UPDATABLE_NODE_FIELDS.safeParse(patch);
     if (!parsed.success) {
@@ -315,7 +317,8 @@ const addEdge = defineTool({
       ["sourceId", sourceId],
       ["targetId", targetId],
     ] as const) {
-      if (!isKnownNodeRef(id, context, diagram)) return toolError(`Unknown ${role} "${id}".`);
+      if (!isKnownNodeRef(id, context, diagram))
+        return toolError(`Unknown ${role} ${JSON.stringify(id)}.`);
     }
     context.suggestion.queue({ type: "ADD_EDGE", payload: { sourceId, targetId, label } });
     return { queued: true, note: QUEUED_NOTE };
@@ -332,7 +335,7 @@ const removeEdge = defineTool({
     const diagram = context.host.readDiagram();
     if (!diagram) return noDiagram();
     if (!(edgeId in diagram.snapshot.connections)) {
-      return toolError(`Unknown edge id "${edgeId}".`);
+      return toolError(`Unknown edge id ${JSON.stringify(edgeId)}.`);
     }
     context.suggestion.queue({ type: "REMOVE_EDGE", payload: { edgeId } });
     return { queued: true, note: QUEUED_NOTE };
@@ -348,10 +351,12 @@ const insertPattern = defineTool({
   source: "internal",
   execute: ({ patternId, provider }, context) => {
     if (!isValidPatternId(patternId)) {
-      return toolError(`Unknown patternId "${patternId}". Use list_patterns.`);
+      return toolError(`Unknown patternId ${JSON.stringify(patternId)}. Use list_patterns.`);
     }
     if (provider !== undefined && !isPatternProvider(provider)) {
-      return toolError(`Unknown provider "${provider}". Use list_patterns for the accepted ones.`);
+      return toolError(
+        `Unknown provider ${JSON.stringify(provider)}. Use list_patterns for the accepted ones.`,
+      );
     }
     context.suggestion.queue({
       type: "INSERT_PATTERN",

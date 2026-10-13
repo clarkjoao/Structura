@@ -25,6 +25,8 @@ export interface ToolCallPart {
   status: ToolCallStatus;
   result?: unknown;
   error?: string;
+  /** The user stopped the reply while this call was running. */
+  stopped?: boolean;
 }
 
 /**
@@ -76,7 +78,8 @@ export function isToolCallPart(value: unknown): value is ToolCallPart {
     (value.source === "internal" || value.source === "mcp") &&
     (value.serverId === undefined || typeof value.serverId === "string") &&
     isToolCallStatus(value.status) &&
-    (value.error === undefined || typeof value.error === "string")
+    (value.error === undefined || typeof value.error === "string") &&
+    (value.stopped === undefined || typeof value.stopped === "boolean")
   );
 }
 
@@ -148,6 +151,55 @@ export function appendTextDelta(message: ChatMessage, delta: string): ChatMessag
     };
   }
   return { ...message, parts: [...message.parts, textPart(delta)] };
+}
+
+/**
+ * Appends a non-text part (a tool call, a suggestion). An empty text part at
+ * the end — the placeholder a streaming reply starts with — is dropped so it
+ * does not render as an empty paragraph before the part.
+ */
+export function appendPart(message: ChatMessage, part: MessagePart): ChatMessage {
+  const last = message.parts[message.parts.length - 1];
+  const kept =
+    isTextPart(last) && last.text.length === 0 ? message.parts.slice(0, -1) : message.parts;
+  return { ...message, parts: [...kept, part] };
+}
+
+/**
+ * Updates the running tool-call part with this id (the latest one: some
+ * providers reuse ids across steps); other parts are kept as they are.
+ */
+export function updateToolCallPart(
+  message: ChatMessage,
+  id: string,
+  update: Partial<Pick<ToolCallPart, "status" | "result" | "error">>,
+): ChatMessage {
+  let target = -1;
+  message.parts.forEach((part, index) => {
+    if (isToolCallPart(part) && part.id === id && part.status === "running") target = index;
+  });
+  if (target === -1) return message;
+  return {
+    ...message,
+    parts: message.parts.map((part, index) =>
+      index === target && isToolCallPart(part) ? { ...part, ...update } : part,
+    ),
+  };
+}
+
+/**
+ * Ends every still-running tool call as an error: `stopped` when the user
+ * stopped the reply, otherwise because the request failed around it.
+ */
+export function failRunningToolCalls(message: ChatMessage, stopped: boolean): ChatMessage {
+  return {
+    ...message,
+    parts: message.parts.map((part) =>
+      isToolCallPart(part) && part.status === "running"
+        ? { ...part, status: "error", ...(stopped ? { stopped: true } : {}) }
+        : part,
+    ),
+  };
 }
 
 export function getErrorPart(message: Pick<ChatMessage, "parts">): ErrorPart | undefined {

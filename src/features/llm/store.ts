@@ -1,17 +1,20 @@
 import { create } from "zustand";
 import type { ToolSet } from "ai";
+import type { ToolEvent } from "./transport/ai-sdk-transport";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
 import { LLMRequestCancelledError, toLLMError } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
 import {
+  appendPart,
   appendTextDelta,
   errorPart,
+  failRunningToolCalls,
   getMessageText,
-  isTextPart,
   suggestionPart,
   textPart,
+  updateToolCallPart,
 } from "./message-parts";
 import type {
   ChatMessage,
@@ -36,6 +39,7 @@ import {
 import { applySuggestionActions } from "./apply-diagram-patch";
 import { SuggestionDraft } from "./tools/suggestion-draft";
 import { createInternalToolRegistry } from "./tools/internal-tools";
+import { isToolErrorResult } from "./tools/registry";
 import { storeDiagramHost } from "./tools/store-host";
 
 function getResolvedAppLanguage(): string {
@@ -120,9 +124,10 @@ async function executeLLMMessage(
   onChunk: (chunk: string) => void,
   signal: AbortSignal,
   tools?: ToolSet,
+  onToolEvent?: (event: ToolEvent) => void,
 ): Promise<LLMCompletion> {
   const { streamChat } = await import("./transport/ai-sdk-transport");
-  return streamChat({ config, messages, systemPrompt, onChunk, signal, tools });
+  return streamChat({ config, messages, systemPrompt, onChunk, signal, tools, onToolEvent });
 }
 
 export interface LLMStoreState {
@@ -228,6 +233,34 @@ function freshThreadState(): DiagramThreadState {
   return { threads: [], activeThreadId: "" };
 }
 
+/** Turns a transport tool event into the matching change on the message's tool-call parts. */
+function applyToolEvent(message: ChatMessage, event: ToolEvent): ChatMessage {
+  switch (event.kind) {
+    case "call": {
+      const tool = internalTools.get(event.name);
+      return appendPart(message, {
+        type: "tool-call",
+        id: event.id,
+        name: event.name,
+        source: tool?.source ?? "internal",
+        ...(tool?.serverId ? { serverId: tool.serverId } : {}),
+        args: event.input,
+        status: "running",
+      });
+    }
+    case "result":
+      return isToolErrorResult(event.output)
+        ? updateToolCallPart(message, event.id, {
+            status: "error",
+            result: event.output,
+            error: event.output.error,
+          })
+        : updateToolCallPart(message, event.id, { status: "done", result: event.output });
+    case "error":
+      return updateToolCallPart(message, event.id, { status: "error", error: event.error });
+  }
+}
+
 /** The tools every turn offers the model. */
 const internalTools = createInternalToolRegistry();
 
@@ -321,6 +354,13 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         },
         controller.signal,
         tools,
+        (event) => {
+          set((streamingState) => ({
+            messages: streamingState.messages.map((message) =>
+              message.id === assistantMessageId ? applyToolEvent(message, event) : message,
+            ),
+          }));
+        },
       );
       // Cut at the output-token ceiling: the reply is kept as it is and the
       // message says so, instead of passing for a complete answer.
@@ -362,8 +402,12 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     } catch (error) {
       if (error instanceof LLMRequestCancelledError) {
         set({
+          // Completed calls stay; the running one ends as stopped. The
+          // turn's queued changes are dropped with it: no suggestion.
           messages: get().messages.map((message) =>
-            message.id === assistantMessageId ? { ...message, status: "cancelled" } : message,
+            message.id === assistantMessageId
+              ? { ...failRunningToolCalls(message, true), status: "cancelled" }
+              : message,
           ),
           streamingContent: null,
           isLoading: false,
@@ -383,7 +427,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           message.id === assistantMessageId
             ? {
                 ...message,
-                parts: [...message.parts.filter(isTextPart), errorPart(llmError)],
+                parts: [...failRunningToolCalls(message, false).parts, errorPart(llmError)],
                 status: "error",
               }
             : message,

@@ -42,7 +42,7 @@ function formatValue(value: unknown): string {
 export function ToolCallRow({ part }: { part: ToolCallPart }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  const statusLabel = t(toolCallStatusKey(part.status));
+  const statusLabel = part.stopped ? t("llmChat.stopped") : t(toolCallStatusKey(part.status));
 
   return (
     <div className="text-xs" data-testid="tool-call-row">

@@ -170,7 +170,15 @@ export interface ChatStreamRequest {
   signal?: AbortSignal;
   /** Tools the model may call; the SDK runs them in a loop of up to MAX_TOOL_STEPS steps. */
   tools?: ToolSet;
+  /** Tool activity, in stream order, so the chat can show each call as it happens. */
+  onToolEvent?: (event: ToolEvent) => void;
 }
+
+/** A tool call starting, finishing with an output, or failing. */
+export type ToolEvent =
+  | { kind: "call"; id: string; name: string; input: unknown }
+  | { kind: "result"; id: string; output: unknown }
+  | { kind: "error"; id: string; error: string };
 
 /** Most model calls one reply may make: each tool round trip is one step. */
 export const MAX_TOOL_STEPS = 8;
@@ -205,6 +213,24 @@ export async function streamChat(request: ChatStreamRequest): Promise<LLMComplet
         case "text-delta":
           text += part.text;
           request.onChunk(part.text);
+          break;
+        case "tool-call":
+          request.onToolEvent?.({
+            kind: "call",
+            id: part.toolCallId,
+            name: part.toolName,
+            input: part.input,
+          });
+          break;
+        case "tool-result":
+          request.onToolEvent?.({ kind: "result", id: part.toolCallId, output: part.output });
+          break;
+        case "tool-error":
+          request.onToolEvent?.({
+            kind: "error",
+            id: part.toolCallId,
+            error: part.error instanceof Error ? part.error.message : String(part.error),
+          });
           break;
         case "finish":
           stopReason = toStopReason(part.finishReason);

@@ -52,6 +52,11 @@ describe("ToolCallRow", () => {
     expect(screen.getByText(i18n.t("llmChat.toolCall.status.awaitingApproval"))).toBeTruthy();
   });
 
+  it("labels a call the user stopped as Stopped", () => {
+    render(<ToolCallRow part={{ ...search, status: "error", result: undefined, stopped: true }} />);
+    expect(screen.getByText(i18n.t("llmChat.stopped"))).toBeTruthy();
+  });
+
   it("shows the error of a failed call", () => {
     render(<ToolCallRow part={{ ...search, status: "error", result: undefined, error: "boom" }} />);
     fireEvent.click(screen.getByRole("button"));
