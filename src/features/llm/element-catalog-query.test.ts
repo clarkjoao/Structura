@@ -5,16 +5,16 @@ import {
   listElementFamilies,
   searchElements,
 } from "./element-catalog-query";
-import { applyDiagramPatchAction } from "./apply-diagram-patch";
-import { CATALOG_READ_TOOL_NAMES, isWriteTool } from "./tools";
+import { createInternalToolRegistry } from "./tools/internal-tools";
 import { buildComponentTypeCatalog, allComponentTypes } from "./component-catalog";
 import { buildSystemPrompt } from "./prompt-builder";
 import type { Component } from "@/features/diagram/model/component.types";
 
 describe("hierarchical element catalog (F8)", () => {
-  it("keeps catalog read tools outside WRITE_TOOL_NAMES", () => {
-    for (const name of CATALOG_READ_TOOL_NAMES) {
-      expect(isWriteTool(name)).toBe(false);
+  it("registers the catalog queries as read tools", () => {
+    const registry = createInternalToolRegistry();
+    for (const name of ["list_element_families", "search_elements", "list_patterns"]) {
+      expect(registry.get(name)?.kind).toBe("read");
     }
   });
 
@@ -51,16 +51,9 @@ describe("hierarchical element catalog (F8)", () => {
     expect(redis.elementType).toBe("oss-datastore");
   });
 
-  it("applies LIST_ELEMENT_FAMILIES and SEARCH_ELEMENTS as tool results", () => {
-    const families = applyDiagramPatchAction({ type: "LIST_ELEMENT_FAMILIES", payload: {} });
-    expect(families.toolResult?.type).toBe("LIST_ELEMENT_FAMILIES");
-    const search = applyDiagramPatchAction({
-      type: "SEARCH_ELEMENTS",
-      payload: { query: "kafka" },
-    });
-    expect(search.toolResult?.type).toBe("SEARCH_ELEMENTS");
-    const data = search.toolResult?.data as { results: Array<{ serviceId: string | null }> };
-    expect(data.results.some((row) => row.serviceId === "kafka")).toBe(true);
+  it("finds Kafka through search_elements", () => {
+    const found = searchElements({ query: "kafka" });
+    expect(found.results.some((row) => row.serviceId === "kafka")).toBe(true);
   });
 
   it("records AFTER hierarchical catalog sizes", () => {

@@ -54,3 +54,27 @@ export function controllableReply(chunks: string[]): {
     fail: () => controller?.error(new DOMException("The operation was aborted.", "AbortError")),
   };
 }
+
+/** A model step that calls tools and stops for their results. */
+export function toolCallReply(calls: Array<{ name: string; args: unknown }>): Response {
+  const toolCalls = calls.map((call, index) => ({
+    index,
+    id: `call_${index + 1}`,
+    type: "function",
+    function: { name: call.name, arguments: JSON.stringify(call.args) },
+  }));
+  return sse(
+    chatChunk({ role: "assistant", tool_calls: toolCalls }) + chatChunk({}, "tool_calls") + DONE,
+  );
+}
+
+/** A fetch stub that answers each model call with the next response in order. */
+export function sequenceFetch(responses: Array<() => Response>) {
+  let call = 0;
+  return async (_url: string, _init: RequestInit): Promise<Response> => {
+    const next = responses[Math.min(call, responses.length - 1)];
+    call += 1;
+    if (!next) throw new Error("sequenceFetch: no responses");
+    return next();
+  };
+}

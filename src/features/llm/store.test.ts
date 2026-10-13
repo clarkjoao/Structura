@@ -3,21 +3,52 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // Stub the diagram store; the LLM store calls pushHistoryBoundary on accept/reject
 // and updateNodeLayout on certain sendMessage paths, neither of which matters
 // for the connection/thread CRUD tests below.
-vi.mock("@/features/diagram", () => ({
-  useDiagramStore: {
-    getState: () => ({
-      pushHistoryBoundary: () => undefined,
-      updateNodeLayout: () => undefined,
-      activeDiagramId: "diagram-store",
-      diagrams: { "diagram-store": { viewport: { x: 0, y: 0, zoom: 1 } } },
+vi.mock("@/features/diagram", () => {
+  const diagram = {
+    id: "diagram-store",
+    name: "Store test",
+    level: "container",
+    viewport: { x: 0, y: 0, zoom: 1 },
+    snapshot: {
+      components: {
+        "n-1": { id: "n-1", type: "container", name: "Cache", description: "", parentId: null },
+      },
+      connections: {},
+      flows: {},
+      iconLibrary: {},
+    },
+    nodeLayouts: {},
+    edgeLayouts: {},
+  };
+  return {
+    useDiagramStore: {
+      getState: () => ({
+        pushHistoryBoundary: () => undefined,
+        updateNodeLayout: () => undefined,
+        activeDiagramId: "diagram-store",
+        diagrams: { "diagram-store": diagram },
+      }),
+    },
+    getCachedCanvasSnapshot: (d: typeof diagram) => ({
+      components: d.snapshot.components,
+      connections: d.snapshot.connections,
+      nodeLayouts: d.nodeLayouts,
     }),
-  },
-}));
+    isSharedRefComponent: () => false,
+  };
+});
 
 import { countConversationMessages, useLLMStore } from "./store";
 import { isErrorPart } from "./message-parts";
-import { controllableReply, replyWith } from "./test-utils/openai-sse";
+import {
+  controllableReply,
+  replyWith,
+  sequenceFetch,
+  toolCallReply,
+} from "./test-utils/openai-sse";
 import { resetLLMStorageForTests } from "./llm-storage";
+import { buildContextualSuggestions } from "./suggestions";
+import i18n from "@/infrastructure/i18n";
 
 beforeEach(() => {
   localStorage.clear();
@@ -45,7 +76,6 @@ function resetStore(): void {
     messages: [],
     pendingSuggestions: [],
     pendingPreviews: [],
-    pendingAnalysis: null,
     streamingContent: null,
     isLoading: false,
   });
@@ -453,31 +483,62 @@ describe("LLM store — message parts", () => {
     expect(last?.status).toBe("complete");
   });
 
-  it("references the pending suggestion from the assistant message", async () => {
-    const reply = JSON.stringify({
-      mode: "patch",
-      message: "Removing it",
-      patch: {
-        id: "p-1",
-        description: "Remove the cache",
-        actions: [{ type: "REMOVE_NODE", payload: { nodeId: "n-1" } }],
-      },
-    });
+  it("turns the write tools of one reply into one suggestion referenced by the message", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => replyWith(reply)),
+      vi.fn(
+        sequenceFetch([
+          () => toolCallReply([{ name: "remove_node", args: { nodeId: "n-1" } }]),
+          () => replyWith("I queued the removal of the cache."),
+        ]),
+      ),
     );
 
     await useLLMStore.getState().sendMessage("Remove the cache", "ctx");
 
     const state = useLLMStore.getState();
+    expect(state.pendingSuggestions).toHaveLength(1);
     const suggestion = state.pendingSuggestions[0];
     expect(suggestion?.status).toBe("pending");
+    expect(suggestion?.patch.actions).toEqual([
+      { type: "REMOVE_NODE", payload: { nodeId: "n-1" } },
+    ]);
     const last = lastMessage(state.messages);
     expect(last?.parts[last.parts.length - 1]).toEqual({
       type: "suggestion",
       suggestionId: suggestion?.id,
     });
     expect(last?.status).toBe("complete");
+  });
+});
+
+describe("LLM store — review requests are normal turns", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("a review quick action sends its label as a normal turn with no analysis state", async () => {
+    const review = buildContextualSuggestions(null).find((s) => s.id === "review");
+    expect(review).toBeDefined();
+    const prompt = i18n.t(review?.labelKey ?? "");
+    const markdown = "**Summary**\n\n### High\n- **Orders DB** has no replica.";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => replyWith(markdown)),
+    );
+
+    await useLLMStore.getState().sendMessage(prompt, "ctx");
+
+    const state = useLLMStore.getState();
+    expect(state.messages.map((message) => message.role)).toEqual(["user", "assistant"]);
+    expect(state.messages[0]?.parts).toEqual([{ type: "text", text: prompt }]);
+    expect(lastMessage(state.messages)?.parts).toEqual([{ type: "text", text: markdown }]);
+    expect(state.pendingSuggestions).toEqual([]);
+    expect("pendingAnalysis" in state).toBe(false);
   });
 });

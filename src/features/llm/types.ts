@@ -1,4 +1,4 @@
-import type { ComponentPatch, ComponentType, Connection, EdgeStyle } from "@/features/diagram";
+import type { ComponentPatch, ComponentType, EdgeStyle } from "@/features/diagram";
 import type { MessagePart, MessageStatus } from "./message-parts";
 
 export type LLMProvider = "openai" | "anthropic" | "custom";
@@ -76,15 +76,21 @@ export interface DiagramThreadState {
   activeThreadId: string;
 }
 
+/**
+ * One change a write tool queued for the user to review. Ids are the
+ * diagram's own, or the `ref` of a node added earlier in the same suggestion.
+ */
 export type DiagramPatchAction =
   | {
       type: "ADD_NODE";
       payload: {
+        /** How later changes in the same suggestion point at this node. */
+        ref: string;
         nodeType: ComponentType;
         name: string;
         parentId: string | null;
         position?: { x: number; y: number };
-        awsService?: string;
+        cloudServiceId?: string;
       };
     }
   | { type: "REMOVE_NODE"; payload: { nodeId: string } }
@@ -96,30 +102,16 @@ export type DiagramPatchAction =
         targetId: string;
         label: string;
         edgeStyle?: EdgeStyle;
-        patch?: Partial<Omit<Connection, "id" | "sourceId" | "targetId" | "label">>;
       };
     }
   | { type: "REMOVE_EDGE"; payload: { edgeId: string } }
   | { type: "INSERT_PATTERN"; payload: { patternId: string; provider?: string } }
-  | { type: "AUTO_LAYOUT"; payload: Record<string, never> }
-  | { type: "GET_TAGS"; payload: Record<string, never> }
-  | { type: "LIST_ELEMENT_FAMILIES"; payload: Record<string, never> }
-  | { type: "LIST_PATTERNS"; payload: Record<string, never> }
-  | {
-      type: "SEARCH_ELEMENTS";
-      payload: {
-        query: string;
-        familyId?: string;
-        categoryId?: string;
-        limit?: number;
-      };
-    };
+  | { type: "AUTO_LAYOUT"; payload: Record<string, never> };
 
 export interface DiagramPatch {
   id: string;
   description: string;
   actions: DiagramPatchAction[];
-  toolCalls?: LLMToolCall[];
 }
 
 export interface PendingSuggestion {
@@ -135,30 +127,6 @@ export interface PendingNodePreview {
   edgeIds: string[];
 }
 
-export type AnalysisSeverity = "critical" | "high" | "medium" | "low" | "info";
-
-export interface AnalysisFinding {
-  severity: AnalysisSeverity;
-  category: string;
-  title: string;
-  detail: string;
-  recommendation: string;
-  affectedNodes?: string[];
-}
-
-export interface AnalysisResponse {
-  mode: "analysis";
-  summary: string;
-  findings: AnalysisFinding[];
-  strengths: string[];
-  nextSteps: string[];
-}
-
-export type ParsedLLMResponse =
-  | { kind: "text"; message: string }
-  | { kind: "patch"; message: string; patch: DiagramPatch | null }
-  | { kind: "analysis"; analysis: AnalysisResponse };
-
 export interface MentionItem {
   id: string;
   kind: "node" | "edge";
@@ -170,15 +138,4 @@ export interface MentionItem {
 export interface ActiveMention {
   mentionId: string;
   label: string;
-}
-
-export interface LLMTool {
-  name: string;
-  description: string;
-  parametersSchema: Record<string, unknown>;
-}
-
-export interface LLMToolCall {
-  tool: string;
-  parameters: Record<string, unknown>;
 }

@@ -12,7 +12,10 @@ const suggestion: PendingSuggestion = {
     id: "p-1",
     description: "Put a cache in front of the database",
     actions: [
-      { type: "ADD_NODE", payload: { nodeType: "container", name: "Redis", parentId: null } },
+      {
+        type: "ADD_NODE",
+        payload: { ref: "new-1", nodeType: "container", name: "Redis", parentId: null },
+      },
       { type: "UPDATE_NODE", payload: { nodeId: "api", patch: { name: "API" } } },
       { type: "REMOVE_EDGE", payload: { edgeId: "e-1" } },
     ],

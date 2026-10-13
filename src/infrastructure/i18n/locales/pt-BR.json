@@ -604,7 +604,6 @@
         "removeEdge": "Remover conexão {{edgeId}}",
         "insertPattern": "Inserir pattern {{patternId}}",
         "autoLayout": "Organizar diagrama automaticamente",
-        "getTags": "Listar tags do diagrama",
         "connectionFallback": "conexão",
         "unknown": "Ação desconhecida"
       },
@@ -668,23 +667,6 @@
       "proxyEndpointNotFound": "O proxy de LLM não tem endpoint de chat nesta URL (404). Verifique a URL do proxy.",
       "modelNotFound": "Modelo não encontrado. Verifique o nome do modelo nas configurações."
     },
-    "analysis": {
-      "summary": "Resumo executivo",
-      "findings": "Achados",
-      "strengths": "Pontos fortes",
-      "nextSteps": "Próximos passos",
-      "dismiss": "Dispensar análise",
-      "recommendation": "Recomendação",
-      "criticalCount": "{{count}} crítico(s)",
-      "highCount": "{{count}} alto(s)",
-      "severity": {
-        "critical": "Crítico",
-        "high": "Alto",
-        "medium": "Médio",
-        "low": "Baixo",
-        "info": "Info"
-      }
-    },
     "suggestions": {
       "title": "SUGESTÕES",
       "context": "Contexto carregado: \"{{name}}\"",
@@ -702,9 +684,6 @@
     },
     "slash": {
       "title": "Comandos",
-      "analyze": "Analisar diagrama",
-      "analyzeDesc": "Revisar a estrutura e sugerir melhorias",
-      "analyzePrompt": "Analise o diagrama atual e sugira melhorias na estrutura.",
       "clear": "Limpar conversa",
       "clearDesc": "Apagar todo o histórico desta conversa",
       "clearConfirm": "Iniciar nova conversa? O chat atual será salvo no histórico.",
@@ -714,7 +693,6 @@
       "copyFailed": "Falha ao copiar.",
       "noMessages": "Nenhuma mensagem para copiar.",
       "newChat": "Nova conversa iniciada.",
-      "analyzing": "Analisando…",
       "cleared": "Chat limpo."
     },
     "headerSubtitle": "Usando {{name}}",
@@ -723,12 +701,6 @@
     "thinking": "Pensando",
     "parseFallback": "[Resposta não processada. Tente novamente.]",
     "previousSuggestion": "[sugestão anterior de diagrama]",
-    "patch": {
-      "none": "Nenhuma ação proposta.",
-      "proposed_one": "Proponho {{count}} alteração no diagrama.",
-      "proposed_other": "Proponho {{count}} alterações no diagrama.",
-      "catalogResults": "Resultados das ferramentas de catálogo:"
-    },
     "copyExport": {
       "title": "Exportação da conversa",
       "user": "Você",

@@ -44,11 +44,6 @@ export interface SlashCommandDef {
 
 const SLASH_COMMANDS: SlashCommandDef[] = [
   {
-    names: ["analisar", "analyze"],
-    labelKey: "llmChat.slash.analyze",
-    descriptionKey: "llmChat.slash.analyzeDesc",
-  },
-  {
     names: ["limpar", "clear"],
     labelKey: "llmChat.slash.clear",
     descriptionKey: "llmChat.slash.clearDesc",
@@ -125,8 +120,6 @@ export interface AssistantUIComposerProps {
   placeholder?: string;
   /** Clear chat history */
   onClearHistory?: () => void;
-  /** Dismiss pending analysis */
-  onDismissAnalysis?: () => void;
 }
 
 export interface AssistantUIComposerRef {
@@ -279,13 +272,6 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         const cmdName = cmd.names[0];
 
         switch (cmdName) {
-          case "analisar":
-          case "analyze": {
-            void onSend(t("llmChat.slash.analyzePrompt"), []);
-            toast(t("llmChat.slash.analyzing"));
-            break;
-          }
-
           case "limpar":
           case "clear": {
             if (window.confirm(t("llmChat.slash.clearConfirm"))) {
@@ -322,7 +308,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           }
         }
       },
-      [messages, pendingSuggestions, activeDiagramId, createThread, onClearHistory, onSend, t],
+      [messages, pendingSuggestions, activeDiagramId, createThread, onClearHistory, t],
     );
 
     const handleClear = useCallback(() => {

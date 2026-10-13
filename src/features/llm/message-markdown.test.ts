@@ -13,7 +13,7 @@ const suggestion: PendingSuggestion = {
     actions: [
       {
         type: "ADD_NODE",
-        payload: { nodeType: "container", name: "Redis", parentId: null },
+        payload: { ref: "new-1", nodeType: "container", name: "Redis", parentId: null },
       },
       { type: "REMOVE_EDGE", payload: { edgeId: "e-9" } },
     ],

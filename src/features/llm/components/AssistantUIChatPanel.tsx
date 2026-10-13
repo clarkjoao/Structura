@@ -15,7 +15,6 @@ import { AssistantUIComposer } from "./AssistantUIComposer";
 import { ThreadDrawer } from "./ThreadDrawer";
 import { LLMSelector } from "./LLMSelector";
 import { LLMSettings } from "./LLMSettings";
-import { AnalysisPanel } from "@/features/canvas/chat";
 import { buildContextualSuggestions } from "@/features/llm";
 import { isUsableConnection } from "@/features/llm/llm-storage";
 import { ChatActionsContext, type ChatActions } from "./chat-actions";
@@ -79,8 +78,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     rerun,
     isLoading,
     streamingContent,
-    pendingAnalysis,
-    dismissPendingAnalysis,
     activeThread,
     activeConnection,
     config,
@@ -251,10 +248,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
             <ThreadPrimitive.Root className="flex h-full flex-col">
               <ThreadPrimitive.Viewport ref={viewportRef} className="h-full w-full overflow-y-auto">
                 <div className="flex flex-col gap-3 p-4">
-                  {pendingAnalysis ? (
-                    <AnalysisPanel analysis={pendingAnalysis} onDismiss={dismissPendingAnalysis} />
-                  ) : null}
-
                   {showSkeleton ? (
                     <SkeletonLoader />
                   ) : showTyping ? (
@@ -291,7 +284,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
               onCancel={cancel}
               isLoading={isLoading}
               onClearHistory={clearHistory}
-              onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}
             />
             <div className="mt-2 flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>

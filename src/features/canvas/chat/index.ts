@@ -1,4 +1,3 @@
-export { AnalysisPanel } from "./AnalysisPanel";
 export { useDiagramContext, type DiagramContextResult } from "./useDiagramContext";
 export { useLLMChat } from "./useLLMChat";
 export { useMentionSearch } from "./useMentionSearch";

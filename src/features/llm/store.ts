@@ -1,8 +1,8 @@
 import { create } from "zustand";
+import type { ToolSet } from "ai";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
-import { parseLLMResponse } from "./patch-parser";
 import { LLMRequestCancelledError, toLLMError } from "./errors";
 import { deriveThreadTitle } from "./llm-storage";
 import {
@@ -14,7 +14,6 @@ import {
   textPart,
 } from "./message-parts";
 import type {
-  AnalysisResponse,
   ChatMessage,
   ConversationThread,
   DiagramThreadState,
@@ -34,12 +33,10 @@ import {
   saveConnections,
   saveThreadsForDiagram,
 } from "./llm-storage";
-import {
-  applyDiagramPatchAction,
-  computeGridPositions,
-  resolveRef,
-  runCatalogReadActions,
-} from "./apply-diagram-patch";
+import { applySuggestionActions } from "./apply-diagram-patch";
+import { SuggestionDraft } from "./tools/suggestion-draft";
+import { createInternalToolRegistry } from "./tools/internal-tools";
+import { storeDiagramHost } from "./tools/store-host";
 
 function getResolvedAppLanguage(): string {
   const lng = i18n.resolvedLanguage ?? i18n.language ?? "pt-BR";
@@ -51,13 +48,6 @@ function getResolvedAppLanguage(): string {
     return "en";
   }
   return "pt-BR";
-}
-
-function buildPatchMessage(actionCount: number): string {
-  if (actionCount === 0) {
-    return i18n.t("llmChat.patch.none");
-  }
-  return i18n.t("llmChat.patch.proposed", { count: actionCount });
 }
 
 /**
@@ -96,10 +86,6 @@ function summarizeAssistantText(text: string): string {
   return i18n.t("llmChat.previousSuggestion");
 }
 
-function ensureHistoryBoundary(): void {
-  useDiagramStore.getState().pushHistoryBoundary();
-}
-
 function connectionToConfig(connection: LLMConnection): LLMConfig {
   return {
     mode: connection.mode,
@@ -133,9 +119,10 @@ async function executeLLMMessage(
   systemPrompt: string,
   onChunk: (chunk: string) => void,
   signal: AbortSignal,
+  tools?: ToolSet,
 ): Promise<LLMCompletion> {
   const { streamChat } = await import("./transport/ai-sdk-transport");
-  return streamChat({ config, messages, systemPrompt, onChunk, signal });
+  return streamChat({ config, messages, systemPrompt, onChunk, signal, tools });
 }
 
 export interface LLMStoreState {
@@ -148,7 +135,6 @@ export interface LLMStoreState {
   messages: ChatMessage[];
   pendingSuggestions: PendingSuggestion[];
   pendingPreviews: PendingNodePreview[];
-  pendingAnalysis: AnalysisResponse | null;
   streamingContent: string | null;
   isLoading: boolean;
 
@@ -185,7 +171,6 @@ export interface LLMStoreState {
   rerunAssistantMessage: (assistantMessageId: string, diagramContext: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
-  dismissPendingAnalysis: () => void;
   /**
    * @deprecated Replaced by `createThread`. Kept for the panel until Fase 6.
    */
@@ -242,6 +227,9 @@ function hasActiveThread(state: LLMStoreState): boolean {
 function freshThreadState(): DiagramThreadState {
   return { threads: [], activeThreadId: "" };
 }
+
+/** The tools every turn offers the model. */
+const internalTools = createInternalToolRegistry();
 
 export const useLLMStore = create<LLMStoreState>((set, get) => {
   const initialConnections = loadConnections();
@@ -310,207 +298,63 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     inFlight = controller;
     try {
       const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
-      const sanitizedMessages = toRequestMessages(outgoingMessages);
+      const requestMessages = toRequestMessages(outgoingMessages);
+      // Write tools queue into this draft; it becomes the turn's one suggestion.
+      const suggestionDraft = new SuggestionDraft();
+      const tools = internalTools.toToolSet({
+        host: storeDiagramHost,
+        suggestion: suggestionDraft,
+      });
       let fullResponse = "";
-      const { text: rawAssistantResponse, stopReason } = await executeLLMMessage(
+      const { stopReason } = await executeLLMMessage(
         state.config,
-        sanitizedMessages,
+        requestMessages,
         systemPrompt,
         (chunk) => {
           fullResponse += chunk;
-          // A JSON envelope (patch or analysis) is not readable while it
-          // streams; its text part stays empty until the response is parsed.
-          const looksLikeJsonEnvelope = fullResponse.trim().startsWith("{");
           set((streamingState) => ({
             streamingContent: fullResponse,
-            messages: looksLikeJsonEnvelope
-              ? streamingState.messages
-              : streamingState.messages.map((message) =>
-                  message.id === assistantMessageId ? appendTextDelta(message, chunk) : message,
-                ),
+            messages: streamingState.messages.map((message) =>
+              message.id === assistantMessageId ? appendTextDelta(message, chunk) : message,
+            ),
           }));
         },
         controller.signal,
+        tools,
       );
-      const parsedResponse = parseLLMResponse(rawAssistantResponse);
       // Cut at the output-token ceiling: the reply is kept as it is and the
       // message says so, instead of passing for a complete answer.
       const truncation = stopReason === "length" ? { truncated: true } : {};
 
-      if (parsedResponse.kind === "analysis") {
-        set({
-          messages: get().messages.map((message) =>
-            message.id === assistantMessageId
-              ? {
-                  ...message,
-                  parts: [textPart(parsedResponse.analysis.summary)],
-                  status: "complete",
-                  ...truncation,
-                }
-              : message,
-          ),
-          pendingAnalysis: parsedResponse.analysis,
-          streamingContent: null,
-          isLoading: false,
-        });
-        persistThread();
-        return;
-      }
-
-      const nextSuggestions = [...get().pendingSuggestions];
-      const nextPreviews = [...get().pendingPreviews];
-      const catalogToolResults: unknown[] = [];
-      let suggestionId: string | null = null;
-      if (parsedResponse.kind === "patch" && parsedResponse.patch) {
-        const suggestion: PendingSuggestion = {
-          id: crypto.randomUUID(),
-          messageId: assistantMessageId,
-          patch: parsedResponse.patch,
-          status: "pending",
-        };
-        nextSuggestions.push(suggestion);
-        suggestionId = suggestion.id;
-
-        const addNodeActions = parsedResponse.patch.actions.filter(
-          (action) => action.type === "ADD_NODE",
-        );
-        const addEdgeActions = parsedResponse.patch.actions.filter(
-          (action) => action.type === "ADD_EDGE",
-        );
-
-        // F8b: catalog reads first so search_elements hits can gate ADD_NODE
-        // in the same turn (no multi-turn model loop required).
-        const { catalogToolResults: earlyCatalogResults } = runCatalogReadActions(
-          parsedResponse.patch.actions,
-        );
-        catalogToolResults.push(...earlyCatalogResults);
-
-        const previewNodeIds: string[] = [];
-        const previewEdgeIds: string[] = [];
-
-        const nameToIdMap = new Map<string, string>();
-        const nodesMissingPosition: string[] = [];
-
-        // Pass 1: Create root nodes (no parentId or null parentId)
-        for (const action of addNodeActions) {
-          const hasParentRef = action.payload.parentId?.startsWith("@ref:");
-          if (hasParentRef) continue;
-
-          const applied = applyDiagramPatchAction(action, nameToIdMap);
-          if (applied.addedNodeId) {
-            previewNodeIds.push(applied.addedNodeId);
-            const name = action.payload.name?.trim();
-            if (name) {
-              nameToIdMap.set(name.toLowerCase(), applied.addedNodeId);
-            }
-            if (!action.payload.position) {
-              nodesMissingPosition.push(applied.addedNodeId);
-            }
-          }
-        }
-
-        // Pass 2: Create child nodes (with parentId @ref)
-        for (const action of addNodeActions) {
-          const hasParentRef = action.payload.parentId?.startsWith("@ref:");
-          if (!hasParentRef) continue;
-
-          const applied = applyDiagramPatchAction(action, nameToIdMap);
-          if (applied.addedNodeId) {
-            previewNodeIds.push(applied.addedNodeId);
-            const name = action.payload.name?.trim();
-            if (name) {
-              nameToIdMap.set(name.toLowerCase(), applied.addedNodeId);
-            }
-            if (!action.payload.position) {
-              nodesMissingPosition.push(applied.addedNodeId);
-            }
-          }
-        }
-
-        for (const action of addEdgeActions) {
-          const resolvedSourceId = resolveRef(action.payload.sourceId, nameToIdMap);
-          const resolvedTargetId = resolveRef(action.payload.targetId, nameToIdMap);
-          if (resolvedSourceId.startsWith("@ref:") || resolvedTargetId.startsWith("@ref:")) {
-            console.warn(
-              "[LLM] Unresolved @ref in ADD_EDGE - action skipped",
-              action.payload.sourceId,
-              action.payload.targetId,
-            );
-            continue;
-          }
-          const applied = applyDiagramPatchAction(
-            {
-              ...action,
-              payload: {
-                ...action.payload,
-                sourceId: resolvedSourceId,
-                targetId: resolvedTargetId,
-              },
+      const suggestion: PendingSuggestion | null = suggestionDraft.isEmpty
+        ? null
+        : {
+            id: crypto.randomUUID(),
+            messageId: assistantMessageId,
+            patch: {
+              id: crypto.randomUUID(),
+              description: "",
+              actions: [...suggestionDraft.actions],
             },
-            nameToIdMap,
-          );
-          if (applied.addedEdgeId) {
-            previewEdgeIds.push(applied.addedEdgeId);
-          }
-        }
-
-        if (nodesMissingPosition.length > 0) {
-          const diagramState = useDiagramStore.getState();
-          const activeDiagramId = diagramState.activeDiagramId;
-          const activeDiagram = activeDiagramId ? diagramState.diagrams[activeDiagramId] : null;
-          const viewport = activeDiagram?.viewport ?? { x: 0, y: 0, zoom: 1 };
-          const startX = 200 - viewport.x;
-          const startY = 200 - viewport.y;
-          const gridPositions = computeGridPositions(nodesMissingPosition.length, startX, startY);
-          for (let index = 0; index < nodesMissingPosition.length; index += 1) {
-            const nodeId = nodesMissingPosition[index];
-            const pos = gridPositions[index];
-            if (!nodeId || !pos) continue;
-            diagramState.updateNodeLayout(nodeId, pos);
-          }
-        }
-
-        nextPreviews.push({
-          suggestionId: suggestion.id,
-          nodeIds: previewNodeIds,
-          edgeIds: previewEdgeIds,
-        });
-      }
-
-      let assistantContent =
-        parsedResponse.kind === "patch"
-          ? buildPatchMessage(parsedResponse.patch?.actions.length ?? 0)
-          : parsedResponse.kind === "text"
-            ? parsedResponse.message
-            : "";
-      if (catalogToolResults.length > 0) {
-        const catalogBlock = [
-          i18n.t("llmChat.patch.catalogResults"),
-          "```json",
-          JSON.stringify(catalogToolResults, null, 2),
-          "```",
-        ].join("\n");
-        assistantContent = assistantContent
-          ? `${assistantContent}\n\n${catalogBlock}`
-          : catalogBlock;
-      }
+            status: "pending",
+          };
 
       set({
         messages: get().messages.map((message) =>
           message.id === assistantMessageId
             ? {
                 ...message,
-                parts: suggestionId
-                  ? [textPart(assistantContent), suggestionPart(suggestionId)]
-                  : [textPart(assistantContent)],
+                parts: suggestion
+                  ? [...message.parts, suggestionPart(suggestion.id)]
+                  : message.parts,
                 status: "complete",
                 ...truncation,
               }
             : message,
         ),
-        pendingSuggestions: nextSuggestions,
-        pendingPreviews: nextPreviews,
-        pendingAnalysis: null,
+        pendingSuggestions: suggestion
+          ? [...get().pendingSuggestions, suggestion]
+          : get().pendingSuggestions,
         streamingContent: null,
         isLoading: false,
       });
@@ -565,7 +409,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     messages: [],
     pendingSuggestions: [],
     pendingPreviews: [],
-    pendingAnalysis: null,
     streamingContent: null,
     isLoading: false,
 
@@ -684,7 +527,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         messages: activeThread?.messages ?? [],
         pendingSuggestions: [],
         pendingPreviews: [],
-        pendingAnalysis: null,
         streamingContent: null,
       });
     },
@@ -706,7 +548,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         messages: thread.messages,
         pendingSuggestions: [],
         pendingPreviews: [],
-        pendingAnalysis: null,
         streamingContent: null,
       });
     },
@@ -741,7 +582,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         messages: [],
         pendingSuggestions: [],
         pendingPreviews: [],
-        pendingAnalysis: null,
         streamingContent: null,
       });
       return draft;
@@ -803,7 +643,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           messages: [],
           pendingSuggestions: [],
           pendingPreviews: [],
-          pendingAnalysis: null,
           streamingContent: null,
         });
         return;
@@ -820,7 +659,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
               messages: remaining.find((thread) => thread.id === nextActiveId)?.messages ?? [],
               pendingSuggestions: [],
               pendingPreviews: [],
-              pendingAnalysis: null,
               streamingContent: null,
             }
           : {}),
@@ -880,15 +718,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         return;
       }
 
-      ensureHistoryBoundary();
-
-      const patchActions = suggestion.patch.actions;
-      for (const action of patchActions) {
-        if (action.type === "ADD_NODE" || action.type === "ADD_EDGE") {
-          continue;
-        }
-        applyDiagramPatchAction(action);
-      }
+      applySuggestionActions(suggestion.patch.actions);
 
       set((state) => ({
         pendingSuggestions: state.pendingSuggestions.map((candidateSuggestion) =>
@@ -908,16 +738,6 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       );
       if (!suggestion || suggestion.status !== "pending") {
         return;
-      }
-
-      const preview = get().pendingPreviews.find(
-        (pendingPreview) => pendingPreview.suggestionId === suggestionId,
-      );
-
-      if (preview && (preview.nodeIds.length > 0 || preview.edgeIds.length > 0)) {
-        // Batched so a multi-node suggestion is removed as one undo step,
-        // instead of pushing a history checkpoint per removed node/edge.
-        useDiagramStore.getState().removeElements(preview.nodeIds, preview.edgeIds);
       }
 
       set((state) => ({
@@ -941,15 +761,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           messages: [],
           pendingSuggestions: [],
           pendingPreviews: [],
-          pendingAnalysis: null,
           streamingContent: null,
           isLoading: false,
         });
       }
-    },
-
-    dismissPendingAnalysis: () => {
-      set({ pendingAnalysis: null });
     },
   };
 });

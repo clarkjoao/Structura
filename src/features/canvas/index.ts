@@ -36,7 +36,7 @@ export { EmbedModal } from "./components/EmbedModal";
 export { DiagramTitle } from "./toolbar/components/DiagramTitle";
 export { useInteractionMode } from "./hooks/useInteractionMode";
 export type { InteractionMode } from "./hooks/useInteractionMode";
-export { AnalysisPanel, useLLMChat } from "./chat";
+export { useLLMChat } from "./chat";
 
 /** Canvas Core — shared surface for Write / Reader / future Plugin hosts. */
 export {

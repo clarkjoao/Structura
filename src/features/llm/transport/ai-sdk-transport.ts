@@ -1,4 +1,4 @@
-import type { LanguageModel } from "ai";
+import type { LanguageModel, ToolSet } from "ai";
 import {
   LLMProviderError,
   LLMRequestCancelledError,
@@ -168,7 +168,12 @@ export interface ChatStreamRequest {
   onChunk: (chunk: string) => void;
   /** The user's Stop. Merged with the inactivity timeout. */
   signal?: AbortSignal;
+  /** Tools the model may call; the SDK runs them in a loop of up to MAX_TOOL_STEPS steps. */
+  tools?: ToolSet;
 }
+
+/** Most model calls one reply may make: each tool round trip is one step. */
+export const MAX_TOOL_STEPS = 8;
 
 /** Streams one reply through the AI SDK. */
 export async function streamChat(request: ChatStreamRequest): Promise<LLMCompletion> {
@@ -176,7 +181,10 @@ export async function streamChat(request: ChatStreamRequest): Promise<LLMComplet
   const context = errorContext(config);
   const timeout = createRequestTimeout(undefined, request.signal);
   try {
-    const [{ streamText }, model] = await Promise.all([import("ai"), createLanguageModel(config)]);
+    const [{ streamText, isStepCount }, model] = await Promise.all([
+      import("ai"),
+      createLanguageModel(config),
+    ]);
     const usesDirectCeiling =
       config.mode === "direct" && (config.provider === "openai" || config.provider === "anthropic");
     const result = streamText({
@@ -185,6 +193,7 @@ export async function streamChat(request: ChatStreamRequest): Promise<LLMComplet
       messages: request.messages,
       abortSignal: timeout.signal,
       maxRetries: 0,
+      ...(request.tools ? { tools: request.tools, stopWhen: isStepCount(MAX_TOOL_STEPS) } : {}),
       ...(usesDirectCeiling ? { maxOutputTokens: MAX_OUTPUT_TOKENS } : {}),
     });
 

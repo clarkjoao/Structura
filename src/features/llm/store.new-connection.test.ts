@@ -38,7 +38,6 @@ beforeEach(() => {
     messages: [],
     pendingSuggestions: [],
     pendingPreviews: [],
-    pendingAnalysis: null,
     streamingContent: null,
     isLoading: false,
   });

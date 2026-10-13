@@ -604,7 +604,6 @@
         "removeEdge": "Remove edge {{edgeId}}",
         "insertPattern": "Insert pattern {{patternId}}",
         "autoLayout": "Auto layout diagram",
-        "getTags": "List diagram tags",
         "connectionFallback": "connection",
         "unknown": "Unknown action"
       },
@@ -668,23 +667,6 @@
       "proxyEndpointNotFound": "The LLM proxy has no chat endpoint at this URL (404). Check the proxy URL.",
       "modelNotFound": "Model not found. Check the model name in settings."
     },
-    "analysis": {
-      "summary": "Executive summary",
-      "findings": "Findings",
-      "strengths": "Strengths",
-      "nextSteps": "Next steps",
-      "dismiss": "Dismiss analysis",
-      "recommendation": "Recommendation",
-      "criticalCount": "{{count}} critical",
-      "highCount": "{{count}} high",
-      "severity": {
-        "critical": "Critical",
-        "high": "High",
-        "medium": "Medium",
-        "low": "Low",
-        "info": "Info"
-      }
-    },
     "suggestions": {
       "title": "SUGGESTIONS",
       "context": "Context loaded: \"{{name}}\"",
@@ -702,9 +684,6 @@
     },
     "slash": {
       "title": "Commands",
-      "analyze": "Analyze diagram",
-      "analyzeDesc": "Review structure and suggest improvements",
-      "analyzePrompt": "Analyze the current diagram and suggest improvements.",
       "clear": "Clear chat",
       "clearDesc": "Delete all history for this conversation",
       "clearConfirm": "Start a new conversation? Current chat will be saved in history.",
@@ -714,7 +693,6 @@
       "copyFailed": "Failed to copy.",
       "noMessages": "No messages to copy.",
       "newChat": "New conversation started.",
-      "analyzing": "Analyzing…",
       "cleared": "Chat cleared."
     },
     "headerSubtitle": "Using {{name}}",
@@ -723,12 +701,6 @@
     "thinking": "Thinking",
     "parseFallback": "[The response could not be processed. Try again.]",
     "previousSuggestion": "[previous diagram suggestion]",
-    "patch": {
-      "none": "No actions proposed.",
-      "proposed_one": "I propose {{count}} diagram change.",
-      "proposed_other": "I propose {{count}} diagram changes.",
-      "catalogResults": "Catalog tool results:"
-    },
     "copyExport": {
       "title": "Conversation Export",
       "user": "You",

@@ -40,8 +40,6 @@ export function formatActionLabel(action: DiagramPatchAction, translate: TFuncti
       });
     case "AUTO_LAYOUT":
       return translate("llmChat.suggestion.action.autoLayout");
-    case "GET_TAGS":
-      return translate("llmChat.suggestion.action.getTags");
     default:
       return translate("llmChat.suggestion.action.unknown");
   }
