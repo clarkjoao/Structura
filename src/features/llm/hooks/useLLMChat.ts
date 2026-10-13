@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { useLLMStore } from "../store";
-import type { LLMConnection } from "../types";
+import type { CommandRef, LLMConnection } from "../types";
 import type { MentionRef } from "../mentions/mention-ref";
 import { useDiagramContext } from "./useDiagramContext";
 
@@ -72,8 +72,8 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   }, [diagramText, selIds, focusedNodeId, activeDiagram]);
 
   const send = useCallback(
-    async (userText: string, mentions: MentionRef[]) => {
-      await sendMessage(userText, buildContext(), { mentions });
+    async (userText: string, mentions: MentionRef[], command?: CommandRef) => {
+      await sendMessage(userText, buildContext(), { mentions, ...(command ? { command } : {}) });
     },
     [buildContext, sendMessage],
   );

@@ -64,6 +64,17 @@ export interface ChatMessage {
    * the conversation renders or copies as Markdown.
    */
   mentions?: MentionRef[];
+  /**
+   * User messages only: the prompt command the message was sent with. The
+   * text part holds only the user's extra text; the instruction is looked up
+   * by id when the request is built. `name` is cached for display.
+   */
+  command?: CommandRef;
+}
+
+export interface CommandRef {
+  id: string;
+  name: string;
 }
 
 /** What a provider sends for one turn: the role and its text. */

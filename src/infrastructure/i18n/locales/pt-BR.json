@@ -713,12 +713,7 @@
       }
     },
     "slash": {
-      "title": "Comandos",
-      "clear": "Limpar conversa",
-      "clearDesc": "Apagar todo o histórico desta conversa",
       "clearConfirm": "Iniciar nova conversa? O chat atual será salvo no histórico.",
-      "copy": "Copiar conversa",
-      "copyDesc": "Copiar toda a conversa para a área de transferência",
       "copied": "Conversa copiada!",
       "copyFailed": "Falha ao copiar.",
       "noMessages": "Nenhuma mensagem para copiar.",
@@ -766,6 +761,36 @@
     "truncated": "Resposta interrompida no limite de tokens",
     "modelPicker": {
       "label": "Modelo"
+    },
+    "command": {
+      "section": {
+        "commands": "Comandos"
+      },
+      "remove": "Remover /{{name}}",
+      "review": {
+        "label": "Revisar a arquitetura",
+        "description": "Achados por severidade, com recomendações"
+      },
+      "explain": {
+        "label": "Explicar o diagrama ou a seleção",
+        "description": "O papel de cada elemento e como os dados fluem"
+      },
+      "wellArch": {
+        "label": "Avaliar pelo Well-Architected",
+        "description": "Achados nos seis pilares da AWS"
+      },
+      "blastRadius": {
+        "label": "Impacto se um componente falhar",
+        "description": "O que quebra, o que degrada, como conter"
+      },
+      "clear": {
+        "label": "Nova conversa (a atual vai para o histórico)",
+        "description": "Inicia uma nova conversa"
+      },
+      "copy": {
+        "label": "Copiar a conversa como Markdown",
+        "description": "Copia a conversa inteira"
+      }
     }
   },
   "versions": {

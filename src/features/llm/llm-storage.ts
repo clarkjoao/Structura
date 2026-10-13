@@ -7,7 +7,7 @@ import type {
   LLMProvider,
 } from "./types";
 import i18n from "@/infrastructure/i18n";
-import { getMessageText, migrateStoredMessages } from "./message-parts";
+import { getVisibleText, migrateStoredMessages } from "./message-parts";
 import {
   THREAD_FORMAT_VERSION,
   loadAllThreadsFromIdb,
@@ -312,7 +312,7 @@ export function deriveThreadTitle(messages: ChatMessage[]): string {
   if (!firstUser) {
     return "";
   }
-  const trimmed = getMessageText(firstUser).trim().replace(/\s+/g, " ");
+  const trimmed = getVisibleText(firstUser).trim().replace(/\s+/g, " ");
   if (trimmed.length === 0) {
     return "";
   }

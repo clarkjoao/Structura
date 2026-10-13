@@ -9,6 +9,7 @@ import {
   type ToolCallStatus,
 } from "./message-parts";
 import { formatActionLabel } from "./patch-action-labels";
+import { getVisibleText } from "./message-parts";
 import type { ChatMessage, PendingSuggestion } from "./types";
 
 export interface MarkdownContext {
@@ -55,6 +56,10 @@ function partToMarkdown(part: MessagePart, context: MarkdownContext): string {
 
 /** One message as Markdown: text as written, the other parts as short lines. */
 export function messageToMarkdown(message: ChatMessage, context: MarkdownContext): string {
+  // A command message reads as the user typed it: "/name text".
+  if (message.role === "user" && message.command) {
+    return getVisibleText(message);
+  }
   return message.parts
     .map((part) => partToMarkdown(part, context))
     .filter((block) => block.trim().length > 0)

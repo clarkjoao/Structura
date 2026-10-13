@@ -83,7 +83,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     activeConnection,
     config,
     createThread,
-    clearHistory,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
 
   // Empty state is rendered *without* creating a thread — no auto-persistence.
@@ -178,12 +177,16 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   // instead. Returns whether the message was sent, so the composer keeps the
   // draft when it was not.
   const handleSend = useCallback(
-    async (text: string, mentions: Parameters<typeof send>[1]): Promise<boolean> => {
+    async (
+      text: string,
+      mentions: Parameters<typeof send>[1],
+      command?: Parameters<typeof send>[2],
+    ): Promise<boolean> => {
       if (!isUsableConnection(config)) {
         setShowSettings(true);
         return false;
       }
-      await send(text, mentions);
+      await send(text, mentions, command);
       return true;
     },
     [config, send],
@@ -284,7 +287,6 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
               onSend={handleSend}
               onCancel={cancel}
               isLoading={isLoading}
-              onClearHistory={clearHistory}
             />
             <div className="mt-2 flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>

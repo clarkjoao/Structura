@@ -63,14 +63,21 @@ export function UserMessageComponent() {
   const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true, locale });
   const text = getPartText(message);
   // Context chips live on the stored message, not in assistant-ui's copy.
-  const mentions = useLLMStore(
-    (state) => state.messages.find((candidate) => candidate.id === message.id)?.mentions,
+  const stored = useLLMStore((state) =>
+    state.messages.find((candidate) => candidate.id === message.id),
   );
+  const mentions = stored?.mentions;
+  const command = stored?.command;
 
   return (
     <div className="flex w-full min-w-0 justify-end">
       <div className="group relative max-w-[85%] min-w-0 pb-5">
         <div className="rounded-2xl bg-primary px-4 py-2.5 text-sm text-primary-foreground whitespace-pre-wrap break-words [overflow-wrap:anywhere] shadow-sm">
+          {command ? (
+            <span className="mr-1.5 inline-flex items-center rounded bg-primary-foreground/20 px-1.5 font-mono text-xs font-medium">
+              /{command.name}
+            </span>
+          ) : null}
           {mentions && mentions.length > 0 ? (
             <span className="mb-1 flex flex-wrap gap-1">
               {mentions.map((ref) => (
@@ -83,7 +90,7 @@ export function UserMessageComponent() {
               ))}
             </span>
           ) : null}
-          <span>{text || " "}</span>
+          <span>{text || (command ? "" : " ")}</span>
         </div>
         <span className="absolute -bottom-1 left-0 select-none whitespace-nowrap text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
           {timeAgo}

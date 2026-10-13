@@ -713,12 +713,7 @@
       }
     },
     "slash": {
-      "title": "Commands",
-      "clear": "Clear chat",
-      "clearDesc": "Delete all history for this conversation",
       "clearConfirm": "Start a new conversation? Current chat will be saved in history.",
-      "copy": "Copy conversation",
-      "copyDesc": "Copy entire conversation to clipboard",
       "copied": "Conversation copied!",
       "copyFailed": "Failed to copy.",
       "noMessages": "No messages to copy.",
@@ -766,6 +761,36 @@
     "truncated": "Reply cut off at the token limit",
     "modelPicker": {
       "label": "Model"
+    },
+    "command": {
+      "section": {
+        "commands": "Commands"
+      },
+      "remove": "Remove /{{name}}",
+      "review": {
+        "label": "Review the architecture",
+        "description": "Findings by severity, with recommendations"
+      },
+      "explain": {
+        "label": "Explain the diagram or the selection",
+        "description": "What each element does and how data flows"
+      },
+      "wellArch": {
+        "label": "Evaluate with Well-Architected",
+        "description": "Findings across the six AWS pillars"
+      },
+      "blastRadius": {
+        "label": "Impact if a component fails",
+        "description": "What breaks, what degrades, how to contain it"
+      },
+      "clear": {
+        "label": "New conversation (the current one goes to history)",
+        "description": "Starts a new conversation"
+      },
+      "copy": {
+        "label": "Copy the conversation as Markdown",
+        "description": "Copies the whole conversation"
+      }
     }
   },
   "versions": {

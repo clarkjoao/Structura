@@ -49,6 +49,7 @@ import {
 import { resetLLMStorageForTests } from "./llm-storage";
 import { fixtureDiagram, fixtureHost } from "./test-utils/fixture-host";
 import { buildContextualSuggestions } from "./suggestions";
+import { conversationToMarkdown } from "./message-markdown";
 import i18n from "@/infrastructure/i18n";
 
 beforeEach(() => {
@@ -657,5 +658,57 @@ describe("LLM store — mentions travel with the user message", () => {
     await useLLMStore.getState().rerunAssistantMessage(failed?.id ?? "", "ctx");
 
     expect(userContentOf(retrySpy.mock.calls[0]?.[1])).toBe(first);
+  });
+});
+
+describe("LLM store — prompt commands", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+    useLLMStore.getState().setToolHost(fixtureHost(fixtureDiagram({})));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    useLLMStore.getState().setToolHost(null);
+  });
+
+  it("stores the command and the extra text; the model gets the instruction, the user sees /name", async () => {
+    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) => replyWith("Findings…"));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await useLLMStore
+      .getState()
+      .sendMessage("focus on the database", "ctx", { command: { id: "review", name: "review" } });
+
+    const state = useLLMStore.getState();
+    const user = state.messages[0];
+    expect(user?.command).toEqual({ id: "review", name: "review" });
+    expect(user?.parts).toEqual([{ type: "text", text: "focus on the database" }]);
+    const body = JSON.parse(String(fetchSpy.mock.calls[0]?.[1]?.body ?? "{}")) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const sent = body.messages.find((m) => m.role === "user")?.content ?? "";
+    expect(sent).toMatch(/^Review the architecture/);
+    expect(sent).toContain("focus on the database");
+    // Visible form, not the instruction, for the title and /copy.
+    const thread = state.threadsByDiagram["diagram-store"]?.threads[0];
+    expect(thread?.title).toBe("/review focus on the database");
+    const markdown = conversationToMarkdown(state.messages, {
+      t: i18n.t.bind(i18n),
+      findSuggestion: () => undefined,
+    });
+    expect(markdown).toContain("/review focus on the database");
+    expect(markdown).not.toContain("Review the architecture in the diagram");
+  });
+
+  it("sends a command chip with no extra text", async () => {
+    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) => replyWith("ok"));
+    vi.stubGlobal("fetch", fetchSpy);
+    await useLLMStore
+      .getState()
+      .sendMessage("", "ctx", { command: { id: "explain", name: "explain" } });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(useLLMStore.getState().messages[0]?.command?.name).toBe("explain");
   });
 });

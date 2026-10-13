@@ -11,9 +11,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowDown, Loader2, Square } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useLLMStore } from "@/features/llm";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useMentionSearch } from "@/features/llm/hooks/useMentionSearch";
@@ -21,7 +19,10 @@ import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";
 import type { MentionItem } from "@/features/llm/types";
 import { mentionKey, type MentionRef } from "@/features/llm/mentions/mention-ref";
-import { conversationToMarkdown } from "@/features/llm/message-markdown";
+import { commandRegistry } from "@/features/llm/commands/builtins";
+import { isPromptCommand, type ChatCommand } from "@/features/llm/commands/registry";
+import { useCommandActions } from "@/features/llm/hooks/useCommandActions";
+import type { CommandRef } from "@/features/llm/types";
 
 const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
 
@@ -37,36 +38,9 @@ function findMentionTrigger(
 }
 
 /* ── Slash commands ───────────────────────────────────────────────────── */
-export interface SlashCommandDef {
-  names: string[]; // Both PT and EN aliases
-  labelKey: string;
-  descriptionKey: string;
-}
-
-const SLASH_COMMANDS: SlashCommandDef[] = [
-  {
-    names: ["limpar", "clear"],
-    labelKey: "llmChat.slash.clear",
-    descriptionKey: "llmChat.slash.clearDesc",
-  },
-  {
-    names: ["copiar", "copy"],
-    labelKey: "llmChat.slash.copy",
-    descriptionKey: "llmChat.slash.copyDesc",
-  },
-];
-
-/** Returns all commands that match the partial input after `/` */
-function filterSlashCommands(input: string): SlashCommandDef[] {
-  const trimmed = input.trimStart().toLowerCase();
-  if (!trimmed.startsWith("/")) return [];
-  const query = trimmed.slice(1).toLowerCase();
-
-  if (!query) return SLASH_COMMANDS;
-
-  return SLASH_COMMANDS.filter((cmd) =>
-    cmd.names.some((name) => name.toLowerCase().startsWith(query)),
-  );
+function slashQuery(input: string): string | null {
+  const trimmed = input.trimStart();
+  return trimmed.startsWith("/") ? trimmed.slice(1) : null;
 }
 
 function SlashCommandMenu({
@@ -74,9 +48,9 @@ function SlashCommandMenu({
   selectedIndex,
   onSelect,
 }: {
-  commands: SlashCommandDef[];
+  commands: ChatCommand[];
   selectedIndex: number;
-  onSelect: (c: SlashCommandDef) => void;
+  onSelect: (c: ChatCommand) => void;
 }) {
   const { t } = useTranslation();
 
@@ -86,12 +60,12 @@ function SlashCommandMenu({
     <div className="absolute bottom-full left-0 mb-1.5 w-60 rounded-xl border border-border bg-card shadow-lg">
       <div className="px-2.5 py-1.5">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("llmChat.slash.title")}
+          {t("llmChat.command.section.commands")}
         </p>
       </div>
       {commands.map((cmd, i) => (
         <button
-          key={cmd.names[0]}
+          key={cmd.id}
           type="button"
           onClick={() => onSelect(cmd)}
           className={cn(
@@ -101,10 +75,10 @@ function SlashCommandMenu({
         >
           <span className="flex items-center gap-2 text-xs font-medium text-foreground">
             <span className="flex h-5 min-w-[2rem] items-center rounded bg-muted px-1.5 text-[11px] font-mono">
-              /{cmd.names[0]}
+              /{cmd.name}
             </span>
           </span>
-          <span className="text-[11px] text-muted-foreground">{t(cmd.descriptionKey)}</span>
+          <span className="text-[11px] text-muted-foreground">{t(cmd.labelKey)}</span>
         </button>
       ))}
     </div>
@@ -114,13 +88,11 @@ function SlashCommandMenu({
 /* ── Main composer ────────────────────────────────────────────────────── */
 export interface AssistantUIComposerProps {
   /** Resolves to `false` when the message was not sent, so the draft is kept. */
-  onSend: (text: string, mentions: MentionRef[]) => Promise<boolean | void>;
+  onSend: (text: string, mentions: MentionRef[], command?: CommandRef) => Promise<boolean | void>;
   onCancel?: () => Promise<void> | void;
   isLoading: boolean;
   disabled?: boolean;
   placeholder?: string;
-  /** Clear chat history */
-  onClearHistory?: () => void;
 }
 
 export interface AssistantUIComposerRef {
@@ -129,15 +101,11 @@ export interface AssistantUIComposerRef {
 
 export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantUIComposerProps>(
   function AssistantUIComposer(
-    { onSend, onCancel, isLoading, disabled = false, placeholder, onClearHistory },
+    { onSend, onCancel, isLoading, disabled = false, placeholder },
     ref,
   ) {
     const { t } = useTranslation();
     const { search } = useMentionSearch();
-    const messages = useLLMStore((s) => s.messages);
-    const pendingSuggestions = useLLMStore((s) => s.pendingSuggestions);
-    const activeDiagramId = useLLMStore((s) => s.activeDiagramId);
-    const createThread = useLLMStore((s) => s.createThread);
 
     const [text, setText] = useState("");
     const [mentions, setMentions] = useState<MentionRef[]>([]);
@@ -151,7 +119,18 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Filtered commands based on current input
-    const filteredCommands = useMemo(() => filterSlashCommands(text), [text]);
+    const commandActions = useCommandActions();
+    const [command, setCommand] = useState<ChatCommand | null>(null);
+    const query = slashQuery(text);
+    const filteredCommands = useMemo(
+      () =>
+        query === null
+          ? []
+          : commandRegistry
+              .sections({ diagram: null, selectionIds: [] }, query, t)
+              .flatMap((section) => section.commands),
+      [query, t],
+    );
 
     // Expose focusTextarea via ref for Cmd+K support.
     useImperativeHandle(
@@ -256,57 +235,24 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       setMentions((prev) => prev.filter((ref) => mentionKey(ref) !== key));
     }, []);
 
-    /** Execute a slash command and clear the input. */
+    /** A prompt command becomes a chip; an action command runs now. */
     const executeSlashCommand = useCallback(
-      (cmd: SlashCommandDef) => {
+      (cmd: ChatCommand) => {
         setSlashMenuOpen(false);
         setText("");
-
-        const cmdName = cmd.names[0];
-
-        switch (cmdName) {
-          case "limpar":
-          case "clear": {
-            if (window.confirm(t("llmChat.slash.clearConfirm"))) {
-              if (activeDiagramId) {
-                createThread(activeDiagramId);
-                toast(t("llmChat.slash.newChat"));
-              } else {
-                onClearHistory?.();
-                toast(t("llmChat.slash.cleared"));
-              }
-            }
-            break;
-          }
-
-          case "copiar":
-          case "copy": {
-            if (messages.length === 0) {
-              toast(t("llmChat.slash.noMessages"));
-              break;
-            }
-            const formatted = conversationToMarkdown(messages, {
-              t,
-              findSuggestion: (id) => pendingSuggestions.find((suggestion) => suggestion.id === id),
-            });
-            navigator.clipboard
-              .writeText(formatted)
-              .then(() => {
-                toast(t("llmChat.slash.copied"));
-              })
-              .catch(() => {
-                toast(t("llmChat.slash.copyFailed"));
-              });
-            break;
-          }
+        if (isPromptCommand(cmd)) {
+          setCommand(cmd);
+          return;
         }
+        void cmd.run(commandActions);
       },
-      [messages, pendingSuggestions, activeDiagramId, createThread, onClearHistory, t],
+      [commandActions],
     );
 
     const handleClear = useCallback(() => {
       setText("");
       setMentions([]);
+      setCommand(null);
       setIsPickerOpen(false);
       setMentionQuery("");
       setSlashMenuOpen(false);
@@ -314,12 +260,16 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
 
     const handleSend = useCallback(async () => {
       const trimmed = text.trim();
-      if ((!trimmed && mentions.length === 0) || isLoading || disabled) return;
-      const sent = await onSend(trimmed, mentions);
+      if ((!trimmed && mentions.length === 0 && !command) || isLoading || disabled) return;
+      const sent = await onSend(
+        trimmed,
+        mentions,
+        command ? { id: command.id, name: command.name } : undefined,
+      );
       if (sent === false) return;
       handleClear();
       requestAnimationFrame(() => textareaRef.current?.focus());
-    }, [text, isLoading, disabled, onSend, mentions, handleClear]);
+    }, [text, isLoading, disabled, onSend, mentions, command, handleClear]);
 
     const handleCancel = useCallback(() => {
       if (!onCancel) return;
@@ -421,13 +371,26 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         )}
 
         {/* Mention chips */}
-        {mentions.length > 0 && (
+        {mentions.length > 0 || command ? (
           <div className="mb-2 flex flex-wrap gap-1.5">
+            {command ? (
+              <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 font-mono text-xs font-medium text-secondary-foreground">
+                /{command.name}
+                <button
+                  type="button"
+                  onClick={() => setCommand(null)}
+                  aria-label={t("llmChat.command.remove", { name: command.name })}
+                  className="inline-flex items-center"
+                >
+                  ×
+                </button>
+              </span>
+            ) : null}
             {mentions.map((m) => (
               <MentionTag key={mentionKey(m)} mention={m} onRemove={handleRemoveMention} />
             ))}
           </div>
-        )}
+        ) : null}
 
         {/* Composer body */}
         <div

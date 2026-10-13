@@ -4,6 +4,8 @@ import type { ToolEvent } from "./transport/ai-sdk-transport";
 import type { Diagram } from "@/features/diagram";
 import { buildMentionContextBlock } from "./mentions/context-block";
 import type { MentionRef } from "./mentions/mention-ref";
+import { commandRegistry } from "./commands/builtins";
+import { isPromptCommand } from "./commands/registry";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
@@ -15,6 +17,7 @@ import {
   errorPart,
   failRunningToolCalls,
   getMessageText,
+  getVisibleText,
   suggestionPart,
   textPart,
   updateToolCallPart,
@@ -27,6 +30,7 @@ import type {
   LLMConfig,
   LLMConnection,
   LLMRequestMessage,
+  CommandRef,
   PendingSuggestion,
 } from "./types";
 import {
@@ -78,7 +82,19 @@ function toRequestMessages(messages: ChatMessage[], diagram: Diagram | null): LL
  */
 function userTurnContent(message: ChatMessage, text: string, diagram: Diagram | null): string {
   const block = buildMentionContextBlock(message.mentions ?? [], diagram);
-  return [text, block].filter((section) => section.trim().length > 0).join("\n\n");
+  return [commandInstruction(message), text, block]
+    .filter((section) => section.trim().length > 0)
+    .join("\n\n");
+}
+
+/**
+ * The instruction of the prompt command a message was sent with. A command
+ * that no longer exists contributes its visible "/name" instead.
+ */
+function commandInstruction(message: ChatMessage): string {
+  if (!message.command) return "";
+  const command = commandRegistry.get(message.command.id);
+  return command && isPromptCommand(command) ? command.instruction : `/${message.command.name}`;
 }
 
 function summarizeAssistantText(text: string): string {
@@ -143,6 +159,8 @@ async function executeLLMMessage(
 /** What a user message carries besides its text. */
 export interface MessageAttachments {
   mentions?: MentionRef[];
+  /** A prompt command chip; the text is the user's extra text. */
+  command?: CommandRef;
 }
 
 export interface LLMStoreState {
@@ -754,10 +772,13 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
     sendMessage: async (userText, diagramContext, attachments = {}) => {
       const mentions = attachments.mentions ?? [];
-      if (!userText.trim() && mentions.length === 0) {
+      const command = attachments.command;
+      if (!userText.trim() && mentions.length === 0 && !command) {
         return;
       }
-      ensureActiveThread(userText.trim());
+      ensureActiveThread(
+        getVisibleText({ parts: [textPart(userText.trim())], ...(command ? { command } : {}) }),
+      );
       const state = get();
 
       // If hydration hasn't run yet (panel mounted before App shell's
@@ -773,6 +794,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         parts: [textPart(userText.trim())],
         timestamp: Date.now(),
         ...(mentions.length > 0 ? { mentions } : {}),
+        ...(command ? { command } : {}),
       };
       const outgoingMessages = [...state.messages, userMessage];
       await runAssistantTurn(outgoingMessages, diagramContext);

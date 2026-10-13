@@ -1,6 +1,6 @@
 import type { LLMError } from "./errors";
 import { isMentionRef } from "./mentions/mention-ref";
-import type { ChatMessage } from "./types";
+import type { ChatMessage, CommandRef } from "./types";
 
 /**
  * A chat message is an ordered list of parts. Text is what the model wrote;
@@ -125,6 +125,21 @@ export function errorPart(error: LLMError): ErrorPart {
 
 export function suggestionPart(suggestionId: string): SuggestionPart {
   return { type: "suggestion", suggestionId };
+}
+
+export function isCommandRef(value: unknown): value is CommandRef {
+  return isRecord(value) && typeof value.id === "string" && typeof value.name === "string";
+}
+
+/**
+ * What the user sees for a message: a command message reads "/name text".
+ * Used for the bubble's copy, /copy and the thread title — never the
+ * command's instruction.
+ */
+export function getVisibleText(message: Pick<ChatMessage, "parts" | "command">): string {
+  const text = getMessageText(message);
+  if (!message.command) return text;
+  return text.trim().length > 0 ? `/${message.command.name} ${text}` : `/${message.command.name}`;
 }
 
 /** The message's text: every text part, in order, joined. */
@@ -274,6 +289,11 @@ export function migrateStoredMessage(raw: unknown): MigratedMessage {
   }
 
   const message: ChatMessage = { id, role, parts, timestamp };
+  if (isCommandRef(raw.command)) {
+    message.command = { id: raw.command.id, name: raw.command.name };
+  } else if (raw.command !== undefined) {
+    changed = true;
+  }
   if (Array.isArray(raw.mentions)) {
     const mentions = raw.mentions.filter(isMentionRef);
     if (mentions.length !== raw.mentions.length) changed = true;
