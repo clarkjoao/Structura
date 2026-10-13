@@ -11,6 +11,8 @@ import {
   type LLMProvider,
 } from "@/features/llm";
 import { DEFAULT_PROXY_BASE_URL } from "@/features/llm/llm-storage";
+import { getLLMErrorI18nKey } from "@/features/llm/errors";
+import type { ConnectionTestResult } from "@/features/llm/transport/connection-test";
 
 const CUSTOM_MODEL_OPTION_VALUE = "__custom__";
 const URL_PATTERN = /^https?:\/\/\S+$/i;
@@ -37,7 +39,12 @@ interface DraftState {
   modelCustom: string;
   extraHeadersText: string;
   extraBodyParamsText: string;
+  /** Models the last "Test connection" listed; saved with the connection. */
+  models: string[];
 }
+
+type TestState =
+  { status: "idle" } | { status: "testing" } | { status: "done"; result: ConnectionTestResult };
 
 function emptyDraft(): DraftState {
   return {
@@ -52,6 +59,7 @@ function emptyDraft(): DraftState {
     modelCustom: "",
     extraHeadersText: "",
     extraBodyParamsText: "",
+    models: [],
   };
 }
 
@@ -78,6 +86,7 @@ function draftFromConnection(connection: LLMConnection): DraftState {
     extraBodyParamsText: connection.extraParams
       ? JSON.stringify(connection.extraParams, null, 2)
       : "",
+    models: connection.models ?? [],
   };
 }
 
@@ -107,6 +116,7 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
   // explicitly picks it from the list (handleSelectConnection).
   const [draft, setDraft] = useState<DraftState>(emptyDraft);
   const [validation, setValidation] = useState<ValidationResult>({});
+  const [testState, setTestState] = useState<TestState>({ status: "idle" });
 
   const presetModels = getPresetsForProvider(draft.provider);
   const isCustomSelectable = draft.provider !== "custom" && presetModels.length > 0;
@@ -168,22 +178,32 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
       return;
     }
     if (draft.mode === "proxy") {
-      createConnectionOrUpdate({
-        id: draft.id,
-        name: draft.name.trim() || t("llmChat.settings.connectionName"),
-        mode: "proxy",
-        provider: draft.provider === "custom" ? "openai" : draft.provider,
-        apiKey: draft.apiKey,
-        model: resolveModel() || "gpt-4o-mini",
-      });
+      createConnectionOrUpdate(proxyConnectionFromDraft());
       onClose();
       return;
     }
 
+    createConnectionOrUpdate(directConnectionFromDraft());
+    onClose();
+  };
+
+  function proxyConnectionFromDraft(): Omit<LLMConnection, "id"> & { id?: string } {
+    return {
+      id: draft.id,
+      name: draft.name.trim() || t("llmChat.settings.connectionName"),
+      mode: "proxy",
+      provider: draft.provider === "custom" ? "openai" : draft.provider,
+      apiKey: draft.apiKey,
+      model: draft.model.trim() || "gpt-4o-mini",
+      baseUrl: draft.baseUrl.trim() || DEFAULT_PROXY_BASE_URL,
+      ...(draft.models.length > 0 ? { models: draft.models } : {}),
+    };
+  }
+
+  function directConnectionFromDraft(): Omit<LLMConnection, "id"> & { id?: string } {
     const headers = tryParseJson(draft.extraHeadersText);
     const bodyParams = tryParseJson(draft.extraBodyParamsText);
-
-    createConnectionOrUpdate({
+    return {
       id: draft.id,
       name: draft.name.trim() || t("llmChat.settings.connectionName"),
       mode: "direct",
@@ -202,8 +222,20 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
       ...(!("error" in bodyParams) && bodyParams.value !== undefined
         ? { extraParams: bodyParams.value as Record<string, unknown> }
         : {}),
-    });
-    onClose();
+      ...(draft.models.length > 0 ? { models: draft.models } : {}),
+    };
+  }
+
+  const handleTestConnection = async () => {
+    const connection =
+      draft.mode === "proxy" ? proxyConnectionFromDraft() : directConnectionFromDraft();
+    setTestState({ status: "testing" });
+    const { testConnection } = await import("@/features/llm/transport/connection-test");
+    const result = await testConnection({ ...connection });
+    setTestState({ status: "done", result });
+    if (result.ok) {
+      setDraft((current) => ({ ...current, models: result.models }));
+    }
   };
 
   function createConnectionOrUpdate(payload: Omit<LLMConnection, "id"> & { id?: string }): void {
@@ -558,6 +590,7 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
                   ) : (
                     <Input
                       id="llm-model"
+                      list="llm-tested-models"
                       placeholder={t("llmChat.settings.modelCustomPlaceholder")}
                       value={draft.provider === "custom" ? draft.model : draft.modelCustom}
                       onChange={(event) =>
@@ -628,13 +661,69 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
                 ) : null}
               </>
             ) : (
-              <div className="space-y-1">
-                <label htmlFor="llm-proxy-url" className="text-xs text-muted-foreground">
-                  {t("llmChat.settings.proxyUrl")}
-                </label>
-                <Input id="llm-proxy-url" value={DEFAULT_PROXY_BASE_URL} readOnly />
-              </div>
+              <>
+                <div className="space-y-1">
+                  <label htmlFor="llm-proxy-url" className="text-xs text-muted-foreground">
+                    {t("llmChat.settings.proxyUrl")}
+                  </label>
+                  <Input
+                    id="llm-proxy-url"
+                    value={draft.baseUrl}
+                    placeholder={DEFAULT_PROXY_BASE_URL}
+                    onChange={(event) => setDraft({ ...draft, baseUrl: event.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("llmChat.settings.proxyUrlHint")}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="llm-proxy-key" className="text-xs text-muted-foreground">
+                    {t("llmChat.settings.customProvider.apiKeyLabel")}
+                  </label>
+                  <Input
+                    id="llm-proxy-key"
+                    type="password"
+                    value={draft.apiKey}
+                    onChange={(event) => setDraft({ ...draft, apiKey: event.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label htmlFor="llm-proxy-model" className="text-xs text-muted-foreground">
+                    {t("llmChat.settings.model")}
+                  </label>
+                  <Input
+                    id="llm-proxy-model"
+                    list="llm-tested-models"
+                    placeholder={t("llmChat.settings.modelCustomPlaceholder")}
+                    value={draft.model}
+                    onChange={(event) => setDraft({ ...draft, model: event.target.value })}
+                  />
+                </div>
+              </>
             )}
+
+            <datalist id="llm-tested-models">
+              {draft.models.map((model) => (
+                <option key={model} value={model} />
+              ))}
+            </datalist>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleTestConnection()}
+                disabled={testState.status === "testing"}
+              >
+                {testState.status === "testing"
+                  ? t("llmChat.settings.testing")
+                  : t("llmChat.settings.testConnection")}
+              </Button>
+              {testState.status === "done" ? (
+                <ConnectionTestStatus result={testState.result} />
+              ) : null}
+            </div>
           </section>
 
           <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
@@ -650,3 +739,24 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
     </div>
   );
 });
+
+function ConnectionTestStatus({ result }: { result: ConnectionTestResult }) {
+  const { t } = useTranslation();
+  if (!result.ok) {
+    return (
+      <p role="status" className="text-xs text-destructive">
+        {t(getLLMErrorI18nKey(result.error), { status: result.error.status })}
+      </p>
+    );
+  }
+  return (
+    <p role="status" className="text-xs text-muted-foreground">
+      {result.source === "presets"
+        ? t("llmChat.settings.testPresets", { count: result.models.length })
+        : t("llmChat.settings.testConnected", {
+            count: result.models.length,
+            latency: result.latencyMs,
+          })}
+    </p>
+  );
+}

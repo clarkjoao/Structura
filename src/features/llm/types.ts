@@ -19,6 +19,8 @@ export interface LLMConfig {
 export interface LLMConnection {
   id: string;
   name: string;
+  /** The models "Test connection" found (or the presets); the picker lists them. */
+  models?: string[];
   mode: LLMMode;
   provider: LLMProvider;
   baseUrl?: string;

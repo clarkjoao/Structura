@@ -122,6 +122,9 @@ function normalizeConnection(raw: Partial<LLMConnection>): LLMConnection {
     apiKey: isString(raw.apiKey) ? raw.apiKey : "",
     model: isString(raw.model) && raw.model.length > 0 ? raw.model : DEFAULT_LLM_CONFIG.model,
     baseUrl: migrateBaseUrl(mode, provider, raw.baseUrl),
+    models: Array.isArray(raw.models)
+      ? raw.models.filter((model): model is string => isString(model))
+      : undefined,
     authHeader: isString(raw.authHeader) && raw.authHeader.length > 0 ? raw.authHeader : undefined,
     extraHeaders: isObject(raw.extraHeaders)
       ? (raw.extraHeaders as Record<string, string>)

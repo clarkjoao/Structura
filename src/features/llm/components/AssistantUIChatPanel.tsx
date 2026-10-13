@@ -14,6 +14,7 @@ import { useAssistantUIAdapter } from "@/features/llm/adapters/useAssistantUIAda
 import { AssistantUIComposer } from "./AssistantUIComposer";
 import { ThreadDrawer } from "./ThreadDrawer";
 import { LLMSelector } from "./LLMSelector";
+import { ModelPicker } from "./ModelPicker";
 import { LLMSettings } from "./LLMSettings";
 import { buildContextualSuggestions } from "@/features/llm";
 import { isUsableConnection } from "@/features/llm/llm-storage";
@@ -287,7 +288,10 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
             />
             <div className="mt-2 flex items-center justify-between">
               <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>
-              <LLMSelector onOpenSettings={() => setShowSettings(true)} />
+              <div className="flex items-center">
+                <LLMSelector onOpenSettings={() => setShowSettings(true)} />
+                <ModelPicker />
+              </div>
             </div>
           </div>
 

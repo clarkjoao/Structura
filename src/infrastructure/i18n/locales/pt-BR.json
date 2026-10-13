@@ -591,7 +591,14 @@
       "connectionsHint": "Gerencie as conexões de provedor salvas",
       "defaultConnectionName": "Padrão",
       "fallbackConnectionName": "Conexão",
-      "connectionCopyName": "{{name}} (cópia)"
+      "connectionCopyName": "{{name}} (cópia)",
+      "proxyUrlHint": "Qualquer endpoint compatível com OpenAI; as requisições vão para <URL>/chat/completions.",
+      "testConnection": "Testar conexão",
+      "testing": "Testando…",
+      "testConnected_one": "Conectado · {{count}} modelo · {{latency}} ms",
+      "testConnected_other": "Conectado · {{count}} modelos · {{latency}} ms",
+      "testPresets_one": "{{count}} modelo predefinido; a chave é verificada na primeira mensagem",
+      "testPresets_other": "{{count}} modelos predefinidos; a chave é verificada na primeira mensagem"
     },
     "suggestion": {
       "accept": "Aceitar",
@@ -737,7 +744,10 @@
       "copy": "Copiar mensagem",
       "regenerate": "Gerar resposta novamente"
     },
-    "truncated": "Resposta interrompida no limite de tokens"
+    "truncated": "Resposta interrompida no limite de tokens",
+    "modelPicker": {
+      "label": "Modelo"
+    }
   },
   "versions": {
     "base": "Base",

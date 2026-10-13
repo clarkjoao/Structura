@@ -1,4 +1,4 @@
-import type { LLMMode, LLMProvider } from "./types";
+import type { LLMConnection, LLMMode, LLMProvider } from "./types";
 
 export interface ModelPreset {
   id: string;
@@ -29,20 +29,6 @@ export const MODEL_PRESETS: Record<LLMProvider, ModelPreset[]> = {
     },
   ],
   anthropic: [
-    {
-      id: "claude-sonnet-4-5",
-      provider: "anthropic",
-      model: "claude-sonnet-4-5-20250929",
-      label: "Claude Sonnet 4.5",
-      mode: "direct",
-    },
-    {
-      id: "claude-haiku-4-5",
-      provider: "anthropic",
-      model: "claude-haiku-4-5-20251001",
-      label: "Claude Haiku 4.5",
-      mode: "direct",
-    },
     {
       id: "claude-opus-5-5",
       provider: "anthropic",
@@ -77,4 +63,13 @@ export const MODEL_PRESETS: Record<LLMProvider, ModelPreset[]> = {
 
 export function getPresetsForProvider(provider: LLMProvider): ModelPreset[] {
   return MODEL_PRESETS[provider] ?? [];
+}
+
+/** What the model picker offers: the connection's tested models, else its presets, plus the current one. */
+export function modelsForConnection(connection: LLMConnection): string[] {
+  const listed =
+    connection.models && connection.models.length > 0
+      ? connection.models
+      : getPresetsForProvider(connection.provider).map((preset) => preset.model);
+  return listed.includes(connection.model) ? listed : [connection.model, ...listed];
 }

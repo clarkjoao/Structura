@@ -591,7 +591,14 @@
       "connectionsHint": "Manage saved provider connections",
       "defaultConnectionName": "Default",
       "fallbackConnectionName": "Connection",
-      "connectionCopyName": "{{name}} (copy)"
+      "connectionCopyName": "{{name}} (copy)",
+      "proxyUrlHint": "Any OpenAI-compatible endpoint; requests go to <URL>/chat/completions.",
+      "testConnection": "Test connection",
+      "testing": "Testing…",
+      "testConnected_one": "Connected · {{count}} model · {{latency}} ms",
+      "testConnected_other": "Connected · {{count}} models · {{latency}} ms",
+      "testPresets_one": "{{count}} preset model; the key is checked on the first message",
+      "testPresets_other": "{{count}} preset models; the key is checked on the first message"
     },
     "suggestion": {
       "accept": "Accept",
@@ -737,7 +744,10 @@
       "copy": "Copy message",
       "regenerate": "Regenerate response"
     },
-    "truncated": "Reply cut off at the token limit"
+    "truncated": "Reply cut off at the token limit",
+    "modelPicker": {
+      "label": "Model"
+    }
   },
   "versions": {
     "base": "Base",
