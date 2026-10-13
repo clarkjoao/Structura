@@ -64,6 +64,8 @@ export function defineTool<TSchema extends z.ZodType>(
 export interface ToolFilter {
   kind?: ToolKind;
   source?: ToolSource;
+  /** Only these registry names (e.g. a skill allowlist); unknown names match nothing. */
+  names?: ReadonlySet<string>;
 }
 
 /** Every tool the chat can offer, by unique name. */
@@ -102,7 +104,8 @@ export class ToolRegistry {
     return [...this.tools.values()].filter(
       (tool) =>
         (filter.kind === undefined || tool.kind === filter.kind) &&
-        (filter.source === undefined || tool.source === filter.source),
+        (filter.source === undefined || tool.source === filter.source) &&
+        (filter.names === undefined || filter.names.has(tool.name)),
     );
   }
 }

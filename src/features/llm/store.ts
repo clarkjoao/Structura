@@ -5,6 +5,12 @@ import type { Diagram } from "@/features/diagram";
 import { buildMentionContextBlock } from "./mentions/context-block";
 import type { MentionRef } from "./mentions/mention-ref";
 import type { SkillRef } from "./skills/skill.types";
+import { useSkillStore } from "./skills/skill-store";
+import {
+  buildSkillInstructionsBlock,
+  resolveActiveSkills,
+  skillToolAllowlist,
+} from "./skills/skill-request";
 import { commandRegistry } from "./commands/builtins";
 import { isPromptCommand } from "./commands/registry";
 import { useDiagramStore } from "@/features/diagram";
@@ -396,14 +402,33 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     const controller = new AbortController();
     inFlight = controller;
     try {
-      const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
+      // The turn's skills are the ones its user message was sent with, so a
+      // retry reuses them. A skill that no longer exists is left out.
+      const turnMessage = [...outgoingMessages]
+        .reverse()
+        .find((message) => message.role === "user");
+      const skills = resolveActiveSkills(turnMessage?.skills, useSkillStore.getState().skills);
+      const systemPrompt = [
+        buildSystemPrompt(diagramContext, getResolvedAppLanguage()),
+        buildSkillInstructionsBlock(skills),
+      ]
+        .filter((section) => section.length > 0)
+        .join("\n\n");
       const requestMessages = toRequestMessages(outgoingMessages, toolHost?.readDiagram() ?? null);
       // Write tools queue into this draft; it becomes the turn's one suggestion.
       const suggestionDraft = new SuggestionDraft();
       const host = toolHost;
       // Without a host (no canvas mounted) the model answers without tools.
       const registry = await loadInternalTools();
-      const tools = host ? registry.toToolSet({ host, suggestion: suggestionDraft }) : undefined;
+      // Skill allowlists narrow the tools on the registry, before the SDK sees them.
+      const allowlist = skillToolAllowlist(skills);
+      const toolSet = host
+        ? registry.toToolSet(
+            { host, suggestion: suggestionDraft },
+            allowlist ? { names: allowlist } : {},
+          )
+        : undefined;
+      const tools = toolSet && Object.keys(toolSet).length > 0 ? toolSet : undefined;
       let fullResponse = "";
       const { stopReason } = await executeLLMMessage(
         state.config,

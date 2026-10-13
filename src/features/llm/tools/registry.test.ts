@@ -45,6 +45,15 @@ describe("ToolRegistry", () => {
     expect(registry.list()).toHaveLength(2);
   });
 
+  it("filters by registry name, so an allowlist can name an MCP tool too", () => {
+    const registry = new ToolRegistry();
+    registry.register(echo);
+    registry.register(remote);
+    const names = new Set(["remote_write", "not_registered"]);
+    expect(registry.list({ names }).map((tool) => tool.name)).toEqual(["remote_write"]);
+    expect(Object.keys(registry.toToolSet(context, { names: new Set() }))).toEqual([]);
+  });
+
   it("converts to an SDK tool set bound to the turn's context", async () => {
     const registry = new ToolRegistry();
     registry.register(echo);
