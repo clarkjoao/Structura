@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, History, MessageSquarePlus, Plus, Settings, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLLMChat } from "@/features/canvas/chat";
+import { useLLMChat } from "@/features/llm/hooks/useLLMChat";
 import {
   AssistantRuntimeProvider,
   ThreadPrimitive,

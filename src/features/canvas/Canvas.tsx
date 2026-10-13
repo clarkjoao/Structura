@@ -45,6 +45,7 @@ import {
 } from "@/features/element-presets";
 import { AssistantUIChatPanel, FloatingChatButton } from "@/features/llm/components";
 import { useLLMStore } from "@/features/llm";
+import { useProvideChatToolHost } from "./chat";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
 import { isPanelComponent, isApiGroupComponent, isTextComponent } from "@/features/diagram";
@@ -93,6 +94,8 @@ import { useCanvasSvgFileDrop } from "./hooks/useCanvasSvgFileDrop";
 
 const Canvas = (props: CanvasProps = {}) => {
   useFlowSewNotices();
+  // The chat mounted below reaches the diagram and the layout engine through this.
+  useProvideChatToolHost();
   useSharedRefNotices();
   const nodeTypes = useNodeTypes();
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);

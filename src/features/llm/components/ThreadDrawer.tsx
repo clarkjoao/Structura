@@ -10,7 +10,7 @@ import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
 import type { Locale } from "date-fns";
 import type { TFunction } from "i18next";
-import { useLLMChat } from "@/features/canvas/chat";
+import { useLLMChat } from "@/features/llm/hooks/useLLMChat";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { ThreadRenameControl } from "./ThreadRenameControl";
 import { countConversationMessages, type ConversationThread } from "@/features/llm";

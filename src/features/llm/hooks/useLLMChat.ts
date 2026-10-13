@@ -1,11 +1,8 @@
 import { useCallback, useEffect } from "react";
 import { useActiveDiagramModel } from "@/features/diagram";
-import {
-  buildMentionContextBlock,
-  useLLMStore,
-  type ActiveMention,
-  type LLMConnection,
-} from "@/features/llm";
+import { buildMentionContextBlock } from "../mention-serializer";
+import { useLLMStore } from "../store";
+import type { ActiveMention, LLMConnection } from "../types";
 import { useDiagramContext } from "./useDiagramContext";
 import { useMentionSearch } from "./useMentionSearch";
 

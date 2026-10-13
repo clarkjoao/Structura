@@ -5,7 +5,7 @@ import {
   resolveActiveVersion,
   useActiveDiagramModel,
 } from "@/features/diagram";
-import { serializeDiagramContext } from "@/features/llm";
+import { serializeDiagramContext } from "../serializer";
 
 export interface DiagramContextResult {
   /** Full diagram serialization for the system prompt */

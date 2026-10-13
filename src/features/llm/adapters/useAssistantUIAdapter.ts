@@ -13,7 +13,7 @@ import type {
   ThreadSuggestion,
   ThreadUserMessage,
 } from "@assistant-ui/core";
-import { useLLMChat } from "@/features/canvas/chat";
+import { useLLMChat } from "@/features/llm/hooks/useLLMChat";
 import type { ChatMessage } from "@/features/llm/types";
 import {
   getMessageText,

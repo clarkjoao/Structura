@@ -47,6 +47,7 @@ import {
   toolCallReply,
 } from "./test-utils/openai-sse";
 import { resetLLMStorageForTests } from "./llm-storage";
+import { fixtureDiagram, fixtureHost } from "./test-utils/fixture-host";
 import { buildContextualSuggestions } from "./suggestions";
 import i18n from "@/infrastructure/i18n";
 
@@ -356,6 +357,13 @@ describe("LLM store — message parts", () => {
   beforeEach(() => {
     localStorage.clear();
     resetStore();
+    useLLMStore.getState().setToolHost(
+      fixtureHost(
+        fixtureDiagram({
+          "n-1": { id: "n-1", type: "container", name: "Cache", description: "", parentId: null },
+        }),
+      ),
+    );
   });
 
   afterEach(() => {
@@ -508,6 +516,59 @@ describe("LLM store — message parts", () => {
       suggestionId: suggestion?.id,
     });
     expect(last?.status).toBe("complete");
+  });
+});
+
+describe("LLM store — Accept and Reject", () => {
+  let host: ReturnType<typeof fixtureHost>;
+
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+    host = fixtureHost(
+      fixtureDiagram({
+        "n-1": { id: "n-1", type: "container", name: "Cache", description: "", parentId: null },
+      }),
+    );
+    useLLMStore.getState().setToolHost(host);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        sequenceFetch([
+          () =>
+            toolCallReply([
+              { name: "update_node", args: { nodeId: "n-1", patch: { name: "Redis" } } },
+              { name: "add_node", args: { nodeType: "container", name: "API", parentId: null } },
+            ]),
+          () => replyWith("Done."),
+        ]),
+      ),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    useLLMStore.getState().setToolHost(null);
+  });
+
+  it("nothing is applied before Accept; Accept applies the whole suggestion in one batch", async () => {
+    await useLLMStore.getState().sendMessage("Rename and add", "ctx");
+    expect(host.applied).toEqual([]);
+
+    const suggestion = useLLMStore.getState().pendingSuggestions[0];
+    await useLLMStore.getState().acceptSuggestion(suggestion?.id ?? "");
+
+    expect(host.applied).toHaveLength(1);
+    expect(host.applied[0]?.map((change) => change.kind)).toEqual(["updateNode", "addNode"]);
+    expect(useLLMStore.getState().pendingSuggestions[0]?.status).toBe("accepted");
+  });
+
+  it("Reject changes nothing", async () => {
+    await useLLMStore.getState().sendMessage("Rename and add", "ctx");
+    const suggestion = useLLMStore.getState().pendingSuggestions[0];
+    useLLMStore.getState().rejectSuggestion(suggestion?.id ?? "");
+    expect(host.applied).toEqual([]);
+    expect(useLLMStore.getState().pendingSuggestions[0]?.status).toBe("rejected");
   });
 });
 

@@ -39,7 +39,7 @@ import { applySuggestion } from "./suggestion-apply";
 import { SuggestionDraft } from "./tools/suggestion-draft";
 import { createInternalToolRegistry } from "./tools/internal-tools";
 import { isToolErrorResult } from "./tools/registry";
-import { storeDiagramHost } from "./tools/store-host";
+import type { DiagramToolHost } from "./tools/host";
 
 function getResolvedAppLanguage(): string {
   const lng = i18n.resolvedLanguage ?? i18n.language ?? "pt-BR";
@@ -167,6 +167,8 @@ export interface LLMStoreState {
    * marked cancelled, and no error is recorded.
    */
   cancelRequest: () => void;
+  /** Set by the canvas hosting the chat; null when none is mounted. */
+  setToolHost: (host: DiagramToolHost | null) => void;
   /**
    * Requests a new reply to the user message before `assistantMessageId`,
    * replacing that assistant message. Retry (after an error) and Regenerate.
@@ -279,6 +281,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
   /** Aborts the request in flight; not state, so it lives outside `set()`. */
   let inFlight: AbortController | null = null;
+  /**
+   * How tools and Accept reach the diagram, provided by the canvas that hosts
+   * the chat (`useProvideChatToolHost`). A dependency, not state.
+   */
+  let toolHost: DiagramToolHost | null = null;
 
   const persistThread = (messages?: ChatMessage[]) => {
     const next = persistActiveThread(get(), messages);
@@ -336,10 +343,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const requestMessages = toRequestMessages(outgoingMessages);
       // Write tools queue into this draft; it becomes the turn's one suggestion.
       const suggestionDraft = new SuggestionDraft();
-      const tools = internalTools.toToolSet({
-        host: storeDiagramHost,
-        suggestion: suggestionDraft,
-      });
+      const host = toolHost;
+      // Without a host (no canvas mounted) the model answers without tools.
+      const tools = host
+        ? internalTools.toToolSet({ host, suggestion: suggestionDraft })
+        : undefined;
       let fullResponse = "";
       const { stopReason } = await executeLLMMessage(
         state.config,
@@ -746,6 +754,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       await runAssistantTurn(messages.slice(0, index), diagramContext);
     },
 
+    setToolHost: (host) => {
+      toolHost = host;
+    },
+
     cancelRequest: () => {
       inFlight?.abort();
     },
@@ -758,6 +770,12 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         return;
       }
 
+      if (!toolHost) {
+        console.warn("[llm] accept ignored: no diagram host is mounted");
+        return;
+      }
+      const host = toolHost;
+
       // Marked first so a second click cannot apply it twice while the
       // layout (if any) runs.
       set((state) => ({
@@ -767,7 +785,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             : candidateSuggestion,
         ),
       }));
-      const skipped = await applySuggestion(suggestion.patch.actions, storeDiagramHost);
+      const skipped = await applySuggestion(suggestion.patch.actions, host);
       if (skipped.length > 0) {
         set((state) => ({
           pendingSuggestions: state.pendingSuggestions.map((candidateSuggestion) =>

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { type Diagram, getCachedCanvasSnapshot, useActiveDiagramModel } from "@/features/diagram";
-import type { MentionItem } from "@/features/llm";
+import type { MentionItem } from "../types";
 
 interface UseMentionSearchResult {
   search: (query: string) => MentionItem[];

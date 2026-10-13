@@ -1,35 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@/features/diagram", () => {
-  const diagram = {
-    id: "d1",
-    name: "Loop test",
-    level: "container",
-    viewport: { x: 0, y: 0, zoom: 1 },
-    snapshot: {
-      components: {
-        api: { id: "api", type: "container", name: "API", description: "", parentId: null },
-      },
-      connections: {},
-      flows: {},
-      iconLibrary: {},
-    },
-    nodeLayouts: {},
-    edgeLayouts: {},
-  };
-  return {
-    useDiagramStore: {
-      getState: () => ({ activeDiagramId: "d1", diagrams: { d1: diagram } }),
-    },
-    getCachedCanvasSnapshot: (d: typeof diagram) => ({
-      components: d.snapshot.components,
-      connections: d.snapshot.connections,
-      nodeLayouts: d.nodeLayouts,
-    }),
-    isSharedRefComponent: () => false,
-  };
-});
-
 import {
   failRunningToolCalls,
   isSuggestionPart,
@@ -37,6 +7,7 @@ import {
   type ToolCallPart,
 } from "./message-parts";
 import { resetLLMStorageForTests } from "./llm-storage";
+import { fixtureDiagram, fixtureHost } from "./test-utils/fixture-host";
 import { useLLMStore } from "./store";
 import { MAX_TOOL_STEPS } from "./transport/ai-sdk-transport";
 import {
@@ -68,6 +39,13 @@ beforeEach(() => {
   localStorage.clear();
   resetLLMStorageForTests();
   resetStore();
+  useLLMStore.getState().setToolHost(
+    fixtureHost(
+      fixtureDiagram({
+        api: { id: "api", type: "container", name: "API", description: "", parentId: null },
+      }),
+    ),
+  );
 });
 
 afterEach(() => {
@@ -107,7 +85,7 @@ describe("multi-step tool loop", () => {
       ["add_node", "done"],
       ["add_edge", "done"],
     ]);
-    expect(lastToolCalls()[0]?.result).toMatchObject({ name: "Loop test" });
+    expect(lastToolCalls()[0]?.result).toMatchObject({ name: "Fixture" });
     expect(state.pendingSuggestions).toHaveLength(1);
     expect(state.pendingSuggestions[0]?.patch.actions.map((action) => action.type)).toEqual([
       "ADD_NODE",

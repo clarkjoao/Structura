@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useLLMStore } from "@/features/llm";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import { useMentionSearch } from "@/features/canvas/chat/useMentionSearch";
+import { useMentionSearch } from "@/features/llm/hooks/useMentionSearch";
 import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";
 import type { MentionItem, ActiveMention } from "@/features/llm/types";
