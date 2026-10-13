@@ -19,7 +19,8 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import { useMentionSearch } from "@/features/llm/hooks/useMentionSearch";
 import { MentionPicker } from "./MentionPicker";
 import { MentionTag } from "./MentionTag";
-import type { MentionItem, ActiveMention } from "@/features/llm/types";
+import type { MentionItem } from "@/features/llm/types";
+import { mentionKey, type MentionRef } from "@/features/llm/mentions/mention-ref";
 import { conversationToMarkdown } from "@/features/llm/message-markdown";
 
 const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
@@ -113,7 +114,7 @@ function SlashCommandMenu({
 /* ── Main composer ────────────────────────────────────────────────────── */
 export interface AssistantUIComposerProps {
   /** Resolves to `false` when the message was not sent, so the draft is kept. */
-  onSend: (text: string, mentions: ActiveMention[]) => Promise<boolean | void>;
+  onSend: (text: string, mentions: MentionRef[]) => Promise<boolean | void>;
   onCancel?: () => Promise<void> | void;
   isLoading: boolean;
   disabled?: boolean;
@@ -139,7 +140,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const createThread = useLLMStore((s) => s.createThread);
 
     const [text, setText] = useState("");
-    const [mentions, setMentions] = useState<ActiveMention[]>([]);
+    const [mentions, setMentions] = useState<MentionRef[]>([]);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
     const [mentionQuery, setMentionQuery] = useState("");
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -225,15 +226,16 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         const trigger = findMentionTrigger(text);
         if (!trigger) return;
 
+        // The "@query" text goes away; the element becomes a chip.
         const textBefore = text.slice(0, trigger.triggerIndex);
         const textAfter = text.slice(trigger.triggerEndIndex);
-        const inserted = `@${item.label} `;
+        const inserted = "";
         const nextText = textBefore + inserted + textAfter;
 
         setText(nextText);
         setMentions((prev) => {
-          if (prev.some((m) => m.mentionId === item.id)) return prev;
-          return [...prev, { mentionId: item.id, label: item.label }];
+          if (prev.some((ref) => mentionKey(ref) === mentionKey(item.ref))) return prev;
+          return [...prev, item.ref];
         });
         setIsPickerOpen(false);
         setMentionQuery("");
@@ -250,18 +252,9 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       [text],
     );
 
-    const handleRemoveMention = useCallback(
-      (mentionId: string) => {
-        setMentions((prev) => prev.filter((m) => m.mentionId !== mentionId));
-        setText((current) => {
-          const mention = mentions.find((m) => m.mentionId === mentionId);
-          if (!mention) return current;
-          const marker = `@${mention.label}`;
-          return current.replace(marker, "").replace(/\s+/g, " ").trimStart();
-        });
-      },
-      [mentions],
-    );
+    const handleRemoveMention = useCallback((key: string) => {
+      setMentions((prev) => prev.filter((ref) => mentionKey(ref) !== key));
+    }, []);
 
     /** Execute a slash command and clear the input. */
     const executeSlashCommand = useCallback(
@@ -321,7 +314,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
 
     const handleSend = useCallback(async () => {
       const trimmed = text.trim();
-      if (!trimmed || isLoading || disabled) return;
+      if ((!trimmed && mentions.length === 0) || isLoading || disabled) return;
       const sent = await onSend(trimmed, mentions);
       if (sent === false) return;
       handleClear();
@@ -431,7 +424,7 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         {mentions.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1.5">
             {mentions.map((m) => (
-              <MentionTag key={m.mentionId} mention={m} onRemove={handleRemoveMention} />
+              <MentionTag key={mentionKey(m)} mention={m} onRemove={handleRemoveMention} />
             ))}
           </div>
         )}

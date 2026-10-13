@@ -146,4 +146,19 @@ describe("migrateStoredMessage", () => {
     expect(getMessageText(messages[1]!)).toBe("a bare string");
     expect(messages[2]?.role).toBe("assistant");
   });
+
+  it("keeps a user message's mentions and drops invalid ones", () => {
+    const { message, changed } = migrateStoredMessage({
+      id: "u",
+      role: "user",
+      parts: [textPart("hi")],
+      timestamp: 1,
+      mentions: [{ kind: "node", id: "a", label: "A" }, { kind: "bogus" }],
+    });
+    expect(message.mentions).toEqual([{ kind: "node", id: "a", label: "A" }]);
+    expect(changed).toBe(true);
+    const again = migrateStoredMessage(message);
+    expect(again.changed).toBe(false);
+    expect(again.message.mentions).toEqual(message.mentions);
+  });
 });

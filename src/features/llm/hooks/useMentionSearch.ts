@@ -14,13 +14,12 @@ function buildNodeMentionItem(component: {
   parentId: string | null;
 }): MentionItem {
   const label = component.name || component.id;
-  const parent = component.parentId ?? "none";
   return {
     id: component.id,
     kind: "node",
     label,
     subLabel: component.type,
-    serialized: `node id=${component.id} type=${component.type} label="${label}" parent=${parent}`,
+    ref: { kind: "node", id: component.id, label },
   };
 }
 
@@ -36,7 +35,7 @@ function buildEdgeMentionItem(
     kind: "edge",
     label: edgeLabel,
     subLabel: `${sourceName} -> ${targetName}`,
-    serialized: `edge id=${connection.id} source=${connection.sourceId} target=${connection.targetId} label="${edgeLabel}"`,
+    ref: { kind: "edge", id: connection.id, label: edgeLabel },
   };
 }
 

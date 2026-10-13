@@ -1,10 +1,10 @@
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { ActiveMention } from "@/features/llm";
+import { mentionKey, type MentionRef } from "@/features/llm/mentions/mention-ref";
 
 interface MentionTagProps {
-  mention: ActiveMention;
-  onRemove: (mentionId: string) => void;
+  mention: MentionRef;
+  onRemove: (key: string) => void;
 }
 
 export function MentionTag({ mention, onRemove }: MentionTagProps) {
@@ -14,7 +14,7 @@ export function MentionTag({ mention, onRemove }: MentionTagProps) {
       @{mention.label}
       <button
         type="button"
-        onClick={() => onRemove(mention.mentionId)}
+        onClick={() => onRemove(mentionKey(mention))}
         aria-label={t("llmChat.mention.removeTag", { label: mention.label })}
         className="inline-flex items-center"
       >

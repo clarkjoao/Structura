@@ -1,6 +1,9 @@
 import { create } from "zustand";
 import type { ToolSet } from "ai";
 import type { ToolEvent } from "./transport/ai-sdk-transport";
+import type { Diagram } from "@/features/diagram";
+import { buildMentionContextBlock } from "./mentions/context-block";
+import type { MentionRef } from "./mentions/mention-ref";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
@@ -57,16 +60,25 @@ function getResolvedAppLanguage(): string {
  * assistant reply stored as a raw JSON envelope is reduced to its summary.
  * Turns with no text (a failed or a stopped-before-anything turn) are left out.
  */
-function toRequestMessages(messages: ChatMessage[]): LLMRequestMessage[] {
+function toRequestMessages(messages: ChatMessage[], diagram: Diagram | null): LLMRequestMessage[] {
   return messages
     .map((message): LLMRequestMessage => {
       const text = getMessageText(message);
       if (message.role !== "assistant") {
-        return { role: message.role, content: text };
+        return { role: message.role, content: userTurnContent(message, text, diagram) };
       }
       return { role: "assistant", content: summarizeAssistantText(text) };
     })
     .filter((message) => message.content.trim().length > 0);
+}
+
+/**
+ * A user turn as the model sees it: the text, then the attached refs resolved
+ * against the current diagram as a JSON block. Old messages have no refs.
+ */
+function userTurnContent(message: ChatMessage, text: string, diagram: Diagram | null): string {
+  const block = buildMentionContextBlock(message.mentions ?? [], diagram);
+  return [text, block].filter((section) => section.trim().length > 0).join("\n\n");
 }
 
 function summarizeAssistantText(text: string): string {
@@ -128,6 +140,11 @@ async function executeLLMMessage(
   return streamChat({ config, messages, systemPrompt, onChunk, signal, tools, onToolEvent });
 }
 
+/** What a user message carries besides its text. */
+export interface MessageAttachments {
+  mentions?: MentionRef[];
+}
+
 export interface LLMStoreState {
   connections: LLMConnection[];
   activeConnectionId: string;
@@ -160,7 +177,11 @@ export interface LLMStoreState {
    */
   initChatThreads: () => Promise<void>;
 
-  sendMessage: (userText: string, diagramContext: string) => Promise<void>;
+  sendMessage: (
+    userText: string,
+    diagramContext: string,
+    attachments?: MessageAttachments,
+  ) => Promise<void>;
   /**
    * Stops the request in flight. What had streamed stays, the message is
    * marked cancelled, and no error is recorded.
@@ -355,7 +376,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     inFlight = controller;
     try {
       const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
-      const requestMessages = toRequestMessages(outgoingMessages);
+      const requestMessages = toRequestMessages(outgoingMessages, toolHost?.readDiagram() ?? null);
       // Write tools queue into this draft; it becomes the turn's one suggestion.
       const suggestionDraft = new SuggestionDraft();
       const host = toolHost;
@@ -731,8 +752,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
     initChatThreads: () => hydrateChatThreadsCacheFromIdb(),
 
-    sendMessage: async (userText, diagramContext) => {
-      if (!userText.trim()) {
+    sendMessage: async (userText, diagramContext, attachments = {}) => {
+      const mentions = attachments.mentions ?? [];
+      if (!userText.trim() && mentions.length === 0) {
         return;
       }
       ensureActiveThread(userText.trim());
@@ -750,6 +772,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         role: "user",
         parts: [textPart(userText.trim())],
         timestamp: Date.now(),
+        ...(mentions.length > 0 ? { mentions } : {}),
       };
       const outgoingMessages = [...state.messages, userMessage];
       await runAssistantTurn(outgoingMessages, diagramContext);

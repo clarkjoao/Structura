@@ -602,3 +602,60 @@ describe("LLM store — review requests are normal turns", () => {
     expect("pendingAnalysis" in state).toBe(false);
   });
 });
+
+describe("LLM store — mentions travel with the user message", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+    useLLMStore.getState().setToolHost(
+      fixtureHost(
+        fixtureDiagram({
+          "n-1": {
+            id: "n-1",
+            type: "container",
+            name: 'Cache "hot"',
+            description: "",
+            parentId: null,
+          },
+        }),
+      ),
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    useLLMStore.getState().setToolHost(null);
+  });
+
+  function userContentOf(init: RequestInit | undefined): string {
+    const body = JSON.parse(String(init?.body ?? "{}")) as {
+      messages: Array<{ role: string; content: string }>;
+    };
+    const users = body.messages.filter((m) => m.role === "user");
+    return users[users.length - 1]?.content ?? "";
+  }
+
+  it("stores the refs and sends them resolved as an encoded block; Retry resends them", async () => {
+    const fetchSpy = vi.fn(
+      async (_url: string, _init: RequestInit) => new Response("down", { status: 503 }),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+
+    await useLLMStore.getState().sendMessage("What does this do?", "ctx", {
+      mentions: [{ kind: "node", id: "n-1", label: "Cache" }],
+    });
+
+    const user = useLLMStore.getState().messages[0];
+    expect(user?.mentions).toEqual([{ kind: "node", id: "n-1", label: "Cache" }]);
+    const first = userContentOf(fetchSpy.mock.calls[0]?.[1]);
+    expect(first.startsWith("What does this do?")).toBe(true);
+    expect(first).toContain('"name": "Cache \\"hot\\""');
+
+    const failed = useLLMStore.getState().messages[1];
+    const retrySpy = vi.fn(async (_url: string, _init: RequestInit) => replyWith("ok"));
+    vi.stubGlobal("fetch", retrySpy);
+    await useLLMStore.getState().rerunAssistantMessage(failed?.id ?? "", "ctx");
+
+    expect(userContentOf(retrySpy.mock.calls[0]?.[1])).toBe(first);
+  });
+});

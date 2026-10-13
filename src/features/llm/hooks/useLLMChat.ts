@@ -1,10 +1,9 @@
 import { useCallback, useEffect } from "react";
 import { useActiveDiagramModel } from "@/features/diagram";
-import { buildMentionContextBlock } from "../mention-serializer";
 import { useLLMStore } from "../store";
-import type { ActiveMention, LLMConnection } from "../types";
+import type { LLMConnection } from "../types";
+import type { MentionRef } from "../mentions/mention-ref";
 import { useDiagramContext } from "./useDiagramContext";
-import { useMentionSearch } from "./useMentionSearch";
 
 interface UseLLMChatParams {
   selectedNodeIds: Set<string>;
@@ -19,7 +18,6 @@ const defaultLLMChatParams: UseLLMChatParams = {
 export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const activeDiagram = useActiveDiagramModel();
   const { diagramText, selectedNodeIds: selIds, focusedNodeId } = useDiagramContext(params);
-  const { allItems } = useMentionSearch();
   const messages = useLLMStore((state) => state.messages);
   const isLoading = useLLMStore((state) => state.isLoading);
   const pendingSuggestions = useLLMStore((state) => state.pendingSuggestions);
@@ -50,53 +48,44 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     }
   }, [activeDiagram?.id, activeDiagramId, loadHistoryForDiagram]);
 
-  /** The diagram, what the user is looking at, and any @-mentioned elements. */
-  const buildContext = useCallback(
-    (mentions: ActiveMention[]): string => {
-      const mentionContext = buildMentionContextBlock(mentions, allItems);
-
-      const visualContextLines: string[] = [];
-      if (selIds.length > 0) {
-        const components = activeDiagram?.snapshot?.components ?? {};
-        const selectedLabels = selIds.map((id) => {
-          const comp = components[id];
-          return comp ? `${comp.name} (id=${id})` : id;
-        });
-        visualContextLines.push(`Selected nodes (${selIds.length}): ${selectedLabels.join(", ")}`);
-      }
-      if (focusedNodeId && !selIds.includes(focusedNodeId)) {
-        const comp = activeDiagram?.snapshot?.components?.[focusedNodeId];
-        const label = comp ? `${comp.name} (id=${focusedNodeId})` : focusedNodeId;
-        visualContextLines.push(`Focused node (ElementPanel open): ${label}`);
-      }
-
-      const visualContext =
-        visualContextLines.length > 0
-          ? `\nCurrent user focus:\n${visualContextLines.join("\n")}`
-          : "";
-
-      return [diagramText, visualContext, mentionContext ? `\n${mentionContext}` : ""]
-        .filter(Boolean)
-        .join("");
-    },
-    [allItems, diagramText, selIds, focusedNodeId, activeDiagram],
-  );
+  /** The diagram and what the user is looking at, for the system prompt. */
+  const buildContext = useCallback((): string => {
+    const visualContextLines: string[] = [];
+    if (selIds.length > 0) {
+      const components = activeDiagram?.snapshot?.components ?? {};
+      const selectedLabels = selIds.map((id) => {
+        const comp = components[id];
+        return comp ? `${comp.name} (id=${id})` : id;
+      });
+      visualContextLines.push(`Selected nodes (${selIds.length}): ${selectedLabels.join(", ")}`);
+    }
+    if (focusedNodeId && !selIds.includes(focusedNodeId)) {
+      const comp = activeDiagram?.snapshot?.components?.[focusedNodeId];
+      const label = comp ? `${comp.name} (id=${focusedNodeId})` : focusedNodeId;
+      visualContextLines.push(`Focused node (ElementPanel open): ${label}`);
+    }
+    const visualContext =
+      visualContextLines.length > 0
+        ? `\nCurrent user focus:\n${visualContextLines.join("\n")}`
+        : "";
+    return [diagramText, visualContext].filter(Boolean).join("");
+  }, [diagramText, selIds, focusedNodeId, activeDiagram]);
 
   const send = useCallback(
-    async (userText: string, mentions: ActiveMention[]) => {
-      await sendMessage(userText, buildContext(mentions));
+    async (userText: string, mentions: MentionRef[]) => {
+      await sendMessage(userText, buildContext(), { mentions });
     },
     [buildContext, sendMessage],
   );
 
   /**
    * Asks again for the reply that `assistantMessageId` holds, replacing it.
-   * Mentions are not stored with a message, so the context is the current
-   * diagram and selection.
+   * The user message keeps its refs; they are resolved against the current
+   * diagram when the request is built.
    */
   const rerun = useCallback(
     async (assistantMessageId: string) => {
-      await rerunAssistantMessage(assistantMessageId, buildContext([]));
+      await rerunAssistantMessage(assistantMessageId, buildContext());
     },
     [buildContext, rerunAssistantMessage],
   );

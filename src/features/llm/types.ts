@@ -1,5 +1,6 @@
 import type { ComponentPatch, ComponentType, EdgeStyle } from "@/features/diagram";
 import type { MessagePart, MessageStatus } from "./message-parts";
+import type { MentionRef } from "./mentions/mention-ref";
 import type { SkippedAction } from "./suggestion-apply";
 
 export type LLMProvider = "openai" | "anthropic" | "custom";
@@ -57,6 +58,12 @@ export interface ChatMessage {
   status?: MessageStatus;
   /** Assistant messages only: the model stopped at its output-token limit. */
   truncated?: boolean;
+  /**
+   * User messages only: the diagram elements attached as context chips. Kept
+   * beside the parts (not as parts): they are request context, not content
+   * the conversation renders or copies as Markdown.
+   */
+  mentions?: MentionRef[];
 }
 
 /** What a provider sends for one turn: the role and its text. */
@@ -132,10 +139,5 @@ export interface MentionItem {
   kind: "node" | "edge";
   label: string;
   subLabel: string;
-  serialized: string;
-}
-
-export interface ActiveMention {
-  mentionId: string;
-  label: string;
+  ref: MentionRef;
 }

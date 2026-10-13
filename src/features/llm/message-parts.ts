@@ -1,4 +1,5 @@
 import type { LLMError } from "./errors";
+import { isMentionRef } from "./mentions/mention-ref";
 import type { ChatMessage } from "./types";
 
 /**
@@ -273,6 +274,13 @@ export function migrateStoredMessage(raw: unknown): MigratedMessage {
   }
 
   const message: ChatMessage = { id, role, parts, timestamp };
+  if (Array.isArray(raw.mentions)) {
+    const mentions = raw.mentions.filter(isMentionRef);
+    if (mentions.length !== raw.mentions.length) changed = true;
+    if (mentions.length > 0) message.mentions = mentions;
+  } else if (raw.mentions !== undefined) {
+    changed = true;
+  }
   if (raw.truncated === true) {
     message.truncated = true;
   } else if (raw.truncated !== undefined) {

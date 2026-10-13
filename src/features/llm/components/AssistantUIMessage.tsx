@@ -8,6 +8,7 @@ import { Check, Copy, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLLMStore } from "@/features/llm";
 import { getSuggestionIds } from "@/features/llm/message-parts";
+import { mentionKey } from "@/features/llm/mentions/mention-ref";
 import { messageToMarkdown } from "@/features/llm/message-markdown";
 import { useChatActions } from "./chat-actions";
 import { useAuiState, MessagePrimitive } from "@assistant-ui/react";
@@ -61,11 +62,27 @@ export function UserMessageComponent() {
   const locale = i18n.language === "pt-BR" ? ptBR : enUS;
   const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true, locale });
   const text = getPartText(message);
+  // Context chips live on the stored message, not in assistant-ui's copy.
+  const mentions = useLLMStore(
+    (state) => state.messages.find((candidate) => candidate.id === message.id)?.mentions,
+  );
 
   return (
     <div className="flex w-full min-w-0 justify-end">
       <div className="group relative max-w-[85%] min-w-0 pb-5">
         <div className="rounded-2xl bg-primary px-4 py-2.5 text-sm text-primary-foreground whitespace-pre-wrap break-words [overflow-wrap:anywhere] shadow-sm">
+          {mentions && mentions.length > 0 ? (
+            <span className="mb-1 flex flex-wrap gap-1">
+              {mentions.map((ref) => (
+                <span
+                  key={mentionKey(ref)}
+                  className="inline-flex items-center rounded bg-primary-foreground/20 px-1.5 text-xs font-medium"
+                >
+                  @{ref.label}
+                </span>
+              ))}
+            </span>
+          ) : null}
           <span>{text || " "}</span>
         </div>
         <span className="absolute -bottom-1 left-0 select-none whitespace-nowrap text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">

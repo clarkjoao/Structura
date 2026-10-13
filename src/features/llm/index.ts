@@ -11,7 +11,6 @@ export type {
   DiagramPatch,
   PendingSuggestion,
   MentionItem,
-  ActiveMention,
 } from "./types";
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -19,7 +18,6 @@ export { useLLMStore, countConversationMessages } from "./store";
 
 // ─── Serializers ──────────────────────────────────────────────────────────────
 export { serializeDiagramContext } from "./serializer";
-export { serializeMentionItem, buildMentionContextBlock } from "./mention-serializer";
 export type { DiagramSerializerOptions } from "./serializer";
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
