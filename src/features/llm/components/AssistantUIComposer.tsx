@@ -4,135 +4,161 @@ import {
   forwardRef,
   useCallback,
   useEffect,
+  useId,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowDown, Loader2, Square } from "lucide-react";
+import { ArrowUp, Loader2, MousePointer2, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
-import { useMentionSearch } from "@/features/llm/hooks/useMentionSearch";
-import { MentionPicker } from "./MentionPicker";
-import { MentionTag } from "./MentionTag";
-import type { MentionItem } from "@/features/llm/types";
-import { mentionKey, type MentionRef } from "@/features/llm/mentions/mention-ref";
 import { commandRegistry } from "@/features/llm/commands/builtins";
-import { isPromptCommand, type ChatCommand } from "@/features/llm/commands/registry";
+import { isPromptCommand, type PromptCommand } from "@/features/llm/commands/registry";
 import { useCommandActions } from "@/features/llm/hooks/useCommandActions";
+import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
+import {
+  isSelectionRef,
+  mentionKey,
+  type MentionRef,
+} from "@/features/llm/mentions/mention-ref";
+import { createMentionRegistry } from "@/features/llm/mentions/providers";
 import type { CommandRef } from "@/features/llm/types";
+import { ComposerMenu } from "./composer/ComposerMenu";
+import {
+  buildMenuSections,
+  findTrigger,
+  flattenItems,
+  isCommandMenuItem,
+  isMentionTrigger,
+  removeTrigger,
+  type MenuItem,
+  type MenuTrigger,
+} from "./composer/composer-menu";
+import { ModelPicker } from "./ModelPicker";
 
-const MENTION_TRIGGER_PATTERN = /(?:^|\s)@([^\s@]*)$/;
+const mentionRegistry = createMentionRegistry();
 
-function findMentionTrigger(
-  value: string,
-): { query: string; triggerIndex: number; triggerEndIndex: number } | null {
-  const match = value.match(MENTION_TRIGGER_PATTERN);
-  if (!match) return null;
-  const query = match[1] ?? "";
-  const triggerIndex = value.length - query.length - 1;
-  const triggerEndIndex = triggerIndex + 1 + query.length;
-  return { query, triggerIndex, triggerEndIndex };
-}
-
-/* ── Slash commands ───────────────────────────────────────────────────── */
-function slashQuery(input: string): string | null {
-  const trimmed = input.trimStart();
-  return trimmed.startsWith("/") ? trimmed.slice(1) : null;
-}
-
-function SlashCommandMenu({
-  commands,
-  selectedIndex,
-  onSelect,
-}: {
-  commands: ChatCommand[];
-  selectedIndex: number;
-  onSelect: (c: ChatCommand) => void;
-}) {
-  const { t } = useTranslation();
-
-  if (commands.length === 0) return null;
-
-  return (
-    <div className="absolute bottom-full left-0 mb-1.5 w-60 rounded-xl border border-border bg-card shadow-lg">
-      <div className="px-2.5 py-1.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("llmChat.command.section.commands")}
-        </p>
-      </div>
-      {commands.map((cmd, i) => (
-        <button
-          key={cmd.id}
-          type="button"
-          onClick={() => onSelect(cmd)}
-          className={cn(
-            "flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors",
-            i === selectedIndex ? "bg-primary/10" : "hover:bg-accent",
-          )}
-        >
-          <span className="flex items-center gap-2 text-xs font-medium text-foreground">
-            <span className="flex h-5 min-w-[2rem] items-center rounded bg-muted px-1.5 text-[11px] font-mono">
-              /{cmd.name}
-            </span>
-          </span>
-          <span className="text-[11px] text-muted-foreground">{t(cmd.labelKey)}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/* ── Main composer ────────────────────────────────────────────────────── */
 export interface AssistantUIComposerProps {
   /** Resolves to `false` when the message was not sent, so the draft is kept. */
-  onSend: (text: string, mentions: MentionRef[], command?: CommandRef) => Promise<boolean | void>;
+  onSend: (
+    text: string,
+    mentions: MentionRef[],
+    command?: CommandRef,
+  ) => Promise<boolean | void>;
   onCancel?: () => Promise<void> | void;
   isLoading: boolean;
   disabled?: boolean;
   placeholder?: string;
+  /** Node ids selected on the canvas, passed down by the panel. */
+  selectedNodeIds?: readonly string[];
 }
 
 export interface AssistantUIComposerRef {
   focusTextarea: () => void;
+  /** Sets a prompt command chip (empty-state suggestions) and focuses the composer. */
+  setCommand: (command: PromptCommand) => void;
+}
+
+function isMac(): boolean {
+  return typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 }
 
 export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantUIComposerProps>(
   function AssistantUIComposer(
-    { onSend, onCancel, isLoading, disabled = false, placeholder },
+    { onSend, onCancel, isLoading, disabled = false, placeholder, selectedNodeIds = [] },
     ref,
   ) {
     const { t } = useTranslation();
-    const { search } = useMentionSearch();
+    const diagram = useResolvedDiagram();
+    const commandActions = useCommandActions();
+    const listId = useId();
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const [text, setText] = useState("");
+    const [caret, setCaret] = useState(0);
     const [mentions, setMentions] = useState<MentionRef[]>([]);
-    const [isPickerOpen, setIsPickerOpen] = useState(false);
-    const [mentionQuery, setMentionQuery] = useState("");
-    const [selectedIndex, setSelectedIndex] = useState(0);
-    // Slash command menu
-    const [slashMenuOpen, setSlashMenuOpen] = useState(false);
-    const [slashSelectedIndex, setSlashSelectedIndex] = useState(0);
+    const [command, setCommandState] = useState<PromptCommand | null>(null);
+    /** The trigger the user closed with Esc; the menu stays shut until the text changes. */
+    const [dismissedAt, setDismissedAt] = useState<string | null>(null);
+    const [activeKey, setActiveKey] = useState("");
+    const [activeDescendant, setActiveDescendant] = useState<string | undefined>(undefined);
+    /** The user removed the automatic selection chip for the current selection. */
+    const [selectionChipDismissed, setSelectionChipDismissed] = useState(false);
 
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const selectionKey = selectedNodeIds.join(",");
+    useEffect(() => {
+      // A different selection brings the automatic chip back.
+      setSelectionChipDismissed(false);
+    }, [selectionKey]);
 
-    // Filtered commands based on current input
-    const commandActions = useCommandActions();
-    const [command, setCommand] = useState<ChatCommand | null>(null);
-    const query = slashQuery(text);
-    const filteredCommands = useMemo(
-      () =>
-        query === null
-          ? []
-          : commandRegistry
-              .sections({ diagram: null, selectionIds: [] }, query, t)
-              .flatMap((section) => section.commands),
-      [query, t],
+    const selectionIdsInDiagram = useMemo(
+      () => selectedNodeIds.filter((id) => (diagram ? id in diagram.snapshot.components : false)),
+      [selectedNodeIds, diagram],
     );
 
-    // Expose focusTextarea via ref for Cmd+K support.
+    /** The automatic "Selection · …" chip: follows the canvas until removed or sent. */
+    const autoSelection = useMemo((): MentionRef | null => {
+      if (selectionChipDismissed || selectionIdsInDiagram.length === 0 || !diagram) return null;
+      if (mentions.some(isSelectionRef)) return null;
+      const first = diagram.snapshot.components[selectionIdsInDiagram[0] ?? ""];
+      const label =
+        selectionIdsInDiagram.length === 1 && first
+          ? first.name
+          : t("llmChat.mention.selectionCount", { count: selectionIdsInDiagram.length });
+      return { kind: "selection", nodeIds: selectionIdsInDiagram, label };
+    }, [selectionChipDismissed, selectionIdsInDiagram, diagram, mentions, t]);
+
+    const trigger: MenuTrigger | null = useMemo(() => {
+      const found = findTrigger(text, caret, command === null);
+      if (!found) return null;
+      return dismissedAt === `${found.mode}:${text}` ? null : found;
+    }, [text, caret, command, dismissedAt]);
+
+    const translate = useCallback(
+      (key: string, params?: Record<string, unknown>) => t(key, params),
+      [t],
+    );
+
+    const sections = useMemo(
+      () =>
+        trigger
+          ? buildMenuSections(
+              trigger,
+              mentionRegistry,
+              { diagram, selectionIds: selectionIdsInDiagram, translate },
+              commandRegistry,
+              { diagram, selectionIds: selectionIdsInDiagram },
+            )
+          : [],
+      [trigger, diagram, selectionIdsInDiagram, translate],
+    );
+    const items = useMemo(() => flattenItems(sections), [sections]);
+    const menuOpen = trigger !== null;
+
+    // Keep the active item valid as the list changes.
+    useEffect(() => {
+      if (!items.some((item) => item.key === activeKey)) setActiveKey(items[0]?.key ?? "");
+    }, [items, activeKey]);
+
+    // The textarea points at the item cmdk renders as selected.
+    useLayoutEffect(() => {
+      if (!menuOpen) {
+        setActiveDescendant(undefined);
+        return;
+      }
+      const selected = listRef.current?.querySelector<HTMLElement>('[aria-selected="true"]');
+      setActiveDescendant(selected?.id || undefined);
+    }, [menuOpen, activeKey, items]);
+
+    const focusTextarea = useCallback(() => {
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    }, []);
+
     useImperativeHandle(
       ref,
       () => ({
@@ -140,11 +166,15 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
           textareaRef.current?.focus();
           textareaRef.current?.select();
         },
+        setCommand: (next) => {
+          setCommandState(next);
+          focusTextarea();
+        },
       }),
-      [],
+      [focusTextarea],
     );
 
-    // Auto-resize textarea to fit content
+    // Auto-resize textarea to fit content.
     useEffect(() => {
       const el = textareaRef.current;
       if (!el) return;
@@ -152,281 +182,252 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
     }, [text]);
 
-    // Show slash menu when text starts with /
-    useEffect(() => {
-      const trimmed = text.trimStart();
-      if (trimmed.startsWith("/") && trimmed.length >= 1) {
-        setSlashMenuOpen(true);
-        // Reset selection when query changes
-        if (slashSelectedIndex >= filteredCommands.length) {
-          setSlashSelectedIndex(Math.max(0, filteredCommands.length - 1));
-        }
-      } else {
-        setSlashMenuOpen(false);
-      }
-    }, [text, filteredCommands.length, slashSelectedIndex]);
-
-    const mentionItems = useMemo(() => {
-      if (!isPickerOpen) return [];
-      return search(mentionQuery).slice(0, 8);
-    }, [isPickerOpen, mentionQuery, search]);
-
-    // Track the last (query, open) tuple we saw, so we can reset the index
-    // *as part of the input update* instead of via a setState-in-effect.
-    const pickerKeyRef = useRef("");
-
-    const updateText = useCallback((next: string) => {
+    const updateText = (next: string, nextCaret: number) => {
       setText(next);
-      const trigger = findMentionTrigger(next);
-      if (!trigger) {
-        setIsPickerOpen(false);
-        setMentionQuery("");
-        pickerKeyRef.current = "";
-        return;
-      }
-      setIsPickerOpen(true);
-      setMentionQuery(trigger.query);
-      const nextKey = `${true}:${trigger.query}`;
-      if (pickerKeyRef.current !== nextKey) {
-        pickerKeyRef.current = nextKey;
-        setSelectedIndex(0);
-      }
-    }, []);
+      setCaret(nextCaret);
+      setDismissedAt(null);
+    };
 
-    // Reset selection when picker is dismissed externally (Escape, click outside).
-    const handleDismissPicker = useCallback(() => {
-      setIsPickerOpen(false);
-      setMentionQuery("");
-      pickerKeyRef.current = "";
-    }, []);
-
-    const handleSelectMention = useCallback(
-      (item: MentionItem) => {
-        const trigger = findMentionTrigger(text);
+    const choose = useCallback(
+      (item: MenuItem) => {
         if (!trigger) return;
-
-        // The "@query" text goes away; the element becomes a chip.
-        const textBefore = text.slice(0, trigger.triggerIndex);
-        const textAfter = text.slice(trigger.triggerEndIndex);
-        const inserted = "";
-        const nextText = textBefore + inserted + textAfter;
-
+        const nextText = removeTrigger(text, trigger);
         setText(nextText);
-        setMentions((prev) => {
-          if (prev.some((ref) => mentionKey(ref) === mentionKey(item.ref))) return prev;
-          return [...prev, item.ref];
-        });
-        setIsPickerOpen(false);
-        setMentionQuery("");
-
-        // Restore cursor position
+        setCaret(trigger.start);
+        if (isCommandMenuItem(item)) {
+          if (isPromptCommand(item.command)) {
+            setCommandState(item.command);
+          } else {
+            void item.command.run(commandActions);
+          }
+        } else {
+          const ref = item.option.ref;
+          setMentions((current) =>
+            current.some((existing) => mentionKey(existing) === mentionKey(ref))
+              ? current
+              : [...current, ref],
+          );
+        }
         requestAnimationFrame(() => {
           const el = textareaRef.current;
           if (!el) return;
-          const pos = (textBefore + inserted).length;
           el.focus();
-          el.setSelectionRange(pos, pos);
+          el.setSelectionRange(trigger.start, trigger.start);
         });
       },
-      [text],
+      [trigger, text, commandActions],
     );
 
-    const handleRemoveMention = useCallback((key: string) => {
-      setMentions((prev) => prev.filter((ref) => mentionKey(ref) !== key));
+    const removeMention = useCallback((key: string) => {
+      setMentions((current) => current.filter((ref) => mentionKey(ref) !== key));
     }, []);
 
-    /** A prompt command becomes a chip; an action command runs now. */
-    const executeSlashCommand = useCallback(
-      (cmd: ChatCommand) => {
-        setSlashMenuOpen(false);
-        setText("");
-        if (isPromptCommand(cmd)) {
-          setCommand(cmd);
-          return;
-        }
-        void cmd.run(commandActions);
-      },
-      [commandActions],
-    );
+    /** Removes the last chip: mentions first (newest last), then the selection, then the command. */
+    const removeLastChip = useCallback(() => {
+      if (mentions.length > 0) {
+        setMentions((current) => current.slice(0, -1));
+      } else if (autoSelection) {
+        setSelectionChipDismissed(true);
+      } else if (command) {
+        setCommandState(null);
+      }
+    }, [mentions.length, autoSelection, command]);
 
-    const handleClear = useCallback(() => {
+    const reset = useCallback(() => {
       setText("");
+      setCaret(0);
       setMentions([]);
-      setCommand(null);
-      setIsPickerOpen(false);
-      setMentionQuery("");
-      setSlashMenuOpen(false);
+      setCommandState(null);
+      setDismissedAt(null);
+      // The selection that was sent stays out of the next draft until it changes.
+      setSelectionChipDismissed(true);
     }, []);
 
-    const handleSend = useCallback(async () => {
+    const send = useCallback(async () => {
       const trimmed = text.trim();
-      if ((!trimmed && mentions.length === 0 && !command) || isLoading || disabled) return;
+      const refs = autoSelection ? [autoSelection, ...mentions] : mentions;
+      if ((!trimmed && refs.length === 0 && !command) || isLoading || disabled) return;
       const sent = await onSend(
         trimmed,
-        mentions,
+        refs,
         command ? { id: command.id, name: command.name } : undefined,
       );
       if (sent === false) return;
-      handleClear();
-      requestAnimationFrame(() => textareaRef.current?.focus());
-    }, [text, isLoading, disabled, onSend, mentions, command, handleClear]);
+      reset();
+      focusTextarea();
+    }, [text, autoSelection, mentions, command, isLoading, disabled, onSend, reset, focusTextarea]);
 
-    const handleCancel = useCallback(() => {
-      if (!onCancel) return;
-      void onCancel();
-    }, [onCancel]);
+    const moveActive = (step: number) => {
+      if (items.length === 0) return;
+      const index = items.findIndex((item) => item.key === activeKey);
+      const next = (index + step + items.length) % items.length;
+      setActiveKey(items[next]?.key ?? "");
+    };
 
-    const handleKeyDown = useCallback(
-      (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        // ── Slash command navigation ──
-        if (slashMenuOpen && filteredCommands.length > 0) {
-          if (keyIs(event, KEY.ARROW_DOWN)) {
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (menuOpen) {
+        if (keyIs(event, KEY.ARROW_DOWN) || keyIs(event, KEY.ARROW_UP)) {
+          event.preventDefault();
+          moveActive(keyIs(event, KEY.ARROW_DOWN) ? 1 : -1);
+          return;
+        }
+        const active = items.find((item) => item.key === activeKey);
+        if ((keyIs(event, KEY.ENTER) || keyIs(event, KEY.TAB)) && !event.metaKey && !event.ctrlKey) {
+          if (active) {
             event.preventDefault();
-            setSlashSelectedIndex((i) => Math.min(i + 1, filteredCommands.length - 1));
-            return;
-          }
-          if (keyIs(event, KEY.ARROW_UP)) {
-            event.preventDefault();
-            setSlashSelectedIndex((i) => Math.max(i - 1, 0));
-            return;
-          }
-          if (keyIs(event, KEY.ENTER)) {
-            event.preventDefault();
-            executeSlashCommand(filteredCommands[slashSelectedIndex]);
-            return;
-          }
-          if (keyIs(event, KEY.ESCAPE)) {
-            event.preventDefault();
-            setSlashMenuOpen(false);
+            choose(active);
             return;
           }
         }
+        if (keyIs(event, KEY.ESCAPE) && trigger) {
+          event.preventDefault();
+          setDismissedAt(`${trigger.mode}:${text}`);
+          return;
+        }
+      }
+      if (keyIs(event, KEY.BACKSPACE) && text.length === 0) {
+        event.preventDefault();
+        removeLastChip();
+        return;
+      }
+      if ((event.metaKey || event.ctrlKey) && keyIs(event, KEY.ENTER)) {
+        event.preventDefault();
+        void send();
+      }
+    };
 
-        // ── Mention picker navigation ──
-        if (isPickerOpen && keyIs(event, KEY.ARROW_DOWN)) {
-          event.preventDefault();
-          setSelectedIndex((idx) => Math.min(idx + 1, Math.max(mentionItems.length - 1, 0)));
-          return;
-        }
-        if (isPickerOpen && keyIs(event, KEY.ARROW_UP)) {
-          event.preventDefault();
-          setSelectedIndex((idx) => Math.max(idx - 1, 0));
-          return;
-        }
-        if (isPickerOpen && keyIs(event, KEY.ENTER)) {
-          event.preventDefault();
-          const item = mentionItems[selectedIndex];
-          if (item) handleSelectMention(item);
-          return;
-        }
-        if (keyIs(event, KEY.ESCAPE)) {
-          if (isPickerOpen) {
-            event.preventDefault();
-            handleDismissPicker();
-          }
-          return;
-        }
-        const isSubmit = (event.metaKey || event.ctrlKey) && keyIs(event, KEY.ENTER);
-        if (isSubmit && !isPickerOpen && !slashMenuOpen) {
-          event.preventDefault();
-          void handleSend();
-        }
-      },
-      [
-        slashMenuOpen,
-        filteredCommands,
-        slashSelectedIndex,
-        executeSlashCommand,
-        isPickerOpen,
-        mentionItems,
-        selectedIndex,
-        handleSelectMention,
-        handleDismissPicker,
-        handleSend,
-      ],
-    );
+    /** The @ and / buttons type their trigger and open the menu. */
+    const insertTrigger = (character: "@" | "/") => {
+      const el = textareaRef.current;
+      const at = el?.selectionStart ?? text.length;
+      if (character === "/") {
+        if (command) return;
+        updateText(`/${text.trimStart()}`, 1);
+        requestAnimationFrame(() => {
+          el?.focus();
+          el?.setSelectionRange(1, 1);
+        });
+        return;
+      }
+      const needsSpace = at > 0 && !/\s/.test(text[at - 1] ?? "");
+      const insert = `${needsSpace ? " " : ""}@`;
+      const next = text.slice(0, at) + insert + text.slice(at);
+      updateText(next, at + insert.length);
+      requestAnimationFrame(() => {
+        el?.focus();
+        el?.setSelectionRange(at + insert.length, at + insert.length);
+      });
+    };
 
-    const canSubmit = text.trim().length > 0 && !isLoading && !disabled;
+    const chips: Array<{ key: string; ref: MentionRef; auto: boolean }> = [
+      ...(autoSelection ? [{ key: "auto-selection", ref: autoSelection, auto: true }] : []),
+      ...mentions.map((ref) => ({ key: mentionKey(ref), ref, auto: false })),
+    ];
+    const canSubmit =
+      (text.trim().length > 0 || chips.length > 0 || command !== null) && !isLoading && !disabled;
     const canCancel = isLoading && Boolean(onCancel);
+    const sendHint = isMac() ? "⌘↵" : "Ctrl↵";
+    const menuLabelKey =
+      trigger && isMentionTrigger(trigger) ? "llmChat.menu.mentionLabel" : "llmChat.menu.commandLabel";
 
     return (
       <div className="relative">
-        {/* Slash command menu - shows as you type / */}
-        {slashMenuOpen && (
-          <SlashCommandMenu
-            commands={filteredCommands}
-            selectedIndex={slashSelectedIndex}
-            onSelect={executeSlashCommand}
+        {menuOpen ? (
+          <ComposerMenu
+            ref={listRef}
+            listId={listId}
+            labelKey={menuLabelKey}
+            sections={sections}
+            activeKey={activeKey}
+            onActiveKeyChange={setActiveKey}
+            onChoose={choose}
           />
-        )}
-
-        {/* Mention picker */}
-        {isPickerOpen && (
-          <MentionPicker
-            items={mentionItems}
-            selectedIndex={selectedIndex}
-            onSelect={handleSelectMention}
-            onDismiss={handleDismissPicker}
-          />
-        )}
-
-        {/* Mention chips */}
-        {mentions.length > 0 || command ? (
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {command ? (
-              <span className="inline-flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 font-mono text-xs font-medium text-secondary-foreground">
-                /{command.name}
-                <button
-                  type="button"
-                  onClick={() => setCommand(null)}
-                  aria-label={t("llmChat.command.remove", { name: command.name })}
-                  className="inline-flex items-center"
-                >
-                  ×
-                </button>
-              </span>
-            ) : null}
-            {mentions.map((m) => (
-              <MentionTag key={mentionKey(m)} mention={m} onRemove={handleRemoveMention} />
-            ))}
-          </div>
         ) : null}
 
-        {/* Composer body */}
         <div
           className={cn(
-            "relative flex flex-col rounded-2xl border border-border bg-background transition-colors",
-            "focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/15",
-            (disabled || isLoading) && "opacity-70",
+            "flex flex-col gap-2 rounded-xl border border-input bg-background px-2.5 pb-2 pt-2.5 transition-colors",
+            "focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/15",
+            (disabled || isLoading) && "opacity-80",
           )}
         >
+          {command || chips.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {command ? (
+                <Chip
+                  label={`/${command.name}`}
+                  mono
+                  removeLabel={t("llmChat.command.remove", { name: command.name })}
+                  onRemove={() => setCommandState(null)}
+                />
+              ) : null}
+              {chips.map(({ key, ref, auto }) => (
+                <Chip
+                  key={key}
+                  icon={isSelectionRef(ref)}
+                  label={
+                    isSelectionRef(ref)
+                      ? t("llmChat.mention.selectionChip", { label: ref.label })
+                      : `@${ref.label}`
+                  }
+                  removeLabel={t("llmChat.mention.removeTag", { label: ref.label })}
+                  onRemove={() => (auto ? setSelectionChipDismissed(true) : removeMention(key))}
+                />
+              ))}
+            </div>
+          ) : null}
+
           <textarea
             ref={textareaRef}
             value={text}
-            onChange={(e) => updateText(e.target.value)}
+            onChange={(event) => updateText(event.target.value, event.target.selectionStart)}
+            onSelect={(event) => setCaret(event.currentTarget.selectionStart)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder ?? t("llmChat.inputPlaceholder")}
             disabled={disabled}
             rows={1}
-            aria-label={t("llmChat.inputPlaceholder")}
-            className={cn(
-              "block w-full resize-none bg-transparent px-4 pb-2 pt-3 text-sm leading-relaxed",
-              "placeholder:text-muted-foreground focus:outline-none",
-              "min-h-[2.5rem] max-h-[15rem] overflow-y-auto",
-            )}
+            aria-label={t("llmChat.inputLabel")}
+            aria-autocomplete="list"
+            aria-expanded={menuOpen}
+            aria-controls={menuOpen ? listId : undefined}
+            aria-activedescendant={activeDescendant}
+            className="block max-h-[15rem] min-h-[2.5rem] w-full resize-none overflow-y-auto bg-transparent px-1.5 text-sm leading-relaxed placeholder:text-muted-foreground focus:outline-none"
           />
 
-          {/* Footer bar */}
-          <div className="flex items-center justify-between gap-2 px-2 pb-2 pt-1">
-            <p className="text-[11px] text-muted-foreground">
-              {isLoading ? t("llmChat.sending") : t("llmChat.submitHint")}
-            </p>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 font-mono text-sm"
+              aria-label={t("llmChat.menu.openMention")}
+              title={t("llmChat.menu.openMention")}
+              onClick={() => insertTrigger("@")}
+            >
+              @
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 font-mono text-sm"
+              aria-label={t("llmChat.menu.openCommand")}
+              title={t("llmChat.menu.openCommand")}
+              onClick={() => insertTrigger("/")}
+              disabled={command !== null}
+            >
+              /
+            </Button>
+            <ModelPicker />
+            <span className="ml-auto pr-1 text-[11px] text-muted-foreground" aria-hidden>
+              {sendHint}
+            </span>
             {canCancel ? (
               <Button
                 type="button"
                 size="icon"
                 variant="secondary"
-                onClick={handleCancel}
+                onClick={() => void onCancel?.()}
                 className="h-8 w-8 rounded-full"
                 aria-label={t("llmChat.stop")}
                 title={t("llmChat.stop")}
@@ -437,15 +438,16 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
               <Button
                 type="button"
                 size="icon"
-                onClick={() => void handleSend()}
+                onClick={() => void send()}
                 disabled={!canSubmit}
                 className="h-8 w-8 rounded-full"
                 aria-label={t("llmChat.send")}
+                title={t("llmChat.send")}
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <ArrowDown className="h-4 w-4 -rotate-90" />
+                  <ArrowUp className="h-4 w-4" />
                 )}
               </Button>
             )}
@@ -455,3 +457,38 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     );
   },
 );
+
+function Chip({
+  label,
+  removeLabel,
+  onRemove,
+  mono = false,
+  icon = false,
+}: {
+  label: string;
+  removeLabel: string;
+  onRemove: () => void;
+  mono?: boolean;
+  icon?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex h-6 max-w-full items-center gap-1.5 rounded-md bg-secondary pl-2 pr-1 text-xs text-secondary-foreground",
+        mono && "font-mono font-medium",
+      )}
+    >
+      {icon ? <MousePointer2 aria-hidden className="h-3 w-3 shrink-0" /> : null}
+      <span className="truncate">{label}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={removeLabel}
+        title={removeLabel}
+        className="flex rounded p-0.5 hover:bg-background/60"
+      >
+        <X aria-hidden className="h-3 w-3" />
+      </button>
+    </span>
+  );
+}

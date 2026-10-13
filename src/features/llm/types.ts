@@ -145,10 +145,3 @@ export interface PendingSuggestion {
   skipped?: SkippedAction[];
 }
 
-export interface MentionItem {
-  id: string;
-  kind: "node" | "edge";
-  label: string;
-  subLabel: string;
-  ref: MentionRef;
-}
