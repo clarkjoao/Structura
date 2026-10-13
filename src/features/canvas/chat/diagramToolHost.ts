@@ -2,10 +2,12 @@ import { useEffect } from "react";
 import { getCachedCanvasSnapshot, useDiagramStore, type Diagram } from "@/features/diagram";
 import { useLLMStore } from "@/features/llm";
 import type { DiagramToolHost } from "@/features/llm/tools/host";
+import { useSkillStore } from "@/features/llm/skills/skill-store";
 import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
 import { toAppliedLayouts } from "../layout/applyLayout";
 import { fromDiagram, resizableIds } from "../layout/fromDiagram";
 import { layout } from "../layout/layoutEngine";
+import { canvasSkillFolderHost } from "./skillFolderHost";
 
 /** The active diagram as the canvas shows it: the active version applied. */
 function readDiagram(): Diagram | null {
@@ -63,10 +65,17 @@ export const canvasDiagramToolHost: DiagramToolHost = {
   autoLayout,
 };
 
-/** Hands the chat its diagram host while the canvas that hosts the chat is mounted. */
+/**
+ * Hands the chat its diagram host, and the workspace folder its skills live
+ * in, while the canvas that hosts the chat is mounted.
+ */
 export function useProvideChatToolHost(): void {
   useEffect(() => {
     useLLMStore.getState().setToolHost(canvasDiagramToolHost);
-    return () => useLLMStore.getState().setToolHost(null);
+    useSkillStore.getState().setFolderHost(canvasSkillFolderHost);
+    return () => {
+      useLLMStore.getState().setToolHost(null);
+      useSkillStore.getState().setFolderHost(null);
+    };
   }, []);
 }

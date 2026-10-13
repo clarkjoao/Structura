@@ -576,6 +576,69 @@ export class FileSystemAdapter {
     }
   }
 
+  /**
+   * Plain text files in a fixed subfolder of the workspace, for features that
+   * keep their own files there (e.g. `.structura/skills/`). Separate from the
+   * sidecar methods: these read and write text as is, take the path as given,
+   * and throw on failure so the caller can show why. A hidden subfolder is
+   * never scanned as a diagram folder (`isValidFolderId`).
+   */
+  private async _existingDirectory(segments: string[]): Promise<FileSystemDirectoryHandle | null> {
+    if (!this.handle) return null;
+    let current = this.handle;
+    for (const segment of segments) {
+      try {
+        current = await current.getDirectoryHandle(segment);
+      } catch {
+        return null;
+      }
+    }
+    return current;
+  }
+
+  /** Names of the files directly inside `segments`; empty when the folder does not exist. */
+  async listFilesAt(segments: string[]): Promise<string[]> {
+    const dir = await this._existingDirectory(segments);
+    if (!dir) return [];
+    const names: string[] = [];
+    for await (const [name, entry] of directoryEntries(dir)) {
+      if (entry.kind === FileSystemEntryKind.File) names.push(name);
+    }
+    return names.sort();
+  }
+
+  async readTextFileAt(segments: string[], fileName: string): Promise<string> {
+    const dir = await this._existingDirectory(segments);
+    if (!dir) throw new Error(`Folder not found: ${segments.join("/")}`);
+    const file = await dir.getFileHandle(fileName);
+    return (await file.getFile()).text();
+  }
+
+  /** Creates the folder and the file as needed. */
+  async writeTextFileAt(segments: string[], fileName: string, text: string): Promise<void> {
+    if (!this.handle) throw new Error("No workspace folder is connected");
+    if (!(await this.checkPermission())) throw new Error("Write permission was not granted");
+    const dir = await getOrCreateDirectory(this.handle, segments);
+    const file = await dir.getFileHandle(fileName, { create: true });
+    const writable = await file.createWritable();
+    await writable.write(text);
+    await writable.close();
+  }
+
+  /** A file that is already gone counts as deleted. */
+  async deleteFileAt(segments: string[], fileName: string): Promise<void> {
+    if (!this.handle) throw new Error("No workspace folder is connected");
+    if (!(await this.checkPermission())) throw new Error("Write permission was not granted");
+    const dir = await this._existingDirectory(segments);
+    if (!dir) return;
+    try {
+      await dir.getFileHandle(fileName);
+    } catch {
+      return;
+    }
+    await dir.removeEntry(fileName);
+  }
+
   async writeDiagram(diagram: Diagram): Promise<boolean> {
     if (!this.handle) return false;
 
