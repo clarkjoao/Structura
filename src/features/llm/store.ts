@@ -40,7 +40,9 @@ import type {
   LLMRequestMessage,
   CommandRef,
   PendingSuggestion,
+  QueuedMessage,
 } from "./types";
+import { MAX_QUEUED_MESSAGES } from "./types";
 import {
   defaultLLMConnection,
   hydrateChatThreadsCacheFromIdb,
@@ -187,6 +189,12 @@ export interface LLMStoreState {
   pendingSuggestions: PendingSuggestion[];
   streamingContent: string | null;
   isLoading: boolean;
+  /**
+   * The diagram context the composer most recently sent with. Drained
+   * messages reuse it because the React side that builds the context is not
+   * re-invoked on drain.
+   */
+  lastDiagramContext: string;
 
   /** True once the stored connections have been read. */
   connectionsLoaded: boolean;
@@ -216,12 +224,19 @@ export interface LLMStoreState {
     userText: string,
     diagramContext: string,
     attachments?: MessageAttachments,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   /**
    * Stops the request in flight. What had streamed stays, the message is
    * marked cancelled, and no error is recorded.
    */
   cancelRequest: () => void;
+  /** Composer queue: messages enqueued while the assistant is busy. */
+  queuedMessages: QueuedMessage[];
+  /**
+   * Removes one queued message by id. A no-op when the id is unknown. The
+   * composer shows a chip per queued message; clicking the chip's X calls this.
+   */
+  removeQueuedMessage: (id: string) => void;
   /** Set by the canvas hosting the chat; null when none is mounted. */
   setToolHost: (host: DiagramToolHost | null) => void;
   /**
@@ -377,6 +392,25 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
   const setWithPersist = (partial: Partial<LLMStoreState>) => set(partial);
 
   /**
+   * Pops the next queued message, if any, and runs it as a regular turn.
+   * Called when a turn ends (success or error). The composer captured the
+   * diagram context at send time; the store reuses its last one for the
+   * drained turn so the React side does not have to re-invoke the context
+   * builder. No-op when the queue is empty.
+   */
+  const drainQueue = async (): Promise<void> => {
+    const [next, ...rest] = get().queuedMessages;
+    if (!next) return;
+    set({ queuedMessages: rest });
+    // sendMessage runs the turn directly (isLoading is now false).
+    await get().sendMessage(next.text, get().lastDiagramContext, {
+      mentions: next.mentions,
+      ...(next.command ? { command: next.command } : {}),
+      ...(next.skills.length > 0 ? { skills: next.skills } : {}),
+    });
+  };
+
+  /**
    * Requests the assistant's reply to `outgoingMessages` (which ends with the
    * user's message): appends a streaming assistant message, streams into it,
    * then completes, cancels or fails it in place.
@@ -405,6 +439,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
     const controller = new AbortController();
     inFlight = controller;
+    // A turn that ended with an explicit user cancel keeps the queue intact:
+    // the next manual send will pull it.
+    let cancelledExplicitly = false;
     try {
       // The turn's skills are the ones its user message was sent with, so a
       // retry reuses them. A skill that no longer exists is left out.
@@ -502,6 +539,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       persistThread();
     } catch (error) {
       if (error instanceof LLMRequestCancelledError) {
+        cancelledExplicitly = true;
         set({
           // Completed calls stay; the running one ends as stopped. The
           // turn's queued changes are dropped with it: no suggestion.
@@ -541,6 +579,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       if (inFlight === controller) {
         inFlight = null;
       }
+      // Drained on success and on error. Cancel leaves the queue alone; the
+      // next manual send will pull it.
+      if (!cancelledExplicitly) {
+        await drainQueue();
+      }
     }
   };
 
@@ -556,6 +599,8 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     pendingSuggestions: [],
     streamingContent: null,
     isLoading: false,
+    queuedMessages: [],
+    lastDiagramContext: "",
 
     hydrateConnections: async () => {
       const payload = await loadConnections();
@@ -838,8 +883,30 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const command = attachments.command;
       const skills = attachments.skills ?? [];
       if (!userText.trim() && mentions.length === 0 && !command) {
-        return;
+        return true;
       }
+      // The assistant is busy: hold the message in the composer queue and
+      // return so the composer clears the input. Returns false when the queue
+      // is full, so the composer can show a toast.
+      if (get().isLoading) {
+        const queued: QueuedMessage = {
+          id: crypto.randomUUID(),
+          text: userText.trim(),
+          mentions,
+          ...(command ? { command } : {}),
+          skills: skills ?? [],
+        };
+        let accepted = true;
+        set((state) => {
+          if (state.queuedMessages.length >= MAX_QUEUED_MESSAGES) {
+            accepted = false;
+            return state;
+          }
+          return { queuedMessages: [...state.queuedMessages, queued] };
+        });
+        return accepted;
+      }
+      set({ lastDiagramContext: diagramContext });
       const attached = {
         ...(mentions.length > 0 ? { mentions } : {}),
         ...(command ? { command } : {}),
@@ -864,6 +931,13 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       };
       const outgoingMessages = [...state.messages, userMessage];
       await runAssistantTurn(outgoingMessages, diagramContext);
+      return true;
+    },
+
+    removeQueuedMessage: (id) => {
+      set((state) => ({
+        queuedMessages: state.queuedMessages.filter((message) => message.id !== id),
+      }));
     },
 
     rerunAssistantMessage: async (assistantMessageId, diagramContext) => {

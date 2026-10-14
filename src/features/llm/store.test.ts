@@ -712,3 +712,139 @@ describe("LLM store — prompt commands", () => {
     expect(useLLMStore.getState().messages[0]?.command?.name).toBe("explain");
   });
 });
+
+describe("LLM store — message queue", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("sendMessage while isLoading enqueues instead of running a turn", async () => {
+    useLLMStore.setState({ isLoading: true });
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const accepted = await useLLMStore.getState().sendMessage("next", "ctx");
+
+    expect(accepted).toBe(true);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(useLLMStore.getState().queuedMessages).toHaveLength(1);
+    expect(useLLMStore.getState().queuedMessages[0]?.text).toBe("next");
+  });
+
+  it("refuses the 11th queued message and returns false", async () => {
+    useLLMStore.setState({ isLoading: true });
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    // 10 already in the queue.
+    useLLMStore.setState({
+      queuedMessages: Array.from({ length: 10 }, (_, i) => ({
+        id: `seed-${i}`,
+        text: `seed ${i}`,
+        mentions: [],
+        skills: [],
+      })),
+    });
+
+    const accepted = await useLLMStore.getState().sendMessage("overflow", "ctx");
+
+    expect(accepted).toBe(false);
+    expect(useLLMStore.getState().queuedMessages).toHaveLength(10);
+  });
+
+  it("removeQueuedMessage filters by id", () => {
+    useLLMStore.setState({
+      queuedMessages: [
+        { id: "a", text: "first", mentions: [], skills: [] },
+        { id: "b", text: "second", mentions: [], skills: [] },
+      ],
+    });
+    useLLMStore.getState().removeQueuedMessage("a");
+    expect(useLLMStore.getState().queuedMessages.map((m) => m.id)).toEqual(["b"]);
+  });
+
+  it("drains the queue on turn success", async () => {
+    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) => replyWith("ok"));
+    vi.stubGlobal("fetch", fetchSpy);
+    useLLMStore.setState({
+      queuedMessages: [
+        { id: "q-1", text: "queued one", mentions: [], skills: [] },
+        { id: "q-2", text: "queued two", mentions: [], skills: [] },
+      ],
+    });
+
+    await useLLMStore.getState().sendMessage("first", "ctx");
+
+    // After the first turn completes, the drain runs `sendMessage` for `q-1`,
+    // which then drains `q-2`. So fetch ends up being called 3 times (first
+    // + 2 drains).
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+
+    const userTexts = fetchSpy.mock.calls.map((call) => {
+      const body = JSON.parse(String(call[1]?.body ?? "{}")) as {
+        messages: Array<{ role: string; content: string }>;
+      };
+      return body.messages
+        .filter((m) => m.role === "user")
+        .map((m) => m.content)
+        .join(" ");
+    });
+    expect(userTexts.some((t) => t.includes("first"))).toBe(true);
+    expect(userTexts.some((t) => t.includes("queued one"))).toBe(true);
+    expect(userTexts.some((t) => t.includes("queued two"))).toBe(true);
+  });
+
+  it("drains the queue on turn error", async () => {
+    const fetchSpy = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(
+      async () => new Response("server down", { status: 500 }),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+    useLLMStore.setState({
+      queuedMessages: [{ id: "q-1", text: "after error", mentions: [], skills: [] }],
+    });
+
+    await useLLMStore.getState().sendMessage("trigger error", "ctx");
+
+    // First call triggers the error, then the drain fires the queued one.
+    expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
+    const userTexts = fetchSpy.mock.calls.map((call) => {
+      const body = JSON.parse(String(call[1]?.body ?? "{}")) as {
+        messages: Array<{ role: string; content: string }>;
+      };
+      return body.messages
+        .filter((m) => m.role === "user")
+        .map((m) => m.content)
+        .join(" ");
+    });
+    expect(userTexts.some((t) => t.includes("after error"))).toBe(true);
+  });
+
+  it("does not drain the queue on explicit cancel", async () => {
+    // A fetch that never resolves unless the signal aborts; the cancel call
+    // rejects the request, which the store maps to a cancellation.
+    const fetchSpy = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_, reject) => {
+          init.signal?.addEventListener("abort", () => {
+            reject(new DOMException("aborted", "AbortError"));
+          });
+        }),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const sendPromise = useLLMStore.getState().sendMessage("first", "ctx");
+    // Wait for the store to set isLoading and stash the AbortController.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    useLLMStore.getState().cancelRequest();
+    await sendPromise.catch(() => undefined);
+
+    // Queue was empty before the cancel; it stays empty after.
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+    expect(useLLMStore.getState().isLoading).toBe(false);
+  });
+});

@@ -75,6 +75,7 @@ const blastRadius: ChatCommand = {
 const clear: ChatCommand = {
   id: "clear",
   name: "clear",
+  aliases: ["new", "clean"],
   labelKey: "llmChat.command.clear.label",
   descriptionKey: "llmChat.command.clear.description",
   kind: "action",

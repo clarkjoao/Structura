@@ -7,6 +7,9 @@ import type { SkippedAction } from "./suggestion-apply";
 export type LLMProvider = "openai" | "anthropic" | "custom";
 export type LLMMode = "direct" | "proxy";
 
+/** The wire protocol a `custom` provider speaks. Ignored for other providers. */
+export type CustomProtocol = "openai" | "anthropic";
+
 export interface LLMConfig {
   mode: LLMMode;
   provider: LLMProvider;
@@ -16,6 +19,8 @@ export interface LLMConfig {
   authHeader?: string;
   extraHeaders?: Record<string, string>;
   extraParams?: Record<string, unknown>;
+  /** When `provider === "custom"`, the endpoint's wire protocol. */
+  customProtocol?: CustomProtocol;
 }
 
 export interface LLMConnection {
@@ -31,6 +36,7 @@ export interface LLMConnection {
   model: string;
   extraHeaders?: Record<string, string>;
   extraParams?: Record<string, unknown>;
+  customProtocol?: CustomProtocol;
 }
 
 /**
@@ -82,6 +88,24 @@ export interface ChatMessage {
 export interface CommandRef {
   id: string;
   name: string;
+}
+
+/** Hard cap on composer-queued messages while the assistant is busy. */
+export const MAX_QUEUED_MESSAGES = 10;
+
+/**
+ * A user message held in the composer queue while the assistant is busy. The
+ * composer creates one on every send that arrives while `isLoading` is true;
+ * the store drains the queue when the running turn ends. Lives in memory
+ * only — reloading the page drops it.
+ */
+export interface QueuedMessage {
+  id: string;
+  text: string;
+  mentions: MentionRef[];
+  command?: CommandRef;
+  /** Snapshot of the active skill chips at enqueue time. */
+  skills: SkillRef[];
 }
 
 /** What a provider sends for one turn: the role and its text. */

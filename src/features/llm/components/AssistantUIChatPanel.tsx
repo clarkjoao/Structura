@@ -80,6 +80,8 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     isLoading,
     streamingContent,
     pendingSuggestions,
+    queuedMessages,
+    removeQueuedMessage,
     activeThread,
     activeConnection,
     config,
@@ -324,6 +326,8 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
               onSend={handleSend}
               onCancel={cancel}
               isLoading={isLoading}
+              queuedMessages={queuedMessages}
+              onRemoveQueued={removeQueuedMessage}
               selectedNodeIds={selectedNodeIdList}
               conversationId={activeThread?.id ?? ""}
             />

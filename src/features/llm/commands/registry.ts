@@ -21,6 +21,12 @@ interface CommandBase {
   id: string;
   /** The `/name` token, without the slash. */
   name: string;
+  /**
+   * Extra `/name` tokens that resolve to this command. The `/` menu only
+   * shows `name`; aliases exist so users can type `/new` or `/clean` and get
+   * the same action as `/clear`.
+   */
+  aliases?: string[];
   /** Whether to suggest the command for this context; absent means always. */
   when?: (context: CommandContext) => boolean;
 }
@@ -138,11 +144,16 @@ export class CommandRegistry {
     return undefined;
   }
 
-  /** A command by its `/name` token. */
+  /** A command by its `/name` token, with aliases as a fallback. */
   getByName(name: string, context: CommandContext = EMPTY_CONTEXT): ChatCommand | undefined {
     const wanted = name.toLowerCase();
     for (const provider of this.providers) {
-      const found = provider.list(context).find((command) => command.name === wanted);
+      const found = provider
+        .list(context)
+        .find(
+          (command) =>
+            command.name === wanted || (command.aliases ?? []).some((alias) => alias === wanted),
+        );
       if (found) return found;
     }
     return undefined;

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/infrastructure/i18n";
 import type { Diagram } from "@/features/diagram";
@@ -215,5 +215,101 @@ describe("AssistantUIComposer — chip remove", () => {
     });
     fireEvent.click(remove);
     expect(screen.queryByText("@API")).toBeNull();
+  });
+});
+
+describe("AssistantUIComposer — message queue", () => {
+  it("Enter while isLoading calls onSend and clears the input", async () => {
+    const onSend = vi.fn().mockResolvedValue(true);
+    render(<AssistantUIComposer onSend={onSend} isLoading={true} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "next question", selectionStart: 12 } });
+    fireEvent.keyDown(textarea, { key: "Enter" });
+
+    await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
+    expect(onSend.mock.calls[0]?.[0]).toBe("next question");
+    expect(textarea.value).toBe("");
+  });
+
+  it("Shift+Enter breaks the line and does not send", () => {
+    const onSend = vi.fn().mockResolvedValue(true);
+    render(<AssistantUIComposer onSend={onSend} isLoading={true} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "first", selectionStart: 5 } });
+    fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
+
+    expect(onSend).not.toHaveBeenCalled();
+    // The composer must NOT preventDefault on Shift+Enter, so the textarea
+    // keeps the inserted newline (jsdom reflects the unchanged value because
+    // the newline comes from the browser default, not from React state).
+  });
+
+  it("Cmd+Enter while isLoading calls onSend and clears the input", async () => {
+    const onSend = vi.fn().mockResolvedValue(true);
+    render(<AssistantUIComposer onSend={onSend} isLoading={true} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "next question", selectionStart: 12 } });
+    fireEvent.keyDown(textarea, { key: "Enter", metaKey: true });
+
+    await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
+    expect(onSend.mock.calls[0]?.[0]).toBe("next question");
+    expect(textarea.value).toBe("");
+  });
+
+  it("Ctrl+Enter while isLoading calls onSend and clears the input", async () => {
+    const onSend = vi.fn().mockResolvedValue(true);
+    render(<AssistantUIComposer onSend={onSend} isLoading={true} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "queued", selectionStart: 6 } });
+    fireEvent.keyDown(textarea, { key: "Enter", ctrlKey: true });
+
+    await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
+    expect(textarea.value).toBe("");
+  });
+
+  it("the send button is enabled while isLoading so the user can queue", () => {
+    const onSend = vi.fn().mockResolvedValue(true);
+    render(<AssistantUIComposer onSend={onSend} isLoading={true} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "queued", selectionStart: 6 } });
+    const sendButton = screen.getByRole("button", { name: i18n.t("llmChat.send") });
+    expect(sendButton.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("renders queued messages above the input and removes them on click", () => {
+    const onRemove = vi.fn();
+    const queued = [
+      { id: "q-1", text: "first queued", mentions: [], skills: [] },
+      { id: "q-2", text: "second queued", mentions: [], skills: [] },
+    ];
+    render(
+      <AssistantUIComposer
+        onSend={vi.fn().mockResolvedValue(true)}
+        isLoading={true}
+        queuedMessages={queued}
+        onRemoveQueued={onRemove}
+      />,
+    );
+    expect(screen.getByText("first queued")).toBeTruthy();
+    expect(screen.getByText("second queued")).toBeTruthy();
+
+    const firstChip = screen.getByText("first queued").parentElement as HTMLElement;
+    const remove = within(firstChip).getByRole("button", {
+      name: i18n.t("llmChat.queue.removeOne"),
+    });
+    fireEvent.click(remove);
+    expect(onRemove).toHaveBeenCalledWith("q-1");
+  });
+
+  it("does not render the queued bar when the queue is empty", () => {
+    render(
+      <AssistantUIComposer
+        onSend={vi.fn().mockResolvedValue(true)}
+        isLoading={true}
+        queuedMessages={[]}
+        onRemoveQueued={vi.fn()}
+      />,
+    );
+    expect(screen.queryByLabelText(i18n.t("llmChat.queue.label", { count: 1 }))).toBeNull();
   });
 });

@@ -43,6 +43,8 @@ function requestHeaders(config: LLMConfig): Record<string, string> {
 }
 
 function usesModelsEndpoint(config: LLMConfig): boolean {
+  // Anthropic-compatible endpoints do not expose a /models listing.
+  if (config.provider === "custom" && config.customProtocol === "anthropic") return false;
   return config.mode === "proxy" || config.provider === "custom";
 }
 
@@ -54,6 +56,28 @@ function usesModelsEndpoint(config: LLMConfig): boolean {
 export async function testConnection(config: LLMConfig): Promise<ConnectionTestResult> {
   const context = { mode: config.mode, provider: config.provider };
   if (!usesModelsEndpoint(config)) {
+    // Anthropic-compatible custom providers: validate the baseUrl locally and
+    // return an empty list. The first message confirms the round trip.
+    if (config.provider === "custom" && config.customProtocol === "anthropic") {
+      const base = config.baseUrl?.trim() ?? "";
+      try {
+        new URL(base);
+      } catch {
+        return {
+          ok: false,
+          error: toLLMError(
+            new LLMProviderError({
+              ...context,
+              status: null,
+              detail: `Invalid base URL: ${base}`,
+              timedOut: false,
+            }),
+            context,
+          ),
+        };
+      }
+      return { ok: true, models: [], latencyMs: null, source: "presets" };
+    }
     return {
       ok: true,
       models: getPresetsForProvider(config.provider).map((preset) => preset.model),

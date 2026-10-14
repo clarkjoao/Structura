@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { ArrowUp, Loader2, MousePointer2, Sparkles, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,7 +27,8 @@ import { useCommandActions } from "@/features/llm/hooks/useCommandActions";
 import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
 import { isSelectionRef, mentionKey, type MentionRef } from "@/features/llm/mentions/mention-ref";
 import { createMentionRegistry } from "@/features/llm/mentions/providers";
-import type { CommandRef } from "@/features/llm/types";
+import type { CommandRef, QueuedMessage } from "@/features/llm/types";
+import { MAX_QUEUED_MESSAGES } from "@/features/llm/types";
 import { findSkill, useSkillStore } from "@/features/llm/skills/skill-store";
 import { skillKey, toSkillRef, type SkillRef } from "@/features/llm/skills/skill.types";
 import { SkillSourceBadge } from "./skills/SkillSourceBadge";
@@ -42,6 +44,7 @@ import {
   type MenuTrigger,
 } from "./composer/composer-menu";
 import { ModelPicker } from "./ModelPicker";
+import { QueuedMessagesBar } from "./QueuedMessagesBar";
 
 const mentionRegistry = createMentionRegistry();
 
@@ -55,6 +58,10 @@ export interface AssistantUIComposerProps {
   ) => Promise<boolean | void>;
   onCancel?: () => Promise<void> | void;
   isLoading: boolean;
+  /** Messages held in the store while the assistant is busy. */
+  queuedMessages?: readonly QueuedMessage[];
+  /** Removes one queued message by id. */
+  onRemoveQueued?: (id: string) => void;
   disabled?: boolean;
   placeholder?: string;
   /** Node ids selected on the canvas, passed down by the panel. */
@@ -69,16 +76,14 @@ export interface AssistantUIComposerRef {
   setCommand: (command: PromptCommand) => void;
 }
 
-function isMac(): boolean {
-  return typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
-}
-
 export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantUIComposerProps>(
   function AssistantUIComposer(
     {
       onSend,
       onCancel,
       isLoading,
+      queuedMessages = [],
+      onRemoveQueued,
       disabled = false,
       placeholder,
       selectedNodeIds = [],
@@ -309,28 +314,36 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     const send = useCallback(async () => {
       const trimmed = text.trim();
       const refs = autoSelection ? [autoSelection, ...mentions] : mentions;
-      if ((!trimmed && refs.length === 0 && !command) || isLoading || disabled) return;
-      const sent = await onSend(
-        trimmed,
-        refs,
-        command ? { id: command.id, name: command.name } : undefined,
-        activeSkills,
-      );
-      if (sent === false) return;
-      // Skill chips are not reset: they stay for the rest of the conversation.
+      if ((!trimmed && refs.length === 0 && !command) || disabled) return;
+      const draftText = trimmed;
+      const draftMentions = refs;
+      const draftCommand = command ? { id: command.id, name: command.name } : undefined;
+      const draftSkills = activeSkills;
+      // Clear the input first, so the user can type the next message right away
+      // regardless of how long the send takes. Skill chips are not reset: they
+      // stay for the rest of the conversation.
       reset();
-      focusTextarea();
+      const sent = await onSend(draftText, draftMentions, draftCommand, draftSkills);
+      if (sent === false) {
+        // The store rejected the message (e.g. queue is full). The draft was
+        // already cleared, so surface a toast so the user knows it was not
+        // held anywhere.
+        toast.error(t("llmChat.queue.full", { max: MAX_QUEUED_MESSAGES }));
+        focusTextarea();
+      } else {
+        focusTextarea();
+      }
     }, [
       text,
       autoSelection,
       mentions,
       command,
       activeSkills,
-      isLoading,
       disabled,
       onSend,
       reset,
       focusTextarea,
+      t,
     ]);
 
     const moveActive = (step: number) => {
@@ -351,7 +364,8 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         if (
           (keyIs(event, KEY.ENTER) || keyIs(event, KEY.TAB)) &&
           !event.metaKey &&
-          !event.ctrlKey
+          !event.ctrlKey &&
+          !event.shiftKey
         ) {
           if (active) {
             event.preventDefault();
@@ -370,7 +384,9 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         removeLastChip();
         return;
       }
-      if ((event.metaKey || event.ctrlKey) && keyIs(event, KEY.ENTER)) {
+      // Enter sends, Shift+Enter breaks the line. Cmd/Ctrl+Enter also sends
+      // (covers muscle memory from the old behavior).
+      if (keyIs(event, KEY.ENTER) && !event.shiftKey && (event.metaKey || event.ctrlKey || true)) {
         event.preventDefault();
         void send();
       }
@@ -403,10 +419,9 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       ...(autoSelection ? [{ key: "auto-selection", ref: autoSelection, auto: true }] : []),
       ...mentions.map((ref) => ({ key: mentionKey(ref), ref, auto: false })),
     ];
-    const canSubmit =
-      (text.trim().length > 0 || chips.length > 0 || command !== null) && !isLoading && !disabled;
+    const canSubmit = (text.trim().length > 0 || chips.length > 0 || command !== null) && !disabled;
     const canCancel = isLoading && Boolean(onCancel);
-    const sendHint = isMac() ? "⌘↵" : "Ctrl↵";
+    const sendHint = t("llmChat.sendHint");
     const menuLabelKey =
       trigger && isMentionTrigger(trigger)
         ? "llmChat.menu.mentionLabel"
@@ -414,6 +429,9 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
 
     return (
       <div className="relative">
+        {queuedMessages.length > 0 && onRemoveQueued ? (
+          <QueuedMessagesBar messages={queuedMessages} onRemove={onRemoveQueued} />
+        ) : null}
         {menuOpen ? (
           <ComposerMenu
             ref={listRef}
@@ -524,23 +542,22 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
               >
                 <Square className="h-3 w-3 fill-current" />
               </Button>
-            ) : (
-              <Button
-                type="button"
-                size="icon"
-                onClick={() => void send()}
-                disabled={!canSubmit}
-                className="h-8 w-8 rounded-full"
-                aria-label={t("llmChat.send")}
-                title={t("llmChat.send")}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowUp className="h-4 w-4" />
-                )}
-              </Button>
-            )}
+            ) : null}
+            <Button
+              type="button"
+              size="icon"
+              onClick={() => void send()}
+              disabled={!canSubmit}
+              className="h-8 w-8 rounded-full"
+              aria-label={t("llmChat.send")}
+              title={t("llmChat.send")}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ArrowUp className="h-4 w-4" />
+              )}
+            </Button>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   getPresetsForProvider,
   useLLMStore,
+  type CustomProtocol,
   type LLMConnection,
   type LLMMode,
   type LLMProvider,
@@ -35,6 +36,7 @@ interface DraftState {
   name: string;
   mode: LLMMode;
   provider: LLMProvider;
+  customProtocol: CustomProtocol;
   baseUrl: string;
   authHeader: string;
   apiKey: string;
@@ -55,6 +57,7 @@ function emptyDraft(): DraftState {
     name: "",
     mode: "direct",
     provider: "openai",
+    customProtocol: "openai",
     baseUrl: "",
     authHeader: "",
     apiKey: "",
@@ -74,6 +77,7 @@ function draftFromConnection(connection: LLMConnection): DraftState {
     name: connection.name,
     mode: connection.mode,
     provider: connection.provider,
+    customProtocol: connection.customProtocol ?? "openai",
     baseUrl: connection.baseUrl ?? "",
     authHeader: connection.authHeader ?? "",
     apiKey: connection.apiKey,
@@ -217,6 +221,7 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
         ? {
             baseUrl: draft.baseUrl.trim(),
             authHeader: draft.authHeader.trim() || undefined,
+            customProtocol: draft.customProtocol,
           }
         : {}),
       ...(draft.provider === "custom" && !("error" in headers) && headers.value !== undefined
@@ -517,6 +522,34 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
                   {draft.provider === "custom" ? (
                     <>
                       <div className="space-y-1">
+                        <label
+                          htmlFor="llm-custom-protocol"
+                          className="text-xs text-muted-foreground"
+                        >
+                          {t("llmChat.settings.customProvider.protocolLabel")}
+                        </label>
+                        <select
+                          id="llm-custom-protocol"
+                          className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+                          value={draft.customProtocol}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            if (value !== "openai" && value !== "anthropic") return;
+                            setDraft({ ...draft, customProtocol: value });
+                          }}
+                        >
+                          <option value="openai">
+                            {t("llmChat.settings.customProvider.protocolOpenAI")}
+                          </option>
+                          <option value="anthropic">
+                            {t("llmChat.settings.customProvider.protocolAnthropic")}
+                          </option>
+                        </select>
+                        <p className="text-xs text-muted-foreground">
+                          {t("llmChat.settings.customProvider.protocolNote")}
+                        </p>
+                      </div>
+                      <div className="space-y-1">
                         <label htmlFor="llm-base-url" className="text-xs text-muted-foreground">
                           {t("llmChat.settings.customProvider.baseUrl")}
                         </label>
@@ -535,14 +568,18 @@ export const LLMSettings = memo(function LLMSettings({ onClose }: LLMSettingsPro
                         </label>
                         <Input
                           id="llm-auth-header"
-                          placeholder="Authorization"
+                          placeholder={
+                            draft.customProtocol === "anthropic" ? "x-api-key" : "Authorization"
+                          }
                           value={draft.authHeader}
                           onChange={(event) =>
                             setDraft({ ...draft, authHeader: event.target.value })
                           }
                         />
                         <p className="text-xs text-muted-foreground">
-                          {t("llmChat.settings.customProvider.authHeaderHint")}
+                          {draft.customProtocol === "anthropic"
+                            ? t("llmChat.settings.customProvider.authHeaderAnthropicHint")
+                            : t("llmChat.settings.customProvider.authHeaderHint")}
                         </p>
                       </div>
                     </>

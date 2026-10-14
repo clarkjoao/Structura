@@ -119,6 +119,59 @@ describe("AI SDK transport — provider mapping", () => {
     expect(chunks.join("")).toBe("Hello");
     expect(completion).toEqual({ text: "Hello", stopReason: "stop" });
   });
+
+  it("custom-anthropic: posts to the messages API with x-api-key and the browser-access header", async () => {
+    const { url, headers } = await captureRequest(() => new Response("", { status: 200 })).send({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "sk-proxy",
+      model: "claude-sonnet-5-5",
+      baseUrl: "https://anthropic-proxy.example.com/v1/messages",
+    });
+    expect(url).toBe("https://anthropic-proxy.example.com/v1/messages");
+    expect(headers.get("x-api-key")).toBe("sk-proxy");
+    expect(headers.get("authorization")).toBeNull();
+    expect(headers.get("anthropic-dangerous-direct-browser-access")).toBe("true");
+  });
+
+  it("custom-anthropic: trims a trailing slash on the base URL", async () => {
+    const { url } = await captureRequest(() => new Response("", { status: 200 })).send({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "sk-proxy",
+      model: "claude-haiku-5-5",
+      baseUrl: "https://anthropic-proxy.example.com/v1/",
+    });
+    expect(url).toBe("https://anthropic-proxy.example.com/v1/messages");
+  });
+
+  it("custom-anthropic: uses the custom auth header when one is set", async () => {
+    const { headers } = await captureRequest(() => new Response("", { status: 200 })).send({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "tok",
+      authHeader: "X-Custom-Key",
+      model: "claude-sonnet-5-5",
+      baseUrl: "https://anthropic-proxy.example.com",
+    });
+    expect(headers.get("x-custom-key")).toBe("tok");
+    expect(headers.get("x-api-key")).toBeNull();
+    expect(headers.get("anthropic-dangerous-direct-browser-access")).toBe("true");
+  });
+
+  it("custom: default protocol is OpenAI-compatible (regression)", async () => {
+    const { url } = await captureRequest().send({
+      mode: "direct",
+      provider: "custom",
+      apiKey: "tok",
+      model: "local",
+      baseUrl: "http://localhost:11434/v1/chat/completions",
+    });
+    expect(url).toBe("http://localhost:11434/v1/chat/completions");
+  });
 });
 
 describe("AI SDK transport — error mapping", () => {

@@ -2,6 +2,7 @@
 export type {
   LLMProvider,
   LLMMode,
+  CustomProtocol,
   LLMConfig,
   LLMConnection,
   ChatMessage,

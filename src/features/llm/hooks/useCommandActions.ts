@@ -5,7 +5,7 @@ import type { CommandActionContext } from "../commands/registry";
 import { conversationToMarkdown } from "../message-markdown";
 import { useLLMStore } from "../store";
 
-/** What the action commands (/clear, /copy) do in this chat. */
+/** What the action commands (/clear, /new, /clean, /copy) do in this chat. */
 export function useCommandActions(): CommandActionContext {
   const { t } = useTranslation();
   return useMemo<CommandActionContext>(

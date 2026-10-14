@@ -100,3 +100,55 @@ describe("modelsForConnection", () => {
     );
   });
 });
+
+describe("testConnection — custom-anthropic", () => {
+  it("does not call /models and returns an empty list when the base URL is valid", async () => {
+    const fetchSpy = vi.fn(async () => Response.json({ data: [{ id: "nope" }] }));
+    vi.stubGlobal("fetch", fetchSpy);
+    const result = await testConnection({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "sk-proxy",
+      model: "claude-sonnet-5-5",
+      baseUrl: "https://anthropic-proxy.example.com/v1/messages",
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result).toEqual({ ok: true, models: [], latencyMs: null, source: "presets" });
+  });
+
+  it("returns an error when the base URL is not parseable", async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const result = await testConnection({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "sk-proxy",
+      model: "claude-sonnet-5-5",
+      baseUrl: "not a url",
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      // No status, direct mode: the network/CORS bucket is the closest fit
+      // for "we never reached the server because the URL was bad".
+      expect(result.error.kind).toBe("networkOrCors");
+      expect(result.error.detail).toContain("Invalid base URL");
+    }
+  });
+
+  it("still calls /models for the default OpenAI-compatible custom protocol (regression)", async () => {
+    const fetchSpy = vi.fn(async () => Response.json({ data: [{ id: "local" }] }));
+    vi.stubGlobal("fetch", fetchSpy);
+    const result = await testConnection({
+      mode: "direct",
+      provider: "custom",
+      apiKey: "",
+      model: "local",
+      baseUrl: "http://localhost:11434/v1/chat/completions",
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(result.ok).toBe(true);
+  });
+});

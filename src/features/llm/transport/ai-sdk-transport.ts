@@ -84,6 +84,24 @@ export async function createLanguageModel(config: LLMConfig): Promise<LanguageMo
       })(config.model);
     }
     case "custom": {
+      if (config.customProtocol === "anthropic") {
+        const { createAnthropic } = await import("@ai-sdk/anthropic");
+        const authHeader = config.authHeader?.trim();
+        const useXApiKey = !authHeader || authHeader.toLowerCase() === "x-api-key";
+        const headers: Record<string, string> = {
+          // The browser needs this for the CORS preflight; the official
+          // Anthropic client adds it on every request.
+          ...ANTHROPIC_BROWSER_HEADER,
+          ...(!useXApiKey && authHeader && config.apiKey ? { [authHeader]: config.apiKey } : {}),
+          ...(config.extraHeaders ?? {}),
+        };
+        return createAnthropic({
+          baseURL: toAnthropicBaseUrl(config.baseUrl ?? ""),
+          ...(useXApiKey && config.apiKey ? { apiKey: config.apiKey } : {}),
+          headers,
+          fetch,
+        })(config.model);
+      }
       const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
       const authHeader = config.authHeader?.trim();
       const usesBearer = !authHeader || authHeader.toLowerCase() === "authorization";
@@ -105,6 +123,14 @@ export async function createLanguageModel(config: LLMConfig): Promise<LanguageMo
       return createOpenAI({ apiKey: config.apiKey, fetch }).chat(config.model);
     }
   }
+}
+
+/** Strips a trailing "/v1/messages" so the Anthropic SDK can append its own path. */
+function toAnthropicBaseUrl(url: string): string {
+  return url
+    .trim()
+    .replace(/\/+$/, "")
+    .replace(/\/v1\/messages$/, "");
 }
 
 function toStopReason(finishReason: string): LLMStopReason {

@@ -32,6 +32,8 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const loadHistoryForDiagram = useLLMStore((state) => state.loadHistoryForDiagram);
   const setLLMConfig = useLLMStore((state) => state.setLLMConfig);
   const setActiveConnection = useLLMStore((state) => state.setActiveConnection);
+  const queuedMessages = useLLMStore((state) => state.queuedMessages);
+  const removeQueuedMessage = useLLMStore((state) => state.removeQueuedMessage);
   const sendMessage = useLLMStore((state) => state.sendMessage);
   const cancelRequest = useLLMStore((state) => state.cancelRequest);
   const rerunAssistantMessage = useLLMStore((state) => state.rerunAssistantMessage);
@@ -79,7 +81,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
       command?: CommandRef,
       skills: SkillRef[] = [],
     ) => {
-      await sendMessage(userText, buildContext(), {
+      return sendMessage(userText, buildContext(), {
         mentions,
         ...(command ? { command } : {}),
         ...(skills.length > 0 ? { skills } : {}),
@@ -114,6 +116,8 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
     isLoading,
     pendingSuggestions,
     streamingContent,
+    queuedMessages,
+    removeQueuedMessage,
     accept: acceptSuggestion,
     reject: rejectSuggestion,
     config,

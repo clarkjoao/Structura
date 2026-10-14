@@ -63,6 +63,22 @@ describe("command registry", () => {
     expect(registry.get("missing")).toBeUndefined();
   });
 
+  it("resolves aliases (/new, /clean) to the same command as /clear", () => {
+    const registry = createCommandRegistry();
+    const clear = registry.getByName("clear");
+    const newCmd = registry.getByName("new");
+    const cleanCmd = registry.getByName("clean");
+    expect(newCmd?.id).toBe(clear?.id);
+    expect(cleanCmd?.id).toBe(clear?.id);
+    // The / menu only lists the canonical name, not the aliases.
+    const names = registry
+      .sections(context(null), "", t)
+      .flatMap((section) => section.commands.map((command) => command.name));
+    expect(names).toContain("clear");
+    expect(names).not.toContain("new");
+    expect(names).not.toContain("clean");
+  });
+
   it("filters by name or translated label, name-prefix matches first", () => {
     const registry = createCommandRegistry();
     const found = registry.sections(context(null), "re", t)[0]?.commands.map((c) => c.name);
