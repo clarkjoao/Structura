@@ -474,6 +474,26 @@
     "removed": "Removed",
     "modified": "Modified"
   },
+  "textNode": {
+    "placeholder": "Type here…",
+    "ariaLabel": "Text"
+  },
+  "textStyle": {
+    "size": "Text size",
+    "sizes": { "sm": "Small", "md": "Medium", "lg": "Large", "xl": "Extra large" },
+    "color": "Text colour",
+    "colors": {
+      "default": "Default",
+      "muted": "Muted",
+      "blue": "Blue",
+      "green": "Green",
+      "amber": "Amber",
+      "red": "Red"
+    },
+    "bold": "Bold",
+    "italic": "Italic",
+    "delete": "Delete text"
+  },
   "canvasToolbar": {
     "drillUp": "Level up",
     "panel": "Panel",

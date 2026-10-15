@@ -35,7 +35,8 @@ export const textElement: ElementDescriptor = {
     canHaveParent: true,
     canBeParent: false,
     canBeConnectionSource: false,
-    derivesSize: false,
+    // Only the width is the author's: the height is whatever the text takes.
+    derivesSize: true,
 
     buildData: (comp, ctx) => {
       if (!isTextComponent(comp)) return {};
@@ -47,16 +48,16 @@ export const textElement: ElementDescriptor = {
         italic: comp.italic,
         textColor: comp.textColor,
         isSelected: ctx.selectedNodeId === comp.id,
+        onInlineEditingChange: ctx.setNoteInlineEditingId
+          ? (editing: boolean) => ctx.setNoteInlineEditingId!(editing ? comp.id : null)
+          : undefined,
       };
     },
 
-    buildStyle: (comp, ctx) => {
-      const layout = ctx.resolvedNodeLayouts[comp.id];
-      return {
-        width: layout?.width ?? TEXT_DEFAULT_W,
-        height: layout?.height ?? TEXT_DEFAULT_H,
-      };
-    },
+    // No height: React Flow measures the node, so it wraps its own text.
+    buildStyle: (comp, ctx) => ({
+      width: ctx.resolvedNodeLayouts[comp.id]?.width ?? TEXT_DEFAULT_W,
+    }),
   },
 
   palette: {

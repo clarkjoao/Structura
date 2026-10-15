@@ -10,6 +10,7 @@ import {
   useDiagramTags,
   useResolvedComponents,
   useResolvedNodeLayouts,
+  isTextComponent,
 } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import { useCanvasCompareState } from "./useCanvasCompareState";
@@ -140,7 +141,18 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     [graphState.nodes, visualState.selectedNodeIds],
   );
   const selectedCount = visualState.selectedNodeIds.size;
+  // A lone text is edited on the canvas and styled from its floating bar; the
+  // side panel would only offer a type switch and fields it has no use for.
+  const selectedComponent = visualState.selectedNodeId
+    ? resolvedComponents[visualState.selectedNodeId]
+    : undefined;
+  const isLoneTextSelected =
+    selectedCount <= 1 &&
+    !visualState.selectedEdgeId &&
+    selectedComponent !== undefined &&
+    isTextComponent(selectedComponent);
   const showElementPanel =
+    !isLoneTextSelected &&
     (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
     interactionMode.canEditCanvas &&
     visualState.noteInlineEditingId === null &&

@@ -21,6 +21,7 @@ import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
 import { NodeQuickActionsBar } from "./selection-actions/NodeQuickActionsBar";
+import { TextStyleToolbar } from "./selection-actions/TextStyleToolbar";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
 import { useNodeDragLocks } from "@/features/collaboration/hooks/useElementLocks";
@@ -46,7 +47,7 @@ import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
-import { isPanelComponent, isApiGroupComponent } from "@/features/diagram";
+import { isPanelComponent, isApiGroupComponent, isTextComponent } from "@/features/diagram";
 import { DiagramSurface, writePolicy } from "./core";
 import { useCanvasSvgFileDrop } from "./hooks/useCanvasSvgFileDrop";
 import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
@@ -505,7 +506,22 @@ const Canvas = (props: CanvasProps = {}) => {
               either began would otherwise carry it in. */}
                 {visualState.selectedNodeId &&
                   selectedNodes.length === 1 &&
-                  interactionMode.canEditCanvas && (
+                  interactionMode.canEditCanvas &&
+                  selectedComponent &&
+                  isTextComponent(selectedComponent) && (
+                    <TextStyleToolbar
+                      nodeId={visualState.selectedNodeId}
+                      component={selectedComponent}
+                      onChange={(patch) =>
+                        actions.updateComponent(visualState.selectedNodeId!, patch)
+                      }
+                      onDelete={() => actions.removeComponent(visualState.selectedNodeId!)}
+                    />
+                  )}
+                {visualState.selectedNodeId &&
+                  selectedNodes.length === 1 &&
+                  interactionMode.canEditCanvas &&
+                  !(selectedComponent && isTextComponent(selectedComponent)) && (
                     <NodeQuickActionsBar
                       nodeId={visualState.selectedNodeId}
                       diagramId={diagram?.id ?? ""}

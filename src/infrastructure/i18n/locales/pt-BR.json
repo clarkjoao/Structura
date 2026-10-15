@@ -474,6 +474,26 @@
     "removed": "Removido",
     "modified": "Modificado"
   },
+  "textNode": {
+    "placeholder": "Digite aqui…",
+    "ariaLabel": "Texto"
+  },
+  "textStyle": {
+    "size": "Tamanho do texto",
+    "sizes": { "sm": "Pequeno", "md": "Médio", "lg": "Grande", "xl": "Extra grande" },
+    "color": "Cor do texto",
+    "colors": {
+      "default": "Padrão",
+      "muted": "Suave",
+      "blue": "Azul",
+      "green": "Verde",
+      "amber": "Âmbar",
+      "red": "Vermelho"
+    },
+    "bold": "Negrito",
+    "italic": "Itálico",
+    "delete": "Excluir texto"
+  },
   "canvasToolbar": {
     "drillUp": "Nível acima",
     "panel": "Painel",
