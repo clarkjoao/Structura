@@ -231,7 +231,11 @@ export interface LLMStoreState {
    * marked cancelled, and no error is recorded.
    */
   cancelRequest: () => void;
-  /** Composer queue: messages enqueued while the assistant is busy. */
+  /**
+   * Composer queue: messages enqueued while the assistant is busy. It belongs
+   * to the active thread, so switching, creating, deleting or clearing a
+   * thread, or opening another diagram, empties it.
+   */
   queuedMessages: QueuedMessage[];
   /**
    * Removes one queued message by id. A no-op when the id is unknown. The
@@ -394,7 +398,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     }
     const diagramId = get().activeDiagramId ?? useDiagramStore.getState().activeDiagramId;
     if (diagramId) {
+      // The thread is created for this conversation's first send, so the
+      // queue typed for it stays.
+      const { queuedMessages } = get();
       get().createThread(diagramId, firstUserMessage);
+      set({ queuedMessages });
     }
   };
   const setWithPersist = (partial: Partial<LLMStoreState>) => set(partial);
@@ -747,6 +755,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         messages: activeThread?.messages ?? [],
         pendingSuggestions: [],
         streamingContent: null,
+        queuedMessages: [],
       });
     },
 
@@ -767,6 +776,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         messages: thread.messages,
         pendingSuggestions: [],
         streamingContent: null,
+        queuedMessages: [],
       });
     },
 
@@ -800,6 +810,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         messages: [],
         pendingSuggestions: [],
         streamingContent: null,
+        queuedMessages: [],
       });
       return draft;
     },
@@ -860,6 +871,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           messages: [],
           pendingSuggestions: [],
           streamingContent: null,
+          queuedMessages: [],
         });
         return;
       }
@@ -875,6 +887,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
               messages: remaining.find((thread) => thread.id === nextActiveId)?.messages ?? [],
               pendingSuggestions: [],
               streamingContent: null,
+              queuedMessages: [],
             }
           : {}),
       });
@@ -1041,6 +1054,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           pendingSuggestions: [],
           streamingContent: null,
           isLoading: false,
+          queuedMessages: [],
         });
       }
     },

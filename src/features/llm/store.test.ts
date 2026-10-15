@@ -818,6 +818,32 @@ describe("LLM store — message queue", () => {
     expect(String(fetchSpy.mock.calls[1]?.[1]?.body)).not.toContain("diagram before accept");
   });
 
+  it("empties the queue when the active thread or diagram changes", () => {
+    const queued = [{ id: "q-1", text: "for thread A", mentions: [], skills: [] }];
+    const threadA = useLLMStore.getState().createThread("diagram-1");
+    useLLMStore.getState().createThread("diagram-1");
+
+    useLLMStore.setState({ queuedMessages: queued });
+    useLLMStore.getState().switchThread(threadA.id);
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+
+    useLLMStore.setState({ queuedMessages: queued });
+    useLLMStore.getState().createThread("diagram-1");
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+
+    useLLMStore.setState({ queuedMessages: queued });
+    useLLMStore.getState().deleteThread(useLLMStore.getState().activeThreadId);
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+
+    useLLMStore.setState({ queuedMessages: queued });
+    useLLMStore.getState().clearHistory();
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+
+    useLLMStore.setState({ queuedMessages: queued });
+    useLLMStore.getState().loadHistoryForDiagram("diagram-2");
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+  });
+
   it("drains the queue on turn error", async () => {
     const fetchSpy = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(
       async () => new Response("server down", { status: 500 }),
