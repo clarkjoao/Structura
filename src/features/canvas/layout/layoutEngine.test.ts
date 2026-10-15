@@ -423,3 +423,17 @@ describe("layout — db-table size comes from its columns", () => {
     expect(tableEntry?.height).toBeUndefined();
   });
 });
+
+describe("layout — a container's top inset", () => {
+  it("keeps children below the room a container reserves for its header", async () => {
+    const graph: LayoutGraph = {
+      nodes: [
+        { id: "p", parentId: null, width: 600, height: 400, topInset: 90 },
+        { id: "c", parentId: "p", width: 180, height: 80 },
+      ],
+      edges: [],
+    };
+    const result = await layout(graph);
+    expect(result.boxes.get("c")!.y).toBeGreaterThanOrEqual(90);
+  });
+});

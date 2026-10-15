@@ -8,6 +8,7 @@ import {
   NODE_DRAG_PADDING,
   PANEL_DEFAULT_H,
   PANEL_DEFAULT_W,
+  panelTopInset,
 } from "../../model/layout.constants";
 import i18n from "@/infrastructure/i18n";
 import type { AppState } from "../store.types";
@@ -186,7 +187,7 @@ export const componentParentingSlice = (
       const positions = ids.map((id) => getAbsPos(id));
       const sizes = ids.map((id) => getSize(id));
       const minX = Math.min(...positions.map((p) => p.x)) - NODE_DRAG_PADDING;
-      const minY = Math.min(...positions.map((p) => p.y)) - NODE_DRAG_PADDING;
+      const minY = Math.min(...positions.map((p) => p.y)) - panelTopInset();
       const maxX = Math.max(...positions.map((p, i) => p.x + sizes[i].w)) + NODE_DRAG_PADDING;
       const maxY = Math.max(...positions.map((p, i) => p.y + sizes[i].h)) + NODE_DRAG_PADDING * 2;
 

@@ -100,6 +100,15 @@ function buildChildrenByParent(nodes: readonly LayoutNode[]): Map<string | null,
   return childrenByParent;
 }
 
+/** Replaces `top` in an ELK `[top=..,left=..]` padding string. */
+function withTopPadding(padding: string | undefined, top: number): string {
+  const sides = (padding ?? "")
+    .replace(/[[\]\s]/g, "")
+    .split(",")
+    .filter((s) => !s.startsWith("top="));
+  return `[top=${top},${sides.join(",")}]`;
+}
+
 function buildElkNode(
   node: LayoutNode,
   childrenByParent: Map<string | null, LayoutNode[]>,
@@ -123,7 +132,10 @@ function buildElkNode(
     id: node.id,
     width: node.width,
     height: node.height,
-    layoutOptions: { ...options },
+    layoutOptions:
+      node.topInset === undefined
+        ? { ...options }
+        : { ...options, "elk.padding": withTopPadding(options["elk.padding"], node.topInset) },
     children: children.map((child) => buildElkNode(child, childrenByParent, options, visited)),
   };
 }

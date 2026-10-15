@@ -105,7 +105,7 @@ export function fitContainersToChildren(
       if (!entry || !node) return [];
       return [{ ...entry, width: entry.width ?? node.width, height: entry.height ?? node.height }];
     });
-    const bounds = computeFitBounds(children);
+    const bounds = computeFitBounds(children, graphNode.get(containerId)?.topInset);
     if (!bounds) continue;
 
     for (const child of children) {

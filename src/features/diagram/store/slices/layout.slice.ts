@@ -12,6 +12,7 @@ import {
   resolveNodeLayout,
 } from "../helpers/version-helpers";
 import { computeFitBounds } from "../../utils/fit-group-to-children";
+import { panelTopInset } from "../../model/layout.constants";
 
 export const layoutSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -266,7 +267,7 @@ export const layoutSlice = (
 
       if (childLayouts.length === 0) return;
 
-      const bounds = computeFitBounds(childLayouts);
+      const bounds = computeFitBounds(childLayouts, panelTopInset(panelComp.description));
       if (!bounds) return;
 
       pushHistory(state);

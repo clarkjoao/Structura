@@ -19,6 +19,7 @@ import { useCanvasPreferencesStore } from "./preferences";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
+import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
 import { NodeQuickActionsBar } from "./selection-actions/NodeQuickActionsBar";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
@@ -333,6 +334,20 @@ const Canvas = (props: CanvasProps = {}) => {
     ],
   );
 
+  const revealedLabelEdgeIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (!diagram || visualState.selectedNodeIds.size === 0) return ids;
+    for (const connection of Object.values(getCachedCanvasSnapshot(diagram).connections)) {
+      if (
+        visualState.selectedNodeIds.has(connection.sourceId) ||
+        visualState.selectedNodeIds.has(connection.targetId)
+      ) {
+        ids.add(connection.id);
+      }
+    }
+    return ids;
+  }, [diagram, visualState.selectedNodeIds]);
+
   if (!diagram) {
     return (
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
@@ -345,335 +360,338 @@ const Canvas = (props: CanvasProps = {}) => {
 
   return (
     <HandleHighlightProvider value={handleHighlightValue}>
-      <div className="flex-1 flex relative h-full min-h-0">
-        <style>{CANVAS_STYLES}</style>
-        <div ref={reactFlowWrapperRef} className="flex-1 relative">
-          {!interactionMode.isPlaying && (
-            <CanvasBottomToolbar
-              diagram={diagram}
-              isPanelOpen={isPanelOpen}
-              canInsert={interactionMode.canEditCanvas && !isFlowActive && !isCompareMode}
-              onInserted={selectInsertedNodes}
-              versions={{
-                locked: !interactionMode.canEditVersions || isFlowActive,
-                open: showVersions,
-                onOpenChange: setShowVersions,
-              }}
-              tags={{
-                allTags: allDiagramTags,
-                visibleTags: visualState.visibleTags,
-                locked: !interactionMode.canEditVersions || isFlowActive,
-                onToggle: visualState.toggleTag,
-                onShowAll: visualState.showAllTags,
-                onShowNoTags: visualState.showNoTags,
-              }}
-            />
-          )}
-          {showSearch && diagram && (
-            <CanvasSearch
-              onClose={() => setShowSearch(false)}
-              onSelectResult={handleSearchSelect}
-              components={resolvedSnapshot.components}
-            />
-          )}
-          <div className="absolute inset-y-0 left-0 z-30 flex">
-            <DiagramSidebar
-              isOpen={showDiagramSidebar && !isFlowActive}
-              onClose={() => setShowDiagramSidebar(false)}
-              currentDiagramId={diagram.id}
-              onSelectDiagram={handleSelectDiagram}
-            />
-          </div>
-          <div
-            onContextMenu={(e) => e.preventDefault()}
-            onDragOver={(event) => {
-              onSvgDragOver(event);
-              if (catalogDrop.onDragOver(event)) return;
-              if (!interactionMode.canEditCanvas) return;
-              if (event.dataTransfer.types.includes(ELEMENT_PRESET_DRAG_MIME)) {
-                event.preventDefault();
-                event.dataTransfer.dropEffect = "copy";
-              }
-            }}
-            onDrop={(event) => {
-              // Synchronously: the drag data is only readable while the drop is dispatched.
-              if (catalogDrop.onDrop(event)) return;
-              void (async () => {
-                if (await onSvgDropFiles(event)) return;
-                if (!interactionMode.canEditCanvas) return;
-                const presetId = event.dataTransfer.getData(ELEMENT_PRESET_DRAG_MIME);
-                if (!presetId) return;
-                event.preventDefault();
-                const position = reactFlowInstance.screenToFlowPosition({
-                  x: event.clientX,
-                  y: event.clientY,
-                });
-                instantiatePreset({ presetId, position });
-              })();
-            }}
-            onDoubleClick={(event) => {
-              if (interactionMode.canEditCanvas) eventHandlers.onPaneDoubleClick(event);
-            }}
-            className="w-full h-full"
-          >
-            {isCompareMode && (
-              <div className="absolute top-12 left-1/2 z-20 flex max-w-[min(100vw-2rem,42rem)] -translate-x-1/2 flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs text-muted-foreground shadow-sm sm:flex-row sm:flex-wrap sm:justify-center">
-                <div className="flex items-center gap-2">
-                  <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                  <span>{t("canvas.compareViewBanner")}</span>
-                </div>
-                <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
-                  <span className="flex items-center gap-1">
-                    <span className="h-3 w-3 shrink-0 rounded-full bg-green-500" aria-hidden />
-                    {t("compareMode.added")}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-3 w-3 shrink-0 rounded-full bg-red-500" aria-hidden />
-                    {t("compareMode.removed")}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-3 w-3 shrink-0 rounded-full bg-amber-500" aria-hidden />
-                    {t("compareMode.modified")}
-                  </span>
-                </div>
-              </div>
-            )}
-            <DiagramSurface
-              policy={writePolicy(interactionMode.canEditCanvas)}
-              nodes={lockedNodes}
-              edges={edges}
-              nodeTypes={nodeTypes}
-              inputProfile={inputProfile}
-              snapToGrid={!isSnapToGridDisabledForE2E()}
-              nodeDragThreshold={DRAG_THRESHOLD_PX}
-              onNodesChange={onNodesChange}
-              onEdgesChange={eventHandlers.onEdgesChange}
-              onConnect={eventHandlers.onConnect}
-              onConnectEnd={eventHandlers.onConnectEnd}
-              onReconnect={edgeReconnect.onReconnect}
-              onReconnectStart={edgeReconnect.onReconnectStart}
-              onReconnectEnd={edgeReconnect.onReconnectEnd}
-              onNodeClick={eventHandlers.onNodeClick}
-              onEdgeClick={eventHandlers.onEdgeClick}
-              onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
-              onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
-              onPaneClick={eventHandlers.onPaneClick}
-              onPaneContextMenu={eventHandlers.onPaneContextMenu}
-              onNodeContextMenu={eventHandlers.onNodeContextMenu}
-              onNodeDragStart={dragLocks.onNodeDragStart}
-              onNodeDragStop={handleNodeDragStop}
-              onSelectionChange={eventHandlers.onSelectionChange}
-              defaultViewport={initialViewport}
-              fitView={!hasSavedViewport(initialViewport)}
-              onMoveEnd={eventHandlers.onMoveEnd}
-            >
-              <SharedLayer
-                suggest={interactionMode.canEditCanvas}
-                components={resolvedSnapshot.components}
-                connections={resolvedSnapshot.connections}
-                onPick={(originalId) => {
-                  // A badge stands for its original: picking it is picking the original.
-                  const node = nodes.find((candidate) => candidate.id === originalId);
-                  if (node) eventHandlers.onNodeClick?.({} as never, node);
+      <EdgeLabelRevealProvider value={revealedLabelEdgeIds}>
+        <div className="flex-1 flex relative h-full min-h-0">
+          <style>{CANVAS_STYLES}</style>
+          <div ref={reactFlowWrapperRef} className="flex-1 relative">
+            {!interactionMode.isPlaying && (
+              <CanvasBottomToolbar
+                diagram={diagram}
+                isPanelOpen={isPanelOpen}
+                canInsert={interactionMode.canEditCanvas && !isFlowActive && !isCompareMode}
+                onInserted={selectInsertedNodes}
+                versions={{
+                  locked: !interactionMode.canEditVersions || isFlowActive,
+                  open: showVersions,
+                  onOpenChange: setShowVersions,
+                }}
+                tags={{
+                  allTags: allDiagramTags,
+                  visibleTags: visualState.visibleTags,
+                  locked: !interactionMode.canEditVersions || isFlowActive,
+                  onToggle: visualState.toggleTag,
+                  onShowAll: visualState.showAllTags,
+                  onShowNoTags: visualState.showNoTags,
                 }}
               />
-              <PendingNodeToolbars
-                pendingNodeIds={pendingNodeIds}
-                pendingPreviews={pendingPreviews}
-                onKeep={accept}
-                onDiscard={rejectSuggestion}
+            )}
+            {showSearch && diagram && (
+              <CanvasSearch
+                onClose={() => setShowSearch(false)}
+                onSelectResult={handleSearchSelect}
+                components={resolvedSnapshot.components}
               />
-              {/* QuickActions toolbar for single node selection. Gated on the same
+            )}
+            <div className="absolute inset-y-0 left-0 z-30 flex">
+              <DiagramSidebar
+                isOpen={showDiagramSidebar && !isFlowActive}
+                onClose={() => setShowDiagramSidebar(false)}
+                currentDiagramId={diagram.id}
+                onSelectDiagram={handleSelectDiagram}
+              />
+            </div>
+            <div
+              onContextMenu={(e) => e.preventDefault()}
+              onDragOver={(event) => {
+                onSvgDragOver(event);
+                if (catalogDrop.onDragOver(event)) return;
+                if (!interactionMode.canEditCanvas) return;
+                if (event.dataTransfer.types.includes(ELEMENT_PRESET_DRAG_MIME)) {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "copy";
+                }
+              }}
+              onDrop={(event) => {
+                // Synchronously: the drag data is only readable while the drop is dispatched.
+                if (catalogDrop.onDrop(event)) return;
+                void (async () => {
+                  if (await onSvgDropFiles(event)) return;
+                  if (!interactionMode.canEditCanvas) return;
+                  const presetId = event.dataTransfer.getData(ELEMENT_PRESET_DRAG_MIME);
+                  if (!presetId) return;
+                  event.preventDefault();
+                  const position = reactFlowInstance.screenToFlowPosition({
+                    x: event.clientX,
+                    y: event.clientY,
+                  });
+                  instantiatePreset({ presetId, position });
+                })();
+              }}
+              onDoubleClick={(event) => {
+                if (interactionMode.canEditCanvas) eventHandlers.onPaneDoubleClick(event);
+              }}
+              className="w-full h-full"
+            >
+              {isCompareMode && (
+                <div className="absolute top-12 left-1/2 z-20 flex max-w-[min(100vw-2rem,42rem)] -translate-x-1/2 flex-col items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-xs text-muted-foreground shadow-sm sm:flex-row sm:flex-wrap sm:justify-center">
+                  <div className="flex items-center gap-2">
+                    <Eye className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span>{t("canvas.compareViewBanner")}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <span className="h-3 w-3 shrink-0 rounded-full bg-green-500" aria-hidden />
+                      {t("compareMode.added")}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-3 w-3 shrink-0 rounded-full bg-red-500" aria-hidden />
+                      {t("compareMode.removed")}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-3 w-3 shrink-0 rounded-full bg-amber-500" aria-hidden />
+                      {t("compareMode.modified")}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <DiagramSurface
+                policy={writePolicy(interactionMode.canEditCanvas)}
+                nodes={lockedNodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                inputProfile={inputProfile}
+                snapToGrid={!isSnapToGridDisabledForE2E()}
+                nodeDragThreshold={DRAG_THRESHOLD_PX}
+                onNodesChange={onNodesChange}
+                onEdgesChange={eventHandlers.onEdgesChange}
+                onConnect={eventHandlers.onConnect}
+                onConnectEnd={eventHandlers.onConnectEnd}
+                onReconnect={edgeReconnect.onReconnect}
+                onReconnectStart={edgeReconnect.onReconnectStart}
+                onReconnectEnd={edgeReconnect.onReconnectEnd}
+                onNodeClick={eventHandlers.onNodeClick}
+                onEdgeClick={eventHandlers.onEdgeClick}
+                onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
+                onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
+                onPaneClick={eventHandlers.onPaneClick}
+                onPaneContextMenu={eventHandlers.onPaneContextMenu}
+                onNodeContextMenu={eventHandlers.onNodeContextMenu}
+                onNodeDragStart={dragLocks.onNodeDragStart}
+                onNodeDragStop={handleNodeDragStop}
+                onSelectionChange={eventHandlers.onSelectionChange}
+                defaultViewport={initialViewport}
+                fitView={!hasSavedViewport(initialViewport)}
+                onMoveEnd={eventHandlers.onMoveEnd}
+              >
+                <SharedLayer
+                  suggest={interactionMode.canEditCanvas}
+                  components={resolvedSnapshot.components}
+                  connections={resolvedSnapshot.connections}
+                  onPick={(originalId) => {
+                    // A badge stands for its original: picking it is picking the original.
+                    const node = nodes.find((candidate) => candidate.id === originalId);
+                    if (node) eventHandlers.onNodeClick?.({} as never, node);
+                  }}
+                />
+                <PendingNodeToolbars
+                  pendingNodeIds={pendingNodeIds}
+                  pendingPreviews={pendingPreviews}
+                  onKeep={accept}
+                  onDiscard={rejectSuggestion}
+                />
+                {/* QuickActions toolbar for single node selection. Gated on the same
               flag as the element panel: the bar edits the element, so it has no
               place in a reading or a comparison — and a selection made before
               either began would otherwise carry it in. */}
-              {visualState.selectedNodeId &&
-                selectedNodes.length === 1 &&
-                interactionMode.canEditCanvas && (
-                  <NodeQuickActionsBar
-                    nodeId={visualState.selectedNodeId}
-                    diagramId={diagram?.id ?? ""}
-                    updateComponent={actions.updateComponent}
-                    onUngroup={
-                      (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren
-                        ? handleUngroup
-                        : undefined
-                    }
-                    onFitToChildren={
-                      (isSelectedPanel || isSelectedApiGroup) &&
-                      hasPanelChildren &&
-                      !(selectedComponent as { collapsed?: boolean })?.collapsed
-                        ? handleFitToChildren
-                        : undefined
-                    }
-                    onOrganizeChildren={
-                      (isSelectedPanel || isSelectedApiGroup) &&
-                      hasPanelChildren &&
-                      !(selectedComponent as { collapsed?: boolean })?.collapsed &&
-                      !isPanelLayoutRunning
-                        ? handleOrganizeChildren
-                        : undefined
-                    }
-                    onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
-                    onFocusElement={handleSearchSelect}
-                  />
-                )}
-              {/* Zoom, fit, view options and the minimap all move the viewport, and a
+                {visualState.selectedNodeId &&
+                  selectedNodes.length === 1 &&
+                  interactionMode.canEditCanvas && (
+                    <NodeQuickActionsBar
+                      nodeId={visualState.selectedNodeId}
+                      diagramId={diagram?.id ?? ""}
+                      updateComponent={actions.updateComponent}
+                      onUngroup={
+                        (isSelectedPanel || isSelectedApiGroup) && hasPanelChildren
+                          ? handleUngroup
+                          : undefined
+                      }
+                      onFitToChildren={
+                        (isSelectedPanel || isSelectedApiGroup) &&
+                        hasPanelChildren &&
+                        !(selectedComponent as { collapsed?: boolean })?.collapsed
+                          ? handleFitToChildren
+                          : undefined
+                      }
+                      onOrganizeChildren={
+                        (isSelectedPanel || isSelectedApiGroup) &&
+                        hasPanelChildren &&
+                        !(selectedComponent as { collapsed?: boolean })?.collapsed &&
+                        !isPanelLayoutRunning
+                          ? handleOrganizeChildren
+                          : undefined
+                      }
+                      onRemoveFromGroup={isSelectedChildOfGroup ? handleRemoveFromGroup : undefined}
+                      onFocusElement={handleSearchSelect}
+                    />
+                  )}
+                {/* Zoom, fit, view options and the minimap all move the viewport, and a
               reading moves it for you — every step frames its own element. Leaving
               them out keeps the two from fighting over the same viewport, and keeps
               the reading's canvas as clean as the rail beside it. Recording still
               needs them: that is where you go looking for the next element to click. */}
-              {!interactionMode.isPlaying && (
-                <>
-                  <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-                  <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
-                    <CanvasViewOptions />
-                  </Panel>
-                  {showMiniMap && (
-                    <MiniMap
-                      pannable
-                      zoomable
-                      position="bottom-right"
-                      nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
-                      /* Offset above the floating chat button, which also sits bottom-right. */
-                      className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
-                      maskColor="hsl(var(--muted) / 0.6)"
-                    />
-                  )}
-                </>
-              )}
-              <CollabPresenceLayer />
-              {occupancy.hasNodes && !occupancy.anyNodeVisible && (
-                <NothingInViewCard elementCount={occupancy.nodeCount} />
-              )}
-            </DiagramSurface>
-          </div>
-        </div>
-
-        {visualState.contextMenu && (
-          <CanvasContextMenu
-            contextMenu={visualState.contextMenu}
-            diagram={diagram}
-            resolvedSnapshot={resolvedSnapshot}
-            selectedNodeIds={visualState.selectedNodeIds}
-            canEditCanvas={interactionMode.canEditCanvas}
-            onSaveAsTemplate={setTemplateNodeId}
-            onAutoLayout={handleAutoLayout}
-            isAutoLayoutRunning={isAutoLayoutRunning}
-            onClose={() => visualState.setContextMenu(null)}
-          />
-        )}
-
-        {visualState.quickInsert && (
-          <QuickInsertPopover
-            screenPos={visualState.quickInsert.screenPos}
-            flowPos={visualState.quickInsert.flowPos}
-            sourceNodeId={visualState.quickInsert.sourceNodeId}
-            sourceName={
-              visualState.quickInsert.sourceNodeId
-                ? resolvedSnapshot.components[visualState.quickInsert.sourceNodeId]?.name
-                : undefined
-            }
-            onInsert={eventHandlers.handleQuickInsert}
-            onClose={() => visualState.setQuickInsert(null)}
-          />
-        )}
-
-        {showCommandPalette && (
-          <DiagramCommandPalette
-            onClose={() => setShowCommandPalette(false)}
-            onSelectDiagram={handleSelectDiagram}
-          />
-        )}
-
-        {templateSourceNode ? (
-          <SaveElementPresetModal
-            defaultName={String(
-              resolvedSnapshot.components[templateSourceNode.id]?.name ??
-                templateSourceNode.data?.name ??
-                "",
-            )}
-            defaultDescription={
-              resolvedSnapshot.components[templateSourceNode.id]?.description ??
-              (typeof templateSourceNode.data?.description === "string"
-                ? templateSourceNode.data.description
-                : undefined)
-            }
-            onClose={() => setTemplateNodeId(null)}
-            onSave={(name, description) => {
-              const domainComponent = resolvedSnapshot.components[templateSourceNode.id];
-              const templateData = createPresetDataFromNode(templateSourceNode, domainComponent);
-              addPreset({
-                id: crypto.randomUUID(),
-                name,
-                description,
-                baseType: templateData.baseType,
-                data: templateData.data,
-                serviceId: templateData.serviceId,
-                templateVersion: 1,
-                category: "general",
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-              });
-              setTemplateNodeId(null);
-            }}
-          />
-        ) : null}
-
-        <div className="absolute inset-y-0 right-0 z-20 flex items-stretch h-full">
-          <div className="pointer-events-none flex h-full min-h-0 flex-col items-end">
-            {props.focusMode && props.onToggleFocusMode ? (
-              <div className="shrink-0 pt-4 pr-4">
-                <button
-                  type="button"
-                  onClick={props.onToggleFocusMode}
-                  className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
-                  title={t("canvasToolbar.exitFocusMode")}
-                >
-                  <Minimize2 className="h-3.5 w-3.5" aria-hidden />
-                  {t("canvasToolbar.exitFocusMode")}
-                </button>
-              </div>
-            ) : null}
-            <div className="mt-auto flex pb-5 pr-4">
-              <div className="pointer-events-auto">
-                <FloatingChatButton
-                  isOpen={isChatOpen}
-                  hasUnread={hasUnread}
-                  onClick={() => {
-                    if (isFlowActive) return;
-                    setIsChatOpen((previous) => {
-                      const next = !previous;
-                      if (next) {
-                        setHasUnread(false);
-                      }
-                      return next;
-                    });
-                  }}
-                />
-              </div>
+                {!interactionMode.isPlaying && (
+                  <>
+                    <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+                    <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
+                      <CanvasViewOptions />
+                    </Panel>
+                    {showMiniMap && (
+                      <MiniMap
+                        pannable
+                        zoomable
+                        position="bottom-right"
+                        nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
+                        /* Offset above the floating chat button, which also sits bottom-right. */
+                        className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
+                        maskColor="hsl(var(--muted) / 0.6)"
+                      />
+                    )}
+                  </>
+                )}
+                <CollabPresenceLayer />
+                {occupancy.hasNodes && !occupancy.anyNodeVisible && (
+                  <NothingInViewCard elementCount={occupancy.nodeCount} />
+                )}
+              </DiagramSurface>
             </div>
           </div>
-          {showElementPanel && (
-            <ElementPanel
-              key={visualState.selectedNodeId ?? visualState.selectedEdgeId ?? "multi"}
-              selectedElementId={visualState.selectedNodeId}
-              selectedEdgeId={visualState.selectedEdgeId}
-              selectedNodeIds={Array.from(visualState.selectedNodeIds)}
-              selectedNodes={selectedNodes}
-              focusTitleTrigger={focusTitleTrigger}
-              onClose={eventHandlers.closePanel}
+
+          {visualState.contextMenu && (
+            <CanvasContextMenu
+              contextMenu={visualState.contextMenu}
+              diagram={diagram}
+              resolvedSnapshot={resolvedSnapshot}
+              selectedNodeIds={visualState.selectedNodeIds}
+              canEditCanvas={interactionMode.canEditCanvas}
+              onSaveAsTemplate={setTemplateNodeId}
+              onAutoLayout={handleAutoLayout}
+              isAutoLayoutRunning={isAutoLayoutRunning}
+              onClose={() => visualState.setContextMenu(null)}
             />
           )}
-          {isChatOpen ? (
-            <AssistantUIChatPanel
-              onClose={() => setIsChatOpen(false)}
-              selectedNodeIds={visualState.selectedNodeIds}
-              selectedNodeId={visualState.selectedNodeId}
+
+          {visualState.quickInsert && (
+            <QuickInsertPopover
+              screenPos={visualState.quickInsert.screenPos}
+              flowPos={visualState.quickInsert.flowPos}
+              sourceNodeId={visualState.quickInsert.sourceNodeId}
+              sourceName={
+                visualState.quickInsert.sourceNodeId
+                  ? resolvedSnapshot.components[visualState.quickInsert.sourceNodeId]?.name
+                  : undefined
+              }
+              onInsert={eventHandlers.handleQuickInsert}
+              onClose={() => visualState.setQuickInsert(null)}
+            />
+          )}
+
+          {showCommandPalette && (
+            <DiagramCommandPalette
+              onClose={() => setShowCommandPalette(false)}
+              onSelectDiagram={handleSelectDiagram}
+            />
+          )}
+
+          {templateSourceNode ? (
+            <SaveElementPresetModal
+              defaultName={String(
+                resolvedSnapshot.components[templateSourceNode.id]?.name ??
+                  templateSourceNode.data?.name ??
+                  "",
+              )}
+              defaultDescription={
+                resolvedSnapshot.components[templateSourceNode.id]?.description ??
+                (typeof templateSourceNode.data?.description === "string"
+                  ? templateSourceNode.data.description
+                  : undefined)
+              }
+              onClose={() => setTemplateNodeId(null)}
+              onSave={(name, description) => {
+                const domainComponent = resolvedSnapshot.components[templateSourceNode.id];
+                const templateData = createPresetDataFromNode(templateSourceNode, domainComponent);
+                addPreset({
+                  id: crypto.randomUUID(),
+                  name,
+                  description,
+                  baseType: templateData.baseType,
+                  data: templateData.data,
+                  serviceId: templateData.serviceId,
+                  templateVersion: 1,
+                  category: "general",
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
+                });
+                setTemplateNodeId(null);
+              }}
             />
           ) : null}
+
+          <div className="absolute inset-y-0 right-0 z-20 flex items-stretch h-full">
+            <div className="pointer-events-none flex h-full min-h-0 flex-col items-end">
+              {props.focusMode && props.onToggleFocusMode ? (
+                <div className="shrink-0 pt-4 pr-4">
+                  <button
+                    type="button"
+                    onClick={props.onToggleFocusMode}
+                    className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card/90 px-3 py-2 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-colors hover:bg-surface-hover hover:text-foreground"
+                    title={t("canvasToolbar.exitFocusMode")}
+                  >
+                    <Minimize2 className="h-3.5 w-3.5" aria-hidden />
+                    {t("canvasToolbar.exitFocusMode")}
+                  </button>
+                </div>
+              ) : null}
+              <div className="mt-auto flex pb-5 pr-4">
+                <div className="pointer-events-auto">
+                  <FloatingChatButton
+                    isOpen={isChatOpen}
+                    hasUnread={hasUnread}
+                    onClick={() => {
+                      if (isFlowActive) return;
+                      setIsChatOpen((previous) => {
+                        const next = !previous;
+                        if (next) {
+                          setHasUnread(false);
+                        }
+                        return next;
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            {showElementPanel && (
+              <ElementPanel
+                key={visualState.selectedNodeId ?? visualState.selectedEdgeId ?? "multi"}
+                selectedElementId={visualState.selectedNodeId}
+                selectedEdgeId={visualState.selectedEdgeId}
+                selectedNodeIds={Array.from(visualState.selectedNodeIds)}
+                selectedNodes={selectedNodes}
+                focusTitleTrigger={focusTitleTrigger}
+                onFocusElement={handleSearchSelect}
+                onClose={eventHandlers.closePanel}
+              />
+            )}
+            {isChatOpen ? (
+              <AssistantUIChatPanel
+                onClose={() => setIsChatOpen(false)}
+                selectedNodeIds={visualState.selectedNodeIds}
+                selectedNodeId={visualState.selectedNodeId}
+              />
+            ) : null}
+          </div>
         </div>
-      </div>
+      </EdgeLabelRevealProvider>
     </HandleHighlightProvider>
   );
 };

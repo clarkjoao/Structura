@@ -384,3 +384,13 @@
   border-radius: 8px;
   cursor: copy !important;
 }
+
+/* Edge labels hide when the canvas is zoomed out, unless their edge is hovered,
+   selected or attached to the selection (see EdgeLabelZoomSync). */
+[data-labels-collapsed="true"] [data-edge-label]:not([data-revealed="true"]) {
+  opacity: 0;
+  pointer-events: none;
+}
+[data-edge-label] {
+  transition: opacity 120ms ease;
+}

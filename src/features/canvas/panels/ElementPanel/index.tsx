@@ -18,6 +18,7 @@ interface Props {
   selectedNodeIds?: string[];
   selectedNodes?: Node[];
   focusTitleTrigger?: number;
+  onFocusElement?: (componentId: string) => void;
   onClose: () => void;
 }
 
@@ -27,6 +28,7 @@ const ElementPanel = ({
   selectedNodeIds = [],
   selectedNodes = [],
   focusTitleTrigger = 0,
+  onFocusElement,
   onClose,
 }: Props) => {
   const { t } = useTranslation();
@@ -58,6 +60,7 @@ const ElementPanel = ({
           updateConnection={updateConnection}
           removeConnection={removeConnection}
           focusTitleTrigger={focusTitleTrigger}
+          onFocusElement={onFocusElement}
         />
       </div>
     );

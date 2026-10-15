@@ -11,6 +11,7 @@ import {
   DEFAULT_NODE_W,
   PANEL_DEFAULT_H,
   PANEL_DEFAULT_W,
+  panelTopInset,
 } from "@/features/diagram/model/layout.constants";
 import type { Component } from "@/features/diagram/model/component.types";
 import type { Connection } from "@/features/diagram/model/connection.types";
@@ -179,7 +180,9 @@ export function fromDiagram(
     const component = components[id];
     if (component === undefined) continue;
     const { width, height } = sizeOf(component, nodeLayouts, options.measured, components);
-    nodes.push({ id, parentId: component.parentId ?? null, width, height });
+    const node: LayoutNode = { id, parentId: component.parentId ?? null, width, height };
+    if (isPanelType(component.type)) node.topInset = panelTopInset(component.description);
+    nodes.push(node);
   }
 
   // Remap ends that sit on grouped endpoints onto the api-group, then drop

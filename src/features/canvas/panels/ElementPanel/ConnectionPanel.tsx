@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import debounce from "lodash.debounce";
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, ArrowRight } from "lucide-react";
 import type { Connection, ConnectionIntent, ConnectionStyle } from "@/features/diagram";
 import {
   EdgeStyle,
@@ -10,7 +10,7 @@ import {
   useActiveDiagramId,
   useDiagramActions,
 } from "@/features/diagram";
-import { INTENT_DEFAULTS } from "@/features/diagram";
+import { INTENT_DEFAULTS, useResolvedComponents } from "@/features/diagram";
 import { cn } from "@/lib/utils";
 import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import Field from "./components/Field";
@@ -55,7 +55,43 @@ interface ConnectionPanelProps {
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
   focusTitleTrigger?: number;
+  /** Select and frame an element — the endpoint names in the header call it. */
+  onFocusElement?: (componentId: string) => void;
 }
+
+interface EndpointButtonProps {
+  id: string;
+  caption: string;
+  onFocusElement?: (componentId: string) => void;
+}
+
+/** One end of the connection: its name, and the group it sits in as context. */
+const EndpointButton = ({ id, caption, onFocusElement }: EndpointButtonProps) => {
+  const { t } = useTranslation();
+  const components = useResolvedComponents();
+  const component = components[id];
+  const parent = component?.parentId ? components[component.parentId] : undefined;
+  const name = component?.name?.trim() || t("common.unnamedElement");
+  return (
+    <button
+      type="button"
+      disabled={!component || !onFocusElement}
+      onClick={() => onFocusElement?.(id)}
+      title={name}
+      className="min-w-0 flex-1 rounded-md border border-border px-2 py-1.5 text-left enabled:hover:bg-accent disabled:cursor-default"
+    >
+      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground">
+        {caption}
+      </span>
+      <span className="block truncate text-sm font-medium">{name}</span>
+      {parent && (
+        <span className="block truncate text-xs text-muted-foreground">
+          {t("common.inGroup", { name: parent.name?.trim() || t("common.unnamedElement") })}
+        </span>
+      )}
+    </button>
+  );
+};
 
 const ConnectionPanel = ({
   conn,
@@ -63,6 +99,7 @@ const ConnectionPanel = ({
   updateConnection,
   removeConnection,
   focusTitleTrigger = 0,
+  onFocusElement,
 }: ConnectionPanelProps) => {
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
@@ -131,6 +168,19 @@ const ConnectionPanel = ({
         </button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <EndpointButton
+            id={conn.sourceId}
+            caption={t("common.connectionFrom")}
+            onFocusElement={onFocusElement}
+          />
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <EndpointButton
+            id={conn.targetId}
+            caption={t("common.connectionTo")}
+            onFocusElement={onFocusElement}
+          />
+        </div>
         <Field
           label={t("common.label")}
           value={label}

@@ -20,6 +20,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useEdgeLabelReveal } from "../contexts/EdgeLabelRevealContext";
 import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
 import { buildStepPath } from "./geometry/orthogonal";
 import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/projection";
@@ -81,6 +82,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   // and nothing on the read path needs the store's record.
   const connectionStyle = edgeData.connectionStyle;
   const { highlightedConnectionIds } = useHandleHighlight();
+  const revealedLabelEdgeIds = useEdgeLabelReveal();
 
   const source = useMemo<Point>(() => ({ x: sourceX, y: sourceY }), [sourceX, sourceY]);
   const target = useMemo<Point>(() => ({ x: targetX, y: targetY }), [targetX, targetY]);
@@ -387,6 +389,13 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           label={edgeData.label}
           technology={edgeData.technology}
           isHighlighted={isHighlighted}
+          revealed={
+            isHighlighted ||
+            hovered ||
+            revealedLabelEdgeIds.has(connectionId) ||
+            Boolean(edgeData.stepBadges?.length) ||
+            Boolean(edgeData.isLastRecorded)
+          }
           stepBadges={edgeData.stepBadges}
           isLastRecorded={edgeData.isLastRecorded}
           coverageFlowNames={edgeData.coverageFlowNames}

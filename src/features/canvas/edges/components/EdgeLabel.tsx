@@ -7,6 +7,8 @@ export interface EdgeLabelProps {
   label: string;
   technology?: string;
   isHighlighted: boolean;
+  /** Shown even when the canvas is zoomed out far enough to hide edge labels. */
+  revealed?: boolean;
   stepBadges?: string[];
   isLastRecorded?: boolean;
   coverageFlowNames?: string[];
@@ -25,6 +27,7 @@ export function EdgeLabel({
   label,
   technology,
   isHighlighted,
+  revealed = false,
   stepBadges,
   isLastRecorded,
   coverageFlowNames,
@@ -43,6 +46,8 @@ export function EdgeLabel({
     <EdgeLabelPortal>
       <div
         className={`nodrag nopan absolute z-[2] pointer-events-auto ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
+        data-edge-label=""
+        data-revealed={revealed ? "true" : undefined}
         data-connection-id={connectionId}
         data-label-position={labelPosition}
         data-drag-hit-path={dragPath ? "1" : "0"}
@@ -51,7 +56,7 @@ export function EdgeLabel({
         onPointerUp={onDragEnd}
         onPointerCancel={onDragEnd}
         style={{
-          transform: `translate(-50%, -50%) translate(${labelPoint.x}px, ${labelPoint.y}px)`,
+          transform: `translate(-50%, -50%) translate(${labelPoint.x}px, ${labelPoint.y}px) scale(var(--edge-label-scale, 1))`,
         }}
       >
         <div
