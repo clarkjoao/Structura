@@ -95,11 +95,13 @@ export async function createLanguageModel(config: LLMConfig): Promise<LanguageMo
           ...(!useXApiKey && authHeader && config.apiKey ? { [authHeader]: config.apiKey } : {}),
           ...(config.extraHeaders ?? {}),
         };
+        // The SDK always sends `x-api-key` and throws when no key is set, so it
+        // gets an empty one here and the fetch drops it on the way out.
         return createAnthropic({
           baseURL: toAnthropicBaseUrl(config.baseUrl ?? ""),
-          ...(useXApiKey && config.apiKey ? { apiKey: config.apiKey } : {}),
+          apiKey: useXApiKey ? config.apiKey : "",
           headers,
-          fetch,
+          fetch: withoutEmptyHeader(fetch, "x-api-key"),
         })(config.model);
       }
       const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
@@ -125,12 +127,22 @@ export async function createLanguageModel(config: LLMConfig): Promise<LanguageMo
   }
 }
 
-/** Strips a trailing "/v1/messages" so the Anthropic SDK can append its own path. */
+/** Wraps `fetch` so a request never carries `name` with an empty value. */
+function withoutEmptyHeader(fetch: typeof globalThis.fetch, name: string): typeof globalThis.fetch {
+  return (input, init) => {
+    const headers = new Headers(init?.headers);
+    if (headers.get(name) !== "") return fetch(input, init);
+    headers.delete(name);
+    return fetch(input, { ...init, headers });
+  };
+}
+
+/** Strips a trailing "/messages" so the Anthropic SDK can append its own path. */
 function toAnthropicBaseUrl(url: string): string {
   return url
     .trim()
     .replace(/\/+$/, "")
-    .replace(/\/v1\/messages$/, "");
+    .replace(/\/messages$/, "");
 }
 
 function toStopReason(finishReason: string): LLMStopReason {

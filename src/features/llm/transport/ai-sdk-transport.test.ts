@@ -162,6 +162,19 @@ describe("AI SDK transport — provider mapping", () => {
     expect(headers.get("anthropic-dangerous-direct-browser-access")).toBe("true");
   });
 
+  it("custom-anthropic: sends no x-api-key when the connection has no key", async () => {
+    const { url, headers } = await captureRequest(() => new Response("", { status: 200 })).send({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "",
+      model: "claude-haiku-5-5",
+      baseUrl: "https://anthropic-proxy.example.com/v1",
+    });
+    expect(url).toBe("https://anthropic-proxy.example.com/v1/messages");
+    expect(headers.get("x-api-key")).toBeNull();
+  });
+
   it("custom: default protocol is OpenAI-compatible (regression)", async () => {
     const { url } = await captureRequest().send({
       mode: "direct",
