@@ -25,7 +25,9 @@ export function patchChangeKind(action: DiagramPatchAction): PatchChangeKind {
 export function formatActionLabel(action: DiagramPatchAction, translate: TFunction): string {
   switch (action.type) {
     case "ADD_NODE":
-      return `${action.payload.name} (${action.payload.nodeType})`;
+      return `${action.payload.name} (${
+        action.payload.serviceId ?? action.payload.panelKind ?? action.payload.nodeType
+      })`;
     case "REMOVE_NODE":
       return translate("llmChat.suggestion.action.removeNode", { nodeId: action.payload.nodeId });
     case "UPDATE_NODE":

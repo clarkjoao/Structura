@@ -56,6 +56,15 @@ describe("hierarchical element catalog (F8)", () => {
     expect(found.results.some((row) => row.serviceId === "kafka")).toBe(true);
   });
 
+  it("finds a service by the full name a model writes, not only its catalog name", () => {
+    const serviceIds = (query: string) =>
+      searchElements({ query, familyId: "aws" }).results.map((row) => row.serviceId);
+    expect(serviceIds("Application Load Balancer")).toEqual(["elb"]);
+    expect(serviceIds("Elastic Container Service")).toContain("ecs");
+    expect(serviceIds("ECS Fargate")).toEqual(expect.arrayContaining(["ecs", "fargate"]));
+    expect(serviceIds("lambda")[0]).toBe("lambda");
+  });
+
   it("records AFTER hierarchical catalog sizes", () => {
     const catalog = buildComponentTypeCatalog();
     const prompt = buildSystemPrompt("## Diagram\n(empty)", "en");

@@ -638,7 +638,7 @@
       "rejected": "Rejeitado",
       "changeCount_one": "{{count}} alteração",
       "changeCount_other": "{{count}} alterações",
-      "oneUndoStep": "Aplica como um único passo de desfazer",
+      "oneUndoStep": "Visível no canvas · Aceitar mantém como um único passo de desfazer",
       "skipped": {
         "missingNode": "Ignorada: o elemento não existe mais",
         "missingEdge": "Ignorada: a conexão não existe mais",
@@ -696,6 +696,10 @@
     "floatingButton": {
       "open": "Abrir assistente de chat",
       "close": "Fechar assistente de chat"
+    },
+    "preview": {
+      "keep": "Manter",
+      "discard": "Descartar"
     },
     "error": {
       "auth": "Chave de API inválida. Verifique suas configurações.",
@@ -828,7 +832,8 @@
       "section": "Skills",
       "source": {
         "workspace": "Workspace",
-        "local": "Local"
+        "local": "Local",
+        "builtin": "Nativa"
       },
       "toolCount_one": "{{count}} ferramenta",
       "toolCount_other": "{{count}} ferramentas",

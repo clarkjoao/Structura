@@ -229,4 +229,63 @@ describe("internal tools — write tools queue and never touch the diagram", () 
     ).toBe(true);
     expect(context.suggestion.isEmpty).toBe(true);
   });
+
+  it("add_node takes a registered serviceId's category over a generic nodeType", () => {
+    const { run, context } = setup();
+    const result = run("add_node", {
+      nodeType: "container",
+      name: "Orders service",
+      parentId: null,
+      serviceId: "ecs",
+    });
+    expect(result).toMatchObject({ queued: true, nodeType: "aws-compute" });
+    expect(context.suggestion.actions[0]).toMatchObject({
+      type: "ADD_NODE",
+      payload: { nodeType: "aws-compute", serviceId: "ecs" },
+    });
+  });
+
+  it("an unknown serviceId error names the closest catalog entries", () => {
+    const { run } = setup();
+    const result = run("add_node", {
+      nodeType: "container",
+      name: "LB",
+      parentId: null,
+      serviceId: "elastic-load-balancing",
+    });
+    expect(isToolErrorResult(result)).toBe(true);
+    expect(JSON.stringify(result)).toContain("Closest catalog entries");
+    expect(JSON.stringify(result)).toContain('\\"elb\\"');
+  });
+
+  it("add_node returns the ref of the same node queued earlier instead of adding it twice", () => {
+    const { run, context } = setup();
+    const subnet = { nodeType: "panel", name: "Public Subnet A", panelKind: "public-subnet" };
+    run("add_node", { ...subnet, parentId: null });
+    expect(run("add_node", { ...subnet, parentId: null })).toMatchObject({
+      queued: false,
+      ref: "new-1",
+    });
+    expect(context.suggestion.actions).toHaveLength(1);
+  });
+
+  it("parentId, sourceId and targetId may name a node queued this turn or on the diagram", () => {
+    const { run, context } = setup();
+    run("add_node", {
+      nodeType: "panel",
+      name: "AZ A",
+      parentId: null,
+      panelKind: "availability-zone",
+    });
+    expect(run("add_node", { nodeType: "container", name: "App", parentId: "az a" })).toMatchObject(
+      { queued: true },
+    );
+    expect(run("add_edge", { sourceId: "App", targetId: "Orders DB", label: "SQL" })).toMatchObject(
+      { queued: true },
+    );
+    expect(context.suggestion.actions[1]).toMatchObject({ payload: { parentId: "new-1" } });
+    expect(context.suggestion.actions[2]).toMatchObject({
+      payload: { sourceId: "new-2", targetId: "db" },
+    });
+  });
 });

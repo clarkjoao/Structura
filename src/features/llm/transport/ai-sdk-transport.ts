@@ -246,7 +246,7 @@ export type ToolEvent =
   | { kind: "error"; id: string; error: string };
 
 /** Most model calls one reply may make: each tool round trip is one step. */
-export const MAX_TOOL_STEPS = 8;
+export const MAX_TOOL_STEPS = 12;
 
 /** Streams one reply through the AI SDK. */
 export async function streamChat(request: ChatStreamRequest): Promise<LLMCompletion> {

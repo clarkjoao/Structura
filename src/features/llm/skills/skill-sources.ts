@@ -1,6 +1,7 @@
 import type { IStoragePort } from "@/infrastructure/persistence";
 import { skillFileStem } from "./skill-format";
 import type { SkillSource } from "./skill.types";
+import { BUILTIN_SKILL_FILES, createBuiltinSkillSource } from "./builtin-skills";
 
 /**
  * Where skills live. Each source stores skill files as text (the skill file
@@ -21,6 +22,8 @@ export interface SkillFile {
 
 export interface SkillSourceAdapter {
   readonly source: SkillSource;
+  /** Lists skills but takes no new or changed ones (built-in skills). */
+  readonly readOnly?: boolean;
   list(): Promise<SkillFile[]>;
   read(id: string): Promise<SkillFile | null>;
   /** Stores a new skill; `nameHint` names the file where the source has files. */
@@ -265,17 +268,22 @@ export class SkillSourceRegistry {
 }
 
 /**
- * Local is always there; Workspace only while a folder is connected, so the
- * question "where do I save this?" is answered by what is registered.
+ * Local and Built-in are always there; Workspace only while a folder is
+ * connected, so the question "where do I save this?" is answered by what is
+ * registered (and not read-only).
  */
 export function createSkillSourceRegistry(
   port: IStoragePort,
   host: SkillFolderHost | null,
+  builtinFiles: Readonly<Record<string, string>> = BUILTIN_SKILL_FILES,
 ): SkillSourceRegistry {
   const registry = new SkillSourceRegistry();
   if (host?.isConnected() && host.workspaceId()) {
     registry.register(createWorkspaceSkillSource(host, port));
   }
   registry.register(createLocalSkillSource(port));
+  if (Object.keys(builtinFiles).length > 0) {
+    registry.register(createBuiltinSkillSource(port, builtinFiles));
+  }
   return registry;
 }

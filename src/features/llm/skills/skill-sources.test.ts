@@ -5,6 +5,8 @@ import {
   createSkillSourceRegistry,
   createWorkspaceSkillSource,
 } from "./skill-sources";
+import { createBuiltinSkillSource } from "./builtin-skills";
+import { isSkillParseFailure, parseSkillMarkdown } from "./skill-format";
 import { memorySkillFolder, skillText } from "./test-utils";
 
 describe("workspace skill source", () => {
@@ -120,13 +122,39 @@ describe("source registry", () => {
         .list()
         .map((source) => source.source);
 
-    expect(sourcesOf()).toEqual(["workspace", "local"]);
+    expect(sourcesOf()).toEqual(["workspace", "local", "builtin"]);
     folder.setConnected(false);
-    expect(sourcesOf()).toEqual(["local"]);
+    expect(sourcesOf()).toEqual(["local", "builtin"]);
     expect(
       createSkillSourceRegistry(port, null)
         .list()
         .map((source) => source.source),
-    ).toEqual(["local"]);
+    ).toEqual(["local", "builtin"]);
+  });
+});
+
+describe("built-in skills", () => {
+  it("ship a valid AWS architecture skill that leaves the tools open", async () => {
+    const files = await createBuiltinSkillSource(new InMemoryAdapter()).list();
+    const aws = files.find((file) => file.id === "aws-architecture.md");
+    expect(aws?.enabled).toBe(true);
+    const parsed = parseSkillMarkdown(aws?.text ?? "");
+    expect(isSkillParseFailure(parsed)).toBe(false);
+    if (!isSkillParseFailure(parsed)) {
+      expect(parsed.fields.name).toBe("AWS architecture diagram");
+      expect(parsed.fields.tools).toBeUndefined();
+      expect(parsed.warnings).toEqual([]);
+    }
+  });
+
+  it("are read-only; only the enabled flag is stored", async () => {
+    const port = new InMemoryAdapter();
+    const source = createBuiltinSkillSource(port, { "x.md": skillText("X") });
+    await expect(source.update("x.md", "changed")).rejects.toThrow();
+    await expect(source.delete("x.md")).rejects.toThrow();
+    await expect(source.create("new", "New")).rejects.toThrow();
+
+    await source.setEnabled("x.md", false);
+    expect(await source.read("x.md")).toEqual({ id: "x.md", text: skillText("X"), enabled: false });
   });
 });

@@ -15,6 +15,12 @@ vi.mock("../../hooks/useToolCatalog", () => ({
 
 vi.mock("@/lib/export-service/download-file", () => ({ downloadFile: vi.fn() }));
 
+// The app's built-in skills would add rows to every list below.
+vi.mock("../../skills/builtin-skills", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../skills/builtin-skills")>()),
+  BUILTIN_SKILL_FILES: {},
+}));
+
 const t = (key: string, params?: Record<string, unknown>) => i18n.t(key, params);
 
 let folder: ReturnType<typeof memorySkillFolder>;

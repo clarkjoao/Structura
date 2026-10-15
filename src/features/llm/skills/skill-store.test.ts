@@ -6,7 +6,7 @@ import { memorySkillFolder, skillText } from "./test-utils";
 function setup() {
   const folder = memorySkillFolder();
   const port = new InMemoryAdapter();
-  const store = createSkillStore(port);
+  const store = createSkillStore(port, {});
   return { folder, port, store };
 }
 

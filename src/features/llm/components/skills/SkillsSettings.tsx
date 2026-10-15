@@ -34,6 +34,7 @@ import { unknownSkillTools } from "../../skills/skill-request";
 import { useSkillStore, type SkillProblem, type SkillWriteResult } from "../../skills/skill-store";
 import {
   SKILL_SOURCE_LABEL_KEYS,
+  isBuiltinSkill,
   isWorkspaceSkill,
   isWorkspaceSource,
   skillKey,
@@ -297,9 +298,9 @@ export function SkillsSettings() {
                 unknownTools={unknownSkillTools(skill, knownTool)}
                 unknownKeys={(warnings[skillKey(skill)] ?? []).map((warning) => warning.field)}
                 onToggle={(enabled) => void useSkillStore.getState().setEnabled(skill, enabled)}
-                onEdit={() => openEdit(skill)}
+                onEdit={isBuiltinSkill(skill) ? undefined : () => openEdit(skill)}
                 onExport={() => exportSkill(skill)}
-                onDelete={() => setDeleting(skill)}
+                onDelete={isBuiltinSkill(skill) ? undefined : () => setDeleting(skill)}
               />
             ))}
           </ul>
@@ -410,9 +411,11 @@ function SkillRow({
   unknownTools: string[];
   unknownKeys: string[];
   onToggle: (enabled: boolean) => void;
-  onEdit: () => void;
+  /** Absent for read-only (built-in) skills. */
+  onEdit?: () => void;
   onExport: () => void;
-  onDelete: () => void;
+  /** Absent for read-only (built-in) skills. */
+  onDelete?: () => void;
 }) {
   const { t } = useTranslation();
   const warning = [
@@ -455,15 +458,19 @@ function SkillRow({
         onCheckedChange={onToggle}
         aria-label={t("llmChat.skills.settings.enable", { name: skill.name })}
       />
-      <IconButton label={t("llmChat.skills.settings.edit")} onClick={onEdit}>
-        <Pencil className="h-3.5 w-3.5" />
-      </IconButton>
+      {onEdit ? (
+        <IconButton label={t("llmChat.skills.settings.edit")} onClick={onEdit}>
+          <Pencil className="h-3.5 w-3.5" />
+        </IconButton>
+      ) : null}
       <IconButton label={t("llmChat.skills.settings.export")} onClick={onExport}>
         <Download className="h-3.5 w-3.5" />
       </IconButton>
-      <IconButton label={t("llmChat.skills.settings.delete")} onClick={onDelete}>
-        <Trash2 className="h-3.5 w-3.5" />
-      </IconButton>
+      {onDelete ? (
+        <IconButton label={t("llmChat.skills.settings.delete")} onClick={onDelete}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </IconButton>
+      ) : null}
     </li>
   );
 }

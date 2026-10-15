@@ -63,6 +63,10 @@ export const canvasDiagramToolHost: DiagramToolHost = {
   readDiagram,
   applyChanges: (changes) => useDiagramStore.getState().applyChangeBatch(changes),
   autoLayout,
+  takeReceipt: (checkpoint) => useDiagramStore.getState().takeChangeBatchReceipt(checkpoint),
+  revertChanges: (receipt) => useDiagramStore.getState().revertChangeBatch(receipt),
+  isInHistory: (receipt) => useDiagramStore.getState().isChangeBatchInHistory(receipt),
+  removeElements: (nodeIds, edgeIds) => useDiagramStore.getState().removeElements(nodeIds, edgeIds),
 };
 
 /**

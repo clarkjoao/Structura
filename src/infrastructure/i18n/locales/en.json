@@ -638,7 +638,7 @@
       "rejected": "Rejected",
       "changeCount_one": "{{count}} change",
       "changeCount_other": "{{count}} changes",
-      "oneUndoStep": "Applies as one undo step",
+      "oneUndoStep": "Shown on the canvas · Accept keeps it as one undo step",
       "skipped": {
         "missingNode": "Skipped: element no longer exists",
         "missingEdge": "Skipped: connection no longer exists",
@@ -696,6 +696,10 @@
     "floatingButton": {
       "open": "Open chat assistant",
       "close": "Close chat assistant"
+    },
+    "preview": {
+      "keep": "Keep",
+      "discard": "Discard"
     },
     "error": {
       "auth": "Invalid API key. Check your settings.",
@@ -828,7 +832,8 @@
       "section": "Skills",
       "source": {
         "workspace": "Workspace",
-        "local": "Local"
+        "local": "Local",
+        "builtin": "Built-in"
       },
       "toolCount_one": "{{count}} tool",
       "toolCount_other": "{{count}} tools",

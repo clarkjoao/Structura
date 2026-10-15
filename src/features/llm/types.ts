@@ -1,4 +1,10 @@
-import type { ComponentPatch, ComponentType, EdgeStyle } from "@/features/diagram";
+import type {
+  ChangeBatchReceipt,
+  ComponentPatch,
+  ComponentType,
+  EdgeStyle,
+} from "@/features/diagram";
+import type { PanelKind } from "@/features/diagram/enums";
 import type { MessagePart, MessageStatus } from "./message-parts";
 import type { MentionRef } from "./mentions/mention-ref";
 import type { SkillRef } from "./skills/skill.types";
@@ -144,6 +150,8 @@ export type DiagramPatchAction =
         position?: { x: number; y: number };
         /** Catalog service id from search_elements; becomes the component's cloud service. */
         serviceId?: string;
+        /** Panels only: the group kind (VPC, subnet, availability zone…). */
+        panelKind?: PanelKind;
       };
     }
   | { type: "REMOVE_NODE"; payload: { nodeId: string } }
@@ -172,6 +180,19 @@ export interface PendingSuggestion {
   messageId: string;
   patch: DiagramPatch;
   status: "pending" | "accepted" | "rejected";
-  /** After Accept: the actions that no longer applied (their target was gone). */
+  /** The actions that no longer applied (their target was gone). */
   skipped?: SkippedAction[];
+}
+
+/**
+ * A pending suggestion drawn on the canvas before Accept: it is applied as
+ * one undo step and its elements are marked pending. Accept keeps it; Reject
+ * takes it back.
+ */
+export interface PendingNodePreview {
+  suggestionId: string;
+  nodeIds: string[];
+  edgeIds: string[];
+  /** How to take the preview back as one step; null when that is not possible. */
+  receipt: ChangeBatchReceipt | null;
 }

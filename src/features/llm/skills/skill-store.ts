@@ -7,6 +7,7 @@ import {
   type SkillParseError,
   type SkillParseWarning,
 } from "./skill-format";
+import { BUILTIN_SKILL_FILES } from "./builtin-skills";
 import {
   createSkillSourceRegistry,
   type SkillFile,
@@ -115,13 +116,16 @@ function toLoaded(source: SkillSource, file: SkillFile): LoadedFile {
 }
 
 /** Builds the skill store over a storage port; the app uses {@link useSkillStore}. */
-export function createSkillStore(port: IStoragePort) {
+export function createSkillStore(
+  port: IStoragePort,
+  builtinFiles: Readonly<Record<string, string>> = BUILTIN_SKILL_FILES,
+) {
   return create<SkillStoreState>((set, get) => {
     let host: SkillFolderHost | null = null;
     let generation = 0;
     let unwatch: Array<() => void> = [];
 
-    const registry = (): SkillSourceRegistry => createSkillSourceRegistry(port, host);
+    const registry = (): SkillSourceRegistry => createSkillSourceRegistry(port, host, builtinFiles);
 
     const write = async (
       source: SkillSource,
@@ -192,7 +196,10 @@ export function createSkillStore(port: IStoragePort) {
                 : [],
             ),
           ),
-          availableSources: sources.list().map((source) => source.source),
+          availableSources: sources
+            .list()
+            .filter((source) => !source.readOnly)
+            .map((source) => source.source),
           loaded: true,
         });
       },

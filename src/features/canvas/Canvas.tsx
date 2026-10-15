@@ -46,6 +46,7 @@ import {
 import { AssistantUIChatPanel, FloatingChatButton } from "@/features/llm/components";
 import { useLLMStore } from "@/features/llm";
 import { useProvideChatToolHost } from "./chat";
+import { PendingNodeToolbars } from "./selection-actions/PendingNodeToolbar";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
 import { isPanelComponent, isApiGroupComponent, isTextComponent } from "@/features/diagram";
@@ -456,6 +457,7 @@ const Canvas = (props: CanvasProps = {}) => {
                     if (node) eventHandlers.onNodeClick?.({} as never, node);
                   }}
                 />
+                <PendingNodeToolbars />
                 {/* QuickActions toolbar for single node selection. Gated on the same
               flag as the element panel: the bar edits the element, so it has no
               place in a reading or a comparison — and a selection made before

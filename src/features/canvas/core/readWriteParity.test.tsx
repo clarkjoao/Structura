@@ -13,6 +13,7 @@ import {
   type Diagram,
   type VersionDiff,
 } from "@/features/diagram";
+import { useLLMStore, type PendingNodePreview } from "@/features/llm";
 import "@/features/canvas/nodes/node-types/registry";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { FlowModeProvider } from "../flow/FlowModeContext";
@@ -597,8 +598,8 @@ describe("slice 4: editor and viewer hand React Flow the same arrays", () => {
 /*
  * Slice 5: what only the editor has is an overlay, and an overlay cannot move
  * the base. With every editor-only mode on at once — a selection, a highlight,
- * a selected edge, scene comparison on every node and edge and the tag filter —
- * the editor still draws the same base as the viewer:
+ * a selected edge, scene comparison on every node and edge, the tag filter and
+ * pending LLM previews — the editor still draws the same base as the viewer:
  * same nodes in the same order, same places, stacking, nesting, visibility and
  * size, same edges on the same handles along the same route.
  */
@@ -607,6 +608,7 @@ describe("slice 5: editor-only modes leave the base alone", () => {
     useDiagramStore.setState({ diagrams: {}, activeDiagramId: null });
     useCanvasSelectionStore.getState().clearSelection();
     editorModes = EDITOR_MODES_OFF;
+    useLLMStore.setState({ pendingPreviews: [] });
   });
 
   for (const [name, diagram] of Object.entries(BASE_CASES)) {
@@ -625,12 +627,18 @@ describe("slice 5: editor-only modes leave the base alone", () => {
         compareConnectionOpacity: Object.fromEntries(edgeIds.map((id) => [id, 0.5])),
         hiddenByTag: (component) => component.id === nodeIds[nodeIds.length - 1],
       };
+      useLLMStore.setState({
+        pendingPreviews: [{ suggestionId: "s", nodeIds, edgeIds } as unknown as PendingNodePreview],
+      });
 
       const write = writeProjection(diagram);
 
       // The overlays did act, so the equalities below are not vacuous.
+      expect(write.nodes.some((node) => node.className?.includes("node-pending"))).toBe(true);
+      expect(write.nodes.every((node) => node.draggable === false)).toBe(true);
       if (edgeIds.length > 0) {
         expect(write.edges.some((edge) => edge.selected)).toBe(true);
+        expect(write.edges.every((edge) => edge.className?.includes("edge-pending"))).toBe(true);
       }
 
       expect(write.nodes.map(drawnNode)).toEqual(read.nodes.map(drawnNode));

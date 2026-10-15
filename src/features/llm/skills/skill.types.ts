@@ -3,10 +3,14 @@
  * menu. Name, description and instructions are user data — never translated.
  */
 
-export type SkillSource = "workspace" | "local";
+/** `builtin` skills ship with the app and are read-only. */
+export type SkillSource = "workspace" | "local" | "builtin";
 
 export interface Skill {
-  /** Stable per source: the file path for workspace skills, a generated id for local ones. */
+  /**
+   * Stable per source: the file path for workspace skills, a generated id for
+   * local ones, the file name for built-in ones.
+   */
   id: string;
   source: SkillSource;
   name: string;
@@ -34,7 +38,7 @@ export interface SkillRef {
   name: string;
 }
 
-const SKILL_SOURCES: readonly SkillSource[] = ["workspace", "local"];
+const SKILL_SOURCES: readonly SkillSource[] = ["workspace", "local", "builtin"];
 
 export function isSkillSource(value: unknown): value is SkillSource {
   return SKILL_SOURCES.some((source) => source === value);
@@ -50,6 +54,11 @@ export function isWorkspaceSkill(skill: Skill): skill is Skill & { source: "work
 
 export function isLocalSkill(skill: Skill): skill is Skill & { source: "local" } {
   return skill.source === "local";
+}
+
+/** Built-in skills ship with the app: they can be turned off and exported, not edited. */
+export function isBuiltinSkill(skill: Pick<Skill, "source">): boolean {
+  return skill.source === "builtin";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -78,6 +87,7 @@ export function toSkillRef(skill: Skill): SkillRef {
 export const SKILL_SOURCE_LABEL_KEYS: Record<SkillSource, string> = {
   workspace: "llmChat.skills.source.workspace",
   local: "llmChat.skills.source.local",
+  builtin: "llmChat.skills.source.builtin",
 };
 
 /** i18n key for the tool summary: "N tools" when the skill restricts tools, "all tools" otherwise. */

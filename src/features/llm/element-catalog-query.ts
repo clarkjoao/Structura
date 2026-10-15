@@ -6,6 +6,8 @@ import {
 } from "@/features/elements/families/cloud-family.registry";
 import type { Component } from "@/features/diagram/model/component.types";
 import type { ElementDescriptor } from "@/features/elements/element.types";
+import { conceptTerms } from "@/features/elements/search/concepts";
+import { fold } from "@/features/elements/search/normalize";
 import i18n from "@/infrastructure/i18n";
 
 const CATALOG_LOCALE = "en";
@@ -117,8 +119,81 @@ export function listElementFamilies(
   };
 }
 
-function matchesQuery(haystack: string, query: string): boolean {
-  return haystack.toLowerCase().includes(query.toLowerCase());
+/** Words a query carries that say nothing about which element it wants. */
+const QUERY_STOPWORDS = new Set([
+  "amazon",
+  "aws",
+  "azure",
+  "google",
+  "gcp",
+  "cloud",
+  "service",
+  "services",
+  "the",
+  "of",
+  "for",
+  "and",
+]);
+
+/** Longer words match on their first letters: "balancer" finds "Balancing". */
+const STEM_LENGTH = 5;
+
+/** Folded, with every space and dash dropped: "Elastic Container Service" meets an icon name. */
+function compact(text: string): string {
+  return fold(text).replace(/[^a-z0-9]+/g, "");
+}
+
+function queryTokens(query: string): string[] {
+  return fold(query)
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 2 && !QUERY_STOPWORDS.has(token))
+    .map((token) => (token.length > STEM_LENGTH ? token.slice(0, STEM_LENGTH) : token));
+}
+
+/**
+ * The keys an entry is found by. `names` are what it is called (id, label,
+ * icon name, synonyms, concept terms); `all` adds the descriptions.
+ */
+interface SearchKeys {
+  names: readonly string[];
+  all: readonly string[];
+}
+
+/** A name made of several words ("load balancer"), which a query may contain whole. */
+function isPhrase(name: string): boolean {
+  return /\s/.test(name.trim());
+}
+
+/**
+ * How an entry matches the whole query: 2 when one of its names does — it
+ * contains the query (spaces and dashes aside), or the query contains one of
+ * its multi-word names ("Application Load Balancer" holds "load balancer") —
+ * 1 when only a description does, 0 when nothing does.
+ */
+function queryMatch(keys: SearchKeys, query: string): number {
+  const folded = fold(query);
+  const compacted = compact(query);
+  const byName = keys.names.some((key) => {
+    const name = compact(key);
+    return name.includes(compacted) || (isPhrase(key) && compacted.includes(name));
+  });
+  if (byName) return 2;
+  return keys.all.some((key) => fold(key).includes(folded)) ? 1 : 0;
+}
+
+/** The words of an entry's names, camel-case icon names split too. */
+function nameWords(keys: SearchKeys): string[] {
+  return keys.names.flatMap((name) =>
+    fold(name.replace(/([a-z])([A-Z])/g, "$1 $2"))
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean),
+  );
+}
+
+/** How many of the query's words start a word of the entry's names. */
+function tokenScore(keys: SearchKeys, tokens: readonly string[]): number {
+  const words = nameWords(keys);
+  return tokens.filter((token) => words.some((word) => word.startsWith(token))).length;
 }
 
 /**
@@ -135,7 +210,7 @@ export function searchElements(params: {
 }): SearchElementsResult {
   const limit = Math.min(Math.max(params.limit ?? 15, 1), 50);
   const query = params.query.trim();
-  const results: SearchElementsResultItem[] = [];
+  const candidates: { item: SearchElementsResultItem; keys: SearchKeys }[] = [];
 
   if (!query) {
     return { results: [], truncated: false };
@@ -147,15 +222,22 @@ export function searchElements(params: {
     for (const element of elements) {
       const label = t(element.labelKey);
       const description = t(element.descriptionKey);
-      const keys = [element.id, label, description, ...(element.palette.searchKeys ?? [])];
-      if (!keys.some((key) => matchesQuery(key, query))) continue;
-      results.push({
-        elementType: element.id,
-        serviceId: null,
-        familyId: familyFilter,
+      const names = [
+        element.id,
         label,
-        description,
-        requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : [],
+        ...(element.palette.searchKeys ?? []),
+        ...(element.palette.concepts ?? []).flatMap(conceptTerms),
+      ];
+      candidates.push({
+        keys: { names, all: [...names, description] },
+        item: {
+          elementType: element.id,
+          serviceId: null,
+          familyId: familyFilter,
+          label,
+          description,
+          requiredFields: element.model.requiredFields ? [...element.model.requiredFields] : [],
+        },
       });
     }
   };
@@ -186,27 +268,53 @@ export function searchElements(params: {
         const description = service.descriptionKey
           ? t(service.descriptionKey)
           : categoryDescription;
-        const keys = [
+        const names = [
           service.id,
           service.name,
           service.iconName,
-          description,
-          category.id,
-          categoryLabel,
-          categoryDescription,
-          family.id,
+          ...(service.concepts ?? []).flatMap(conceptTerms),
         ];
-        if (!keys.some((key) => matchesQuery(key, query))) continue;
-        results.push({
-          elementType: category.id,
-          serviceId: service.id,
-          familyId: family.id,
-          label: service.name,
-          description,
-          requiredFields: [],
+        candidates.push({
+          keys: {
+            names,
+            all: [
+              ...names,
+              description,
+              category.id,
+              categoryLabel,
+              categoryDescription,
+              family.id,
+            ],
+          },
+          item: {
+            elementType: category.id,
+            serviceId: service.id,
+            familyId: family.id,
+            label: service.name,
+            description,
+            requiredFields: [],
+          },
         });
       }
     }
+  }
+
+  // Entries matched by name first, then those only a description matched.
+  let results = candidates
+    .map((candidate) => ({ item: candidate.item, match: queryMatch(candidate.keys, query) }))
+    .filter((entry) => entry.match > 0)
+    .sort((a, b) => b.match - a.match)
+    .map((entry) => entry.item);
+  if (results.length === 0) {
+    // No entry holds the whole query ("Elastic Container Service Fargate"):
+    // keep the ones that hold the most of its words.
+    const tokens = queryTokens(query);
+    const scored = candidates.map((candidate) => ({
+      item: candidate.item,
+      score: tokenScore(candidate.keys, tokens),
+    }));
+    const best = Math.max(0, ...scored.map((entry) => entry.score));
+    results = best === 0 ? [] : scored.filter((entry) => entry.score === best).map((e) => e.item);
   }
 
   const truncated = results.length > limit;

@@ -28,6 +28,39 @@ export class SuggestionDraft {
     return this.queued.some((action) => isAddNodeAction(action) && action.payload.ref === id);
   }
 
+  /** The ref of the node most recently queued with this name (case-insensitive), if any. */
+  refByName(name: string): string | undefined {
+    const wanted = name.trim().toLowerCase();
+    for (let index = this.queued.length - 1; index >= 0; index -= 1) {
+      const action = this.queued[index];
+      if (
+        action &&
+        isAddNodeAction(action) &&
+        action.payload.name.trim().toLowerCase() === wanted
+      ) {
+        return action.payload.ref;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * The ref of a node already queued with the same name, type, panel kind and
+   * service: a model that retries after an error often queues it again.
+   */
+  sameNodeRef(payload: Omit<AddNodeAction["payload"], "ref">): string | undefined {
+    const wanted = payload.name.trim().toLowerCase();
+    const match = this.queued.find(
+      (action): action is AddNodeAction =>
+        isAddNodeAction(action) &&
+        action.payload.name.trim().toLowerCase() === wanted &&
+        action.payload.nodeType === payload.nodeType &&
+        action.payload.panelKind === payload.panelKind &&
+        action.payload.serviceId === payload.serviceId,
+    );
+    return match?.payload.ref;
+  }
+
   get actions(): readonly DiagramPatchAction[] {
     return this.queued;
   }

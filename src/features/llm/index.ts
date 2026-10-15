@@ -11,10 +11,17 @@ export type {
   DiagramPatchAction,
   DiagramPatch,
   PendingSuggestion,
+  PendingNodePreview,
 } from "./types";
 
 // ─── Store ────────────────────────────────────────────────────────────────────
-export { useLLMStore, countConversationMessages } from "./store";
+export {
+  useLLMStore,
+  countConversationMessages,
+  getPendingNodeIds,
+  getPendingEdgeIds,
+  getSuggestionIdForNode,
+} from "./store";
 
 // ─── Serializers ──────────────────────────────────────────────────────────────
 export { serializeDiagramContext } from "./serializer";

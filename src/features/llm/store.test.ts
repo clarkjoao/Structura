@@ -551,24 +551,56 @@ describe("LLM store — Accept and Reject", () => {
     useLLMStore.getState().setToolHost(null);
   });
 
-  it("nothing is applied before Accept; Accept applies the whole suggestion in one batch", async () => {
+  it("the turn previews its suggestion on the canvas as one batch, marked pending", async () => {
     await useLLMStore.getState().sendMessage("Rename and add", "ctx");
-    expect(host.applied).toEqual([]);
 
+    expect(host.applied).toHaveLength(1);
+    expect(host.applied[0]?.map((change) => change.kind)).toEqual(["updateNode", "addNode"]);
+    const suggestion = useLLMStore.getState().pendingSuggestions[0];
+    expect(suggestion?.status).toBe("pending");
+    expect(useLLMStore.getState().pendingPreviews).toEqual([
+      expect.objectContaining({ suggestionId: suggestion?.id }),
+    ]);
+  });
+
+  it("Accept keeps the preview without applying it again", async () => {
+    await useLLMStore.getState().sendMessage("Rename and add", "ctx");
     const suggestion = useLLMStore.getState().pendingSuggestions[0];
     await useLLMStore.getState().acceptSuggestion(suggestion?.id ?? "");
 
     expect(host.applied).toHaveLength(1);
-    expect(host.applied[0]?.map((change) => change.kind)).toEqual(["updateNode", "addNode"]);
+    expect(host.reverted).toEqual([]);
+    expect(useLLMStore.getState().pendingSuggestions[0]?.status).toBe("accepted");
+    expect(useLLMStore.getState().pendingPreviews).toEqual([]);
+  });
+
+  it("Accept applies again when the preview was undone", async () => {
+    await useLLMStore.getState().sendMessage("Rename and add", "ctx");
+    host.undoAll();
+    const suggestion = useLLMStore.getState().pendingSuggestions[0];
+    await useLLMStore.getState().acceptSuggestion(suggestion?.id ?? "");
+
+    expect(host.applied).toHaveLength(2);
     expect(useLLMStore.getState().pendingSuggestions[0]?.status).toBe("accepted");
   });
 
-  it("Reject changes nothing", async () => {
+  it("Reject takes the preview back", async () => {
     await useLLMStore.getState().sendMessage("Rename and add", "ctx");
     const suggestion = useLLMStore.getState().pendingSuggestions[0];
     useLLMStore.getState().rejectSuggestion(suggestion?.id ?? "");
-    expect(host.applied).toEqual([]);
+
+    expect(host.reverted).toHaveLength(1);
     expect(useLLMStore.getState().pendingSuggestions[0]?.status).toBe("rejected");
+    expect(useLLMStore.getState().pendingPreviews).toEqual([]);
+  });
+
+  it("starting a new conversation takes pending previews back", async () => {
+    await useLLMStore.getState().sendMessage("Rename and add", "ctx");
+    const diagramId = useLLMStore.getState().activeDiagramId ?? "d";
+    useLLMStore.getState().createThread(diagramId);
+
+    expect(host.reverted).toHaveLength(1);
+    expect(useLLMStore.getState().pendingPreviews).toEqual([]);
   });
 });
 

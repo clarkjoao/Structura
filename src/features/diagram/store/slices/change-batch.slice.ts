@@ -1,11 +1,12 @@
 import type { Diagram, VersionDiff } from "../../model/diagram.types";
 import type { ComponentPatch, ComponentType } from "../../model/component.types";
 import type { EdgeStyle } from "../../model/connection.types";
+import type { PanelKind } from "../../enums";
 import type { PatternFragment } from "../../model/pattern-fragment.types";
 import { canContain } from "@/features/elements/containment";
 import { canBeConnectionSource } from "../../model/connection-rules";
 import { generateId } from "../../utils/generate-id";
-import type { AppState } from "../store.types";
+import type { AppState, DiagramSnapshot } from "../store.types";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { resolveActiveVersion, resolveComponent } from "../helpers/version-helpers";
@@ -33,6 +34,8 @@ export type DiagramChange =
       position?: { x: number; y: number };
       /** Catalog service id; written through `buildComponentForType`. */
       serviceId?: string;
+      /** Panels only: which group kind to build; ignored for other types. */
+      panelKind?: PanelKind;
     }
   | { kind: "updateNode"; id: string; patch: ComponentPatch }
   | { kind: "removeNode"; id: string }
@@ -49,6 +52,23 @@ export interface DiagramChangeBatchResult {
   idByRef: Record<string, string>;
   /** Indexes into the batch of the changes that were not applied, with why. */
   skipped: Array<{ index: number; reason: DiagramChangeSkipReason }>;
+  /**
+   * The undo checkpoint the batch took, or null when it took none (nothing
+   * applied, or an undo had just run). Opaque: hand it to
+   * `takeChangeBatchReceipt`.
+   */
+  checkpoint?: DiagramSnapshot | null;
+}
+
+/**
+ * What a batch left behind, so it can be taken back while nothing else has
+ * changed the diagram since (see `revertChangeBatch`).
+ */
+export interface ChangeBatchReceipt {
+  diagramId: string;
+  checkpoint: DiagramSnapshot;
+  /** The diagram's model right after the batch and anything that finished it (its layout). */
+  after: Pick<Diagram, "snapshot" | "versions">;
 }
 
 function nodeExists(d: Diagram, scene: VersionDiff | null, id: string): boolean {
@@ -86,7 +106,7 @@ function applyChange(
         change.type,
         change.name,
         parentId,
-        undefined,
+        change.panelKind,
         change.serviceId,
       );
       placeNewComponent(state, d, scene, {
@@ -141,7 +161,7 @@ function applyChange(
 
 export const changeBatchSlice = (
   set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
+  get: () => AppState,
 ) => ({
   /**
    * Applies a batch of changes as ONE undo step: one `set()`, one history
@@ -154,11 +174,12 @@ export const changeBatchSlice = (
     if (changes.length === 0) return result;
 
     let applied = false;
+    let checkpointed = false;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
       applied = true;
-      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      checkpointed = pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       changes.forEach((change, index) => {
         const reason = applyChange(state, d, change, result.idByRef);
         if (reason) result.skipped.push({ index, reason });
@@ -168,6 +189,60 @@ export const changeBatchSlice = (
     if (!applied) {
       result.skipped = changes.map((_change, index) => ({ index, reason: "noDiagram" }));
     }
+    const past = get().past;
+    result.checkpoint = checkpointed ? (past[past.length - 1] ?? null) : null;
     return result;
   },
+
+  /**
+   * Records the active diagram as a batch left it. Call it once whatever
+   * finishes the batch (a layout without history) has run. Null without a
+   * checkpoint: such a batch cannot be taken back as one step.
+   */
+  takeChangeBatchReceipt: (checkpoint: DiagramSnapshot | null | undefined) => {
+    const state = get();
+    const d = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+    if (!checkpoint || !d || checkpoint.diagramId !== d.id) return null;
+    const receipt: ChangeBatchReceipt = {
+      diagramId: d.id,
+      checkpoint,
+      after: { snapshot: d.snapshot, versions: d.versions },
+    };
+    return receipt;
+  },
+
+  /**
+   * Takes a batch back, as if it never ran: the diagram returns to its
+   * checkpoint and the checkpoint leaves the history, with nothing to redo.
+   * Only while the batch is the last thing that happened to the diagram;
+   * returns false, changing nothing, otherwise.
+   */
+  revertChangeBatch: (receipt: ChangeBatchReceipt): boolean => {
+    const state = get();
+    const d = state.diagrams[receipt.diagramId];
+    const isLast =
+      state.activeDiagramId === receipt.diagramId &&
+      state.past[state.past.length - 1] === receipt.checkpoint &&
+      d !== undefined &&
+      // The model must be untouched. Layouts may differ: the canvas measures
+      // new nodes without history, and those writes go with the batch.
+      d.snapshot === receipt.after.snapshot &&
+      d.versions === receipt.after.versions;
+    if (!isLast) return false;
+    set((draft) => {
+      const entry = draft.past.pop();
+      const target = draft.diagrams[receipt.diagramId];
+      if (!entry || !target) return;
+      target.snapshot = entry.snapshot;
+      target.nodeLayouts = entry.nodeLayouts;
+      target.edgeLayouts = entry.edgeLayouts;
+      target.versions = entry.versions;
+      touchDiagram(target);
+    });
+    return true;
+  },
+
+  /** Whether the batch's checkpoint is still in the undo history (it was not undone). */
+  isChangeBatchInHistory: (receipt: ChangeBatchReceipt): boolean =>
+    get().past.includes(receipt.checkpoint),
 });

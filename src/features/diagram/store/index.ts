@@ -75,6 +75,7 @@ export type {
 } from "./slices/generated-graph.slice";
 export type { NewConnectedComponent, NewConnectedEdge } from "./slices/components.slice";
 export type {
+  ChangeBatchReceipt,
   DiagramChange,
   DiagramChangeBatchResult,
   DiagramChangeSkipReason,

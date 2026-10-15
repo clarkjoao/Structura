@@ -39,6 +39,7 @@ import type {
   LLMConnection,
   LLMRequestMessage,
   CommandRef,
+  PendingNodePreview,
   PendingSuggestion,
   QueuedMessage,
 } from "./types";
@@ -188,6 +189,8 @@ export interface LLMStoreState {
   activeThreadId: string;
   messages: ChatMessage[];
   pendingSuggestions: PendingSuggestion[];
+  /** Pending suggestions drawn on the canvas, waiting for Accept or Reject. */
+  pendingPreviews: PendingNodePreview[];
   streamingContent: string | null;
   isLoading: boolean;
   /**
@@ -255,10 +258,12 @@ export interface LLMStoreState {
    */
   rerunAssistantMessage: (assistantMessageId: string, diagramContext: string) => Promise<void>;
   /**
-   * Applies the suggestion as one undo step. Nothing touched the diagram
-   * before this; changes that no longer apply are skipped and recorded.
+   * Keeps the suggestion. It is on the canvas already as a preview (one undo
+   * step); when the preview is gone (undone, or there was none) it is applied
+   * now, as one undo step.
    */
   acceptSuggestion: (suggestionId: string) => Promise<void>;
+  /** Drops the suggestion and takes its preview off the canvas. */
   rejectSuggestion: (suggestionId: string) => void;
   /**
    * @deprecated Replaced by `createThread`. Kept for the panel until Fase 6.
@@ -408,6 +413,90 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
   const setWithPersist = (partial: Partial<LLMStoreState>) => set(partial);
 
   /**
+   * Previews still being drawn (the layout is async), by suggestion id: Accept
+   * and Reject wait for them, so a quick click cannot apply a suggestion twice.
+   */
+  const previewsInFlight = new Map<string, Promise<void>>();
+
+  const setSuggestion = (suggestionId: string, patch: Partial<PendingSuggestion>) => {
+    set((state) => ({
+      pendingSuggestions: state.pendingSuggestions.map((candidate) =>
+        candidate.id === suggestionId ? { ...candidate, ...patch } : candidate,
+      ),
+      pendingPreviews: state.pendingPreviews.filter(
+        (preview) => patch.status === undefined || preview.suggestionId !== suggestionId,
+      ),
+    }));
+  };
+
+  /**
+   * Draws a new suggestion on the canvas: applied as one undo step, its
+   * elements marked pending until Accept or Reject.
+   */
+  const previewSuggestion = (suggestion: PendingSuggestion): Promise<void> => {
+    const running = drawPreview(suggestion).finally(() => {
+      previewsInFlight.delete(suggestion.id);
+    });
+    previewsInFlight.set(suggestion.id, running);
+    return running;
+  };
+
+  const drawPreview = async (suggestion: PendingSuggestion): Promise<void> => {
+    const host = toolHost;
+    if (!host) return;
+    try {
+      const applied = await applySuggestion(suggestion.patch.actions, host);
+      set((state) => ({
+        pendingPreviews: [
+          ...state.pendingPreviews,
+          {
+            suggestionId: suggestion.id,
+            nodeIds: applied.addedNodeIds,
+            edgeIds: applied.addedEdgeIds,
+            receipt: applied.receipt,
+          },
+        ],
+        pendingSuggestions: state.pendingSuggestions.map((candidate) =>
+          candidate.id === suggestion.id && applied.skipped.length > 0
+            ? { ...candidate, skipped: applied.skipped }
+            : candidate,
+        ),
+      }));
+    } catch (err) {
+      console.error("[llm] could not preview the suggestion", err);
+    }
+  };
+
+  /** Whether the preview's changes are still on the diagram. */
+  const isPreviewApplied = (preview: PendingNodePreview, host: DiagramToolHost): boolean => {
+    if (preview.receipt && host.isInHistory(preview.receipt)) return true;
+    const components = host.readDiagram()?.snapshot.components ?? {};
+    return preview.nodeIds.some((id) => id in components);
+  };
+
+  /** Takes a preview off the canvas: reverted as if it never ran, or its additions removed. */
+  const discardPreview = (preview: PendingNodePreview) => {
+    const host = toolHost;
+    if (!host) return;
+    if (preview.receipt && host.revertChanges(preview.receipt)) return;
+    if (!isPreviewApplied(preview, host)) return;
+    const snapshot = host.readDiagram()?.snapshot;
+    const nodeIds = preview.nodeIds.filter((id) => id in (snapshot?.components ?? {}));
+    const edgeIds = preview.edgeIds.filter((id) => id in (snapshot?.connections ?? {}));
+    if (nodeIds.length > 0 || edgeIds.length > 0) {
+      host.removeElements(nodeIds, edgeIds);
+    }
+  };
+
+  /** Rejects every previewed suggestion: called when the conversation they belong to is left. */
+  const discardAllPreviews = () => {
+    for (const preview of [...get().pendingPreviews].reverse()) {
+      discardPreview(preview);
+    }
+    set({ pendingPreviews: [] });
+  };
+
+  /**
    * Pops the next queued message, if any, and runs it as a regular turn.
    * Called when a turn completes. The context is built now, so
    * the turn sees changes made while it waited (an accepted suggestion, an
@@ -555,6 +644,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         isLoading: false,
       });
       persistThread();
+      if (suggestion) {
+        await previewSuggestion(suggestion);
+      }
       completed = true;
     } catch (error) {
       if (error instanceof LLMRequestCancelledError) {
@@ -613,6 +705,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     activeThreadId: "",
     messages: [],
     pendingSuggestions: [],
+    pendingPreviews: [],
     streamingContent: null,
     isLoading: false,
     queuedMessages: [],
@@ -744,6 +837,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       const activeThreadId =
         threads.find((thread) => thread.id === state.activeThreadId)?.id ?? threads[0]?.id ?? "";
       const activeThread = threads.find((thread) => thread.id === activeThreadId);
+      // Reloading the conversation already open (the thread drawer does)
+      // keeps its pending suggestions and their canvas previews.
+      const sameConversation =
+        diagramId === get().activeDiagramId && activeThreadId === get().activeThreadId;
       setWithPersist({
         threadsByDiagram: {
           ...get().threadsByDiagram,
@@ -752,7 +849,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         activeDiagramId: diagramId,
         activeThreadId,
         messages: activeThread?.messages ?? [],
-        pendingSuggestions: [],
+        ...(sameConversation ? {} : { pendingSuggestions: [], pendingPreviews: [] }),
         streamingContent: null,
         queuedMessages: [],
       });
@@ -769,17 +866,20 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         return;
       }
       const nextEntry: DiagramThreadState = { threads: entry.threads, activeThreadId: threadId };
+      if (threadId !== get().activeThreadId) discardAllPreviews();
       setWithPersist({
         threadsByDiagram: { ...threadsByDiagram, [activeDiagramId]: nextEntry },
         activeThreadId: threadId,
         messages: thread.messages,
         pendingSuggestions: [],
+        pendingPreviews: [],
         streamingContent: null,
         queuedMessages: [],
       });
     },
 
     createThread: (diagramId, firstUserMessage) => {
+      if (diagramId === get().activeDiagramId) discardAllPreviews();
       const draft: ConversationThread = {
         id: crypto.randomUUID(),
         diagramId,
@@ -808,6 +908,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         activeThreadId: draft.id,
         messages: [],
         pendingSuggestions: [],
+        pendingPreviews: [],
         streamingContent: null,
         queuedMessages: [],
       });
@@ -846,6 +947,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         return;
       }
       const remaining = entry.threads.filter((thread) => thread.id !== threadId);
+      if (entry.activeThreadId === threadId) discardAllPreviews();
       if (remaining.length === 0) {
         // Last thread in this diagram: don't call createThread (it would
         // re-read `entry.threads` and reintroduce the thread we just filtered
@@ -869,6 +971,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           activeThreadId: fallback.id,
           messages: [],
           pendingSuggestions: [],
+          pendingPreviews: [],
           streamingContent: null,
           queuedMessages: [],
         });
@@ -885,6 +988,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           ? {
               messages: remaining.find((thread) => thread.id === nextActiveId)?.messages ?? [],
               pendingSuggestions: [],
+              pendingPreviews: [],
               streamingContent: null,
               queuedMessages: [],
             }
@@ -992,6 +1096,8 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     },
 
     acceptSuggestion: async (suggestionId) => {
+      // A preview still being drawn finishes first: it is what Accept keeps.
+      await previewsInFlight.get(suggestionId);
       const suggestion = get().pendingSuggestions.find(
         (candidateSuggestion) => candidateSuggestion.id === suggestionId,
       );
@@ -1004,53 +1110,47 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         return;
       }
       const host = toolHost;
+      const preview = get().pendingPreviews.find((entry) => entry.suggestionId === suggestionId);
 
       // Marked first so a second click cannot apply it twice while the
       // layout (if any) runs.
-      set((state) => ({
-        pendingSuggestions: state.pendingSuggestions.map((candidateSuggestion) =>
-          candidateSuggestion.id === suggestionId
-            ? { ...candidateSuggestion, status: "accepted" }
-            : candidateSuggestion,
-        ),
-      }));
-      const skipped = await applySuggestion(suggestion.patch.actions, host);
-      if (skipped.length > 0) {
-        set((state) => ({
-          pendingSuggestions: state.pendingSuggestions.map((candidateSuggestion) =>
-            candidateSuggestion.id === suggestionId
-              ? { ...candidateSuggestion, skipped }
-              : candidateSuggestion,
-          ),
-        }));
+      setSuggestion(suggestionId, { status: "accepted" });
+      if (preview && isPreviewApplied(preview, host)) {
+        return;
       }
+      const { skipped } = await applySuggestion(suggestion.patch.actions, host);
+      setSuggestion(suggestionId, { skipped });
     },
 
     rejectSuggestion: (suggestionId) => {
+      const drawing = previewsInFlight.get(suggestionId);
+      if (drawing) {
+        void drawing.then(() => get().rejectSuggestion(suggestionId));
+        return;
+      }
       const suggestion = get().pendingSuggestions.find(
         (candidateSuggestion) => candidateSuggestion.id === suggestionId,
       );
       if (!suggestion || suggestion.status !== "pending") {
         return;
       }
-
-      set((state) => ({
-        pendingSuggestions: state.pendingSuggestions.map((candidateSuggestion) =>
-          candidateSuggestion.id === suggestionId
-            ? { ...candidateSuggestion, status: "rejected" }
-            : candidateSuggestion,
-        ),
-      }));
+      const preview = get().pendingPreviews.find((entry) => entry.suggestionId === suggestionId);
+      if (preview) {
+        discardPreview(preview);
+      }
+      setSuggestion(suggestionId, { status: "rejected" });
     },
 
     clearHistory: () => {
       const { activeDiagramId } = get();
+      if (!activeDiagramId) discardAllPreviews();
       if (activeDiagramId) {
         get().createThread(activeDiagramId);
       } else {
         set({
           messages: [],
           pendingSuggestions: [],
+          pendingPreviews: [],
           streamingContent: null,
           isLoading: false,
           queuedMessages: [],
@@ -1072,3 +1172,21 @@ export function countConversationMessages(messages: ChatMessage[], isLoading: bo
 }
 
 void useLLMStore.getState().hydrateConnections();
+
+export function getPendingNodeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
+  return new Set(pendingPreviews.flatMap((pendingPreview) => pendingPreview.nodeIds));
+}
+
+export function getPendingEdgeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
+  return new Set(pendingPreviews.flatMap((pendingPreview) => pendingPreview.edgeIds));
+}
+
+export function getSuggestionIdForNode(
+  pendingPreviews: PendingNodePreview[],
+  nodeId: string,
+): string | null {
+  return (
+    pendingPreviews.find((pendingPreview) => pendingPreview.nodeIds.includes(nodeId))
+      ?.suggestionId ?? null
+  );
+}

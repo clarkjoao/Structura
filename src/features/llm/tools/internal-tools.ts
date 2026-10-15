@@ -6,7 +6,9 @@ import {
   type Connection,
   type Diagram,
 } from "@/features/diagram";
+import { PanelKind } from "@/features/diagram/enums";
 import { isPatternProvider } from "@/features/elements/patterns";
+import { allCloudFamilies } from "@/features/elements/families/cloud-family.registry";
 import { validateAddNodeAgainstRegistry } from "../add-node-validation";
 import { isKnownNodeType, isValidPatternId } from "../component-catalog";
 import { listElementFamilies, searchElements } from "../element-catalog-query";
@@ -66,6 +68,52 @@ function summarizeEdge(connection: Connection) {
 /** True when `id` names a node already on the diagram or one queued this turn. */
 function isKnownNodeRef(id: string, context: ToolContext, diagram: Diagram): boolean {
   return id in diagram.snapshot.components || context.suggestion.hasRef(id);
+}
+
+/**
+ * The node a model meant: an id or ref as given, or, since models often pass
+ * a name instead, the node queued this turn under that name, else the one
+ * diagram node with that name. Null when nothing (or more than one) matches.
+ */
+function resolveNodeRef(id: string, context: ToolContext, diagram: Diagram): string | null {
+  if (isKnownNodeRef(id, context, diagram)) return id;
+  const queued = context.suggestion.refByName(id);
+  if (queued) return queued;
+  const wanted = id.trim().toLowerCase();
+  const named = Object.values(diagram.snapshot.components).filter(
+    (component) => component.name.trim().toLowerCase() === wanted,
+  );
+  return named.length === 1 && named[0] ? named[0].id : null;
+}
+
+const UNKNOWN_NODE_HINT =
+  'Use the ref add_node returned (e.g. "new-2") or an existing node id from get_diagram_summary.';
+
+/**
+ * The category a registered cloud service belongs to, when `serviceId` names
+ * exactly one service: models often pair a right serviceId with a generic
+ * nodeType ("container" + "ecs").
+ */
+function categoryOfService(serviceId: string): string | null {
+  const categories = allCloudFamilies().flatMap((family) =>
+    family.services
+      .filter((service) => service.id === serviceId)
+      .map((service) => service.categoryId),
+  );
+  return categories.length === 1 && categories[0] ? categories[0] : null;
+}
+
+/** "Did you mean" for an unknown service id, from the catalog search. */
+function serviceSuggestions(serviceId: string): string {
+  const hits = searchElements({ query: serviceId.replace(/[-_]+/g, " "), limit: 3 }).results.filter(
+    (hit) => hit.serviceId !== null,
+  );
+  if (hits.length === 0)
+    return " Call search_elements and use its exact elementType and serviceId.";
+  const list = hits
+    .map((hit) => `${JSON.stringify(hit.elementType)} + ${JSON.stringify(hit.serviceId)}`)
+    .join(", ");
+  return ` Closest catalog entries (nodeType + serviceId): ${list}.`;
 }
 
 // ─── Read tools ────────────────────────────────────────────────────────────────
@@ -194,6 +242,9 @@ const searchElementsTool = defineTool({
 
 // ─── Write tools: queue, never mutate ──────────────────────────────────────────
 
+/** The group kinds a panel can draw, as the enum zod needs. */
+const PANEL_KINDS = Object.values(PanelKind) as [PanelKind, ...PanelKind[]];
+
 const addNode = defineTool({
   name: "add_node",
   description:
@@ -208,31 +259,69 @@ const addNode = defineTool({
       .nullable()
       .describe("Id of an existing container node, a ref from add_node, or null"),
     serviceId: z.string().optional().describe("serviceId from search_elements, for cloud/OSS"),
+    panelKind: z
+      .enum(PANEL_KINDS)
+      .optional()
+      .describe(
+        'nodeType "panel" only: the group it draws, e.g. "vpc", "availability-zone", "public-subnet", "private-subnet". Other nodes go inside it with parentId.',
+      ),
     position: z.object({ x: z.number(), y: z.number() }).optional(),
   }),
   kind: "write",
   source: "internal",
-  execute: ({ nodeType, name, parentId, serviceId, position }, context) => {
+  execute: (
+    { nodeType: requestedType, name, parentId, serviceId, panelKind, position },
+    context,
+  ) => {
     const diagram = context.host.readDiagram();
     if (!diagram) return noDiagram();
+    // A registered serviceId decides the category, whatever nodeType came with it.
+    const serviceCategory = serviceId ? categoryOfService(serviceId) : null;
+    const nodeType =
+      serviceCategory &&
+      !validateAddNodeAgainstRegistry(requestedType, serviceId).ok &&
+      isKnownNodeType(serviceCategory)
+        ? serviceCategory
+        : requestedType;
     if (!isKnownNodeType(nodeType)) {
       return toolError(
         `Unknown nodeType ${JSON.stringify(nodeType)}. Use search_elements or the catalog.`,
       );
     }
     const registryCheck = validateAddNodeAgainstRegistry(nodeType, serviceId);
-    if (!registryCheck.ok) return toolError(registryCheck.reason);
-    if (parentId !== null && !isKnownNodeRef(parentId, context, diagram)) {
-      return toolError(`Unknown parentId ${JSON.stringify(parentId)}.`);
+    if (!registryCheck.ok) {
+      return toolError(registryCheck.reason + (serviceId ? serviceSuggestions(serviceId) : ""));
     }
-    const ref = context.suggestion.addNode({
+    if (panelKind && nodeType !== "panel") {
+      return toolError('panelKind only applies to nodeType "panel".');
+    }
+    const resolvedParent = parentId === null ? null : resolveNodeRef(parentId, context, diagram);
+    if (parentId !== null && resolvedParent === null) {
+      return toolError(`Unknown parentId ${JSON.stringify(parentId)}. ${UNKNOWN_NODE_HINT}`);
+    }
+    const payload = {
       nodeType,
       name,
-      parentId,
+      parentId: resolvedParent,
       ...(position ? { position } : {}),
       ...(serviceId ? { serviceId } : {}),
-    });
-    return { queued: true, ref, note: QUEUED_NOTE };
+      ...(panelKind ? { panelKind } : {}),
+    };
+    const existing = context.suggestion.sameNodeRef(payload);
+    if (existing) {
+      return {
+        queued: false,
+        ref: existing,
+        note: `Already queued as ${existing}; not added again. Use that ref.`,
+      };
+    }
+    const ref = context.suggestion.addNode(payload);
+    return {
+      queued: true,
+      ref,
+      ...(nodeType !== requestedType ? { nodeType } : {}),
+      note: QUEUED_NOTE,
+    };
   },
 });
 
@@ -313,14 +402,18 @@ const addEdge = defineTool({
   execute: ({ sourceId, targetId, label }, context) => {
     const diagram = context.host.readDiagram();
     if (!diagram) return noDiagram();
-    for (const [role, id] of [
-      ["sourceId", sourceId],
-      ["targetId", targetId],
-    ] as const) {
-      if (!isKnownNodeRef(id, context, diagram))
-        return toolError(`Unknown ${role} ${JSON.stringify(id)}.`);
+    const source = resolveNodeRef(sourceId, context, diagram);
+    if (source === null) {
+      return toolError(`Unknown sourceId ${JSON.stringify(sourceId)}. ${UNKNOWN_NODE_HINT}`);
     }
-    context.suggestion.queue({ type: "ADD_EDGE", payload: { sourceId, targetId, label } });
+    const target = resolveNodeRef(targetId, context, diagram);
+    if (target === null) {
+      return toolError(`Unknown targetId ${JSON.stringify(targetId)}. ${UNKNOWN_NODE_HINT}`);
+    }
+    context.suggestion.queue({
+      type: "ADD_EDGE",
+      payload: { sourceId: source, targetId: target, label },
+    });
     return { queued: true, note: QUEUED_NOTE };
   },
 });

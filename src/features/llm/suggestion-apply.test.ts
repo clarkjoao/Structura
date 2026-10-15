@@ -32,6 +32,10 @@ function setup() {
     readDiagram,
     applyChanges: (changes) => store.getState().applyChangeBatch(changes),
     autoLayout: layoutRuns,
+    takeReceipt: (checkpoint) => store.getState().takeChangeBatchReceipt(checkpoint),
+    revertChanges: (receipt) => store.getState().revertChangeBatch(receipt),
+    isInHistory: (receipt) => store.getState().isChangeBatchInHistory(receipt),
+    removeElements: (nodeIds, edgeIds) => store.getState().removeElements(nodeIds, edgeIds),
   };
   const snapshot = () => JSON.stringify(readDiagram()?.snapshot);
   const draft = new SuggestionDraft();
@@ -64,7 +68,7 @@ describe("one suggestion per turn, applied on Accept as one undo step", () => {
     expect(snapshot()).toBe(before);
     expect(store.getState().past.length).toBe(pastBefore);
 
-    const skipped = await applySuggestion(draft.actions, host);
+    const { skipped } = await applySuggestion(draft.actions, host);
     expect(skipped).toEqual([]);
     expect(snapshot()).not.toBe(before);
     expect(store.getState().past.length).toBe(pastBefore + 1);
@@ -92,10 +96,94 @@ describe("one suggestion per turn, applied on Accept as one undo step", () => {
     vi.advanceTimersByTime(5000);
     const pastBefore = store.getState().past.length;
 
-    const skipped = await applySuggestion(draft.actions, host);
+    const { skipped } = await applySuggestion(draft.actions, host);
 
     expect(skipped).toEqual([{ actionIndex: 1, reason: "missingNode" }]);
     expect(host.readDiagram()?.snapshot.components[api.id]?.name).toBe("Public API");
     expect(store.getState().past.length).toBe(pastBefore + 1);
+  });
+});
+
+describe("preview: a suggestion drawn before Accept can be taken back as one step", () => {
+  it("reports what it added and reverts to the state before, with nothing to redo", async () => {
+    const { store, host, api, draft, call, snapshot } = setup();
+    const before = snapshot();
+    const pastBefore = store.getState().past.length;
+    call("add_node", { nodeType: "container", name: "Cache", parentId: null });
+    call("add_edge", { sourceId: api.id, targetId: "new-1", label: "reads" });
+
+    const applied = await applySuggestion(draft.actions, host);
+    expect(applied.addedNodeIds).toHaveLength(1);
+    expect(applied.addedEdgeIds).toHaveLength(1);
+    expect(applied.receipt).not.toBeNull();
+    expect(host.isInHistory(applied.receipt!)).toBe(true);
+
+    expect(host.revertChanges(applied.receipt!)).toBe(true);
+    expect(snapshot()).toBe(before);
+    expect(store.getState().past.length).toBe(pastBefore);
+    expect(store.getState().future).toEqual([]);
+    expect(host.isInHistory(applied.receipt!)).toBe(false);
+  });
+
+  it("does not revert once the diagram changed after the preview", async () => {
+    const { store, host, draft, call, snapshot } = setup();
+    call("add_node", { nodeType: "container", name: "Cache", parentId: null });
+    const applied = await applySuggestion(draft.actions, host);
+    vi.advanceTimersByTime(5000);
+    store.getState().addComponent("container", "Manual", null, { x: 600, y: 0 });
+    const afterEdit = snapshot();
+
+    expect(host.revertChanges(applied.receipt!)).toBe(false);
+    expect(snapshot()).toBe(afterEdit);
+    expect(host.isInHistory(applied.receipt!)).toBe(true);
+  });
+
+  it("is no longer in history once the user undoes it", async () => {
+    const { store, host, draft, call } = setup();
+    call("add_node", { nodeType: "container", name: "Cache", parentId: null });
+    const applied = await applySuggestion(draft.actions, host);
+    vi.advanceTimersByTime(100);
+    store.getState().undo();
+    expect(host.isInHistory(applied.receipt!)).toBe(false);
+  });
+
+  it("builds a panel of the requested kind (VPC) and nests a node in it", async () => {
+    const { host, draft, call } = setup();
+    call("add_node", { nodeType: "panel", name: "VPC", parentId: null, panelKind: "vpc" });
+    call("add_node", { nodeType: "container", name: "App", parentId: "new-1" });
+    const applied = await applySuggestion(draft.actions, host);
+    const components = host.readDiagram()!.snapshot.components;
+    const [vpcId, appId] = applied.addedNodeIds.sort((a, b) =>
+      components[a]!.type === "panel" ? -1 : components[b]!.type === "panel" ? 1 : 0,
+    );
+    expect(components[vpcId!]).toMatchObject({ type: "panel", panelKind: "vpc" });
+    expect(components[appId!]?.parentId).toBe(vpcId);
+  });
+
+  it("refuses panelKind on a node that is not a panel", () => {
+    const { call, draft } = setup();
+    const result = call("add_node", {
+      nodeType: "container",
+      name: "App",
+      parentId: null,
+      panelKind: "vpc",
+    });
+    expect(result).toMatchObject({ error: expect.stringContaining("panelKind") });
+    expect(draft.isEmpty).toBe(true);
+  });
+
+  it("lays out a suggestion that adds several unplaced nodes, even without auto_layout", async () => {
+    const { host, draft, call, layoutRuns } = setup();
+    call("add_node", { nodeType: "container", name: "A", parentId: null });
+    call("add_node", { nodeType: "container", name: "B", parentId: null });
+    await applySuggestion(draft.actions, host);
+    expect(layoutRuns).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves the layout alone for a single new node", async () => {
+    const { host, draft, call, layoutRuns } = setup();
+    call("add_node", { nodeType: "container", name: "A", parentId: null });
+    await applySuggestion(draft.actions, host);
+    expect(layoutRuns).not.toHaveBeenCalled();
   });
 });

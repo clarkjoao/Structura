@@ -24,6 +24,7 @@ import type { ViewSnapshot } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { applyEditorNodeOverlays } from "./nodeOverlays";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
+import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 
 /** The projection's policy on the editor path; interactivity is React Flow's, per canvas. */
 const EDITOR_PROJECTION = writePolicy(true);
@@ -195,6 +196,8 @@ export function useCanvasNodes({
   diagramRef.current = diagram;
 
   const { isRecording, onRecordHandleClick } = useFlowMode();
+  const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
+  const pendingNodeIds = useMemo(() => getPendingNodeIds(pendingPreviews), [pendingPreviews]);
 
   // Stabilize Sets by content so they don't cause unnecessary dataCtx re-creation on
   // selection/highlight toggles that only add/remove a single member.
@@ -374,8 +377,7 @@ export function useCanvasNodes({
         isReading,
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
         lockedByVersion: sceneActive && !isComponentAddedInActiveVersion(diagram, comp.id),
-        // Chat suggestions no longer put nodes on the canvas before Accept.
-        pending: false,
+        pending: pendingNodeIds.has(comp.id),
       });
 
       // Identity cache, unchanged: React Flow keeps the previous object unless
@@ -428,5 +430,12 @@ export function useCanvasNodes({
     }
     prevNodesArrayRef.current = nextNodes;
     return nextNodes;
-  }, [diagramVersionState, dataCtx, nodeCtxPlayback, view, isNodeHiddenByTagFilter]);
+  }, [
+    diagramVersionState,
+    dataCtx,
+    nodeCtxPlayback,
+    view,
+    isNodeHiddenByTagFilter,
+    pendingNodeIds,
+  ]);
 }

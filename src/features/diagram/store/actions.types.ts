@@ -242,6 +242,13 @@ export interface AppActions {
   applyChangeBatch: (
     changes: import("./slices/change-batch.slice").DiagramChange[],
   ) => import("./slices/change-batch.slice").DiagramChangeBatchResult;
+  takeChangeBatchReceipt: (
+    checkpoint: import("./store.types").DiagramSnapshot | null | undefined,
+  ) => import("./slices/change-batch.slice").ChangeBatchReceipt | null;
+  revertChangeBatch: (receipt: import("./slices/change-batch.slice").ChangeBatchReceipt) => boolean;
+  isChangeBatchInHistory: (
+    receipt: import("./slices/change-batch.slice").ChangeBatchReceipt,
+  ) => boolean;
 
   undo: () => void;
   redo: () => void;
