@@ -101,7 +101,7 @@ The visual reference (Diagram Assistant v1 → "Configurações — MCP" and "MC
 - `SessionStorageAdapter.test.ts` (new): round-trip and `keys()` with the prefix stripped.
 - Updated: `llm-storage.migration.test.ts` (covered all the migration paths), `llm-storage.test.ts` (new keys are read through the port), `tools/registry.test.ts` (`source: "mcp"`, `serverId`, `kind: "read"` on MCP definitions), `llm-i18n.test.ts` (new MCP keys exist in both locales), `import-boundary.test.ts` (still no `features/canvas` import), `browser-storage-boundary.test.ts` (no direct `localStorage` / `sessionStorage` access).
 
-`npm run test`: 391 files, 3906/3908 pass. The 2 failing tests are pre-existing and unrelated to this phase: `errors.test.ts:167` and `transport/ai-sdk-transport.test.ts:84` both expect `https://api.anthropic.com/v1/messages` but receive `https://api.kpalabz.com/messages` because the sandbox is intercepting outbound network calls. They fail identically on `feat/llm-chat-phase5`.
+`npm run test`: 391 files, 3908/3908 pass on `117e3743` (re-run 2026-10-15). The original session reported 2 sandbox-related failures; they do not reproduce.
 
 `npm run typecheck`: pass.
 `npm run lint`: 0 errors, 4 pre-existing `react-refresh/only-export-components` warnings in `features/canvas`.
@@ -145,3 +145,13 @@ The MCP runtime is in its own chunk and is only fetched the first time the chat 
 - [ ] **Stop** while an MCP call is in flight aborts the call; the message ends in `cancelled`; no suggestion is queued.
 - [ ] **Refresh** on a connected server re-lists its tools.
 - [ ] **Test connection** in the form lists the tools and shows latency, or the classified error.
+
+## Addendum (2026-10-15): commits after the brief's scope
+
+The branch carries three more commits on top of `117e3743`. They are outside the Phase 6 brief and were added after the original session.
+
+- `f8fa236b`, `4cdef20e`: T6 `pr-stack.md` and Prettier on the scratchpad.
+- `f6db2ba2` feat: add custom protocol support for Anthropic in LLM settings and transport — a `custom` connection can speak the Anthropic Messages protocol (settings dropdown, transport, connection test), plus a composer **message queue** (`QueuedMessagesBar`, up to `MAX_QUEUED_MESSAGES = 10`, memory only) and its i18n keys. This commit was pushed to `origin/feat/llm-chat-phase6` and left 2 transport tests failing.
+- `1fe2974c` fix(llm): send the right URL and auth header for custom Anthropic endpoints — keeps `/v1` when trimming the base URL, and gives the SDK an empty key that the fetch drops so a custom auth header or a keyless proxy no longer fails with a missing-key error. Adds a keyless-proxy test.
+
+Known limitation added by `f6db2ba2`: queued messages live in memory only; reloading the page drops them.
