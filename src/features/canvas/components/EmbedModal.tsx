@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "react-i18next";
 import { generateViewerUrl, getViewerPostMessageUrl } from "@/lib/share-url";
+import { IncludeTextsSwitch } from "../text/IncludeTextsSwitch";
 
 type EmbedMethod = "iframe-hash" | "iframe-postmessage";
 
@@ -103,6 +104,8 @@ function StructuraDiagramEmbed() {
           <DialogTitle>{t("export.embed.title")}</DialogTitle>
           <DialogDescription>{t("export.embed.menuItem")}</DialogDescription>
         </DialogHeader>
+
+        <IncludeTextsSwitch />
 
         <Tabs
           value={activeMethod}

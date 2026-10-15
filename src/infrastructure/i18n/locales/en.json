@@ -476,8 +476,9 @@
   },
   "textLayer": {
     "show": "Show texts",
-    "tool": "Text",
-    "hide": "Hide texts"
+    "hide": "Hide texts",
+    "includeTexts": "Include texts",
+    "includeTextsHint": "Planning texts stay out of links, embeds, the viewer and exports unless you include them."
   },
   "textNode": {
     "placeholder": "Type here…",

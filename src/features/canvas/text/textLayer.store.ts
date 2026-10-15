@@ -1,13 +1,16 @@
 import { create } from "zustand";
 
-interface TextToolState {
-  /** The next click on the empty canvas creates a text there. */
-  toolActive: boolean;
-  setToolActive: (active: boolean) => void;
+interface TextLayerState {
+  /**
+   * The editor's own view of the text layer: texts are drawn while it is on. A
+   * local state of the editing session — on by default, never saved. What a
+   * viewer, a link or an export shows is the diagram's saved `textsVisible`.
+   */
+  layerVisible: boolean;
+  setLayerVisible: (visible: boolean) => void;
 }
 
-/** The text tool is a canvas gesture, not diagram data: it is not saved. */
-export const useTextToolStore = create<TextToolState>((set) => ({
-  toolActive: false,
-  setToolActive: (toolActive) => set({ toolActive }),
+export const useTextToolStore = create<TextLayerState>((set) => ({
+  layerVisible: true,
+  setLayerVisible: (layerVisible) => set({ layerVisible }),
 }));

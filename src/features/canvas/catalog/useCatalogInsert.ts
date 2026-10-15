@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import {
   getDefaultNameForNewComponent,
   isTextType,
-  useActiveDiagramId,
   getLastEdgeStyle,
   useDiagramActions,
   type NewConnectedEdge,
@@ -12,6 +11,7 @@ import { useElementPresetLibrary } from "@/features/element-presets";
 import type { CatalogEntry } from "@/features/elements/search";
 import { panelKindDefaultName } from "@/lib/catalogs/panels";
 import { useCanvasPreferencesStore } from "../preferences";
+import { useTextToolStore } from "../text/textLayer.store";
 
 export interface CatalogInsertTarget {
   /** Flow position of the new node. */
@@ -44,9 +44,8 @@ export function useCatalogInsert(): (
   target: CatalogInsertTarget,
 ) => string | null {
   const { t } = useTranslation();
-  const { addComponent, addComponentConnectedFrom, linkComponentToService, setTextsVisible } =
-    useDiagramActions();
-  const diagramId = useActiveDiagramId();
+  const { addComponent, addComponentConnectedFrom, linkComponentToService } = useDiagramActions();
+  const showTextLayer = useTextToolStore((state) => state.setLayerVisible);
   const { instantiatePreset } = useElementPresetLibrary();
   const recordUse = useCanvasPreferencesStore((state) => state.recordCatalogEntryUse);
 
@@ -64,7 +63,7 @@ export function useCatalogInsert(): (
           const { type, createOptions } = entry.insert;
           const name = defaultNameFor(entry);
           // A text is drawn only while the layer is on: inserting one turns it on.
-          if (isTextType(type) && diagramId) setTextsVisible(diagramId, true);
+          if (isTextType(type)) showTextLayer(true);
           createdId = connectFrom
             ? addComponentConnectedFrom(
                 connectFrom.sourceId,
@@ -121,8 +120,7 @@ export function useCatalogInsert(): (
       addComponent,
       addComponentConnectedFrom,
       linkComponentToService,
-      setTextsVisible,
-      diagramId,
+      showTextLayer,
       instantiatePreset,
       recordUse,
     ],

@@ -476,8 +476,9 @@
   },
   "textLayer": {
     "show": "Mostrar textos",
-    "tool": "Texto",
-    "hide": "Ocultar textos"
+    "hide": "Ocultar textos",
+    "includeTexts": "Incluir textos",
+    "includeTextsHint": "Os textos de planejamento ficam fora de links, embeds, viewer e exportações, a menos que você os inclua."
   },
   "textNode": {
     "placeholder": "Digite aqui…",

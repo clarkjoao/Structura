@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { IncludeTextsSwitch } from "@/features/canvas/text/IncludeTextsSwitch";
 import { usePluginIoContributions } from "@/features/plugins/use-plugin-contributions";
 import { resolveLocalizedText } from "@/features/plugins/localized-text";
 import type { DiagramExportFormat } from "@/lib/export-service";
@@ -128,6 +129,8 @@ export function ExportModal({
           </DialogTitle>
           <DialogDescription>{t("export.description")}</DialogDescription>
         </DialogHeader>
+
+        <IncludeTextsSwitch />
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
           <TabsList className="grid w-full grid-cols-2">

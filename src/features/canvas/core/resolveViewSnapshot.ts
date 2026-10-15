@@ -47,6 +47,11 @@ export interface ViewSnapshotOptions {
    * N edges", or the one a flow step is on (F5). A view state, never saved.
    */
   reveal?: SharedReveal;
+  /**
+   * Whether texts are drawn. Absent means the diagram's saved `textsVisible`
+   * (a viewer); the editor passes its own, local state of the text layer.
+   */
+  textsVisible?: boolean;
 }
 
 /** One placed component, as the canvas shows it. */
@@ -339,7 +344,7 @@ export function resolveViewSnapshot(
 ): ViewSnapshot {
   const resolved = resolveViewScene(diagram, options);
   const placed = placedComponents(resolved.components, resolved.nodeLayouts, {
-    textsVisible: diagram.textsVisible === true,
+    textsVisible: options.textsVisible ?? diagram.textsVisible === true,
   });
   const panelIds = buildPanelIds(placed, describe);
   const compactContainerIds = buildCompactContainerIds(resolved.components, describe);

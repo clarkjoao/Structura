@@ -29,7 +29,7 @@ import { useNodeDragParenting } from "./useNodeDragParenting";
 import { forceSaveToConnectedFolder } from "@/infrastructure/persistence";
 import { useCatalogUiStore } from "../catalog/catalogUi.store";
 import { registryCatalog, TOOLBAR_TOOLS } from "../catalog/toolbarTools";
-import { useTextLayer } from "../text/useTextLayer";
+import { useCreateTextAtPointer } from "../text/useCreateTextAtPointer";
 import { KEY } from "@/lib/core/keyboard";
 import { useInsertAtCenter } from "../catalog/useInsertAtCenter";
 
@@ -244,14 +244,13 @@ export function useCanvasInteraction(
   );
   const insertAtCenter = useInsertAtCenter(isPanelOpen, selectInsertedNode);
 
-  const textLayer = useTextLayer();
+  const createTextAtPointer = useCreateTextAtPointer(reactFlowWrapperRef, selectInsertedNode);
 
   /** A toolbar insert (N, P, L) or the text tool (T); false when the key is not one, so the key stays free. */
   const insertToolByKey = useCallback(
     (key: string) => {
       if (key === KEY.T) {
-        textLayer.pressTool();
-        return true;
+        return createTextAtPointer();
       }
       const tool = TOOLBAR_TOOLS.find((candidate) => candidate.key === key);
       if (!tool) return false;
@@ -260,7 +259,7 @@ export function useCanvasInteraction(
       insertAtCenter(entry);
       return true;
     },
-    [insertAtCenter, textLayer],
+    [insertAtCenter, createTextAtPointer],
   );
 
   const handleSearchSelect = useCallback(

@@ -22,7 +22,6 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
 import { NodeQuickActionsBar } from "./selection-actions/NodeQuickActionsBar";
 import { TextStyleToolbar } from "./selection-actions/TextStyleToolbar";
-import { useTextCreateTool } from "./text/useTextCreateTool";
 import { useTextLayer } from "./text/useTextLayer";
 import { Eye, Minimize2 } from "lucide-react";
 import { useCanvasController } from "./hooks/useCanvasController";
@@ -338,14 +337,6 @@ const Canvas = (props: CanvasProps = {}) => {
   );
 
   const textLayer = useTextLayer();
-  const createTextAt = useTextCreateTool(interactionMode.canEditCanvas, selectInsertedNode);
-  const handlePaneClick = useCallback(
-    (event: React.MouseEvent) => {
-      if (createTextAt(event)) return;
-      eventHandlers.onPaneClick();
-    },
-    [createTextAt, eventHandlers],
-  );
   // Hiding the layer hides what is selected in it: deselect, delete nothing.
   const selectedIsText = !!selectedComponent && isTextComponent(selectedComponent);
   useEffect(() => {
@@ -383,11 +374,7 @@ const Canvas = (props: CanvasProps = {}) => {
       <EdgeLabelRevealProvider value={revealedLabelEdgeIds}>
         <div className="flex-1 flex relative h-full min-h-0">
           <style>{CANVAS_STYLES}</style>
-          <div
-            ref={reactFlowWrapperRef}
-            className="flex-1 relative"
-            data-text-tool={textLayer.toolActive ? "armed" : undefined}
-          >
+          <div ref={reactFlowWrapperRef} className="flex-1 relative">
             {!interactionMode.isPlaying && (
               <CanvasBottomToolbar
                 diagram={diagram}
@@ -506,7 +493,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 onEdgeClick={eventHandlers.onEdgeClick}
                 onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
                 onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
-                onPaneClick={handlePaneClick}
+                onPaneClick={eventHandlers.onPaneClick}
                 onPaneContextMenu={eventHandlers.onPaneContextMenu}
                 onNodeContextMenu={eventHandlers.onNodeContextMenu}
                 onNodeDragStart={dragLocks.onNodeDragStart}

@@ -6,6 +6,7 @@ import { readerCatalogFromStore, type Diagram } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { IncludeTextsSwitch } from "@/features/canvas/text/IncludeTextsSwitch";
 import { type ShareUrlResult, generateShareUrl, generateViewerUrl } from "@/lib/share-url";
 
 /** Nothing chosen. A value rather than an empty string, so the select says it. */
@@ -86,6 +87,7 @@ export function ShareModal({ diagram, open, onOpenChange }: ShareModalProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4">
+          <IncludeTextsSwitch />
           {flows.length > 0 && (
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium" htmlFor="share-flow">
