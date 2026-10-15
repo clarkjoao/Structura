@@ -148,10 +148,28 @@ The MCP runtime is in its own chunk and is only fetched the first time the chat 
 
 ## Addendum (2026-10-15): commits after the brief's scope
 
-The branch carries three more commits on top of `117e3743`. They are outside the Phase 6 brief and were added after the original session.
+The branch carries more commits on top of `117e3743`. They are outside the Phase 6 brief and were added after the original session.
 
-- `f8fa236b`, `4cdef20e`: T6 `pr-stack.md` and Prettier on the scratchpad.
-- `f6db2ba2` feat: add custom protocol support for Anthropic in LLM settings and transport — a `custom` connection can speak the Anthropic Messages protocol (settings dropdown, transport, connection test), plus a composer **message queue** (`QueuedMessagesBar`, up to `MAX_QUEUED_MESSAGES = 10`, memory only) and its i18n keys. This commit was pushed to `origin/feat/llm-chat-phase6` and left 2 transport tests failing.
-- `1fe2974c` fix(llm): send the right URL and auth header for custom Anthropic endpoints — keeps `/v1` when trimming the base URL, and gives the SDK an empty key that the fetch drops so a custom auth header or a keyless proxy no longer fails with a missing-key error. Adds a keyless-proxy test.
+- `f8fa236b`, `4cdef20e`, `a260655e`: scratchpad docs (branch stack, Prettier, reconstructed PR bodies).
+- `f6db2ba2` feat: add custom protocol support for Anthropic in LLM settings and transport. Two features in one commit:
+  - **Custom Anthropic protocol:** a `custom` connection can speak the Anthropic Messages protocol (settings dropdown, transport, connection test, auth-header hint).
+  - **Message queue:** messages sent while a reply is running are held in the composer (`QueuedMessagesBar`, up to `MAX_QUEUED_MESSAGES = 10`, memory only) and sent one by one when the running turn completes. Chips above the input show and remove them. `/new` and `/clean` become aliases of `/clear`; Enter sends, Shift+Enter breaks the line.
 
-Known limitation added by `f6db2ba2`: queued messages live in memory only; reloading the page drops them.
+### Fixes to `f6db2ba2`
+
+1. `1fe2974c` fix(llm): send the right URL and auth header for custom Anthropic endpoints — keeps `/v1` when trimming the base URL; a custom auth header or a keyless proxy no longer fails with a missing-key error.
+2. `e15a862d` fix(llm): keep the custom protocol on stored connections and in the request config — the protocol was dropped on save/load, when building the request config and on config updates, so it never reached the transport.
+3. `4622502c` fix(llm): build the diagram context when a queued message is sent — the chat hook registers a context source; a queued message sees an accepted suggestion or edit made while it waited.
+4. `d6c10ef2` fix(llm): empty the message queue when the thread or diagram changes.
+5. `1871d0ed` fix(llm): keep the draft when the message queue is full — text, mentions and chips are put back.
+6. `fde9b0ec` fix(llm): leave Enter to the IME while composing.
+7. `df48d9ec` fix(llm): hold the message queue when a turn fails — one error is shown once; the queue is kept and sent by the next send or a completed retry (same as after Stop).
+8. `7e0b16f2` fix(llm): test custom Anthropic connections with a real request — a one-token request through the chat transport, with latency or the structured error.
+
+### Known limitations of the message queue
+
+- **Memory only:** reloading the page drops queued messages.
+- **One chat panel:** the store holds one diagram-context source, set by the chat hook. With two chat panels mounted at once, the last one registered wins and unmounting either clears it; queued messages then fall back to the last context sent.
+- **Order after Stop or an error:** the kept queue is sent after the next message the user sends, not before it.
+- **Does not wait for a pending suggestion:** queued messages go out one after another without waiting for Accept or Reject; earlier suggestions stay pending.
+- **Commit not scoped:** `f6db2ba2` is `feat:` without `(llm)` and bundles two features; left as is.

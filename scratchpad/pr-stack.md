@@ -2,7 +2,7 @@
 
 Six stacked branches from `main`, each with its own PR body. Open and merge in order. Each branch's commits sit directly on the previous branch's tip, so a phase's PR shows only that phase.
 
-Branches 1–5 were recreated on 2026-10-15 as plain refs at the tips this file recorded (the refs had been lost; the commits had not). `feat/llm-chat-phase6` is the only branch on `origin`. No PRs are open.
+Branches 1–5 were recreated on 2026-10-15 as plain refs at the tips this file recorded (the refs had been lost; the commits had not). They are not pushed: the whole stack is reviewed as one PR from `feat/llm-chat-phase6` to `main`, and the per-phase sections below follow the commit order.
 
 | #   | Branch                 | Base                   | Commits | Tip        | PR body                                        |
 | --- | ---------------------- | ---------------------- | ------- | ---------- | ---------------------------------------------- |
@@ -11,13 +11,13 @@ Branches 1–5 were recreated on 2026-10-15 as plain refs at the tips this file 
 | 3   | `feat/llm-chat-phase3` | `feat/llm-chat-phase2` | 8       | `4e9b989e` | `scratchpad/pr-body-phase3.md` (reconstructed) |
 | 4   | `feat/llm-chat-phase4` | `feat/llm-chat-phase3` | 9       | `8cc6a79d` | `scratchpad/pr-body-phase4.md` (reconstructed) |
 | 5   | `feat/llm-chat-phase5` | `feat/llm-chat-phase4` | 5       | `843ab81e` | `scratchpad/pr-body-phase5.md` (reconstructed) |
-| 6   | `feat/llm-chat-phase6` | `feat/llm-chat-phase5` | 9       | see branch | `scratchpad/pr-body-phase6.md`                 |
+| 6   | `feat/llm-chat-phase6` | `feat/llm-chat-phase5` | 18      | see branch | `scratchpad/pr-body-phase6.md`                 |
 
-Phase 6 has 5 brief commits (`c6dc83d2`…`117e3743`), 2 scratchpad commits, `f6db2ba2` (custom Anthropic protocol + message queue, outside the brief) and `1fe2974c` (fixes the 2 tests `f6db2ba2` broke), plus this file's update.
+Phase 6 has 5 brief commits (`c6dc83d2`…`117e3743`), 4 scratchpad commits, `f6db2ba2` (custom Anthropic protocol + composer message queue, outside the brief) and 8 fixes to it (`1fe2974c`, `e15a862d`, `4622502c`, `d6c10ef2`, `1871d0ed`, `fde9b0ec`, `df48d9ec`, `7e0b16f2`; listed in `pr-body-phase6.md`).
 
 ## Summary
 
-The upgrade turns the chat from a single-shot text assistant into a multi-step, model-agnostic diagram assistant. Phase 1 fixes the foundations: i18n in both locales, reliable thread persistence, errors classified by mode and status, usable defaults, and `/generate` unwired. Phase 2 stores messages as typed parts with Markdown rendering, cancel, and per-turn errors with Retry. Phase 3 moves the chat onto the AI SDK with native function calling: a tool registry of internal read and write tools runs in a multi-step loop, and write calls become one suggestion applied on Accept as a single undo step. Phase 4 rebuilds the composer around one menu for `@` mentions (sent as id refs in a JSON context block) and a `/` command registry. Phase 5 adds skills — workspace or local instruction packs with tool allowlists that scope a turn's tools. Phase 6 connects to remote MCP servers from the browser, runs their tools in the loop as untrusted read-only data, and moves all persisted chat state and secrets behind `IStoragePort`. The feature lives in `features/llm` and imports `features/canvas` only from the untouched `ir/` folder.
+The upgrade turns the chat from a single-shot text assistant into a multi-step, model-agnostic diagram assistant. Phase 1 fixes the foundations: i18n in both locales, reliable thread persistence, errors classified by mode and status, usable defaults, and `/generate` unwired. Phase 2 stores messages as typed parts with Markdown rendering, cancel, and per-turn errors with Retry. Phase 3 moves the chat onto the AI SDK with native function calling: a tool registry of internal read and write tools runs in a multi-step loop, and write calls become one suggestion applied on Accept as a single undo step. Phase 4 rebuilds the composer around one menu for `@` mentions (sent as id refs in a JSON context block) and a `/` command registry. Phase 5 adds skills — workspace or local instruction packs with tool allowlists that scope a turn's tools. Phase 6 connects to remote MCP servers from the browser, runs their tools in the loop as untrusted read-only data, and moves all persisted chat state and secrets behind `IStoragePort`. On top of Phase 6, custom connections can speak the Anthropic protocol and the composer queues messages sent while a reply is running. The feature lives in `features/llm` and imports `features/canvas` only from the untouched `ir/` folder.
 
 ## Known limitations across the six phases
 
@@ -30,6 +30,9 @@ The upgrade turns the chat from a single-shot text assistant into a multi-step, 
 - **MCP SDK is in the chat's lazy chunk,** not a plugin; servers can't extend the chat beyond the registry. (6)
 - **Visual reference for MCP settings was not consulted.** (6)
 - **Queued composer messages are memory-only;** a reload drops them. (6, `f6db2ba2`)
+- **The message queue relies on one chat panel:** the store holds one diagram-context source; with two panels mounted, the last one registered wins and unmounting either clears it. (6, `f6db2ba2`)
+- **After Stop or an error, the kept queue goes out after the user's next message,** not before it. (6, `f6db2ba2`)
+- **Queued messages do not wait for a pending suggestion's Accept or Reject.** (6, `f6db2ba2`)
 - **No file watcher for workspace skills.** (5)
 - **Workspace skill enabled state keyed by folder name.** (5)
 - **`/` disabled while a command chip is set,** so a skill can't be added then. (5)
