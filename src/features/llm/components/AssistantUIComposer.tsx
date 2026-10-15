@@ -357,6 +357,10 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
     };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // Keys that confirm or edit an IME composition belong to the IME.
+      // Safari reports the confirming Enter as keyCode 229 after the
+      // composition has ended.
+      if (event.nativeEvent.isComposing || event.keyCode === 229) return;
       if (menuOpen) {
         if (keyIs(event, KEY.ARROW_DOWN) || keyIs(event, KEY.ARROW_UP)) {
           event.preventDefault();
@@ -387,9 +391,8 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
         removeLastChip();
         return;
       }
-      // Enter sends, Shift+Enter breaks the line. Cmd/Ctrl+Enter also sends
-      // (covers muscle memory from the old behavior).
-      if (keyIs(event, KEY.ENTER) && !event.shiftKey && (event.metaKey || event.ctrlKey || true)) {
+      // Enter sends (with or without Cmd/Ctrl), Shift+Enter breaks the line.
+      if (keyIs(event, KEY.ENTER) && !event.shiftKey) {
         event.preventDefault();
         void send();
       }

@@ -242,6 +242,18 @@ describe("AssistantUIComposer — message queue", () => {
     await waitFor(() => expect(textarea.value).toBe("one too many"));
   });
 
+  it("Enter that confirms an IME composition does not send", () => {
+    const onSend = vi.fn().mockResolvedValue(true);
+    render(<AssistantUIComposer onSend={onSend} isLoading={false} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "にほんご", selectionStart: 4 } });
+    fireEvent.keyDown(textarea, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(textarea, { key: "Enter", keyCode: 229 });
+
+    expect(onSend).not.toHaveBeenCalled();
+    expect(textarea.value).toBe("にほんご");
+  });
+
   it("Shift+Enter breaks the line and does not send", () => {
     const onSend = vi.fn().mockResolvedValue(true);
     render(<AssistantUIComposer onSend={onSend} isLoading={true} />);
