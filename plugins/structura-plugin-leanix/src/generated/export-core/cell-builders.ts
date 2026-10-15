@@ -6,8 +6,7 @@
  */
 
 import { C4_LABEL_TEMPLATE, C4_META, CONFIG, FLOW_SHAPE_STYLES, THEME } from "./constants";
-import type { ExportNode } from "./model";
-import { logger } from "@/lib/core/logger";
+import type { ExportNode, ExportRepresentation, ExportSkinColours } from "./model";
 import {
   buildApiGroupStyle,
   buildAwsStyle,
@@ -143,11 +142,12 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
     case "swimlane": {
       const w = width || CONFIG.defaults.panelWidth;
       const h = height || CONFIG.defaults.panelHeight;
-      const style = buildSwimlaneStyle({
-        laneColor: node.laneColor ?? "#6366f1",
-        orientation: node.orientation,
-        opacity: node.opacity ?? 10,
-      });
+      const style =
+        buildSwimlaneStyle({
+          laneColor: node.laneColor ?? "#6366f1",
+          orientation: node.orientation,
+          opacity: node.opacity ?? 10,
+        }) + (node.dashed ? "dashed=1;" : "");
       const label = node.laneLabel?.trim() || node.name?.trim() || "Lane";
       return (
         `<mxCell id="${escXml(node.id)}" value="${escXml(label)}" style="${style}" ` +
@@ -220,7 +220,7 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       try {
         preview = JSON.stringify(JSON.parse(node.jsonContent), null, 2);
       } catch (err) {
-        logger.warn("[export-core]", "Failed to format JSON for preview:", err);
+        console.warn("[export-core]", "Failed to format JSON for preview:", err);
       }
       const truncated = preview.length > 400 ? `${preview.slice(0, 400)}…` : preview;
       const schemaLine = node.schemaRef ? `${node.schemaRef}\n` : "";
@@ -237,13 +237,56 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       );
     }
 
+    case "container": {
+      const w = width || 320;
+      const h = height || 200;
+      const style =
+        "swimlane;container=1;collapsible=1;startSize=32;rounded=1;arcSize=12;absoluteArcSize=1;" +
+        "html=1;fontSize=12;fontStyle=1;align=left;spacingLeft=10;" +
+        (node.stacked ? "shadow=1;" : "") +
+        (node.extraStyle ?? "") +
+        skinColourStyle(node);
+      // Compact: draw.io's collapsed container, drawn at the compact box, with
+      // the expanded one kept as alternateBounds so nothing inside is lost.
+      const geometry = node.compact
+        ? `<mxGeometry x="${x}" y="${y}" width="${node.compact.width}" height="${node.compact.height}" as="geometry">` +
+          `<mxRectangle x="${x}" y="${y}" width="${w}" height="${h}" as="alternateBounds"/></mxGeometry>`
+        : `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>`;
+      const cell =
+        `<mxCell id="${escXml(node.id)}" value="${escXml(node.label)}" style="${style}" ` +
+        `vertex="1"${node.compact ? ' collapsed="1"' : ""} parent="${escXml(parentId)}">` +
+        geometry +
+        `</mxCell>`;
+      return cell + representationCells(node.id, node.representations, node.accentColor);
+    }
+
+    case "stencil": {
+      const w = width || 120;
+      const h = height || 80;
+      const style = `${node.shapeStyle}whiteSpace=wrap;html=1;fontSize=11;` + skinColourStyle(node);
+      const value = node.label ?? node.name;
+      return (
+        `<mxCell id="${escXml(node.id)}" value="${escXml(value)}" style="${style}" ` +
+        `vertex="1" parent="${escXml(parentId)}">` +
+        `<mxGeometry x="${x}" y="${y}" width="${w}" height="${h}" as="geometry"/>` +
+        `</mxCell>` +
+        representationCells(node.id, node.representations, node.accentColor)
+      );
+    }
+
     case "flowNode": {
       const w = width || 160;
       const h = height || 60;
       const shapeStyle = FLOW_SHAPE_STYLES[node.shape] ?? FLOW_SHAPE_STYLES.rectangle;
-      const fill = node.nodeColor ? `fillColor=${node.nodeColor};` : "";
-      const style = `${shapeStyle}whiteSpace=wrap;html=1;align=center;fontSize=11;${fill}`;
-      const value = node.description ? `${node.name}\n${node.description}` : node.name;
+      const style =
+        `${shapeStyle}whiteSpace=wrap;html=1;align=center;fontSize=11;` + flowColourStyle(node);
+      const value = [
+        node.name,
+        node.description,
+        node.technology ? `[${node.technology}]` : undefined,
+      ]
+        .filter(Boolean)
+        .join("\n");
       return (
         `<mxCell id="${escXml(node.id)}" value="${escXml(value)}" style="${style}" ` +
         `vertex="1" parent="${escXml(parentId)}">` +
@@ -361,4 +404,58 @@ function buildPassthroughCell(
     `</mxCell>` +
     `</object>`
   );
+}
+
+function flowColourStyle(node: Extract<ExportNode, { kind: "flowNode" }>): string {
+  // An annotation is a bracket and text: no body to fill, and the bracket is
+  // drawn in the neutral colour whatever the accent.
+  if (node.shape === "annotation") return "fillColor=none;strokeColor=#64748b;strokeWidth=1.5;";
+  return skinColourStyle(node);
+}
+
+/**
+ * The flow skin's colour parts as mxGraph style, for flow nodes and stencils.
+ * draw.io cannot draw the canvas's 3px accent bar, so the accent goes where it
+ * can show: the outline. Soft is the accent at 8% (`fillOpacity`) with the
+ * outline at 30%, as on the canvas; solid fills with the accent and writes in
+ * the contrast colour.
+ */
+/**
+ * What a node shows of its data without it being a node: plain cells inside
+ * it that no edge can reach and that move with it.
+ */
+function representationCells(
+  parentId: string,
+  representations: readonly ExportRepresentation[] | undefined,
+  accent: string,
+): string {
+  return (representations ?? [])
+    .map((rep) => {
+      const style = rep.shapeStyle
+        ? `${rep.shapeStyle}aspect=fixed;html=1;connectable=0;movable=0;resizable=0;` +
+          `fillColor=${accent};strokeColor=#ffffff;`
+        : `rounded=1;arcSize=20;absoluteArcSize=1;html=1;fontSize=10;fontFamily=monospace;` +
+          `connectable=0;movable=0;resizable=0;strokeColor=none;fillColor=${accent};` +
+          `fillOpacity=${rep.fillOpacity ?? 20};`;
+      return (
+        `<mxCell id="${escXml(rep.id)}" value="${escXml(rep.label)}" ` +
+        `style="${style}" vertex="1" parent="${escXml(parentId)}">` +
+        `<mxGeometry x="${rep.x}" y="${rep.y}" width="${rep.width}" height="${rep.height}" as="geometry"/>` +
+        `</mxCell>`
+      );
+    })
+    .join("");
+}
+
+function skinColourStyle(parts: ExportSkinColours): string {
+  const accent = parts.accentColor;
+  const dashed = parts.dashed ? "dashed=1;" : "";
+  switch (parts.fill) {
+    case "solid":
+      return `fillColor=${accent};strokeColor=${accent};fontColor=${parts.fontColor ?? "#000000"};${dashed}`;
+    case "soft":
+      return `fillColor=${accent};fillOpacity=8;strokeColor=${accent};strokeOpacity=30;${dashed}`;
+    default:
+      return `fillColor=#ffffff;strokeColor=${accent};${dashed}`;
+  }
 }

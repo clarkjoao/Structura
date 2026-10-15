@@ -52,16 +52,14 @@ function model(nodes: ExportNode[], edges: ExportEdge[] = []): ExportModel {
 }
 
 describe("export-core is framework-agnostic", () => {
-  it("imports nothing from @/features or plugin types", () => {
+  it("imports nothing through the @ alias or from plugin types", () => {
     const files = readdirSync(HERE).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
     expect(files.length).toBeGreaterThan(5);
     for (const f of files) {
       const src = readFileSync(`${HERE}/${f}`, "utf8");
-      // @/lib/core is cross-cutting utilities (logger), not app features — exempt.
-      // @/features and @/plugins are app-specific and must stay out of export-core.
-      expect(src, `${f} must not import from @/features or @/plugins`).not.toMatch(
-        /from\s+["']@\/(features|plugins)\//,
-      );
+      // The LeanIX plugin copies these files verbatim (sync-shared) and has no
+      // @ alias, so any @/ import, even a utility, breaks the plugin build.
+      expect(src, `${f} must not import through the @ alias`).not.toMatch(/from\s+["']@\//);
       expect(src, `${f} must not reference plugin.types`).not.toMatch(/plugin\.types/);
     }
   });

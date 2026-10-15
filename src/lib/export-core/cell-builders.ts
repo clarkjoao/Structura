@@ -1,6 +1,5 @@
 import { C4_LABEL_TEMPLATE, C4_META, CONFIG, FLOW_SHAPE_STYLES, THEME } from "./constants";
 import type { ExportNode, ExportRepresentation, ExportSkinColours } from "./model";
-import { logger } from "@/lib/core/logger";
 import {
   buildApiGroupStyle,
   buildAwsStyle,
@@ -214,7 +213,7 @@ export function buildCell(node: ExportNode, geometry: GeometryInfo, parentId: st
       try {
         preview = JSON.stringify(JSON.parse(node.jsonContent), null, 2);
       } catch (err) {
-        logger.warn("[export-core]", "Failed to format JSON for preview:", err);
+        console.warn("[export-core]", "Failed to format JSON for preview:", err);
       }
       const truncated = preview.length > 400 ? `${preview.slice(0, 400)}…` : preview;
       const schemaLine = node.schemaRef ? `${node.schemaRef}\n` : "";

@@ -37,7 +37,9 @@ export type ExportNodeKind =
   | "jsonViewer"
   | "image"
   | "passthrough"
-  | "flowNode";
+  | "flowNode"
+  | "stencil"
+  | "container";
 
 interface BaseNode {
   id: string;
@@ -48,6 +50,22 @@ interface BaseNode {
   /** 0 means "use the kind's default size" (kept for CSS-auto C4 nodes). */
   width: number;
   height: number;
+  /**
+   * `structura*` attributes carried on the cell's `<object>` (the cell is
+   * promoted to one if it is not already): what a drawing hides but the
+   * model keeps, read back by the importer. Named without a `structura:`
+   * prefix: an undeclared XML namespace prefix makes the file unparseable.
+   */
+  metadata?: Readonly<Record<string, string>>;
+  /** Badges worn under the node: a shared element's name, as a plain cell of its own. */
+  badges?: ExportBadge[];
+}
+
+export interface ExportBadge {
+  id: string;
+  label: string;
+  /** `#rrggbb`. */
+  accentColor: string;
 }
 
 export interface C4Node extends BaseNode {
@@ -105,6 +123,8 @@ export interface SwimlaneNode extends BaseNode {
   orientation: "horizontal" | "vertical";
   /** Background tint 0–100 (Structura canvas semantics). */
   opacity?: number;
+  /** A dashed (or dotted) lane outline — the physical-evidence lane of a blueprint. */
+  dashed?: boolean;
 }
 
 export interface ApiGroupNode extends BaseNode {
@@ -190,7 +210,15 @@ export type ExportFlowShape =
   | "parallelogram"
   | "cylinder"
   | "circle"
-  | "subroutine";
+  | "subroutine"
+  | "start"
+  | "end"
+  | "document"
+  | "event"
+  | "junction-and"
+  | "junction-or"
+  | "annotation"
+  | "evidence";
 
 /**
  * A flowchart box.
@@ -205,11 +233,97 @@ export interface FlowNode extends BaseNode {
   name: string;
   description?: string;
   shape: ExportFlowShape;
-  /** Raw colour from the snapshot, when the user picked one. */
-  nodeColor?: string;
+  /** The mono chip on the canvas; exported as a bracketed line, like a C4 technology. */
+  technology?: string;
+  /**
+   * The resolved accent as `#rrggbb` — theme tokens already turned into the
+   * light theme's value, since draw.io has no theme to resolve them against.
+   */
+  accentColor: string;
+  /** How the accent fills the body, defaults resolved. */
+  fill: "none" | "soft" | "solid";
+  dashed: boolean;
+  /** Text colour on a solid fill, chosen by contrast; absent otherwise. */
+  fontColor?: string;
+}
+
+/** The flow skin's colour parts, resolved for an export. */
+export interface ExportSkinColours {
+  /** `#rrggbb`, theme tokens already resolved to the light theme. */
+  accentColor: string;
+  fill: "none" | "soft" | "solid";
+  dashed: boolean;
+  /** Text colour on a solid fill, chosen by contrast; absent otherwise. */
+  fontColor?: string;
+}
+
+/**
+ * A shape from one of draw.io's own stencil libraries, coloured with the flow
+ * skin's parts.
+ *
+ * One kind for every such element rather than a builder per element: the
+ * descriptor names the stencil (each one confirmed against draw.io's sources)
+ * and the builder only lays it out.
+ */
+export interface StencilNode extends BaseNode, ExportSkinColours {
+  kind: "stencil";
+  name: string;
+  /** The shape part of the style, ending in `;`. */
+  shapeStyle: string;
+  /** The cell's text; defaults to the name. */
+  label?: string;
+  /** Glyphs and chips drawn inside it, as in `ContainerNode`. */
+  representations?: ExportRepresentation[];
+}
+
+/**
+ * What a typed container shows of its data without it being a node — a key
+ * range segment, a pod tile, a badge. Exported as a plain, non-connectable
+ * cell inside the container, never as a node an edge can reach.
+ */
+export interface ExportRepresentation {
+  id: string;
+  label: string;
+  /** Container-relative. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Accent wash, 0–100. */
+  fillOpacity?: number;
+  /**
+   * A draw.io stencil to draw it with instead of the plain chip — a
+   * `mxgraph.kubernetes.icon2` glyph, say — ending in `;`. Filled with the
+   * accent, stroked white, as draw.io's own palette draws them.
+   */
+  shapeStyle?: string;
+}
+
+/**
+ * A typed container (a sharded store, a cluster, a state machine): a draw.io
+ * container whose children are the element's children, as real cells.
+ *
+ * Compact is exported as draw.io's own collapsed container — `collapsed="1"`
+ * with the expanded box kept as `alternateBounds` — so the file opens looking
+ * like the canvas, and expanding it in draw.io shows every child.
+ */
+export interface ContainerNode extends BaseNode, ExportSkinColours {
+  kind: "container";
+  name: string;
+  /** Header text: the name, then the parameters. */
+  label: string;
+  /** Extra style for the container cell (a stencil icon, say), ending in `;`. */
+  extraStyle?: string;
+  /** Present while compact: the size it is drawn at; `width`/`height` stay the expanded box. */
+  compact?: { width: number; height: number };
+  /** Replicas drawn as a stack: exported as a shadow, not as extra cells. */
+  stacked?: boolean;
+  representations?: ExportRepresentation[];
 }
 
 export type ExportNode =
+  | ContainerNode
+  | StencilNode
   | FlowNode
   | ImageNode
   | PassthroughNode

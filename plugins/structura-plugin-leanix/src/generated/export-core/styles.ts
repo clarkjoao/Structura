@@ -212,6 +212,7 @@ const EDGE_STYLE_BASE: Record<ExportEdgeStyle, string> = {
   editable: "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
   "editable-step":
     "edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;",
+  // draw.io's own edge shape for it, registered in mxLeanMap.js.
 };
 
 export function buildEdgeStyle(
