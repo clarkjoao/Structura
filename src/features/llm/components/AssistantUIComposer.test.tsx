@@ -231,6 +231,17 @@ describe("AssistantUIComposer — message queue", () => {
     expect(textarea.value).toBe("");
   });
 
+  it("puts the draft back when the queue is full", async () => {
+    const onSend = vi.fn().mockResolvedValue(false);
+    render(<AssistantUIComposer onSend={onSend} isLoading={true} />);
+    const textarea = getTextarea();
+    fireEvent.change(textarea, { target: { value: "one too many", selectionStart: 12 } });
+    fireEvent.keyDown(textarea, { key: "Enter" });
+
+    await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(textarea.value).toBe("one too many"));
+  });
+
   it("Shift+Enter breaks the line and does not send", () => {
     const onSend = vi.fn().mockResolvedValue(true);
     render(<AssistantUIComposer onSend={onSend} isLoading={true} />);

@@ -325,20 +325,23 @@ export const AssistantUIComposer = forwardRef<AssistantUIComposerRef, AssistantU
       reset();
       const sent = await onSend(draftText, draftMentions, draftCommand, draftSkills);
       if (sent === false) {
-        // The store rejected the message (e.g. queue is full). The draft was
-        // already cleared, so surface a toast so the user knows it was not
-        // held anywhere.
+        // The store refused the message (the queue is full): put the draft
+        // back as it was, so nothing the user typed is lost.
+        setText(text);
+        setCaret(text.length);
+        setMentions(mentions);
+        setCommandState(command);
+        setSelectionChipDismissed(selectionChipDismissed);
         toast.error(t("llmChat.queue.full", { max: MAX_QUEUED_MESSAGES }));
-        focusTextarea();
-      } else {
-        focusTextarea();
       }
+      focusTextarea();
     }, [
       text,
       autoSelection,
       mentions,
       command,
       activeSkills,
+      selectionChipDismissed,
       disabled,
       onSend,
       reset,
