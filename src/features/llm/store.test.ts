@@ -844,29 +844,56 @@ describe("LLM store — message queue", () => {
     expect(useLLMStore.getState().queuedMessages).toEqual([]);
   });
 
-  it("drains the queue on turn error", async () => {
+  it("keeps the queue when a turn fails and sends it on the next send", async () => {
     const fetchSpy = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(
       async () => new Response("server down", { status: 500 }),
     );
     vi.stubGlobal("fetch", fetchSpy);
     useLLMStore.setState({
-      queuedMessages: [{ id: "q-1", text: "after error", mentions: [], skills: [] }],
+      queuedMessages: [
+        { id: "q-1", text: "after error one", mentions: [], skills: [] },
+        { id: "q-2", text: "after error two", mentions: [], skills: [] },
+      ],
     });
 
     await useLLMStore.getState().sendMessage("trigger error", "ctx");
 
-    // First call triggers the error, then the drain fires the queued one.
-    expect(fetchSpy.mock.calls.length).toBeGreaterThanOrEqual(2);
-    const userTexts = fetchSpy.mock.calls.map((call) => {
-      const body = JSON.parse(String(call[1]?.body ?? "{}")) as {
-        messages: Array<{ role: string; content: string }>;
-      };
-      return body.messages
-        .filter((m) => m.role === "user")
-        .map((m) => m.content)
-        .join(" ");
+    // One failed turn, one error: the queued messages are not sent into it.
+    const callsAfterError = fetchSpy.mock.calls.length;
+    const bodies = () => fetchSpy.mock.calls.map((call) => String(call[1]?.body ?? ""));
+    expect(bodies().some((body) => body.includes("after error"))).toBe(false);
+    expect(useLLMStore.getState().queuedMessages.map((m) => m.id)).toEqual(["q-1", "q-2"]);
+    const failedTurns = useLLMStore
+      .getState()
+      .messages.filter((m) => m.role === "assistant" && m.status === "error");
+    expect(failedTurns).toHaveLength(1);
+
+    // The provider is back: the next send goes out, then the kept queue.
+    fetchSpy.mockImplementation(async () => replyWith("ok"));
+    await useLLMStore.getState().sendMessage("try again", "ctx");
+    expect(fetchSpy.mock.calls.length).toBeGreaterThan(callsAfterError);
+    expect(bodies().some((body) => body.includes("after error one"))).toBe(true);
+    expect(bodies().some((body) => body.includes("after error two"))).toBe(true);
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
+  });
+
+  it("sends the kept queue after a successful retry", async () => {
+    const fetchSpy = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(
+      async () => new Response("server down", { status: 500 }),
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+    useLLMStore.setState({
+      queuedMessages: [{ id: "q-1", text: "held back", mentions: [], skills: [] }],
     });
-    expect(userTexts.some((t) => t.includes("after error"))).toBe(true);
+    await useLLMStore.getState().sendMessage("trigger error", "ctx");
+    const failed = useLLMStore.getState().messages.find((m) => m.role === "assistant");
+
+    fetchSpy.mockImplementation(async () => replyWith("ok"));
+    await useLLMStore.getState().rerunAssistantMessage(failed?.id ?? "", "ctx");
+
+    const bodies = fetchSpy.mock.calls.map((call) => String(call[1]?.body ?? ""));
+    expect(bodies.some((body) => body.includes("held back"))).toBe(true);
+    expect(useLLMStore.getState().queuedMessages).toEqual([]);
   });
 
   it("does not drain the queue on explicit cancel", async () => {

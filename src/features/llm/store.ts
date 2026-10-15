@@ -409,7 +409,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
   /**
    * Pops the next queued message, if any, and runs it as a regular turn.
-   * Called when a turn ends (success or error). The context is built now, so
+   * Called when a turn completes. The context is built now, so
    * the turn sees changes made while it waited (an accepted suggestion, an
    * edit); without a context source it falls back to the last one sent.
    * No-op when the queue is empty.
@@ -456,9 +456,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
     const controller = new AbortController();
     inFlight = controller;
-    // A turn that ended with an explicit user cancel keeps the queue intact:
-    // the next manual send will pull it.
-    let cancelledExplicitly = false;
+    // Only a turn that completed sends the queue on. A cancelled or failed
+    // turn keeps it, so one error is shown once instead of once per queued
+    // message; the next send or a retry that completes sends it.
+    let completed = false;
     try {
       // The turn's skills are the ones its user message was sent with, so a
       // retry reuses them. A skill that no longer exists is left out.
@@ -554,9 +555,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         isLoading: false,
       });
       persistThread();
+      completed = true;
     } catch (error) {
       if (error instanceof LLMRequestCancelledError) {
-        cancelledExplicitly = true;
         set({
           // Completed calls stay; the running one ends as stopped. The
           // turn's queued changes are dropped with it: no suggestion.
@@ -596,9 +597,7 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
       if (inFlight === controller) {
         inFlight = null;
       }
-      // Drained on success and on error. Cancel leaves the queue alone; the
-      // next manual send will pull it.
-      if (!cancelledExplicitly) {
+      if (completed) {
         await drainQueue();
       }
     }
