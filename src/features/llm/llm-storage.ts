@@ -5,6 +5,7 @@ import type {
   LLMConfig,
   LLMConnection,
   LLMProvider,
+  CustomProtocol,
 } from "./types";
 import i18n from "@/infrastructure/i18n";
 import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence";
@@ -108,6 +109,10 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+function isCustomProtocol(value: unknown): value is CustomProtocol {
+  return value === "openai" || value === "anthropic";
+}
+
 function normalizeConnection(raw: Partial<LLMConnection>): LLMConnection {
   const provider: LLMProvider = (
     raw.provider === "anthropic" || raw.provider === "custom" ? raw.provider : "openai"
@@ -128,6 +133,7 @@ function normalizeConnection(raw: Partial<LLMConnection>): LLMConnection {
       ? raw.models.filter((model): model is string => isString(model))
       : undefined,
     authHeader: isString(raw.authHeader) && raw.authHeader.length > 0 ? raw.authHeader : undefined,
+    customProtocol: isCustomProtocol(raw.customProtocol) ? raw.customProtocol : undefined,
     extraHeaders: isObject(raw.extraHeaders)
       ? (raw.extraHeaders as Record<string, string>)
       : undefined,

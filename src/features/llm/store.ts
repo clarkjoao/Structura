@@ -137,6 +137,7 @@ function connectionToConfig(connection: LLMConnection): LLMConfig {
     model: connection.model,
     ...(connection.baseUrl ? { baseUrl: connection.baseUrl } : {}),
     ...(connection.authHeader ? { authHeader: connection.authHeader } : {}),
+    ...(connection.customProtocol ? { customProtocol: connection.customProtocol } : {}),
     ...(connection.extraHeaders ? { extraHeaders: connection.extraHeaders } : {}),
     ...(connection.extraParams ? { extraParams: connection.extraParams } : {}),
   };
@@ -632,6 +633,9 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
               model: config.model,
               ...(config.baseUrl !== undefined ? { baseUrl: config.baseUrl } : {}),
               ...(config.authHeader !== undefined ? { authHeader: config.authHeader } : {}),
+              ...(config.customProtocol !== undefined
+                ? { customProtocol: config.customProtocol }
+                : {}),
               ...(config.extraHeaders !== undefined ? { extraHeaders: config.extraHeaders } : {}),
               ...(config.extraParams !== undefined ? { extraParams: config.extraParams } : {}),
             }
