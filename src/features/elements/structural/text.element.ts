@@ -1,4 +1,5 @@
 import { Type } from "lucide-react";
+import i18n from "@/infrastructure/i18n";
 import TextNode from "@/features/canvas/nodes/TextNode";
 import { NO_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import { COMPONENT_TYPE_TEXT } from "@/features/diagram/model/component-type-constants";
@@ -71,11 +72,14 @@ export const textElement: ElementDescriptor = {
 
   export: {
     drawio: {
+      // draw.io has no borderless text in the export model yet: the passthrough
+      // box keeps the content and carries `structuraType`, so nothing is lost.
       toExportNode: (comp, base) => ({
         ...base,
-        kind: "note",
+        kind: "passthrough",
         name: comp.name,
-        description: "",
+        originType: comp.type,
+        originLabel: i18n.t("elements.text.label"),
       }),
     },
   },

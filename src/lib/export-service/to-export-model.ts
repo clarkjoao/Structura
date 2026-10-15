@@ -1,4 +1,5 @@
 import { hideSharedEdges, sharedMode, sharedUses } from "@/features/diagram/utils/shared";
+import { withoutHiddenTexts } from "@/features/diagram/utils/without-hidden-texts";
 import { elementAccent } from "@/features/canvas/shared/sharedLayerModel";
 import { exportColorHex } from "@/features/canvas/nodes/ProcessNode/flowExportColor";
 import {
@@ -355,7 +356,7 @@ export function diagramToExportModel(
   services: Record<string, ServiceDefinition>,
   options?: { componentIds?: string[] },
 ): ExportModel {
-  const resolved = diagramWithResolvedScene(diagram);
+  const resolved = diagramWithResolvedScene(withoutHiddenTexts(diagram));
   validateDiagram(resolved);
 
   const shouldFilter = options?.componentIds !== undefined && options.componentIds.length > 0;

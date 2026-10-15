@@ -131,6 +131,7 @@ export { buildChildrenIndex, getDescendantIdsFromIndex } from "./children-index"
 // ─── Snapshot cache ──────────────────────────────────────────────────────────
 export { getCachedCanvasSnapshot } from "./snapshot-cache";
 export { placedComponents, placedConnections } from "./placement";
+export { withoutHiddenTexts } from "./without-hidden-texts";
 export type { ResolvedSnapshot } from "./snapshot-cache";
 
 // ─── Reader catalog ──────────────────────────────────────────────────────────

@@ -413,7 +413,16 @@ const Canvas = (props: CanvasProps = {}) => {
               <CanvasSearch
                 onClose={() => setShowSearch(false)}
                 onSelectResult={handleSearchSelect}
-                components={resolvedSnapshot.components}
+                // Texts are found only while their layer is on: hidden, they are not there.
+                components={
+                  textLayer.visible
+                    ? resolvedSnapshot.components
+                    : Object.fromEntries(
+                        Object.entries(resolvedSnapshot.components).filter(
+                          ([, component]) => !isTextComponent(component),
+                        ),
+                      )
+                }
               />
             )}
             <div className="absolute inset-y-0 left-0 z-30 flex">
