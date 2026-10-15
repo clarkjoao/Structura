@@ -799,6 +799,25 @@ describe("LLM store — message queue", () => {
     expect(userTexts.some((t) => t.includes("queued two"))).toBe(true);
   });
 
+  it("builds the diagram context for a drained message when it is sent", async () => {
+    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) => replyWith("ok"));
+    vi.stubGlobal("fetch", fetchSpy);
+    let current = "diagram before accept";
+    useLLMStore.getState().setDiagramContextSource(() => current);
+    useLLMStore.setState({
+      queuedMessages: [{ id: "q-1", text: "queued one", mentions: [], skills: [] }],
+    });
+
+    const sending = useLLMStore.getState().sendMessage("first", "diagram before accept");
+    current = "diagram after accept";
+    await sending;
+    useLLMStore.getState().setDiagramContextSource(null);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(String(fetchSpy.mock.calls[1]?.[1]?.body)).toContain("diagram after accept");
+    expect(String(fetchSpy.mock.calls[1]?.[1]?.body)).not.toContain("diagram before accept");
+  });
+
   it("drains the queue on turn error", async () => {
     const fetchSpy = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(
       async () => new Response("server down", { status: 500 }),

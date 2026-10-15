@@ -241,6 +241,11 @@ export interface LLMStoreState {
   /** Set by the canvas hosting the chat; null when none is mounted. */
   setToolHost: (host: DiagramToolHost | null) => void;
   /**
+   * Set by the chat hook: builds the diagram context for a turn the store
+   * starts on its own (a drained queued message). Null when no chat is mounted.
+   */
+  setDiagramContextSource: (source: (() => string) | null) => void;
+  /**
    * Requests a new reply to the user message before `assistantMessageId`,
    * replacing that assistant message. Retry (after an error) and Regenerate.
    */
@@ -369,6 +374,8 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
    * the chat (`useProvideChatToolHost`). A dependency, not state.
    */
   let toolHost: DiagramToolHost | null = null;
+  /** Builds the current diagram context; see `setDiagramContextSource`. */
+  let diagramContextSource: (() => string) | null = null;
 
   const persistThread = (messages?: ChatMessage[]) => {
     const next = persistActiveThread(get(), messages);
@@ -394,17 +401,18 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
   /**
    * Pops the next queued message, if any, and runs it as a regular turn.
-   * Called when a turn ends (success or error). The composer captured the
-   * diagram context at send time; the store reuses its last one for the
-   * drained turn so the React side does not have to re-invoke the context
-   * builder. No-op when the queue is empty.
+   * Called when a turn ends (success or error). The context is built now, so
+   * the turn sees changes made while it waited (an accepted suggestion, an
+   * edit); without a context source it falls back to the last one sent.
+   * No-op when the queue is empty.
    */
   const drainQueue = async (): Promise<void> => {
     const [next, ...rest] = get().queuedMessages;
     if (!next) return;
     set({ queuedMessages: rest });
     // sendMessage runs the turn directly (isLoading is now false).
-    await get().sendMessage(next.text, get().lastDiagramContext, {
+    const diagramContext = diagramContextSource?.() ?? get().lastDiagramContext;
+    await get().sendMessage(next.text, diagramContext, {
       mentions: next.mentions,
       ...(next.command ? { command: next.command } : {}),
       ...(next.skills.length > 0 ? { skills: next.skills } : {}),
@@ -961,6 +969,10 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 
     setToolHost: (host) => {
       toolHost = host;
+    },
+
+    setDiagramContextSource: (source) => {
+      diagramContextSource = source;
     },
 
     cancelRequest: () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { useLLMStore } from "../store";
 import type { CommandRef, LLMConnection } from "../types";
@@ -37,6 +37,7 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
   const sendMessage = useLLMStore((state) => state.sendMessage);
   const cancelRequest = useLLMStore((state) => state.cancelRequest);
   const rerunAssistantMessage = useLLMStore((state) => state.rerunAssistantMessage);
+  const setDiagramContextSource = useLLMStore((state) => state.setDiagramContextSource);
   const acceptSuggestion = useLLMStore((state) => state.acceptSuggestion);
   const rejectSuggestion = useLLMStore((state) => state.rejectSuggestion);
   const clearHistory = useLLMStore((state) => state.clearHistory);
@@ -73,6 +74,17 @@ export function useLLMChat(params: UseLLMChatParams = defaultLLMChatParams) {
         : "";
     return [diagramText, visualContext].filter(Boolean).join("");
   }, [diagramText, selIds, focusedNodeId, activeDiagram]);
+
+  // A queued message is sent by the store when the running turn ends; it asks
+  // for the context then, so the turn sees the diagram as it is at that time.
+  const buildContextRef = useRef(buildContext);
+  useEffect(() => {
+    buildContextRef.current = buildContext;
+  }, [buildContext]);
+  useEffect(() => {
+    setDiagramContextSource(() => buildContextRef.current());
+    return () => setDiagramContextSource(null);
+  }, [setDiagramContextSource]);
 
   const send = useCallback(
     async (
