@@ -7,7 +7,7 @@ export type ConnectionTestResult =
   | {
       ok: true;
       models: string[];
-      /** Round trip of the models request; null when the list comes from presets. */
+      /** Round trip of the test request; null when the list comes from presets. */
       latencyMs: number | null;
       source: "endpoint" | "presets";
     }
@@ -50,14 +50,14 @@ function usesModelsEndpoint(config: LLMConfig): boolean {
 
 /**
  * Checks a connection and lists its models. OpenAI-compatible endpoints
- * (proxy, custom) are asked for `GET <base>/models`; the direct providers list
- * their presets without a request, so their key is checked on the first message.
+ * (proxy, custom) are asked for `GET <base>/models`; Anthropic-compatible
+ * custom endpoints, which have no models listing, get a one-token request for
+ * the connection's model; the direct providers list their presets without a
+ * request, so their key is checked on the first message.
  */
 export async function testConnection(config: LLMConfig): Promise<ConnectionTestResult> {
   const context = { mode: config.mode, provider: config.provider };
   if (!usesModelsEndpoint(config)) {
-    // Anthropic-compatible custom providers: validate the baseUrl locally and
-    // return an empty list. The first message confirms the round trip.
     if (config.provider === "custom" && config.customProtocol === "anthropic") {
       const base = config.baseUrl?.trim() ?? "";
       try {
@@ -76,7 +76,19 @@ export async function testConnection(config: LLMConfig): Promise<ConnectionTestR
           ),
         };
       }
-      return { ok: true, models: [], latencyMs: null, source: "presets" };
+      const started = performance.now();
+      try {
+        const { pingModel } = await import("./ai-sdk-transport");
+        await pingModel(config);
+      } catch (error) {
+        return { ok: false, error: toLLMError(error, context) };
+      }
+      return {
+        ok: true,
+        models: config.model ? [config.model] : [],
+        latencyMs: Math.round(performance.now() - started),
+        source: "endpoint",
+      };
     }
     return {
       ok: true,

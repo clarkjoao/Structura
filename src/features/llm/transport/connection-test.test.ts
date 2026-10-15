@@ -102,8 +102,20 @@ describe("modelsForConnection", () => {
 });
 
 describe("testConnection — custom-anthropic", () => {
-  it("does not call /models and returns an empty list when the base URL is valid", async () => {
-    const fetchSpy = vi.fn(async () => Response.json({ data: [{ id: "nope" }] }));
+  const anthropicReply = () =>
+    Response.json({
+      id: "msg_1",
+      type: "message",
+      role: "assistant",
+      model: "claude-sonnet-5-5",
+      content: [{ type: "text", text: "p" }],
+      stop_reason: "max_tokens",
+      stop_sequence: null,
+      usage: { input_tokens: 1, output_tokens: 1 },
+    });
+
+  it("sends a one-token request to the messages endpoint and reports its latency", async () => {
+    const fetchSpy = vi.fn(async (_url: string, _init: RequestInit) => anthropicReply());
     vi.stubGlobal("fetch", fetchSpy);
     const result = await testConnection({
       mode: "direct",
@@ -113,8 +125,64 @@ describe("testConnection — custom-anthropic", () => {
       model: "claude-sonnet-5-5",
       baseUrl: "https://anthropic-proxy.example.com/v1/messages",
     });
-    expect(fetchSpy).not.toHaveBeenCalled();
-    expect(result).toEqual({ ok: true, models: [], latencyMs: null, source: "presets" });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchSpy.mock.calls[0] ?? [];
+    expect(url).toBe("https://anthropic-proxy.example.com/v1/messages");
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      model: "claude-sonnet-5-5",
+      max_tokens: 1,
+    });
+    expect(new Headers(init?.headers).get("x-api-key")).toBe("sk-proxy");
+    expect(result).toMatchObject({ ok: true, models: ["claude-sonnet-5-5"], source: "endpoint" });
+    if (result.ok) expect(result.latencyMs).toEqual(expect.any(Number));
+  });
+
+  it("returns the structured error when the endpoint refuses the key", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json(
+          { type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } },
+          { status: 401 },
+        ),
+      ),
+    );
+    const result = await testConnection({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "sk-bad",
+      model: "claude-sonnet-5-5",
+      baseUrl: "https://anthropic-proxy.example.com/v1",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.status).toBe(401);
+      expect(result.error.kind).toBe("auth");
+      expect(result.error.detail).toContain("invalid x-api-key");
+    }
+  });
+
+  it("returns the network error when the endpoint cannot be reached", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("Failed to fetch");
+      }),
+    );
+    const result = await testConnection({
+      mode: "direct",
+      provider: "custom",
+      customProtocol: "anthropic",
+      apiKey: "sk-proxy",
+      model: "claude-sonnet-5-5",
+      baseUrl: "https://anthropic-proxy.example.com/v1",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.status).toBeNull();
+      expect(result.error.kind).toBe("networkOrCors");
+    }
   });
 
   it("returns an error when the base URL is not parseable", async () => {

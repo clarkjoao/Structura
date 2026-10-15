@@ -199,6 +199,33 @@ export async function toTransportError(
   return error instanceof Error ? error : new Error(detail);
 }
 
+/**
+ * Sends the smallest request the connection can answer (one output token) and
+ * maps a failure the way a chat turn does. For connections with no models
+ * endpoint to ask, so a connection test still makes a round trip.
+ */
+export async function pingModel(config: LLMConfig): Promise<void> {
+  const context = errorContext(config);
+  const timeout = createRequestTimeout();
+  try {
+    const [{ generateText }, model] = await Promise.all([
+      import("ai"),
+      createLanguageModel(config),
+    ]);
+    await generateText({
+      model,
+      prompt: "ping",
+      maxOutputTokens: 1,
+      maxRetries: 0,
+      abortSignal: timeout.signal,
+    });
+  } catch (error) {
+    throw await toTransportError(error, context, timeout);
+  } finally {
+    timeout.clear();
+  }
+}
+
 export interface ChatStreamRequest {
   config: LLMConfig;
   messages: LLMRequestMessage[];
