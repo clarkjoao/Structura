@@ -29,7 +29,11 @@ export const useConnections = () =>
     }),
   );
 
-export const useVisibleComponents = () => {
+/**
+ * `textsVisible` is the caller's own view of the text layer (the editor's local
+ * state); absent, the diagram's saved flag decides, as it does for a viewer.
+ */
+export const useVisibleComponents = (options: { textsVisible?: boolean } = {}) => {
   const components = useDiagramStore((s) => {
     if (!s.activeDiagramId) return undefined;
     const d = s.diagrams[s.activeDiagramId];
@@ -40,11 +44,15 @@ export const useVisibleComponents = () => {
     const d = s.diagrams[s.activeDiagramId];
     return getCachedCanvasSnapshot(d).nodeLayouts;
   });
+  const savedTextsVisible = useDiagramStore((s) =>
+    s.activeDiagramId ? s.diagrams[s.activeDiagramId]?.textsVisible === true : false,
+  );
+  const textsVisible = options.textsVisible ?? savedTextsVisible;
   // The placement rule the viewer's `resolveViewSnapshot` uses too.
   return useMemo(() => {
     if (!components || !nodeLayouts) return [];
-    return placedComponents(components, nodeLayouts);
-  }, [components, nodeLayouts]);
+    return placedComponents(components, nodeLayouts, { textsVisible });
+  }, [components, nodeLayouts, textsVisible]);
 };
 
 export const useVisibleConnections = () => {

@@ -1,4 +1,9 @@
-import { isDbTableType, isJsonViewerType, isNoteType } from "./component-type-constants";
+import {
+  isDbTableType,
+  isJsonViewerType,
+  isNoteType,
+  isTextType,
+} from "./component-type-constants";
 
 /**
  * Whether a connection may leave a component of this type.
@@ -25,5 +30,14 @@ import { isDbTableType, isJsonViewerType, isNoteType } from "./component-type-co
  * together so they cannot drift.
  */
 export function canBeConnectionSource(type: string): boolean {
-  return !isNoteType(type) && !isJsonViewerType(type) && !isDbTableType(type);
+  return !isNoteType(type) && !isJsonViewerType(type) && !isDbTableType(type) && !isTextType(type);
+}
+
+/**
+ * Whether a connection may arrive at a component of this type. Free text is a
+ * decoration: it takes no edge in either direction, so a quick insert, a
+ * generated graph or a patch cannot hang a relationship on a caption.
+ */
+export function canBeConnectionTarget(type: string): boolean {
+  return !isTextType(type);
 }

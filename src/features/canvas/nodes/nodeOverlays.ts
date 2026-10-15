@@ -86,6 +86,7 @@ export function focusDimOverlay(
   selectedNodeIds: Set<string>,
   highlightedNodeIds: Set<string>,
   flowModeActive: boolean,
+  selectionIsDecoration = false,
 ): Node {
   if (flowModeActive) return node;
   const { dimmedBySelection } = resolveSelectionFocus(
@@ -94,6 +95,7 @@ export function focusDimOverlay(
     viewNode.isHidden,
     selectedNodeIds,
     highlightedNodeIds,
+    selectionIsDecoration,
   );
   return dimmedBySelection ? withStyle(node, { opacity: OPACITY_FLOW_PLAYBACK_NODE_DIM }) : node;
 }
@@ -181,6 +183,8 @@ export function pendingOverlay(node: Node, pending: boolean): Node {
 export interface EditorNodeOverlayInput {
   selectedNodeIds: Set<string>;
   highlightedNodeIds: Set<string>;
+  /** What is selected is only free text: it takes no focus from the diagram. */
+  selectionIsDecoration?: boolean;
   /** A flow is being played or recorded: the flow owns opacity. */
   flowModeActive: boolean;
   isViewingCoverage: boolean;
@@ -207,6 +211,7 @@ export function applyEditorNodeOverlays(
     input.selectedNodeIds,
     input.highlightedNodeIds,
     input.flowModeActive,
+    input.selectionIsDecoration,
   );
   next = coverageDimOverlay(
     next,

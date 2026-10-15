@@ -7,6 +7,7 @@ import {
   useDiagramActions,
   useFlows,
 } from "@/features/diagram";
+import { useTextToolStore } from "../text/textLayer.store";
 
 const EMPTY_SERVICES: Record<string, never> = {};
 
@@ -14,7 +15,8 @@ export function useCanvasStore() {
   const diagram = useActiveDiagramModel();
   const allDiagrams = useDiagrams();
   // Selectors now memoize their own arrays — no wrapper needed.
-  const visibleComponents = useVisibleComponents();
+  const textsVisible = useTextToolStore((state) => state.layerVisible);
+  const visibleComponents = useVisibleComponents({ textsVisible });
   const visibleConnections = useVisibleConnections();
   const services = useServices();
   const flows = useFlows();

@@ -14,6 +14,7 @@ import { EMPTY_VIEW_SNAPSHOT, resolveViewSnapshot } from "../core/resolveViewSna
 import { remapConnectionsToVisible } from "../core/compactView";
 import { hideSharedEdges } from "@/features/diagram/utils/shared";
 import { useSharedRevealStore } from "../shared/useSharedRevealStore";
+import { useTextToolStore } from "../text/textLayer.store";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
 
@@ -119,6 +120,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   const effectiveFlowHighlight = flowState.flowHighlight;
   // "Show the N edges" of a shared element: a view state, never saved.
   const revealedOriginals = useSharedRevealStore((state) => state.originals);
+  const textsVisible = useTextToolStore((state) => state.layerVisible);
   // …and the edge a flow step is on, while it is being read (F5): hidden by a
   // shared element, it is drawn for that step and hidden again after.
   const activeConnId = effectiveFlowHighlight.activeConnId;
@@ -149,6 +151,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
               versionId: diagram.activeVersionId ?? null,
               compareVersionId: diagram.compareVersionId ?? null,
               reveal: sharedReveal,
+              textsVisible,
             },
             resolveNodeDescriptor,
           )
@@ -161,6 +164,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
       diagram?.id,
       diagram?.activeVersionId,
       diagram?.compareVersionId,
+      // The text layer is the editor's own state, not part of the resolved snapshot.
+      textsVisible,
       resolvedComponentsRef,
       resolvedNodeLayoutsRef,
       resolvedConnectionsRef,

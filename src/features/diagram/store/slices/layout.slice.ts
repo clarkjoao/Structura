@@ -12,6 +12,8 @@ import {
   resolveNodeLayout,
 } from "../helpers/version-helpers";
 import { computeFitBounds } from "../../utils/fit-group-to-children";
+import { panelTopInset } from "../../model/layout.constants";
+import { isTextType } from "../../model/component-type-constants";
 
 export const layoutSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -260,13 +262,14 @@ export const layoutSlice = (
       if ("collapsed" in panelComp && panelComp.collapsed) return;
 
       const childLayouts = Object.values(components)
-        .filter((c) => c.parentId === panelId)
+        // Free text is a decoration; it does not size the group around it.
+        .filter((c) => c.parentId === panelId && !isTextType(c.type))
         .map((c) => layouts[c.id])
         .filter(Boolean);
 
       if (childLayouts.length === 0) return;
 
-      const bounds = computeFitBounds(childLayouts);
+      const bounds = computeFitBounds(childLayouts, panelTopInset(panelComp.description));
       if (!bounds) return;
 
       pushHistory(state);

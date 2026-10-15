@@ -57,6 +57,10 @@
     "actions": "Ações",
     "intent": "Intenção",
     "direction": "Direção",
+    "connectionFrom": "Origem",
+    "connectionTo": "Destino",
+    "unnamedElement": "(sem nome)",
+    "inGroup": "em {{name}}",
     "connection": "Conexão",
     "label": "Label",
     "custom": "Personalizado",
@@ -469,6 +473,32 @@
     "added": "Adicionado",
     "removed": "Removido",
     "modified": "Modificado"
+  },
+  "textLayer": {
+    "show": "Mostrar textos",
+    "hide": "Ocultar textos",
+    "includeTexts": "Incluir textos",
+    "includeTextsHint": "Os textos de planejamento ficam fora de links, embeds, viewer e exportações, a menos que você os inclua."
+  },
+  "textNode": {
+    "placeholder": "Digite aqui…",
+    "ariaLabel": "Texto"
+  },
+  "textStyle": {
+    "size": "Tamanho do texto",
+    "sizes": { "sm": "Pequeno", "md": "Médio", "lg": "Grande", "xl": "Extra grande" },
+    "color": "Cor do texto",
+    "colors": {
+      "default": "Padrão",
+      "muted": "Suave",
+      "blue": "Azul",
+      "green": "Verde",
+      "amber": "Âmbar",
+      "red": "Vermelho"
+    },
+    "bold": "Negrito",
+    "italic": "Itálico",
+    "delete": "Excluir texto"
   },
   "canvasToolbar": {
     "drillUp": "Nível acima",
@@ -1122,6 +1152,10 @@
       "deploy": {
         "label": "Deployment"
       }
+    },
+    "text": {
+      "label": "Texto",
+      "description": "Texto livre para planejamento — um título ou uma legenda. Só aparece com a camada de texto ligada."
     },
     "flow-divider": {
       "label": "Linha nomeada",

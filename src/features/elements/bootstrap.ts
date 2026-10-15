@@ -13,6 +13,7 @@ import { externalElementElement } from "./structural/external-element.element";
 import { panelElement } from "./structural/panel.element";
 import { processNodeElement } from "./structural/process-node.element";
 import { flowDividerElement } from "./structural/flow-divider.element";
+import { textElement } from "./structural/text.element";
 import { svgElement } from "./structural/svg.element";
 import { unknownElement } from "./structural/unknown.element";
 import { sharedRefElement } from "./structural/shared-ref.element";
@@ -35,6 +36,7 @@ const BUILT_IN_ELEMENTS: ElementDescriptor[] = [
   panelElement,
   processNodeElement,
   flowDividerElement,
+  textElement,
   externalElementElement,
   svgElement,
   unknownElement,

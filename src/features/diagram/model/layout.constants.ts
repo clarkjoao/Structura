@@ -25,6 +25,23 @@ export const MIN_HANDLES = 1;
  */
 export const MAX_HANDLES = 8;
 export const NODE_DRAG_PADDING = 40;
+
+/** A panel's header with only a title: `py-2.5` twice around one `text-sm` line. */
+export const PANEL_HEADER_H = 40;
+/** One more `text-xs` line, the unselected (`line-clamp-1`) description. */
+export const PANEL_HEADER_DESCRIPTION_H = 16;
+/** Air between the header and the children inside the panel. */
+export const PANEL_HEADER_GAP = 16;
+
+/**
+ * Space a panel reserves above its children: the header it draws, plus a gap.
+ * The description counts as one line because that is how an unselected panel
+ * renders it; the full text shows as an overlay while the panel is selected.
+ */
+export function panelTopInset(description?: string): number {
+  const descriptionH = description?.trim() ? PANEL_HEADER_DESCRIPTION_H : 0;
+  return PANEL_HEADER_H + descriptionH + PANEL_HEADER_GAP;
+}
 export const DEFAULT_NODE_W = 180;
 export const DEFAULT_NODE_H = 80;
 

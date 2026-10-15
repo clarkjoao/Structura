@@ -49,6 +49,7 @@ const FIXED_REGISTERED_IDS = [
   "deploy-shard",
   "deploy-sharded-store",
   "flow-divider",
+  "text",
   "svg",
   "unknown",
 ] as const;

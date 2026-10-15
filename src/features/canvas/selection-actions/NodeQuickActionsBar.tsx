@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo } from "react";
-import { NodeToolbar, Position } from "@xyflow/react";
 import {
   Lock,
   Unlock,
@@ -36,6 +35,7 @@ import { CreateRefButton, SharedModeControl } from "./SharedModeControl";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { canBeReferenced } from "@/features/elements/referencing";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
+import { FloatingSelectionToolbar } from "./FloatingSelectionToolbar";
 
 interface NodeQuickActionsBarProps {
   nodeId: string;
@@ -288,7 +288,7 @@ export function NodeQuickActionsBar({
 
   return (
     <>
-      <NodeToolbar nodeId={nodeId} isVisible position={Position.Top} offset={10}>
+      <FloatingSelectionToolbar nodeIds={[nodeId]}>
         <div
           className="flex items-center gap-0.5 rounded-md border border-border bg-card px-1.5 py-1 shadow-lg"
           onPointerDown={(e) => e.stopPropagation()}
@@ -458,7 +458,7 @@ export function NodeQuickActionsBar({
             </div>
           )}
         </div>
-      </NodeToolbar>
+      </FloatingSelectionToolbar>
 
       {pickerOpen && diagramId ? (
         <IconPickerModal

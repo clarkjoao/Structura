@@ -71,6 +71,9 @@ export function singleIncomingTargetHandleId(nodeId: string): string {
   return `in-${nodeId}`;
 }
 
+/** A node that takes no edge at all: decorations such as free text. */
+export const NO_HANDLES: NodeHandleSpec = { incoming: 0, outgoing: 0 };
+
 /** A node that spreads its edges over the full set of slots. */
 export const SPREAD_HANDLES: NodeHandleSpec = {
   incoming: MAX_HANDLES,

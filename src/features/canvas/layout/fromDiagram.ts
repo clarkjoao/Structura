@@ -5,12 +5,14 @@ import {
   isPanelType,
   isDbTableType,
   isEndpointType,
+  isTextType,
 } from "@/features/diagram/model/component-type-constants";
 import {
   DEFAULT_NODE_H,
   DEFAULT_NODE_W,
   PANEL_DEFAULT_H,
   PANEL_DEFAULT_W,
+  panelTopInset,
 } from "@/features/diagram/model/layout.constants";
 import type { Component } from "@/features/diagram/model/component.types";
 import type { Connection } from "@/features/diagram/model/connection.types";
@@ -129,6 +131,7 @@ function collectSubtree(
       // the diagram layout engine. Excluding them here means they stay put.
       const child = components[childId];
       if (child && isApiGroupComponent(components[id]!)) continue;
+      if (child && isTextType(child.type)) continue;
       visit(childId);
     }
   };
@@ -165,6 +168,8 @@ export function fromDiagram(
           Object.keys(components).filter((id) => {
             const comp = components[id];
             if (!comp) return false;
+            // Free text is a decoration: it stays where the author put it.
+            if (isTextType(comp.type)) return false;
             // ApiGroups themselves are included (ELK sizes them from their children).
             // Their endpoint children are excluded (ApiGroup manages those itself).
             if (isApiGroupComponent(comp)) return true;
@@ -179,7 +184,9 @@ export function fromDiagram(
     const component = components[id];
     if (component === undefined) continue;
     const { width, height } = sizeOf(component, nodeLayouts, options.measured, components);
-    nodes.push({ id, parentId: component.parentId ?? null, width, height });
+    const node: LayoutNode = { id, parentId: component.parentId ?? null, width, height };
+    if (isPanelType(component.type)) node.topInset = panelTopInset(component.description);
+    nodes.push(node);
   }
 
   // Remap ends that sit on grouped endpoints onto the api-group, then drop

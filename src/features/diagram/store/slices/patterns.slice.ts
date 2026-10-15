@@ -7,7 +7,7 @@ import type {
 } from "../../model/diagram.types";
 import type { PatternFragment } from "../../model/pattern-fragment.types";
 import { isC4Component } from "../../model/component.guards";
-import { canBeConnectionSource } from "../../model/connection-rules";
+import { canBeConnectionSource, canBeConnectionTarget } from "../../model/connection-rules";
 import { UNSIZED_NODE_EXTENT_H, UNSIZED_NODE_EXTENT_W } from "../../model/layout.constants";
 import { generateId } from "../../utils/generate-id";
 import { freeInsertOrigin, type Box } from "../../utils/free-insert-origin";
@@ -145,6 +145,7 @@ function insertFragment(
     // An edge out of a note or a table can never be drawn; the catalog test keeps
     // them out, and this keeps a bad entry from writing one.
     if (!canBeConnectionSource(fragment.nodes[edge.from].type)) continue;
+    if (!canBeConnectionTarget(fragment.nodes[edge.to].type)) continue;
     writeConnection(d, scene, buildConnection(ids[edge.from], ids[edge.to], edge.label));
   }
 }

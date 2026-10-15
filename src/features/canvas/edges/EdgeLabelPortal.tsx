@@ -1,6 +1,13 @@
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
-import { EdgeLabelRenderer } from "@xyflow/react";
+import { EdgeLabelRenderer, useStore } from "@xyflow/react";
 
 /**
  * One edge-label portal for the whole canvas.
@@ -84,8 +91,32 @@ export function EdgeLabelPortalHost() {
   return (
     <EdgeLabelRenderer>
       <div ref={attach} />
+      <EdgeLabelZoomSync />
     </EdgeLabelRenderer>
   );
+}
+
+/** Below this zoom, edge labels hide unless their edge is revealed. */
+export const EDGE_LABEL_MIN_ZOOM = 0.6;
+
+/**
+ * Edge labels live inside the zoomed viewport, so left alone they shrink with
+ * it. Counter-scaling keeps them one size on screen, and below
+ * `EDGE_LABEL_MIN_ZOOM` they would only crowd the diagram, so they hide.
+ *
+ * Both are written as a CSS variable and an attribute on the shared container,
+ * from this one subscriber. A subscription per edge is what this file exists to
+ * avoid (see the note at the top); a stylesheet rule reads the attribute.
+ */
+function EdgeLabelZoomSync() {
+  const container = useEdgeLabelPortalContainer();
+  const zoom = useStore((state) => state.transform[2]);
+  useLayoutEffect(() => {
+    if (!container) return;
+    container.style.setProperty("--edge-label-scale", String(1 / zoom));
+    container.dataset.labelsCollapsed = zoom < EDGE_LABEL_MIN_ZOOM ? "true" : "false";
+  }, [container, zoom]);
+  return null;
 }
 
 /** Drop-in replacement for `<EdgeLabelRenderer>` inside an edge component. */

@@ -160,6 +160,13 @@ export interface Diagram {
   activeVersionId?: string | null;
 
   compareVersionId?: string | null;
+
+  /**
+   * The text layer: `text` elements are drawn only while this is on. Absent
+   * means off — the planning notes stay out of the viewer, shared links and
+   * exports until the author turns it on and saves.
+   */
+  textsVisible?: boolean;
 }
 
 export type DiagramModel = Omit<Diagram, "viewport">;

@@ -61,6 +61,7 @@ export type {
   ShardedStoreComponent,
   ShardStrategy,
   FlowDividerComponent,
+  TextComponent,
   EndpointHandler,
   HttpMethod,
 } from "./component.types";
@@ -91,6 +92,7 @@ export {
   MIN_HANDLES,
   MAX_HANDLES,
   NODE_DRAG_PADDING,
+  panelTopInset,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
   API_GROUP_HEADER_H,
@@ -98,6 +100,15 @@ export {
   API_GROUP_FOOTER_H,
   API_GROUP_FRAME_W,
 } from "./layout.constants";
+export {
+  TEXT_SIZES,
+  TEXT_COLORS,
+  DEFAULT_TEXT_SIZE,
+  DEFAULT_TEXT_COLOR,
+  isTextSize,
+  isTextColor,
+} from "./text-style";
+export type { TextSize, TextColor } from "./text-style";
 
 // ─── Connection ───────────────────────────────────────────────────────────────
 export type {
@@ -183,6 +194,8 @@ export {
   isShardedStoreType,
   COMPONENT_TYPE_FLOW_DIVIDER,
   isFlowDividerType,
+  COMPONENT_TYPE_TEXT,
+  isTextType,
   isPanelType,
   isNoteType,
   isC4Type,
@@ -206,7 +219,7 @@ export {
   getDefaultNameForNewComponent,
 } from "./component-type-constants";
 export type { C4Type } from "./component-type-constants";
-export { canBeConnectionSource } from "./connection-rules";
+export { canBeConnectionSource, canBeConnectionTarget } from "./connection-rules";
 
 // ─── Component guards ────────────────────────────────────────────────────────
 export {
@@ -239,6 +252,7 @@ export {
   isShardComponent,
   isShardedStoreComponent,
   isFlowDividerComponent,
+  isTextComponent,
   isPluginTypedComponent,
 } from "./component.guards";
 export type {

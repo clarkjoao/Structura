@@ -5,7 +5,10 @@ import {
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
 } from "../../edges/connectionDerivations";
-import { canBeConnectionSource } from "@/features/diagram/model/connection-rules";
+import {
+  canBeConnectionSource,
+  canBeConnectionTarget,
+} from "@/features/diagram/model/connection-rules";
 import { NODE_TYPE_REGISTRY, getDescriptor, handleSpecForType } from "./registry";
 import { registeredElementIds } from "@/features/elements/element.registry";
 import { singleIncomingTargetHandleId } from "./handle-spec";
@@ -97,8 +100,12 @@ describe("declared handle specs", () => {
   it("no declared handle set exceeds MAX_HANDLES", () => {
     for (const descriptor of allDescriptors()) {
       const { incoming, outgoing } = descriptor.handles;
+      // 0 incoming is legal too: a decoration (free text) takes no edge at all,
+      // and `canBeConnectionTarget` refuses one for it.
       if (incoming !== "shared") {
-        expect(incoming, `${descriptor.rfType} incoming`).toBeGreaterThanOrEqual(1);
+        expect(incoming, `${descriptor.rfType} incoming`).toBeGreaterThanOrEqual(
+          canBeConnectionTarget(descriptor.rfType) ? 1 : 0,
+        );
         expect(incoming, `${descriptor.rfType} incoming`).toBeLessThanOrEqual(MAX_HANDLES);
       }
       // 0 is legal and meaningful: the type is not a source.
@@ -128,6 +135,8 @@ describe("declared handle specs", () => {
           expect(index, `${type} used ${handle}`).toBeLessThan(spec.outgoing);
         }
       }
+      // Same for a type that takes no edge in: there is no slot to stay inside.
+      if (spec.incoming === 0) continue;
       for (const handle of used.target) {
         if (spec.incoming === "shared") {
           expect(handle, `${type} target`).toBe(singleIncomingTargetHandleId("hub"));

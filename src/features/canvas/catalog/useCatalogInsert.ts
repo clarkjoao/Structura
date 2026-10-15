@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getDefaultNameForNewComponent,
+  isTextType,
   getLastEdgeStyle,
   useDiagramActions,
   type NewConnectedEdge,
@@ -10,6 +11,7 @@ import { useElementPresetLibrary } from "@/features/element-presets";
 import type { CatalogEntry } from "@/features/elements/search";
 import { panelKindDefaultName } from "@/lib/catalogs/panels";
 import { useCanvasPreferencesStore } from "../preferences";
+import { useTextToolStore } from "../text/textLayer.store";
 
 export interface CatalogInsertTarget {
   /** Flow position of the new node. */
@@ -22,6 +24,8 @@ export interface CatalogInsertTarget {
 function defaultNameFor(entry: CatalogEntry): string {
   if (entry.insert.kind !== "element") return entry.label;
   const { type, createOptions } = entry.insert;
+  // A text starts empty: it opens for typing, and has no name to be called.
+  if (isTextType(type)) return "";
   if (createOptions.serviceId) return entry.label;
   const panelDefault = createOptions.panelKind
     ? panelKindDefaultName(createOptions.panelKind)
@@ -41,6 +45,7 @@ export function useCatalogInsert(): (
 ) => string | null {
   const { t } = useTranslation();
   const { addComponent, addComponentConnectedFrom, linkComponentToService } = useDiagramActions();
+  const showTextLayer = useTextToolStore((state) => state.setLayerVisible);
   const { instantiatePreset } = useElementPresetLibrary();
   const recordUse = useCanvasPreferencesStore((state) => state.recordCatalogEntryUse);
 
@@ -57,6 +62,8 @@ export function useCatalogInsert(): (
         case "element": {
           const { type, createOptions } = entry.insert;
           const name = defaultNameFor(entry);
+          // A text is drawn only while the layer is on: inserting one turns it on.
+          if (isTextType(type)) showTextLayer(true);
           createdId = connectFrom
             ? addComponentConnectedFrom(
                 connectFrom.sourceId,
@@ -113,6 +120,7 @@ export function useCatalogInsert(): (
       addComponent,
       addComponentConnectedFrom,
       linkComponentToService,
+      showTextLayer,
       instantiatePreset,
       recordUse,
     ],

@@ -30,6 +30,12 @@ export function isFlowDividerType(type: string): type is "flow-divider" {
   return type === COMPONENT_TYPE_FLOW_DIVIDER;
 }
 
+export const COMPONENT_TYPE_TEXT = "text";
+
+export function isTextType(type: string): type is "text" {
+  return type === COMPONENT_TYPE_TEXT;
+}
+
 export const COMPONENT_TYPE_SHARDED_STORE = "deploy-sharded-store";
 
 export function isShardedStoreType(type: string): type is "deploy-sharded-store" {

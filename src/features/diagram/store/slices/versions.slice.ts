@@ -18,7 +18,7 @@ import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
 import { resolveActiveVersion } from "../helpers/version-helpers";
 import i18n from "@/infrastructure/i18n";
-import { canBeConnectionSource } from "../../model/connection-rules";
+import { canBeConnectionSource, canBeConnectionTarget } from "../../model/connection-rules";
 
 function ensureVersions(d: Diagram): Record<string, VersionDiff> {
   if (!d.versions) d.versions = {};
@@ -250,6 +250,10 @@ export const versionsSlice = (
         sc.addedComponents?.[connection.sourceId]?.type ??
         d!.snapshot.components[connection.sourceId]?.type;
       if (sourceType !== undefined && !canBeConnectionSource(sourceType)) return;
+      const targetType =
+        sc.addedComponents?.[connection.targetId]?.type ??
+        d!.snapshot.components[connection.targetId]?.type;
+      if (targetType !== undefined && !canBeConnectionTarget(targetType)) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       sc.addedConnections[connection.id] = connection;
       touchDiagram(d);

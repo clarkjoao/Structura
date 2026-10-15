@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, LayoutGrid, PanelBottomClose, PanelBottomOpen, Puzzle } from "lucide-react";
+import {
+  ChevronDown,
+  LayoutGrid,
+  PanelBottomClose,
+  PanelBottomOpen,
+  Puzzle,
+  Type,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -14,6 +21,7 @@ import { PluginToolbarSlot } from "@/features/plugins/components/PluginToolbarSl
 import { usePluginPanels } from "@/features/plugins/use-plugin-contributions";
 import { cn } from "@/lib/utils";
 import { usePatternInsert } from "../patterns";
+import { useTextLayer } from "../text/useTextLayer";
 import { useCanvasPreferencesStore } from "../preferences";
 import { LayerFilterPopover } from "../toolbar/LayerFilterPopover";
 import { VersionsButton } from "../toolbar/components/VersionsButton";
@@ -80,6 +88,7 @@ export function CanvasBottomToolbar({
   const autoHide = useCanvasPreferencesStore((state) => state.autoHideBottomToolbar);
   const setAutoHide = useCanvasPreferencesStore((state) => state.setAutoHideBottomToolbar);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const textLayer = useTextLayer();
   const dock = useDockAutoHide(autoHide, open || versions.open || menuOpen !== null);
 
   useEffect(() => {
@@ -155,6 +164,18 @@ export function CanvasBottomToolbar({
           </button>
         );
       })}
+      {/* The text layer: highlighted while the texts are drawn (the editor starts
+          with them on). The T key creates a text; the button shows or hides. */}
+      <button
+        type="button"
+        title={textLayer.visible ? t("textLayer.hide") : t("textLayer.show")}
+        aria-label={textLayer.visible ? t("textLayer.hide") : t("textLayer.show")}
+        aria-pressed={textLayer.visible}
+        onClick={textLayer.toggle}
+        className={cn(TOOL_BUTTON_CLASS, textLayer.visible && "bg-primary/15 text-primary")}
+      >
+        <Type aria-hidden className="h-4 w-4" />
+      </button>
       <Separator />
       {renderMenu("elementCatalog.toolbar.c4", "elementCatalog.toolbar.c4Menu", c4)}
       {renderMenu(

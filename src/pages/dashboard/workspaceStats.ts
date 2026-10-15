@@ -1,4 +1,5 @@
 import type { Diagram } from "@/features/diagram";
+import { countComponents } from "@/features/diagram/utils/count-components";
 
 export interface WorkspaceStats {
   diagramCount: number;
@@ -11,7 +12,7 @@ export function sumWorkspaceStats(diagrams: Diagram[]): WorkspaceStats {
   let componentCount = 0;
   let flowCount = 0;
   for (const diagram of diagrams) {
-    componentCount += Object.keys(diagram.snapshot.components).length;
+    componentCount += countComponents(diagram.snapshot.components);
     flowCount += Object.keys(diagram.snapshot.flows).length;
   }
   return {

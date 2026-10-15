@@ -10,7 +10,7 @@ import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
 import { resolveActiveVersion } from "../helpers/version-helpers";
 import { mutateRemoveConnectionInVersion } from "../../utils/version-mutations";
-import { canBeConnectionSource } from "../../model/connection-rules";
+import { canBeConnectionSource, canBeConnectionTarget } from "../../model/connection-rules";
 
 /**
  * The source component's type, looked up where the active scene can see it: a
@@ -79,6 +79,7 @@ export const connectionsSlice = (
     const state = get();
     const active = state.diagrams[state.activeDiagramId ?? ""];
     if (active && !canBeConnectionSource(sourceTypeIn(active, sourceId) ?? "")) return null;
+    if (active && !canBeConnectionTarget(sourceTypeIn(active, targetId) ?? "")) return null;
 
     const connection = buildConnection(sourceId, targetId, label, edgeStyle, sides);
     set((state) => {
@@ -101,6 +102,10 @@ export const connectionsSlice = (
       if (patch.sourceId !== undefined) {
         const sourceType = d.snapshot.components[patch.sourceId]?.type;
         if (sourceType !== undefined && !canBeConnectionSource(sourceType)) return;
+      }
+      if (patch.targetId !== undefined) {
+        const targetType = d.snapshot.components[patch.targetId]?.type;
+        if (targetType !== undefined && !canBeConnectionTarget(targetType)) return;
       }
       const scene = resolveActiveVersion(d);
       const inScene = !!(scene && scene.addedConnections[id]);

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { DiagramItemActions } from "@/pages/dashboard/dashboard.types";
 import { DiagramCardFooter } from "@/pages/dashboard/components/diagram-card/DiagramCardFooter";
 import { DiagramCardPreview } from "@/pages/dashboard/components/diagram-card/DiagramCardPreview";
+import { countComponents } from "@/features/diagram/utils/count-components";
 
 interface DiagramCardProps {
   diagram: Diagram;
@@ -34,7 +35,7 @@ export function DiagramCard({
 }: DiagramCardProps) {
   const [preview, setPreview] = useState<string | null>(null);
 
-  const componentCount = Object.keys(diagram.snapshot.components).length;
+  const componentCount = countComponents(diagram.snapshot.components);
   const connectionCount = Object.keys(diagram.snapshot.connections).length;
   const flowCount = Object.keys(diagram.snapshot.flows).length;
 

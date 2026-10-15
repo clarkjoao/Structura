@@ -10,6 +10,7 @@ export interface SizeLimits {
  */
 export const ELEMENT_SIZE_LIMITS: Readonly<Record<string, SizeLimits>> = {
   "flow-divider": { minWidth: 120, minHeight: 24 },
+  text: { minWidth: 80, minHeight: 24 },
   "deploy-sharded-store": { minWidth: 240, minHeight: 84 },
   "deploy-shard": { minWidth: 140, minHeight: 64 },
   "deploy-shard-router": { minWidth: 120, minHeight: 48 },

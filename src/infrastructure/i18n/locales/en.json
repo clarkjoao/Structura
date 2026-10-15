@@ -57,6 +57,10 @@
     "actions": "Actions",
     "intent": "Intent",
     "direction": "Direction",
+    "connectionFrom": "From",
+    "connectionTo": "To",
+    "unnamedElement": "(unnamed)",
+    "inGroup": "in {{name}}",
     "connection": "Connection",
     "label": "Label",
     "custom": "Custom",
@@ -469,6 +473,32 @@
     "added": "Added",
     "removed": "Removed",
     "modified": "Modified"
+  },
+  "textLayer": {
+    "show": "Show texts",
+    "hide": "Hide texts",
+    "includeTexts": "Include texts",
+    "includeTextsHint": "Planning texts stay out of links, embeds, the viewer and exports unless you include them."
+  },
+  "textNode": {
+    "placeholder": "Type here…",
+    "ariaLabel": "Text"
+  },
+  "textStyle": {
+    "size": "Text size",
+    "sizes": { "sm": "Small", "md": "Medium", "lg": "Large", "xl": "Extra large" },
+    "color": "Text colour",
+    "colors": {
+      "default": "Default",
+      "muted": "Muted",
+      "blue": "Blue",
+      "green": "Green",
+      "amber": "Amber",
+      "red": "Red"
+    },
+    "bold": "Bold",
+    "italic": "Italic",
+    "delete": "Delete text"
   },
   "canvasToolbar": {
     "drillUp": "Level up",
@@ -1122,6 +1152,10 @@
       "deploy": {
         "label": "Deployment"
       }
+    },
+    "text": {
+      "label": "Text",
+      "description": "Free text for planning — a heading or a caption. Drawn only while the text layer is on."
     },
     "flow-divider": {
       "label": "Named line",

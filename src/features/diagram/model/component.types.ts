@@ -4,6 +4,7 @@ import type { AzureCategoryId } from "@/features/cloud/providers/azure/azure.cat
 import type { K8sCategoryId } from "@/features/elements/families/k8s/k8s.catalog";
 import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog";
 import type { ExternalLinkType, PanelKind } from "../enums";
+import type { TextColor, TextSize } from "./text-style";
 
 /**
  * Namespaced plugin component type: "<pluginId>/<name>". No built-in type contains "/",
@@ -28,6 +29,7 @@ export type ComponentType =
   | "process-node"
   | "external-element"
   | "flow-divider"
+  | "text"
   | SharedComponentType
   | K8sStructureType
   | DeployComponentType
@@ -317,6 +319,22 @@ export interface FlowDividerComponent extends BaseComponent {
   stroke?: NodeStrokeMode;
 }
 
+/**
+ * Free text on the canvas — a heading, a caption — written while planning. A
+ * decoration, not architecture: no handles, no edges, outside autolayout. Its
+ * content is `name`; the rest is a closed set of styles. It is drawn only while
+ * the diagram's text layer is on (`Diagram.textsVisible`).
+ */
+export interface TextComponent extends BaseComponent {
+  type: "text";
+  /** Absent means medium. */
+  textSize?: TextSize;
+  bold?: boolean;
+  italic?: boolean;
+  /** Absent means the default foreground. */
+  textColor?: TextColor;
+}
+
 /** The deployment vocabulary (the `deploy` family): stores and their shards. */
 export type DeployComponentType = "deploy-sharded-store" | "deploy-shard" | "deploy-shard-router";
 
@@ -496,6 +514,7 @@ export type Component =
   | ShardComponent
   | ShardedStoreComponent
   | FlowDividerComponent
+  | TextComponent
   | C4Component
   | PanelComponent
   | NoteComponent
@@ -540,7 +559,8 @@ export type ComponentPatch = Partial<Omit<C4Component, "id">> &
   Partial<Omit<ShardRouterComponent, "id">> &
   Partial<Omit<ShardComponent, "id">> &
   Partial<Omit<ShardedStoreComponent, "id">> &
-  Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number };
+  Partial<Omit<FlowDividerComponent, "id">> &
+  Partial<Omit<TextComponent, "id">> & { width?: number; height?: number };
 
 export type TypedComponentPatch =
   | (Partial<Omit<C4Component, "id">> & { width?: number; height?: number })
@@ -571,5 +591,6 @@ export type TypedComponentPatch =
   | (Partial<Omit<ShardComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<ShardedStoreComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<FlowDividerComponent, "id">> & { width?: number; height?: number })
+  | (Partial<Omit<TextComponent, "id">> & { width?: number; height?: number })
   | (Partial<Omit<PluginTypedComponent, "id">> & { width?: number; height?: number })
   | { width?: number; height?: number };

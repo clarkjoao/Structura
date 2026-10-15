@@ -35,6 +35,11 @@ export interface LayoutNode {
   parentId: string | null;
   width: number;
   height: number;
+  /**
+   * Room a container keeps free above its children, for what it draws there
+   * (a header). Absent means the engine's default padding.
+   */
+  topInset?: number;
 }
 
 export interface LayoutEdge {

@@ -19,6 +19,7 @@ import {
   type ReadDiagramRoutePlay,
 } from "@/features/canvas/core";
 import { HandleHighlightProvider } from "@/features/canvas/contexts/HandleHighlightContext";
+import { EdgeLabelRevealProvider } from "@/features/canvas/contexts/EdgeLabelRevealContext";
 import { useCanvasHighlight } from "@/features/canvas/hooks/useCanvasHighlight";
 import {
   EMPTY_FLOW_HIGHLIGHT,
@@ -341,6 +342,21 @@ const ViewerCanvasContent = ({
     () => (focusedNodeId ? new Set([focusedNodeId]) : NO_NODE_IDS),
     [focusedNodeId],
   );
+  /**
+   * A focused node shows the labels of the edges wired to it, even when the
+   * canvas is zoomed out far enough to hide them. A tap is the only way to ask
+   * on a touch screen, where there is no hover.
+   */
+  const revealedLabelEdgeIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (!focusedNodeId) return ids;
+    for (const connection of Object.values(view.connections)) {
+      if (connection.sourceId === focusedNodeId || connection.targetId === focusedNodeId) {
+        ids.add(connection.id);
+      }
+    }
+    return ids;
+  }, [focusedNodeId, view]);
   /** A focused node, or a highlighted edge's ends, keep the light; the rest dims, as in the editor. */
   const nodes = useMemo(
     () =>
@@ -477,20 +493,22 @@ const ViewerCanvasContent = ({
         }}
       >
         <HandleHighlightProvider value={handleHighlightValue}>
-          <DiagramSurface
-            policy={readPolicy()}
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={nodeTypes}
-            iconLookup={iconLookup}
-            fitView={!framesPreviewEntry}
-            onNodeClick={handleNodeClick}
-            onEdgeClick={handleEdgeClick}
-            onPaneClick={handlePaneClick}
-          >
-            <DiagramControls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-            <SharedLayer components={view.components} connections={view.connections} />
-          </DiagramSurface>
+          <EdgeLabelRevealProvider value={revealedLabelEdgeIds}>
+            <DiagramSurface
+              policy={readPolicy()}
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              iconLookup={iconLookup}
+              fitView={!framesPreviewEntry}
+              onNodeClick={handleNodeClick}
+              onEdgeClick={handleEdgeClick}
+              onPaneClick={handlePaneClick}
+            >
+              <DiagramControls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+              <SharedLayer components={view.components} connections={view.connections} />
+            </DiagramSurface>
+          </EdgeLabelRevealProvider>
         </HandleHighlightProvider>
 
         {!readingFlow && !previewMode && <FlowInvite flows={flows} onSelect={startFlow} />}

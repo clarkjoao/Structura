@@ -1,7 +1,7 @@
 import { Check, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { DiagramNodeToolbar, DiagramPosition } from "../core/DiagramFlowProvider";
+import { FloatingSelectionToolbar } from "./FloatingSelectionToolbar";
 
 interface PendingNodeToolbarProps {
   nodeId: string;
@@ -23,7 +23,7 @@ export function PendingNodeToolbar({
   const { t } = useTranslation();
 
   return (
-    <DiagramNodeToolbar nodeId={nodeId} isVisible position={DiagramPosition.Top} offset={10}>
+    <FloatingSelectionToolbar nodeIds={[nodeId]}>
       <div className="flex items-center gap-2 rounded-md border border-border bg-card/95 p-1 shadow-md backdrop-blur-sm">
         <Button
           type="button"
@@ -45,6 +45,6 @@ export function PendingNodeToolbar({
           {t("llmChat.preview.discard")}
         </Button>
       </div>
-    </DiagramNodeToolbar>
+    </FloatingSelectionToolbar>
   );
 }

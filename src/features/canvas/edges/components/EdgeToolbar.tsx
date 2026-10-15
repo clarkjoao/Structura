@@ -10,7 +10,7 @@ import {
   dropdownToEdgeStyle,
   edgeStyleToDropdown,
 } from "@/features/canvas/selection-actions/edgeStyleMapping";
-import { EdgeLabelPortal } from "../EdgeLabelPortal";
+import { FloatingSelectionToolbar } from "@/features/canvas/selection-actions/FloatingSelectionToolbar";
 import { RouteThroughRefButton } from "@/features/canvas/shared/RouteThroughRefButton";
 
 interface EdgeToolbarProps {
@@ -52,13 +52,9 @@ export function EdgeToolbar({
   const hasStyleControls = !!onStyleChange;
 
   return (
-    <EdgeLabelPortal>
+    <FloatingSelectionToolbar flowRect={{ x: anchor.x, y: anchor.y, width: 0, height: 0 }}>
       <div
-        className="nodrag nopan absolute z-[3] pointer-events-auto flex items-center gap-0.5
-                   rounded-md border border-border bg-card px-1 py-0.5 shadow-lg"
-        style={{
-          transform: `translate(-50%, -50%) translate(${anchor.x}px, ${anchor.y - 28}px)`,
-        }}
+        className="flex items-center gap-0.5 rounded-md border border-border bg-card px-1 py-0.5 shadow-lg"
         onPointerDown={(e) => e.stopPropagation()}
       >
         {/* Style controls — only when callback provided */}
@@ -118,6 +114,6 @@ export function EdgeToolbar({
           <Trash2 className="h-3.5 w-3.5" aria-hidden />
         </button>
       </div>
-    </EdgeLabelPortal>
+    </FloatingSelectionToolbar>
   );
 }

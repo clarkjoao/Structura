@@ -3,6 +3,7 @@
  */
 import LZString from "lz-string";
 import type { Diagram } from "@/features/diagram";
+import { withoutHiddenTexts } from "@/features/diagram/utils/without-hidden-texts";
 import type { ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
 import { getAppBaseUrl, currentHashParams } from "./utils";
 
@@ -33,7 +34,9 @@ function withCatalog<T extends object>(diagram: T, catalog?: ReaderCatalog): T {
 }
 
 export function encodeDiagramPayload(diagram: Diagram, catalog?: ReaderCatalog): string {
-  return LZString.compressToEncodedURIComponent(JSON.stringify(withCatalog(diagram, catalog)));
+  return LZString.compressToEncodedURIComponent(
+    JSON.stringify(withCatalog(withoutHiddenTexts(diagram), catalog)),
+  );
 }
 
 /**
@@ -77,7 +80,7 @@ function stripForShare(diagram: Diagram): Record<string, unknown> {
 }
 
 export function generateShareUrl(diagram: Diagram, options: ShareOptions = {}): ShareUrlResult {
-  const stripped = withCatalog(stripForShare(diagram), options.catalog);
+  const stripped = withCatalog(stripForShare(withoutHiddenTexts(diagram)), options.catalog);
   const json = JSON.stringify(stripped);
   const encoded = encodeURIComponent(LZString.compressToEncodedURIComponent(json));
   const url = `${getAppBaseUrl()}#share=${encoded}${flowParam(options.flowId)}`;

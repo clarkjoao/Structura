@@ -1,8 +1,13 @@
 import type { NodeLayout } from "../model/layout.types";
 import { DEFAULT_NODE_W, DEFAULT_NODE_H, NODE_DRAG_PADDING } from "../model/layout.constants";
 
+/**
+ * `topInset` is the room above the children for a panel's header; it defaults
+ * to the side padding for callers that fit something without one.
+ */
 export function computeFitBounds(
   childLayouts: NodeLayout[],
+  topInset: number = NODE_DRAG_PADDING,
 ): { x: number; y: number; width: number; height: number } | null {
   if (childLayouts.length === 0) return null;
 
@@ -22,8 +27,8 @@ export function computeFitBounds(
 
   return {
     x: minX - NODE_DRAG_PADDING,
-    y: minY - NODE_DRAG_PADDING,
+    y: minY - topInset,
     width: maxX - minX + NODE_DRAG_PADDING * 2,
-    height: maxY - minY + NODE_DRAG_PADDING * 3,
+    height: maxY - minY + topInset + NODE_DRAG_PADDING * 2,
   };
 }

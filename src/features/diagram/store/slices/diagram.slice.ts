@@ -123,6 +123,17 @@ export const diagramsSlice = (
     });
   },
 
+  /** Turns the text layer on or off. Not written when off, so an untouched diagram hashes as before. */
+  setTextsVisible: (diagramId: string, visible: boolean) => {
+    set((s) => {
+      const diagram = s.diagrams[diagramId];
+      if (!diagram || (diagram.textsVisible ?? false) === visible) return;
+      if (visible) diagram.textsVisible = true;
+      else delete diagram.textsVisible;
+      touchDiagram(diagram);
+    });
+  },
+
   deleteDiagram: (id: string) => {
     set((s) => {
       const wasActive = s.activeDiagramId === id;

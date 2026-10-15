@@ -18,24 +18,24 @@ export interface ToolbarTool {
 }
 
 export const TOOLBAR_TOOLS: readonly ToolbarTool[] = [
-  {
-    id: "note",
-    entryId: COMPONENT_TYPE_NOTE,
-    labelKey: "elementCatalog.toolbar.note",
-    key: KEY.N,
-  },
-  {
-    id: "panel",
-    entryId: `${COMPONENT_TYPE_PANEL}:${PanelKind.Default}`,
-    labelKey: "elementCatalog.toolbar.panel",
-    key: KEY.P,
-  },
-  {
-    id: "swimlane",
-    entryId: `${COMPONENT_TYPE_PANEL}:${PanelKind.Swimlane}`,
-    labelKey: "elementCatalog.toolbar.swimlane",
-    key: KEY.L,
-  },
+  // {
+  //   id: "note",
+  //   entryId: COMPONENT_TYPE_NOTE,
+  //   labelKey: "elementCatalog.toolbar.note",
+  //   key: KEY.N,
+  // },
+  // {
+  //   id: "panel",
+  //   entryId: `${COMPONENT_TYPE_PANEL}:${PanelKind.Default}`,
+  //   labelKey: "elementCatalog.toolbar.panel",
+  //   key: KEY.P,
+  // },
+  // {
+  //   id: "swimlane",
+  //   entryId: `${COMPONENT_TYPE_PANEL}:${PanelKind.Swimlane}`,
+  //   labelKey: "elementCatalog.toolbar.swimlane",
+  //   key: KEY.L,
+  // },
 ];
 
 interface RegistryCatalog {
