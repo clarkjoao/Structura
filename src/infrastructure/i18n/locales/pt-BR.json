@@ -1127,6 +1127,10 @@
         "label": "Deployment"
       }
     },
+    "text": {
+      "label": "Texto",
+      "description": "Texto livre para planejamento — um título ou uma legenda. Só aparece com a camada de texto ligada."
+    },
     "flow-divider": {
       "label": "Linha nomeada",
       "description": "Uma linha com rótulo atravessando o diagrama — a linha de interação, de visibilidade ou de interação interna de um service blueprint."

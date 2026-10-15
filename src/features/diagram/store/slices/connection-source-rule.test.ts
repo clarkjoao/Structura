@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ComponentType } from "../../model";
 import { COMPONENT_TYPE_DB_TABLE, COMPONENT_TYPE_JSON_VIEWER } from "../../model";
-import { canBeConnectionSource } from "../../model/connection-rules";
+import { canBeConnectionSource, canBeConnectionTarget } from "../../model/connection-rules";
 import { createTestDiagramStore } from "../test-utils";
 import type { GeneratedEdgeInput, GeneratedNodeInput } from "./generated-graph.slice";
 
@@ -23,7 +23,9 @@ import type { GeneratedEdgeInput, GeneratedNodeInput } from "./generated-graph.s
  * them go through.
  */
 
-const SOURCELESS = ["note", COMPONENT_TYPE_DB_TABLE, COMPONENT_TYPE_JSON_VIEWER];
+const SOURCELESS = ["note", COMPONENT_TYPE_DB_TABLE, COMPONENT_TYPE_JSON_VIEWER, "text"];
+/** Source-less, but still something a connection may arrive at. */
+const POINTED_AT = SOURCELESS.filter((type) => type !== "text");
 
 function seed() {
   const store = createTestDiagramStore();
@@ -61,7 +63,7 @@ describe("addConnection", () => {
     expect(Object.keys(connectionsOf(store, diagramId))).toHaveLength(0);
   });
 
-  it.each(SOURCELESS)("still accepts a %s as the target", (type) => {
+  it.each(POINTED_AT)("still accepts a %s as the target", (type) => {
     const { store, diagramId } = seed();
     const source = store.getState().addComponent("system", "svc", null);
     const note = store.getState().addComponent(type as ComponentType, "note", null);
@@ -120,5 +122,34 @@ describe("insertGeneratedGraph", () => {
 
     const labels = Object.values(connectionsOf(store, diagramId)).map((c) => c.label);
     expect(labels.sort()).toEqual(["into the note", "kept"]);
+  });
+});
+
+describe("free text takes no connection in either direction", () => {
+  it("is refused as a target by the rule", () => {
+    expect(canBeConnectionTarget("text")).toBe(false);
+    expect(canBeConnectionTarget("system")).toBe(true);
+    expect(canBeConnectionTarget("note")).toBe(true);
+  });
+
+  it("refuses a text as the target of addConnection and creates nothing", () => {
+    const { store, diagramId } = seed();
+    const text = store.getState().addComponent("text", "caption", null);
+    const source = store.getState().addComponent("system", "svc", null);
+
+    expect(store.getState().addConnection(source.id, text.id, "points at")).toBeNull();
+    expect(Object.keys(connectionsOf(store, diagramId))).toHaveLength(0);
+  });
+
+  it("refuses repointing an existing connection at a text", () => {
+    const { store, diagramId } = seed();
+    const text = store.getState().addComponent("text", "caption", null);
+    const a = store.getState().addComponent("system", "a", null);
+    const b = store.getState().addComponent("system", "b", null);
+    const connection = store.getState().addConnection(a.id, b.id, "uses")!;
+
+    store.getState().updateConnection(connection.id, { targetId: text.id });
+
+    expect(connectionsOf(store, diagramId)[connection.id]!.targetId).toBe(b.id);
   });
 });

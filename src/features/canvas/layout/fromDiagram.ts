@@ -5,6 +5,7 @@ import {
   isPanelType,
   isDbTableType,
   isEndpointType,
+  isTextType,
 } from "@/features/diagram/model/component-type-constants";
 import {
   DEFAULT_NODE_H,
@@ -130,6 +131,7 @@ function collectSubtree(
       // the diagram layout engine. Excluding them here means they stay put.
       const child = components[childId];
       if (child && isApiGroupComponent(components[id]!)) continue;
+      if (child && isTextType(child.type)) continue;
       visit(childId);
     }
   };
@@ -166,6 +168,8 @@ export function fromDiagram(
           Object.keys(components).filter((id) => {
             const comp = components[id];
             if (!comp) return false;
+            // Free text is a decoration: it stays where the author put it.
+            if (isTextType(comp.type)) return false;
             // ApiGroups themselves are included (ELK sizes them from their children).
             // Their endpoint children are excluded (ApiGroup manages those itself).
             if (isApiGroupComponent(comp)) return true;

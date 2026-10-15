@@ -50,6 +50,7 @@ export interface AppActions {
   openDiagram: (id: string) => void;
   updateDiagram: (id: string, patch: Partial<Pick<Diagram, "name" | "domain">>) => void;
   updateDiagramDescription: (diagramId: string, description: string) => void;
+  setTextsVisible: (diagramId: string, visible: boolean) => void;
   deleteDiagram: (id: string) => void;
   addFolder: (name: string, parentId: string | null, domain?: string) => Folder;
   renameFolder: (id: string, name: string) => void;

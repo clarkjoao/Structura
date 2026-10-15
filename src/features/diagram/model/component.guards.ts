@@ -33,6 +33,7 @@ import type {
   ShardComponent,
   ShardedStoreComponent,
   FlowDividerComponent,
+  TextComponent,
   PluginTypedComponent,
 } from "./component.types";
 import {
@@ -59,6 +60,7 @@ import {
   isShardType,
   isShardedStoreType,
   isFlowDividerType,
+  isTextType,
 } from "./component-type-constants";
 
 export const isPanelComponent = (c: Component): c is PanelComponent => isPanelType(c.type);
@@ -107,6 +109,8 @@ export const isExternalElementComponent = (c: Component): c is ExternalElementCo
 
 export const isFlowDividerComponent = (c: Component): c is FlowDividerComponent =>
   isFlowDividerType(c.type);
+
+export const isTextComponent = (c: Component): c is TextComponent => isTextType(c.type);
 
 export const isShardedStoreComponent = (c: Component): c is ShardedStoreComponent =>
   isShardedStoreType(c.type);

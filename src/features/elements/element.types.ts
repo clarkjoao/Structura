@@ -61,6 +61,7 @@ export type RegisteredElementTypeId =
   | "deploy-shard"
   | "deploy-sharded-store"
   | "flow-divider"
+  | "text"
   | "svg"
   | "unknown"
   | "gcp-compute"

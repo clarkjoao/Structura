@@ -84,3 +84,28 @@ describe("moveDiagram", () => {
     expect(store.getState().diagrams[imported.id]!.folderId).toBe(folder.id);
   });
 });
+
+describe("setTextsVisible", () => {
+  it("turns the text layer on and writes nothing when it is off", () => {
+    const store = createTestDiagramStore();
+    const diagram = store.getState().addDiagram("Plan", "context");
+
+    expect(store.getState().diagrams[diagram.id]!.textsVisible).toBeUndefined();
+
+    store.getState().setTextsVisible(diagram.id, true);
+    expect(store.getState().diagrams[diagram.id]!.textsVisible).toBe(true);
+
+    store.getState().setTextsVisible(diagram.id, false);
+    expect("textsVisible" in store.getState().diagrams[diagram.id]!).toBe(false);
+  });
+
+  it("is a no-op when the state does not change", () => {
+    const store = createTestDiagramStore();
+    const diagram = store.getState().addDiagram("Plan", "context");
+    const before = store.getState().diagrams[diagram.id]!.updatedAt;
+
+    store.getState().setTextsVisible(diagram.id, false);
+
+    expect(store.getState().diagrams[diagram.id]!.updatedAt).toBe(before);
+  });
+});

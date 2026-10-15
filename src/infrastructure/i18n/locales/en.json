@@ -1127,6 +1127,10 @@
         "label": "Deployment"
       }
     },
+    "text": {
+      "label": "Text",
+      "description": "Free text for planning — a heading or a caption. Drawn only while the text layer is on."
+    },
     "flow-divider": {
       "label": "Named line",
       "description": "A labelled line across the diagram — a service blueprint’s line of interaction, visibility or internal interaction."
