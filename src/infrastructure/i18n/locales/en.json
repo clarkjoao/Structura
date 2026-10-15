@@ -474,6 +474,11 @@
     "removed": "Removed",
     "modified": "Modified"
   },
+  "textLayer": {
+    "show": "Show texts",
+    "tool": "Text",
+    "hide": "Hide texts"
+  },
   "textNode": {
     "placeholder": "Type here…",
     "ariaLabel": "Text"

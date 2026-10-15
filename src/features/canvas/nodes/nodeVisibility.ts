@@ -1,4 +1,5 @@
 import type { Component } from "@/features/diagram";
+import { isTextType } from "@/features/diagram/model/component-type-constants";
 import type { NodeTypeDescriptor } from "./node-types/types";
 import type { CoverageInfo } from "../flow/flowState";
 import { OPACITY_FLOW_PLAYBACK_NODE_DIM } from "../canvas.constants";
@@ -62,17 +63,29 @@ export function resolveSelectionFocus(
   isHidden: boolean,
   selectedNodeIds: Set<string>,
   highlightedNodeIds: Set<string>,
+  /**
+   * The selection is only free text. A decoration takes no focus from the
+   * diagram, so selecting one dims nothing — and, being a decoration, a text
+   * is never dimmed by somebody else's selection either.
+   */
+  selectionIsDecoration = false,
 ): { isSelected: boolean; isHighlighted: boolean; dimmedBySelection: boolean } {
   const isSelected = selectedNodeIds.has(comp.id);
   const isHighlighted = highlightedNodeIds.has(comp.id);
-  const hasFocusedNodes = selectedNodeIds.size > 0 || highlightedNodeIds.size > 0;
+  const hasFocusedNodes =
+    (selectedNodeIds.size > 0 && !selectionIsDecoration) || highlightedNodeIds.size > 0;
   const isChildOfSelectedPanel =
     isChild && comp.parentId !== null && selectedNodeIds.has(comp.parentId);
   return {
     isSelected,
     isHighlighted,
     dimmedBySelection:
-      hasFocusedNodes && !isSelected && !isHighlighted && !isHidden && !isChildOfSelectedPanel,
+      hasFocusedNodes &&
+      !isTextType(comp.type) &&
+      !isSelected &&
+      !isHighlighted &&
+      !isHidden &&
+      !isChildOfSelectedPanel,
   };
 }
 

@@ -338,7 +338,9 @@ export function resolveViewSnapshot(
   describe: DescribeNode,
 ): ViewSnapshot {
   const resolved = resolveViewScene(diagram, options);
-  const placed = placedComponents(resolved.components, resolved.nodeLayouts);
+  const placed = placedComponents(resolved.components, resolved.nodeLayouts, {
+    textsVisible: diagram.textsVisible === true,
+  });
   const panelIds = buildPanelIds(placed, describe);
   const compactContainerIds = buildCompactContainerIds(resolved.components, describe);
   const collapsedPanelIds = buildCollapsedPanelIds(resolved.components);

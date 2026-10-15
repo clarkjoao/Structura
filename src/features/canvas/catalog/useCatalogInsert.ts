@@ -2,6 +2,8 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getDefaultNameForNewComponent,
+  isTextType,
+  useActiveDiagramId,
   getLastEdgeStyle,
   useDiagramActions,
   type NewConnectedEdge,
@@ -22,6 +24,8 @@ export interface CatalogInsertTarget {
 function defaultNameFor(entry: CatalogEntry): string {
   if (entry.insert.kind !== "element") return entry.label;
   const { type, createOptions } = entry.insert;
+  // A text starts empty: it opens for typing, and has no name to be called.
+  if (isTextType(type)) return "";
   if (createOptions.serviceId) return entry.label;
   const panelDefault = createOptions.panelKind
     ? panelKindDefaultName(createOptions.panelKind)
@@ -40,7 +44,9 @@ export function useCatalogInsert(): (
   target: CatalogInsertTarget,
 ) => string | null {
   const { t } = useTranslation();
-  const { addComponent, addComponentConnectedFrom, linkComponentToService } = useDiagramActions();
+  const { addComponent, addComponentConnectedFrom, linkComponentToService, setTextsVisible } =
+    useDiagramActions();
+  const diagramId = useActiveDiagramId();
   const { instantiatePreset } = useElementPresetLibrary();
   const recordUse = useCanvasPreferencesStore((state) => state.recordCatalogEntryUse);
 
@@ -57,6 +63,8 @@ export function useCatalogInsert(): (
         case "element": {
           const { type, createOptions } = entry.insert;
           const name = defaultNameFor(entry);
+          // A text is drawn only while the layer is on: inserting one turns it on.
+          if (isTextType(type) && diagramId) setTextsVisible(diagramId, true);
           createdId = connectFrom
             ? addComponentConnectedFrom(
                 connectFrom.sourceId,
@@ -113,6 +121,8 @@ export function useCatalogInsert(): (
       addComponent,
       addComponentConnectedFrom,
       linkComponentToService,
+      setTextsVisible,
+      diagramId,
       instantiatePreset,
       recordUse,
     ],

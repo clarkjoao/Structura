@@ -161,6 +161,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
       diagram?.id,
       diagram?.activeVersionId,
       diagram?.compareVersionId,
+      // The text layer is a flag on the diagram, not part of the resolved snapshot.
+      diagram?.textsVisible,
       resolvedComponentsRef,
       resolvedNodeLayoutsRef,
       resolvedConnectionsRef,

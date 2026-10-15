@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, LayoutGrid, PanelBottomClose, PanelBottomOpen, Puzzle } from "lucide-react";
+import {
+  ChevronDown,
+  Eye,
+  LayoutGrid,
+  PanelBottomClose,
+  PanelBottomOpen,
+  Puzzle,
+  Type,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -13,7 +21,9 @@ import type { CatalogEntry } from "@/features/elements/search";
 import { PluginToolbarSlot } from "@/features/plugins/components/PluginToolbarSlot";
 import { usePluginPanels } from "@/features/plugins/use-plugin-contributions";
 import { cn } from "@/lib/utils";
+import { KEY } from "@/lib/core/keyboard";
 import { usePatternInsert } from "../patterns";
+import { useTextLayer } from "../text/useTextLayer";
 import { useCanvasPreferencesStore } from "../preferences";
 import { LayerFilterPopover } from "../toolbar/LayerFilterPopover";
 import { VersionsButton } from "../toolbar/components/VersionsButton";
@@ -80,6 +90,7 @@ export function CanvasBottomToolbar({
   const autoHide = useCanvasPreferencesStore((state) => state.autoHideBottomToolbar);
   const setAutoHide = useCanvasPreferencesStore((state) => state.setAutoHideBottomToolbar);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const textLayer = useTextLayer();
   const dock = useDockAutoHide(autoHide, open || versions.open || menuOpen !== null);
 
   useEffect(() => {
@@ -155,6 +166,40 @@ export function CanvasBottomToolbar({
           </button>
         );
       })}
+      {/* The text layer: off, one press turns it on; on, the same button arms the
+          text tool (T), and the eye beside it hides the layer again. */}
+      <button
+        type="button"
+        title={
+          textLayer.visible
+            ? t("elementCatalog.toolbar.withShortcut", {
+                label: t("textLayer.tool"),
+                shortcut: KEY.T.toUpperCase(),
+              })
+            : t("textLayer.show")
+        }
+        aria-label={textLayer.visible ? t("textLayer.tool") : t("textLayer.show")}
+        aria-pressed={textLayer.visible ? textLayer.toolActive : false}
+        onClick={textLayer.pressTool}
+        className={cn(
+          TOOL_BUTTON_CLASS,
+          textLayer.toolActive && "bg-primary/15 text-primary",
+          !textLayer.visible && "opacity-60",
+        )}
+      >
+        <Type aria-hidden className="h-4 w-4" />
+      </button>
+      {textLayer.visible && (
+        <button
+          type="button"
+          title={t("textLayer.hide")}
+          aria-label={t("textLayer.hide")}
+          onClick={textLayer.hide}
+          className={TOOL_BUTTON_CLASS}
+        >
+          <Eye aria-hidden className="h-4 w-4" />
+        </button>
+      )}
       <Separator />
       {renderMenu("elementCatalog.toolbar.c4", "elementCatalog.toolbar.c4Menu", c4)}
       {renderMenu(

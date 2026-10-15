@@ -394,3 +394,8 @@
 [data-edge-label] {
   transition: opacity 120ms ease;
 }
+
+/* While the text tool is armed the canvas asks for a click, not a pan. */
+[data-text-tool="armed"] .react-flow__pane {
+  cursor: text;
+}

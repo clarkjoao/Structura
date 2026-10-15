@@ -103,11 +103,15 @@ const TextNode = memo(({ data: d, selected }: NodeProps<Node<TextNodeData>>) => 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelected, isEmpty, editable]);
 
+  // Focus a frame late: a text made by clicking the canvas opens while that
+  // same click is still settling, and the pane takes the focus back.
   useEffect(() => {
-    if (isEditing) {
+    if (!isEditing) return;
+    const frame = requestAnimationFrame(() => {
       textareaRef.current?.focus();
       textareaRef.current?.select();
-    }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [isEditing]);
 
   // Grow the field with what is typed, as the finished text will.
@@ -193,6 +197,9 @@ const TextNode = memo(({ data: d, selected }: NodeProps<Node<TextNodeData>>) => 
             className="nodrag nopan block w-full resize-none overflow-hidden border-none bg-transparent p-0 outline-none"
             style={{ font: "inherit", color: "inherit", lineHeight: "inherit" }}
           />
+        ) : isEmpty ? (
+          // Nothing typed and not being edited: keep it findable and deletable.
+          <span className="italic text-muted-foreground/60">{t("textNode.placeholder")}</span>
         ) : (
           d.name
         )}

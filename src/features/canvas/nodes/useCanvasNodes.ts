@@ -15,6 +15,7 @@ import {
   isComponentAddedInActiveVersion,
   isAncestorLocked,
   buildChildrenIndex,
+  isTextType,
 } from "@/features/diagram";
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { writePolicy } from "../core/canvasInteractionPolicy";
@@ -353,11 +354,19 @@ export function useCanvasNodes({
     // follows only the editor has, as overlays that cannot move anything.
     const projected = projectNodes(view, ctx, EDITOR_PROJECTION, resolveNodeDescriptor);
 
+    const selectionIsDecoration =
+      dataCtx.selectedNodeIds.size > 0 &&
+      [...dataCtx.selectedNodeIds].every((id) => {
+        const selectedComponent = dataCtx.resolvedComponents[id];
+        return selectedComponent !== undefined && isTextType(selectedComponent.type);
+      });
+
     const nextNodes = projected.map((base, index): Node => {
       const viewNode = view.nodes[index]!;
       const comp = viewNode.component;
       const node = applyEditorNodeOverlays(base, viewNode, {
         selectedNodeIds: dataCtx.selectedNodeIds,
+        selectionIsDecoration,
         highlightedNodeIds: hIds,
         flowModeActive,
         isViewingCoverage: viewingCov,

@@ -40,11 +40,14 @@ export const useVisibleComponents = () => {
     const d = s.diagrams[s.activeDiagramId];
     return getCachedCanvasSnapshot(d).nodeLayouts;
   });
+  const textsVisible = useDiagramStore((s) =>
+    s.activeDiagramId ? s.diagrams[s.activeDiagramId]?.textsVisible === true : false,
+  );
   // The placement rule the viewer's `resolveViewSnapshot` uses too.
   return useMemo(() => {
     if (!components || !nodeLayouts) return [];
-    return placedComponents(components, nodeLayouts);
-  }, [components, nodeLayouts]);
+    return placedComponents(components, nodeLayouts, { textsVisible });
+  }, [components, nodeLayouts, textsVisible]);
 };
 
 export const useVisibleConnections = () => {
