@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { FileSystemAdapter } from "./FileSystemAdapter";
 import { createMemoryFs } from "./__testing__/memoryFileSystem";
 

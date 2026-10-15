@@ -7,7 +7,7 @@ import {
   unregisterDescriptor,
 } from "@/features/canvas/nodes/node-types/registry";
 // Leaf import (not the @/features/diagram barrel): this module loads at app boot.
-import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store.singleton";
 import {
   STRUCTURA_PLUGIN_API_VERSION,
   type DiagramSnapshot,

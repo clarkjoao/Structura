@@ -1,10 +1,7 @@
-import {
-  useDiagramStore,
-  VIEWPORT_DEBOUNCE_MS,
-  PERSIST_KEY,
-  type Diagram,
-  type IconDefinition,
-} from "@/features/diagram";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store.singleton";
+import { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram/store/store.constants";
+import { PERSIST_KEY } from "@/features/diagram/store/persist.config";
+import type { Diagram, IconDefinition } from "@/features/diagram/model/diagram.types";
 import {
   fileSystemAdapter,
   type WorkspacePayload,
@@ -14,7 +11,7 @@ import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimesta
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { defaultStorage } from "./LocalStorageAdapter";
 import { useElementPresetStore } from "@/features/element-presets";
-import { useIconStore } from "@/features/diagram/store";
+import { useIconStore } from "@/features/diagram/store/icon-store";
 import { mergeElementPresets } from "./merge-element-presets";
 import { readElementPresetsField } from "./read-element-presets-field";
 import { diagramStoreWorkspaceEqualsForFolderSync } from "./workspace-folder-sync-equality";

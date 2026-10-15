@@ -1,6 +1,6 @@
 import { useShallow } from "zustand/react/shallow";
 import type { EdgeControlPoint } from "../../model/diagram.types";
-import { useDiagramStore } from "../diagram.store";
+import { useDiagramStore } from "../diagram.store.singleton";
 
 const EMPTY_CONTROL_POINTS: EdgeControlPoint[] = [];
 

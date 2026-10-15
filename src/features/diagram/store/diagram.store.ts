@@ -2,10 +2,8 @@ import { create } from "zustand";
 import type { StoreApi } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
-import { defaultStorage, type IStoragePort } from "@/infrastructure/persistence";
-import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
+import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { useIconStore, type IconStore } from "./icon-store";
-import type { UserTemplate } from "../model/diagram.types";
 import type { AppState, DiagramSnapshot, DiagramStore } from "./store.types";
 import { createStableSlice } from "./stableSlice";
 import {
@@ -26,13 +24,13 @@ import {
   iconsSlice,
   userTemplatesSlice,
 } from "./slices";
-import { buildPersistStoragePayload, createPersistConfig, PERSIST_KEY } from "./persist.config";
+import { createPersistConfig } from "./persist.config";
 
 export type { AppState, DiagramSnapshot } from "./store.types";
 export type { ClipboardEntry, DiagramStore } from "./store.types";
 
 export function createDiagramStore(
-  storage: IStoragePort = defaultStorage,
+  storage: IStoragePort,
   iconStoreOverride?: Pick<StoreApi<IconStore>, "getState">,
 ) {
   const iconStore = iconStoreOverride ?? useIconStore;
@@ -89,79 +87,9 @@ export function createDiagramStore(
   );
 }
 
-export const useDiagramStore = createDiagramStore();
-
-export async function flushDiagramStoreToLocalStorageNow(
-  options: { force?: boolean } = {},
-): Promise<boolean> {
-  const payload = buildPersistStoragePayload(useDiagramStore.getState());
-
-  if (defaultStorage.paused && !options.force) {
-    return false;
-  }
-
-  if (defaultStorage.paused && options.force) {
-    const ok = await defaultStorage.forceSave(PERSIST_KEY, payload);
-    if (ok) {
-      recordLocalStorageDiagramSyncSuccess();
-    }
-    return ok;
-  }
-
-  const json = JSON.stringify({
-    state: payload.state,
-    version: payload.version,
-  });
-  await defaultStorage.setItem(PERSIST_KEY, json);
-  recordLocalStorageDiagramSyncSuccess();
-  return true;
-}
-
-/**
- * Best-effort synchronous persist on tab close. Uses the same semantics as
- * {@link flushDiagramStoreToLocalStorageNow} with `{ force: true }` when folder sync pauses local writes.
- */
-export function flushDiagramStoreToLocalStorageBeforeUnloadSync(): void {
-  const payload = buildPersistStoragePayload(useDiagramStore.getState());
-
-  if (defaultStorage.paused) {
-    const ok = defaultStorage.forceSaveSync(PERSIST_KEY, payload);
-    if (ok) {
-      recordLocalStorageDiagramSyncSuccess();
-    }
-    return;
-  }
-
-  const json = JSON.stringify({
-    state: payload.state,
-    version: payload.version,
-  });
-  defaultStorage.setItemSync(PERSIST_KEY, json);
-  recordLocalStorageDiagramSyncSuccess();
-}
-
-export function updateDiagramDescription(diagramId: string, description: string): void {
-  useDiagramStore.getState().updateDiagramDescription(diagramId, description);
-}
-
-export function saveUserTemplate(template: UserTemplate): void {
-  useDiagramStore.getState().saveUserTemplate(template);
-}
-
-export function updateUserTemplate(
-  id: string,
-  patch: Partial<Pick<UserTemplate, "name" | "description" | "category">>,
-): void {
-  useDiagramStore.getState().updateUserTemplate(id, patch);
-}
-
-export function deleteUserTemplate(id: string): void {
-  useDiagramStore.getState().deleteUserTemplate(id);
-}
-
 const pickFromStore = createStableSlice<DiagramStore>();
 
-const selectDiagramActions = pickFromStore([
+export const selectDiagramActions = pickFromStore([
   "addDiagram",
   "addImportedDiagram",
   "importDiagram",
@@ -252,7 +180,7 @@ const selectDiagramActions = pickFromStore([
   "deleteUserTemplate",
 ]);
 
-const selectComponentActions = pickFromStore([
+export const selectComponentActions = pickFromStore([
   "addComponent",
   "addComponentConnectedFrom",
   "addSharedRef",
@@ -268,13 +196,13 @@ const selectComponentActions = pickFromStore([
   "removeExternalLink",
 ]);
 
-const selectConnectionActions = pickFromStore([
+export const selectConnectionActions = pickFromStore([
   "addConnection",
   "updateConnection",
   "removeConnection",
 ]);
 
-const selectLayoutActions = pickFromStore([
+export const selectLayoutActions = pickFromStore([
   "updateNodeLayout",
   "batchUpdateNodeLayouts",
   "updateViewport",
@@ -291,7 +219,7 @@ const selectLayoutActions = pickFromStore([
   "setParent",
 ]);
 
-const selectVersionActions = pickFromStore([
+export const selectVersionActions = pickFromStore([
   "addVersion",
   "duplicateVersion",
   "removeVersion",
@@ -306,14 +234,14 @@ const selectVersionActions = pickFromStore([
   "updateVersionNodeLayout",
 ]);
 
-const selectClipboardActions = pickFromStore([
+export const selectClipboardActions = pickFromStore([
   "copyToClipboard",
   "pasteFromClipboard",
   "clearClipboard",
   "hydrateClipboard",
 ]);
 
-const selectIconActions = pickFromStore([
+export const selectIconActions = pickFromStore([
   "addIcon",
   "removeIcon",
   "updateIconName",
@@ -321,27 +249,9 @@ const selectIconActions = pickFromStore([
   "decrementIconUsage",
 ]);
 
-const selectServiceActions = pickFromStore([
+export const selectServiceActions = pickFromStore([
   "addService",
   "updateService",
   "removeService",
   "linkComponentToService",
 ]);
-
-export const useDiagramActions = () => useDiagramStore(selectDiagramActions);
-
-// --- Domain-scoped action hooks ---
-
-export const useComponentActions = () => useDiagramStore(selectComponentActions);
-
-export const useConnectionActions = () => useDiagramStore(selectConnectionActions);
-
-export const useLayoutActions = () => useDiagramStore(selectLayoutActions);
-
-export const useVersionActions = () => useDiagramStore(selectVersionActions);
-
-export const useClipboardActions = () => useDiagramStore(selectClipboardActions);
-
-export const useIconActions = () => useDiagramStore(selectIconActions);
-
-export const useServiceActions = () => useDiagramStore(selectServiceActions);

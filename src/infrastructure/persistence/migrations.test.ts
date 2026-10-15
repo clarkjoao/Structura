@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { migrateDiagram } from "./migrations";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
 import type { Component } from "@/features/diagram/model/component.types";
 
 function makeDiagram(components: Record<string, Component>): Diagram {

@@ -2,7 +2,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useIconStore } from "../icon-store";
 import type { IconDefinition } from "../../model/diagram.types";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
-import { useDiagramStore } from "../diagram.store";
+import { useDiagramStore } from "../diagram.store.singleton";
 
 function sortIconDefinitions(icons: IconDefinition[]): IconDefinition[] {
   return [...icons].sort((left, right) => {

@@ -1,5 +1,5 @@
 import { useShallow } from "zustand/react/shallow";
-import { useDiagramStore } from "../diagram.store";
+import { useDiagramStore } from "../diagram.store.singleton";
 
 export const useFolderIds = () => useDiagramStore(useShallow((s) => Object.keys(s.folders)));
 

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useDiagramStore } from "../diagram.store";
+import { useDiagramStore } from "../diagram.store.singleton";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 import { placedComponents, placedConnections } from "../../utils/placement";
 

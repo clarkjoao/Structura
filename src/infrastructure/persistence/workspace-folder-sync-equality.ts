@@ -1,4 +1,5 @@
-import type { Diagram, DiagramStore } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
+import type { DiagramStore } from "@/features/diagram/store/store.types";
 
 /**
  * Returns true when two diagram states are equivalent for folder JSON export,

@@ -1,4 +1,7 @@
-import type { Component, Connection, Diagram, NodeLayout } from "@/features/diagram";
+import type { Component } from "@/features/diagram/model/component.types";
+import type { Connection } from "@/features/diagram/model/connection.types";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
+import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import {
   DEFAULT_NODE_H,
   DEFAULT_NODE_W,

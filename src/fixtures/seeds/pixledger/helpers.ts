@@ -1,4 +1,5 @@
-import type { FlowStep, NodeLayout } from "@/features/diagram";
+import type { FlowStep } from "@/features/diagram/model/flow.types";
+import type { NodeLayout } from "@/features/diagram/model/layout.types";
 
 /** Chain `.next` automatically for linear action lists (conditions keep explicit next). */
 export function steps(list: FlowStep[]): Record<string, FlowStep> {

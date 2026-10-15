@@ -2,7 +2,6 @@
 export {
   useDiagramStore,
   useServiceActions,
-  createDiagramStore,
   useDiagramActions,
   useComponentActions,
   useConnectionActions,
@@ -15,7 +14,9 @@ export {
   saveUserTemplate,
   updateUserTemplate,
   deleteUserTemplate,
-} from "./diagram.store";
+} from "./diagram.store.singleton";
+
+export { createDiagramStore } from "./diagram.store";
 
 export { useIconStore } from "./icon-store";
 export type { IconStore } from "./icon-store";

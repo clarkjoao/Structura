@@ -1,4 +1,5 @@
-import type { Diagram, Folder, ServiceDefinition } from "@/features/diagram";
+import type { Diagram, Folder } from "@/features/diagram/model/diagram.types";
+import type { ServiceDefinition } from "@/features/diagram/model/service.types";
 import { buildCatalogDiagram } from "./catalog";
 import { buildContextDiagram } from "./context";
 import { buildHubContainerDiagram } from "./container-hub";

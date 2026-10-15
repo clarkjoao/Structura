@@ -3,14 +3,11 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { fileSystemAdapter } from "./FileSystemAdapter";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store.singleton";
 import { useElementPresetStore } from "@/features/element-presets";
-import { useIconStore } from "@/features/diagram/store";
-import {
-  buildPersistStoragePayload,
-  flushDiagramStoreToLocalStorageNow,
-  PERSIST_KEY,
-} from "@/features/diagram";
+import { useIconStore } from "@/features/diagram/store/icon-store";
+import { PERSIST_KEY, buildPersistStoragePayload } from "@/features/diagram/store/persist.config";
+import { flushDiagramStoreToLocalStorageNow } from "@/features/diagram/store/diagram.store.singleton";
 import { defaultStorage } from "./LocalStorageAdapter";
 import {
   clearLocalStorageDiagramSyncTimestamp,

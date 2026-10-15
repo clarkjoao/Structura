@@ -1,5 +1,5 @@
-import type { Diagram, Folder, IconDefinition } from "@/features/diagram";
-import { FileSystemEntryKind } from "@/features/diagram";
+import type { Diagram, Folder, IconDefinition } from "@/features/diagram/model/diagram.types";
+import { FileSystemEntryKind } from "@/features/diagram/enums";
 import type { ElementPreset } from "@/features/element-presets";
 import i18n from "@/infrastructure/i18n";
 import {

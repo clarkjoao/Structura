@@ -1,5 +1,5 @@
-import type { Diagram } from "@/features/diagram";
-import type { ServiceManifestEntry } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
+import type { ServiceManifestEntry } from "@/features/diagram/model/service-manifest.types";
 
 // Schema version para diagramas individuais
 export const DIAGRAM_SCHEMA_VERSION = 1;

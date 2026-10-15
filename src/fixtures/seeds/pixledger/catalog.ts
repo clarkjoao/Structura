@@ -1,4 +1,6 @@
-import { PanelKind, type Component, type Diagram } from "@/features/diagram";
+import { PanelKind } from "@/features/diagram/enums";
+import type { Component } from "@/features/diagram/model/component.types";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { layout, SEED_TS } from "./helpers";
 import { D_CATALOG, D_CONTEXT, FOLDER_CATALOG } from "./ids";
 

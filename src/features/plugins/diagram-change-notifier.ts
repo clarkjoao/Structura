@@ -1,7 +1,7 @@
 import type { Diagram } from "@/features/diagram";
 // Leaf import: this module is loaded at app boot; the barrel would drag the whole
 // diagram feature into the entry chunk (see AGENTS.md "Known sharp edges").
-import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store.singleton";
 import { DIAGRAM_CHANGE_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 /**

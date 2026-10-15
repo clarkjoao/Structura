@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Diagram } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { FileSystemAdapter } from "./FileSystemAdapter";
 import { getTempFileName } from "./stagedDiagramWrite";
 import { isValidFolderId } from "./folderSync";

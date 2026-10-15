@@ -1,4 +1,5 @@
-import type { Diagram, ServiceManifestEntry } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
+import type { ServiceManifestEntry } from "@/features/diagram/model/service-manifest.types";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import type { WorkspaceManifest } from "./FileSystemAdapter";
 import { DIAGRAM_SCHEMA_VERSION, DIAGRAM_SCHEMA_URI } from "./versions";

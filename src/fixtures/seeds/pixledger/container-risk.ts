@@ -1,4 +1,5 @@
-import { PanelKind, type Diagram } from "@/features/diagram";
+import { PanelKind } from "@/features/diagram/enums";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { layout, SEED_TS } from "./helpers";
 import { D_CT_RISK, D_DP_RISK, FOLDER_ROOT } from "./ids";
 

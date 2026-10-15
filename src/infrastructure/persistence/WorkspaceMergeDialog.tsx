@@ -16,7 +16,7 @@ import {
   HardDrive,
 } from "lucide-react";
 import type { WorkspaceScanResult } from "./FileSystemAdapter";
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store.singleton";
 import { useShallow } from "zustand/react/shallow";
 
 interface WorkspaceMergeDialogProps {

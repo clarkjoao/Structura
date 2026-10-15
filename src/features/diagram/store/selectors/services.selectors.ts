@@ -1,7 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import type { Diagram } from "../../model";
 import { buildReaderCatalog, type ReaderCatalog } from "../../utils/reader-catalog";
-import { useDiagramStore } from "../diagram.store";
+import { useDiagramStore } from "../diagram.store.singleton";
 
 export const useServiceIds = () => useDiagramStore(useShallow((s) => Object.keys(s.services)));
 

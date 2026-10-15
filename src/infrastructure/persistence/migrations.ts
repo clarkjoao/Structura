@@ -1,5 +1,5 @@
-import type { Diagram } from "@/features/diagram";
-import { sanitizeComponentType } from "@/features/diagram";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
+import { sanitizeComponentType } from "@/features/diagram/model/sanitize-component-type";
 import type { Component } from "@/features/diagram/model/component.types";
 import { DIAGRAM_SCHEMA_VERSION } from "./versions";
 

@@ -1,5 +1,5 @@
 import { useShallow } from "zustand/react/shallow";
-import { useDiagramStore } from "../diagram.store";
+import { useDiagramStore } from "../diagram.store.singleton";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 
 const EMPTY_TAGS: string[] = [];

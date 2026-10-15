@@ -1,4 +1,5 @@
-import { PanelKind, StrokeStyle, type Diagram } from "@/features/diagram";
+import { PanelKind, StrokeStyle } from "@/features/diagram/enums";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { layout, SEED_TS, steps } from "./helpers";
 import { D_DP_MERCHANT, FOLDER_ROOT } from "./ids";
 
