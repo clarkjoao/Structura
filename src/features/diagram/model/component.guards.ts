@@ -100,10 +100,6 @@ export const isJsonViewerComponent = (c: Component): c is JsonViewerComponent =>
 export const isProcessNodeComponent = (c: Component): c is ProcessNodeComponent =>
   isProcessNodeType(c.type);
 
-/** @deprecated Use `isProcessNodeComponent` */
-export const isFlowNodeComponent = (c: Component): c is ProcessNodeComponent =>
-  isProcessNodeType(c.type);
-
 export const isExternalElementComponent = (c: Component): c is ExternalElementComponent =>
   isExternalElementType(c.type);
 

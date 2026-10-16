@@ -180,9 +180,3 @@ export function subscribeNodeTypes(listener: () => void): () => void {
 export function getNodeTypesSnapshot(): NodeTypes {
   return nodeTypesSnapshot;
 }
-
-/**
- * @deprecated Snapshot taken at module load; late (plugin) registrations never reach it.
- * Use `useNodeTypes()` in React or `getNodeTypesSnapshot()` elsewhere.
- */
-export const nodeTypes: NodeTypes = nodeTypesSnapshot;

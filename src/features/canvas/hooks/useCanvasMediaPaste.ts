@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import { extractSvgMarkup } from "@/lib/clipboard";
-import { getPasteFlowPosition, isInputFocused } from "./keyboard/helpers";
+import { isEditableTarget } from "@/lib/core/keyboard";
+import { getPasteFlowPosition } from "./keyboard/helpers";
 import {
   importImageFilesToCanvas,
   importSvgMarkupToCanvas,
@@ -71,7 +72,7 @@ export function useCanvasMediaPaste({
     };
 
     const onPaste = (event: ClipboardEvent) => {
-      if (isInputFocused(event.target)) return;
+      if (isEditableTarget(event.target)) return;
 
       const pastePos = getPasteFlowPosition(
         reactFlowInstance,

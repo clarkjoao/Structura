@@ -1,5 +1,5 @@
 import { AWS_CATEGORY_MAP } from "@/features/cloud/providers/aws/aws.catalog";
-import { buildAwsCatalogCompact } from "../component-catalog";
+import { buildCloudFamilyCatalogCompact } from "../component-catalog";
 import {
   getIrAwsSemanticTypes,
   IR_C4_SEMANTIC_TYPES,
@@ -130,7 +130,7 @@ function buildAwsServiceSection(): string {
     '("vpc", "public-subnet", "private-subnet", "ecs", "eks").',
     "Omit the field when no service in the list fits — never invent an id.",
     "",
-    buildAwsCatalogCompact(),
+    buildCloudFamilyCatalogCompact("aws"),
   ].join("\n");
 }
 

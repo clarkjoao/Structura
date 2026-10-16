@@ -219,11 +219,6 @@ export function buildCloudFamilyCatalogCompact(familyId: string): string {
   return lines.join("\n");
 }
 
-/** @deprecated Use `buildCloudFamilyCatalogCompact("aws")`. */
-export function buildAwsCatalogCompact(): string {
-  return buildCloudFamilyCatalogCompact("aws");
-}
-
 export function buildPatternCatalogCompact(): string {
   const lines: string[] = [
     "",

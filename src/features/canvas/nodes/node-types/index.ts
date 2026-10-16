@@ -2,7 +2,6 @@ export {
   NODE_TYPE_REGISTRY,
   getDescriptor,
   resolveNodeDescriptor,
-  nodeTypes,
   registerDescriptor,
   unregisterDescriptor,
   subscribeNodeTypes,
