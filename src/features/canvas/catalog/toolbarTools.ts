@@ -1,4 +1,3 @@
-import { COMPONENT_TYPE_NOTE, COMPONENT_TYPE_PANEL, PanelKind } from "@/features/diagram";
 import {
   registryCatalogEntries,
   type CatalogEntry,
@@ -6,7 +5,6 @@ import {
 } from "@/features/elements/search";
 import { subscribeElements } from "@/features/elements/element.registry";
 import i18n from "@/infrastructure/i18n";
-import { KEY } from "@/lib/core/keyboard";
 
 /** A one-click insert on the toolbar, with its plain-letter shortcut. */
 export interface ToolbarTool {

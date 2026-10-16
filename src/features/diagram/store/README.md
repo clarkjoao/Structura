@@ -71,7 +71,7 @@ Important distinction:
 - Many selectors (`useComponent*`, `useConnection*`, `useVisible*`,
   `useResolved*`) read from `getCachedCanvasSnapshot`, so they return the
   scene-resolved canvas view.
-- Layout selectors (`useNodeLayout`, `useNodeLayouts`, `useEdgeWaypoints`,
+- Layout selectors (`useEdgeWaypoints`,
   `useEdgeLabelOffset`) read persisted layout state from the active diagram.
 
 Use `useShallow` whenever the selector returns a derived array or object (not a primitive).

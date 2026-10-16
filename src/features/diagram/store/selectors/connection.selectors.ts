@@ -4,15 +4,6 @@ import { useDiagramStore } from "../diagram.store";
 import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 import { placedComponents, placedConnections } from "../../utils/placement";
 
-export const useConnectionIds = () =>
-  useDiagramStore(
-    useShallow((s) => {
-      if (!s.activeDiagramId) return [];
-      const d = s.diagrams[s.activeDiagramId];
-      return Object.keys(getCachedCanvasSnapshot(d).connections);
-    }),
-  );
-
 export const useConnection = (id: string) =>
   useDiagramStore((s) => {
     if (!s.activeDiagramId) return undefined;

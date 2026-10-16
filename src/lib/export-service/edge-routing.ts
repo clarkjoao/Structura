@@ -297,7 +297,6 @@ export interface EdgeRoutingResult {
  * `isSource` determines which slot index/count to use.
  */
 function resolveAbs(
-  nodeId: string,
   layout: NodeLayout,
   comp: Component,
   handlePosition: HandlePosition,
@@ -380,30 +379,12 @@ export function resolveEdgeRouting(
   // 3. Resolve absolute handle positions with slot offsets
   const sourceAbs: { x: number; y: number; position: HandlePosition } =
     srcLayout && srcComp
-      ? resolveAbs(
-          sourceId,
-          srcLayout,
-          srcComp,
-          sides.sourcePosition,
-          slot,
-          true,
-          layoutMap,
-          components,
-        )
+      ? resolveAbs(srcLayout, srcComp, sides.sourcePosition, slot, true, layoutMap, components)
       : { x: 0, y: 0, position: "right" };
 
   const targetAbs: { x: number; y: number; position: HandlePosition } =
     tgtLayout && tgtComp
-      ? resolveAbs(
-          targetId,
-          tgtLayout,
-          tgtComp,
-          sides.targetPosition,
-          slot,
-          false,
-          layoutMap,
-          components,
-        )
+      ? resolveAbs(tgtLayout, tgtComp, sides.targetPosition, slot, false, layoutMap, components)
       : { x: 0, y: 0, position: "left" };
 
   // 4. User waypoints override everything else

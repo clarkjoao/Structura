@@ -1,4 +1,3 @@
-import * as React from "react";
 import type { IconDefinition } from "@/features/diagram";
 import { cn } from "@/lib/utils";
 import { CustomIconRenderer } from "./CustomIconRenderer";
