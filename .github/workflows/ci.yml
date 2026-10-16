@@ -34,6 +34,23 @@ jobs:
       - name: Check plugin generated files are in sync
         run: npm run plugins:sync-check
 
+  fallow:
+    name: Dead code and cycles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Block import cycles and new dead code
+        run: npm run fallow:check
+
   typecheck:
     name: Type check
     runs-on: ubuntu-latest

@@ -1,4 +1,5 @@
-import { ServiceSource, type Folder, type ServiceDefinition } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram/enums";
+import type { Folder, ServiceDefinition } from "@/features/diagram";
 import { FOLDER_CATALOG, FOLDER_ROOT } from "./ids";
 
 export function buildFolders(): Record<string, Folder> {

@@ -1,3 +1,4 @@
+import { current } from "immer";
 import type {
   Component,
   Connection,
@@ -39,7 +40,8 @@ export const versionsSlice = (
       const versions = ensureVersions(d);
       const index = Object.keys(versions).length;
       const id = generateId("version");
-      const copy = structuredClone(src) as VersionDiff;
+      // `src` is an immer draft here, and a draft is a Proxy: structuredClone throws on it.
+      const copy = structuredClone(current(src)) as VersionDiff;
       copy.id = id;
       const baseName = name?.trim() || i18n.t("versions.duplicatedVersionName", { name: src.name });
       copy.name = baseName;

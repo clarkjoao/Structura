@@ -1,5 +1,5 @@
 import { createJSONStorage } from "zustand/middleware";
-import type { IStoragePort } from "@/infrastructure/persistence";
+import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
 import {
   clearLocalStorageDiagramSyncTimestamp,

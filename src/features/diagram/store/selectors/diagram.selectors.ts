@@ -25,10 +25,6 @@ export const useActiveDiagramModel = () =>
     }),
   );
 
-export const useDiagramIds = () => useDiagramStore(useShallow((s) => Object.keys(s.diagrams)));
-
-export const useDiagram = (id: string) => useDiagramStore((s) => s.diagrams[id]);
-
 export const useDiagrams = () => useDiagramStore(useShallow((s) => s.diagrams));
 
 /**

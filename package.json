@@ -39,6 +39,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "fallow:check": "npx --yes fallow@3.33.1 architecture --fail-on-issues --quiet && npx --yes fallow@3.33.1 dead-code --baseline fallow-dead-code-baseline.json --fail-on-issues --quiet",
+    "fallow:baseline": "npx --yes fallow@3.33.1 dead-code --save-baseline fallow-dead-code-baseline.json --quiet || true",
     "plugins:sync-check": "node plugins/structura-plugin-leanix/scripts/sync-types.mjs --check && node plugins/structura-plugin-leanix/scripts/sync-shared.mjs --check",
     "preview": "vite preview",
     "test": "vitest run",
@@ -55,6 +57,7 @@
     "media:capture": "node scripts/capture-media.mjs"
   },
   "dependencies": {
+    "@assistant-ui/core": "^0.3.15",
     "@assistant-ui/react": "^0.15.16",
     "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-alert-dialog": "^1.1.23",

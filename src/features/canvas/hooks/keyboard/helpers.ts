@@ -38,9 +38,6 @@ export {
   keyMatchesLetterOrCode,
 } from "@/lib/core/keyboard";
 
-/** @deprecated prefer `isEditableTarget` from `@/lib/core/keyboard`. */
-export const isInputFocused = isEditableTarget;
-
 /**
  * Mark a keyboard event as fully handled by the canvas.
  * `stopImmediatePropagation` cuts off other same-phase listeners on `document`
@@ -82,7 +79,7 @@ export function isOsTextEditingChord(event: KeyboardEvent): boolean {
  * when a field is focused (it is typing), and runs on the canvas otherwise.
  */
 export function shouldYieldCanvasShortcutToFocusedField(event: KeyboardEvent): boolean {
-  if (!isInputFocused(event.target)) return false;
+  if (!isEditableTarget(event.target)) return false;
   if (!isModKeyPressed(event)) return true;
   return isOsTextEditingChord(event);
 }

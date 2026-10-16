@@ -8,12 +8,7 @@ export { default as Canvas } from "./Canvas";
 export { default as FlowPanel } from "./flow/FlowPanel";
 export { default as FlowReadingRail } from "./flow/reading/FlowReadingRail";
 export { default as FlowRecorderPanel } from "./flow/FlowRecorderPanel";
-export {
-  nodeTypes,
-  NODE_TYPE_REGISTRY,
-  resolveNodeDescriptor,
-  useNodeTypes,
-} from "./nodes/node-types";
+export { NODE_TYPE_REGISTRY, resolveNodeDescriptor, useNodeTypes } from "./nodes/node-types";
 export type { NodeBuildContext } from "./nodes/node-types";
 export { buildCollapsedPanelIds, computeNodeVisibility } from "./nodes/nodeVisibility";
 export { buildEdge, filterVisibleConnections, type EdgeBuildParams } from "./edges/data/buildEdges";

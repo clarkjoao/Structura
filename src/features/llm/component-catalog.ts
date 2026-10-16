@@ -23,12 +23,6 @@ export interface ComponentTypeDefinition {
 export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [];
 
 /**
- * @deprecated F9 — C4 lives on the element registry (`c4RegisteredTypes`).
- * Kept as an empty array so older imports that spread it stay safe.
- */
-export const C4_TYPES: ComponentTypeDefinition[] = [];
-
-/**
  * Registered elements, as catalog entries.
  *
  * Derived rather than curated (decision 7): an element that exists is an
@@ -60,7 +54,7 @@ export function registeredElementTypes(): ComponentTypeDefinition[] {
   return familyRegisteredTypes("structural");
 }
 
-/** C4 Model types from the registry (F9) — replaces the hand-curated `C4_TYPES` list. */
+/** C4 Model types from the registry (F9) — replaces the old hand-curated list. */
 export function c4RegisteredTypes(): ComponentTypeDefinition[] {
   return familyRegisteredTypes("c4");
 }
@@ -223,11 +217,6 @@ export function buildCloudFamilyCatalogCompact(familyId: string): string {
   }
 
   return lines.join("\n");
-}
-
-/** @deprecated Use `buildCloudFamilyCatalogCompact("aws")`. */
-export function buildAwsCatalogCompact(): string {
-  return buildCloudFamilyCatalogCompact("aws");
 }
 
 export function buildPatternCatalogCompact(): string {

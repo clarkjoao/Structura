@@ -71,8 +71,6 @@ export function CollabToolbar({
     );
   }
 
-  const _peerCount = participantCount > 0 ? participantCount - 1 : 0;
-
   return (
     <>
       <AlertDialog open={endSessionDialogOpen} onOpenChange={setEndSessionDialogOpen}>

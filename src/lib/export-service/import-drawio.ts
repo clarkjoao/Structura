@@ -294,28 +294,28 @@ function isRootParentDrawioId(parentDrawioId: string): boolean {
   return parentDrawioId === "0" || parentDrawioId === "1" || parentDrawioId === "";
 }
 
-export function parseDrawioXml(
-  xml: string,
-  pasteCenter: { x: number; y: number },
-  services: Record<string, { id: string; name: string }>,
-): DrawioImportResult {
-  let document: Document;
-  try {
-    const fragment = extractMxGraphModelFragment(xml);
-    document = new DOMParser().parseFromString(fragment, "text/xml");
-    if (isParseErrorDocument(document)) {
-      return { ...EMPTY_RESULT };
-    }
-  } catch {
-    return { ...EMPTY_RESULT };
-  }
+interface CollectContext {
+  pendingVertices: PendingVertex[];
+  skipped: string[];
+  /** The mxCells that belong to an `<object>`: the object already stands for them. */
+  innerMxCellsFromObjects: Set<Element>;
+}
 
-  const sharedEdges: Array<{ sourceDrawioId: string; targetId: string }> = [];
-  const skipped: string[] = [];
-  const idMap = new Map<string, string>();
-  const pendingVertices: PendingVertex[] = [];
-  const innerMxCellsFromObjects = new Set<Element>();
+type RawGeometry = PendingVertex["rawGeometry"];
 
+function pendingVertex(
+  drawioId: string,
+  kind: PendingVertex["kind"],
+  parentDrawioId: string,
+  rawGeometry: RawGeometry,
+  sourceElement: Element,
+): PendingVertex {
+  return { drawioId, kind, parentDrawioId, rawGeometry, sourceElement };
+}
+
+/** The `<object>` wrappers: C4 elements, scope boundaries and shared-element references. */
+function collectObjectVertices(document: Document, ctx: CollectContext): void {
+  const { pendingVertices, skipped, innerMxCellsFromObjects } = ctx;
   const objectNodes = document.getElementsByTagName("object");
   for (let index = 0; index < objectNodes.length; index += 1) {
     const objectEl = objectNodes[index]!;
@@ -327,13 +327,15 @@ export function parseDrawioXml(
       const refId = getAttr(objectEl, "id");
       if (refCell && refId) {
         innerMxCellsFromObjects.add(refCell);
-        pendingVertices.push({
-          drawioId: refId,
-          kind: "shared-ref",
-          parentDrawioId: getAttr(refCell, "parent"),
-          rawGeometry: readGeometry(refCell),
-          sourceElement: objectEl,
-        });
+        pendingVertices.push(
+          pendingVertex(
+            refId,
+            "shared-ref",
+            getAttr(refCell, "parent"),
+            readGeometry(refCell),
+            objectEl,
+          ),
+        );
       }
       continue;
     }
@@ -347,74 +349,38 @@ export function parseDrawioXml(
 
     const vertexCell = getVertexMxCellFromObject(objectEl);
     if (!vertexCell) {
-      pendingVertices.push({
-        drawioId,
-        kind: "unknown",
-        parentDrawioId: "1",
-        rawGeometry: readGeometry(objectEl),
-        sourceElement: objectEl,
-      });
+      pendingVertices.push(
+        pendingVertex(drawioId, "unknown", "1", readGeometry(objectEl), objectEl),
+      );
       continue;
     }
     innerMxCellsFromObjects.add(vertexCell);
 
     const parentDrawioId = getAttr(vertexCell, "parent");
     const rawGeometry = readGeometry(vertexCell);
-
-    if (c4TypeLabel === "SystemScopeBoundary") {
-      pendingVertices.push({
-        drawioId,
-        kind: "panel",
-        parentDrawioId,
-        rawGeometry,
-        sourceElement: objectEl,
-      });
-      continue;
-    }
-
-    const mappedC4Type = C4_TYPE_MAP[c4TypeLabel];
-    if (mappedC4Type) {
-      pendingVertices.push({
-        drawioId,
-        kind: "c4",
-        parentDrawioId,
-        rawGeometry,
-        sourceElement: objectEl,
-      });
-      continue;
-    }
-
-    pendingVertices.push({
-      drawioId,
-      kind: "unknown",
-      parentDrawioId,
-      rawGeometry,
-      sourceElement: objectEl,
-    });
+    const kind: PendingVertex["kind"] =
+      c4TypeLabel === "SystemScopeBoundary" ? "panel" : C4_TYPE_MAP[c4TypeLabel] ? "c4" : "unknown";
+    pendingVertices.push(pendingVertex(drawioId, kind, parentDrawioId, rawGeometry, objectEl));
   }
+}
 
-  const mxCellNodes = document.getElementsByTagName("mxCell");
+/** The bare `mxCell` vertices: panels, AWS product icons and anything else draw.io drew. */
+function collectMxCellVertices(mxCellNodes: HTMLCollectionOf<Element>, ctx: CollectContext): void {
+  const { pendingVertices, skipped, innerMxCellsFromObjects } = ctx;
   for (let index = 0; index < mxCellNodes.length; index += 1) {
     const mxCell = mxCellNodes[index]!;
     const cellId = getAttr(mxCell, "id");
     if (cellId === "0" || cellId === "1") continue;
-
-    if (isEdgeMxCell(mxCell)) {
-      continue;
-    }
-
-    if (!isVertexMxCell(mxCell)) {
-      continue;
-    }
-
-    if (innerMxCellsFromObjects.has(mxCell)) {
-      continue;
-    }
+    if (isEdgeMxCell(mxCell) || !isVertexMxCell(mxCell)) continue;
+    if (innerMxCellsFromObjects.has(mxCell)) continue;
 
     const style = getAttr(mxCell, "style");
 
     // A shared element's badge is a drawing of an edge the object carries, not an element.
     if (style.includes("structuraBadge=1;")) continue;
+
+    const vertexOf = (kind: PendingVertex["kind"]): PendingVertex =>
+      pendingVertex(cellId, kind, getAttr(mxCell, "parent"), readGeometry(mxCell), mxCell);
 
     if (styleHasDashedBorder(style)) {
       const ancestorObject = closestObjectAncestor(mxCell);
@@ -425,13 +391,7 @@ export function parseDrawioXml(
         skipped.push("panel:missing-id");
         continue;
       }
-      pendingVertices.push({
-        drawioId: cellId,
-        kind: "panel-mxcell",
-        parentDrawioId: getAttr(mxCell, "parent"),
-        rawGeometry: readGeometry(mxCell),
-        sourceElement: mxCell,
-      });
+      pendingVertices.push(vertexOf("panel-mxcell"));
       continue;
     }
 
@@ -440,258 +400,227 @@ export function parseDrawioXml(
         skipped.push("aws:missing-id");
         continue;
       }
-      pendingVertices.push({
-        drawioId: cellId,
-        kind: "aws",
-        parentDrawioId: getAttr(mxCell, "parent"),
-        rawGeometry: readGeometry(mxCell),
-        sourceElement: mxCell,
-      });
+      pendingVertices.push(vertexOf("aws"));
       continue;
     }
 
-    if (!cellId) {
-      continue;
+    if (!cellId) continue;
+    pendingVertices.push(vertexOf("unknown"));
+  }
+}
+
+/** Where the paste lands: root-level vertices are shifted so their top-left sits on the centre. */
+function pasteOffsetFor(
+  pendingVertices: PendingVertex[],
+  pasteCenter: { x: number; y: number },
+): { x: number; y: number } {
+  const rootRawPositions = pendingVertices
+    .filter((pending) => isRootParentDrawioId(pending.parentDrawioId))
+    .map((pending) => ({ x: pending.rawGeometry.x, y: pending.rawGeometry.y }));
+  if (rootRawPositions.length === 0) return { x: 0, y: 0 };
+  const minX = Math.min(...rootRawPositions.map((position) => position.x));
+  const minY = Math.min(...rootRawPositions.map((position) => position.y));
+  return { x: pasteCenter.x - minX, y: pasteCenter.y - minY };
+}
+
+interface BuildContext {
+  idMap: Map<string, string>;
+  offset: { x: number; y: number };
+  services: Record<string, { id: string; name: string }>;
+  sharedEdges: Array<{ sourceDrawioId: string; targetId: string }>;
+}
+
+interface BuiltVertex {
+  component: Component;
+  /** Overrides the placed size, for a vertex whose own geometry came back empty. */
+  size?: { width: number; height: number };
+}
+
+function awsComponentFor(
+  newId: string,
+  name: string,
+  parentId: string | null,
+  awsService: string | undefined,
+): AwsComponent {
+  return {
+    id: newId,
+    name,
+    description: "",
+    parentId,
+    type: resolveAwsCategoryType(awsService),
+    ...cloudServiceIdWrite(awsService),
+  };
+}
+
+function panelComponentFor(pending: PendingVertex, newId: string, parentId: string | null) {
+  const objectEl = pending.kind === "panel" ? pending.sourceElement : null;
+  const mxCellEl =
+    pending.kind === "panel-mxcell"
+      ? pending.sourceElement
+      : getVertexMxCellFromObject(pending.sourceElement);
+
+  const name =
+    objectEl && getAttr(objectEl, "c4Name").length > 0
+      ? getAttr(objectEl, "c4Name")
+      : mxCellEl
+        ? getAttr(mxCellEl, "value")
+        : "";
+
+  return {
+    id: newId,
+    name,
+    description: "",
+    parentId,
+    type: "panel" as const,
+    panelKind: PanelKind.Default,
+  };
+}
+
+function c4ComponentFor(
+  objectEl: Element,
+  newId: string,
+  parentId: string | null,
+  ctx: BuildContext,
+): Component {
+  const mappedType = C4_TYPE_MAP[getAttr(objectEl, "c4Type")] as
+    "person" | "system" | "container" | "component";
+  const serviceId = resolveServiceIdByName(getAttr(objectEl, "registryService"), ctx.services);
+
+  const shared = readShared(objectEl);
+  if (shared) {
+    for (const consumer of shared.consumers) {
+      ctx.sharedEdges.push({ sourceDrawioId: consumer, targetId: newId });
     }
-    pendingVertices.push({
-      drawioId: cellId,
-      kind: "unknown",
-      parentDrawioId: getAttr(mxCell, "parent"),
-      rawGeometry: readGeometry(mxCell),
-      sourceElement: mxCell,
-    });
   }
+  return {
+    id: newId,
+    name: getAttr(objectEl, "c4Name") || "Unnamed",
+    description: getAttr(objectEl, "c4Description"),
+    parentId,
+    type: mappedType,
+    technology: getAttr(objectEl, "c4Technology") || undefined,
+    ...(serviceId ? { serviceId } : {}),
+    ...(shared ? { shared: { mode: shared.mode } } : {}),
+  };
+}
 
-  for (const pending of pendingVertices) {
-    idMap.set(pending.drawioId, generateId("el"));
-  }
+function unknownVertexFor(
+  sourceEl: Element,
+  newId: string,
+  parentId: string | null,
+  positioned: RawGeometry,
+): BuiltVertex {
+  const conversion = tryConvertUnknownCell(sourceEl);
 
-  const rootRawPositions: Array<{ x: number; y: number }> = [];
-  for (const pending of pendingVertices) {
-    if (isRootParentDrawioId(pending.parentDrawioId)) {
-      rootRawPositions.push({ x: pending.rawGeometry.x, y: pending.rawGeometry.y });
-    }
-  }
-
-  let offsetX = 0;
-  let offsetY = 0;
-  if (rootRawPositions.length > 0) {
-    const minX = Math.min(...rootRawPositions.map((position) => position.x));
-    const minY = Math.min(...rootRawPositions.map((position) => position.y));
-    offsetX = pasteCenter.x - minX;
-    offsetY = pasteCenter.y - minY;
-  }
-
-  function mapParentId(parentDrawioId: string): string | null {
-    if (isRootParentDrawioId(parentDrawioId)) return null;
-    const mapped = idMap.get(parentDrawioId);
-    return mapped ?? null;
-  }
-
-  function layoutPositionFor(
-    parentDrawioId: string,
-    raw: { x: number; y: number; width: number; height: number },
-  ): { x: number; y: number; width: number; height: number } {
-    const applyOffset = isRootParentDrawioId(parentDrawioId);
+  if (conversion.kind === "c4") {
+    const base = {
+      id: newId,
+      name: conversion.name,
+      description: conversion.description,
+      parentId,
+      type: conversion.componentType,
+    };
     return {
-      x: raw.x + (applyOffset ? offsetX : 0),
-      y: raw.y + (applyOffset ? offsetY : 0),
-      width: raw.width,
-      height: raw.height,
+      component:
+        conversion.technology !== undefined ? { ...base, technology: conversion.technology } : base,
     };
   }
+  if (conversion.kind === "aws") {
+    return { component: awsComponentFor(newId, conversion.name, parentId, conversion.awsService) };
+  }
 
+  const fallbackGeom = extractGeometry(sourceEl);
+  const unknownComp: UnknownComponent = {
+    id: newId,
+    name: conversion.name,
+    description: "",
+    parentId,
+    type: COMPONENT_TYPE_UNKNOWN,
+    ...(conversion.rawContent.length > 0 ? { rawContent: conversion.rawContent } : {}),
+  };
+  return {
+    component: unknownComp,
+    size: {
+      width: positioned.width > 0 ? positioned.width : fallbackGeom.width,
+      height: positioned.height > 0 ? positioned.height : fallbackGeom.height,
+    },
+  };
+}
+
+function buildVertex(
+  pending: PendingVertex,
+  newId: string,
+  parentId: string | null,
+  positioned: RawGeometry,
+  ctx: BuildContext,
+): BuiltVertex {
+  switch (pending.kind) {
+    case "panel":
+    case "panel-mxcell":
+      return { component: panelComponentFor(pending, newId, parentId) };
+    case "aws": {
+      const awsService = extractAwsServiceFromStyle(getAttr(pending.sourceElement, "style"));
+      const name = getAttr(pending.sourceElement, "value") || (awsService ?? "AWS");
+      return { component: awsComponentFor(newId, name, parentId, awsService) };
+    }
+    case "shared-ref":
+      // Its original is mapped once every vertex has its new id.
+      return {
+        component: {
+          id: newId,
+          name: getAttr(pending.sourceElement, "label") || "ref",
+          description: "",
+          parentId,
+          type: "shared-ref",
+          refOf: getAttr(pending.sourceElement, "structuraRefOf"),
+        },
+      };
+    case "c4":
+      return { component: c4ComponentFor(pending.sourceElement, newId, parentId, ctx) };
+    case "unknown":
+      return unknownVertexFor(pending.sourceElement, newId, parentId, positioned);
+  }
+}
+
+function buildComponents(
+  pendingVertices: PendingVertex[],
+  ctx: BuildContext,
+): { components: Component[]; layouts: NodeLayout[] } {
+  const { idMap, offset } = ctx;
   const components: Component[] = [];
   const layouts: NodeLayout[] = [];
 
   for (const pending of pendingVertices) {
     const newId = idMap.get(pending.drawioId)!;
-    const parentId = mapParentId(pending.parentDrawioId);
-    const positioned = layoutPositionFor(pending.parentDrawioId, pending.rawGeometry);
+    const isRoot = isRootParentDrawioId(pending.parentDrawioId);
+    const parentId = isRoot ? null : (idMap.get(pending.parentDrawioId) ?? null);
+    const raw = pending.rawGeometry;
+    const positioned = {
+      x: raw.x + (isRoot ? offset.x : 0),
+      y: raw.y + (isRoot ? offset.y : 0),
+      width: raw.width,
+      height: raw.height,
+    };
 
-    if (pending.kind === "panel" || pending.kind === "panel-mxcell") {
-      const objectEl = pending.kind === "panel" ? pending.sourceElement : null;
-      const mxCellEl =
-        pending.kind === "panel-mxcell"
-          ? pending.sourceElement
-          : getVertexMxCellFromObject(pending.sourceElement);
-
-      const name =
-        objectEl && getAttr(objectEl, "c4Name").length > 0
-          ? getAttr(objectEl, "c4Name")
-          : mxCellEl
-            ? getAttr(mxCellEl, "value")
-            : "";
-
-      components.push({
-        id: newId,
-        name,
-        description: "",
-        parentId,
-        type: "panel",
-        panelKind: PanelKind.Default,
-      });
-      layouts.push({
-        elementId: newId,
-        x: positioned.x,
-        y: positioned.y,
-        width: positioned.width || undefined,
-        height: positioned.height || undefined,
-      });
-      continue;
-    }
-
-    if (pending.kind === "aws") {
-      const mxCellEl = pending.sourceElement;
-      const style = getAttr(mxCellEl, "style");
-      const awsService = extractAwsServiceFromStyle(style);
-      const name = getAttr(mxCellEl, "value") || (awsService ?? "AWS");
-
-      const awsComponent: AwsComponent = {
-        id: newId,
-        name,
-        description: "",
-        parentId,
-        type: resolveAwsCategoryType(awsService),
-        ...cloudServiceIdWrite(awsService),
-      };
-      components.push(awsComponent);
-      layouts.push({
-        elementId: newId,
-        x: positioned.x,
-        y: positioned.y,
-        width: positioned.width || undefined,
-        height: positioned.height || undefined,
-      });
-      continue;
-    }
-
-    if (pending.kind === "shared-ref") {
-      // Its original is mapped once every vertex has its new id, below.
-      components.push({
-        id: newId,
-        name: getAttr(pending.sourceElement, "label") || "ref",
-        description: "",
-        parentId,
-        type: "shared-ref",
-        refOf: getAttr(pending.sourceElement, "structuraRefOf"),
-      });
-      layouts.push({
-        elementId: newId,
-        x: positioned.x,
-        y: positioned.y,
-        width: positioned.width || undefined,
-        height: positioned.height || undefined,
-      });
-      continue;
-    }
-
-    if (pending.kind === "c4") {
-      const objectEl = pending.sourceElement;
-      const c4TypeLabel = getAttr(objectEl, "c4Type");
-      const mappedType = C4_TYPE_MAP[c4TypeLabel] as
-        "person" | "system" | "container" | "component";
-      const registryServiceName = getAttr(objectEl, "registryService");
-      const serviceId = resolveServiceIdByName(registryServiceName, services);
-
-      const shared = readShared(objectEl);
-      components.push({
-        id: newId,
-        name: getAttr(objectEl, "c4Name") || "Unnamed",
-        description: getAttr(objectEl, "c4Description"),
-        parentId,
-        type: mappedType,
-        technology: getAttr(objectEl, "c4Technology") || undefined,
-        ...(serviceId ? { serviceId } : {}),
-        ...(shared ? { shared: { mode: shared.mode } } : {}),
-      });
-      if (shared) {
-        for (const consumer of shared.consumers) {
-          sharedEdges.push({ sourceDrawioId: consumer, targetId: newId });
-        }
-      }
-      layouts.push({
-        elementId: newId,
-        x: positioned.x,
-        y: positioned.y,
-        width: positioned.width || undefined,
-        height: positioned.height || undefined,
-      });
-      continue;
-    }
-
-    if (pending.kind === "unknown") {
-      const sourceEl = pending.sourceElement;
-      const conversion = tryConvertUnknownCell(sourceEl);
-      const fallbackGeom = extractGeometry(sourceEl);
-      const layoutWidth = positioned.width > 0 ? positioned.width : fallbackGeom.width;
-      const layoutHeight = positioned.height > 0 ? positioned.height : fallbackGeom.height;
-
-      if (conversion.kind === "c4") {
-        const base = {
-          id: newId,
-          name: conversion.name,
-          description: conversion.description,
-          parentId,
-          type: conversion.componentType,
-        };
-        components.push(
-          conversion.technology !== undefined
-            ? { ...base, technology: conversion.technology }
-            : base,
-        );
-        layouts.push({
-          elementId: newId,
-          x: positioned.x,
-          y: positioned.y,
-          width: positioned.width || undefined,
-          height: positioned.height || undefined,
-        });
-      } else if (conversion.kind === "aws") {
-        const awsComponent: AwsComponent = {
-          id: newId,
-          name: conversion.name,
-          description: "",
-          parentId,
-          type: resolveAwsCategoryType(conversion.awsService),
-          ...cloudServiceIdWrite(conversion.awsService),
-        };
-        components.push(awsComponent);
-        layouts.push({
-          elementId: newId,
-          x: positioned.x,
-          y: positioned.y,
-          width: positioned.width || undefined,
-          height: positioned.height || undefined,
-        });
-      } else {
-        const unknownComp: UnknownComponent = {
-          id: newId,
-          name: conversion.name,
-          description: "",
-          parentId,
-          type: COMPONENT_TYPE_UNKNOWN,
-          ...(conversion.rawContent.length > 0 ? { rawContent: conversion.rawContent } : {}),
-        };
-        components.push(unknownComp);
-        layouts.push({
-          elementId: newId,
-          x: positioned.x,
-          y: positioned.y,
-          width: layoutWidth,
-          height: layoutHeight,
-        });
-      }
-    }
+    const built = buildVertex(pending, newId, parentId, positioned, ctx);
+    components.push(built.component);
+    layouts.push({
+      elementId: newId,
+      x: positioned.x,
+      y: positioned.y,
+      width: built.size ? built.size.width : positioned.width || undefined,
+      height: built.size ? built.size.height : positioned.height || undefined,
+    });
   }
+  return { components, layouts };
+}
 
-  // References point at their originals' new ids.
-  for (const component of components) {
-    if (component.type === "shared-ref") {
-      component.refOf = idMap.get(component.refOf) ?? component.refOf;
-    }
-  }
-
+function buildConnections(
+  mxCellNodes: HTMLCollectionOf<Element>,
+  ctx: BuildContext,
+  skipped: string[],
+): Connection[] {
+  const { idMap, sharedEdges } = ctx;
   const connections: Connection[] = [];
   // The edges a badge-mode element hid in draw.io, back from its consumers.
   for (const edge of sharedEdges) {
@@ -720,18 +649,64 @@ export function parseDrawioXml(
       idMap.set(edgeDrawioId, newConnId);
     }
 
-    const style = getAttr(mxCell, "style");
-    const edgeStyle = resolveEdgeStyle(style);
-    const label = getAttr(mxCell, "value");
-
     connections.push({
       id: newConnId,
       sourceId,
       targetId,
-      label,
-      style: { edgeStyle },
+      label: getAttr(mxCell, "value"),
+      style: { edgeStyle: resolveEdgeStyle(getAttr(mxCell, "style")) },
     });
   }
+  return connections;
+}
 
+function parseXmlDocument(xml: string): Document | null {
+  try {
+    const document = new DOMParser().parseFromString(extractMxGraphModelFragment(xml), "text/xml");
+    return isParseErrorDocument(document) ? null : document;
+  } catch {
+    return null;
+  }
+}
+
+export function parseDrawioXml(
+  xml: string,
+  pasteCenter: { x: number; y: number },
+  services: Record<string, { id: string; name: string }>,
+): DrawioImportResult {
+  const document = parseXmlDocument(xml);
+  if (!document) return { ...EMPTY_RESULT };
+
+  const collect: CollectContext = {
+    pendingVertices: [],
+    skipped: [],
+    innerMxCellsFromObjects: new Set<Element>(),
+  };
+  const mxCellNodes = document.getElementsByTagName("mxCell");
+  collectObjectVertices(document, collect);
+  collectMxCellVertices(mxCellNodes, collect);
+  const { pendingVertices, skipped } = collect;
+
+  const idMap = new Map<string, string>();
+  for (const pending of pendingVertices) {
+    idMap.set(pending.drawioId, generateId("el"));
+  }
+
+  const build: BuildContext = {
+    idMap,
+    offset: pasteOffsetFor(pendingVertices, pasteCenter),
+    services,
+    sharedEdges: [],
+  };
+  const { components, layouts } = buildComponents(pendingVertices, build);
+
+  // References point at their originals' new ids.
+  for (const component of components) {
+    if (component.type === "shared-ref") {
+      component.refOf = idMap.get(component.refOf) ?? component.refOf;
+    }
+  }
+
+  const connections = buildConnections(mxCellNodes, build, skipped);
   return { components, connections, layouts, skipped };
 }

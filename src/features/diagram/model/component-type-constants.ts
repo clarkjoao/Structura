@@ -19,9 +19,6 @@ export const COMPONENT_TYPE_SVG = "svg";
 
 export const COMPONENT_TYPE_EXTERNAL_ELEMENT = "external-element";
 
-/** @deprecated Use COMPONENT_TYPE_PROCESS_NODE */
-export const COMPONENT_TYPE_FLOW_NODE = "process-node";
-
 export const COMPONENT_TYPE_PROCESS_NODE = "process-node";
 
 export const COMPONENT_TYPE_FLOW_DIVIDER = "flow-divider";
@@ -107,11 +104,6 @@ export function isProcessNodeType(type: string): type is "process-node" {
     type === LEGACY_FLOW_NODE_TYPE ||
     type === LEGACY_PROCESSOS_TYPE
   );
-}
-
-/** @deprecated Use `isProcessNodeType` */
-export function isFlowNodeType(type: string): type is "process-node" {
-  return isProcessNodeType(type);
 }
 
 export function isSvgComponentType(type: string): type is "svg" {
@@ -228,7 +220,7 @@ export function getUsageKeyForType(type: ComponentType, panelKind?: PanelKind): 
     isApiGroupType(type) ||
     isDbTableType(type) ||
     isJsonViewerType(type) ||
-    isFlowNodeType(type)
+    isProcessNodeType(type)
   ) {
     return `canvas:${type}`;
   }
@@ -257,7 +249,7 @@ export function getDefaultNameForNewComponent(
     return i18n.t("quickInsert.newNamed", {
       name: i18n.t("nodeTypes.json-viewer"),
     });
-  if (isFlowNodeType(type)) return label;
+  if (isProcessNodeType(type)) return label;
   if (isPanelType(type) && panelDefaultName) return panelDefaultName;
   return i18n.t("quickInsert.newNamed", { name: label });
 }

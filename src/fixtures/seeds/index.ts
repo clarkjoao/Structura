@@ -1,4 +1,4 @@
-import { Diagram, Folder, ServiceDefinition } from "@/features/diagram";
+import type { Diagram, Folder, ServiceDefinition } from "@/features/diagram";
 import { SEED_PL_DIAGRAMS, SEED_PL_FOLDERS, SEED_PL_SERVICES } from "./pixledger";
 
 export const SEED_SERVICES: Record<string, ServiceDefinition> = {

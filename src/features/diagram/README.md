@@ -18,8 +18,7 @@ If you are documenting or using selector hooks, this distinction matters:
 
 - `useComponent*`, `useConnection*`, `useVisible*`, and resolved-layout selectors
   generally read from the cached resolved canvas snapshot.
-- Layout selectors such as `useNodeLayout`, `useNodeLayouts`,
-  `useEdgeControlPoints`, and `useEdgeLabelOffset` read persisted layout data
+- Layout selectors such as `useEdgeControlPoints`, and `useEdgeLabelOffset` read persisted layout data
   from the active diagram.
 
 ## Main entry points
@@ -48,8 +47,6 @@ If you are documenting or using selector hooks, this distinction matters:
 | -------------------- | ------------------------------------------------------------------------- |
 | `useActiveDiagramId` | Returns the ID of the diagram the app is currently operating on.          |
 | `useActiveDiagram`   | Returns the current active diagram object or `null` if nothing is open.   |
-| `useDiagramIds`      | Returns the list of all diagram IDs in the store.                         |
-| `useDiagram`         | Reads a specific diagram by ID.                                           |
 | `useDiagrams`        | Returns the diagram dictionary keyed by diagram ID.                       |
 | `useAllDiagrams`     | Returns all diagrams as an array, typically for navigation or lookup UIs. |
 
@@ -57,11 +54,9 @@ If you are documenting or using selector hooks, this distinction matters:
 
 | Hook                           | Goal                                                                                                             |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `useComponentIds`              | Returns component IDs from the resolved active-diagram snapshot.                                                 |
 | `useComponent`                 | Reads one resolved component from the active diagram.                                                            |
 | `useComponents`                | Returns the resolved component map for the active diagram.                                                       |
 | `useAllComponents`             | Returns all resolved components for the active diagram as an array.                                              |
-| `useConnectionIds`             | Returns connection IDs from the resolved active-diagram snapshot.                                                |
 | `useConnection`                | Reads one resolved connection from the active diagram.                                                           |
 | `useConnections`               | Returns the resolved connection map for the active diagram.                                                      |
 | `useVisibleComponents`         | Returns only components that are visible in the current scene-aware canvas snapshot.                             |
@@ -74,22 +69,18 @@ If you are documenting or using selector hooks, this distinction matters:
 
 | Hook                   | Goal                                                              |
 | ---------------------- | ----------------------------------------------------------------- |
-| `useNodeLayouts`       | Returns persisted node layouts for the active diagram.            |
-| `useNodeLayout`        | Returns one persisted node layout by component ID.                |
 | `useEdgeControlPoints` | Returns the stored control points for an editable edge's path.    |
 | `useEdgeLabelOffset`   | Returns the stored label offset for an edge label along its path. |
 
 ### Flows, folders, icons, registry, and templates
 
-| Hook                                                           | Goal                                                                              |
-| -------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `useFlowIds`                                                   | Returns flow IDs for the active diagram.                                          |
-| `useFlow`                                                      | Returns a single flow from the active diagram snapshot.                           |
-| `useFlows`                                                     | Returns all flows for the active diagram.                                         |
-| `useFolderIds`, `useFolder`, `useFolders`, `useAllFolders`     | Read folder structure and folder lists from the store.                            |
-| `useIconLibrary`, `useIconById`, `useComponentIcon`            | Read from the shared icon library and resolve a component's selected custom icon. |
-| `useServiceIds`, `useService`, `useAllServices`, `useServices` | Read the workspace Services collection that diagrams can link components to.      |
-| `useAllUserTemplates`                                          | Returns saved user templates sorted by creation time.                             |
+| Hook                                                | Goal                                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `useFlows`                                          | Returns all flows for the active diagram.                                         |
+| `useFolders`, `useAllFolders`                       | Read folder structure and folder lists from the store.                            |
+| `useIconLibrary`, `useIconById`, `useComponentIcon` | Read from the shared icon library and resolve a component's selected custom icon. |
+| `useAllServices`, `useServices`                     | Read the workspace Services collection that diagrams can link components to.      |
+| `useAllUserTemplates`                               | Returns saved user templates sorted by creation time.                             |
 
 ## Preference helpers
 

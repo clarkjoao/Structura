@@ -4,15 +4,6 @@ import { getCachedCanvasSnapshot } from "../../utils/snapshot-cache";
 
 const EMPTY_TAGS: string[] = [];
 
-export const useComponentIds = () =>
-  useDiagramStore(
-    useShallow((state) => {
-      if (!state.activeDiagramId) return [];
-      const activeDiagram = state.diagrams[state.activeDiagramId];
-      return Object.keys(getCachedCanvasSnapshot(activeDiagram).components);
-    }),
-  );
-
 export const useComponent = (id: string) =>
   useDiagramStore(
     useShallow((s) => {
