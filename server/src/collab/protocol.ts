@@ -346,6 +346,58 @@ function isCursor(value: unknown): value is { x: number; y: number } | null {
   );
 }
 
+type Frame = Record<string, unknown>;
+
+const isJoinResumeFrom = (value: unknown): boolean =>
+  value === undefined || (Number.isInteger(value) && (value as number) >= 0);
+
+const isCreateFrame = (value: Frame): boolean =>
+  typeof value.protocol === "number" &&
+  isRoomId(value.roomId) &&
+  isCollabUser(value.user) &&
+  Number.isInteger(value.seedChars) &&
+  Number.isInteger(value.seedChunks) &&
+  isOptionalString(value.hostToken);
+
+const isSeedChunkFrame = (value: Frame): boolean =>
+  Number.isInteger(value.index) && typeof value.data === "string";
+
+const isJoinFrame = (value: Frame): boolean =>
+  typeof value.protocol === "number" &&
+  isRoomId(value.roomId) &&
+  isCollabUser(value.user) &&
+  isOptionalString(value.hostToken) &&
+  isOptionalString(value.resumeEpoch) &&
+  isJoinResumeFrom(value.resumeFrom);
+
+const isPatchFrame = (value: Frame): boolean =>
+  typeof value.opId === "string" &&
+  value.opId.length > 0 &&
+  value.opId.length <= 128 &&
+  Number.isInteger(value.baseVersion) &&
+  isDiagramPatch(value.patch);
+
+const isLockFrame = (value: Frame): boolean =>
+  (value.action === "acquire" || value.action === "renew" || value.action === "release") &&
+  isLockTarget(value);
+
+const isCursorFrame = (value: Frame): boolean =>
+  "cursor" in value &&
+  isCursor(value.cursor) &&
+  (value.activeElementId === null || typeof value.activeElementId === "string");
+
+/** Frames that carry fields to validate, by type. The rest carry only their type. */
+const FRAME_VALIDATORS = new Map<string, (value: Frame) => boolean>([
+  ["create", isCreateFrame],
+  ["seed:chunk", isSeedChunkFrame],
+  ["join", isJoinFrame],
+  ["patch", isPatchFrame],
+  ["lock", isLockFrame],
+  ["cursor", isCursorFrame],
+]);
+
+const BARE_FRAME_TYPES = new Set(["seed:commit", "close", "ping", "pong"]);
+
 /** Parse and validate one inbound frame. Returns null for anything that is not a v3 message. */
 export function parseClientMessage(raw: string): ClientMessage | null {
   let value: unknown;
@@ -356,59 +408,9 @@ export function parseClientMessage(raw: string): ClientMessage | null {
   }
   if (!isRecord(value) || typeof value.type !== "string") return null;
 
-  switch (value.type) {
-    case "create":
-      return typeof value.protocol === "number" &&
-        isRoomId(value.roomId) &&
-        isCollabUser(value.user) &&
-        Number.isInteger(value.seedChars) &&
-        Number.isInteger(value.seedChunks) &&
-        isOptionalString(value.hostToken)
-        ? (value as ClientMessage)
-        : null;
-    case "seed:chunk":
-      return Number.isInteger(value.index) && typeof value.data === "string"
-        ? (value as ClientMessage)
-        : null;
-    case "seed:commit":
-    case "close":
-    case "ping":
-    case "pong":
-      return { type: value.type };
-    case "join":
-      return typeof value.protocol === "number" &&
-        isRoomId(value.roomId) &&
-        isCollabUser(value.user) &&
-        isOptionalString(value.hostToken) &&
-        isOptionalString(value.resumeEpoch) &&
-        (value.resumeFrom === undefined ||
-          (Number.isInteger(value.resumeFrom) && (value.resumeFrom as number) >= 0))
-        ? (value as ClientMessage)
-        : null;
-    case "patch":
-      return typeof value.opId === "string" &&
-        value.opId.length > 0 &&
-        value.opId.length <= 128 &&
-        Number.isInteger(value.baseVersion) &&
-        isDiagramPatch(value.patch)
-        ? (value as ClientMessage)
-        : null;
-    case "lock":
-      return (value.action === "acquire" ||
-        value.action === "renew" ||
-        value.action === "release") &&
-        isLockTarget(value)
-        ? (value as ClientMessage)
-        : null;
-    case "cursor":
-      return "cursor" in value &&
-        isCursor(value.cursor) &&
-        (value.activeElementId === null || typeof value.activeElementId === "string")
-        ? (value as ClientMessage)
-        : null;
-    default:
-      return null;
-  }
+  if (BARE_FRAME_TYPES.has(value.type)) return { type: value.type } as ClientMessage;
+  const validate = FRAME_VALIDATORS.get(value.type);
+  return validate?.(value) ? (value as ClientMessage) : null;
 }
 
 // ── State helpers shared by both sides ─────────────────────────────────────
