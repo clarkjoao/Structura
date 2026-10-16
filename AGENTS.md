@@ -32,6 +32,8 @@ npm run typecheck    # the type gate: checks src and vite.config.ts
 npm run lint         # eslint
 npm run format       # prettier --write
 npm run test         # vitest run
+npm run fallow:check # CI gate: no import cycles, no new dead code vs fallow-dead-code-baseline.json
+npm run fallow:baseline # re-save the baseline after deliberately removing dead code
 npm run build        # npm run typecheck && vite build
 ```
 

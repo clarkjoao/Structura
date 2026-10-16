@@ -9,3 +9,4 @@ CHANGELOG.md
 src/fixtures/seeds
 .claude/worktrees
 go-server/internal/merge/testdata
+fallow-dead-code-baseline.json
