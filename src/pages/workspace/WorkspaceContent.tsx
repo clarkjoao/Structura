@@ -42,7 +42,7 @@ import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandove
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
 import { useDiagramStore, useStorageMonitor, type Diagram, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
-import { CollabCursors, CollabToolbar, useCollab } from "@/features/collaboration";
+import { CollabToolbar, useCollab } from "@/features/collaboration";
 import {
   DocumentPaneSlot,
   DocumentPaneToggles,
