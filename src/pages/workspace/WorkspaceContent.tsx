@@ -134,6 +134,8 @@ export function WorkspaceContent({
       return {
         id: active.id,
         name: active.name,
+        level: active.level,
+        description: active.description,
         domain: active.domain,
         activeVersionId: active.activeVersionId,
         compareVersionId: active.compareVersionId,

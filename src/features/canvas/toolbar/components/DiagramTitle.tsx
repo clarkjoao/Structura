@@ -6,7 +6,7 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import { cn } from "@/lib/utils";
 
 export interface DiagramTitleProps {
-  diagram: Diagram;
+  diagram: Pick<Diagram, "id" | "name" | "level" | "description">;
   /** Renaming is refused while the canvas cannot be edited. */
   editLocked: boolean;
   /** Back to the diagram this one was drilled into from, when there is one. */
