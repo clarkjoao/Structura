@@ -1,4 +1,4 @@
-import { ServiceSource } from "@/features/diagram";
+import { ServiceSource } from "@/features/diagram/enums";
 import type { ServiceDefinition, ServiceSourceRef } from "@/features/diagram";
 
 export function dedupeStringsPreserveOrder(values: string[]): string[] {
