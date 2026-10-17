@@ -40,6 +40,73 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Changed
 
+- **VSCode extension 0.4.0**: the preview draws only YAML that opscr validates
+  without errors — changes typed, saved or written to disk by other tools
+  (Claude Code, git) — keeping the last valid picture and saying why in the
+  status bar meanwhile. The diagram stays a read-only view in VSCode. Ctrl/Cmd+F
+  finds elements in the preview, Ctrl/Cmd+Shift+L re-lays it out, and an update
+  zooms to what it changed.
+  Clicking an element opens the YAML that writes it, the element under the
+  cursor is lit in the preview, and a listed problem opens its line.
+- **Plugin API 1.11.0**: `api.canvas` (the canvas selection, and `highlight()`
+  to light elements and bring them into view), and `CodeEditor` `path` (a model
+  per file, with its own undo history), `revealLine`, `onCursorLine` and
+  `original` (a comparison; `onCursorLine` reports clicks and arrow keys, not
+  typing). **opscr plugin 0.13.0**: selecting an element on the canvas opens the
+  YAML that writes it (dragging it does not) and the element under the cursor is
+  lit on the canvas; the pane lists what does not carry between the YAML and the
+  diagram; a conflict can be compared with the folder's version; an empty
+  folder offers a first manifest.
+- **Embed**: `embed-editor.html`, Structura's canvas on an in-memory diagram,
+  driven over `postMessage` like a remote plugin API (not used by the extension).
+- **opscr plugin**: the document pane's orchestration is now a UI-free
+  `OpscrEngine` (`src/engine/`), which other hosts can run too (the VSCode
+  extension, a read-only preview, does not).
+- Fixed: an element dragged out of its panel, or into another one (a sibling, a
+  nested panel), now lands in the panel under it; children were clamped to their
+  panel before.
+- Fixed: the element and pattern pickers were drawn under the chat panel.
+- **opscr plugin**: picking another cloud service or technology for a bound
+  element sets its `spec.provider` (or is reverted when the Kind has no such
+  provider).
+- **opscr plugin**: moving an element into another panel, or out of every panel,
+  on a bound diagram updates its `belongsTo`.
+- **Plugin API 1.10.0**: component snapshots carry `cloudServiceId` and
+  `technology`. The opscr pane lists canvas elements that are not in the YAML
+  with a suggested Kind and provider, and adds them (manifest, `belongsTo`,
+  edges) without redrawing them.
+- **Plugin API 1.9.0**: `PluginFolder.stats()` (last-modified time and size).
+  The opscr pane follows changes made to the bound folder outside Structura:
+  clean files reload, unsaved edits are never overwritten (a conflict offers
+  both versions), and a changed layout sidecar moves the canvas.
+- Fixed: Space typed in a plugin code editor was swallowed by the canvas.
+- **Plugin API 1.8.0**: chat contexts can present the chat (title, subtitle,
+  suggestions) and notify the host when they start or stop applying. The opscr
+  chat introduces itself as "opscr · <folder>" with opscr suggestions. Additive.
+- **Plugin API 1.7.0**: a plugin chat reply can return a `preview`: the host
+  shows its elements as pending (highlight, Keep / Discard), focuses the canvas
+  on them, and asks the plugin to undo the reply on Discard. The opscr chat uses
+  it: Discard restores the manifests unless they changed since. Additive.
+- **Plugin API 1.6.0**: `llm:context` capability and `api.registerChatContext`:
+  a plugin can answer the chat for the diagrams it owns, with its own system
+  prompt, reply handling and validation retries. Additive.
+- **opscr plugin**: on a bound diagram whose folder is open, the chat edits the
+  YAML with the opscr-architect skill as context, validated by opscr.
+- **Plugin API 1.5.0**: `api.ui.CodeEditor` takes a `rename` handler, so F2
+  ("Rename symbol") in a plugin's editor is answered by the plugin. Additive.
+- **opscr plugin**: canvas edits patch the bound YAML (rename, description,
+  delete, connections, undo/redo), the arrangement is kept in an
+  `opscr.layout.json` sidecar shared with the VSCode preview, and F2 renames an
+  element across every file while it keeps its place on the canvas.
+- **Plugin API 1.4.0**: a `document-pane` slot docked beside the canvas, the
+  host code editor as `api.ui.CodeEditor`, folder access (`files:folder`,
+  `api.files`) remembered per binding, and `api.applyChanges` for several
+  diagram changes as one undo step. Additive.
+- **Plugin API 1.3.0**: importer results can nest components (`parentKey`, to a
+  new or an existing component), create panels and catalog components (AWS,
+  GCP, Azure, OSS…) with `cloudServiceId` and `technology`. Plugin imports now
+  commit through the same path as generated diagrams, so they also land in an
+  open diagram version. Additive: 1.2 importers behave as before.
 - **`ServiceCatalog` → `Services`** (`PERSIST_SCHEMA_VERSION` 13 → 14).
   Canonical product name is **Services** / **Serviços**. Persist field
   `serviceCatalog` → `services` (still migrates legacy `serviceRegistry`);
@@ -87,6 +154,16 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Fixed
 
+- **opscr plugin: a sync could draw on the wrong diagram.** Opening another
+  diagram while the pane was projecting the YAML applied the changes to the one
+  just opened. A sync now stops when its diagram is no longer the open one, and
+  the pane reads a diagram's binding only after its pending writes.
+- **opscr plugin: a canvas edit made during a sync could be undone.** An
+  element deleted on the canvas while the pane projected the YAML was drawn
+  back. The sync now writes such an edit into the YAML and projects again.
+- **opscr plugin: a failed sync went unnoticed.** When a step of the pane's
+  sync threw, the error only reached the console and the diagram silently
+  stopped following the text. The pane now says so and offers to try again.
 - **Canvas node selection could describe one node while another kept the
   focus ring.** `selectedNodeId` (element panel, quick-actions toolbar)
   and `selectedNodeIds` (dimming, React Flow's `selected` flag) are one
