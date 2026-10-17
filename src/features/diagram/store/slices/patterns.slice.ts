@@ -99,7 +99,7 @@ function occupiedBoxes(state: AppState): Box[] {
  * the same as one inserted from the catalog. A boundary keeps the size the
  * resolver gave it, to fit its children.
  */
-function insertFragment(
+export function insertFragment(
   state: AppState,
   fragment: PatternFragment,
   position: { x: number; y: number },

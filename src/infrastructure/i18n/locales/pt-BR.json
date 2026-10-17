@@ -539,13 +539,23 @@
     "openSettings": "Abrir configurações de LLM",
     "close": "Fechar chat",
     "inputPlaceholder": "Digite sua mensagem...",
-    "submitHint": "Use Cmd/Ctrl + Enter para enviar",
+    "inputLabel": "Mensagem para o assistente",
+    "submitHint": "Use Enter para enviar, Shift+Enter para quebrar a linha",
+    "sendHint": "Enter envia · Shift+Enter quebra a linha",
     "sending": "Enviando...",
     "send": "Enviar",
     "scrollToBottom": "Nova mensagem",
     "showMore": "Ver mais",
     "showLess": "Ver menos",
     "generating": "Gerando resposta...",
+    "queue": {
+      "label_one": "{{count}} na fila",
+      "label_other": "{{count}} na fila",
+      "removeOne": "Remover da fila",
+      "clearAll": "Limpar fila",
+      "attachmentOnly": "(só anexos)",
+      "full": "A fila está cheia ({{max}} mensagens). Espere a assistente terminar antes de enviar mais."
+    },
     "settings": {
       "title": "Configurações de LLM",
       "mode": "Modo",
@@ -554,7 +564,7 @@
       "provider": "Provedor",
       "providerOpenAI": "OpenAI",
       "providerAnthropic": "Anthropic",
-      "providerCustom": "Custom (compatível com OpenAI)",
+      "providerCustom": "Custom",
       "apiKey": "Chave de API",
       "apiKeyRequired": "Insira sua chave de API da {{provider}}",
       "proxyUrl": "URL do Proxy",
@@ -579,14 +589,34 @@
         "baseUrlInvalid": "Informe uma URL que comece com http:// ou https://",
         "authHeader": "Nome do header de autenticação",
         "authHeaderHint": "Padrão \"Authorization\" (envia \"Bearer &lt;token&gt;\").",
+        "authHeaderAnthropicHint": "Padrão \"x-api-key\". Endpoints Anthropic também aceitam anthropic-version em Cabeçalhos extras.",
         "apiKeyLabel": "Chave de API / token",
+        "protocolLabel": "Protocolo",
+        "protocolOpenAI": "Compatível com OpenAI",
+        "protocolAnthropic": "Compatível com Anthropic",
+        "protocolNote": "Endpoints Anthropic usam /v1/messages com x-api-key. Endpoints OpenAI usam /chat/completions com bearer token.",
         "advanced": "Avançado",
         "extraHeaders": "Headers extras (JSON)",
         "extraHeadersHint": "Mesclados aos headers da requisição. Ex.: {\"X-Org\":\"acme\"}",
         "extraBodyParams": "Parâmetros extras do body (JSON)",
         "extraBodyParamsHint": "Mesclados ao body da requisição. Ex.: {\"temperature\":0.2}",
         "extraJsonInvalid": "JSON inválido. Corrija antes de salvar."
-      }
+      },
+      "subtitle": "Configure seu provedor de IA e modelo",
+      "connectionsHint": "Gerencie as conexões de provedor salvas",
+      "defaultConnectionName": "Padrão",
+      "fallbackConnectionName": "Conexão",
+      "connectionCopyName": "{{name}} (cópia)",
+      "proxyUrlHint": "Qualquer endpoint compatível com OpenAI; as requisições vão para <URL>/chat/completions.",
+      "testConnection": "Testar conexão",
+      "testing": "Testando…",
+      "testConnected_one": "Conectado · {{count}} modelo · {{latency}} ms",
+      "testConnected_other": "Conectado · {{count}} modelos · {{latency}} ms",
+      "testPresets_one": "{{count}} modelo predefinido; a chave é verificada na primeira mensagem",
+      "testPresets_other": "{{count}} modelos predefinidos; a chave é verificada na primeira mensagem",
+      "tabConnections": "Conexões",
+      "tabSkills": "Skills",
+      "tabMcp": "Servidores MCP"
     },
     "suggestion": {
       "accept": "Aceitar",
@@ -599,17 +629,46 @@
         "removeEdge": "Remover conexão {{edgeId}}",
         "insertPattern": "Inserir pattern {{patternId}}",
         "autoLayout": "Organizar diagrama automaticamente",
-        "getTags": "Listar tags do diagrama"
+        "connectionFallback": "conexão",
+        "unknown": "Ação desconhecida"
       },
-      "defaultTitle": "Alterações sugeridas",
+      "defaultTitle": "Alteração sugerida",
       "noChanges": "sem alterações",
       "accepted": "Aceito",
-      "rejected": "Rejeitado"
+      "rejected": "Rejeitado",
+      "changeCount_one": "{{count}} alteração",
+      "changeCount_other": "{{count}} alterações",
+      "oneUndoStep": "Visível no canvas · Aceitar mantém como um único passo de desfazer",
+      "skipped": {
+        "missingNode": "Ignorada: o elemento não existe mais",
+        "missingEdge": "Ignorada: a conexão não existe mais",
+        "edgeNotAllowed": "Ignorada: este elemento não pode iniciar uma conexão",
+        "noDiagram": "Ignorada: nenhum diagrama aberto",
+        "unknownPattern": "Ignorada: padrão não encontrado"
+      }
     },
     "mention": {
-      "noResults": "Nenhum nó ou conexão encontrado",
       "removeTag": "Remover menção {{label}}",
-      "pickerLabel": "Seletor de menções"
+      "selectionChip": "Seleção · {{label}}",
+      "section": {
+        "selection": "Seleção",
+        "nodes": "Nós",
+        "edges": "Conexões",
+        "flows": "Fluxos",
+        "diagram": "Diagrama"
+      },
+      "selectionCount_one": "{{count}} nó",
+      "selectionCount_other": "{{count}} nós",
+      "secondary": {
+        "selected_one": "{{count}} nó selecionado",
+        "selected_other": "{{count}} nós selecionados",
+        "route": "{{source}} → {{target}}",
+        "steps_one": "{{count}} passo",
+        "steps_other": "{{count}} passos",
+        "diagramSize": "{{nodes}} nós · {{edges}} conexões"
+      },
+      "wholeDiagram": "Diagrama inteiro",
+      "more": "+{{count}} mais"
     },
     "selector": {
       "proxy": "Proxy",
@@ -625,7 +684,14 @@
       "delete": "Excluir",
       "deleteConfirm": "Excluir esta conversa? Não dá para desfazer.",
       "active": "Atual",
-      "empty": "Nenhuma conversa anterior neste diagrama ainda."
+      "empty": "Nenhuma conversa anterior neste diagrama ainda.",
+      "searchPlaceholder": "Buscar…",
+      "noMatches": "Nenhuma conversa encontrada.",
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "messageCount_one": "{{count}} mensagem",
+      "messageCount_other": "{{count}} mensagens",
+      "defaultTitle": "Conversa · {{date}}"
     },
     "floatingButton": {
       "open": "Abrir assistente de chat",
@@ -638,34 +704,19 @@
     "error": {
       "auth": "Chave de API inválida. Verifique suas configurações.",
       "rate_limit": "Limite de requisições atingido. Aguarde alguns segundos.",
-      "cors": "Chamada bloqueada pelo navegador. Use o modo Proxy nas configurações.",
       "corsCustom": "O endpoint recusou a requisição do navegador (CORS). Verifique se o endpoint libera requisições de origens do browser — o Structura não consegue contornar CORS no servidor do provedor.",
-      "network": "Sem conexão com o servidor. Verifique sua internet.",
-      "model": "Modelo não encontrado. Verifique o nome do modelo nas configurações.",
       "server": "Erro no servidor do provedor. Tente novamente em instantes.",
       "timeout": "A requisição demorou muito. Tente novamente.",
       "unknown": "Erro inesperado. Tente novamente.",
       "action": {
         "settings": "Abrir configurações",
         "retry": "Tentar novamente"
-      }
-    },
-    "analysis": {
-      "summary": "Resumo executivo",
-      "findings": "Achados",
-      "strengths": "Pontos fortes",
-      "nextSteps": "Próximos passos",
-      "dismiss": "Dispensar análise",
-      "recommendation": "Recomendação",
-      "criticalCount": "{{count}} crítico(s)",
-      "highCount": "{{count}} alto(s)",
-      "severity": {
-        "critical": "Crítico",
-        "high": "Alto",
-        "medium": "Médio",
-        "low": "Baixo",
-        "info": "Info"
-      }
+      },
+      "networkOrCors": "Não foi possível alcançar o provedor. Verifique sua conexão; se continuar falhando, o navegador pode estar bloqueando a chamada (CORS) — tente o modo Proxy nas configurações.",
+      "proxyUnreachable": "Não foi possível alcançar o proxy de LLM. Verifique se ele está rodando, se a URL está correta e se ele aceita requisições deste site.",
+      "proxyRejected": "O proxy de LLM recusou a requisição ({{status}}). Verifique as credenciais configuradas no proxy.",
+      "proxyEndpointNotFound": "O proxy de LLM não tem endpoint de chat nesta URL (404). Verifique a URL do proxy.",
+      "modelNotFound": "Modelo não encontrado. Verifique o nome do modelo nas configurações."
     },
     "suggestions": {
       "title": "SUGESTÕES",
@@ -682,59 +733,231 @@
         "observability": "Identificar gaps de observabilidade"
       }
     },
-    "ir": {
-      "commandHint": "Descreva o diagrama depois do comando, por exemplo: /gerar diagrama C4 de contêineres para um e-commerce com microsserviços.",
-      "export": "Baixar o IR gerado em JSON",
-      "invalid": "O modelo devolveu um diagrama fora do schema do IR:",
-      "moreIssues": "e mais {{count}} problema(s).",
-      "applied": "Gerados {{nodeCount}} nó(s) e {{edgeCount}} conexão(ões) — revise e aceite abaixo.",
-      "noActiveDiagram": "Abra um diagrama antes de gerar.",
-      "notApplied": "O diagrama foi gerado, mas não pôde ser aplicado ao canvas.",
-      "truncated": "O diagrama foi cortado: a resposta atingiu o limite de saída do modelo antes de terminar.",
-      "issue": {
-        "responseTruncated": "Tente de novo descrevendo menos elementos, ou gere o diagrama em partes — uma fronteira ou subsistema por vez.",
-        "invalidJson": "A resposta não é um JSON válido.",
-        "notAnObject": "A resposta não é um objeto JSON.",
-        "invalidDiagramType": "Tipo de diagrama desconhecido: \"{{value}}\".",
-        "nodesNotArray": "\"nodes\" não é uma lista.",
-        "edgesNotArray": "\"edges\" não é uma lista.",
-        "emptyNodes": "O diagrama não tem nenhum nó.",
-        "nodeNotAnObject": "O nó na posição {{index}} não é um objeto.",
-        "nodeMissingId": "O nó na posição {{index}} não tem id.",
-        "nodeDuplicateId": "Id de nó duplicado: \"{{id}}\".",
-        "nodeMissingName": "O nó \"{{id}}\" não tem nome.",
-        "nodeInvalidSemanticType": "O nó \"{{id}}\" usa um semanticType desconhecido: \"{{value}}\".",
-        "nodeInvalidParentId": "O nó \"{{id}}\" tem um parentId inválido.",
-        "nodeInvalidBoundary": "O nó \"{{id}}\" tem isBoundary que não é booleano.",
-        "nodeParentNotFound": "O nó \"{{id}}\" aponta para um pai inexistente: \"{{parentId}}\".",
-        "nodeSelfParent": "O nó \"{{id}}\" é pai de si mesmo.",
-        "containmentCycle": "Ciclo de containment: {{ids}}.",
-        "edgeNotAnObject": "A aresta na posição {{index}} não é um objeto.",
-        "edgeMissingId": "A aresta na posição {{index}} não tem id.",
-        "edgeDuplicateId": "Id de aresta duplicado: \"{{id}}\".",
-        "edgeSourceNotFound": "A aresta \"{{id}}\" sai de um nó inexistente: \"{{ref}}\".",
-        "edgeTargetNotFound": "A aresta \"{{id}}\" chega em um nó inexistente: \"{{ref}}\"."
-      }
-    },
     "slash": {
-      "title": "Comandos",
-      "analyze": "Analisar diagrama",
-      "analyzeDesc": "Revisar a estrutura e sugerir melhorias",
-      "analyzePrompt": "Analise o diagrama atual e sugira melhorias na estrutura.",
-      "export": "Exportar IR",
-      "exportDesc": "Baixar a representação intermediária em JSON",
-      "clear": "Limpar conversa",
-      "clearDesc": "Apagar todo o histórico desta conversa",
       "clearConfirm": "Iniciar nova conversa? O chat atual será salvo no histórico.",
-      "copy": "Copiar conversa",
-      "copyDesc": "Copiar toda a conversa para a área de transferência",
       "copied": "Conversa copiada!",
       "copyFailed": "Falha ao copiar.",
       "noMessages": "Nenhuma mensagem para copiar.",
       "newChat": "Nova conversa iniciada.",
-      "exported": "IR exportado!",
-      "noIR": "Nenhum IR gerado ainda. Use /generate primeiro.",
-      "analyzing": "Analisando…"
+      "cleared": "Chat limpo."
+    },
+    "headerSubtitle": "Usando {{name}}",
+    "emptySubtitle": "Como posso ajudar a moldar este diagrama?",
+    "disclaimer": "A IA pode cometer erros. Verifique alterações importantes.",
+    "thinking": "Pensando",
+    "parseFallback": "[Resposta não processada. Tente novamente.]",
+    "previousSuggestion": "[sugestão anterior de diagrama]",
+    "menu": {
+      "mentionLabel": "Elementos do diagrama",
+      "commandLabel": "Comandos",
+      "empty": "Nenhum resultado",
+      "openMention": "Mencionar um elemento do diagrama (@)",
+      "openCommand": "Inserir um comando (/)",
+      "hintNavigate": "↑↓ navegar",
+      "hintChoose": "↵ escolher",
+      "hintComplete": "Tab completar",
+      "hintClose": "Esc fechar"
+    },
+    "connectionBanner": {
+      "message": "Configure um provedor para iniciar o chat.",
+      "configure": "Configurar"
+    },
+    "copyExport": {
+      "title": "Exportação da conversa",
+      "user": "Você",
+      "assistant": "Assistente",
+      "tool": "Ferramenta",
+      "error": "Erro",
+      "suggestionUnavailable": "Alteração sugerida (não está mais disponível)"
+    },
+    "toolCall": {
+      "status": {
+        "running": "Executando",
+        "done": "Concluída",
+        "error": "Falhou",
+        "awaitingApproval": "Aguardando aprovação",
+        "denied": "Negada"
+      },
+      "showDetails": "Mostrar detalhes de {{name}}",
+      "hideDetails": "Ocultar detalhes de {{name}}",
+      "arguments": "Argumentos",
+      "result": "Resultado",
+      "error": "Erro",
+      "mcpBadge": "MCP · {{server}}"
+    },
+    "markdown": {
+      "copyCode": "Copiar código"
+    },
+    "stop": "Parar de gerar",
+    "stopped": "Interrompida",
+    "messageActions": {
+      "copy": "Copiar mensagem",
+      "regenerate": "Gerar resposta novamente"
+    },
+    "truncated": "Resposta interrompida no limite de tokens",
+    "modelPicker": {
+      "label": "Modelo"
+    },
+    "command": {
+      "section": {
+        "commands": "Comandos"
+      },
+      "remove": "Remover /{{name}}",
+      "review": {
+        "label": "Revisar a arquitetura",
+        "description": "Achados por severidade, com recomendações"
+      },
+      "explain": {
+        "label": "Explicar o diagrama ou a seleção",
+        "description": "O papel de cada elemento e como os dados fluem"
+      },
+      "wellArch": {
+        "label": "Avaliar pelo Well-Architected",
+        "description": "Achados nos seis pilares da AWS"
+      },
+      "blastRadius": {
+        "label": "Impacto se um componente falhar",
+        "description": "O que quebra, o que degrada, como conter"
+      },
+      "clear": {
+        "label": "Nova conversa (a atual vai para o histórico)",
+        "description": "Inicia uma nova conversa"
+      },
+      "copy": {
+        "label": "Copiar a conversa como Markdown",
+        "description": "Copia a conversa inteira"
+      }
+    },
+    "skills": {
+      "section": "Skills",
+      "source": {
+        "workspace": "Workspace",
+        "local": "Local",
+        "builtin": "Nativa"
+      },
+      "toolCount_one": "{{count}} ferramenta",
+      "toolCount_other": "{{count}} ferramentas",
+      "allTools": "todas as ferramentas",
+      "removeChip": "Remover skill {{name}}",
+      "unavailableChip": "{{name}} (indisponível)",
+      "unavailableHint": "Esta skill não existe mais. Tentar de novo envia a mensagem sem ela.",
+      "settings": {
+        "title": "Skills",
+        "hint": "Instruções reutilizáveis que você ativa pelo menu /.",
+        "workspaceHint": "Conecte uma pasta de workspace para compartilhar skills com o time em .structura/skills/.",
+        "new": "Nova skill",
+        "editTitle": "Editar skill",
+        "import": "Importar .md",
+        "importTo": "Importar para:",
+        "importDone_one": "{{count}} skill importada.",
+        "importDone_other": "{{count}} skills importadas.",
+        "importFailed": "{{file}}: {{reason}}",
+        "empty": "Nenhuma skill ainda.",
+        "enable": "Ativar {{name}}",
+        "edit": "Editar",
+        "export": "Exportar como .md",
+        "delete": "Excluir",
+        "warningUnknownTools": "Ferramentas desconhecidas são ignoradas: {{names}}.",
+        "warningUnknownKeys": "Chaves desconhecidas são ignoradas: {{keys}}.",
+        "unknownTool": "Nenhuma ferramenta tem este nome; ele é ignorado.",
+        "problemsTitle": "Arquivos com erro",
+        "problemLine": "Linha {{line}}: {{reason}}",
+        "unreadable": "Não foi possível ler o arquivo: {{message}}",
+        "showRaw": "Corrigir o texto",
+        "filePath": "Corrija no arquivo: {{path}}",
+        "rawTitle": "Texto da skill",
+        "saveTo": "Salvar em",
+        "name": "Nome",
+        "description": "Quando usar",
+        "instructions": "Instruções",
+        "charCount": "{{count}}/{{max}}",
+        "tools": "Ferramentas permitidas",
+        "toolsAll": "Nenhuma selecionada: todas as ferramentas são permitidas.",
+        "addTool": "Adicionar ferramenta",
+        "removeTool": "Remover {{name}}",
+        "toolKind": {
+          "read": "leitura",
+          "write": "escrita"
+        },
+        "writeNote": "Ferramentas de escrita nunca alteram o diagrama diretamente: as mudanças sempre passam por Aceitar/Rejeitar.",
+        "saveFailed": "Não foi possível salvar: {{message}}",
+        "deleteFailed": "Não foi possível excluir: {{message}}",
+        "deleteTitle": "Excluir {{name}}?",
+        "deleteLocal": "Isto remove a skill deste navegador.",
+        "deleteWorkspace": "Isto exclui o arquivo {{path}} da pasta do workspace, para todos que a usam.",
+        "confirmDelete": "Excluir"
+      },
+      "error": {
+        "fileTooLarge": "O arquivo passa de {{max}} bytes.",
+        "missingFrontmatter": "O arquivo deve começar com um bloco de front matter entre linhas ---.",
+        "unclosedFrontmatter": "O bloco de front matter não foi fechado com ---.",
+        "invalidLine": "Esperado \"chave: valor\" ou um item de lista.",
+        "duplicateKey": "\"{{field}}\" aparece mais de uma vez.",
+        "invalidValue": "Este valor não é válido.",
+        "invalidList": "Esta lista não é válida.",
+        "missingField": "\"{{field}}\" é obrigatório.",
+        "tooLong": "\"{{field}}\" passa de {{max}} caracteres."
+      }
+    },
+    "mcp": {
+      "title": "Servidores MCP",
+      "hint": "Ferramentas remotas que o assistente pode chamar deste navegador (Streamable HTTP). As chamadas rodam sem pedir confirmação; bloqueie uma ferramenta para deixá-la fora do alcance do modelo. Ferramentas MCP nunca alteram o diagrama.",
+      "add": "Adicionar servidor",
+      "editTitle": "Editar servidor",
+      "empty": "Nenhum servidor MCP ainda.",
+      "enable": "Ativar {{name}}",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "showTools": "Mostrar as ferramentas de {{name}}",
+      "enterToken": "Informar token",
+      "status": {
+        "connected": "Conectado",
+        "connecting": "Conectando",
+        "error": "Erro",
+        "disconnected": "Desconectado"
+      },
+      "error": {
+        "cors": "O navegador bloqueou a requisição. O servidor precisa permitir a origem deste app via CORS: {{origin}} (e o cabeçalho Authorization quando houver token).",
+        "auth": "O servidor recusou o acesso. Confira o token.",
+        "notFound": "Nada neste endereço (HTTP 404). Confira o caminho do endpoint MCP do servidor.",
+        "protocol": "O servidor não respondeu como um servidor MCP via Streamable HTTP, ou usa uma versão de protocolo não suportada.",
+        "network": "Não foi possível alcançar o servidor, ou ele falhou. Tente de novo mais tarde.",
+        "tokenMissing": "O token só foi guardado na sessão anterior do navegador. Informe-o de novo."
+      },
+      "toolsTitle_one": "{{count}} ferramenta",
+      "toolsTitle_other": "{{count}} ferramentas",
+      "refresh": "Atualizar",
+      "noTools": "Este servidor não lista ferramentas.",
+      "toolsWhenConnected": "As ferramentas aparecem quando o servidor estiver conectado.",
+      "unsupportedSchema": "schema não suportado",
+      "toolMode": "Modo de {{name}}",
+      "mode": {
+        "auto": "Automático",
+        "blocked": "Bloqueado"
+      },
+      "annotation": {
+        "readOnly": "somente leitura",
+        "destructive": "destrutiva",
+        "openWorld": "mundo aberto"
+      },
+      "deleteTitle": "Excluir {{name}}?",
+      "deleteDescription": "Isto remove as configurações do servidor e o token dele deste navegador.",
+      "confirmDelete": "Excluir",
+      "form": {
+        "name": "Nome",
+        "url": "URL",
+        "urlInvalid": "Informe uma URL válida.",
+        "urlInsecure": "Use https://. http:// simples só funciona para localhost e 127.0.0.1.",
+        "token": "Token bearer (opcional)",
+        "tokenKeep": "Deixe vazio para manter o token atual",
+        "remember": "Lembrar neste navegador",
+        "rememberNote": "Caso contrário, o token dura só esta sessão do navegador.",
+        "test": "Testar conexão",
+        "testing": "Testando…",
+        "testOk_one": "Conectado: {{count}} ferramenta em {{latency}} ms.",
+        "testOk_other": "Conectado: {{count}} ferramentas em {{latency}} ms.",
+        "saveFailed": "Não foi possível salvar: {{message}}"
+      }
     }
   },
   "versions": {

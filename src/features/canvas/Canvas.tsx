@@ -44,14 +44,14 @@ import {
   useElementPresetLibrary,
 } from "@/features/element-presets";
 import { AssistantUIChatPanel, FloatingChatButton } from "@/features/llm/components";
-import { useLLMChat } from "./chat";
-import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
+import { useLLMStore } from "@/features/llm";
+import { useProvideChatToolHost } from "./chat";
+import { PendingNodeToolbars } from "./selection-actions/PendingNodeToolbar";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
 import { useResolvedComponents } from "@/features/diagram";
 import { isPanelComponent, isApiGroupComponent, isTextComponent } from "@/features/diagram";
 import { DiagramSurface, writePolicy } from "./core";
 import { useCanvasSvgFileDrop } from "./hooks/useCanvasSvgFileDrop";
-import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
 
 /**
  * Phase 4 — selection epic.
@@ -93,44 +93,10 @@ import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
  * Shift+drag-marquee.
  */
 
-/* ── Memoized sub-component ─────────────────────────────────────────────── */
-import type { PendingNodePreview } from "@/features/llm";
-
-interface PendingNodeToolbarsProps {
-  pendingNodeIds: string[];
-  pendingPreviews: PendingNodePreview[];
-  onKeep: (suggestionId: string) => void;
-  onDiscard: (suggestionId: string) => void;
-}
-
-const PendingNodeToolbars = React.memo(function PendingNodeToolbars({
-  pendingNodeIds,
-  pendingPreviews,
-  onKeep,
-  onDiscard,
-}: PendingNodeToolbarsProps) {
-  return (
-    <>
-      {pendingNodeIds.map((nodeId) => {
-        const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
-        if (!suggestionId) return null;
-        return (
-          <PendingNodeToolbar
-            key={nodeId}
-            nodeId={nodeId}
-            suggestionId={suggestionId}
-            onKeep={onKeep}
-            onDiscard={onDiscard}
-          />
-        );
-      })}
-    </>
-  );
-});
-/* ───────────────────────────────────────────────────────────────────────── */
-
 const Canvas = (props: CanvasProps = {}) => {
   useFlowSewNotices();
+  // The chat mounted below reaches the diagram and the layout engine through this.
+  useProvideChatToolHost();
   useSharedRefNotices();
   const nodeTypes = useNodeTypes();
   const [templateNodeId, setTemplateNodeId] = useState<string | null>(null);
@@ -190,18 +156,6 @@ const Canvas = (props: CanvasProps = {}) => {
     importDrawioResult: actions.importDrawioResult,
     setSelectedNodeIds: visualState.setSelectedNodeIds,
   });
-  const {
-    pendingPreviews,
-    accept: acceptSuggestion,
-    reject: rejectSuggestion,
-  } = useLLMChat({
-    selectedNodeIds: visualState.selectedNodeIds,
-    selectedNodeId: visualState.selectedNodeId,
-  });
-  const pendingNodeIds = useMemo(
-    () => Array.from(getPendingNodeIds(pendingPreviews)),
-    [pendingPreviews],
-  );
   const { isFlowActive } = interactionMode;
   const { setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId } = visualState;
   const selectInsertedNode = useCallback(
@@ -268,16 +222,6 @@ const Canvas = (props: CanvasProps = {}) => {
   useEffect(() => {
     setShowVersions(false);
   }, [diagram?.id, setShowVersions]);
-
-  const accept = useCallback(
-    (suggestionId: string) => {
-      acceptSuggestion(suggestionId);
-      setTimeout(() => {
-        reactFlowInstance.setNodes((previousNodes) => previousNodes.map((node) => ({ ...node })));
-      }, 50);
-    },
-    [acceptSuggestion, reactFlowInstance],
-  );
 
   // QuickActionsBar context: detect panel-with-children vs child-of-panel
   const resolvedComponents = useResolvedComponents();
@@ -513,12 +457,7 @@ const Canvas = (props: CanvasProps = {}) => {
                     if (node) eventHandlers.onNodeClick?.({} as never, node);
                   }}
                 />
-                <PendingNodeToolbars
-                  pendingNodeIds={pendingNodeIds}
-                  pendingPreviews={pendingPreviews}
-                  onKeep={accept}
-                  onDiscard={rejectSuggestion}
-                />
+                <PendingNodeToolbars />
                 {/* QuickActions toolbar for single node selection. Gated on the same
               flag as the element panel: the bar edits the element, so it has no
               place in a reading or a comparison — and a selection made before

@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow, isToday, isYesterday, format } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
 import type { Locale } from "date-fns";
-import { useLLMChat } from "@/features/canvas/chat";
+import type { TFunction } from "i18next";
+import { useLLMChat } from "@/features/llm/hooks/useLLMChat";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { ThreadRenameControl } from "./ThreadRenameControl";
-import type { ConversationThread } from "@/features/llm";
+import { countConversationMessages, type ConversationThread } from "@/features/llm";
 
 interface ThreadDrawerProps {
   open: boolean;
@@ -24,7 +25,11 @@ type ThreadGroup = {
   items: ConversationThread[];
 };
 
-function groupThreadsByDate(threads: ConversationThread[], locale: Locale): ThreadGroup[] {
+function groupThreadsByDate(
+  threads: ConversationThread[],
+  locale: Locale,
+  t: TFunction,
+): ThreadGroup[] {
   const today: ConversationThread[] = [];
   const yesterday: ConversationThread[] = [];
   const earlier = new Map<string, ConversationThread[]>();
@@ -47,8 +52,8 @@ function groupThreadsByDate(threads: ConversationThread[], locale: Locale): Thre
   }
 
   const groups: ThreadGroup[] = [];
-  if (today.length) groups.push({ label: "Today", items: today });
-  if (yesterday.length) groups.push({ label: "Yesterday", items: yesterday });
+  if (today.length) groups.push({ label: t("llmChat.threads.today"), items: today });
+  if (yesterday.length) groups.push({ label: t("llmChat.threads.yesterday"), items: yesterday });
   for (const [label, items] of earlier) {
     if (items.length) groups.push({ label, items });
   }
@@ -66,6 +71,8 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
   const activeDiagram = useActiveDiagramModel();
 
   const {
+    messages,
+    isLoading,
     threads,
     activeThread,
     createThread,
@@ -122,8 +129,8 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
   }, [threads, search]);
 
   const grouped = useMemo(
-    () => groupThreadsByDate(filteredThreads, locale),
-    [filteredThreads, locale],
+    () => groupThreadsByDate(filteredThreads, locale, t),
+    [filteredThreads, locale, t],
   );
 
   return (
@@ -172,13 +179,9 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("llmChat.threads.searchPlaceholder", {
-                defaultValue: "Search…",
-              })}
+              placeholder={t("llmChat.threads.searchPlaceholder")}
               className="h-8 pl-8 text-xs"
-              aria-label={t("llmChat.threads.searchPlaceholder", {
-                defaultValue: "Search…",
-              })}
+              aria-label={t("llmChat.threads.searchPlaceholder")}
             />
           </div>
         </div>
@@ -206,7 +209,7 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
             </p>
           ) : filteredThreads.length === 0 ? (
             <p className="px-2 py-6 text-center text-xs text-muted-foreground">
-              {t("llmChat.threads.noMatches", { defaultValue: "No conversations match." })}
+              {t("llmChat.threads.noMatches")}
             </p>
           ) : (
             <div className="space-y-3">
@@ -240,7 +243,14 @@ export function ThreadDrawer({ open, onClose }: ThreadDrawerProps) {
                           >
                             <span className="line-clamp-1 w-full font-medium">{thread.title}</span>
                             <span className="text-[10px] text-muted-foreground">
-                              {thread.messages.length} · {timeAgo}
+                              {t("llmChat.threads.messageCount", {
+                                // The active thread's live messages lead its
+                                // persisted snapshot while a request runs.
+                                count: isActive
+                                  ? countConversationMessages(messages, isLoading)
+                                  : thread.messages.length,
+                              })}{" "}
+                              · {timeAgo}
                             </span>
                           </button>
 

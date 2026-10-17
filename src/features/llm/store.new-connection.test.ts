@@ -37,11 +37,8 @@ beforeEach(() => {
     activeThreadId: "",
     messages: [],
     pendingSuggestions: [],
-    pendingPreviews: [],
-    pendingAnalysis: null,
     streamingContent: null,
     isLoading: false,
-    error: null,
   });
 });
 
@@ -50,7 +47,7 @@ afterEach(() => {
 });
 
 describe("'Nova conexão' does not overwrite the active one", () => {
-  it("preserves the active connection when creating a new one (modeled after the LLMSettings flow)", () => {
+  it("preserves the active connection when creating a new one (modeled after the LLMSettings flow)", async () => {
     // 1. Seed storage with a single seeded connection, just like the legacy
     //    migration does on first load.
     const seeded = useLLMStore.getState().createConnection({
@@ -106,7 +103,7 @@ describe("'Nova conexão' does not overwrite the active one", () => {
     handleSave("claude-opus-4-8", "Default3");
 
     // 5. Re-read from localStorage exactly like a remount would.
-    const refreshed = loadConnections();
+    const refreshed = await loadConnections();
     expect(refreshed.connections).toHaveLength(2);
     const names = refreshed.connections.map((entry) => entry.name).sort();
     expect(names).toEqual(["Default2", "Default3"]);
@@ -114,7 +111,7 @@ describe("'Nova conexão' does not overwrite the active one", () => {
     expect(refreshed.connections.find((entry) => entry.id === seeded.id)?.name).toBe("Default2");
   });
 
-  it("DOES overwrite when the user is genuinely editing (not creating)", () => {
+  it("DOES overwrite when the user is genuinely editing (not creating)", async () => {
     const seeded = useLLMStore.getState().createConnection({
       name: "Original",
       mode: "direct",
@@ -132,7 +129,7 @@ describe("'Nova conexão' does not overwrite the active one", () => {
       mode: "direct",
     });
 
-    const refreshed = loadConnections();
+    const refreshed = await loadConnections();
     expect(refreshed.connections).toHaveLength(1);
     expect(refreshed.connections[0]?.name).toBe("Edited");
   });

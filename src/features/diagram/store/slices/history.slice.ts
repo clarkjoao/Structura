@@ -42,16 +42,21 @@ export function pushHistoryCheckpoint(state: AppState): boolean {
   return true;
 }
 
-/** Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS). */
-export function pushHistory(state: AppState, mutationType: HistoryMutationKind = "soft"): void {
+/**
+ * Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS).
+ * Returns whether a checkpoint was recorded.
+ */
+export function pushHistory(state: AppState, mutationType: HistoryMutationKind = "soft"): boolean {
   const d = getActiveDiagram(state);
-  if (!d) return;
-  if (Date.now() - state._lastUndoRedoTimestamp < UNDO_REDO_COOLDOWN_MS) return;
+  if (!d) return false;
+  if (Date.now() - state._lastUndoRedoTimestamp < UNDO_REDO_COOLDOWN_MS) return false;
   if (mutationType !== STRUCTURAL_MUTATION_MARKER) {
     const last = state.past[state.past.length - 1];
-    if (last?.diagramId === d.id && Date.now() - last.timestamp < HISTORY_COALESCE_MS) return;
+    if (last?.diagramId === d.id && Date.now() - last.timestamp < HISTORY_COALESCE_MS) {
+      return false;
+    }
   }
-  pushHistoryCheckpoint(state);
+  return pushHistoryCheckpoint(state);
 }
 
 export const historySlice = (

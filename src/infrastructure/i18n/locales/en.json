@@ -539,13 +539,23 @@
     "openSettings": "Open LLM settings",
     "close": "Close chat",
     "inputPlaceholder": "Type your message...",
-    "submitHint": "Use Cmd/Ctrl + Enter to send",
+    "inputLabel": "Message to the assistant",
+    "submitHint": "Use Enter to send, Shift+Enter to break the line",
+    "sendHint": "Enter to send · Shift+Enter for new line",
     "sending": "Sending...",
     "send": "Send",
     "scrollToBottom": "New message",
     "showMore": "Show more",
     "showLess": "Show less",
     "generating": "Generating response...",
+    "queue": {
+      "label_one": "{{count}} queued",
+      "label_other": "{{count}} queued",
+      "removeOne": "Remove from queue",
+      "clearAll": "Clear queue",
+      "attachmentOnly": "(only attachments)",
+      "full": "The queue is full ({{max}} messages). Wait for the assistant to finish before sending more."
+    },
     "settings": {
       "title": "LLM Settings",
       "mode": "Mode",
@@ -554,7 +564,7 @@
       "provider": "Provider",
       "providerOpenAI": "OpenAI",
       "providerAnthropic": "Anthropic",
-      "providerCustom": "Custom (OpenAI-compatible)",
+      "providerCustom": "Custom",
       "apiKey": "API key",
       "apiKeyRequired": "Enter your {{provider}} API key",
       "proxyUrl": "Proxy URL",
@@ -579,14 +589,34 @@
         "baseUrlInvalid": "Enter a URL that starts with http:// or https://",
         "authHeader": "Auth header name",
         "authHeaderHint": "Defaults to \"Authorization\" (sends \"Bearer &lt;token&gt;\").",
+        "authHeaderAnthropicHint": "Defaults to \"x-api-key\". Anthropic endpoints also accept anthropic-version in Extra headers.",
         "apiKeyLabel": "API key / token",
+        "protocolLabel": "Protocol",
+        "protocolOpenAI": "OpenAI-compatible",
+        "protocolAnthropic": "Anthropic-compatible",
+        "protocolNote": "Anthropic endpoints use /v1/messages with x-api-key. OpenAI endpoints use /chat/completions with a bearer token.",
         "advanced": "Advanced",
         "extraHeaders": "Extra request headers (JSON)",
         "extraHeadersHint": "Merged into the request headers. Example: {\"X-Org\":\"acme\"}",
         "extraBodyParams": "Extra body parameters (JSON)",
         "extraBodyParamsHint": "Merged into the request body. Example: {\"temperature\":0.2}",
         "extraJsonInvalid": "Invalid JSON. Fix before saving."
-      }
+      },
+      "subtitle": "Configure your AI provider and model",
+      "connectionsHint": "Manage saved provider connections",
+      "defaultConnectionName": "Default",
+      "fallbackConnectionName": "Connection",
+      "connectionCopyName": "{{name}} (copy)",
+      "proxyUrlHint": "Any OpenAI-compatible endpoint; requests go to <URL>/chat/completions.",
+      "testConnection": "Test connection",
+      "testing": "Testing…",
+      "testConnected_one": "Connected · {{count}} model · {{latency}} ms",
+      "testConnected_other": "Connected · {{count}} models · {{latency}} ms",
+      "testPresets_one": "{{count}} preset model; the key is checked on the first message",
+      "testPresets_other": "{{count}} preset models; the key is checked on the first message",
+      "tabConnections": "Connections",
+      "tabSkills": "Skills",
+      "tabMcp": "MCP servers"
     },
     "suggestion": {
       "accept": "Accept",
@@ -599,17 +629,46 @@
         "removeEdge": "Remove edge {{edgeId}}",
         "insertPattern": "Insert pattern {{patternId}}",
         "autoLayout": "Auto layout diagram",
-        "getTags": "List diagram tags"
+        "connectionFallback": "connection",
+        "unknown": "Unknown action"
       },
-      "defaultTitle": "Suggested changes",
+      "defaultTitle": "Suggested change",
       "noChanges": "no changes",
       "accepted": "Accepted",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "changeCount_one": "{{count}} change",
+      "changeCount_other": "{{count}} changes",
+      "oneUndoStep": "Shown on the canvas · Accept keeps it as one undo step",
+      "skipped": {
+        "missingNode": "Skipped: element no longer exists",
+        "missingEdge": "Skipped: connection no longer exists",
+        "edgeNotAllowed": "Skipped: this element cannot start a connection",
+        "noDiagram": "Skipped: no diagram open",
+        "unknownPattern": "Skipped: pattern not found"
+      }
     },
     "mention": {
-      "noResults": "No matching nodes or edges",
       "removeTag": "Remove mention {{label}}",
-      "pickerLabel": "Mention picker"
+      "selectionChip": "Selection · {{label}}",
+      "section": {
+        "selection": "Selection",
+        "nodes": "Nodes",
+        "edges": "Connections",
+        "flows": "Flows",
+        "diagram": "Diagram"
+      },
+      "selectionCount_one": "{{count}} node",
+      "selectionCount_other": "{{count}} nodes",
+      "secondary": {
+        "selected_one": "{{count}} node selected",
+        "selected_other": "{{count}} nodes selected",
+        "route": "{{source}} → {{target}}",
+        "steps_one": "{{count}} step",
+        "steps_other": "{{count}} steps",
+        "diagramSize": "{{nodes}} nodes · {{edges}} connections"
+      },
+      "wholeDiagram": "Whole diagram",
+      "more": "+{{count}} more"
     },
     "selector": {
       "proxy": "Proxy",
@@ -625,7 +684,14 @@
       "delete": "Delete",
       "deleteConfirm": "Delete this conversation? It cannot be undone.",
       "active": "Current",
-      "empty": "No past conversations in this diagram yet."
+      "empty": "No past conversations in this diagram yet.",
+      "searchPlaceholder": "Search…",
+      "noMatches": "No conversations match.",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "messageCount_one": "{{count}} message",
+      "messageCount_other": "{{count}} messages",
+      "defaultTitle": "Conversation · {{date}}"
     },
     "floatingButton": {
       "open": "Open chat assistant",
@@ -636,36 +702,21 @@
       "discard": "Discard"
     },
     "error": {
-      "auth": "Chave de API inválida. Verifique suas configurações.",
-      "rate_limit": "Limite de requisições atingido. Aguarde alguns segundos.",
-      "cors": "Chamada bloqueada pelo navegador. Use o modo Proxy nas configurações.",
-      "corsCustom": "O endpoint recusou a requisição do navegador (CORS). Verifique se o endpoint libera requisições de origens do browser — o Structura não consegue contornar CORS no servidor do provedor.",
-      "network": "Sem conexão com o servidor. Verifique sua internet.",
-      "model": "Modelo não encontrado. Verifique o nome do modelo nas configurações.",
-      "server": "Erro no servidor do provedor. Tente novamente em instantes.",
-      "timeout": "A requisição demorou muito. Tente novamente.",
-      "unknown": "Erro inesperado. Tente novamente.",
+      "auth": "Invalid API key. Check your settings.",
+      "rate_limit": "Rate limit reached. Wait a few seconds.",
+      "corsCustom": "The endpoint refused the browser request (CORS). Check that the endpoint allows requests from browser origins — Structura cannot work around CORS on the provider's server.",
+      "server": "The provider's server returned an error. Try again shortly.",
+      "timeout": "The request took too long. Try again.",
+      "unknown": "Unexpected error. Try again.",
       "action": {
-        "settings": "Abrir configurações",
-        "retry": "Tentar novamente"
-      }
-    },
-    "analysis": {
-      "summary": "Executive summary",
-      "findings": "Findings",
-      "strengths": "Strengths",
-      "nextSteps": "Next steps",
-      "dismiss": "Dismiss analysis",
-      "recommendation": "Recommendation",
-      "criticalCount": "{{count}} critical",
-      "highCount": "{{count}} high",
-      "severity": {
-        "critical": "Critical",
-        "high": "High",
-        "medium": "Medium",
-        "low": "Low",
-        "info": "Info"
-      }
+        "settings": "Open settings",
+        "retry": "Try again"
+      },
+      "networkOrCors": "Could not reach the provider. Check your connection; if it keeps failing, the browser may be blocking the call (CORS) — try Proxy mode in settings.",
+      "proxyUnreachable": "Could not reach the LLM proxy. Check that it is running, that its URL is correct and that it allows requests from this site.",
+      "proxyRejected": "The LLM proxy refused the request ({{status}}). Check the credentials configured on the proxy.",
+      "proxyEndpointNotFound": "The LLM proxy has no chat endpoint at this URL (404). Check the proxy URL.",
+      "modelNotFound": "Model not found. Check the model name in settings."
     },
     "suggestions": {
       "title": "SUGGESTIONS",
@@ -682,59 +733,231 @@
         "observability": "Identify observability gaps"
       }
     },
-    "ir": {
-      "commandHint": "Describe the diagram you want after the command, for example: /generate C4 container diagram for an e-commerce with microservices.",
-      "export": "Download the generated IR as JSON",
-      "invalid": "The model returned a diagram that does not match the IR schema:",
-      "moreIssues": "and {{count}} more problem(s).",
-      "applied": "Generated {{nodeCount}} node(s) and {{edgeCount}} connection(s) — review and accept below.",
-      "noActiveDiagram": "Open a diagram before generating one.",
-      "notApplied": "The diagram was generated but could not be applied to the canvas.",
-      "truncated": "The diagram was cut off: the response hit the model's output limit before it finished.",
-      "issue": {
-        "responseTruncated": "Try again describing fewer elements, or generate the diagram in parts — one boundary or subsystem at a time.",
-        "invalidJson": "The response is not valid JSON.",
-        "notAnObject": "The response is not a JSON object.",
-        "invalidDiagramType": "Unknown diagram type: \"{{value}}\".",
-        "nodesNotArray": "\"nodes\" is not a list.",
-        "edgesNotArray": "\"edges\" is not a list.",
-        "emptyNodes": "The diagram has no nodes.",
-        "nodeNotAnObject": "Node at position {{index}} is not an object.",
-        "nodeMissingId": "Node at position {{index}} has no id.",
-        "nodeDuplicateId": "Duplicate node id: \"{{id}}\".",
-        "nodeMissingName": "Node \"{{id}}\" has no name.",
-        "nodeInvalidSemanticType": "Node \"{{id}}\" uses an unknown semanticType: \"{{value}}\".",
-        "nodeInvalidParentId": "Node \"{{id}}\" has an invalid parentId.",
-        "nodeInvalidBoundary": "Node \"{{id}}\" has a non-boolean isBoundary.",
-        "nodeParentNotFound": "Node \"{{id}}\" points to a parent that does not exist: \"{{parentId}}\".",
-        "nodeSelfParent": "Node \"{{id}}\" is its own parent.",
-        "containmentCycle": "Containment cycle: {{ids}}.",
-        "edgeNotAnObject": "Edge at position {{index}} is not an object.",
-        "edgeMissingId": "Edge at position {{index}} has no id.",
-        "edgeDuplicateId": "Duplicate edge id: \"{{id}}\".",
-        "edgeSourceNotFound": "Edge \"{{id}}\" starts at a node that does not exist: \"{{ref}}\".",
-        "edgeTargetNotFound": "Edge \"{{id}}\" ends at a node that does not exist: \"{{ref}}\"."
-      }
-    },
     "slash": {
-      "title": "Commands",
-      "analyze": "Analyze diagram",
-      "analyzeDesc": "Review structure and suggest improvements",
-      "analyzePrompt": "Analyze the current diagram and suggest improvements.",
-      "export": "Export IR",
-      "exportDesc": "Download intermediate representation as JSON",
-      "clear": "Clear chat",
-      "clearDesc": "Delete all history for this conversation",
       "clearConfirm": "Start a new conversation? Current chat will be saved in history.",
-      "copy": "Copy conversation",
-      "copyDesc": "Copy entire conversation to clipboard",
       "copied": "Conversation copied!",
       "copyFailed": "Failed to copy.",
       "noMessages": "No messages to copy.",
       "newChat": "New conversation started.",
-      "exported": "IR exported!",
-      "noIR": "No IR generated yet. Use /generate first.",
-      "analyzing": "Analyzing…"
+      "cleared": "Chat cleared."
+    },
+    "headerSubtitle": "Using {{name}}",
+    "emptySubtitle": "How can I help you shape this diagram?",
+    "disclaimer": "AI can make mistakes. Verify important changes.",
+    "thinking": "Thinking",
+    "parseFallback": "[The response could not be processed. Try again.]",
+    "previousSuggestion": "[previous diagram suggestion]",
+    "menu": {
+      "mentionLabel": "Diagram elements",
+      "commandLabel": "Commands",
+      "empty": "No matches",
+      "openMention": "Mention a diagram element (@)",
+      "openCommand": "Insert a command (/)",
+      "hintNavigate": "↑↓ navigate",
+      "hintChoose": "↵ choose",
+      "hintComplete": "Tab complete",
+      "hintClose": "Esc close"
+    },
+    "connectionBanner": {
+      "message": "Configure a provider to start the chat.",
+      "configure": "Configure"
+    },
+    "copyExport": {
+      "title": "Conversation Export",
+      "user": "You",
+      "assistant": "Assistant",
+      "tool": "Tool",
+      "error": "Error",
+      "suggestionUnavailable": "Suggested change (no longer available)"
+    },
+    "toolCall": {
+      "status": {
+        "running": "Running",
+        "done": "Done",
+        "error": "Failed",
+        "awaitingApproval": "Awaiting approval",
+        "denied": "Denied"
+      },
+      "showDetails": "Show details for {{name}}",
+      "hideDetails": "Hide details for {{name}}",
+      "arguments": "Arguments",
+      "result": "Result",
+      "error": "Error",
+      "mcpBadge": "MCP · {{server}}"
+    },
+    "markdown": {
+      "copyCode": "Copy code"
+    },
+    "stop": "Stop generating",
+    "stopped": "Stopped",
+    "messageActions": {
+      "copy": "Copy message",
+      "regenerate": "Regenerate response"
+    },
+    "truncated": "Reply cut off at the token limit",
+    "modelPicker": {
+      "label": "Model"
+    },
+    "command": {
+      "section": {
+        "commands": "Commands"
+      },
+      "remove": "Remove /{{name}}",
+      "review": {
+        "label": "Review the architecture",
+        "description": "Findings by severity, with recommendations"
+      },
+      "explain": {
+        "label": "Explain the diagram or the selection",
+        "description": "What each element does and how data flows"
+      },
+      "wellArch": {
+        "label": "Evaluate with Well-Architected",
+        "description": "Findings across the six AWS pillars"
+      },
+      "blastRadius": {
+        "label": "Impact if a component fails",
+        "description": "What breaks, what degrades, how to contain it"
+      },
+      "clear": {
+        "label": "New conversation (the current one goes to history)",
+        "description": "Starts a new conversation"
+      },
+      "copy": {
+        "label": "Copy the conversation as Markdown",
+        "description": "Copies the whole conversation"
+      }
+    },
+    "skills": {
+      "section": "Skills",
+      "source": {
+        "workspace": "Workspace",
+        "local": "Local",
+        "builtin": "Built-in"
+      },
+      "toolCount_one": "{{count}} tool",
+      "toolCount_other": "{{count}} tools",
+      "allTools": "all tools",
+      "removeChip": "Remove skill {{name}}",
+      "unavailableChip": "{{name}} (unavailable)",
+      "unavailableHint": "This skill no longer exists. Retrying sends the message without it.",
+      "settings": {
+        "title": "Skills",
+        "hint": "Reusable instructions you turn on from the / menu.",
+        "workspaceHint": "Connect a workspace folder to share skills with your team in .structura/skills/.",
+        "new": "New skill",
+        "editTitle": "Edit skill",
+        "import": "Import .md",
+        "importTo": "Import to:",
+        "importDone_one": "Imported {{count}} skill.",
+        "importDone_other": "Imported {{count}} skills.",
+        "importFailed": "{{file}}: {{reason}}",
+        "empty": "No skills yet.",
+        "enable": "Enable {{name}}",
+        "edit": "Edit",
+        "export": "Export as .md",
+        "delete": "Delete",
+        "warningUnknownTools": "Unknown tools are ignored: {{names}}.",
+        "warningUnknownKeys": "Unknown keys are ignored: {{keys}}.",
+        "unknownTool": "No tool has this name; it is ignored.",
+        "problemsTitle": "Files with errors",
+        "problemLine": "Line {{line}}: {{reason}}",
+        "unreadable": "Could not read the file: {{message}}",
+        "showRaw": "Fix the text",
+        "filePath": "Fix it in the file: {{path}}",
+        "rawTitle": "Skill text",
+        "saveTo": "Save to",
+        "name": "Name",
+        "description": "When to use",
+        "instructions": "Instructions",
+        "charCount": "{{count}}/{{max}}",
+        "tools": "Allowed tools",
+        "toolsAll": "None selected: all tools are allowed.",
+        "addTool": "Add tool",
+        "removeTool": "Remove {{name}}",
+        "toolKind": {
+          "read": "read",
+          "write": "write"
+        },
+        "writeNote": "Write tools never change the diagram directly: their changes always go through Accept/Reject.",
+        "saveFailed": "Could not save: {{message}}",
+        "deleteFailed": "Could not delete: {{message}}",
+        "deleteTitle": "Delete {{name}}?",
+        "deleteLocal": "This removes the skill from this browser.",
+        "deleteWorkspace": "This deletes the file {{path}} from the workspace folder, for everyone who uses it.",
+        "confirmDelete": "Delete"
+      },
+      "error": {
+        "fileTooLarge": "The file is larger than {{max}} bytes.",
+        "missingFrontmatter": "The file must start with a front matter block between --- lines.",
+        "unclosedFrontmatter": "The front matter block is not closed with ---.",
+        "invalidLine": "Expected \"key: value\" or a list item.",
+        "duplicateKey": "\"{{field}}\" appears more than once.",
+        "invalidValue": "This value is not valid.",
+        "invalidList": "This list is not valid.",
+        "missingField": "\"{{field}}\" is required.",
+        "tooLong": "\"{{field}}\" is longer than {{max}} characters."
+      }
+    },
+    "mcp": {
+      "title": "MCP servers",
+      "hint": "Remote tools the assistant can call from this browser (Streamable HTTP). Calls run without asking; block a tool to keep it away from the model. MCP tools never change the diagram.",
+      "add": "Add server",
+      "editTitle": "Edit server",
+      "empty": "No MCP servers yet.",
+      "enable": "Enable {{name}}",
+      "edit": "Edit",
+      "delete": "Delete",
+      "showTools": "Show the tools of {{name}}",
+      "enterToken": "Enter token",
+      "status": {
+        "connected": "Connected",
+        "connecting": "Connecting",
+        "error": "Error",
+        "disconnected": "Not connected"
+      },
+      "error": {
+        "cors": "The browser blocked the request. The server must allow this app's origin through CORS: {{origin}} (and the Authorization header when you use a token).",
+        "auth": "The server refused access. Check the token.",
+        "notFound": "Nothing at this URL (HTTP 404). Check the path of the server's MCP endpoint.",
+        "protocol": "The server did not answer as an MCP server over Streamable HTTP, or uses an unsupported protocol version.",
+        "network": "Could not reach the server, or it failed. Try again later.",
+        "tokenMissing": "The token was only kept for the last browser session. Enter it again."
+      },
+      "toolsTitle_one": "{{count}} tool",
+      "toolsTitle_other": "{{count}} tools",
+      "refresh": "Refresh",
+      "noTools": "This server lists no tools.",
+      "toolsWhenConnected": "Tools appear once the server is connected.",
+      "unsupportedSchema": "unsupported schema",
+      "toolMode": "Mode for {{name}}",
+      "mode": {
+        "auto": "Auto",
+        "blocked": "Blocked"
+      },
+      "annotation": {
+        "readOnly": "read-only",
+        "destructive": "destructive",
+        "openWorld": "open world"
+      },
+      "deleteTitle": "Delete {{name}}?",
+      "deleteDescription": "This removes the server's settings and its token from this browser.",
+      "confirmDelete": "Delete",
+      "form": {
+        "name": "Name",
+        "url": "URL",
+        "urlInvalid": "Enter a valid URL.",
+        "urlInsecure": "Use https://. Plain http:// only works for localhost and 127.0.0.1.",
+        "token": "Bearer token (optional)",
+        "tokenKeep": "Leave empty to keep the current token",
+        "remember": "Remember on this browser",
+        "rememberNote": "Otherwise the token lasts for this browser session only.",
+        "test": "Test connection",
+        "testing": "Testing…",
+        "testOk_one": "Connected: {{count}} tool in {{latency}} ms.",
+        "testOk_other": "Connected: {{count}} tools in {{latency}} ms.",
+        "saveFailed": "Could not save: {{message}}"
+      }
     }
   },
   "versions": {

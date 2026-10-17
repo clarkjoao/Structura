@@ -2,19 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ChevronDown,
-  Download,
-  History,
-  MessageSquarePlus,
-  Plus,
-  Settings,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { ChevronDown, History, MessageSquarePlus, Settings, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLLMStore } from "@/features/llm";
-import { useLLMChat } from "@/features/canvas/chat";
+import { useLLMChat } from "@/features/llm/hooks/useLLMChat";
 import {
   AssistantRuntimeProvider,
   ThreadPrimitive,
@@ -25,13 +15,16 @@ import { AssistantUIComposer } from "./AssistantUIComposer";
 import { ThreadDrawer } from "./ThreadDrawer";
 import { LLMSelector } from "./LLMSelector";
 import { LLMSettings } from "./LLMSettings";
-import { AnalysisPanel } from "@/features/canvas/chat";
-import { buildContextualSuggestions, downloadIR, getLLMErrorI18nKey } from "@/features/llm";
-import type { ChatSuggestion } from "@/features/llm/suggestions";
+import { isUsableConnection } from "@/features/llm/llm-storage";
+import { commandRegistry } from "@/features/llm/commands/builtins";
+import type { PromptCommand } from "@/features/llm/commands/registry";
+import { ChatActionsContext, type ChatActions } from "./chat-actions";
 import { useActiveDiagramModel } from "@/features/diagram";
+import { useResolvedDiagram } from "@/features/llm/hooks/useResolvedDiagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
-import { SuggestionCard } from "./SuggestionCard";
 import { TypingIndicator } from "./TypingIndicator";
+import { useSkillStore } from "@/features/llm/skills/skill-store";
+import { useMcpStore } from "@/features/llm/mcp/mcp-store";
 
 interface AssistantUIChatPanelProps {
   onClose: () => void;
@@ -77,29 +70,60 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   const [showThreadDrawer, setShowThreadDrawer] = useState(false);
 
   const activeDiagram = useActiveDiagramModel();
-  const lastGeneratedIR = useLLMStore((s) => s.lastGeneratedIR);
-
-  const adapter = useAssistantUIAdapter();
-  const runtime = useExternalStoreRuntime(adapter);
+  const resolvedDiagram = useResolvedDiagram();
 
   const {
     messages,
     send,
+    cancel,
+    rerun,
     isLoading,
     streamingContent,
     pendingSuggestions,
-    pendingAnalysis,
-    dismissPendingAnalysis,
-    error,
+    queuedMessages,
+    removeQueuedMessage,
     activeThread,
+    activeConnection,
+    config,
     createThread,
-    accept,
-    reject,
-    clearHistory,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
+
+  const selectedNodeIdList = useMemo(() => Array.from(selectedNodeIds), [selectedNodeIds]);
+
+  // Skill files may have changed outside the app (git pull, an editor) since
+  // the panel was last open.
+  useEffect(() => {
+    void useSkillStore.getState().load();
+  }, []);
+
+  // MCP sessions live while the panel is open: connect enabled servers now,
+  // close every session when it closes (page unload is handled by the store).
+  useEffect(() => {
+    void useMcpStore.getState().connectAll();
+    return () => {
+      void useMcpStore.getState().disconnectAll();
+    };
+  }, []);
 
   // Empty state is rendered *without* creating a thread — no auto-persistence.
   const hasMessages = messages.length > 0;
+
+  // The slice the assistant-ui adapter needs. Built once and stable across
+  // renders unless its inputs change, so the adapter is cheap to recompute.
+  const adapterDeps = useMemo(
+    () => ({ send, cancel, rerun, messages, isLoading, streamingContent, pendingSuggestions }),
+    [send, cancel, rerun, messages, isLoading, streamingContent, pendingSuggestions],
+  );
+  const adapter = useAssistantUIAdapter(adapterDeps);
+  const runtime = useExternalStoreRuntime(adapter);
+
+  // Command suggestions the empty state shows. Filtered by each command's
+  // `when(ctx)` for the active selection/diagram. Up to 4 rows.
+  const commandSuggestions = useMemo(
+    () =>
+      commandRegistry.suggest({ diagram: resolvedDiagram, selectionIds: selectedNodeIdList }, 4),
+    [resolvedDiagram, selectedNodeIdList],
+  );
 
   // ── Skeleton: briefly shown when switching to a thread that has no
   //    messages in memory yet (IndexedDB fetch is in-flight).
@@ -166,7 +190,10 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   // ── Cmd+K inside the chat focuses the composer. Canvas owns Cmd+K globally
   // (command palette) on /model, so only handle it when the event lands in this panel.
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const composerRef = useRef<{ focusTextarea: () => void } | null>(null);
+  const composerRef = useRef<{
+    focusTextarea: () => void;
+    setCommand: (command: PromptCommand) => void;
+  } | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -181,17 +208,39 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  const contextualSuggestions = useMemo(
-    () => buildContextualSuggestions(activeDiagram ?? null),
-    [activeDiagram],
-  );
-  const diagramName = activeDiagram?.name ?? "";
-
+  // Without a usable connection a request can only fail, so open the settings
+  // instead. Returns whether the message was sent, so the composer keeps the
+  // draft when it was not.
   const handleSend = useCallback(
-    async (text: string, mentions: Parameters<typeof send>[1]) => {
-      await send(text, mentions);
+    async (
+      text: string,
+      mentions: Parameters<typeof send>[1],
+      command?: Parameters<typeof send>[2],
+      skills?: Parameters<typeof send>[3],
+    ): Promise<boolean> => {
+      if (!isUsableConnection(config)) {
+        setShowSettings(true);
+        return false;
+      }
+      await send(text, mentions, command, skills);
+      return true;
     },
-    [send],
+    [config, send],
+  );
+
+  const chatActions = useMemo<ChatActions>(
+    () => ({
+      openSettings: () => setShowSettings(true),
+      rerun: (assistantMessageId) => {
+        // A retry fails the same way without a usable connection.
+        if (!isUsableConnection(config)) {
+          setShowSettings(true);
+          return;
+        }
+        void rerun(assistantMessageId);
+      },
+    }),
+    [config, rerun],
   );
 
   const handleCreateThread = useCallback(() => {
@@ -200,135 +249,98 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     }
   }, [activeDiagram, createThread]);
 
-  // Header title: prefer active thread's title; if a thread exists but is
-  // empty, fall back to the default "Diagram assistant" label so the UI
-  // doesn't surface the raw seed title ("Nova conversa") while still
-  // showing it inside the threads drawer for context.
+  // Header title: prefer the active thread's title; without one, fall back to
+  // the assistant's name. The subtitle names the active connection.
   const threadedTitle =
     activeThread && activeThread.title && activeThread.title.length > 0
       ? activeThread.title
-      : t("llmChat.headerSubtitle", {
-          defaultValue: "Diagram assistant",
-        });
+      : t("llmChat.title");
+  const connectionName = activeConnection?.name ?? "";
 
   // Show typing indicator when loading but no streaming content yet.
   const showTyping = isLoading && !streamingContent && hasMessages;
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div
-        ref={panelRef}
-        className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl"
-      >
-        {/* Header */}
-        <ChatHeader
-          title={threadedTitle}
-          diagramName={diagramName}
-          hasExportableIR={Boolean(lastGeneratedIR)}
-          onOpenThreads={() => setShowThreadDrawer(true)}
-          onCreateThread={handleCreateThread}
-          onExportIR={() => {
-            if (lastGeneratedIR) downloadIR(lastGeneratedIR);
-          }}
-          onOpenSettings={() => setShowSettings(true)}
-          onClose={onClose}
-        />
+      <ChatActionsContext.Provider value={chatActions}>
+        <div
+          ref={panelRef}
+          className="relative flex h-full w-[26rem] max-w-[92vw] flex-col overflow-hidden rounded-l-xl border-l border-border bg-card shadow-2xl"
+        >
+          {/* Header */}
+          <ChatHeader
+            title={threadedTitle}
+            connectionName={connectionName}
+            onOpenThreads={() => setShowThreadDrawer(true)}
+            onCreateThread={handleCreateThread}
+            onOpenSettings={() => setShowSettings(true)}
+            onClose={onClose}
+          />
 
-        {/* Thread drawer */}
-        <ThreadDrawer open={showThreadDrawer} onClose={() => setShowThreadDrawer(false)} />
+          {/* Thread drawer */}
+          <ThreadDrawer open={showThreadDrawer} onClose={() => setShowThreadDrawer(false)} />
 
-        {/* Messages — fixed-height scroll container */}
-        {/* min-h-0 + flex-1 are required so the scrollable viewport actually
+          {/* Messages — fixed-height scroll container */}
+          {/* min-h-0 + flex-1 are required so the scrollable viewport actually
             constrains its height instead of letting flex children grow
             indefinitely (which was the previous bug). */}
-        <div className="relative min-h-0 flex-1 overflow-hidden">
-          <ThreadPrimitive.Root className="flex h-full flex-col">
-            <ThreadPrimitive.Viewport ref={viewportRef} className="h-full w-full overflow-y-auto">
-              <div className="flex flex-col gap-3 p-4">
-                {pendingAnalysis ? (
-                  <AnalysisPanel analysis={pendingAnalysis} onDismiss={dismissPendingAnalysis} />
-                ) : null}
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <ThreadPrimitive.Root className="flex h-full flex-col">
+              <ThreadPrimitive.Viewport ref={viewportRef} className="h-full w-full overflow-y-auto">
+                <div className="flex flex-col gap-3 p-4">
+                  {showSkeleton ? (
+                    <SkeletonLoader />
+                  ) : showTyping ? (
+                    <TypingIndicator />
+                  ) : hasMessages ? (
+                    <ThreadPrimitive.Messages>
+                      {({ message }) => {
+                        if (message.role === "user") {
+                          return <UserMessageComponent />;
+                        }
+                        return <AssistantMessageComponent />;
+                      }}
+                    </ThreadPrimitive.Messages>
+                  ) : (
+                    <EmptyState
+                      commands={commandSuggestions}
+                      onSelectCommand={(command) => {
+                        composerRef.current?.setCommand(command);
+                      }}
+                    />
+                  )}
+                </div>
+              </ThreadPrimitive.Viewport>
 
-                {showSkeleton ? (
-                  <SkeletonLoader />
-                ) : showTyping ? (
-                  <TypingIndicator />
-                ) : hasMessages ? (
-                  <ThreadPrimitive.Messages>
-                    {({ message }) => {
-                      if (message.role === "user") {
-                        return <UserMessageComponent />;
-                      }
-                      return <AssistantMessageComponent />;
-                    }}
-                  </ThreadPrimitive.Messages>
-                ) : (
-                  <EmptyState
-                    diagramName={diagramName}
-                    suggestions={contextualSuggestions}
-                    onSelectSuggestion={(text) => {
-                      void send(text, []);
-                    }}
-                  />
-                )}
+              <ScrollToBottomAffordance viewportRef={viewportRef} />
+            </ThreadPrimitive.Root>
+          </div>
 
-                {messages.map((message) => {
-                  const suggestion = pendingSuggestions.find(
-                    (s) => s.messageId === message.id && s.status === "pending",
-                  );
-                  if (!suggestion) return null;
-                  return (
-                    <div key={`suggestion-${message.id}`} className="mt-1">
-                      <SuggestionCard suggestion={suggestion} onAccept={accept} onReject={reject} />
-                    </div>
-                  );
-                })}
-              </div>
-            </ThreadPrimitive.Viewport>
-
-            <ScrollToBottomAffordance viewportRef={viewportRef} />
-          </ThreadPrimitive.Root>
-        </div>
-
-        {/* Error */}
-        {error ? (
-          <div className="mx-3 mb-2 space-y-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
-            <p className="text-xs font-medium text-destructive">{t(getLLMErrorI18nKey(error))}</p>
-            {error === "auth" || error === "cors" || error === "model" ? (
-              <button
-                type="button"
-                className="text-xs text-primary underline"
-                onClick={() => setShowSettings(true)}
-              >
-                {t("llmChat.error.action.settings")}
-              </button>
+          {/* Composer */}
+          <div className="shrink-0 space-y-2 border-t border-border bg-card/60 p-3">
+            {!isUsableConnection(config) ? (
+              <ConnectionBanner onConfigure={() => setShowSettings(true)} />
             ) : null}
+            <AssistantUIComposer
+              ref={composerRef}
+              onSend={handleSend}
+              onCancel={cancel}
+              isLoading={isLoading}
+              queuedMessages={queuedMessages}
+              onRemoveQueued={removeQueuedMessage}
+              selectedNodeIds={selectedNodeIdList}
+              conversationId={activeThread?.id ?? ""}
+            />
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-[11px] text-muted-foreground">{t("llmChat.disclaimer")}</p>
+              <LLMSelector onOpenSettings={() => setShowSettings(true)} />
+            </div>
           </div>
-        ) : null}
 
-        {/* Composer */}
-        <div className="shrink-0 border-t border-border bg-card/60 p-3">
-          <AssistantUIComposer
-            ref={composerRef}
-            onSend={handleSend}
-            isLoading={isLoading}
-            onExportIR={lastGeneratedIR ? () => downloadIR(lastGeneratedIR) : undefined}
-            onClearHistory={clearHistory}
-            onDismissAnalysis={pendingAnalysis ? dismissPendingAnalysis : undefined}
-          />
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-[11px] text-muted-foreground">
-              {t("llmChat.disclaimer", {
-                defaultValue: "AI can make mistakes. Verify important changes.",
-              })}
-            </p>
-            <LLMSelector onOpenSettings={() => setShowSettings(true)} />
-          </div>
+          {/* Settings */}
+          {showSettings ? <LLMSettings onClose={() => setShowSettings(false)} /> : null}
         </div>
-
-        {/* Settings */}
-        {showSettings ? <LLMSettings onClose={() => setShowSettings(false)} /> : null}
-      </div>
+      </ChatActionsContext.Provider>
     </AssistantRuntimeProvider>
   );
 });
@@ -337,22 +349,18 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
 
 interface ChatHeaderProps {
   title: string;
-  diagramName: string;
-  hasExportableIR: boolean;
+  connectionName: string;
   onOpenThreads: () => void;
   onCreateThread: () => void;
-  onExportIR: () => void;
   onOpenSettings: () => void;
   onClose: () => void;
 }
 
 function ChatHeader({
   title,
-  diagramName,
-  hasExportableIR,
+  connectionName,
   onOpenThreads,
   onCreateThread,
-  onExportIR,
   onOpenSettings,
   onClose,
 }: ChatHeaderProps) {
@@ -368,10 +376,7 @@ function ChatHeader({
             <span className="truncate">{title}</span>
           </h3>
           <p className="truncate text-[11px] text-muted-foreground">
-            {t("llmChat.headerSubtitle", {
-              defaultValue: "Diagram assistant",
-              name: diagramName,
-            })}
+            {t("llmChat.headerSubtitle", { name: connectionName })}
           </p>
         </div>
       </div>
@@ -379,11 +384,6 @@ function ChatHeader({
         <IconButton label={t("llmChat.threads.historyAria")} onClick={onOpenThreads}>
           <History className="h-4 w-4" />
         </IconButton>
-        {hasExportableIR && (
-          <IconButton label={t("llmChat.ir.export")} onClick={onExportIR}>
-            <Download className="h-4 w-4" />
-          </IconButton>
-        )}
         <IconButton label={t("llmChat.threads.newThread")} onClick={onCreateThread}>
           <MessageSquarePlus className="h-4 w-4" />
         </IconButton>
@@ -421,12 +421,11 @@ function IconButton({ label, onClick, children }: IconButtonProps) {
 }
 
 interface EmptyStateProps {
-  diagramName: string;
-  suggestions: ChatSuggestion[];
-  onSelectSuggestion: (text: string) => void;
+  commands: readonly PromptCommand[];
+  onSelectCommand: (command: PromptCommand) => void;
 }
 
-function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyStateProps) {
+function EmptyState({ commands, onSelectCommand }: EmptyStateProps) {
   const { t } = useTranslation();
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto py-8 text-center">
@@ -435,26 +434,49 @@ function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyState
       </div>
       <div className="space-y-1">
         <h4 className="text-base font-semibold text-foreground">{t("llmChat.title")}</h4>
-        <p className="text-xs text-muted-foreground">
-          {t("llmChat.emptySubtitle", {
-            defaultValue: "How can I help you shape this diagram?",
-            name: diagramName,
-          })}
-        </p>
+        <p className="text-xs text-muted-foreground">{t("llmChat.emptySubtitle")}</p>
       </div>
       <div className="w-full space-y-1.5">
-        {suggestions.map((s) => (
+        {commands.map((command) => (
           <button
-            key={s.id}
+            key={command.id}
             type="button"
-            onClick={() => onSelectSuggestion(t(s.labelKey))}
+            onClick={() => onSelectCommand(command)}
             className="group flex w-full items-center gap-2.5 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-left text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
-            <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-            <span className="truncate">{t(s.labelKey)}</span>
+            <code className="font-mono text-[11px] font-semibold text-primary">
+              /{command.name}
+            </code>
+            <span className="truncate">{t(command.labelKey)}</span>
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Banner above the composer when no usable connection is configured. The
+ * composer still works and still opens settings on send; the banner is just
+ * a heads-up so the user is not surprised by the redirect.
+ */
+function ConnectionBanner({ onConfigure }: { onConfigure: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="status"
+      className="flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-200"
+    >
+      <span className="truncate">{t("llmChat.connectionBanner.message")}</span>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        onClick={onConfigure}
+        className="h-7 border-amber-500/40 px-2 text-[11px] hover:bg-amber-500/15"
+      >
+        {t("llmChat.connectionBanner.configure")}
+      </Button>
     </div>
   );
 }

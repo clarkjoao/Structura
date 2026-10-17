@@ -74,6 +74,12 @@ export type {
   GeneratedNodeInput,
 } from "./slices/generated-graph.slice";
 export type { NewConnectedComponent, NewConnectedEdge } from "./slices/components.slice";
+export type {
+  ChangeBatchReceipt,
+  DiagramChange,
+  DiagramChangeBatchResult,
+  DiagramChangeSkipReason,
+} from "./slices/change-batch.slice";
 
 // ─── Store constants ──────────────────────────────────────────────────────────
 export {

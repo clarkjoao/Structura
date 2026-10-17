@@ -1,51 +1,110 @@
 "use client";
 
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   AppendMessage,
   ExternalStoreAdapter,
   StartRunConfig,
   TextMessagePart,
   ThreadAssistantMessage,
+  ThreadAssistantMessagePart,
   ThreadMessage,
   ThreadSuggestion,
   ThreadUserMessage,
 } from "@assistant-ui/core";
-import { useLLMChat } from "@/features/canvas/chat";
-import type { ChatMessage } from "@/features/llm/types";
-import type { LLMErrorKind } from "@/features/llm/errors";
+import type { ChatMessage, CommandRef, PendingSuggestion } from "@/features/llm/types";
+import type { MentionRef } from "@/features/llm/mentions/mention-ref";
+import {
+  getMessageText,
+  isErrorPart,
+  isSuggestionPart,
+  isToolCallPart,
+  type MessagePart,
+  type MessageStatus,
+} from "@/features/llm/message-parts";
 
-function isJsonEnvelope(text: string): boolean {
-  const trimmed = text.trimStart();
-  return trimmed.startsWith("{") && trimmed.endsWith("}");
+/** Data-part names for the Structura parts assistant-ui has no type for. */
+export const SUGGESTION_DATA_PART = "structura-suggestion";
+export const ERROR_DATA_PART = "structura-error";
+
+const EMPTY_METADATA: ThreadAssistantMessage["metadata"] = {
+  unstable_state: null,
+  unstable_annotations: [],
+  unstable_data: [],
+  steps: [],
+  custom: {},
+};
+
+function toAssistantPart(part: MessagePart, running: boolean): ThreadAssistantMessagePart {
+  if (isToolCallPart(part)) {
+    // The renderer reads the Structura part back from `artifact`; the
+    // assistant-ui fields are filled so the runtime treats it as a tool call.
+    return {
+      type: "tool-call",
+      toolCallId: part.id,
+      toolName: part.name,
+      args: {},
+      argsText: safeStringify(part.args),
+      result: part.result,
+      isError: part.status === "error",
+      artifact: part,
+    };
+  }
+  if (isSuggestionPart(part)) {
+    return { type: "data", name: SUGGESTION_DATA_PART, data: part };
+  }
+  if (isErrorPart(part)) {
+    return { type: "data", name: ERROR_DATA_PART, data: part };
+  }
+  return running
+    ? { type: "text", text: part.text, status: { type: "running" } }
+    : { type: "text", text: part.text };
+}
+
+function safeStringify(value: unknown): string {
+  try {
+    return JSON.stringify(value) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function toAssistantStatus(status: MessageStatus | undefined): ThreadAssistantMessage["status"] {
+  switch (status) {
+    case "streaming":
+      return { type: "running" };
+    case "cancelled":
+      return { type: "incomplete", reason: "cancelled" };
+    case "error":
+      return { type: "incomplete", reason: "error" };
+    default:
+      return { type: "complete", reason: "stop" };
+  }
 }
 
 function chatMessageToThreadMessage(msg: ChatMessage): ThreadMessage {
-  const textPart: TextMessagePart = { type: "text", text: msg.content };
   if (msg.role === "user") {
     const userMsg: ThreadUserMessage = {
       id: msg.id,
       role: "user",
-      content: [textPart],
+      content: [{ type: "text", text: getMessageText(msg) }],
       attachments: [],
       createdAt: new Date(msg.timestamp),
       metadata: { custom: {} },
     };
     return userMsg;
   }
+  const running = msg.status === "streaming";
   const assistantMsg: ThreadAssistantMessage = {
     id: msg.id,
     role: "assistant",
-    content: [textPart],
-    status: { type: "complete", reason: "stop" },
+    content: msg.parts.map((part) => toAssistantPart(part, running)),
+    status: msg.truncated
+      ? { type: "incomplete", reason: "length" }
+      : toAssistantStatus(msg.status),
     createdAt: new Date(msg.timestamp),
-    metadata: {
-      unstable_state: null,
-      unstable_annotations: [],
-      unstable_data: [],
-      steps: [],
-      custom: {},
-    },
+    metadata: EMPTY_METADATA,
   };
   return assistantMsg;
 }
@@ -62,109 +121,48 @@ function extractTextFromAppendMessage(message: AppendMessage): string {
   return "";
 }
 
-function mapErrorToMessage(kind: LLMErrorKind): string {
-  const messages: Record<LLMErrorKind, string> = {
-    auth: "Authentication failed. Please check your API key.",
-    rate_limit: "Rate limit exceeded. Please wait and try again.",
-    cors: "CORS error. Please check your server configuration.",
-    network: "Network error. Please check your connection.",
-    model: "Model not found. Please check your model settings.",
-    server: "Server error. Please try again later.",
-    timeout: "Request timed out. Please try again.",
-    unknown: "An unexpected error occurred.",
-  };
-  return messages[kind] ?? messages.unknown;
+/**
+ * The slice of `useLLMChat` the assistant-ui adapter needs. The chat panel
+ * calls `useLLMChat` once and passes the result in, so the hook only runs
+ * once per panel (F25).
+ */
+export interface AssistantUIAdapterDeps {
+  send: (text: string, mentions: MentionRef[], command?: CommandRef) => Promise<boolean | void>;
+  cancel: () => void;
+  rerun: (assistantMessageId: string) => Promise<void>;
+  messages: ChatMessage[];
+  isLoading: boolean;
+  streamingContent: string | null;
+  pendingSuggestions: PendingSuggestion[];
 }
 
-export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
+export function useAssistantUIAdapter(
+  deps: AssistantUIAdapterDeps,
+): ExternalStoreAdapter<ThreadMessage> {
+  const { t } = useTranslation();
   const {
     send,
+    cancel,
+    rerun,
     messages: chatMessages,
     isLoading,
     streamingContent,
-    error: llmError,
     pendingSuggestions,
-  } = useLLMChat({
-    selectedNodeIds: new Set(),
-    selectedNodeId: null,
-  });
+  } = deps;
 
-  const threadMessages = useMemo((): readonly ThreadMessage[] => {
-    const lastAssistantIndex = [...chatMessages]
-      .reverse()
-      .findIndex((msg) => msg.role === "assistant");
-    const actualAssistantIndex =
-      lastAssistantIndex === -1 ? -1 : chatMessages.length - 1 - lastAssistantIndex;
-
-    const isActivelyStreaming =
-      streamingContent !== null && streamingContent.length > 0 && actualAssistantIndex !== -1;
-
-    const baseMessages = isActivelyStreaming
-      ? chatMessages.slice(0, actualAssistantIndex)
-      : chatMessages;
-
-    const baseThreadMessages = baseMessages.map(chatMessageToThreadMessage);
-
-    if (!isActivelyStreaming || actualAssistantIndex === -1) {
-      return baseThreadMessages;
-    }
-
-    const lastMsg = chatMessages[actualAssistantIndex];
-
-    if (isJsonEnvelope(streamingContent)) {
-      const emptyTextPart: TextMessagePart = { type: "text", text: "" };
-      const streamingAssistant: ThreadAssistantMessage = {
-        id: lastMsg.id,
-        role: "assistant",
-        content: [emptyTextPart],
-        status: { type: "running" },
-        createdAt: new Date(lastMsg.timestamp),
-        metadata: {
-          unstable_state: null,
-          unstable_annotations: [],
-          unstable_data: [],
-          steps: [],
-          custom: {},
-        },
-      };
-      return [...baseThreadMessages, streamingAssistant];
-    }
-
-    const textPart: TextMessagePart = {
-      type: "text",
-      text: streamingContent,
-      status: { type: "running" },
-    };
-    const streamingAssistant: ThreadAssistantMessage = {
-      id: lastMsg.id,
-      role: "assistant",
-      content: [textPart],
-      status: { type: "running" },
-      createdAt: new Date(lastMsg.timestamp),
-      metadata: {
-        unstable_state: null,
-        unstable_annotations: [],
-        unstable_data: [],
-        steps: [],
-        custom: {},
-      },
-    };
-    return [...baseThreadMessages, streamingAssistant];
-  }, [chatMessages, streamingContent]);
+  const threadMessages = useMemo(
+    (): readonly ThreadMessage[] => chatMessages.map(chatMessageToThreadMessage),
+    [chatMessages],
+  );
 
   const suggestions = useMemo((): readonly ThreadSuggestion[] => {
     return pendingSuggestions
       .filter((s) => s.status === "pending")
       .map((s): ThreadSuggestion => ({
-        title: s.patch.description || "Suggested change",
+        title: s.patch.description || t("llmChat.suggestion.defaultTitle"),
         prompt: `Accept suggestion ${s.id}`,
       }));
-  }, [pendingSuggestions]);
-
-  const errorMessage = useMemo((): string | null => {
-    if (!llmError) return null;
-    return mapErrorToMessage(llmError);
-  }, [llmError]);
+  }, [pendingSuggestions, t]);
 
   const onNew = useCallback(
     async (message: AppendMessage): Promise<void> => {
@@ -176,8 +174,8 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
   );
 
   const onCancel = useCallback(async (): Promise<void> => {
-    // No-op: the underlying store does not yet expose cancellation.
-  }, []);
+    cancel();
+  }, [cancel]);
 
   const onEdit = useCallback(
     async (message: AppendMessage): Promise<void> => {
@@ -186,14 +184,16 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
     [onNew],
   );
 
+  // Errors are shown inside the conversation (error parts), so the adapter
+  // reports none of its own. Reload regenerates the last assistant message.
   const onReload = useCallback(
     async (_parentId: string | null, _config: StartRunConfig): Promise<void> => {
-      const lastUserMessage = [...chatMessages].reverse().find((msg) => msg.role === "user");
-      if (lastUserMessage) {
-        await send(lastUserMessage.content, []);
+      const lastAssistant = [...chatMessages].reverse().find((msg) => msg.role === "assistant");
+      if (lastAssistant) {
+        await rerun(lastAssistant.id);
       }
     },
-    [chatMessages, send],
+    [chatMessages, rerun],
   );
 
   const setMessages = useCallback((_messages: readonly ThreadMessage[]) => {
@@ -206,7 +206,6 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
       suggestions,
       isLoading,
       isRunning: isLoading && streamingContent !== null,
-      error: errorMessage,
       onNew,
       onCancel,
       onEdit,
@@ -220,7 +219,6 @@ export function useAssistantUIAdapter(): ExternalStoreAdapter<ThreadMessage> {
       suggestions,
       isLoading,
       streamingContent,
-      errorMessage,
       onNew,
       onCancel,
       onEdit,

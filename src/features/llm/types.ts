@@ -1,7 +1,20 @@
-import type { ComponentPatch, ComponentType, Connection, EdgeStyle } from "@/features/diagram";
+import type {
+  ChangeBatchReceipt,
+  ComponentPatch,
+  ComponentType,
+  EdgeStyle,
+} from "@/features/diagram";
+import type { PanelKind } from "@/features/diagram/enums";
+import type { MessagePart, MessageStatus } from "./message-parts";
+import type { MentionRef } from "./mentions/mention-ref";
+import type { SkillRef } from "./skills/skill.types";
+import type { SkippedAction } from "./suggestion-apply";
 
 export type LLMProvider = "openai" | "anthropic" | "custom";
 export type LLMMode = "direct" | "proxy";
+
+/** The wire protocol a `custom` provider speaks. Ignored for other providers. */
+export type CustomProtocol = "openai" | "anthropic";
 
 export interface LLMConfig {
   mode: LLMMode;
@@ -12,11 +25,15 @@ export interface LLMConfig {
   authHeader?: string;
   extraHeaders?: Record<string, string>;
   extraParams?: Record<string, unknown>;
+  /** When `provider === "custom"`, the endpoint's wire protocol. */
+  customProtocol?: CustomProtocol;
 }
 
 export interface LLMConnection {
   id: string;
   name: string;
+  /** The models "Test connection" found (or the presets); the picker lists them. */
+  models?: string[];
   mode: LLMMode;
   provider: LLMProvider;
   baseUrl?: string;
@@ -25,6 +42,7 @@ export interface LLMConnection {
   model: string;
   extraHeaders?: Record<string, string>;
   extraParams?: Record<string, unknown>;
+  customProtocol?: CustomProtocol;
 }
 
 /**
@@ -47,8 +65,59 @@ export interface LLMCompletion {
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
-  content: string;
+  parts: MessagePart[];
   timestamp: number;
+  /** Assistant messages only: where the turn that produced it ended up. */
+  status?: MessageStatus;
+  /** Assistant messages only: the model stopped at its output-token limit. */
+  truncated?: boolean;
+  /**
+   * User messages only: the diagram elements attached as context chips. Kept
+   * beside the parts (not as parts): they are request context, not content
+   * the conversation renders or copies as Markdown.
+   */
+  mentions?: MentionRef[];
+  /**
+   * User messages only: the prompt command the message was sent with. The
+   * text part holds only the user's extra text; the instruction is looked up
+   * by id when the request is built. `name` is cached for display.
+   */
+  command?: CommandRef;
+  /**
+   * User messages only: the skills active when the message was sent, so Retry
+   * and Regenerate reuse them. Resolved by source and id when a request is
+   * built; a skill that no longer exists is left out.
+   */
+  skills?: SkillRef[];
+}
+
+export interface CommandRef {
+  id: string;
+  name: string;
+}
+
+/** Hard cap on composer-queued messages while the assistant is busy. */
+export const MAX_QUEUED_MESSAGES = 10;
+
+/**
+ * A user message held in the composer queue while the assistant is busy. The
+ * composer creates one on every send that arrives while `isLoading` is true;
+ * the store drains the queue when the running turn ends. Lives in memory
+ * only — reloading the page drops it.
+ */
+export interface QueuedMessage {
+  id: string;
+  text: string;
+  mentions: MentionRef[];
+  command?: CommandRef;
+  /** Snapshot of the active skill chips at enqueue time. */
+  skills: SkillRef[];
+}
+
+/** What a provider sends for one turn: the role and its text. */
+export interface LLMRequestMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export interface ConversationThread {
@@ -65,15 +134,24 @@ export interface DiagramThreadState {
   activeThreadId: string;
 }
 
+/**
+ * One change a write tool queued for the user to review. Ids are the
+ * diagram's own, or the `ref` of a node added earlier in the same suggestion.
+ */
 export type DiagramPatchAction =
   | {
       type: "ADD_NODE";
       payload: {
+        /** How later changes in the same suggestion point at this node. */
+        ref: string;
         nodeType: ComponentType;
         name: string;
         parentId: string | null;
         position?: { x: number; y: number };
-        awsService?: string;
+        /** Catalog service id from search_elements; becomes the component's cloud service. */
+        serviceId?: string;
+        /** Panels only: the group kind (VPC, subnet, availability zone…). */
+        panelKind?: PanelKind;
       };
     }
   | { type: "REMOVE_NODE"; payload: { nodeId: string } }
@@ -85,30 +163,16 @@ export type DiagramPatchAction =
         targetId: string;
         label: string;
         edgeStyle?: EdgeStyle;
-        patch?: Partial<Omit<Connection, "id" | "sourceId" | "targetId" | "label">>;
       };
     }
   | { type: "REMOVE_EDGE"; payload: { edgeId: string } }
   | { type: "INSERT_PATTERN"; payload: { patternId: string; provider?: string } }
-  | { type: "AUTO_LAYOUT"; payload: Record<string, never> }
-  | { type: "GET_TAGS"; payload: Record<string, never> }
-  | { type: "LIST_ELEMENT_FAMILIES"; payload: Record<string, never> }
-  | { type: "LIST_PATTERNS"; payload: Record<string, never> }
-  | {
-      type: "SEARCH_ELEMENTS";
-      payload: {
-        query: string;
-        familyId?: string;
-        categoryId?: string;
-        limit?: number;
-      };
-    };
+  | { type: "AUTO_LAYOUT"; payload: Record<string, never> };
 
 export interface DiagramPatch {
   id: string;
   description: string;
   actions: DiagramPatchAction[];
-  toolCalls?: LLMToolCall[];
 }
 
 export interface PendingSuggestion {
@@ -116,58 +180,19 @@ export interface PendingSuggestion {
   messageId: string;
   patch: DiagramPatch;
   status: "pending" | "accepted" | "rejected";
+  /** The actions that no longer applied (their target was gone). */
+  skipped?: SkippedAction[];
 }
 
+/**
+ * A pending suggestion drawn on the canvas before Accept: it is applied as
+ * one undo step and its elements are marked pending. Accept keeps it; Reject
+ * takes it back.
+ */
 export interface PendingNodePreview {
   suggestionId: string;
   nodeIds: string[];
   edgeIds: string[];
-}
-
-export type AnalysisSeverity = "critical" | "high" | "medium" | "low" | "info";
-
-export interface AnalysisFinding {
-  severity: AnalysisSeverity;
-  category: string;
-  title: string;
-  detail: string;
-  recommendation: string;
-  affectedNodes?: string[];
-}
-
-export interface AnalysisResponse {
-  mode: "analysis";
-  summary: string;
-  findings: AnalysisFinding[];
-  strengths: string[];
-  nextSteps: string[];
-}
-
-export type ParsedLLMResponse =
-  | { kind: "text"; message: string }
-  | { kind: "patch"; message: string; patch: DiagramPatch | null }
-  | { kind: "analysis"; analysis: AnalysisResponse };
-
-export interface MentionItem {
-  id: string;
-  kind: "node" | "edge";
-  label: string;
-  subLabel: string;
-  serialized: string;
-}
-
-export interface ActiveMention {
-  mentionId: string;
-  label: string;
-}
-
-export interface LLMTool {
-  name: string;
-  description: string;
-  parametersSchema: Record<string, unknown>;
-}
-
-export interface LLMToolCall {
-  tool: string;
-  parameters: Record<string, unknown>;
+  /** How to take the preview back as one step; null when that is not possible. */
+  receipt: ChangeBatchReceipt | null;
 }

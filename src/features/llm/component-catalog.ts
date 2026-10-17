@@ -5,6 +5,7 @@ import {
   familyOwnElements,
   nonCatalogFamilyIds,
 } from "@/features/elements/families/cloud-family.registry";
+import type { ComponentType } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { PATTERNS, PATTERN_CATEGORIES } from "@/lib/catalogs/patterns";
 
@@ -240,6 +241,11 @@ export function buildPatternCatalogCompact(): string {
 
 export function isValidNodeType(nodeType: string): boolean {
   return allComponentTypes().some((definition) => definition.nodeType === nodeType);
+}
+
+/** Guard form of `isValidNodeType`: a node type the catalog offers is a `ComponentType`. */
+export function isKnownNodeType(nodeType: string): nodeType is ComponentType {
+  return isValidNodeType(nodeType);
 }
 
 export function isValidPatternId(patternId: string): boolean {

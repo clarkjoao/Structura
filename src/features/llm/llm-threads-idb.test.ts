@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  THREAD_FORMAT_VERSION,
   loadAllThreadsFromIdb,
   loadThreadsFromIdb,
   migrateThreadsFromLocalStorageToIdb,
@@ -200,7 +201,7 @@ function makeState(diagramId: string): DiagramThreadState {
         id: `t-${diagramId}`,
         diagramId,
         title: `Title ${diagramId}`,
-        messages: [{ id: "m1", role: "user", content: "hi", timestamp: 1 }],
+        messages: [{ id: "m1", role: "user", parts: [{ type: "text", text: "hi" }], timestamp: 1 }],
         createdAt: 1,
         updatedAt: 1,
       },
@@ -313,5 +314,82 @@ describe("llm-threads-idb", () => {
     resetThreadsIdbForTests();
     // The flag is removed even if no IDB is reachable.
     expect(localStorage.getItem("structura:llm:history:migratedToIdb")).toBeNull();
+  });
+});
+
+describe("llm-threads-idb — message parts migration", () => {
+  async function seed(records: Array<[string, unknown]>): Promise<Map<string, unknown>> {
+    const { stores } = installIndexedDbMock();
+    // Opens the database so the object store exists, then writes raw records.
+    await saveThreadsToIdb("__seed__", makeState("__seed__"));
+    const data = stores.get("llm_threads")!.data;
+    data.delete("__seed__");
+    for (const [key, value] of records) {
+      data.set(key, value);
+    }
+    return data;
+  }
+
+  const legacyRecord = {
+    diagramId: "legacy",
+    state: {
+      threads: [
+        {
+          id: "t1",
+          diagramId: "legacy",
+          title: "Old",
+          messages: [
+            { id: "u", role: "user", content: "Add a cache", timestamp: 1 },
+            { id: "a", role: "assistant", content: "Done", timestamp: 2 },
+          ],
+          createdAt: 1,
+          updatedAt: 2,
+        },
+      ],
+      activeThreadId: "t1",
+    },
+  };
+
+  it("migrates a legacy record to parts and rewrites it at the current format", async () => {
+    const data = await seed([["legacy", legacyRecord]]);
+    const all = await loadAllThreadsFromIdb();
+    expect(all["legacy"]?.threads[0]?.messages).toEqual([
+      { id: "u", role: "user", parts: [{ type: "text", text: "Add a cache" }], timestamp: 1 },
+      { id: "a", role: "assistant", parts: [{ type: "text", text: "Done" }], timestamp: 2 },
+    ]);
+    const rewritten = data.get("legacy") as { formatVersion?: number; state: unknown };
+    expect(rewritten.formatVersion).toBe(THREAD_FORMAT_VERSION);
+    expect(rewritten.state).toEqual(all["legacy"]);
+  });
+
+  it("leaves an already-migrated record unchanged", async () => {
+    const current = {
+      diagramId: "current",
+      formatVersion: THREAD_FORMAT_VERSION,
+      state: makeState("current"),
+    };
+    const data = await seed([["current", current]]);
+    const all = await loadAllThreadsFromIdb();
+    expect(all["current"]).toEqual(current.state);
+    expect(data.get("current")).toBe(current);
+  });
+
+  it("is idempotent: a second load sees the same migrated state", async () => {
+    await seed([["legacy", legacyRecord]]);
+    const first = await loadAllThreadsFromIdb();
+    const second = await loadAllThreadsFromIdb();
+    expect(second).toEqual(first);
+  });
+
+  it("a corrupt entry does not break loading the rest", async () => {
+    await seed([
+      ["legacy", legacyRecord],
+      ["broken", { diagramId: "broken", state: { threads: "not-an-array" } }],
+      ["garbage", 42],
+    ]);
+    const all = await loadAllThreadsFromIdb();
+    expect(all["legacy"]?.threads).toHaveLength(1);
+    expect(all["broken"]).toEqual({ threads: [], activeThreadId: "" });
+    expect(all["garbage"]).toBeUndefined();
   });
 });

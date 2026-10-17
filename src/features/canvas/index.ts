@@ -36,7 +36,7 @@ export { EmbedModal } from "./components/EmbedModal";
 export { DiagramTitle } from "./toolbar/components/DiagramTitle";
 export { useInteractionMode } from "./hooks/useInteractionMode";
 export type { InteractionMode } from "./hooks/useInteractionMode";
-export { AnalysisPanel, useLLMChat } from "./chat";
+export { useLLMChat } from "./chat";
 
 /** Canvas Core — shared surface for Write / Reader / future Plugin hosts. */
 export {
@@ -72,7 +72,6 @@ export type {
   ReadDiagramRoutePlay,
   ReactFlowShellProps,
 } from "./core";
-export { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
 
 /** Layout engine — public for Reader visualization without deep imports. */
 export { fromDiagram, resizableIds } from "./layout/fromDiagram";

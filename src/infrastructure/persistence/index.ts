@@ -3,6 +3,7 @@ export { isQuotaExceededError } from "./storageQuota";
 export { mergeElementPresets } from "./merge-element-presets";
 export { LocalStorageAdapter, defaultStorage } from "./LocalStorageAdapter";
 export { InMemoryAdapter } from "./InMemoryAdapter";
+export { SessionStorageAdapter, sessionStorageAdapter } from "./SessionStorageAdapter";
 export { FileSystemAdapter, fileSystemAdapter } from "./FileSystemAdapter";
 export type { WorkspaceManifest, WorkspacePayload, WorkspaceScanResult } from "./FileSystemAdapter";
 export { useFileSystemSync } from "./useFileSystemSync";

@@ -1,13 +1,25 @@
-import type { DiagramThreadState } from "./types";
+import { migrateStoredMessages } from "./message-parts";
+import type { ConversationThread, DiagramThreadState } from "./types";
+import type { IStoragePort } from "@/infrastructure/persistence";
+import { legacyLocalStore as rawLocalStore } from "./legacy-local-store";
 
 const DB_NAME = "structura";
 const THREADS_STORE = "llm_threads";
 const SCHEMA_VERSION = 1;
 const MIGRATION_FLAG_KEY = "structura:llm:history:migratedToIdb";
 
+/**
+ * Format of the thread state inside a record (not the IndexedDB schema, which
+ * is `SCHEMA_VERSION`). 1 (or absent): messages carry `content: string`.
+ * 2: messages carry `parts`. Records are migrated on read and rewritten at the
+ * current format only once the migration succeeded.
+ */
+export const THREAD_FORMAT_VERSION = 2;
+
 interface ThreadRecord {
   diagramId: string;
   state: DiagramThreadState;
+  formatVersion?: number;
 }
 
 function isIndexedDbAvailable(): boolean {
@@ -55,7 +67,7 @@ async function readThreadRecord(
     request.onsuccess = () => {
       const value: unknown = request.result;
       if (isThreadRecord(value)) {
-        resolve(value.state);
+        resolve(migrateThreadState(value.state).state);
       } else {
         resolve(null);
       }
@@ -72,7 +84,7 @@ async function writeThreadRecord(
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(THREADS_STORE, "readwrite");
     const store = transaction.objectStore(THREADS_STORE);
-    const record: ThreadRecord = { diagramId, state };
+    const record: ThreadRecord = { diagramId, state, formatVersion: THREAD_FORMAT_VERSION };
     const request = store.put(record);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error ?? new Error("idb write failed"));
@@ -145,12 +157,13 @@ export async function saveThreadsToIdb(
  */
 export async function migrateThreadsFromLocalStorageToIdb(
   legacyJson: string | null,
+  flagStore: IStoragePort = rawLocalStore,
 ): Promise<boolean> {
   if (!isIndexedDbAvailable() || !legacyJson) {
     return false;
   }
   try {
-    if (localStorage.getItem(MIGRATION_FLAG_KEY) === "1") {
+    if ((await flagStore.getItem(MIGRATION_FLAG_KEY)) === "1") {
       return false;
     }
     let legacy: unknown;
@@ -168,7 +181,7 @@ export async function migrateThreadsFromLocalStorageToIdb(
       const records: ThreadRecord[] = [];
       for (const [diagramId, value] of Object.entries(legacy)) {
         if (!isObject(value)) continue;
-        const record: ThreadRecord = { diagramId, state: normalizeLegacyState(value) };
+        const record: ThreadRecord = { diagramId, state: migrateThreadState(value).state };
         records.push(record);
       }
       for (const record of records) {
@@ -177,7 +190,7 @@ export async function migrateThreadsFromLocalStorageToIdb(
     } finally {
       db.close();
     }
-    localStorage.setItem(MIGRATION_FLAG_KEY, "1");
+    await flagStore.setItem(MIGRATION_FLAG_KEY, "1");
     return true;
   } catch {
     return false;
@@ -192,48 +205,61 @@ export async function migrateThreadsFromLocalStorageToIdb(
  * semantics and leave a fresh test running against a half-cleared store.
  */
 export function resetThreadsIdbForTests(): void {
-  localStorage.removeItem(MIGRATION_FLAG_KEY);
+  void rawLocalStore.removeItem(MIGRATION_FLAG_KEY);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function normalizeLegacyState(value: Record<string, unknown>): DiagramThreadState {
-  // Best-effort: trust already-migrated payloads or legacy payloads.
-  // Anything we can't recognize ends up as empty state.
-  const threadsValue = value.threads;
-  const activeThreadIdValue = value.activeThreadId;
-  if (Array.isArray(threadsValue)) {
-    return {
-      threads: threadsValue
-        .filter((thread): boolean => isObject(thread))
-        .map((thread) => {
-          const id = String((thread as { id?: unknown }).id ?? "");
-          const diagramId = String((thread as { diagramId?: unknown }).diagramId ?? "");
-          const title = String((thread as { title?: unknown }).title ?? "");
-          const messages = Array.isArray((thread as { messages?: unknown }).messages)
-            ? (thread as { messages: unknown[] }).messages
-            : [];
-          return {
-            id,
-            diagramId,
-            title,
-            messages: messages as DiagramThreadState["threads"][number]["messages"],
-            createdAt:
-              typeof (thread as { createdAt?: unknown }).createdAt === "number"
-                ? (thread as { createdAt: number }).createdAt
-                : Date.now(),
-            updatedAt:
-              typeof (thread as { updatedAt?: unknown }).updatedAt === "number"
-                ? (thread as { updatedAt: number }).updatedAt
-                : Date.now(),
-          };
-        }),
-      activeThreadId: typeof activeThreadIdValue === "string" ? activeThreadIdValue : "",
-    };
+function readTimestamp(value: unknown): number {
+  return typeof value === "number" ? value : Date.now();
+}
+
+function migrateThread(thread: Record<string, unknown>): {
+  thread: ConversationThread;
+  changed: boolean;
+} {
+  const { messages, changed } = migrateStoredMessages(thread.messages);
+  return {
+    thread: {
+      id: String(thread.id ?? ""),
+      diagramId: String(thread.diagramId ?? ""),
+      title: String(thread.title ?? ""),
+      messages,
+      createdAt: readTimestamp(thread.createdAt),
+      updatedAt: readTimestamp(thread.updatedAt),
+    },
+    changed,
+  };
+}
+
+/**
+ * Brings a stored `DiagramThreadState` to the current message format. Every
+ * message is kept (see `migrateStoredMessage`); a thread entry that is not an
+ * object is skipped, since there is no conversation to recover from it.
+ * `changed` is false when the value was already in the current format.
+ */
+export function migrateThreadState(value: unknown): {
+  state: DiagramThreadState;
+  changed: boolean;
+} {
+  if (!isObject(value) || !Array.isArray(value.threads)) {
+    return { state: { threads: [], activeThreadId: "" }, changed: true };
   }
-  return { threads: [], activeThreadId: "" };
+  let changed = false;
+  const threads: ConversationThread[] = [];
+  for (const raw of value.threads) {
+    if (!isObject(raw)) {
+      changed = true;
+      continue;
+    }
+    const migrated = migrateThread(raw);
+    if (migrated.changed) changed = true;
+    threads.push(migrated.thread);
+  }
+  const activeThreadId = typeof value.activeThreadId === "string" ? value.activeThreadId : "";
+  return { state: { threads, activeThreadId }, changed };
 }
 
 /**
@@ -249,8 +275,27 @@ export async function loadAllThreadsFromIdb(): Promise<Record<string, DiagramThr
     try {
       const records = await readAllThreadRecords(db);
       const result: Record<string, DiagramThreadState> = {};
+      const toRewrite: Array<{ diagramId: string; state: DiagramThreadState }> = [];
       for (const record of records) {
-        result[record.diagramId] = record.state;
+        // One bad record must not cost the user every other diagram's history.
+        try {
+          const { state, changed } = migrateThreadState(record.state);
+          result[record.diagramId] = state;
+          if (changed || record.formatVersion !== THREAD_FORMAT_VERSION) {
+            toRewrite.push({ diagramId: record.diagramId, state });
+          }
+        } catch (error) {
+          console.warn(`[llm-threads-idb] Skipped unreadable record ${record.diagramId}`, error);
+        }
+      }
+      for (const { diagramId, state } of toRewrite) {
+        try {
+          await writeThreadRecord(db, diagramId, state);
+        } catch {
+          // The migrated state is still served from memory; the next save
+          // writes it in the current format.
+          console.warn(`[llm-threads-idb] Failed to rewrite record ${diagramId}`);
+        }
       }
       return result;
     } finally {
