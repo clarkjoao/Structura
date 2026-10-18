@@ -85,7 +85,7 @@ class DroppedEdges {
 
 /**
  * Projects an opscr workspace into the technical view: Domains and bounded contexts
- * (ApplicationService) as panels, technical Kinds as elements nested by `belongsTo`,
+ * (BoundedContext) as panels, technical Kinds as elements nested by `belongsTo`,
  * flow edges between them. Subdomain, business and organization Kinds are listed in
  * `omitted`; edges that cannot be drawn are listed in `dropped`. Never throws.
  */
@@ -133,7 +133,7 @@ export function buildTechnicalView(workspace: OpscrWorkspaceInput): TechnicalVie
     parentOf.set(edge.from, { edge });
   }
 
-  // A drawn element's parent is its nearest drawn ancestor: an ApplicationService that
+  // A drawn element's parent is its nearest drawn ancestor: a BoundedContext that
   // belongs to a Subdomain lands in that Subdomain's Domain.
   for (const node of nodes.values()) {
     const seen = new Set([node.id]);

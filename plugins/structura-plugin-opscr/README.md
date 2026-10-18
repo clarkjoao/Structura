@@ -65,7 +65,7 @@ Two ways to bring opscr into Structura:
 ## Importer
 
 Imports opscr architecture-as-code manifests (`*.opscr.yaml`) into the active
-diagram as a laid-out **technical view**: Domains and bounded contexts (ApplicationService) as nested
+diagram as a laid-out **technical view**: Domains and BoundedContexts as nested
 panels, technical Kinds as their AWS / GCP / Azure / OSS catalog components, flow edges as
 connections labelled with their type. Kinds left out of the view, edges not drawn and opscr
 validation errors come back as import warnings.

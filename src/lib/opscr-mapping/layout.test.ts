@@ -22,7 +22,7 @@ describe("toLayoutGraph", () => {
     const view = buildTechnicalView({
       manifests: [
         { kind: "Domain", metadata: { name: "empty" }, spec: {} },
-        { kind: "ApplicationService", metadata: { name: "orders" }, spec: {} },
+        { kind: "BoundedContext", metadata: { name: "orders" }, spec: {} },
         { kind: "Application", metadata: { name: "api" }, spec: {} },
         {
           kind: "Relationship",
@@ -31,7 +31,7 @@ describe("toLayoutGraph", () => {
             edges: [
               {
                 from: { kind: "Application", id: "api" },
-                to: { kind: "ApplicationService", id: "orders" },
+                to: { kind: "BoundedContext", id: "orders" },
                 type: "belongsTo",
               },
             ],
@@ -42,10 +42,7 @@ describe("toLayoutGraph", () => {
     const sizes = new Map(toLayoutGraph(view).nodes.map((n) => [n.id, [n.width, n.height]]));
     expect(sizes.get("Domain/empty")).toEqual([EMPTY_BOUNDARY_W, EMPTY_BOUNDARY_H]);
     expect(sizes.get("Application/api")).toEqual([LEAF_W, LEAF_H]);
-    expect(sizes.get("ApplicationService/orders")).not.toEqual([
-      EMPTY_BOUNDARY_W,
-      EMPTY_BOUNDARY_H,
-    ]);
+    expect(sizes.get("BoundedContext/orders")).not.toEqual([EMPTY_BOUNDARY_W, EMPTY_BOUNDARY_H]);
   });
 
   it("is accepted by the app's layout contract as it is", () => {

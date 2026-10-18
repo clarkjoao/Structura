@@ -19,7 +19,7 @@ import {
 const graph: PreviewGraph = {
   components: [
     {
-      key: "ApplicationService/orders",
+      key: "BoundedContext/orders",
       name: "orders",
       type: "panel",
       x: 0,
@@ -32,7 +32,7 @@ const graph: PreviewGraph = {
       name: "api",
       type: "aws-compute",
       cloudServiceId: "lambda",
-      parentKey: "ApplicationService/orders",
+      parentKey: "BoundedContext/orders",
       x: 40,
       y: 40,
     },
@@ -91,11 +91,11 @@ describe("buildPreviewDiagram", () => {
     const { components, connections } = diagram.snapshot;
     expect(Object.keys(components).sort()).toEqual([
       "Application/api",
-      "ApplicationService/orders",
+      "BoundedContext/orders",
       "Database/db",
     ]);
     expect(components["Application/api"]).toMatchObject({
-      parentId: "ApplicationService/orders",
+      parentId: "BoundedContext/orders",
       cloudServiceId: "lambda",
     });
     expect(diagram.nodeLayouts["Database/db"]).toMatchObject({ elementId: "Database/db", x: 600 });
