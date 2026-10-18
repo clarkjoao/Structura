@@ -435,16 +435,8 @@ describe("F2 rename (from the text)", () => {
   it("renames everywhere and keeps the canvas element, children included", async () => {
     const id = s.id("orders");
     const children = s.canvas.components.filter((c) => c.parentId === id).map((c) => c.id);
-    s.files = renameElement(
-      s.files,
-      { kind: "ApplicationService", name: "orders" },
-      "ordering-app",
-    )!;
-    s.binding = renameInBinding(
-      s.binding,
-      "ApplicationService/orders",
-      "ApplicationService/ordering-app",
-    );
+    s.files = renameElement(s.files, { kind: "BoundedContext", name: "orders" }, "ordering-app")!;
+    s.binding = renameInBinding(s.binding, "BoundedContext/orders", "BoundedContext/ordering-app");
     s.canvas.apply({ update: [{ id, name: "ordering-app" }] });
     const plan = await s.pump();
     expect(plan.changes.remove).toEqual([]);
@@ -533,7 +525,7 @@ describe("palette elements into the YAML", () => {
     expect(
       countEdges(s.files, {
         from: ref,
-        to: { kind: "ApplicationService", name: "orders" },
+        to: { kind: "BoundedContext", name: "orders" },
         type: "belongsTo",
       }),
     ).toBe(1);
@@ -580,7 +572,7 @@ describe("moving an element into another panel", () => {
   const belongsTo = (parent: string) =>
     countEdges(s.files, {
       from: tracker,
-      to: { kind: "ApplicationService", name: parent },
+      to: { kind: "BoundedContext", name: parent },
       type: "belongsTo",
     });
   const move = (parentId: string | null) =>

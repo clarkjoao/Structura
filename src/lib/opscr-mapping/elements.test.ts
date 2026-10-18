@@ -83,7 +83,7 @@ describe("elementFor", () => {
 
   it("draws boundaries as panels, external systems as C4 systems, channels by framework", () => {
     expect(elementFor(manifest("Domain"))).toEqual({ type: "panel" });
-    expect(elementFor(manifest("ApplicationService"))).toEqual({ type: "panel" });
+    expect(elementFor(manifest("BoundedContext"))).toEqual({ type: "panel" });
     expect(elementFor(manifest("ExternalSystem", { provider: "Stripe" }))).toEqual({
       type: "system",
       technology: "Stripe",
@@ -114,7 +114,7 @@ describe("kindFor", () => {
 
   it("names panels, systems and containers, and gives up on other shapes", () => {
     expect(kindFor({ type: "panel" })).toEqual({ kind: "Domain" });
-    expect(kindFor({ type: "panel" }, "Domain")).toEqual({ kind: "ApplicationService" });
+    expect(kindFor({ type: "panel" }, "Domain")).toEqual({ kind: "BoundedContext" });
     expect(kindFor({ type: "system", technology: "Stripe" })).toEqual({
       kind: "ExternalSystem",
       provider: "Stripe",

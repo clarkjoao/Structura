@@ -33,14 +33,14 @@ describe("buildTechnicalView", () => {
 
   it("nests an Application in its bounded context instead of drawing belongsTo", () => {
     const v = view(
-      m("ApplicationService", "orders"),
+      m("BoundedContext", "orders"),
       m("Application", "orders-api", { provider: "Lambda" }),
       relationship(
         "r",
-        edge(["Application", "orders-api"], "belongsTo", ["ApplicationService", "orders"]),
+        edge(["Application", "orders-api"], "belongsTo", ["BoundedContext", "orders"]),
       ),
     );
-    expect(parentOf(v, "Application/orders-api")).toBe("ApplicationService/orders");
+    expect(parentOf(v, "Application/orders-api")).toBe("BoundedContext/orders");
     expect(v.edges).toEqual([]);
   });
 
@@ -48,20 +48,20 @@ describe("buildTechnicalView", () => {
     const v = view(
       m("Domain", "commerce"),
       m("Subdomain", "ordering"),
-      m("ApplicationService", "orders"),
+      m("BoundedContext", "orders"),
       relationship(
         "r",
-        edge(["ApplicationService", "orders"], "belongsTo", ["Subdomain", "ordering"]),
+        edge(["BoundedContext", "orders"], "belongsTo", ["Subdomain", "ordering"]),
         edge(["Subdomain", "ordering"], "belongsTo", ["Domain", "commerce"]),
       ),
     );
-    expect(parentOf(v, "ApplicationService/orders")).toBe("Domain/commerce");
+    expect(parentOf(v, "BoundedContext/orders")).toBe("Domain/commerce");
     expect(v.nodes.map((n) => n.id)).not.toContain("Subdomain/ordering");
     expect(v.omitted).toEqual([{ kind: "Subdomain", name: "ordering" }]);
   });
 
   it("keeps an empty bounded context as a boundary", () => {
-    const [node] = view(m("ApplicationService", "orders")).nodes;
+    const [node] = view(m("BoundedContext", "orders")).nodes;
     expect(node).toMatchObject({ isBoundary: true, parentId: null, element: { type: "panel" } });
   });
 
@@ -136,27 +136,27 @@ describe("buildTechnicalView", () => {
 
   it("keeps the first parent and reports a second one", () => {
     const v = view(
-      m("ApplicationService", "a"),
-      m("ApplicationService", "b"),
+      m("BoundedContext", "a"),
+      m("BoundedContext", "b"),
       m("Application", "api"),
       relationship(
         "r",
-        edge(["Application", "api"], "belongsTo", ["ApplicationService", "a"]),
-        edge(["Application", "api"], "belongsTo", ["ApplicationService", "b"]),
+        edge(["Application", "api"], "belongsTo", ["BoundedContext", "a"]),
+        edge(["Application", "api"], "belongsTo", ["BoundedContext", "b"]),
       ),
     );
-    expect(parentOf(v, "Application/api")).toBe("ApplicationService/a");
+    expect(parentOf(v, "Application/api")).toBe("BoundedContext/a");
     expect(v.dropped.map((d) => [d.index, d.reason])).toEqual([[1, "second-parent"]]);
   });
 
   it("breaks a containment cycle so no element is its own ancestor", () => {
     const v = view(
-      m("ApplicationService", "a"),
+      m("BoundedContext", "a"),
       m("Domain", "x"),
       relationship(
         "r",
-        edge(["ApplicationService", "a"], "belongsTo", ["Domain", "x"]),
-        edge(["Domain", "x"], "belongsTo", ["ApplicationService", "a"]),
+        edge(["BoundedContext", "a"], "belongsTo", ["Domain", "x"]),
+        edge(["Domain", "x"], "belongsTo", ["BoundedContext", "a"]),
       ),
     );
     const byId = new Map(v.nodes.map((n) => [n.id, n]));
@@ -202,11 +202,11 @@ describe("the opscr sample", () => {
         .sort(),
     ).toEqual(["Domain/commerce", "Domain/finance"]);
     expect(children("Domain/commerce")).toEqual([
-      "ApplicationService/catalog",
-      "ApplicationService/orders",
+      "BoundedContext/catalog",
+      "BoundedContext/orders",
     ]);
-    expect(children("Domain/finance")).toEqual(["ApplicationService/payments"]);
-    expect(children("ApplicationService/orders")).toEqual([
+    expect(children("Domain/finance")).toEqual(["BoundedContext/payments"]);
+    expect(children("BoundedContext/orders")).toEqual([
       "Application/order-tracker",
       "Application/orders-api",
     ]);

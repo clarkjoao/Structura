@@ -36,14 +36,14 @@ result through `stabilizeLayout(view, fresh, previous)`: surviving elements keep
 
 ## The technical view
 
-| opscr                                            | Drawn as                                                                                             |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `Domain`, `ApplicationService` (bounded context) | panel; `belongsTo` nests into it                                                                     |
-| `Subdomain`                                      | not drawn — a bounded context that belongs to one lands in its Domain                                |
-| Technical Kinds                                  | the catalog service of `spec.provider` (`PROVIDER_SERVICES`), else a C4 container naming the product |
-| `ExternalSystem` / `Channel`                     | C4 system / C4 container                                                                             |
-| Business and organization Kinds                  | not drawn, listed in `omitted`                                                                       |
-| Any edge but `belongsTo`                         | an edge, `from` → `to`, when both ends are drawn; otherwise listed in `dropped`                      |
+| opscr                           | Drawn as                                                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `Domain`, `BoundedContext`      | panel; `belongsTo` nests into it                                                                     |
+| `Subdomain`                     | not drawn — a bounded context that belongs to one lands in its Domain                                |
+| Technical Kinds                 | the catalog service of `spec.provider` (`PROVIDER_SERVICES`), else a C4 container naming the product |
+| `ExternalSystem` / `Channel`    | C4 system / C4 container                                                                             |
+| Business and organization Kinds | not drawn, listed in `omitted`                                                                       |
+| Any edge but `belongsTo`        | an edge, `from` → `to`, when both ends are drawn; otherwise listed in `dropped`                      |
 
 Ids are `Kind/name`: in opscr the name is the identity.
 

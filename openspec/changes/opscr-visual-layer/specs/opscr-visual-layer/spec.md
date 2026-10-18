@@ -41,9 +41,9 @@ panel. Its `members` — manifest elements and visual elements — SHALL be nest
 
 #### Scenario: A bounded context inside a VPC
 
-- **GIVEN** an `ApplicationService` manifest listed as a member of a VPC boundary
+- **GIVEN** an `BoundedContext` manifest listed as a member of a VPC boundary
 - **WHEN** it is drawn
-- **THEN** the ApplicationService panel is a child of the VPC panel and its applications stay children of the ApplicationService panel
+- **THEN** the BoundedContext panel is a child of the VPC panel and its applications stay children of the BoundedContext panel
 
 ### Requirement: Services without a Kind keep their identity
 

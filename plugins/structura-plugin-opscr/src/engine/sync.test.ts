@@ -8,7 +8,7 @@ const graph = (
 ): ImporterGraph => {
   const components: ImporterGraph["components"] = [
     {
-      key: "ApplicationService/orders",
+      key: "BoundedContext/orders",
       name: "orders",
       type: "panel",
       description: "",
@@ -24,7 +24,7 @@ const graph = (
       description: "API",
       cloudServiceId: "lambda",
       technology: "Lambda",
-      parentKey: "ApplicationService/orders",
+      parentKey: "BoundedContext/orders",
       x: 40,
       y: 40,
     },
@@ -97,11 +97,11 @@ describe("planSync", () => {
   it("adds everything on the first sync, parents addressed by key", () => {
     const { plan, next } = apply(graph(), emptyBinding(), diagramFor(emptyBinding(), graph()));
     expect(plan.changes.add!.map((c) => c.key)).toEqual([
-      "ApplicationService/orders",
+      "BoundedContext/orders",
       "Application/api",
       "Database/db",
     ]);
-    expect(plan.changes.add![1]!.parentKey).toBe("ApplicationService/orders");
+    expect(plan.changes.add![1]!.parentKey).toBe("BoundedContext/orders");
     expect(plan.changes.connect).toEqual([
       { source: "Application/api", target: "Database/db", label: "writes" },
     ]);
@@ -144,16 +144,13 @@ describe("planSync", () => {
   it("re-adds an element whose type changed, with its descendants", () => {
     const first = apply(graph(), emptyBinding(), diagramFor(emptyBinding(), graph())).next;
     const plan = planSync(
-      graph({ "ApplicationService/orders": { type: "container" } }),
+      graph({ "BoundedContext/orders": { type: "container" } }),
       first,
       diagramFor(first, graph()),
     );
-    expect(plan.changes.remove!.sort()).toEqual([
-      "id:Application/api",
-      "id:ApplicationService/orders",
-    ]);
+    expect(plan.changes.remove!.sort()).toEqual(["id:Application/api", "id:BoundedContext/orders"]);
     expect(plan.changes.add!.map((c) => c.key)).toEqual([
-      "ApplicationService/orders",
+      "BoundedContext/orders",
       "Application/api",
     ]);
   });
@@ -162,12 +159,12 @@ describe("planSync", () => {
     const first = apply(graph(), emptyBinding(), diagramFor(emptyBinding(), graph())).next;
     const diagram = diagramFor(first, graph(), (cs) => (cs[0]!.position = { x: 7, y: 9 }));
     const plan = planSync(
-      graph({ "ApplicationService/orders": { width: 500, height: 300 } }),
+      graph({ "BoundedContext/orders": { width: 500, height: 300 } }),
       first,
       diagram,
     );
     expect(plan.changes.move).toEqual([
-      { id: "id:ApplicationService/orders", x: 7, y: 9, width: 500, height: 300 },
+      { id: "id:BoundedContext/orders", x: 7, y: 9, width: 500, height: 300 },
     ]);
   });
 });
@@ -178,7 +175,7 @@ describe("canvasLayout", () => {
     const diagram = diagramFor(first, graph(), (cs) => (cs[2]!.position = { x: 999, y: 5 }));
     const { boxes } = canvasLayout(first, diagram);
     expect(boxes.get("Database/db")).toEqual({ x: 999, y: 5, width: 180, height: 80 });
-    expect(boxes.get("ApplicationService/orders")).toMatchObject({ width: 400, height: 300 });
+    expect(boxes.get("BoundedContext/orders")).toMatchObject({ width: 400, height: 300 });
   });
 });
 
@@ -186,7 +183,7 @@ describe("sidecarMoves", () => {
   it("moves bound elements to the sidecar's boxes, panels with their size", () => {
     const binding: BindingState = {
       ...emptyBinding(),
-      ids: { "Application/api": "c1", "ApplicationService/orders": "c2", "Database/db": "c3" },
+      ids: { "Application/api": "c1", "BoundedContext/orders": "c2", "Database/db": "c3" },
     };
     const component = (id: string, x: number, size: { width: number; height: number } | null) => ({
       id,
@@ -216,7 +213,7 @@ describe("sidecarMoves", () => {
       version: 1,
       elements: {
         "Application/api": { x: 90, y: 0, width: 180, height: 80 },
-        "ApplicationService/orders": { x: 0, y: 0, width: 500, height: 300 },
+        "BoundedContext/orders": { x: 0, y: 0, width: 500, height: 300 },
         "Database/db": { x: 50, y: 0, width: 180, height: 80 },
       },
     });

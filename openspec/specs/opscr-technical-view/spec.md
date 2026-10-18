@@ -22,28 +22,28 @@ to the same element on every projection.
 ### Requirement: Containment is drawn as nesting
 
 A `belongsTo` edge SHALL make the source element a child of the target element instead of being drawn
-as an edge. An ApplicationService that belongs to a Subdomain SHALL be nested in that Subdomain's Domain.
+as an edge. An BoundedContext that belongs to a Subdomain SHALL be nested in that Subdomain's Domain.
 
 #### Scenario: Application inside its bounded context
 
-- **GIVEN** `Application/orders-api belongsTo ApplicationService/orders`
+- **GIVEN** `Application/orders-api belongsTo BoundedContext/orders`
 - **WHEN** the technical view is built
-- **THEN** `Application/orders-api` is a child of `ApplicationService/orders` and no edge is drawn between them
+- **THEN** `Application/orders-api` is a child of `BoundedContext/orders` and no edge is drawn between them
 
 #### Scenario: Bounded context inside its domain through a subdomain
 
-- **GIVEN** `ApplicationService/orders belongsTo Subdomain/ordering` and `Subdomain/ordering belongsTo Domain/commerce`
+- **GIVEN** `BoundedContext/orders belongsTo Subdomain/ordering` and `Subdomain/ordering belongsTo Domain/commerce`
 - **WHEN** the technical view is built
-- **THEN** `ApplicationService/orders` is a child of `Domain/commerce`
+- **THEN** `BoundedContext/orders` is a child of `Domain/commerce`
 
 ### Requirement: Domains and bounded contexts are boundaries
 
-Domain and ApplicationService elements SHALL be boundaries (drawn as panels that may hold children),
+Domain and BoundedContext elements SHALL be boundaries (drawn as panels that may hold children),
 even when nothing belongs to them.
 
 #### Scenario: Empty bounded context
 
-- **GIVEN** an ApplicationService that no Application belongs to
+- **GIVEN** a BoundedContext that no Application belongs to
 - **WHEN** the technical view is built
 - **THEN** it is a boundary with no children
 
@@ -108,7 +108,7 @@ second parent SHALL be ignored and reported.
 
 #### Scenario: Containment cycle
 
-- **GIVEN** `ApplicationService/a belongsTo Domain/x` and `Domain/x belongsTo ApplicationService/a`
+- **GIVEN** `BoundedContext/a belongsTo Domain/x` and `Domain/x belongsTo BoundedContext/a`
 - **WHEN** the technical view is built
 - **THEN** the view is returned, no element is its own ancestor, and the ignored containment is reported
 

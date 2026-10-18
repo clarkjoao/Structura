@@ -101,12 +101,12 @@ describe("boundaries", () => {
 
   it("a bounded context inside a VPC keeps its applications", () => {
     const { graph } = draw("aws-simple-architecture");
-    const frontEnd = graph.components.find((c) => c.key === "ApplicationService/front-end")!;
+    const frontEnd = graph.components.find((c) => c.key === "BoundedContext/front-end")!;
     expect(parentName(graph, frontEnd)).toBe("VPC");
     const cluster = graph.components.find((c) => c.key === "Application/confluence-cluster-1")!;
     expect(parentName(graph, cluster)).toBe("Auto Scaling group");
     const asg = graph.components.find((c) => c.key === cluster.parentKey)!;
-    expect(asg.parentKey).toBe("ApplicationService/front-end");
+    expect(asg.parentKey).toBe("BoundedContext/front-end");
   });
 
   it("panel kinds follow the hint and the label", () => {

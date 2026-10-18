@@ -682,7 +682,7 @@ await page
 
 // Taking an element out of its panel (Ungroup) drops its belongsTo…
 const relayBelongsTo =
-  /- from: \{ kind: Application, id: order-relay \}\n\s+to: \{ kind: ApplicationService, id: orders \}\n\s+type: belongsTo/;
+  /- from: \{ kind: Application, id: order-relay \}\n\s+to: \{ kind: BoundedContext, id: orders \}\n\s+type: belongsTo/;
 await check(
   relayBelongsTo.test(await saveAndRead("relationships.opscr.yaml")),
   "order-relay sits in orders",
@@ -728,7 +728,7 @@ await page.mouse.up();
 await page.screenshot({ path: join(OUT, "8b-into-catalog.png") });
 await waitFor(
   async () =>
-    /- from: \{ kind: Application, id: order-relay \}\n\s+to: \{ kind: ApplicationService, id: catalog \}\n\s+type: belongsTo/.test(
+    /- from: \{ kind: Application, id: order-relay \}\n\s+to: \{ kind: BoundedContext, id: catalog \}\n\s+type: belongsTo/.test(
       await saveAndRead("relationships.opscr.yaml"),
     ),
   "dragging an element into a panel gives it that panel's belongsTo",
