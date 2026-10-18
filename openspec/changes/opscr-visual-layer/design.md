@@ -20,7 +20,7 @@ writes `opscr.visual.json` v1 —
 ```
 
 Visual boxes are relative to their `parent`; `opscr.layout.json` boxes are relative to the
-element's manifest parent (Domain / ApplicationService) — both in the same page coordinates
+element's manifest parent (Domain / BoundedContext) — both in the same page coordinates
 (transposed when the import transposed the page). Checked headless already: the import's layout
 covers every view node, so the plugin keeps the drawing's positions.
 

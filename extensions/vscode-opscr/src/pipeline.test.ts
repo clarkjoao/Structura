@@ -108,11 +108,7 @@ describe("PreviewPipeline", () => {
     expect(diagnostics.filter((d) => d.severity === "error")).toEqual([]);
     const keys = graph!.components.map((c) => c.key);
     expect(keys).toEqual(
-      expect.arrayContaining([
-        "Domain/commerce",
-        "ApplicationService/orders",
-        "Database/orders-db",
-      ]),
+      expect.arrayContaining(["Domain/commerce", "BoundedContext/orders", "Database/orders-db"]),
     );
     expect(graph!.connections).toContainEqual({
       source: "Application/orders-api",

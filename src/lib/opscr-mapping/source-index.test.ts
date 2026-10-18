@@ -23,7 +23,7 @@ const end = (kind: string, id: string) => ({ kind, id });
 // apps.opscr.yaml: a panel, two apps and a business Kind that is not drawn.
 // rel.opscr.yaml: a belongsTo, a call, and an edge to a missing manifest.
 const manifests = [
-  at("apps", 1, "ApplicationService", "orders"),
+  at("apps", 1, "BoundedContext", "orders"),
   at("apps", 6, "Application", "api"),
   at("apps", 11, "Application", "worker"),
   at("apps", 16, "BusinessCapability", "selling"),
@@ -36,7 +36,7 @@ const manifests = [
       edges: [
         {
           from: end("Application", "api"),
-          to: end("ApplicationService", "orders"),
+          to: end("BoundedContext", "orders"),
           type: "belongsTo",
         },
         { from: end("Application", "api"), to: end("Application", "worker"), type: "calls" },
@@ -78,7 +78,7 @@ describe("SourceIndex", () => {
   it("finds the element a line writes, down to the next manifest or edge", () => {
     expect(index.elementAt("apps", 1)).toEqual({
       kind: "component",
-      key: "ApplicationService/orders",
+      key: "BoundedContext/orders",
     });
     expect(index.elementAt("apps", 8)).toEqual({ kind: "component", key: "Application/api" });
     expect(index.elementAt("rel", 10)).toEqual({ kind: "connection", key: call });

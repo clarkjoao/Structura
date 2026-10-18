@@ -34,7 +34,7 @@
       }
     },
     {
-      "kind": "ApplicationService",
+      "kind": "BoundedContext",
       "metadata": {
         "name": "orders"
       },
@@ -44,7 +44,7 @@
       }
     },
     {
-      "kind": "ApplicationService",
+      "kind": "BoundedContext",
       "metadata": {
         "name": "catalog"
       },
@@ -216,7 +216,7 @@
       }
     },
     {
-      "kind": "ApplicationService",
+      "kind": "BoundedContext",
       "metadata": {
         "name": "payments"
       },
@@ -331,7 +331,7 @@
           },
           {
             "from": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "orders"
             },
             "to": {
@@ -342,7 +342,7 @@
           },
           {
             "from": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "catalog"
             },
             "to": {
@@ -353,7 +353,7 @@
           },
           {
             "from": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "payments"
             },
             "to": {
@@ -443,7 +443,7 @@
               "id": "orders-api"
             },
             "to": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "orders"
             },
             "type": "belongsTo"
@@ -454,7 +454,7 @@
               "id": "order-tracker"
             },
             "to": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "orders"
             },
             "type": "belongsTo"
@@ -547,7 +547,7 @@
               "id": "order-fulfillment"
             },
             "to": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "orders"
             },
             "type": "appliesTo"
@@ -568,7 +568,7 @@
               "id": "catalog-api"
             },
             "to": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "catalog"
             },
             "type": "belongsTo"
@@ -600,7 +600,7 @@
               "id": "payment-worker"
             },
             "to": {
-              "kind": "ApplicationService",
+              "kind": "BoundedContext",
               "id": "payments"
             },
             "type": "belongsTo"

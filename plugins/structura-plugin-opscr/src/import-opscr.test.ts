@@ -40,16 +40,16 @@ describe("importOpscr — the sample as one file", () => {
   it("draws domains and bounded contexts as nested panels sized for their children", () => {
     expect(byKey.get("Domain/commerce")).toMatchObject({ type: "panel" });
     expect(childrenOf("Domain/commerce")).toEqual([
-      "ApplicationService/catalog",
-      "ApplicationService/orders",
+      "BoundedContext/catalog",
+      "BoundedContext/orders",
     ]);
-    expect(childrenOf("ApplicationService/orders")).toEqual([
+    expect(childrenOf("BoundedContext/orders")).toEqual([
       "Application/order-tracker",
       "Application/order-tracker-2",
       "Application/orders-api",
     ]);
-    const orders = byKey.get("ApplicationService/orders")!;
-    for (const key of childrenOf("ApplicationService/orders")) {
+    const orders = byKey.get("BoundedContext/orders")!;
+    for (const key of childrenOf("BoundedContext/orders")) {
       const child = byKey.get(key)!;
       expect(child.x).toBeGreaterThanOrEqual(0);
       expect(child.x).toBeLessThan(orders.width!);

@@ -26,30 +26,30 @@ const overlap = (a: ViewBox, b: ViewBox) =>
 /** orders panel with one app; the edit adds a second app inside it and a root database. */
 const before = buildTechnicalView({
   manifests: [
-    m("ApplicationService", "orders"),
+    m("BoundedContext", "orders"),
     m("Application", "api"),
     m("Relationship", "r", {
-      edges: [belongs(["Application", "api"], ["ApplicationService", "orders"])],
+      edges: [belongs(["Application", "api"], ["BoundedContext", "orders"])],
     }),
   ],
 });
 const after = buildTechnicalView({
   manifests: [
-    m("ApplicationService", "orders"),
+    m("BoundedContext", "orders"),
     m("Application", "api"),
     m("Application", "worker"),
     m("Database", "db"),
     m("Relationship", "r", {
       edges: [
-        belongs(["Application", "api"], ["ApplicationService", "orders"]),
-        belongs(["Application", "worker"], ["ApplicationService", "orders"]),
+        belongs(["Application", "api"], ["BoundedContext", "orders"]),
+        belongs(["Application", "worker"], ["BoundedContext", "orders"]),
       ],
     }),
   ],
 });
 
 const previous = result({
-  "ApplicationService/orders": box(100, 100, 260, 160),
+  "BoundedContext/orders": box(100, 100, 260, 160),
   "Application/api": box(40, 40),
 });
 
@@ -58,30 +58,30 @@ describe("stabilizeLayout", () => {
     const fresh = result({ "Application/api": box(1, 2) });
     const stable = stabilizeLayout(before, fresh, undefined);
     expect(stable.boxes).toBe(fresh.boxes);
-    expect(stable.parents?.get("Application/api")).toBe("ApplicationService/orders");
+    expect(stable.parents?.get("Application/api")).toBe("BoundedContext/orders");
   });
 
   it("keeps every surviving element where it was, whatever the engine says now", () => {
     // The engine moved everything (as a full relayout does).
     const fresh = result({
-      "ApplicationService/orders": box(500, 500, 260, 300),
+      "BoundedContext/orders": box(500, 500, 260, 300),
       "Application/api": box(40, 160),
       "Application/worker": box(40, 40),
       "Database/db": box(900, 0),
     });
     const boxes = stabilizeLayout(after, fresh, previous).boxes;
-    expect(boxes.get("ApplicationService/orders")).toMatchObject({ x: 100, y: 100 });
+    expect(boxes.get("BoundedContext/orders")).toMatchObject({ x: 100, y: 100 });
     expect(boxes.get("Application/api")).toMatchObject({ x: 40, y: 40, width: 180, height: 80 });
   });
 
   it("places an element moved to another parent like a new one", () => {
     // api leaves the orders panel for the root; its old box was relative to the panel.
     const moved = buildTechnicalView({
-      manifests: [m("ApplicationService", "orders"), m("Application", "api")],
+      manifests: [m("BoundedContext", "orders"), m("Application", "api")],
     });
     const known = { ...previous, parents: stabilizeLayout(before, previous, undefined).parents };
     const fresh = result({
-      "ApplicationService/orders": box(0, 0, 360, 200),
+      "BoundedContext/orders": box(0, 0, 360, 200),
       "Application/api": box(400, 0),
     });
     const boxes = stabilizeLayout(moved, fresh, known).boxes;
@@ -96,18 +96,18 @@ describe("stabilizeLayout", () => {
 
   it("moves nothing when only text changed", () => {
     const fresh = result({
-      "ApplicationService/orders": box(0, 0, 300, 300),
+      "BoundedContext/orders": box(0, 0, 300, 300),
       "Application/api": box(80, 90),
     });
     const boxes = stabilizeLayout(before, fresh, previous).boxes;
-    expect(boxes.get("ApplicationService/orders")).toEqual(box(100, 100, 260, 160));
+    expect(boxes.get("BoundedContext/orders")).toEqual(box(100, 100, 260, 160));
     expect(boxes.get("Application/api")).toEqual(box(40, 40));
   });
 
   it("places a new element relative to its nearest surviving sibling, overlapping none", () => {
     // The engine puts worker exactly where api was kept: it must move off it.
     const fresh = result({
-      "ApplicationService/orders": box(100, 100, 260, 300),
+      "BoundedContext/orders": box(100, 100, 260, 300),
       "Application/api": box(40, 160),
       "Application/worker": box(40, 160),
       "Database/db": box(900, 0),
@@ -121,13 +121,13 @@ describe("stabilizeLayout", () => {
 
   it("grows a panel to hold its children and never shrinks it", () => {
     const fresh = result({
-      "ApplicationService/orders": box(100, 100, 10, 10),
+      "BoundedContext/orders": box(100, 100, 10, 10),
       "Application/api": box(40, 40),
       "Application/worker": box(40, 400),
       "Database/db": box(900, 0),
     });
     const boxes = stabilizeLayout(after, fresh, previous).boxes;
-    const panel = boxes.get("ApplicationService/orders")!;
+    const panel = boxes.get("BoundedContext/orders")!;
     for (const id of ["Application/api", "Application/worker"]) {
       const child = boxes.get(id)!;
       expect(child.x + child.width).toBeLessThanOrEqual(panel.width);
@@ -147,7 +147,7 @@ describe("stabilizeLayout", () => {
     expect(previousCoversView(after, known)).toBe(false); // worker and db are new
     expect(previousCoversView(before, undefined)).toBe(false);
     const moved = buildTechnicalView({
-      manifests: [m("ApplicationService", "orders"), m("Application", "api")],
+      manifests: [m("BoundedContext", "orders"), m("Application", "api")],
     });
     expect(previousCoversView(moved, known)).toBe(false); // api left its panel
   });
