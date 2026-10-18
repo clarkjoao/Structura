@@ -224,6 +224,21 @@ export const AWS_CATEGORIES: AwsCategory[] = [
         iconName: "ArchitectureServiceAWSTransitGateway",
       },
       {
+        id: "internet-gateway",
+        name: "Internet Gateway",
+        iconName: "ResourceAmazonVPCInternetGateway",
+      },
+      {
+        id: "nat-gateway",
+        name: "NAT Gateway",
+        iconName: "ResourceAmazonVPCNATGateway",
+      },
+      {
+        id: "elastic-ip",
+        name: "Elastic IP Address",
+        iconName: "ResourceAmazonEC2ElasticIPAddress",
+      },
+      {
         id: "global-accelerator",
         name: "AWS Global Accelerator",
         iconName: "ArchitectureServiceAWSGlobalAccelerator",
