@@ -1,6 +1,8 @@
 import type { ComponentType } from "@/features/diagram/model/component.types";
 import {
+  COMPONENT_TYPE_TEXT,
   isC4Type,
+  isPanelKind,
   isPanelType,
   isPluginComponentType,
 } from "@/features/diagram/model/component-type-constants";
@@ -24,12 +26,14 @@ function isCatalogCategoryType(type: string): boolean {
 }
 
 /**
- * The type an imported component is created with. C4 shapes, panels, catalog categories and
- * plugin-namespaced types are kept; other built-ins carry semantics a plain data input cannot
- * express (an endpoint's handlers, a note's text) and degrade to `unknown`, as before 1.3.
+ * The type an imported component is created with. C4 shapes, panels, text (since 1.12), catalog
+ * categories and plugin-namespaced types are kept; other built-ins carry semantics a plain data
+ * input cannot express (an endpoint's handlers, a note's body) and degrade to `unknown`, as
+ * before 1.3. A text element's text is its name.
  */
 function importedType(type: string | undefined): ComponentType {
   if (type === undefined) return "unknown";
+  if (type === COMPONENT_TYPE_TEXT) return COMPONENT_TYPE_TEXT;
   if (isC4Type(type) || isPanelType(type) || isPluginComponentType(type)) return type;
   if (isCatalogCategoryType(type)) return type as ComponentType;
   return "unknown";
@@ -56,6 +60,7 @@ function validComponents(inputs: readonly unknown[]): PluginComponentInput[] {
         type: typeof input.type === "string" ? input.type : undefined,
         description: typeof input.description === "string" ? input.description : undefined,
         parentKey: typeof input.parentKey === "string" ? input.parentKey : undefined,
+        panelKind: typeof input.panelKind === "string" ? input.panelKind : undefined,
         ...(finite(width) ? { width } : {}),
         ...(finite(height) ? { height } : {}),
       },
@@ -120,6 +125,10 @@ export function toGeneratedGraph(result: Pick<ImportResult, "components" | "conn
       name: input.name,
       ...(input.description !== undefined ? { description: input.description } : {}),
       parentExternalId: parentOf.get(input.key) ?? null,
+      // An unknown panel kind is dropped: the panel is a default one.
+      ...(input.panelKind !== undefined && isPanelKind(input.panelKind)
+        ? { panelKind: input.panelKind }
+        : {}),
       ...cloudServiceIdWrite(
         typeof input.cloudServiceId === "string" ? input.cloudServiceId : undefined,
       ),

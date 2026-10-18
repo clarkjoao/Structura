@@ -8,7 +8,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.11.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.12.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -133,7 +133,7 @@ export interface PluginComponentInput {
   key: string;
   name: string;
   /**
-   * Kept when it is a C4 type, `"panel"`, a catalog family category (`"aws-database"`,
+   * Kept when it is a C4 type, `"panel"`, `"text"` (since 1.12; its text is `name`), a catalog family category (`"aws-database"`,
    * `"gcp-compute"`, `"oss-messaging"`, …) or a plugin node type `"<pluginId>/<name>"`;
    * anything else, or omitted, becomes `"unknown"`.
    */
@@ -147,6 +147,12 @@ export interface PluginComponentInput {
   parentKey?: string;
   /** Catalog service of a catalog family component, e.g. "dynamodb" (since 1.3). */
   cloudServiceId?: string;
+  /**
+   * Kind of a `panel` (since 1.12): `"vpc"`, `"public-subnet"`, `"private-subnet"`,
+   * `"availability-zone"`, `"auto-scaling-group"`, `"eks-cluster"`, `"ecs-cluster"`,
+   * `"swimlane"`; anything else is a default panel.
+   */
+  panelKind?: string;
   /** Technology label of a C4 or catalog component (since 1.3). */
   technology?: string;
   /** Relative to the parent when `parentKey` is honoured; otherwise canvas coordinates. */
