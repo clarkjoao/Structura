@@ -11,10 +11,18 @@ import { CONFIG_FILE, isManifest, projector, type Projection } from "../project"
 import { nameAt, refOf, type SourceText } from "../engine/patches";
 import { openSession } from "../session";
 import {
+  importDrawioFile,
+  isWorkspaceFile,
+  notArchitecturePages,
+  reviewItems,
+} from "../import-drawio";
+import {
   DRAWN_KINDS,
   LAYOUT_FILE,
+  VISUAL_FILE,
   kindFor,
   providersFor,
+  type DrawnThrough,
   type GraphElementRef,
   type SourceLocation,
 } from "../generated/opscr-mapping";
@@ -60,7 +68,12 @@ interface Buffer {
 /** How often the folder is checked for changes made outside Structura. */
 const WATCH_INTERVAL_MS = 2000;
 const isTracked = (name: string) =>
-  isManifest(name) || name === CONFIG_FILE || name === LAYOUT_FILE;
+  isManifest(name) || name === CONFIG_FILE || name === LAYOUT_FILE || name === VISUAL_FILE;
+/** The sidecars: written by the engine from the canvas, never shown as an editor tab. */
+const isSidecar = (name: string) =>
+  name === LAYOUT_FILE || name === VISUAL_FILE || name === ANALYSIS_FILE;
+/** Written by a draw.io import; read for its review list, never edited here. */
+const ANALYSIS_FILE = "analysis.json";
 
 interface StoredBinding {
   folderName: string;
@@ -154,6 +167,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const restored = useRef(false);
     /** Canvas connections the YAML does not carry as drawn. */
     const [unwritten, setUnwritten] = useState<UnwrittenConnection[]>([]);
+    const [drawnThrough, setDrawnThrough] = useState<DrawnThrough[]>([]);
     /** The last projection with a graph: where elements are written, and what is not drawn. */
     const [projection, setProjection] = useState<Projection | null>(null);
     const projectionRef = useRef(projection);
@@ -274,6 +288,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
       else if (event.type === "rename-refused") setStatus(t.renameRefused(event.name));
       else if (event.type === "provider-refused") setStatus(t.providerRefused(event.names));
       else if (event.type === "added") setStatus(t.addedToYaml(event.keys));
+      else if (event.type === "drawn-through") setDrawnThrough(event.edges);
+      else if (event.type === "visual-unreadable") setStatus(t.visualUnreadable);
     };
     const engine = useMemo(() => {
       /**
@@ -477,17 +493,19 @@ export function createOpscrPane(api: StructuraPluginApi) {
           await Promise.all(read.map(async (name) => [name, await folder.read(name)] as const)),
         );
         knownStats.current = toStats(stats.filter((f) => isTracked(f.name)));
-        const merged = mergeDisk(buffersRef.current, disk, removed, (n) => n === LAYOUT_FILE);
+        const merged = mergeDisk(buffersRef.current, disk, removed, isSidecar);
         commitBuffers(merged.buffers);
         if (merged.conflicts.length > 0) setStatus(t.diskConflict(merged.conflicts));
         else if (merged.reloaded.length > 0) setStatus(t.diskReloaded(merged.reloaded));
         const sidecar = merged.reloaded.includes(LAYOUT_FILE)
           ? merged.buffers.find((b) => b.name === LAYOUT_FILE)?.text
           : undefined;
-        const manifestsChanged = merged.reloaded.some((n) => n !== LAYOUT_FILE);
-        if (!sidecar && !manifestsChanged) return;
+        const visualChanged = merged.reloaded.includes(VISUAL_FILE);
+        const manifestsChanged = merged.reloaded.some((n) => !isSidecar(n));
+        if (!sidecar && !visualChanged && !manifestsChanged) return;
         if (sidecar) await engine.sidecarChanged(sidecar);
-        else await engine.sync();
+        if (visualChanged) await engine.visualChanged();
+        if (!sidecar && !visualChanged) await engine.sync();
       } catch (error) {
         console.error("[opscr] checking the folder failed:", error);
       } finally {
@@ -571,9 +589,14 @@ export function createOpscrPane(api: StructuraPluginApi) {
       async (opened: PluginFolder) => {
         const listed = await opened.list();
         const names = listed.filter((n) => isManifest(n) || n === CONFIG_FILE);
+        // The visual layer only exists for folders imported from draw.io.
+        const sidecars = [
+          LAYOUT_FILE,
+          ...[VISUAL_FILE, ANALYSIS_FILE].filter((n) => listed.includes(n)),
+        ];
         const loaded = await Promise.all(
-          [...names, LAYOUT_FILE].map(async (name) => {
-            // The sidecar may not exist yet: it is created on the first save.
+          [...names, ...sidecars].map(async (name) => {
+            // The layout sidecar may not exist yet: it is created on the first save.
             const content =
               name === LAYOUT_FILE && !listed.includes(name) ? "" : await opened.read(name);
             return { name, disk: content, text: content };
@@ -661,6 +684,19 @@ export function createOpscrPane(api: StructuraPluginApi) {
       if (folder) await load(folder);
     };
 
+    /** A one-way migration: only into a folder that holds no opscr workspace yet. */
+    const importDrawioIntoFolder = async (file: File) => {
+      if (!folder) return;
+      const listed = await folder.list();
+      if (listed.some(isWorkspaceFile)) return setStatus(t.importNeedsEmpty);
+      setStatus(t.importing(file.name));
+      const result = await importDrawioFile(await file.text(), file.name);
+      if (result.problem) return setStatus(t.importProblem(result.problem));
+      for (const f of result.files) await folder.write(f.name, f.text);
+      await load(folder);
+      setStatus(t.imported(file.name, result.skippedPages));
+    };
+
     useEffect(() => () => clearTimeout(timer.current), []);
 
     if (!diagramId) return <p className="p-3 text-xs text-muted-foreground">{t.noDiagram}</p>;
@@ -715,7 +751,10 @@ export function createOpscrPane(api: StructuraPluginApi) {
     ).length;
     const omitted = projection?.omitted ?? [];
     const dropped = projection?.dropped ?? [];
-    const notCarried = unwritten.length + omitted.length + dropped.length;
+    const notCarried = unwritten.length + omitted.length + dropped.length + drawnThrough.length;
+    const sources = buffers.map((b) => ({ name: b.name, text: b.text }));
+    const review = buffers.some((b) => b.name === ANALYSIS_FILE) ? reviewItems(sources) : [];
+    const flaggedPages = notArchitecturePages(sources);
     const openWritten = (id: string) => {
       const at = projection?.sources?.locateWritten(id);
       if (at) showSource(at);
@@ -753,7 +792,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         </div>
         <div role="tablist" className="flex flex-wrap gap-1 border-b px-2 py-1">
           {buffers
-            .filter((b) => b.name !== LAYOUT_FILE)
+            .filter((b) => !isSidecar(b.name))
             .map((b) => (
               <button
                 key={b.name}
@@ -900,7 +939,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
                 </ul>
               </div>
             )}
-            {omitted.length + dropped.length > 0 && (
+            {omitted.length + dropped.length + drawnThrough.length > 0 && (
               <div className="mt-1">
                 <p className="text-muted-foreground">{t.inYamlOnly}</p>
                 <ul className="space-y-0.5">
@@ -912,6 +951,17 @@ export function createOpscrPane(api: StructuraPluginApi) {
                         onClick={() => openWritten(`${d.relationship}#${d.index}`)}
                       >
                         {t.dropped(d.type, d.from, d.to, d.reason)}
+                      </button>
+                    </li>
+                  ))}
+                  {drawnThrough.map((d) => (
+                    <li key={`through:${d.edge}`}>
+                      <button
+                        type="button"
+                        className="text-left hover:underline"
+                        onClick={() => openWritten(d.edge.split(" -")[0]!)}
+                      >
+                        {t.drawnThrough(d.edge, d.via)}
                       </button>
                     </li>
                   ))}
@@ -929,6 +979,28 @@ export function createOpscrPane(api: StructuraPluginApi) {
                 </ul>
               </div>
             )}
+          </details>
+        )}
+        {review.length + flaggedPages.length > 0 && (
+          <details className="max-h-40 overflow-auto border-b px-2 py-1">
+            <summary className="cursor-pointer">{t.reviewTitle(review.length)}</summary>
+            {flaggedPages.length > 0 && (
+              <p className="mt-1 text-destructive">{t.notArchitecture(flaggedPages)}</p>
+            )}
+            <ul className="mt-1 space-y-0.5">
+              {review.map((r) => (
+                <li key={r.key}>
+                  <button
+                    type="button"
+                    className="text-left hover:underline"
+                    onClick={() => openWritten(r.key)}
+                    title={r.evidence}
+                  >
+                    {r.key} — {r.evidence}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </details>
         )}
         {current && comparing === current.name && current.conflict !== undefined && (
@@ -962,6 +1034,20 @@ export function createOpscrPane(api: StructuraPluginApi) {
                 >
                   {t.createFirst}
                 </button>
+                <label className="ml-2 inline-block cursor-pointer rounded-md border px-3 py-1.5">
+                  {t.importDrawio}
+                  <input
+                    type="file"
+                    accept=".drawio,.xml,.svg"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.target.value = "";
+                      if (file) void importDrawioIntoFolder(file);
+                    }}
+                  />
+                </label>
+                <p className="text-muted-foreground">{t.importDrawioHint}</p>
               </div>
             )
           )}

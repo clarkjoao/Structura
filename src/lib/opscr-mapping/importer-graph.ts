@@ -15,6 +15,8 @@ export interface ImporterGraphComponent {
   parentKey?: string;
   cloudServiceId?: string;
   technology?: string;
+  /** Panel kind (plugin API 1.12), for the visual layer's boundaries. */
+  panelKind?: string;
   x: number;
   y: number;
   width?: number;

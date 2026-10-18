@@ -66,6 +66,24 @@ const en = {
         ? `“${label}” is not an opscr edge type — the YAML says ${type}`
         : `“${label}” could not be written to a Relationship`,
   omitted: (kind: string, name: string) => `${kind} ${name}: this view does not draw ${kind}`,
+  drawnThrough: (edge: string, via: string[]) =>
+    `${edge}: drawn through ${via.join(" → ")}, as in the drawing`,
+  visualUnreadable: "opscr.visual.json cannot be read — drawn without the visual layer.",
+  importDrawio: "Import .drawio…",
+  importDrawioHint:
+    "Migrates an architecture diagram drawn in draw.io into this folder, once: afterwards the YAML is the source and the .drawio is history.",
+  importNeedsEmpty: "Importing a draw.io file is a one-time migration: bind an empty folder.",
+  importing: (file: string) => `Importing ${file}…`,
+  importProblem: (problem: "no-diagram" | "no-architecture"): string =>
+    problem === "no-diagram"
+      ? "No draw.io diagram found in that file."
+      : "No architecture found in that diagram.",
+  imported: (file: string, skipped: string[]) =>
+    `Imported ${file}` +
+    (skipped.length > 0 ? ` (first page; for ${skipped.join(", ")} use the opscr CLI)` : "") +
+    " — review what was assumed below.",
+  reviewTitle: (n: number) => `${n} assumed by the import — to review`,
+  notArchitecture: (pages: string[]) => `May not be an architecture diagram: ${pages.join(", ")}`,
   dropped: (
     type: string,
     from: string,
@@ -165,6 +183,27 @@ const ptBR: typeof en = {
         ? `“${label}” não é um tipo de aresta do opscr — o YAML diz ${type}`
         : `“${label}” não pôde ser escrita num Relationship`,
   omitted: (kind: string, name: string) => `${kind} ${name}: esta visão não desenha ${kind}`,
+  drawnThrough: (edge: string, via: string[]) =>
+    `${edge}: desenhada passando por ${via.join(" → ")}, como no desenho`,
+  visualUnreadable: "opscr.visual.json não pôde ser lido — desenhado sem a camada visual.",
+  importDrawio: "Importar .drawio…",
+  importDrawioHint:
+    "Migra para esta pasta, uma vez, um diagrama de arquitetura desenhado no draw.io: depois disso o YAML é a fonte e o .drawio é histórico.",
+  importNeedsEmpty: "Importar um arquivo draw.io é uma migração única: vincule uma pasta vazia.",
+  importing: (file: string) => `Importando ${file}…`,
+  importProblem: (problem: "no-diagram" | "no-architecture") =>
+    problem === "no-diagram"
+      ? "Nenhum diagrama draw.io nesse arquivo."
+      : "Nenhuma arquitetura nesse diagrama.",
+  imported: (file: string, skipped: string[]) =>
+    `${file} importado` +
+    (skipped.length > 0
+      ? ` (primeira página; para ${skipped.join(", ")} use o CLI do opscr)`
+      : "") +
+    " — revise abaixo o que foi assumido.",
+  reviewTitle: (n: number) => `${n} assumidos pelo import — a revisar`,
+  notArchitecture: (pages: string[]) =>
+    `Pode não ser um diagrama de arquitetura: ${pages.join(", ")}`,
   dropped: (
     type: string,
     from: string,

@@ -32,6 +32,22 @@ export { SourceIndex } from "./source-index";
 export type { GraphElementRef, LocatedManifestInput, SourceLocation } from "./source-index";
 export { CONFIG_FILE, isManifestName } from "./files";
 export { LAYOUT_FILE, overlayLayouts, parseLayoutFile, serializeLayoutFile } from "./layout-file";
+export {
+  VISUAL_FILE,
+  VISUAL_SERVICES,
+  boundaryPanelKind,
+  parseVisualFile,
+  serviceFor,
+  withVisualLayer,
+} from "./visual-layer";
+export type {
+  DrawnThrough,
+  VisualBox,
+  VisualEdge,
+  VisualElement,
+  VisualFile,
+  VisualLayerResult,
+} from "./visual-layer";
 export type {
   ImporterGraph,
   ImporterGraphComponent,
