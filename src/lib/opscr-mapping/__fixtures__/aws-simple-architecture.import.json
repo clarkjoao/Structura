@@ -1,0 +1,131 @@
+{
+  "source": "aws-simple-architecture.drawio",
+  "manifests": [
+    {
+      "kind": "LoadBalancer",
+      "metadata": {
+        "name": "elastic-load-balancer"
+      },
+      "spec": {
+        "provider": "ALB",
+        "description": "Elastic Load Balancer"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "confluence-cluster-1"
+      },
+      "spec": {
+        "provider": "ECS",
+        "language": "Java",
+        "description": "Confluence Cluster 1"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "confluence-cluster-2"
+      },
+      "spec": {
+        "provider": "ECS",
+        "language": "Java",
+        "description": "Confluence Cluster 2"
+      }
+    },
+    {
+      "kind": "Channel",
+      "metadata": {
+        "name": "users"
+      },
+      "spec": {
+        "type": "Web",
+        "description": "Users"
+      }
+    },
+    {
+      "kind": "LoadBalancer",
+      "metadata": {
+        "name": "reverse-proxy"
+      },
+      "spec": {
+        "provider": "ALB",
+        "description": "Reverse Proxy"
+      }
+    },
+    {
+      "kind": "LoadBalancer",
+      "metadata": {
+        "name": "reverse-proxy-2"
+      },
+      "spec": {
+        "provider": "ALB",
+        "description": "Reverse Proxy"
+      }
+    },
+    {
+      "kind": "Database",
+      "metadata": {
+        "name": "primary"
+      },
+      "spec": {
+        "provider": "RDSPostgres",
+        "description": "Primary"
+      }
+    },
+    {
+      "kind": "Database",
+      "metadata": {
+        "name": "secondary"
+      },
+      "spec": {
+        "provider": "RDSPostgres",
+        "description": "Secondary"
+      }
+    },
+    {
+      "kind": "ApplicationService",
+      "metadata": {
+        "name": "front-end"
+      },
+      "spec": {
+        "displayName": "Front End",
+        "description": "Front End"
+      }
+    },
+    {
+      "kind": "Relationship",
+      "metadata": {
+        "name": "aws-simple-architecture-relationships"
+      },
+      "spec": {
+        "edges": [
+          {
+            "from": {
+              "kind": "Application",
+              "id": "confluence-cluster-1"
+            },
+            "to": {
+              "kind": "ApplicationService",
+              "id": "front-end"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "confluence-cluster-2"
+            },
+            "to": {
+              "kind": "ApplicationService",
+              "id": "front-end"
+            },
+            "type": "belongsTo"
+          }
+        ]
+      }
+    }
+  ],
+  "layout": "{\n  \"version\": 1,\n  \"elements\": {\n    \"Application/confluence-cluster-1\": { \"x\": 124, \"y\": 74, \"width\": 41, \"height\": 50 },\n    \"Application/confluence-cluster-2\": { \"x\": 529, \"y\": 75, \"width\": 41, \"height\": 50 },\n    \"ApplicationService/front-end\": { \"x\": -950, \"y\": -460, \"width\": 700, \"height\": 170 },\n    \"Channel/users\": { \"x\": -620, \"y\": -870, \"width\": 40, \"height\": 40 },\n    \"Database/primary\": { \"x\": -835, \"y\": -220, \"width\": 60, \"height\": 60 },\n    \"Database/secondary\": { \"x\": -430, \"y\": -220, \"width\": 60, \"height\": 60 },\n    \"LoadBalancer/elastic-load-balancer\": { \"x\": -624, \"y\": -720, \"width\": 48, \"height\": 48 },\n    \"LoadBalancer/reverse-proxy\": { \"x\": -784, \"y\": -632, \"width\": 60, \"height\": 60 },\n    \"LoadBalancer/reverse-proxy-2\": { \"x\": -379, \"y\": -632, \"width\": 60, \"height\": 60 }\n  }\n}\n",
+  "visual": "{\n  \"edges\": [],\n  \"elements\": {\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-22\": {\n      \"box\": {\n        \"height\": 780,\n        \"width\": 840,\n        \"x\": -1020,\n        \"y\": -800\n      },\n      \"hint\": \"aws:cloud\",\n      \"label\": \"AWS Cloud\",\n      \"members\": [\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-23\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-36\"\n      ],\n      \"parent\": null,\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;strokeColor=#232F3E;verticalAlign=top;align=left;spacingLeft=30;fontColor=#232F3E;dashed=0;fillColor=none;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-23\": {\n      \"box\": {\n        \"height\": 680,\n        \"width\": 800,\n        \"x\": 20,\n        \"y\": 80\n      },\n      \"hint\": \"generic:vpc\",\n      \"label\": \"VPC\",\n      \"members\": [\n        \"ApplicationService/front-end\",\n        \"LoadBalancer/elastic-load-balancer\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-31\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-32\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-42\"\n      ],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-22\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_vpc;strokeColor=#248814;fillColor=none;verticalAlign=top;align=left;spacingLeft=30;dashed=0;fontColor=#248814;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-24\": {\n      \"box\": {\n        \"height\": 120,\n        \"width\": 320,\n        \"x\": 10,\n        \"y\": 28\n      },\n      \"hint\": \"generic:subnet\",\n      \"label\": \"Public DMZ1\",\n      \"members\": [\n        \"LoadBalancer/reverse-proxy\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-38\"\n      ],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-31\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#248814;fillColor=#E9F3E6;verticalAlign=top;align=left;spacingLeft=30;fontColor=#248814;dashed=0;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-25\": {\n      \"box\": {\n        \"height\": 120,\n        \"width\": 320,\n        \"x\": 10,\n        \"y\": 28\n      },\n      \"hint\": \"generic:subnet\",\n      \"label\": \"Public DMZ2\",\n      \"members\": [\n        \"LoadBalancer/reverse-proxy-2\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-48\"\n      ],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-32\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#248814;fillColor=#E9F3E6;verticalAlign=top;align=left;spacingLeft=30;fontColor=#248814;dashed=0;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-26\": {\n      \"box\": {\n        \"height\": 450,\n        \"width\": 320,\n        \"x\": 10,\n        \"y\": 170\n      },\n      \"hint\": \"generic:subnet\",\n      \"label\": \"Private Subnet 1\",\n      \"members\": [],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-31\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#147EBA;fillColor=#E6F2F8;verticalAlign=top;align=left;spacingLeft=30;fontColor=#147EBA;dashed=0;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-27\": {\n      \"box\": {\n        \"height\": 450,\n        \"width\": 320,\n        \"x\": 10,\n        \"y\": 170\n      },\n      \"hint\": \"generic:subnet\",\n      \"label\": \"Private Subnet 2\",\n      \"members\": [],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-32\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;grStroke=0;strokeColor=#147EBA;fillColor=#E6F2F8;verticalAlign=top;align=left;spacingLeft=30;fontColor=#147EBA;dashed=0;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-28\": {\n      \"box\": {\n        \"height\": 130,\n        \"width\": 250,\n        \"x\": 20,\n        \"y\": 20\n      },\n      \"hint\": \"generic:auto-scaling-group\",\n      \"label\": \"Auto Scaling group\",\n      \"members\": [\n        \"Application/confluence-cluster-1\"\n      ],\n      \"parent\": \"ApplicationService/front-end\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.groupCenter;grIcon=mxgraph.aws4.group_auto_scaling_group;grStroke=1;strokeColor=#D86613;fillColor=none;verticalAlign=top;align=center;fontColor=#D86613;dashed=1;spacingTop=25;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-29\": {\n      \"box\": {\n        \"height\": 130,\n        \"width\": 250,\n        \"x\": 420,\n        \"y\": 20\n      },\n      \"hint\": \"generic:auto-scaling-group\",\n      \"label\": \"Auto Scaling group\",\n      \"members\": [\n        \"Application/confluence-cluster-2\"\n      ],\n      \"parent\": \"ApplicationService/front-end\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.groupCenter;grIcon=mxgraph.aws4.group_auto_scaling_group;grStroke=1;strokeColor=#D86613;fillColor=none;verticalAlign=top;align=center;fontColor=#D86613;dashed=1;spacingTop=25;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-31\": {\n      \"box\": {\n        \"height\": 630,\n        \"width\": 340,\n        \"x\": 30,\n        \"y\": 30\n      },\n      \"hint\": \"generic:az\",\n      \"label\": \"Availability Zone 1\",\n      \"members\": [\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-24\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-26\"\n      ],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-23\",\n      \"role\": \"boundary\",\n      \"style\": \"strokeColor=#147EBA;dashed=1;verticalAlign=top;fontStyle=0;fontColor=#147EBA;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-32\": {\n      \"box\": {\n        \"height\": 630,\n        \"width\": 340,\n        \"x\": 430,\n        \"y\": 30\n      },\n      \"hint\": \"generic:az\",\n      \"label\": \"Availability Zone 2\",\n      \"members\": [\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-25\",\n        \"drawio:5G6M97Ru5O6IGqaMy1Rf-27\"\n      ],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-23\",\n      \"role\": \"boundary\",\n      \"style\": \"strokeColor=#147EBA;dashed=1;verticalAlign=top;fontStyle=0;fontColor=#147EBA;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-36\": {\n      \"box\": {\n        \"height\": 48,\n        \"width\": 48,\n        \"x\": 396,\n        \"y\": 0\n      },\n      \"hint\": \"aws:internet-gateway\",\n      \"label\": \"Internet Gateway\",\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-22\",\n      \"role\": \"service\",\n      \"style\": \"outlineConnect=0;fontColor=#232F3E;gradientColor=none;fillColor=#232F3E;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.internet_alt2;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-38\": {\n      \"box\": {\n        \"height\": 16,\n        \"width\": 38,\n        \"x\": 50,\n        \"y\": 52\n      },\n      \"hint\": \"aws:elastic-ip\",\n      \"label\": \"Elastic IP\",\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-24\",\n      \"role\": \"service\",\n      \"style\": \"outlineConnect=0;gradientColor=none;strokeColor=#248814;dashed=0;verticalLabelPosition=bottom;verticalAlign=middle;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.elastic_ip_address;rotation=90;spacingLeft=30;fillColor=#248814;fontColor=#248814;horizontal=0;labelPosition=center;spacingTop=46;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-42\": {\n      \"box\": {\n        \"height\": 170,\n        \"width\": 700,\n        \"x\": 50,\n        \"y\": 460\n      },\n      \"hint\": \"generic:group\",\n      \"label\": \"Databases\",\n      \"members\": [\n        \"Database/primary\",\n        \"Database/secondary\"\n      ],\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-23\",\n      \"role\": \"boundary\",\n      \"style\": \"fillColor=none;strokeColor=#5A6C86;dashed=1;verticalAlign=top;fontStyle=0;fontColor=#5A6C86;\"\n    },\n    \"drawio:5G6M97Ru5O6IGqaMy1Rf-48\": {\n      \"box\": {\n        \"height\": 16,\n        \"width\": 38,\n        \"x\": 62,\n        \"y\": 52\n      },\n      \"hint\": \"aws:elastic-ip\",\n      \"label\": \"Elastic IP\",\n      \"parent\": \"drawio:5G6M97Ru5O6IGqaMy1Rf-25\",\n      \"role\": \"service\",\n      \"style\": \"outlineConnect=0;gradientColor=none;strokeColor=#248814;dashed=0;verticalLabelPosition=bottom;verticalAlign=middle;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.elastic_ip_address;rotation=90;spacingLeft=30;fillColor=#248814;fontColor=#248814;horizontal=0;labelPosition=center;spacingTop=46;\"\n    }\n  },\n  \"source\": {\n    \"file\": \"aws-simple-architecture.drawio\",\n    \"page\": \"Page-1\"\n  },\n  \"version\": 1\n}\n"
+}

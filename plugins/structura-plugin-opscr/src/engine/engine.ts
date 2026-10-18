@@ -1,4 +1,10 @@
-import { LAYOUT_FILE } from "../generated/opscr-mapping";
+import {
+  LAYOUT_FILE,
+  VISUAL_FILE,
+  parseVisualFile,
+  withVisualLayer,
+  type DrawnThrough,
+} from "../generated/opscr-mapping";
 import type {
   DiagramSnapshot,
   PluginDiagramChanges,
@@ -16,6 +22,7 @@ import {
   type BindingState,
 } from "./sync";
 import type { ImporterGraph, ViewLayoutResult } from "../generated/opscr-mapping";
+import { mergeBinding, splitBinding, visualMoves, visualText, withoutVisual } from "./visual";
 
 /**
  * The binding between a diagram and a folder of opscr manifests, without any UI: YAML → canvas
@@ -65,6 +72,10 @@ export type EngineEvent =
   | { type: "rename-refused"; name: string }
   | { type: "provider-refused"; names: string[] }
   | { type: "added"; keys: string[] }
+  /** Manifest edges drawn as the chain they were collapsed from (`opscr.visual.json`). */
+  | { type: "drawn-through"; edges: DrawnThrough[] }
+  /** `opscr.visual.json` is there but cannot be read: drawn without the visual layer. */
+  | { type: "visual-unreadable" }
   /** A step threw: the diagram may no longer match the text until the next sync. */
   | { type: "failed"; error: unknown };
 
@@ -121,14 +132,18 @@ export class OpscrEngine {
     this.synced = [];
   }
 
-  /** Canvas → YAML. True when the text changed. */
+  /**
+   * Canvas → YAML. True when the text changed. The visual layer is not the YAML's: reconcile
+   * sees the diagram and the binding without it, and the visual part of the binding is kept.
+   */
   private async reconcileNow(): Promise<boolean> {
     const diagram = this.options.diagram.get();
     if (!diagram) return false;
-    const result = reconcile(diagram, this.options.binding.get(), this.manifests());
+    const { manifest, visual } = splitBinding(this.options.binding.get());
+    const result = reconcile(withoutVisual(diagram, visual), manifest, this.manifests());
     if (result.skipped) return false;
     if (result.changed) await this.options.texts.set(result.files);
-    await this.options.binding.set(result.binding);
+    await this.options.binding.set(mergeBinding(result.binding, visual));
     const { remove, disconnect, update } = result.revert;
     if (remove.length + disconnect.length + update.length > 0) {
       await this.options.diagram.apply(result.revert);
@@ -140,6 +155,30 @@ export class OpscrEngine {
       this.emit({ type: "provider-refused", names: result.refusedProviders });
     }
     return result.changed;
+  }
+
+  /** Rewrites `opscr.visual.json` from the canvas: moves, resizes and deletions of its elements. */
+  private async writeVisual() {
+    const diagram = this.options.diagram.get();
+    const current = this.text(VISUAL_FILE);
+    if (!diagram || current === undefined) return;
+    const text = visualText(current, this.options.binding.get(), diagram);
+    if (text !== null && text !== current)
+      await this.options.texts.set([{ name: VISUAL_FILE, text }]);
+  }
+
+  /** The projection with the visual layer drawn on it, when the folder has one. */
+  private withVisual(graph: ImporterGraph): ImporterGraph {
+    const text = this.text(VISUAL_FILE);
+    if (text === undefined || text.trim() === "") return graph;
+    const visual = parseVisualFile(text);
+    if (!visual) {
+      this.emit({ type: "visual-unreadable" });
+      return graph;
+    }
+    const layered = withVisualLayer(graph, visual);
+    this.emit({ type: "drawn-through", edges: layered.drawnThrough });
+    return layered.graph;
   }
 
   /** Rewrites the layout sidecar from the canvas, when the arrangement changed. */
@@ -181,7 +220,7 @@ export class OpscrEngine {
       await this.reconcileNow();
       return this.syncNow(retries - 1);
     }
-    const plan = planSync(projection.graph, binding, now);
+    const plan = planSync(this.withVisual(projection.graph), binding, now);
     const result = plan.empty
       ? { idsByKey: {}, connectionIds: [] }
       : await this.options.diagram.apply(plan.changes);
@@ -195,6 +234,7 @@ export class OpscrEngine {
   sync() {
     return this.enqueue(async () => {
       await this.reconcileNow();
+      await this.writeVisual();
       await this.syncNow();
     });
   }
@@ -202,8 +242,27 @@ export class OpscrEngine {
   /** After a diagram change (canvas edit, undo/redo, or the engine's own changes). */
   canvasChanged() {
     return this.enqueue(async () => {
-      if (await this.reconcileNow()) await this.syncNow();
+      const changed = await this.reconcileNow();
+      // Before any sync: a visual element deleted on the canvas must leave the file first, or
+      // the sync would draw it again.
+      await this.writeVisual();
+      if (changed) await this.syncNow();
       else await this.writeSidecar();
+    });
+  }
+
+  /** `opscr.visual.json` changed outside: its elements move to where it says, then sync. */
+  visualChanged() {
+    return this.enqueue(async () => {
+      const diagram = this.options.diagram.get();
+      const text = this.text(VISUAL_FILE);
+      const visual = text ? parseVisualFile(text) : null;
+      if (diagram && visual) {
+        const move = visualMoves(visual, this.options.binding.get(), diagram);
+        if (move.length > 0) await this.options.diagram.apply({ move });
+      }
+      await this.reconcileNow();
+      await this.syncNow();
     });
   }
 

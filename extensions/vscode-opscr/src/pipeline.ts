@@ -4,6 +4,7 @@ import {
   CONFIG_FILE,
   LAYOUT_FILE,
   SourceIndex,
+  VISUAL_FILE,
   buildTechnicalView,
   isManifestName,
   overlayLayouts,
@@ -13,6 +14,8 @@ import {
   stabilizeLayout,
   toImporterGraph,
   toLayoutGraph,
+  parseVisualFile,
+  withVisualLayer,
   type ImporterGraph,
   type ViewLayoutResult,
 } from "./generated/opscr-mapping";
@@ -24,6 +27,8 @@ export interface WorkspaceText {
   config?: SourceFile;
   /** The folder's layout sidecar (`opscr.layout.json`) text, when there is one. */
   layout?: string;
+  /** The visual layer of a workspace imported from draw.io (`opscr.visual.json`), when there is one. */
+  visual?: string;
 }
 
 export interface PreviewUpdate {
@@ -97,9 +102,12 @@ export class PreviewPipeline {
       : await layoutView(toLayoutGraph(view), this.previous?.boxes);
     const stable = stabilizeLayout(view, fresh, this.previous);
     this.previous = stable;
+    const graph = toImporterGraph(placeView(view, stable));
+    // Boundaries, services with no Kind and text, drawn as the plugin draws them.
+    const visual = workspace.visual ? parseVisualFile(workspace.visual) : null;
     return {
       diagnostics,
-      graph: toImporterGraph(placeView(view, stable)),
+      graph: visual ? withVisualLayer(graph, visual).graph : graph,
       sources: new SourceIndex(compiled.manifests, view),
     };
   }
@@ -131,17 +139,22 @@ export async function collectWorkspace(
     ? await readText(join(CONFIG_FILE))
     : undefined;
   const layout = fileNames.includes(LAYOUT_FILE) ? await readText(join(LAYOUT_FILE)) : undefined;
+  const visual = fileNames.includes(VISUAL_FILE) ? await readText(join(VISUAL_FILE)) : undefined;
   return {
     files,
     ...(configText === undefined
       ? {}
       : { config: { path: join(CONFIG_FILE), content: configText } }),
     ...(layout === undefined ? {} : { layout }),
+    ...(visual === undefined ? {} : { visual }),
   };
 }
 
 export function isManifestPath(path: string): boolean {
   return (
-    isManifestName(path) || path.endsWith(`/${CONFIG_FILE}`) || path.endsWith(`/${LAYOUT_FILE}`)
+    isManifestName(path) ||
+    path.endsWith(`/${CONFIG_FILE}`) ||
+    path.endsWith(`/${LAYOUT_FILE}`) ||
+    path.endsWith(`/${VISUAL_FILE}`)
   );
 }

@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, win32 } from "node:path";
 import { createRequire } from "node:module";
 import { connectionKeys } from "./generated/opscr-mapping";
-import { collectWorkspace, PreviewPipeline, type WorkspaceText } from "./pipeline";
+import { collectWorkspace, isManifestPath, PreviewPipeline, type WorkspaceText } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
 /** How many compiles run at once, to see that updates do not overlap. */
@@ -273,5 +273,32 @@ describe("previewHtml", () => {
     expect(html).toContain('<base href="vscode-webview://x/media/embed/">');
     expect(html).toContain("script-src vscode-src");
     expect(html).not.toContain("unsafe-eval");
+  });
+});
+
+describe("visual layer", () => {
+  it("collects opscr.visual.json and draws an imported workspace's boundaries, services and text", async () => {
+    const { importDrawio } = await import("opscr/import-drawio");
+    const out = await importDrawio(
+      readFileSync(
+        "node_modules/opscr/tests/import/corpus/vendor/aws/example-microservices.drawio",
+        "utf8",
+      ),
+      { source: "example-microservices.drawio" },
+    );
+    const names = out.map((f) => f.path);
+    const workspace = await collectWorkspace(
+      "/w",
+      names,
+      async (p) => out.find((f) => `/w/${f.path}` === p)?.content,
+    );
+    expect(workspace.visual).toBeDefined();
+    const { graph } = await new PreviewPipeline().update(workspace);
+    expect(graph!.components.find((c) => c.name === "AWS Cloud")).toMatchObject({ type: "panel" });
+    expect(graph!.components.some((c) => c.cloudServiceId === "cloudwatch")).toBe(true);
+    expect(
+      graph!.components.some((c) => c.type === "text" && c.name === "Microservices on ECS Fargate"),
+    ).toBe(true);
+    expect(isManifestPath("/w/opscr.visual.json")).toBe(true);
   });
 });

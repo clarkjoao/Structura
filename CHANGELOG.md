@@ -48,6 +48,17 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
   zooms to what it changed.
   Clicking an element opens the YAML that writes it, the element under the
   cursor is lit in the preview, and a listed problem opens its line.
+- **Plugin API 1.12.0**: importers and batched changes keep `text` components
+  (their text is `name`) and give a panel its `panelKind` (`vpc`, subnets,
+  availability zone, auto scaling group, EKS / ECS cluster, swimlane).
+  **opscr plugin 0.14.0**: a folder imported from draw.io (`opscr.visual.json`)
+  is drawn with its boundaries as panels (VPC, subnets, AZ…), its services with
+  no opscr Kind as catalog components (CloudFront, CloudWatch, X-Ray…), titles
+  and notes as text, and the chains its edges went through; moving or deleting
+  them writes the visual file, never the YAML. An empty bound folder offers
+  **Import .drawio…** (opscr's import, in the browser), with a list of what the
+  import assumed. The VSCode preview draws the same layer. The AWS catalog gains
+  Internet Gateway, NAT Gateway and Elastic IP Address (also exported to draw.io).
 - **Plugin API 1.11.0**: `api.canvas` (the canvas selection, and `highlight()`
   to light elements and bring them into view), and `CodeEditor` `path` (a model
   per file, with its own undo history), `revealLine`, `onCursorLine` and
