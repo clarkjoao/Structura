@@ -18,6 +18,7 @@ import type {
   PluginDiagramChangesResult,
 } from "../types/plugin.types";
 import type { EdgeSource } from "./patches";
+import { canvasAbsolute, isVisualKey } from "./visual";
 
 /** Default leaf size when the canvas has not measured one. */
 const LEAF = { width: LEAF_W, height: LEAF_H };
@@ -69,8 +70,12 @@ export const connectionKeys = (graph: ImporterGraph): string[] =>
 
 /**
  * The layout the reader currently sees, by element key — the canvas's positions and sizes of
- * every element the binding created and the diagram still has. Fed to the stable layout as
- * "previous", so whatever the user dragged stays where they put it.
+ * every manifest element the binding created and the diagram still has. Fed to the stable layout
+ * as "previous", so whatever the user dragged stays where they put it.
+ *
+ * Visual-layer panels (a VPC, a subnet) are not layout parents: an element drawn inside one is
+ * given relative to the nearest manifest panel above it (or the page), as `opscr.layout.json`
+ * keeps it. Visual elements themselves are not in it.
  */
 export function canvasLayout(binding: BindingState, diagram: DiagramSnapshot): ViewLayoutResult {
   const byId = new Map(diagram.components.map((c) => [c.id, c]));
@@ -78,19 +83,27 @@ export function canvasLayout(binding: BindingState, diagram: DiagramSnapshot): V
   const boxes = new Map<string, ViewBox>();
   const parents = new Map<string, string | null>();
   for (const [key, id] of Object.entries(binding.ids)) {
+    if (isVisualKey(key)) continue;
     const component = byId.get(id);
     if (!component?.position) continue;
+    let { x, y } = component.position;
+    let parentId = component.parentId;
+    for (let depth = 0; parentId && depth < 64; depth++) {
+      const parentKey = keyOfId.get(parentId);
+      const parent = byId.get(parentId);
+      if (!parentKey || !isVisualKey(parentKey) || !parent?.position) break;
+      x += parent.position.x;
+      y += parent.position.y;
+      parentId = parent.parentId;
+    }
     boxes.set(key, {
-      x: component.position.x,
-      y: component.position.y,
+      x,
+      y,
       width: component.size?.width ?? LEAF.width,
       height: component.size?.height ?? LEAF.height,
     });
     // Positions are relative to the canvas parent; one outside the binding has no key.
-    parents.set(
-      key,
-      component.parentId ? (keyOfId.get(component.parentId) ?? `#${component.parentId}`) : null,
-    );
+    parents.set(key, parentId ? (keyOfId.get(parentId) ?? `#${parentId}`) : null);
   }
   return { boxes, edgeRoutes: new Map(), parents };
 }
@@ -122,10 +135,23 @@ export function sidecarMoves(
   if (!boxes) return [];
   const byId = new Map(diagram.components.map((c) => [c.id, c]));
   const moves: NonNullable<PluginDiagramChanges["move"]> = [];
+  const keyOfId = new Map(Object.entries(binding.ids).map(([key, id]) => [id, key]));
+  const abs = canvasAbsolute(diagram);
   for (const [key, id] of Object.entries(binding.ids)) {
-    const box = boxes.get(key);
+    const fileBox = boxes.get(key);
     const component = byId.get(id);
-    if (!box || !component?.position) continue;
+    if (!fileBox || !component?.position) continue;
+    // The file is relative to the manifest parent; the canvas may hold it in a visual panel.
+    let box = fileBox;
+    const canvasParentKey = component.parentId ? keyOfId.get(component.parentId) : undefined;
+    if (canvasParentKey && isVisualKey(canvasParentKey)) {
+      let ancestor: string | null = component.parentId;
+      while (ancestor && isVisualKey(keyOfId.get(ancestor) ?? ""))
+        ancestor = byId.get(ancestor)?.parentId ?? null;
+      const base = ancestor ? abs.get(ancestor)! : { x: 0, y: 0 };
+      const holder = abs.get(component.parentId!)!;
+      box = { ...fileBox, x: base.x + fileBox.x - holder.x, y: base.y + fileBox.y - holder.y };
+    }
     const moved =
       Math.abs(component.position.x - box.x) > 0.5 || Math.abs(component.position.y - box.y) > 0.5;
     const resized =
@@ -277,12 +303,15 @@ export function planSync(
 
   const keys = connectionKeys(graph);
   const keepConnections = new Map<string, string>();
+  // Ends from the graph, not by splitting the key: visual keys (`drawio:<cell>`) hold a colon.
+  const connectionByKey = new Map(keys.map((key, i) => [key, graph.connections[i]!]));
   for (const [key, id] of Object.entries(binding.connections)) {
-    const [ends] = key.split(":");
-    const [source, target] = (ends ?? "").split("->");
+    const wantedConnection = connectionByKey.get(key);
     const endsKept =
-      source !== undefined && target !== undefined && kept.has(source) && kept.has(target);
-    if (liveConnections.has(id) && endsKept && keys.includes(key)) keepConnections.set(key, id);
+      wantedConnection !== undefined &&
+      kept.has(wantedConnection.source) &&
+      kept.has(wantedConnection.target);
+    if (liveConnections.has(id) && endsKept) keepConnections.set(key, id);
     else if (liveConnections.has(id)) changes.disconnect.push(id);
   }
   // Unbound canvas connections between the same ends with the same label are this edge.

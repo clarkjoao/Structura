@@ -38,6 +38,8 @@ const ALLOWED = new Set(
     // the opscr projection. It is request data: the host writes the persisted field through
     // `cloudServiceIdWrite()` when it inserts the graph (`features/plugins/import-graph.ts`).
     "lib/opscr-mapping/importer-graph.ts",
+    // Same importer input, for the visual layer's catalog services (plugin API 1.12).
+    "lib/opscr-mapping/visual-layer.ts",
   ].map((p) => path.join(SRC, p)),
 );
 

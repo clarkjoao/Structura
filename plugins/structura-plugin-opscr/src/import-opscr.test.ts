@@ -45,6 +45,7 @@ describe("importOpscr — the sample as one file", () => {
     ]);
     expect(childrenOf("ApplicationService/orders")).toEqual([
       "Application/order-tracker",
+      "Application/order-tracker-2",
       "Application/orders-api",
     ]);
     const orders = byKey.get("ApplicationService/orders")!;
