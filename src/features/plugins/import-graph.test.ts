@@ -78,4 +78,20 @@ describe("toGeneratedGraph", () => {
     expect(nodes[0]!.type).toBe("unknown");
     expect(nodes.filter((n) => n.parentExternalId !== null)).toHaveLength(1);
   });
+
+  it("keeps text, and the panel kinds it knows (1.12)", () => {
+    const { nodes } = toGeneratedGraph({
+      components: [
+        { key: "t", name: "Solution Architecture", type: "text", ...at },
+        { key: "v", name: "VPC", type: "panel", panelKind: "vpc", ...at },
+        { key: "m", name: "Moat", type: "panel", panelKind: "moat", ...at },
+      ],
+      connections: [],
+    });
+    expect(nodes.map((n) => [n.type, n.name, n.panelKind])).toEqual([
+      ["text", "Solution Architecture", undefined],
+      ["panel", "VPC", "vpc"],
+      ["panel", "Moat", undefined],
+    ]);
+  });
 });
