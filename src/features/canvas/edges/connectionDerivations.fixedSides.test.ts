@@ -144,3 +144,20 @@ describe("vertical sides on the flowchart shapes", () => {
     }
   });
 });
+
+describe("a hub keeps one slot per edge", () => {
+  it("gives each of twelve outgoing edges a handle of its own", () => {
+    // At MAX_HANDLES = 8 the ninth edge onwards all landed on `source-7` and
+    // were drawn on top of each other into the node.
+    const targets = Array.from({ length: 12 }, (_, i) => `t${i}`);
+    const components = Object.fromEntries(
+      ["hub", ...targets].map((id) => [id, component(id)] as const),
+    );
+    const assignments = assign(
+      targets.map((target, i) => connection(`c${i}`, "hub", target)),
+      components,
+    );
+
+    expect(new Set(assignments.map((a) => a.sourceHandle)).size).toBe(12);
+  });
+});

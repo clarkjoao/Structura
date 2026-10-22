@@ -22,8 +22,13 @@ export const MIN_HANDLES = 1;
  * this count still exist; they share/clamp onto the available slots via
  * `buildEdgeHandleAssignments` / `handleOrder`. Raising the number only spreads
  * more distinct ports along the side for denser fans.
+ *
+ * 32, not 8: a side only renders as many slots as it has edges, so the cap is
+ * only ever reached by a hub, and at 8 a hub's ninth edge onwards all shared the
+ * last slot — drawn on top of each other into the node. ELK gives every edge
+ * its own attachment point; this lets the canvas keep them.
  */
-export const MAX_HANDLES = 8;
+export const MAX_HANDLES = 32;
 export const NODE_DRAG_PADDING = 40;
 
 /** A panel's header with only a title: `py-2.5` twice around one `text-sm` line. */

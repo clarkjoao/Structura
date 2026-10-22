@@ -15,78 +15,78 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-ctx-payer": {
         "elementId": "pl-ctx-payer",
-        "x": 596,
-        "y": 40,
+        "x": 774,
+        "y": 86.33333333333333,
         "width": 180,
         "height": 80
       },
       "pl-ctx-merchant": {
         "elementId": "pl-ctx-merchant",
         "x": 196,
-        "y": 243.33333333333331,
+        "y": 309.83333333333337,
         "width": 180,
         "height": 80
       },
       "pl-ctx-hub": {
         "elementId": "pl-ctx-hub",
-        "x": 996,
-        "y": 53.33333333333333,
+        "x": 1352,
+        "y": 119.83333333333334,
         "width": 180,
         "height": 80
       },
       "pl-ctx-ledger": {
         "elementId": "pl-ctx-ledger",
-        "x": 1396,
-        "y": 310,
+        "x": 1920,
+        "y": 382.00000000000006,
         "width": 180,
         "height": 80
       },
       "pl-ctx-risk": {
         "elementId": "pl-ctx-risk",
-        "x": 1796,
-        "y": 46.66666666666666,
+        "x": 2446,
+        "y": 119.83333333333336,
         "width": 180,
         "height": 80
       },
       "pl-ctx-platform": {
         "elementId": "pl-ctx-platform",
-        "x": 596,
-        "y": 243.33333333333331,
+        "x": 774,
+        "y": 309.83333333333337,
         "width": 180,
         "height": 80
       },
       "pl-ctx-spi": {
         "elementId": "pl-ctx-spi",
-        "x": 1396,
-        "y": 114.33333333333333,
+        "x": 1920,
+        "y": 192,
         "width": 180,
         "height": 80
       },
       "pl-ctx-bank": {
         "elementId": "pl-ctx-bank",
-        "x": 1796,
-        "y": 323.3333333333333,
+        "x": 2446,
+        "y": 415.50000000000006,
         "width": 180,
         "height": 80
       },
       "pl-ctx-kyc": {
         "elementId": "pl-ctx-kyc",
-        "x": 2196,
-        "y": 46.66666666666666,
+        "x": 2960,
+        "y": 119.83333333333336,
         "width": 180,
         "height": 80
       },
       "pl-ctx-notify": {
         "elementId": "pl-ctx-notify",
-        "x": 996,
-        "y": 243.33333333333331,
+        "x": 1352,
+        "y": 583.5,
         "width": 180,
         "height": 80
       },
       "pl-ctx-note": {
         "elementId": "pl-ctx-note",
         "x": 40,
-        "y": 433.3333333333333,
+        "y": 499.83333333333337,
         "width": 336,
         "height": 475
       }
@@ -94,7 +94,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.4040404040404041
+      "zoom": 0.35
     },
     "handleOrder": {
       "pl-ctx-payer": {
@@ -142,8 +142,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-ctx-platform": {
         "outgoing": [
           "pl-ctx-r8",
-          "pl-ctx-r10",
-          "pl-ctx-r9"
+          "pl-ctx-r9",
+          "pl-ctx-r10"
         ],
         "incoming": [
           "pl-ctx-r2"
@@ -180,126 +180,126 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-payer": {
         "elementId": "pl-hub-payer",
         "x": 196,
-        "y": 992,
+        "y": 902,
         "width": 180,
         "height": 80
       },
       "pl-hub-merchant-sys": {
         "elementId": "pl-hub-merchant-sys",
-        "x": 596,
-        "y": 492,
+        "x": 774,
+        "y": 695.75,
         "width": 180,
         "height": 80
       },
       "pl-hub-boundary": {
         "elementId": "pl-hub-boundary",
-        "x": 1008.5,
+        "x": 1348.5,
         "y": 40,
-        "width": 1860,
-        "height": 965.3333333333334
+        "width": 2262,
+        "height": 1073.3333333333333
       },
       "pl-hub-cob-api": {
         "elementId": "pl-hub-cob-api",
-        "x": 1240,
-        "y": 832,
+        "x": 1522,
+        "y": 890.3333333333333,
         "width": 180,
         "height": 80
       },
       "pl-hub-dict": {
         "elementId": "pl-hub-dict",
-        "x": 1640,
-        "y": 845.3333333333334,
+        "x": 2042,
+        "y": 953.3333333333333,
         "width": 180,
         "height": 80
       },
       "pl-hub-webhook": {
         "elementId": "pl-hub-webhook",
-        "x": 1240,
-        "y": 452,
+        "x": 1522,
+        "y": 474,
         "width": 180,
         "height": 80
       },
       "pl-hub-cache": {
         "elementId": "pl-hub-cache",
-        "x": 1640,
-        "y": 392,
+        "x": 2042,
+        "y": 699.5,
         "width": 180,
         "height": 80
       },
       "pl-hub-queue": {
         "elementId": "pl-hub-queue",
-        "x": 1640,
-        "y": 202,
+        "x": 2042,
+        "y": 242.5,
         "width": 180,
         "height": 80
       },
       "pl-hub-worker": {
         "elementId": "pl-hub-worker",
-        "x": 1240,
-        "y": 262,
+        "x": 1522,
+        "y": 284,
         "width": 180,
         "height": 80
       },
       "pl-hub-spi": {
         "elementId": "pl-hub-spi",
-        "x": 596,
-        "y": 992,
+        "x": 774,
+        "y": 902,
         "width": 180,
         "height": 80
       },
       "pl-hub-risk-ext": {
         "elementId": "pl-hub-risk-ext",
-        "x": 3101,
-        "y": 498.6666666666667,
+        "x": 4005,
+        "y": 445.5,
         "width": 180,
         "height": 80
       },
       "pl-hub-ledger-ext": {
         "elementId": "pl-hub-ledger-ext",
-        "x": 3101,
-        "y": 161,
+        "x": 4005,
+        "y": 912.3333333333333,
         "width": 180,
         "height": 80
       },
       "pl-hub-note": {
         "elementId": "pl-hub-note",
         "x": 40,
-        "y": 1182,
+        "y": 316.99999999999994,
         "width": 336,
         "height": 475
       },
       "pl-hub-ep-post": {
         "elementId": "pl-hub-ep-post",
         "x": 40,
-        "y": 642,
+        "y": 664,
         "width": 180,
         "height": 80
       },
       "pl-hub-auth-guard": {
         "elementId": "pl-hub-auth-guard",
-        "x": 440,
-        "y": 642,
+        "x": 518,
+        "y": 664,
         "width": 180,
         "height": 80
       },
       "pl-hub-cob-svc": {
         "elementId": "pl-hub-cob-svc",
-        "x": 840,
-        "y": 642,
+        "x": 1026,
+        "y": 664,
         "width": 180,
         "height": 80
       },
       "pl-hub-cache-svc": {
         "elementId": "pl-hub-cache-svc",
-        "x": 1240,
-        "y": 642,
+        "x": 1522,
+        "y": 664,
         "width": 180,
         "height": 80
       },
       "pl-hub-event-pub": {
         "elementId": "pl-hub-event-pub",
-        "x": 1240,
-        "y": 72,
+        "x": 1522,
+        "y": 83,
         "width": 180,
         "height": 80
       }
@@ -344,8 +344,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-webhook": {
         "outgoing": [
           "pl-hub-c-queue",
-          "pl-hub-c-cache",
-          "pl-hub-c-risk"
+          "pl-hub-c-risk",
+          "pl-hub-c-cache"
         ],
         "incoming": [
           "pl-hub-c-merchant-wh",
@@ -355,8 +355,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-cache": {
         "outgoing": [],
         "incoming": [
-          "pl-hub-c-cache",
           "pl-hub-c-cache-redis",
+          "pl-hub-c-cache",
           "pl-hub-c-cob-cache"
         ]
       },
@@ -370,9 +370,9 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-hub-worker": {
         "outgoing": [
-          "pl-hub-c-ledger",
+          "pl-hub-c-worker-risk",
           "pl-hub-c-worker",
-          "pl-hub-c-worker-risk"
+          "pl-hub-c-ledger"
         ],
         "incoming": []
       },
@@ -451,50 +451,50 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-led-boundary": {
         "elementId": "pl-led-boundary",
-        "x": 608.5,
-        "y": 309.3333333333333,
-        "width": 660,
-        "height": 449
+        "x": 700.5,
+        "y": 325.83333333333337,
+        "width": 810,
+        "height": 466.3333333333333
       },
       "pl-led-engine": {
         "elementId": "pl-led-engine",
         "x": 40,
-        "y": 315.6666666666667,
+        "y": 299.16666666666663,
         "width": 180,
         "height": 80
       },
       "pl-led-db": {
         "elementId": "pl-led-db",
-        "x": 440,
-        "y": 329,
+        "x": 590,
+        "y": 346.3333333333333,
         "width": 180,
         "height": 80
       },
       "pl-led-settlement": {
         "elementId": "pl-led-settlement",
         "x": 40,
-        "y": 105.66666666666669,
+        "y": 75.33333333333333,
         "width": 180,
         "height": 80
       },
       "pl-led-kafka": {
         "elementId": "pl-led-kafka",
-        "x": 440,
-        "y": 139,
+        "x": 590,
+        "y": 156.33333333333331,
         "width": 180,
         "height": 80
       },
       "pl-led-bank": {
         "elementId": "pl-led-bank",
-        "x": 1501,
-        "y": 341.3333333333333,
+        "x": 1869,
+        "y": 275.83333333333337,
         "width": 180,
         "height": 80
       },
       "pl-led-risk": {
         "elementId": "pl-led-risk",
-        "x": 1501,
-        "y": 531.3333333333333,
+        "x": 1869,
+        "y": 465.83333333333337,
         "width": 180,
         "height": 80
       },
@@ -509,7 +509,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.5710886377156456
+      "zoom": 0.4685212298682284
     },
     "handleOrder": {
       "pl-led-hub-ext": {
@@ -567,41 +567,41 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-risk-hub-ext": {
         "elementId": "pl-risk-hub-ext",
         "x": 196,
-        "y": 893.6666666666667,
+        "y": 815,
         "width": 180,
         "height": 80
       },
       "pl-risk-led-ext": {
         "elementId": "pl-risk-led-ext",
         "x": 196,
-        "y": 118.66666666666667,
+        "y": 40,
         "width": 180,
         "height": 80
       },
       "pl-risk-boundary": {
         "elementId": "pl-risk-boundary",
-        "x": 608.5,
-        "y": 40,
-        "width": 1060,
+        "x": 746.5,
+        "y": 165.49999999999994,
+        "width": 1227,
         "height": 423
       },
       "pl-risk-engine": {
         "elementId": "pl-risk-engine",
-        "x": 440,
-        "y": 92,
+        "x": 505,
+        "y": 262,
         "width": 180,
         "height": 80
       },
       "pl-risk-rules": {
         "elementId": "pl-risk-rules",
-        "x": 840,
+        "x": 1007,
         "y": 262,
         "width": 180,
         "height": 80
       },
       "pl-risk-features": {
         "elementId": "pl-risk-features",
-        "x": 840,
+        "x": 1007,
         "y": 72,
         "width": 180,
         "height": 80
@@ -609,21 +609,21 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-risk-api": {
         "elementId": "pl-risk-api",
         "x": 40,
-        "y": 92,
+        "y": 262,
         "width": 180,
         "height": 80
       },
       "pl-risk-kyc": {
         "elementId": "pl-risk-kyc",
-        "x": 1901,
-        "y": 382,
+        "x": 2290,
+        "y": 507.49999999999994,
         "width": 180,
         "height": 80
       },
       "pl-risk-note": {
         "elementId": "pl-risk-note",
         "x": 40,
-        "y": 308.6666666666667,
+        "y": 229.99999999999997,
         "width": 336,
         "height": 475
       }
@@ -631,7 +631,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.46131667467563675
+      "zoom": 0.38866396761133604
     },
     "handleOrder": {
       "pl-risk-hub-ext": {
@@ -696,64 +696,64 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-mer-boundary": {
         "elementId": "pl-mer-boundary",
-        "x": 608.5,
-        "y": 526.3333333333334,
-        "width": 1060,
+        "x": 704.5,
+        "y": 173,
+        "width": 1252,
         "height": 639
       },
       "pl-mer-spa": {
         "elementId": "pl-mer-spa",
         "x": 40,
-        "y": 98.66666666666666,
+        "y": 452,
         "width": 180,
         "height": 80
       },
       "pl-mer-api": {
         "elementId": "pl-mer-api",
-        "x": 440,
-        "y": 98.66666666666666,
+        "x": 518,
+        "y": 452,
         "width": 180,
         "height": 80
       },
       "pl-mer-webhooks": {
         "elementId": "pl-mer-webhooks",
-        "x": 840,
+        "x": 1032,
         "y": 72,
         "width": 180,
         "height": 80
       },
       "pl-mer-db": {
         "elementId": "pl-mer-db",
-        "x": 840,
+        "x": 1032,
         "y": 262,
         "width": 180,
         "height": 80
       },
       "pl-mer-notify": {
         "elementId": "pl-mer-notify",
-        "x": 840,
+        "x": 1032,
         "y": 452,
         "width": 180,
         "height": 80
       },
       "pl-mer-hub": {
         "elementId": "pl-mer-hub",
-        "x": 1901,
-        "y": 894.3333333333334,
+        "x": 2303,
+        "y": 623.5,
         "width": 180,
         "height": 80
       },
       "pl-mer-ledger": {
         "elementId": "pl-mer-ledger",
-        "x": 1901,
-        "y": 1084.3333333333335,
+        "x": 2303,
+        "y": 813.5,
         "width": 180,
         "height": 80
       },
       "pl-mer-sms": {
         "elementId": "pl-mer-sms",
-        "x": 1901,
-        "y": 704.3333333333334,
+        "x": 2303,
+        "y": 433.5,
         "width": 180,
         "height": 80
       },
@@ -768,7 +768,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.46131667467563675
+      "zoom": 0.38662907772855415
     },
     "handleOrder": {
       "pl-mer-user": {
@@ -1033,19 +1033,19 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "elementId": "pl-dpl-vpc",
         "x": 40,
         "y": 40,
-        "width": 845,
+        "width": 917,
         "height": 874
       },
       "pl-dpl-private": {
         "elementId": "pl-dpl-private",
         "x": 40,
-        "y": 85.33333333333333,
+        "y": 117.50000000000003,
         "width": 260,
         "height": 382
       },
       "pl-dpl-data": {
         "elementId": "pl-dpl-data",
-        "x": 545,
+        "x": 617,
         "y": 72,
         "width": 260,
         "height": 762
@@ -1147,61 +1147,61 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "elementId": "pl-dpr-cluster",
         "x": 40,
         "y": 40,
-        "width": 1860,
+        "width": 2142,
         "height": 762
       },
       "pl-dpr-ingress": {
         "elementId": "pl-dpr-ingress",
         "x": 40,
-        "y": 96,
+        "y": 357,
         "width": 180,
         "height": 80
       },
       "pl-dpr-svc": {
         "elementId": "pl-dpr-svc",
-        "x": 440,
-        "y": 96,
+        "x": 488,
+        "y": 357,
         "width": 180,
         "height": 80
       },
       "pl-dpr-deploy": {
         "elementId": "pl-dpr-deploy",
-        "x": 1240,
-        "y": 96,
+        "x": 1432,
+        "y": 357,
         "width": 180,
         "height": 80
       },
       "pl-dpr-api-deploy": {
         "elementId": "pl-dpr-api-deploy",
-        "x": 840,
-        "y": 96,
+        "x": 960,
+        "y": 357,
         "width": 180,
         "height": 80
       },
       "pl-dpr-cm": {
         "elementId": "pl-dpr-cm",
-        "x": 1640,
+        "x": 1922,
         "y": 262,
         "width": 180,
         "height": 80
       },
       "pl-dpr-secret": {
         "elementId": "pl-dpr-secret",
-        "x": 1640,
+        "x": 1922,
         "y": 452,
         "width": 180,
         "height": 80
       },
       "pl-dpr-pvc": {
         "elementId": "pl-dpr-pvc",
-        "x": 1640,
+        "x": 1922,
         "y": 72,
         "width": 180,
         "height": 80
       },
       "pl-dpr-redis": {
         "elementId": "pl-dpr-redis",
-        "x": 1640,
+        "x": 1922,
         "y": 642,
         "width": 180,
         "height": 80
@@ -1210,7 +1210,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.5052631578947369
+      "zoom": 0.43996333638863433
     },
     "handleOrder": {
       "pl-dpr-ingress": {
@@ -1276,9 +1276,9 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-dpm-edge": {
         "elementId": "pl-dpm-edge",
-        "x": 385,
+        "x": 418,
         "y": 40,
-        "width": 660,
+        "width": 714,
         "height": 192
       },
       "pl-dpm-cf": {
@@ -1290,7 +1290,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-dpm-s3": {
         "elementId": "pl-dpm-s3",
-        "x": 440,
+        "x": 494,
         "y": 72,
         "width": 180,
         "height": 80
@@ -1299,27 +1299,27 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "elementId": "pl-dpm-vpc",
         "x": 40,
         "y": 342,
-        "width": 1350,
-        "height": 684
+        "width": 1470,
+        "height": 750.1666666666666
       },
       "pl-dpm-public": {
         "elementId": "pl-dpm-public",
         "x": 40,
-        "y": 432,
+        "y": 262,
         "width": 260,
         "height": 192
       },
       "pl-dpm-private": {
         "elementId": "pl-dpm-private",
-        "x": 545,
-        "y": 242,
+        "x": 605,
+        "y": 72,
         "width": 260,
         "height": 382
       },
       "pl-dpm-data": {
         "elementId": "pl-dpm-data",
-        "x": 1050,
-        "y": 72,
+        "x": 1170,
+        "y": 138.16666666666666,
         "width": 260,
         "height": 572
       },
@@ -1369,7 +1369,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.6237816764132553
+      "zoom": 0.585991149092019
     },
     "handleOrder": {
       "pl-dpm-cf": {

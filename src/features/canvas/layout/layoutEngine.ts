@@ -56,6 +56,25 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
 };
 
+/**
+ * Applied on top of `ELK_OPTIONS_INTERACTIVE` when any edge carries a
+ * `labelBox` (the Mermaid 12 approach: labels are inline, so ELK routes around
+ * them).
+ *
+ *   - An inline label is a layer of its own, so a labelled edge spans two
+ *     between-layer gaps. Halving the gap gives most of that width back:
+ *     measured over the reference diagrams, area went +61% at 220 and +24% at
+ *     110, with the same crossing count.
+ *   - BALANCED alignment was the one option of Mermaid's preset that helped;
+ *     its DEPTH_FIRST cycle breaking made every diagram worse and is left out.
+ *
+ * Numbers from `elkMermaidParity.experiment.test.ts`.
+ */
+const ELK_OPTIONS_LABELLED: Record<string, string> = {
+  "elk.layered.spacing.nodeNodeBetweenLayers": "110",
+  "elk.layered.nodePlacement.bk.fixedAlignment": "BALANCED",
+};
+
 const ELK_ROOT_ID = "__structura_layout_root__";
 
 let elkConstructor: (new () => { layout(graph: ElkNode): Promise<ElkNode> }) | null = null;
@@ -175,7 +194,12 @@ export async function layoutElkGraph(
   graph: LayoutGraph,
   optionOverrides: Record<string, string> = {},
 ): Promise<ElkNode> {
-  const options = { ...ELK_OPTIONS_INTERACTIVE, ...optionOverrides };
+  const labelled = graph.edges.some((edge) => edge.labelBox?.text);
+  const options = {
+    ...ELK_OPTIONS_INTERACTIVE,
+    ...(labelled ? ELK_OPTIONS_LABELLED : {}),
+    ...optionOverrides,
+  };
 
   const nodes = sortById(graph.nodes);
   const present = new Set(nodes.map((node) => node.id));
@@ -192,6 +216,18 @@ export async function layoutElkGraph(
     id: edge.id,
     sources: [edge.sourceId],
     targets: [edge.targetId],
+    // elkjs ignores a label with no text, so an empty one reserves nothing.
+    ...(edge.labelBox?.text && {
+      labels: [
+        {
+          id: `${edge.id}__label`,
+          text: edge.labelBox.text,
+          width: edge.labelBox.width,
+          height: edge.labelBox.height,
+          layoutOptions: { "elk.edgeLabels.inline": "true", "elk.edgeLabels.placement": "CENTER" },
+        },
+      ],
+    }),
   }));
 
   const visited = new Set<string>();
@@ -209,11 +245,17 @@ export async function layoutElkGraph(
 /**
  * Lays out a graph. Pure and deterministic: no React, no store, no DOM, no
  * measurement of a rendered element. Everything that varies is in the graph.
+ *
+ * `optionOverrides` has the same purpose as on `layoutElkGraph`: comparing
+ * configurations end to end. Production callers omit it.
  */
-export async function layout(graph: LayoutGraph): Promise<LayoutResult> {
+export async function layout(
+  graph: LayoutGraph,
+  optionOverrides: Record<string, string> = {},
+): Promise<LayoutResult> {
   if (graph.nodes.length === 0) return emptyResult();
 
-  const laidOut = await layoutElkGraph(graph);
+  const laidOut = await layoutElkGraph(graph, optionOverrides);
   if (!laidOut.children?.length) return emptyResult();
 
   const boxes = new Map<string, LayoutBox>();

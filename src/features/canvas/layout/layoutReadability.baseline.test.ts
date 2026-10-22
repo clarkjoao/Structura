@@ -12,6 +12,10 @@ import { readElkHandleOrder } from "./elkHandleOrder";
 import { buildRenderedPolylines, measureRenderedReadability } from "./renderedEdgePath";
 import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-placed-diagram";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import type { LayoutGraph } from "./contract";
+import { edgeLabelBox } from "./edgeLabelBox";
+import { handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
+import { layout } from "./layoutEngine";
 
 /**
  * Readability of the shipped layout configuration, over the four reference
@@ -199,6 +203,75 @@ describe("layout readability baseline", () => {
       expect(report.nodeCount, name).toBe(ir.nodes.length);
       expect(report.edgeCount, name).toBe(ir.edges.length);
     }
+  });
+});
+
+/**
+ * The auto-layout path (Cmd/Ctrl+Shift+L, panel and selection layout): edges
+ * carry their labels into ELK (`fromDiagram` → `labelBox`), and the drawn path
+ * keeps ELK's corridors snapped onto the handle slots (`handleAlignedRoutes`).
+ * The generated-diagram numbers above do neither, which is why they differ.
+ *
+ * Measured 2026-10-21 when inline labels shipped: crossings 12 → 11 and label
+ * overlaps 6 → 0 against the same path without labels, for +24% area. Source:
+ * `elkMermaidParity.experiment.test.ts`.
+ */
+describe("auto-layout path baseline", () => {
+  const AUTO_LAYOUT_BASELINE: Record<string, { crossings: number; labelOverlaps: number }> = {
+    "C4 e-commerce": { crossings: 0, labelOverlaps: 0 },
+    "AWS ECS Fargate": { crossings: 3, labelOverlaps: 0 },
+    "C4 Context healthcare": { crossings: 1, labelOverlaps: 0 },
+    "AWS microservices": { crossings: 7, labelOverlaps: 0 },
+  };
+
+  function withLabels(graph: LayoutGraph, labels: Map<string, string>): LayoutGraph {
+    return {
+      ...graph,
+      edges: graph.edges.map((edge) => {
+        const labelBox = edgeLabelBox(labels.get(edge.id));
+        return labelBox ? { ...edge, labelBox } : edge;
+      }),
+    };
+  }
+
+  it("stays within the recorded crossings and label overlaps", async () => {
+    const failures: string[] = [];
+    const rows: string[] = [];
+
+    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+      const labels = labelsOf(ir);
+      const input = withLabels(irToLayoutGraph(ir), labels);
+      const graph = await layoutElkGraph(input);
+      const result = await layout(input);
+      const cornersByEdgeId = new Map(
+        [...handleAlignedRoutes(input, result)].map(([id, route]) => [id, route.corners]),
+      );
+      const report = measureRenderedReadability(graph, ir.edges, {
+        labels,
+        handleOrder: result.handleOrder,
+        cornersByEdgeId,
+      });
+
+      rows.push(
+        `${name.padEnd(24)} crossings ${String(report.edgeCrossings).padStart(3)}  ` +
+          `over-node ${String(report.edgeNodeOverlaps).padStart(3)}  ` +
+          `labels ${String(report.labelOverlaps).padStart(3)}`,
+      );
+      const expected = AUTO_LAYOUT_BASELINE[name];
+      if (!expected) continue;
+      if (report.edgeCrossings > expected.crossings) {
+        failures.push(`${name}: crossings ${report.edgeCrossings} > ${expected.crossings}`);
+      }
+      if (report.labelOverlaps > expected.labelOverlaps) {
+        failures.push(
+          `${name}: label overlaps ${report.labelOverlaps} > ${expected.labelOverlaps}`,
+        );
+      }
+      expect(report.edgeNodeOverlaps, `${name} edge through a node`).toBe(0);
+    }
+
+    console.info(`\nAuto-layout path\n${rows.join("\n")}\n`);
+    expect(failures, failures.join("\n")).toHaveLength(0);
   });
 });
 
