@@ -69,6 +69,11 @@ interface Expected {
  * 116 crossings and 16 → 11 label overlaps over the reference and generated
  * diagrams, which is why it shipped.
  *
+ * Refreshed 2026-10-21 again: `irToLayoutGraph` now sends edge labels to ELK,
+ * as `fromDiagram` does for the canvas, so generation lays out the way the
+ * auto-layout does. ELK-routed crossings 97 → 117 (B-run3 52 → 72), mid-X
+ * step crossings 284 → 263, edges through a node 69 → 47.
+ *
  * `containerEdges` is here because it is the count that used to disappear:
  * B-run1's 16 container-addressed edges were 16 connections the canvas never
  * drew. They were always in these measurements — `measureRenderedReadability`
@@ -81,9 +86,9 @@ const EXPECTED: Record<string, Expected> = {
     edges: 33,
     containerEdges: 0,
     elkCrossings: 1,
-    renderedCrossings: 11,
+    renderedCrossings: 9,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 5,
+    renderedEdgeNodeOverlaps: 6,
     maxNestingDepth: 2,
   },
   "A-run2 C4 insurer": {
@@ -91,7 +96,7 @@ const EXPECTED: Record<string, Expected> = {
     edges: 40,
     containerEdges: 0,
     elkCrossings: 0,
-    renderedCrossings: 4,
+    renderedCrossings: 3,
     elkEdgeNodeOverlaps: 0,
     renderedEdgeNodeOverlaps: 10,
     maxNestingDepth: 2,
@@ -100,10 +105,10 @@ const EXPECTED: Record<string, Expected> = {
     nodes: 34,
     edges: 40,
     containerEdges: 0,
-    elkCrossings: 4,
-    renderedCrossings: 52,
+    elkCrossings: 5,
+    renderedCrossings: 39,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 12,
+    renderedEdgeNodeOverlaps: 9,
     maxNestingDepth: 2,
   },
   "B-run1 AWS deployment": {
@@ -111,29 +116,29 @@ const EXPECTED: Record<string, Expected> = {
     edges: 27,
     containerEdges: 16,
     elkCrossings: 7,
-    renderedCrossings: 30,
+    renderedCrossings: 19,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 23,
+    renderedEdgeNodeOverlaps: 15,
     maxNestingDepth: 4,
   },
   "B-run2 AWS deployment": {
     nodes: 42,
     edges: 33,
     containerEdges: 0,
-    elkCrossings: 33,
-    renderedCrossings: 96,
+    elkCrossings: 32,
+    renderedCrossings: 75,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 18,
+    renderedEdgeNodeOverlaps: 6,
     maxNestingDepth: 3,
   },
   "B-run3 AWS deployment": {
     nodes: 33,
     edges: 37,
     containerEdges: 0,
-    elkCrossings: 52,
-    renderedCrossings: 91,
+    elkCrossings: 72,
+    renderedCrossings: 118,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 6,
+    renderedEdgeNodeOverlaps: 1,
     maxNestingDepth: 4,
   },
 };
@@ -274,7 +279,7 @@ describe("frozen generated diagram measurements", () => {
         `TOTAL elk ${elkTotal} -> rendered ${renderedTotal}   gap ${renderedTotal - elkTotal}\n`,
     );
 
-    expect(elkTotal).toBe(97);
-    expect(renderedTotal).toBe(284);
+    expect(elkTotal).toBe(117);
+    expect(renderedTotal).toBe(263);
   });
 });

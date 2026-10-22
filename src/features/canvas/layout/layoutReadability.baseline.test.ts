@@ -14,8 +14,6 @@ import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-p
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 import { GENERATED_DIAGRAMS } from "./generated-diagrams";
 import { stepPolyline } from "./renderedEdgePath";
-import type { LayoutGraph } from "./contract";
-import { edgeLabelBox } from "./edgeLabelBox";
 import { handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
 import { layout } from "./layoutEngine";
 
@@ -135,13 +133,19 @@ describe("layout readability baseline", () => {
    * redistribution.
    *
    * An upper bound, like the ELK-routing numbers above.
+   *
+   * Re-measured 2026-10-21 when `irToLayoutGraph` started sending edge labels
+   * to ELK: 1 + 8 + 6 + 10 = 25. This path is the mid-X step a connection with
+   * no stored corners draws; since generation and the auto-layout both store
+   * ELK's corridors, what reaches the user is the "auto-layout path" baseline
+   * below, which those labels left at 0 + 3 + 1 + 7 with no label overlap.
    */
-  const RENDERED_CROSSINGS_BASELINE = 17;
+  const RENDERED_CROSSINGS_BASELINE = 25;
   const RENDERED_CROSSINGS_PER_DIAGRAM: Record<string, number> = {
-    "C4 e-commerce": 2,
-    "AWS ECS Fargate": 3,
-    "C4 Context healthcare": 5,
-    "AWS microservices": 7,
+    "C4 e-commerce": 1,
+    "AWS ECS Fargate": 8,
+    "C4 Context healthcare": 6,
+    "AWS microservices": 10,
   };
 
   it("does not regress the rendered-crossing total", async () => {
@@ -209,11 +213,11 @@ describe("layout readability baseline", () => {
 });
 
 /**
- * The auto-layout path (Cmd/Ctrl+Shift+L, panel and selection layout): edges
- * carry their labels into ELK (`fromDiagram` → `labelBox`), and the drawn path
+ * The auto-layout path (Cmd/Ctrl+Shift+L, generation, panel and selection
+ * layout): edges carry their labels into ELK (`labelBox`), and the drawn path
  * keeps ELK's corridors snapped onto the handle slots (`handleAlignedRoutes`).
- * The numbers above measure the mid-X step without stored corners and without
- * labels, which is why they differ.
+ * The numbers above measure ELK's own routing and the mid-X step without stored
+ * corners, which is why they differ.
  *
  * Measured 2026-10-21 when inline labels shipped: crossings 12 → 11 and label
  * overlaps 6 → 0 against the same path without labels, for +24% area. Source:
@@ -230,16 +234,6 @@ describe("auto-layout path baseline", () => {
     "AWS microservices": { crossings: 7, labelOverlaps: 0 },
   };
 
-  function withLabels(graph: LayoutGraph, labels: Map<string, string>): LayoutGraph {
-    return {
-      ...graph,
-      edges: graph.edges.map((edge) => {
-        const labelBox = edgeLabelBox(labels.get(edge.id));
-        return labelBox ? { ...edge, labelBox } : edge;
-      }),
-    };
-  }
-
   const CORNERS_BASELINE = 174;
 
   it("stays within the recorded crossings, label overlaps and corners", async () => {
@@ -249,7 +243,7 @@ describe("auto-layout path baseline", () => {
 
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
       const labels = labelsOf(ir);
-      const input = withLabels(irToLayoutGraph(ir), labels);
+      const input = irToLayoutGraph(ir);
       const graph = await layoutElkGraph(input);
       const result = await layout(input);
       const cornersByEdgeId = new Map(
@@ -333,15 +327,7 @@ describe("auto-layout path — vertical channels stay apart", () => {
   it("keeps different edges' vertical legs at least a channel apart", async () => {
     let pairs = 0;
     for (const { ir } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
-      const labels = labelsOf(ir);
-      const graph = irToLayoutGraph(ir);
-      const input: LayoutGraph = {
-        ...graph,
-        edges: graph.edges.map((edge) => {
-          const labelBox = edgeLabelBox(labels.get(edge.id));
-          return labelBox ? { ...edge, labelBox } : edge;
-        }),
-      };
+      const input = irToLayoutGraph(ir);
       const routes = handleAlignedRoutes(input, await layout(input));
       pairs += nearParallelPairs(
         [...routes].flatMap(([id, route]) =>

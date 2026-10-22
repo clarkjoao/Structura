@@ -3,15 +3,14 @@ import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { layout } from "./layoutEngine";
 import { chooseAutoRefs, planAutoRefs, type AutoRefPlanOptions } from "./autoRefs";
 import { GENERATED_DIAGRAMS } from "./generated-diagrams";
-import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
-import { edgeLabelBox } from "./edgeLabelBox";
+import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
 import type { LayoutGraph } from "./contract";
 
 /**
  * Does referencing hubs make the auto-layout read better, on the diagrams the
  * layout is tuned against? Each diagram is laid out as it is, then with the
  * references `chooseAutoRefs` keeps, both measured on the drawn path. The
- * graph carries its edge labels, as `fromDiagram` builds it for the canvas.
+ * graph carries its edge labels (`irToLayoutGraph`, like `fromDiagram`).
  *
  *   npx vitest run autoRefs.experiment --silent=false
  */
@@ -32,15 +31,7 @@ describe("auto references, measured", () => {
   it("prints before/after for every fixture and never reads worse", async () => {
     const rows: string[] = [];
     for (const { name, ir } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
-      const labels = labelsOf(ir);
-      const unlabelled = irToLayoutGraph(ir);
-      const graph: LayoutGraph = {
-        ...unlabelled,
-        edges: unlabelled.edges.map((edge) => {
-          const labelBox = edgeLabelBox(labels.get(edge.id));
-          return labelBox ? { ...edge, labelBox } : edge;
-        }),
-      };
+      const graph = irToLayoutGraph(ir);
       const options = optionsFor(graph);
       const hubs = planAutoRefs(graph, options);
       const choice = await chooseAutoRefs(graph, options, layout);

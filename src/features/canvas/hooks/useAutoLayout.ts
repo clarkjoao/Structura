@@ -2,12 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { layout } from "../layout/layoutEngine";
-import { fitToContentIds, fromDiagram, resizableIds } from "../layout/fromDiagram";
-import { fitContainersToChildren, toAppliedLayouts, measuredSizesOf } from "../layout/applyLayout";
-import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
-import { chooseAutoRefs } from "../layout/autoRefs";
-import { autoRefOptionsFor, withoutAutoRefs } from "../layout/autoRefsFromDiagram";
+import { measuredSizesOf } from "../layout/applyLayout";
+import { applyDiagramAutoLayout, planDiagramAutoLayout } from "../layout/autoLayoutDiagram";
 import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
@@ -61,47 +57,25 @@ export function useAutoLayout() {
         // A scene adds and removes elements through its own diff; references are
         // made on the base diagram only, and a scene is laid out as it is.
         const inScene = !!active?.activeVersionId && !!active.versions?.[active.activeVersionId];
-        const planned = inScene
-          ? { components, connections: [...connections] }
-          : withoutAutoRefs(components, connections);
-        const baseGraph = fromDiagram(planned.components, planned.connections, nodeLayouts, {
+        // The same plan the assistant and generation run (`autoLayoutDiagram.ts`),
+        // with the sizes React Flow measured.
+        const plan = await planDiagramAutoLayout({
+          components,
+          connections,
+          nodeLayouts,
           measured: measuredSizesOf(nodesToUse),
+          autoRefs: !inScene,
         });
-        // Hubs used from other panels get a reference where they are used, when
-        // that reads better. The layout applied is the one that was measured.
-        const { graph, result, groups } = inScene
-          ? { graph: baseGraph, result: await layout(baseGraph), groups: [] }
-          : await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), layout);
+        const { groups } = plan;
 
-        if (result.boxes.size === 0) {
+        if (plan.result.boxes.size === 0) {
           toast.info(t("autoLayout.nothingToLayout"));
           return;
         }
 
-        // Every panel comes out wrapped the way its "Fit to content" button leaves it.
-        applyAutoLayout(
-          fitContainersToChildren(
-            toAppliedLayouts(graph, result, resizableIds(graph, components)),
-            graph,
-            fitToContentIds(graph, components),
-          ),
-          inScene
-            ? undefined
-            : groups.map(({ refId, originalId, parentId, sourceIds }) => ({
-                refId,
-                originalId,
-                parentId,
-                sourceIds,
-              })),
-        );
-
         const diagramId = useDiagramStore.getState().activeDiagramId;
-        if (diagramId !== null) {
-          // Handle-aligned ELK corridors: adapt border→border routes onto the
-          // discrete L/R handle slots so Cmd+Shift+L keeps obstacle clearance
-          // without the port jogs that forced "Resetar caminhos" after every run.
-          applyLayoutResultEdges(graph, result, diagramId);
-        }
+        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId);
+        else applyAutoLayout(plan.layouts, plan.autoRefs);
 
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });

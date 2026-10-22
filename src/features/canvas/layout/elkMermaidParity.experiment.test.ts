@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import type { LayoutGraph } from "./contract";
-import { edgeLabelBox } from "./edgeLabelBox";
 import { handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import { layout, layoutElkGraph } from "./layoutEngine";
@@ -47,14 +46,9 @@ const MERMAID_PRESET: Record<string, string> = {
   "elk.layered.nodePlacement.networkSimplex.nodeFlexibility": "PORT_POSITION",
 };
 
-function withLabels(graph: LayoutGraph, labels: Map<string, string>): LayoutGraph {
-  return {
-    ...graph,
-    edges: graph.edges.map((edge) => {
-      const labelBox = edgeLabelBox(labels.get(edge.id));
-      return labelBox ? { ...edge, labelBox } : edge;
-    }),
-  };
+/** The graph as the engine used to get it: no edge labels. */
+function withoutLabels(graph: LayoutGraph): LayoutGraph {
+  return { ...graph, edges: graph.edges.map(({ labelBox: _labelBox, ...edge }) => edge) };
 }
 
 interface Variant {
@@ -102,7 +96,7 @@ async function measure(variant: Variant): Promise<Measured[]> {
   for (const { ir } of REFERENCE_DIAGRAMS) {
     const labels = labelsOf(ir);
     const base = irToLayoutGraph(ir);
-    const input = variant.labels ? withLabels(base, labels) : base;
+    const input = variant.labels ? base : withoutLabels(base);
     const graph = await layoutElkGraph(input, variant.overrides);
     const result = await layout(input, variant.overrides);
     const cornersByEdgeId = new Map(

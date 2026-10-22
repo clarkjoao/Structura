@@ -6,6 +6,7 @@ import {
 import { cloudServiceIdWrite } from "@/features/diagram/model/cloud-service-id";
 import { layout } from "@/features/canvas/layout/layoutEngine";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
+import { autoLayoutActiveDiagram } from "@/features/canvas/layout/autoLayoutDiagram";
 import type { LayoutBox } from "@/features/canvas/layout/contract";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { mapNodeToComponent } from "./ir-to-component";
@@ -18,6 +19,12 @@ const VIEWPORT_MARGIN = 80;
 export interface ApplyIRResult {
   componentIds: string[];
   connectionIds: string[];
+  /**
+   * Automatic references the auto-layout made for the generated diagram. Not
+   * generated nodes, but they come and go with them: a preview discarded
+   * without them would leave references to nodes that no longer exist.
+   */
+  referenceIds: string[];
 }
 
 /**
@@ -100,6 +107,8 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
   const { nodes, edges } = buildGeneratedGraphInputs(ir, layoutResult.boxes, origin);
 
   const store = useDiagramStore.getState();
+  const before = store.activeDiagramId ? store.diagrams[store.activeDiagramId] : undefined;
+  const intoEmptyDiagram = Object.keys(before?.snapshot.components ?? {}).length === 0;
   const result = store.insertGeneratedGraph(nodes, edges);
 
   if (result.componentIds.length > 0) {
@@ -130,13 +139,28 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
   // other layout consumer uses. `waypointOffset` is the viewport origin: the
   // routes come back anchored at (0,0) and the diagram was inserted where the
   // user is looking.
-  applyLayoutResultEdges(graph, layoutResult, store.activeDiagramId, {
-    waypointOffset: origin,
-    idMap: {
-      node: (irNodeId) => result.componentIdByExternalId[irNodeId],
-      edge: (irEdgeId) => connectionIdByEdgeId.get(irEdgeId),
-    },
-  });
+  //
+  // Into an empty diagram, the generated graph *is* the diagram, so it gets the
+  // whole-diagram auto-layout instead — references included — and reads exactly
+  // as Cmd/Ctrl+Shift+L would leave it. Into a diagram with content, only the
+  // new part is placed; re-laying out the user's own work is not this path's call.
+  let referenceIds: string[] = [];
+  if (intoEmptyDiagram && result.componentIds.length > 0) {
+    const plan = await autoLayoutActiveDiagram({ offset: origin });
+    referenceIds = plan?.groups.map((group) => group.refId) ?? [];
+  } else {
+    applyLayoutResultEdges(graph, layoutResult, store.activeDiagramId, {
+      waypointOffset: origin,
+      idMap: {
+        node: (irNodeId) => result.componentIdByExternalId[irNodeId],
+        edge: (irEdgeId) => connectionIdByEdgeId.get(irEdgeId),
+      },
+    });
+  }
 
-  return { componentIds: result.componentIds, connectionIds: result.connectionIds };
+  return {
+    componentIds: result.componentIds,
+    connectionIds: result.connectionIds,
+    referenceIds,
+  };
 }

@@ -2,6 +2,7 @@
 // and the barrel would drag the store in with it.
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import type { LayoutGraph, LayoutNode } from "@/features/canvas/layout/contract";
+import { edgeLabelBox } from "@/features/canvas/layout/edgeLabelBox";
 import { isBoundaryNode, type DiagramIR } from "./ir.types";
 
 /**
@@ -50,11 +51,17 @@ export function irToLayoutGraph(ir: DiagramIR): LayoutGraph {
     };
   });
 
-  const edges = ir.edges.map((edge) => ({
-    id: edge.id,
-    sourceId: edge.sourceId,
-    targetId: edge.targetId,
-  }));
+  // Labels go to ELK as on the canvas (`fromDiagram`), so a generated diagram
+  // is laid out the way the auto-layout lays it out.
+  const edges = ir.edges.map((edge) => {
+    const labelBox = edgeLabelBox(edge.label);
+    return {
+      id: edge.id,
+      sourceId: edge.sourceId,
+      targetId: edge.targetId,
+      ...(labelBox && { labelBox }),
+    };
+  });
 
   return { nodes, edges };
 }
