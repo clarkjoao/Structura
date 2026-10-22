@@ -215,6 +215,9 @@ describe("layout readability baseline", () => {
  * Measured 2026-10-21 when inline labels shipped: crossings 12 → 11 and label
  * overlaps 6 → 0 against the same path without labels, for +24% area. Source:
  * `elkMermaidParity.experiment.test.ts`.
+ *
+ * Corners: 204 before `straightenPolylines` removed the jogs that snapping onto
+ * handle slots leaves near the ends of a route, 174 after.
  */
 describe("auto-layout path baseline", () => {
   const AUTO_LAYOUT_BASELINE: Record<string, { crossings: number; labelOverlaps: number }> = {
@@ -234,9 +237,12 @@ describe("auto-layout path baseline", () => {
     };
   }
 
-  it("stays within the recorded crossings and label overlaps", async () => {
+  const CORNERS_BASELINE = 174;
+
+  it("stays within the recorded crossings, label overlaps and corners", async () => {
     const failures: string[] = [];
     const rows: string[] = [];
+    let corners = 0;
 
     for (const { name, ir } of REFERENCE_DIAGRAMS) {
       const labels = labelsOf(ir);
@@ -246,6 +252,7 @@ describe("auto-layout path baseline", () => {
       const cornersByEdgeId = new Map(
         [...handleAlignedRoutes(input, result)].map(([id, route]) => [id, route.corners]),
       );
+      for (const routeCorners of cornersByEdgeId.values()) corners += routeCorners.length;
       const report = measureRenderedReadability(graph, ir.edges, {
         labels,
         handleOrder: result.handleOrder,
@@ -270,8 +277,9 @@ describe("auto-layout path baseline", () => {
       expect(report.edgeNodeOverlaps, `${name} edge through a node`).toBe(0);
     }
 
-    console.info(`\nAuto-layout path\n${rows.join("\n")}\n`);
+    console.info(`\nAuto-layout path\n${rows.join("\n")}\nTOTAL corners ${corners}\n`);
     expect(failures, failures.join("\n")).toHaveLength(0);
+    expect(corners).toBeLessThanOrEqual(CORNERS_BASELINE);
   });
 });
 
