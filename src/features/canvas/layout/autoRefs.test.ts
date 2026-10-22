@@ -6,6 +6,7 @@ import {
   AUTO_REF_MIN_EDGES,
   chooseAutoRefs,
   isBetterLayout,
+  planAutoRefHubs,
   planAutoRefs,
   splitGraph,
   type AutoRefPlanOptions,
@@ -93,6 +94,27 @@ describe("planAutoRefs", () => {
     ]);
   });
 
+  it("offers a container's lone edge as a one-edge reference to try on its own", () => {
+    const [hub] = planAutoRefHubs(HUB, OPTIONS);
+    expect(hub?.lone).toEqual([
+      { refId: "ref:h:p2", originalId: "h", parentId: "p2", sourceIds: ["c"], edgeIds: ["ch"] },
+    ]);
+    expect(hub?.maxLone).toBe(1);
+  });
+
+  it("never lets lone references take the original's last edge", () => {
+    // h used once from p1 and once from p2, from nowhere beside it: one of the
+    // two lone edges has to stay on the original.
+    const graph: LayoutGraph = {
+      nodes: [node("p1"), node("p2"), node("h"), node("a", "p1"), node("c", "p2")],
+      edges: [edge("ah", "a", "h"), edge("ch", "c", "h")],
+    };
+    const [hub] = planAutoRefHubs(graph, OPTIONS);
+    expect(hub?.groups).toEqual([]);
+    expect(hub?.lone).toHaveLength(2);
+    expect(hub?.maxLone).toBe(1);
+  });
+
   it("leaves the busiest container on the original when nothing uses it from beside it", () => {
     const graph: LayoutGraph = {
       nodes: [...HUB.nodes, node("c2", "p2")],
@@ -165,14 +187,27 @@ describe("chooseAutoRefs", () => {
   };
 
   it("keeps the unsplit layout when no trial reads better", async () => {
+    // Without c's lone edge: one trial, p1's reference.
+    const graph: LayoutGraph = { ...HUB, edges: HUB.edges.filter((e) => e.id !== "ch") };
     const runs: LayoutGraph[] = [];
-    const choice = await chooseAutoRefs(HUB, OPTIONS, async (graph) => {
-      runs.push(graph);
-      return rowResult(graph);
+    const choice = await chooseAutoRefs(graph, OPTIONS, async (trial) => {
+      runs.push(trial);
+      return rowResult(trial);
     });
     expect(runs).toHaveLength(2);
     expect(choice.groups).toEqual([]);
-    expect(choice.graph).toBe(HUB);
+    expect(choice.graph).toBe(graph);
+  });
+
+  it("tries each lone edge on its own, after the hubs", async () => {
+    const runs: LayoutGraph[] = [];
+    await chooseAutoRefs(HUB, OPTIONS, async (trial) => {
+      runs.push(trial);
+      return rowResult(trial);
+    });
+    // The unsplit layout, p1's reference, then p2's lone edge as a reference.
+    expect(runs).toHaveLength(3);
+    expect(runs[2]!.nodes.map((n) => n.id)).toContain("ref:h:p2");
   });
 });
 

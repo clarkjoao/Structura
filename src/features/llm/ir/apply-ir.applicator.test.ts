@@ -210,12 +210,12 @@ describe("applyIRToDiagram — into an empty diagram", () => {
     );
     expect(applied.referenceIds.length).toBeGreaterThan(0);
     expect(refs.map((ref) => ref.id).sort()).toEqual([...applied.referenceIds].sort());
-    // Each reference is part of the drawing: at least two connections end on it.
+    // Each reference is part of the drawing: a connection ends on it.
     for (const ref of refs) {
       const uses = Object.values(diagram.snapshot.connections).filter(
         (connection) => connection.targetId === ref.id || connection.sourceId === ref.id,
       );
-      expect(uses.length, ref.id).toBeGreaterThanOrEqual(2);
+      expect(uses.length, ref.id).toBeGreaterThanOrEqual(1);
     }
     const withWaypoints = Object.values(diagram.edgeLayouts).filter(
       (edgeLayout) => (edgeLayout.points?.length ?? 0) > 0,
