@@ -12,14 +12,6 @@ import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 
-/**
- * Automatic references (`layout/autoRefs.ts`) are off while the inline edge
- * labels and the uncapped handle slots are evaluated by hand: references
- * change the graph being laid out, which would confound the comparison. With
- * them off, a run still dissolves the references an earlier run made.
- */
-const AUTO_REFS_ENABLED = false;
-
 export function useAutoLayout() {
   const { t } = useTranslation();
   const { fitView, getNodes } = useReactFlow();
@@ -77,10 +69,9 @@ export function useAutoLayout() {
         });
         // Hubs used from other panels get a reference where they are used, when
         // that reads better. The layout applied is the one that was measured.
-        const { graph, result, groups } =
-          inScene || !AUTO_REFS_ENABLED
-            ? { graph: baseGraph, result: await layout(baseGraph), groups: [] }
-            : await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), layout);
+        const { graph, result, groups } = inScene
+          ? { graph: baseGraph, result: await layout(baseGraph), groups: [] }
+          : await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), layout);
 
         if (result.boxes.size === 0) {
           toast.info(t("autoLayout.nothingToLayout"));
