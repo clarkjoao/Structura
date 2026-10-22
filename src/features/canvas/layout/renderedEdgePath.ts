@@ -1,6 +1,6 @@
 import { Position } from "@xyflow/react";
 import type { Point } from "@/features/diagram";
-import { MAX_HANDLES, MIN_HANDLES } from "../canvas.constants";
+import { handleSlotOffset, MAX_HANDLES, MIN_HANDLES } from "../canvas.constants";
 import { defaultOrthogonalCorners, stepPathPoints } from "../edges/geometry/orthogonal";
 import {
   measurePolylines,
@@ -23,9 +23,8 @@ import type { ElkNode } from "elkjs";
 
 /**
  * Handle anchor, matching `buildHandles`: `n` handles clamped to
- * `[MIN_HANDLES, MAX_HANDLES]`, handle `i` at `(i + 1) / (n + 1)` of the node
- * height. A single handle sits at the default 50%, which the same formula
- * yields for n = 1.
+ * `[MIN_HANDLES, MAX_HANDLES]`, handle `i` where `handleSlotOffset` puts it:
+ * bundled `HANDLE_PITCH` apart around the middle of the side.
  *
  * The side is fixed — sources leave on the right, targets arrive on the left,
  * whatever the geometry — because that is what the canvas draws. See the module
@@ -41,7 +40,7 @@ export function handleAnchor(
   const index = Math.min(Math.max(slot, 0), n - 1);
   return {
     x: side === "source" ? box.x + box.width : box.x,
-    y: box.y + box.height * ((index + 1) / (n + 1)),
+    y: box.y + handleSlotOffset(index, n, box.height),
   };
 }
 

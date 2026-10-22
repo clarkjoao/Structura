@@ -22,6 +22,7 @@ import type { EdgeLayout, NodeLayout } from "@/features/diagram";
 import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import type { HandlePosition } from "@/features/canvas/edges/geometry/paths";
 import { getStepPolylinePoints } from "@/features/canvas/edges/geometry/paths";
+import { handleSlotOffset } from "@/features/diagram/model/layout.constants";
 
 // ─── Handle position resolution ─────────────────────────────────────────────────
 
@@ -31,16 +32,6 @@ export interface HandleSlots {
   targetSlot: number;
   sourceCount: number;
   targetCount: number;
-}
-
-/**
- * Convert a handle slot index to a normalised anchor offset along a node side.
- * For N slots on a side, slot i gets position (i+1)/(N+1).
- * This matches how React Flow's buildHandles distributes handles visually.
- */
-export function slotToAnchorOffset(slot: number, count: number): number {
-  if (count <= 1) return 0.5;
-  return (slot + 1) / (count + 1);
 }
 
 // ─── Source/target side inference ───────────────────────────────────────────────
@@ -322,20 +313,20 @@ function resolveAbs(
 
   const slotCount = isSource ? (slot?.sourceCount ?? 1) : (slot?.targetCount ?? 1);
   const slotIndex = isSource ? (slot?.sourceSlot ?? 0) : (slot?.targetSlot ?? 0);
-  const offset = slotToAnchorOffset(slotIndex, slotCount);
+  const along = (sideLength: number) => handleSlotOffset(slotIndex, slotCount, sideLength);
 
   let handleX: number, handleY: number;
   if (handlePosition === "right") {
     handleX = absX + w;
-    handleY = absY + offset * h;
+    handleY = absY + along(h);
   } else if (handlePosition === "left") {
     handleX = absX;
-    handleY = absY + offset * h;
+    handleY = absY + along(h);
   } else if (handlePosition === "bottom") {
-    handleX = absX + offset * w;
+    handleX = absX + along(w);
     handleY = absY + h;
   } else {
-    handleX = absX + offset * w;
+    handleX = absX + along(w);
     handleY = absY;
   }
 

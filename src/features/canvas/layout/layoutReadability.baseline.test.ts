@@ -28,9 +28,9 @@ import { layout } from "./layoutEngine";
 
 const BASELINE: Record<string, Pick<ReadabilityReport, "edgeCrossings" | "edgeNodeOverlaps">> = {
   "C4 e-commerce": { edgeCrossings: 0, edgeNodeOverlaps: 0 },
-  "AWS ECS Fargate": { edgeCrossings: 4, edgeNodeOverlaps: 0 },
-  "C4 Context healthcare": { edgeCrossings: 0, edgeNodeOverlaps: 0 },
-  "AWS microservices": { edgeCrossings: 5, edgeNodeOverlaps: 0 },
+  "AWS ECS Fargate": { edgeCrossings: 3, edgeNodeOverlaps: 0 },
+  "C4 Context healthcare": { edgeCrossings: 1, edgeNodeOverlaps: 0 },
+  "AWS microservices": { edgeCrossings: 4, edgeNodeOverlaps: 0 },
 };
 
 describe("reference diagrams", () => {
@@ -139,13 +139,16 @@ describe("layout readability baseline", () => {
    * no stored corners draws; since generation and the auto-layout both store
    * ELK's corridors, what reaches the user is the "auto-layout path" baseline
    * below, which those labels left at 0 + 3 + 1 + 7 with no label overlap.
+   *
+   * Re-measured 2026-10-22 when the handles were bundled around the middle of
+   * each side (`HANDLE_PITCH`): 2 + 8 + 6 + 6 = 22.
    */
-  const RENDERED_CROSSINGS_BASELINE = 25;
+  const RENDERED_CROSSINGS_BASELINE = 22;
   const RENDERED_CROSSINGS_PER_DIAGRAM: Record<string, number> = {
-    "C4 e-commerce": 1,
+    "C4 e-commerce": 2,
     "AWS ECS Fargate": 8,
     "C4 Context healthcare": 6,
-    "AWS microservices": 10,
+    "AWS microservices": 6,
   };
 
   it("does not regress the rendered-crossing total", async () => {
@@ -225,16 +228,20 @@ describe("layout readability baseline", () => {
  *
  * Corners: 204 before `straightenPolylines` removed the jogs that snapping onto
  * handle slots leaves near the ends of a route, 174 after.
+ *
+ * Measured 2026-10-22 when ELK ports started bundling each side's edges where
+ * the canvas draws its handles (`HANDLE_PITCH`): crossings 11 → 8 (AWS
+ * microservices 7 → 4), corners 174 → 176, no label overlap.
  */
 describe("auto-layout path baseline", () => {
   const AUTO_LAYOUT_BASELINE: Record<string, { crossings: number; labelOverlaps: number }> = {
     "C4 e-commerce": { crossings: 0, labelOverlaps: 0 },
     "AWS ECS Fargate": { crossings: 3, labelOverlaps: 0 },
     "C4 Context healthcare": { crossings: 1, labelOverlaps: 0 },
-    "AWS microservices": { crossings: 7, labelOverlaps: 0 },
+    "AWS microservices": { crossings: 4, labelOverlaps: 0 },
   };
 
-  const CORNERS_BASELINE = 174;
+  const CORNERS_BASELINE = 176;
 
   it("stays within the recorded crossings, label overlaps and corners", async () => {
     const failures: string[] = [];
@@ -286,11 +293,12 @@ describe("auto-layout path baseline", () => {
  *
  * Measured 2026-10-21, auto-layout path over the reference and generated
  * diagrams: 117 pairs with ELK's default between-layer edge gap (10), 2 with
- * `edgeEdgeBetweenLayers` at 20.
+ * `edgeEdgeBetweenLayers` at 20. 4 since 2026-10-22, when ELK ports started
+ * bundling each side's edges around its middle (`HANDLE_PITCH`).
  */
 describe("auto-layout path — vertical channels stay apart", () => {
   const TOO_CLOSE = 10;
-  const NEAR_PARALLEL_BASELINE = 2;
+  const NEAR_PARALLEL_BASELINE = 4;
 
   interface Vertical {
     edge: string;

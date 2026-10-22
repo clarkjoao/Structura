@@ -18,77 +18,77 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-ctx-payer": {
         "elementId": "pl-ctx-payer",
         "x": 774,
-        "y": 89.99999999999997,
+        "y": 77.5,
         "width": 260,
         "height": 85
       },
       "pl-ctx-merchant": {
         "elementId": "pl-ctx-merchant",
         "x": 116,
-        "y": 340.24999999999994,
+        "y": 329,
         "width": 260,
         "height": 85
       },
       "pl-ctx-hub": {
         "elementId": "pl-ctx-hub",
         "x": 1432,
-        "y": 92.99999999999997,
+        "y": 80.5,
         "width": 260,
         "height": 146
       },
       "pl-ctx-ledger": {
         "elementId": "pl-ctx-ledger",
         "x": 2080,
-        "y": 386.99999999999994,
+        "y": 387,
         "width": 260,
         "height": 131
       },
       "pl-ctx-risk": {
         "elementId": "pl-ctx-risk",
         "x": 2686,
-        "y": 104.0833333333333,
+        "y": 86.25,
         "width": 260,
         "height": 131
       },
       "pl-ctx-platform": {
         "elementId": "pl-ctx-platform",
         "x": 774,
-        "y": 317.24999999999994,
+        "y": 306,
         "width": 260,
         "height": 131
       },
       "pl-ctx-spi": {
         "elementId": "pl-ctx-spi",
         "x": 2080,
-        "y": 191.99999999999997,
+        "y": 192,
         "width": 260,
         "height": 85
       },
       "pl-ctx-bank": {
         "elementId": "pl-ctx-bank",
         "x": 2686,
-        "y": 443.49999999999994,
+        "y": 443.5,
         "width": 260,
         "height": 85
       },
       "pl-ctx-kyc": {
         "elementId": "pl-ctx-kyc",
         "x": 3280,
-        "y": 127.0833333333333,
+        "y": 109.25,
         "width": 260,
         "height": 85
       },
       "pl-ctx-notify": {
         "elementId": "pl-ctx-notify",
         "x": 1432,
-        "y": 613.9999999999999,
+        "y": 614,
         "width": 260,
         "height": 85
       },
       "pl-ctx-note": {
         "elementId": "pl-ctx-note",
         "x": 40,
-        "y": 535.2499999999999,
+        "y": 524,
         "width": 336,
         "height": 475
       }
@@ -182,27 +182,27 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r1-cp0",
             "x": 1332,
-            "y": 132.5
+            "y": 120
           },
           {
             "id": "pl-ctx-r1-cp1",
             "x": 1332,
-            "y": 141.67
+            "y": 149.5
           }
         ],
-        "labelOffset": 0.4887
+        "labelOffset": 0.4655
       },
       "pl-ctx-r2": {
         "points": [
           {
             "id": "pl-ctx-r2-cp0",
             "x": 575,
-            "y": 382.75
+            "y": 371.5
           },
           {
             "id": "pl-ctx-r2-cp1",
             "x": 575,
-            "y": 382.75
+            "y": 371.5
           }
         ],
         "labelOffset": 0.5
@@ -212,22 +212,32 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r3-cp0",
             "x": 1702,
-            "y": 202.5
+            "y": 161.5
           },
           {
             "id": "pl-ctx-r3-cp1",
             "x": 1702,
-            "y": 430.67
+            "y": 422
+          },
+          {
+            "id": "pl-ctx-r3-cp2",
+            "x": 1980,
+            "y": 422
+          },
+          {
+            "id": "pl-ctx-r3-cp3",
+            "x": 1980,
+            "y": 448.5
           }
         ],
-        "labelOffset": 0.6852
+        "labelOffset": 0.6733
       },
       "pl-ctx-r4": {
         "points": [
           {
             "id": "pl-ctx-r4-cp0",
             "x": 1722,
-            "y": 166
+            "y": 153.5
           },
           {
             "id": "pl-ctx-r4-cp1",
@@ -235,14 +245,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 234.5
           }
         ],
-        "labelOffset": 0.575
+        "labelOffset": 0.5864
       },
       "pl-ctx-r5": {
         "points": [
           {
             "id": "pl-ctx-r5-cp0",
             "x": 1702,
-            "y": 129.5
+            "y": 145.5
           },
           {
             "id": "pl-ctx-r5-cp1",
@@ -260,14 +270,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 147.75
           }
         ],
-        "labelOffset": 0.5103
+        "labelOffset": 0.5171
       },
       "pl-ctx-r6": {
         "points": [
           {
             "id": "pl-ctx-r6-cp0",
             "x": 2350,
-            "y": 474.33
+            "y": 456.5
           },
           {
             "id": "pl-ctx-r6-cp1",
@@ -275,19 +285,19 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 486
           }
         ],
-        "labelOffset": 0.5163
+        "labelOffset": 0.5393
       },
       "pl-ctx-r7": {
         "points": [
           {
             "id": "pl-ctx-r7-cp0",
             "x": 3113,
-            "y": 169.58
+            "y": 151.75
           },
           {
             "id": "pl-ctx-r7-cp1",
             "x": 3113,
-            "y": 169.58
+            "y": 151.75
           }
         ],
         "labelOffset": 0.5
@@ -297,47 +307,57 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r8-cp0",
             "x": 1044,
-            "y": 350
+            "y": 363.5
           },
           {
             "id": "pl-ctx-r8-cp1",
             "x": 1044,
-            "y": 258.62
+            "y": 258.5
           },
           {
             "id": "pl-ctx-r8-cp2",
             "x": 1332,
-            "y": 258.62
+            "y": 258.5
           },
           {
             "id": "pl-ctx-r8-cp3",
             "x": 1332,
-            "y": 190.33
+            "y": 157.5
           }
         ],
-        "labelOffset": 0.5207
+        "labelOffset": 0.5033
       },
       "pl-ctx-r9": {
         "points": [
           {
             "id": "pl-ctx-r9-cp0",
             "x": 1064,
-            "y": 382.75
+            "y": 371.5
           },
           {
             "id": "pl-ctx-r9-cp1",
             "x": 1064,
-            "y": 474.33
+            "y": 483
+          },
+          {
+            "id": "pl-ctx-r9-cp2",
+            "x": 1980,
+            "y": 483
+          },
+          {
+            "id": "pl-ctx-r9-cp3",
+            "x": 1980,
+            "y": 456.5
           }
         ],
-        "labelOffset": 0.5446
+        "labelOffset": 0.5401
       },
       "pl-ctx-r10": {
         "points": [
           {
             "id": "pl-ctx-r10-cp0",
             "x": 1044,
-            "y": 415.5
+            "y": 379.5
           },
           {
             "id": "pl-ctx-r10-cp1",
@@ -345,32 +365,32 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 656.5
           }
         ],
-        "labelOffset": 0.6886
+        "labelOffset": 0.7052
       },
       "pl-ctx-r11": {
         "points": [
           {
             "id": "pl-ctx-r11-cp0",
             "x": 2350,
-            "y": 430.67
+            "y": 448.5
           },
           {
             "id": "pl-ctx-r11-cp1",
             "x": 2350,
-            "y": 354.42
+            "y": 345.5
           },
           {
             "id": "pl-ctx-r11-cp2",
             "x": 2586,
-            "y": 354.42
+            "y": 345.5
           },
           {
             "id": "pl-ctx-r11-cp3",
             "x": 2586,
-            "y": 191.42
+            "y": 155.75
           }
         ],
-        "labelOffset": 0.4259
+        "labelOffset": 0.4321
       }
     }
   },
@@ -379,126 +399,126 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-payer": {
         "elementId": "pl-hub-payer",
         "x": 116,
-        "y": 1037.875,
+        "y": 579.5,
         "width": 260,
         "height": 85
       },
       "pl-hub-merchant-sys": {
         "elementId": "pl-hub-merchant-sys",
         "x": 774,
-        "y": 810.75,
+        "y": 770.5,
         "width": 260,
         "height": 85
       },
       "pl-hub-boundary": {
         "elementId": "pl-hub-boundary",
         "x": 1428.5,
-        "y": 49.25,
+        "y": 101,
         "width": 2662,
-        "height": 1314.5
+        "height": 1265.75
       },
       "pl-hub-cob-api": {
         "elementId": "pl-hub-cob-api",
         "x": 1762,
-        "y": 1007.75,
+        "y": 85,
         "width": 260,
         "height": 174
       },
       "pl-hub-dict": {
         "elementId": "pl-hub-dict",
         "x": 2362,
-        "y": 1100.5,
+        "y": 72,
         "width": 260,
         "height": 134
       },
       "pl-hub-webhook": {
         "elementId": "pl-hub-webhook",
         "x": 1762,
-        "y": 494.75,
+        "y": 596.5,
         "width": 260,
         "height": 174
       },
       "pl-hub-cache": {
         "elementId": "pl-hub-cache",
         "x": 2362,
-        "y": 816,
+        "y": 369.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-queue": {
         "elementId": "pl-hub-queue",
         "x": 2362,
-        "y": 233.25,
+        "y": 962,
         "width": 260,
         "height": 104
       },
       "pl-hub-worker": {
         "elementId": "pl-hub-worker",
         "x": 1762,
-        "y": 280.75,
+        "y": 880.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-spi": {
         "elementId": "pl-hub-spi",
         "x": 774,
-        "y": 1037.875,
+        "y": 575.5,
         "width": 260,
         "height": 85
       },
       "pl-hub-risk-ext": {
         "elementId": "pl-hub-risk-ext",
         "x": 4485,
-        "y": 517,
+        "y": 725.75,
         "width": 260,
         "height": 85
       },
       "pl-hub-ledger-ext": {
         "elementId": "pl-hub-ledger-ext",
         "x": 4485,
-        "y": 1074.75,
+        "y": 1261,
         "width": 260,
         "height": 68
       },
       "pl-hub-note": {
         "elementId": "pl-hub-note",
         "x": 40,
-        "y": 452.87499999999994,
+        "y": 774.5,
         "width": 336,
         "height": 475
       },
       "pl-hub-ep-post": {
         "elementId": "pl-hub-ep-post",
         "x": 40,
-        "y": 778.75,
+        "y": 362.25,
         "width": 260,
         "height": 104
       },
       "pl-hub-auth-guard": {
         "elementId": "pl-hub-auth-guard",
         "x": 598,
-        "y": 778.75,
+        "y": 362.25,
         "width": 260,
         "height": 104
       },
       "pl-hub-cob-svc": {
         "elementId": "pl-hub-cob-svc",
         "x": 1186,
-        "y": 778.75,
+        "y": 362.25,
         "width": 260,
         "height": 104
       },
       "pl-hub-cache-svc": {
         "elementId": "pl-hub-cache-svc",
         "x": 1762,
-        "y": 778.75,
+        "y": 369.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-event-pub": {
         "elementId": "pl-hub-event-pub",
         "x": 1765.5,
-        "y": 72,
+        "y": 1098.75,
         "width": 253,
         "height": 87
       }
@@ -517,19 +537,19 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-hub-merchant-sys": {
         "outgoing": [
-          "pl-hub-c-merchant-wh",
-          "pl-hub-c-merchant"
+          "pl-hub-c-merchant",
+          "pl-hub-c-merchant-wh"
         ],
         "incoming": []
       },
       "pl-hub-cob-api": {
         "outgoing": [
-          "pl-hub-c-cob-cache",
-          "pl-hub-c-dict"
+          "pl-hub-c-dict",
+          "pl-hub-c-cob-cache"
         ],
         "incoming": [
-          "pl-hub-c-svc-api",
-          "pl-hub-c-merchant"
+          "pl-hub-c-merchant",
+          "pl-hub-c-svc-api"
         ]
       },
       "pl-hub-dict": {
@@ -542,9 +562,9 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-hub-webhook": {
         "outgoing": [
-          "pl-hub-c-queue",
+          "pl-hub-c-cache",
           "pl-hub-c-risk",
-          "pl-hub-c-cache"
+          "pl-hub-c-queue"
         ],
         "incoming": [
           "pl-hub-c-merchant-wh",
@@ -554,17 +574,17 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-cache": {
         "outgoing": [],
         "incoming": [
+          "pl-hub-c-cob-cache",
           "pl-hub-c-cache-redis",
-          "pl-hub-c-cache",
-          "pl-hub-c-cob-cache"
+          "pl-hub-c-cache"
         ]
       },
       "pl-hub-queue": {
         "outgoing": [],
         "incoming": [
-          "pl-hub-c-pub-queue",
           "pl-hub-c-worker",
-          "pl-hub-c-queue"
+          "pl-hub-c-queue",
+          "pl-hub-c-pub-queue"
         ]
       },
       "pl-hub-worker": {
@@ -580,8 +600,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           "pl-hub-c-spi"
         ],
         "incoming": [
-          "pl-hub-c-payer",
-          "pl-hub-c-dict-spi"
+          "pl-hub-c-dict-spi",
+          "pl-hub-c-payer"
         ]
       },
       "pl-hub-risk-ext": {
@@ -613,9 +633,9 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-hub-cob-svc": {
         "outgoing": [
-          "pl-hub-c-svc-pub",
+          "pl-hub-c-svc-api",
           "pl-hub-c-svc-cache",
-          "pl-hub-c-svc-api"
+          "pl-hub-c-svc-pub"
         ],
         "incoming": [
           "pl-hub-c-guard-svc"
@@ -643,288 +663,318 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-payer-cp0",
-            "x": 754,
-            "y": 1080.38
+            "x": 575,
+            "y": 622
           },
           {
             "id": "pl-hub-c-payer-cp1",
-            "x": 754,
-            "y": 1066.21
+            "x": 575,
+            "y": 622
           }
         ],
-        "labelOffset": 0.4828
+        "labelOffset": 0.5
       },
       "pl-hub-c-merchant": {
         "points": [
           {
             "id": "pl-hub-c-merchant-cp0",
-            "x": 1084,
-            "y": 867.42
+            "x": 1044,
+            "y": 809
           },
           {
             "id": "pl-hub-c-merchant-cp1",
-            "x": 1084,
-            "y": 1132.96
+            "x": 1044,
+            "y": 323.5
           },
           {
             "id": "pl-hub-c-merchant-cp2",
             "x": 1316,
-            "y": 1132.96
+            "y": 323.5
           },
           {
             "id": "pl-hub-c-merchant-cp3",
             "x": 1316,
-            "y": 1173
+            "y": 242.5
+          },
+          {
+            "id": "pl-hub-c-merchant-cp4",
+            "x": 3090.5,
+            "y": 242.5
+          },
+          {
+            "id": "pl-hub-c-merchant-cp5",
+            "x": 3090.5,
+            "y": 269
           }
         ],
-        "labelOffset": 0.1854
+        "labelOffset": 0.246
       },
       "pl-hub-c-dict": {
         "points": [
           {
             "id": "pl-hub-c-dict-cp0",
             "x": 3460.5,
-            "y": 1173
+            "y": 269
           },
           {
             "id": "pl-hub-c-dict-cp1",
             "x": 3460.5,
-            "y": 1216.75
+            "y": 240
           }
         ],
-        "labelOffset": 0.557
+        "labelOffset": 0.5393
       },
       "pl-hub-c-spi": {
         "points": [
           {
             "id": "pl-hub-c-spi-cp0",
-            "x": 1064,
-            "y": 1080.38
+            "x": 1084,
+            "y": 618
           },
           {
             "id": "pl-hub-c-spi-cp1",
-            "x": 1064,
-            "y": 660
+            "x": 1084,
+            "y": 818
+          },
+          {
+            "id": "pl-hub-c-spi-cp2",
+            "x": 1316,
+            "y": 818
+          },
+          {
+            "id": "pl-hub-c-spi-cp3",
+            "x": 1316,
+            "y": 788.5
           }
         ],
-        "labelOffset": 0.2373
+        "labelOffset": 0.1639
       },
       "pl-hub-c-cache": {
         "points": [
           {
             "id": "pl-hub-c-cache-cp0",
-            "x": 3480.5,
-            "y": 674.5
+            "x": 3460.5,
+            "y": 776.5
           },
           {
             "id": "pl-hub-c-cache-cp1",
-            "x": 3480.5,
-            "y": 935.25
+            "x": 3460.5,
+            "y": 635.25
           },
           {
             "id": "pl-hub-c-cache-cp2",
             "x": 3690.5,
-            "y": 935.25
+            "y": 635.25
           },
           {
             "id": "pl-hub-c-cache-cp3",
             "x": 3690.5,
-            "y": 917.25
+            "y": 530.5
           }
         ],
-        "labelOffset": 0.6962
+        "labelOffset": 0.5311
       },
       "pl-hub-c-risk": {
         "points": [
           {
             "id": "pl-hub-c-risk-cp0",
-            "x": 4385,
-            "y": 631
+            "x": 4113,
+            "y": 784.5
           },
           {
             "id": "pl-hub-c-risk-cp1",
+            "x": 4113,
+            "y": 801.75
+          },
+          {
+            "id": "pl-hub-c-risk-cp2",
             "x": 4385,
-            "y": 573.67
+            "y": 801.75
+          },
+          {
+            "id": "pl-hub-c-risk-cp3",
+            "x": 4385,
+            "y": 772.25
           }
         ],
-        "labelOffset": 0.7726
+        "labelOffset": 0.7961
       },
       "pl-hub-c-worker-risk": {
         "points": [
           {
             "id": "pl-hub-c-worker-risk-cp0",
-            "x": 3460.5,
-            "y": 356
+            "x": 3480.5,
+            "y": 1025.5
           },
           {
             "id": "pl-hub-c-worker-risk-cp1",
-            "x": 3460.5,
-            "y": 112
+            "x": 3480.5,
+            "y": 755.25
           },
           {
             "id": "pl-hub-c-worker-risk-cp2",
             "x": 4113,
-            "y": 112
+            "y": 755.25
           },
           {
             "id": "pl-hub-c-worker-risk-cp3",
             "x": 4113,
-            "y": 301.5
+            "y": 734.75
           },
           {
             "id": "pl-hub-c-worker-risk-cp4",
             "x": 4385,
-            "y": 301.5
+            "y": 734.75
           },
           {
             "id": "pl-hub-c-worker-risk-cp5",
             "x": 4385,
-            "y": 545.33
+            "y": 764.25
           }
         ],
-        "labelOffset": 0.746
+        "labelOffset": 0.8372
       },
       "pl-hub-c-merchant-wh": {
         "points": [
           {
             "id": "pl-hub-c-merchant-wh-cp0",
-            "x": 1044,
-            "y": 839.08
+            "x": 1064,
+            "y": 817
           },
           {
             "id": "pl-hub-c-merchant-wh-cp1",
-            "x": 1044,
-            "y": 554.33
+            "x": 1064,
+            "y": 751
           },
           {
             "id": "pl-hub-c-merchant-wh-cp2",
             "x": 1316,
-            "y": 554.33
+            "y": 751
           },
           {
             "id": "pl-hub-c-merchant-wh-cp3",
             "x": 1316,
-            "y": 602
+            "y": 780.5
           }
         ],
-        "labelOffset": 0.1911
+        "labelOffset": 0.1141
       },
       "pl-hub-c-queue": {
         "points": [
           {
             "id": "pl-hub-c-queue-cp0",
-            "x": 3460.5,
-            "y": 587.5
+            "x": 3520.5,
+            "y": 792.5
           },
           {
             "id": "pl-hub-c-queue-cp1",
-            "x": 3460.5,
-            "y": 507
+            "x": 3520.5,
+            "y": 1133
           },
           {
             "id": "pl-hub-c-queue-cp2",
-            "x": 3710.5,
-            "y": 507
+            "x": 3690.5,
+            "y": 1133
           },
           {
             "id": "pl-hub-c-queue-cp3",
-            "x": 3710.5,
-            "y": 360.5
+            "x": 3690.5,
+            "y": 1115
           }
         ],
-        "labelOffset": 0.4418
+        "labelOffset": 0.7309
       },
       "pl-hub-c-worker": {
         "points": [
           {
             "id": "pl-hub-c-worker-cp0",
             "x": 3690.5,
-            "y": 382
+            "y": 1033.5
           },
           {
             "id": "pl-hub-c-worker-cp1",
             "x": 3690.5,
-            "y": 334.5
+            "y": 1107
           }
         ],
-        "labelOffset": 0.4387
+        "labelOffset": 0.4111
       },
       "pl-hub-c-ledger": {
         "points": [
           {
             "id": "pl-hub-c-ledger-cp0",
-            "x": 3500.5,
-            "y": 408
+            "x": 3460.5,
+            "y": 1041.5
           },
           {
             "id": "pl-hub-c-ledger-cp1",
-            "x": 3500.5,
-            "y": 1108.75
+            "x": 3460.5,
+            "y": 1295
           }
         ],
-        "labelOffset": 0.8899
+        "labelOffset": 0.8517
       },
       "pl-hub-c-dict-spi": {
         "points": [
           {
             "id": "pl-hub-c-dict-spi-cp0",
             "x": 4113,
-            "y": 1216.75
+            "y": 240
           },
           {
             "id": "pl-hub-c-dict-spi-cp1",
             "x": 4113,
-            "y": 1363.75
+            "y": 61
           },
           {
             "id": "pl-hub-c-dict-spi-cp2",
-            "x": 1044,
-            "y": 1363.75
+            "x": 674,
+            "y": 61
           },
           {
             "id": "pl-hub-c-dict-spi-cp3",
-            "x": 1044,
-            "y": 1094.54
+            "x": 674,
+            "y": 614
           }
         ],
-        "labelOffset": 0.8114
+        "labelOffset": 0.7222
       },
       "pl-hub-c-cob-cache": {
         "points": [
           {
             "id": "pl-hub-c-cob-cache-cp0",
             "x": 3460.5,
-            "y": 1115
+            "y": 277
           },
           {
             "id": "pl-hub-c-cob-cache-cp1",
             "x": 3460.5,
-            "y": 1045.25
+            "y": 307
           },
           {
             "id": "pl-hub-c-cob-cache-cp2",
-            "x": 3710.5,
-            "y": 1045.25
+            "x": 3690.5,
+            "y": 307
           },
           {
             "id": "pl-hub-c-cob-cache-cp3",
-            "x": 3710.5,
-            "y": 943.25
+            "x": 3690.5,
+            "y": 514.5
           }
         ],
-        "labelOffset": 0.4685
+        "labelOffset": 0.3463
       },
       "pl-hub-c-ep-guard": {
         "points": [
           {
             "id": "pl-hub-c-ep-guard-cp0",
             "x": 1877.5,
-            "y": 880
+            "y": 515.25
           },
           {
             "id": "pl-hub-c-ep-guard-cp1",
             "x": 1877.5,
-            "y": 880
+            "y": 515.25
           }
         ],
         "labelOffset": 0.5
@@ -934,12 +984,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-guard-svc-cp0",
             "x": 2450.5,
-            "y": 880
+            "y": 515.25
           },
           {
             "id": "pl-hub-c-guard-svc-cp1",
             "x": 2450.5,
-            "y": 880
+            "y": 515.25
           }
         ],
         "labelOffset": 0.5
@@ -949,75 +999,95 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-svc-api-cp0",
             "x": 2884.5,
-            "y": 906
+            "y": 507.25
           },
           {
             "id": "pl-hub-c-svc-api-cp1",
             "x": 2884.5,
-            "y": 1115
+            "y": 304.5
+          },
+          {
+            "id": "pl-hub-c-svc-api-cp2",
+            "x": 3090.5,
+            "y": 304.5
+          },
+          {
+            "id": "pl-hub-c-svc-api-cp3",
+            "x": 3090.5,
+            "y": 277
           }
         ],
-        "labelOffset": 0.699
+        "labelOffset": 0.6604
       },
       "pl-hub-c-svc-cache": {
         "points": [
           {
             "id": "pl-hub-c-svc-cache-cp0",
-            "x": 3032.5,
-            "y": 880
+            "x": 2904.5,
+            "y": 515.25
           },
           {
             "id": "pl-hub-c-svc-cache-cp1",
-            "x": 3032.5,
-            "y": 880
+            "x": 2904.5,
+            "y": 522.5
           }
         ],
-        "labelOffset": 0.5
+        "labelOffset": 0.5112
       },
       "pl-hub-c-cache-redis": {
         "points": [
           {
             "id": "pl-hub-c-cache-redis-cp0",
-            "x": 3690.5,
-            "y": 880
+            "x": 3620.5,
+            "y": 522.5
           },
           {
             "id": "pl-hub-c-cache-redis-cp1",
-            "x": 3690.5,
-            "y": 891.25
+            "x": 3620.5,
+            "y": 522.5
           }
         ],
-        "labelOffset": 0.484
+        "labelOffset": 0.5
       },
       "pl-hub-c-svc-pub": {
         "points": [
           {
             "id": "pl-hub-c-svc-pub-cp0",
             "x": 2884.5,
-            "y": 854
+            "y": 523.25
           },
           {
             "id": "pl-hub-c-svc-pub-cp1",
             "x": 2884.5,
-            "y": 164.75
+            "y": 1243.25
           }
         ],
-        "labelOffset": 0.8399
+        "labelOffset": 0.8446
       },
       "pl-hub-c-pub-queue": {
         "points": [
           {
             "id": "pl-hub-c-pub-queue-cp0",
-            "x": 3690.5,
-            "y": 164.75
+            "x": 3480.5,
+            "y": 1243.25
           },
           {
             "id": "pl-hub-c-pub-queue-cp1",
-            "x": 3690.5,
-            "y": 308.5
+            "x": 3480.5,
+            "y": 1222.5
+          },
+          {
+            "id": "pl-hub-c-pub-queue-cp2",
+            "x": 3710.5,
+            "y": 1222.5
+          },
+          {
+            "id": "pl-hub-c-pub-queue-cp3",
+            "x": 3710.5,
+            "y": 1123
           }
         ],
-        "labelOffset": 0.3561
+        "labelOffset": 0.4189
       }
     }
   },
@@ -1061,21 +1131,21 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-led-kafka": {
         "elementId": "pl-led-kafka",
         "x": 670,
-        "y": 203,
+        "y": 190.5,
         "width": 260,
         "height": 104
       },
       "pl-led-bank": {
         "elementId": "pl-led-bank",
         "x": 2029,
-        "y": 231.08333333333334,
+        "y": 217.75,
         "width": 259,
         "height": 68
       },
       "pl-led-risk": {
         "elementId": "pl-led-risk",
         "x": 2029,
-        "y": 409.08333333333337,
+        "y": 395.75,
         "width": 260,
         "height": 85
       },
@@ -1163,7 +1233,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-led-c2-cp0",
             "x": 1010.5,
-            "y": 696.5
+            "y": 671.5
           },
           {
             "id": "pl-led-c2-cp1",
@@ -1171,87 +1241,107 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 701
           }
         ],
-        "labelOffset": 0.506
+        "labelOffset": 0.5369
       },
       "pl-led-c3": {
         "points": [
           {
             "id": "pl-led-c3-cp0",
             "x": 1010.5,
-            "y": 638.5
+            "y": 663.5
           },
           {
             "id": "pl-led-c3-cp1",
             "x": 1010.5,
-            "y": 569.17
+            "y": 562.5
           },
           {
             "id": "pl-led-c3-cp2",
             "x": 1270.5,
-            "y": 569.17
+            "y": 562.5
           },
           {
             "id": "pl-led-c3-cp3",
             "x": 1270.5,
-            "y": 496.83
+            "y": 471
           }
         ],
-        "labelOffset": 0.4971
+        "labelOffset": 0.5084
       },
       "pl-led-c4": {
         "points": [
           {
             "id": "pl-led-c4-cp0",
             "x": 1010.5,
-            "y": 427
+            "y": 391.5
           },
           {
             "id": "pl-led-c4-cp1",
             "x": 1010.5,
-            "y": 446
+            "y": 433.5
           },
           {
             "id": "pl-led-c4-cp2",
             "x": 1270.5,
-            "y": 446
+            "y": 433.5
           },
           {
             "id": "pl-led-c4-cp3",
             "x": 1270.5,
-            "y": 462.17
+            "y": 463
           }
         ],
-        "labelOffset": 0.5035
+        "labelOffset": 0.5142
       },
       "pl-led-c5": {
         "points": [
           {
             "id": "pl-led-c5-cp0",
-            "x": 1693,
-            "y": 339.5
+            "x": 1010.5,
+            "y": 375.5
           },
           {
             "id": "pl-led-c5-cp1",
+            "x": 1010.5,
+            "y": 332
+          },
+          {
+            "id": "pl-led-c5-cp2",
             "x": 1693,
-            "y": 265.08
+            "y": 332
+          },
+          {
+            "id": "pl-led-c5-cp3",
+            "x": 1693,
+            "y": 251.75
           }
         ],
-        "labelOffset": 0.8431
+        "labelOffset": 0.8499
       },
       "pl-led-c6": {
         "points": [
           {
             "id": "pl-led-c6-cp0",
-            "x": 1693,
+            "x": 1030.5,
             "y": 383.5
           },
           {
             "id": "pl-led-c6-cp1",
+            "x": 1030.5,
+            "y": 358
+          },
+          {
+            "id": "pl-led-c6-cp2",
             "x": 1693,
-            "y": 451.58
+            "y": 358
+          },
+          {
+            "id": "pl-led-c6-cp3",
+            "x": 1693,
+            "y": 438.25
           }
         ],
-        "labelOffset": 0.8422
+        "labelOffset": 0.8475
       }
     }
   },
@@ -1260,7 +1350,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-risk-hub-ext": {
         "elementId": "pl-risk-hub-ext",
         "x": 116,
-        "y": 803.0000000000001,
+        "y": 803,
         "width": 260,
         "height": 85
       },
@@ -1274,7 +1364,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-risk-boundary": {
         "elementId": "pl-risk-boundary",
         "x": 746.5,
-        "y": 121.74999999999997,
+        "y": 121.75,
         "width": 1467,
         "height": 505
       },
@@ -1388,10 +1478,10 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c1-cp1",
             "x": 634,
-            "y": 481.92
+            "y": 463.75
           }
         ],
-        "labelOffset": 0.2312
+        "labelOffset": 0.2259
       },
       "pl-risk-c2": {
         "points": [
@@ -1403,10 +1493,10 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c2-cp1",
             "x": 634,
-            "y": 437.58
+            "y": 455.75
           }
         ],
-        "labelOffset": 0.2312
+        "labelOffset": 0.2259
       },
       "pl-risk-c3": {
         "points": [
@@ -1443,7 +1533,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c5-cp0",
             "x": 1601.5,
-            "y": 416.25
+            "y": 451.75
           },
           {
             "id": "pl-risk-c5-cp1",
@@ -1451,14 +1541,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 245.75
           }
         ],
-        "labelOffset": 0.6731
+        "labelOffset": 0.6951
       },
       "pl-risk-c6": {
         "points": [
           {
             "id": "pl-risk-c6-cp0",
             "x": 1601.5,
-            "y": 503.25
+            "y": 467.75
           },
           {
             "id": "pl-risk-c6-cp1",
@@ -1466,7 +1556,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 551.75
           }
         ],
-        "labelOffset": 0.846
+        "labelOffset": 0.8513
       }
     }
   },
@@ -1657,7 +1747,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-mer-c3-cp0",
             "x": 1540.5,
-            "y": 696.5
+            "y": 675.5
           },
           {
             "id": "pl-mer-c3-cp1",
@@ -1675,14 +1765,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 693.5
           }
         ],
-        "labelOffset": 0.8512
+        "labelOffset": 0.854
       },
       "pl-mer-c4": {
         "points": [
           {
             "id": "pl-mer-c4-cp0",
             "x": 1520.5,
-            "y": 725.5
+            "y": 683.5
           },
           {
             "id": "pl-mer-c4-cp1",
@@ -1700,14 +1790,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 871.5
           }
         ],
-        "labelOffset": 0.8518
+        "labelOffset": 0.8571
       },
       "pl-mer-c5": {
         "points": [
           {
             "id": "pl-mer-c5-cp0",
             "x": 1540.5,
-            "y": 638.5
+            "y": 659.5
           },
           {
             "id": "pl-mer-c5-cp1",
@@ -1715,14 +1805,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 447
           }
         ],
-        "labelOffset": 0.6822
+        "labelOffset": 0.6944
       },
       "pl-mer-c6": {
         "points": [
           {
             "id": "pl-mer-c6-cp0",
             "x": 1520.5,
-            "y": 609.5
+            "y": 651.5
           },
           {
             "id": "pl-mer-c6-cp1",
@@ -1730,7 +1820,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 210
           }
         ],
-        "labelOffset": 0.7723
+        "labelOffset": 0.7847
       },
       "pl-mer-c7": {
         "points": [
@@ -1967,7 +2057,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-dpl-private": {
         "elementId": "pl-dpl-private",
         "x": 40,
-        "y": 127.99999999999997,
+        "y": 113.5,
         "width": 304,
         "height": 442
       },
@@ -2074,17 +2164,17 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-dpl-c1-cp0",
             "x": 406.5,
-            "y": 270
+            "y": 266.5
           },
           {
             "id": "pl-dpl-c1-cp1",
             "x": 406.5,
-            "y": 245.58
+            "y": 237
           },
           {
             "id": "pl-dpl-c1-cp2",
             "x": 588.5,
-            "y": 245.58
+            "y": 237
           },
           {
             "id": "pl-dpl-c1-cp3",
@@ -2092,32 +2182,32 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 229
           }
         ],
-        "labelOffset": 0.5089
+        "labelOffset": 0.5247
       },
       "pl-dpl-c2": {
         "points": [
           {
             "id": "pl-dpl-c2-cp0",
             "x": 406.5,
-            "y": 300
+            "y": 274.5
           },
           {
             "id": "pl-dpl-c2-cp1",
             "x": 406.5,
-            "y": 376.42
+            "y": 364.5
           },
           {
             "id": "pl-dpl-c2-cp2",
             "x": 588.5,
-            "y": 376.42
+            "y": 364.5
           },
           {
             "id": "pl-dpl-c2-cp3",
             "x": 588.5,
-            "y": 419.33
+            "y": 433
           }
         ],
-        "labelOffset": 0.5324
+        "labelOffset": 0.5194
       },
       "pl-dpl-c3": {
         "points": [
@@ -2129,27 +2219,27 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-dpl-c3-cp1",
             "x": 406.5,
-            "y": 454.67
+            "y": 441
           }
         ],
-        "labelOffset": 0.5097
+        "labelOffset": 0.5257
       },
       "pl-dpl-c4": {
         "points": [
           {
             "id": "pl-dpl-c4-cp0",
             "x": 406.5,
-            "y": 507.5
+            "y": 478.5
           },
           {
             "id": "pl-dpl-c4-cp1",
             "x": 406.5,
-            "y": 700.83
+            "y": 694
           },
           {
             "id": "pl-dpl-c4-cp2",
             "x": 588.5,
-            "y": 700.83
+            "y": 694
           },
           {
             "id": "pl-dpl-c4-cp3",
@@ -2157,24 +2247,24 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 845
           }
         ],
-        "labelOffset": 0.5335
+        "labelOffset": 0.5422
       },
       "pl-dpl-c5": {
         "points": [
           {
             "id": "pl-dpl-c5-cp0",
             "x": 426.5,
-            "y": 485
+            "y": 470.5
           },
           {
             "id": "pl-dpl-c5-cp1",
             "x": 426.5,
-            "y": 575.33
+            "y": 568.5
           },
           {
             "id": "pl-dpl-c5-cp2",
             "x": 588.5,
-            "y": 575.33
+            "y": 568.5
           },
           {
             "id": "pl-dpl-c5-cp3",
@@ -2182,7 +2272,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 645
           }
         ],
-        "labelOffset": 0.5186
+        "labelOffset": 0.5188
       }
     }
   },
@@ -2367,7 +2457,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-dpr-c4-cp0",
             "x": 1782,
-            "y": 448
+            "y": 453
           },
           {
             "id": "pl-dpr-c4-cp1",
@@ -2375,14 +2465,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 357
           }
         ],
-        "labelOffset": 0.6135
+        "labelOffset": 0.6182
       },
       "pl-dpr-c5": {
         "points": [
           {
             "id": "pl-dpr-c5-cp0",
             "x": 1782,
-            "y": 466
+            "y": 461
           },
           {
             "id": "pl-dpr-c5-cp1",
@@ -2390,14 +2480,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 557
           }
         ],
-        "labelOffset": 0.6135
+        "labelOffset": 0.6182
       },
       "pl-dpr-c6": {
         "points": [
           {
             "id": "pl-dpr-c6-cp0",
             "x": 1762,
-            "y": 430
+            "y": 445
           },
           {
             "id": "pl-dpr-c6-cp1",
@@ -2405,14 +2495,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 157
           }
         ],
-        "labelOffset": 0.7341
+        "labelOffset": 0.7408
       },
       "pl-dpr-c7": {
         "points": [
           {
             "id": "pl-dpr-c7-cp0",
             "x": 1762,
-            "y": 484
+            "y": 469
           },
           {
             "id": "pl-dpr-c7-cp1",
@@ -2420,7 +2510,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "y": 757
           }
         ],
-        "labelOffset": 0.7341
+        "labelOffset": 0.7408
       }
     }
   },
@@ -2452,7 +2542,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "x": 40,
         "y": 352,
         "width": 1595,
-        "height": 864.75
+        "height": 866.5
       },
       "pl-dpm-public": {
         "elementId": "pl-dpm-public",
@@ -2471,7 +2561,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-dpm-data": {
         "elementId": "pl-dpm-data",
         "x": 1275,
-        "y": 142.75,
+        "y": 144.5,
         "width": 280,
         "height": 642
       },
@@ -2521,7 +2611,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.5259913704540785
+      "zoom": 0.5252359458350431
     },
     "handleOrder": {
       "pl-dpm-cf": {
@@ -2613,71 +2703,101 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c3-cp0",
-            "x": 1202.5,
+            "x": 1052.5,
             "y": 741
           },
           {
             "id": "pl-dpm-c3-cp1",
+            "x": 1052.5,
+            "y": 762.5
+          },
+          {
+            "id": "pl-dpm-c3-cp2",
             "x": 1202.5,
-            "y": 811.75
+            "y": 762.5
+          },
+          {
+            "id": "pl-dpm-c3-cp3",
+            "x": 1202.5,
+            "y": 813.5
           }
         ],
-        "labelOffset": 0.4317
+        "labelOffset": 0.4763
       },
       "pl-dpm-c4": {
         "points": [
           {
             "id": "pl-dpm-c4-cp0",
             "x": 1032.5,
-            "y": 763.5
+            "y": 749
           },
           {
             "id": "pl-dpm-c4-cp1",
             "x": 1032.5,
-            "y": 880.75
+            "y": 888
           },
           {
             "id": "pl-dpm-c4-cp2",
             "x": 1202.5,
-            "y": 880.75
+            "y": 888
           },
           {
             "id": "pl-dpm-c4-cp3",
             "x": 1202.5,
-            "y": 1011.75
+            "y": 1013.5
           }
         ],
-        "labelOffset": 0.4951
+        "labelOffset": 0.516
       },
       "pl-dpm-c5": {
         "points": [
           {
             "id": "pl-dpm-c5-cp0",
-            "x": 1202.5,
-            "y": 718.5
+            "x": 1032.5,
+            "y": 733
           },
           {
             "id": "pl-dpm-c5-cp1",
+            "x": 1032.5,
+            "y": 711.5
+          },
+          {
+            "id": "pl-dpm-c5-cp2",
             "x": 1202.5,
-            "y": 626.75
+            "y": 711.5
+          },
+          {
+            "id": "pl-dpm-c5-cp3",
+            "x": 1202.5,
+            "y": 617.5
           }
         ],
-        "labelOffset": 0.413
+        "labelOffset": 0.436
       },
       "pl-dpm-c6": {
         "points": [
           {
             "id": "pl-dpm-c6-cp0",
-            "x": 1202.5,
+            "x": 1032.5,
             "y": 541
           },
           {
             "id": "pl-dpm-c6-cp1",
+            "x": 1032.5,
+            "y": 562.5
+          },
+          {
+            "id": "pl-dpm-c6-cp2",
             "x": 1202.5,
-            "y": 596.75
+            "y": 562.5
+          },
+          {
+            "id": "pl-dpm-c6-cp3",
+            "x": 1202.5,
+            "y": 609.5
           }
         ],
-        "labelOffset": 0.4368
+        "labelOffset": 0.4719
       }
     }
   },

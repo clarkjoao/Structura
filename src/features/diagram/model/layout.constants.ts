@@ -29,6 +29,38 @@ export const MIN_HANDLES = 1;
  * its own attachment point; this lets the canvas keep them.
  */
 export const MAX_HANDLES = 32;
+
+/**
+ * Gap between neighbouring handle slots on a side, in flow pixels.
+ *
+ * Slots gather in a bundle at the middle of the side rather than spreading
+ * over its whole height, the way Mermaid's diagrams read: edges leave a node
+ * together and fan out in the gap, instead of leaving from points scattered
+ * down a tall card. 8, not Mermaid's ~5: an edge here can be two pixels wide
+ * with an arrowhead, and at 5 neighbours touched.
+ *
+ * ELK places its ports with the same gap (`elk.spacing.portPort` in
+ * `layoutEngine.ts`), so a laid-out route starts exactly on its handle.
+ */
+export const HANDLE_PITCH = 8;
+
+/**
+ * Where slot `index` of `count` sits along a side `sideLength` long, from the
+ * side's start: centred, `HANDLE_PITCH` apart, and squeezed to
+ * `sideLength / (count + 1)` apart when that is tighter, so a crowded side
+ * still keeps its slots off the corners. One slot sits in the middle.
+ *
+ * The one formula for a handle's position: `buildHandles` draws it (as CSS),
+ * `renderedEdgePath.handleAnchor` measures with it, the export routes with it.
+ *
+ * @example
+ * handleSlotOffset(0, 3, 120) // 52 — slots at 52, 60, 68
+ */
+export function handleSlotOffset(index: number, count: number, sideLength: number): number {
+  if (count <= 1) return sideLength / 2;
+  const pitch = Math.min(HANDLE_PITCH, sideLength / (count + 1));
+  return sideLength / 2 + (index - (count - 1) / 2) * pitch;
+}
 export const NODE_DRAG_PADDING = 40;
 
 /** A panel's header with only a title: `py-2.5` twice around one `text-sm` line. */

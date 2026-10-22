@@ -1,4 +1,6 @@
-import type { ElkExtendedEdge, ElkNode } from "elkjs";
+import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
+// The leaf module: the layout path must not pull the diagram store in.
+import { HANDLE_PITCH } from "@/features/diagram/model/layout.constants";
 import { readLaidOutGraph } from "./layoutReadability";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import type {
@@ -46,6 +48,11 @@ import type {
  * other 125 → 2, for +1% area, with crossings and label overlaps unchanged. Mermaid gets the same effect from
  * `spacing.baseValue`.
  *
+ * The port options bundle each side's edges around its middle, `HANDLE_PITCH`
+ * apart — where the canvas draws its handles (see `withPorts`). `FIXED_SIDE`
+ * keeps outputs on the right and inputs on the left but leaves ELK free to
+ * order them; `spacing.portPort` is only read from the root, not per node.
+ *
  * Options that are *not* here were removed on measurement, not on taste:
  * `layering.strategy=LONGEST_PATH` measured worse (11 crossings against 9), and
  * `layered.wrapping.strategy` breaks a linear chain into rows, which contradicts
@@ -63,6 +70,9 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
   "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
   "elk.padding": "[top=40,left=40,bottom=40,right=40]",
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+  "elk.portConstraints": "FIXED_SIDE",
+  "elk.portAlignment.default": "CENTER",
+  "elk.spacing.portPort": String(HANDLE_PITCH),
 };
 
 /**
@@ -137,34 +147,120 @@ function withTopPadding(padding: string | undefined, top: number): string {
   return `[top=${top},${sides.join(",")}]`;
 }
 
+/** Where an edge leaves its source and enters its target, as ELK ports. */
+interface EdgePorts {
+  byNode: Map<string, ElkPort[]>;
+  /** edge id -> its source and target ids, ports where it has them. */
+  ends: Map<string, { source: string; target: string }>;
+}
+
+function isAncestor(
+  ancestorId: string,
+  nodeId: string,
+  parentOf: ReadonlyMap<string, string | null>,
+): boolean {
+  const seen = new Set<string>();
+  for (let id = parentOf.get(nodeId); id != null && !seen.has(id); id = parentOf.get(id)) {
+    if (id === ancestorId) return true;
+    seen.add(id);
+  }
+  return false;
+}
+
+/**
+ * One port per edge end: the source's on its right side, the target's on its
+ * left, as the canvas draws its handles.
+ *
+ * Without ports ELK spreads a side's edges over the node's whole height —
+ * `(i + 1) / (n + 1)` — and the canvas then had to bridge to its own handles.
+ * With them, `portAlignment CENTER` and `spacing.portPort` bundle the edges
+ * exactly where `handleSlotOffset` puts the handles, so a route starts on its
+ * handle. ELK still orders the ports to minimise crossings; `handleOrder`
+ * reads that order back off the routes, as before.
+ *
+ * An edge between a container and something inside it gets no ports: its end
+ * is on the far side of the border from the side the port would sit on, and
+ * ELK routes it better attached to the node itself.
+ */
+function edgePorts(
+  edges: readonly LayoutEdge[],
+  parentOf: ReadonlyMap<string, string | null>,
+): EdgePorts {
+  const byNode = new Map<string, ElkPort[]>();
+  const ends = new Map<string, { source: string; target: string }>();
+  const add = (nodeId: string, port: ElkPort) => {
+    const list = byNode.get(nodeId);
+    if (list) list.push(port);
+    else byNode.set(nodeId, [port]);
+  };
+
+  for (const edge of edges) {
+    const nested =
+      isAncestor(edge.sourceId, edge.targetId, parentOf) ||
+      isAncestor(edge.targetId, edge.sourceId, parentOf);
+    if (nested) {
+      ends.set(edge.id, { source: edge.sourceId, target: edge.targetId });
+      continue;
+    }
+    const source = `${edge.id}__out`;
+    const target = `${edge.id}__in`;
+    add(edge.sourceId, {
+      id: source,
+      width: 0,
+      height: 0,
+      layoutOptions: { "elk.port.side": "EAST" },
+    });
+    add(edge.targetId, {
+      id: target,
+      width: 0,
+      height: 0,
+      layoutOptions: { "elk.port.side": "WEST" },
+    });
+    ends.set(edge.id, { source, target });
+  }
+  return { byNode, ends };
+}
+
 function buildElkNode(
   node: LayoutNode,
   childrenByParent: Map<string | null, LayoutNode[]>,
   options: Record<string, string>,
+  portsByNode: ReadonlyMap<string, ElkPort[]>,
   visited: Set<string>,
 ): ElkNode {
-  // A containment cycle would recurse forever and hang the tab. The IR validator
-  // rejects cycles and the store should not create them, so this is insurance
-  // rather than an expected path.
-  if (visited.has(node.id)) {
-    return { id: node.id, width: node.width, height: node.height };
-  }
-  visited.add(node.id);
-
-  const children = childrenByParent.get(node.id) ?? [];
-  if (children.length === 0) {
-    return { id: node.id, width: node.width, height: node.height };
-  }
-
-  return {
+  const ports = portsByNode.get(node.id);
+  const shape: ElkNode = {
     id: node.id,
     width: node.width,
     height: node.height,
+    // A leaf has no options of its own, and ELK does not hand a parent's port
+    // options down to it: without these its ports would float to any side.
+    ...(ports && {
+      ports,
+      layoutOptions: {
+        "elk.portConstraints": options["elk.portConstraints"]!,
+        "elk.portAlignment.default": options["elk.portAlignment.default"]!,
+      },
+    }),
+  };
+  // A containment cycle would recurse forever and hang the tab. The IR validator
+  // rejects cycles and the store should not create them, so this is insurance
+  // rather than an expected path.
+  if (visited.has(node.id)) return shape;
+  visited.add(node.id);
+
+  const children = childrenByParent.get(node.id) ?? [];
+  if (children.length === 0) return shape;
+
+  return {
+    ...shape,
     layoutOptions:
       node.topInset === undefined
         ? { ...options }
         : { ...options, "elk.padding": withTopPadding(options["elk.padding"], node.topInset) },
-    children: children.map((child) => buildElkNode(child, childrenByParent, options, visited)),
+    children: children.map((child) =>
+      buildElkNode(child, childrenByParent, options, portsByNode, visited),
+    ),
   };
 }
 
@@ -221,10 +317,16 @@ export async function layoutElkGraph(
     (edge) => present.has(edge.sourceId) && present.has(edge.targetId),
   );
 
+  const parentOf = new Map<string, string | null>();
+  for (const [parentId, children] of childrenByParent) {
+    for (const child of children) parentOf.set(child.id, parentId);
+  }
+  const ports = edgePorts(edges, parentOf);
+
   const elkEdges: ElkExtendedEdge[] = edges.map((edge) => ({
     id: edge.id,
-    sources: [edge.sourceId],
-    targets: [edge.targetId],
+    sources: [ports.ends.get(edge.id)!.source],
+    targets: [ports.ends.get(edge.id)!.target],
     // elkjs ignores a label with no text, so an empty one reserves nothing.
     ...(edge.labelBox?.text && {
       labels: [
@@ -243,7 +345,9 @@ export async function layoutElkGraph(
   const elkGraph: ElkNode = {
     id: ELK_ROOT_ID,
     layoutOptions: options,
-    children: roots.map((root) => buildElkNode(root, childrenByParent, options, visited)),
+    children: roots.map((root) =>
+      buildElkNode(root, childrenByParent, options, ports.byNode, visited),
+    ),
     edges: elkEdges,
   };
 

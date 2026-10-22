@@ -45,6 +45,7 @@ export const WHEEL_LINE_HEIGHT_PX = 16;
 
 // Re-exported for internal use in canvas features
 export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram";
+export { HANDLE_PITCH, handleSlotOffset } from "@/features/diagram/model/layout.constants";
 
 // Re-export timing constants for consumers of this module
 export { FIELD_DEBOUNCE_MS } from "@/lib/timing.constants";

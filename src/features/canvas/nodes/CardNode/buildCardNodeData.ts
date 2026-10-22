@@ -105,10 +105,11 @@ export function buildCardNodeData(comp: Component, ctx: NodeBuildContext): Recor
  * chip and the "explore inside" row need names from the workspace. The reader
  * gets them through `ReaderCatalog`, but a link written before the catalog
  * travelled has none, and a flow being played hides the row on both surfaces —
- * so the same card can come out ~70px shorter. Auto-layout anchors every waypoint at
- * `(slot + 1) / (count + 1)` of the height ELK was given, so a card that draws
- * shorter puts every handle where the corridor does not reach — edges arrive
- * diagonally and the arrowheads turn away from the node.
+ * so the same card can come out ~70px shorter. Auto-layout anchors every waypoint
+ * on the handles of the height ELK was given (`handleSlotOffset`, around its
+ * middle), so a card that draws shorter puts every handle where the corridor
+ * does not reach — edges arrive diagonally and the arrowheads turn away from
+ * the node.
  *
  * `minHeight`, not `height`: the box is at least what the layout assumed, and a
  * card whose content outgrows a stale entry still expands instead of clipping.
