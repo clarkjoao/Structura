@@ -1,6 +1,6 @@
 import { Handle, Position } from "@xyflow/react";
 import type { NodeData } from "./types";
-import { MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
+import { HANDLE_PITCH, MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
 
 /**
  * What a handle needs to know about its node, and nothing else.
@@ -25,12 +25,16 @@ export function handleSlotCount(count: number): number {
 }
 
 /**
- * Vertical placement of slot `index` of `count`, as a percentage of the node's
- * height. `renderedEdgePath.handleAnchor` measures against this exact formula —
- * `renderedEdgePath.test.ts` holds them together.
+ * Vertical placement of slot `index` of `count`, as CSS against the node's
+ * height: `handleSlotOffset` written so the browser resolves it, since the
+ * height is only known once laid out. `renderedEdgePath.handleAnchor` measures
+ * with `handleSlotOffset` itself — `renderedEdgePath.test.ts` holds them
+ * together.
  */
-export function handleTopPercent(index: number, count: number): number {
-  return ((index + 1) / (count + 1)) * 100;
+export function handleTopCss(index: number, count: number): string {
+  if (count <= 1) return "50%";
+  const fromMiddle = index - (count - 1) / 2;
+  return `calc(50% + ${fromMiddle} * min(${HANDLE_PITCH}px, ${100 / (count + 1)}%))`;
 }
 
 function getHandleClass(d: HandleBehaviour, handleId: string): string {
@@ -48,6 +52,34 @@ function getHandleClass(d: HandleBehaviour, handleId: string): string {
     return `${base} !w-3.5 !h-3.5 !bg-primary/60 cursor-pointer hover:!bg-primary hover:ring-2 hover:ring-primary`;
   }
   return `${base} !w-2.5 !h-2.5 !bg-muted-foreground`;
+}
+
+/**
+ * Class for one slot of a bundle: there to connect to, but not drawn.
+ *
+ * Slots sit `HANDLE_PITCH` apart, closer than a dot is wide, so drawing each
+ * one smeared them into a bar; `bundleDot` draws the side's one dot instead.
+ * Recording picks among the slots and playback lights one up, so those still
+ * draw the way they always did.
+ */
+function bundledHandleClass(d: HandleBehaviour, handleId: string): string {
+  if (d.isRecording || d.activeHandleId === handleId) return getHandleClass(d, handleId);
+  return "!w-2.5 !h-2.5 !bg-transparent !border-transparent";
+}
+
+/** The one dot a bundled side shows, in the middle; it takes no pointer. */
+function bundleDot(type: "source" | "target", position: Position): React.ReactNode {
+  return (
+    <div
+      key={`${type}-dot`}
+      aria-hidden
+      className="pointer-events-none absolute top-1/2 h-2.5 w-2.5 rounded-full border border-background bg-muted-foreground"
+      style={{
+        [position === Position.Left ? "left" : "right"]: 0,
+        transform: `translate(${position === Position.Left ? "-50%" : "50%"}, -50%)`,
+      }}
+    />
+  );
 }
 
 export function buildHandles(
@@ -80,7 +112,12 @@ export function buildHandles(
       />,
     ];
   }
-  return Array.from({ length: n }, (_, i) => {
+  // A bundle is drawn as one dot unless the caller styles its own slots (a
+  // panel's are invisible) or a flow is being recorded, which picks a slot.
+  const bundled = classNameFor === getHandleClass;
+  const slotClassFor = bundled ? bundledHandleClass : classNameFor;
+  const showDot = bundled && !d.isRecording;
+  const slots = Array.from({ length: n }, (_, i) => {
     const handleId = `${type}-${i}`;
     const onClick =
       d.isRecording && d.onHandleClick
@@ -95,15 +132,16 @@ export function buildHandles(
         id={handleId}
         type={type}
         position={position}
-        className={classNameFor(d, handleId)}
+        className={slotClassFor(d, handleId)}
         style={{
           ...handlePointer,
-          top: `${handleTopPercent(i, n)}%`,
+          top: handleTopCss(i, n),
         }}
         onClick={onClick}
       />
     );
   });
+  return showDot ? [...slots, bundleDot(type, position)] : slots;
 }
 
 /**

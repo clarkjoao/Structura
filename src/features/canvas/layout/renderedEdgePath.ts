@@ -1,7 +1,7 @@
 import { Position } from "@xyflow/react";
 import type { Point } from "@/features/diagram";
-import { MAX_HANDLES, MIN_HANDLES } from "../canvas.constants";
-import { defaultOrthogonalCorners } from "../edges/geometry/orthogonal";
+import { handleSlotOffset, MAX_HANDLES, MIN_HANDLES } from "../canvas.constants";
+import { defaultOrthogonalCorners, stepPathPoints } from "../edges/geometry/orthogonal";
 import {
   measurePolylines,
   readLaidOutGraph,
@@ -11,21 +11,20 @@ import {
 import type { ElkNode } from "elkjs";
 
 /**
- * The polyline the canvas actually draws for a generated connection.
+ * The polyline the canvas draws for a connection, from its handles.
  *
- * Neither of the ELK-side numbers is what the user sees: ELK's routed path is
- * discarded by `apply-ir.ts`, and the straight centre-to-centre line is only a
- * placement proxy. Generated connections render as `EdgeStyle.EditableStep`,
- * whose path comes from the node handles plus `defaultOrthogonalCorners`. This
- * module reproduces that, reusing the canvas's own corner function, so the
- * measurement tracks the rendered result rather than an idealised one.
+ * With `corners` (`cornersByEdgeId`) it is the path every layout consumer
+ * leaves on screen today: ELK's corridor snapped onto the handles
+ * (`handleAlignedRoutes`), which `applyIRToDiagram` and the auto-layout both
+ * write. Without them it is the mid-X step `defaultOrthogonalCorners` draws for
+ * a connection with no stored path — what generated diagrams drew before
+ * `apply-ir.ts` kept ELK's routes, and what the frozen baselines still measure.
  */
 
 /**
  * Handle anchor, matching `buildHandles`: `n` handles clamped to
- * `[MIN_HANDLES, MAX_HANDLES]`, handle `i` at `(i + 1) / (n + 1)` of the node
- * height. A single handle sits at the default 50%, which the same formula
- * yields for n = 1.
+ * `[MIN_HANDLES, MAX_HANDLES]`, handle `i` where `handleSlotOffset` puts it:
+ * bundled `HANDLE_PITCH` apart around the middle of the side.
  *
  * The side is fixed — sources leave on the right, targets arrive on the left,
  * whatever the geometry — because that is what the canvas draws. See the module
@@ -41,46 +40,16 @@ export function handleAnchor(
   const index = Math.min(Math.max(slot, 0), n - 1);
   return {
     x: side === "source" ? box.x + box.width : box.x,
-    y: box.y + box.height * ((index + 1) / (n + 1)),
+    y: box.y + handleSlotOffset(index, n, box.height),
   };
 }
 
 /**
- * Expands the knots into the points the SVG path visits. `buildStepPath` emits
- * `H x V y` per knot, so each leg is an L: horizontal first, then vertical —
- * except the leg into the target, which turns first and arrives horizontally so
- * the arrowhead points into the handle. Kept in step with that function by
- * `renderedEdgePath.test.ts`, which compares these points against the path
- * string it produces.
+ * The points the canvas's step path visits. Lives with `buildStepPath` in
+ * `edges/geometry/orthogonal.ts` as `stepPathPoints`; re-exported under the
+ * name the layout code and its tests have always used.
  */
-export function stepPolyline(source: Point, target: Point, corners: readonly Point[]): Point[] {
-  const knots: Point[] = [source, ...corners, target];
-  const points: Point[] = [{ x: knots[0].x, y: knots[0].y }];
-  let current = points[0];
-
-  for (let i = 1; i < knots.length - 1; i += 1) {
-    const knot = knots[i];
-    if (knot.x !== current.x) {
-      current = { x: knot.x, y: current.y };
-      points.push(current);
-    }
-    if (knot.y !== current.y) {
-      current = { x: current.x, y: knot.y };
-      points.push(current);
-    }
-  }
-
-  if (target.y !== current.y) {
-    current = { x: current.x, y: target.y };
-    points.push(current);
-  }
-  if (target.x !== current.x) {
-    current = { x: target.x, y: current.y };
-    points.push(current);
-  }
-
-  return points;
-}
+export const stepPolyline = stepPathPoints;
 
 export interface RenderedEdgeInput {
   id: string;

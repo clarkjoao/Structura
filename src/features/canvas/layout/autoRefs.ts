@@ -23,8 +23,17 @@ import { stepPolyline } from "./renderedEdgePath";
 export const AUTO_REF_MIN_FAN_IN = 4;
 /** ...or by things in at least this many different containers. */
 export const AUTO_REF_MIN_CONSUMER_PARENTS = 2;
+/**
+ * A reference made for a whole container stands for at least this many edges.
+ * One with a single edge is a box hanging off one line, read as a stray copy
+ * rather than as part of the drawing, so it is only made when the drawing
+ * measurably reads better with it (see `chooseAutoRefs`).
+ */
+export const AUTO_REF_MIN_EDGES = 2;
 /** Hubs tried per run, busiest first: each trial is one more ELK run. */
 export const AUTO_REF_MAX_TRIALS = 6;
+/** One-edge references tried per run, after the hubs: each is one more ELK run. */
+const AUTO_REF_MAX_LONE_TRIALS = 12;
 /** A route this much shorter in total wins a tie on crossings and overlaps. */
 const LENGTH_TIE_BREAK = 0.9;
 
@@ -53,11 +62,37 @@ export interface AutoRefPlanOptions {
 }
 
 /**
- * The references each hub would get, grouped by hub. One reference per hub
- * and consumer container, never one per edge; the original always keeps at
- * least one edge, so it never ends up used by nothing but its own copies.
+ * What a hub would get. `groups` are the references that stand for at least
+ * `AUTO_REF_MIN_EDGES` edges, tried together. `lone` are the edges that were
+ * left on the original only for being alone in their container, each as a
+ * one-edge reference in that container: those are tried one at a time and
+ * kept only when they pay for themselves (`chooseAutoRefs`). At most
+ * `maxLone` of them may go, so the original always keeps an edge.
  */
-export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): AutoRefGroup[][] {
+export interface AutoRefHubPlan {
+  fanIn: number;
+  groups: AutoRefGroup[];
+  lone: AutoRefGroup[];
+  maxLone: number;
+}
+
+function toGroup(
+  options: AutoRefPlanOptions,
+  targetId: string,
+  parentId: string | null,
+  grouped: LayoutGraph["edges"],
+): AutoRefGroup {
+  return {
+    refId: options.refIdFor(targetId, parentId),
+    originalId: targetId,
+    parentId,
+    sourceIds: [...new Set(grouped.map((edge) => edge.sourceId))],
+    edgeIds: grouped.map((edge) => edge.id),
+  };
+}
+
+/** Every hub's plan, busiest first. */
+export function planAutoRefHubs(graph: LayoutGraph, options: AutoRefPlanOptions): AutoRefHubPlan[] {
   const parentOf = new Map(graph.nodes.map((node) => [node.id, node.parentId] as const));
   const incoming = new Map<string, LayoutGraph["edges"]>();
   for (const edge of graph.edges) {
@@ -66,7 +101,7 @@ export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): A
     incoming.set(edge.targetId, list);
   }
 
-  const hubs: Array<{ fanIn: number; groups: AutoRefGroup[] }> = [];
+  const hubs: AutoRefHubPlan[] = [];
   for (const [targetId, edges] of incoming) {
     if (!options.canReference(targetId)) continue;
     const consumerParents = new Set(edges.map((edge) => parentOf.get(edge.sourceId) ?? null));
@@ -76,6 +111,8 @@ export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): A
 
     const home = options.refParentFor(parentOf.get(targetId) ?? null);
     const byParent = new Map<string | null, LayoutGraph["edges"]>();
+    /** Where each edge's own container would hold its reference. */
+    const innermost = new Map<string, string | null>();
     let keepsAnEdge = false;
     for (const edge of edges) {
       const refParent = options.refParentFor(parentOf.get(edge.sourceId) ?? null);
@@ -84,18 +121,34 @@ export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): A
         keepsAnEdge = true;
         continue;
       }
+      innermost.set(edge.id, refParent);
       const list = byParent.get(refParent) ?? [];
       list.push(edge);
       byParent.set(refParent, list);
     }
 
-    const groups = [...byParent.entries()].map(([parentId, grouped]) => ({
-      refId: options.refIdFor(targetId, parentId),
-      originalId: targetId,
-      parentId,
-      sourceIds: [...new Set(grouped.map((edge) => edge.sourceId))],
-      edgeIds: grouped.map((edge) => edge.id),
-    }));
+    // A container with too few edges for a reference of its own hands them to
+    // the next container out, where they may join others; once that is the
+    // original's own container, or there is nowhere further out, they stay on
+    // the original — as candidates for a one-edge reference of their own.
+    const lone: AutoRefGroup[] = [];
+    for (let short = shortGroup(byParent); short !== undefined; short = shortGroup(byParent)) {
+      const [parentId, grouped] = short;
+      byParent.delete(parentId);
+      const outer = parentId === null ? home : options.refParentFor(parentOf.get(parentId) ?? null);
+      if (outer === home) {
+        keepsAnEdge = true;
+        for (const edge of grouped) {
+          lone.push(toGroup(options, targetId, innermost.get(edge.id) ?? null, [edge]));
+        }
+        continue;
+      }
+      byParent.set(outer, [...(byParent.get(outer) ?? []), ...grouped]);
+    }
+
+    const groups = [...byParent.entries()].map(([parentId, grouped]) =>
+      toGroup(options, targetId, parentId, grouped),
+    );
     if (!keepsAnEdge && groups.length > 0) {
       // The busiest container stays on the original.
       let busiest = 0;
@@ -104,11 +157,39 @@ export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): A
       });
       groups.splice(busiest, 1);
     }
-    if (groups.length > 0) hubs.push({ fanIn: edges.length, groups });
+
+    const movedByGroups = groups.reduce((sum, group) => sum + group.edgeIds.length, 0);
+    const maxLone = Math.min(lone.length, edges.length - movedByGroups - 1);
+    if (groups.length > 0 || maxLone > 0) {
+      hubs.push({ fanIn: edges.length, groups, lone: maxLone > 0 ? lone : [], maxLone });
+    }
   }
 
   hubs.sort((a, b) => b.fanIn - a.fanIn);
-  return hubs.map((hub) => hub.groups);
+  return hubs;
+}
+
+/**
+ * The references each hub would get, grouped by hub. One reference per hub
+ * and consumer container, never one per edge, and only where that container
+ * has at least `AUTO_REF_MIN_EDGES` edges into the hub; the original always
+ * keeps at least one edge, so it never ends up used by nothing but its own
+ * copies.
+ */
+export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): AutoRefGroup[][] {
+  return planAutoRefHubs(graph, options)
+    .map((hub) => hub.groups)
+    .filter((groups) => groups.length > 0);
+}
+
+/** A container whose edges are too few for a reference, innermost-first by insertion. */
+function shortGroup<K>(
+  byParent: Map<K, LayoutGraph["edges"]>,
+): [K, LayoutGraph["edges"]] | undefined {
+  for (const entry of byParent) {
+    if (entry[1].length < AUTO_REF_MIN_EDGES) return entry;
+  }
+  return undefined;
 }
 
 /** The graph with each group's reference added and its edges ending there. */
@@ -218,9 +299,13 @@ export interface AutoRefChoice {
 
 /**
  * Lays `graph` out and keeps each hub's references only where they read
- * better, one hub at a time, busiest first. The returned graph and result are
- * the ones the kept references were measured in: ELK depends on node order,
- * so the layout that is applied must be the very one that was judged.
+ * better, one hub at a time, busiest first. Then each one-edge reference is
+ * tried on its own, busiest hub first, and kept only if the drawing reads
+ * better with it than without: a lone reference has to earn its place by
+ * removing a crossing or an edge through a node, or by a long edge getting
+ * much shorter. The returned graph and result are the ones the kept references
+ * were measured in: ELK depends on node order, so the layout that is applied
+ * must be the very one that was judged.
  */
 export async function chooseAutoRefs(
   graph: LayoutGraph,
@@ -231,14 +316,27 @@ export async function chooseAutoRefs(
   const baseline = scoreLayout(graph, result);
   let best: AutoRefChoice = { graph, result, groups: [], baseline, score: baseline };
 
-  const hubs = planAutoRefs(graph, options).slice(0, AUTO_REF_MAX_TRIALS);
-  for (const hubGroups of hubs) {
-    const groups = [...best.groups, ...hubGroups];
+  const hubs = planAutoRefHubs(graph, options);
+  const tryGroups = async (groups: AutoRefGroup[]): Promise<boolean> => {
     const trialGraph = splitGraph(graph, groups, options.refSize);
     const trialResult = await run(trialGraph);
     const score = scoreLayout(trialGraph, trialResult);
-    if (isBetterLayout(score, best.score)) {
-      best = { graph: trialGraph, result: trialResult, groups, baseline, score };
+    if (!isBetterLayout(score, best.score)) return false;
+    best = { graph: trialGraph, result: trialResult, groups, baseline, score };
+    return true;
+  };
+
+  for (const hub of hubs.filter((plan) => plan.groups.length > 0).slice(0, AUTO_REF_MAX_TRIALS)) {
+    await tryGroups([...best.groups, ...hub.groups]);
+  }
+
+  let loneTrials = 0;
+  for (const hub of hubs) {
+    let kept = 0;
+    for (const group of hub.lone) {
+      if (kept >= hub.maxLone || loneTrials >= AUTO_REF_MAX_LONE_TRIALS) break;
+      loneTrials += 1;
+      if (await tryGroups([...best.groups, group])) kept += 1;
     }
   }
   return best;

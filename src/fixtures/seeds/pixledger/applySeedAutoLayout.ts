@@ -10,32 +10,81 @@ import {
   API_GROUP_FRAME_W,
 } from "@/features/diagram/model/layout.constants";
 import { computeApiGroupSize } from "@/features/diagram/utils/api-group-size";
-import { fromDiagram, layout, resizableIds, toAppliedLayouts } from "@/features/canvas/layout";
+import type { EdgeLayout } from "@/features/diagram";
+import type { AppliedLayout } from "@/features/canvas/layout/applyLayout";
+import { SEED_MEASURED_SIZES } from "./measured-sizes";
+import { planDiagramAutoLayout } from "@/features/canvas/layout/autoLayoutDiagram";
+import { edgeLayoutsFromLayoutResult } from "@/features/canvas/layout/edgeLayoutsFromLayoutResult";
 
 /**
- * Same core path as `useAutoLayout` / Cmd+Shift+L:
- * `fromDiagram` → `layout(graph)` (interactive profile) → `toAppliedLayouts`.
+ * The same whole-diagram auto-layout as Cmd/Ctrl+Shift+L, generation and the
+ * assistant (`planDiagramAutoLayout`): edge labels in ELK, fitted containers,
+ * ELK's handle order and its corridors snapped onto the handles — so a seed
+ * opens, in the editor or the viewer, looking the way the button leaves it.
  *
- * No DOM measurements (seeds run offline), so sizes are normalised to the same
- * defaults `fromDiagram` would use when the store has no measured boxes — then
- * ELK resizes panels to fit their children, exactly as the button does.
+ * No DOM here (seeds run offline), so leaves are laid out at the sizes the
+ * canvas was measured drawing them at (`measured-sizes.ts`), and anything not
+ * measured at the defaults `fromDiagram` would use.
+ *
+ * Automatic references are left out: they are components, and the seed's
+ * components are authored by hand in its builder.
  */
 export async function applySeedAutoLayout(diagram: Diagram): Promise<Diagram> {
   const components = diagram.snapshot.components;
   const connections = Object.values(diagram.snapshot.connections) as Connection[];
-  const nodeLayouts = sizeHintsForOfflineLayout(components, diagram.nodeLayouts);
+  const nodeLayouts = sizeHintsForOfflineLayout(
+    components,
+    diagram.nodeLayouts,
+    SEED_MEASURED_SIZES[diagram.id] ?? {},
+  );
 
-  const graph = fromDiagram(components, connections, nodeLayouts);
-  if (graph.nodes.length === 0) return diagram;
+  const plan = await planDiagramAutoLayout({
+    components,
+    connections,
+    nodeLayouts,
+    autoRefs: false,
+  });
+  if (plan.result.boxes.size === 0) return diagram;
 
-  // Interactive profile — same call as useAutoLayout (`layout(graph)`).
-  const result = await layout(graph);
-  if (result.boxes.size === 0) return diagram;
-
-  const applied = toAppliedLayouts(graph, result, resizableIds(graph, components));
   // Start from the sizes ELK actually laid out (defaults), not the hand-tuned
   // seed coords — otherwise leaf boxes keep 260×110 while ELK placed 180×80.
-  return mergeApplied({ ...diagram, nodeLayouts }, applied, result.handleOrder);
+  const merged = mergeApplied({ ...diagram, nodeLayouts }, plan.layouts, plan.result.handleOrder);
+  return {
+    ...merged,
+    edgeLayouts: seedEdgeLayouts(plan, diagram.snapshot.connections),
+  };
+}
+
+/**
+ * ELK's corridors as stored control points, the way `applyLayoutResultEdges`
+ * writes them, with ids derived from the connection so a regeneration that
+ * moves nothing writes nothing.
+ */
+function seedEdgeLayouts(
+  plan: Awaited<ReturnType<typeof planDiagramAutoLayout>>,
+  connections: Record<string, Connection>,
+): Record<string, EdgeLayout> {
+  const out: Record<string, EdgeLayout> = {};
+  for (const [connectionId, edgeLayout] of Object.entries(
+    edgeLayoutsFromLayoutResult(plan.graph, plan.result),
+  )) {
+    const connection = connections[connectionId];
+    // A connection drawn from a top or bottom handle keeps its default route.
+    if (!connection || connection.sourceSide || connection.targetSide) continue;
+    const points = (edgeLayout.points ?? []).map((point, index) => ({
+      id: `${connectionId}-cp${index}`,
+      x: Math.round(point.x * 100) / 100,
+      y: Math.round(point.y * 100) / 100,
+    }));
+    if (points.length === 0) continue;
+    out[connectionId] = {
+      points,
+      ...(edgeLayout.labelOffset !== undefined
+        ? { labelOffset: Math.round(edgeLayout.labelOffset * 10000) / 10000 }
+        : {}),
+    };
+  }
+  return out;
 }
 
 /**
@@ -46,7 +95,13 @@ export async function applySeedAutoLayout(diagram: Diagram): Promise<Diagram> {
 function sizeHintsForOfflineLayout(
   components: Record<string, Component>,
   previous: Record<string, NodeLayout>,
+  measured: Record<string, { width: number; height: number }>,
 ): Record<string, NodeLayout> {
+  const containers = new Set(
+    Object.values(components)
+      .map((component) => component.parentId)
+      .filter((parentId): parentId is string => !!parentId),
+  );
   const next: Record<string, NodeLayout> = {};
   const endpointCountByGroup = new Map<string, number>();
 
@@ -61,7 +116,8 @@ function sizeHintsForOfflineLayout(
 
   for (const component of Object.values(components)) {
     const prev = previous[component.id];
-    const size = offlineSizeOf(component, endpointCountByGroup.get(component.id) ?? 0);
+    const rendered = containers.has(component.id) ? undefined : measured[component.id];
+    const size = rendered ?? offlineSizeOf(component, endpointCountByGroup.get(component.id) ?? 0);
     next[component.id] = {
       elementId: component.id,
       x: prev?.x ?? 0,
@@ -104,7 +160,7 @@ function offlineSizeOf(
 
 function mergeApplied(
   diagram: Diagram,
-  applied: ReturnType<typeof toAppliedLayouts>,
+  applied: readonly AppliedLayout[],
   handleOrder: {
     outgoing: Map<string, string[]>;
     incoming: Map<string, string[]>;

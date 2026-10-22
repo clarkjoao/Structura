@@ -19,6 +19,7 @@ import type { Connection } from "@/features/diagram/model/connection.types";
 import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import { computeApiGroupSize } from "@/features/diagram/utils/api-group-size";
 import type { LayoutGraph, LayoutNode } from "./contract";
+import { edgeLabelBox } from "./edgeLabelBox";
 import { isApiGroupComponent } from "@/features/diagram/model/component.guards";
 
 export interface FromDiagramOptions {
@@ -201,7 +202,10 @@ export function fromDiagram(
     const pairKey = `${sourceId}->${targetId}`;
     if (seenPairs.has(pairKey)) continue;
     seenPairs.add(pairKey);
-    edges.push({ id: connection.id, sourceId, targetId });
+    // The label goes to ELK so it gets a place of its own between the two
+    // nodes; every caller of this graph keeps ELK's routes, which go around it.
+    const labelBox = edgeLabelBox(connection.label, connection.technology);
+    edges.push({ id: connection.id, sourceId, targetId, ...(labelBox && { labelBox }) });
   }
 
   return { nodes, edges };

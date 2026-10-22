@@ -46,6 +46,13 @@ export interface LayoutEdge {
   id: string;
   sourceId: string;
   targetId: string;
+  /**
+   * Size of the label the canvas draws on this edge. Present means ELK reserves
+   * room for it inline, as a dummy node in the layer between the endpoints, so
+   * edges route around the label instead of under it. Absent means no label.
+   * `text` must be non-empty: elkjs silently drops a label without text.
+   */
+  labelBox?: { text: string; width: number; height: number };
 }
 
 export interface LayoutGraph {
@@ -80,6 +87,12 @@ export interface LayoutResult {
    */
   edgeRoutes: Map<string, LayoutPoint[]>;
   handleOrder: LayoutHandleOrder;
+  /**
+   * Where ELK put each labelled edge's label, as the label's centre in the same
+   * coordinates as `edgeRoutes`. The label reserved its room there, so that is
+   * where the canvas should draw it.
+   */
+  labelCenters?: Map<string, LayoutPoint>;
   /** Total size of the laid-out graph, for callers that re-anchor the result. */
   bounds: { width: number; height: number };
 }

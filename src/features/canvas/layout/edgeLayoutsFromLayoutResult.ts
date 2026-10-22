@@ -5,6 +5,10 @@ import type { LayoutGraph, LayoutResult } from "./contract";
 import { absoluteBoxesFromLayout } from "./absoluteBoxesFromLayout";
 import { alignElkRouteToHandles } from "./alignElkRouteToHandles";
 import { handleAnchor } from "./renderedEdgePath";
+import { straightenPolylines } from "./straightenRoutes";
+import { getClosestOffsetOnPath } from "../edges/geometry/projection";
+import { Position } from "@xyflow/react";
+import { defaultOrthogonalCorners, pruneRedundantCorners } from "../edges/geometry/orthogonal";
 
 export interface EdgeLayoutsFromResultOptions {
   /** Which edges get waypoints. Defaults to all graph edges. */
@@ -60,12 +64,26 @@ export function edgeLayoutsFromLayoutResult(
     const storeEdgeId = edgeIdOf(edge.id);
     if (storeEdgeId === undefined) continue;
     const route = routes.get(edge.id);
+    // The label goes where ELK reserved its room, as the offset along the drawn
+    // path closest to it: the path midpoint the canvas defaults to can be a
+    // whole layer away, on top of another label.
+    const labelCenter = result.labelCenters?.get(edge.id);
     layouts[storeEdgeId] = {
       points: (route?.corners ?? []).map((point) => ({
         id: generateId("cp"),
         x: point.x + waypointOffset.x,
         y: point.y + waypointOffset.y,
       })),
+      ...(route && labelCenter
+        ? {
+            labelOffset: getClosestOffsetOnPath(
+              route.source,
+              route.target,
+              route.corners,
+              labelCenter,
+            ),
+          }
+        : {}),
     };
   }
   return layouts;
@@ -120,6 +138,30 @@ export function handleAlignedRoutes(
     const target = handleAnchor(targetBox, "target", targetSlot, targetCount);
     const corners = alignElkRouteToHandles(result.edgeRoutes.get(edge.id), source, target);
     routes.set(edge.id, { source, target, corners });
+  }
+  return straightenJogs(routes);
+}
+
+/**
+ * Snapping ELK's attachments onto handle slots leaves a short step near the
+ * ends of many routes; `straightenPolylines` removes the ones it can without
+ * adding a crossing.
+ */
+function straightenJogs(routes: Map<string, HandleAlignedRoute>): Map<string, HandleAlignedRoute> {
+  const polylines = new Map(
+    [...routes].map(([id, route]) => [id, [route.source, ...route.corners, route.target]] as const),
+  );
+  for (const [id, points] of straightenPolylines(polylines)) {
+    const route = routes.get(id)!;
+    if (points === polylines.get(id)) continue;
+    const corners = pruneRedundantCorners(route.source, route.target, points.slice(1, -1));
+    routes.set(id, {
+      ...route,
+      corners:
+        corners.length > 0
+          ? corners
+          : defaultOrthogonalCorners(route.source, route.target, Position.Right),
+    });
   }
   return routes;
 }

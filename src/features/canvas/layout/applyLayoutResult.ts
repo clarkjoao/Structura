@@ -23,7 +23,8 @@ const identity = (id: string): string | undefined => id;
  *
  *   1. write positions via `applyAutoLayout`  ← the caller owns the `toAppliedLayouts` call
  *   2. write ELK's handle ordering into every node's `handleOrder`
- *   3. write handle-aligned ELK corridors as edge control points
+ *   3. write handle-aligned ELK corridors as edge control points, and each
+ *      label's offset to where ELK placed it
  *
  * Separating positions from (2) and (3) allows the caller to pass their own
  * offset (`toAppliedLayouts(graph, result, resizable, offset)`) without
@@ -82,5 +83,9 @@ export function applyLayoutResultEdges(
     const points = layouts[storeEdgeId]?.points ?? [];
     if (points.length === 0) continue;
     store.setEdgeControlPoints(diagramId, storeEdgeId, points, { history: false });
+    const labelOffset = layouts[storeEdgeId]?.labelOffset;
+    if (labelOffset !== undefined) {
+      store.setEdgeLabelOffset(diagramId, storeEdgeId, labelOffset, { history: false });
+    }
   }
 }

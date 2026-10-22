@@ -1,8 +1,5 @@
 import { useDiagramStore } from "@/features/diagram";
-import { layout } from "@/features/canvas/layout/layoutEngine";
-import { fromDiagram, resizableIds } from "@/features/canvas/layout/fromDiagram";
-import { toAppliedLayouts } from "@/features/canvas/layout/applyLayout";
-import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
+import { autoLayoutActiveDiagram } from "@/features/canvas/layout/autoLayoutDiagram";
 import { getPattern } from "@/lib/catalogs/patterns";
 import { resolvePattern } from "@/features/elements/patterns";
 import type { DiagramPatchAction } from "./types";
@@ -158,19 +155,13 @@ export function applyDiagramPatchAction(
         console.info("[apply-diagram-patch] AUTO_LAYOUT: diagram not found");
         return { addedNodeId: null, addedEdgeId: null, toolResult: { type: "AUTO_LAYOUT" } };
       }
-      const components = diagram.snapshot.components;
-      const connectionsList = Object.values(diagram.snapshot.connections);
-      const graph = fromDiagram(components, connectionsList, diagram.nodeLayouts);
-      void layout(graph)
-        .then((result) => {
-          const { applyAutoLayout } = useDiagramStore.getState();
-          // One mutation for the whole run, so a model-initiated relayout is a
-          // single undo step rather than an unreachable pile of per-node writes.
-          applyAutoLayout(toAppliedLayouts(graph, result, resizableIds(graph, components)));
-          // All edges from the graph get handle order and waypoints — same as every
-          // other layout consumer.
-          applyLayoutResultEdges(graph, result, diagramId);
-          console.info(`[apply-diagram-patch] AUTO_LAYOUT: positioned ${result.boxes.size} nodes`);
+      // The same whole-diagram auto-layout as Cmd/Ctrl+Shift+L, references
+      // included, as one undo step for positions and references.
+      void autoLayoutActiveDiagram()
+        .then((plan) => {
+          console.info(
+            `[apply-diagram-patch] AUTO_LAYOUT: positioned ${plan?.result.boxes.size ?? 0} nodes`,
+          );
         })
         .catch((err) => {
           console.error("[llm] auto-layout failed:", err);

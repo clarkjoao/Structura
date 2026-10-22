@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { edgeLayoutsFromLayoutResult } from "./edgeLayoutsFromLayoutResult";
+import { edgeLayoutsFromLayoutResult, handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
+import { layout } from "./layoutEngine";
+import { getPointAtOffset } from "../edges/geometry/projection";
 import type { LayoutGraph, LayoutResult } from "./contract";
 
 function makeGraph(): LayoutGraph {
@@ -53,5 +55,44 @@ describe("edgeLayoutsFromLayoutResult", () => {
     const result = makeResult(graph);
     const layouts = edgeLayoutsFromLayoutResult(graph, result, { resetPaths: true });
     expect(layouts.e1).toEqual({ points: [] });
+  });
+});
+
+describe("edgeLayoutsFromLayoutResult — labels", () => {
+  it("puts each label where ELK reserved its room", async () => {
+    const graph: LayoutGraph = {
+      nodes: [
+        { id: "a", parentId: null, width: 180, height: 80 },
+        { id: "b", parentId: null, width: 180, height: 80 },
+        { id: "c", parentId: null, width: 180, height: 80 },
+      ],
+      edges: [
+        {
+          id: "ab",
+          sourceId: "a",
+          targetId: "b",
+          labelBox: { text: "reads", width: 80, height: 25 },
+        },
+        {
+          id: "ac",
+          sourceId: "a",
+          targetId: "c",
+          labelBox: { text: "writes", width: 80, height: 25 },
+        },
+      ],
+    };
+    const result = await layout(graph);
+    const layouts = edgeLayoutsFromLayoutResult(graph, result);
+    const routes = handleAlignedRoutes(graph, result);
+
+    for (const id of ["ab", "ac"]) {
+      const offset = layouts[id]?.labelOffset;
+      expect(offset, id).toBeDefined();
+      const route = routes.get(id)!;
+      const drawnAt = getPointAtOffset(route.source, route.target, route.corners, offset!);
+      const reserved = result.labelCenters!.get(id)!;
+      // On the drawn path, at the point closest to the room ELK kept for it.
+      expect(Math.hypot(drawnAt.x - reserved.x, drawnAt.y - reserved.y), id).toBeLessThan(20);
+    }
   });
 });

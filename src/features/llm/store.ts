@@ -934,7 +934,8 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             ...get().pendingPreviews,
             {
               suggestionId: suggestion.id,
-              nodeIds: applied.componentIds,
+              // References the auto-layout made go with the nodes they stand for.
+              nodeIds: [...applied.componentIds, ...applied.referenceIds],
               edgeIds: applied.connectionIds,
             },
           ],

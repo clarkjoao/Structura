@@ -1,7 +1,12 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useStore, type ReactFlowState } from "@xyflow/react";
-import { placeFloatingToolbar, type ScreenRect, type ScreenSize } from "./floatingToolbarPlacement";
+import {
+  placeFloatingToolbar,
+  toScreenRect,
+  type ScreenRect,
+  type ScreenSize,
+} from "./floatingToolbarPlacement";
 
 /** A box in flow coordinates. */
 export interface FlowRect {
@@ -16,6 +21,12 @@ interface FloatingSelectionToolbarProps {
   nodeIds?: readonly string[];
   /** A box in flow coordinates, for what is not a node (an edge's label point). */
   flowRect?: FlowRect;
+  /**
+   * Room, in screen pixels, around `flowRect`'s centre that the toolbar must
+   * keep clear: something drawn there at one size whatever the zoom, such as an
+   * edge label. Without it the toolbar sits on top of that label.
+   */
+  screenClearance?: ScreenSize;
   children: ReactNode;
 }
 
@@ -75,6 +86,7 @@ function sameView(a: View, b: View): boolean {
 export function FloatingSelectionToolbar({
   nodeIds,
   flowRect,
+  screenClearance,
   children,
 }: FloatingSelectionToolbarProps) {
   const domNode = useStore((state) => state.domNode);
@@ -83,12 +95,7 @@ export function FloatingSelectionToolbar({
     const box = flowRect ?? flowBounds(state, nodeIds);
     return {
       viewport: { width: state.width, height: state.height },
-      rect: box && {
-        x: box.x * zoom + tx,
-        y: box.y * zoom + ty,
-        width: box.width * zoom,
-        height: box.height * zoom,
-      },
+      rect: box && toScreenRect(box, [tx, ty, zoom], screenClearance),
     };
   }, sameView);
 

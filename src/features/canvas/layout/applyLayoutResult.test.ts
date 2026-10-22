@@ -66,6 +66,7 @@ function makeFakeStore(diagramId: string) {
         waypoints.push({ connectionId, points });
       },
     ),
+    setEdgeLabelOffset: vi.fn(),
     resetEdgeControlPoints: vi.fn((_diagramId: string, connectionId: string) => {
       resets.push(connectionId);
     }),

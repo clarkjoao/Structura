@@ -12,6 +12,10 @@ import { readElkHandleOrder } from "./elkHandleOrder";
 import { buildRenderedPolylines, measureRenderedReadability } from "./renderedEdgePath";
 import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-placed-diagram";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { GENERATED_DIAGRAMS } from "./generated-diagrams";
+import { stepPolyline } from "./renderedEdgePath";
+import { handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
+import { layout } from "./layoutEngine";
 
 /**
  * Readability of the shipped layout configuration, over the four reference
@@ -24,9 +28,9 @@ import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
 const BASELINE: Record<string, Pick<ReadabilityReport, "edgeCrossings" | "edgeNodeOverlaps">> = {
   "C4 e-commerce": { edgeCrossings: 0, edgeNodeOverlaps: 0 },
-  "AWS ECS Fargate": { edgeCrossings: 4, edgeNodeOverlaps: 0 },
-  "C4 Context healthcare": { edgeCrossings: 0, edgeNodeOverlaps: 0 },
-  "AWS microservices": { edgeCrossings: 5, edgeNodeOverlaps: 0 },
+  "AWS ECS Fargate": { edgeCrossings: 3, edgeNodeOverlaps: 0 },
+  "C4 Context healthcare": { edgeCrossings: 1, edgeNodeOverlaps: 0 },
+  "AWS microservices": { edgeCrossings: 4, edgeNodeOverlaps: 0 },
 };
 
 describe("reference diagrams", () => {
@@ -129,13 +133,22 @@ describe("layout readability baseline", () => {
    * redistribution.
    *
    * An upper bound, like the ELK-routing numbers above.
+   *
+   * Re-measured 2026-10-21 when `irToLayoutGraph` started sending edge labels
+   * to ELK: 1 + 8 + 6 + 10 = 25. This path is the mid-X step a connection with
+   * no stored corners draws; since generation and the auto-layout both store
+   * ELK's corridors, what reaches the user is the "auto-layout path" baseline
+   * below, which those labels left at 0 + 3 + 1 + 7 with no label overlap.
+   *
+   * Re-measured 2026-10-22 when the handles were bundled around the middle of
+   * each side (`HANDLE_PITCH`): 2 + 8 + 6 + 6 = 22.
    */
-  const RENDERED_CROSSINGS_BASELINE = 17;
+  const RENDERED_CROSSINGS_BASELINE = 22;
   const RENDERED_CROSSINGS_PER_DIAGRAM: Record<string, number> = {
     "C4 e-commerce": 2,
-    "AWS ECS Fargate": 3,
-    "C4 Context healthcare": 5,
-    "AWS microservices": 7,
+    "AWS ECS Fargate": 8,
+    "C4 Context healthcare": 6,
+    "AWS microservices": 6,
   };
 
   it("does not regress the rendered-crossing total", async () => {
@@ -200,6 +213,139 @@ describe("layout readability baseline", () => {
       expect(report.edgeCount, name).toBe(ir.edges.length);
     }
   });
+});
+
+/**
+ * The auto-layout path (Cmd/Ctrl+Shift+L, generation, panel and selection
+ * layout): edges carry their labels into ELK (`labelBox`), and the drawn path
+ * keeps ELK's corridors snapped onto the handle slots (`handleAlignedRoutes`).
+ * The numbers above measure ELK's own routing and the mid-X step without stored
+ * corners, which is why they differ.
+ *
+ * Measured 2026-10-21 when inline labels shipped: crossings 12 → 11 and label
+ * overlaps 6 → 0 against the same path without labels, for +24% area. Source:
+ * `elkMermaidParity.experiment.test.ts`.
+ *
+ * Corners: 204 before `straightenPolylines` removed the jogs that snapping onto
+ * handle slots leaves near the ends of a route, 174 after.
+ *
+ * Measured 2026-10-22 when ELK ports started bundling each side's edges where
+ * the canvas draws its handles (`HANDLE_PITCH`): crossings 11 → 8 (AWS
+ * microservices 7 → 4), corners 174 → 176, no label overlap.
+ */
+describe("auto-layout path baseline", () => {
+  const AUTO_LAYOUT_BASELINE: Record<string, { crossings: number; labelOverlaps: number }> = {
+    "C4 e-commerce": { crossings: 0, labelOverlaps: 0 },
+    "AWS ECS Fargate": { crossings: 3, labelOverlaps: 0 },
+    "C4 Context healthcare": { crossings: 1, labelOverlaps: 0 },
+    "AWS microservices": { crossings: 4, labelOverlaps: 0 },
+  };
+
+  const CORNERS_BASELINE = 176;
+
+  it("stays within the recorded crossings, label overlaps and corners", async () => {
+    const failures: string[] = [];
+    const rows: string[] = [];
+    let corners = 0;
+
+    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+      const labels = labelsOf(ir);
+      const input = irToLayoutGraph(ir);
+      const graph = await layoutElkGraph(input);
+      const result = await layout(input);
+      const cornersByEdgeId = new Map(
+        [...handleAlignedRoutes(input, result)].map(([id, route]) => [id, route.corners]),
+      );
+      for (const routeCorners of cornersByEdgeId.values()) corners += routeCorners.length;
+      const report = measureRenderedReadability(graph, ir.edges, {
+        labels,
+        handleOrder: result.handleOrder,
+        cornersByEdgeId,
+      });
+
+      rows.push(
+        `${name.padEnd(24)} crossings ${String(report.edgeCrossings).padStart(3)}  ` +
+          `over-node ${String(report.edgeNodeOverlaps).padStart(3)}  ` +
+          `labels ${String(report.labelOverlaps).padStart(3)}`,
+      );
+      const expected = AUTO_LAYOUT_BASELINE[name];
+      if (!expected) continue;
+      if (report.edgeCrossings > expected.crossings) {
+        failures.push(`${name}: crossings ${report.edgeCrossings} > ${expected.crossings}`);
+      }
+      if (report.labelOverlaps > expected.labelOverlaps) {
+        failures.push(
+          `${name}: label overlaps ${report.labelOverlaps} > ${expected.labelOverlaps}`,
+        );
+      }
+      expect(report.edgeNodeOverlaps, `${name} edge through a node`).toBe(0);
+    }
+
+    console.info(`\nAuto-layout path\n${rows.join("\n")}\nTOTAL corners ${corners}\n`);
+    expect(failures, failures.join("\n")).toHaveLength(0);
+    expect(corners).toBeLessThanOrEqual(CORNERS_BASELINE);
+  });
+});
+
+/**
+ * Neighbouring vertical channels: two edges whose vertical legs run alongside
+ * each other closer than this read as one line.
+ *
+ * Measured 2026-10-21, auto-layout path over the reference and generated
+ * diagrams: 117 pairs with ELK's default between-layer edge gap (10), 2 with
+ * `edgeEdgeBetweenLayers` at 20. 4 since 2026-10-22, when ELK ports started
+ * bundling each side's edges around its middle (`HANDLE_PITCH`).
+ */
+describe("auto-layout path — vertical channels stay apart", () => {
+  const TOO_CLOSE = 10;
+  const NEAR_PARALLEL_BASELINE = 4;
+
+  interface Vertical {
+    edge: string;
+    x: number;
+    top: number;
+    bottom: number;
+  }
+
+  function verticals(id: string, points: ReadonlyArray<{ x: number; y: number }>): Vertical[] {
+    const out: Vertical[] = [];
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const a = points[i]!;
+      const b = points[i + 1]!;
+      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) > 0.5) {
+        out.push({ edge: id, x: a.x, top: Math.min(a.y, b.y), bottom: Math.max(a.y, b.y) });
+      }
+    }
+    return out;
+  }
+
+  function nearParallelPairs(all: Vertical[]): number {
+    let pairs = 0;
+    for (let i = 0; i < all.length; i += 1) {
+      for (let j = i + 1; j < all.length; j += 1) {
+        const a = all[i]!;
+        const b = all[j]!;
+        if (a.edge === b.edge || Math.abs(a.x - b.x) > TOO_CLOSE) continue;
+        if (Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 2) pairs += 1;
+      }
+    }
+    return pairs;
+  }
+
+  it("keeps different edges' vertical legs at least a channel apart", async () => {
+    let pairs = 0;
+    for (const { ir } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
+      const input = irToLayoutGraph(ir);
+      const routes = handleAlignedRoutes(input, await layout(input));
+      pairs += nearParallelPairs(
+        [...routes].flatMap(([id, route]) =>
+          verticals(id, stepPolyline(route.source, route.target, route.corners)),
+        ),
+      );
+    }
+    console.info(`\nNear-parallel vertical legs: ${pairs}\n`);
+    expect(pairs).toBeLessThanOrEqual(NEAR_PARALLEL_BASELINE);
+  }, 60_000);
 });
 
 /**

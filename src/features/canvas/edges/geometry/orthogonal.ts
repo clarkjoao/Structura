@@ -63,6 +63,42 @@ export function buildStepPath(source: Point, target: Point, corners: readonly Po
   return path;
 }
 
+/**
+ * The points `buildStepPath` visits, in order: each knot is reached horizontally
+ * then vertically, except the leg into the target, which turns first and
+ * arrives horizontally so the arrowhead points into the handle. A no-op leg
+ * adds no point. Kept in step with `buildStepPath` by `renderedEdgePath.test.ts`,
+ * which compares these points against the path string.
+ */
+export function stepPathPoints(source: Point, target: Point, corners: readonly Point[]): Point[] {
+  const knots: Point[] = [source, ...corners, target];
+  const points: Point[] = [{ x: knots[0].x, y: knots[0].y }];
+  let current = points[0];
+
+  for (let i = 1; i < knots.length - 1; i += 1) {
+    const knot = knots[i];
+    if (knot.x !== current.x) {
+      current = { x: knot.x, y: current.y };
+      points.push(current);
+    }
+    if (knot.y !== current.y) {
+      current = { x: current.x, y: knot.y };
+      points.push(current);
+    }
+  }
+
+  if (target.y !== current.y) {
+    current = { x: current.x, y: target.y };
+    points.push(current);
+  }
+  if (target.x !== current.x) {
+    current = { x: target.x, y: current.y };
+    points.push(current);
+  }
+
+  return points;
+}
+
 export interface StepSegment {
   index: number;
   x1: number;

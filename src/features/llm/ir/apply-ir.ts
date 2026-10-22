@@ -6,6 +6,7 @@ import {
 import { cloudServiceIdWrite } from "@/features/diagram/model/cloud-service-id";
 import { layout } from "@/features/canvas/layout/layoutEngine";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
+import { autoLayoutActiveDiagram } from "@/features/canvas/layout/autoLayoutDiagram";
 import type { LayoutBox } from "@/features/canvas/layout/contract";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { mapNodeToComponent } from "./ir-to-component";
@@ -18,6 +19,12 @@ const VIEWPORT_MARGIN = 80;
 export interface ApplyIRResult {
   componentIds: string[];
   connectionIds: string[];
+  /**
+   * Automatic references the auto-layout made for the generated diagram. Not
+   * generated nodes, but they come and go with them: a preview discarded
+   * without them would leave references to nodes that no longer exist.
+   */
+  referenceIds: string[];
 }
 
 /**
@@ -36,6 +43,27 @@ function currentViewportOrigin(): { x: number; y: number } {
     x: -viewport.x / zoom + VIEWPORT_MARGIN,
     y: -viewport.y / zoom + VIEWPORT_MARGIN,
   };
+}
+
+/** Frames to wait for React Flow to measure freshly inserted nodes. */
+const MEASURE_WAIT_FRAMES = 30;
+
+/**
+ * Resolves once every component in `ids` has a size in the active diagram's
+ * layouts — the canvas writes what it measured there — or after
+ * `MEASURE_WAIT_FRAMES` frames, whichever is first. A canvas that is not on
+ * screen never measures; the layout then runs on default sizes.
+ */
+async function whenMeasured(ids: readonly string[]): Promise<void> {
+  if (typeof requestAnimationFrame !== "function") return;
+  for (let frame = 0; frame < MEASURE_WAIT_FRAMES; frame += 1) {
+    const state = useDiagramStore.getState();
+    const layouts = state.activeDiagramId
+      ? state.diagrams[state.activeDiagramId]?.nodeLayouts
+      : undefined;
+    if (layouts && ids.every((id) => layouts[id]?.width !== undefined)) return;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
 }
 
 export interface GeneratedGraphInputs {
@@ -100,6 +128,8 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
   const { nodes, edges } = buildGeneratedGraphInputs(ir, layoutResult.boxes, origin);
 
   const store = useDiagramStore.getState();
+  const before = store.activeDiagramId ? store.diagrams[store.activeDiagramId] : undefined;
+  const intoEmptyDiagram = Object.keys(before?.snapshot.components ?? {}).length === 0;
   const result = store.insertGeneratedGraph(nodes, edges);
 
   if (result.componentIds.length > 0) {
@@ -130,13 +160,32 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
   // other layout consumer uses. `waypointOffset` is the viewport origin: the
   // routes come back anchored at (0,0) and the diagram was inserted where the
   // user is looking.
-  applyLayoutResultEdges(graph, layoutResult, store.activeDiagramId, {
-    waypointOffset: origin,
-    idMap: {
-      node: (irNodeId) => result.componentIdByExternalId[irNodeId],
-      edge: (irEdgeId) => connectionIdByEdgeId.get(irEdgeId),
-    },
-  });
+  //
+  // Into an empty diagram, the generated graph *is* the diagram, so it gets the
+  // whole-diagram auto-layout instead — references included — and reads exactly
+  // as Cmd/Ctrl+Shift+L would leave it. Into a diagram with content, only the
+  // new part is placed; re-laying out the user's own work is not this path's call.
+  let referenceIds: string[] = [];
+  if (intoEmptyDiagram && result.componentIds.length > 0) {
+    // Laid out at the size the canvas draws each node, like the button: until
+    // React Flow has measured them, a card 260 wide is laid out as 180 and its
+    // edges start with a step backwards.
+    await whenMeasured(result.componentIds);
+    const plan = await autoLayoutActiveDiagram({ offset: origin });
+    referenceIds = plan?.groups.map((group) => group.refId) ?? [];
+  } else {
+    applyLayoutResultEdges(graph, layoutResult, store.activeDiagramId, {
+      waypointOffset: origin,
+      idMap: {
+        node: (irNodeId) => result.componentIdByExternalId[irNodeId],
+        edge: (irEdgeId) => connectionIdByEdgeId.get(irEdgeId),
+      },
+    });
+  }
 
-  return { componentIds: result.componentIds, connectionIds: result.connectionIds };
+  return {
+    componentIds: result.componentIds,
+    connectionIds: result.connectionIds,
+    referenceIds,
+  };
 }

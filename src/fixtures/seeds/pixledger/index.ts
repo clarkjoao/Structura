@@ -40,11 +40,18 @@ function withGeneratedLayout(diagram: Diagram): Diagram {
     nodeLayouts[id] = slice.nodeLayouts[id] ?? diagram.nodeLayouts[id]!;
   }
 
+  // Corridors only for connections that still exist.
+  const edgeLayouts: Diagram["edgeLayouts"] = { ...diagram.edgeLayouts };
+  for (const [id, edgeLayout] of Object.entries(slice.edgeLayouts ?? {})) {
+    if (diagram.snapshot.connections[id]) edgeLayouts[id] = edgeLayout;
+  }
+
   // Drop stale ids left over from deleted components in layouts.generated.ts.
   return {
     ...diagram,
     snapshot: { ...diagram.snapshot, components },
     nodeLayouts,
+    edgeLayouts,
     viewport: slice.viewport,
   };
 }

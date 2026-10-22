@@ -437,3 +437,57 @@ describe("layout — a container's top inset", () => {
     expect(result.boxes.get("c")!.y).toBeGreaterThanOrEqual(90);
   });
 });
+
+describe("layout — edge labels are laid out, not painted over the result", () => {
+  const twoNodes = (labelBox?: { text: string; width: number; height: number }): LayoutGraph => ({
+    nodes: [
+      { id: "a", parentId: null, width: 180, height: 80 },
+      { id: "b", parentId: null, width: 180, height: 80 },
+    ],
+    edges: [{ id: "e", sourceId: "a", targetId: "b", ...(labelBox && { labelBox }) }],
+  });
+
+  const gap = (result: LayoutResult): number =>
+    result.boxes.get("b")!.x - (result.boxes.get("a")!.x + result.boxes.get("a")!.width);
+
+  it("leaves room between the nodes for a label wider than the usual gap", async () => {
+    const result = await layout(twoNodes({ text: "a long label", width: 400, height: 25 }));
+    expect(gap(result)).toBeGreaterThanOrEqual(400);
+  });
+
+  it("keeps the unlabelled spacing when no edge has a label", async () => {
+    // 220: ELK_OPTIONS_INTERACTIVE's between-layer gap.
+    expect(gap(await layout(twoNodes()))).toBe(220);
+  });
+
+  it("tightens the between-layer gap once labels take a layer of their own", async () => {
+    // A label is its own layer, so a labelled edge spans two gaps; each is
+    // 110 rather than 220, which is what keeps labelled diagrams from doubling.
+    const result = await layout(twoNodes({ text: "x", width: 20, height: 20 }));
+    expect(gap(result)).toBeLessThan(2 * 220);
+  });
+
+  it("ignores a label with no text, as elkjs does", async () => {
+    expect(gap(await layout(twoNodes({ text: "", width: 400, height: 25 })))).toBe(220);
+  });
+
+  it("carries each connection's label from the diagram into the graph", () => {
+    const components = componentsOf([
+      component("a", null),
+      component("b", null),
+      component("c", null),
+    ]);
+    const graph = fromDiagram(
+      components,
+      [
+        { ...connection("labelled", "a", "b"), label: "reads", technology: "JDBC" },
+        connection("bare", "b", "c"),
+      ],
+      {},
+    );
+    const byId = new Map(graph.edges.map((edge) => [edge.id, edge]));
+
+    expect(byId.get("labelled")?.labelBox?.text).toBe("reads");
+    expect(byId.get("bare")?.labelBox).toBeUndefined();
+  });
+});

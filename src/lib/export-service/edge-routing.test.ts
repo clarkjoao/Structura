@@ -6,7 +6,6 @@ import {
   computeDefaultWaypoints,
   FIXED_EDGE_SIDES,
   resolveEdgeRouting,
-  slotToAnchorOffset,
   type HandleSlots,
 } from "./edge-routing";
 import type { HandlePosition } from "@/features/canvas/edges/geometry/paths";
@@ -46,25 +45,6 @@ function mkHandleSlots(
 ): HandleSlots {
   return { sourceSlot: srcSlot, targetSlot: tgtSlot, sourceCount: srcCount, targetCount: tgtCount };
 }
-
-// ─── slotToAnchorOffset ─────────────────────────────────────────────────────────
-
-describe("slotToAnchorOffset", () => {
-  it("returns 0.5 (centre) for a single handle", () => {
-    expect(slotToAnchorOffset(0, 1)).toBe(0.5);
-  });
-
-  it("distributes two slots as 1/3 and 2/3", () => {
-    expect(slotToAnchorOffset(0, 2)).toBeCloseTo(1 / 3);
-    expect(slotToAnchorOffset(1, 2)).toBeCloseTo(2 / 3);
-  });
-
-  it("distributes three slots as 1/4, 2/4, 3/4", () => {
-    expect(slotToAnchorOffset(0, 3)).toBeCloseTo(0.25);
-    expect(slotToAnchorOffset(1, 3)).toBeCloseTo(0.5);
-    expect(slotToAnchorOffset(2, 3)).toBeCloseTo(0.75);
-  });
-});
 
 // ─── Fixed edge sides ───────────────────────────────────────────────────────────
 
@@ -349,9 +329,8 @@ describe("resolveEdgeRouting", () => {
 
     const result = resolveEdgeRouting("src", "tgt", layoutMap, components, undefined, twoSlotSrc);
 
-    // Source slot 0 of 2 → offset 1/3
-    // handleX = 0 + 200 = 200, handleY = 0 + 1/3 * 120 = 40
+    // Source slot 0 of 2: half a pitch above the middle of the 120-tall side.
     expect(result.sourceAbs.x).toBe(200);
-    expect(result.sourceAbs.y).toBeCloseTo(40, 0);
+    expect(result.sourceAbs.y).toBeCloseTo(60 - 4, 6);
   });
 });

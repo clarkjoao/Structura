@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Position } from "@xyflow/react";
 import type { Point } from "@/features/diagram";
-import { MAX_HANDLES } from "../canvas.constants";
+import { HANDLE_PITCH, MAX_HANDLES } from "../canvas.constants";
 import { buildStepPath, defaultOrthogonalCorners } from "../edges/geometry/orthogonal";
 import { buildRenderedPolylines, handleAnchor, stepPolyline } from "./renderedEdgePath";
 
@@ -108,10 +108,16 @@ describe("handleAnchor", () => {
     expect(handleAnchor(box, "target", 0, 1)).toEqual({ x: 100, y: 240 });
   });
 
-  it("spaces multiple handles by (i + 1) / (n + 1), as buildHandles does", () => {
-    expect(handleAnchor(box, "source", 0, 3).y).toBeCloseTo(200 + 80 * 0.25);
-    expect(handleAnchor(box, "source", 1, 3).y).toBeCloseTo(200 + 80 * 0.5);
-    expect(handleAnchor(box, "source", 2, 3).y).toBeCloseTo(200 + 80 * 0.75);
+  it("bundles multiple handles HANDLE_PITCH apart around the middle, as buildHandles does", () => {
+    expect(handleAnchor(box, "source", 0, 3).y).toBeCloseTo(240 - HANDLE_PITCH);
+    expect(handleAnchor(box, "source", 1, 3).y).toBeCloseTo(240);
+    expect(handleAnchor(box, "source", 2, 3).y).toBeCloseTo(240 + HANDLE_PITCH);
+  });
+
+  it("squeezes a crowded side so its slots stay off the corners", () => {
+    // 80 tall, 19 slots: 8 apart would run past both ends; 80/20 = 4 apart fits.
+    expect(handleAnchor(box, "source", 0, 19).y).toBeCloseTo(204);
+    expect(handleAnchor(box, "source", 18, 19).y).toBeCloseTo(276);
   });
 
   it("clamps beyond MAX_HANDLES on a side", () => {

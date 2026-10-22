@@ -29,6 +29,24 @@ interface PlaceOptions {
   margin?: number;
 }
 
+/**
+ * A flow box on screen, grown by `clearance` screen pixels around its centre:
+ * room for something drawn there at one size whatever the zoom (an edge label),
+ * which the toolbar must not cover.
+ */
+export function toScreenRect(
+  box: ScreenRect,
+  [tx, ty, zoom]: readonly [number, number, number],
+  clearance: ScreenSize = { width: 0, height: 0 },
+): ScreenRect {
+  return {
+    x: box.x * zoom + tx - clearance.width / 2,
+    y: box.y * zoom + ty - clearance.height / 2,
+    width: box.width * zoom + clearance.width,
+    height: box.height * zoom + clearance.height,
+  };
+}
+
 const DEFAULT_GAP = 10;
 const DEFAULT_MARGIN = 8;
 

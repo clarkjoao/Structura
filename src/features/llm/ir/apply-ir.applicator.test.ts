@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDiagramStore } from "@/features/diagram";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { REFERENCE_DIAGRAMS } from "@/features/canvas/layout/reference-diagrams";
+import { GENERATED_DIAGRAMS } from "@/features/canvas/layout/generated-diagrams";
+import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
 import { applyIRToDiagram } from "./apply-ir";
 import type { DiagramIR } from "./ir.types";
 
@@ -36,7 +38,17 @@ function makeFakeStore(viewport: { x: number; y: number; zoom: number }) {
 
   return {
     activeDiagramId: "diag-1",
-    diagrams: { "diag-1": { nodeLayouts: {}, edgeLayouts: {}, viewport } },
+    // The diagram already holds something: a generated graph is then placed on
+    // its own, through the id translation these tests pin. Into an empty
+    // diagram it gets the whole-diagram auto-layout instead (see below).
+    diagrams: {
+      "diag-1": {
+        nodeLayouts: {},
+        edgeLayouts: {},
+        viewport,
+        snapshot: { components: { existing: { id: "existing" } }, connections: {} },
+      },
+    },
     insertGeneratedGraph: vi.fn(() => ({
       componentIds: Object.values(COMPONENT_ID),
       connectionIds: CONNECTION_IDS,
@@ -55,6 +67,7 @@ function makeFakeStore(viewport: { x: number; y: number; zoom: number }) {
         waypoints.push({ connectionId, points });
       },
     ),
+    setEdgeLabelOffset: vi.fn(),
     resetEdgeControlPoints: vi.fn(),
     _handleOrders: handleOrders,
     _waypoints: waypoints,
@@ -162,5 +175,51 @@ describe("applyIRToDiagram — ids that reach the store", () => {
         expect(point.y).toBeGreaterThanOrEqual(280);
       }
     }
+  });
+});
+
+describe("applyIRToDiagram — into an empty diagram", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /** A real store with one empty, open diagram, standing in for the app's. */
+  function emptyDiagramStore() {
+    const store = createTestDiagramStore();
+    const diagram = store.getState().addDiagram("Generated", "container");
+    store.getState().openDiagram(diagram.id);
+    vi.spyOn(useDiagramStore, "getState").mockImplementation(() => store.getState() as never);
+    vi.spyOn(useCanvasSelectionStore, "getState").mockReturnValue({
+      setSelectedNodeId: vi.fn(),
+      setSelectedNodeIds: vi.fn(),
+      setSelectedEdgeId: vi.fn(),
+    } as never);
+    return { store, diagramId: diagram.id };
+  }
+
+  it("lays the result out as the auto-layout would, references included", async () => {
+    // B-run2: a generated diagram where the auto-layout keeps references.
+    const ir = GENERATED_DIAGRAMS.find((diagram) => diagram.name.startsWith("B-run2"))!.ir;
+    const { store, diagramId } = emptyDiagramStore();
+
+    const applied = await applyIRToDiagram(ir);
+
+    const diagram = store.getState().diagrams[diagramId]!;
+    const refs = Object.values(diagram.snapshot.components).filter(
+      (component) => "auto" in component && component.auto === true,
+    );
+    expect(applied.referenceIds.length).toBeGreaterThan(0);
+    expect(refs.map((ref) => ref.id).sort()).toEqual([...applied.referenceIds].sort());
+    // Each reference is part of the drawing: a connection ends on it.
+    for (const ref of refs) {
+      const uses = Object.values(diagram.snapshot.connections).filter(
+        (connection) => connection.targetId === ref.id || connection.sourceId === ref.id,
+      );
+      expect(uses.length, ref.id).toBeGreaterThanOrEqual(1);
+    }
+    const withWaypoints = Object.values(diagram.edgeLayouts).filter(
+      (edgeLayout) => (edgeLayout.points?.length ?? 0) > 0,
+    );
+    expect(withWaypoints.length).toBeGreaterThan(0);
   });
 });

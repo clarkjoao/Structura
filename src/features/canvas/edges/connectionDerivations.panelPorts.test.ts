@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Position } from "@xyflow/react";
 import type { Component, Connection } from "@/features/diagram";
 import { buildConnectionCountPerNode, buildEdgeHandleAssignments } from "./connectionDerivations";
-import { buildPanelHandles, handleSlotCount, handleTopPercent } from "../nodes/CardNode/Handles";
+import { buildPanelHandles, handleSlotCount, handleTopCss } from "../nodes/CardNode/Handles";
 import { handleAnchor } from "../layout/renderedEdgePath";
 
 /**
@@ -128,14 +128,25 @@ describe("a panel renders the slot the assignment reaches for", () => {
 
   it("places a slot where the measurement expects to find it", () => {
     // `handleAnchor` is what `measureRenderedReadability` uses. If the rendered
-    // percentage and the measured fraction drift apart, every crossing number in
+    // CSS and the measured offset drift apart, every crossing number in
     // `generated-diagrams.baseline.test.ts` becomes a number about a picture the
     // canvas is not drawing.
-    const box = { x: 0, y: 0, width: 300, height: 200 };
-    for (const count of [1, 2, 3, 4]) {
-      for (let slot = 0; slot < count; slot += 1) {
-        const anchor = handleAnchor(box, "target", slot, count);
-        expect(anchor.y).toBeCloseTo((box.height * handleTopPercent(slot, count)) / 100, 6);
+    /** Resolves `handleTopCss` the way the browser does, for a node this tall. */
+    const resolveTop = (css: string, height: number): number => {
+      if (css === "50%") return height / 2;
+      const match = /^calc\(50% \+ (-?[\d.]+) \* min\(([\d.]+)px, ([\d.]+)%\)\)$/.exec(css);
+      if (!match) throw new Error(`unexpected handle top: ${css}`);
+      const [, fromMiddle, pitch, share] = match.map(Number) as number[];
+      return height / 2 + fromMiddle! * Math.min(pitch!, (height * share!) / 100);
+    };
+    // Tall enough for the full pitch, and short enough to squeeze it.
+    for (const height of [200, 40]) {
+      const box = { x: 0, y: 0, width: 300, height };
+      for (const count of [1, 2, 3, 4, 9]) {
+        for (let slot = 0; slot < count; slot += 1) {
+          const anchor = handleAnchor(box, "target", slot, count);
+          expect(anchor.y).toBeCloseTo(resolveTop(handleTopCss(slot, count), height), 6);
+        }
       }
     }
   });

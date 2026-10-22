@@ -9,7 +9,8 @@ import type { LayoutGraph } from "./contract";
 /**
  * Does referencing hubs make the auto-layout read better, on the diagrams the
  * layout is tuned against? Each diagram is laid out as it is, then with the
- * references `chooseAutoRefs` keeps, both measured on the drawn path.
+ * references `chooseAutoRefs` keeps, both measured on the drawn path. The
+ * graph carries its edge labels (`irToLayoutGraph`, like `fromDiagram`).
  *
  *   npx vitest run autoRefs.experiment --silent=false
  */
