@@ -26,6 +26,7 @@ describe("layout options", () => {
       "elk.spacing.nodeNode": "110",
       "elk.spacing.edgeNode": "40",
       "elk.spacing.edgeEdge": "25",
+      "elk.layered.spacing.edgeEdgeBetweenLayers": "20",
       "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
       "elk.padding": "[top=40,left=40,bottom=40,right=40]",
       "elk.hierarchyHandling": "INCLUDE_CHILDREN",

@@ -11,14 +11,14 @@ import {
 import type { ElkNode } from "elkjs";
 
 /**
- * The polyline the canvas actually draws for a generated connection.
+ * The polyline the canvas draws for a connection, from its handles.
  *
- * Neither of the ELK-side numbers is what the user sees: ELK's routed path is
- * discarded by `apply-ir.ts`, and the straight centre-to-centre line is only a
- * placement proxy. Generated connections render as `EdgeStyle.EditableStep`,
- * whose path comes from the node handles plus `defaultOrthogonalCorners`. This
- * module reproduces that, reusing the canvas's own corner function, so the
- * measurement tracks the rendered result rather than an idealised one.
+ * With `corners` (`cornersByEdgeId`) it is the path every layout consumer
+ * leaves on screen today: ELK's corridor snapped onto the handles
+ * (`handleAlignedRoutes`), which `applyIRToDiagram` and the auto-layout both
+ * write. Without them it is the mid-X step `defaultOrthogonalCorners` draws for
+ * a connection with no stored path — what generated diagrams drew before
+ * `apply-ir.ts` kept ELK's routes, and what the frozen baselines still measure.
  */
 
 /**

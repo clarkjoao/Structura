@@ -60,6 +60,15 @@ interface Expected {
  * the baseline numbers were the snapshot of that deterministic output as of
  * the date above, and this file is the place that snapshot lives.
  *
+ * Refreshed 2026-10-21: `elk.layered.spacing.edgeEdgeBetweenLayers` 10 → 20
+ * moved B-run2 89 → 96 and B-run3 87 → 91 crossings (total 273 → 284), and
+ * edges through a node 30 → 18 and 7 → 6. This column draws
+ * the mid-X step between handles, which no layout consumer leaves on screen any
+ * more: `applyIRToDiagram` writes ELK's corridors through
+ * `applyLayoutResultEdges`. On that drawn path the same change measured 116 →
+ * 116 crossings and 16 → 11 label overlaps over the reference and generated
+ * diagrams, which is why it shipped.
+ *
  * `containerEdges` is here because it is the count that used to disappear:
  * B-run1's 16 container-addressed edges were 16 connections the canvas never
  * drew. They were always in these measurements — `measureRenderedReadability`
@@ -112,9 +121,9 @@ const EXPECTED: Record<string, Expected> = {
     edges: 33,
     containerEdges: 0,
     elkCrossings: 33,
-    renderedCrossings: 89,
+    renderedCrossings: 96,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 30,
+    renderedEdgeNodeOverlaps: 18,
     maxNestingDepth: 3,
   },
   "B-run3 AWS deployment": {
@@ -122,9 +131,9 @@ const EXPECTED: Record<string, Expected> = {
     edges: 37,
     containerEdges: 0,
     elkCrossings: 52,
-    renderedCrossings: 87,
+    renderedCrossings: 91,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 7,
+    renderedEdgeNodeOverlaps: 6,
     maxNestingDepth: 4,
   },
 };
@@ -266,6 +275,6 @@ describe("frozen generated diagram measurements", () => {
     );
 
     expect(elkTotal).toBe(97);
-    expect(renderedTotal).toBe(273);
+    expect(renderedTotal).toBe(284);
   });
 });

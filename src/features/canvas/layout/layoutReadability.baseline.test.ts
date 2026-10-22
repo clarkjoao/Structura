@@ -212,7 +212,8 @@ describe("layout readability baseline", () => {
  * The auto-layout path (Cmd/Ctrl+Shift+L, panel and selection layout): edges
  * carry their labels into ELK (`fromDiagram` → `labelBox`), and the drawn path
  * keeps ELK's corridors snapped onto the handle slots (`handleAlignedRoutes`).
- * The generated-diagram numbers above do neither, which is why they differ.
+ * The numbers above measure the mid-X step without stored corners and without
+ * labels, which is why they differ.
  *
  * Measured 2026-10-21 when inline labels shipped: crossings 12 → 11 and label
  * overlaps 6 → 0 against the same path without labels, for +24% area. Source:

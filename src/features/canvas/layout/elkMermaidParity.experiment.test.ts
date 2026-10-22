@@ -27,11 +27,12 @@ import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
  * already include the engine's labelled profile (`ELK_OPTIONS_LABELLED`), which
  * this experiment is where it came from.
  *
- * Two drawn paths are measured, because they are different products:
- *   - `gen`: generated diagrams (`apply-ir`), which discard ELK's routes and
- *     draw the mid-X step between handles.
- *   - `auto`: the auto-layout button, which keeps ELK's corridors and snaps
- *     their ends onto the handle slots (`handleAlignedRoutes`).
+ * Two drawn paths are measured:
+ *   - `auto`: ELK's corridors snapped onto the handle slots
+ *     (`handleAlignedRoutes`) — what the auto-layout and `applyIRToDiagram`
+ *     both leave on screen. This is the column to decide on.
+ *   - `gen`: the mid-X step between handles that a connection with no stored
+ *     path draws, kept because the frozen baselines still measure it.
  *
  *   npx vitest run elkMermaidParity.experiment --silent=false
  */
