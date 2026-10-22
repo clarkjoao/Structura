@@ -45,7 +45,11 @@ describe("buildHandles", () => {
       buildHandles(3, "source", Position.Right, { elementId: "n", isRecording: true }, undefined),
     );
     expect(dots(nodes)).toHaveLength(0);
-    for (const slot of slots(nodes)) expect(slot.props.className).not.toContain("!bg-transparent");
+    for (const slot of slots(nodes)) {
+      expect(slot.props.className).not.toContain("!bg-transparent");
+      // Narrower than the pitch, so neighbouring slots do not overlap.
+      expect(slot.props.className).toContain("!w-[7px]");
+    }
   });
 
   it("adds no dot to a panel, whose handles are invisible", () => {

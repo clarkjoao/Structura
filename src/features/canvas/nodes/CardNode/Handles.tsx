@@ -37,19 +37,23 @@ export function handleTopCss(index: number, count: number): string {
   return `calc(50% + ${fromMiddle} * min(${HANDLE_PITCH}px, ${100 / (count + 1)}%))`;
 }
 
-function getHandleClass(d: HandleBehaviour, handleId: string): string {
+/** A lit handle's size: full on its own, or a bundle's pitch so neighbours never overlap. */
+const LIT_SIZE = "!w-3.5 !h-3.5";
+const LIT_SIZE_BUNDLED = "!w-[7px] !h-[7px]";
+
+function getHandleClass(d: HandleBehaviour, handleId: string, litSize = LIT_SIZE): string {
   const base = "!border-background transition-all duration-150";
   const isRecHighlighted = d.isRecording && d.lastRecordedHandleId === handleId;
   const isPlayHighlighted = !d.isRecording && d.activeHandleId === handleId;
 
   if (isRecHighlighted) {
-    return `${base} !w-3.5 !h-3.5 !bg-primary ring-2 ring-primary`;
+    return `${base} ${litSize} !bg-primary ring-2 ring-primary`;
   }
   if (isPlayHighlighted) {
-    return `${base} !w-3.5 !h-3.5 !bg-primary ring-2 ring-primary animate-pulse`;
+    return `${base} ${litSize} !bg-primary ring-2 ring-primary animate-pulse`;
   }
   if (d.isRecording) {
-    return `${base} !w-3.5 !h-3.5 !bg-primary/60 cursor-pointer hover:!bg-primary hover:ring-2 hover:ring-primary`;
+    return `${base} ${litSize} !bg-primary/60 cursor-pointer hover:!bg-primary hover:ring-2 hover:ring-primary`;
   }
   return `${base} !w-2.5 !h-2.5 !bg-muted-foreground`;
 }
@@ -59,11 +63,14 @@ function getHandleClass(d: HandleBehaviour, handleId: string): string {
  *
  * Slots sit `HANDLE_PITCH` apart, closer than a dot is wide, so drawing each
  * one smeared them into a bar; `bundleDot` draws the side's one dot instead.
- * Recording picks among the slots and playback lights one up, so those still
- * draw the way they always did.
+ * Recording picks among the slots, so it draws every one, and playback lights
+ * one up — both a pixel under `HANDLE_PITCH` wide, so neighbouring slots stay
+ * apart enough to click.
  */
 function bundledHandleClass(d: HandleBehaviour, handleId: string): string {
-  if (d.isRecording || d.activeHandleId === handleId) return getHandleClass(d, handleId);
+  if (d.isRecording || d.activeHandleId === handleId) {
+    return getHandleClass(d, handleId, LIT_SIZE_BUNDLED);
+  }
   return "!w-2.5 !h-2.5 !bg-transparent !border-transparent";
 }
 

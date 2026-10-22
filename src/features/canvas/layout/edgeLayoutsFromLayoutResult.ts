@@ -5,7 +5,7 @@ import type { LayoutGraph, LayoutResult } from "./contract";
 import { absoluteBoxesFromLayout } from "./absoluteBoxesFromLayout";
 import { alignElkRouteToHandles } from "./alignElkRouteToHandles";
 import { handleAnchor } from "./renderedEdgePath";
-import { straightenPolylines } from "./straightenRoutes";
+import { straightenPolylines, type StraightenOptions } from "./straightenRoutes";
 import { getClosestOffsetOnPath } from "../edges/geometry/projection";
 import { Position } from "@xyflow/react";
 import { defaultOrthogonalCorners, pruneRedundantCorners } from "../edges/geometry/orthogonal";
@@ -115,14 +115,21 @@ export function handleAlignedRoutes(
     incomingCount.set(edge.targetId, (incomingCount.get(edge.targetId) ?? 0) + 1);
   }
 
+  // A side drawn as one point has one slot, however many edges share it.
+  const singlePort = new Map(graph.nodes.map((node) => [node.id, node.singlePort]));
+
   const routes = new Map<string, HandleAlignedRoute>();
   for (const edge of edges) {
     const sourceBox = absBoxes.get(edge.sourceId);
     const targetBox = absBoxes.get(edge.targetId);
     if (!sourceBox || !targetBox) continue;
 
-    const sourceCount = clampHandleCount(outgoingCount.get(edge.sourceId) ?? 1);
-    const targetCount = clampHandleCount(incomingCount.get(edge.targetId) ?? 1);
+    const sourceCount = singlePort.get(edge.sourceId)?.outgoing
+      ? 1
+      : clampHandleCount(outgoingCount.get(edge.sourceId) ?? 1);
+    const targetCount = singlePort.get(edge.targetId)?.incoming
+      ? 1
+      : clampHandleCount(incomingCount.get(edge.targetId) ?? 1);
     const sourceSlot = resolveSlot(
       edge.id,
       result.handleOrder.outgoing.get(edge.sourceId),
@@ -139,7 +146,24 @@ export function handleAlignedRoutes(
     const corners = alignElkRouteToHandles(result.edgeRoutes.get(edge.id), source, target);
     routes.set(edge.id, { source, target, corners });
   }
-  return straightenJogs(routes);
+  const containers = new Set(graph.nodes.map((node) => node.parentId));
+  const containerEnds = new Map(
+    edges.map((edge) => [
+      edge.id,
+      { source: containers.has(edge.sourceId), target: containers.has(edge.targetId) },
+    ]),
+  );
+  // Leaves only: a route runs through containers by design, into and out of them.
+  const leaves = graph.nodes.filter((node) => !containers.has(node.id));
+  const obstacles = new Map(
+    edges.map((edge) => [
+      edge.id,
+      leaves
+        .filter((node) => node.id !== edge.sourceId && node.id !== edge.targetId)
+        .flatMap((node) => absBoxes.get(node.id) ?? []),
+    ]),
+  );
+  return straightenJogs(routes, { containerEnds, obstacles });
 }
 
 /**
@@ -147,11 +171,14 @@ export function handleAlignedRoutes(
  * ends of many routes; `straightenPolylines` removes the ones it can without
  * adding a crossing.
  */
-function straightenJogs(routes: Map<string, HandleAlignedRoute>): Map<string, HandleAlignedRoute> {
+function straightenJogs(
+  routes: Map<string, HandleAlignedRoute>,
+  options: StraightenOptions,
+): Map<string, HandleAlignedRoute> {
   const polylines = new Map(
     [...routes].map(([id, route]) => [id, [route.source, ...route.corners, route.target]] as const),
   );
-  for (const [id, points] of straightenPolylines(polylines)) {
+  for (const [id, points] of straightenPolylines(polylines, options)) {
     const route = routes.get(id)!;
     if (points === polylines.get(id)) continue;
     const corners = pruneRedundantCorners(route.source, route.target, points.slice(1, -1));

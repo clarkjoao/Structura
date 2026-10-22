@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
+import { HANDLE_PITCH } from "@/features/diagram/model/layout.constants";
 import { layout } from "./layoutEngine";
 import { fromDiagram, resizableIds } from "./fromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
@@ -489,5 +490,49 @@ describe("layout — edge labels are laid out, not painted over the result", () 
 
     expect(byId.get("labelled")?.labelBox?.text).toBe("reads");
     expect(byId.get("bare")?.labelBox).toBeUndefined();
+  });
+});
+
+describe("layout — edges attach where the canvas draws its handles", () => {
+  const leaf = (id: string, height = 80) => ({ id, parentId: null, width: 200, height });
+  const fan: LayoutGraph = {
+    nodes: [leaf("hub", 120), leaf("t0"), leaf("t1"), leaf("t2")],
+    edges: ["t0", "t1", "t2"].map((t) => ({ id: `e-${t}`, sourceId: "hub", targetId: t })),
+  };
+
+  it("bundles a side's edges HANDLE_PITCH apart around its middle", async () => {
+    const result = await layout(fan);
+    const hub = result.boxes.get("hub")!;
+    const starts = [...result.edgeRoutes.values()].map((route) => route[0]!.y - hub.y);
+    expect(starts.sort((a, b) => a - b)).toEqual([60 - HANDLE_PITCH, 60, 60 + HANDLE_PITCH]);
+  });
+
+  it("attaches every edge to one point on a side the canvas draws as one", async () => {
+    const graph: LayoutGraph = {
+      ...fan,
+      nodes: fan.nodes.map((node) =>
+        node.id === "hub" ? { ...node, singlePort: { outgoing: true } } : node,
+      ),
+    };
+    const result = await layout(graph);
+    const hub = result.boxes.get("hub")!;
+    for (const route of result.edgeRoutes.values()) {
+      expect(route[0]).toEqual({ x: hub.x + hub.width, y: hub.y + 60 });
+    }
+  });
+
+  it("reads the single points off the handles each component renders", () => {
+    const components = componentsOf([component("note", null, "note"), component("box", null)]);
+    const graph = fromDiagram(
+      components,
+      [connection("c", "box", "note")],
+      {},
+      {
+        handleSpecFor: (c) =>
+          c.type === "note" ? { incoming: "shared", outgoing: 0 } : { incoming: 32, outgoing: 32 },
+      },
+    );
+    expect(graph.nodes.find((n) => n.id === "note")?.singlePort).toEqual({ incoming: true });
+    expect(graph.nodes.find((n) => n.id === "box")?.singlePort).toBeUndefined();
   });
 });

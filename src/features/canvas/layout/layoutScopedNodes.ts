@@ -1,6 +1,7 @@
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
 import { layout } from "./layoutEngine";
 import { fromDiagram, resizableIds } from "./fromDiagram";
+import { handleSpecFor } from "../nodes/node-types/registry";
 import type { LayoutGraph } from "./contract";
 import { toAppliedLayouts, type AppliedLayout } from "./applyLayout";
 import { applyLayoutResultEdges } from "./applyLayoutResult";
@@ -94,7 +95,7 @@ export async function layoutScopedNodes(params: LayoutScopedNodesParams): Promis
   );
   const scopedConnections = connectionIds.map((id) => connections[id]).filter(Boolean);
 
-  const graph = fromDiagram(scopedComponents, scopedConnections, nodeLayouts);
+  const graph = fromDiagram(scopedComponents, scopedConnections, nodeLayouts, { handleSpecFor });
   const result = await layout(graph);
   if (result.boxes.size === 0) return false;
 
