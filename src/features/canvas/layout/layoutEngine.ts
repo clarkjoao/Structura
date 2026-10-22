@@ -38,6 +38,14 @@ import type {
  * the author runs. If the editor's auto-layout ever wants that placement, that
  * measurement is the starting point.
  *
+ * `edgeEdgeBetweenLayers` is the gap between the vertical channels edges take
+ * between two layers, and is not `spacing.edgeEdge` (that one is within a
+ * layer). ELK's default is 10, which drew neighbouring channels close enough
+ * to read as one line. Measured 2026-10-21 over the reference, generated and
+ * PixLedger diagrams: vertical segments of different edges within 10px of each
+ * other 125 → 2, for +1% area, with crossings and label overlaps unchanged. Mermaid gets the same effect from
+ * `spacing.baseValue`.
+ *
  * Options that are *not* here were removed on measurement, not on taste:
  * `layering.strategy=LONGEST_PATH` measured worse (11 crossings against 9), and
  * `layered.wrapping.strategy` breaks a linear chain into rows, which contradicts
@@ -51,6 +59,7 @@ export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
   "elk.spacing.nodeNode": "110",
   "elk.spacing.edgeNode": "40",
   "elk.spacing.edgeEdge": "25",
+  "elk.layered.spacing.edgeEdgeBetweenLayers": "20",
   "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
   "elk.padding": "[top=40,left=40,bottom=40,right=40]",
   "elk.hierarchyHandling": "INCLUDE_CHILDREN",

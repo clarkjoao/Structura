@@ -12,6 +12,8 @@ import { readElkHandleOrder } from "./elkHandleOrder";
 import { buildRenderedPolylines, measureRenderedReadability } from "./renderedEdgePath";
 import { handPlacedDiagram, handPlacedLabels, handPlacedParents } from "./hand-placed-diagram";
 import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { GENERATED_DIAGRAMS } from "./generated-diagrams";
+import { stepPolyline } from "./renderedEdgePath";
 import type { LayoutGraph } from "./contract";
 import { edgeLabelBox } from "./edgeLabelBox";
 import { handleAlignedRoutes } from "./edgeLayoutsFromLayoutResult";
@@ -281,6 +283,74 @@ describe("auto-layout path baseline", () => {
     expect(failures, failures.join("\n")).toHaveLength(0);
     expect(corners).toBeLessThanOrEqual(CORNERS_BASELINE);
   });
+});
+
+/**
+ * Neighbouring vertical channels: two edges whose vertical legs run alongside
+ * each other closer than this read as one line.
+ *
+ * Measured 2026-10-21, auto-layout path over the reference and generated
+ * diagrams: 117 pairs with ELK's default between-layer edge gap (10), 2 with
+ * `edgeEdgeBetweenLayers` at 20.
+ */
+describe("auto-layout path — vertical channels stay apart", () => {
+  const TOO_CLOSE = 10;
+  const NEAR_PARALLEL_BASELINE = 2;
+
+  interface Vertical {
+    edge: string;
+    x: number;
+    top: number;
+    bottom: number;
+  }
+
+  function verticals(id: string, points: ReadonlyArray<{ x: number; y: number }>): Vertical[] {
+    const out: Vertical[] = [];
+    for (let i = 0; i < points.length - 1; i += 1) {
+      const a = points[i]!;
+      const b = points[i + 1]!;
+      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) > 0.5) {
+        out.push({ edge: id, x: a.x, top: Math.min(a.y, b.y), bottom: Math.max(a.y, b.y) });
+      }
+    }
+    return out;
+  }
+
+  function nearParallelPairs(all: Vertical[]): number {
+    let pairs = 0;
+    for (let i = 0; i < all.length; i += 1) {
+      for (let j = i + 1; j < all.length; j += 1) {
+        const a = all[i]!;
+        const b = all[j]!;
+        if (a.edge === b.edge || Math.abs(a.x - b.x) > TOO_CLOSE) continue;
+        if (Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 2) pairs += 1;
+      }
+    }
+    return pairs;
+  }
+
+  it("keeps different edges' vertical legs at least a channel apart", async () => {
+    let pairs = 0;
+    for (const { ir } of [...REFERENCE_DIAGRAMS, ...GENERATED_DIAGRAMS]) {
+      const labels = labelsOf(ir);
+      const graph = irToLayoutGraph(ir);
+      const input: LayoutGraph = {
+        ...graph,
+        edges: graph.edges.map((edge) => {
+          const labelBox = edgeLabelBox(labels.get(edge.id));
+          return labelBox ? { ...edge, labelBox } : edge;
+        }),
+      };
+      const routes = handleAlignedRoutes(input, await layout(input));
+      pairs += nearParallelPairs(
+        [...routes].flatMap(([id, route]) =>
+          verticals(id, stepPolyline(route.source, route.target, route.corners)),
+        ),
+      );
+    }
+    console.info(`\nNear-parallel vertical legs: ${pairs}\n`);
+    expect(pairs).toBeLessThanOrEqual(NEAR_PARALLEL_BASELINE);
+  }, 60_000);
 });
 
 /**
