@@ -1,5 +1,5 @@
 import type { Point } from "@/features/diagram";
-import { segmentsIntersect } from "./layoutReadability";
+import { segmentCrossesBox, segmentsIntersect } from "./layoutReadability";
 
 /**
  * Removes the small jog an auto-laid-out edge makes right after it leaves its
@@ -30,6 +30,19 @@ import { segmentsIntersect } from "./layoutReadability";
 const MAX_STUB = 100;
 /** ...the jog after it is at most this tall... */
 const MAX_JOG = 16;
+/**
+ * ...or this tall at the border of a container.
+ *
+ * ELK does not centre a container's ports the way it centres a leaf's: it
+ * places them where its inner layout routes, so the jog onto the canvas's
+ * handle there can be fifty pixels and more. Every edge into the container
+ * then bridged at the same stub, and their bridges ran along one shared
+ * vertical line. Measured 2026-10-22 over the reference and generated diagrams
+ * (auto-layout path): vertical legs closer than 10px 4 → 2, crossings 130 →
+ * 128, corners 964 → 956, label overlaps unchanged. Without the `obstacles`
+ * guard it also put two routes through a node; with it, none.
+ */
+const MAX_CONTAINER_JOG = 200;
 /** ...and taller than this, or there is nothing to straighten. */
 const MIN_JOG = 0.01;
 
@@ -46,7 +59,7 @@ function axisOf(a: Point, b: Point): Axis | null {
  * `[start, stub end, jog end, ...]` with the jog removed, or `null` when the
  * start of this polyline is not the stub-jog-continue shape.
  */
-function straightenStart(points: readonly Point[]): Point[] | null {
+function straightenStart(points: readonly Point[], maxJog: number): Point[] | null {
   if (points.length < 5) return null;
   const [start, stubEnd, jogEnd, next] = points as [Point, Point, Point, Point];
   const axis = axisOf(start, stubEnd);
@@ -55,7 +68,7 @@ function straightenStart(points: readonly Point[]): Point[] | null {
   if (Math.hypot(stubEnd.x - start.x, stubEnd.y - start.y) > MAX_STUB) return null;
 
   const jog = Math.abs(axis === "h" ? jogEnd.y - stubEnd.y : jogEnd.x - stubEnd.x);
-  if (jog < MIN_JOG || jog > MAX_JOG) return null;
+  if (jog < MIN_JOG || jog > maxJog) return null;
   // The run after the jog has to keep going the way the stub went; a jog
   // into a U-turn is a real turn, not noise.
   const sameWay =
@@ -80,12 +93,53 @@ function straightenStart(points: readonly Point[]): Point[] | null {
   return out;
 }
 
+/** Which ends of a route sit on a container's border. */
+export interface ContainerEnds {
+  source?: boolean;
+  target?: boolean;
+}
+
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface StraightenOptions {
+  /** Per route id: which of its ends are on a container (`MAX_CONTAINER_JOG`). */
+  containerEnds?: ReadonlyMap<string, ContainerEnds>;
+  /**
+   * Per route id: the nodes it must not be moved through — the leaves that are
+   * not its own ends. A long jog moves a long run, and the run can land on a
+   * node; a short one never moves far enough to.
+   */
+  obstacles?: ReadonlyMap<string, readonly Box[]>;
+}
+
 /** The polyline with the jog at either end removed, or the polyline itself. */
-export function straightenPolyline(points: readonly Point[]): readonly Point[] {
-  let out: readonly Point[] = straightenStart(points) ?? points;
-  const reversed = straightenStart([...out].reverse());
+export function straightenPolyline(
+  points: readonly Point[],
+  containerEnds: ContainerEnds = {},
+): readonly Point[] {
+  const jogAt = (container: boolean | undefined) => (container ? MAX_CONTAINER_JOG : MAX_JOG);
+  let out: readonly Point[] = straightenStart(points, jogAt(containerEnds.source)) ?? points;
+  const reversed = straightenStart([...out].reverse(), jogAt(containerEnds.target));
   if (reversed) out = reversed.reverse();
   return out;
+}
+
+function nodesCrossed(points: readonly Point[], boxes: readonly Box[]): number {
+  let count = 0;
+  for (const box of boxes) {
+    for (let i = 0; i < points.length - 1; i += 1) {
+      if (segmentCrossesBox(points[i]!, points[i + 1]!, box)) {
+        count += 1;
+        break;
+      }
+    }
+  }
+  return count;
 }
 
 function crossings(a: readonly Point[], b: readonly Point[]): number {
@@ -100,18 +154,25 @@ function crossings(a: readonly Point[], b: readonly Point[]): number {
 
 /**
  * Straightens each polyline where that adds no crossing against the others,
- * in input order, each against the routes as already straightened.
+ * and takes it through no node it did not already cross, in input order, each
+ * against the routes as already straightened.
  *
  * @example
  * straightenPolylines(new Map([["e1", [source, ...corners, target]]]))
  */
 export function straightenPolylines(
   polylines: ReadonlyMap<string, readonly Point[]>,
+  options: StraightenOptions = {},
 ): Map<string, readonly Point[]> {
   const out = new Map(polylines);
   for (const [id, points] of polylines) {
-    const straightened = straightenPolyline(points);
+    const straightened = straightenPolyline(points, options.containerEnds?.get(id));
     if (straightened === points) continue;
+
+    const obstacles = options.obstacles?.get(id);
+    if (obstacles && nodesCrossed(straightened, obstacles) > nodesCrossed(points, obstacles)) {
+      continue;
+    }
 
     let before = 0;
     let after = 0;

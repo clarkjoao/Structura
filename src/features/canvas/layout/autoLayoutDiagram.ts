@@ -10,6 +10,7 @@ import { autoRefOptionsFor, withoutAutoRefs } from "./autoRefsFromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { fitToContentIds, fromDiagram, resizableIds } from "./fromDiagram";
 import { layout } from "./layoutEngine";
+import { handleSpecFor } from "../nodes/node-types/registry";
 
 /**
  * The whole-diagram auto-layout, in one place.
@@ -67,6 +68,7 @@ export async function planDiagramAutoLayout(
     : { components, connections: [...connections] };
   const baseGraph = fromDiagram(planned.components, planned.connections, nodeLayouts, {
     ...(measured ? { measured } : {}),
+    handleSpecFor,
   });
 
   const { graph, result, groups } = input.autoRefs

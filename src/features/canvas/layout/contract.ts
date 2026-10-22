@@ -40,6 +40,13 @@ export interface LayoutNode {
    * (a header). Absent means the engine's default padding.
    */
   topInset?: number;
+  /**
+   * Sides the canvas draws as a single point every edge on that side shares —
+   * a note's one input, a flowchart shape's one output. ELK then attaches all
+   * of them to one port there, instead of bundling them `HANDLE_PITCH` apart
+   * around a point the canvas does not draw. Absent means one slot per edge.
+   */
+  singlePort?: { incoming?: true; outgoing?: true };
 }
 
 export interface LayoutEdge {

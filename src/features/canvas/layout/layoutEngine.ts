@@ -178,20 +178,30 @@ function isAncestor(
  * handle. ELK still orders the ports to minimise crossings; `handleOrder`
  * reads that order back off the routes, as before.
  *
+ * A side the canvas draws as one point (`LayoutNode.singlePort`) gets one
+ * port, which every edge on that side shares.
+ *
  * An edge between a container and something inside it gets no ports: its end
  * is on the far side of the border from the side the port would sit on, and
  * ELK routes it better attached to the node itself.
  */
 function edgePorts(
   edges: readonly LayoutEdge[],
+  nodes: ReadonlyMap<string, LayoutNode>,
   parentOf: ReadonlyMap<string, string | null>,
 ): EdgePorts {
   const byNode = new Map<string, ElkPort[]>();
   const ends = new Map<string, { source: string; target: string }>();
-  const add = (nodeId: string, port: ElkPort) => {
+  const added = new Set<string>();
+  /** Adds the port unless a shared one is already there; returns its id. */
+  const add = (nodeId: string, id: string, side: "EAST" | "WEST"): string => {
+    if (added.has(id)) return id;
+    added.add(id);
+    const port: ElkPort = { id, width: 0, height: 0, layoutOptions: { "elk.port.side": side } };
     const list = byNode.get(nodeId);
     if (list) list.push(port);
     else byNode.set(nodeId, [port]);
+    return id;
   };
 
   for (const edge of edges) {
@@ -202,20 +212,18 @@ function edgePorts(
       ends.set(edge.id, { source: edge.sourceId, target: edge.targetId });
       continue;
     }
-    const source = `${edge.id}__out`;
-    const target = `${edge.id}__in`;
-    add(edge.sourceId, {
-      id: source,
-      width: 0,
-      height: 0,
-      layoutOptions: { "elk.port.side": "EAST" },
-    });
-    add(edge.targetId, {
-      id: target,
-      width: 0,
-      height: 0,
-      layoutOptions: { "elk.port.side": "WEST" },
-    });
+    const sharedOut = nodes.get(edge.sourceId)?.singlePort?.outgoing;
+    const sharedIn = nodes.get(edge.targetId)?.singlePort?.incoming;
+    const source = add(
+      edge.sourceId,
+      sharedOut ? `${edge.sourceId}__shared_out` : `${edge.id}__out`,
+      "EAST",
+    );
+    const target = add(
+      edge.targetId,
+      sharedIn ? `${edge.targetId}__shared_in` : `${edge.id}__in`,
+      "WEST",
+    );
     ends.set(edge.id, { source, target });
   }
   return { byNode, ends };
@@ -321,7 +329,7 @@ export async function layoutElkGraph(
   for (const [parentId, children] of childrenByParent) {
     for (const child of children) parentOf.set(child.id, parentId);
   }
-  const ports = edgePorts(edges, parentOf);
+  const ports = edgePorts(edges, new Map(nodes.map((node) => [node.id, node])), parentOf);
 
   const elkEdges: ElkExtendedEdge[] = edges.map((edge) => ({
     id: edge.id,

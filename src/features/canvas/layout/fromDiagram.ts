@@ -18,6 +18,7 @@ import type { Component } from "@/features/diagram/model/component.types";
 import type { Connection } from "@/features/diagram/model/connection.types";
 import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import { computeApiGroupSize } from "@/features/diagram/utils/api-group-size";
+import type { NodeHandleSpec } from "../nodes/node-types/handle-spec";
 import type { LayoutGraph, LayoutNode } from "./contract";
 import { edgeLabelBox } from "./edgeLabelBox";
 import { isApiGroupComponent } from "@/features/diagram/model/component.guards";
@@ -30,6 +31,24 @@ export interface FromDiagramOptions {
   rootIds?: readonly string[];
   /** Sizes read off the rendered canvas, when the caller has them. */
   measured?: ReadonlyMap<string, { width: number; height: number }>;
+  /**
+   * The handles a component renders (`handleSpecFor`), so a side drawn as one
+   * point gets one port. Passed in rather than imported: the node registry
+   * sits on the React side, and the layout path stays clear of it. Omitted,
+   * every side has a slot per edge.
+   */
+  handleSpecFor?: (component: Component) => NodeHandleSpec;
+}
+
+/** The sides `spec` draws as one point, or `undefined` when there are none. */
+function singlePortOf(spec: NodeHandleSpec): LayoutNode["singlePort"] {
+  const incoming = spec.incoming === "shared" || spec.incoming === 1;
+  const outgoing = spec.outgoing === 1;
+  if (!incoming && !outgoing) return undefined;
+  return {
+    ...(incoming && { incoming: true as const }),
+    ...(outgoing && { outgoing: true as const }),
+  };
 }
 
 /**
@@ -187,6 +206,8 @@ export function fromDiagram(
     const { width, height } = sizeOf(component, nodeLayouts, options.measured, components);
     const node: LayoutNode = { id, parentId: component.parentId ?? null, width, height };
     if (isPanelType(component.type)) node.topInset = panelTopInset(component.description);
+    const singlePort = options.handleSpecFor && singlePortOf(options.handleSpecFor(component));
+    if (singlePort) node.singlePort = singlePort;
     nodes.push(node);
   }
 

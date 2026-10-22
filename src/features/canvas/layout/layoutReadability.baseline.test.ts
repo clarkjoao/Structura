@@ -293,12 +293,14 @@ describe("auto-layout path baseline", () => {
  *
  * Measured 2026-10-21, auto-layout path over the reference and generated
  * diagrams: 117 pairs with ELK's default between-layer edge gap (10), 2 with
- * `edgeEdgeBetweenLayers` at 20. 4 since 2026-10-22, when ELK ports started
- * bundling each side's edges around its middle (`HANDLE_PITCH`).
+ * `edgeEdgeBetweenLayers` at 20. 2026-10-22: 4 when ELK ports started
+ * bundling each side's edges around its middle (`HANDLE_PITCH`), all of them
+ * bridges onto a container's handles; back to 2 once a container end may
+ * straighten a long jog (`MAX_CONTAINER_JOG`).
  */
 describe("auto-layout path — vertical channels stay apart", () => {
   const TOO_CLOSE = 10;
-  const NEAR_PARALLEL_BASELINE = 4;
+  const NEAR_PARALLEL_BASELINE = 2;
 
   interface Vertical {
     edge: string;

@@ -96,3 +96,18 @@ describe("edgeLayoutsFromLayoutResult — labels", () => {
     }
   });
 });
+
+describe("handleAlignedRoutes — a side drawn as one point", () => {
+  it("ends every edge on that one point, where the canvas draws it", async () => {
+    const leaf = (id: string) => ({ id, parentId: null, width: 180, height: 80 });
+    const graph: LayoutGraph = {
+      nodes: [leaf("a"), leaf("b"), leaf("c"), { ...leaf("note"), singlePort: { incoming: true } }],
+      edges: ["a", "b", "c"].map((id) => ({ id: `${id}-note`, sourceId: id, targetId: "note" })),
+    };
+    const result = await layout(graph);
+    const note = result.boxes.get("note")!;
+    for (const route of handleAlignedRoutes(graph, result).values()) {
+      expect(route.target).toEqual({ x: note.x, y: note.y + 40 });
+    }
+  });
+});

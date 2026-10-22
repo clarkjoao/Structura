@@ -268,7 +268,7 @@ function centreOf(box: Box): Point {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
-function segmentCrossesBox(p1: Point, p2: Point, box: Box): boolean {
+export function segmentCrossesBox(p1: Point, p2: Point, box: Box): boolean {
   const corners: Point[] = [
     { x: box.x, y: box.y },
     { x: box.x + box.width, y: box.y },

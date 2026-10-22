@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { layout } from "../layout/layoutEngine";
 import { fitToContentIds, fromDiagram, resizableIds } from "../layout/fromDiagram";
+import { handleSpecFor } from "../nodes/node-types/registry";
 import { fitContainersToChildren, measuredSizesOf, toAppliedLayouts } from "../layout/applyLayout";
 import { applyLayoutResultEdges } from "../layout/applyLayoutResult";
 import {
@@ -34,6 +35,7 @@ export function usePanelChildLayout() {
         const graph = fromDiagram(components, connections, nodeLayouts, {
           rootIds: [panelId],
           measured: measuredSizesOf(getNodes()),
+          handleSpecFor,
         });
         if (graph.nodes.length <= 1) {
           toast.info(t("autoLayout.nothingToLayout"));
