@@ -35,6 +35,7 @@ import { EdgeSegmentHandles } from "./components/EdgeSegmentHandles";
 import { CornerHandles, GhostCorner } from "./components/CornerHandles";
 import { EdgeHitArea } from "./components/EdgeHitArea";
 import { EdgeToolbar } from "./components/EdgeToolbar";
+import { edgeLabelBox } from "../layout/edgeLabelBox";
 import { EdgeLabel } from "./components/EdgeLabel";
 import { EdgeParticle } from "./overlays/EdgeParticle";
 import { EdgePayloadOverlay } from "./overlays/EdgePayloadOverlay";
@@ -362,6 +363,8 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
       {selected && elementsSelectable && (
         <EdgeToolbar
           anchor={labelPoint}
+          // The label is drawn one size at every zoom, centred on the same point.
+          labelSize={edgeData.label ? edgeLabelBox(edgeData.label, edgeData.technology) : undefined}
           canReset={isEditable && points.length > 0}
           onReset={() => activeDiagramId && resetEdgeControlPoints(activeDiagramId, connectionId)}
           onDelete={() => removeConnection(connectionId)}

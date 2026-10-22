@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { placeFloatingToolbar } from "./floatingToolbarPlacement";
+import { placeFloatingToolbar, toScreenRect } from "./floatingToolbarPlacement";
 
 const viewport = { width: 1000, height: 700 };
 const toolbar = { width: 200, height: 36 };
@@ -54,5 +54,33 @@ describe("placeFloatingToolbar", () => {
     });
     expect(p.x).toBe(1000 - 200 - 8);
     expect(p.y).toBe(700 - 36 - 8);
+  });
+});
+
+describe("toScreenRect", () => {
+  it("maps a flow box through the viewport transform", () => {
+    expect(toScreenRect({ x: 100, y: 50, width: 20, height: 10 }, [5, 7, 2])).toEqual({
+      x: 205,
+      y: 107,
+      width: 40,
+      height: 20,
+    });
+  });
+
+  it("keeps clear of an edge label drawn at one size around the anchor", () => {
+    // A point anchor with a 120x26 label on it: the toolbar goes above the label,
+    // not on top of it, at any zoom.
+    const rect = toScreenRect({ x: 100, y: 200, width: 0, height: 0 }, [0, 0, 0.5], {
+      width: 120,
+      height: 26,
+    });
+    expect(rect).toEqual({ x: -10, y: 87, width: 120, height: 26 });
+    const placement = placeFloatingToolbar({
+      target: rect,
+      toolbar: { width: 300, height: 30 },
+      viewport: { width: 1000, height: 800 },
+    });
+    expect(placement.side).toBe("top");
+    expect(placement.y + 30).toBeLessThanOrEqual(rect.y);
   });
 });

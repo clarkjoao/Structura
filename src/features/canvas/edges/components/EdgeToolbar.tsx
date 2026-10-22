@@ -15,6 +15,8 @@ import { RouteThroughRefButton } from "@/features/canvas/shared/RouteThroughRefB
 
 interface EdgeToolbarProps {
   anchor: Point;
+  /** The label's size on screen, centred on `anchor`; the toolbar sits clear of it. */
+  labelSize?: { width: number; height: number };
   canReset: boolean;
   onReset: () => void;
   onDelete: () => void;
@@ -34,6 +36,7 @@ interface EdgeToolbarProps {
 /** Floating actions anchored above a selected edge. */
 export function EdgeToolbar({
   anchor,
+  labelSize,
   canReset,
   onReset,
   onDelete,
@@ -52,7 +55,10 @@ export function EdgeToolbar({
   const hasStyleControls = !!onStyleChange;
 
   return (
-    <FloatingSelectionToolbar flowRect={{ x: anchor.x, y: anchor.y, width: 0, height: 0 }}>
+    <FloatingSelectionToolbar
+      flowRect={{ x: anchor.x, y: anchor.y, width: 0, height: 0 }}
+      {...(labelSize ? { screenClearance: labelSize } : {})}
+    >
       <div
         className="flex items-center gap-0.5 rounded-md border border-border bg-card px-1 py-0.5 shadow-lg"
         onPointerDown={(e) => e.stopPropagation()}
