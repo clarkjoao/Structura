@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDiagramStore } from "@/features/diagram";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { REFERENCE_DIAGRAMS } from "@/features/canvas/layout/reference-diagrams";
+import { GENERATED_DIAGRAMS } from "@/features/canvas/layout/generated-diagrams";
 import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
 import { applyIRToDiagram } from "./apply-ir";
 import type { DiagramIR } from "./ir.types";
@@ -66,6 +67,7 @@ function makeFakeStore(viewport: { x: number; y: number; zoom: number }) {
         waypoints.push({ connectionId, points });
       },
     ),
+    setEdgeLabelOffset: vi.fn(),
     resetEdgeControlPoints: vi.fn(),
     _handleOrders: handleOrders,
     _waypoints: waypoints,
@@ -196,8 +198,8 @@ describe("applyIRToDiagram — into an empty diagram", () => {
   }
 
   it("lays the result out as the auto-layout would, references included", async () => {
-    // AWS ECS Fargate: the reference diagram where the auto-layout keeps references.
-    const ir = REFERENCE_DIAGRAMS[1].ir;
+    // B-run2: a generated diagram where the auto-layout keeps references.
+    const ir = GENERATED_DIAGRAMS.find((diagram) => diagram.name.startsWith("B-run2"))!.ir;
     const { store, diagramId } = emptyDiagramStore();
 
     const applied = await applyIRToDiagram(ir);
@@ -208,6 +210,13 @@ describe("applyIRToDiagram — into an empty diagram", () => {
     );
     expect(applied.referenceIds.length).toBeGreaterThan(0);
     expect(refs.map((ref) => ref.id).sort()).toEqual([...applied.referenceIds].sort());
+    // Each reference is part of the drawing: at least two connections end on it.
+    for (const ref of refs) {
+      const uses = Object.values(diagram.snapshot.connections).filter(
+        (connection) => connection.targetId === ref.id || connection.sourceId === ref.id,
+      );
+      expect(uses.length, ref.id).toBeGreaterThanOrEqual(2);
+    }
     const withWaypoints = Object.values(diagram.edgeLayouts).filter(
       (edgeLayout) => (edgeLayout.points?.length ?? 0) > 0,
     );

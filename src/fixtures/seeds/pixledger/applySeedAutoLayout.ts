@@ -76,7 +76,13 @@ function seedEdgeLayouts(
       x: Math.round(point.x * 100) / 100,
       y: Math.round(point.y * 100) / 100,
     }));
-    if (points.length > 0) out[connectionId] = { points };
+    if (points.length === 0) continue;
+    out[connectionId] = {
+      points,
+      ...(edgeLayout.labelOffset !== undefined
+        ? { labelOffset: Math.round(edgeLayout.labelOffset * 10000) / 10000 }
+        : {}),
+    };
   }
   return out;
 }

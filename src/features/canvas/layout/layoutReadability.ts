@@ -56,7 +56,14 @@ const LABEL_HEIGHT = 20;
 interface WalkedGraph {
   boxes: Map<string, Box>;
   parentOf: Map<string, string | null>;
-  edges: Array<{ id: string; source: string; target: string; points: Point[] }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    points: Point[];
+    /** Centre of the edge's label where ELK placed it, when it has one. */
+    labelCenter?: Point;
+  }>;
 }
 
 function absoluteBoxes(graph: ElkNode): {
@@ -158,7 +165,23 @@ function walkGraph(graph: ElkNode): WalkedGraph {
     }
     if (points.length < 2) continue;
 
-    edges.push({ id: edge.id, source: sourceNode, target: targetNode, points });
+    // Labels share the edge's coordinate space: the same anchor applies.
+    const label = edge.labels?.[0];
+    const labelCenter =
+      label?.x !== undefined && label.y !== undefined
+        ? {
+            x: label.x + (label.width ?? 0) / 2 + anchor.x,
+            y: label.y + (label.height ?? 0) / 2 + anchor.y,
+          }
+        : undefined;
+
+    edges.push({
+      id: edge.id,
+      source: sourceNode,
+      target: targetNode,
+      points,
+      ...(labelCenter && { labelCenter }),
+    });
   }
 
   return { boxes, parentOf, edges };
@@ -444,11 +467,7 @@ export type { Box as ReadabilityBox, Point as ReadabilityPoint };
  * application and the rendered-path metric share one implementation of the
  * correction instead of each repeating it.
  */
-export function readLaidOutGraph(graph: ElkNode): {
-  boxes: Map<string, Box>;
-  parentOf: Map<string, string | null>;
-  edges: Array<{ id: string; source: string; target: string; points: Point[] }>;
-} {
+export function readLaidOutGraph(graph: ElkNode): WalkedGraph {
   return walkGraph(graph);
 }
 

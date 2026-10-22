@@ -6,6 +6,7 @@ import { absoluteBoxesFromLayout } from "./absoluteBoxesFromLayout";
 import { alignElkRouteToHandles } from "./alignElkRouteToHandles";
 import { handleAnchor } from "./renderedEdgePath";
 import { straightenPolylines } from "./straightenRoutes";
+import { getClosestOffsetOnPath } from "../edges/geometry/projection";
 import { Position } from "@xyflow/react";
 import { defaultOrthogonalCorners, pruneRedundantCorners } from "../edges/geometry/orthogonal";
 
@@ -63,12 +64,26 @@ export function edgeLayoutsFromLayoutResult(
     const storeEdgeId = edgeIdOf(edge.id);
     if (storeEdgeId === undefined) continue;
     const route = routes.get(edge.id);
+    // The label goes where ELK reserved its room, as the offset along the drawn
+    // path closest to it: the path midpoint the canvas defaults to can be a
+    // whole layer away, on top of another label.
+    const labelCenter = result.labelCenters?.get(edge.id);
     layouts[storeEdgeId] = {
       points: (route?.corners ?? []).map((point) => ({
         id: generateId("cp"),
         x: point.x + waypointOffset.x,
         y: point.y + waypointOffset.y,
       })),
+      ...(route && labelCenter
+        ? {
+            labelOffset: getClosestOffsetOnPath(
+              route.source,
+              route.target,
+              route.corners,
+              labelCenter,
+            ),
+          }
+        : {}),
     };
   }
   return layouts;

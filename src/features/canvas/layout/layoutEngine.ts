@@ -274,16 +274,19 @@ export async function layout(
   // lowest-common-ancestor correction and is tested in `layoutReadability.test.ts`.
   // Do not re-derive the offset here.
   const edgeRoutes = new Map<string, LayoutPoint[]>();
+  const labelCenters = new Map<string, LayoutPoint>();
   for (const edge of readLaidOutGraph(laidOut).edges) {
     edgeRoutes.set(
       edge.id,
       edge.points.map((point) => ({ x: point.x, y: point.y })),
     );
+    if (edge.labelCenter) labelCenters.set(edge.id, edge.labelCenter);
   }
 
   return {
     boxes,
     edgeRoutes,
+    labelCenters,
     handleOrder: readElkHandleOrder(laidOut),
     bounds: { width: laidOut.width ?? 0, height: laidOut.height ?? 0 },
   };

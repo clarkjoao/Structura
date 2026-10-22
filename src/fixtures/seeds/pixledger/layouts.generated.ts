@@ -189,7 +189,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1332,
             "y": 141.67
           }
-        ]
+        ],
+        "labelOffset": 0.4887
       },
       "pl-ctx-r2": {
         "points": [
@@ -203,7 +204,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 575,
             "y": 382.75
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-ctx-r3": {
         "points": [
@@ -217,7 +219,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1702,
             "y": 430.67
           }
-        ]
+        ],
+        "labelOffset": 0.6852
       },
       "pl-ctx-r4": {
         "points": [
@@ -231,7 +234,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1722,
             "y": 234.5
           }
-        ]
+        ],
+        "labelOffset": 0.575
       },
       "pl-ctx-r5": {
         "points": [
@@ -255,7 +259,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2586,
             "y": 147.75
           }
-        ]
+        ],
+        "labelOffset": 0.5103
       },
       "pl-ctx-r6": {
         "points": [
@@ -269,7 +274,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2350,
             "y": 486
           }
-        ]
+        ],
+        "labelOffset": 0.5163
       },
       "pl-ctx-r7": {
         "points": [
@@ -283,7 +289,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3113,
             "y": 169.58
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-ctx-r8": {
         "points": [
@@ -307,7 +314,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1332,
             "y": 190.33
           }
-        ]
+        ],
+        "labelOffset": 0.5207
       },
       "pl-ctx-r9": {
         "points": [
@@ -321,7 +329,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1064,
             "y": 474.33
           }
-        ]
+        ],
+        "labelOffset": 0.5446
       },
       "pl-ctx-r10": {
         "points": [
@@ -335,7 +344,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1044,
             "y": 656.5
           }
-        ]
+        ],
+        "labelOffset": 0.6886
       },
       "pl-ctx-r11": {
         "points": [
@@ -359,7 +369,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2586,
             "y": 191.42
           }
-        ]
+        ],
+        "labelOffset": 0.4259
       }
     }
   },
@@ -640,7 +651,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 754,
             "y": 1066.21
           }
-        ]
+        ],
+        "labelOffset": 0.4828
       },
       "pl-hub-c-merchant": {
         "points": [
@@ -664,7 +676,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1316,
             "y": 1173
           }
-        ]
+        ],
+        "labelOffset": 0.1854
       },
       "pl-hub-c-dict": {
         "points": [
@@ -678,7 +691,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3460.5,
             "y": 1216.75
           }
-        ]
+        ],
+        "labelOffset": 0.557
       },
       "pl-hub-c-spi": {
         "points": [
@@ -692,7 +706,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1064,
             "y": 660
           }
-        ]
+        ],
+        "labelOffset": 0.2373
       },
       "pl-hub-c-cache": {
         "points": [
@@ -716,7 +731,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3690.5,
             "y": 917.25
           }
-        ]
+        ],
+        "labelOffset": 0.6962
       },
       "pl-hub-c-risk": {
         "points": [
@@ -730,7 +746,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 4385,
             "y": 573.67
           }
-        ]
+        ],
+        "labelOffset": 0.7726
       },
       "pl-hub-c-worker-risk": {
         "points": [
@@ -764,7 +781,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 4385,
             "y": 545.33
           }
-        ]
+        ],
+        "labelOffset": 0.746
       },
       "pl-hub-c-merchant-wh": {
         "points": [
@@ -788,7 +806,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1316,
             "y": 602
           }
-        ]
+        ],
+        "labelOffset": 0.1911
       },
       "pl-hub-c-queue": {
         "points": [
@@ -812,7 +831,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3710.5,
             "y": 360.5
           }
-        ]
+        ],
+        "labelOffset": 0.4418
       },
       "pl-hub-c-worker": {
         "points": [
@@ -826,7 +846,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3690.5,
             "y": 334.5
           }
-        ]
+        ],
+        "labelOffset": 0.4387
       },
       "pl-hub-c-ledger": {
         "points": [
@@ -840,7 +861,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3500.5,
             "y": 1108.75
           }
-        ]
+        ],
+        "labelOffset": 0.8899
       },
       "pl-hub-c-dict-spi": {
         "points": [
@@ -864,7 +886,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1044,
             "y": 1094.54
           }
-        ]
+        ],
+        "labelOffset": 0.8114
       },
       "pl-hub-c-cob-cache": {
         "points": [
@@ -888,7 +911,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3710.5,
             "y": 943.25
           }
-        ]
+        ],
+        "labelOffset": 0.4685
       },
       "pl-hub-c-ep-guard": {
         "points": [
@@ -902,7 +926,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1877.5,
             "y": 880
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-hub-c-guard-svc": {
         "points": [
@@ -916,7 +941,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2450.5,
             "y": 880
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-hub-c-svc-api": {
         "points": [
@@ -930,7 +956,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2884.5,
             "y": 1115
           }
-        ]
+        ],
+        "labelOffset": 0.699
       },
       "pl-hub-c-svc-cache": {
         "points": [
@@ -944,7 +971,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3032.5,
             "y": 880
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-hub-c-cache-redis": {
         "points": [
@@ -958,7 +986,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3690.5,
             "y": 891.25
           }
-        ]
+        ],
+        "labelOffset": 0.484
       },
       "pl-hub-c-svc-pub": {
         "points": [
@@ -972,7 +1001,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2884.5,
             "y": 164.75
           }
-        ]
+        ],
+        "labelOffset": 0.8399
       },
       "pl-hub-c-pub-queue": {
         "points": [
@@ -986,7 +1016,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 3690.5,
             "y": 308.5
           }
-        ]
+        ],
+        "labelOffset": 0.3561
       }
     }
   },
@@ -1124,7 +1155,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 558.25,
             "y": 667.5
           }
-        ]
+        ],
+        "labelOffset": 0.428
       },
       "pl-led-c2": {
         "points": [
@@ -1138,7 +1170,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1010.5,
             "y": 701
           }
-        ]
+        ],
+        "labelOffset": 0.506
       },
       "pl-led-c3": {
         "points": [
@@ -1162,7 +1195,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1270.5,
             "y": 496.83
           }
-        ]
+        ],
+        "labelOffset": 0.4971
       },
       "pl-led-c4": {
         "points": [
@@ -1186,7 +1220,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1270.5,
             "y": 462.17
           }
-        ]
+        ],
+        "labelOffset": 0.5035
       },
       "pl-led-c5": {
         "points": [
@@ -1200,7 +1235,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1693,
             "y": 265.08
           }
-        ]
+        ],
+        "labelOffset": 0.8431
       },
       "pl-led-c6": {
         "points": [
@@ -1214,7 +1250,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1693,
             "y": 451.58
           }
-        ]
+        ],
+        "labelOffset": 0.8422
       }
     }
   },
@@ -1353,7 +1390,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 634,
             "y": 481.92
           }
-        ]
+        ],
+        "labelOffset": 0.2312
       },
       "pl-risk-c2": {
         "points": [
@@ -1367,7 +1405,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 634,
             "y": 437.58
           }
-        ]
+        ],
+        "labelOffset": 0.2312
       },
       "pl-risk-c3": {
         "points": [
@@ -1381,7 +1420,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1189,
             "y": 459.75
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-risk-c4": {
         "points": [
@@ -1395,7 +1435,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1752.5,
             "y": 459.75
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-risk-c5": {
         "points": [
@@ -1409,7 +1450,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1601.5,
             "y": 245.75
           }
-        ]
+        ],
+        "labelOffset": 0.6731
       },
       "pl-risk-c6": {
         "points": [
@@ -1423,7 +1465,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1601.5,
             "y": 551.75
           }
-        ]
+        ],
+        "labelOffset": 0.846
       }
     }
   },
@@ -1591,7 +1634,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 560.25,
             "y": 667.5
           }
-        ]
+        ],
+        "labelOffset": 0.4288
       },
       "pl-mer-c2": {
         "points": [
@@ -1605,7 +1649,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1101.5,
             "y": 667.5
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-mer-c3": {
         "points": [
@@ -1629,7 +1674,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2167,
             "y": 693.5
           }
-        ]
+        ],
+        "labelOffset": 0.8512
       },
       "pl-mer-c4": {
         "points": [
@@ -1653,7 +1699,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2167,
             "y": 871.5
           }
-        ]
+        ],
+        "labelOffset": 0.8518
       },
       "pl-mer-c5": {
         "points": [
@@ -1667,7 +1714,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1540.5,
             "y": 447
           }
-        ]
+        ],
+        "labelOffset": 0.6822
       },
       "pl-mer-c6": {
         "points": [
@@ -1681,7 +1729,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1520.5,
             "y": 210
           }
-        ]
+        ],
+        "labelOffset": 0.7723
       },
       "pl-mer-c7": {
         "points": [
@@ -1695,7 +1744,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1686.25,
             "y": 667.5
           }
-        ]
+        ],
+        "labelOffset": 0.4751
       },
       "pl-mer-c8": {
         "points": [
@@ -1709,7 +1759,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 2167,
             "y": 515.5
           }
-        ]
+        ],
+        "labelOffset": 0.6996
       }
     }
   },
@@ -2040,7 +2091,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 588.5,
             "y": 229
           }
-        ]
+        ],
+        "labelOffset": 0.5089
       },
       "pl-dpl-c2": {
         "points": [
@@ -2064,7 +2116,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 588.5,
             "y": 419.33
           }
-        ]
+        ],
+        "labelOffset": 0.5324
       },
       "pl-dpl-c3": {
         "points": [
@@ -2078,7 +2131,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 406.5,
             "y": 454.67
           }
-        ]
+        ],
+        "labelOffset": 0.5097
       },
       "pl-dpl-c4": {
         "points": [
@@ -2102,7 +2156,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 588.5,
             "y": 845
           }
-        ]
+        ],
+        "labelOffset": 0.5335
       },
       "pl-dpl-c5": {
         "points": [
@@ -2126,7 +2181,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 588.5,
             "y": 645
           }
-        ]
+        ],
+        "labelOffset": 0.5186
       }
     }
   },
@@ -2273,7 +2329,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 414,
             "y": 457
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-dpr-c2": {
         "points": [
@@ -2287,7 +2344,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 894,
             "y": 457
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-dpr-c3": {
         "points": [
@@ -2301,7 +2359,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1386,
             "y": 457
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-dpr-c4": {
         "points": [
@@ -2315,7 +2374,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1782,
             "y": 357
           }
-        ]
+        ],
+        "labelOffset": 0.6135
       },
       "pl-dpr-c5": {
         "points": [
@@ -2329,7 +2389,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1782,
             "y": 557
           }
-        ]
+        ],
+        "labelOffset": 0.6135
       },
       "pl-dpr-c6": {
         "points": [
@@ -2343,7 +2404,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1762,
             "y": 157
           }
-        ]
+        ],
+        "labelOffset": 0.7341
       },
       "pl-dpr-c7": {
         "points": [
@@ -2357,7 +2419,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1762,
             "y": 757
           }
-        ]
+        ],
+        "labelOffset": 0.7341
       }
     }
   },
@@ -2528,7 +2591,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 837,
             "y": 157
           }
-        ]
+        ],
+        "labelOffset": 0.5
       },
       "pl-dpm-c2": {
         "points": [
@@ -2542,7 +2606,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 558.75,
             "y": 741
           }
-        ]
+        ],
+        "labelOffset": 0.4724
       },
       "pl-dpm-c3": {
         "points": [
@@ -2556,7 +2621,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1202.5,
             "y": 811.75
           }
-        ]
+        ],
+        "labelOffset": 0.4317
       },
       "pl-dpm-c4": {
         "points": [
@@ -2580,7 +2646,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1202.5,
             "y": 1011.75
           }
-        ]
+        ],
+        "labelOffset": 0.4951
       },
       "pl-dpm-c5": {
         "points": [
@@ -2594,7 +2661,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1202.5,
             "y": 626.75
           }
-        ]
+        ],
+        "labelOffset": 0.413
       },
       "pl-dpm-c6": {
         "points": [
@@ -2608,7 +2676,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
             "x": 1202.5,
             "y": 596.75
           }
-        ]
+        ],
+        "labelOffset": 0.4368
       }
     }
   },
