@@ -3,6 +3,7 @@ import "@/features/elements/bootstrap";
 import type { Component } from "@/features/diagram/model/component.types";
 import type { Connection } from "@/features/diagram/model/connection.types";
 import {
+  AUTO_REF_MIN_EDGES,
   chooseAutoRefs,
   isBetterLayout,
   planAutoRefs,
@@ -43,6 +44,7 @@ const HUB: LayoutGraph = {
 
 describe("planAutoRefs", () => {
   it("gives a hub one reference per consumer container, not one per edge", () => {
+    // p2 uses the hub once: too few for a reference, so `ch` stays on the original.
     expect(planAutoRefs(HUB, OPTIONS)).toEqual([
       [
         {
@@ -52,15 +54,52 @@ describe("planAutoRefs", () => {
           sourceIds: ["a", "b"],
           edgeIds: ["ah", "bh"],
         },
-        { refId: "ref:h:p2", originalId: "h", parentId: "p2", sourceIds: ["c"], edgeIds: ["ch"] },
+      ],
+    ]);
+  });
+
+  it("never makes a reference with fewer than two edges", () => {
+    for (const groups of planAutoRefs(HUB, OPTIONS)) {
+      for (const group of groups) {
+        expect(group.edgeIds.length, group.refId).toBeGreaterThanOrEqual(AUTO_REF_MIN_EDGES);
+      }
+    }
+  });
+
+  it("gathers lone edges from inner containers into a reference further out", () => {
+    // q holds q1 and q2, each using the hub once: one reference in q, for both.
+    const graph: LayoutGraph = {
+      nodes: [
+        node("pq"),
+        node("pq1", "pq"),
+        node("pq2", "pq"),
+        node("h"),
+        node("x", "pq1"),
+        node("y", "pq2"),
+        node("d"),
+      ],
+      edges: [edge("xh", "x", "h"), edge("yh", "y", "h"), edge("dh", "d", "h")],
+    };
+    expect(planAutoRefs(graph, OPTIONS)).toEqual([
+      [
+        {
+          refId: "ref:h:pq",
+          originalId: "h",
+          parentId: "pq",
+          sourceIds: ["x", "y"],
+          edgeIds: ["xh", "yh"],
+        },
       ],
     ]);
   });
 
   it("leaves the busiest container on the original when nothing uses it from beside it", () => {
-    const graph = { ...HUB, edges: HUB.edges.filter((e) => e.id !== "dh") };
+    const graph: LayoutGraph = {
+      nodes: [...HUB.nodes, node("c2", "p2")],
+      edges: [...HUB.edges.filter((e) => e.id !== "dh"), edge("c2h", "c2", "h")],
+    };
     const [groups] = planAutoRefs(graph, OPTIONS);
-    // Used from two containers is still a hub; p1, the busier, stays on the original.
+    // p1 and p2 use it twice each and nothing beside it does: p1 stays on the original.
     expect(groups?.map((g) => g.parentId)).toEqual(["p2"]);
   });
 

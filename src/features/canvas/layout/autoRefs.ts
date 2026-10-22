@@ -23,6 +23,12 @@ import { stepPolyline } from "./renderedEdgePath";
 export const AUTO_REF_MIN_FAN_IN = 4;
 /** ...or by things in at least this many different containers. */
 export const AUTO_REF_MIN_CONSUMER_PARENTS = 2;
+/**
+ * A reference stands for at least this many edges. One with a single edge is
+ * a box hanging off one line, read as a stray copy rather than as part of the
+ * drawing; that edge stays on the original instead.
+ */
+export const AUTO_REF_MIN_EDGES = 2;
 /** Hubs tried per run, busiest first: each trial is one more ELK run. */
 export const AUTO_REF_MAX_TRIALS = 6;
 /** A route this much shorter in total wins a tie on crossings and overlaps. */
@@ -54,8 +60,10 @@ export interface AutoRefPlanOptions {
 
 /**
  * The references each hub would get, grouped by hub. One reference per hub
- * and consumer container, never one per edge; the original always keeps at
- * least one edge, so it never ends up used by nothing but its own copies.
+ * and consumer container, never one per edge, and only where that container
+ * has at least `AUTO_REF_MIN_EDGES` edges into the hub; the original always
+ * keeps at least one edge, so it never ends up used by nothing but its own
+ * copies.
  */
 export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): AutoRefGroup[][] {
   const parentOf = new Map(graph.nodes.map((node) => [node.id, node.parentId] as const));
@@ -89,6 +97,21 @@ export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): A
       byParent.set(refParent, list);
     }
 
+    // A container with too few edges for a reference of its own hands them to
+    // the next container out, where they may join others; once that is the
+    // original's own container, or there is nowhere further out, they stay on
+    // the original.
+    for (let short = shortGroup(byParent); short !== undefined; short = shortGroup(byParent)) {
+      const [parentId, grouped] = short;
+      byParent.delete(parentId);
+      const outer = parentId === null ? home : options.refParentFor(parentOf.get(parentId) ?? null);
+      if (outer === home) {
+        keepsAnEdge = true;
+        continue;
+      }
+      byParent.set(outer, [...(byParent.get(outer) ?? []), ...grouped]);
+    }
+
     const groups = [...byParent.entries()].map(([parentId, grouped]) => ({
       refId: options.refIdFor(targetId, parentId),
       originalId: targetId,
@@ -109,6 +132,16 @@ export function planAutoRefs(graph: LayoutGraph, options: AutoRefPlanOptions): A
 
   hubs.sort((a, b) => b.fanIn - a.fanIn);
   return hubs.map((hub) => hub.groups);
+}
+
+/** A container whose edges are too few for a reference, innermost-first by insertion. */
+function shortGroup<K>(
+  byParent: Map<K, LayoutGraph["edges"]>,
+): [K, LayoutGraph["edges"]] | undefined {
+  for (const entry of byParent) {
+    if (entry[1].length < AUTO_REF_MIN_EDGES) return entry;
+  }
+  return undefined;
 }
 
 /** The graph with each group's reference added and its edges ending there. */
