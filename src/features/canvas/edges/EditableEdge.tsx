@@ -22,7 +22,9 @@ import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useEdgeLabelReveal } from "../contexts/EdgeLabelRevealContext";
 import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
-import { buildStepPath } from "./geometry/orthogonal";
+import { buildStepPath, stepPathPoints } from "./geometry/orthogonal";
+import { buildPathWithHops } from "./geometry/lineHops";
+import { useLineHops } from "../contexts/LineHopsContext";
 import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/projection";
 import { useControlPoints } from "./interaction/useControlPoints";
 import { useSegmentDrag } from "./interaction/useSegmentDrag";
@@ -160,9 +162,22 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   const [hovered, setHovered] = useState(false);
 
+  // The points the step path visits, published so the canvas can find where it
+  // crosses other step edges; it hops over the ones it crosses horizontally.
+  const stepPoints = useMemo(
+    () => (isStep ? stepPathPoints(source, target, stepCorners) : null),
+    [isStep, source, target, stepCorners],
+  );
+  const lineHops = useLineHops(id, stepPoints);
+
   const { edgePath } = useMemo(() => {
     if (isStep) {
-      return { edgePath: buildStepPath(source, target, stepCorners) };
+      return {
+        edgePath:
+          stepPoints && lineHops.length > 0
+            ? buildPathWithHops(stepPoints, lineHops)
+            : buildStepPath(source, target, stepCorners),
+      };
     }
     if (isCurve) {
       return { edgePath: buildEditableEdgePath(source, target, points, "catmull-rom") };
@@ -185,6 +200,8 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
     target,
     points,
     stepCorners,
+    stepPoints,
+    lineHops,
     edgeStyle,
     sourceX,
     sourceY,
