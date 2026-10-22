@@ -18,77 +18,77 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-ctx-payer": {
         "elementId": "pl-ctx-payer",
         "x": 774,
-        "y": 86.33333333333333,
-        "width": 180,
-        "height": 80
+        "y": 89.99999999999997,
+        "width": 260,
+        "height": 85
       },
       "pl-ctx-merchant": {
         "elementId": "pl-ctx-merchant",
-        "x": 196,
-        "y": 309.83333333333337,
-        "width": 180,
-        "height": 80
+        "x": 116,
+        "y": 340.24999999999994,
+        "width": 260,
+        "height": 85
       },
       "pl-ctx-hub": {
         "elementId": "pl-ctx-hub",
-        "x": 1352,
-        "y": 119.83333333333334,
-        "width": 180,
-        "height": 80
+        "x": 1432,
+        "y": 92.99999999999997,
+        "width": 260,
+        "height": 146
       },
       "pl-ctx-ledger": {
         "elementId": "pl-ctx-ledger",
-        "x": 1920,
-        "y": 382.00000000000006,
-        "width": 180,
-        "height": 80
+        "x": 2080,
+        "y": 386.99999999999994,
+        "width": 260,
+        "height": 131
       },
       "pl-ctx-risk": {
         "elementId": "pl-ctx-risk",
-        "x": 2446,
-        "y": 119.83333333333336,
-        "width": 180,
-        "height": 80
+        "x": 2686,
+        "y": 104.0833333333333,
+        "width": 260,
+        "height": 131
       },
       "pl-ctx-platform": {
         "elementId": "pl-ctx-platform",
         "x": 774,
-        "y": 309.83333333333337,
-        "width": 180,
-        "height": 80
+        "y": 317.24999999999994,
+        "width": 260,
+        "height": 131
       },
       "pl-ctx-spi": {
         "elementId": "pl-ctx-spi",
-        "x": 1920,
-        "y": 192,
-        "width": 180,
-        "height": 80
+        "x": 2080,
+        "y": 191.99999999999997,
+        "width": 260,
+        "height": 85
       },
       "pl-ctx-bank": {
         "elementId": "pl-ctx-bank",
-        "x": 2446,
-        "y": 415.50000000000006,
-        "width": 180,
-        "height": 80
+        "x": 2686,
+        "y": 443.49999999999994,
+        "width": 260,
+        "height": 85
       },
       "pl-ctx-kyc": {
         "elementId": "pl-ctx-kyc",
-        "x": 2960,
-        "y": 119.83333333333336,
-        "width": 180,
-        "height": 80
+        "x": 3280,
+        "y": 127.0833333333333,
+        "width": 260,
+        "height": 85
       },
       "pl-ctx-notify": {
         "elementId": "pl-ctx-notify",
-        "x": 1352,
-        "y": 583.5,
-        "width": 180,
-        "height": 80
+        "x": 1432,
+        "y": 613.9999999999999,
+        "width": 260,
+        "height": 85
       },
       "pl-ctx-note": {
         "elementId": "pl-ctx-note",
         "x": 40,
-        "y": 499.83333333333337,
+        "y": 535.2499999999999,
         "width": 336,
         "height": 475
       }
@@ -181,13 +181,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r1-cp0",
-            "x": 1252,
-            "y": 126.33
+            "x": 1332,
+            "y": 132.5
           },
           {
             "id": "pl-ctx-r1-cp1",
-            "x": 1252,
-            "y": 146.5
+            "x": 1332,
+            "y": 141.67
           }
         ]
       },
@@ -196,12 +196,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r2-cp0",
             "x": 575,
-            "y": 349.83
+            "y": 382.75
           },
           {
             "id": "pl-ctx-r2-cp1",
             "x": 575,
-            "y": 349.83
+            "y": 382.75
           }
         ]
       },
@@ -209,23 +209,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r3-cp0",
-            "x": 1542,
-            "y": 179.83
+            "x": 1702,
+            "y": 202.5
           },
           {
             "id": "pl-ctx-r3-cp1",
-            "x": 1542,
-            "y": 391.5
-          },
-          {
-            "id": "pl-ctx-r3-cp2",
-            "x": 1820,
-            "y": 391.5
-          },
-          {
-            "id": "pl-ctx-r3-cp3",
-            "x": 1820,
-            "y": 408.67
+            "x": 1702,
+            "y": 430.67
           }
         ]
       },
@@ -233,13 +223,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r4-cp0",
-            "x": 1562,
-            "y": 159.83
+            "x": 1722,
+            "y": 166
           },
           {
             "id": "pl-ctx-r4-cp1",
-            "x": 1562,
-            "y": 232
+            "x": 1722,
+            "y": 234.5
           }
         ]
       },
@@ -247,23 +237,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r5-cp0",
-            "x": 1542,
-            "y": 139.83
+            "x": 1702,
+            "y": 129.5
           },
           {
             "id": "pl-ctx-r5-cp1",
-            "x": 1542,
+            "x": 1702,
             "y": 61
           },
           {
             "id": "pl-ctx-r5-cp2",
-            "x": 2346,
+            "x": 2586,
             "y": 61
           },
           {
             "id": "pl-ctx-r5-cp3",
-            "x": 2346,
-            "y": 146.5
+            "x": 2586,
+            "y": 147.75
           }
         ]
       },
@@ -271,13 +261,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r6-cp0",
-            "x": 2110,
-            "y": 435.33
+            "x": 2350,
+            "y": 474.33
           },
           {
             "id": "pl-ctx-r6-cp1",
-            "x": 2110,
-            "y": 455.5
+            "x": 2350,
+            "y": 486
           }
         ]
       },
@@ -285,13 +275,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r7-cp0",
-            "x": 2793,
-            "y": 159.83
+            "x": 3113,
+            "y": 169.58
           },
           {
             "id": "pl-ctx-r7-cp1",
-            "x": 2793,
-            "y": 159.83
+            "x": 3113,
+            "y": 169.58
           }
         ]
       },
@@ -299,23 +289,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r8-cp0",
-            "x": 964,
-            "y": 329.83
+            "x": 1044,
+            "y": 350
           },
           {
             "id": "pl-ctx-r8-cp1",
-            "x": 964,
-            "y": 244.83
+            "x": 1044,
+            "y": 258.62
           },
           {
             "id": "pl-ctx-r8-cp2",
-            "x": 1252,
-            "y": 244.83
+            "x": 1332,
+            "y": 258.62
           },
           {
             "id": "pl-ctx-r8-cp3",
-            "x": 1252,
-            "y": 173.17
+            "x": 1332,
+            "y": 190.33
           }
         ]
       },
@@ -323,23 +313,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r9-cp0",
-            "x": 984,
-            "y": 349.83
+            "x": 1064,
+            "y": 382.75
           },
           {
             "id": "pl-ctx-r9-cp1",
-            "x": 984,
-            "y": 452.5
-          },
-          {
-            "id": "pl-ctx-r9-cp2",
-            "x": 1820,
-            "y": 452.5
-          },
-          {
-            "id": "pl-ctx-r9-cp3",
-            "x": 1820,
-            "y": 435.33
+            "x": 1064,
+            "y": 474.33
           }
         ]
       },
@@ -347,13 +327,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r10-cp0",
-            "x": 964,
-            "y": 369.83
+            "x": 1044,
+            "y": 415.5
           },
           {
             "id": "pl-ctx-r10-cp1",
-            "x": 964,
-            "y": 623.5
+            "x": 1044,
+            "y": 656.5
           }
         ]
       },
@@ -361,23 +341,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-ctx-r11-cp0",
-            "x": 2110,
-            "y": 408.67
+            "x": 2350,
+            "y": 430.67
           },
           {
             "id": "pl-ctx-r11-cp1",
-            "x": 2110,
-            "y": 333.67
+            "x": 2350,
+            "y": 354.42
           },
           {
             "id": "pl-ctx-r11-cp2",
-            "x": 2346,
-            "y": 333.67
+            "x": 2586,
+            "y": 354.42
           },
           {
             "id": "pl-ctx-r11-cp3",
-            "x": 2346,
-            "y": 173.17
+            "x": 2586,
+            "y": 191.42
           }
         ]
       }
@@ -387,129 +367,129 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-hub-payer": {
         "elementId": "pl-hub-payer",
-        "x": 196,
-        "y": 902,
-        "width": 180,
-        "height": 80
+        "x": 116,
+        "y": 1037.875,
+        "width": 260,
+        "height": 85
       },
       "pl-hub-merchant-sys": {
         "elementId": "pl-hub-merchant-sys",
         "x": 774,
-        "y": 695.75,
-        "width": 180,
-        "height": 80
+        "y": 810.75,
+        "width": 260,
+        "height": 85
       },
       "pl-hub-boundary": {
         "elementId": "pl-hub-boundary",
-        "x": 1348.5,
-        "y": 51,
-        "width": 2262,
-        "height": 1102.3333333333333
+        "x": 1428.5,
+        "y": 49.25,
+        "width": 2662,
+        "height": 1314.5
       },
       "pl-hub-cob-api": {
         "elementId": "pl-hub-cob-api",
-        "x": 1522,
-        "y": 879.3333333333333,
-        "width": 180,
-        "height": 80
+        "x": 1762,
+        "y": 1007.75,
+        "width": 260,
+        "height": 174
       },
       "pl-hub-dict": {
         "elementId": "pl-hub-dict",
-        "x": 2042,
-        "y": 942.3333333333333,
-        "width": 180,
-        "height": 80
+        "x": 2362,
+        "y": 1100.5,
+        "width": 260,
+        "height": 134
       },
       "pl-hub-webhook": {
         "elementId": "pl-hub-webhook",
-        "x": 1522,
-        "y": 463,
-        "width": 180,
-        "height": 80
+        "x": 1762,
+        "y": 494.75,
+        "width": 260,
+        "height": 174
       },
       "pl-hub-cache": {
         "elementId": "pl-hub-cache",
-        "x": 2042,
-        "y": 688.5,
-        "width": 180,
-        "height": 80
+        "x": 2362,
+        "y": 816,
+        "width": 260,
+        "height": 104
       },
       "pl-hub-queue": {
         "elementId": "pl-hub-queue",
-        "x": 2042,
-        "y": 231.5,
-        "width": 180,
-        "height": 80
+        "x": 2362,
+        "y": 233.25,
+        "width": 260,
+        "height": 104
       },
       "pl-hub-worker": {
         "elementId": "pl-hub-worker",
-        "x": 1522,
-        "y": 273,
-        "width": 180,
-        "height": 80
+        "x": 1762,
+        "y": 280.75,
+        "width": 260,
+        "height": 104
       },
       "pl-hub-spi": {
         "elementId": "pl-hub-spi",
         "x": 774,
-        "y": 902,
-        "width": 180,
-        "height": 80
+        "y": 1037.875,
+        "width": 260,
+        "height": 85
       },
       "pl-hub-risk-ext": {
         "elementId": "pl-hub-risk-ext",
-        "x": 4005,
-        "y": 445.5,
-        "width": 180,
-        "height": 80
+        "x": 4485,
+        "y": 517,
+        "width": 260,
+        "height": 85
       },
       "pl-hub-ledger-ext": {
         "elementId": "pl-hub-ledger-ext",
-        "x": 4005,
-        "y": 912.3333333333333,
-        "width": 180,
-        "height": 80
+        "x": 4485,
+        "y": 1074.75,
+        "width": 260,
+        "height": 68
       },
       "pl-hub-note": {
         "elementId": "pl-hub-note",
         "x": 40,
-        "y": 316.99999999999994,
+        "y": 452.87499999999994,
         "width": 336,
         "height": 475
       },
       "pl-hub-ep-post": {
         "elementId": "pl-hub-ep-post",
         "x": 40,
-        "y": 653,
-        "width": 180,
-        "height": 80
+        "y": 778.75,
+        "width": 260,
+        "height": 104
       },
       "pl-hub-auth-guard": {
         "elementId": "pl-hub-auth-guard",
-        "x": 518,
-        "y": 653,
-        "width": 180,
-        "height": 80
+        "x": 598,
+        "y": 778.75,
+        "width": 260,
+        "height": 104
       },
       "pl-hub-cob-svc": {
         "elementId": "pl-hub-cob-svc",
-        "x": 1026,
-        "y": 653,
-        "width": 180,
-        "height": 80
+        "x": 1186,
+        "y": 778.75,
+        "width": 260,
+        "height": 104
       },
       "pl-hub-cache-svc": {
         "elementId": "pl-hub-cache-svc",
-        "x": 1522,
-        "y": 653,
-        "width": 180,
-        "height": 80
+        "x": 1762,
+        "y": 778.75,
+        "width": 260,
+        "height": 104
       },
       "pl-hub-event-pub": {
         "elementId": "pl-hub-event-pub",
-        "x": 1522,
+        "x": 1765.5,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 253,
+        "height": 87
       }
     },
     "viewport": {
@@ -653,12 +633,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-payer-cp0",
             "x": 754,
-            "y": 942
+            "y": 1080.38
           },
           {
             "id": "pl-hub-c-payer-cp1",
             "x": 754,
-            "y": 928.67
+            "y": 1066.21
           }
         ]
       },
@@ -666,33 +646,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-merchant-cp0",
-            "x": 1004,
-            "y": 749.08
+            "x": 1084,
+            "y": 867.42
           },
           {
             "id": "pl-hub-c-merchant-cp1",
-            "x": 1004,
-            "y": 944.25
+            "x": 1084,
+            "y": 1132.96
           },
           {
             "id": "pl-hub-c-merchant-cp2",
-            "x": 1236,
-            "y": 944.25
+            "x": 1316,
+            "y": 1132.96
           },
           {
             "id": "pl-hub-c-merchant-cp3",
-            "x": 1236,
-            "y": 1000.83
-          },
-          {
-            "id": "pl-hub-c-merchant-cp4",
-            "x": 2770.5,
-            "y": 1000.83
-          },
-          {
-            "id": "pl-hub-c-merchant-cp5",
-            "x": 2770.5,
-            "y": 983.67
+            "x": 1316,
+            "y": 1173
           }
         ]
       },
@@ -700,13 +670,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-dict-cp0",
-            "x": 3060.5,
-            "y": 983.67
+            "x": 3460.5,
+            "y": 1173
           },
           {
             "id": "pl-hub-c-dict-cp1",
-            "x": 3060.5,
-            "y": 1033.33
+            "x": 3460.5,
+            "y": 1216.75
           }
         ]
       },
@@ -714,23 +684,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-spi-cp0",
-            "x": 984,
-            "y": 942
+            "x": 1064,
+            "y": 1080.38
           },
           {
             "id": "pl-hub-c-spi-cp1",
-            "x": 984,
-            "y": 609.5
-          },
-          {
-            "id": "pl-hub-c-spi-cp2",
-            "x": 1236,
-            "y": 609.5
-          },
-          {
-            "id": "pl-hub-c-spi-cp3",
-            "x": 1236,
-            "y": 567.33
+            "x": 1064,
+            "y": 660
           }
         ]
       },
@@ -738,23 +698,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-cache-cp0",
-            "x": 3080.5,
-            "y": 574
+            "x": 3480.5,
+            "y": 674.5
           },
           {
             "id": "pl-hub-c-cache-cp1",
-            "x": 3080.5,
-            "y": 803
+            "x": 3480.5,
+            "y": 935.25
           },
           {
             "id": "pl-hub-c-cache-cp2",
-            "x": 3290.5,
-            "y": 803
+            "x": 3690.5,
+            "y": 935.25
           },
           {
             "id": "pl-hub-c-cache-cp3",
-            "x": 3290.5,
-            "y": 779.5
+            "x": 3690.5,
+            "y": 917.25
           }
         ]
       },
@@ -762,13 +722,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-risk-cp0",
-            "x": 3905,
-            "y": 554
+            "x": 4385,
+            "y": 631
           },
           {
             "id": "pl-hub-c-risk-cp1",
-            "x": 3905,
-            "y": 498.83
+            "x": 4385,
+            "y": 573.67
           }
         ]
       },
@@ -776,33 +736,33 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-worker-risk-cp0",
-            "x": 3060.5,
-            "y": 344
+            "x": 3460.5,
+            "y": 356
           },
           {
             "id": "pl-hub-c-worker-risk-cp1",
-            "x": 3060.5,
+            "x": 3460.5,
             "y": 112
           },
           {
             "id": "pl-hub-c-worker-risk-cp2",
-            "x": 3633,
+            "x": 4113,
             "y": 112
           },
           {
             "id": "pl-hub-c-worker-risk-cp3",
-            "x": 3633,
-            "y": 306.67
+            "x": 4113,
+            "y": 301.5
           },
           {
             "id": "pl-hub-c-worker-risk-cp4",
-            "x": 3905,
-            "y": 306.67
+            "x": 4385,
+            "y": 301.5
           },
           {
             "id": "pl-hub-c-worker-risk-cp5",
-            "x": 3905,
-            "y": 472.17
+            "x": 4385,
+            "y": 545.33
           }
         ]
       },
@@ -810,23 +770,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-merchant-wh-cp0",
-            "x": 964,
-            "y": 722.42
+            "x": 1044,
+            "y": 839.08
           },
           {
             "id": "pl-hub-c-merchant-wh-cp1",
-            "x": 964,
-            "y": 481
+            "x": 1044,
+            "y": 554.33
           },
           {
             "id": "pl-hub-c-merchant-wh-cp2",
-            "x": 1236,
-            "y": 481
+            "x": 1316,
+            "y": 554.33
           },
           {
             "id": "pl-hub-c-merchant-wh-cp3",
-            "x": 1236,
-            "y": 540.67
+            "x": 1316,
+            "y": 602
           }
         ]
       },
@@ -834,23 +794,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-queue-cp0",
-            "x": 3060.5,
-            "y": 534
+            "x": 3460.5,
+            "y": 587.5
           },
           {
             "id": "pl-hub-c-queue-cp1",
-            "x": 3060.5,
-            "y": 462
+            "x": 3460.5,
+            "y": 507
           },
           {
             "id": "pl-hub-c-queue-cp2",
-            "x": 3310.5,
-            "y": 462
+            "x": 3710.5,
+            "y": 507
           },
           {
             "id": "pl-hub-c-queue-cp3",
-            "x": 3310.5,
-            "y": 342.5
+            "x": 3710.5,
+            "y": 360.5
           }
         ]
       },
@@ -858,13 +818,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-worker-cp0",
-            "x": 3290.5,
-            "y": 364
+            "x": 3690.5,
+            "y": 382
           },
           {
             "id": "pl-hub-c-worker-cp1",
-            "x": 3290.5,
-            "y": 322.5
+            "x": 3690.5,
+            "y": 334.5
           }
         ]
       },
@@ -872,13 +832,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-ledger-cp0",
-            "x": 3100.5,
-            "y": 384
+            "x": 3500.5,
+            "y": 408
           },
           {
             "id": "pl-hub-c-ledger-cp1",
-            "x": 3100.5,
-            "y": 952.33
+            "x": 3500.5,
+            "y": 1108.75
           }
         ]
       },
@@ -886,23 +846,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-dict-spi-cp0",
-            "x": 3633,
-            "y": 1033.33
+            "x": 4113,
+            "y": 1216.75
           },
           {
             "id": "pl-hub-c-dict-spi-cp1",
-            "x": 3633,
-            "y": 1153.33
+            "x": 4113,
+            "y": 1363.75
           },
           {
             "id": "pl-hub-c-dict-spi-cp2",
-            "x": 964,
-            "y": 1153.33
+            "x": 1044,
+            "y": 1363.75
           },
           {
             "id": "pl-hub-c-dict-spi-cp3",
-            "x": 964,
-            "y": 955.33
+            "x": 1044,
+            "y": 1094.54
           }
         ]
       },
@@ -910,23 +870,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-cob-cache-cp0",
-            "x": 3060.5,
-            "y": 957
+            "x": 3460.5,
+            "y": 1115
           },
           {
             "id": "pl-hub-c-cob-cache-cp1",
-            "x": 3060.5,
-            "y": 891.33
+            "x": 3460.5,
+            "y": 1045.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp2",
-            "x": 3310.5,
-            "y": 891.33
+            "x": 3710.5,
+            "y": 1045.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp3",
-            "x": 3310.5,
-            "y": 799.5
+            "x": 3710.5,
+            "y": 943.25
           }
         ]
       },
@@ -934,13 +894,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-ep-guard-cp0",
-            "x": 1717.5,
-            "y": 744
+            "x": 1877.5,
+            "y": 880
           },
           {
             "id": "pl-hub-c-ep-guard-cp1",
-            "x": 1717.5,
-            "y": 744
+            "x": 1877.5,
+            "y": 880
           }
         ]
       },
@@ -948,13 +908,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-guard-svc-cp0",
-            "x": 2210.5,
-            "y": 744
+            "x": 2450.5,
+            "y": 880
           },
           {
             "id": "pl-hub-c-guard-svc-cp1",
-            "x": 2210.5,
-            "y": 744
+            "x": 2450.5,
+            "y": 880
           }
         ]
       },
@@ -962,23 +922,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-svc-api-cp0",
-            "x": 2564.5,
-            "y": 764
+            "x": 2884.5,
+            "y": 906
           },
           {
             "id": "pl-hub-c-svc-api-cp1",
-            "x": 2564.5,
-            "y": 939.83
-          },
-          {
-            "id": "pl-hub-c-svc-api-cp2",
-            "x": 2770.5,
-            "y": 939.83
-          },
-          {
-            "id": "pl-hub-c-svc-api-cp3",
-            "x": 2770.5,
-            "y": 957
+            "x": 2884.5,
+            "y": 1115
           }
         ]
       },
@@ -986,13 +936,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-svc-cache-cp0",
-            "x": 2712.5,
-            "y": 744
+            "x": 3032.5,
+            "y": 880
           },
           {
             "id": "pl-hub-c-svc-cache-cp1",
-            "x": 2712.5,
-            "y": 744
+            "x": 3032.5,
+            "y": 880
           }
         ]
       },
@@ -1000,13 +950,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-cache-redis-cp0",
-            "x": 3290.5,
-            "y": 744
+            "x": 3690.5,
+            "y": 880
           },
           {
             "id": "pl-hub-c-cache-redis-cp1",
-            "x": 3290.5,
-            "y": 759.5
+            "x": 3690.5,
+            "y": 891.25
           }
         ]
       },
@@ -1014,13 +964,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-svc-pub-cp0",
-            "x": 2564.5,
-            "y": 724
+            "x": 2884.5,
+            "y": 854
           },
           {
             "id": "pl-hub-c-svc-pub-cp1",
-            "x": 2564.5,
-            "y": 163
+            "x": 2884.5,
+            "y": 164.75
           }
         ]
       },
@@ -1028,13 +978,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-pub-queue-cp0",
-            "x": 3290.5,
-            "y": 163
+            "x": 3690.5,
+            "y": 164.75
           },
           {
             "id": "pl-hub-c-pub-queue-cp1",
-            "x": 3290.5,
-            "y": 302.5
+            "x": 3690.5,
+            "y": 308.5
           }
         ]
       }
@@ -1044,59 +994,59 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-led-hub-ext": {
         "elementId": "pl-led-hub-ext",
-        "x": 196,
+        "x": 116,
         "y": 625,
-        "width": 180,
-        "height": 80
+        "width": 260,
+        "height": 85
       },
       "pl-led-boundary": {
         "elementId": "pl-led-boundary",
         "x": 700.5,
-        "y": 329.1666666666667,
-        "width": 810,
-        "height": 503
+        "y": 224.5,
+        "width": 970,
+        "height": 610
       },
       "pl-led-engine": {
         "elementId": "pl-led-engine",
         "x": 40,
-        "y": 295.8333333333333,
-        "width": 180,
-        "height": 80
+        "y": 356,
+        "width": 260,
+        "height": 174
       },
       "pl-led-db": {
         "elementId": "pl-led-db",
-        "x": 590,
-        "y": 343,
-        "width": 180,
-        "height": 80
+        "x": 670,
+        "y": 424.5,
+        "width": 260,
+        "height": 104
       },
       "pl-led-settlement": {
         "elementId": "pl-led-settlement",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 260,
+        "height": 174
       },
       "pl-led-kafka": {
         "elementId": "pl-led-kafka",
-        "x": 590,
-        "y": 153,
-        "width": 180,
-        "height": 80
+        "x": 670,
+        "y": 203,
+        "width": 260,
+        "height": 104
       },
       "pl-led-bank": {
         "elementId": "pl-led-bank",
-        "x": 1869,
-        "y": 275.83333333333337,
-        "width": 180,
-        "height": 80
+        "x": 2029,
+        "y": 231.08333333333334,
+        "width": 259,
+        "height": 68
       },
       "pl-led-risk": {
         "elementId": "pl-led-risk",
-        "x": 1869,
-        "y": 465.83333333333337,
-        "width": 180,
-        "height": 80
+        "x": 2029,
+        "y": 409.08333333333337,
+        "width": 260,
+        "height": 85
       },
       "pl-led-note": {
         "elementId": "pl-led-note",
@@ -1109,7 +1059,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.4685212298682284
+      "zoom": 0.4193971166448231
     },
     "handleOrder": {
       "pl-led-hub-ext": {
@@ -1167,12 +1117,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-led-c1-cp0",
             "x": 558.25,
-            "y": 665
+            "y": 667.5
           },
           {
             "id": "pl-led-c1-cp1",
             "x": 558.25,
-            "y": 665
+            "y": 667.5
           }
         ]
       },
@@ -1180,13 +1130,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-led-c2-cp0",
-            "x": 930.5,
-            "y": 678.33
+            "x": 1010.5,
+            "y": 696.5
           },
           {
             "id": "pl-led-c2-cp1",
-            "x": 930.5,
-            "y": 712.17
+            "x": 1010.5,
+            "y": 701
           }
         ]
       },
@@ -1194,23 +1144,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-led-c3-cp0",
-            "x": 930.5,
-            "y": 651.67
+            "x": 1010.5,
+            "y": 638.5
           },
           {
             "id": "pl-led-c3-cp1",
-            "x": 930.5,
-            "y": 576.67
+            "x": 1010.5,
+            "y": 569.17
           },
           {
             "id": "pl-led-c3-cp2",
-            "x": 1190.5,
-            "y": 576.67
+            "x": 1270.5,
+            "y": 569.17
           },
           {
             "id": "pl-led-c3-cp3",
-            "x": 1190.5,
-            "y": 535.5
+            "x": 1270.5,
+            "y": 496.83
           }
         ]
       },
@@ -1218,23 +1168,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-led-c4-cp0",
-            "x": 930.5,
-            "y": 461.17
+            "x": 1010.5,
+            "y": 427
           },
           {
             "id": "pl-led-c4-cp1",
-            "x": 930.5,
-            "y": 488.67
+            "x": 1010.5,
+            "y": 446
           },
           {
             "id": "pl-led-c4-cp2",
-            "x": 1190.5,
-            "y": 488.67
+            "x": 1270.5,
+            "y": 446
           },
           {
             "id": "pl-led-c4-cp3",
-            "x": 1190.5,
-            "y": 508.83
+            "x": 1270.5,
+            "y": 462.17
           }
         ]
       },
@@ -1242,23 +1192,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-led-c5-cp0",
-            "x": 930.5,
-            "y": 421.17
+            "x": 1693,
+            "y": 339.5
           },
           {
             "id": "pl-led-c5-cp1",
-            "x": 930.5,
-            "y": 397.83
-          },
-          {
-            "id": "pl-led-c5-cp2",
-            "x": 1533,
-            "y": 397.83
-          },
-          {
-            "id": "pl-led-c5-cp3",
-            "x": 1533,
-            "y": 315.83
+            "x": 1693,
+            "y": 265.08
           }
         ]
       },
@@ -1266,23 +1206,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-led-c6-cp0",
-            "x": 950.5,
-            "y": 441.17
+            "x": 1693,
+            "y": 383.5
           },
           {
             "id": "pl-led-c6-cp1",
-            "x": 950.5,
-            "y": 423.83
-          },
-          {
-            "id": "pl-led-c6-cp2",
-            "x": 1533,
-            "y": 423.83
-          },
-          {
-            "id": "pl-led-c6-cp3",
-            "x": 1533,
-            "y": 505.83
+            "x": 1693,
+            "y": 451.58
           }
         ]
       }
@@ -1292,64 +1222,64 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-risk-hub-ext": {
         "elementId": "pl-risk-hub-ext",
-        "x": 196,
-        "y": 815,
-        "width": 180,
-        "height": 80
+        "x": 116,
+        "y": 803.0000000000001,
+        "width": 260,
+        "height": 85
       },
       "pl-risk-led-ext": {
         "elementId": "pl-risk-led-ext",
-        "x": 196,
+        "x": 143,
         "y": 40,
-        "width": 180,
-        "height": 80
+        "width": 233,
+        "height": 68
       },
       "pl-risk-boundary": {
         "elementId": "pl-risk-boundary",
         "x": 746.5,
-        "y": 165.49999999999994,
-        "width": 1227,
-        "height": 422
+        "y": 121.74999999999997,
+        "width": 1467,
+        "height": 505
       },
       "pl-risk-engine": {
         "elementId": "pl-risk-engine",
-        "x": 505,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 585,
+        "y": 251,
+        "width": 260,
+        "height": 174
       },
       "pl-risk-rules": {
         "elementId": "pl-risk-rules",
-        "x": 1007,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 1167,
+        "y": 286,
+        "width": 260,
+        "height": 104
       },
       "pl-risk-features": {
         "elementId": "pl-risk-features",
-        "x": 1007,
+        "x": 1167,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 260,
+        "height": 104
       },
       "pl-risk-api": {
         "elementId": "pl-risk-api",
         "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "y": 271.5,
+        "width": 260,
+        "height": 133
       },
       "pl-risk-kyc": {
         "elementId": "pl-risk-kyc",
-        "x": 2290,
-        "y": 507.49999999999994,
-        "width": 180,
-        "height": 80
+        "x": 2530,
+        "y": 517.75,
+        "width": 200,
+        "height": 68
       },
       "pl-risk-note": {
         "elementId": "pl-risk-note",
         "x": 40,
-        "y": 229.99999999999997,
+        "y": 218,
         "width": 336,
         "height": 475
       }
@@ -1357,7 +1287,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.38866396761133604
+      "zoom": 0.3516483516483517
     },
     "handleOrder": {
       "pl-risk-hub-ext": {
@@ -1416,12 +1346,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c1-cp0",
             "x": 634,
-            "y": 855
+            "y": 845.5
           },
           {
             "id": "pl-risk-c1-cp1",
             "x": 634,
-            "y": 480.83
+            "y": 481.92
           }
         ]
       },
@@ -1430,12 +1360,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c2-cp0",
             "x": 634,
-            "y": 80
+            "y": 74
           },
           {
             "id": "pl-risk-c2-cp1",
             "x": 634,
-            "y": 454.17
+            "y": 437.58
           }
         ]
       },
@@ -1443,13 +1373,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-risk-c3-cp0",
-            "x": 1109,
-            "y": 467.5
+            "x": 1189,
+            "y": 459.75
           },
           {
             "id": "pl-risk-c3-cp1",
-            "x": 1109,
-            "y": 467.5
+            "x": 1189,
+            "y": 459.75
           }
         ]
       },
@@ -1457,13 +1387,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-risk-c4-cp0",
-            "x": 1592.5,
-            "y": 467.5
+            "x": 1752.5,
+            "y": 459.75
           },
           {
             "id": "pl-risk-c4-cp1",
-            "x": 1592.5,
-            "y": 467.5
+            "x": 1752.5,
+            "y": 459.75
           }
         ]
       },
@@ -1471,13 +1401,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-risk-c5-cp0",
-            "x": 1441.5,
-            "y": 447.5
+            "x": 1601.5,
+            "y": 416.25
           },
           {
             "id": "pl-risk-c5-cp1",
-            "x": 1441.5,
-            "y": 277.5
+            "x": 1601.5,
+            "y": 245.75
           }
         ]
       },
@@ -1485,13 +1415,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-risk-c6-cp0",
-            "x": 1441.5,
-            "y": 487.5
+            "x": 1601.5,
+            "y": 503.25
           },
           {
             "id": "pl-risk-c6-cp1",
-            "x": 1441.5,
-            "y": 547.5
+            "x": 1601.5,
+            "y": 551.75
           }
         ]
       }
@@ -1501,73 +1431,73 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-mer-user": {
         "elementId": "pl-mer-user",
-        "x": 196,
+        "x": 116,
         "y": 625,
-        "width": 180,
-        "height": 80
+        "width": 260,
+        "height": 85
       },
       "pl-mer-boundary": {
         "elementId": "pl-mer-boundary",
         "x": 704.5,
-        "y": 173,
-        "width": 1252,
-        "height": 612
+        "y": 63,
+        "width": 1440,
+        "height": 771.5
       },
       "pl-mer-spa": {
         "elementId": "pl-mer-spa",
         "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "y": 561,
+        "width": 208,
+        "height": 87
       },
       "pl-mer-api": {
         "elementId": "pl-mer-api",
-        "x": 518,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "x": 546,
+        "y": 517.5,
+        "width": 260,
+        "height": 174
       },
       "pl-mer-webhooks": {
         "elementId": "pl-mer-webhooks",
-        "x": 1032,
+        "x": 1140,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 260,
+        "height": 150
       },
       "pl-mer-db": {
         "elementId": "pl-mer-db",
-        "x": 1032,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 1140,
+        "y": 332,
+        "width": 260,
+        "height": 104
       },
       "pl-mer-notify": {
         "elementId": "pl-mer-notify",
-        "x": 1032,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "x": 1157.5,
+        "y": 546,
+        "width": 225,
+        "height": 117
       },
       "pl-mer-hub": {
         "elementId": "pl-mer-hub",
-        "x": 2303,
-        "y": 623.5,
-        "width": 180,
-        "height": 80
+        "x": 2491,
+        "y": 659.5,
+        "width": 225,
+        "height": 68
       },
       "pl-mer-ledger": {
         "elementId": "pl-mer-ledger",
-        "x": 2303,
-        "y": 813.5,
-        "width": 180,
-        "height": 80
+        "x": 2491,
+        "y": 837.5,
+        "width": 200,
+        "height": 68
       },
       "pl-mer-sms": {
         "elementId": "pl-mer-sms",
-        "x": 2303,
-        "y": 433.5,
-        "width": 180,
-        "height": 80
+        "x": 2491,
+        "y": 481.5,
+        "width": 215,
+        "height": 68
       },
       "pl-mer-note": {
         "elementId": "pl-mer-note",
@@ -1580,7 +1510,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.38662907772855415
+      "zoom": 0.35346097201767307
     },
     "handleOrder": {
       "pl-mer-user": {
@@ -1654,12 +1584,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-mer-c1-cp0",
             "x": 560.25,
-            "y": 665
+            "y": 667.5
           },
           {
             "id": "pl-mer-c1-cp1",
             "x": 560.25,
-            "y": 665
+            "y": 667.5
           }
         ]
       },
@@ -1667,13 +1597,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c2-cp0",
-            "x": 1073.5,
-            "y": 665
+            "x": 1101.5,
+            "y": 667.5
           },
           {
             "id": "pl-mer-c2-cp1",
-            "x": 1073.5,
-            "y": 665
+            "x": 1101.5,
+            "y": 667.5
           }
         ]
       },
@@ -1681,23 +1611,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c3-cp0",
-            "x": 1432.5,
-            "y": 678.33
+            "x": 1540.5,
+            "y": 696.5
           },
           {
             "id": "pl-mer-c3-cp1",
-            "x": 1432.5,
-            "y": 745
+            "x": 1540.5,
+            "y": 766
           },
           {
             "id": "pl-mer-c3-cp2",
-            "x": 1999,
-            "y": 745
+            "x": 2167,
+            "y": 766
           },
           {
             "id": "pl-mer-c3-cp3",
-            "x": 1999,
-            "y": 663.5
+            "x": 2167,
+            "y": 693.5
           }
         ]
       },
@@ -1705,23 +1635,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c4-cp0",
-            "x": 1412.5,
-            "y": 691.67
+            "x": 1520.5,
+            "y": 725.5
           },
           {
             "id": "pl-mer-c4-cp1",
-            "x": 1412.5,
-            "y": 771
+            "x": 1520.5,
+            "y": 792
           },
           {
             "id": "pl-mer-c4-cp2",
-            "x": 1979,
-            "y": 771
+            "x": 2167,
+            "y": 792
           },
           {
             "id": "pl-mer-c4-cp3",
-            "x": 1979,
-            "y": 853.5
+            "x": 2167,
+            "y": 871.5
           }
         ]
       },
@@ -1729,13 +1659,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c5-cp0",
-            "x": 1432.5,
-            "y": 651.67
+            "x": 1540.5,
+            "y": 638.5
           },
           {
             "id": "pl-mer-c5-cp1",
-            "x": 1432.5,
-            "y": 475
+            "x": 1540.5,
+            "y": 447
           }
         ]
       },
@@ -1743,13 +1673,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c6-cp0",
-            "x": 1412.5,
-            "y": 638.33
+            "x": 1520.5,
+            "y": 609.5
           },
           {
             "id": "pl-mer-c6-cp1",
-            "x": 1412.5,
-            "y": 285
+            "x": 1520.5,
+            "y": 210
           }
         ]
       },
@@ -1757,13 +1687,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c7-cp0",
-            "x": 1569.5,
-            "y": 665
+            "x": 1686.25,
+            "y": 667.5
           },
           {
             "id": "pl-mer-c7-cp1",
-            "x": 1569.5,
-            "y": 665
+            "x": 1686.25,
+            "y": 667.5
           }
         ]
       },
@@ -1771,13 +1701,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c8-cp0",
-            "x": 1979,
-            "y": 665
+            "x": 2167,
+            "y": 667.5
           },
           {
             "id": "pl-mer-c8-cp1",
-            "x": 1979,
-            "y": 473.5
+            "x": 2167,
+            "y": 515.5
           }
         ]
       }
@@ -1980,70 +1910,70 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "elementId": "pl-dpl-vpc",
         "x": 40,
         "y": 40,
-        "width": 917,
-        "height": 954
+        "width": 1041,
+        "height": 1010
       },
       "pl-dpl-private": {
         "elementId": "pl-dpl-private",
         "x": 40,
-        "y": 117.50000000000003,
-        "width": 260,
-        "height": 422
+        "y": 127.99999999999997,
+        "width": 304,
+        "height": 442
       },
       "pl-dpl-data": {
         "elementId": "pl-dpl-data",
-        "x": 617,
+        "x": 661,
         "y": 72,
-        "width": 260,
-        "height": 802
+        "width": 340,
+        "height": 858
       },
       "pl-dpl-ecs": {
         "elementId": "pl-dpl-ecs",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 224,
+        "height": 90
       },
       "pl-dpl-settle": {
         "elementId": "pl-dpl-settle",
-        "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 64,
+        "y": 272,
+        "width": 200,
+        "height": 90
       },
       "pl-dpl-aurora": {
         "elementId": "pl-dpl-aurora",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 200,
+        "height": 90
       },
       "pl-dpl-msk": {
         "elementId": "pl-dpl-msk",
         "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "y": 272,
+        "width": 260,
+        "height": 106
       },
       "pl-dpl-sqs": {
         "elementId": "pl-dpl-sqs",
         "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "y": 488,
+        "width": 200,
+        "height": 90
       },
       "pl-dpl-s3": {
         "elementId": "pl-dpl-s3",
         "x": 40,
-        "y": 642,
-        "width": 180,
-        "height": 80
+        "y": 688,
+        "width": 203,
+        "height": 90
       }
     },
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.6438631790744468
+      "zoom": 0.6095238095238096
     },
     "handleOrder": {
       "pl-dpl-ecs": {
@@ -2092,23 +2022,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpl-c1-cp0",
-            "x": 362.5,
-            "y": 256.17
+            "x": 406.5,
+            "y": 270
           },
           {
             "id": "pl-dpl-c1-cp1",
-            "x": 362.5,
-            "y": 234
+            "x": 406.5,
+            "y": 245.58
           },
           {
             "id": "pl-dpl-c1-cp2",
-            "x": 544.5,
-            "y": 234
+            "x": 588.5,
+            "y": 245.58
           },
           {
             "id": "pl-dpl-c1-cp3",
-            "x": 544.5,
-            "y": 224
+            "x": 588.5,
+            "y": 229
           }
         ]
       },
@@ -2116,23 +2046,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpl-c2-cp0",
-            "x": 362.5,
-            "y": 282.83
+            "x": 406.5,
+            "y": 300
           },
           {
             "id": "pl-dpl-c2-cp1",
-            "x": 362.5,
-            "y": 354.5
+            "x": 406.5,
+            "y": 376.42
           },
           {
             "id": "pl-dpl-c2-cp2",
-            "x": 544.5,
-            "y": 354.5
+            "x": 588.5,
+            "y": 376.42
           },
           {
             "id": "pl-dpl-c2-cp3",
-            "x": 544.5,
-            "y": 400.67
+            "x": 588.5,
+            "y": 419.33
           }
         ]
       },
@@ -2140,13 +2070,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpl-c3-cp0",
-            "x": 362.5,
-            "y": 439.5
+            "x": 406.5,
+            "y": 462.5
           },
           {
             "id": "pl-dpl-c3-cp1",
-            "x": 362.5,
-            "y": 427.33
+            "x": 406.5,
+            "y": 454.67
           }
         ]
       },
@@ -2154,23 +2084,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpl-c4-cp0",
-            "x": 362.5,
-            "y": 479.5
+            "x": 406.5,
+            "y": 507.5
           },
           {
             "id": "pl-dpl-c4-cp1",
-            "x": 362.5,
-            "y": 661.67
+            "x": 406.5,
+            "y": 700.83
           },
           {
             "id": "pl-dpl-c4-cp2",
-            "x": 544.5,
-            "y": 661.67
+            "x": 588.5,
+            "y": 700.83
           },
           {
             "id": "pl-dpl-c4-cp3",
-            "x": 544.5,
-            "y": 794
+            "x": 588.5,
+            "y": 845
           }
         ]
       },
@@ -2178,23 +2108,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpl-c5-cp0",
-            "x": 382.5,
-            "y": 459.5
+            "x": 426.5,
+            "y": 485
           },
           {
             "id": "pl-dpl-c5-cp1",
-            "x": 382.5,
-            "y": 541.17
+            "x": 426.5,
+            "y": 575.33
           },
           {
             "id": "pl-dpl-c5-cp2",
-            "x": 544.5,
-            "y": 541.17
+            "x": 588.5,
+            "y": 575.33
           },
           {
             "id": "pl-dpl-c5-cp3",
-            "x": 544.5,
-            "y": 604
+            "x": 588.5,
+            "y": 645
           }
         ]
       }
@@ -2206,70 +2136,70 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "elementId": "pl-dpr-cluster",
         "x": 40,
         "y": 40,
-        "width": 2142,
-        "height": 802
+        "width": 2282,
+        "height": 842
       },
       "pl-dpr-ingress": {
         "elementId": "pl-dpr-ingress",
         "x": 40,
-        "y": 357,
-        "width": 180,
-        "height": 80
+        "y": 372,
+        "width": 200,
+        "height": 90
       },
       "pl-dpr-svc": {
         "elementId": "pl-dpr-svc",
-        "x": 488,
-        "y": 357,
-        "width": 180,
-        "height": 80
+        "x": 508,
+        "y": 372,
+        "width": 200,
+        "height": 90
       },
       "pl-dpr-deploy": {
         "elementId": "pl-dpr-deploy",
-        "x": 1432,
-        "y": 357,
-        "width": 180,
-        "height": 80
+        "x": 1492,
+        "y": 372,
+        "width": 220,
+        "height": 90
       },
       "pl-dpr-api-deploy": {
         "elementId": "pl-dpr-api-deploy",
-        "x": 960,
-        "y": 357,
-        "width": 180,
-        "height": 80
+        "x": 1000,
+        "y": 372,
+        "width": 200,
+        "height": 90
       },
       "pl-dpr-cm": {
         "elementId": "pl-dpr-cm",
-        "x": 1922,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 2022,
+        "y": 272,
+        "width": 200,
+        "height": 90
       },
       "pl-dpr-secret": {
         "elementId": "pl-dpr-secret",
-        "x": 1922,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "x": 2022,
+        "y": 472,
+        "width": 200,
+        "height": 90
       },
       "pl-dpr-pvc": {
         "elementId": "pl-dpr-pvc",
-        "x": 1922,
+        "x": 2022,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 220,
+        "height": 90
       },
       "pl-dpr-redis": {
         "elementId": "pl-dpr-redis",
-        "x": 1922,
-        "y": 642,
-        "width": 180,
-        "height": 80
+        "x": 2022,
+        "y": 672,
+        "width": 200,
+        "height": 90
       }
     },
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.43996333638863433
+      "zoom": 0.4134366925064599
     },
     "handleOrder": {
       "pl-dpr-ingress": {
@@ -2335,13 +2265,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpr-c1-cp0",
-            "x": 394,
-            "y": 437
+            "x": 414,
+            "y": 457
           },
           {
             "id": "pl-dpr-c1-cp1",
-            "x": 394,
-            "y": 437
+            "x": 414,
+            "y": 457
           }
         ]
       },
@@ -2349,13 +2279,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpr-c2-cp0",
-            "x": 854,
-            "y": 437
+            "x": 894,
+            "y": 457
           },
           {
             "id": "pl-dpr-c2-cp1",
-            "x": 854,
-            "y": 437
+            "x": 894,
+            "y": 457
           }
         ]
       },
@@ -2363,13 +2293,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpr-c3-cp0",
-            "x": 1326,
-            "y": 437
+            "x": 1386,
+            "y": 457
           },
           {
             "id": "pl-dpr-c3-cp1",
-            "x": 1326,
-            "y": 437
+            "x": 1386,
+            "y": 457
           }
         ]
       },
@@ -2377,13 +2307,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpr-c4-cp0",
-            "x": 1682,
-            "y": 429
+            "x": 1782,
+            "y": 448
           },
           {
             "id": "pl-dpr-c4-cp1",
-            "x": 1682,
-            "y": 342
+            "x": 1782,
+            "y": 357
           }
         ]
       },
@@ -2391,13 +2321,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpr-c5-cp0",
-            "x": 1682,
-            "y": 445
+            "x": 1782,
+            "y": 466
           },
           {
             "id": "pl-dpr-c5-cp1",
-            "x": 1682,
-            "y": 532
+            "x": 1782,
+            "y": 557
           }
         ]
       },
@@ -2405,13 +2335,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpr-c6-cp0",
-            "x": 1662,
-            "y": 413
+            "x": 1762,
+            "y": 430
           },
           {
             "id": "pl-dpr-c6-cp1",
-            "x": 1662,
-            "y": 152
+            "x": 1762,
+            "y": 157
           }
         ]
       },
@@ -2419,13 +2349,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpr-c7-cp0",
-            "x": 1662,
-            "y": 461
+            "x": 1762,
+            "y": 484
           },
           {
             "id": "pl-dpr-c7-cp1",
-            "x": 1662,
-            "y": 722
+            "x": 1762,
+            "y": 757
           }
         ]
       }
@@ -2435,100 +2365,100 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-dpm-edge": {
         "elementId": "pl-dpm-edge",
-        "x": 418,
+        "x": 460,
         "y": 40,
-        "width": 714,
-        "height": 232
+        "width": 755,
+        "height": 242
       },
       "pl-dpm-cf": {
         "elementId": "pl-dpm-cf",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 200,
+        "height": 90
       },
       "pl-dpm-s3": {
         "elementId": "pl-dpm-s3",
-        "x": 494,
+        "x": 514,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 201,
+        "height": 90
       },
       "pl-dpm-vpc": {
         "elementId": "pl-dpm-vpc",
         "x": 40,
-        "y": 342,
-        "width": 1470,
-        "height": 830.1666666666666
+        "y": 352,
+        "width": 1595,
+        "height": 864.75
       },
       "pl-dpm-public": {
         "elementId": "pl-dpm-public",
         "x": 40,
-        "y": 262,
-        "width": 260,
-        "height": 232
+        "y": 272,
+        "width": 315,
+        "height": 242
       },
       "pl-dpm-private": {
         "elementId": "pl-dpm-private",
-        "x": 605,
+        "x": 660,
         "y": 72,
-        "width": 260,
-        "height": 422
+        "width": 310,
+        "height": 442
       },
       "pl-dpm-data": {
         "elementId": "pl-dpm-data",
-        "x": 1170,
-        "y": 138.16666666666666,
-        "width": 260,
-        "height": 612
+        "x": 1275,
+        "y": 142.75,
+        "width": 280,
+        "height": 642
       },
       "pl-dpm-elb": {
         "elementId": "pl-dpm-elb",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 235,
+        "height": 90
       },
       "pl-dpm-ecs": {
         "elementId": "pl-dpm-ecs",
-        "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 62.5,
+        "y": 272,
+        "width": 200,
+        "height": 90
       },
       "pl-dpm-wh": {
         "elementId": "pl-dpm-wh",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 230,
+        "height": 90
       },
       "pl-dpm-rds": {
         "elementId": "pl-dpm-rds",
         "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "y": 272,
+        "width": 200,
+        "height": 90
       },
       "pl-dpm-redis": {
         "elementId": "pl-dpm-redis",
         "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "y": 472,
+        "width": 200,
+        "height": 90
       },
       "pl-dpm-sqs": {
         "elementId": "pl-dpm-sqs",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 200,
+        "height": 90
       }
     },
     "viewport": {
       "x": 40,
       "y": 20,
-      "zoom": 0.5459974406369971
+      "zoom": 0.5259913704540785
     },
     "handleOrder": {
       "pl-dpm-cf": {
@@ -2590,13 +2520,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c1-cp0",
-            "x": 775,
-            "y": 152
+            "x": 837,
+            "y": 157
           },
           {
             "id": "pl-dpm-c1-cp1",
-            "x": 775,
-            "y": 152
+            "x": 837,
+            "y": 157
           }
         ]
       },
@@ -2604,13 +2534,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c2-cp0",
-            "x": 492.5,
-            "y": 716
+            "x": 558.75,
+            "y": 741
           },
           {
             "id": "pl-dpm-c2-cp1",
-            "x": 492.5,
-            "y": 716
+            "x": 558.75,
+            "y": 741
           }
         ]
       },
@@ -2618,13 +2548,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c3-cp0",
-            "x": 1097.5,
-            "y": 716
+            "x": 1202.5,
+            "y": 741
           },
           {
             "id": "pl-dpm-c3-cp1",
-            "x": 1097.5,
-            "y": 782.17
+            "x": 1202.5,
+            "y": 811.75
           }
         ]
       },
@@ -2632,23 +2562,23 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c4-cp0",
-            "x": 927.5,
-            "y": 736
+            "x": 1032.5,
+            "y": 763.5
           },
           {
             "id": "pl-dpm-c4-cp1",
-            "x": 927.5,
-            "y": 852
+            "x": 1032.5,
+            "y": 880.75
           },
           {
             "id": "pl-dpm-c4-cp2",
-            "x": 1097.5,
-            "y": 852
+            "x": 1202.5,
+            "y": 880.75
           },
           {
             "id": "pl-dpm-c4-cp3",
-            "x": 1097.5,
-            "y": 972.17
+            "x": 1202.5,
+            "y": 1011.75
           }
         ]
       },
@@ -2656,13 +2586,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c5-cp0",
-            "x": 1097.5,
-            "y": 696
+            "x": 1202.5,
+            "y": 718.5
           },
           {
             "id": "pl-dpm-c5-cp1",
-            "x": 1097.5,
-            "y": 605.5
+            "x": 1202.5,
+            "y": 626.75
           }
         ]
       },
@@ -2670,13 +2600,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c6-cp0",
-            "x": 1097.5,
-            "y": 526
+            "x": 1202.5,
+            "y": 541
           },
           {
             "id": "pl-dpm-c6-cp1",
-            "x": 1097.5,
-            "y": 578.83
+            "x": 1202.5,
+            "y": 596.75
           }
         ]
       }
@@ -2686,288 +2616,288 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-cat-c4": {
         "elementId": "pl-cat-c4",
-        "x": 250,
+        "x": 219,
         "y": 40,
-        "width": 260,
-        "height": 802
+        "width": 322,
+        "height": 792
       },
       "pl-cat-person": {
         "elementId": "pl-cat-person",
-        "x": 40,
+        "x": 58,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 206,
+        "height": 68
       },
       "pl-cat-system": {
         "elementId": "pl-cat-system",
-        "x": 40,
-        "y": 642,
-        "width": 180,
-        "height": 80
+        "x": 52,
+        "y": 644,
+        "width": 218,
+        "height": 68
       },
       "pl-cat-container": {
         "elementId": "pl-cat-container",
-        "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "x": 46,
+        "y": 447,
+        "width": 230,
+        "height": 87
       },
       "pl-cat-component": {
         "elementId": "pl-cat-component",
         "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "y": 250,
+        "width": 242,
+        "height": 87
       },
       "pl-cat-aws": {
         "elementId": "pl-cat-aws",
-        "x": 250,
-        "y": 6809,
-        "width": 260,
-        "height": 1752
+        "x": 227,
+        "y": 6939,
+        "width": 306,
+        "height": 1842
       },
       "pl-cat-aws-lambda": {
         "elementId": "pl-cat-aws-lambda",
-        "x": 40,
-        "y": 1402,
-        "width": 180,
-        "height": 80
+        "x": 52,
+        "y": 1472,
+        "width": 202,
+        "height": 90
       },
       "pl-cat-aws-s3": {
         "elementId": "pl-cat-aws-s3",
-        "x": 40,
-        "y": 642,
-        "width": 180,
-        "height": 80
+        "x": 53,
+        "y": 672,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-aws-rds": {
         "elementId": "pl-cat-aws-rds",
-        "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "x": 53,
+        "y": 472,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-aws-vpc": {
         "elementId": "pl-cat-aws-vpc",
-        "x": 40,
-        "y": 1592,
-        "width": 180,
-        "height": 80
+        "x": 53,
+        "y": 1672,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-aws-iam": {
         "elementId": "pl-cat-aws-iam",
-        "x": 40,
-        "y": 1212,
-        "width": 180,
-        "height": 80
+        "x": 53,
+        "y": 1272,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-aws-athena": {
         "elementId": "pl-cat-aws-athena",
-        "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 53,
+        "y": 272,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-aws-sqs": {
         "elementId": "pl-cat-aws-sqs",
-        "x": 40,
-        "y": 1022,
-        "width": 180,
-        "height": 80
+        "x": 53,
+        "y": 1072,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-aws-ecr": {
         "elementId": "pl-cat-aws-ecr",
-        "x": 40,
+        "x": 53,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 200,
+        "height": 90
       },
       "pl-cat-aws-cw": {
         "elementId": "pl-cat-aws-cw",
         "x": 40,
-        "y": 832,
-        "width": 180,
-        "height": 80
+        "y": 872,
+        "width": 226,
+        "height": 90
       },
       "pl-cat-gcp": {
         "elementId": "pl-cat-gcp",
-        "x": 250,
-        "y": 912,
-        "width": 260,
-        "height": 1562
+        "x": 221,
+        "y": 902,
+        "width": 318,
+        "height": 1642
       },
       "pl-cat-gcp-run": {
         "elementId": "pl-cat-gcp-run",
-        "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "x": 51,
+        "y": 472,
+        "width": 216,
+        "height": 90
       },
       "pl-cat-gcp-gcs": {
         "elementId": "pl-cat-gcp-gcs",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 238,
+        "height": 90
       },
       "pl-cat-gcp-sql": {
         "elementId": "pl-cat-gcp-sql",
-        "x": 40,
-        "y": 1022,
-        "width": 180,
-        "height": 80
+        "x": 50.5,
+        "y": 1072,
+        "width": 217,
+        "height": 90
       },
       "pl-cat-gcp-net": {
         "elementId": "pl-cat-gcp-net",
-        "x": 40,
-        "y": 1402,
-        "width": 180,
-        "height": 80
+        "x": 47.5,
+        "y": 1472,
+        "width": 223,
+        "height": 90
       },
       "pl-cat-gcp-sec": {
         "elementId": "pl-cat-gcp-sec",
-        "x": 40,
-        "y": 642,
-        "width": 180,
-        "height": 80
+        "x": 57.5,
+        "y": 672,
+        "width": 203,
+        "height": 90
       },
       "pl-cat-gcp-bq": {
         "elementId": "pl-cat-gcp-bq",
-        "x": 40,
-        "y": 832,
-        "width": 180,
-        "height": 80
+        "x": 54.5,
+        "y": 872,
+        "width": 209,
+        "height": 90
       },
       "pl-cat-gcp-ai": {
         "elementId": "pl-cat-gcp-ai",
-        "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 55,
+        "y": 272,
+        "width": 208,
+        "height": 90
       },
       "pl-cat-gcp-int": {
         "elementId": "pl-cat-gcp-int",
-        "x": 40,
-        "y": 1212,
-        "width": 180,
-        "height": 80
+        "x": 50,
+        "y": 1272,
+        "width": 218,
+        "height": 90
       },
       "pl-cat-azure": {
         "elementId": "pl-cat-azure",
-        "x": 250,
-        "y": 8631,
-        "width": 260,
-        "height": 1372
+        "x": 213.5,
+        "y": 8851,
+        "width": 333,
+        "height": 1442
       },
       "pl-cat-az-fn": {
         "elementId": "pl-cat-az-fn",
-        "x": 40,
-        "y": 1022,
-        "width": 180,
-        "height": 80
+        "x": 60.5,
+        "y": 1072,
+        "width": 212,
+        "height": 90
       },
       "pl-cat-az-blob": {
         "elementId": "pl-cat-az-blob",
-        "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 51.5,
+        "y": 272,
+        "width": 230,
+        "height": 90
       },
       "pl-cat-az-cosmos": {
         "elementId": "pl-cat-az-cosmos",
-        "x": 40,
+        "x": 55,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 223,
+        "height": 90
       },
       "pl-cat-az-vnet": {
         "elementId": "pl-cat-az-vnet",
-        "x": 40,
-        "y": 642,
-        "width": 180,
-        "height": 80
+        "x": 66.5,
+        "y": 672,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-az-kv": {
         "elementId": "pl-cat-az-kv",
-        "x": 40,
-        "y": 1212,
-        "width": 180,
-        "height": 80
+        "x": 61.5,
+        "y": 1272,
+        "width": 210,
+        "height": 90
       },
       "pl-cat-az-sa": {
         "elementId": "pl-cat-az-sa",
         "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "y": 472,
+        "width": 253,
+        "height": 90
       },
       "pl-cat-az-bus": {
         "elementId": "pl-cat-az-bus",
-        "x": 40,
-        "y": 832,
-        "width": 180,
-        "height": 80
+        "x": 54.5,
+        "y": 872,
+        "width": 224,
+        "height": 90
       },
       "pl-cat-k8s": {
         "elementId": "pl-cat-k8s",
-        "x": 250,
-        "y": 5445,
-        "width": 260,
-        "height": 802
+        "x": 227.5,
+        "y": 5515,
+        "width": 305,
+        "height": 842
       },
       "pl-cat-k8s-deploy": {
         "elementId": "pl-cat-k8s-deploy",
         "x": 40,
-        "y": 452,
-        "width": 180,
-        "height": 80
+        "y": 472,
+        "width": 225,
+        "height": 90
       },
       "pl-cat-k8s-ing": {
         "elementId": "pl-cat-k8s-ing",
-        "x": 40,
+        "x": 52.5,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 200,
+        "height": 90
       },
       "pl-cat-k8s-pvc": {
         "elementId": "pl-cat-k8s-pvc",
-        "x": 40,
-        "y": 642,
-        "width": 180,
-        "height": 80
+        "x": 52.5,
+        "y": 672,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-k8s-cm": {
         "elementId": "pl-cat-k8s-cm",
-        "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "x": 42.5,
+        "y": 272,
+        "width": 220,
+        "height": 90
       },
       "pl-cat-oss": {
         "elementId": "pl-cat-oss",
-        "x": 250,
-        "y": 6317,
-        "width": 260,
-        "height": 422
+        "x": 240,
+        "y": 6427,
+        "width": 280,
+        "height": 442
       },
       "pl-cat-oss-redis": {
         "elementId": "pl-cat-oss-redis",
         "x": 40,
-        "y": 262,
-        "width": 180,
-        "height": 80
+        "y": 272,
+        "width": 200,
+        "height": 90
       },
       "pl-cat-oss-kafka": {
         "elementId": "pl-cat-oss-kafka",
         "x": 40,
         "y": 72,
-        "width": 180,
-        "height": 80
+        "width": 200,
+        "height": 90
       },
       "pl-cat-struct": {
         "elementId": "pl-cat-struct",
         "x": 40,
-        "y": 2544,
+        "y": 2614,
         "width": 680,
         "height": 2831
       },
@@ -3003,7 +2933,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "elementId": "pl-cat-ep",
         "x": 1064,
         "y": 56,
-        "width": 276,
+        "width": 300,
         "height": 40
       },
       "pl-cat-panel": {

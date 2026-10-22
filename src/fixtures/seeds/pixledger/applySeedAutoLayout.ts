@@ -12,6 +12,7 @@ import {
 import { computeApiGroupSize } from "@/features/diagram/utils/api-group-size";
 import type { EdgeLayout } from "@/features/diagram";
 import type { AppliedLayout } from "@/features/canvas/layout/applyLayout";
+import { SEED_MEASURED_SIZES } from "./measured-sizes";
 import { planDiagramAutoLayout } from "@/features/canvas/layout/autoLayoutDiagram";
 import { edgeLayoutsFromLayoutResult } from "@/features/canvas/layout/edgeLayoutsFromLayoutResult";
 
@@ -21,8 +22,9 @@ import { edgeLayoutsFromLayoutResult } from "@/features/canvas/layout/edgeLayout
  * ELK's handle order and its corridors snapped onto the handles — so a seed
  * opens, in the editor or the viewer, looking the way the button leaves it.
  *
- * No DOM measurements (seeds run offline), so sizes are normalised to the same
- * defaults `fromDiagram` would use when the store has no measured boxes.
+ * No DOM here (seeds run offline), so leaves are laid out at the sizes the
+ * canvas was measured drawing them at (`measured-sizes.ts`), and anything not
+ * measured at the defaults `fromDiagram` would use.
  *
  * Automatic references are left out: they are components, and the seed's
  * components are authored by hand in its builder.
@@ -30,7 +32,11 @@ import { edgeLayoutsFromLayoutResult } from "@/features/canvas/layout/edgeLayout
 export async function applySeedAutoLayout(diagram: Diagram): Promise<Diagram> {
   const components = diagram.snapshot.components;
   const connections = Object.values(diagram.snapshot.connections) as Connection[];
-  const nodeLayouts = sizeHintsForOfflineLayout(components, diagram.nodeLayouts);
+  const nodeLayouts = sizeHintsForOfflineLayout(
+    components,
+    diagram.nodeLayouts,
+    SEED_MEASURED_SIZES[diagram.id] ?? {},
+  );
 
   const plan = await planDiagramAutoLayout({
     components,
@@ -83,7 +89,13 @@ function seedEdgeLayouts(
 function sizeHintsForOfflineLayout(
   components: Record<string, Component>,
   previous: Record<string, NodeLayout>,
+  measured: Record<string, { width: number; height: number }>,
 ): Record<string, NodeLayout> {
+  const containers = new Set(
+    Object.values(components)
+      .map((component) => component.parentId)
+      .filter((parentId): parentId is string => !!parentId),
+  );
   const next: Record<string, NodeLayout> = {};
   const endpointCountByGroup = new Map<string, number>();
 
@@ -98,7 +110,8 @@ function sizeHintsForOfflineLayout(
 
   for (const component of Object.values(components)) {
     const prev = previous[component.id];
-    const size = offlineSizeOf(component, endpointCountByGroup.get(component.id) ?? 0);
+    const rendered = containers.has(component.id) ? undefined : measured[component.id];
+    const size = rendered ?? offlineSizeOf(component, endpointCountByGroup.get(component.id) ?? 0);
     next[component.id] = {
       elementId: component.id,
       x: prev?.x ?? 0,

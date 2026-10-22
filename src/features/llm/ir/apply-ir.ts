@@ -45,6 +45,27 @@ function currentViewportOrigin(): { x: number; y: number } {
   };
 }
 
+/** Frames to wait for React Flow to measure freshly inserted nodes. */
+const MEASURE_WAIT_FRAMES = 30;
+
+/**
+ * Resolves once every component in `ids` has a size in the active diagram's
+ * layouts — the canvas writes what it measured there — or after
+ * `MEASURE_WAIT_FRAMES` frames, whichever is first. A canvas that is not on
+ * screen never measures; the layout then runs on default sizes.
+ */
+async function whenMeasured(ids: readonly string[]): Promise<void> {
+  if (typeof requestAnimationFrame !== "function") return;
+  for (let frame = 0; frame < MEASURE_WAIT_FRAMES; frame += 1) {
+    const state = useDiagramStore.getState();
+    const layouts = state.activeDiagramId
+      ? state.diagrams[state.activeDiagramId]?.nodeLayouts
+      : undefined;
+    if (layouts && ids.every((id) => layouts[id]?.width !== undefined)) return;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  }
+}
+
 export interface GeneratedGraphInputs {
   nodes: GeneratedNodeInput[];
   edges: GeneratedEdgeInput[];
@@ -146,6 +167,10 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
   // new part is placed; re-laying out the user's own work is not this path's call.
   let referenceIds: string[] = [];
   if (intoEmptyDiagram && result.componentIds.length > 0) {
+    // Laid out at the size the canvas draws each node, like the button: until
+    // React Flow has measured them, a card 260 wide is laid out as 180 and its
+    // edges start with a step backwards.
+    await whenMeasured(result.componentIds);
     const plan = await autoLayoutActiveDiagram({ offset: origin });
     referenceIds = plan?.groups.map((group) => group.refId) ?? [];
   } else {
