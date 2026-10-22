@@ -114,6 +114,93 @@ export function findLineHops(polylines: readonly HopPolyline[]): Map<string, Lin
   return hops;
 }
 
+/** A jog shorter than this reads as a straight line, so it is drawn as one. */
+const MICRO_JOG = 1;
+
+type Axis = "h" | "v" | null;
+
+function axisOf(a: Point, b: Point): Axis {
+  if (isHorizontal(a, b)) return "h";
+  if (isVertical(a, b)) return "v";
+  return null;
+}
+
+/**
+ * Drops points that repeat the one before, sit mid-way along a straight run,
+ * or tip a sub-pixel spur (a run that steps out and straight back).
+ */
+function withoutRedundantPoints(points: readonly Point[]): Point[] {
+  const out: Point[] = [];
+  for (const point of points) {
+    for (;;) {
+      const last = out[out.length - 1];
+      if (last && Math.abs(last.x - point.x) < EPSILON && Math.abs(last.y - point.y) < EPSILON) {
+        break;
+      }
+      const before = out[out.length - 2];
+      const axis = before && last ? axisOf(before, last) : null;
+      if (axis === null || axis !== axisOf(last!, point)) {
+        out.push({ x: point.x, y: point.y });
+        break;
+      }
+      const key = axis === "h" ? "x" : "y";
+      const into = last![key] - before![key];
+      const onward = point[key] - last![key];
+      const spur = Math.min(Math.abs(into), Math.abs(onward)) < MICRO_JOG;
+      if (Math.sign(into) !== Math.sign(onward) && !spur) {
+        out.push({ x: point.x, y: point.y });
+        break;
+      }
+      out.pop();
+    }
+  }
+  return out;
+}
+
+/**
+ * The step polyline with every sub-pixel jog ironed out, or `points` itself
+ * when there is none.
+ *
+ * A stored route rarely lands exactly on a handle measured later: a fraction
+ * of a pixel off, the path makes a jog nobody can see. But the jog splits the
+ * straight run in two, and a crossing that falls within a few pixels of the
+ * split has no room for its arc, so the edge seems to pass straight through
+ * the other one. The run on one side of the jog moves onto the other's line
+ * instead — never a run that ends at a handle, so neither end moves.
+ */
+export function withoutMicroJogs(points: readonly Point[]): readonly Point[] {
+  let out = withoutRedundantPoints(points);
+  let changed = out.length !== points.length;
+
+  for (let i = 1; i < out.length - 2; i += 1) {
+    const jogAxis = axisOf(out[i]!, out[i + 1]!);
+    const runAxis = axisOf(out[i - 1]!, out[i]!);
+    if (jogAxis === null || runAxis === null || jogAxis === runAxis) continue;
+    if (axisOf(out[i + 1]!, out[i + 2]!) !== runAxis) continue;
+    const jog = jogAxis === "v" ? out[i + 1]!.y - out[i]!.y : out[i + 1]!.x - out[i]!.x;
+    if (Math.abs(jog) >= MICRO_JOG) continue;
+
+    const key = runAxis === "h" ? "y" : "x";
+    // The run after the jog, up to the corner where it turns.
+    let end = i + 1;
+    while (end + 1 < out.length && axisOf(out[end]!, out[end + 1]!) === runAxis) end += 1;
+    let start = i;
+    while (start > 0 && axisOf(out[start - 1]!, out[start]!) === runAxis) start -= 1;
+
+    if (end < out.length - 1) {
+      for (let k = i + 1; k <= end; k += 1) out[k] = { ...out[k]!, [key]: out[i]![key] };
+    } else if (start > 0) {
+      for (let k = start; k <= i; k += 1) out[k] = { ...out[k]!, [key]: out[i + 1]![key] };
+    } else {
+      continue;
+    }
+    out = withoutRedundantPoints(out);
+    changed = true;
+    i = 0;
+  }
+  return changed ? out : points;
+}
+
 function format(value: number): string {
   return String(Math.round(value * 1000) / 1000);
 }
@@ -180,4 +267,22 @@ export function buildPathWithHops(
     d += ` L ${format(b.x)} ${format(b.y)}`;
   }
   return d;
+}
+
+/**
+ * Just the hop arcs of a `buildPathWithHops` path, each as its own subpath.
+ *
+ * A dashed or dotted edge cuts its arcs into dashes like the rest of the line,
+ * and a hop chopped into two or three pieces reads as a break, not as a jump.
+ * The edge draws this solid on top so each arc stays whole.
+ *
+ * @example
+ * hopArcsPath("M 0 50 L 44 50 A 6 6 0 0 1 56 50 L 100 50") // "M 44 50 A 6 6 0 0 1 56 50"
+ */
+export function hopArcsPath(path: string): string {
+  const arcs: string[] = [];
+  for (const match of path.matchAll(/L (\S+) (\S+) (A [^LAM]+)/g)) {
+    arcs.push(`M ${match[1]} ${match[2]} ${match[3]!.trim()}`);
+  }
+  return arcs.join(" ");
 }

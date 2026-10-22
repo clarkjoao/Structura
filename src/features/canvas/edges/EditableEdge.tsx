@@ -23,7 +23,7 @@ import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useEdgeLabelReveal } from "../contexts/EdgeLabelRevealContext";
 import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
 import { buildStepPath, stepPathPoints } from "./geometry/orthogonal";
-import { buildPathWithHops } from "./geometry/lineHops";
+import { buildPathWithHops, hopArcsPath, withoutMicroJogs } from "./geometry/lineHops";
 import { useLineHops } from "../contexts/LineHopsContext";
 import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/projection";
 import { useControlPoints } from "./interaction/useControlPoints";
@@ -165,8 +165,10 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   // The points the step path visits, published so the canvas can find where it
   // crosses other step edges; it hops over the ones it crosses horizontally.
+  // Sub-pixel jogs are ironed out first: they would leave a crossing next to
+  // them no room for its arc.
   const stepPoints = useMemo(
-    () => (isStep ? stepPathPoints(source, target, stepCorners) : null),
+    () => (isStep ? withoutMicroJogs(stepPathPoints(source, target, stepCorners)) : null),
     [isStep, source, target, stepCorners],
   );
   const lineHops = useLineHops(id, stepPoints);
@@ -221,6 +223,14 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const strokeStyle = edgeData.strokeStyle ?? StrokeStyle.Solid;
   const strokeWidth = edgeData.strokeWidth ?? 1;
   const baseStroke = edgeData.color ?? DEFAULT_STROKE;
+  const stroke = isHighlighted ? HIGHLIGHT_STROKE : baseStroke;
+  const drawnStrokeWidth = isHighlighted ? Math.max(2, strokeWidth + 1) : strokeWidth;
+  // React Flow dashes every path of an animated edge, whatever its style says.
+  const isDashed = strokeStyle !== StrokeStyle.Solid || Boolean(props.animated);
+  const hopArcs = useMemo(
+    () => (isDashed && lineHops.length > 0 ? hopArcsPath(edgePath) : ""),
+    [isDashed, lineHops, edgePath],
+  );
 
   const showAffordances = isEditable && (Boolean(selected) || hovered) && !!activeDiagramId;
   const ghosts = useMemo(
@@ -266,11 +276,25 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           markerStart={markerStart}
           interactionWidth={20}
           style={{
-            stroke: isHighlighted ? HIGHLIGHT_STROKE : baseStroke,
-            strokeWidth: isHighlighted ? Math.max(2, strokeWidth + 1) : strokeWidth,
+            stroke,
+            strokeWidth: drawnStrokeWidth,
             strokeDasharray: strokeDasharrayByStyle[strokeStyle],
           }}
         />
+        {hopArcs && (
+          // Solid over the dashed line, so a dash gap never cuts a hop in pieces.
+          <path
+            d={hopArcs}
+            fill="none"
+            style={{
+              stroke,
+              strokeWidth: drawnStrokeWidth,
+              strokeDasharray: "none",
+              animation: "none",
+              pointerEvents: "none",
+            }}
+          />
+        )}
         <EdgeHitArea
           edgePath={edgePath}
           onHoverChange={setHovered}
@@ -295,8 +319,10 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
           );
         })}
         {segmentDrag.previewPath && (
+          // The edge's own path, hops included: a plain step path on top
+          // would draw straight through every crossing while dragging.
           <path
-            d={segmentDrag.previewPath}
+            d={edgePath}
             fill="none"
             stroke="var(--color-text-info, hsl(187 72% 51%))"
             strokeWidth={2}
