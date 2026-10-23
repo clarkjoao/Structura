@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
+import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
@@ -16,6 +16,7 @@ import { useCanvasBackdrop } from "./use-canvas-backdrop";
 import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 import { buildPanelHandles } from "./CardNode/Handles";
+import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 /**
  * The header's "minimize" button is switched off for now; the collapse code
@@ -76,6 +77,7 @@ const UNPARENT_BORDER = "hsl(25 95% 53%)";
 const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const { data, selected, dragging } = props;
   const d = data as PanelNodeData;
+  const sides = useHandleSides();
   const isResizing =
     "resizing" in props ? Boolean((props as NodeProps & { resizing?: boolean }).resizing) : false;
   const { t } = useTranslation();
@@ -116,8 +118,8 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
    */
   const panelHandles = (
     <>
-      {buildPanelHandles(d.incomingCount ?? 1, "target", Position.Left, d.elementId)}
-      {buildPanelHandles(d.outgoingCount ?? 1, "source", Position.Right, d.elementId)}
+      {buildPanelHandles(d.incomingCount ?? 1, "target", sides.input, d.elementId)}
+      {buildPanelHandles(d.outgoingCount ?? 1, "source", sides.output, d.elementId)}
     </>
   );
 

@@ -4,7 +4,12 @@ import { buildHandles, buildPanelHandles, handleTopCss } from "./Handles";
 
 type Rendered = {
   key: string;
-  props: { id?: string; className?: string; "aria-hidden"?: boolean };
+  props: {
+    id?: string;
+    className?: string;
+    "aria-hidden"?: boolean;
+    style?: Record<string, unknown>;
+  };
 };
 
 const render = (nodes: React.ReactNode[]) => nodes as unknown as Rendered[];
@@ -50,6 +55,37 @@ describe("buildHandles", () => {
       // Narrower than the pitch, so neighbouring slots do not overlap.
       expect(slot.props.className).toContain("!w-[7px]");
     }
+  });
+
+  it("spreads a left or right side along the height, as always", () => {
+    const placed = slots(
+      render(buildHandles(3, "target", Position.Left, { elementId: "n" }, undefined)),
+    );
+    expect(placed.map((slot) => slot.props.style?.top)).toEqual(
+      [0, 1, 2].map((i) => handleTopCss(i, 3)),
+    );
+    expect(placed.every((slot) => slot.props.style?.left === undefined)).toBe(true);
+  });
+
+  it("spreads a top or bottom side along the width, with the same formula", () => {
+    const placed = slots(
+      render(buildHandles(3, "source", Position.Bottom, { elementId: "n" }, undefined)),
+    );
+    expect(placed.map((slot) => slot.props.style?.left)).toEqual(
+      [0, 1, 2].map((i) => handleTopCss(i, 3)),
+    );
+    expect(placed.every((slot) => slot.props.style?.top === undefined)).toBe(true);
+  });
+
+  it("puts a bundle's dot on the side it bundles", () => {
+    const [right] = dots(
+      render(buildHandles(3, "source", Position.Right, { elementId: "n" }, undefined)),
+    );
+    expect(right!.props.style).toMatchObject({ right: 0, top: "50%" });
+    const [bottom] = dots(
+      render(buildHandles(3, "source", Position.Bottom, { elementId: "n" }, undefined)),
+    );
+    expect(bottom!.props.style).toMatchObject({ bottom: 0, left: "50%" });
   });
 
   it("adds no dot to a panel, whose handles are invisible", () => {

@@ -1,6 +1,7 @@
-import { Handle, Position } from "@xyflow/react";
+import { Handle, type Position } from "@xyflow/react";
 import type { NodeData } from "./types";
 import { HANDLE_PITCH, MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
+import { isSideAlongHeight, middleOfSideStyle } from "../node-types/handle-sides";
 
 /**
  * What a handle needs to know about its node, and nothing else.
@@ -25,9 +26,10 @@ export function handleSlotCount(count: number): number {
 }
 
 /**
- * Vertical placement of slot `index` of `count`, as CSS against the node's
- * height: `handleSlotOffset` written so the browser resolves it, since the
- * height is only known once laid out. `renderedEdgePath.handleAnchor` measures
+ * Placement of slot `index` of `count` along its side, as CSS against the
+ * side's length — the height for a left or right side (`top`), the width for a
+ * top or bottom one (`left`): `handleSlotOffset` written so the browser resolves
+ * it, since the size is only known once laid out. `renderedEdgePath.handleAnchor` measures
  * with `handleSlotOffset` itself — `renderedEdgePath.test.ts` holds them
  * together.
  */
@@ -80,11 +82,8 @@ function bundleDot(type: "source" | "target", position: Position): React.ReactNo
     <div
       key={`${type}-dot`}
       aria-hidden
-      className="pointer-events-none absolute top-1/2 h-2.5 w-2.5 rounded-full border border-background bg-muted-foreground"
-      style={{
-        [position === Position.Left ? "left" : "right"]: 0,
-        transform: `translate(${position === Position.Left ? "-50%" : "50%"}, -50%)`,
-      }}
+      className="pointer-events-none absolute h-2.5 w-2.5 rounded-full border border-background bg-muted-foreground"
+      style={middleOfSideStyle(position)}
     />
   );
 }
@@ -142,7 +141,7 @@ export function buildHandles(
         className={slotClassFor(d, handleId)}
         style={{
           ...handlePointer,
-          top: handleTopCss(i, n),
+          [isSideAlongHeight(position) ? "top" : "left"]: handleTopCss(i, n),
         }}
         onClick={onClick}
       />

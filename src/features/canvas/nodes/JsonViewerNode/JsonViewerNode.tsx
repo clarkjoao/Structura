@@ -1,12 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import {
-  Handle,
-  NodeResizer,
-  Position,
-  useReactFlow,
-  type Node,
-  type NodeProps,
-} from "@xyflow/react";
+import { Handle, NodeResizer, useReactFlow, type Node, type NodeProps } from "@xyflow/react";
 import { LazyMonacoEditor as Editor, type EditorProps } from "@/lib/monaco/LazyMonacoEditor";
 import { Braces, Check, ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +9,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { JsonViewerNodeData, JsonViewerMode } from "./JsonViewerNode.types";
+import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 
 const COLLAPSED_W = 240;
 const COLLAPSED_H = 88;
@@ -36,11 +30,12 @@ const jsonViewerIncomingHandleClassName =
  * same and is what the edge handle assignment reads.
  */
 function JsonViewerEdgeHandles({ elementId }: { elementId: string }) {
+  const { input } = useHandleSides();
   return (
     <Handle
       id={singleIncomingTargetHandleId(elementId)}
       type="target"
-      position={Position.Left}
+      position={input}
       className={jsonViewerIncomingHandleClassName}
     />
   );
