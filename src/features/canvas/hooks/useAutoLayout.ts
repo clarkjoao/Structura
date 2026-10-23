@@ -1,18 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useReactFlow } from "@xyflow/react";
+import { useReactFlow, useStoreApi } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { measuredSizesOf } from "../layout/applyLayout";
 import { applyDiagramAutoLayout, planDiagramAutoLayout } from "../layout/autoLayoutDiagram";
+import { startLayoutTransition } from "../layout/layoutTransition";
 import { useDiagramActions, useDiagramStore } from "@/features/diagram";
-import type { Component, Connection, NodeLayout } from "@/features/diagram";
+import type { Component, Connection, DiagramLayoutSettings, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
+
+interface AutoLayoutRunOptions {
+  /**
+   * Arrange with these settings instead of the diagram's, and store them in the
+   * same undo step — what a change in the Arrange menu does.
+   */
+  settings?: DiagramLayoutSettings;
+}
 
 export function useAutoLayout() {
   const { t } = useTranslation();
   const { fitView, getNodes } = useReactFlow();
+  const reactFlowStore = useStoreApi();
   const { applyAutoLayout } = useDiagramActions();
   const [isRunning, setIsRunning] = useState(false);
+  const endTransitionRef = useRef<() => void>();
+
+  useEffect(() => () => endTransitionRef.current?.(), []);
 
   // Keep a ref to the latest runAutoLayout for recursive calls
   const runAutoLayoutRef =
@@ -22,6 +35,7 @@ export function useAutoLayout() {
         connections: Connection[],
         nodeLayouts: Record<string, NodeLayout>,
         measuredNodes?: Node[],
+        options?: AutoLayoutRunOptions,
       ) => Promise<void>
     >();
 
@@ -31,6 +45,7 @@ export function useAutoLayout() {
       connections: Connection[],
       nodeLayouts: Record<string, NodeLayout>,
       measuredNodes?: Node[],
+      options: AutoLayoutRunOptions = {},
     ) => {
       if (isRunning) return;
 
@@ -45,7 +60,7 @@ export function useAutoLayout() {
       if (!hasMeasuredDimensions) {
         // Retry after a short delay to allow nodes to measure
         requestAnimationFrame(() => {
-          runAutoLayoutRef.current?.(components, connections, nodeLayouts, getNodes());
+          runAutoLayoutRef.current?.(components, connections, nodeLayouts, getNodes(), options);
         });
         return;
       }
@@ -57,6 +72,8 @@ export function useAutoLayout() {
         // A scene adds and removes elements through its own diff; references are
         // made on the base diagram only, and a scene is laid out as it is.
         const inScene = !!active?.activeVersionId && !!active.versions?.[active.activeVersionId];
+        const writeSettings = options.settings !== undefined;
+        const settings = writeSettings ? options.settings : active?.layoutSettings;
         // The same plan the assistant and generation run (`autoLayoutDiagram.ts`),
         // with the sizes React Flow measured.
         const plan = await planDiagramAutoLayout({
@@ -65,6 +82,7 @@ export function useAutoLayout() {
           nodeLayouts,
           measured: measuredSizesOf(nodesToUse),
           autoRefs: !inScene,
+          ...(settings ? { settings } : {}),
         });
         const { groups } = plan;
 
@@ -73,8 +91,9 @@ export function useAutoLayout() {
           return;
         }
 
+        endTransitionRef.current = startLayoutTransition(reactFlowStore.getState().domNode);
         const diagramId = useDiagramStore.getState().activeDiagramId;
-        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId);
+        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId, { writeSettings });
         else applyAutoLayout(plan.layouts, plan.autoRefs);
 
         requestAnimationFrame(() => {
@@ -92,7 +111,7 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [isRunning, applyAutoLayout, fitView, getNodes, t],
+    [isRunning, applyAutoLayout, fitView, getNodes, reactFlowStore, t],
   );
 
   // Keep ref in sync with the callback

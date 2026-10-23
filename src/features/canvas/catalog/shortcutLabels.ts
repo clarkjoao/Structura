@@ -9,3 +9,8 @@ export function modKeyLabel(): string {
 export function catalogShortcutLabel(): string {
   return `${modKeyLabel()}K`;
 }
+
+/** The arrange (auto-layout) shortcut, Cmd/Ctrl+Shift+L, as shown in hints. */
+export function arrangeShortcutLabel(): string {
+  return getPlatform() === "mac" ? "⇧⌘L" : "Ctrl+Shift+L";
+}

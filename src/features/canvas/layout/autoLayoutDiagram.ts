@@ -9,7 +9,8 @@ import { chooseAutoRefs, type AutoRefGroup } from "./autoRefs";
 import { autoRefOptionsFor, withoutAutoRefs } from "./autoRefsFromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { fitToContentIds, fromDiagram, resizableIds } from "./fromDiagram";
-import { layout } from "./layoutEngine";
+import { layoutWithSettings } from "./layoutEngine";
+import type { DiagramLayoutSettings } from "@/features/diagram/model/layout-settings";
 import { handleSpecFor } from "../nodes/node-types/registry";
 
 /**
@@ -45,6 +46,12 @@ export interface DiagramAutoLayoutInput {
    * user is looking.
    */
   offset?: { x: number; y: number };
+  /**
+   * The diagram's layout settings (density, gaps). Absent runs the tuned
+   * spacing unchanged. References are chosen under the same spacing, so the
+   * choice is measured against the layout that will be drawn.
+   */
+  settings?: DiagramLayoutSettings;
 }
 
 export interface DiagramAutoLayoutPlan {
@@ -56,6 +63,8 @@ export interface DiagramAutoLayoutPlan {
   /** The references to reconcile; `undefined` leaves references alone. */
   autoRefs: AutoRefAssignment[] | undefined;
   offset: { x: number; y: number };
+  /** The settings the plan was made with, for the caller that writes them. */
+  settings: DiagramLayoutSettings | undefined;
 }
 
 export async function planDiagramAutoLayout(
@@ -71,9 +80,10 @@ export async function planDiagramAutoLayout(
     handleSpecFor,
   });
 
+  const run = layoutWithSettings(input.settings);
   const { graph, result, groups } = input.autoRefs
-    ? await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), layout)
-    : { graph: baseGraph, result: await layout(baseGraph), groups: [] };
+    ? await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), run)
+    : { graph: baseGraph, result: await run(baseGraph), groups: [] };
 
   const layouts = fitContainersToChildren(
     toAppliedLayouts(graph, result, resizableIds(graph, components), offset),
@@ -87,6 +97,7 @@ export async function planDiagramAutoLayout(
     groups,
     layouts,
     offset,
+    settings: input.settings,
     autoRefs: input.autoRefs
       ? groups.map(({ refId, originalId, parentId, sourceIds }) => ({
           refId,
@@ -101,9 +112,23 @@ export async function planDiagramAutoLayout(
 /**
  * Writes a plan to the active diagram: positions and references as one undo
  * step, then ELK's handle order and corridors.
+ *
+ * `writeSettings` stores the settings the plan was made with in that same step
+ * — what a settings change from the Arrange menu does. Omitted, the diagram's
+ * stored settings are left as they are.
  */
-export function applyDiagramAutoLayout(plan: DiagramAutoLayoutPlan, diagramId: string): void {
-  useDiagramStore.getState().applyAutoLayout(plan.layouts, plan.autoRefs);
+export function applyDiagramAutoLayout(
+  plan: DiagramAutoLayoutPlan,
+  diagramId: string,
+  { writeSettings = false }: { writeSettings?: boolean } = {},
+): void {
+  useDiagramStore
+    .getState()
+    .applyAutoLayout(
+      plan.layouts,
+      plan.autoRefs,
+      writeSettings ? { layoutSettings: plan.settings ?? {} } : undefined,
+    );
   applyLayoutResultEdges(plan.graph, plan.result, diagramId, { waypointOffset: plan.offset });
 }
 
@@ -126,6 +151,7 @@ export async function autoLayoutActiveDiagram(
     connections: Object.values(diagram.snapshot.connections),
     nodeLayouts: diagram.nodeLayouts,
     autoRefs: !inScene,
+    ...(diagram.layoutSettings ? { settings: diagram.layoutSettings } : {}),
     ...(options.offset ? { offset: options.offset } : {}),
   });
   if (plan.result.boxes.size === 0) return null;

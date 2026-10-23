@@ -56,6 +56,7 @@ import type { Component } from "./component.types";
 import type { Connection } from "./connection.types";
 import type { Flow } from "./flow.types";
 import type { EdgeLayout, NodeLayout } from "./layout.types";
+import type { DiagramLayoutSettings } from "./layout-settings";
 
 export type Level = "context" | "container" | "component" | string;
 
@@ -167,6 +168,13 @@ export interface Diagram {
    * exports until the author turns it on and saves.
    */
   textsVisible?: boolean;
+
+  /**
+   * How the auto-layout arranges this diagram (`layout-settings.ts`). Absent
+   * means the default arrangement; written only through `applyAutoLayout`, so
+   * a change and the arrangement it causes are one undo step.
+   */
+  layoutSettings?: DiagramLayoutSettings;
 }
 
 export type DiagramModel = Omit<Diagram, "viewport">;

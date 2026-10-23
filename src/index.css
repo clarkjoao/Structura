@@ -394,3 +394,31 @@
 [data-edge-label] {
   transition: opacity 120ms ease;
 }
+
+/*
+ * An auto-layout run glides the nodes to where the layout put them
+ * (`layoutTransition.ts`). React Flow positions a node with `transform` only,
+ * so the transition is all it takes — no store writes, no per-frame React work.
+ * A node being dragged is left out, so a drag started mid-run follows the
+ * pointer. Edges carry stored waypoints that land at once, so they are hidden
+ * while the nodes move and fade back in on their final route.
+ */
+[data-layout-animating] .react-flow__node:not(.dragging) {
+  transition: transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.react-flow__edges,
+.react-flow__edgelabel-renderer {
+  transition: opacity 160ms ease-out;
+}
+[data-layout-animating] .react-flow__edges,
+[data-layout-animating] .react-flow__edgelabel-renderer,
+[data-layout-animating] [data-edge-label] {
+  opacity: 0;
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Same selector as the rule above, so it wins on order, not lose on specificity. */
+  [data-layout-animating] .react-flow__node:not(.dragging) {
+    transition: none;
+  }
+}

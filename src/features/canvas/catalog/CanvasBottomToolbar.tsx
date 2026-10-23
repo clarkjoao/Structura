@@ -26,6 +26,7 @@ import { useCanvasPreferencesStore } from "../preferences";
 import { LayerFilterPopover } from "../toolbar/LayerFilterPopover";
 import { VersionsButton } from "../toolbar/components/VersionsButton";
 import { ConnectedVersionPanel } from "../toolbar/VersionPanel";
+import { ArrangeControl, type ArrangeControlProps } from "./ArrangeControl";
 import { CatalogEntryIcon } from "./CatalogEntryIcon";
 import { CANVAS_OVERLAY_ATTRIBUTE, useCatalogUiStore } from "./catalogUi.store";
 import { ElementCatalog } from "./ElementCatalog";
@@ -42,6 +43,8 @@ export interface CanvasBottomToolbarProps {
   canInsert: boolean;
   /** Selects what an insert created. */
   onInserted: (nodeIds: string[]) => void;
+  /** The Arrange split button; shown with the insert half, when the canvas can be edited. */
+  arrange: Omit<ArrangeControlProps, "buttonClassName" | "onOpenChange">;
   /** The versions panel opens above the toolbar, like the catalog. */
   versions: { locked: boolean; open: boolean; onOpenChange: (open: boolean) => void };
   tags: {
@@ -72,6 +75,7 @@ export function CanvasBottomToolbar({
   isPanelOpen,
   canInsert,
   onInserted,
+  arrange,
   versions,
   tags,
 }: CanvasBottomToolbarProps) {
@@ -220,6 +224,12 @@ export function CanvasBottomToolbar({
           />
         </PopoverContent>
       </Popover>
+      <Separator />
+      <ArrangeControl
+        {...arrange}
+        onOpenChange={holdWhileOpen("arrange")}
+        buttonClassName={TOOL_BUTTON_CLASS}
+      />
       <Separator />
     </>
   );

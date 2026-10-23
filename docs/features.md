@@ -106,7 +106,18 @@ snapshot, with a compare mode.
 
 ## Layout
 
-- Auto layout (layered, left to right) powered by ELK.
+- Auto layout (layered, left to right) powered by ELK, from the **Arrange** button in the bottom
+  toolbar, `Cmd/Ctrl + Shift + L`, the context menus or the assistant.
+- Per-diagram arrange settings, saved with the diagram:
+  - **Spacing**: Compact, Normal or Spacious. It scales every tuned layout gap (×0.75 / ×1 / ×1.4),
+    so the measured proportions hold. Normal is the default layout.
+  - **Advanced**: the gap between layers and the gap between elements in a layer (40–600px), each
+    overriding the spacing for that gap only.
+  - Changing a setting re-arranges at once; one undo restores both the setting and the positions.
+  - **Restore defaults** goes back to Normal spacing with no overrides.
+- Arranging animates: elements glide to their new place and connections fade back in on their
+  final route (instant with reduced motion).
+- A collapsed panel is arranged at its collapsed size; its hidden children keep their place.
 - Fit panels to their children; grid snapping.
 
 ## Import, export and sharing

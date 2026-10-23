@@ -527,7 +527,31 @@
     "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal.",
     "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente",
     "renameDiagram": "Nome do diagrama",
-    "renameDiagramHint": "Clique duas vezes para renomear"
+    "renameDiagramHint": "Clique duas vezes para renomear",
+    "arrange": {
+      "label": "Organizar",
+      "action": "Organizar o diagrama",
+      "withShortcut": "Organizar o diagrama ({{shortcut}})",
+      "optionsAria": "Opções de organização",
+      "title": "Organizar",
+      "mode": "Modo",
+      "modeManual": "Manual",
+      "modeManualHint": "Os elementos só se movem quando você organiza.",
+      "modeAutomatic": "Automático",
+      "modeAutomaticHint": "Em breve: reorganiza ao adicionar, conectar ou recolher.",
+      "soon": "em breve",
+      "density": "Espaçamento",
+      "densityCompact": "Compacto",
+      "densityNormal": "Normal",
+      "densitySpacious": "Espaçado",
+      "densityHint": "Mudar reorganiza o diagrama. Desfazer volta como estava.",
+      "advanced": "Avançado",
+      "layerGap": "Espaço entre camadas",
+      "nodeGap": "Espaço entre elementos",
+      "resetGaps": "Voltar ao espaçamento",
+      "resetDefaults": "Restaurar padrão",
+      "running": "Organizando…"
+    }
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",

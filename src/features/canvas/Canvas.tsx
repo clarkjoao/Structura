@@ -172,6 +172,8 @@ const Canvas = (props: CanvasProps = {}) => {
     isCompareMode,
     allDiagramTags,
     handleAutoLayout,
+    handleArrangeWithSettings,
+    arrangeLabelled,
     isAutoLayoutRunning,
     actions,
   } = useCanvasController(props);
@@ -381,6 +383,13 @@ const Canvas = (props: CanvasProps = {}) => {
                 isPanelOpen={isPanelOpen}
                 canInsert={interactionMode.canEditCanvas && !isFlowActive && !isCompareMode}
                 onInserted={selectInsertedNodes}
+                arrange={{
+                  settings: diagram.layoutSettings,
+                  labelled: arrangeLabelled,
+                  running: isAutoLayoutRunning,
+                  onArrange: handleAutoLayout,
+                  onSettingsChange: handleArrangeWithSettings,
+                }}
                 versions={{
                   locked: !interactionMode.canEditVersions || isFlowActive,
                   open: showVersions,

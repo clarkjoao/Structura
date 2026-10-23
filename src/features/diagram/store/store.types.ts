@@ -10,6 +10,7 @@ import type {
   ViewNodeLayout,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+import type { DiagramLayoutSettings } from "../model/layout-settings";
 import type { AppActions } from "./actions.types";
 
 export interface DiagramSnapshot {
@@ -26,6 +27,11 @@ export interface DiagramSnapshot {
    * has no versions.
    */
   versions?: Record<string, VersionDiff>;
+  /**
+   * The layout settings at the checkpoint, so undoing a density change puts the
+   * setting back along with the positions it produced. Undefined when unset.
+   */
+  layoutSettings?: DiagramLayoutSettings;
   timestamp: number;
 }
 

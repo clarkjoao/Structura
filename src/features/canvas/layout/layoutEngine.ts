@@ -1,6 +1,11 @@
 import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
 // The leaf module: the layout path must not pull the diagram store in.
 import { HANDLE_PITCH } from "@/features/diagram/model/layout.constants";
+import {
+  LAYOUT_DENSITY_FACTOR,
+  clampLayoutGap,
+  type DiagramLayoutSettings,
+} from "@/features/diagram/model/layout-settings";
 import { readLaidOutGraph } from "./layoutReadability";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import type {
@@ -57,6 +62,11 @@ import type {
  * `layering.strategy=LONGEST_PATH` measured worse (11 crossings against 9), and
  * `layered.wrapping.strategy` breaks a linear chain into rows, which contradicts
  * the reading-direction rule in AGENTS.md. Both are covered by tests.
+ *
+ * The author can scale the spacings per diagram (`elkSpacingFor`): a density
+ * multiplies every value tuned above, labelled ones included, so their measured
+ * ratios hold. Padding and `spacing.portPort` are not scaled — they encode where
+ * the canvas draws its headers and handles, not how airy the diagram is.
  */
 export const ELK_OPTIONS_INTERACTIVE: Record<string, string> = {
   "elk.algorithm": "layered",
@@ -93,6 +103,84 @@ const ELK_OPTIONS_LABELLED: Record<string, string> = {
   "elk.layered.spacing.nodeNodeBetweenLayers": "110",
   "elk.layered.nodePlacement.bk.fixedAlignment": "BALANCED",
 };
+
+/** The spacings a density scales. Everything else in the option set is left as tuned. */
+const DENSITY_SCALED_KEYS = [
+  "elk.layered.spacing.nodeNodeBetweenLayers",
+  "elk.spacing.nodeNode",
+  "elk.spacing.edgeNode",
+  "elk.spacing.edgeEdge",
+  "elk.layered.spacing.edgeEdgeBetweenLayers",
+] as const;
+
+/**
+ * The option overrides a diagram's layout settings make, on top of the tuned
+ * set (`ELK_OPTIONS_INTERACTIVE`, plus `ELK_OPTIONS_LABELLED` when `labelled`).
+ *
+ * Empty for the default settings, so a diagram nobody tuned runs exactly the
+ * options the baselines lock. The density scales every spacing first; an
+ * advanced gap then replaces its own spacing, clamped, whatever the density.
+ */
+export function elkSpacingFor(
+  settings: DiagramLayoutSettings | undefined,
+  labelled: boolean,
+): Record<string, string> {
+  const overrides: Record<string, string> = {};
+  if (!settings) return overrides;
+
+  const factor = LAYOUT_DENSITY_FACTOR[settings.density ?? "normal"] ?? 1;
+  if (factor !== 1) {
+    const tuned = { ...ELK_OPTIONS_INTERACTIVE, ...(labelled ? ELK_OPTIONS_LABELLED : {}) };
+    for (const key of DENSITY_SCALED_KEYS) {
+      const value = Number(tuned[key]);
+      if (Number.isFinite(value)) overrides[key] = String(Math.round(value * factor));
+    }
+  }
+  if (typeof settings.layerGap === "number" && Number.isFinite(settings.layerGap)) {
+    overrides["elk.layered.spacing.nodeNodeBetweenLayers"] = String(
+      clampLayoutGap(settings.layerGap),
+    );
+  }
+  if (typeof settings.nodeGap === "number" && Number.isFinite(settings.nodeGap)) {
+    overrides["elk.spacing.nodeNode"] = String(clampLayoutGap(settings.nodeGap));
+  }
+  return overrides;
+}
+
+/**
+ * The two gaps the Arrange menu shows, as the layout will use them: the
+ * override when there is one, the density-scaled tuned value otherwise.
+ */
+export function effectiveLayoutGaps(
+  settings: DiagramLayoutSettings | undefined,
+  labelled: boolean,
+): { layerGap: number; nodeGap: number } {
+  const options = {
+    ...ELK_OPTIONS_INTERACTIVE,
+    ...(labelled ? ELK_OPTIONS_LABELLED : {}),
+    ...elkSpacingFor(settings, labelled),
+  };
+  return {
+    layerGap: Number(options["elk.layered.spacing.nodeNodeBetweenLayers"]),
+    nodeGap: Number(options["elk.spacing.nodeNode"]),
+  };
+}
+
+/** Whether ELK reserves room for labels in this graph, which picks `ELK_OPTIONS_LABELLED`. */
+function hasLabels(graph: LayoutGraph): boolean {
+  return graph.edges.some((edge) => edge.labelBox?.text);
+}
+
+/**
+ * `layout`, arranged the way a diagram's settings ask. What every production
+ * caller runs, so the toolbar, the shortcut, the assistant and generation cannot
+ * space a diagram differently. Absent settings run the tuned options unchanged.
+ */
+export function layoutWithSettings(
+  settings: DiagramLayoutSettings | undefined,
+): (graph: LayoutGraph) => Promise<LayoutResult> {
+  return (graph) => layout(graph, elkSpacingFor(settings, hasLabels(graph)));
+}
 
 const ELK_ROOT_ID = "__structura_layout_root__";
 
@@ -307,7 +395,7 @@ export async function layoutElkGraph(
   graph: LayoutGraph,
   optionOverrides: Record<string, string> = {},
 ): Promise<ElkNode> {
-  const labelled = graph.edges.some((edge) => edge.labelBox?.text);
+  const labelled = hasLabels(graph);
   const options = {
     ...ELK_OPTIONS_INTERACTIVE,
     ...(labelled ? ELK_OPTIONS_LABELLED : {}),

@@ -527,7 +527,31 @@
     "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways.",
     "autoHideBottomToolbar": "Automatically hide the bottom toolbar",
     "renameDiagram": "Diagram name",
-    "renameDiagramHint": "Double-click to rename"
+    "renameDiagramHint": "Double-click to rename",
+    "arrange": {
+      "label": "Arrange",
+      "action": "Arrange the diagram",
+      "withShortcut": "Arrange the diagram ({{shortcut}})",
+      "optionsAria": "Arrange options",
+      "title": "Arrange",
+      "mode": "Mode",
+      "modeManual": "Manual",
+      "modeManualHint": "Elements move only when you arrange them.",
+      "modeAutomatic": "Automatic",
+      "modeAutomaticHint": "Coming soon: rearranges as you add, connect or collapse.",
+      "soon": "soon",
+      "density": "Spacing",
+      "densityCompact": "Compact",
+      "densityNormal": "Normal",
+      "densitySpacious": "Spacious",
+      "densityHint": "Changing it arranges the diagram again. Undo puts it back.",
+      "advanced": "Advanced",
+      "layerGap": "Gap between layers",
+      "nodeGap": "Gap between elements",
+      "resetGaps": "Reset to spacing",
+      "resetDefaults": "Restore defaults",
+      "running": "Arranging…"
+    }
   },
   "diagram": {
     "deleteConfirmTitle": "Delete diagram?",

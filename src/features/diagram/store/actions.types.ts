@@ -17,6 +17,7 @@ import type {
   ExternalLink,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+import type { DiagramLayoutSettings } from "../model/layout-settings";
 
 /**
  * A reference the auto-layout decided on: `refId` stands for `originalId` in
@@ -157,6 +158,7 @@ export interface AppActions {
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
+    options?: { layoutSettings?: DiagramLayoutSettings },
   ) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;

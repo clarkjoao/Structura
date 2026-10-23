@@ -128,6 +128,39 @@ function sizeOf(
   return { width: DEFAULT_NODE_W, height: DEFAULT_NODE_H };
 }
 
+function isCollapsedPanel(component: Component | undefined): boolean {
+  return (
+    component !== undefined &&
+    isPanelType(component.type) &&
+    "collapsed" in component &&
+    component.collapsed === true
+  );
+}
+
+/**
+ * Whether a collapsed panel sits anywhere above `component`. The canvas hides
+ * such a component (`buildCollapsedPanelIds`), so the layout leaves it out too:
+ * handing ELK a collapsed panel's hidden children sizes the panel as if it were
+ * open, and its neighbours keep their distance from a box the canvas does not
+ * draw. Left out, a hidden child keeps its stored, parent-relative position and
+ * is where it was when the panel is expanded again.
+ */
+function insideCollapsedPanel(
+  component: Component,
+  components: Record<string, Component>,
+): boolean {
+  let parentId = component.parentId;
+  const seen = new Set<string>();
+  while (parentId !== null && parentId !== undefined && !seen.has(parentId)) {
+    seen.add(parentId);
+    const parent = components[parentId];
+    if (parent === undefined) return false;
+    if (isCollapsedPanel(parent)) return true;
+    parentId = parent.parentId;
+  }
+  return false;
+}
+
 /** `rootIds` plus every component nested under them, at any depth. */
 function collectSubtree(
   components: Record<string, Component>,
@@ -152,6 +185,7 @@ function collectSubtree(
       const child = components[childId];
       if (child && isApiGroupComponent(components[id]!)) continue;
       if (child && isTextType(child.type)) continue;
+      if (isCollapsedPanel(components[id])) continue;
       visit(childId);
     }
   };
@@ -194,6 +228,7 @@ export function fromDiagram(
             // Their endpoint children are excluded (ApiGroup manages those itself).
             if (isApiGroupComponent(comp)) return true;
             if (comp.parentId && apiGroupIds.has(comp.parentId)) return false;
+            if (insideCollapsedPanel(comp, components)) return false;
             return true;
           }),
         )
@@ -239,6 +274,10 @@ export function fromDiagram(
  * panel's size from the stored layout (`panel.descriptor.ts`). Every other node
  * type sizes itself from its own content, so writing a layout size would pin it
  * to something the DOM never agreed to.
+ *
+ * A collapsed panel is left out: the layout sees it as a leaf at its collapsed
+ * size, and writing that back would be a no-op at best — the size it opens to is
+ * kept on the component (`collapsedWidth`/`collapsedHeight`), not in the layout.
  */
 export function resizableIds(
   graph: LayoutGraph,
@@ -247,23 +286,21 @@ export function resizableIds(
   const ids = new Set<string>();
   for (const node of graph.nodes) {
     const component = components[node.id];
-    if (component !== undefined && isPanelType(component.type)) ids.add(node.id);
+    if (component === undefined || !isPanelType(component.type)) continue;
+    if (isCollapsedPanel(component)) continue;
+    ids.add(node.id);
   }
   return ids;
 }
 
 /**
  * The containers an auto-layout wraps to their content afterwards: the resizable
- * ones, minus a collapsed panel, which `fitGroupToChildren` leaves alone too.
+ * ones, which already leave a collapsed panel out — `fitGroupToChildren` leaves
+ * it alone too.
  */
 export function fitToContentIds(
   graph: LayoutGraph,
   components: Record<string, Component>,
 ): Set<string> {
-  const ids = resizableIds(graph, components);
-  for (const id of ids) {
-    const component = components[id];
-    if (component && "collapsed" in component && component.collapsed) ids.delete(id);
-  }
-  return ids;
+  return resizableIds(graph, components);
 }
