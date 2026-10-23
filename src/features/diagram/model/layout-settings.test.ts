@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isAutomaticLayout,
   LAYOUT_GAP_MAX,
   LAYOUT_GAP_MIN,
   normalizeLayoutSettings,
@@ -37,6 +38,28 @@ describe("normalizeLayoutSettings", () => {
       nodeGap: "90",
     } as unknown as DiagramLayoutSettings;
     expect(normalizeLayoutSettings(received)).toBeUndefined();
+  });
+});
+
+describe("layout mode", () => {
+  it("drops manual as the default and keeps automatic", () => {
+    expect(normalizeLayoutSettings({ mode: "manual" })).toBeUndefined();
+    expect(normalizeLayoutSettings({ mode: "automatic", density: "compact" })).toEqual({
+      mode: "automatic",
+      density: "compact",
+    });
+  });
+
+  it("drops an unknown mode", () => {
+    const received = { mode: "sometimes" } as unknown as DiagramLayoutSettings;
+    expect(normalizeLayoutSettings(received)).toBeUndefined();
+  });
+
+  it("tells settings apart by mode", () => {
+    expect(sameLayoutSettings({ mode: "automatic" }, undefined)).toBe(false);
+    expect(sameLayoutSettings({ mode: "manual" }, undefined)).toBe(true);
+    expect(isAutomaticLayout({ mode: "automatic" })).toBe(true);
+    expect(isAutomaticLayout(undefined)).toBe(false);
   });
 });
 

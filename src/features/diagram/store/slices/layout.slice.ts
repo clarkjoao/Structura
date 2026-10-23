@@ -176,12 +176,16 @@ export const layoutSlice = (
     });
   },
 
-  resetEdgeControlPoints: (diagramId: string, connectionId: string) => {
+  resetEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    options?: { history?: boolean },
+  ) => {
     set((state) => {
       const diagram = state.diagrams[diagramId];
       const existing = diagram?.edgeLayouts[connectionId];
       if (!diagram || !existing?.points?.length) return;
-      pushHistory(state);
+      if (options?.history !== false) pushHistory(state);
       delete existing.points;
       if (existing.labelOffset === undefined && existing.pathType === undefined) {
         delete diagram.edgeLayouts[connectionId];
@@ -330,7 +334,22 @@ export const layoutSlice = (
    * with, written (normalised) in the same `set()` after the same checkpoint: a
    * density change and the arrangement it caused are one undo step. Omitted, the
    * stored settings are left alone.
+   *
+   * `options.history: false` pushes no checkpoint: the run joins the undo step of
+   * the edit that caused it — the automatic mode's arrangement after an insert.
    */
+  setLayoutSettings: (settings: DiagramLayoutSettings) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d || sameLayoutSettings(d.layoutSettings, settings)) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      const normalized = normalizeLayoutSettings(settings);
+      if (normalized) d.layoutSettings = normalized;
+      else delete d.layoutSettings;
+      touchDiagram(d);
+    });
+  },
+
   applyAutoLayout: (
     layouts: Array<{
       elementId: string;
@@ -340,7 +359,7 @@ export const layoutSlice = (
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
-    options?: { layoutSettings?: DiagramLayoutSettings },
+    options?: { layoutSettings?: DiagramLayoutSettings; history?: boolean },
   ) => {
     set((state) => {
       const d = getActiveDiagram(state);
@@ -355,10 +374,12 @@ export const layoutSlice = (
       const nextSettings = options?.layoutSettings;
       const changesSettings =
         nextSettings !== undefined && !sameLayoutSettings(d.layoutSettings, nextSettings);
-      pushHistory(
-        state,
-        reconcilesRefs || changesSettings ? STRUCTURAL_MUTATION_MARKER : undefined,
-      );
+      if (options?.history !== false) {
+        pushHistory(
+          state,
+          reconcilesRefs || changesSettings ? STRUCTURAL_MUTATION_MARKER : undefined,
+        );
+      }
       if (changesSettings) {
         const normalized = normalizeLayoutSettings(nextSettings);
         if (normalized) d.layoutSettings = normalized;

@@ -19,6 +19,7 @@ function setup(overrides: Partial<ArrangeControlProps> = {}) {
     running: false,
     onArrange: vi.fn(),
     onSettingsChange: vi.fn(),
+    onSettingsSave: vi.fn(),
     buttonClassName: "",
     ...overrides,
   };
@@ -49,20 +50,46 @@ describe("ArrangeControl", () => {
     ).toBeDisabled();
   });
 
-  it("shows the stored density and reserves the automatic mode", () => {
+  it("shows the stored density and mode", () => {
     setup({ settings: { density: "spacious" } });
     openMenu();
 
     expect(
       screen.getByRole("radio", { name: "canvasToolbar.arrange.densitySpacious" }),
     ).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("radio", { name: /canvasToolbar.arrange.modeManual/ })).toHaveAttribute(
+    expect(screen.getByRole("radio", { name: "canvasToolbar.arrange.modeManual" })).toHaveAttribute(
       "aria-checked",
       "true",
     );
-    expect(
-      screen.getByRole("radio", { name: /canvasToolbar.arrange.modeAutomatic/ }),
-    ).toBeDisabled();
+  });
+
+  it("turns automatic on by arranging with it", () => {
+    const { props } = setup({ settings: { density: "compact" } });
+    openMenu();
+
+    fireEvent.click(screen.getByRole("radio", { name: "canvasToolbar.arrange.modeAutomatic" }));
+
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ density: "compact", mode: "automatic" });
+    expect(props.onSettingsSave).not.toHaveBeenCalled();
+  });
+
+  it("turns automatic off without arranging", () => {
+    const { props } = setup({ settings: { mode: "automatic", density: "compact" } });
+    openMenu();
+
+    fireEvent.click(screen.getByRole("radio", { name: "canvasToolbar.arrange.modeManual" }));
+
+    expect(props.onSettingsSave).toHaveBeenCalledWith({ density: "compact", mode: "manual" });
+    expect(props.onSettingsChange).not.toHaveBeenCalled();
+  });
+
+  it("marks the button while the diagram arranges itself", () => {
+    const { unmount } = setup();
+    expect(screen.queryByText("canvasToolbar.arrange.autoBadge")).toBeNull();
+    unmount();
+
+    setup({ settings: { mode: "automatic" } });
+    expect(screen.getByText("canvasToolbar.arrange.autoBadge")).toBeInTheDocument();
   });
 
   it("re-arranges with the picked density at once", () => {
@@ -121,7 +148,9 @@ describe("ArrangeControl", () => {
   });
 
   it("restores the defaults in one step, and is off when already default", () => {
-    const { props, unmount } = setup({ settings: { density: "compact", layerGap: 300 } });
+    const { props, unmount } = setup({
+      settings: { mode: "automatic", density: "compact", layerGap: 300 },
+    });
     openMenu();
 
     fireEvent.click(screen.getByRole("button", { name: /canvasToolbar.arrange.resetDefaults/ }));

@@ -21,7 +21,7 @@ import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
 import { useInteractionMode } from "./useInteractionMode";
-import { useAutoLayout } from "./useAutoLayout";
+import { useAutoLayout, type AutoLayoutRunOptions } from "./useAutoLayout";
 import { edgeLabelBox } from "../layout/edgeLabelBox";
 
 export function useCanvasController(canvasProps: CanvasProps = {}) {
@@ -62,18 +62,19 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const { runAutoLayout, isRunning: isAutoLayoutRunning } = useAutoLayout();
   /**
    * Arranges the diagram. With `settings`, arranges with those instead of the
-   * diagram's and stores them in the same undo step (the Arrange menu).
+   * diagram's and stores them in the same undo step (the Arrange menu); with
+   * `automatic`, joins the last edit's undo step quietly (automatic mode).
    */
   const arrange = useCallback(
-    (settings?: DiagramLayoutSettings) => {
+    async (options: AutoLayoutRunOptions = {}) => {
       if (!diagram) return;
       const measuredNodes = reactFlowInstance.getNodes();
-      runAutoLayout(
+      await runAutoLayout(
         resolvedComponents,
         Object.values(resolvedConnections),
         resolvedNodeLayouts,
         measuredNodes,
-        settings ? { settings } : {},
+        options,
       );
     },
     [
@@ -85,7 +86,11 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
       reactFlowInstance,
     ],
   );
-  const handleAutoLayout = useCallback(() => arrange(), [arrange]);
+  const handleAutoLayout = useCallback(() => void arrange(), [arrange]);
+  const handleArrangeWithSettings = useCallback(
+    (settings: DiagramLayoutSettings) => void arrange({ settings }),
+    [arrange],
+  );
   /** Whether the layout reserves room for edge labels, which picks its tuned layer gap. */
   const arrangeLabelled = useMemo(
     () =>
@@ -207,7 +212,8 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     isCompareMode: compareState.isCompareMode,
     allDiagramTags,
     handleAutoLayout,
-    handleArrangeWithSettings: arrange,
+    handleArrangeWithSettings,
+    arrange,
     arrangeLabelled,
     isAutoLayoutRunning,
   };

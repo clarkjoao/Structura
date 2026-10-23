@@ -138,7 +138,11 @@ export interface AppActions {
     index: number,
   ) => void;
   removeEdgeControlPoint: (diagramId: string, connectionId: string, pointId: string) => void;
-  resetEdgeControlPoints: (diagramId: string, connectionId: string) => void;
+  resetEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    options?: { history?: boolean },
+  ) => void;
   setEdgeLabelOffset: (
     diagramId: string,
     connectionId: string,
@@ -158,8 +162,13 @@ export interface AppActions {
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
-    options?: { layoutSettings?: DiagramLayoutSettings },
+    options?: { layoutSettings?: DiagramLayoutSettings; history?: boolean },
   ) => void;
+  /**
+   * Writes the active diagram's layout settings without moving anything, as
+   * one undo step — switching the arrange mode back to manual.
+   */
+  setLayoutSettings: (settings: DiagramLayoutSettings) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;

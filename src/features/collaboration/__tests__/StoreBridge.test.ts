@@ -91,3 +91,18 @@ describe("StoreBridge inbound batching", () => {
     hidden.mockRestore();
   });
 });
+
+describe("StoreBridge remote-write marker", () => {
+  it("marks a peer's change, and not a local edit", () => {
+    const { store, ids, bridge, peerMove } = setup();
+    const before = store.getState()._lastRemoteWriteAt;
+
+    store.getState().updateNodeLayout(ids[0]!, { x: 9, y: 9 });
+    vi.advanceTimersByTime(32);
+    expect(store.getState()._lastRemoteWriteAt).toBe(before);
+
+    bridge.onEntry(peerMove(ids[1]!, 500));
+    vi.advanceTimersByTime(32);
+    expect(store.getState()._lastRemoteWriteAt).toBe(before + 1);
+  });
+});

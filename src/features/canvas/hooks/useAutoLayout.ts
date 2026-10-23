@@ -9,12 +9,17 @@ import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, DiagramLayoutSettings, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 
-interface AutoLayoutRunOptions {
+export interface AutoLayoutRunOptions {
   /**
    * Arrange with these settings instead of the diagram's, and store them in the
    * same undo step — what a change in the Arrange menu does.
    */
   settings?: DiagramLayoutSettings;
+  /**
+   * The automatic mode's run after a structural edit: it joins the edit's undo
+   * step, keeps the user's viewport and says nothing unless it fails.
+   */
+  automatic?: boolean;
 }
 
 export function useAutoLayout() {
@@ -87,15 +92,17 @@ export function useAutoLayout() {
         const { groups } = plan;
 
         if (plan.result.boxes.size === 0) {
-          toast.info(t("autoLayout.nothingToLayout"));
+          if (!options.automatic) toast.info(t("autoLayout.nothingToLayout"));
           return;
         }
 
         endTransitionRef.current = startLayoutTransition(reactFlowStore.getState().domNode);
         const diagramId = useDiagramStore.getState().activeDiagramId;
-        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId, { writeSettings });
-        else applyAutoLayout(plan.layouts, plan.autoRefs);
+        const history = !options.automatic;
+        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId, { writeSettings, history });
+        else applyAutoLayout(plan.layouts, plan.autoRefs, history ? undefined : { history });
 
+        if (options.automatic) return;
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });
         });

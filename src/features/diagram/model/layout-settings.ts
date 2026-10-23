@@ -9,7 +9,15 @@
  */
 export type LayoutDensity = "compact" | "normal" | "spacious";
 
+/**
+ * Whether the diagram is arranged only on request (`manual`) or after every
+ * structural edit the author makes (`automatic`).
+ */
+export type LayoutMode = "manual" | "automatic";
+
 export interface DiagramLayoutSettings {
+  /** Absent means `"manual"`: nothing moves until the author arranges. */
+  mode?: LayoutMode;
   /** Scales every tuned layout spacing. Absent means `"normal"`. */
   density?: LayoutDensity;
   /** Gap between consecutive layers, overriding the density for that spacing. */
@@ -57,6 +65,7 @@ export function normalizeLayoutSettings(
 ): DiagramLayoutSettings | undefined {
   if (!settings) return undefined;
   const normalized: DiagramLayoutSettings = {};
+  if (settings.mode === "automatic") normalized.mode = "automatic";
   if (isLayoutDensity(settings.density) && settings.density !== "normal") {
     normalized.density = settings.density;
   }
@@ -67,7 +76,12 @@ export function normalizeLayoutSettings(
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
-/** Whether two settings arrange a diagram the same way. */
+/** Whether a diagram re-arranges itself after each structural edit. */
+export function isAutomaticLayout(settings: DiagramLayoutSettings | undefined): boolean {
+  return settings?.mode === "automatic";
+}
+
+/** Whether two settings are the same once normalised. */
 export function sameLayoutSettings(
   a: DiagramLayoutSettings | undefined,
   b: DiagramLayoutSettings | undefined,
@@ -75,6 +89,7 @@ export function sameLayoutSettings(
   const left = normalizeLayoutSettings(a);
   const right = normalizeLayoutSettings(b);
   return (
+    left?.mode === right?.mode &&
     left?.density === right?.density &&
     left?.layerGap === right?.layerGap &&
     left?.nodeGap === right?.nodeGap

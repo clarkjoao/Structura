@@ -546,6 +546,7 @@ export function mergePersistedState(
   state._lastUndoRedoAt = 0;
   state._lastUndoRedoTimestamp = 0;
   state._lastLayoutWriteAt = 0;
+  state._lastRemoteWriteAt = 0;
   state._flowSession = null;
   state._flowSewNotices = null;
   state._sharedRefNotice = null;

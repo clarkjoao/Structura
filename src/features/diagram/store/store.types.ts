@@ -68,6 +68,12 @@ export interface AppState {
    */
   _lastLayoutWriteAt: number;
   /**
+   * Bumped when a collaboration session writes a peer's change into the store
+   * (`StoreBridge.write`). Lets a watcher tell the local user's edits from a
+   * peer's: the automatic arrangement runs only for the former.
+   */
+  _lastRemoteWriteAt: number;
+  /**
    * An open flow-editing session. While one is open the flow actions push no
    * checkpoints of their own: the session's is the undo unit. `undoMark` is
    * the length `past` had right after that checkpoint, so an abandoned

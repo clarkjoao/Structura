@@ -25,6 +25,8 @@ export interface ArrangeControlProps {
   onArrange: () => void;
   /** Arranges with `settings` and stores them, as one undo step. */
   onSettingsChange: (settings: DiagramLayoutSettings) => void;
+  /** Stores `settings` without arranging, as one undo step — switching to manual. */
+  onSettingsSave: (settings: DiagramLayoutSettings) => void;
   onOpenChange?: (open: boolean) => void;
   buttonClassName: string;
 }
@@ -56,6 +58,7 @@ export function ArrangeControl({
   running,
   onArrange,
   onSettingsChange,
+  onSettingsSave,
   onOpenChange,
   buttonClassName,
 }: ArrangeControlProps) {
@@ -69,6 +72,7 @@ export function ArrangeControl({
 
   const shown = pending ?? settings ?? {};
   const density = shown.density ?? "normal";
+  const automatic = shown.mode === "automatic";
   const gaps = effectiveLayoutGaps(shown, labelled);
   const [draftGaps, setDraftGaps] = useState<{ layerGap?: number; nodeGap?: number }>({});
 
@@ -102,9 +106,23 @@ export function ArrangeControl({
   };
 
   const hasGapOverride = shown.layerGap !== undefined || shown.nodeGap !== undefined;
-  const isDefault = density === "normal" && !hasGapOverride;
+  const isDefault = density === "normal" && !hasGapOverride && !automatic;
 
-  /** Back to the layout the editor always ran: normal spacing, no gap overrides. */
+  /**
+   * Automatic arranges at once, so the mode and the arrangement it implies are
+   * one undo step; manual moves nothing — the positions are the author's now.
+   */
+  const changeMode = (mode: "manual" | "automatic") => {
+    if (mode === "automatic") {
+      request({ ...shown, mode });
+      return;
+    }
+    queued.current = null;
+    setPending(null);
+    onSettingsSave({ ...shown, mode: "manual" });
+  };
+
+  /** Back to the layout the editor always ran: manual, normal spacing, no gap overrides. */
   const resetToDefaults = () => {
     clearTimeout(sliderTimer.current);
     setDraftGaps({});
@@ -157,6 +175,11 @@ export function ArrangeControl({
           <Wand2 aria-hidden className="h-4 w-4" />
         )}
         {t("canvasToolbar.arrange.label")}
+        {automatic && (
+          <span className="rounded bg-primary/15 px-1 text-[10px] font-medium text-primary">
+            {t("canvasToolbar.arrange.autoBadge")}
+          </span>
+        )}
       </button>
       <Popover onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
@@ -195,29 +218,40 @@ export function ArrangeControl({
             aria-label={t("canvasToolbar.arrange.mode")}
             className="mb-3 grid grid-cols-2 gap-1"
           >
-            <button
-              type="button"
-              role="radio"
-              aria-checked
-              title={t("canvasToolbar.arrange.modeManualHint")}
-              className="rounded-md border border-primary bg-primary/10 px-2 py-1.5 text-xs font-medium text-primary"
-            >
-              {t("canvasToolbar.arrange.modeManual")}
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={false}
-              disabled
-              title={t("canvasToolbar.arrange.modeAutomaticHint")}
-              className="flex items-center justify-center gap-1 rounded-md border border-dashed border-border px-2 py-1.5 text-xs text-muted-foreground"
-            >
-              {t("canvasToolbar.arrange.modeAutomatic")}
-              <span className="whitespace-nowrap rounded bg-muted px-1 text-[10px]">
-                {t("canvasToolbar.arrange.soon")}
-              </span>
-            </button>
+            {(["manual", "automatic"] as const).map((mode) => {
+              const checked = (mode === "automatic") === automatic;
+              const labelKey =
+                mode === "automatic"
+                  ? "canvasToolbar.arrange.modeAutomatic"
+                  : "canvasToolbar.arrange.modeManual";
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  role="radio"
+                  aria-checked={checked}
+                  onClick={() => {
+                    if (!checked) changeMode(mode);
+                  }}
+                  className={cn(
+                    "rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+                    checked
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {t(labelKey)}
+                </button>
+              );
+            })}
           </div>
+          <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
+            {t(
+              automatic
+                ? "canvasToolbar.arrange.modeAutomaticHint"
+                : "canvasToolbar.arrange.modeManualHint",
+            )}
+          </p>
 
           <p className={SECTION_TITLE_CLASS}>{t("canvasToolbar.arrange.density")}</p>
           <div

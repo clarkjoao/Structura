@@ -45,6 +45,7 @@ export function createDiagramStore(
         _lastUndoRedoAt: 0,
         _lastUndoRedoTimestamp: 0,
         _lastLayoutWriteAt: 0,
+        _lastRemoteWriteAt: 0,
         _flowSession: null as { undoMark: number | null } | null,
         _flowSewNotices: null as AppState["_flowSewNotices"],
         _sharedRefNotice: null as AppState["_sharedRefNotice"],

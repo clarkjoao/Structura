@@ -263,6 +263,7 @@ export class StoreBridge {
             : previous.diagrams,
           past: rebase(previous.past),
           future: rebase(previous.future),
+          _lastRemoteWriteAt: (previous._lastRemoteWriteAt ?? 0) + 1,
         };
       });
     } finally {

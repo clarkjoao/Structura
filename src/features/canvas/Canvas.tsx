@@ -15,6 +15,7 @@ import { NothingInViewCard } from "./components/NothingInViewCard";
 import { CollabPresenceLayer } from "./components/CollabPresenceLayer";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
 import { useViewportOccupancy } from "./hooks/useViewportOccupancy";
+import { useAutoArrange } from "./hooks/useAutoArrange";
 import { useCanvasPreferencesStore } from "./preferences";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
@@ -32,6 +33,7 @@ import { useFlowSewNotices } from "./flow/useFlowSewNotices";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
+import type { DiagramLayoutSettings } from "@/features/diagram";
 import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
@@ -173,6 +175,7 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
     handleAutoLayout,
     handleArrangeWithSettings,
+    arrange,
     arrangeLabelled,
     isAutoLayoutRunning,
     actions,
@@ -205,6 +208,13 @@ const Canvas = (props: CanvasProps = {}) => {
     [pendingPreviews],
   );
   const { isFlowActive } = interactionMode;
+  const canEditStructure = interactionMode.canEditCanvas && !isFlowActive && !isCompareMode;
+  const arrangeAutomatically = useCallback(() => arrange({ automatic: true }), [arrange]);
+  useAutoArrange({ enabled: canEditStructure, arrange: arrangeAutomatically });
+  const saveLayoutSettings = useCallback(
+    (settings: DiagramLayoutSettings) => useDiagramStore.getState().setLayoutSettings(settings),
+    [],
+  );
   const { setSelectedNodeId, setSelectedNodeIds, setSelectedEdgeId } = visualState;
   const selectInsertedNode = useCallback(
     (nodeId: string) => {
@@ -381,7 +391,7 @@ const Canvas = (props: CanvasProps = {}) => {
               <CanvasBottomToolbar
                 diagram={diagram}
                 isPanelOpen={isPanelOpen}
-                canInsert={interactionMode.canEditCanvas && !isFlowActive && !isCompareMode}
+                canInsert={canEditStructure}
                 onInserted={selectInsertedNodes}
                 arrange={{
                   settings: diagram.layoutSettings,
@@ -389,6 +399,7 @@ const Canvas = (props: CanvasProps = {}) => {
                   running: isAutoLayoutRunning,
                   onArrange: handleAutoLayout,
                   onSettingsChange: handleArrangeWithSettings,
+                  onSettingsSave: saveLayoutSettings,
                 }}
                 versions={{
                   locked: !interactionMode.canEditVersions || isFlowActive,
