@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Position } from "@xyflow/react";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 
 /**
  * Which side of a node an edge enters and leaves, by the diagram's reading
@@ -15,7 +16,7 @@ import { Position } from "@xyflow/react";
  * The one place a node learns its sides; no renderer names a `Position` for
  * them itself (`nodes/handleSides.guard.test.ts`).
  */
-export type ReadingDirection = "LR" | "TB";
+export type ReadingDirection = DiagramDirection;
 
 export const DEFAULT_READING_DIRECTION: ReadingDirection = "LR";
 

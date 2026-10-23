@@ -1,4 +1,6 @@
-import type { Component, Connection, NodeLayout } from "@/features/diagram";
+import type { Component, Connection, DiagramDirection, NodeLayout } from "@/features/diagram";
+import { useDiagramStore } from "@/features/diagram";
+import { inDirection } from "./axis";
 import { layout } from "./layoutEngine";
 import { fromDiagram, resizableIds } from "./fromDiagram";
 import { handleSpecFor } from "../nodes/node-types/registry";
@@ -24,6 +26,12 @@ export interface LayoutScopedNodesParams {
    * for, keeps ELK's route.
    */
   resetPaths?: boolean;
+  /**
+   * The axis to lay out along (ADR-0013). Omitted, the active diagram's own
+   * direction is used, so a selection in a top-to-bottom diagram lays out
+   * top-to-bottom like the rest of it.
+   */
+  direction?: DiagramDirection;
 }
 
 /**
@@ -84,6 +92,11 @@ export async function layoutScopedNodes(params: LayoutScopedNodesParams): Promis
     applyAutoLayout,
     resetPaths = false,
   } = params;
+  const direction =
+    params.direction ??
+    (activeDiagramId !== null
+      ? useDiagramStore.getState().diagrams[activeDiagramId]?.direction
+      : undefined);
 
   if (nodeIds.length === 0) return false;
 
@@ -96,7 +109,7 @@ export async function layoutScopedNodes(params: LayoutScopedNodesParams): Promis
   const scopedConnections = connectionIds.map((id) => connections[id]).filter(Boolean);
 
   const graph = fromDiagram(scopedComponents, scopedConnections, nodeLayouts, { handleSpecFor });
-  const result = await layout(graph);
+  const result = await inDirection(direction, layout)(graph);
   if (result.boxes.size === 0) return false;
 
   const offset = {
@@ -117,6 +130,7 @@ export async function layoutScopedNodes(params: LayoutScopedNodesParams): Promis
     applyLayoutResultEdges(graph, result, activeDiagramId, {
       waypointOffset: offset,
       resetPaths,
+      ...(direction && { direction }),
     });
   }
 

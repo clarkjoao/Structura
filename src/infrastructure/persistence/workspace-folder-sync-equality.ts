@@ -23,6 +23,7 @@ export function diagramsEqualForFolderSync(a: Diagram, b: Diagram): boolean {
   if (a.compareVersionId !== b.compareVersionId) return false;
   if (a.textsVisible !== b.textsVisible) return false;
   if (a.layoutSettings !== b.layoutSettings) return false;
+  if (a.direction !== b.direction) return false;
   return true;
 }
 

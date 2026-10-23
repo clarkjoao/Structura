@@ -212,6 +212,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     allDiagramTags,
     handleAutoLayout,
     handleArrangeWithSettings,
+    arrange,
     placeTouched,
     arrangeLabelled,
     isAutoLayoutRunning,

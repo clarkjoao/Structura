@@ -4,6 +4,7 @@ import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import { isTextType } from "@/features/diagram/model/component-type-constants";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 import type { AppliedLayout } from "./applyLayout";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 
 /**
  * The automatic mode's placement: put only what the author just added, and
@@ -39,6 +40,12 @@ export interface IncrementalPlacementInput {
   columnGap: number;
   /** Vertical clearance kept between elements. */
   rowGap: number;
+  /**
+   * The axis the diagram reads along (ADR-0013). Top-to-bottom places one row
+   * below the source instead of one column right of it — the same placement in
+   * the mirrored diagram (`axis.ts`).
+   */
+  direction?: DiagramDirection;
 }
 
 function sizeOf(
@@ -72,6 +79,38 @@ function overlaps(a: Box, b: Box, clearance: number): boolean {
  * no neighbour at all stays where it was put.
  */
 export function placeIncrementally(input: IncrementalPlacementInput): AppliedLayout[] {
+  if (input.direction !== "TB") return placeLeftToRight(input);
+  const swap = (size: { width: number; height: number }) => ({
+    width: size.height,
+    height: size.width,
+  });
+  const mirrored = placeLeftToRight({
+    ...input,
+    nodeLayouts: Object.fromEntries(
+      Object.entries(input.nodeLayouts).map(([id, layout]) => [
+        id,
+        {
+          ...layout,
+          x: layout.y,
+          y: layout.x,
+          ...(layout.width !== undefined && { height: layout.width }),
+          ...(layout.height !== undefined && { width: layout.height }),
+        },
+      ]),
+    ),
+    ...(input.measured && {
+      measured: new Map([...input.measured].map(([id, size]) => [id, swap(size)])),
+    }),
+  });
+  return mirrored.map(({ elementId, x, y, width, height }) => ({
+    elementId,
+    x: y,
+    y: x,
+    ...(width !== undefined && height !== undefined && { width: height, height: width }),
+  }));
+}
+
+function placeLeftToRight(input: IncrementalPlacementInput): AppliedLayout[] {
   const { components, connections, nodeLayouts, measured, columnGap, rowGap } = input;
   const dirty = new Set(input.dirtyIds.filter((id) => components[id] && nodeLayouts[id]));
   const placed = new Map<string, { x: number; y: number }>();

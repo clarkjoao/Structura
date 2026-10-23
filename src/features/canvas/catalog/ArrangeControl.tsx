@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Loader2, RotateCcw, Wand2 } from "lucide-react";
+import { ArrowDown, ArrowRight, ChevronDown, Loader2, RotateCcw, Wand2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 import {
   LAYOUT_DENSITIES,
   LAYOUT_GAP_MAX,
@@ -27,6 +28,15 @@ export interface ArrangeControlProps {
   onSettingsChange: (settings: DiagramLayoutSettings) => void;
   /** Stores `settings` without arranging, as one undo step — switching the mode. */
   onSettingsSave: (settings: DiagramLayoutSettings) => void;
+  /** The diagram's reading direction (ADR-0013). */
+  direction: DiagramDirection;
+  /** Re-arranges the whole diagram along `direction` and stores it, as one undo step. */
+  onDirectionChange: (direction: DiagramDirection) => void;
+  /**
+   * Why the direction cannot be switched right now, as an i18n key — a live
+   * session does not carry it yet — or `null` when it can.
+   */
+  directionLockedReasonKey: string | null;
   onOpenChange?: (open: boolean) => void;
   buttonClassName: string;
 }
@@ -36,6 +46,11 @@ const DENSITY_LABEL_KEY: Record<LayoutDensity, string> = {
   normal: "canvasToolbar.arrange.densityNormal",
   spacious: "canvasToolbar.arrange.densitySpacious",
 };
+
+const DIRECTIONS = [
+  { value: "LR", labelKey: "canvasToolbar.arrange.directionHorizontal", Icon: ArrowRight },
+  { value: "TB", labelKey: "canvasToolbar.arrange.directionVertical", Icon: ArrowDown },
+] as const satisfies ReadonlyArray<{ value: DiagramDirection; labelKey: string; Icon: unknown }>;
 
 /** How long a slider rests before it re-arranges: one run per gesture, not per tick. */
 export const ARRANGE_SLIDER_DEBOUNCE_MS = 250;
@@ -59,6 +74,9 @@ export function ArrangeControl({
   onArrange,
   onSettingsChange,
   onSettingsSave,
+  direction,
+  onDirectionChange,
+  directionLockedReasonKey,
   onOpenChange,
   buttonClassName,
 }: ArrangeControlProps) {
@@ -247,6 +265,41 @@ export function ArrangeControl({
                 ? "canvasToolbar.arrange.modeAutomaticHint"
                 : "canvasToolbar.arrange.modeManualHint",
             )}
+          </p>
+
+          <p className={SECTION_TITLE_CLASS}>{t("canvasToolbar.arrange.direction")}</p>
+          <div
+            role="radiogroup"
+            aria-label={t("canvasToolbar.arrange.direction")}
+            className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
+          >
+            {DIRECTIONS.map(({ value, labelKey, Icon }) => {
+              const checked = direction === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={checked}
+                  disabled={running || (!checked && directionLockedReasonKey !== null)}
+                  onClick={() => {
+                    if (!checked) onDirectionChange(value);
+                  }}
+                  className={cn(
+                    "flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                    checked
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon aria-hidden className="h-3.5 w-3.5" />
+                  {t(labelKey)}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mb-3 mt-1.5 text-[11px] text-muted-foreground">
+            {t(directionLockedReasonKey ?? "canvasToolbar.arrange.directionHint")}
           </p>
 
           <p className={SECTION_TITLE_CLASS}>{t("canvasToolbar.arrange.density")}</p>

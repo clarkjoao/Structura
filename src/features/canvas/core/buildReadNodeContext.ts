@@ -30,12 +30,13 @@ const NOOP_DRILL_DOWN = (): void => {};
 function readHandleState(
   connections: Connection[],
   components: Record<string, Component>,
+  direction: Diagram["direction"],
 ): Pick<NodeBuildContext, "connectionCounts" | "effectiveHandleOrder"> {
   const connectionCounts = buildConnectionCountPerNode(connections);
   return {
     connectionCounts,
     effectiveHandleOrder: buildEffectiveHandleOrder(
-      buildEdgeHandleAssignments(connections, connectionCounts, components),
+      buildEdgeHandleAssignments(connections, connectionCounts, components, direction),
       connections,
     ),
   };
@@ -103,7 +104,7 @@ export function buildReadNodeContext(
     // From placed components only, as the editor builds it: a child of a panel
     // that has no layout is not nested inside a node that does not exist.
     panelIds: buildPanelIds(placedComponents(components, layouts), resolveNodeDescriptor),
-    ...readHandleState(connections, components),
+    ...readHandleState(connections, components, diagram.direction),
     childrenIndex: buildChildrenIndex(components),
     isPlaying: Boolean(reading),
     isRecording: false,

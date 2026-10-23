@@ -15,6 +15,7 @@ import { NothingInViewCard } from "./components/NothingInViewCard";
 import { CollabPresenceLayer } from "./components/CollabPresenceLayer";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
 import { useViewportOccupancy } from "./hooks/useViewportOccupancy";
+import { useCollab } from "@/features/collaboration";
 import { useAutoArrange } from "./hooks/useAutoArrange";
 import { useCanvasPreferencesStore } from "./preferences";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
@@ -33,7 +34,7 @@ import { useFlowSewNotices } from "./flow/useFlowSewNotices";
 import { useServiceFocusFromUrl } from "./hooks/useServiceFocusFromUrl";
 import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
-import type { DiagramLayoutSettings } from "@/features/diagram";
+import type { DiagramDirection, DiagramLayoutSettings } from "@/features/diagram";
 import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
@@ -175,6 +176,7 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
     handleAutoLayout,
     handleArrangeWithSettings,
+    arrange,
     placeTouched,
     arrangeLabelled,
     isAutoLayoutRunning,
@@ -214,6 +216,11 @@ const Canvas = (props: CanvasProps = {}) => {
     [placeTouched, arrangeLabelled],
   );
   useAutoArrange({ enabled: canEditStructure, arrange: placeAutomatically });
+  const { session: collabSession } = useCollab();
+  const switchDirection = useCallback(
+    (direction: DiagramDirection) => void arrange({ direction }),
+    [arrange],
+  );
   const saveLayoutSettings = useCallback(
     (settings: DiagramLayoutSettings) => useDiagramStore.getState().setLayoutSettings(settings),
     [],
@@ -403,6 +410,11 @@ const Canvas = (props: CanvasProps = {}) => {
                   onArrange: handleAutoLayout,
                   onSettingsChange: handleArrangeWithSettings,
                   onSettingsSave: saveLayoutSettings,
+                  direction: diagram.direction ?? "LR",
+                  onDirectionChange: switchDirection,
+                  directionLockedReasonKey: collabSession
+                    ? "canvasToolbar.arrange.directionLockedSession"
+                    : null,
                 }}
                 versions={{
                   locked: !interactionMode.canEditVersions || isFlowActive,
@@ -499,6 +511,7 @@ const Canvas = (props: CanvasProps = {}) => {
               )}
               <DiagramSurface
                 policy={writePolicy(interactionMode.canEditCanvas)}
+                readingDirection={diagram.direction ?? "LR"}
                 nodes={lockedNodes}
                 edges={edges}
                 nodeTypes={nodeTypes}

@@ -19,6 +19,7 @@ import {
   sameLayoutSettings,
   type DiagramLayoutSettings,
 } from "../../model/layout-settings";
+import type { DiagramDirection } from "../../model/diagram.types";
 
 export const layoutSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -337,6 +338,10 @@ export const layoutSlice = (
    *
    * `options.history: false` pushes no checkpoint: the run joins the undo step of
    * the edit that caused it — the automatic mode's arrangement after an insert.
+   *
+   * `options.direction`, when passed, is the reading direction the run was laid
+   * out on (ADR-0013): switching the axis and the arrangement it needs are one
+   * undo step, like a settings change.
    */
   setLayoutSettings: (settings: DiagramLayoutSettings) => {
     set((state) => {
@@ -359,7 +364,11 @@ export const layoutSlice = (
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
-    options?: { layoutSettings?: DiagramLayoutSettings; history?: boolean },
+    options?: {
+      layoutSettings?: DiagramLayoutSettings;
+      history?: boolean;
+      direction?: DiagramDirection;
+    },
   ) => {
     set((state) => {
       const d = getActiveDiagram(state);
@@ -374,11 +383,20 @@ export const layoutSlice = (
       const nextSettings = options?.layoutSettings;
       const changesSettings =
         nextSettings !== undefined && !sameLayoutSettings(d.layoutSettings, nextSettings);
+      const nextDirection = options?.direction;
+      const changesDirection =
+        nextDirection !== undefined && nextDirection !== (d.direction ?? "LR");
       if (options?.history !== false) {
         pushHistory(
           state,
-          reconcilesRefs || changesSettings ? STRUCTURAL_MUTATION_MARKER : undefined,
+          reconcilesRefs || changesSettings || changesDirection
+            ? STRUCTURAL_MUTATION_MARKER
+            : undefined,
         );
+      }
+      if (changesDirection) {
+        if (nextDirection === "TB") d.direction = "TB";
+        else delete d.direction;
       }
       if (changesSettings) {
         const normalized = normalizeLayoutSettings(nextSettings);

@@ -150,6 +150,7 @@ export type {
   IconSource,
   Folder,
   Level,
+  DiagramDirection,
 } from "./diagram.types";
 
 export { isAwsIcon, isLucideIcon, isSvgIcon } from "./diagram.types";

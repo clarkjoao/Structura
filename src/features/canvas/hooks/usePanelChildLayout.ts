@@ -3,6 +3,7 @@ import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { layout } from "../layout/layoutEngine";
+import { inDirection } from "../layout/axis";
 import { fitToContentIds, fromDiagram, resizableIds } from "../layout/fromDiagram";
 import { handleSpecFor } from "../nodes/node-types/registry";
 import { fitContainersToChildren, measuredSizesOf, toAppliedLayouts } from "../layout/applyLayout";
@@ -42,7 +43,11 @@ export function usePanelChildLayout() {
           return;
         }
 
-        const result = await layout(graph);
+        const active = useDiagramStore.getState();
+        const direction = active.activeDiagramId
+          ? active.diagrams[active.activeDiagramId]?.direction
+          : undefined;
+        const result = await inDirection(direction, layout)(graph);
         if (result.boxes.size === 0) {
           toast.info(t("autoLayout.nothingToLayout"));
           return;
@@ -75,6 +80,7 @@ export function usePanelChildLayout() {
             (e) => panelNodeIds.has(e.sourceId) && panelNodeIds.has(e.targetId),
           );
           applyLayoutResultEdges(graph, result, diagramId, {
+            ...(direction && { direction }),
             edgeIds: new Set(scopedEdges.map((e) => e.id)),
             ...(panelLayout
               ? {

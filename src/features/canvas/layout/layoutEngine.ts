@@ -227,12 +227,22 @@ function buildChildrenByParent(nodes: readonly LayoutNode[]): Map<string | null,
 }
 
 /** Replaces `top` in an ELK `[top=..,left=..]` padding string. */
-function withTopPadding(padding: string | undefined, top: number): string {
+function withPadding(padding: string | undefined, side: "top" | "left", inset: number): string {
   const sides = (padding ?? "")
     .replace(/[[\]\s]/g, "")
     .split(",")
-    .filter((s) => !s.startsWith("top="));
-  return `[top=${top},${sides.join(",")}]`;
+    .filter((s) => s.length > 0 && !s.startsWith(`${side}=`));
+  return `[${side}=${inset},${sides.join(",")}]`;
+}
+
+/**
+ * A container's padding with room for its header: on top, or on the left in a
+ * transposed (top-to-bottom) graph, where the header's side is the left.
+ */
+function containerPadding(node: LayoutNode, padding: string | undefined): string | undefined {
+  if (node.topInset !== undefined) return withPadding(padding, "top", node.topInset);
+  if (node.leftInset !== undefined) return withPadding(padding, "left", node.leftInset);
+  return undefined;
 }
 
 /** Where an edge leaves its source and enters its target, as ELK ports. */
@@ -351,10 +361,10 @@ function buildElkNode(
 
   return {
     ...shape,
-    layoutOptions:
-      node.topInset === undefined
-        ? { ...options }
-        : { ...options, "elk.padding": withTopPadding(options["elk.padding"], node.topInset) },
+    layoutOptions: (() => {
+      const padding = containerPadding(node, options["elk.padding"]);
+      return padding === undefined ? { ...options } : { ...options, "elk.padding": padding };
+    })(),
     children: children.map((child) =>
       buildElkNode(child, childrenByParent, options, portsByNode, visited),
     ),

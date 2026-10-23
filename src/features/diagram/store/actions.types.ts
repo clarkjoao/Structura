@@ -162,7 +162,11 @@ export interface AppActions {
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
-    options?: { layoutSettings?: DiagramLayoutSettings; history?: boolean },
+    options?: {
+      layoutSettings?: DiagramLayoutSettings;
+      history?: boolean;
+      direction?: import("../model/diagram.types").DiagramDirection;
+    },
   ) => void;
   /**
    * Writes the active diagram's layout settings without moving anything, as

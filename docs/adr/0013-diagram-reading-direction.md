@@ -1,6 +1,6 @@
 # ADR-0013 — A diagram declares its reading direction: left-to-right or top-to-bottom
 
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
@@ -135,3 +135,23 @@ OpenSpec change per step:
 
 When accepted, the hard rule in AGENTS.md is reworded per decision 2 in the same PR as step 2,
 and `connectionDerivations.fixedSides.test.ts` gains the top-to-bottom cases.
+
+## Amendment — 2026-10-23: accepted, and how step 2 implemented it
+
+Accepted. Steps 1 (`handle-sides-by-direction`) and 2 (`diagram-reading-direction`) shipped.
+Three points refine the decision above:
+
+- **Decision 6 is implemented by transposition, not by parameterising each reader.**
+  - A top-to-bottom layout runs the left-to-right pipeline on the graph reflected across its
+    diagonal: ELK RIGHT with EAST/WEST ports, handle anchors, route alignment, straightening and
+    reference scoring.
+  - Boxes, routes and label centres are reflected back. The handle order is kept as is.
+  - A container's header room becomes a `leftInset` in the mirror.
+  - `layout/axis.ts` owns this. The route readers named in decision 6 did not change.
+  - Over the reference diagrams, crossings and overlaps are identical in both directions, so
+    no vertical-specific spacing was needed.
+- **`verticalSides` keeps its name.** Decision 3's rename to `crossAxisSides` was not done.
+  The flag now means "renders the cross axis", and the cross-axis handle ids (`source-bottom`,
+  `target-top`) keep their names whatever side they sit on. Stored sides are absolute as
+  decided: `sourceSide: "bottom" | "right"`, `targetSide: "top" | "left"`.
+- **Until step 4, the direction switch is disabled during a live session.**

@@ -11,6 +11,8 @@ import type { LayoutGraph, LayoutResult } from "./contract";
 import { fitToContentIds, fromDiagram, resizableIds } from "./fromDiagram";
 import { layoutWithSettings } from "./layoutEngine";
 import type { DiagramLayoutSettings } from "@/features/diagram/model/layout-settings";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
+import { isTopToBottom, transposeGraph, transposeResult } from "./axis";
 import { handleSpecFor } from "../nodes/node-types/registry";
 
 /**
@@ -52,6 +54,12 @@ export interface DiagramAutoLayoutInput {
    * choice is measured against the layout that will be drawn.
    */
   settings?: DiagramLayoutSettings;
+  /**
+   * The axis to lay out along (ADR-0013). Absent is left-to-right. A
+   * top-to-bottom plan runs the whole left-to-right pipeline — references
+   * included — on the mirrored graph (`axis.ts`).
+   */
+  direction?: DiagramDirection;
 }
 
 export interface DiagramAutoLayoutPlan {
@@ -65,6 +73,8 @@ export interface DiagramAutoLayoutPlan {
   offset: { x: number; y: number };
   /** The settings the plan was made with, for the caller that writes them. */
   settings: DiagramLayoutSettings | undefined;
+  /** The axis the plan was laid out on; its edges are written on the same one. */
+  direction: DiagramDirection;
 }
 
 export async function planDiagramAutoLayout(
@@ -80,10 +90,16 @@ export async function planDiagramAutoLayout(
     handleSpecFor,
   });
 
+  const direction = input.direction ?? "LR";
+  const mirrored = isTopToBottom(direction);
   const run = layoutWithSettings(input.settings);
-  const { graph, result, groups } = input.autoRefs
-    ? await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), run)
-    : { graph: baseGraph, result: await run(baseGraph), groups: [] };
+  const laidOut = mirrored ? transposeGraph(baseGraph) : baseGraph;
+  const chosen = input.autoRefs
+    ? await chooseAutoRefs(laidOut, autoRefOptionsFor(components), run)
+    : { graph: laidOut, result: await run(laidOut), groups: [] };
+  const { groups } = chosen;
+  const graph = mirrored ? transposeGraph(chosen.graph) : chosen.graph;
+  const result = mirrored ? transposeResult(chosen.result) : chosen.result;
 
   const layouts = fitContainersToChildren(
     toAppliedLayouts(graph, result, resizableIds(graph, components), offset),
@@ -98,6 +114,7 @@ export async function planDiagramAutoLayout(
     layouts,
     offset,
     settings: input.settings,
+    direction,
     autoRefs: input.autoRefs
       ? groups.map(({ refId, originalId, parentId, sourceIds }) => ({
           refId,
@@ -114,22 +131,26 @@ export async function planDiagramAutoLayout(
  * step, then ELK's handle order and corridors.
  *
  * `writeSettings` stores the settings the plan was made with in that same step
- * — what a settings change from the Arrange menu does. Omitted, the diagram's
- * stored settings are left as they are.
+ * — what a settings change from the Arrange menu does — and `writeDirection`
+ * the axis it was laid out on (switching direction). Omitted, the diagram's
+ * stored settings and direction are left as they are.
  */
 export function applyDiagramAutoLayout(
   plan: DiagramAutoLayoutPlan,
   diagramId: string,
-  { writeSettings = false }: { writeSettings?: boolean } = {},
+  {
+    writeSettings = false,
+    writeDirection = false,
+  }: { writeSettings?: boolean; writeDirection?: boolean } = {},
 ): void {
-  useDiagramStore
-    .getState()
-    .applyAutoLayout(
-      plan.layouts,
-      plan.autoRefs,
-      writeSettings ? { layoutSettings: plan.settings ?? {} } : undefined,
-    );
-  applyLayoutResultEdges(plan.graph, plan.result, diagramId, { waypointOffset: plan.offset });
+  useDiagramStore.getState().applyAutoLayout(plan.layouts, plan.autoRefs, {
+    ...(writeSettings && { layoutSettings: plan.settings ?? {} }),
+    ...(writeDirection && { direction: plan.direction }),
+  });
+  applyLayoutResultEdges(plan.graph, plan.result, diagramId, {
+    waypointOffset: plan.offset,
+    direction: plan.direction,
+  });
 }
 
 /**
@@ -152,6 +173,7 @@ export async function autoLayoutActiveDiagram(
     nodeLayouts: diagram.nodeLayouts,
     autoRefs: !inScene,
     ...(diagram.layoutSettings ? { settings: diagram.layoutSettings } : {}),
+    ...(diagram.direction ? { direction: diagram.direction } : {}),
     ...(options.offset ? { offset: options.offset } : {}),
   });
   if (plan.result.boxes.size === 0) return null;

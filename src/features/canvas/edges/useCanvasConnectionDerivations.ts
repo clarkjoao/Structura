@@ -7,6 +7,7 @@ import {
   buildEffectiveHandleOrder,
 } from "./connectionDerivations";
 import { resolveNodeDescriptor } from "../nodes/node-types/registry";
+import { useActiveDirection } from "../hooks/useActiveDirection";
 
 interface UseCanvasConnectionDerivationsParams {
   visibleComponents: Component[];
@@ -33,10 +34,18 @@ export function useCanvasConnectionDerivations({
     [visibleConnections],
   );
 
+  // The reading direction decides which real side a stored cross-axis edge
+  // means (ADR-0013); it is the diagram's declaration, never node geometry.
+  const direction = useActiveDirection();
   const edgeHandleAssignments = useMemo(
     () =>
-      buildEdgeHandleAssignments(visibleConnections, connectionCountPerNode, resolvedComponents),
-    [visibleConnections, connectionCountPerNode, resolvedComponents],
+      buildEdgeHandleAssignments(
+        visibleConnections,
+        connectionCountPerNode,
+        resolvedComponents,
+        direction,
+      ),
+    [visibleConnections, connectionCountPerNode, resolvedComponents, direction],
   );
 
   const effectiveHandleOrder = useMemo(

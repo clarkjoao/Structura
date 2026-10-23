@@ -120,6 +120,11 @@ snapshot, with a compare mode.
     between placed elements move nothing. The placement joins the edit's undo step, keeps your
     zoom, and the **Arrange** button still reorganizes the whole diagram. In a live session only
     the person who made the edit places it.
+  - **Direction**: Horizontal (left to right, the default) or Vertical (top to bottom,
+    [ADR-0013](adr/0013-diagram-reading-direction.md)). Switching re-arranges the whole diagram on
+    the new axis and redraws its connections as one undo step; inputs move to the top and outputs
+    to the bottom of every element. Not available during a live session yet, and exports still use
+    left-to-right connection points.
   - **Restore defaults** goes back to Manual, Normal spacing, no overrides.
 - Arranging animates: elements glide to their new place and connections fade back in on their
   final route (instant with reduced motion).

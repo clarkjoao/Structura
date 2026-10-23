@@ -16,6 +16,7 @@ import { getNodeType } from "../utils/node-type-utils";
 import { sidesFromHandles, type ConnectionSides } from "../nodes/node-types/handle-spec";
 import { dragSelectionRef } from "./useLocalNodes";
 import { usePointerFunnel, type GestureTarget } from "../selection/pointerFunnel";
+import { activeDirection } from "./useActiveDirection";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
@@ -187,7 +188,7 @@ export function useCanvasEventHandlers({
           c.target,
           t("canvas.usesEdgeLabel"),
           getLastEdgeStyle(),
-          sidesFromHandles(c.sourceHandle, c.targetHandle),
+          sidesFromHandles(c.sourceHandle, c.targetHandle, activeDirection()),
         );
       }
     },

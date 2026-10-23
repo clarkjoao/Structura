@@ -32,6 +32,8 @@ export interface DiagramSnapshot {
    * setting back along with the positions it produced. Undefined when unset.
    */
   layoutSettings?: DiagramLayoutSettings;
+  /** The reading direction at the checkpoint; undefined is left-to-right. */
+  direction?: "TB";
   timestamp: number;
 }
 

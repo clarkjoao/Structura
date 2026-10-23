@@ -1,7 +1,9 @@
 import type { Component, Connection } from "@/features/diagram";
 import { handleSpecFor } from "../nodes/node-types/registry";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 import {
   BOTTOM_SOURCE_HANDLE_ID,
+  crossAxisSides,
   singleIncomingTargetHandleId,
   slotCountFor,
   SPREAD_HANDLES,
@@ -11,10 +13,12 @@ import {
 /**
  * Handle sides are fixed, by design.
  *
- * Structura diagrams are read left to right, and the handles are what enforce
- * that reading: **left is input only, right is output only**, on every node,
- * whatever its position. An edge leaves its source on the right and arrives at
- * its target on the left — always. Only the slot within a side varies.
+ * A diagram reads along its declared axis — left to right, or top to bottom
+ * (ADR-0013) — and the handles are what enforce that reading: **left is input
+ * only, right is output only** (top and bottom in a top-to-bottom diagram), on
+ * every node, whatever its position. An edge leaves its source on the output
+ * side and arrives at its target on the input side — always. Only the slot
+ * within a side varies.
  *
  * Do not derive the side from the node positions. The edge states the direction;
  * position only complements it. Deriving the side means dragging a node silently
@@ -24,9 +28,10 @@ import {
  * the connection owns its endpoints.
  *
  * The one extension is on the flowchart shapes (`verticalSides`): an edge may
- * also leave from the bottom or arrive on the top. That is still the edge's
- * choice, stored on the connection when the user drew it from or to those
- * handles — top is input, bottom is output, and nothing here looks at geometry.
+ * also use the cross axis — leave from the bottom and arrive on the top in a
+ * left-to-right diagram, right and left in a top-to-bottom one. That is still
+ * the edge's choice, stored on the connection as an absolute side when the user
+ * drew it from or to those handles, and nothing here looks at geometry.
  */
 
 export { singleIncomingTargetHandleId };
@@ -76,7 +81,9 @@ export function buildEdgeHandleAssignments(
   connections: Connection[],
   connectionCountPerNode: Record<string, ConnectionCounts>,
   components: Record<string, Component>,
+  direction: DiagramDirection = "LR",
 ): HandleAssignment[] {
+  const cross = crossAxisSides(direction);
   const sourceUsage: Record<string, number> = {};
   const targetUsage: Record<string, number> = {};
 
@@ -110,14 +117,16 @@ export function buildEdgeHandleAssignments(
     sourceUsage[conn.sourceId] = (sourceUsage[conn.sourceId] ?? 0) + 1;
     targetUsage[conn.targetId] = (targetUsage[conn.targetId] ?? 0) + 1;
 
-    // Sides are fixed: out of the right, into the left. Only the slot varies —
-    // unless the edge itself asked for a vertical side the node renders.
-    const leavesBottom = conn.sourceSide === "bottom" && sourceSpec.verticalSides === true;
-    const entersTop = conn.targetSide === "top" && targetSpec.verticalSides === true;
+    // Sides are fixed: out of the output side, into the input side. Only the
+    // slot varies — unless the edge itself asked for the cross axis the node
+    // renders. A stored side that is this direction's main axis (a "bottom"
+    // in a top-to-bottom diagram) is just the default.
+    const leavesCross = conn.sourceSide === cross.sourceSide && sourceSpec.verticalSides === true;
+    const entersCross = conn.targetSide === cross.targetSide && targetSpec.verticalSides === true;
     return {
       connId: conn.id,
-      sourceHandle: leavesBottom ? BOTTOM_SOURCE_HANDLE_ID : `source-${sIdx}`,
-      targetHandle: entersTop
+      sourceHandle: leavesCross ? BOTTOM_SOURCE_HANDLE_ID : `source-${sIdx}`,
+      targetHandle: entersCross
         ? TOP_TARGET_HANDLE_ID
         : usesSingleIncomingHandle
           ? singleIncomingTargetHandleId(conn.targetId)

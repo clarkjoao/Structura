@@ -550,6 +550,11 @@
       "nodeGap": "Espaço entre elementos",
       "resetGaps": "Voltar ao espaçamento",
       "resetDefaults": "Restaurar padrão",
+      "direction": "Direção",
+      "directionHorizontal": "Horizontal",
+      "directionVertical": "Vertical",
+      "directionHint": "Reorganiza o diagrama inteiro e refaz as conexões. Desfazer volta como estava.",
+      "directionLockedSession": "Ainda não disponível durante uma sessão ao vivo.",
       "running": "Organizando…"
     }
   },

@@ -192,3 +192,48 @@ describe("setLayoutSettings", () => {
     expect("layoutSettings" in store.getState().diagrams[diagramId]!).toBe(false);
   });
 });
+
+describe("applyAutoLayout with a reading direction", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-23T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("writes the direction with the positions, and one undo restores both", () => {
+    const { store, diagramId, aId } = setupDiagram();
+    const before = { ...store.getState().diagrams[diagramId]!.nodeLayouts[aId]! };
+
+    store.getState().applyAutoLayout([{ elementId: aId, x: 0, y: 900 }], undefined, {
+      direction: "TB",
+    });
+    expect(store.getState().diagrams[diagramId]!.direction).toBe("TB");
+
+    store.getState().undo();
+    const undone = store.getState().diagrams[diagramId]!;
+    expect("direction" in undone).toBe(false);
+    expect(undone.nodeLayouts[aId]!.y).toBe(before.y);
+
+    store.getState().redo();
+    expect(store.getState().diagrams[diagramId]!.direction).toBe("TB");
+  });
+
+  it("stores nothing for left-to-right, the default", () => {
+    const { store, diagramId, aId } = setupDiagram();
+
+    store.getState().applyAutoLayout([{ elementId: aId, x: 1, y: 1 }], undefined, {
+      direction: "TB",
+    });
+    vi.advanceTimersByTime(HISTORY_COALESCE_MS + 100);
+    store.getState().applyAutoLayout([{ elementId: aId, x: 2, y: 2 }], undefined, {
+      direction: "LR",
+    });
+
+    expect("direction" in store.getState().diagrams[diagramId]!).toBe(false);
+    const reopened = JSON.parse(JSON.stringify(buildPersistStoragePayload(store.getState())));
+    expect("direction" in reopened.state.diagrams[diagramId]).toBe(false);
+  });
+});

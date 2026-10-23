@@ -20,6 +20,9 @@ function setup(overrides: Partial<ArrangeControlProps> = {}) {
     onArrange: vi.fn(),
     onSettingsChange: vi.fn(),
     onSettingsSave: vi.fn(),
+    direction: "LR",
+    onDirectionChange: vi.fn(),
+    directionLockedReasonKey: null,
     buttonClassName: "",
     ...overrides,
   };
@@ -162,5 +165,28 @@ describe("ArrangeControl", () => {
     expect(
       screen.getByRole("button", { name: /canvasToolbar.arrange.resetDefaults/ }),
     ).toBeDisabled();
+  });
+
+  it("switches the reading direction from the menu", () => {
+    const { props } = setup();
+    openMenu();
+
+    fireEvent.click(screen.getByRole("radio", { name: "canvasToolbar.arrange.directionVertical" }));
+
+    expect(props.onDirectionChange).toHaveBeenCalledWith("TB");
+  });
+
+  it("locks the direction during a live session and says why", () => {
+    const { props } = setup({
+      direction: "TB",
+      directionLockedReasonKey: "canvasToolbar.arrange.directionLockedSession",
+    });
+    openMenu();
+
+    expect(
+      screen.getByRole("radio", { name: "canvasToolbar.arrange.directionHorizontal" }),
+    ).toBeDisabled();
+    expect(screen.getByText("canvasToolbar.arrange.directionLockedSession")).toBeInTheDocument();
+    expect(props.onDirectionChange).not.toHaveBeenCalled();
   });
 });

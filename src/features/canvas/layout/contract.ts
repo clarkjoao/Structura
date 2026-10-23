@@ -41,6 +41,12 @@ export interface LayoutNode {
    */
   topInset?: number;
   /**
+   * The same room on the left: what a header's `topInset` becomes in a graph
+   * transposed for a top-to-bottom layout (`axis.ts`). A node has one or the
+   * other.
+   */
+  leftInset?: number;
+  /**
    * Sides the canvas draws as a single point every edge on that side shares —
    * a note's one input, a flowchart shape's one output. ELK then attaches all
    * of them to one port there, instead of bundling them `HANDLE_PITCH` apart

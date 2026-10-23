@@ -161,3 +161,55 @@ describe("a hub keeps one slot per edge", () => {
     expect(new Set(assignments.map((a) => a.sourceHandle)).size).toBe(12);
   });
 });
+
+describe("handle sides in a top-to-bottom diagram (ADR-0013)", () => {
+  const flow = (id: string): Component =>
+    ({
+      id,
+      name: id,
+      description: "",
+      parentId: null,
+      type: "process-node",
+      flowShape: "diamond",
+    }) as Component;
+  const sided = (
+    id: string,
+    sourceId: string,
+    targetId: string,
+    sides: Pick<Connection, "sourceSide" | "targetSide">,
+  ): Connection => ({ ...connection(id, sourceId, targetId), ...sides });
+  const assignTB = (connections: Connection[], components: Record<string, Component>) =>
+    buildEdgeHandleAssignments(
+      connections,
+      buildConnectionCountPerNode(connections),
+      components,
+      "TB",
+    );
+
+  it("uses the main output and input for a plain edge and its back-edge alike", () => {
+    const components = { a: component("a"), b: component("b") };
+    for (const a of assignTB(
+      [connection("c1", "a", "b"), connection("c2", "b", "a")],
+      components,
+    )) {
+      expect(a).toMatchObject({ sourceHandle: "source-0", targetHandle: "target-0" });
+    }
+  });
+
+  it("takes the cross axis (right out, left in) when the edge says so", () => {
+    const [only] = assignTB([sided("c1", "d", "e", { sourceSide: "right", targetSide: "left" })], {
+      d: flow("d"),
+      e: flow("e"),
+    });
+    expect(only).toMatchObject({ sourceHandle: "source-bottom", targetHandle: "target-top" });
+  });
+
+  it("reads a left-to-right cross-axis edge as the main axis once vertical", () => {
+    // Stored sides are absolute: bottom/top is the main axis of a top-to-bottom diagram.
+    const [only] = assignTB([sided("c1", "d", "e", { sourceSide: "bottom", targetSide: "top" })], {
+      d: flow("d"),
+      e: flow("e"),
+    });
+    expect(only).toMatchObject({ sourceHandle: "source-0", targetHandle: "target-0" });
+  });
+});

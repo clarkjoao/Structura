@@ -30,12 +30,15 @@ export interface Connection {
   transportPreset?: "sync" | "async" | "event" | "tcp" | "udp";
   style?: ConnectionStyle;
   /**
-   * The edge leaves its source from the bottom instead of the right. Only a
-   * node whose handle spec declares `verticalSides` honours it (the flowchart
-   * shapes); anywhere else the edge keeps the right side. Absent means right —
-   * the default is never written, so an edge nobody re-sided hashes as before.
+   * The edge leaves its source from the cross axis instead of the main output:
+   * the bottom in a left-to-right diagram, the right in a top-to-bottom one
+   * (ADR-0013). Sides are absolute, so a stored `"bottom"` in a top-to-bottom
+   * diagram is just the main output. Only a node whose handle spec declares
+   * `verticalSides` honours a cross side; anywhere else the edge keeps the main
+   * output. Absent means the main output — the default is never written, so an
+   * edge nobody re-sided hashes as before.
    */
-  sourceSide?: "bottom";
-  /** The edge arrives at its target on the top instead of the left. Same rules as `sourceSide`. */
-  targetSide?: "top";
+  sourceSide?: "bottom" | "right";
+  /** The edge arrives on the cross axis: the top (LR) or the left (TB). Same rules as `sourceSide`. */
+  targetSide?: "top" | "left";
 }

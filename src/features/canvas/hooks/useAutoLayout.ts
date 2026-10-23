@@ -9,7 +9,13 @@ import { placeIncrementally } from "../layout/incrementalPlacement";
 import { effectiveLayoutGaps } from "../layout/layoutEngine";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import { useDiagramActions, useDiagramStore } from "@/features/diagram";
-import type { Component, Connection, DiagramLayoutSettings, NodeLayout } from "@/features/diagram";
+import type {
+  Component,
+  Connection,
+  DiagramDirection,
+  DiagramLayoutSettings,
+  NodeLayout,
+} from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 
 export interface AutoLayoutRunOptions {
@@ -18,6 +24,11 @@ export interface AutoLayoutRunOptions {
    * same undo step — what a change in the Arrange menu does.
    */
   settings?: DiagramLayoutSettings;
+  /**
+   * Arrange along this axis instead of the diagram's, and store it in the same
+   * undo step — switching the reading direction (ADR-0013).
+   */
+  direction?: DiagramDirection;
 }
 
 export function useAutoLayout() {
@@ -76,6 +87,8 @@ export function useAutoLayout() {
         // made on the base diagram only, and a scene is laid out as it is.
         const inScene = !!active?.activeVersionId && !!active.versions?.[active.activeVersionId];
         const writeSettings = options.settings !== undefined;
+        const writeDirection = options.direction !== undefined;
+        const direction = options.direction ?? active?.direction;
         const settings = writeSettings ? options.settings : active?.layoutSettings;
         // The same plan the assistant and generation run (`autoLayoutDiagram.ts`),
         // with the sizes React Flow measured.
@@ -86,6 +99,7 @@ export function useAutoLayout() {
           measured: measuredSizesOf(nodesToUse),
           autoRefs: !inScene,
           ...(settings ? { settings } : {}),
+          ...(direction ? { direction } : {}),
         });
         const { groups } = plan;
 
@@ -96,8 +110,9 @@ export function useAutoLayout() {
 
         endTransitionRef.current = startLayoutTransition(reactFlowStore.getState().domNode);
         const diagramId = useDiagramStore.getState().activeDiagramId;
-        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId, { writeSettings });
-        else applyAutoLayout(plan.layouts, plan.autoRefs);
+        if (diagramId !== null) {
+          applyDiagramAutoLayout(plan, diagramId, { writeSettings, writeDirection });
+        } else applyAutoLayout(plan.layouts, plan.autoRefs);
 
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });
@@ -143,6 +158,7 @@ export function useAutoLayout() {
         dirtyIds,
         columnGap: gaps.layerGap,
         rowGap: Math.round(gaps.nodeGap / 2),
+        ...(diagram.direction && { direction: diagram.direction }),
       });
       if (placements.length === 0) return;
 
