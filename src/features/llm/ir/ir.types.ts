@@ -139,10 +139,23 @@ export interface IREdge {
   label?: string;
 }
 
+/** The reading direction a generation asks for (ADR-0013). */
+export type IRDirection = "LR" | "TB";
+
 export interface DiagramIR {
   type: IRDiagramType;
   nodes: IRNode[];
   edges: IREdge[];
+  /**
+   * Left-to-right (`"LR"`, the default) or top-to-bottom (`"TB"`). Honoured when
+   * the generation is the whole diagram; added to a diagram with content, the
+   * new part follows that diagram's direction.
+   */
+  direction?: IRDirection;
+}
+
+export function isIRDirection(value: unknown): value is IRDirection {
+  return value === "LR" || value === "TB";
 }
 
 export function isIRDiagramType(value: unknown): value is IRDiagramType {

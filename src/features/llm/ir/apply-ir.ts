@@ -5,6 +5,7 @@ import {
 } from "@/features/diagram";
 import { cloudServiceIdWrite } from "@/features/diagram/model/cloud-service-id";
 import { layout } from "@/features/canvas/layout/layoutEngine";
+import { inDirection } from "@/features/canvas/layout/axis";
 import { applyLayoutResultEdges } from "@/features/canvas/layout/applyLayoutResult";
 import { autoLayoutActiveDiagram } from "@/features/canvas/layout/autoLayoutDiagram";
 import type { LayoutBox } from "@/features/canvas/layout/contract";
@@ -122,14 +123,18 @@ export function buildGeneratedGraphInputs(
  * single undoable mutation.
  */
 export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
-  const graph = irToLayoutGraph(ir);
-  const layoutResult = await layout(graph);
-  const origin = currentViewportOrigin();
-  const { nodes, edges } = buildGeneratedGraphInputs(ir, layoutResult.boxes, origin);
-
   const store = useDiagramStore.getState();
   const before = store.activeDiagramId ? store.diagrams[store.activeDiagramId] : undefined;
   const intoEmptyDiagram = Object.keys(before?.snapshot.components ?? {}).length === 0;
+  // The generation's direction is the diagram's only when it is the whole
+  // diagram; added to one with content, it follows that diagram (ADR-0013).
+  const direction = intoEmptyDiagram && ir.direction ? ir.direction : (before?.direction ?? "LR");
+
+  const graph = irToLayoutGraph(ir);
+  const layoutResult = await inDirection(direction, layout)(graph);
+  const origin = currentViewportOrigin();
+  const { nodes, edges } = buildGeneratedGraphInputs(ir, layoutResult.boxes, origin);
+
   const result = store.insertGeneratedGraph(nodes, edges);
 
   if (result.componentIds.length > 0) {
@@ -171,10 +176,14 @@ export async function applyIRToDiagram(ir: DiagramIR): Promise<ApplyIRResult> {
     // React Flow has measured them, a card 260 wide is laid out as 180 and its
     // edges start with a step backwards.
     await whenMeasured(result.componentIds);
-    const plan = await autoLayoutActiveDiagram({ offset: origin });
+    const plan = await autoLayoutActiveDiagram({
+      offset: origin,
+      ...(direction !== (before?.direction ?? "LR") && { direction }),
+    });
     referenceIds = plan?.groups.map((group) => group.refId) ?? [];
   } else {
     applyLayoutResultEdges(graph, layoutResult, store.activeDiagramId, {
+      direction,
       waypointOffset: origin,
       idMap: {
         node: (irNodeId) => result.componentIdByExternalId[irNodeId],

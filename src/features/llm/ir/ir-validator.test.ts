@@ -429,3 +429,16 @@ describe("parseAndValidateIR", () => {
     expect(codesOf(parseAndValidateIR("   "))).toEqual(["invalidJson"]);
   });
 });
+
+describe("validateIR — reading direction (ADR-0013)", () => {
+  it("keeps a direction it recognises", () => {
+    const result = validateIR({ ...validIR, direction: "TB" });
+    expect(result.ok && result.ir.direction).toBe("TB");
+  });
+
+  it("drops one it does not, without rejecting the diagram", () => {
+    const result = validateIR({ ...validIR, direction: "diagonal" });
+    expect(result.ok).toBe(true);
+    expect(result.ok && "direction" in result.ir).toBe(false);
+  });
+});

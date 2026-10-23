@@ -2136,6 +2136,8 @@
     "panelTitle": "Flows",
     "importFlow": "Import flow",
     "importDialog": {
+      "directionApproximated": "Mermaid’s BT and RL directions are imported as top-to-bottom and left-to-right.",
+      "directionKept": "Imported along this diagram’s direction; switch it in Arrange if you want the other one.",
       "title": "Import Mermaid sequence",
       "description": "Paste a sequenceDiagram or flowchart to create components, connections, and a new flow.",
       "flowName": "Flow name",

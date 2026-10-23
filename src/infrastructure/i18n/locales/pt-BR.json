@@ -2136,6 +2136,8 @@
     "panelTitle": "Fluxos",
     "importFlow": "Importar fluxo",
     "importDialog": {
+      "directionApproximated": "As direções BT e RL do Mermaid são importadas como de cima para baixo e da esquerda para a direita.",
+      "directionKept": "Importado na direção deste diagrama; troque em Organizar se quiser a outra.",
       "title": "Importar sequência Mermaid",
       "description": "Cole um diagrama sequenceDiagram ou flowchart para criar componentes, conexões e um novo fluxo.",
       "flowName": "Nome do fluxo",

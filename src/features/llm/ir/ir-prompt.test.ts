@@ -68,3 +68,9 @@ describe("buildIRSystemPrompt", () => {
     }
   });
 });
+
+describe("buildIRSystemPrompt — reading direction", () => {
+  it("documents the optional direction field", () => {
+    expect(prompt).toContain('direction?: "LR" | "TB"');
+  });
+});

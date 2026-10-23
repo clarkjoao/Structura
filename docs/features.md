@@ -123,8 +123,10 @@ snapshot, with a compare mode.
   - **Direction**: Horizontal (left to right, the default) or Vertical (top to bottom,
     [ADR-0013](adr/0013-diagram-reading-direction.md)). Switching re-arranges the whole diagram on
     the new axis and redraws its connections as one undo step; inputs move to the top and outputs
-    to the bottom of every element. Not available during a live session yet, and exports still use
-    left-to-right connection points.
+    to the bottom of every element. Not available during a live session yet. The draw.io export
+    attaches connections on the diagram's axis, a Mermaid `flowchart TD` imported into an empty
+    diagram makes it vertical (into one with content it follows that diagram's direction), and
+    the assistant can generate a vertical diagram.
   - **Restore defaults** goes back to Manual, Normal spacing, no overrides.
 - Arranging animates: elements glide to their new place and connections fade back in on their
   final route (instant with reduced motion).

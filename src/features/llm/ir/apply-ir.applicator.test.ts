@@ -222,4 +222,34 @@ describe("applyIRToDiagram — into an empty diagram", () => {
     );
     expect(withWaypoints.length).toBeGreaterThan(0);
   });
+
+  it("takes the direction the generation asks for, laid out along it (ADR-0013)", async () => {
+    const ir: DiagramIR = {
+      type: "c4-container",
+      direction: "TB",
+      nodes: [
+        { id: "web", semanticType: "container", name: "Web", parentId: null, tier: "ingress" },
+        { id: "api", semanticType: "container", name: "API", parentId: null, tier: "compute" },
+        { id: "db", semanticType: "container", name: "DB", parentId: null, tier: "data" },
+      ],
+      edges: [
+        { id: "web-api", sourceId: "web", targetId: "api" },
+        { id: "api-db", sourceId: "api", targetId: "db" },
+      ],
+    };
+    const { store, diagramId } = emptyDiagramStore();
+
+    await applyIRToDiagram(ir);
+
+    const diagram = store.getState().diagrams[diagramId]!;
+    expect(diagram.direction).toBe("TB");
+    const byName = Object.fromEntries(
+      Object.values(diagram.snapshot.components).map((component) => [
+        component.name,
+        diagram.nodeLayouts[component.id]!,
+      ]),
+    );
+    expect(byName.API!.y).toBeGreaterThan(byName.Web!.y);
+    expect(byName.DB!.y).toBeGreaterThan(byName.API!.y);
+  });
 });

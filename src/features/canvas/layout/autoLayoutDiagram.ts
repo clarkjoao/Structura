@@ -159,7 +159,13 @@ export function applyDiagramAutoLayout(
  * scene is active. Returns the plan, or `null` when there is nothing to lay out.
  */
 export async function autoLayoutActiveDiagram(
-  options: Pick<DiagramAutoLayoutInput, "offset"> = {},
+  options: Pick<DiagramAutoLayoutInput, "offset"> & {
+    /**
+     * Lay out along this axis and store it as the diagram's, in the same step —
+     * a generation that is the whole diagram and asks for its own direction.
+     */
+    direction?: DiagramDirection;
+  } = {},
 ): Promise<DiagramAutoLayoutPlan | null> {
   const state = useDiagramStore.getState();
   const diagramId = state.activeDiagramId;
@@ -173,11 +179,11 @@ export async function autoLayoutActiveDiagram(
     nodeLayouts: diagram.nodeLayouts,
     autoRefs: !inScene,
     ...(diagram.layoutSettings ? { settings: diagram.layoutSettings } : {}),
-    ...(diagram.direction ? { direction: diagram.direction } : {}),
+    direction: options.direction ?? diagram.direction ?? "LR",
     ...(options.offset ? { offset: options.offset } : {}),
   });
   if (plan.result.boxes.size === 0) return null;
 
-  applyDiagramAutoLayout(plan, diagramId);
+  applyDiagramAutoLayout(plan, diagramId, { writeDirection: options.direction !== undefined });
   return plan;
 }

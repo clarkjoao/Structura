@@ -155,3 +155,19 @@ Three points refine the decision above:
   `target-top`) keep their names whatever side they sit on. Stored sides are absolute as
   decided: `sourceSide: "bottom" | "right"`, `targetSide: "top" | "left"`.
 - **Until step 4, the direction switch is disabled during a live session.**
+
+## Amendment — 2026-10-23: step 3 (interchange)
+
+Step 3 shipped as `diagram-direction-interchange`:
+
+- **draw.io export.** It attaches edges on the declared axis, with slot offsets along the side.
+  Its normalisation rule is the left-to-right one mirrored, so left-to-right output is
+  byte-identical.
+- **Mermaid flowchart import.** `TD`/`TB` (and `BT`, approximated) read top-to-bottom. The
+  header's direction becomes the diagram's only when the import is the whole diagram; into a
+  diagram with content, the import follows that diagram, with a notice.
+- **Assistant.** The IR gains an optional `direction`. An invalid value is dropped, not
+  rejected, and it is honoured under the same whole-diagram rule.
+- **Imports.** An imported diagram's `direction` and `layoutSettings` are sanitised.
+- **draw.io import.** Still left-to-right: draw.io has no diagram-level direction to read.
+

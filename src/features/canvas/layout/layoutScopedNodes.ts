@@ -19,7 +19,11 @@ export interface LayoutScopedNodesParams {
   /** Where the caller wants the result centred — the canvas insertion point. */
   anchor: { x: number; y: number };
   activeDiagramId: string | null;
-  applyAutoLayout: (layouts: AppliedLayout[]) => void;
+  applyAutoLayout: (
+    layouts: AppliedLayout[],
+    autoRefs?: undefined,
+    options?: { direction?: DiagramDirection },
+  ) => void;
   /**
    * Leave the laid-out connections with no stored path, as the auto-layout
    * commands do. Off by default so the import path, which this was written
@@ -32,6 +36,11 @@ export interface LayoutScopedNodesParams {
    * top-to-bottom like the rest of it.
    */
   direction?: DiagramDirection;
+  /**
+   * Store `direction` as the diagram's, in the same step as this layout — an
+   * import that brings its own direction into an empty diagram.
+   */
+  writeDirection?: boolean;
 }
 
 /**
@@ -124,6 +133,8 @@ export async function layoutScopedNodes(params: LayoutScopedNodesParams): Promis
       fullyScopedContainers(graph, components, scopedComponents),
       offset,
     ),
+    undefined,
+    params.writeDirection && direction ? { direction } : undefined,
   );
 
   if (activeDiagramId !== null) {

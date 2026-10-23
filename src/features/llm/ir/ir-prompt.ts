@@ -92,8 +92,12 @@ function buildSchemaSection(): string {
     "    targetId: string;           // must be an existing node id",
     "    label?: string;             // short description of the interaction",
     "  }>;",
+    '  direction?: "LR" | "TB";      // reading direction: omit for left-to-right; "TB" for top-to-bottom',
     "}",
     "```",
+    "",
+    'Use "TB" only when the user asks for a vertical / top-to-bottom diagram, or for a',
+    "process that reads as a sequence of steps going down. Otherwise omit it.",
   ].join("\n");
 }
 

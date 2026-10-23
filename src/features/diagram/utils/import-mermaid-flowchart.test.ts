@@ -172,3 +172,21 @@ describe("parseMermaidFlowchart", () => {
     expect(result.newConnections[1].label).toBe("maybe");
   });
 });
+
+describe("parseMermaidFlowchart — header direction (ADR-0013)", () => {
+  const plan = (header: string) =>
+    parseMermaidFlowchart(`${header}\n  A[Start] --> B[End]`, {}, {}, { x: 0, y: 0 });
+
+  it.each([
+    ["flowchart LR", "LR", false],
+    ["flowchart TD", "TB", false],
+    ["flowchart TB", "TB", false],
+    ["flowchart BT", "TB", true],
+    ["flowchart RL", "LR", true],
+    ["flowchart td", "TB", false],
+  ] as const)("%s reads %s", (header, direction, approximated) => {
+    const result = plan(header);
+    expect(result.direction).toBe(direction);
+    expect(result.directionApproximated).toBe(approximated);
+  });
+});
