@@ -297,6 +297,8 @@ type Joined struct {
 	HostOnline      bool          `json:"hostOnline"`
 	Epoch           string        `json:"epoch"`
 	Catchup         *[]Entry      `json:"catchup,omitempty"`
+	// DocFields are the doc fields this relay accepts; a client sends nothing outside them.
+	DocFields []string `json:"docFields"`
 }
 
 // SnapshotChunk is one part of a room's state.

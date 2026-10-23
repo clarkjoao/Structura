@@ -15,7 +15,7 @@ import { NothingInViewCard } from "./components/NothingInViewCard";
 import { CollabPresenceLayer } from "./components/CollabPresenceLayer";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
 import { useViewportOccupancy } from "./hooks/useViewportOccupancy";
-import { useCollab } from "@/features/collaboration";
+import { useCollab, useCollabStore } from "@/features/collaboration";
 import { useAutoArrange } from "./hooks/useAutoArrange";
 import { useCanvasPreferencesStore } from "./preferences";
 import { DiagramSidebar } from "./navigation/DiagramSidebar";
@@ -217,6 +217,8 @@ const Canvas = (props: CanvasProps = {}) => {
   );
   useAutoArrange({ enabled: canEditStructure, arrange: placeAutomatically });
   const { session: collabSession } = useCollab();
+  // A relay that does not carry the direction would leave peers on the old axis.
+  const syncsDiagramLayout = useCollabStore((state) => state.syncsDiagramLayout);
   const switchDirection = useCallback(
     (direction: DiagramDirection) => void arrange({ direction }),
     [arrange],
@@ -412,9 +414,10 @@ const Canvas = (props: CanvasProps = {}) => {
                   onSettingsSave: saveLayoutSettings,
                   direction: diagram.direction ?? "LR",
                   onDirectionChange: switchDirection,
-                  directionLockedReasonKey: collabSession
-                    ? "canvasToolbar.arrange.directionLockedSession"
-                    : null,
+                  directionLockedReasonKey:
+                    collabSession && !syncsDiagramLayout
+                      ? "canvasToolbar.arrange.directionLockedSession"
+                      : null,
                 }}
                 versions={{
                   locked: !interactionMode.canEditVersions || isFlowActive,

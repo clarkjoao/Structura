@@ -478,7 +478,7 @@ func (i *inv) seedCommit(rec *ConnRecord) error {
 	return i.send(rec.ConnID, protocol.MustMarshal(protocol.Joined{
 		Type: "joined", ClientID: participant.ClientID, Role: "host", Version: 0,
 		Participants: []protocol.Participant{participant}, MaxParticipants: i.h.opt.MaxParticipants,
-		HostOnline: true, Epoch: meta.Epoch, Catchup: &catchup,
+		HostOnline: true, Epoch: meta.Epoch, Catchup: &catchup, DocFields: protocol.DocFields,
 	}))
 }
 
@@ -606,6 +606,7 @@ func (i *inv) join(rec *ConnRecord, m *protocol.ClientMessage) error {
 	joined := protocol.Joined{
 		Type: "joined", ClientID: participant.ClientID, Role: role, Participants: participants,
 		MaxParticipants: i.h.opt.MaxParticipants, HostOnline: hostOnline, Epoch: meta.Epoch,
+		DocFields: protocol.DocFields,
 	}
 
 	var version int64

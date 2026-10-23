@@ -411,6 +411,7 @@ func (r *Relay) handleSeedCommit(ctx context.Context, state *connState) error {
 		HostOnline:      true,
 		Epoch:           epoch,
 		Catchup:         &catchup,
+		DocFields:       protocol.DocFields,
 	}))
 	r.finishJoin(state, 0)
 	r.opt.Log("[collab] room opened: %s", roomID)
@@ -517,6 +518,7 @@ func (r *Relay) handleJoin(ctx context.Context, state *connState, m *protocol.Cl
 		MaxParticipants: r.opt.MaxParticipants,
 		HostOnline:      hostOnline,
 		Epoch:           meta.Epoch,
+		DocFields:       protocol.DocFields,
 	}
 
 	// A resume is only meaningful within the incarnation it was taken from.

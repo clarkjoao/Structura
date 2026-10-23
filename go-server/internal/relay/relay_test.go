@@ -356,6 +356,28 @@ func TestRelay(t *testing.T) {
 				}
 			})
 
+			t.Run("declares its doc fields and carries the reading direction", func(t *testing.T) {
+				_, r := setup(t)
+				roomID := nextRoomID()
+				host, _ := hostRoom(t, r, roomID)
+				host.write(patchMsg("h1", 0, `{"doc":{"direction":"TB","layoutSettings":{"mode":"automatic"}}}`))
+				ack := host.next("ack", nil)
+				if !ack["applied"].(bool) || ack.num("version") != 1 {
+					t.Fatalf("ack %v", ack)
+				}
+				guest := joinRoom(t, r, roomID, "guest", nil)
+				joined := guest.next("joined", nil)
+				fields := fmt.Sprint(joined["docFields"])
+				if !strings.Contains(fields, "direction") || !strings.Contains(fields, "layoutSettings") {
+					t.Fatalf("docFields %v", joined["docFields"])
+				}
+				ready(t, guest)
+				state := snapshotState(guest)
+				if !strings.Contains(state, `"direction":"TB"`) || !strings.Contains(state, `"layoutSettings":{"mode":"automatic"}`) {
+					t.Fatalf("snapshot %s", state)
+				}
+			})
+
 			t.Run("rate-limits a flooding participant", func(t *testing.T) {
 				s := f.make(t)
 				opt := fast

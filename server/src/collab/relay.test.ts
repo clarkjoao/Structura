@@ -245,6 +245,29 @@ for (const factory of storeFactories()) {
         expect(host.all("entry").map((e) => e.version)).toEqual([1]);
       });
 
+      it("declares its doc fields and carries the reading direction and arrange settings", async () => {
+        const { relay } = await setup();
+        const roomId = nextRoomId();
+        const { host } = await hostRoom(relay, roomId, SEED);
+        const joined = await host.next("joined");
+        expect(joined.docFields).toEqual(expect.arrayContaining(["direction", "layoutSettings"]));
+
+        const settings = { mode: "automatic", density: "compact" };
+        const opId = patch(host, { doc: { direction: "TB", layoutSettings: settings } }, 0);
+        expect(await host.next("ack", (a) => a.opId === opId)).toMatchObject({
+          applied: true,
+          version: 1,
+        });
+
+        const guest = new FakeClient(user("guest"));
+        await joinRoom(relay, roomId, guest);
+        expect((await guest.next("joined")).docFields).toContain("direction");
+        expect((await receivedSnapshot(guest)).doc).toMatchObject({
+          direction: "TB",
+          layoutSettings: settings,
+        });
+      });
+
       it("keeps both concurrent edits to different fields of one component", async () => {
         const { relay } = await setup();
         const roomId = nextRoomId();

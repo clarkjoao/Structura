@@ -171,3 +171,17 @@ Step 3 shipped as `diagram-direction-interchange`:
 - **Imports.** An imported diagram's `direction` and `layoutSettings` are sanitised.
 - **draw.io import.** Still left-to-right: draw.io has no diagram-level direction to read.
 
+## Amendment — 2026-10-23: step 4 (live sessions)
+
+Step 4 shipped as `collab-diagram-layout-sync`. `direction` and `layoutSettings` are doc fields in
+both relays: Node, Go long-lived and Go serverless. The capability decision 8 asked for is
+`joined.docFields`, the list of doc fields the relay accepts.
+
+- The client sends no field outside that list.
+- A seed is always limited to the legacy fields; the host sends the rest as a patch after
+  `joined`. So a new client never has a seed or patch refused by an older relay.
+- Against an older relay the direction switch stays disabled during the session.
+- Undo checkpoints carry a peer's change of either field.
+- The arrange settings from the layout slices ride the same mechanism, as the decision
+  anticipated.
+

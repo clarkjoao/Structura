@@ -21,8 +21,11 @@ export const COLLECTIONS = [
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
-/** Top-level scalar fields of a diagram, assigned whole. */
-export const DOC_FIELDS = [
+/**
+ * The doc fields every relay has always accepted. A client that is not told otherwise (a
+ * `joined` without `docFields`, from an older relay) sends only these.
+ */
+export const LEGACY_DOC_FIELDS = [
   "diagramId",
   "diagramName",
   "level",
@@ -31,6 +34,13 @@ export const DOC_FIELDS = [
   "activeVersionId",
   "compareVersionId",
 ] as const;
+
+/**
+ * Top-level fields of a diagram, assigned whole. Beyond the legacy set: the reading direction
+ * (`"TB"` or `null`, ADR-0013) and the arrange settings (an object or `null`). A relay declares
+ * the list it accepts in `joined.docFields`, and a client sends nothing outside it.
+ */
+export const DOC_FIELDS = [...LEGACY_DOC_FIELDS, "direction", "layoutSettings"] as const;
 export type DocField = (typeof DOC_FIELDS)[number];
 
 /** Doc fields fixed at seed time; a patch may not change them. */
@@ -185,6 +195,11 @@ export type ServerMessage =
       epoch: string;
       /** Present when the resume was served by replay; otherwise a snapshot follows. */
       catchup?: Entry[];
+      /**
+       * The doc fields this relay accepts. Absent from an older relay, which accepts only
+       * `LEGACY_DOC_FIELDS`; a client never sends a field outside the list.
+       */
+      docFields?: string[];
     }
   | { type: "snapshot:chunk"; index: number; total: number; data: string }
   | { type: "snapshot:end"; version: number }

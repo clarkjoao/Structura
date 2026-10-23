@@ -119,11 +119,12 @@ snapshot, with a compare mode.
     way) and leaves every other element where it is. Moves, renames, deletions and connections
     between placed elements move nothing. The placement joins the edit's undo step, keeps your
     zoom, and the **Arrange** button still reorganizes the whole diagram. In a live session only
-    the person who made the edit places it.
+    the person who made the edit places it, and the mode itself syncs to everyone.
   - **Direction**: Horizontal (left to right, the default) or Vertical (top to bottom,
     [ADR-0013](adr/0013-diagram-reading-direction.md)). Switching re-arranges the whole diagram on
     the new axis and redraws its connections as one undo step; inputs move to the top and outputs
-    to the bottom of every element. Not available during a live session yet. The draw.io export
+    to the bottom of every element. In a live session the direction and the arrange settings sync
+    to everyone (on a relay that predates this, the switch stays off). The draw.io export
     attaches connections on the diagram's axis, a Mermaid `flowchart TD` imported into an empty
     diagram makes it vertical (into one with content it follows that diagram's direction), and
     the assistant can generate a vertical diagram.

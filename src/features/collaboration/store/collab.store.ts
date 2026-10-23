@@ -26,6 +26,11 @@ export interface CollabStoreState {
   locks: Record<string, ElementLock>;
   /** The peer (client id) whose cursor this canvas follows, or null. */
   following: string | null;
+  /**
+   * The relay synchronises the reading direction and arrange settings (it declared them in
+   * `joined.docFields`). Until it does, switching the direction stays off during a session.
+   */
+  syncsDiagramLayout: boolean;
 
   setSession: (session: CollabSession | null) => void;
   setStatus: (status: CollabStatus) => void;
@@ -50,6 +55,7 @@ export interface CollabStoreState {
     }>,
   ) => void;
   setFollowing: (clientId: string | null) => void;
+  setSyncsDiagramLayout: (value: boolean) => void;
   reset: () => void;
 }
 
@@ -68,6 +74,7 @@ const INITIAL = {
   maxParticipants: 50,
   locks: {},
   following: null,
+  syncsDiagramLayout: false,
 };
 
 export const createCollabStore = () =>
@@ -87,6 +94,8 @@ export const createCollabStore = () =>
       })),
 
     setIsReady: (isReady) => set({ isReady }),
+
+    setSyncsDiagramLayout: (syncsDiagramLayout) => set({ syncsDiagramLayout }),
 
     setHostOnline: (hostOnline) => set({ hostOnline }),
 

@@ -5,6 +5,7 @@ import type { CollabStoreState } from "../store/collab.store";
 import type { CollabStatus, ElementLock, PeerState } from "../types";
 import { CollabClient, type ClientPhase, type ClosedReason, type SocketLike } from "./CollabClient";
 import { StoreBridge } from "./StoreBridge";
+import { LEGACY_DOC_FIELD_SET, type DocFieldSet } from "./diagramState";
 
 /**
  * One live session, wired end to end: the socket client, the store bridge for the shared diagram,
@@ -63,6 +64,8 @@ function toPeer(participant: Participant): PeerState {
 export class CollabSession {
   readonly client: CollabClient;
   private bridge: StoreBridge | null = null;
+  /** The doc fields the relay accepts: the legacy set until `joined` declares more. */
+  private docFields: DocFieldSet = LEGACY_DOC_FIELD_SET;
   private diagramId: string | null;
   private selfId: string;
   private cursor: { x: number; y: number } | null = null;
@@ -108,6 +111,13 @@ export class CollabSession {
           collab.setParticipantCount(info.participants.length, info.maxParticipants);
           collab.setHostOnline(info.hostOnline);
           collab.setHostName(info.participants.find((p) => p.role === "host")?.user.name ?? null);
+          // What this relay accepts beyond the legacy doc fields (ADR-0013 step 4). Nothing
+          // outside the list is ever sent: an older relay would refuse the patch.
+          this.docFields = Array.isArray(info.docFields)
+            ? new Set(info.docFields.filter((field) => typeof field === "string"))
+            : LEGACY_DOC_FIELD_SET;
+          collab.setSyncsDiagramLayout(this.docFields.has("direction"));
+          this.bridge?.setDocFields(this.docFields);
         },
         onSnapshot: (version, state) => this.onSnapshot(version, state),
         onCatchup: (_version, entries) => {
@@ -198,6 +208,7 @@ export class CollabSession {
       selfId: this.opts.user.id,
       sendIntervalMs: this.opts.sendIntervalMs,
       inboundBatchMs: this.opts.inboundBatchMs,
+      docFields: this.docFields,
       transport: { sendPatch: (patch, base) => this.client.sendPatch(patch, base) },
     });
     bridge.attach();

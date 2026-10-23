@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypt
 import {
   chunkString,
   COLLAB_PROTOCOL_VERSION,
+  DOC_FIELDS,
   LIMITS,
   lockTargets,
   parseClientMessage,
@@ -315,6 +316,7 @@ export class CollabRelay {
       hostOnline: true,
       epoch,
       catchup: [],
+      docFields: [...DOC_FIELDS],
     });
     this.finishJoin(state, 0);
     this.log(`[collab] room opened: ${roomId}`);
@@ -385,6 +387,7 @@ export class CollabRelay {
       maxParticipants: this.opt.maxParticipants,
       hostOnline,
       epoch: meta.epoch,
+      docFields: [...DOC_FIELDS],
     };
 
     // A resume is only meaningful within the incarnation it was taken from.
