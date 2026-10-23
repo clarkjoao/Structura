@@ -99,6 +99,40 @@ export function stepPathPoints(source: Point, target: Point, corners: readonly P
   return points;
 }
 
+const mirror = (point: Point): Point => ({ x: point.y, y: point.x });
+
+/**
+ * `stepPathPoints` for a top-to-bottom diagram (ADR-0013): the same rule in the
+ * mirror. Each knot is reached vertically then horizontally, and the leg into
+ * the target turns first and arrives vertically — so the edge leaves a bottom
+ * handle downwards, the arrowhead points into a top handle, and a corner that
+ * sits a few pixels off the handle (layout boxes and drawn boxes rarely agree
+ * to the pixel) is reached by a short sideways step after leaving the handle,
+ * not by a jog along the node's border.
+ */
+export function verticalStepPathPoints(
+  source: Point,
+  target: Point,
+  corners: readonly Point[],
+): Point[] {
+  return stepPathPoints(mirror(source), mirror(target), corners.map(mirror)).map(mirror);
+}
+
+/** An SVG path through orthogonal points, as `H`/`V` commands (`L` for a diagonal leg). */
+export function pathThroughPoints(points: readonly Point[]): string {
+  const [first, ...rest] = points;
+  if (!first) return "";
+  let path = `M ${first.x} ${first.y}`;
+  let previous = first;
+  for (const point of rest) {
+    if (point.y === previous.y) path += ` H ${point.x}`;
+    else if (point.x === previous.x) path += ` V ${point.y}`;
+    else path += ` L ${point.x} ${point.y}`;
+    previous = point;
+  }
+  return path;
+}
+
 export interface StepSegment {
   index: number;
   x1: number;

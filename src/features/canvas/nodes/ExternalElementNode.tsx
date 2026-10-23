@@ -1,8 +1,9 @@
 import { memo } from "react";
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, type Node, type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, ExternalLink } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
+import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 export type ExternalElementNodeData = {
   elementId: string;
@@ -55,6 +56,7 @@ const handleClass =
 const ExternalElementNode = memo(
   ({ data: d, selected }: NodeProps<Node<ExternalElementNodeData>>) => {
     const isSelected = selected || d.isSelected;
+    const sides = useHandleSides();
     const collabHighlight = useCollabHighlight(d.elementId);
     const { t } = useTranslation();
 
@@ -101,8 +103,8 @@ const ExternalElementNode = memo(
             : undefined
         }
       >
-        <Handle id="target-0" type="target" position={Position.Left} className={handleClass} />
-        <Handle id="source-0" type="source" position={Position.Right} className={handleClass} />
+        <Handle id="target-0" type="target" position={sides.input} className={handleClass} />
+        <Handle id="source-0" type="source" position={sides.output} className={handleClass} />
 
         {collabHighlight && (
           <div

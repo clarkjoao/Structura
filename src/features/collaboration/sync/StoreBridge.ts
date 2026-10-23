@@ -5,7 +5,9 @@ import {
   applyPatchToCheckpoint,
   applyStateToDiagram,
   diagramToState,
+  LEGACY_DOC_FIELD_SET,
   sameSyncedState,
+  type DocFieldSet,
 } from "./diagramState";
 import {
   applyEntry,
@@ -49,6 +51,8 @@ export interface StoreBridgeOptions {
   sendIntervalMs?: number;
   /** Longest an incoming entry waits to be batched with the next ones; 0 applies each at once. */
   inboundBatchMs?: number;
+  /** The doc fields the relay accepts; the legacy set until `joined` declares more. */
+  docFields?: DocFieldSet;
 }
 
 type Inbound = { kind: "entry"; entry: Entry } | { kind: "refused"; opId: string };
@@ -67,6 +71,7 @@ export class StoreBridge {
   private readonly inboundBatchMs: number;
   private inbound: Inbound[] = [];
   private inboundTimer: ReturnType<typeof setTimeout> | null = null;
+  private docFields: DocFieldSet;
 
   constructor(options: StoreBridgeOptions) {
     this.store = options.store;
@@ -75,6 +80,17 @@ export class StoreBridge {
     this.transport = options.transport;
     this.interval = options.sendIntervalMs ?? 100;
     this.inboundBatchMs = options.inboundBatchMs ?? 32;
+    this.docFields = options.docFields ?? LEGACY_DOC_FIELD_SET;
+  }
+
+  /**
+   * The relay declared the doc fields it accepts (`joined.docFields`). Fields new to this
+   * session — the reading direction, the arrange settings — then show up as a local change and
+   * go out with the next send, so the room learns them right after joining.
+   */
+  setDocFields(fields: DocFieldSet): void {
+    this.docFields = fields;
+    if (this.sync) this.schedule();
   }
 
   /** Start capturing local edits. Idempotent. */
@@ -98,11 +114,15 @@ export class StoreBridge {
     return this.sync?.version ?? null;
   }
 
-  /** The diagram as the editor holds it, for seeding a room. */
+  /**
+   * The diagram as the editor holds it, for seeding a room. Always the legacy fields: the seed
+   * goes out before the relay has said what it accepts, and an older relay refuses a seed with
+   * any other. The rest follows as a patch once `joined` declares it (`setDocFields`).
+   */
   currentState(): DiagramState | null {
     this.drain();
     const diagram = this.diagram();
-    return diagram ? diagramToState(diagram) : null;
+    return diagram ? diagramToState(diagram, LEGACY_DOC_FIELD_SET) : null;
   }
 
   /** The version this client can vouch for, or null when anything local is unconfirmed. */
@@ -190,7 +210,7 @@ export class StoreBridge {
     if (!this.sync) return;
     const diagram = this.diagram();
     if (!diagram) return;
-    this.sync = captureLocal(this.sync, diagramToState(diagram));
+    this.sync = captureLocal(this.sync, diagramToState(diagram, this.docFields));
   }
 
   private enqueue(item: Inbound): void {
@@ -228,7 +248,7 @@ export class StoreBridge {
    */
   private write(state: DiagramState, remotePatches: DiagramPatch[]): void {
     const current = this.diagram();
-    const needsWrite = !current || !sameSyncedState(diagramToState(current), state);
+    const needsWrite = !current || !sameSyncedState(diagramToState(current, this.docFields), state);
     if (!needsWrite && remotePatches.length === 0) return;
 
     this.writing = true;
@@ -263,6 +283,7 @@ export class StoreBridge {
             : previous.diagrams,
           past: rebase(previous.past),
           future: rebase(previous.future),
+          _lastRemoteWriteAt: (previous._lastRemoteWriteAt ?? 0) + 1,
         };
       });
     } finally {

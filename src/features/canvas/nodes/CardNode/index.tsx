@@ -1,5 +1,5 @@
 import { memo, useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
-import { Position, type Node, type NodeProps } from "@xyflow/react";
+import { type Node, type NodeProps } from "@xyflow/react";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPresence";
 import { useIsNodeLocked, usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { useIsCollabGuest } from "@/features/collaboration/hooks/useIsCollabGuest";
 import { CARD_MAX_W, CARD_MIN_W } from "./constants";
+import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 
 /**
  * Remembers the collapsed height and, while active, caps vertical growth at
@@ -70,11 +71,12 @@ interface NodeHandlesProps {
 }
 
 const NodeHandles = ({ d, incomingCount, outgoingCount, handlePointer }: NodeHandlesProps) => {
+  const sides = useHandleSides();
   return (
     <>
-      {buildHandles(incomingCount, "target", Position.Left, d, handlePointer)}
-      {/* Left is input only, right is output only — never mirrored by position. */}
-      {buildHandles(outgoingCount, "source", Position.Right, d, handlePointer)}
+      {buildHandles(incomingCount, "target", sides.input, d, handlePointer)}
+      {/* Input and output sides come from the reading direction — never from position. */}
+      {buildHandles(outgoingCount, "source", sides.output, d, handlePointer)}
     </>
   );
 };

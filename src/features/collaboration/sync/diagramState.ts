@@ -1,5 +1,6 @@
 import {
   COLLECTIONS,
+  LEGACY_DOC_FIELDS,
   applyEffectivePatch,
   type CollectionName,
   type DiagramPatch,
@@ -7,6 +8,14 @@ import {
   type EntityMap,
 } from "@collab-protocol";
 import type { Diagram, DiagramSnapshot } from "@/features/diagram";
+import { normalizeLayoutSettings } from "@/features/diagram/model/layout-settings";
+
+/**
+ * The doc fields a relay accepts. Until a relay declares more (`joined.docFields`), a session
+ * syncs only the legacy set: an older relay refuses a patch or a seed with any other field.
+ */
+export type DocFieldSet = ReadonlySet<string>;
+export const LEGACY_DOC_FIELD_SET: DocFieldSet = new Set(LEGACY_DOC_FIELDS);
 
 /**
  * The bridge between the editor's `Diagram` and the wire's `DiagramState`. Only these fields are
@@ -29,7 +38,10 @@ function asModel<T>(map: EntityMap): Record<string, T> {
   return map as unknown as Record<string, T>;
 }
 
-export function diagramToState(diagram: Diagram): DiagramState {
+export function diagramToState(
+  diagram: Diagram,
+  fields: DocFieldSet = LEGACY_DOC_FIELD_SET,
+): DiagramState {
   const doc: DiagramState["doc"] = {
     diagramId: diagram.id,
     diagramName: diagram.name,
@@ -38,6 +50,10 @@ export function diagramToState(diagram: Diagram): DiagramState {
     description: diagram.description ?? null,
     activeVersionId: diagram.activeVersionId ?? null,
     compareVersionId: diagram.compareVersionId ?? null,
+    // Only to a relay that declared them (ADR-0013 step 4). `null` is "not set": left-to-right,
+    // default arrange settings.
+    ...(fields.has("direction") && { direction: diagram.direction ?? null }),
+    ...(fields.has("layoutSettings") && { layoutSettings: diagram.layoutSettings ?? null }),
   };
   const entities: Record<CollectionName, EntityMap> = {
     components: entityMap(diagram.snapshot.components),
@@ -66,7 +82,7 @@ function nullableString(value: unknown): string | null {
 export function applyStateToDiagram(diagram: Diagram, state: DiagramState): Diagram {
   const e = state.entities;
   return {
-    ...diagram,
+    ...withLayoutDoc(diagram, state.doc),
     name: typeof state.doc.diagramName === "string" ? state.doc.diagramName : diagram.name,
     level: typeof state.doc.level === "string" ? state.doc.level : diagram.level,
     domain: optionalString(state.doc.domain),
@@ -84,6 +100,34 @@ export function applyStateToDiagram(diagram: Diagram, state: DiagramState): Diag
     edgeLayouts: asModel(e.edgeLayouts),
     versions: asModel(e.versions),
   };
+}
+
+/**
+ * The reading direction and arrange settings a remote `doc` carries, sanitised. A field the doc
+ * does not have (an older relay, or a room nobody wrote it in) leaves the local value alone;
+ * `null` clears it.
+ */
+function withLayoutDoc<T extends Pick<Diagram, "direction" | "layoutSettings">>(
+  target: T,
+  doc: DiagramState["doc"],
+): T {
+  let next = target;
+  if ("direction" in doc) {
+    const { direction: _direction, ...rest } = next;
+    next = (doc.direction === "TB" ? { ...rest, direction: "TB" } : rest) as T;
+  }
+  if ("layoutSettings" in doc) {
+    const { layoutSettings: _settings, ...rest } = next;
+    const settings = isRecordValue(doc.layoutSettings)
+      ? normalizeLayoutSettings(doc.layoutSettings)
+      : undefined;
+    next = (settings ? { ...rest, layoutSettings: settings } : rest) as T;
+  }
+  return next;
+}
+
+function isRecordValue(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** True when the synchronised part of two states is the same, by reference. */
@@ -105,26 +149,29 @@ export function applyPatchToCheckpoint(
   checkpoint: DiagramSnapshot,
   patch: DiagramPatch,
 ): DiagramSnapshot {
-  if (!patch.entities) return checkpoint;
+  // A peer's direction or arrange settings go into the checkpoint too, or undo would put the
+  // old ones back over the peer's change.
+  const base = patch.doc ? withLayoutDoc(checkpoint, patch.doc) : checkpoint;
+  if (!patch.entities) return base;
   const before: DiagramState = {
     doc: {},
     entities: {
-      components: entityMap(checkpoint.snapshot.components),
-      connections: entityMap(checkpoint.snapshot.connections),
-      flows: entityMap(checkpoint.snapshot.flows),
-      iconLibrary: entityMap(checkpoint.snapshot.iconLibrary),
-      nodeLayouts: entityMap(checkpoint.nodeLayouts),
-      edgeLayouts: entityMap(checkpoint.edgeLayouts),
-      versions: entityMap(checkpoint.versions),
+      components: entityMap(base.snapshot.components),
+      connections: entityMap(base.snapshot.connections),
+      flows: entityMap(base.snapshot.flows),
+      iconLibrary: entityMap(base.snapshot.iconLibrary),
+      nodeLayouts: entityMap(base.nodeLayouts),
+      edgeLayouts: entityMap(base.edgeLayouts),
+      versions: entityMap(base.versions),
     },
   };
   const after = applyEffectivePatch(before, { entities: patch.entities });
-  if (after === before) return checkpoint;
+  if (after === before) return base;
   const e = after.entities;
   return {
-    ...checkpoint,
+    ...base,
     snapshot: {
-      ...checkpoint.snapshot,
+      ...base.snapshot,
       components: asModel(e.components),
       connections: asModel(e.connections),
       flows: asModel(e.flows),

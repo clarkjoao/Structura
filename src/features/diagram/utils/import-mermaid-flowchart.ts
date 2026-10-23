@@ -4,6 +4,7 @@ import type {
   ProcessNodeComponent,
   FlowNodeShape,
   NodeLayout,
+  DiagramDirection,
 } from "../model/diagram.types";
 import { generateId } from "./generate-id";
 
@@ -12,6 +13,22 @@ export interface FlowchartImportPlan {
   newConnections: Connection[];
   layouts: NodeLayout[];
   errors: string[];
+  /**
+   * The direction the header asks for (ADR-0013): `TD`/`TB` read top-to-bottom,
+   * `LR` left-to-right. `BT` and `RL` have no Structura equivalent and take the
+   * nearest, with `directionApproximated` set.
+   */
+  direction: DiagramDirection;
+  directionApproximated: boolean;
+}
+
+/** The Structura direction for a Mermaid flowchart header's. */
+function directionOfHeader(header: string): { direction: DiagramDirection; approximated: boolean } {
+  const token = header.trim().split(/\s+/)[1]?.toUpperCase() ?? "LR";
+  return {
+    direction: token === "TD" || token === "TB" || token === "BT" ? "TB" : "LR",
+    approximated: token === "BT" || token === "RL",
+  };
 }
 
 const GRID_COLUMNS = 3;
@@ -64,6 +81,8 @@ function emptyPlan(errors: string[]): FlowchartImportPlan {
     newConnections: [],
     layouts: [],
     errors,
+    direction: "LR",
+    directionApproximated: false,
   };
 }
 
@@ -289,6 +308,7 @@ export function parseMermaidFlowchart(
   if (!firstContentLine || !FLOWCHART_HEADER_RE.test(firstContentLine)) {
     return emptyPlan(["Not a flowchart diagram"]);
   }
+  const header = directionOfHeader(firstContentLine);
 
   const errors: string[] = [];
   const aliasOrder: string[] = [];
@@ -408,5 +428,7 @@ export function parseMermaidFlowchart(
     newConnections,
     layouts,
     errors,
+    direction: header.direction,
+    directionApproximated: header.approximated,
   };
 }

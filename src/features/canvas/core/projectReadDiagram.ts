@@ -97,6 +97,7 @@ export function projectReadDiagramView(
     view.placedConnections,
     buildConnectionCountPerNode(view.placedConnections),
     view.components,
+    diagram.direction,
   );
   // The read policy locks the nodes — interaction flags and editing controls.
   const { nodes, edges } = projectDiagram(view, ctx, readPolicy(), {

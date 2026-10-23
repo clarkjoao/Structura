@@ -1,4 +1,5 @@
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 
 /**
  * What a node type renders on its two sides — declared, not inferred.
@@ -9,9 +10,10 @@ import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
  * `connectionDerivations -> registry -> descriptor -> NoteNode ->
  * connectionDerivations` from closing into an import cycle.
  *
- * Sides are still fixed — left is input, right is output, whatever the node's
- * position (see the module comment in `edges/connectionDerivations.ts`). A spec
- * says how many slots a side has, never which side an edge uses.
+ * Sides are still fixed by the diagram's reading direction — input and output
+ * whatever the node's position (see the module comment in
+ * `edges/connectionDerivations.ts`). A spec says how many slots a side has,
+ * never which side an edge uses.
  */
 export interface NodeHandleSpec {
   /**
@@ -26,38 +28,52 @@ export interface NodeHandleSpec {
    */
   outgoing: number;
   /**
-   * Also renders an input on the top side and an output on the bottom — the
-   * flowchart shapes, where a decision's "no" leaves downwards and a step can
-   * be entered from above. The side is chosen by the edge (`Connection.sourceSide`
-   * / `targetSide`, written when the user draws from or to one of these
-   * handles), never derived from where the nodes sit.
+   * Also renders the cross axis — an input on top and an output at the bottom
+   * in a left-to-right diagram, on the left and right in a top-to-bottom one —
+   * the flowchart shapes, where a decision's "no" leaves sideways from the
+   * reading flow. The side is chosen by the edge (`Connection.sourceSide` /
+   * `targetSide`, written when the user draws from or to one of these handles),
+   * never derived from where the nodes sit. The name predates ADR-0013.
    */
   verticalSides?: boolean;
 }
 
-/** The top-side input of a node with `verticalSides`. */
+/**
+ * The cross-axis input of a node with `verticalSides`: on top in a
+ * left-to-right diagram, on the left in a top-to-bottom one (ADR-0013). The id
+ * kept its original name; it means "the cross-axis input", wherever it sits.
+ */
 export const TOP_TARGET_HANDLE_ID = "target-top";
-/** The bottom-side output of a node with `verticalSides`. */
+/** The cross-axis output: at the bottom (LR) or on the right (TB). */
 export const BOTTOM_SOURCE_HANDLE_ID = "source-bottom";
 
-/** The sides a connection asks for, as stored. Absent means right/left. */
+/** The sides a connection asks for, as stored — absolute sides. Absent means the main axis. */
 export interface ConnectionSides {
-  sourceSide?: "bottom";
-  targetSide?: "top";
+  sourceSide?: "bottom" | "right";
+  targetSide?: "top" | "left";
+}
+
+/** The real sides the cross-axis handles sit on, by reading direction. */
+export function crossAxisSides(direction: DiagramDirection = "LR"): Required<ConnectionSides> {
+  return direction === "TB"
+    ? { sourceSide: "right", targetSide: "left" }
+    : { sourceSide: "bottom", targetSide: "top" };
 }
 
 /**
- * The sides a connection drawn between two handles asks for. Only the keys
- * that differ from the default are present, so a plain right-to-left edge
- * stores nothing new.
+ * The sides a connection drawn between two handles asks for: the real side of
+ * a cross-axis handle in this diagram's direction. Only the keys that differ
+ * from the main axis are present, so a plain edge stores nothing new.
  */
 export function sidesFromHandles(
   sourceHandle: string | null | undefined,
   targetHandle: string | null | undefined,
+  direction: DiagramDirection = "LR",
 ): ConnectionSides {
+  const cross = crossAxisSides(direction);
   return {
-    ...(sourceHandle === BOTTOM_SOURCE_HANDLE_ID ? { sourceSide: "bottom" as const } : {}),
-    ...(targetHandle === TOP_TARGET_HANDLE_ID ? { targetSide: "top" as const } : {}),
+    ...(sourceHandle === BOTTOM_SOURCE_HANDLE_ID ? { sourceSide: cross.sourceSide } : {}),
+    ...(targetHandle === TOP_TARGET_HANDLE_ID ? { targetSide: cross.targetSide } : {}),
   };
 }
 

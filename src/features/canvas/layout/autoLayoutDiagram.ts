@@ -9,7 +9,12 @@ import { chooseAutoRefs, type AutoRefGroup } from "./autoRefs";
 import { autoRefOptionsFor, withoutAutoRefs } from "./autoRefsFromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { fitToContentIds, fromDiagram, resizableIds } from "./fromDiagram";
-import { layout } from "./layoutEngine";
+import { layoutWithSettings } from "./layoutEngine";
+import type { DiagramLayoutSettings } from "@/features/diagram/model/layout-settings";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
+import { isTopToBottom, transposeGraph, transposeResult } from "./axis";
+import { isArrangeBlockedInSession } from "./sessionArrangeGuard";
+import { useCollabStore } from "@/features/collaboration/store/collab.store";
 import { handleSpecFor } from "../nodes/node-types/registry";
 
 /**
@@ -45,6 +50,18 @@ export interface DiagramAutoLayoutInput {
    * user is looking.
    */
   offset?: { x: number; y: number };
+  /**
+   * The diagram's layout settings (density, gaps). Absent runs the tuned
+   * spacing unchanged. References are chosen under the same spacing, so the
+   * choice is measured against the layout that will be drawn.
+   */
+  settings?: DiagramLayoutSettings;
+  /**
+   * The axis to lay out along (ADR-0013). Absent is left-to-right. A
+   * top-to-bottom plan runs the whole left-to-right pipeline — references
+   * included — on the mirrored graph (`axis.ts`).
+   */
+  direction?: DiagramDirection;
 }
 
 export interface DiagramAutoLayoutPlan {
@@ -56,6 +73,10 @@ export interface DiagramAutoLayoutPlan {
   /** The references to reconcile; `undefined` leaves references alone. */
   autoRefs: AutoRefAssignment[] | undefined;
   offset: { x: number; y: number };
+  /** The settings the plan was made with, for the caller that writes them. */
+  settings: DiagramLayoutSettings | undefined;
+  /** The axis the plan was laid out on; its edges are written on the same one. */
+  direction: DiagramDirection;
 }
 
 export async function planDiagramAutoLayout(
@@ -71,9 +92,16 @@ export async function planDiagramAutoLayout(
     handleSpecFor,
   });
 
-  const { graph, result, groups } = input.autoRefs
-    ? await chooseAutoRefs(baseGraph, autoRefOptionsFor(components), layout)
-    : { graph: baseGraph, result: await layout(baseGraph), groups: [] };
+  const direction = input.direction ?? "LR";
+  const mirrored = isTopToBottom(direction);
+  const run = layoutWithSettings(input.settings);
+  const laidOut = mirrored ? transposeGraph(baseGraph) : baseGraph;
+  const chosen = input.autoRefs
+    ? await chooseAutoRefs(laidOut, autoRefOptionsFor(components), run)
+    : { graph: laidOut, result: await run(laidOut), groups: [] };
+  const { groups } = chosen;
+  const graph = mirrored ? transposeGraph(chosen.graph) : chosen.graph;
+  const result = mirrored ? transposeResult(chosen.result) : chosen.result;
 
   const layouts = fitContainersToChildren(
     toAppliedLayouts(graph, result, resizableIds(graph, components), offset),
@@ -87,6 +115,8 @@ export async function planDiagramAutoLayout(
     groups,
     layouts,
     offset,
+    settings: input.settings,
+    direction,
     autoRefs: input.autoRefs
       ? groups.map(({ refId, originalId, parentId, sourceIds }) => ({
           refId,
@@ -101,24 +131,54 @@ export async function planDiagramAutoLayout(
 /**
  * Writes a plan to the active diagram: positions and references as one undo
  * step, then ELK's handle order and corridors.
+ *
+ * `writeSettings` stores the settings the plan was made with in that same step
+ * — what a settings change from the Arrange menu does — and `writeDirection`
+ * the axis it was laid out on (switching direction). Omitted, the diagram's
+ * stored settings and direction are left as they are.
  */
-export function applyDiagramAutoLayout(plan: DiagramAutoLayoutPlan, diagramId: string): void {
-  useDiagramStore.getState().applyAutoLayout(plan.layouts, plan.autoRefs);
-  applyLayoutResultEdges(plan.graph, plan.result, diagramId, { waypointOffset: plan.offset });
+export function applyDiagramAutoLayout(
+  plan: DiagramAutoLayoutPlan,
+  diagramId: string,
+  {
+    writeSettings = false,
+    writeDirection = false,
+  }: { writeSettings?: boolean; writeDirection?: boolean } = {},
+): void {
+  useDiagramStore.getState().applyAutoLayout(plan.layouts, plan.autoRefs, {
+    ...(writeSettings && { layoutSettings: plan.settings ?? {} }),
+    ...(writeDirection && { direction: plan.direction }),
+  });
+  applyLayoutResultEdges(plan.graph, plan.result, diagramId, {
+    waypointOffset: plan.offset,
+    direction: plan.direction,
+  });
 }
 
 /**
  * Plans and applies the auto-layout on the active diagram as stored, the way
  * the assistant and generation run it: no measured sizes, references unless a
- * scene is active. Returns the plan, or `null` when there is nothing to lay out.
+ * scene is active. Returns the plan, or `null` when there is nothing to lay out
+ * or when a live session keeps a diagram this large from being re-arranged
+ * (`sessionArrangeGuard.ts`).
  */
 export async function autoLayoutActiveDiagram(
-  options: Pick<DiagramAutoLayoutInput, "offset"> = {},
+  options: Pick<DiagramAutoLayoutInput, "offset"> & {
+    /**
+     * Lay out along this axis and store it as the diagram's, in the same step —
+     * a generation that is the whole diagram and asks for its own direction.
+     */
+    direction?: DiagramDirection;
+  } = {},
 ): Promise<DiagramAutoLayoutPlan | null> {
   const state = useDiagramStore.getState();
   const diagramId = state.activeDiagramId;
   const diagram = diagramId ? state.diagrams[diagramId] : undefined;
   if (!diagramId || !diagram) return null;
+
+  // The assistant's layout follows the same rule as the button in a live session.
+  const inSession = useCollabStore.getState().session !== null;
+  if (isArrangeBlockedInSession(diagram.snapshot.components, inSession)) return null;
 
   const inScene = !!diagram.activeVersionId && !!diagram.versions?.[diagram.activeVersionId];
   const plan = await planDiagramAutoLayout({
@@ -126,10 +186,12 @@ export async function autoLayoutActiveDiagram(
     connections: Object.values(diagram.snapshot.connections),
     nodeLayouts: diagram.nodeLayouts,
     autoRefs: !inScene,
+    ...(diagram.layoutSettings ? { settings: diagram.layoutSettings } : {}),
+    direction: options.direction ?? diagram.direction ?? "LR",
     ...(options.offset ? { offset: options.offset } : {}),
   });
   if (plan.result.boxes.size === 0) return null;
 
-  applyDiagramAutoLayout(plan, diagramId);
+  applyDiagramAutoLayout(plan, diagramId, { writeDirection: options.direction !== undefined });
   return plan;
 }

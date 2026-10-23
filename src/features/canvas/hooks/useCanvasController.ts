@@ -11,6 +11,7 @@ import {
   useResolvedComponents,
   useResolvedNodeLayouts,
   isTextComponent,
+  type DiagramLayoutSettings,
 } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import { useCanvasCompareState } from "./useCanvasCompareState";
@@ -20,7 +21,8 @@ import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
 import { useInteractionMode } from "./useInteractionMode";
-import { useAutoLayout } from "./useAutoLayout";
+import { useAutoLayout, type AutoLayoutRunOptions } from "./useAutoLayout";
+import { edgeLabelBox } from "../layout/edgeLabelBox";
 
 export function useCanvasController(canvasProps: CanvasProps = {}) {
   const { t } = useTranslation();
@@ -57,24 +59,45 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
         : null,
     [activeDiagramId, resolvedComponents, resolvedNodeLayouts, resolvedConnections],
   );
-  const { runAutoLayout, isRunning: isAutoLayoutRunning } = useAutoLayout();
-  const handleAutoLayout = useCallback(() => {
-    if (!diagram) return;
-    const measuredNodes = reactFlowInstance.getNodes();
-    runAutoLayout(
+  const { runAutoLayout, placeTouched, isRunning: isAutoLayoutRunning } = useAutoLayout();
+  /**
+   * Arranges the diagram. With `settings`, arranges with those instead of the
+   * diagram's and stores them in the same undo step (the Arrange menu).
+   */
+  const arrange = useCallback(
+    async (options: AutoLayoutRunOptions = {}) => {
+      if (!diagram) return;
+      const measuredNodes = reactFlowInstance.getNodes();
+      await runAutoLayout(
+        resolvedComponents,
+        Object.values(resolvedConnections),
+        resolvedNodeLayouts,
+        measuredNodes,
+        options,
+      );
+    },
+    [
+      diagram,
+      runAutoLayout,
       resolvedComponents,
-      Object.values(resolvedConnections),
+      resolvedConnections,
       resolvedNodeLayouts,
-      measuredNodes,
-    );
-  }, [
-    diagram,
-    runAutoLayout,
-    resolvedComponents,
-    resolvedConnections,
-    resolvedNodeLayouts,
-    reactFlowInstance,
-  ]);
+      reactFlowInstance,
+    ],
+  );
+  const handleAutoLayout = useCallback(() => void arrange(), [arrange]);
+  const handleArrangeWithSettings = useCallback(
+    (settings: DiagramLayoutSettings) => void arrange({ settings }),
+    [arrange],
+  );
+  /** Whether the layout reserves room for edge labels, which picks its tuned layer gap. */
+  const arrangeLabelled = useMemo(
+    () =>
+      Object.values(resolvedConnections).some(
+        (connection) => edgeLabelBox(connection.label, connection.technology) !== undefined,
+      ),
+    [resolvedConnections],
+  );
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
   const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
   useEffect(() => {
@@ -188,6 +211,10 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     isCompareMode: compareState.isCompareMode,
     allDiagramTags,
     handleAutoLayout,
+    handleArrangeWithSettings,
+    arrange,
+    placeTouched,
+    arrangeLabelled,
     isAutoLayoutRunning,
   };
 }

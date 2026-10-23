@@ -38,6 +38,10 @@ import { validateDiagram } from "./validate-diagram";
 import { withInheritedAccent } from "@/features/canvas/nodes/laneAccent";
 import { MAX_HANDLES } from "@/features/diagram/model/layout.constants";
 import { edgeSides, resolveEdgeRouting } from "./edge-routing";
+import { crossAxisSides } from "@/features/canvas/nodes/node-types/handle-spec";
+import { handleSides } from "@/features/canvas/nodes/node-types/handle-sides";
+import type { HandlePosition } from "@/features/canvas/edges/geometry/paths";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 import { withPodLinkStyle } from "@/features/diagram/utils/k8s-pod";
 import type { HandleSlots } from "./edge-routing";
 
@@ -269,8 +273,10 @@ function mapEdge(
   layoutMap: Record<string, NodeLayout>,
   components: Record<string, Component>,
   slot: HandleSlots | undefined,
+  direction: DiagramDirection,
 ): ExportEdge {
   const eff = getEffectiveConnectionStyle(conn);
+  const cross = crossAxisSides(direction);
 
   // Resolve routing: handle positions (with slot offsets), sides, and waypoints.
   // Uses absolute coordinates and matches the canvas routing exactly.
@@ -282,8 +288,9 @@ function mapEdge(
     edgeLayout,
     slot,
     edgeSides(
-      conn.sourceSide === "bottom" && hasVerticalSides(components[conn.sourceId]),
-      conn.targetSide === "top" && hasVerticalSides(components[conn.targetId]),
+      direction,
+      conn.sourceSide === cross.sourceSide && hasVerticalSides(components[conn.sourceId]),
+      conn.targetSide === cross.targetSide && hasVerticalSides(components[conn.targetId]),
     ),
   );
 
@@ -292,20 +299,36 @@ function mapEdge(
   // of a node each get a different exitY/entryY, so edges don't collapse.
   const srcAbsLayout = getAbsoluteLayout(conn.sourceId, layoutMap, components);
   const tgtAbsLayout = getAbsoluteLayout(conn.targetId, layoutMap, components);
+  const srcW = srcAbsLayout?.width ?? 200;
   const srcH = srcAbsLayout?.height ?? 120;
   const tgtW = tgtAbsLayout?.width ?? 200;
+  const tgtH = tgtAbsLayout?.height ?? 120;
+  const along = (position: HandlePosition) => position === "left" || position === "right";
+  const sides = handleSides(direction);
 
-  // Normalise absolute handle Y to [0, 1] relative to source node height
+  // A source on the main output carries its slot offset along that side: the
+  // height for a right side, the width for a bottom one.
+  const sourceOnMain = routing.sides.sourcePosition === sides.output;
+  const exitX =
+    sourceOnMain && !along(routing.sides.sourcePosition)
+      ? (routing.sourceAbs.x - (srcAbsLayout?.x ?? 0)) / srcW
+      : routing.sides.exitX;
   const exitY =
-    routing.sides.sourcePosition === "right" || routing.sides.sourcePosition === "left"
+    sourceOnMain && along(routing.sides.sourcePosition)
       ? (routing.sourceAbs.y - (srcAbsLayout?.y ?? 0)) / srcH
       : routing.sides.exitY;
 
-  // Normalise absolute handle X to [0, 1] relative to target node width
+  // A target on the cross input does the same along its side (the top for
+  // left-to-right, the left for top-to-bottom).
+  const targetOnCross = routing.sides.targetPosition === sides.crossInput;
   const entryX =
-    routing.sides.targetPosition === "top" || routing.sides.targetPosition === "bottom"
+    targetOnCross && !along(routing.sides.targetPosition)
       ? (routing.targetAbs.x - (tgtAbsLayout?.x ?? 0)) / tgtW
       : routing.sides.entryX;
+  const entryY =
+    targetOnCross && along(routing.sides.targetPosition)
+      ? (routing.targetAbs.y - (tgtAbsLayout?.y ?? 0)) / tgtH
+      : routing.sides.entryY;
 
   return {
     id: conn.id,
@@ -320,10 +343,10 @@ function mapEdge(
     markerStart: mapMarker(eff.markerStart),
     markerEnd: mapMarker(eff.markerEnd),
     waypoints: routing.waypoints,
-    exitX: routing.sides.exitX,
+    exitX,
     exitY,
     entryX,
-    entryY: routing.sides.entryY,
+    entryY,
   };
 }
 
@@ -450,6 +473,7 @@ export function diagramToExportModel(
       layoutMap,
       components,
       handleSlots.get(conn.id),
+      diagramForExport.direction ?? "LR",
     ),
   );
 

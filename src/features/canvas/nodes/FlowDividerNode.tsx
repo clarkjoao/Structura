@@ -37,7 +37,7 @@ const FlowDividerNode = memo(
           lineClassName="!border-transparent"
           handleClassName="!w-2 !h-2 !bg-foreground/40 !border-background !rounded-sm"
         />
-        <SkinHandles left={{ x: 0, y: h / 2 }} right={{ x: w, y: h / 2 }} w={w} h={h} inert />
+        <SkinHandles input={{ x: 0, y: h / 2 }} output={{ x: w, y: h / 2 }} w={w} h={h} inert />
         <div className="relative h-full w-full">
           <div
             className="absolute inset-x-0 top-1/2"

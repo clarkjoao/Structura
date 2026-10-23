@@ -527,7 +527,37 @@
     "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways.",
     "autoHideBottomToolbar": "Automatically hide the bottom toolbar",
     "renameDiagram": "Diagram name",
-    "renameDiagramHint": "Double-click to rename"
+    "renameDiagramHint": "Double-click to rename",
+    "arrange": {
+      "label": "Arrange",
+      "action": "Arrange the diagram",
+      "withShortcut": "Arrange the diagram ({{shortcut}})",
+      "optionsAria": "Arrange options",
+      "title": "Arrange",
+      "mode": "Mode",
+      "modeManual": "Manual",
+      "modeManualHint": "Elements move only when you arrange them.",
+      "modeAutomatic": "Automatic",
+      "modeAutomaticHint": "Places what you add next to what it connects to; everything else stays where it is. Arrange reorganizes the whole diagram.",
+      "autoBadge": "Auto",
+      "density": "Spacing",
+      "densityCompact": "Compact",
+      "densityNormal": "Normal",
+      "densitySpacious": "Spacious",
+      "densityHint": "Changing it arranges the diagram again. Undo puts it back.",
+      "advanced": "Advanced",
+      "layerGap": "Gap between layers",
+      "nodeGap": "Gap between elements",
+      "resetGaps": "Reset to spacing",
+      "resetDefaults": "Restore defaults",
+      "lockedLargeSession": "Arranging is off during a live session for diagrams with more than {{max}} elements.",
+      "direction": "Direction",
+      "directionHorizontal": "Horizontal",
+      "directionVertical": "Vertical",
+      "directionHint": "Rearranges the whole diagram and redraws its connections. Undo puts it back.",
+      "directionLockedSession": "Not available during a live session.",
+      "running": "Arranging…"
+    }
   },
   "diagram": {
     "deleteConfirmTitle": "Delete diagram?",
@@ -2107,6 +2137,8 @@
     "panelTitle": "Flows",
     "importFlow": "Import flow",
     "importDialog": {
+      "directionApproximated": "Mermaid’s BT and RL directions are imported as top-to-bottom and left-to-right.",
+      "directionKept": "Imported along this diagram’s direction; switch it in Arrange if you want the other one.",
       "title": "Import Mermaid sequence",
       "description": "Paste a sequenceDiagram or flowchart to create components, connections, and a new flow.",
       "flowName": "Flow name",
@@ -2770,7 +2802,8 @@
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",
-    "nothingToLayout": "Nothing to lay out"
+    "nothingToLayout": "Nothing to lay out",
+    "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements."
   },
   "plugins": {
     "title": "Plugins",

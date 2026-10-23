@@ -22,7 +22,13 @@ import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useEdgeLabelReveal } from "../contexts/EdgeLabelRevealContext";
 import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
-import { buildStepPath, stepPathPoints } from "./geometry/orthogonal";
+import {
+  buildStepPath,
+  pathThroughPoints,
+  stepPathPoints,
+  verticalStepPathPoints,
+} from "./geometry/orthogonal";
+import { useReadingDirection } from "../contexts/ReadingDirectionContext";
 import { buildPathWithHops, hopArcsPath, withoutMicroJogs } from "./geometry/lineHops";
 import { useLineHops } from "../contexts/LineHopsContext";
 import { clampOffset, getGhostMidpoints, getPointAtOffset } from "./geometry/projection";
@@ -111,13 +117,35 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   // corners, or the default route when there are none.
   const stepCorners = segmentDrag.corners;
 
+  // A top-to-bottom diagram draws its step paths along the vertical axis
+  // (ADR-0013): out of a bottom handle downwards, into a top handle from above.
+  const vertical = useReadingDirection() === "TB";
+
+  // The points the step path visits, published so the canvas can find where it
+  // crosses other step edges; it hops over the ones it crosses horizontally.
+  // Sub-pixel jogs are ironed out first: they would leave a crossing next to
+  // them no room for its arc.
+  const stepPoints = useMemo(
+    () =>
+      isStep
+        ? withoutMicroJogs(
+            (vertical ? verticalStepPathPoints : stepPathPoints)(source, target, stepCorners),
+          )
+        : null,
+    [isStep, vertical, source, target, stepCorners],
+  );
+
   // Label placement polyline:
   //  - EditableStep / Editable: same knots the path traces (store or stamped).
   //  - Other styles: xyflow-equivalent knots — never store points (stale CPs).
   // Use style geometry even when !elementsSelectable so the viewer keeps labels
   // on the orthogonal path.
+  //  - In a top-to-bottom diagram, the step path as drawn: its corners can sit
+  //    off the handles' axis, and the label has to sit on the line, not beside it.
   const projectionPoints = isStep
-    ? stepCorners
+    ? vertical && stepPoints
+      ? stepPoints.slice(1, -1)
+      : stepCorners
     : isCurve
       ? points
       : getRenderedPathKnots({
@@ -163,14 +191,6 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
 
   const [hovered, setHovered] = useState(false);
 
-  // The points the step path visits, published so the canvas can find where it
-  // crosses other step edges; it hops over the ones it crosses horizontally.
-  // Sub-pixel jogs are ironed out first: they would leave a crossing next to
-  // them no room for its arc.
-  const stepPoints = useMemo(
-    () => (isStep ? withoutMicroJogs(stepPathPoints(source, target, stepCorners)) : null),
-    [isStep, source, target, stepCorners],
-  );
   const lineHops = useLineHops(id, stepPoints);
 
   const { edgePath } = useMemo(() => {
@@ -179,7 +199,9 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
         edgePath:
           stepPoints && lineHops.length > 0
             ? buildPathWithHops(stepPoints, lineHops)
-            : buildStepPath(source, target, stepCorners),
+            : vertical && stepPoints
+              ? pathThroughPoints(stepPoints)
+              : buildStepPath(source, target, stepCorners),
       };
     }
     if (isCurve) {
@@ -199,6 +221,7 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   }, [
     isStep,
     isCurve,
+    vertical,
     source,
     target,
     points,

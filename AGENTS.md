@@ -71,19 +71,26 @@ src/
 
 ## Hard rules
 
-- **Diagrams read left to right, and handles enforce it**: on every node the left
-  handles are input only and the right handles are output only, whatever the node's
-  position. An edge leaves its source on the right and arrives at its target on the
-  left — always. Never derive the side from the node geometry: the edge states the
-  direction, position only complements it. Moving a node must not rewire the edges
-  already drawn, and a deliberate back-edge (loop, retry, write-back to a store
-  drawn further left) must keep reading as one. Same contract as draw.io. This
-  outranks layout metrics — improve a crossing count by routing or placement, never
-  by flipping a side. Locked by `edges/connectionDerivations.fixedSides.test.ts`.
-  One declared extension: the flowchart shapes (`verticalSides` in their handle
-  spec) also have a top input and a bottom output. The side is still the edge's
-  own — stored as `Connection.sourceSide`/`targetSide` when the user draws from or
-  to those handles, absent by default — and is never derived from geometry.
+- **Diagrams read along their declared axis, and handles enforce it** (ADR-0013):
+  left to right by default, top to bottom when `Diagram.direction` is `"TB"`. On
+  every node the input side (left, or top) is input only and the output side
+  (right, or bottom) is output only, whatever the node's position. An edge leaves
+  its source on the output side and arrives at its target on the input side —
+  always. Never derive the side from the node geometry: the diagram's declaration
+  and the edge state the sides, position only complements them. Moving a node must
+  not rewire the edges already drawn, and a deliberate back-edge (loop, retry,
+  write-back to a store drawn further back) must keep reading as one. Same contract
+  as draw.io. This outranks layout metrics — improve a crossing count by routing or
+  placement, never by flipping a side. Node renderers take their sides from
+  `useHandleSides()` only (guarded by `nodes/handleSides.guard.test.ts`); locked by
+  `edges/connectionDerivations.fixedSides.test.ts` in both directions. One declared
+  extension: the flowchart shapes (`verticalSides` in their handle spec) also have
+  the cross axis — top in / bottom out left to right, left in / right out top to
+  bottom. The side is still the edge's own — stored as an absolute
+  `Connection.sourceSide`/`targetSide` when the user draws from or to those
+  handles, absent by default — and is never derived from geometry. Top-to-bottom
+  layouts run the left-to-right pipeline on the mirrored graph (`layout/axis.ts`);
+  do not fork the layout readers per axis.
 - **Type guards, not raw strings**: `isPanelComponent(c)` / `isPanelType(t)` from
   `@/features/diagram` — never `c.type === "panel"`.
 - **No hardcoded user-visible strings**: always `t("key")` with entries in both

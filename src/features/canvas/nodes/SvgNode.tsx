@@ -1,9 +1,10 @@
 import { memo } from "react";
-import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
+import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 export type SvgNodeData = {
   elementId: string;
@@ -25,6 +26,7 @@ const SVG_ACCENT_DEFAULT = "#f97316";
 
 const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
   const { t } = useTranslation();
+  const sides = useHandleSides();
   const { highlightedNodeIds } = useHandleHighlight();
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
@@ -46,13 +48,13 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
       <Handle
         id="target-0"
         type="target"
-        position={Position.Left}
+        position={sides.input}
         className="!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground"
       />
       <Handle
         id="source-0"
         type="source"
-        position={Position.Right}
+        position={sides.output}
         className="!w-2.5 !h-2.5 !border-2 !border-background !bg-muted-foreground"
       />
 

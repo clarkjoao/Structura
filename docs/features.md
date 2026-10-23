@@ -106,7 +106,35 @@ snapshot, with a compare mode.
 
 ## Layout
 
-- Auto layout (layered, left to right) powered by ELK.
+- Auto layout (layered, left to right) powered by ELK, from the **Arrange** button in the bottom
+  toolbar, `Cmd/Ctrl + Shift + L`, the context menus or the assistant.
+- Per-diagram arrange settings, saved with the diagram:
+  - **Spacing**: Compact, Normal or Spacious. It scales every tuned layout gap (×0.75 / ×1 / ×1.35),
+    so the measured proportions hold. Normal is the default layout.
+  - **Advanced**: the gap between layers and the gap between elements in a layer (40–308px), each
+    overriding the spacing for that gap only.
+  - Changing a setting re-arranges at once; one undo restores both the setting and the positions.
+  - **Mode**: Manual (default) moves nothing on its own. Automatic places what you add next to
+    what it connects to (a column to the right of its source, sliding down past anything in the
+    way) and leaves every other element where it is. Moves, renames, deletions and connections
+    between placed elements move nothing. The placement joins the edit's undo step, keeps your
+    zoom, and the **Arrange** button still reorganizes the whole diagram. In a live session only
+    the person who made the edit places it, and the mode itself syncs to everyone.
+  - **Direction**: Horizontal (left to right, the default) or Vertical (top to bottom,
+    [ADR-0013](adr/0013-diagram-reading-direction.md)). Switching re-arranges the whole diagram on
+    the new axis and redraws its connections as one undo step; inputs move to the top and outputs
+    to the bottom of every element. During a live session the switch is off; a vertical diagram
+    still reads vertical for everyone, as the direction and arrange settings sync. The draw.io export
+    attaches connections on the diagram's axis, a Mermaid `flowchart TD` imported into an empty
+    diagram makes it vertical (into one with content it follows that diagram's direction), and
+    the assistant can generate a vertical diagram.
+  - **Restore defaults** goes back to Manual, Normal spacing, no overrides.
+  - **Live sessions**: on a diagram with more than 50 elements, arranging the whole diagram (button,
+    shortcut, menus, spacing changes, the assistant) is off, since it would rewrite every position
+    for every participant at once. The automatic mode's placement of what was just added stays on.
+- Arranging animates: elements glide to their new place and connections fade back in on their
+  final route (instant with reduced motion).
+- A collapsed panel is arranged at its collapsed size; its hidden children keep their place.
 - Fit panels to their children; grid snapping.
 
 ## Import, export and sharing

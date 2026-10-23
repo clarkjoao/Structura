@@ -1,5 +1,5 @@
-import { Position } from "@xyflow/react";
 import { buildHandles, type HandleBehaviour } from "../CardNode/Handles";
+import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 
 /**
  * The pieces every deployment element is drawn from, so the card, the
@@ -17,10 +17,11 @@ export function DeployHandles({
   outgoingCount: number;
 }) {
   const behaviour: HandleBehaviour = { elementId };
+  const sides = useHandleSides();
   return (
     <>
-      {buildHandles(incomingCount, "target", Position.Left, behaviour, undefined)}
-      {buildHandles(outgoingCount, "source", Position.Right, behaviour, undefined)}
+      {buildHandles(incomingCount, "target", sides.input, behaviour, undefined)}
+      {buildHandles(outgoingCount, "source", sides.output, behaviour, undefined)}
     </>
   );
 }

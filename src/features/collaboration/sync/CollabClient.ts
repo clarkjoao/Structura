@@ -64,6 +64,8 @@ export interface CollabClientCallbacks {
     participants: Participant[];
     maxParticipants: number;
     hostOnline: boolean;
+    /** The doc fields the relay accepts; absent from an older relay. */
+    docFields?: string[];
   }) => void;
   onHostToken?: (token: string) => void;
   onPeerJoined?: (participant: Participant, count: number) => void;
@@ -380,6 +382,7 @@ export class CollabClient {
           participants: message.participants,
           maxParticipants: message.maxParticipants,
           hostOnline: message.hostOnline,
+          ...(message.docFields && { docFields: message.docFields }),
         });
         if (message.catchup) {
           this.cb.onCatchup(message.version, message.catchup);

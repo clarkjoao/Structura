@@ -1,5 +1,5 @@
 import { memo, useState, useCallback, useRef, useId, useEffect, useMemo } from "react";
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp, Database, Plus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHigh
 import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { DbColumnRow, DbTableColumnKey, DbTableNodeData } from "./DbTableNode.types";
+import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 
 interface ColDef {
   key: DbTableColumnKey;
@@ -43,11 +44,12 @@ const dbTableIncomingHandleClassName =
  * same and is what the edge handle assignment reads.
  */
 function DbTableEdgeHandles({ elementId }: { elementId: string }) {
+  const { input } = useHandleSides();
   return (
     <Handle
       id={singleIncomingTargetHandleId(elementId)}
       type="target"
-      position={Position.Left}
+      position={input}
       className={dbTableIncomingHandleClassName}
     />
   );

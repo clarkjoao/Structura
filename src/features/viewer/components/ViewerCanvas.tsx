@@ -496,6 +496,7 @@ const ViewerCanvasContent = ({
           <EdgeLabelRevealProvider value={revealedLabelEdgeIds}>
             <DiagramSurface
               policy={readPolicy()}
+              readingDirection={diagram.direction ?? "LR"}
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}

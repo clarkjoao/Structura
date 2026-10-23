@@ -1,11 +1,12 @@
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, type Node, type NodeProps } from "@xyflow/react";
 import { Play } from "lucide-react";
 import type { EndpointHandler, FlowRef, HttpMethod } from "@/features/diagram";
 import { ENDPOINT_H, METHOD_COLORS } from "./ApiGroupNode/constants";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
+import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 export { METHOD_COLORS } from "./ApiGroupNode/constants";
 
@@ -42,6 +43,7 @@ export type EndpointNodeData = {
 const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
   const { method, path } = d;
   const { t } = useTranslation();
+  const sides = useHandleSides();
   const collabHighlight = useCollabHighlight(d.elementId);
   const callers = d.callerNames ?? [];
   /**
@@ -70,7 +72,7 @@ const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
       <Handle
         id="target-0"
         type="target"
-        position={Position.Left}
+        position={sides.input}
         className="!w-2.5 !h-2.5 !bg-muted-foreground !border-background"
       />
 
@@ -112,7 +114,7 @@ const EndpointNode = memo(({ data: d }: NodeProps<Node<EndpointNodeData>>) => {
       <Handle
         id="source-0"
         type="source"
-        position={Position.Right}
+        position={sides.output}
         className="!w-2.5 !h-2.5 !bg-muted-foreground !border-background"
       />
     </div>

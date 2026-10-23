@@ -1,6 +1,7 @@
 import type { Diagram, IconDefinition } from "@/features/diagram";
 import { logger } from "@/lib/core/logger";
 import { useIconStore } from "@/features/diagram";
+import { normalizeLayoutSettings } from "@/features/diagram/model/layout-settings";
 
 function normalizeOneIconEntry(key: string, value: unknown): IconDefinition | null {
   if (!value || typeof value !== "object") return null;
@@ -115,8 +116,14 @@ export function normalizeImportedDiagram(diagram: Diagram): Diagram {
       components[key] = { ...comp, customIconId: undefined };
     }
   }
+  // The reading direction and the arrange settings arrive from a file, a
+  // folder or a link: keep what is valid, drop the rest rather than store it.
+  const { direction, layoutSettings, ...rest } = diagram;
+  const settings = normalizeLayoutSettings(layoutSettings);
   return {
-    ...diagram,
+    ...rest,
+    ...(direction === "TB" && { direction }),
+    ...(settings && { layoutSettings: settings }),
     edgeLayouts:
       diagram.edgeLayouts &&
       typeof diagram.edgeLayouts === "object" &&

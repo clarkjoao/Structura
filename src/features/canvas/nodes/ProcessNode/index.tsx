@@ -1,8 +1,9 @@
 import { memo, type CSSProperties } from "react";
-import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, type Node, type NodeProps, type Position } from "@xyflow/react";
 import { Plus } from "lucide-react";
 import type { FlowNodeShape } from "@/features/diagram";
 import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
+import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 import { CARD_MAX_W, CARD_MIN_W } from "../CardNode/constants";
 import type { ProcessNodeData } from "./ProcessNode.types";
 import {
@@ -440,16 +441,18 @@ function SvgShapeBody({ shape, d, palette, isActive, w, h }: ShapeProps) {
 }
 
 /**
- * One handle in the middle of each side, on the shape's own outline. Left and
- * right are the plain input and output every edge uses by default; top is an
- * extra input and bottom an extra output, used by the edges drawn to or from
- * them (see `FLOW_SHAPE_HANDLES`).
+ * One handle in the middle of each side, on the shape's own outline. The input
+ * and output sides of the reading direction (left and right) take every edge by
+ * default; the cross axis (top in, bottom out) is used by the edges drawn to or
+ * from it (see `FLOW_SHAPE_HANDLES`).
  *
  * Positions are percentages of the box so they stay on the outline while the
  * node is being resized, before the next measurement.
  */
 function FlowHandles({ shape, w, h }: { shape: FlowNodeShape; w: number; h: number }) {
-  const at = flowShapeHandles(shape, w, h);
+  const sides = useHandleSides();
+  const outline = flowShapeHandles(shape, w, h);
+  const at = (side: Position) => outline[side];
   // Centred on the point whatever the side: React Flow's per-side classes pin
   // right/bottom and translate by half a handle, which would push the handle
   // off the outline once left/top are set too.
@@ -473,31 +476,31 @@ function FlowHandles({ shape, w, h }: { shape: FlowNodeShape; w: number; h: numb
       <Handle
         id="target-0"
         type="target"
-        position={Position.Left}
-        style={pct(at.left)}
+        position={sides.input}
+        style={pct(at(sides.input))}
         className={HANDLE_CLASS}
       />
       <Handle
         id={TOP_TARGET_HANDLE_ID}
         type="target"
-        position={Position.Top}
-        style={inert(at.top)}
+        position={sides.crossInput}
+        style={inert(at(sides.crossInput))}
         className={cls}
         isConnectable={!hidden}
       />
       <Handle
         id="source-0"
         type="source"
-        position={Position.Right}
-        style={inert(at.right)}
+        position={sides.output}
+        style={inert(at(sides.output))}
         className={cls}
         isConnectable={!hidden}
       />
       <Handle
         id={BOTTOM_SOURCE_HANDLE_ID}
         type="source"
-        position={Position.Bottom}
-        style={inert(at.bottom)}
+        position={sides.crossOutput}
+        style={inert(at(sides.crossOutput))}
         className={cls}
         isConnectable={!hidden}
       />

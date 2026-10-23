@@ -14,6 +14,12 @@ import {
 import { computeFitBounds } from "../../utils/fit-group-to-children";
 import { panelTopInset } from "../../model/layout.constants";
 import { isTextType } from "../../model/component-type-constants";
+import {
+  normalizeLayoutSettings,
+  sameLayoutSettings,
+  type DiagramLayoutSettings,
+} from "../../model/layout-settings";
+import type { DiagramDirection } from "../../model/diagram.types";
 
 export const layoutSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -171,12 +177,16 @@ export const layoutSlice = (
     });
   },
 
-  resetEdgeControlPoints: (diagramId: string, connectionId: string) => {
+  resetEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    options?: { history?: boolean },
+  ) => {
     set((state) => {
       const diagram = state.diagrams[diagramId];
       const existing = diagram?.edgeLayouts[connectionId];
       if (!diagram || !existing?.points?.length) return;
-      pushHistory(state);
+      if (options?.history !== false) pushHistory(state);
       delete existing.points;
       if (existing.labelOffset === undefined && existing.pathType === undefined) {
         delete diagram.edgeLayouts[connectionId];
@@ -320,7 +330,31 @@ export const layoutSlice = (
    * container has to be resized to hold what the layout put inside it, and
    * dropping that size is what used to leave children outside their own panel.
    * Nodes that size themselves from their content are simply passed without one.
+   *
+   * `options.layoutSettings`, when passed, is the setting the run was planned
+   * with, written (normalised) in the same `set()` after the same checkpoint: a
+   * density change and the arrangement it caused are one undo step. Omitted, the
+   * stored settings are left alone.
+   *
+   * `options.history: false` pushes no checkpoint: the run joins the undo step of
+   * the edit that caused it — the automatic mode's arrangement after an insert.
+   *
+   * `options.direction`, when passed, is the reading direction the run was laid
+   * out on (ADR-0013): switching the axis and the arrangement it needs are one
+   * undo step, like a settings change.
    */
+  setLayoutSettings: (settings: DiagramLayoutSettings) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d || sameLayoutSettings(d.layoutSettings, settings)) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      const normalized = normalizeLayoutSettings(settings);
+      if (normalized) d.layoutSettings = normalized;
+      else delete d.layoutSettings;
+      touchDiagram(d);
+    });
+  },
+
   applyAutoLayout: (
     layouts: Array<{
       elementId: string;
@@ -330,6 +364,11 @@ export const layoutSlice = (
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
+    options?: {
+      layoutSettings?: DiagramLayoutSettings;
+      history?: boolean;
+      direction?: DiagramDirection;
+    },
   ) => {
     set((state) => {
       const d = getActiveDiagram(state);
@@ -339,7 +378,31 @@ export const layoutSlice = (
       // References the layout made or dissolved are a structural change: the
       // checkpoint must not be coalesced into an earlier one.
       const reconcilesRefs = autoRefs !== undefined && scene === null;
-      pushHistory(state, reconcilesRefs ? STRUCTURAL_MUTATION_MARKER : undefined);
+      // So is a settings change: coalesced into the last checkpoint, one undo
+      // would skip past the setting the user just picked.
+      const nextSettings = options?.layoutSettings;
+      const changesSettings =
+        nextSettings !== undefined && !sameLayoutSettings(d.layoutSettings, nextSettings);
+      const nextDirection = options?.direction;
+      const changesDirection =
+        nextDirection !== undefined && nextDirection !== (d.direction ?? "LR");
+      if (options?.history !== false) {
+        pushHistory(
+          state,
+          reconcilesRefs || changesSettings || changesDirection
+            ? STRUCTURAL_MUTATION_MARKER
+            : undefined,
+        );
+      }
+      if (changesDirection) {
+        if (nextDirection === "TB") d.direction = "TB";
+        else delete d.direction;
+      }
+      if (changesSettings) {
+        const normalized = normalizeLayoutSettings(nextSettings);
+        if (normalized) d.layoutSettings = normalized;
+        else delete d.layoutSettings;
+      }
       // Before the positions: a reference made here has no layout to move yet.
       if (reconcilesRefs) reconcileAutoRefs(d, autoRefs);
 

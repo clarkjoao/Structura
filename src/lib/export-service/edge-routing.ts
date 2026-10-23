@@ -21,6 +21,8 @@ import type { Component } from "@/features/diagram";
 import type { EdgeLayout, NodeLayout } from "@/features/diagram";
 import { isApiGroupComponent, isPanelComponent } from "@/features/diagram";
 import type { HandlePosition } from "@/features/canvas/edges/geometry/paths";
+import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
+import { handleSides } from "@/features/canvas/nodes/node-types/handle-sides";
 import { getStepPolylinePoints } from "@/features/canvas/edges/geometry/paths";
 import { handleSlotOffset } from "@/features/diagram/model/layout.constants";
 
@@ -48,10 +50,10 @@ export interface InferredSides {
 /**
  * The sides an edge attaches to — fixed, exactly as the canvas draws them.
  *
- * Structura diagrams read left to right, and the handles enforce it: left is
- * input only, right is output only, on every node, whatever its position. An
- * edge leaves its source on the right and arrives at its target on the left,
- * always. See the module comment in
+ * A left-to-right diagram — the default — reads with left as input only and
+ * right as output only, on every node, whatever its position: an edge leaves
+ * its source on the right and arrives at its target on the left, always. A
+ * top-to-bottom one turns the axis (`edgeSides`). See the module comment in
  * `features/canvas/edges/connectionDerivations.ts` for the full rule.
  *
  * This used to be inferred from the relative geometry of the two nodes —
@@ -72,17 +74,41 @@ export const FIXED_EDGE_SIDES: Readonly<InferredSides> = Object.freeze({
 });
 
 /**
- * The sides for one edge: the fixed right-to-left pair, except where the edge
- * itself asked for a flowchart shape's bottom output or top input (and the
- * shape honours it — the caller decides that from the handle spec, exactly as
- * the canvas's `buildEdgeHandleAssignments` does).
+ * Each side as an attachment: the handle position and the draw.io anchor for
+ * an exit or an entry there (the middle of the side; slot offsets are applied
+ * later, along the side).
  */
-export function edgeSides(leavesBottom: boolean, entersTop: boolean): Readonly<InferredSides> {
-  if (!leavesBottom && !entersTop) return FIXED_EDGE_SIDES;
+const SIDE_ANCHOR: Record<HandlePosition, { x: number; y: number }> = {
+  right: { x: 1, y: 0.5 },
+  left: { x: 0, y: 0.5 },
+  bottom: { x: 0.5, y: 1 },
+  top: { x: 0.5, y: 0 },
+};
+
+/**
+ * The sides for one edge, as the canvas draws them in the diagram's reading
+ * direction (ADR-0013): out of the main output and into the main input — right
+ * and left, or bottom and top — except where the edge itself asked for a
+ * flowchart shape's cross axis (and the shape honours it — the caller decides
+ * that from the handle spec, exactly as the canvas's
+ * `buildEdgeHandleAssignments` does).
+ */
+export function edgeSides(
+  direction: DiagramDirection,
+  leavesCross: boolean,
+  entersCross: boolean,
+): Readonly<InferredSides> {
+  if (direction !== "TB" && !leavesCross && !entersCross) return FIXED_EDGE_SIDES;
+  const sides = handleSides(direction);
+  const source = (leavesCross ? sides.crossOutput : sides.output) as HandlePosition;
+  const target = (entersCross ? sides.crossInput : sides.input) as HandlePosition;
   return {
-    ...FIXED_EDGE_SIDES,
-    ...(leavesBottom ? { sourcePosition: "bottom" as const, exitX: 0.5, exitY: 1 } : {}),
-    ...(entersTop ? { targetPosition: "top" as const, entryX: 0.5, entryY: 0 } : {}),
+    sourcePosition: source,
+    targetPosition: target,
+    exitX: SIDE_ANCHOR[source].x,
+    exitY: SIDE_ANCHOR[source].y,
+    entryX: SIDE_ANCHOR[target].x,
+    entryY: SIDE_ANCHOR[target].y,
   };
 }
 

@@ -17,6 +17,7 @@ import type {
   ExternalLink,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+import type { DiagramLayoutSettings } from "../model/layout-settings";
 
 /**
  * A reference the auto-layout decided on: `refId` stands for `originalId` in
@@ -137,7 +138,11 @@ export interface AppActions {
     index: number,
   ) => void;
   removeEdgeControlPoint: (diagramId: string, connectionId: string, pointId: string) => void;
-  resetEdgeControlPoints: (diagramId: string, connectionId: string) => void;
+  resetEdgeControlPoints: (
+    diagramId: string,
+    connectionId: string,
+    options?: { history?: boolean },
+  ) => void;
   setEdgeLabelOffset: (
     diagramId: string,
     connectionId: string,
@@ -157,7 +162,17 @@ export interface AppActions {
       height?: number;
     }>,
     autoRefs?: readonly AutoRefAssignment[],
+    options?: {
+      layoutSettings?: DiagramLayoutSettings;
+      history?: boolean;
+      direction?: import("../model/diagram.types").DiagramDirection;
+    },
   ) => void;
+  /**
+   * Writes the active diagram's layout settings without moving anything, as
+   * one undo step — switching the arrange mode back to manual.
+   */
+  setLayoutSettings: (settings: DiagramLayoutSettings) => void;
 
   addService: (service: Omit<ServiceDefinition, "id">) => ServiceDefinition;
   updateService: (id: string, patch: Partial<Omit<ServiceDefinition, "id">>) => void;

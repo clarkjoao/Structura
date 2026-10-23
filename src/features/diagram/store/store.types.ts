@@ -10,6 +10,7 @@ import type {
   ViewNodeLayout,
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
+import type { DiagramLayoutSettings } from "../model/layout-settings";
 import type { AppActions } from "./actions.types";
 
 export interface DiagramSnapshot {
@@ -26,6 +27,13 @@ export interface DiagramSnapshot {
    * has no versions.
    */
   versions?: Record<string, VersionDiff>;
+  /**
+   * The layout settings at the checkpoint, so undoing a density change puts the
+   * setting back along with the positions it produced. Undefined when unset.
+   */
+  layoutSettings?: DiagramLayoutSettings;
+  /** The reading direction at the checkpoint; undefined is left-to-right. */
+  direction?: "TB";
   timestamp: number;
 }
 
@@ -61,6 +69,12 @@ export interface AppState {
    * showed up and auto layout did not.
    */
   _lastLayoutWriteAt: number;
+  /**
+   * Bumped when a collaboration session writes a peer's change into the store
+   * (`StoreBridge.write`). Lets a watcher tell the local user's edits from a
+   * peer's: the automatic arrangement runs only for the former.
+   */
+  _lastRemoteWriteAt: number;
   /**
    * An open flow-editing session. While one is open the flow actions push no
    * checkpoints of their own: the session's is the undo unit. `undoMark` is

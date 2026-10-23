@@ -23,7 +23,9 @@ var Collections = []string{
 	"versions",
 }
 
-// DocFields are the top-level scalar fields of a diagram, assigned whole.
+// DocFields are the top-level fields of a diagram, assigned whole. Beyond the original seven:
+// the reading direction ("TB" or null, ADR-0013) and the arrange settings (an object or null).
+// The relay declares this list in joined.docFields; a client never sends a field outside it.
 var DocFields = []string{
 	"diagramId",
 	"diagramName",
@@ -32,6 +34,8 @@ var DocFields = []string{
 	"description",
 	"activeVersionId",
 	"compareVersionId",
+	"direction",
+	"layoutSettings",
 }
 
 // ImmutableDocFields are fixed at seed time; a patch may not change them.

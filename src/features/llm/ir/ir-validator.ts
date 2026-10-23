@@ -2,6 +2,7 @@ import {
   coerceTier,
   isBoundaryNode,
   isIRDiagramType,
+  isIRDirection,
   isSemanticType,
   type DiagramIR,
   type IREdge,
@@ -337,7 +338,17 @@ export function validateIR(value: unknown): IRValidationResult {
     return { ok: false, issues };
   }
 
-  return { ok: true, ir: { type: value.type, nodes, edges } };
+  // A direction the model got wrong is dropped, not an issue: a bad reading
+  // direction must not reject an otherwise good diagram.
+  return {
+    ok: true,
+    ir: {
+      type: value.type,
+      nodes,
+      edges,
+      ...(isIRDirection(value.direction) && { direction: value.direction }),
+    },
+  };
 }
 
 /** Extracts the IR object from a raw model response and validates it. */

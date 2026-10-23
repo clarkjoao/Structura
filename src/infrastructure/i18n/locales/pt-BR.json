@@ -527,7 +527,37 @@
     "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal.",
     "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente",
     "renameDiagram": "Nome do diagrama",
-    "renameDiagramHint": "Clique duas vezes para renomear"
+    "renameDiagramHint": "Clique duas vezes para renomear",
+    "arrange": {
+      "label": "Organizar",
+      "action": "Organizar o diagrama",
+      "withShortcut": "Organizar o diagrama ({{shortcut}})",
+      "optionsAria": "Opções de organização",
+      "title": "Organizar",
+      "mode": "Modo",
+      "modeManual": "Manual",
+      "modeManualHint": "Os elementos só se movem quando você organiza.",
+      "modeAutomatic": "Automático",
+      "modeAutomaticHint": "Posiciona o que você adiciona ao lado do que ele conecta; o resto fica onde está. Organizar reorganiza o diagrama inteiro.",
+      "autoBadge": "Auto",
+      "density": "Espaçamento",
+      "densityCompact": "Compacto",
+      "densityNormal": "Normal",
+      "densitySpacious": "Espaçado",
+      "densityHint": "Mudar reorganiza o diagrama. Desfazer volta como estava.",
+      "advanced": "Avançado",
+      "layerGap": "Espaço entre camadas",
+      "nodeGap": "Espaço entre elementos",
+      "resetGaps": "Voltar ao espaçamento",
+      "resetDefaults": "Restaurar padrão",
+      "lockedLargeSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos.",
+      "direction": "Direção",
+      "directionHorizontal": "Horizontal",
+      "directionVertical": "Vertical",
+      "directionHint": "Reorganiza o diagrama inteiro e refaz as conexões. Desfazer volta como estava.",
+      "directionLockedSession": "Indisponível durante uma sessão ao vivo.",
+      "running": "Organizando…"
+    }
   },
   "diagram": {
     "deleteConfirmTitle": "Remover diagrama?",
@@ -2107,6 +2137,8 @@
     "panelTitle": "Fluxos",
     "importFlow": "Importar fluxo",
     "importDialog": {
+      "directionApproximated": "As direções BT e RL do Mermaid são importadas como de cima para baixo e da esquerda para a direita.",
+      "directionKept": "Importado na direção deste diagrama; troque em Organizar se quiser a outra.",
       "title": "Importar sequência Mermaid",
       "description": "Cole um diagrama sequenceDiagram ou flowchart para criar componentes, conexões e um novo fluxo.",
       "flowName": "Nome do fluxo",
@@ -2770,7 +2802,8 @@
     "panelApplied": "Layout do painel aplicado",
     "organizeChildren": "Organizar filhos (LR)",
     "error": "Erro ao calcular layout",
-    "nothingToLayout": "Nada para organizar"
+    "nothingToLayout": "Nada para organizar",
+    "blockedInSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos."
   },
   "plugins": {
     "title": "Plugins",

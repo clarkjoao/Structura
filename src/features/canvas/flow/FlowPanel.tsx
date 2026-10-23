@@ -25,7 +25,7 @@ import {
   useComponents,
   useConnections,
   useDiagramStore,
-  useResolvedNodeLayouts,
+  getCachedCanvasSnapshot,
   resolveActiveVersion,
   getStepCount,
   getFlowParticipants,
@@ -49,6 +49,8 @@ import MermaidImportDialog from "./MermaidImportDialog";
 import { useFlowViewStore } from "./useFlowViewStore";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
+import { activeDirection } from "../hooks/useActiveDirection";
+import type { DiagramDirection } from "@/features/diagram";
 
 interface Props {
   onClose: () => void;
@@ -77,7 +79,6 @@ const FlowPanel = ({
   const activeDiagramId = useActiveDiagramId();
   const components = useComponents();
   const connections = useConnections();
-  const resolvedNodeLayouts = useResolvedNodeLayouts();
   const { removeFlow, addFlow, updateFlow, applyAutoLayout } = useDiagramActions();
   const importMermaidSequenceResult = useDiagramStore((state) => state.importMermaidSequenceResult);
   const importDrawioResult = useDiagramStore((state) => state.importDrawioResult);
@@ -103,16 +104,28 @@ const FlowPanel = ({
   }, [onClose]);
 
   const layoutNewNodes = useCallback(
-    async (nodeIds: string[], connectionIds: string[]) => {
+    async (
+      nodeIds: string[],
+      connectionIds: string[],
+      direction?: { value: DiagramDirection; write: boolean },
+    ) => {
+      // Read at call time: this runs right after the import wrote the new
+      // elements, and the hook values captured with this callback predate
+      // them — the scoped layout found none of its ids and silently did nothing.
+      const state = useDiagramStore.getState();
+      const diagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+      if (!diagram) return;
+      const resolved = getCachedCanvasSnapshot(diagram);
       const applied = await layoutScopedNodes({
         nodeIds,
         connectionIds,
-        components,
-        connections,
-        nodeLayouts: resolvedNodeLayouts,
+        components: resolved.components,
+        connections: resolved.connections,
+        nodeLayouts: resolved.nodeLayouts,
         anchor: onGetInsertPosition(),
         activeDiagramId,
         applyAutoLayout,
+        ...(direction && { direction: direction.value, writeDirection: direction.write }),
       });
       if (!applied) return;
 
@@ -120,25 +133,21 @@ const FlowPanel = ({
         reactFlowInstance.fitView({ duration: 400, padding: 0.2 });
       });
     },
-    [
-      components,
-      connections,
-      resolvedNodeLayouts,
-      applyAutoLayout,
-      activeDiagramId,
-      onGetInsertPosition,
-      reactFlowInstance,
-    ],
+    [applyAutoLayout, activeDiagramId, onGetInsertPosition, reactFlowInstance],
   );
 
   const preselectAfterImport = useCallback(
-    (nodeIds: string[], _connectionIds: string[]) => {
+    (
+      nodeIds: string[],
+      _connectionIds: string[],
+      direction?: { value: DiagramDirection; write: boolean },
+    ) => {
       if (nodeIds.length === 0) return;
       const store = useCanvasSelectionStore.getState();
       store.setSelectedNodeId(nodeIds[0] ?? null);
       store.setSelectedNodeIds(new Set(nodeIds));
       store.setSelectedEdgeId(null);
-      void layoutNewNodes(nodeIds, _connectionIds).catch((err) => {
+      void layoutNewNodes(nodeIds, _connectionIds, direction).catch((err) => {
         console.error("[mermaidImport] scoped auto-layout failed", err);
         toast.error(t("flows.importDialog.layoutError"));
       });
@@ -241,10 +250,25 @@ const FlowPanel = ({
       const plan = parseMermaidFlowchart(text, components, connections, anchor);
       if (plan.newComponents.length === 0 && plan.errors.length > 0) return;
 
+      // The header's direction is the diagram's when the import is the whole
+      // diagram; into one with content, the import follows the diagram
+      // (ADR-0013) — re-arranging the author's work is not an import's call.
+      const wasEmpty = Object.keys(components).length === 0;
+      const current = activeDirection();
+      const target = wasEmpty ? plan.direction : current;
+      if (plan.directionApproximated) {
+        toast.info(t("flows.importDialog.directionApproximated"));
+      } else if (target !== plan.direction) {
+        toast.info(t("flows.importDialog.directionKept"));
+      }
+
       const createdIds = importDrawioResult(plan.newComponents, plan.newConnections, plan.layouts);
       if (createdIds.length > 0) {
         const connectionIds = plan.newConnections.map((c) => c.id);
-        preselectAfterImport(createdIds, connectionIds);
+        preselectAfterImport(createdIds, connectionIds, {
+          value: target,
+          write: wasEmpty && target !== current,
+        });
       }
       setShowMermaidImport(false);
     },
@@ -255,6 +279,7 @@ const FlowPanel = ({
       importDrawioResult,
       onGetInsertPosition,
       preselectAfterImport,
+      t,
     ],
   );
 

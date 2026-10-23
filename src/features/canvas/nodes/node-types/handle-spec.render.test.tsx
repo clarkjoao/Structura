@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { ReactFlow, ReactFlowProvider, type Node } from "@xyflow/react";
 import type { Component, Connection } from "@/features/diagram";
 import { MAX_HANDLES } from "@/features/diagram";
@@ -11,6 +12,8 @@ import {
 } from "../../edges/connectionDerivations";
 import { getNodeTypesSnapshot, resolveNodeDescriptor, handleSpecForType } from "./registry";
 import type { NodeBuildContext } from "./types";
+import { ReadingDirectionContext } from "../../contexts/ReadingDirectionContext";
+import type { ReadingDirection } from "./handle-sides";
 
 /**
  * What each corrected type actually renders, counted in the DOM.
@@ -101,6 +104,15 @@ function buildContext(
 
 /** One node of `type`, wired to `fan` peers on each side, rendered for real. */
 function renderTypeWithFan(type: string, fan: number): Set<string> {
+  return new Set(renderHandles(type, fan).keys());
+}
+
+/** The side each rendered handle of a `type` hub sits on, by handle id. */
+function renderHandles(
+  type: string,
+  fan: number,
+  direction: ReadingDirection = "LR",
+): Map<string, string> {
   const hub = {
     id: "hub",
     name: "hub",
@@ -140,19 +152,27 @@ function renderTypeWithFan(type: string, fan: number): Set<string> {
     },
   ];
 
-  const { container } = render(
-    <ReactFlowProvider>
-      <div style={{ width: 800, height: 600 }}>
-        <ReactFlow nodes={nodes} edges={[]} nodeTypes={getNodeTypesSnapshot()} />
-      </div>
-    </ReactFlowProvider>,
+  const { container, unmount } = render(
+    <MemoryRouter>
+      <ReactFlowProvider>
+        <ReadingDirectionContext.Provider value={direction}>
+          <div style={{ width: 800, height: 600 }}>
+            <ReactFlow nodes={nodes} edges={[]} nodeTypes={getNodeTypesSnapshot()} />
+          </div>
+        </ReadingDirectionContext.Provider>
+      </ReactFlowProvider>
+    </MemoryRouter>,
   );
 
-  const rendered = new Set<string>();
+  const rendered = new Map<string, string>();
   for (const element of container.querySelectorAll(".react-flow__handle")) {
     const id = element.getAttribute("data-handleid");
-    if (id !== null) rendered.add(id);
+    const side = ["left", "right", "top", "bottom"].find((name) =>
+      element.classList.contains(`react-flow__handle-${name}`),
+    );
+    if (id !== null && side) rendered.set(id, side);
   }
+  unmount();
   return rendered;
 }
 
@@ -318,6 +338,30 @@ describe("flowchart shapes keep every edge attached", () => {
       const handle =
         a.connId.startsWith("in-") || a.connId === "above" ? a.targetHandle : a.sourceHandle;
       expect(rendered.has(handle), `${a.connId} -> ${handle}`).toBe(true);
+    }
+  });
+});
+
+describe("handles follow the reading direction (ADR-0013)", () => {
+  const TYPES = ["system", "panel", "note", "external-element", "svg", "endpoint", "process-node"];
+
+  it.each(TYPES)("%s puts inputs on top and outputs at the bottom when top-to-bottom", (type) => {
+    const sides = renderHandles(type, 2, "TB");
+    expect(sides.size).toBeGreaterThan(0);
+    for (const [id, side] of sides) {
+      if (id === "target-top") expect(side, id).toBe("left");
+      else if (id === "source-bottom") expect(side, id).toBe("right");
+      else if (id.startsWith("source")) expect(side, id).toBe("bottom");
+      else expect(side, id).toBe("top");
+    }
+  });
+
+  it.each(TYPES)("%s keeps left in and right out when left-to-right", (type) => {
+    for (const [id, side] of renderHandles(type, 2)) {
+      if (id === "target-top") expect(side, id).toBe("top");
+      else if (id === "source-bottom") expect(side, id).toBe("bottom");
+      else if (id.startsWith("source")) expect(side, id).toBe("right");
+      else expect(side, id).toBe("left");
     }
   });
 });

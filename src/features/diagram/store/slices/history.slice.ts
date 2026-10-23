@@ -36,6 +36,8 @@ export function pushHistoryCheckpoint(state: AppState): boolean {
     nodeLayouts: toPlain(d.nodeLayouts),
     edgeLayouts: toPlain(d.edgeLayouts),
     versions: toPlain(d.versions),
+    ...(d.layoutSettings && { layoutSettings: toPlain(d.layoutSettings) }),
+    ...(d.direction && { direction: d.direction }),
   });
   if (state.past.length > MAX_HISTORY_STEPS) state.past.shift();
   state.future = [];
@@ -83,6 +85,8 @@ export const historySlice = (
       const currentNodeLayouts = d.nodeLayouts;
       const currentEdgeLayouts = d.edgeLayouts;
       const currentScenes = d.versions;
+      const currentLayoutSettings = d.layoutSettings;
+      const currentDirection = d.direction;
 
       state.past.splice(entryIndex, 1);
       state.future.push({
@@ -91,12 +95,18 @@ export const historySlice = (
         nodeLayouts: currentNodeLayouts,
         edgeLayouts: currentEdgeLayouts,
         versions: currentScenes,
+        ...(currentLayoutSettings && { layoutSettings: currentLayoutSettings }),
+        ...(currentDirection && { direction: currentDirection }),
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
       d.versions = entry.versions;
+      if (entry.layoutSettings) d.layoutSettings = entry.layoutSettings;
+      else delete d.layoutSettings;
+      if (entry.direction) d.direction = entry.direction;
+      else delete d.direction;
       state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
       state._lastUndoRedoTimestamp = Date.now();
     });
@@ -126,6 +136,8 @@ export const historySlice = (
       const currentNodeLayouts = d.nodeLayouts;
       const currentEdgeLayouts = d.edgeLayouts;
       const currentScenes = d.versions;
+      const currentLayoutSettings = d.layoutSettings;
+      const currentDirection = d.direction;
 
       state.future.splice(entryIndex, 1);
       state.past.push({
@@ -134,12 +146,18 @@ export const historySlice = (
         nodeLayouts: currentNodeLayouts,
         edgeLayouts: currentEdgeLayouts,
         versions: currentScenes,
+        ...(currentLayoutSettings && { layoutSettings: currentLayoutSettings }),
+        ...(currentDirection && { direction: currentDirection }),
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
       d.nodeLayouts = entry.nodeLayouts;
       d.edgeLayouts = entry.edgeLayouts;
       d.versions = entry.versions;
+      if (entry.layoutSettings) d.layoutSettings = entry.layoutSettings;
+      else delete d.layoutSettings;
+      if (entry.direction) d.direction = entry.direction;
+      else delete d.direction;
       state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
       state._lastUndoRedoTimestamp = Date.now();
     });

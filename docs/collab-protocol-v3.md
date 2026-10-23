@@ -24,7 +24,8 @@ One WebSocket path (default `/ws`, `WS_PATH`). Every frame is a JSON text object
 
 ```ts
 DiagramState = {
-  doc: { diagramId, diagramName, level, domain, description, activeVersionId, compareVersionId },
+  doc: { diagramId, diagramName, level, domain, description, activeVersionId, compareVersionId,
+         direction, layoutSettings },   // the last two only where the relay declares them (§2.2)
   entities: { components, connections, flows, iconLibrary, nodeLayouts, edgeLayouts, versions },
 }
 ```
@@ -53,6 +54,21 @@ fixed at seed time.
 | creation | `set` on a missing entity creates it; an `unset`-only patch never creates |
 | soft locks | while another participant holds an entity's lock, guarded fields from anyone else are dropped: `nodeLayouts` `x,y,width,height`; `components` `name,description`; `connections` `label,description`. Removal is not guarded |
 | effective patch | the relay distributes and logs only what took effect, never the patch as sent |
+
+### 2.2 Declared doc fields
+
+A relay states in `joined.docFields` the doc fields it accepts. A client sends no doc field outside
+that list. A `joined` without `docFields` comes from an older relay, which accepts only the
+original seven. A seed is always limited to those seven, because it goes out before `joined`.
+A host sends the declared newer fields as an ordinary patch right after `joined`.
+
+| field | value | since |
+|---|---|---|
+| `direction` | `"TB"` or `null` (left-to-right), ADR-0013 | `docFields` |
+| `layoutSettings` | arrange settings object (`mode`, `density`, `layerGap`, `nodeGap`) or `null` | `docFields` |
+
+A client sanitises both on receipt. An unknown `direction` is left-to-right, and invalid settings
+are dropped. A doc that lacks a field leaves the local value alone.
 
 ## 3. Lifecycle
 
@@ -135,7 +151,7 @@ participant's reconnects.
 | type | fields | sent to |
 |---|---|---|
 | `created` | `roomId`, `clientId`, `hostToken` | the creating host |
-| `joined` | `clientId`, `role`, `version`, `participants`, `maxParticipants`, `hostOnline`, `epoch`, `catchup?` | the joiner |
+| `joined` | `clientId`, `role`, `version`, `participants`, `maxParticipants`, `hostOnline`, `epoch`, `catchup?`, `docFields` | the joiner |
 | `snapshot:chunk` | `index`, `total`, `data` | the joiner (no `catchup`) |
 | `snapshot:end` | `version` | the joiner |
 | `entry` | `version`, `opId`, `sender`, `patch` | everyone in the room, sender included, in version order |

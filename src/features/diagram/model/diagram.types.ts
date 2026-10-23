@@ -56,8 +56,16 @@ import type { Component } from "./component.types";
 import type { Connection } from "./connection.types";
 import type { Flow } from "./flow.types";
 import type { EdgeLayout, NodeLayout } from "./layout.types";
+import type { DiagramLayoutSettings } from "./layout-settings";
 
 export type Level = "context" | "container" | "component" | string;
+
+/**
+ * The axis a diagram reads along (ADR-0013): left-to-right (`"LR"`, the default
+ * and never stored) or top-to-bottom (`"TB"`). Handles, edges and layouts follow
+ * it; the side an edge uses never comes from where its nodes sit.
+ */
+export type DiagramDirection = "LR" | "TB";
 
 export type IconSource =
   | { kind: "svg"; svgContent: string }
@@ -167,6 +175,21 @@ export interface Diagram {
    * exports until the author turns it on and saves.
    */
   textsVisible?: boolean;
+
+  /**
+   * How the auto-layout arranges this diagram (`layout-settings.ts`). Absent
+   * means the default arrangement; written only through `applyAutoLayout`, so
+   * a change and the arrangement it causes are one undo step.
+   */
+  layoutSettings?: DiagramLayoutSettings;
+
+  /**
+   * Top-to-bottom when `"TB"`; absent means left-to-right, so every diagram
+   * from before ADR-0013 hashes and exports as it did. Written only by an
+   * arrangement on the new axis (`applyAutoLayout`), so the switch and the
+   * layout it needs are one undo step.
+   */
+  direction?: "TB";
 }
 
 export type DiagramModel = Omit<Diagram, "viewport">;

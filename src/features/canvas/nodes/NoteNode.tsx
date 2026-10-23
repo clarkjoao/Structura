@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { Handle, NodeResizer, Position, type Node, type NodeProps } from "@xyflow/react";
+import { Handle, NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import ReactMarkdown from "react-markdown";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useDiagramActions } from "@/features/diagram";
@@ -17,6 +17,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { singleIncomingTargetHandleId } from "./node-types/handle-spec";
+import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 const noteIncomingHandleClassName =
   "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
@@ -31,11 +32,12 @@ const noteIncomingHandleClassName =
  * same and is what the edge handle assignment reads.
  */
 function NoteEdgeHandles({ elementId }: { elementId: string }) {
+  const { input } = useHandleSides();
   return (
     <Handle
       id={singleIncomingTargetHandleId(elementId)}
       type="target"
-      position={Position.Left}
+      position={input}
       className={noteIncomingHandleClassName}
     />
   );

@@ -150,9 +150,12 @@ export type {
   IconSource,
   Folder,
   Level,
+  DiagramDirection,
 } from "./diagram.types";
 
 export { isAwsIcon, isLucideIcon, isSvgIcon } from "./diagram.types";
+
+export type { DiagramLayoutSettings } from "./layout-settings";
 
 export type { ServiceDefinition, ServiceSourceRef } from "./service.types";
 export type { ServiceManifestEntry } from "./service-manifest.types";
