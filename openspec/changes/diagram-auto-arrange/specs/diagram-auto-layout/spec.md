@@ -20,37 +20,45 @@ the diagram through the persistence port like the other layout settings.
 - **WHEN** the workspace is reloaded
 - **THEN** the diagram is still in automatic mode
 
-### Requirement: Automatic mode re-arranges after a local structural edit
+### Requirement: Automatic mode places only what the edit touched
 
-In automatic mode, the diagram SHALL be re-arranged with its saved settings shortly after
-the local user changes its structure. Structural changes are: adding or removing an
-element or a connection, changing an element's parent, changing a connection's ends, and
-collapsing or expanding a panel. Edits made in quick succession SHALL produce a single
-arrangement.
+In automatic mode, shortly after a local structural edit, the elements the edit touched SHALL be placed and every other element SHALL keep its position. Touched means: added, moved into another container, or connected for the first time to an element already in place. A touched element SHALL go one column after the element it is connected from (before the one it connects to), on the same row, moved down until it overlaps nothing; containers SHALL grow to keep it inside. A burst of edits SHALL be placed once.
 
-#### Scenario: Adding an element arranges the diagram
+#### Scenario: Adding a connected element leaves the diagram in place
 
-- **GIVEN** a diagram in automatic mode
-- **WHEN** the user adds an element and connects it
-- **THEN** the diagram is re-arranged once, after the last of those edits, and the user's viewport is kept
+- **GIVEN** an arranged diagram in automatic mode
+- **WHEN** the user adds an element and connects an existing element to it
+- **THEN** the new element appears to the right of the existing one, and no other element moves
 
-#### Scenario: Moving an element is not structural
+#### Scenario: The spot is taken
 
-- **GIVEN** a diagram in automatic mode
-- **WHEN** the user drags an element to a new place
-- **THEN** the element stays where it was dropped and no arrangement runs
+- **GIVEN** a diagram in automatic mode where the column right of an element is occupied
+- **WHEN** the user adds an element connected from it
+- **THEN** the new element is placed below what occupies that spot, overlapping nothing
 
-#### Scenario: Renaming is not structural
+#### Scenario: A deletion or a connection between placed elements moves nothing
 
 - **GIVEN** a diagram in automatic mode
-- **WHEN** the user edits an element's name or a connection's label
-- **THEN** no arrangement runs
+- **WHEN** the user deletes an element, or connects two elements that are already in place
+- **THEN** no element moves
 
-#### Scenario: Manual mode never re-arranges by itself
+#### Scenario: An unconnected element stays where it was dropped
+
+- **GIVEN** a diagram in automatic mode
+- **WHEN** the user adds an element without connecting it
+- **THEN** it stays where it was inserted, and is placed when it gets its first connection
+
+#### Scenario: Moving or renaming is not structural
+
+- **GIVEN** a diagram in automatic mode
+- **WHEN** the user drags an element or edits a name or label
+- **THEN** nothing is placed
+
+#### Scenario: Manual mode never places by itself
 
 - **GIVEN** a diagram in manual mode
 - **WHEN** the user adds, connects and removes elements
-- **THEN** no arrangement runs
+- **THEN** nothing moves on its own
 
 ### Requirement: The automatic arrangement joins the edit's undo step
 
@@ -100,20 +108,20 @@ local user. It SHALL NOT run for:
 
 ### Requirement: An automatic arrangement is quiet
 
-An automatic arrangement SHALL animate like any arrangement. It SHALL NOT change the
-viewport and SHALL NOT show a success notification. It SHALL still report a failure.
+An automatic placement SHALL animate like any arrangement. It SHALL NOT change the
+viewport and SHALL NOT show a notification.
 
 #### Scenario: No toast while sketching
 
 - **GIVEN** a diagram in automatic mode
-- **WHEN** an automatic arrangement succeeds
-- **THEN** no success notification is shown and the zoom and pan are unchanged
+- **WHEN** an element is placed automatically
+- **THEN** no notification is shown and the zoom and pan are unchanged
 
 ### Requirement: The mode is chosen in the Arrange menu
 
-The Arrange menu SHALL let the author choose Manual or Automatic. Choosing Automatic SHALL
-arrange the diagram immediately and save the mode as one undo step. Choosing Manual SHALL
-save the mode as one undo step without moving anything. The Arrange button SHALL indicate
+The Arrange menu SHALL let the author choose Manual or Automatic. Choosing either SHALL
+save the mode as one undo step without moving anything; the full arrangement stays on the
+Arrange button. The Arrange button SHALL indicate
 when the diagram is in automatic mode, and "Restore defaults" SHALL return to manual mode.
 Every visible string SHALL come from i18n, in both `en` and `pt-BR`.
 

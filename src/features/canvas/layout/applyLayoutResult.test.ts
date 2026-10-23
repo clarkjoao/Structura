@@ -143,9 +143,7 @@ describe("applyLayoutResultEdges", () => {
       diagramId,
     );
 
-    expect(fakeStore.resetEdgeControlPoints).toHaveBeenCalledWith(diagramId, "e1", {
-      history: true,
-    });
+    expect(fakeStore.resetEdgeControlPoints).toHaveBeenCalledWith(diagramId, "e1");
     expect(fakeStore.setEdgeControlPoints).toHaveBeenCalled();
   });
 

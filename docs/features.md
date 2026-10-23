@@ -114,10 +114,12 @@ snapshot, with a compare mode.
   - **Advanced**: the gap between layers and the gap between elements in a layer (40–600px), each
     overriding the spacing for that gap only.
   - Changing a setting re-arranges at once; one undo restores both the setting and the positions.
-  - **Mode**: Manual (default) arranges only on request. Automatic re-arranges shortly after you
-    add, remove, connect, reconnect or nest elements (not on moves, renames or label edits), keeps
-    your zoom, and joins the edit's undo step — one undo takes back both. A manual move holds until
-    the next structural change. In a live session only the person who made the edit arranges.
+  - **Mode**: Manual (default) moves nothing on its own. Automatic places what you add next to
+    what it connects to (a column to the right of its source, sliding down past anything in the
+    way) and leaves every other element where it is. Moves, renames, deletions and connections
+    between placed elements move nothing. The placement joins the edit's undo step, keeps your
+    zoom, and the **Arrange** button still reorganizes the whole diagram. In a live session only
+    the person who made the edit places it.
   - **Restore defaults** goes back to Manual, Normal spacing, no overrides.
 - Arranging animates: elements glide to their new place and connections fade back in on their
   final route (instant with reduced motion).

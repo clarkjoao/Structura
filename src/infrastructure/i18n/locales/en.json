@@ -538,7 +538,7 @@
       "modeManual": "Manual",
       "modeManualHint": "Elements move only when you arrange them.",
       "modeAutomatic": "Automatic",
-      "modeAutomaticHint": "Rearranges after you add, connect or remove elements. A manual move holds until the next change.",
+      "modeAutomaticHint": "Places what you add next to what it connects to; everything else stays where it is. Arrange reorganizes the whole diagram.",
       "autoBadge": "Auto",
       "density": "Spacing",
       "densityCompact": "Compact",

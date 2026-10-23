@@ -538,7 +538,7 @@
       "modeManual": "Manual",
       "modeManualHint": "Os elementos só se movem quando você organiza.",
       "modeAutomatic": "Automático",
-      "modeAutomaticHint": "Reorganiza depois que você adiciona, conecta ou remove elementos. Um ajuste manual vale até a próxima mudança.",
+      "modeAutomaticHint": "Posiciona o que você adiciona ao lado do que ele conecta; o resto fica onde está. Organizar reorganiza o diagrama inteiro.",
       "autoBadge": "Auto",
       "density": "Espaçamento",
       "densityCompact": "Compacto",

@@ -59,11 +59,10 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
         : null,
     [activeDiagramId, resolvedComponents, resolvedNodeLayouts, resolvedConnections],
   );
-  const { runAutoLayout, isRunning: isAutoLayoutRunning } = useAutoLayout();
+  const { runAutoLayout, placeTouched, isRunning: isAutoLayoutRunning } = useAutoLayout();
   /**
    * Arranges the diagram. With `settings`, arranges with those instead of the
-   * diagram's and stores them in the same undo step (the Arrange menu); with
-   * `automatic`, joins the last edit's undo step quietly (automatic mode).
+   * diagram's and stores them in the same undo step (the Arrange menu).
    */
   const arrange = useCallback(
     async (options: AutoLayoutRunOptions = {}) => {
@@ -213,7 +212,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     allDiagramTags,
     handleAutoLayout,
     handleArrangeWithSettings,
-    arrange,
+    placeTouched,
     arrangeLabelled,
     isAutoLayoutRunning,
   };

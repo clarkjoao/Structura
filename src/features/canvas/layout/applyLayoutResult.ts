@@ -11,13 +11,7 @@ import {
  * `diagramId` is null when there is no active diagram — the function still
  * applies positions via `applyAutoLayout`, but skips edge effects.
  */
-export type ApplyLayoutResultOptions = EdgeLayoutsFromResultOptions & {
-  /**
-   * `false` writes without an undo checkpoint, so the edge effects join the step
-   * the caller is already in (an automatic arrangement joins its edit's step).
-   */
-  history?: boolean;
-};
+export type ApplyLayoutResultOptions = EdgeLayoutsFromResultOptions;
 
 /** Identity, so the common case pays nothing for the generation path's mapping. */
 const identity = (id: string): string | undefined => id;
@@ -70,9 +64,7 @@ export function applyLayoutResultEdges(
 
   for (const edge of edgesToStyle) {
     const storeEdgeId = edgeIdOf(edge.id);
-    if (storeEdgeId !== undefined) {
-      store.resetEdgeControlPoints(diagramId, storeEdgeId, { history: options.history !== false });
-    }
+    if (storeEdgeId !== undefined) store.resetEdgeControlPoints(diagramId, storeEdgeId);
   }
 
   if (resetPaths) return;

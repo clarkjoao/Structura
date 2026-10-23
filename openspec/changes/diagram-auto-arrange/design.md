@@ -124,7 +124,39 @@ with `settings` (slice 1), which the menu passes when switching to automatic.
 
 The Arrange button shows a small "Auto" badge (i18n) when the mode is automatic.
 
+### 8. Revision: place only what was touched, never re-run ELK automatically
+
+First implemented as a full ELK run after each edit (decisions 5 and 6), then changed after
+author feedback: elements kept trading places while sketching.
+`autoArrangeStability.experiment.test.ts` measured 16 single inserts over the reference
+diagrams. A full run changed the place of 146 out of 204 existing elements (72%, ~200px on
+average, after discounting a uniform pan). ELK's interactive strategies, fed the current
+positions, moved 165 and had 16x the crossings (542 against 34). Semi-interactive crossing
+minimisation changed nothing.
+
+So the automatic mode no longer runs ELK:
+
+- **What gets placed.** The watcher accumulates `dirtyAfterEdit` over a burst: elements
+  that were added, reparented, or were loose and got their first connection to an element
+  already in place.
+- **Where it goes.** `placeIncrementally` puts each one a column gap after its source
+  (before its target), on the anchor's row. It slides it down past every non-ancestor
+  box, in absolute coordinates, and grows the containers it lands in.
+- **Result.** Measured with the same experiment: 0 elements moved, 0 overlaps.
+- **Undo.** The placement writes `applyAutoLayout(…, { history: false })`, plus
+  `resetEdgeControlPoints(…, { history: false })` for the placed elements' stored routes,
+  so it joins the edit's step.
+- **What was removed.** The `automatic` option on `runAutoLayout` and the `history`
+  threading through `applyDiagramAutoLayout` / `applyLayoutResultEdges`.
+- **Mode switch.** Switching to Automatic no longer arranges anything; it only saves the
+  mode. A full arrangement remains the Arrange button.
+
 ## Risks / Trade-offs
+
+- **[Trade-off]** Placement is local and greedy. A long session of additions can drift from
+  what a full arrangement would draw; the Arrange button is the reset.
+- **[Risk]** A growing container can come to overlap a neighbour container. → Accepted;
+  the full arrangement fixes it.
 
 - **[Risk]** An edit made while an automatic run is computing is absorbed into the
   baseline after the run, and does not trigger another run. → A run takes milliseconds to

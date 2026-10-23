@@ -116,23 +116,20 @@ export async function planDiagramAutoLayout(
  * `writeSettings` stores the settings the plan was made with in that same step
  * — what a settings change from the Arrange menu does. Omitted, the diagram's
  * stored settings are left as they are.
- *
- * `history: false` writes no checkpoint at all: the arrangement joins the undo
- * step of the edit that caused it (automatic mode).
  */
 export function applyDiagramAutoLayout(
   plan: DiagramAutoLayoutPlan,
   diagramId: string,
-  { writeSettings = false, history = true }: { writeSettings?: boolean; history?: boolean } = {},
+  { writeSettings = false }: { writeSettings?: boolean } = {},
 ): void {
-  useDiagramStore.getState().applyAutoLayout(plan.layouts, plan.autoRefs, {
-    ...(writeSettings && { layoutSettings: plan.settings ?? {} }),
-    ...(!history && { history: false }),
-  });
-  applyLayoutResultEdges(plan.graph, plan.result, diagramId, {
-    waypointOffset: plan.offset,
-    ...(!history && { history: false }),
-  });
+  useDiagramStore
+    .getState()
+    .applyAutoLayout(
+      plan.layouts,
+      plan.autoRefs,
+      writeSettings ? { layoutSettings: plan.settings ?? {} } : undefined,
+    );
+  applyLayoutResultEdges(plan.graph, plan.result, diagramId, { waypointOffset: plan.offset });
 }
 
 /**

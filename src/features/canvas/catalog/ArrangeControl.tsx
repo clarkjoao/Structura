@@ -25,7 +25,7 @@ export interface ArrangeControlProps {
   onArrange: () => void;
   /** Arranges with `settings` and stores them, as one undo step. */
   onSettingsChange: (settings: DiagramLayoutSettings) => void;
-  /** Stores `settings` without arranging, as one undo step — switching to manual. */
+  /** Stores `settings` without arranging, as one undo step — switching the mode. */
   onSettingsSave: (settings: DiagramLayoutSettings) => void;
   onOpenChange?: (open: boolean) => void;
   buttonClassName: string;
@@ -109,17 +109,13 @@ export function ArrangeControl({
   const isDefault = density === "normal" && !hasGapOverride && !automatic;
 
   /**
-   * Automatic arranges at once, so the mode and the arrangement it implies are
-   * one undo step; manual moves nothing — the positions are the author's now.
+   * Switching the mode moves nothing in either direction: automatic places what
+   * the author adds from now on, it does not re-shuffle what is already there.
    */
   const changeMode = (mode: "manual" | "automatic") => {
-    if (mode === "automatic") {
-      request({ ...shown, mode });
-      return;
-    }
     queued.current = null;
     setPending(null);
-    onSettingsSave({ ...shown, mode: "manual" });
+    onSettingsSave({ ...shown, mode });
   };
 
   /** Back to the layout the editor always ran: manual, normal spacing, no gap overrides. */

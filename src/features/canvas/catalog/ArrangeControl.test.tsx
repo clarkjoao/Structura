@@ -63,14 +63,14 @@ describe("ArrangeControl", () => {
     );
   });
 
-  it("turns automatic on by arranging with it", () => {
+  it("turns automatic on without moving anything", () => {
     const { props } = setup({ settings: { density: "compact" } });
     openMenu();
 
     fireEvent.click(screen.getByRole("radio", { name: "canvasToolbar.arrange.modeAutomatic" }));
 
-    expect(props.onSettingsChange).toHaveBeenCalledWith({ density: "compact", mode: "automatic" });
-    expect(props.onSettingsSave).not.toHaveBeenCalled();
+    expect(props.onSettingsSave).toHaveBeenCalledWith({ density: "compact", mode: "automatic" });
+    expect(props.onSettingsChange).not.toHaveBeenCalled();
   });
 
   it("turns automatic off without arranging", () => {

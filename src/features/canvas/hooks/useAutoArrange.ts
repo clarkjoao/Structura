@@ -4,16 +4,16 @@ import { watchAutoArrange } from "./autoArrangeWatcher";
 
 /**
  * The automatic mode on the editor canvas: while `enabled`, a structural edit
- * to a diagram in automatic mode arranges it once the edits come to rest
- * (`watchAutoArrange`). `arrange` is read through a ref, so the run always uses
- * the latest measured nodes and resolved snapshot.
+ * to a diagram in automatic mode places what it touched once the edits come to
+ * rest (`watchAutoArrange`). `arrange` is read through a ref, so the run always
+ * uses the latest measured nodes and resolved snapshot.
  */
 export function useAutoArrange({
   enabled,
   arrange,
 }: {
   enabled: boolean;
-  arrange: () => Promise<void> | void;
+  arrange: (dirtyIds: string[]) => Promise<void> | void;
 }): void {
   const arrangeRef = useRef(arrange);
   const enabledRef = useRef(enabled);
@@ -24,7 +24,7 @@ export function useAutoArrange({
     () =>
       watchAutoArrange({
         store: useDiagramStore,
-        arrange: () => arrangeRef.current(),
+        arrange: (dirtyIds) => arrangeRef.current(dirtyIds),
         isEnabled: () => enabledRef.current,
       }),
     [],

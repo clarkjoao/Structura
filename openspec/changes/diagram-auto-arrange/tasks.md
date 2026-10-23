@@ -29,3 +29,11 @@
   - check that one undo removes the element and restores the positions;
   - drag an element and check that it stays;
   - turn Manual on and check that nothing moves.
+
+## 5. Revision: place only what was touched
+
+- [x] 5.1 Measure full vs interactive vs incremental placement in `autoArrangeStability.experiment.test.ts`. Verify that the numbers are recorded in design decision 8.
+- [x] 5.2 Implement `dirtyAfterEdit` and `placeIncrementally` (anchor column, slide past non-ancestor boxes in absolute coordinates, grow containers). Verify with `incrementalPlacement.test.ts`.
+- [x] 5.3 Have the watcher hand on the accumulated dirty ids and skip edits that touch nothing. Have the canvas place them (`placeTouched`) with merged history and no ELK. Verify with `autoArrangeWatcher.test.ts`.
+- [x] 5.4 Make the mode switch save-only in both directions, and update the hint copy (en/pt-BR) and `docs/features.md`. Verify with the `ArrangeControl` tests and the i18n parity test.
+- [x] 5.5 Manual pass: in automatic mode, add and connect elements on an arranged diagram and check that nothing else moves.

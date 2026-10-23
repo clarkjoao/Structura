@@ -69,6 +69,33 @@ describe("watchAutoArrange", () => {
     stop();
   });
 
+  it("hands on only what the edits touched", async () => {
+    const { store, aId, arrange, stop } = setup();
+
+    const b = add(store, "B");
+    store.getState().addConnection(aId, b, "calls");
+    await settle();
+
+    expect(arrange).toHaveBeenCalledWith([b]);
+    stop();
+  });
+
+  it("does nothing for a deletion or a connection between elements already in place", async () => {
+    const { store, aId, arrange, stop } = setup();
+    const b = add(store, "B");
+    store.getState().addConnection(aId, b, "calls");
+    await settle();
+    arrange.mockClear();
+
+    store.getState().addConnection(b, aId, "replies");
+    await settle();
+    store.getState().removeComponent(b);
+    await settle();
+
+    expect(arrange).not.toHaveBeenCalled();
+    stop();
+  });
+
   it("arranges a burst of edits once", async () => {
     const { store, aId, arrange, stop } = setup();
 

@@ -2,6 +2,7 @@ import type { StoreApi } from "zustand";
 import type { Diagram, DiagramStore } from "@/features/diagram";
 import { isAutomaticLayout } from "@/features/diagram/model/layout-settings";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
+import { dirtyAfterEdit } from "../layout/incrementalPlacement";
 import { structuralSignature } from "../layout/structuralSignature";
 
 /** How long a burst of edits has to rest before the automatic arrangement runs. */
@@ -9,8 +10,11 @@ export const AUTO_ARRANGE_DEBOUNCE_MS = 400;
 
 export interface AutoArrangeWatcherOptions {
   store: StoreApi<DiagramStore>;
-  /** Runs the automatic arrangement; resolves when it has been applied (or skipped). */
-  arrange: () => Promise<void> | void;
+  /**
+   * Places the elements the edits asked to place (`dirtyAfterEdit`); resolves
+   * when it has been applied (or skipped).
+   */
+  arrange: (dirtyIds: string[]) => Promise<void> | void;
   /** Whether the canvas may arrange now: editable, not reading a flow, not comparing. */
   isEnabled: () => boolean;
   debounceMs?: number;
@@ -25,7 +29,12 @@ interface StructureKey {
 
 /**
  * Watches the store for structural edits the local user makes to a diagram in
- * automatic mode, and arranges it once the edits come to rest.
+ * automatic mode, and places what they touched once the edits come to rest.
+ *
+ * Only the touched elements are handed on (`dirtyAfterEdit`, accumulated over
+ * the burst): the run places those and leaves the rest of the diagram where
+ * the author has it. An edit that touches nothing placeable — a deletion, a
+ * connection between two elements already in place — schedules nothing.
  *
  * What is an edit is decided by `structuralSignature` over the snapshot the
  * canvas draws. What is *not* the user's edit is decided by the store's markers:
@@ -49,6 +58,11 @@ export function watchAutoArrange({
   let timer: ReturnType<typeof setTimeout> | null = null;
   let layoutWriteAtSchedule = 0;
   let running = false;
+  type Structure = Parameters<typeof dirtyAfterEdit>[0];
+  let structure: Structure | null = null;
+  /** The structure read by the last `signatureOf` that recomputed. */
+  let pendingStructure: Structure | null = null;
+  const dirty = new Set<string>();
 
   const cancel = (): void => {
     if (timer !== null) clearTimeout(timer);
@@ -71,7 +85,9 @@ export function watchAutoArrange({
       return baseline;
     }
     key = next;
-    return structuralSignature(getCachedCanvasSnapshot(diagram));
+    const resolved = getCachedCanvasSnapshot(diagram);
+    pendingStructure = { components: resolved.components, connections: resolved.connections };
+    return structuralSignature(resolved);
   };
 
   const rebaseline = (state: DiagramStore): void => {
@@ -80,19 +96,24 @@ export function watchAutoArrange({
     key = null;
     baseline = null;
     baseline = diagram ? signatureOf(diagram) : null;
+    structure = diagram ? pendingStructure : null;
+    dirty.clear();
   };
 
   const run = async (): Promise<void> => {
     timer = null;
+    const ids = [...dirty];
+    dirty.clear();
     const state = store.getState();
     const diagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
     if (!diagram || !isAutomaticLayout(diagram.layoutSettings) || !isEnabled()) return;
     // Something arranged the diagram after the edit already; arranging again
     // would only add a second animation to the same result.
     if (state._lastLayoutWriteAt !== layoutWriteAtSchedule) return;
+    if (ids.length === 0) return;
     running = true;
     try {
-      await arrange();
+      await arrange(ids);
     } finally {
       running = false;
       rebaseline(store.getState());
@@ -118,6 +139,8 @@ export function watchAutoArrange({
     const signature = signatureOf(diagram);
     if (signature === baseline) return;
     baseline = signature;
+    const before = structure;
+    structure = pendingStructure;
 
     if (running) return;
     // Not the user's edit: undo/redo puts back a state that was already
@@ -132,9 +155,14 @@ export function watchAutoArrange({
       state._lastLayoutWriteAt !== previous._lastLayoutWriteAt
     ) {
       cancel();
+      dirty.clear();
       return;
     }
 
+    if (before && structure) {
+      for (const id of dirtyAfterEdit(before, structure)) dirty.add(id);
+    }
+    if (dirty.size === 0) return;
     cancel();
     layoutWriteAtSchedule = state._lastLayoutWriteAt;
     timer = setTimeout(() => void run(), debounceMs);

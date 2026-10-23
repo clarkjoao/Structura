@@ -5,6 +5,9 @@ import { toast } from "sonner";
 import { measuredSizesOf } from "../layout/applyLayout";
 import { applyDiagramAutoLayout, planDiagramAutoLayout } from "../layout/autoLayoutDiagram";
 import { startLayoutTransition } from "../layout/layoutTransition";
+import { placeIncrementally } from "../layout/incrementalPlacement";
+import { effectiveLayoutGaps } from "../layout/layoutEngine";
+import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import { useDiagramActions, useDiagramStore } from "@/features/diagram";
 import type { Component, Connection, DiagramLayoutSettings, NodeLayout } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
@@ -15,11 +18,6 @@ export interface AutoLayoutRunOptions {
    * same undo step — what a change in the Arrange menu does.
    */
   settings?: DiagramLayoutSettings;
-  /**
-   * The automatic mode's run after a structural edit: it joins the edit's undo
-   * step, keeps the user's viewport and says nothing unless it fails.
-   */
-  automatic?: boolean;
 }
 
 export function useAutoLayout() {
@@ -92,17 +90,15 @@ export function useAutoLayout() {
         const { groups } = plan;
 
         if (plan.result.boxes.size === 0) {
-          if (!options.automatic) toast.info(t("autoLayout.nothingToLayout"));
+          toast.info(t("autoLayout.nothingToLayout"));
           return;
         }
 
         endTransitionRef.current = startLayoutTransition(reactFlowStore.getState().domNode);
         const diagramId = useDiagramStore.getState().activeDiagramId;
-        const history = !options.automatic;
-        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId, { writeSettings, history });
-        else applyAutoLayout(plan.layouts, plan.autoRefs, history ? undefined : { history });
+        if (diagramId !== null) applyDiagramAutoLayout(plan, diagramId, { writeSettings });
+        else applyAutoLayout(plan.layouts, plan.autoRefs);
 
-        if (options.automatic) return;
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });
         });
@@ -126,5 +122,42 @@ export function useAutoLayout() {
     runAutoLayoutRef.current = runAutoLayout;
   }, [runAutoLayout]);
 
-  return { runAutoLayout, isRunning };
+  /**
+   * The automatic mode's run: places only `dirtyIds` next to what they connect
+   * to (`placeIncrementally`) and leaves the rest of the diagram alone. It joins
+   * the undo step of the edit that caused it, keeps the viewport, and says
+   * nothing.
+   */
+  const placeTouched = useCallback(
+    (dirtyIds: readonly string[], labelled: boolean) => {
+      const state = useDiagramStore.getState();
+      const diagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+      if (!diagram) return;
+      const resolved = getCachedCanvasSnapshot(diagram);
+      const gaps = effectiveLayoutGaps(diagram.layoutSettings, labelled);
+      const placements = placeIncrementally({
+        components: resolved.components,
+        connections: resolved.connections,
+        nodeLayouts: resolved.nodeLayouts,
+        measured: measuredSizesOf(getNodes()),
+        dirtyIds,
+        columnGap: gaps.layerGap,
+        rowGap: Math.round(gaps.nodeGap / 2),
+      });
+      if (placements.length === 0) return;
+
+      endTransitionRef.current = startLayoutTransition(reactFlowStore.getState().domNode);
+      state.applyAutoLayout(placements, undefined, { history: false });
+      // A placed element's stored routes were drawn for where it was.
+      const placedIds = new Set(placements.map((placement) => placement.elementId));
+      for (const connection of Object.values(resolved.connections)) {
+        if (placedIds.has(connection.sourceId) || placedIds.has(connection.targetId)) {
+          state.resetEdgeControlPoints(diagram.id, connection.id, { history: false });
+        }
+      }
+    },
+    [getNodes, reactFlowStore],
+  );
+
+  return { runAutoLayout, placeTouched, isRunning };
 }

@@ -329,6 +329,7 @@ function buildElkNode(
     id: node.id,
     width: node.width,
     height: node.height,
+    ...(node.position && { x: node.position.x, y: node.position.y }),
     // A leaf has no options of its own, and ELK does not hand a parent's port
     // options down to it: without these its ports would float to any side.
     ...(ports && {

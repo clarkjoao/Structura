@@ -175,7 +175,7 @@ const Canvas = (props: CanvasProps = {}) => {
     allDiagramTags,
     handleAutoLayout,
     handleArrangeWithSettings,
-    arrange,
+    placeTouched,
     arrangeLabelled,
     isAutoLayoutRunning,
     actions,
@@ -209,8 +209,11 @@ const Canvas = (props: CanvasProps = {}) => {
   );
   const { isFlowActive } = interactionMode;
   const canEditStructure = interactionMode.canEditCanvas && !isFlowActive && !isCompareMode;
-  const arrangeAutomatically = useCallback(() => arrange({ automatic: true }), [arrange]);
-  useAutoArrange({ enabled: canEditStructure, arrange: arrangeAutomatically });
+  const placeAutomatically = useCallback(
+    (dirtyIds: string[]) => placeTouched(dirtyIds, arrangeLabelled),
+    [placeTouched, arrangeLabelled],
+  );
+  useAutoArrange({ enabled: canEditStructure, arrange: placeAutomatically });
   const saveLayoutSettings = useCallback(
     (settings: DiagramLayoutSettings) => useDiagramStore.getState().setLayoutSettings(settings),
     [],

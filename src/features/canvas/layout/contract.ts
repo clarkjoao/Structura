@@ -47,6 +47,11 @@ export interface LayoutNode {
    * around a point the canvas does not draw. Absent means one slot per edge.
    */
   singlePort?: { incoming?: true; outgoing?: true };
+  /**
+   * Where the node is drawn now, relative to its parent. Only the interactive
+   * strategies read it (as the order to keep); the default layout ignores it.
+   */
+  position?: LayoutPoint;
 }
 
 export interface LayoutEdge {
