@@ -109,9 +109,9 @@ snapshot, with a compare mode.
 - Auto layout (layered, left to right) powered by ELK, from the **Arrange** button in the bottom
   toolbar, `Cmd/Ctrl + Shift + L`, the context menus or the assistant.
 - Per-diagram arrange settings, saved with the diagram:
-  - **Spacing**: Compact, Normal or Spacious. It scales every tuned layout gap (×0.75 / ×1 / ×1.4),
+  - **Spacing**: Compact, Normal or Spacious. It scales every tuned layout gap (×0.75 / ×1 / ×1.35),
     so the measured proportions hold. Normal is the default layout.
-  - **Advanced**: the gap between layers and the gap between elements in a layer (40–300px), each
+  - **Advanced**: the gap between layers and the gap between elements in a layer (40–308px), each
     overriding the spacing for that gap only.
   - Changing a setting re-arranges at once; one undo restores both the setting and the positions.
   - **Mode**: Manual (default) moves nothing on its own. Automatic places what you add next to

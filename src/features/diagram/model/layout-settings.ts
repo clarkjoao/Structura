@@ -35,12 +35,12 @@ export const LAYOUT_DENSITIES: readonly LayoutDensity[] = ["compact", "normal", 
 export const LAYOUT_DENSITY_FACTOR: Readonly<Record<LayoutDensity, number>> = {
   compact: 0.75,
   normal: 1,
-  spacious: 1.4,
+  spacious: 1.35,
 };
 
 /** Bounds for the advanced gaps, so a stored or received value cannot break the layout. */
 export const LAYOUT_GAP_MIN = 40;
-export const LAYOUT_GAP_MAX = 300;
+export const LAYOUT_GAP_MAX = 308;
 
 function isLayoutDensity(value: unknown): value is LayoutDensity {
   return typeof value === "string" && (LAYOUT_DENSITIES as readonly string[]).includes(value);

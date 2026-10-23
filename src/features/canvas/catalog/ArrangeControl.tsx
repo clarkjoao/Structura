@@ -173,7 +173,8 @@ export function ArrangeControl({
           type="range"
           min={LAYOUT_GAP_MIN}
           max={LAYOUT_GAP_MAX}
-          step={10}
+          // From 40 in steps of 4 the slider reaches the 308 maximum exactly.
+          step={4}
           value={value}
           disabled={arrangeLocked}
           onChange={(event) => changeGap(key, Number(event.target.value))}

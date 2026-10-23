@@ -9,13 +9,13 @@
 ## 2. Layout settings model and store
 
 - [x] 2.1 Add `LayoutDensity` and `DiagramLayoutSettings` to `diagram.types.ts`, plus the optional `Diagram.layoutSettings`, exported through the model barrel. Verify with `npm run typecheck`.
-- [x] 2.2 Add a pure `normalizeLayoutSettings`: drop default values, clamp the gaps to [40, 300], return `undefined` when everything is default. Verify with unit tests for defaults, clamping and invalid input.
+- [x] 2.2 Add a pure `normalizeLayoutSettings`: drop default values, clamp the gaps to [40, 308], return `undefined` when everything is default. Verify with unit tests for defaults, clamping and invalid input.
 - [x] 2.3 Extend `applyAutoLayout` with an optional `layoutSettings` written (normalised) in the same `set()` after the single `pushHistory`. Verify with a `layout.slice` test: one undo restores both the settings and the positions.
 - [x] 2.4 Verify that a workspace persisted without `layoutSettings` loads unchanged, and that the field round-trips through the persistence port (localStorage and folder adapters). Verify with a persistence test; `PERSIST_SCHEMA_VERSION` stays as is.
 
 ## 3. Density-driven spacing in the engine
 
-- [x] 3.1 Implement `elkSpacingFor(settings, labelled)` in `layoutEngine.ts` (factors 0.75 / 1 / 1.4 over the five spacing keys, overrides applied after, port spacing and padding untouched). Verify with a unit test that normal with no overrides deep-equals today's option objects.
+- [x] 3.1 Implement `elkSpacingFor(settings, labelled)` in `layoutEngine.ts` (factors 0.75 / 1 / 1.35 over the five spacing keys, overrides applied after, port spacing and padding untouched). Verify with a unit test that normal with no overrides deep-equals today's option objects.
 - [x] 3.2 Give `layout()` an optional spacing argument and pass `settings` through `planDiagramAutoLayout`, including the `layout` handed to `chooseAutoRefs`. Verify with a test: on a reference diagram, spacious gives larger bounds and compact smaller bounds than normal, and the baselines stay identical.
 - [x] 3.3 Read `diagram.layoutSettings` in `useAutoLayout` and `autoLayoutActiveDiagram`. Verify with a test: the assistant path and the hook path produce the same plan for a spacious diagram.
 - [x] 3.4 Update the doc comment on `ELK_OPTIONS_INTERACTIVE` to say that density scales these values, and why padding and port spacing are excluded. Verify by review.

@@ -60,7 +60,7 @@ as a browser preference.
 ### Requirement: Density scales the tuned spacing proportionally
 
 Normal density SHALL reproduce the current tuned spacing exactly, compact SHALL scale every
-layout spacing by 0.75, and spacious by 1.4. The labelled-edge spacing SHALL scale by the
+layout spacing by 0.75, and spacious by 1.35. The labelled-edge spacing SHALL scale by the
 same factor, so the relationships between spacings that were tuned by measurement are
 preserved.
 

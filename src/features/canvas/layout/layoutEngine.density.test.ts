@@ -22,8 +22,8 @@ describe("elkSpacingFor", () => {
 
   it("scales every tuned spacing by the density and leaves the rest alone", () => {
     const spacious = elkSpacingFor({ density: "spacious" }, false);
-    expect(spacious[LAYER_GAP]).toBe(String(Math.round(220 * 1.4)));
-    expect(spacious[NODE_GAP]).toBe(String(Math.round(110 * 1.4)));
+    expect(spacious[LAYER_GAP]).toBe(String(Math.round(220 * 1.35)));
+    expect(spacious[NODE_GAP]).toBe(String(Math.round(110 * 1.35)));
     expect(spacious["elk.padding"]).toBeUndefined();
     expect(spacious["elk.spacing.portPort"]).toBeUndefined();
 
@@ -33,7 +33,7 @@ describe("elkSpacingFor", () => {
 
   it("scales the labelled between-layer gap, keeping its ratio to the unlabelled one", () => {
     expect(elkSpacingFor({ density: "spacious" }, true)[LAYER_GAP]).toBe(
-      String(Math.round(110 * 1.4)),
+      String(Math.round(110 * 1.35)),
     );
   });
 

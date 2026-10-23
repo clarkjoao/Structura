@@ -76,7 +76,7 @@ and a collaborator must all see the same value.
 - It starts from `ELK_OPTIONS_INTERACTIVE`, plus `ELK_OPTIONS_LABELLED` when an edge has a
   label.
 - It multiplies these five keys by the density factor (compact 0.75, normal 1,
-  spacious 1.4):
+  spacious 1.35):
   - `nodeNodeBetweenLayers`
   - `spacing.nodeNode`
   - `spacing.edgeNode`
@@ -84,7 +84,7 @@ and a collaborator must all see the same value.
   - `edgeEdgeBetweenLayers`
 - It rounds the results.
 - It then applies `layerGap` → `nodeNodeBetweenLayers` and `nodeGap` → `spacing.nodeNode`,
-  each clamped to [40, 300].
+  each clamped to [40, 308].
 
 At factor 1 with no overrides the function returns the original strings unchanged. A unit
 test asserts that, and the baselines prove it end to end. Port spacing (`HANDLE_PITCH`)
