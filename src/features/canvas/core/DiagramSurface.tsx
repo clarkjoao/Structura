@@ -12,6 +12,7 @@ import { ComponentIconLookupProvider } from "../components/icons/ComponentIconLo
 import { ElementsSelectableProvider } from "../contexts/ElementsSelectableContext";
 import { LineHopsProvider } from "../contexts/LineHopsContext";
 import { ReadingDirectionContext } from "../contexts/ReadingDirectionContext";
+import { HandleSidesSync } from "./HandleSidesSync";
 import { DEFAULT_READING_DIRECTION, type ReadingDirection } from "../nodes/node-types/handle-sides";
 import { EdgeLabelPortalHost, EdgeLabelPortalProvider } from "../edges/EdgeLabelPortal";
 import type { CanvasInputProfile } from "../hooks/useCanvasInputProfile";
@@ -168,6 +169,7 @@ export function DiagramSurface({
               className={shell.className}
             >
               <EdgeLabelPortalHost />
+              <HandleSidesSync direction={readingDirection} />
               <Background
                 variant={BackgroundVariant.Lines}
                 gap={10}
