@@ -9,7 +9,7 @@
 ## 2. Layout settings model and store
 
 - [x] 2.1 Add `LayoutDensity` and `DiagramLayoutSettings` to `diagram.types.ts`, plus the optional `Diagram.layoutSettings`, exported through the model barrel. Verify with `npm run typecheck`.
-- [x] 2.2 Add a pure `normalizeLayoutSettings`: drop default values, clamp the gaps to [40, 600], return `undefined` when everything is default. Verify with unit tests for defaults, clamping and invalid input.
+- [x] 2.2 Add a pure `normalizeLayoutSettings`: drop default values, clamp the gaps to [40, 300], return `undefined` when everything is default. Verify with unit tests for defaults, clamping and invalid input.
 - [x] 2.3 Extend `applyAutoLayout` with an optional `layoutSettings` written (normalised) in the same `set()` after the single `pushHistory`. Verify with a `layout.slice` test: one undo restores both the settings and the positions.
 - [x] 2.4 Verify that a workspace persisted without `layoutSettings` loads unchanged, and that the field round-trips through the persistence port (localStorage and folder adapters). Verify with a persistence test; `PERSIST_SCHEMA_VERSION` stays as is.
 

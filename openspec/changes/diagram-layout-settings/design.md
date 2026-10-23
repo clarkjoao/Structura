@@ -84,7 +84,7 @@ and a collaborator must all see the same value.
   - `edgeEdgeBetweenLayers`
 - It rounds the results.
 - It then applies `layerGap` → `nodeNodeBetweenLayers` and `nodeGap` → `spacing.nodeNode`,
-  each clamped to [40, 600].
+  each clamped to [40, 300].
 
 At factor 1 with no overrides the function returns the original strings unchanged. A unit
 test asserts that, and the baselines prove it end to end. Port spacing (`HANDLE_PITCH`)

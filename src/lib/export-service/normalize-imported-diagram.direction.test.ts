@@ -23,7 +23,7 @@ describe("normalizeImportedDiagram — direction and layout settings", () => {
       imported({ direction: "TB", layoutSettings: { mode: "automatic", layerGap: 5000 } }),
     );
     expect(out.direction).toBe("TB");
-    expect(out.layoutSettings).toEqual({ mode: "automatic", layerGap: 600 });
+    expect(out.layoutSettings).toEqual({ mode: "automatic", layerGap: 300 });
   });
 
   it("drops what it does not recognise instead of storing it", () => {

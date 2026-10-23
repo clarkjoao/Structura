@@ -40,7 +40,7 @@ export const LAYOUT_DENSITY_FACTOR: Readonly<Record<LayoutDensity, number>> = {
 
 /** Bounds for the advanced gaps, so a stored or received value cannot break the layout. */
 export const LAYOUT_GAP_MIN = 40;
-export const LAYOUT_GAP_MAX = 600;
+export const LAYOUT_GAP_MAX = 300;
 
 function isLayoutDensity(value: unknown): value is LayoutDensity {
   return typeof value === "string" && (LAYOUT_DENSITIES as readonly string[]).includes(value);
