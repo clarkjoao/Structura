@@ -21,3 +21,8 @@ export const ReadingDirectionContext = createContext<ReadingDirection>(DEFAULT_R
 export function useHandleSides(): HandleSides {
   return handleSides(useContext(ReadingDirectionContext));
 }
+
+/** The reading direction itself — for edges, which draw their step paths along its axis. */
+export function useReadingDirection(): ReadingDirection {
+  return useContext(ReadingDirectionContext);
+}

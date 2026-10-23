@@ -550,11 +550,12 @@
       "nodeGap": "Gap between elements",
       "resetGaps": "Reset to spacing",
       "resetDefaults": "Restore defaults",
+      "lockedLargeSession": "Arranging is off during a live session for diagrams with more than {{max}} elements.",
       "direction": "Direction",
       "directionHorizontal": "Horizontal",
       "directionVertical": "Vertical",
       "directionHint": "Rearranges the whole diagram and redraws its connections. Undo puts it back.",
-      "directionLockedSession": "Not available during a live session yet.",
+      "directionLockedSession": "Not available during a live session.",
       "running": "Arranging…"
     }
   },
@@ -2801,7 +2802,8 @@
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",
-    "nothingToLayout": "Nothing to lay out"
+    "nothingToLayout": "Nothing to lay out",
+    "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements."
   },
   "plugins": {
     "title": "Plugins",

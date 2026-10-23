@@ -5,6 +5,11 @@ import { toast } from "sonner";
 import { measuredSizesOf } from "../layout/applyLayout";
 import { applyDiagramAutoLayout, planDiagramAutoLayout } from "../layout/autoLayoutDiagram";
 import { startLayoutTransition } from "../layout/layoutTransition";
+import {
+  isArrangeBlockedInSession,
+  SESSION_ARRANGE_MAX_ELEMENTS,
+} from "../layout/sessionArrangeGuard";
+import { useCollabStore } from "@/features/collaboration/store/collab.store";
 import { placeIncrementally } from "../layout/incrementalPlacement";
 import { effectiveLayoutGaps } from "../layout/layoutEngine";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
@@ -62,6 +67,10 @@ export function useAutoLayout() {
       options: AutoLayoutRunOptions = {},
     ) => {
       if (isRunning) return;
+      if (isArrangeBlockedInSession(components, useCollabStore.getState().session !== null)) {
+        toast.info(t("autoLayout.blockedInSession", { max: SESSION_ARRANGE_MAX_ELEMENTS }));
+        return;
+      }
 
       // Use provided measured nodes or get fresh nodes from React Flow
       const nodesToUse = measuredNodes ?? getNodes();

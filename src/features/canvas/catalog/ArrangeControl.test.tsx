@@ -23,6 +23,7 @@ function setup(overrides: Partial<ArrangeControlProps> = {}) {
     direction: "LR",
     onDirectionChange: vi.fn(),
     directionLockedReasonKey: null,
+    arrangeLockedReasonKey: null,
     buttonClassName: "",
     ...overrides,
   };
@@ -188,5 +189,27 @@ describe("ArrangeControl", () => {
     ).toBeDisabled();
     expect(screen.getByText("canvasToolbar.arrange.directionLockedSession")).toBeInTheDocument();
     expect(props.onDirectionChange).not.toHaveBeenCalled();
+  });
+
+  it("locks arranging, and every setting that would re-arrange, in a large live session", () => {
+    const { props } = setup({
+      settings: { density: "compact", layerGap: 300 },
+      arrangeLockedReasonKey: "canvasToolbar.arrange.lockedLargeSession",
+    });
+    expect(
+      screen.getByRole("button", { name: "canvasToolbar.arrange.lockedLargeSession" }),
+    ).toBeDisabled();
+    openMenu();
+
+    expect(
+      screen.getByRole("radio", { name: "canvasToolbar.arrange.densitySpacious" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /canvasToolbar.arrange.resetDefaults/ }),
+    ).toBeDisabled();
+    // The mode only says what happens next; it moves nothing, so it stays on.
+    fireEvent.click(screen.getByRole("radio", { name: "canvasToolbar.arrange.modeAutomatic" }));
+    expect(props.onSettingsSave).toHaveBeenCalled();
+    expect(props.onSettingsChange).not.toHaveBeenCalled();
   });
 });

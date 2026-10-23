@@ -550,11 +550,12 @@
       "nodeGap": "Espaço entre elementos",
       "resetGaps": "Voltar ao espaçamento",
       "resetDefaults": "Restaurar padrão",
+      "lockedLargeSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos.",
       "direction": "Direção",
       "directionHorizontal": "Horizontal",
       "directionVertical": "Vertical",
       "directionHint": "Reorganiza o diagrama inteiro e refaz as conexões. Desfazer volta como estava.",
-      "directionLockedSession": "Ainda não disponível durante uma sessão ao vivo.",
+      "directionLockedSession": "Indisponível durante uma sessão ao vivo.",
       "running": "Organizando…"
     }
   },
@@ -2801,7 +2802,8 @@
     "panelApplied": "Layout do painel aplicado",
     "organizeChildren": "Organizar filhos (LR)",
     "error": "Erro ao calcular layout",
-    "nothingToLayout": "Nada para organizar"
+    "nothingToLayout": "Nada para organizar",
+    "blockedInSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos."
   },
   "plugins": {
     "title": "Plugins",

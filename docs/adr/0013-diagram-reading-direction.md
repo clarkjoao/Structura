@@ -185,3 +185,11 @@ both relays: Node, Go long-lived and Go serverless. The capability decision 8 as
 - The arrange settings from the layout slices ride the same mechanism, as the decision
   anticipated.
 
+## Amendment — 2026-10-23: the switch stays off in live sessions
+
+By the author's decision, the direction switch is disabled during **any** live session, also on
+a relay that declares the field. The direction and the arrange settings still sync, so a vertical
+diagram reads vertical for every participant, but nobody re-axes a diagram under the others
+mid-session. Arranging the whole diagram is also off in a session for diagrams over 50 elements
+(`layout/sessionArrangeGuard.ts`).
+

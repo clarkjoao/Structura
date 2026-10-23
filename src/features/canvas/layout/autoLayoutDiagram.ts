@@ -13,6 +13,8 @@ import { layoutWithSettings } from "./layoutEngine";
 import type { DiagramLayoutSettings } from "@/features/diagram/model/layout-settings";
 import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 import { isTopToBottom, transposeGraph, transposeResult } from "./axis";
+import { isArrangeBlockedInSession } from "./sessionArrangeGuard";
+import { useCollabStore } from "@/features/collaboration/store/collab.store";
 import { handleSpecFor } from "../nodes/node-types/registry";
 
 /**
@@ -156,7 +158,9 @@ export function applyDiagramAutoLayout(
 /**
  * Plans and applies the auto-layout on the active diagram as stored, the way
  * the assistant and generation run it: no measured sizes, references unless a
- * scene is active. Returns the plan, or `null` when there is nothing to lay out.
+ * scene is active. Returns the plan, or `null` when there is nothing to lay out
+ * or when a live session keeps a diagram this large from being re-arranged
+ * (`sessionArrangeGuard.ts`).
  */
 export async function autoLayoutActiveDiagram(
   options: Pick<DiagramAutoLayoutInput, "offset"> & {
@@ -171,6 +175,10 @@ export async function autoLayoutActiveDiagram(
   const diagramId = state.activeDiagramId;
   const diagram = diagramId ? state.diagrams[diagramId] : undefined;
   if (!diagramId || !diagram) return null;
+
+  // The assistant's layout follows the same rule as the button in a live session.
+  const inSession = useCollabStore.getState().session !== null;
+  if (isArrangeBlockedInSession(diagram.snapshot.components, inSession)) return null;
 
   const inScene = !!diagram.activeVersionId && !!diagram.versions?.[diagram.activeVersionId];
   const plan = await planDiagramAutoLayout({

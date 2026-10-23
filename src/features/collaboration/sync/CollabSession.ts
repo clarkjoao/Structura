@@ -116,7 +116,6 @@ export class CollabSession {
           this.docFields = Array.isArray(info.docFields)
             ? new Set(info.docFields.filter((field) => typeof field === "string"))
             : LEGACY_DOC_FIELD_SET;
-          collab.setSyncsDiagramLayout(this.docFields.has("direction"));
           this.bridge?.setDocFields(this.docFields);
         },
         onSnapshot: (version, state) => this.onSnapshot(version, state),

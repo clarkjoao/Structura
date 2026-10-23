@@ -12,6 +12,7 @@ import {
   type LayoutDensity,
 } from "@/features/diagram/model/layout-settings";
 import { effectiveLayoutGaps } from "../layout/layoutEngine";
+import { SESSION_ARRANGE_MAX_ELEMENTS } from "../layout/sessionArrangeGuard";
 import { Kbd } from "./Kbd";
 import { arrangeShortcutLabel } from "./shortcutLabels";
 
@@ -37,6 +38,12 @@ export interface ArrangeControlProps {
    * session does not carry it yet — or `null` when it can.
    */
   directionLockedReasonKey: string | null;
+  /**
+   * Why arranging the whole diagram is off right now, as an i18n key — a live
+   * session with a large diagram — or `null` when it is on. Locks the Arrange
+   * button and every setting that would re-arrange.
+   */
+  arrangeLockedReasonKey: string | null;
   onOpenChange?: (open: boolean) => void;
   buttonClassName: string;
 }
@@ -77,6 +84,7 @@ export function ArrangeControl({
   direction,
   onDirectionChange,
   directionLockedReasonKey,
+  arrangeLockedReasonKey,
   onOpenChange,
   buttonClassName,
 }: ArrangeControlProps) {
@@ -143,7 +151,10 @@ export function ArrangeControl({
     request({});
   };
   const shortcut = arrangeShortcutLabel();
-  const arrangeTitle = t("canvasToolbar.arrange.withShortcut", { shortcut });
+  const arrangeLocked = arrangeLockedReasonKey !== null;
+  const arrangeTitle = arrangeLocked
+    ? t(arrangeLockedReasonKey, { max: SESSION_ARRANGE_MAX_ELEMENTS })
+    : t("canvasToolbar.arrange.withShortcut", { shortcut });
 
   const renderSlider = (key: "layerGap" | "nodeGap", labelKey: string) => {
     const value = draftGaps[key] ?? gaps[key];
@@ -164,8 +175,9 @@ export function ArrangeControl({
           max={LAYOUT_GAP_MAX}
           step={10}
           value={value}
+          disabled={arrangeLocked}
           onChange={(event) => changeGap(key, Number(event.target.value))}
-          className="h-1.5 w-full cursor-pointer accent-primary"
+          className="h-1.5 w-full cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
     );
@@ -179,7 +191,7 @@ export function ArrangeControl({
         aria-label={arrangeTitle}
         aria-keyshortcuts="Meta+Shift+L Control+Shift+L"
         aria-busy={running}
-        disabled={running}
+        disabled={running || arrangeLocked}
         onClick={onArrange}
         className={cn(buttonClassName, "rounded-r-none text-foreground")}
       >
@@ -316,11 +328,12 @@ export function ArrangeControl({
                   type="button"
                   role="radio"
                   aria-checked={checked}
+                  disabled={!checked && arrangeLocked}
                   onClick={() => {
                     if (!checked) request({ ...shown, density: option });
                   }}
                   className={cn(
-                    "rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                    "rounded-md px-2 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                     checked
                       ? "bg-card text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
@@ -332,7 +345,9 @@ export function ArrangeControl({
             })}
           </div>
           <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {t("canvasToolbar.arrange.densityHint")}
+            {arrangeLocked
+              ? t(arrangeLockedReasonKey, { max: SESSION_ARRANGE_MAX_ELEMENTS })
+              : t("canvasToolbar.arrange.densityHint")}
           </p>
 
           <div className="mt-3 border-t border-border pt-2">
@@ -354,7 +369,7 @@ export function ArrangeControl({
                 {renderSlider("nodeGap", "canvasToolbar.arrange.nodeGap")}
                 <button
                   type="button"
-                  disabled={!hasGapOverride}
+                  disabled={!hasGapOverride || arrangeLocked}
                   onClick={() => request(shown.density ? { density: shown.density } : {})}
                   className="self-start text-[11px] text-primary hover:underline disabled:pointer-events-none disabled:text-muted-foreground"
                 >
@@ -367,7 +382,7 @@ export function ArrangeControl({
           <div className="mt-3 flex justify-end border-t border-border pt-2">
             <button
               type="button"
-              disabled={isDefault}
+              disabled={isDefault || arrangeLocked}
               onClick={resetToDefaults}
               className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
             >
