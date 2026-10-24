@@ -1,6 +1,7 @@
 # flow-branch-point-kind Specification
 
 ## Purpose
+
 Records what a branch point _is_ — a choice, a loop, threads running alongside — in a field of its
 own rather than in the question the author wrote, and lets the reading tell a fork in the road apart
 from a fork into threads.

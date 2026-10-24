@@ -1,6 +1,7 @@
 # flow-editing-panel Specification
 
 ## Purpose
+
 Puts the writing of a flow in one place with room for it, and leaves the flows panel doing the one
 thing a list of flows is for — showing them, and saying which one the canvas is counting.
 

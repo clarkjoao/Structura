@@ -1,6 +1,7 @@
 # flow-state-watch Specification
 
 ## Purpose
+
 Lets a reader follow one key across a whole reading — including through the steps where it is not in
 scope — and see the events in its life along the path already walked, so the question "why is this
 value what it is" is answered without leaving the step in hand.

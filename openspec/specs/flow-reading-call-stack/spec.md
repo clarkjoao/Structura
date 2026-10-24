@@ -1,6 +1,7 @@
 # flow-reading-call-stack Specification
 
 ## Purpose
+
 Derives call frames from the request/response pairs a flow already records, so reading a script shows
 which calls are still owed a return, how deep the reader currently is, and lets them skip a call's
 interior without losing their place.
