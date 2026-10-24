@@ -261,6 +261,7 @@ function PluginCard({
             <Switch
               checked={plugin.enabled}
               onCheckedChange={onToggle}
+              disabled={plugin.locked}
               aria-label={t("plugins.enable")}
             />
           </label>
