@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, lazy, Suspense, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Search, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
-import { GithubImportPanel } from "@/features/integrations/github/components/GithubImportPanel";
 import {
   useAllServices,
   useDiagrams,
@@ -19,19 +18,13 @@ import { SERVICE_ROLES, effectiveServiceRole } from "@/features/diagram";
 import { ImportPanel } from "@/features/integrations/import-panel";
 import { useTranslation } from "react-i18next";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
+import { AddServiceDialog } from "./AddServiceDialog";
 import { DetailPanel } from "./DetailPanel";
-import { ManualCreateForm } from "./ManualCreateForm";
 import { ServiceCard } from "./ServiceCard";
 import { countByRole, groupServices } from "./groupServices";
 import { groupLabel, groupHint } from "./serviceLabels";
 import { getServiceUsage } from "./serviceUsage";
 import type { GroupBy, RoleFilter } from "./types";
-
-const DefectDojoPanel = lazy(() =>
-  import("@/features/integrations/defectdojo").then((m) => ({
-    default: m.DefectDojoPanel,
-  })),
-);
 
 export default function ServicesPage() {
   const { t } = useTranslation();
@@ -47,8 +40,6 @@ export default function ServicesPage() {
   const [groupBy, setGroupBy] = useState<GroupBy>("role");
   const searchRef = useRef<HTMLInputElement>(null);
   const [importPanel, setImportPanel] = useState<ImportPanel | null>(null);
-  const showEnableGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
-  const showEnableDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedFromQuery = searchParams.get("serviceId");
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -278,61 +269,11 @@ export default function ServicesPage() {
             </label>
           </div>
 
-          {importPanel && (
-            <div className="mb-6 rounded-xl border border-border bg-card p-4">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex gap-1 rounded-lg bg-secondary p-1">
-                  <button
-                    onClick={() => setImportPanel(ImportPanel.Manual)}
-                    className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                      importPanel === ImportPanel.Manual
-                        ? "bg-card text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {t("services.importManual")}
-                  </button>
-                  {showEnableGithub && (
-                    <button
-                      onClick={() => setImportPanel(ImportPanel.Github)}
-                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        importPanel === ImportPanel.Github
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {t("services.importGithub")}
-                    </button>
-                  )}
-                  {showEnableDefectDojo && (
-                    <button
-                      onClick={() => setImportPanel(ImportPanel.Defectdojo)}
-                      className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                        importPanel === ImportPanel.Defectdojo
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {t("services.importDefectDojo")}
-                    </button>
-                  )}
-                </div>
-                <button
-                  onClick={() => setImportPanel(null)}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <Suspense fallback={<div className="h-32 animate-pulse rounded-xl bg-secondary" />}>
-                {importPanel === ImportPanel.Manual && (
-                  <ManualCreateForm onCancel={() => setImportPanel(null)} onCreate={handleCreate} />
-                )}
-                {importPanel === ImportPanel.Defectdojo && <DefectDojoPanel />}
-                {importPanel === ImportPanel.Github && <GithubImportPanel />}
-              </Suspense>
-            </div>
-          )}
+          <AddServiceDialog
+            panel={importPanel}
+            onPanelChange={setImportPanel}
+            onCreate={handleCreate}
+          />
 
           <div className="mb-6 empty:hidden">
             <PluginPanelSlot slot="services-import" serviceId={selectedId} />

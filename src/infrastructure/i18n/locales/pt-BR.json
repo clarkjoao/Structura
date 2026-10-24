@@ -3132,7 +3132,8 @@
     "roleSuggested": "Sugerido: {{role}}",
     "roleSuggestedTag": "sugerido",
     "openRepository": "Abrir repositório",
-    "moreActions": "Mais ações"
+    "moreActions": "Mais ações",
+    "addServiceTitle": "Adicionar serviço"
   },
   "walkthrough": {
     "addScene": "Adicionar cena",
