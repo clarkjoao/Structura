@@ -113,3 +113,17 @@ folder-binding work, not to this plugin.
 - `npm run sync-shared` also copies the host ELK runner (`src/generated/opscr-layout`).
 
 Neither runs in CI: this plugin depends on an unpublished package.
+
+## Views
+
+When the folder declares opscr `View` manifests (system context, containers, components,
+deployment), the pane shows a **Diagram** picker: the whole workspace, or one view. Picking a view
+swaps the bound diagram to that view's projection (opscr chooses and lifts what it contains,
+Structura lays it out); a box that opens another view (`drillDown`) gets a button above the editor.
+
+A view is a projection: the canvas follows the YAML, and structure (adding, deleting, connecting,
+renaming) is edited in the YAML or in the whole-workspace diagram. Moving boxes is saved per view in
+`opscr.layout.json` (version 2: `elements` is the whole workspace's layout, `views` has one entry per
+view). The folder's files must sit at its top level: the pane opens a folder's top-level files only.
+`e2e/views.mjs` drives all of this in a production build.
+

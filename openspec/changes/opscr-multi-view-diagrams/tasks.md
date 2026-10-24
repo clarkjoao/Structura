@@ -1,5 +1,8 @@
 # Tasks
 
+> Phase A (views on the one bound diagram) is done: 1.x, 2.2, 2.3 and the "Phase A" section at the
+> end. Phase B (2.1, 3.x, 4.x: a diagram per View, API 1.13) is not started.
+
 ## 1. Contract
 
 - [x] 1.1 Depend on the opscr build that exports `resolveView`; verify the plugin imports it and a view-less workspace output is unchanged (existing tests green) — `projectView` in `plugins/structura-plugin-opscr/src/project.ts`
@@ -22,3 +25,11 @@ The mapping and projection steps below are done and tested (`buildViewDiagram`, 
 ## 4. VSCode preview
 
 - [ ] 4.1 View picker in the preview and drill-down navigation; verify in the extension e2e
+
+## 5. Phase A — views on the bound diagram
+
+- [x] 5.1 Sidecar v2 helpers `layoutFor` / `updateLayoutFile` (whole-workspace boxes stay under `elements`, one entry per view); verify unit tests, and that a file with no views stays byte-identical version 1
+- [x] 5.2 Engine: `BindingState.view`, `showView`, per-view sidecar read/write, no reconcile / visual layer / rename / add-to-YAML while a view is shown; verify `engine/views.test.ts` on the opscr `web-app-aws` example
+- [x] 5.3 Pane: diagram picker, drill-down buttons, read-only note (en, pt-BR); verify `e2e/views.mjs` in a production build (context 3, containers 10, components 8, deployment 18 elements, moved box kept per view)
+- [x] 5.4 `buildViewDiagram` lists parents before their children; verify unit test
+- [x] 5.5 `e2e/pane.mjs` baseline moved from 22 to 23 elements (the opscr sample gained `order-tracker-2` earlier); verify the whole script passes

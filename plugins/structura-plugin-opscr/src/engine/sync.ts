@@ -8,9 +8,9 @@ import {
   LEAF_H,
   LEAF_W,
   connectionKeys as importerConnectionKeys,
+  layoutFor,
   overlayLayouts,
-  parseLayoutFile,
-  serializeLayoutFile,
+  updateLayoutFile,
 } from "../generated/opscr-mapping";
 import type {
   DiagramSnapshot,
@@ -34,6 +34,11 @@ export interface BindingState {
   signatures: Record<string, string>;
   /** What left the binding, by canvas id, so an undo that brings it back restores its text. */
   tombstones?: Tombstones;
+  /**
+   * The opscr View the diagram shows; absent when it shows the whole workspace. A View is a
+   * projection: the canvas follows the YAML, and only positions flow back (to the sidecar).
+   */
+  view?: string;
 }
 
 export interface ElementTombstone {
@@ -118,7 +123,7 @@ export function previousLayout(
   diagram: DiagramSnapshot,
   sidecar: string | undefined,
 ): ViewLayoutResult | undefined {
-  const fromFile = sidecar ? parseLayoutFile(sidecar) : null;
+  const fromFile = sidecar ? layoutFor(sidecar, binding.view) : null;
   return overlayLayouts(fromFile, canvasLayout(binding, diagram));
 }
 
@@ -131,7 +136,7 @@ export function sidecarMoves(
   diagram: DiagramSnapshot,
   sidecar: string,
 ): NonNullable<PluginDiagramChanges["move"]> {
-  const boxes = parseLayoutFile(sidecar)?.boxes;
+  const boxes = layoutFor(sidecar, binding.view)?.boxes;
   if (!boxes) return [];
   const byId = new Map(diagram.components.map((c) => [c.id, c]));
   const moves: NonNullable<PluginDiagramChanges["move"]> = [];
@@ -169,9 +174,12 @@ export function sidecarMoves(
   return moves;
 }
 
-/** The sidecar text for what the canvas shows now (bound elements only). */
-export const sidecarText = (binding: BindingState, diagram: DiagramSnapshot) =>
-  serializeLayoutFile(canvasLayout(binding, diagram).boxes);
+/**
+ * The sidecar text for what the canvas shows now (bound elements only): the shown View's boxes
+ * replace its entry, every other diagram's stay as `current` has them.
+ */
+export const sidecarText = (binding: BindingState, diagram: DiagramSnapshot, current?: string) =>
+  updateLayoutFile(current, binding.view, canvasLayout(binding, diagram).boxes);
 
 /**
  * Elements the binding does not know but the canvas already shows — the diagram was bound

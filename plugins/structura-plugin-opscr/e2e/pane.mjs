@@ -198,13 +198,13 @@ await page.goto(`http://localhost:${PORT}/model/${DIAGRAM}`);
 await page.waitForSelector(".react-flow__viewport", { timeout: 30000 });
 await page.getByRole("button", { name: "opscr", exact: true }).click();
 await page.getByRole("button", { name: /Bind to opscr folder|Vincular a uma pasta opscr/ }).click();
-await waitNodes(22).catch(() => fail("binding did not draw the 22 elements of the sample"));
-await check((await nodes()) === 22, "bind draws the sample (22 elements)");
+await waitNodes(23).catch(() => fail("binding did not draw the 23 elements of the sample"));
+await check((await nodes()) === 23, "bind draws the sample (23 elements)");
 await page.screenshot({ path: join(OUT, "1-bound.png") });
 
 await editor.waitFor({ timeout: 20000 });
 await appendToEditor(CACHE);
-await waitNodes(23).catch(() => fail("adding a Cache in the editor did not reach the canvas"));
+await waitNodes(24).catch(() => fail("adding a Cache in the editor did not reach the canvas"));
 await check(true, "an edit adds the Cache without saving");
 await page.screenshot({ path: join(OUT, "2-cache.png") });
 
@@ -225,7 +225,7 @@ await check(
 );
 
 await appendToEditor(EXTRA);
-await waitNodes(24).catch(() => fail("a second edit did not reach the canvas"));
+await waitNodes(25).catch(() => fail("a second edit did not reach the canvas"));
 const after = await nodePos("public-api");
 await check(
   Math.abs(after.x - dragged.x) < 2 && Math.abs(after.y - dragged.y) < 2,
@@ -235,11 +235,11 @@ await page.screenshot({ path: join(OUT, "3-dragged-kept.png") });
 
 await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
 await page.keyboard.press("ControlOrMeta+z");
-await waitNodes(23).catch(() => fail("one undo did not revert one sync"));
+await waitNodes(24).catch(() => fail("one undo did not revert one sync"));
 await check(true, "one undo reverts one sync");
 
 await setEditorText(SAMPLE["commerce.opscr.yaml"] + CACHE);
-await waitNodes(23).catch(() => fail("replacing the text did not re-sync"));
+await waitNodes(24).catch(() => fail("replacing the text did not re-sync"));
 await page.keyboard.press("ControlOrMeta+s");
 await page.waitForTimeout(800);
 const onDisk = await page.evaluate(async () => {
@@ -263,7 +263,7 @@ await check(
 );
 
 await setEditorText(SAMPLE["commerce.opscr.yaml"]);
-await waitNodes(22).catch(() => fail("removing the Cache's manifest did not remove it"));
+await waitNodes(23).catch(() => fail("removing the Cache's manifest did not remove it"));
 await check(true, "deleting a manifest removes its element");
 
 // F2 on a manifest name renames it everywhere and keeps the canvas element.
@@ -292,7 +292,7 @@ await page
   .catch(() => fail("F2 rename did not reach the canvas"));
 const trackerAfter = await nodePos("order-relay");
 await check(
-  (await nodes()) === 22 &&
+  (await nodes()) === 23 &&
     Math.abs(trackerAfter.x - trackerBefore.x) < 2 &&
     Math.abs(trackerAfter.y - trackerBefore.y) < 2,
   "F2 renames the element in place on the canvas",

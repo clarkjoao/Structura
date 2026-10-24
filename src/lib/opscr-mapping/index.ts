@@ -27,11 +27,13 @@ export type { GraphElementRef, LocatedManifestInput, SourceLocation } from "./so
 export { CONFIG_FILE, isManifestName } from "./files";
 export {
   LAYOUT_FILE,
+  layoutFor,
   overlayLayouts,
   parseLayoutFile,
   parseLayoutFiles,
   serializeLayoutFile,
   serializeLayoutFiles,
+  updateLayoutFile,
 } from "./layout-file";
 export type { LayoutFiles } from "./layout-file";
 export { buildViewDiagram } from "./view-diagram";

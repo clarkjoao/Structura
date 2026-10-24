@@ -57,11 +57,18 @@ export type Projector = (
   manifests: SourceText[],
   config: SourceText | undefined,
   previous: ViewLayoutResult | undefined,
-) => Promise<{ graph?: ImporterGraph; diagnostics: unknown[] }>;
+  /** The opscr View to draw; undefined draws the whole workspace. */
+  view?: string,
+) => Promise<{ graph?: ImporterGraph; diagnostics: unknown[]; views?: string[] }>;
 
 /** What the engine reports; the host turns it into UI. */
 export type EngineEvent =
   | { type: "synced"; elements: number }
+  /**
+   * The Views the workspace declares, the one drawn (undefined: the whole workspace) and the
+   * boxes of the drawn view that open another view.
+   */
+  | { type: "views"; views: string[]; current: string | undefined; links: ViewLink[] }
   | { type: "parse-error" }
   /** `requireValid`: the YAML has opscr errors, so the diagram was left as it was. */
   | { type: "invalid"; errors: number }
@@ -78,6 +85,13 @@ export type EngineEvent =
   | { type: "visual-unreadable" }
   /** A step threw: the diagram may no longer match the text until the next sync. */
   | { type: "failed"; error: unknown };
+
+/** A box of the drawn view that opens another view (`drillDown`). */
+export interface ViewLink {
+  key: string;
+  name: string;
+  view: string;
+}
 
 export interface EngineOptions {
   texts: TextsPort;
@@ -138,7 +152,8 @@ export class OpscrEngine {
    */
   private async reconcileNow(): Promise<boolean> {
     const diagram = this.options.diagram.get();
-    if (!diagram) return false;
+    // A View is a projection: its structure is not edited from the canvas.
+    if (!diagram || this.options.binding.get().view !== undefined) return false;
     const { manifest, visual } = splitBinding(this.options.binding.get());
     const result = reconcile(withoutVisual(diagram, visual), manifest, this.manifests());
     if (result.skipped) return false;
@@ -161,7 +176,7 @@ export class OpscrEngine {
   private async writeVisual() {
     const diagram = this.options.diagram.get();
     const current = this.text(VISUAL_FILE);
-    if (!diagram || current === undefined) return;
+    if (!diagram || current === undefined || this.options.binding.get().view !== undefined) return;
     const text = visualText(current, this.options.binding.get(), diagram);
     if (text !== null && text !== current)
       await this.options.texts.set([{ name: VISUAL_FILE, text }]);
@@ -169,6 +184,7 @@ export class OpscrEngine {
 
   /** The projection with the visual layer drawn on it, when the folder has one. */
   private withVisual(graph: ImporterGraph): ImporterGraph {
+    if (this.options.binding.get().view !== undefined) return graph;
     const text = this.text(VISUAL_FILE);
     if (text === undefined || text.trim() === "") return graph;
     const visual = parseVisualFile(text);
@@ -186,7 +202,7 @@ export class OpscrEngine {
     const diagram = this.options.diagram.get();
     const current = this.text(LAYOUT_FILE);
     if (!diagram || current === undefined) return;
-    const text = sidecarText(this.options.binding.get(), diagram);
+    const text = sidecarText(this.options.binding.get(), diagram, current);
     if (current !== text) await this.options.texts.set([{ name: LAYOUT_FILE, text }]);
   }
 
@@ -201,8 +217,19 @@ export class OpscrEngine {
       manifests,
       config === undefined ? undefined : { name: this.options.configFile, text: config },
       previousLayout(binding, diagram, this.text(LAYOUT_FILE)),
+      binding.view,
     );
     this.emit({ type: "diagnostics", diagnostics: projection.diagnostics });
+    if (projection.views) {
+      this.emit({
+        type: "views",
+        views: projection.views,
+        current: binding.view,
+        links: (projection.graph?.components ?? []).flatMap((c) =>
+          c.linkedView !== undefined ? [{ key: c.key, name: c.name, view: c.linkedView }] : [],
+        ),
+      });
+    }
     if (!projection.graph) return this.emit({ type: "parse-error" });
     if (this.options.requireValid) {
       const errors = projection.diagnostics.filter(
@@ -224,10 +251,35 @@ export class OpscrEngine {
     const result = plan.empty
       ? { idsByKey: {}, connectionIds: [] }
       : await this.options.diagram.apply(plan.changes);
-    await this.options.binding.set(retire(binding, plan.commit(result), this.synced));
+    const next = retire(binding, plan.commit(result), this.synced);
+    await this.options.binding.set(binding.view !== undefined ? { ...next, view: binding.view } : next);
     this.synced = manifests;
     await this.writeSidecar();
     this.emit({ type: "synced", elements: projection.graph.components.length });
+  }
+
+  /**
+   * Draws another View of the workspace on the bound diagram (undefined: the whole workspace).
+   * What the binding created leaves the canvas first — the same element is a different box in
+   * another view — and the new projection is laid out from the view's own sidecar boxes.
+   */
+  showView(view: string | undefined) {
+    return this.enqueue(async () => {
+      const binding = this.options.binding.get();
+      if (binding.view === view) return;
+      const diagram = this.options.diagram.get();
+      if (!diagram) return;
+      // Canvas edits of the view being left are settled first (positions go to its sidecar).
+      await this.reconcileNow();
+      await this.writeVisual();
+      await this.writeSidecar();
+      const live = new Set(diagram.components.map((c) => c.id));
+      const remove = Object.values(binding.ids).filter((id) => live.has(id));
+      if (remove.length > 0) await this.options.diagram.apply({ remove });
+      await this.options.binding.set(view === undefined ? emptyBinding() : { ...emptyBinding(), view });
+      this.synced = [];
+      await this.syncNow();
+    });
   }
 
   /** After a text change: canvas edits first, so the sync never takes them back. */
@@ -286,6 +338,8 @@ export class OpscrEngine {
    */
   rename(file: string, offset: number, newName: string) {
     return this.enqueue(async (): Promise<"gone" | "refused" | undefined> => {
+      // A View is a projection: rename in the YAML, or in the whole-workspace diagram.
+      if (this.options.binding.get().view !== undefined) return "refused";
       await this.reconcileNow();
       const manifests = this.manifests();
       const at = nameAt(manifests, file, offset);
@@ -310,6 +364,7 @@ export class OpscrEngine {
   /** Writes canvas elements outside the YAML into it (the chosen Kinds). */
   addToYaml(choices: readonly AddChoice[]) {
     return this.enqueue(async () => {
+      if (this.options.binding.get().view !== undefined) return;
       await this.reconcileNow();
       const diagram = this.options.diagram.get();
       if (!diagram || choices.length === 0) return;

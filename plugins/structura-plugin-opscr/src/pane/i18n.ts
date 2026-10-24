@@ -22,6 +22,12 @@ const en = {
   syncFailed: "The diagram could not be updated — it may not match the YAML.",
   retrySync: "Try again",
   synced: (n: number) => `Diagram in sync · ${n} elements`,
+  viewLabel: "Diagram",
+  wholeWorkspace: "Whole workspace",
+  viewReadOnly:
+    "A view is a projection: edit the YAML here, or switch to the whole workspace to add, delete or connect elements. Moving boxes is saved per view.",
+  opens: (name: string, view: string) => `${name} → ${view}`,
+  opensTitle: "Opens another view",
   saved: (n: number) => (n === 0 ? "Nothing to save" : `Saved ${n} file${n === 1 ? "" : "s"}`),
   problemsElsewhere: (n: number) => `${n} error${n === 1 ? "" : "s"} in other files`,
   renameRefused: (name: string) =>
@@ -138,6 +144,12 @@ const ptBR: typeof en = {
   syncFailed: "Não foi possível atualizar o diagrama — ele pode não refletir o YAML.",
   retrySync: "Tentar de novo",
   synced: (n: number) => `Diagrama sincronizado · ${n} elementos`,
+  viewLabel: "Diagrama",
+  wholeWorkspace: "Workspace inteiro",
+  viewReadOnly:
+    "Uma view é uma projeção: edite o YAML aqui, ou volte ao workspace inteiro para adicionar, apagar ou ligar elementos. Mover caixas fica salvo por view.",
+  opens: (name: string, view: string) => `${name} → ${view}`,
+  opensTitle: "Abre outra view",
   saved: (n: number) =>
     n === 0 ? "Nada a salvar" : `${n} arquivo${n === 1 ? "" : "s"} salvo${n === 1 ? "" : "s"}`,
   problemsElsewhere: (n: number) => `${n} erro${n === 1 ? "" : "s"} em outros arquivos`,
