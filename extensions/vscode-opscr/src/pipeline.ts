@@ -1,4 +1,4 @@
-import { join as joinPath } from "node:path";
+import { dirname, join as joinPath } from "node:path";
 import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
 import {
   CONFIG_FILE,
@@ -115,10 +115,34 @@ export class PreviewPipeline {
 
 export { CONFIG_FILE };
 
+/** Folders the workspace never reads manifests from. */
+const SKIPPED_FOLDER = (segment: string) => segment === "node_modules" || segment.startsWith(".");
+
 /**
- * The workspace a file belongs to: every opscr manifest in its folder plus the folder's
- * `opscr.config.yaml`, read through `readText` — which the extension answers from an open
- * editor's unsaved text when there is one, and from disk otherwise.
+ * The folder a manifest's workspace starts at — the one `opscr compile` would be given: the
+ * nearest folder, from the file's own up to `stopAt` (the VSCode workspace folder), that holds
+ * `opscr.config.yaml`, else the file's own folder. Everything below it is the workspace, so a
+ * workspace may keep its views and model in subfolders.
+ */
+export async function workspaceRoot(
+  file: string,
+  hasConfig: (folder: string) => Promise<boolean>,
+  stopAt?: string,
+  parentOf: (path: string) => string = dirname,
+): Promise<string> {
+  const own = parentOf(file);
+  for (let folder = own; ; folder = parentOf(folder)) {
+    if (await hasConfig(folder)) return folder;
+    if (folder === stopAt || parentOf(folder) === folder) return own;
+  }
+}
+
+/**
+ * The workspace of a folder: every opscr manifest below it (in subfolders too, but not under
+ * `node_modules` or a dot folder) plus the folder's own `opscr.config.yaml`, layout and visual
+ * sidecars, read through `readText` — which the extension answers from an open editor's unsaved
+ * text when there is one, and from disk otherwise. `fileNames` are paths relative to `folder`,
+ * with `/` or the platform's separator.
  */
 export async function collectWorkspace(
   folder: string,
@@ -129,9 +153,14 @@ export async function collectWorkspace(
 ): Promise<WorkspaceText> {
   // The platform's separator: these paths are compared with VSCode's `fsPath` (the cursor's
   // file, the Problems panel's), which uses backslashes on Windows.
-  const join = (name: string) => platformJoin(folder, name);
+  const segmentsOf = (name: string) => name.split(/[\\/]/);
+  const join = (name: string) => platformJoin(folder, ...segmentsOf(name));
+  const wanted = [...fileNames]
+    .filter(isManifestName)
+    .filter((name) => !segmentsOf(name).slice(0, -1).some(SKIPPED_FOLDER))
+    .sort((a, b) => segmentsOf(a).join("/").localeCompare(segmentsOf(b).join("/")));
   const files: SourceFile[] = [];
-  for (const name of [...fileNames].filter(isManifestName).sort()) {
+  for (const name of wanted) {
     const content = await readText(join(name));
     if (content !== undefined) files.push({ path: join(name), content });
   }
@@ -154,6 +183,7 @@ export function isManifestPath(path: string): boolean {
   return (
     isManifestName(path) ||
     path.endsWith(`/${CONFIG_FILE}`) ||
+    path.endsWith(`\\${CONFIG_FILE}`) ||
     path.endsWith(`/${LAYOUT_FILE}`) ||
     path.endsWith(`/${VISUAL_FILE}`)
   );

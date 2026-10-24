@@ -7,11 +7,11 @@
  * element the cursor is in is lit in the preview.
  */
 import { readFile, readdir } from "node:fs/promises";
-import { basename, dirname } from "node:path";
+import { basename, join as joinPath, sep } from "node:path";
 import * as vscode from "vscode";
 import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
 import type { GraphElementRef, SourceIndex, SourceLocation } from "./generated/opscr-mapping";
-import { collectWorkspace, isManifestPath, PreviewPipeline } from "./pipeline";
+import { collectWorkspace, isManifestPath, PreviewPipeline, workspaceRoot } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
 const UPDATE_DELAY_MS = 300;
@@ -181,7 +181,8 @@ class Preview {
 
   private async update(): Promise<void> {
     const generation = ++this.generation;
-    const names = await readdir(this.folder).catch(() => [] as string[]);
+    // Every file below the folder, as paths relative to it: a workspace may use subfolders.
+    const names = await readdir(this.folder, { recursive: true }).catch(() => [] as string[]);
     const workspace = await collectWorkspace(this.folder, names, readText);
     const result = await this.pipeline.update(workspace);
     if (generation !== this.generation) return;
@@ -292,6 +293,21 @@ export function activate(context: vscode.ExtensionContext): void {
   const previews = new Map<string, Preview>();
   const embedRoot = vscode.Uri.joinPath(context.extensionUri, "media", "embed");
 
+  /** Where the workspace of a manifest starts: see `workspaceRoot`. */
+  const rootOf = (uri: vscode.Uri): Promise<string> =>
+    workspaceRoot(
+      uri.fsPath,
+      async (folder) => {
+        try {
+          await vscode.workspace.fs.stat(vscode.Uri.file(joinPath(folder, "opscr.config.yaml")));
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath,
+    );
+
   const open = async (uri?: vscode.Uri) => {
     const target = uri ?? vscode.window.activeTextEditor?.document.uri;
     if (!target || !isManifestPath(target.fsPath)) {
@@ -300,7 +316,7 @@ export function activate(context: vscode.ExtensionContext): void {
       );
       return;
     }
-    const folder = dirname(target.fsPath);
+    const folder = await rootOf(target);
     const existing = previews.get(folder);
     if (existing) {
       existing.schedule();
@@ -308,7 +324,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     const panel = vscode.window.createWebviewPanel(
       "opscr.preview",
-      `Preview: ${folder.split("/").pop()}`,
+      `Preview: ${basename(folder)}`,
       { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
       { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [embedRoot] },
     );
@@ -325,7 +341,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // Files written outside any editor — Claude Code, git, Structura's layout sidecar — come
     // from disk: watch the folder itself.
     const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(vscode.Uri.file(folder), "*"),
+      new vscode.RelativePattern(vscode.Uri.file(folder), "**/*"),
     );
     const onDisk = (uri: vscode.Uri) => {
       if (isManifestPath(uri.fsPath)) preview.schedule();
@@ -341,8 +357,13 @@ export function activate(context: vscode.ExtensionContext): void {
     preview.schedule();
   };
 
+  /** The preview whose folder holds the file; the innermost one when workspaces nest. */
   const forDocument = (uri: vscode.Uri) =>
-    isManifestPath(uri.fsPath) ? previews.get(dirname(uri.fsPath)) : undefined;
+    isManifestPath(uri.fsPath)
+      ? [...previews.values()]
+          .filter((p) => uri.fsPath.startsWith(p.folder + sep))
+          .sort((a, b) => b.folder.length - a.folder.length)[0]
+      : undefined;
 
   context.subscriptions.push(
     diagnostics,

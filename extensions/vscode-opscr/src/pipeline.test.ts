@@ -3,7 +3,13 @@ import { readFileSync, readdirSync } from "node:fs";
 import { basename, dirname, join, win32 } from "node:path";
 import { createRequire } from "node:module";
 import { connectionKeys } from "./generated/opscr-mapping";
-import { collectWorkspace, isManifestPath, PreviewPipeline, type WorkspaceText } from "./pipeline";
+import {
+  collectWorkspace,
+  isManifestPath,
+  PreviewPipeline,
+  workspaceRoot,
+  type WorkspaceText,
+} from "./pipeline";
 import { previewHtml } from "./webview-html";
 
 /** How many compiles run at once, to see that updates do not overlap. */
@@ -71,6 +77,94 @@ describe("collectWorkspace", () => {
       path: "/w/opscr.config.yaml",
       content: "disk:/w/opscr.config.yaml",
     });
+  });
+});
+
+describe("a workspace in subfolders", () => {
+  const EXAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/web-app-aws");
+  const example = readdirSync(EXAMPLE_DIR).filter((n) => n.endsWith(".opscr.yaml"));
+  /** Where each example file sits in the nested layout. */
+  const nested = (name: string) =>
+    /^shop-(context|containers|production)|^orders-api-components/.test(name)
+      ? `views/${name}`
+      : `model/${name}`;
+  const NAMES_NESTED = example.map(nested);
+  const readNested = async (path: string) => {
+    const name = basename(path.replaceAll("\\", "/"));
+    return readFileSync(join(EXAMPLE_DIR, name), "utf8");
+  };
+
+  it("reads manifests from subfolders, in a stable order, with paths under the folder", async () => {
+    const workspace = await collectWorkspace("/w", [...NAMES_NESTED].reverse(), readNested);
+    const paths = workspace.files.map((f) => f.path);
+    expect(paths).toEqual([...paths].sort());
+    expect(paths).toContain("/w/model/shop.opscr.yaml");
+    expect(paths).toContain("/w/views/shop-context.opscr.yaml");
+  });
+
+  it("draws the whole workspace, not just the file's own folder", async () => {
+    const workspace = await collectWorkspace("/w", NAMES_NESTED, readNested);
+    const { graph, blocked, sources } = await new PreviewPipeline().update(workspace);
+    expect(blocked).toBeUndefined();
+    expect(graph!.components.map((c) => c.key)).toContain("Application/orders-api");
+    expect(sources!.locate({ kind: "component", key: "Application/orders-api" })?.file).toBe(
+      "/w/model/shop.opscr.yaml",
+    );
+  });
+
+  it("skips node_modules and dot folders, and reads only the root's sidecars", async () => {
+    const workspace = await collectWorkspace(
+      "/w",
+      [
+        "a.opscr.yaml",
+        "node_modules/pkg/x.opscr.yaml",
+        ".git/y.opscr.yaml",
+        "sub/.hidden/z.opscr.yaml",
+        "sub/b.opscr.yaml",
+        "sub/opscr.config.yaml",
+        "sub/opscr.layout.json",
+        "opscr.config.yaml",
+      ],
+      async (p) => `disk:${p}`,
+    );
+    expect(workspace.files.map((f) => f.path)).toEqual(["/w/a.opscr.yaml", "/w/sub/b.opscr.yaml"]);
+    expect(workspace.config?.path).toBe("/w/opscr.config.yaml");
+    expect(workspace.layout).toBeUndefined();
+  });
+
+  it("keeps backslash paths on Windows, with either separator in the names", async () => {
+    const workspace = await collectWorkspace(
+      "C:\\work\\shop",
+      ["model/shop.opscr.yaml", "views\\shop-context.opscr.yaml"],
+      readNested,
+      win32.join,
+    );
+    expect(workspace.files.map((f) => f.path)).toEqual([
+      "C:\\work\\shop\\model\\shop.opscr.yaml",
+      "C:\\work\\shop\\views\\shop-context.opscr.yaml",
+    ]);
+  });
+});
+
+describe("workspaceRoot", () => {
+  const configAt = (...folders: string[]) => async (folder: string) => folders.includes(folder);
+
+  it("is the nearest folder above the file that has the config", async () => {
+    expect(await workspaceRoot("/w/shop/views/a.opscr.yaml", configAt("/w/shop"))).toBe("/w/shop");
+    expect(await workspaceRoot("/w/shop/a.opscr.yaml", configAt("/w/shop", "/w"))).toBe("/w/shop");
+  });
+
+  it("is the file's own folder when no config is found", async () => {
+    expect(await workspaceRoot("/w/shop/views/a.opscr.yaml", configAt())).toBe("/w/shop/views");
+  });
+
+  it("does not look above the editor's workspace folder", async () => {
+    expect(await workspaceRoot("/w/shop/a.opscr.yaml", configAt("/"), "/w")).toBe("/w/shop");
+    expect(await workspaceRoot("/w/shop/views/a.opscr.yaml", configAt("/w"), "/w")).toBe("/w");
+  });
+
+  it("stops at the filesystem root", async () => {
+    expect(await workspaceRoot("/a.opscr.yaml", configAt())).toBe("/");
   });
 });
 
