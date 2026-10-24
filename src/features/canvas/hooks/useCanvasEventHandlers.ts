@@ -1,4 +1,5 @@
 import { useCallback, useRef } from "react";
+import { useCanvasPreferencesStore } from "../preferences/canvas-preferences.store";
 import type { Node, Edge, OnEdgesChange, OnConnect, Connection } from "@xyflow/react";
 import { useReactFlow } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
@@ -403,6 +404,8 @@ export function useCanvasEventHandlers({
       prevSelectionRef.current = node.id;
       setSelectedNodeIds(new Set([node.id]));
       setSelectedNodeId(node.id);
+      // A double click asks to work on the element, so a folded inspector unfolds.
+      useCanvasPreferencesStore.getState().setElementPanelCollapsed(false);
 
       if (isJsonViewerType(getNodeType(node))) {
         const startEdit = node.data?.onStartEdit as (() => void) | undefined;
