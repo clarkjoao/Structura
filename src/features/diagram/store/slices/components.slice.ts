@@ -855,6 +855,36 @@ export const componentsSlice = (
     });
   },
 
+  batchUpdateComponents: (
+    ids: readonly string[],
+    patch: ComponentPatch | ((component: Component) => ComponentPatch),
+  ) => {
+    if (ids.length === 0) return;
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveVersion(d);
+      const written: Component[] = [];
+      for (const id of ids) {
+        const target = scene?.addedComponents[id] ?? d.snapshot.components[id];
+        if (!target) continue;
+        written.push(target);
+      }
+      if (written.length === 0) return;
+      // Scene-only edits write no history, like `updateComponent`; the rest share one checkpoint.
+      const touchesBase = ids.some((id) => !(scene && scene.addedComponents[id]));
+      if (touchesBase) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      for (const target of written) {
+        const own = typeof patch === "function" ? patch(target) : patch;
+        Object.assign(target, own);
+        if (target.templateId && Object.keys(own).some((key) => key !== "templateId")) {
+          delete target.templateId;
+        }
+      }
+      touchDiagram(d);
+    });
+  },
+
   removeComponent: (id: string) => {
     set((state) => {
       const d = getActiveDiagram(state);

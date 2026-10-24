@@ -18,6 +18,7 @@ import type {
 } from "../model/diagram.types";
 import type { ServiceDefinition } from "../model/service.types";
 import type { DiagramLayoutSettings } from "../model/layout-settings";
+import type { AlignMode, DistributeAxis } from "../utils/alignment";
 
 /**
  * A reference the auto-layout decided on: `refId` stands for `originalId` in
@@ -84,6 +85,14 @@ export interface AppActions {
   /** Ends a connection on a new reference to its target, placed beside its source. */
   routeConnectionThroughRef: (connectionId: string) => Component | null;
   updateComponent: (id: string, patch: ComponentPatch) => void;
+  /**
+   * One patch onto many components — or a patch per component, from a function of it — in one
+   * `set()` and one history checkpoint, however many.
+   */
+  batchUpdateComponents: (
+    ids: readonly string[],
+    patch: ComponentPatch | ((component: Component) => ComponentPatch),
+  ) => void;
   removeComponent: (id: string) => void;
   removeElements: (nodeIds: string[], edgeIds: string[]) => void;
   updateHandleOrder: (
@@ -153,6 +162,10 @@ export interface AppActions {
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
   setNodeZIndex: (elementId: string, zIndex: number) => void;
+  /** Align the selection's boxes to an edge or centre. One `set()`, one history checkpoint. */
+  alignNodes: (ids: readonly string[], mode: AlignMode) => void;
+  /** Equal gaps along an axis between three or more nodes. One `set()`, one checkpoint. */
+  distributeNodes: (ids: readonly string[], axis: DistributeAxis) => void;
   fitGroupToChildren: (panelId: string) => void;
   applyAutoLayout: (
     layouts: Array<{

@@ -41,6 +41,7 @@ import {
   FlowAppearanceSection,
   PositionSection,
 } from "./sections";
+import { ElementTypeSelect } from "./sections/ElementTypeSelect";
 import { isComponentType } from "@/features/diagram";
 import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
 import { useElementTextLock } from "@/features/collaboration/hooks/useElementLocks";
@@ -276,44 +277,16 @@ const ComponentPanel = ({
                 </div>
               )}
               {!isSimple && !isDbTable && !isFlowchart && (
-                <div>
-                  <label htmlFor="panel-type" className={PANEL_LABEL_CLASS}>
-                    {t("endpointPanel.type")}
-                  </label>
-                  <select
-                    id="panel-type"
-                    value={type}
-                    onChange={(event) => {
-                      const nextType = event.target.value as ComponentType;
-                      const nextProvider = cloudRegistry.forType(nextType);
-                      updateComponent(component.id, {
-                        type: nextType,
-                        ...cloudServiceIdClearingPatch(nextProvider ? cloudService : undefined),
-                      } as unknown as ComponentPatch);
-                    }}
-                    className={PANEL_INPUT_CLASS}
-                  >
-                    <optgroup label={t("elementPanel.c4ModelGroup")}>
-                      <option value="person">{t("colors.c4Person")}</option>
-                      <option value="system">{t("colors.c4System")}</option>
-                      <option value="container">{t("colors.c4Container")}</option>
-                      <option value="component">{t("colors.c4Component")}</option>
-                    </optgroup>
-                    {cloudRegistry.allProviders().flatMap((provider) =>
-                      provider.categories.map((category) => (
-                        <optgroup
-                          key={`${provider.id}-${category.id}`}
-                          label={t("endpointPanel.cloudCategory", {
-                            provider: provider.name,
-                            name: category.name,
-                          })}
-                        >
-                          <option value={category.id}>{category.name}</option>
-                        </optgroup>
-                      )),
-                    )}
-                  </select>
-                </div>
+                <ElementTypeSelect
+                  value={type}
+                  onChange={(nextType) => {
+                    const nextProvider = cloudRegistry.forType(nextType);
+                    updateComponent(component.id, {
+                      type: nextType,
+                      ...cloudServiceIdClearingPatch(nextProvider ? cloudService : undefined),
+                    } as unknown as ComponentPatch);
+                  }}
+                />
               )}
               {!isSimple && cloudProvider && (
                 <div>

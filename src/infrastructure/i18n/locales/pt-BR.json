@@ -1978,6 +1978,39 @@
     "default": "Padrão"
   },
   "multiSelect": {
+    "elements_one": "{{count}} elemento",
+    "elements_other": "{{count}} elementos",
+    "chip": {
+      "person_one": "{{count}} pessoa",
+      "person_other": "{{count}} pessoas",
+      "system_one": "{{count}} sistema",
+      "system_other": "{{count}} sistemas",
+      "container_one": "{{count}} aplicação",
+      "container_other": "{{count}} aplicações",
+      "component_one": "{{count}} componente",
+      "component_other": "{{count}} componentes",
+      "panel_one": "{{count}} fronteira",
+      "panel_other": "{{count}} fronteiras",
+      "note_one": "{{count}} nota",
+      "note_other": "{{count}} notas",
+      "other": "{{count}} × {{type}}"
+    },
+    "filterByType": "Selecionar só estes",
+    "mixed": "Misto",
+    "alignSection": "Alinhar e distribuir",
+    "align": {
+      "left": "Alinhar à esquerda",
+      "centerH": "Centralizar na horizontal",
+      "right": "Alinhar à direita",
+      "top": "Alinhar ao topo",
+      "centerV": "Centralizar na vertical",
+      "bottom": "Alinhar à base"
+    },
+    "distribute": {
+      "horizontal": "Distribuir na horizontal",
+      "vertical": "Distribuir na vertical"
+    },
+    "needThree": "Selecione ao menos três elementos para distribuir",
     "title": "Seleção múltipla",
     "selectedCount_one": "{{count}} elemento selecionado",
     "selectedCount_other": "{{count}} elementos selecionados",

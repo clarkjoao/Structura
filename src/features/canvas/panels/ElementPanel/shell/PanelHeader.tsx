@@ -45,6 +45,8 @@ export interface PanelHeaderProps {
   onClose: () => void;
   /** Extra chips beside the type chip ("Locked"). */
   badges?: ReactNode;
+  /** A row under the name, above the trail — the multi-selection's type chips. */
+  subheader?: ReactNode;
 }
 
 /**
@@ -64,6 +66,7 @@ export function PanelHeader({
   menu,
   onClose,
   badges,
+  subheader,
 }: PanelHeaderProps) {
   const { t } = useTranslation();
   return (
@@ -134,6 +137,7 @@ export function PanelHeader({
           {name || namePlaceholder}
         </h3>
       )}
+      {subheader}
       {trail.length > 0 && onSelectElement && (
         <nav
           aria-label={t("panelShell.trail")}

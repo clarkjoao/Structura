@@ -1978,6 +1978,39 @@
     "default": "Default"
   },
   "multiSelect": {
+    "elements_one": "{{count}} element",
+    "elements_other": "{{count}} elements",
+    "chip": {
+      "person_one": "{{count}} person",
+      "person_other": "{{count}} people",
+      "system_one": "{{count}} system",
+      "system_other": "{{count}} systems",
+      "container_one": "{{count}} application",
+      "container_other": "{{count}} applications",
+      "component_one": "{{count}} component",
+      "component_other": "{{count}} components",
+      "panel_one": "{{count}} boundary",
+      "panel_other": "{{count}} boundaries",
+      "note_one": "{{count}} note",
+      "note_other": "{{count}} notes",
+      "other": "{{count}} × {{type}}"
+    },
+    "filterByType": "Select only these",
+    "mixed": "Mixed",
+    "alignSection": "Align and distribute",
+    "align": {
+      "left": "Align left",
+      "centerH": "Align horizontal centres",
+      "right": "Align right",
+      "top": "Align top",
+      "centerV": "Align vertical centres",
+      "bottom": "Align bottom"
+    },
+    "distribute": {
+      "horizontal": "Distribute horizontally",
+      "vertical": "Distribute vertically"
+    },
+    "needThree": "Select at least three elements to distribute",
     "title": "Multi-selection",
     "selectedCount_one": "{{count}} element selected",
     "selectedCount_other": "{{count}} elements selected",
