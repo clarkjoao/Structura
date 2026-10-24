@@ -6,8 +6,13 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
 
 - **Open:** with a `*.opscr.yaml` active, run **opscr: Open Preview to the Side** (or the preview
   icon in the editor title).
-- **Workspace:** every `*.opscr.yaml` / `*.opscr.yml` in that file's folder, plus its
-  `opscr.config.yaml`. Unsaved text in open editors is used as it is.
+- **Workspace:** the folder, as `opscr compile <folder>` reads it: every `*.opscr.yaml` /
+  `*.opscr.yml` in it **and in its subfolders** (not under `node_modules` or dot folders), plus its
+  `opscr.config.yaml`. The folder is the nearest one above the file — up to the VSCode workspace
+  folder — that holds an `opscr.config.yaml`; with none, the file's own folder. So a solution that
+  keeps its model and views in subfolders needs an `opscr.config.yaml` at its root, and opening the
+  preview from any file below it shows the whole solution. `opscr.layout.json` and
+  `opscr.visual.json` are read from the root only. Unsaved text in open editors is used as it is.
 - **Live, validated:** ~300 ms after a change — typed, saved, or written to disk by another tool
   (Claude Code, git) — the folder is validated with opscr and, when it has no errors, drawn.
   While the YAML does not parse or has opscr errors, the preview keeps its last valid picture and

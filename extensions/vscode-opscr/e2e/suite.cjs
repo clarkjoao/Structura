@@ -98,6 +98,28 @@ exports.run = async function run() {
   });
   console.log("[e2e] the preview zooms to the element the file added");
 
+  // The workspace is the folder, subfolders included: a manifest two levels down is drawn too,
+  // and opening the preview from it finds the same workspace (the config is at the root).
+  const fs = require("node:fs");
+  const nestedDir = path.join(folder, "extra", "deeper");
+  fs.mkdirSync(nestedDir, { recursive: true });
+  const nested = path.join(nestedDir, "billing.opscr.yaml");
+  fs.writeFileSync(
+    nested,
+    "apiVersion: opscr.dev/v1\nkind: Application\nmetadata:\n  name: billing-api\nspec:\n  provider: EKS\n  language: Java\n  description: Billing\n",
+  );
+  await until("a manifest in a subfolder to be drawn", async () => {
+    const s = await status(folder);
+    return s.blocked === 0 && s.components === first.components + 2;
+  });
+  console.log("[e2e] a manifest in a subfolder is drawn");
+  await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(nested)), vscode.ViewColumn.One);
+  await vscode.commands.executeCommand("opscr.openPreview");
+  await sleep(500);
+  const all = await vscode.commands.executeCommand("opscr._previewStatus");
+  assert.deepEqual(Object.keys(all), [folder], "the nested file opens the workspace's preview, not its own");
+  console.log("[e2e] a file in a subfolder opens the workspace's preview");
+
   // A click on an element opens the YAML that writes it (posed as the webview's message: a test
   // cannot click inside the webview).
   await vscode.commands.executeCommand("opscr._previewMessage", folder, {
