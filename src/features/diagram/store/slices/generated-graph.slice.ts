@@ -44,6 +44,8 @@ export interface GeneratedNodeInput {
   technology?: string;
   /** Cloud provider service id (`cloudServiceId` on the component after F6b). */
   cloudServiceId?: string;
+  /** The diagram this component opens (drill-down); the caller checks it exists. */
+  linkedDiagramId?: string;
   /** Position is relative to the parent, like React Flow child nodes. */
   x: number;
   y: number;
@@ -81,6 +83,8 @@ export interface GeneratedNodeUpdate {
   technology?: string;
   /** Catalog service; written through `cloudServiceIdWrite`, an empty string clears it. */
   cloudServiceId?: string;
+  /** The diagram the component opens (drill-down); an empty string clears it. */
+  linkedDiagramId?: string;
 }
 
 export interface GeneratedNodeMove {
@@ -153,6 +157,7 @@ function insertGeneratedGraphInDraft(
 
     if (node.description !== undefined) component.description = node.description;
     if (node.technology !== undefined) setTechnology(component, node.technology);
+    if (node.linkedDiagramId) component.linkedDiagramId = node.linkedDiagramId;
 
     const layout: NodeLayout = {
       elementId: id,
@@ -264,17 +269,18 @@ export const generatedGraphSlice = (
    * folder of manifests). Ids that are not in the diagram are skipped. Adds link to
    * existing components (`linkExisting`).
    */
-  applyGraphChanges: (changes: GraphChanges): GraphChangesResult => {
+  applyGraphChanges: (changes: GraphChanges, diagramId?: string): GraphChangesResult => {
     const add = changes.add ?? [];
     const componentIdByExternalId: Record<string, string> = {};
     for (const node of add) componentIdByExternalId[node.externalId] = generateId("el");
     let connectionIds: Array<string | null> = (changes.connect ?? []).map(() => null);
 
     set((state) => {
-      const d = getActiveDiagram(state);
+      // `diagramId`: another diagram than the active one — a plugin keeps several in sync.
+      const d = diagramId === undefined ? getActiveDiagram(state) : (state.diagrams[diagramId] ?? null);
       if (!d) return;
       const scene = resolveActiveVersion(d);
-      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER, d);
 
       const exists = (id: string) => resolveComponent(d, scene, id) !== undefined;
       const remove = (changes.remove ?? []).filter(exists);
@@ -293,6 +299,9 @@ export const generatedGraphSlice = (
         if (update.technology !== undefined) setTechnology(component, update.technology);
         if (update.cloudServiceId !== undefined) {
           Object.assign(component, cloudServiceIdClearingPatch(update.cloudServiceId));
+        }
+        if (update.linkedDiagramId !== undefined && component.type !== "external-element") {
+          component.linkedDiagramId = update.linkedDiagramId || undefined;
         }
       }
 

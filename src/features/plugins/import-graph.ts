@@ -111,7 +111,14 @@ function parentKeysWithoutCycles(inputs: readonly PluginComponentInput[]): Map<s
  * entries dropped, the type policy applied, parent cycles cut, keys as external ids. Shared by plugin imports and the
  * embed preview, so a graph posted to the preview draws exactly what importing it would.
  */
-export function toGeneratedGraph(result: Pick<ImportResult, "components" | "connections">): {
+export function toGeneratedGraph(
+  result: Pick<ImportResult, "components" | "connections">,
+  /**
+   * Whether a diagram exists. A `linkedDiagramId` is kept only for one that does; without this,
+   * none is (the embed preview has no diagrams to open).
+   */
+  diagramExists: (id: string) => boolean = () => false,
+): {
   nodes: GeneratedNodeInput[];
   edges: GeneratedEdgeInput[];
 } {
@@ -133,6 +140,9 @@ export function toGeneratedGraph(result: Pick<ImportResult, "components" | "conn
         typeof input.cloudServiceId === "string" ? input.cloudServiceId : undefined,
       ),
       ...(technology !== undefined ? { technology } : {}),
+      ...(typeof input.linkedDiagramId === "string" && diagramExists(input.linkedDiagramId)
+        ? { linkedDiagramId: input.linkedDiagramId }
+        : {}),
       x: input.x,
       y: input.y,
       ...(input.width !== undefined ? { width: input.width } : {}),

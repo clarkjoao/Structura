@@ -57,7 +57,12 @@ describe("toComponentSnapshot", () => {
       serviceId: null,
       cloudServiceId: null,
       technology: null,
+      linkedDiagramId: null,
     });
+  });
+
+  it("exposes the diagram a component opens (API 1.13)", () => {
+    expect(toComponentSnapshot({ ...component, linkedDiagramId: "d9" }).linkedDiagramId).toBe("d9");
   });
 
   it("exposes the catalog service and technology of a cloud component (API 1.10)", () => {

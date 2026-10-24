@@ -49,6 +49,7 @@ export function toComponentSnapshot(
     serviceId: component.serviceId ?? null,
     cloudServiceId,
     technology,
+    linkedDiagramId: component.linkedDiagramId ?? null,
   };
 }
 
