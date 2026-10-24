@@ -67,3 +67,66 @@ export function overlayLayouts(
     ...(parents.size > 0 ? { parents } : {}),
   };
 }
+
+/**
+ * Version 2: one set of boxes per View (`views` → view name → `Kind/name` → box), because one
+ * element can sit in several diagrams. A version 1 file is the layout of the workspace's default
+ * (view-less) diagram.
+ */
+export interface LayoutFiles {
+  /** The default diagram's layout: a version 1 file's boxes. */
+  base: ViewLayoutResult | null;
+  views: ReadonlyMap<string, ViewLayoutResult>;
+}
+
+function boxesOf(entries: unknown): Map<string, ViewBox> {
+  const boxes = new Map<string, ViewBox>();
+  if (typeof entries !== "object" || entries === null) return boxes;
+  for (const [key, value] of Object.entries(entries)) {
+    if (typeof value !== "object" || value === null) continue;
+    const { x, y, width, height } = value as Record<string, unknown>;
+    if (isNumber(x) && isNumber(y) && isNumber(width) && isNumber(height)) {
+      boxes.set(key, { x, y, width, height });
+    }
+  }
+  return boxes;
+}
+
+/** Version 1 or 2; an unreadable file is null. */
+export function parseLayoutFiles(text: string): LayoutFiles | null {
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (typeof data !== "object" || data === null) return null;
+  const record = data as Record<string, unknown>;
+  if (record["version"] === 2) {
+    const views = new Map<string, ViewLayoutResult>();
+    const raw = record["views"];
+    if (typeof raw === "object" && raw !== null) {
+      for (const [name, entries] of Object.entries(raw)) {
+        views.set(name, { boxes: boxesOf(entries), edgeRoutes: new Map() });
+      }
+    }
+    return { base: null, views };
+  }
+  const base = parseLayoutFile(text);
+  return base ? { base, views: new Map() } : null;
+}
+
+/** Stable text for a version 2 sidecar: sorted views and keys, whole numbers, one element per line. */
+export function serializeLayoutFiles(views: ReadonlyMap<string, ReadonlyMap<string, ViewBox>>): string {
+  const blocks = [...views.keys()].sort().map((name) => {
+    const boxes = views.get(name)!;
+    const lines = [...boxes.keys()].sort().map((key) => {
+      const b = boxes.get(key)!;
+      const box = [b.x, b.y, b.width, b.height].map(Math.round);
+      return `      ${JSON.stringify(key)}: { "x": ${box[0]}, "y": ${box[1]}, "width": ${box[2]}, "height": ${box[3]} }`;
+    });
+    return `    ${JSON.stringify(name)}: ${lines.length > 0 ? `{\n${lines.join(",\n")}\n    }` : "{}"}`;
+  });
+  const body = blocks.length > 0 ? `{\n${blocks.join(",\n")}\n  }` : "{}";
+  return `{\n  "version": 2,\n  "views": ${body}\n}\n`;
+}

@@ -23,6 +23,8 @@ export interface ImporterGraphComponent {
   technology?: string;
   /** Panel kind (plugin API 1.12), for the visual layer's boundaries. */
   panelKind?: string;
+  /** Name of the opscr View this component opens; the host links it to that view's diagram. */
+  linkedView?: string;
   x: number;
   y: number;
   width?: number;
@@ -45,7 +47,7 @@ export function toImporterGraph(view: PlacedView, anchor = { x: 0, y: 0 }): Impo
   const components = view.nodes.map((node): ImporterGraphComponent => {
     const isRoot = node.parentId === null;
     // The importer API's field name; the host writes the persisted field on insert.
-    const { type, catalogServiceId: cloudServiceId, technology } = node.element;
+    const { type, catalogServiceId: cloudServiceId, technology, panelKind } = node.element;
     return {
       key: node.id,
       name: node.name,
@@ -54,6 +56,8 @@ export function toImporterGraph(view: PlacedView, anchor = { x: 0, y: 0 }): Impo
       ...(node.parentId !== null ? { parentKey: node.parentId } : {}),
       ...(cloudServiceId !== undefined ? { cloudServiceId } : {}),
       ...(technology !== undefined ? { technology } : {}),
+      ...(panelKind !== undefined ? { panelKind } : {}),
+      ...(node.drillDown !== undefined ? { linkedView: node.drillDown } : {}),
       x: node.box.x + (isRoot ? anchor.x : 0),
       y: node.box.y + (isRoot ? anchor.y : 0),
       // Panels take the size that holds their children; leaves keep their intrinsic size.
