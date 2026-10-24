@@ -20,6 +20,7 @@ import {
 import { resolveNodeDescriptor, type NodeBuildContext } from "./node-types";
 import { writePolicy } from "../core/canvasInteractionPolicy";
 import { projectNodes } from "../core/projectDiagram";
+import { projectLegendNode } from "../core/legendNode";
 import type { ViewSnapshot } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { applyEditorNodeOverlays } from "./nodeOverlays";
@@ -29,6 +30,15 @@ import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 /** The projection's policy on the editor path; interactivity is React Flow's, per canvas. */
 const EDITOR_PROJECTION = writePolicy(true);
 import { useStableSetByContent } from "../hooks/useStableSetByContent";
+
+/** Whether two projections of the legend say the same thing in the same place. */
+function sameLegendNode(a: Node, b: Node): boolean {
+  return (
+    a.position.x === b.position.x &&
+    a.position.y === b.position.y &&
+    JSON.stringify(a.data) === JSON.stringify(b.data)
+  );
+}
 
 export type DiagramVersionState = {
   id: string;
@@ -249,6 +259,7 @@ export function useCanvasNodes({
 
   const prevRfNodesByIdRef = useRef<Map<string, Node>>(new Map());
   const prevNodesArrayRef = useRef<Node[]>(EMPTY_CANVAS_NODE_LIST);
+  const prevLegendNodeRef = useRef<Node | null>(null);
 
   const dataCtx: DataCtx | null = useMemo(() => {
     if (!diagram) return null;
@@ -416,20 +427,29 @@ export function useCanvasNodes({
       return nodeToUse;
     });
 
+    // The generated legend, appended as the viewer appends it. It is rebuilt every time, so it
+    // keeps the previous object while what it says and where it sits have not changed.
+    const legend = projectLegendNode(view, view.showLegend);
+    const previousLegend = prevLegendNodeRef.current;
+    const legendNode =
+      legend && previousLegend && sameLegendNode(previousLegend, legend) ? previousLegend : legend;
+    prevLegendNodeRef.current = legendNode;
+    const allNodes = legendNode ? [...nextNodes, legendNode] : nextNodes;
+
     const prevArr = prevNodesArrayRef.current;
     if (
-      nextNodes.length === prevArr.length &&
-      nextNodes.length > 0 &&
-      nextNodes.every((node, index) => node === prevArr[index])
+      allNodes.length === prevArr.length &&
+      allNodes.length > 0 &&
+      allNodes.every((node, index) => node === prevArr[index])
     ) {
       return prevArr;
     }
-    if (nextNodes.length === 0) {
+    if (allNodes.length === 0) {
       prevNodesArrayRef.current = EMPTY_CANVAS_NODE_LIST;
       return EMPTY_CANVAS_NODE_LIST;
     }
-    prevNodesArrayRef.current = nextNodes;
-    return nextNodes;
+    prevNodesArrayRef.current = allNodes;
+    return allNodes;
   }, [
     diagramVersionState,
     dataCtx,

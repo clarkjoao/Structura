@@ -59,6 +59,18 @@ describe("DiagramPanel (nothing selected)", () => {
     expect(diagramOf(id).showLegend).toBeUndefined();
   });
 
+  it("previews what the legend will say, from what the diagram uses", () => {
+    const store = useDiagramStore.getState();
+    const id = seed();
+    const a = store.addComponent("system", "A", null, { x: 0, y: 0 });
+    const b = store.addComponent("system", "B", null, { x: 300, y: 0 });
+    const conn = store.addConnection(a.id, b.id, "events")!;
+    store.updateConnection(conn.id, { interaction: "async" });
+    render(<DiagramPanel />);
+    expect(diagramOf(id).showLegend).toBeUndefined();
+    expect(screen.getByText("Asynchronous")).toBeTruthy();
+  });
+
   it("closing folds the panel to its rail", () => {
     seed();
     render(<DiagramPanel />);

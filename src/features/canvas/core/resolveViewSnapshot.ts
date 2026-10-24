@@ -90,6 +90,8 @@ export interface ViewSnapshot {
   placedConnections: Connection[];
   /** The edges drawn: placed connections whose ends are not hidden. */
   shownConnections: Connection[];
+  /** Whether the diagram asks for its generated legend on the canvas. */
+  showLegend: boolean;
 }
 
 /** What a canvas with no diagram shows. One shared object, so memos stay put. */
@@ -104,6 +106,7 @@ export const EMPTY_VIEW_SNAPSHOT: ViewSnapshot = Object.freeze({
   nodes: [],
   placedConnections: [],
   shownConnections: [],
+  showLegend: false,
 });
 
 /**
@@ -394,5 +397,6 @@ export function resolveViewSnapshot(
     nodes,
     placedConnections: connections,
     shownConnections: filterVisibleConnections(connections, resolved.components),
+    showLegend: diagram.showLegend === true,
   };
 }

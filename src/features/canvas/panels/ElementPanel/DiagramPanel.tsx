@@ -1,6 +1,15 @@
 import { Workflow } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useActiveDiagramId, useDiagramActions, useDiagramStore } from "@/features/diagram";
+import { useMemo } from "react";
+import {
+  useActiveDiagramId,
+  useConnections,
+  useDiagramActions,
+  useDiagramStore,
+  useResolvedComponents,
+} from "@/features/diagram";
+import { buildLegend } from "@/features/diagram/utils/legend";
+import { LegendContent } from "@/features/canvas/nodes/LegendNode";
 import type { Level } from "@/features/diagram";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -33,6 +42,13 @@ export default function DiagramPanel() {
   );
   const { updateDiagram, updateDiagramDescription, setShowLegend } = useDiagramActions();
   const setCollapsed = useCanvasPreferencesStore((s) => s.setElementPanelCollapsed);
+  const components = useResolvedComponents();
+  const connections = useConnections();
+  // What the legend will say, whether or not it is on the canvas yet.
+  const legend = useMemo(
+    () => buildLegend(components, new Set(Object.keys(components)), Object.values(connections)),
+    [components, connections],
+  );
 
   if (!diagramId || name === undefined || level === undefined) return null;
 
@@ -98,6 +114,7 @@ export default function DiagramPanel() {
               onCheckedChange={(checked) => setShowLegend(diagramId, checked)}
             />
           </div>
+          <LegendContent legend={legend} />
         </PanelSection>
       </div>
     </div>

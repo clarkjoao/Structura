@@ -1910,6 +1910,13 @@
     "empty": "Nada dentro ainda",
     "collapseOnCanvas": "Recolher no canvas"
   },
+  "legend": {
+    "title": "Legenda",
+    "boundaryTypes": "Fronteiras",
+    "domains": "Domínios",
+    "interactions": "Interações",
+    "empty": "Nada a explicar ainda: a legenda lista os tipos de fronteira, domínios e interações que este diagrama usa."
+  },
   "panelShell": {
     "advanced": "Avançado",
     "copyId": "Copiar ID",

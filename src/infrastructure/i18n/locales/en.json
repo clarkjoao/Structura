@@ -1910,6 +1910,13 @@
     "empty": "Nothing inside yet",
     "collapseOnCanvas": "Collapse on canvas"
   },
+  "legend": {
+    "title": "Legend",
+    "boundaryTypes": "Boundaries",
+    "domains": "Domains",
+    "interactions": "Interactions",
+    "empty": "Nothing to explain yet: the legend lists the boundary types, domains and interactions this diagram uses."
+  },
   "panelShell": {
     "advanced": "Advanced",
     "copyId": "Copy ID",

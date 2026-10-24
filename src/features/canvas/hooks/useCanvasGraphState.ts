@@ -165,6 +165,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
       diagram?.compareVersionId,
       // The text layer is the editor's own state, not part of the resolved snapshot.
       textsVisible,
+      // The legend is a flag of the diagram itself, not part of the resolved snapshot.
+      diagram?.showLegend,
       resolvedComponentsRef,
       resolvedNodeLayoutsRef,
       resolvedConnectionsRef,

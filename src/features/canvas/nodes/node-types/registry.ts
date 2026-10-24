@@ -11,6 +11,8 @@ import {
   subscribeElements,
 } from "@/features/elements/element.registry";
 import type { ElementCanvasSlice, ElementDescriptor } from "@/features/elements/element.types";
+import { LEGEND_NODE_TYPE } from "../../core/legendNode";
+import { LegendNode } from "../LegendNode";
 
 /**
  * Plugin-contributed React Flow descriptors only.
@@ -132,11 +134,15 @@ function buildNodeTypes(): NodeTypes {
     ...(element.variants ?? []).map((variant) => adaptElement(element, variant.canvas)),
   ]);
   const descriptors = [...registered, ...NODE_TYPE_REGISTRY];
-  return Object.fromEntries(
-    descriptors
-      .filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i)
-      .map((d) => [d.rfType, d.component]),
-  ) as NodeTypes;
+  return {
+    ...(Object.fromEntries(
+      descriptors
+        .filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i)
+        .map((d) => [d.rfType, d.component]),
+    ) as NodeTypes),
+    // Not an element: the generated legend both surfaces append to what they project.
+    [LEGEND_NODE_TYPE]: LegendNode,
+  };
 }
 
 let nodeTypesSnapshot: NodeTypes = buildNodeTypes();

@@ -110,3 +110,10 @@ describe("save → close → reopen: boundaries", () => {
     });
   });
 });
+
+describe("save → close → reopen: the legend switch", () => {
+  it("keeps the diagram's showLegend", () => {
+    const raw = { ...diagramWith({}), showLegend: true };
+    expect(reopen(raw).showLegend).toBe(true);
+  });
+});
