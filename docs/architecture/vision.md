@@ -99,16 +99,15 @@ explicitly, with their responsibilities and allowed dependencies:
 | **Workspace** | `pages/`, `infrastructure/persistence` | Folders, dashboard, model explorer, storage adapters (`IStoragePort`), sync, migrations. | Model |
 | **Interchange** | `lib/export-service`, mermaid import utils | Converting to/from external formats (draw.io, Mermaid, Structurizr, JSON). Boundary converters only — no format knowledge leaks inward. | Model |
 | **Catalogs** | `features/cloud`, `lib/catalogs` | AWS/GCP/Azure service catalogs and icons; pattern and panel catalogs. Data, not behavior. | Model |
-| **Collaboration** | `features/collaboration`, `server/` | Live sessions: field-level patches ordered by the relay, presence, soft locks. The relay's store is the source of truth only while a session lasts (ADR-0011). | Model |
+| **Collaboration** | `features/collaboration`, `server/`, `go-server/` | Live sessions: field-level patches ordered by the relay, presence, soft locks. The relay's store is the source of truth only while a session lasts (ADR-0011). | Model |
 | **Intelligence** | `features/llm` | Diagram assistant: providers (Anthropic/OpenAI/proxy), prompt building, patch parsing, applying `DiagramPatch` actions to the store. | Model |
 | **Storytelling** | flows in Model | Cross-diagram narrative: flow recording/playback. The cross-diagram *Walkthroughs* feature was removed in 2026-08; see `docs/decisions/2026-08-26-remove-walkthroughs.md`. | Model, Canvas |
 | **Sharing** | `features/viewer`, share/embed utils | Read-only viewer for shared diagrams. | Model, Canvas |
 
 Dependency rule: **everything may depend on Model; Model depends on nothing.**
 Contexts do not import each other's internals; cross-context needs go through
-the store or a registry. (Today `features/custom-components` and
-`features/icons` are satellite contexts of Model — user-defined templates and
-icon libraries — and follow the same rule.)
+the store or a registry. (Today `features/element-presets` is a satellite context of Model —
+user-saved presets — and follows the same rule.)
 
 ---
 

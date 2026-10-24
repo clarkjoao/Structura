@@ -4,7 +4,7 @@
 > reading the source. The executable contract is `server/src/collab/protocol.ts` (types and
 > guards, shared by both sides) and the merge fixtures in
 > `server/src/collab/store/__fixtures__/merge.fixtures.ts`. The OpenSpec change
-> `openspec/changes/collab-v3-redis/` holds the requirements this protocol serves.
+> `openspec/changes/archive/2026-10-15-collab-v3-redis/` holds the requirements this protocol serves.
 
 ## 1. Model
 

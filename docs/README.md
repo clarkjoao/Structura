@@ -15,7 +15,7 @@ the *why* behind them.
 | [guides/](guides/) | Task-oriented guides (adding a node type, embedding a diagram, …). |
 | [features.md](features.md) | User-facing feature map and keyboard shortcuts. |
 | [decisions/](decisions/) | Product decisions that are not architecture (for example, removing a feature). |
-| [collab-protocol-v3.md](collab-protocol-v3.md) | Wire protocol of the collaboration relay in `server/`. |
+| [collab-protocol-v3.md](collab-protocol-v3.md) | Wire protocol of the collaboration relay (`server/` and `go-server/`). |
 | [assets/](assets/) | Images and recordings used by the README (regenerate with `scripts/capture-media.mjs`). |
 | [../openspec/](../openspec/) | Spec Driven Development via [OpenSpec](https://github.com/Fission-AI/OpenSpec): active changes in `changes/`, accepted requirements in `specs/`. |
 

@@ -164,16 +164,14 @@ Lives inside `Diagram.snapshot.flows`.
 
 ### Process Node
 
-**Status:** `proposed` (currently `type: "processos"` in the union;
-  `FlowNodeComponent` in code; Portuguese leftover)
+**Status:** `current`
 
 **Definition:** A Component of type `process-node` representing a single
 node of a Mermaid-style flowchart (rectangle, rounded, stadium, diamond,
 hexagon, parallelogram, cylinder, circle, subroutine).
 
-**Reference:** `FlowNodeComponent` in
-`src/features/diagram/model/component.types.ts:202`; descriptor at
-`src/features/canvas/nodes/node-types/flownode.descriptor.ts`.
+**Reference:** element descriptor at
+`src/features/elements/structural/process-node.element.ts`.
 
 **Aliases:** `FlowNode` (deprecated — name collides with `Flow`),
 `processos` (deprecated — Portuguese; violates the `AGENTS.md` language
@@ -338,8 +336,7 @@ that Diagram. The feature had a VCR-style player (prev/next, play, record)
 and a separate `Walkthroughs` Zustand store.
 
 **Reference (historical):** `Walkthrough` lived in
-  `src/features/walkthroughs/types.ts`; the player was at
-  `src/features/walkthroughs/components/WalkthroughPlayerBar.tsx`.
+  the original module was removed; the current one is `src/features/walkthrough/`.
 
 **Counterpoint (still applies if a future equivalent is rebuilt):**
 
@@ -397,7 +394,7 @@ instantiated Components via `templateId`.
 **Counterpoint:**
 
 - **Not** the same as a **Pattern** (built-in, curated, shipped with
-  Structura; lives in `lib/catalogs/patterns.ts`).
+  Structura; lives in `lib/catalogs/patterns/`).
 - **Not** the same as a **Component** (a single typed element on a
   Diagram). A UserTemplate is a fragment that, when instantiated,
   produces multiple Components and Connections.
@@ -410,9 +407,9 @@ instantiated Components via `templateId`.
 
 **Definition:** A built-in, curated, multi-component fragment shipped
 with Structura (e.g. "Three-tier web app", "Event-driven with queue").
-Lives in `lib/catalogs/patterns.ts`.
+Lives in `lib/catalogs/patterns/`.
 
-**Reference:** `src/lib/catalogs/patterns.ts`; slice at
+**Reference:** `src/lib/catalogs/patterns/`; slice at
 `src/features/diagram/store/slices/patterns.slice.ts`.
 
 **Counterpoint:** User-authored reusable fragments are `UserTemplate`;
@@ -528,8 +525,7 @@ disambiguate in writing:
 - **ModelDraft** — the semantic snapshot of a Diagram, type
   `Diagram.snapshot: ModelDraft`. This is the unit of undo/redo and
   interchange.
-- **Model Explorer** *(page)* — the workspace view page at
-  `src/pages/modelExplorer/`. **Planned rename to `Workspace`**.
+- **Workspace** *(page)* — the workspace view page at `src/pages/workspace/`.
 
 **Counterpoint:** "Model" in a C4 context means the architecture model
 (systems, containers, components). Structura uses *Diagram* for that
