@@ -40,7 +40,7 @@ the *why* behind them.
 
 ## Historical investigation logs
 
-`investigation/`, `epico-virtualizacao/`, `epico-layout-visualization/` and `discovery/` are dated engineering logs — measurements, hypotheses and the fixes
+`investigation/`, `epico-virtualizacao/` and `discovery/` are dated engineering logs — measurements, hypotheses and the fixes
 they led to. They are **written in Portuguese** and kept as a record because source comments cite
 them by section. They describe the code at the time they were written, not today; see
 [investigation/README.md](investigation/README.md).
