@@ -40,7 +40,12 @@ export function groupServices(services: ServiceDefinition[], groupBy: GroupBy): 
     groupBy === "role"
       ? SERVICE_ROLES
       : groupBy === "source"
-        ? [ServiceSource.Manual, ServiceSource.Github, ServiceSource.Defectdojo]
+        ? [
+            ServiceSource.Manual,
+            ServiceSource.Github,
+            ServiceSource.Gitlab,
+            ServiceSource.Defectdojo,
+          ]
         : [...byKey.keys()].filter((key) => key !== "none").sort((a, b) => a.localeCompare(b));
   return [...order, "none"]
     .filter((key) => byKey.has(key))

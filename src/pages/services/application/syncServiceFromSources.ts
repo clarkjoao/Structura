@@ -1,4 +1,11 @@
 import { i18n } from "@/infrastructure/i18n";
+import { createGitlabClient } from "@/features/integrations/gitlab/gitlabClient";
+import {
+  DEFAULT_GITLAB_CONFIG,
+  readGitlabConfig,
+} from "@/features/integrations/gitlab/useGitlabConfig";
+import { gitlabProjectToMetadata, languagesBySize } from "@/features/integrations/repo/repoLookup";
+import type { RepoMetadata } from "@/features/integrations/repo/repo.types";
 import { createGithubClient } from "@/features/integrations/github/githubClient";
 import type { GithubConfig, GithubRepo } from "@/features/integrations/github/github.types";
 import type { ServiceDefinition } from "@/features/diagram";
@@ -57,6 +64,19 @@ async function fetchGithubRepository(params: {
   return client.getRepository(githubIdentifier);
 }
 
+async function fetchGitlabProject(service: ServiceDefinition): Promise<RepoMetadata | null> {
+  const gitlabSource = normalizeSources(service).find((s) => s.type === ServiceSource.Gitlab);
+  const path = gitlabSource?.sourceId ?? service.metadata?.gitlab?.fullName;
+  if (!path) return null;
+  const client = createGitlabClient(readGitlabConfig() ?? DEFAULT_GITLAB_CONFIG);
+  const project = await client.getProject(path);
+  const languages = await client
+    .getProjectLanguages(project.id)
+    .then(languagesBySize)
+    .catch(() => []);
+  return gitlabProjectToMetadata(project, languages);
+}
+
 async function fetchDefectDojoService(service: ServiceDefinition): Promise<{
   mapped: Omit<ServiceDefinition, "id"> | null;
   sourceId?: string;
@@ -101,15 +121,19 @@ export async function syncServiceFromSources({
   githubConfig,
 }: SyncServiceFromSourcesParams): Promise<Partial<Omit<ServiceDefinition, "id">>> {
   const githubRepo = await fetchGithubRepository({ service, githubConfig });
+  const gitlab = await fetchGitlabProject(service);
   const defectDojo = await fetchDefectDojoService(service);
   const defectDojoMapped = defectDojo.mapped;
 
-  if (!githubRepo && !defectDojoMapped) {
+  if (!githubRepo && !gitlab && !defectDojoMapped) {
     throw new Error(i18n.t("services.errorSyncNoSource"));
   }
 
-  const githubTech = githubRepo?.language ? [githubRepo.language] : [];
-  const githubTags = githubRepo?.topics ?? [];
+  const githubTech = [
+    ...(githubRepo?.language ? [githubRepo.language] : []),
+    ...(gitlab?.languages ?? []),
+  ];
+  const githubTags = [...(githubRepo?.topics ?? []), ...(gitlab?.topics ?? [])];
   const ddTags = defectDojoMapped?.tags ?? [];
 
   const mergedTech = dedupeStringsPreserveOrder([
@@ -124,6 +148,7 @@ export async function syncServiceFromSources({
   ]);
   const mergedSourceEntries = mergeSources(normalizeSources(service), [
     ...(githubRepo ? [{ type: ServiceSource.Github, sourceId: githubRepo.full_name }] : []),
+    ...(gitlab ? [{ type: ServiceSource.Gitlab, sourceId: gitlab.fullName }] : []),
     ...(defectDojoMapped
       ? [{ type: ServiceSource.Defectdojo, sourceId: defectDojo.sourceId }]
       : []),
@@ -133,10 +158,14 @@ export async function syncServiceFromSources({
     name: pickMoreCompleteString(defectDojoMapped?.name ?? "", githubRepo?.name ?? service.name),
     description: pickMoreCompleteString(
       defectDojoMapped?.description ?? "",
-      githubRepo?.description ?? service.description,
+      githubRepo?.description ?? gitlab?.description ?? service.description,
     ),
     repositoryUrl:
-      githubRepo?.html_url || service.repositoryUrl || defectDojoMapped?.repositoryUrl || "",
+      githubRepo?.html_url ||
+      gitlab?.webUrl ||
+      service.repositoryUrl ||
+      defectDojoMapped?.repositoryUrl ||
+      "",
     technology: mergedTech,
     tags: mergedTags,
     sources: mergedSourceEntries,
@@ -150,6 +179,15 @@ export async function syncServiceFromSources({
             updatedAt: githubRepo.updated_at,
           }
         : service.metadata?.github,
+      gitlab: gitlab
+        ? {
+            projectId: gitlab.remoteId,
+            fullName: gitlab.fullName,
+            topics: gitlab.topics,
+            language: gitlab.languages[0] ?? null,
+            updatedAt: gitlab.updatedAt,
+          }
+        : service.metadata?.gitlab,
       defectdojo: defectDojoMapped?.metadata?.defectdojo ?? service.metadata?.defectdojo,
     },
   };

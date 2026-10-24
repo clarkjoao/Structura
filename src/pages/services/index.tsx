@@ -15,7 +15,6 @@ import {
 } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
 import { SERVICE_ROLES, effectiveServiceRole } from "@/features/diagram";
-import { ImportPanel } from "@/features/integrations/import-panel";
 import { useTranslation } from "react-i18next";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { AddServiceDialog } from "./AddServiceDialog";
@@ -39,7 +38,7 @@ export default function ServicesPage() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [groupBy, setGroupBy] = useState<GroupBy>("role");
   const searchRef = useRef<HTMLInputElement>(null);
-  const [importPanel, setImportPanel] = useState<ImportPanel | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedFromQuery = searchParams.get("serviceId");
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -178,7 +177,7 @@ export default function ServicesPage() {
 
   const handleCreate = (svc: Omit<ServiceDefinition, "id">) => {
     const created = addService(svc);
-    setImportPanel(null);
+    setAddOpen(false);
     setSelectedId(created.id);
   };
 
@@ -207,7 +206,7 @@ export default function ServicesPage() {
               </span>
             </h1>
             <button
-              onClick={() => setImportPanel((current) => (current ? null : ImportPanel.Manual))}
+              onClick={() => setAddOpen(true)}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <Plus className="h-4 w-4" />
@@ -270,9 +269,16 @@ export default function ServicesPage() {
           </div>
 
           <AddServiceDialog
-            panel={importPanel}
-            onPanelChange={setImportPanel}
+            open={addOpen}
+            onOpenChange={setAddOpen}
+            services={services}
             onCreate={handleCreate}
+            onOpenExisting={(id) => {
+              setAddOpen(false);
+              setSearch("");
+              setRoleFilter("all");
+              setSelectedId(id);
+            }}
           />
 
           <div className="mb-6 empty:hidden">

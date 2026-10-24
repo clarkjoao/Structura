@@ -45,7 +45,8 @@ export function DetailPanel({
   const normalizedSources = normalizeSources(svc);
   const hasGithubSource = normalizedSources.some((s) => s.type === ServiceSource.Github);
   const hasDefectDojoSource = normalizedSources.some((s) => s.type === ServiceSource.Defectdojo);
-  const hasSyncSource = hasGithubSource || hasDefectDojoSource;
+  const hasGitlabSource = normalizedSources.some((s) => s.type === ServiceSource.Gitlab);
+  const hasSyncSource = hasGithubSource || hasGitlabSource || hasDefectDojoSource;
   const usage = useMemo(() => getServiceUsage(svc.id, diagrams), [svc.id, diagrams]);
 
   const [editing, setEditing] = useState(false);

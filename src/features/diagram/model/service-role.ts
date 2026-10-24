@@ -48,7 +48,10 @@ function matchSegments(parts: string[]): ServiceRole | undefined {
 
 /** Role guessed from the service name, its repository name, then its GitHub topics. */
 export function suggestServiceRole(
-  service: Pick<ServiceDefinition, "name" | "repositoryUrl" | "metadata">,
+  service: Pick<ServiceDefinition, "name" | "repositoryUrl" | "metadata"> & {
+    /** Topics not yet saved on a service, e.g. read from a repository being added. */
+    topics?: string[];
+  },
 ): ServiceRole | undefined {
   const repoName = service.repositoryUrl
     .replace(/\.git$/, "")
@@ -61,7 +64,10 @@ export function suggestServiceRole(
     const byRepo = matchSegments(segments(repoName));
     if (byRepo) return byRepo;
   }
-  const topics = (service.metadata?.github?.topics ?? []).flatMap(segments);
+  const topics = [
+    ...(service.metadata?.github?.topics ?? []),
+    ...(service.metadata?.gitlab?.topics ?? []),
+  ].flatMap(segments);
   const byTopic = matchSegments(topics);
   if (byTopic) return byTopic;
   return topics.map((topic) => STACK_HINTS[topic]).find(Boolean);

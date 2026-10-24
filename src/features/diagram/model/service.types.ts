@@ -33,6 +33,14 @@ export interface ServiceDefinition {
       updatedAt: string;
     };
 
+    gitlab?: {
+      projectId: number;
+      fullName: string;
+      topics: string[];
+      language: string | null;
+      updatedAt: string;
+    };
+
     defectdojo?: Record<string, unknown>;
   };
 }

@@ -4,6 +4,8 @@ import { proxyRequest } from "../proxy";
 export type GithubClient = {
   searchRepositories: (query: string, page: number, perPage: number) => Promise<GithubSearchResult>;
   getRepository: (fullName: string) => Promise<GithubRepo>;
+  getRepositoryLanguages: (fullName: string) => Promise<Record<string, number>>;
+  listOrgRepositories: (org: string, page: number, perPage: number) => Promise<GithubRepo[]>;
   listUserOrgs: () => Promise<GithubOrg[]>;
   getAuthenticatedUser: () => Promise<{ login: string }>;
 };
@@ -71,6 +73,21 @@ export function createGithubClient(config: GithubConfig): GithubClient {
     async getRepository(fullName: string) {
       const [owner, repo] = fullName.split("/");
       return getJson<GithubRepo>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+    },
+
+    async getRepositoryLanguages(fullName: string) {
+      const [owner, repo] = fullName.split("/");
+      return getJson<Record<string, number>>(
+        `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/languages`,
+      );
+    },
+
+    async listOrgRepositories(org: string, page: number, perPage: number) {
+      return getJson<GithubRepo[]>(`/orgs/${encodeURIComponent(org)}/repos`, {
+        per_page: perPage,
+        page,
+        type: "all",
+      });
     },
 
     async listUserOrgs() {

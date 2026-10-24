@@ -7,6 +7,8 @@ export function sourceTypeLabel(t: (key: string) => string, type: ServiceSource)
       return t("services.sourceManual");
     case ServiceSource.Github:
       return t("services.sourceGithub");
+    case ServiceSource.Gitlab:
+      return t("services.sourceGitlab");
     case ServiceSource.Defectdojo:
       return t("services.sourceDefectdojo");
     default:
