@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useTranslation } from "react-i18next";
+import { usePluginChatPresentation } from "../use-plugin-chat-presentation";
 import {
   ChevronDown,
   Download,
@@ -27,7 +28,6 @@ import { LLMSelector } from "./LLMSelector";
 import { LLMSettings } from "./LLMSettings";
 import { AnalysisPanel } from "@/features/canvas/chat";
 import { buildContextualSuggestions, downloadIR, getLLMErrorI18nKey } from "@/features/llm";
-import type { ChatSuggestion } from "@/features/llm/suggestions";
 import { useActiveDiagramModel } from "@/features/diagram";
 import { UserMessageComponent, AssistantMessageComponent } from "./AssistantUIMessage";
 import { SuggestionCard } from "./SuggestionCard";
@@ -181,9 +181,17 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
+  // A plugin that owns this diagram's chat (API 1.8) names it and brings its own suggestions.
+  const pluginPresentation = usePluginChatPresentation(activeDiagram?.id ?? null);
   const contextualSuggestions = useMemo(
-    () => buildContextualSuggestions(activeDiagram ?? null),
-    [activeDiagram],
+    (): EmptyStateSuggestion[] =>
+      pluginPresentation
+        ? (pluginPresentation.suggestions ?? []).map((text, i) => ({ id: `plugin-${i}`, text }))
+        : buildContextualSuggestions(activeDiagram ?? null).map((s) => ({
+            id: s.id,
+            text: t(s.labelKey),
+          })),
+    [activeDiagram, pluginPresentation, t],
   );
   const diagramName = activeDiagram?.name ?? "";
 
@@ -204,12 +212,14 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
   // empty, fall back to the default "Diagram assistant" label so the UI
   // doesn't surface the raw seed title ("Nova conversa") while still
   // showing it inside the threads drawer for context.
+  const hasThreadTitle = Boolean(activeThread?.title);
   const threadedTitle =
     activeThread && activeThread.title && activeThread.title.length > 0
       ? activeThread.title
-      : t("llmChat.headerSubtitle", {
+      : (pluginPresentation?.title ??
+        t("llmChat.headerSubtitle", {
           defaultValue: "Diagram assistant",
-        });
+        }));
 
   // Show typing indicator when loading but no streaming content yet.
   const showTyping = isLoading && !streamingContent && hasMessages;
@@ -224,6 +234,15 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
         <ChatHeader
           title={threadedTitle}
           diagramName={diagramName}
+          subtitle={
+            // The plugin's name goes under a thread's own title; above an untitled thread the
+            // name is already the title, so the line says what the chat does instead.
+            pluginPresentation
+              ? hasThreadTitle
+                ? pluginPresentation.title
+                : (pluginPresentation.subtitle ?? pluginPresentation.title)
+              : undefined
+          }
           hasExportableIR={Boolean(lastGeneratedIR)}
           onOpenThreads={() => setShowThreadDrawer(true)}
           onCreateThread={handleCreateThread}
@@ -265,6 +284,12 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
                 ) : (
                   <EmptyState
                     diagramName={diagramName}
+                    {...(pluginPresentation
+                      ? {
+                          title: pluginPresentation.title,
+                          subtitle: pluginPresentation.subtitle ?? "",
+                        }
+                      : {})}
                     suggestions={contextualSuggestions}
                     onSelectSuggestion={(text) => {
                       void send(text, []);
@@ -338,6 +363,8 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
 interface ChatHeaderProps {
   title: string;
   diagramName: string;
+  /** Replaces the "Diagram assistant" line (a plugin's chat, API 1.8). */
+  subtitle?: string | undefined;
   hasExportableIR: boolean;
   onOpenThreads: () => void;
   onCreateThread: () => void;
@@ -349,6 +376,7 @@ interface ChatHeaderProps {
 function ChatHeader({
   title,
   diagramName,
+  subtitle,
   hasExportableIR,
   onOpenThreads,
   onCreateThread,
@@ -368,10 +396,11 @@ function ChatHeader({
             <span className="truncate">{title}</span>
           </h3>
           <p className="truncate text-[11px] text-muted-foreground">
-            {t("llmChat.headerSubtitle", {
-              defaultValue: "Diagram assistant",
-              name: diagramName,
-            })}
+            {subtitle ??
+              t("llmChat.headerSubtitle", {
+                defaultValue: "Diagram assistant",
+                name: diagramName,
+              })}
           </p>
         </div>
       </div>
@@ -420,13 +449,27 @@ function IconButton({ label, onClick, children }: IconButtonProps) {
   );
 }
 
+interface EmptyStateSuggestion {
+  id: string;
+  text: string;
+}
+
 interface EmptyStateProps {
   diagramName: string;
-  suggestions: ChatSuggestion[];
+  /** Overrides for a plugin's chat (API 1.8). */
+  title?: string;
+  subtitle?: string;
+  suggestions: EmptyStateSuggestion[];
   onSelectSuggestion: (text: string) => void;
 }
 
-function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyStateProps) {
+function EmptyState({
+  diagramName,
+  title,
+  subtitle,
+  suggestions,
+  onSelectSuggestion,
+}: EmptyStateProps) {
   const { t } = useTranslation();
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-5 overflow-y-auto py-8 text-center">
@@ -434,12 +477,13 @@ function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyState
         <Sparkles className="h-5 w-5" />
       </div>
       <div className="space-y-1">
-        <h4 className="text-base font-semibold text-foreground">{t("llmChat.title")}</h4>
+        <h4 className="text-base font-semibold text-foreground">{title ?? t("llmChat.title")}</h4>
         <p className="text-xs text-muted-foreground">
-          {t("llmChat.emptySubtitle", {
-            defaultValue: "How can I help you shape this diagram?",
-            name: diagramName,
-          })}
+          {subtitle ??
+            t("llmChat.emptySubtitle", {
+              defaultValue: "How can I help you shape this diagram?",
+              name: diagramName,
+            })}
         </p>
       </div>
       <div className="w-full space-y-1.5">
@@ -447,11 +491,11 @@ function EmptyState({ diagramName, suggestions, onSelectSuggestion }: EmptyState
           <button
             key={s.id}
             type="button"
-            onClick={() => onSelectSuggestion(t(s.labelKey))}
+            onClick={() => onSelectSuggestion(s.text)}
             className="group flex w-full items-center gap-2.5 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 text-left text-xs font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-primary/5"
           >
             <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
-            <span className="truncate">{t(s.labelKey)}</span>
+            <span className="truncate">{s.text}</span>
           </button>
         ))}
       </div>

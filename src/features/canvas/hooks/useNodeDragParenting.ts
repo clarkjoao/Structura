@@ -353,7 +353,15 @@ export function useNodeDragParenting({
         setUnparentCandidatePanelId(null);
       }
 
-      const match = findPanelInIndex(index, absX, absY, comp.parentId);
+      // The innermost container under the node's centre, as the drop resolves it; its own
+      // parent is not a new target.
+      const size = draggedSizes.get(change.id);
+      const found = findPanelInIndex(
+        index,
+        absX + (size?.width ?? 0) / 2,
+        absY + (size?.height ?? 0) / 2,
+      );
+      const match = found && found.id !== comp.parentId ? found : undefined;
       // A container that refuses this node is not lit up as a target.
       const matchType = match ? r.components[match.id]?.type : undefined;
       const newTarget =
@@ -648,6 +656,38 @@ export function useNodeDragParenting({
           width: draggedNode.measured?.width ?? 0,
           height: draggedNode.measured?.height ?? 0,
         };
+        // Into another container: the innermost one under the node's centre — a sibling panel,
+        // one nested in the current parent, or an ancestor once it left the parent — never the
+        // node itself or something it holds.
+        const blocked = getDescendantIdsFromIndex(draggedNode.id, buildChildrenIndex(components));
+        blocked.add(draggedNode.id);
+        const target = findPanelContainingPoint(
+          nodes.filter((node) => !blocked.has(node.id)),
+          absX + draggedDims.width / 2,
+          absY + draggedDims.height / 2,
+          undefined,
+          r.nodeLayouts,
+          components,
+        );
+        if (
+          target &&
+          target.id !== draggedNode.parentId &&
+          acceptsDrop(target.id, draggedNode.id)
+        ) {
+          const targetAbsPos = resolveAbsolutePosition(
+            target.id,
+            target.position,
+            components,
+            r.nodeLayouts,
+          );
+          entries.push({
+            nodeId: draggedNode.id,
+            newParentId: target.id,
+            newPosition: { x: absX - targetAbsPos.x, y: absY - targetAbsPos.y },
+          });
+          flush();
+          return;
+        }
         const outside = isOutsideParentBounds(draggedNode.position, parent, draggedDims);
         entries.push(
           outside
@@ -662,10 +702,13 @@ export function useNodeDragParenting({
         return;
       }
 
+      // Same rule as for a child: the innermost container under the node's centre.
+      const rootBlocked = getDescendantIdsFromIndex(draggedNode.id, buildChildrenIndex(components));
+      rootBlocked.add(draggedNode.id);
       const match = findPanelContainingPoint(
-        nodes,
-        absX,
-        absY,
+        nodes.filter((node) => !rootBlocked.has(node.id)),
+        absX + (draggedNode.measured?.width ?? 0) / 2,
+        absY + (draggedNode.measured?.height ?? 0) / 2,
         undefined,
         r.nodeLayouts,
         components,
