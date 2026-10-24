@@ -21,3 +21,6 @@ measured, read in the code or hypothesized during a session, and the fix that fo
 Related logs elsewhere in `docs/`: [../epico-virtualizacao/](../epico-virtualizacao/) (canvas
 virtualization and the post-drag commit loop) and [../discovery/](../discovery/) (file-system
 persistence instability).
+
+Logs that no longer exist (`epico-layout-visualization/`, `element-catalog-audit.md`) are still cited by
+name inside the logs above; read them from git history (`git log --diff-filter=D -- docs/`).
