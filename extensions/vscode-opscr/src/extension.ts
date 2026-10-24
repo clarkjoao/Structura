@@ -11,7 +11,7 @@ import { basename, join as joinPath, sep } from "node:path";
 import * as vscode from "vscode";
 import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
 import type { GraphElementRef, SourceIndex, SourceLocation } from "./generated/opscr-mapping";
-import { collectWorkspace, isManifestPath, PreviewPipeline, workspaceRoot } from "./pipeline";
+import { collectWorkspace, detectWorkspaceRoot, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
 const UPDATE_DELAY_MS = 300;
@@ -181,8 +181,8 @@ class Preview {
 
   private async update(): Promise<void> {
     const generation = ++this.generation;
-    // Every file below the folder, as paths relative to it: a workspace may use subfolders.
-    const names = await readdir(this.folder, { recursive: true }).catch(() => [] as string[]);
+    // Every workspace file below the folder, as paths relative to it: a workspace may use subfolders.
+    const names = (await listWorkspaceFiles(this.folder)) ?? [];
     const workspace = await collectWorkspace(this.folder, names, readText);
     const result = await this.pipeline.update(workspace);
     if (generation !== this.generation) return;
@@ -249,6 +249,34 @@ async function showSource(at: SourceLocation): Promise<void> {
   editor.revealRange(editor.selection, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
 }
 
+/** Folders never searched for manifests, and how many entries a search visits before giving up. */
+const SKIPPED = (name: string) => name === "node_modules" || name.startsWith(".");
+const MAX_VISITED = 5000;
+
+/**
+ * The workspace files below `folder` — manifests, the config and the sidecars — as paths relative
+ * to it. Skips `node_modules` and dot folders without entering them; undefined when the folder
+ * holds too much to be one workspace (a repository root with a build output, say).
+ */
+async function listWorkspaceFiles(folder: string): Promise<string[] | undefined> {
+  const found: string[] = [];
+  let visited = 0;
+  const walk = async (relative: string): Promise<boolean> => {
+    const entries = await readdir(joinPath(folder, relative), { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      if (++visited > MAX_VISITED) return false;
+      const next = relative === "" ? entry.name : `${relative}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (!SKIPPED(entry.name) && !(await walk(next))) return false;
+      } else if (isManifestPath(`/${next}`) || isManifestPath(entry.name)) {
+        found.push(next);
+      }
+    }
+    return true;
+  };
+  return (await walk("")) ? found : undefined;
+}
+
 /** An open editor's unsaved text wins over the file on disk. */
 async function readText(path: string): Promise<string | undefined> {
   const open = vscode.workspace.textDocuments.find((d) => d.uri.fsPath === path);
@@ -293,11 +321,10 @@ export function activate(context: vscode.ExtensionContext): void {
   const previews = new Map<string, Preview>();
   const embedRoot = vscode.Uri.joinPath(context.extensionUri, "media", "embed");
 
-  /** Where the workspace of a manifest starts: see `workspaceRoot`. */
+  /** Where the workspace of a manifest starts: see `detectWorkspaceRoot`. */
   const rootOf = (uri: vscode.Uri): Promise<string> =>
-    workspaceRoot(
-      uri.fsPath,
-      async (folder) => {
+    detectWorkspaceRoot(uri.fsPath, {
+      hasConfig: async (folder) => {
         try {
           await vscode.workspace.fs.stat(vscode.Uri.file(joinPath(folder, "opscr.config.yaml")));
           return true;
@@ -305,8 +332,12 @@ export function activate(context: vscode.ExtensionContext): void {
           return false;
         }
       },
-      vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath,
-    );
+      list: listWorkspaceFiles,
+      read: readText,
+      ...(vscode.workspace.getWorkspaceFolder(uri)
+        ? { stopAt: vscode.workspace.getWorkspaceFolder(uri)!.uri.fsPath }
+        : {}),
+    });
 
   const open = async (uri?: vscode.Uri) => {
     const target = uri ?? vscode.window.activeTextEditor?.document.uri;

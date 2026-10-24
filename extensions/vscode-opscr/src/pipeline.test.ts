@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 import { connectionKeys } from "./generated/opscr-mapping";
 import {
   collectWorkspace,
+  detectWorkspaceRoot,
   isManifestPath,
   PreviewPipeline,
   workspaceRoot,
@@ -165,6 +166,98 @@ describe("workspaceRoot", () => {
 
   it("stops at the filesystem root", async () => {
     expect(await workspaceRoot("/a.opscr.yaml", configAt())).toBe("/");
+  });
+});
+
+describe("detectWorkspaceRoot", () => {
+  const EXAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/web-app-aws");
+  const example = readdirSync(EXAMPLE_DIR).filter((n) => n.endsWith(".opscr.yaml"));
+  const isView = (name: string) => /^shop-(context|containers|production)|^orders-api-components/.test(name);
+
+  /** A disk of `path → text`; `list` answers like the extension's walker. */
+  const disk = (files: Record<string, string>, tooBig: string[] = []) => ({
+    hasConfig: async (folder: string) => `${folder}/opscr.config.yaml` in files,
+    list: async (folder: string) =>
+      tooBig.includes(folder)
+        ? undefined
+        : Object.keys(files)
+            .filter((p) => p.startsWith(`${folder}/`))
+            .map((p) => p.slice(folder.length + 1)),
+    read: async (path: string) => files[path],
+  });
+  /** The web-app-aws example under `base`, model files in `model/` and views in `views/`. */
+  const solution = (base: string) =>
+    Object.fromEntries(
+      example.map((n) => [
+        `${base}/${isView(n) ? "views" : "model"}/${n}`,
+        readFileSync(join(EXAMPLE_DIR, n), "utf8"),
+      ]),
+    );
+
+  it("finds the solution's folder from a view that names elements in a sibling folder", async () => {
+    const files = solution("/repo/docs/shop");
+    const root = await detectWorkspaceRoot("/repo/docs/shop/views/shop-context.opscr.yaml", {
+      ...disk(files),
+      stopAt: "/repo",
+    });
+    expect(root).toBe("/repo/docs/shop");
+  });
+
+  it("does not take in a sibling solution, since the first folder that resolves wins", async () => {
+    const files = { ...solution("/repo/docs/shop"), ...solution("/repo/docs/other") };
+    const root = await detectWorkspaceRoot("/repo/docs/shop/views/shop-context.opscr.yaml", {
+      ...disk(files),
+      stopAt: "/repo",
+    });
+    expect(root).toBe("/repo/docs/shop");
+  });
+
+  it("stays on the file's own folder when it already holds everything it refers to", async () => {
+    const files = solution("/repo/shop");
+    const root = await detectWorkspaceRoot("/repo/shop/model/shop.opscr.yaml", {
+      ...disk(files),
+      stopAt: "/repo",
+    });
+    expect(root).toBe("/repo/shop/model");
+  });
+
+  it("uses a config above the file, without looking at references", async () => {
+    const files = { ...solution("/repo/shop"), "/repo/shop/opscr.config.yaml": "packs: []\n" };
+    const root = await detectWorkspaceRoot("/repo/shop/views/shop-context.opscr.yaml", {
+      ...disk(files),
+      stopAt: "/repo",
+    });
+    expect(root).toBe("/repo/shop");
+  });
+
+  it("does not climb past the editor's workspace folder", async () => {
+    const files = solution("/repo/shop");
+    const root = await detectWorkspaceRoot("/repo/shop/views/shop-context.opscr.yaml", {
+      ...disk(files),
+      stopAt: "/repo/shop/views",
+    });
+    expect(root).toBe("/repo/shop/views");
+  });
+
+  it("falls back to the folder with the fewest dangling references when none is clean", async () => {
+    const files = solution("/repo/shop");
+    const model = "/repo/shop/model/relationships.opscr.yaml";
+    files[model] = files[model]!.replace("id: orders-api", "id: orders-apx");
+    const root = await detectWorkspaceRoot("/repo/shop/views/shop-context.opscr.yaml", {
+      ...disk(files),
+      stopAt: "/repo",
+    });
+    // `shop/` has the one typo; `views/` alone has far more.
+    expect(root).toBe("/repo/shop");
+  });
+
+  it("gives up climbing at a folder too big to be a workspace", async () => {
+    const files = solution("/repo/shop");
+    const root = await detectWorkspaceRoot("/repo/shop/views/shop-context.opscr.yaml", {
+      ...disk(files, ["/repo/shop"]),
+      stopAt: "/repo",
+    });
+    expect(root).toBe("/repo/shop/views");
   });
 });
 
