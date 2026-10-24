@@ -15,8 +15,13 @@ import {
   type ImporterContribution,
   type ModalOptions,
   type PanelContribution,
+  type PluginCanvas,
+  type PluginCanvasSelection,
   type PluginCapability,
   type PluginComponentPatch,
+  type PluginDiagramChanges,
+  type PluginDiagramChangesResult,
+  type PluginFiles,
   type PluginManifest,
   type PluginNodeTypeDescriptor,
   type StructuraPluginApi,
@@ -33,6 +38,12 @@ import { createPluginStorage } from "./plugin-storage";
 import { subscribeDiagramChange } from "./diagram-change-notifier";
 import { sanitizeComponentPatch, toComponentSnapshot, toDiagramSnapshot } from "./snapshots";
 import { overlayRegistry } from "./overlay-registry";
+import { toGeneratedGraph } from "./import-graph";
+import { PluginCodeEditor } from "./components/PluginCodeEditor";
+import { registerChatContextContribution } from "./chat-context-registry";
+import { createPluginFolders } from "@/infrastructure/persistence/pluginFolders";
+import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
+import { useHighlightRequests } from "@/features/canvas/focus/highlightRequests";
 
 /**
  * Everything a plugin registered, tracked by the host so deactivation can bulk-unregister
@@ -110,6 +121,69 @@ function toInternalDescriptor(descriptor: PluginNodeTypeDescriptor): NodeTypeDes
   };
 }
 
+/** Folder access for one plugin; the capability is checked on use, like the others. */
+function scopedFiles(manifest: PluginManifest): PluginFiles {
+  const folders = createPluginFolders(manifest.id);
+  const check = () => warnUndeclaredCapability(manifest, "files:folder");
+  return {
+    isSupported: () => folders.isSupported(),
+    pick: (bindingId) => (check(), folders.pick(String(bindingId))),
+    open: (bindingId) => (check(), folders.open(String(bindingId))),
+    forget: (bindingId) => (check(), folders.forget(String(bindingId))),
+  };
+}
+
+/**
+ * Tracks an unsubscribe for rollback, and stops tracking it once the plugin calls it: a pane
+ * that subscribes on every mount would otherwise grow the list for as long as the plugin runs.
+ */
+function trackUnsubscribe(tracker: PluginContributionTracker, unsubscribe: () => void) {
+  const tracked = () => {
+    const i = tracker.unsubscribers.indexOf(tracked);
+    if (i !== -1) tracker.unsubscribers.splice(i, 1);
+    unsubscribe();
+  };
+  tracker.unsubscribers.push(tracked);
+  return tracked;
+}
+
+/** The canvas selection as plugins see it: plain arrays, never the store's own sets. */
+function canvasSelection(): PluginCanvasSelection {
+  const { selectedNodeIds, selectedEdgeId } = useCanvasSelectionStore.getState();
+  return { componentIds: [...selectedNodeIds], connectionId: selectedEdgeId };
+}
+
+function scopedCanvas(manifest: PluginManifest, tracker: PluginContributionTracker): PluginCanvas {
+  const check = () => warnUndeclaredCapability(manifest, "diagram:read");
+  const ids = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+  return {
+    getSelection: () => (check(), canvasSelection()),
+    onSelectionChange(listener) {
+      check();
+      return trackUnsubscribe(
+        tracker,
+        useCanvasSelectionStore.subscribe((state, previous) => {
+          if (
+            state.selectedNodeIds === previous.selectedNodeIds &&
+            state.selectedEdgeId === previous.selectedEdgeId
+          ) {
+            return;
+          }
+          listener(canvasSelection());
+        }),
+      );
+    },
+    highlight(target) {
+      check();
+      useHighlightRequests.getState().requestHighlight({
+        componentIds: ids(target?.componentIds),
+        connectionIds: ids(target?.connectionIds),
+      });
+    },
+  };
+}
+
 /** The per-plugin StructuraPluginApi facade handed to activate() (RFC D4). */
 export function createScopedPluginApi(
   manifest: PluginManifest,
@@ -145,11 +219,23 @@ export function createScopedPluginApi(
       tracker.panelIds.push(section.id);
     },
 
+    registerChatContext(context) {
+      warnUndeclaredCapability(manifest, "llm:context");
+      const valid =
+        typeof context?.id === "string" &&
+        typeof context.appliesTo === "function" &&
+        typeof context.systemPrompt === "function" &&
+        typeof context.handleReply === "function" &&
+        (context.presentation === undefined || typeof context.presentation === "function") &&
+        (context.subscribe === undefined || typeof context.subscribe === "function");
+      if (!valid)
+        throw new Error("[plugins] registerChatContext: id and three functions required.");
+      tracker.unsubscribers.push(registerChatContextContribution(context));
+    },
+
     onDiagramChange(callback: (diagramId: string) => void): () => void {
       warnUndeclaredCapability(manifest, "events:diagram");
-      const unsubscribe = subscribeDiagramChange(callback);
-      tracker.unsubscribers.push(unsubscribe);
-      return unsubscribe;
+      return trackUnsubscribe(tracker, subscribeDiagramChange(callback));
     },
 
     getActiveDiagramId(): string | null {
@@ -186,6 +272,54 @@ export function createScopedPluginApi(
       // the whole rearrangement — and skips unknown element ids itself.
       useDiagramStore.getState().applyAutoLayout(layouts);
     },
+
+    applyChanges(changes: PluginDiagramChanges): PluginDiagramChangesResult {
+      warnUndeclaredCapability(manifest, "diagram:write");
+      const strings = (value: unknown): string[] =>
+        Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+      const optionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
+      // Plugin data is untrusted: adds go through the importer normalization (type policy,
+      // parent cycles), updates keep to their whitelist.
+      const graph = toGeneratedGraph({
+        components: Array.isArray(changes.add) ? changes.add : [],
+        connections: Array.isArray(changes.connect) ? changes.connect : [],
+      });
+      const result = useDiagramStore.getState().applyGraphChanges({
+        remove: strings(changes.remove),
+        disconnect: strings(changes.disconnect),
+        update: (Array.isArray(changes.update) ? changes.update : [])
+          .filter((u) => typeof u?.id === "string")
+          .map((u) => {
+            // Request data: the store writes the field through `cloudServiceIdClearingPatch`.
+            const cloudServiceId = optionalString(u.cloudServiceId);
+            return {
+              id: u.id,
+              name: optionalString(u.name),
+              description: optionalString(u.description),
+              technology: optionalString(u.technology),
+              cloudServiceId,
+            };
+          }),
+        move: (Array.isArray(changes.move) ? changes.move : [])
+          .filter((m) => typeof m?.id === "string" && Number.isFinite(m.x) && Number.isFinite(m.y))
+          .map(({ id, x, y, width, height }) => ({
+            id,
+            x,
+            y,
+            ...(Number.isFinite(width) ? { width } : {}),
+            ...(Number.isFinite(height) ? { height } : {}),
+          })),
+        add: graph.nodes,
+        connect: graph.edges,
+      });
+      return { idsByKey: result.componentIdByExternalId, connectionIds: result.connectionIds };
+    },
+
+    files: scopedFiles(manifest),
+
+    canvas: scopedCanvas(manifest, tracker),
+
+    ui: { CodeEditor: PluginCodeEditor },
 
     storage: createPluginStorage(manifest.id, storagePort),
 

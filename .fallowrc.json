@@ -1,0 +1,14 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
+  "entry": [
+    "src/embed/main.tsx",
+    "src/embed/editor/main.tsx",
+    "scripts/*.mjs",
+    "plugins/*/e2e/*.mjs",
+    "extensions/*/e2e/*.cjs",
+    "src/embed/NoMonacoEditor.tsx",
+    "src/lib/opscr-layout/index.ts",
+    "src/lib/opscr-mapping/index.ts"
+  ],
+  "ignorePatterns": ["**/generated/**"]
+}

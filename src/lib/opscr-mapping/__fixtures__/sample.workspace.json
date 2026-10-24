@@ -1,0 +1,706 @@
+{
+  "manifests": [
+    {
+      "kind": "Domain",
+      "metadata": {
+        "name": "commerce"
+      },
+      "spec": {
+        "displayName": "Commerce",
+        "description": "Selling products online: catalog, carts and orders",
+        "owner": "Commerce area"
+      }
+    },
+    {
+      "kind": "Subdomain",
+      "metadata": {
+        "name": "ordering"
+      },
+      "spec": {
+        "type": "core",
+        "displayName": "Ordering",
+        "description": "Checkout and order lifecycle — what makes the store different"
+      }
+    },
+    {
+      "kind": "Subdomain",
+      "metadata": {
+        "name": "product-catalog"
+      },
+      "spec": {
+        "type": "supporting",
+        "displayName": "Product catalog",
+        "description": "Products and prices shown in the store"
+      }
+    },
+    {
+      "kind": "ApplicationService",
+      "metadata": {
+        "name": "orders"
+      },
+      "spec": {
+        "displayName": "Order Management",
+        "description": "Takes, pays and tracks customer orders"
+      }
+    },
+    {
+      "kind": "ApplicationService",
+      "metadata": {
+        "name": "catalog"
+      },
+      "spec": {
+        "displayName": "Product Catalog",
+        "description": "Products, prices and availability shown in the store"
+      }
+    },
+    {
+      "kind": "LoadBalancer",
+      "metadata": {
+        "name": "orders-alb"
+      },
+      "spec": {
+        "provider": "ALB",
+        "exposure": "Internal",
+        "description": "Spreads API traffic across orders-api pods"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "orders-api"
+      },
+      "spec": {
+        "provider": "EKS",
+        "language": "Java",
+        "description": "Order REST API",
+        "interfaces": [
+          {
+            "port": 8080,
+            "protocol": "http",
+            "path": "/orders"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "order-tracker"
+      },
+      "spec": {
+        "provider": "Lambda",
+        "language": "Python",
+        "description": "Publishes order status changes from the database stream"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "catalog-api"
+      },
+      "spec": {
+        "provider": "EKS",
+        "language": "Go",
+        "description": "Product search and price lookup"
+      }
+    },
+    {
+      "kind": "Database",
+      "metadata": {
+        "name": "orders-db"
+      },
+      "spec": {
+        "provider": "DynamoDB",
+        "description": "Orders and their status history (stream enabled)"
+      }
+    },
+    {
+      "kind": "Database",
+      "metadata": {
+        "name": "catalog-db"
+      },
+      "spec": {
+        "provider": "AuroraPostgres",
+        "description": "Products and prices"
+      }
+    },
+    {
+      "kind": "Cache",
+      "metadata": {
+        "name": "cart-cache"
+      },
+      "spec": {
+        "provider": "ElastiCache Redis",
+        "description": "Shopping carts and sessions"
+      }
+    },
+    {
+      "kind": "Topic",
+      "metadata": {
+        "name": "order-status-events"
+      },
+      "spec": {
+        "provider": "SNS",
+        "type": "IntegrationEvent",
+        "description": "Order status changes, for any area of the company that needs them"
+      }
+    },
+    {
+      "kind": "BusinessCapability",
+      "metadata": {
+        "name": "order-fulfillment"
+      },
+      "spec": {
+        "displayName": "Order fulfillment",
+        "description": "Taking an order from checkout to delivery"
+      }
+    },
+    {
+      "kind": "BusinessRule",
+      "metadata": {
+        "name": "order-integrity"
+      },
+      "spec": {
+        "description": "Integrity rules for orders",
+        "appliesTo": [
+          {
+            "kind": "Application",
+            "name": "orders-api"
+          }
+        ],
+        "constraints": [
+          {
+            "name": "RequireCustomerId",
+            "condition": "customer_id MUST be present on every order",
+            "error": "Order rejected: customer_id missing"
+          },
+          {
+            "name": "IdempotentCheckout",
+            "condition": "A repeated checkout with the same idempotency key MUST NOT create a second order",
+            "error": "Duplicate checkout ignored",
+            "action": "Return the existing order"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Squad",
+      "metadata": {
+        "name": "orders-squad"
+      },
+      "spec": {
+        "code": "SQ-ORD",
+        "displayName": "Orders squad"
+      }
+    },
+    {
+      "kind": "Domain",
+      "metadata": {
+        "name": "finance"
+      },
+      "spec": {
+        "displayName": "Finance",
+        "description": "Charging customers and issuing invoices",
+        "owner": "Finance area"
+      }
+    },
+    {
+      "kind": "Subdomain",
+      "metadata": {
+        "name": "payment-processing"
+      },
+      "spec": {
+        "type": "generic",
+        "displayName": "Payment processing",
+        "description": "Card charging — a solved problem, delegated to the acquirer"
+      }
+    },
+    {
+      "kind": "ApplicationService",
+      "metadata": {
+        "name": "payments"
+      },
+      "spec": {
+        "displayName": "Payments",
+        "description": "Charges orders through the card acquirer and issues invoices"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "payment-worker"
+      },
+      "spec": {
+        "provider": "Lambda",
+        "language": "Python",
+        "description": "Charges orders queued for payment"
+      }
+    },
+    {
+      "kind": "Queue",
+      "metadata": {
+        "name": "payment-requests"
+      },
+      "spec": {
+        "provider": "SQS",
+        "description": "Orders waiting to be charged"
+      }
+    },
+    {
+      "kind": "Queue",
+      "metadata": {
+        "name": "payment-requests-dlq"
+      },
+      "spec": {
+        "provider": "SQS",
+        "description": "Payment requests that failed after all retries"
+      }
+    },
+    {
+      "kind": "Storage",
+      "metadata": {
+        "name": "invoices"
+      },
+      "spec": {
+        "provider": "S3",
+        "description": "Generated invoice PDFs"
+      }
+    },
+    {
+      "kind": "ExternalSystem",
+      "metadata": {
+        "name": "card-acquirer"
+      },
+      "spec": {
+        "category": "Payment",
+        "vendor": "Stripe",
+        "owner": "Vendor",
+        "description": "Card payment acquirer that authorizes and captures charges"
+      }
+    },
+    {
+      "kind": "Notification",
+      "metadata": {
+        "name": "order-emails"
+      },
+      "spec": {
+        "provider": "SES",
+        "type": "Email",
+        "description": "Order confirmation and invoice emails"
+      }
+    },
+    {
+      "kind": "Relationship",
+      "metadata": {
+        "name": "domain-model"
+      },
+      "spec": {
+        "edges": [
+          {
+            "from": {
+              "kind": "Subdomain",
+              "id": "ordering"
+            },
+            "to": {
+              "kind": "Domain",
+              "id": "commerce"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "Subdomain",
+              "id": "product-catalog"
+            },
+            "to": {
+              "kind": "Domain",
+              "id": "commerce"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "Subdomain",
+              "id": "payment-processing"
+            },
+            "to": {
+              "kind": "Domain",
+              "id": "finance"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "ApplicationService",
+              "id": "orders"
+            },
+            "to": {
+              "kind": "Subdomain",
+              "id": "ordering"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "ApplicationService",
+              "id": "catalog"
+            },
+            "to": {
+              "kind": "Subdomain",
+              "id": "product-catalog"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "ApplicationService",
+              "id": "payments"
+            },
+            "to": {
+              "kind": "Subdomain",
+              "id": "payment-processing"
+            },
+            "type": "belongsTo"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Relationship",
+      "metadata": {
+        "name": "entry-relationships"
+      },
+      "spec": {
+        "edges": [
+          {
+            "from": {
+              "kind": "Channel",
+              "id": "store-web"
+            },
+            "to": {
+              "kind": "APIGateway",
+              "id": "public-api"
+            },
+            "type": "calls"
+          },
+          {
+            "from": {
+              "kind": "Channel",
+              "id": "store-app"
+            },
+            "to": {
+              "kind": "APIGateway",
+              "id": "public-api"
+            },
+            "type": "calls"
+          },
+          {
+            "from": {
+              "kind": "APIGateway",
+              "id": "public-api"
+            },
+            "to": {
+              "kind": "LoadBalancer",
+              "id": "orders-alb"
+            },
+            "type": "calls"
+          },
+          {
+            "from": {
+              "kind": "LoadBalancer",
+              "id": "orders-alb"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "orders-api"
+            },
+            "type": "calls"
+          },
+          {
+            "from": {
+              "kind": "APIGateway",
+              "id": "public-api"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "catalog-api"
+            },
+            "type": "calls"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Relationship",
+      "metadata": {
+        "name": "orders-relationships"
+      },
+      "spec": {
+        "edges": [
+          {
+            "from": {
+              "kind": "Application",
+              "id": "orders-api"
+            },
+            "to": {
+              "kind": "ApplicationService",
+              "id": "orders"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "order-tracker"
+            },
+            "to": {
+              "kind": "ApplicationService",
+              "id": "orders"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "orders-api"
+            },
+            "to": {
+              "kind": "Cache",
+              "id": "cart-cache"
+            },
+            "type": "reads",
+            "description": "Loads the cart at checkout"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "orders-api"
+            },
+            "to": {
+              "kind": "Database",
+              "id": "orders-db"
+            },
+            "type": "writes",
+            "description": "Creates the order"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "orders-api"
+            },
+            "to": {
+              "kind": "Queue",
+              "id": "payment-requests"
+            },
+            "type": "produces",
+            "description": "Requests the charge (crosses to the finance domain)"
+          },
+          {
+            "from": {
+              "kind": "Database",
+              "id": "orders-db"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "order-tracker"
+            },
+            "type": "triggers",
+            "description": "DynamoDB stream"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "order-tracker"
+            },
+            "to": {
+              "kind": "Topic",
+              "id": "order-status-events"
+            },
+            "type": "publishes"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "orders-api"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "catalog-api"
+            },
+            "type": "calls",
+            "description": "Current prices at checkout (cross-domain)"
+          },
+          {
+            "from": {
+              "kind": "BusinessRule",
+              "id": "order-integrity"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "orders-api"
+            },
+            "type": "appliesTo"
+          },
+          {
+            "from": {
+              "kind": "BusinessCapability",
+              "id": "order-fulfillment"
+            },
+            "to": {
+              "kind": "ApplicationService",
+              "id": "orders"
+            },
+            "type": "appliesTo"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Relationship",
+      "metadata": {
+        "name": "catalog-relationships"
+      },
+      "spec": {
+        "edges": [
+          {
+            "from": {
+              "kind": "Application",
+              "id": "catalog-api"
+            },
+            "to": {
+              "kind": "ApplicationService",
+              "id": "catalog"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "catalog-api"
+            },
+            "to": {
+              "kind": "Database",
+              "id": "catalog-db"
+            },
+            "type": "reads"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Relationship",
+      "metadata": {
+        "name": "payments-relationships"
+      },
+      "spec": {
+        "edges": [
+          {
+            "from": {
+              "kind": "Application",
+              "id": "payment-worker"
+            },
+            "to": {
+              "kind": "ApplicationService",
+              "id": "payments"
+            },
+            "type": "belongsTo"
+          },
+          {
+            "from": {
+              "kind": "Queue",
+              "id": "payment-requests"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "payment-worker"
+            },
+            "type": "triggers"
+          },
+          {
+            "from": {
+              "kind": "Queue",
+              "id": "payment-requests"
+            },
+            "to": {
+              "kind": "Queue",
+              "id": "payment-requests-dlq"
+            },
+            "type": "produces",
+            "description": "Dead letters after retries"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "payment-worker"
+            },
+            "to": {
+              "kind": "Storage",
+              "id": "invoices"
+            },
+            "type": "writes",
+            "description": "Stores the invoice"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "payment-worker"
+            },
+            "to": {
+              "kind": "ExternalSystem",
+              "id": "card-acquirer"
+            },
+            "type": "calls",
+            "description": "Charges the card"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "payment-worker"
+            },
+            "to": {
+              "kind": "Notification",
+              "id": "order-emails"
+            },
+            "type": "calls",
+            "description": "Emails the invoice"
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Channel",
+      "metadata": {
+        "name": "store-web"
+      },
+      "spec": {
+        "type": "Web",
+        "platform": "Browser",
+        "framework": "Next.js",
+        "description": "Online store"
+      }
+    },
+    {
+      "kind": "Channel",
+      "metadata": {
+        "name": "store-app"
+      },
+      "spec": {
+        "type": "Mobile",
+        "platform": "CrossPlatform",
+        "framework": "Flutter",
+        "description": "Store mobile app"
+      }
+    },
+    {
+      "kind": "APIGateway",
+      "metadata": {
+        "name": "public-api"
+      },
+      "spec": {
+        "provider": "AWS API Gateway",
+        "exposure": "External",
+        "description": "Public API for the store channels"
+      }
+    }
+  ]
+}
