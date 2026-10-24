@@ -3072,8 +3072,6 @@
     "emptyNoServices": "No services yet. Click \"Add Service\" to get started.",
     "emptyFiltered": "No services match the current filters.",
     "chipAddPlaceholder": "Add...",
-    "newService": "New service",
-    "createService": "Create service",
     "techPlaceholder": "java, spring...",
     "tagsPlaceholder": "backend, auth...",
     "repoPlaceholder": "https://github.com/...",

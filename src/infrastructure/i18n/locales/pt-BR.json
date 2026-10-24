@@ -3072,8 +3072,6 @@
     "emptyNoServices": "Nenhum serviço cadastrado. Clique em \"Add Service\" para começar.",
     "emptyFiltered": "Nenhum serviço encontrado para os filtros aplicados.",
     "chipAddPlaceholder": "Adicionar...",
-    "newService": "Novo Serviço",
-    "createService": "Criar Serviço",
     "techPlaceholder": "java, spring...",
     "tagsPlaceholder": "backend, auth...",
     "repoPlaceholder": "https://github.com/...",

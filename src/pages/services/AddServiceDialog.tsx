@@ -61,7 +61,9 @@ export function AddServiceDialog({
             onImport={onCreateMany}
           />
         )}
-        {view === "manual" && <ManualCreateForm onCancel={close} onCreate={onCreate} />}
+        {view === "manual" && (
+          <ManualCreateForm onBack={() => setView("url")} onCancel={close} onCreate={onCreate} />
+        )}
       </DialogContent>
     </Dialog>
   );
