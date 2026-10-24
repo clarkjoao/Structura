@@ -1839,6 +1839,37 @@
     "showLegend": "Mostrar legenda no canvas",
     "legendHint": "Gerada a partir dos tipos de fronteira, domínios e interações usados neste diagrama."
   },
+  "linkPalette": {
+    "all": "Todos",
+    "recents": "Recentes",
+    "suggested": "Sugeridos",
+    "linked": "Vinculado",
+    "categories": "Categorias",
+    "description": "Busque e escolha um para vincular.",
+    "noResultsFor": "Nada corresponde a “{{query}}”",
+    "empty": "Nada por aqui ainda",
+    "hints": {
+      "link": "vincula",
+      "linkAndOpen": "vincula e abre",
+      "category": "categoria",
+      "close": "fecha"
+    }
+  },
+  "diagramLink": {
+    "title": "Vincular diagrama a {{name}}",
+    "searchPlaceholder": "Buscar diagramas…",
+    "sameName": "Mesmo nome do elemento",
+    "createAndLink": "Criar “{{name}}” e vincular",
+    "linkAction": "Vincular um diagrama",
+    "linked": "Diagrama vinculado",
+    "target": "Diagrama de destino",
+    "unlink": "Desvincular",
+    "open": "Abrir diagrama",
+    "imported": "Importado",
+    "noFolder": "Sem pasta",
+    "missing": "não encontrado",
+    "created": "Criamos “{{name}}” e vinculamos"
+  },
   "panelShell": {
     "advanced": "Avançado",
     "copyId": "Copiar ID",

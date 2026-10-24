@@ -1839,6 +1839,37 @@
     "showLegend": "Show legend on canvas",
     "legendHint": "Generated from the boundary types, domains and interactions this diagram uses."
   },
+  "linkPalette": {
+    "all": "All",
+    "recents": "Recent",
+    "suggested": "Suggested",
+    "linked": "Linked",
+    "categories": "Categories",
+    "description": "Search and pick one to link.",
+    "noResultsFor": "Nothing matches “{{query}}”",
+    "empty": "Nothing here yet",
+    "hints": {
+      "link": "link",
+      "linkAndOpen": "link and open",
+      "category": "category",
+      "close": "close"
+    }
+  },
+  "diagramLink": {
+    "title": "Link diagram to {{name}}",
+    "searchPlaceholder": "Search diagrams…",
+    "sameName": "Same name as this element",
+    "createAndLink": "Create “{{name}}” and link",
+    "linkAction": "Link a diagram",
+    "linked": "Linked diagram",
+    "target": "Target diagram",
+    "unlink": "Unlink",
+    "open": "Open diagram",
+    "imported": "Imported",
+    "noFolder": "No folder",
+    "missing": "missing",
+    "created": "Created “{{name}}” and linked"
+  },
   "panelShell": {
     "advanced": "Advanced",
     "copyId": "Copy ID",

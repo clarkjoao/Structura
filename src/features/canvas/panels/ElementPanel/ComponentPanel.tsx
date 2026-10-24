@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import {
-  useAllDiagrams,
   useActiveDiagramModel,
   useAllServices,
   useDiagramActions,
@@ -34,7 +33,6 @@ import { ServicesTab } from "./components/ServicesTab";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
 import {
-  LinkedDiagramSection,
   PanelStyleSection,
   ExternalLinksSection,
   FlowchartFieldsSection,
@@ -42,6 +40,8 @@ import {
   PositionSection,
 } from "./sections";
 import { ElementTypeSelect } from "./sections/ElementTypeSelect";
+import { DiagramLinkField } from "@/features/canvas/palette/DiagramLinkField";
+import { toast } from "sonner";
 import { isComponentType } from "@/features/diagram";
 import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
 import { useElementTextLock } from "@/features/collaboration/hooks/useElementLocks";
@@ -105,7 +105,6 @@ const ComponentPanel = ({
       });
     }
   }, [focusTitleTrigger]);
-  const allDiagrams = useAllDiagrams();
   const allServices = useAllServices();
   const activeDiagram = useActiveDiagramModel();
   const resolved = useMemo(
@@ -145,8 +144,6 @@ const ComponentPanel = ({
   const setTab = (next: Tab) => setStoredTab(component.type, next);
 
   const [tagInput, setTagInput] = useState("");
-  const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // A flow node in a lane that passes on its accent shows that accent unset.
   const defaultAccent = useEffectiveDefaultAccent(component);
   const type: ComponentType = component.type;
@@ -168,12 +165,6 @@ const ComponentPanel = ({
   );
 
   const textLock = useElementTextLock(component.id);
-  useEffect(
-    () => () => {
-      if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
-    },
-    [],
-  );
 
   const identity = useElementIdentity(component);
   const trail = useElementTrail(component);
@@ -190,8 +181,7 @@ const ComponentPanel = ({
     const level = isSystemType(component.type) ? "container" : "component";
     const newDiagram = addDiagram(component.name, level, activeDiagram?.domain);
     linkComponentToDiagram(component.id, newDiagram.id);
-    setCreatedDiagramName(newDiagram.name);
-    confirmTimerRef.current = setTimeout(() => setCreatedDiagramName(null), 3000);
+    toast.success(t("diagramLink.created", { name: newDiagram.name }));
   };
 
   const syncFromService = (service: ServiceDefinition) => {
@@ -372,21 +362,14 @@ const ComponentPanel = ({
             </PanelSection>
             {!isSimple && !isFlowchart && (
               <PanelSection title={t("panelShell.sectionRelates")}>
-                <LinkedDiagramSection
+                <DiagramLinkField
                   componentId={component.id}
+                  label={t("diagramLink.linked")}
+                  elementName={component.name}
                   linkedDiagramId={component.linkedDiagramId}
-                  canCreateLinked={canCreateLinked}
-                  createdDiagramName={createdDiagramName}
-                  diagrams={allDiagrams}
-                  suggestedDiagram={
-                    allDiagrams.find(
-                      (d) =>
-                        d.id === component.id ||
-                        d.name.toLowerCase().includes(component.name.toLowerCase()),
-                    ) ?? null
-                  }
-                  onCreateLinked={handleCreateLinked}
-                  onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
+                  canCreate={canCreateLinked}
+                  onLink={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
+                  onCreateAndLink={handleCreateLinked}
                 />
               </PanelSection>
             )}
