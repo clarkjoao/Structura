@@ -32,7 +32,7 @@ const SHEET_HEADER_H = 22;
 const ADD_BTN_SIZE = 20;
 
 const dbTableIncomingHandleClassName =
-  "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
+  "!border-background transition-[width,height,background-color,box-shadow] duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
 /**
  * The one anchor this node offers: an incoming handle, shared by every edge

@@ -44,7 +44,11 @@ const LIT_SIZE = "!w-3.5 !h-3.5";
 const LIT_SIZE_BUNDLED = "!w-[7px] !h-[7px]";
 
 function getHandleClass(d: HandleBehaviour, handleId: string, litSize = LIT_SIZE): string {
-  const base = "!border-background transition-all duration-150";
+  // Size and colour animate; position never does. A handle that slid to its new
+  // side when the reading direction changed was measured mid-slide, and its
+  // edges stayed attached to where it started (ADR-0013).
+  const base =
+    "!border-background transition-[width,height,background-color,box-shadow] duration-150";
   const isRecHighlighted = d.isRecording && d.lastRecordedHandleId === handleId;
   const isPlayHighlighted = !d.isRecording && d.activeHandleId === handleId;
 
