@@ -41,7 +41,6 @@ export type {
   FlowNodeShape,
   NodeFillMode,
   NodeStrokeMode,
-  SkinParts,
   SharedComponentType,
   K8sStructureType,
   DeployComponentType,

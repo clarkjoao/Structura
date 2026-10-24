@@ -3,4 +3,3 @@ export { ServiceLinkSection, type ServiceLinkSectionProps } from "./ServiceLinkS
 export { PanelStyleSection, type PanelStyleSectionProps } from "./PanelStyleSection";
 export { ExternalLinksSection, type ExternalLinksSectionProps } from "./ExternalLinksSection";
 export { FlowchartFieldsSection, type FlowchartFieldsSectionProps } from "./FlowchartFieldsSection";
-export { FlowAppearanceSection, type FlowAppearanceSectionProps } from "./FlowAppearanceSection";

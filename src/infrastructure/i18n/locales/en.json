@@ -465,6 +465,7 @@
       "resetIcon": "Reset icon",
       "edgeStyle": "Edge style",
       "color": "Color",
+      "outline": "Border and fill",
       "markerStart": "Start cap",
       "markerEnd": "End cap"
     }

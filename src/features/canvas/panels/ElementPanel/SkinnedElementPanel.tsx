@@ -1,10 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { type SkinParts, type ComponentPatch } from "@/features/diagram";
-import { getElement } from "@/features/elements/element.registry";
+import { type ComponentPatch } from "@/features/diagram";
 import type { ElementInspectorProps } from "@/features/elements/element.types";
-import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import { CommitField, ElementScaffold, PanelSection } from "./shell";
-import { FlowAppearanceSection } from "./sections";
 import { DeployFieldsSection } from "./sections/DeployFieldsSection";
 import { K8sFieldsSection } from "./sections/K8sFieldsSection";
 import { ELEMENT_SIZE_LIMITS } from "@/features/canvas/nodes/elementSizeLimits";
@@ -23,9 +20,6 @@ export default function SkinnedElementPanel({
   onFocusElement,
 }: ElementInspectorProps) {
   const { t } = useTranslation();
-  const descriptor = getElement(component.type);
-  // Unset, the accent is the lane's (when it passes one on) or the element's.
-  const defaultAccent = useEffectiveDefaultAccent(component);
   const update = (patch: ComponentPatch) => updateComponent(component.id, patch);
 
   return (
@@ -49,13 +43,6 @@ export default function SkinnedElementPanel({
         />
         <DeployFieldsSection component={component} onChange={update} />
         <K8sFieldsSection component={component} onChange={update} />
-        {descriptor?.skin && (
-          <FlowAppearanceSection
-            appearance={component as SkinParts}
-            defaultAccent={defaultAccent}
-            onChange={update}
-          />
-        )}
       </PanelSection>
     </ElementScaffold>
   );

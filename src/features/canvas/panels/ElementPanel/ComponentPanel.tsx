@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
 import {
   useActiveDiagramModel,
   useAllServices,
@@ -36,7 +35,6 @@ import {
   PanelStyleSection,
   ExternalLinksSection,
   FlowchartFieldsSection,
-  FlowAppearanceSection,
   PositionSection,
 } from "./sections";
 import { ElementTypeSelect } from "./sections/ElementTypeSelect";
@@ -149,8 +147,6 @@ const ComponentPanel = ({
   const setTab = (next: Tab) => setStoredTab(component.type, next);
 
   const [tagInput, setTagInput] = useState("");
-  // A flow node in a lane that passes on its accent shows that accent unset.
-  const defaultAccent = useEffectiveDefaultAccent(component);
   const type: ComponentType = component.type;
   const cloudService = resolveCloudServiceId(component) ?? "";
   const flowShape: FlowNodeShape = isFlowchart ? component.flowShape : "rectangle";
@@ -347,13 +343,6 @@ const ComponentPanel = ({
                   onFlowShapeChange={(shape) =>
                     updateComponent(component.id, { flowShape: shape } as ComponentPatch)
                   }
-                />
-              )}
-              {isProcessNodeComponent(component) && (
-                <FlowAppearanceSection
-                  appearance={component}
-                  defaultAccent={defaultAccent}
-                  onChange={(patch) => updateComponent(component.id, patch)}
                 />
               )}
               {isPanel && !isFlowchart && (

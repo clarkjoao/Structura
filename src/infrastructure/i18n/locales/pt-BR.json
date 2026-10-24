@@ -465,6 +465,7 @@
       "resetIcon": "Redefinir ícone",
       "edgeStyle": "Estilo da aresta",
       "color": "Cor",
+      "outline": "Borda e preenchimento",
       "markerStart": "Extremidade inicial",
       "markerEnd": "Extremidade final"
     }

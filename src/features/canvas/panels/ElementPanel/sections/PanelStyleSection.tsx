@@ -6,7 +6,6 @@ import { PANEL_KINDS, getPanelKindDef, panelKindLabel } from "@/lib/catalogs/pan
 import type { NodeLayout } from "@/features/diagram";
 import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/canvas.constants";
 import Field from "../components/Field";
-import { SegmentedControl } from "../components/SegmentedControl";
 
 function mergeSwimlane(
   current: SwimlaneStyle | undefined,
@@ -143,43 +142,8 @@ export function PanelStyleSection({
               </button>
             </div>
           </div>
-          {/* A lane's outline, as on any panel: the evidence lane is dashed. */}
-          <SegmentedControl<"solid" | "dashed">
-            label={t("elementPanel.stroke")}
-            value={component.borderStyle === "dashed" ? "dashed" : "solid"}
-            options={[
-              { value: "solid", label: t("elementPanel.strokeSolid") },
-              { value: "dashed", label: t("elementPanel.strokeDashed") },
-            ]}
-            onChange={(stroke) =>
-              updateComponent(component.id, {
-                borderStyle: stroke === "solid" ? undefined : stroke,
-              } as ComponentPatch)
-            }
-          />
         </>
-      ) : (
-        <>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              {t("elementPanel.border")}
-            </label>
-            <select
-              value={component.borderStyle ?? "solid"}
-              onChange={(event) =>
-                updateComponent(component.id, {
-                  borderStyle: event.target.value as "solid" | "dashed" | "dotted",
-                } as ComponentPatch)
-              }
-              className="h-8 w-full rounded-md border border-border bg-secondary px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="solid">{t("common.strokeSolid")}</option>
-              <option value="dashed">{t("common.strokeDashed")}</option>
-              <option value="dotted">{t("common.strokeDotted")}</option>
-            </select>
-          </div>
-        </>
-      )}
+      ) : null}
     </>
   );
 }
