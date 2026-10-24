@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.11.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.13.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -86,6 +86,8 @@ export interface PluginComponentSnapshot {
   cloudServiceId: string | null;
   /** v1.10 — the technology label, or null. */
   technology: string | null;
+  /** v1.13 — the diagram this component opens (drill-down), or null. */
+  linkedDiagramId: string | null;
 }
 
 export interface PluginConnectionSnapshot {
@@ -141,7 +143,7 @@ export interface PluginComponentInput {
   key: string;
   name: string;
   /**
-   * Kept when it is a C4 type, `"panel"`, a catalog family category (`"aws-database"`,
+   * Kept when it is a C4 type, `"panel"`, `"text"` (since 1.12; its text is `name`), a catalog family category (`"aws-database"`,
    * `"gcp-compute"`, `"oss-messaging"`, …) or a plugin node type `"<pluginId>/<name>"`;
    * anything else, or omitted, becomes `"unknown"`.
    */
@@ -155,8 +157,19 @@ export interface PluginComponentInput {
   parentKey?: string;
   /** Catalog service of a catalog family component, e.g. "dynamodb" (since 1.3). */
   cloudServiceId?: string;
+  /**
+   * Kind of a `panel` (since 1.12): `"vpc"`, `"public-subnet"`, `"private-subnet"`,
+   * `"availability-zone"`, `"auto-scaling-group"`, `"eks-cluster"`, `"ecs-cluster"`,
+   * `"swimlane"`; anything else is a default panel.
+   */
+  panelKind?: string;
   /** Technology label of a C4 or catalog component (since 1.3). */
   technology?: string;
+  /**
+   * The diagram this component opens, as the host's drill-down (since 1.13): an id from
+   * `createDiagram` or `getDiagram`. Ignored when no such diagram exists.
+   */
+  linkedDiagramId?: string;
   /** Relative to the parent when `parentKey` is honoured; otherwise canvas coordinates. */
   x: number;
   y: number;
@@ -510,12 +523,28 @@ export interface PluginDiagramChanges {
     technology?: string;
     /** Catalog service; "" clears it. */
     cloudServiceId?: string;
+    /** The diagram the component opens (since 1.13); "" clears it. */
+    linkedDiagramId?: string;
   }>;
   move?: Array<{ id: string; x: number; y: number; width?: number; height?: number }>;
   /** New components, as importers return them (type policy and nesting included). */
   add?: PluginComponentInput[];
   /** New connections; ends are `add` keys or existing component ids. */
   connect?: PluginConnectionInput[];
+}
+
+/** v1.13 — where `applyChanges` writes. */
+export interface PluginApplyOptions {
+  /** The diagram to change; the active one when omitted. */
+  diagramId?: string;
+}
+
+/** v1.13 — a new diagram (`createDiagram`). */
+export interface PluginDiagramInput {
+  name: string;
+  description?: string;
+  /** C4 level, e.g. "context", "container", "component" or "deployment"; "container" by default. */
+  level?: string;
 }
 
 export interface PluginDiagramChangesResult {
@@ -567,10 +596,22 @@ export interface StructuraPluginApi {
   moveComponents(moves: Array<{ id: string; x: number; y: number }>): void;
 
   /**
-   * v1.4 — capability "diagram:write". Remove, update, move, add and connect on the ACTIVE
-   * diagram as one history step. Ids not in the diagram are ignored.
+   * v1.4 — capability "diagram:write". Remove, update, move, add and connect as one history
+   * step (of that diagram: undo is per diagram). Ids not in the diagram are ignored.
+   * Since 1.13 `options.diagramId` names another diagram than the active one; an id that is not
+   * a diagram changes nothing and returns an empty result.
    */
-  applyChanges(changes: PluginDiagramChanges): PluginDiagramChangesResult;
+  applyChanges(
+    changes: PluginDiagramChanges,
+    options?: PluginApplyOptions,
+  ): PluginDiagramChangesResult;
+
+  /**
+   * v1.13 — capability "diagram:write". Creates an empty diagram and returns its id. It is not
+   * opened: the user keeps the diagram they are on. Pair it with `applyChanges({ diagramId })`
+   * to fill it and with `linkedDiagramId` to make a component open it.
+   */
+  createDiagram(input: PluginDiagramInput): string;
 
   /** v1.4 — capability "files:folder". Folders the user picked for this plugin. */
   readonly files: PluginFiles;

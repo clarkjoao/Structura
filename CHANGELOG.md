@@ -12,6 +12,10 @@ requests; see [Earlier tags](#earlier-tags).
 
 ### Added
 
+- **Plugin API 1.13** — a plugin can keep several diagrams in sync: `createDiagram`, `applyChanges`
+  with `{ diagramId }` (undo stays per diagram) and `linkedDiagramId` on components, so one diagram
+  can open another.
+
 Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 - Plugin system UI (#121), first-party LeanIX plugin (#128), plugins

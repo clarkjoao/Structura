@@ -20,7 +20,9 @@ import {
   type PluginCapability,
   type PluginComponentPatch,
   type PluginDiagramChanges,
+  type PluginApplyOptions,
   type PluginDiagramChangesResult,
+  type PluginDiagramInput,
   type PluginFiles,
   type PluginManifest,
   type PluginNodeTypeDescriptor,
@@ -273,45 +275,80 @@ export function createScopedPluginApi(
       useDiagramStore.getState().applyAutoLayout(layouts);
     },
 
-    applyChanges(changes: PluginDiagramChanges): PluginDiagramChangesResult {
+    createDiagram(input: PluginDiagramInput): string {
       warnUndeclaredCapability(manifest, "diagram:write");
+      const name = typeof input?.name === "string" ? input.name.trim() : "";
+      if (name === "") throw new Error("[plugins] createDiagram: a name is required.");
+      const level =
+        typeof input.level === "string" && input.level.trim() !== ""
+          ? input.level.trim()
+          : "container";
+      const description = typeof input.description === "string" ? input.description : undefined;
+      // Not opened: the user stays on the diagram they are on (`addDiagram` does not activate).
+      return useDiagramStore.getState().addDiagram(name, level, undefined, null, description).id;
+    },
+
+    applyChanges(
+      changes: PluginDiagramChanges,
+      options?: PluginApplyOptions,
+    ): PluginDiagramChangesResult {
+      warnUndeclaredCapability(manifest, "diagram:write");
+      const diagramId = typeof options?.diagramId === "string" ? options.diagramId : undefined;
+      // Plugin data is untrusted: an id that is not a diagram changes nothing.
+      if (diagramId !== undefined && !useDiagramStore.getState().diagrams[diagramId]) {
+        return { idsByKey: {}, connectionIds: [] };
+      }
+      const diagramExists = (id: string) => useDiagramStore.getState().diagrams[id] !== undefined;
       const strings = (value: unknown): string[] =>
         Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
       const optionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
       // Plugin data is untrusted: adds go through the importer normalization (type policy,
       // parent cycles), updates keep to their whitelist.
-      const graph = toGeneratedGraph({
-        components: Array.isArray(changes.add) ? changes.add : [],
-        connections: Array.isArray(changes.connect) ? changes.connect : [],
-      });
-      const result = useDiagramStore.getState().applyGraphChanges({
-        remove: strings(changes.remove),
-        disconnect: strings(changes.disconnect),
-        update: (Array.isArray(changes.update) ? changes.update : [])
-          .filter((u) => typeof u?.id === "string")
-          .map((u) => {
-            // Request data: the store writes the field through `cloudServiceIdClearingPatch`.
-            const cloudServiceId = optionalString(u.cloudServiceId);
-            return {
-              id: u.id,
-              name: optionalString(u.name),
-              description: optionalString(u.description),
-              technology: optionalString(u.technology),
-              cloudServiceId,
-            };
-          }),
-        move: (Array.isArray(changes.move) ? changes.move : [])
-          .filter((m) => typeof m?.id === "string" && Number.isFinite(m.x) && Number.isFinite(m.y))
-          .map(({ id, x, y, width, height }) => ({
-            id,
-            x,
-            y,
-            ...(Number.isFinite(width) ? { width } : {}),
-            ...(Number.isFinite(height) ? { height } : {}),
-          })),
-        add: graph.nodes,
-        connect: graph.edges,
-      });
+      const graph = toGeneratedGraph(
+        {
+          components: Array.isArray(changes.add) ? changes.add : [],
+          connections: Array.isArray(changes.connect) ? changes.connect : [],
+        },
+        diagramExists,
+      );
+      const result = useDiagramStore.getState().applyGraphChanges(
+        {
+          remove: strings(changes.remove),
+          disconnect: strings(changes.disconnect),
+          update: (Array.isArray(changes.update) ? changes.update : [])
+            .filter((u) => typeof u?.id === "string")
+            .map((u) => {
+              // Request data: the store writes the field through `cloudServiceIdClearingPatch`.
+              const cloudServiceId = optionalString(u.cloudServiceId);
+              return {
+                id: u.id,
+                name: optionalString(u.name),
+                description: optionalString(u.description),
+                technology: optionalString(u.technology),
+                cloudServiceId,
+                // "" clears the link; an id that is not a diagram is ignored.
+                ...(optionalString(u.linkedDiagramId) !== undefined &&
+                (u.linkedDiagramId === "" || diagramExists(u.linkedDiagramId as string))
+                  ? { linkedDiagramId: u.linkedDiagramId as string }
+                  : {}),
+              };
+            }),
+          move: (Array.isArray(changes.move) ? changes.move : [])
+            .filter(
+              (m) => typeof m?.id === "string" && Number.isFinite(m.x) && Number.isFinite(m.y),
+            )
+            .map(({ id, x, y, width, height }) => ({
+              id,
+              x,
+              y,
+              ...(Number.isFinite(width) ? { width } : {}),
+              ...(Number.isFinite(height) ? { height } : {}),
+            })),
+          add: graph.nodes,
+          connect: graph.edges,
+        },
+        diagramId,
+      );
       return { idsByKey: result.componentIdByExternalId, connectionIds: result.connectionIds };
     },
 

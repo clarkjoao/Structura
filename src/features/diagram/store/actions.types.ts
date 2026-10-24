@@ -269,6 +269,8 @@ export interface AppActions {
 
   applyGraphChanges: (
     changes: import("./slices/generated-graph.slice").GraphChanges,
+    /** Another diagram than the active one (a plugin keeping several in sync). */
+    diagramId?: string,
   ) => import("./slices/generated-graph.slice").GraphChangesResult;
 
   undo: () => void;
