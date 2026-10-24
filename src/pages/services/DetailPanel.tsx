@@ -1,13 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, Link2, Loader2, RefreshCw, Save, X } from "lucide-react";
+import {
+  ChevronRight,
+  ExternalLink,
+  Link2,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  RefreshCw,
+  Save,
+  X,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { i18n } from "@/infrastructure/i18n";
 import { useGithubConfig } from "@/features/integrations/github/hooks/useGithubConfig";
 import { normalizeSources } from "@/features/integrations/merge-utils";
 import type { ExternalLink as DiagramExternalLink } from "@/features/diagram";
-import { ServiceSource } from "@/features/diagram";
+import { ServiceSource, suggestServiceRole } from "@/features/diagram";
+import type { ServiceRole } from "@/features/diagram";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ExternalLinksSection } from "@/features/canvas/panels/ElementPanel/sections";
 import { ChipInput } from "./ChipInput";
+import { RoleSelect } from "./RoleSelect";
 import { SOURCE_DOT } from "./services.constants";
 import { getServiceUsage } from "./serviceUsage";
 import type { DetailPanelProps } from "./types";
@@ -34,6 +52,7 @@ export function DetailPanel({
   const [editName, setEditName] = useState(svc.name);
   const [editDesc, setEditDesc] = useState(svc.description);
   const [editOwner, setEditOwner] = useState(svc.owner ?? "");
+  const [editRole, setEditRole] = useState<ServiceRole | "">(svc.role ?? "");
   const [editRepo, setEditRepo] = useState(svc.repositoryUrl);
   const [editTech, setEditTech] = useState<string[]>(svc.technology);
   const [editTags, setEditTags] = useState<string[]>(svc.tags ?? []);
@@ -47,6 +66,7 @@ export function DetailPanel({
       setEditName(svc.name);
       setEditDesc(svc.description);
       setEditOwner(svc.owner ?? "");
+      setEditRole(svc.role ?? "");
       setEditRepo(svc.repositoryUrl);
       setEditTech(svc.technology);
       setEditTags(svc.tags ?? []);
@@ -60,6 +80,9 @@ export function DetailPanel({
       description: editDesc.trim(),
       repositoryUrl: editRepo.trim(),
       owner: editOwner.trim() || undefined,
+      // A picked role is the user's; clearing it hands the decision back to the suggestion.
+      role: editRole || undefined,
+      roleSource: editRole ? (editRole === svc.role ? svc.roleSource : "user") : undefined,
       technology: editTech,
       tags: editTags,
       externalLinks: editLinks,
@@ -93,6 +116,26 @@ export function DetailPanel({
           <h2 className="text-base font-bold text-foreground truncate">{svc.name}</h2>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {svc.repositoryUrl && (
+            <a
+              href={svc.repositoryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {t("services.openRepository")}
+            </a>
+          )}
+          {!editing && (
+            <button
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {t("common.edit")}
+            </button>
+          )}
           {hasSyncSource && (
             <button
               onClick={handleSync}
@@ -107,6 +150,24 @@ export function DetailPanel({
               )}
             </button>
           )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                aria-label={t("services.moreActions")}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={() => setConfirmDelete(true)}
+              >
+                {t("services.deleteService")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             onClick={onClose}
             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -129,14 +190,7 @@ export function DetailPanel({
               <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
                 {t("common.details")}
               </span>
-              {!editing ? (
-                <button
-                  onClick={() => setEditing(true)}
-                  className="text-[11px] text-primary hover:underline font-medium"
-                >
-                  {t("common.edit")}
-                </button>
-              ) : (
+              {editing && (
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => setEditing(false)}
@@ -195,6 +249,15 @@ export function DetailPanel({
                     className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
+                <RoleSelect
+                  value={editRole}
+                  suggested={suggestServiceRole({
+                    name: editName,
+                    repositoryUrl: editRepo,
+                    metadata: svc.metadata,
+                  })}
+                  onChange={setEditRole}
+                />
                 <div>
                   <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
                     {t("services.repoUrlLabel")}
@@ -266,8 +329,8 @@ export function DetailPanel({
             )}
           </div>
 
-          <div className="pt-2 border-t border-border">
-            {confirmDelete ? (
+          {confirmDelete && (
+            <div className="pt-2 border-t border-border">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-destructive flex-1">
                   {t("services.confirmDelete")}
@@ -288,15 +351,8 @@ export function DetailPanel({
                   {t("services.confirmRemoval")}
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => setConfirmDelete(true)}
-                className="text-xs text-destructive hover:underline"
-              >
-                {t("services.deleteService")}
-              </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import type { Diagram, ServiceManifestEntry } from "@/features/diagram";
+import { isServiceRole } from "@/features/diagram";
 import { normalizeImportedDiagram } from "@/lib/export-service/normalize-imported-diagram";
 import type { WorkspaceManifest } from "./FileSystemAdapter";
 import { DIAGRAM_SCHEMA_VERSION, DIAGRAM_SCHEMA_URI } from "./versions";
@@ -126,6 +127,7 @@ function extractServiceManifest(raw: unknown): ServiceManifestEntry[] | undefine
       repositoryUrl: typeof entry.repositoryUrl === "string" ? entry.repositoryUrl : "",
       technology: toStringArray(entry.technology),
       ...(isNonEmptyString(entry.owner) ? { owner: entry.owner } : {}),
+      ...(isServiceRole(entry.role) ? { role: entry.role } : {}),
       ...(toStringArray(entry.tags).length > 0 ? { tags: toStringArray(entry.tags) } : {}),
       ...(github ? { github } : {}),
     });

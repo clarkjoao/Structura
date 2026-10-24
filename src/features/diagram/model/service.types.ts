@@ -1,4 +1,5 @@
 import type { ServiceSource } from "../enums";
+import type { ServiceRole, ServiceRoleSource } from "./service-role";
 
 export interface ServiceSourceRef {
   type: ServiceSource;
@@ -12,6 +13,10 @@ export interface ServiceDefinition {
   repositoryUrl: string;
   technology: string[];
   owner?: string;
+  /** What the service does in the architecture; see `suggestServiceRole`. */
+  role?: ServiceRole;
+  /** `user` once the role was picked by hand: suggestions and syncs never overwrite it. */
+  roleSource?: ServiceRoleSource;
   tags?: string[];
   sources?: ServiceSourceRef[];
 

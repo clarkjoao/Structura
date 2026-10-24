@@ -1,3 +1,4 @@
+import type { ServiceRole } from "./service-role";
 import type { ServiceSourceRef } from "./service.types";
 
 /**
@@ -15,6 +16,7 @@ export interface ServiceManifestEntry {
   repositoryUrl: string;
   technology: string[];
   owner?: string;
+  role?: ServiceRole;
   tags?: string[];
   sources?: ServiceSourceRef[];
   github?: {

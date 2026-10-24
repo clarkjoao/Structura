@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, lazy, Suspense, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, lazy, Suspense, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Search, X } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -8,7 +8,6 @@ import Navbar from "@/components/Navbar";
 import { useModifierKey } from "@/hooks/useModifierKey";
 import { useMultiSelect } from "@/hooks/useMultiSelect";
 import { GithubImportPanel } from "@/features/integrations/github/components/GithubImportPanel";
-import { normalizeSources } from "@/features/integrations/merge-utils";
 import {
   useAllServices,
   useDiagrams,
@@ -16,15 +15,17 @@ import {
   useDiagramActions,
 } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
-import { ServiceSource } from "@/features/diagram";
+import { SERVICE_ROLES, effectiveServiceRole } from "@/features/diagram";
 import { ImportPanel } from "@/features/integrations/import-panel";
 import { useTranslation } from "react-i18next";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { DetailPanel } from "./DetailPanel";
 import { ManualCreateForm } from "./ManualCreateForm";
 import { ServiceCard } from "./ServiceCard";
+import { countByRole, groupServices } from "./groupServices";
+import { groupLabel, groupHint } from "./serviceLabels";
 import { getServiceUsage } from "./serviceUsage";
-import type { SourceFilter } from "./types";
+import type { GroupBy, RoleFilter } from "./types";
 
 const DefectDojoPanel = lazy(() =>
   import("@/features/integrations/defectdojo").then((m) => ({
@@ -42,7 +43,9 @@ export default function ServicesPage() {
   const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState("");
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [groupBy, setGroupBy] = useState<GroupBy>("role");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [importPanel, setImportPanel] = useState<ImportPanel | null>(null);
   const showEnableGithub = import.meta.env.VITE_ENABLE_GITHUB_IMPORT === "true";
   const showEnableDefectDojo = import.meta.env.VITE_ENABLE_DEFECTDOJO === "true";
@@ -68,25 +71,44 @@ export default function ServicesPage() {
     return { diagrams: 0, folders: 0, services: servicesCount };
   }, [selectedIds, services]);
 
-  const filtered = useMemo(() => {
-    let result = services;
-    if (sourceFilter !== "all") {
-      result = result.filter((service) =>
-        normalizeSources(service).some((source) => source.type === sourceFilter),
-      );
-    }
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) ||
-          (s.owner ?? "").toLowerCase().includes(q) ||
-          s.technology.some((t) => t.toLowerCase().includes(q)) ||
-          (s.tags ?? []).some((t) => t.toLowerCase().includes(q)),
-      );
-    }
-    return result;
-  }, [services, search, sourceFilter]);
+  const searched = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return services;
+    return services.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.owner ?? "").toLowerCase().includes(q) ||
+        (effectiveServiceRole(s) ?? "").toLowerCase().includes(q) ||
+        s.technology.some((t) => t.toLowerCase().includes(q)) ||
+        (s.tags ?? []).some((t) => t.toLowerCase().includes(q)),
+    );
+  }, [services, search]);
+
+  const roleCounts = useMemo(() => countByRole(searched), [searched]);
+
+  const filtered = useMemo(
+    () =>
+      roleFilter === "all"
+        ? searched
+        : searched.filter((s) => (effectiveServiceRole(s) ?? "none") === roleFilter),
+    [searched, roleFilter],
+  );
+
+  const groups = useMemo(() => groupServices(filtered, groupBy), [filtered, groupBy]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target?.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "");
+      if (event.key !== "/" || typing || event.ctrlKey || event.metaKey || event.altKey) return;
+      event.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const selectedSvc = useMemo(
     () => (selectedId ? services.find((s) => s.id === selectedId) : undefined),
@@ -112,7 +134,7 @@ export default function ServicesPage() {
     if (!target) return;
 
     setSearch("");
-    setSourceFilter("all");
+    setRoleFilter("all");
     setSelectedId(target.id);
 
     requestAnimationFrame(() => {
@@ -169,11 +191,16 @@ export default function ServicesPage() {
     setSelectedId(created.id);
   };
 
-  const SOURCE_FILTERS: { value: SourceFilter; label: string }[] = [
+  const roleChips: { value: RoleFilter; label: string }[] = [
     { value: "all", label: t("services.filterAll") },
-    { value: ServiceSource.Manual, label: t("services.filterManual") },
-    { value: ServiceSource.Github, label: t("services.filterGithub") },
-    { value: ServiceSource.Defectdojo, label: t("services.filterDefectdojo") },
+    ...SERVICE_ROLES.map((role) => ({ value: role, label: t(`services.role.${role}`) })),
+    { value: "none", label: t("services.role.none") },
+  ];
+
+  const groupOptions: { value: GroupBy; label: string }[] = [
+    { value: "role", label: t("services.groupByRole") },
+    { value: "technology", label: t("services.groupByTechnology") },
+    { value: "source", label: t("services.groupBySource") },
   ];
 
   return (
@@ -181,11 +208,13 @@ export default function ServicesPage() {
       <Navbar />
       <div className="px-6 py-8">
         <div className="mx-auto max-w-[1600px]">
-          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{t("services.title")}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{t("services.subtitle")}</p>
-            </div>
+          <div className="mb-6 flex items-center justify-between gap-4">
+            <h1 className="text-2xl font-bold">
+              {t("services.title")}
+              <span className="ml-2 text-base font-normal text-muted-foreground">
+                · {t("services.repositoryCount", { count: services.length })}
+              </span>
+            </h1>
             <button
               onClick={() => setImportPanel((current) => (current ? null : ImportPanel.Manual))}
               className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -196,40 +225,57 @@ export default function ServicesPage() {
           </div>
 
           <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <input
+              ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t("services.searchPlaceholder")}
-              className="w-full rounded-lg border border-border bg-card pl-10 pr-10 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full rounded-xl border border-border bg-card py-3.5 pl-12 pr-12 text-base text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
-            {search && (
+            {search ? (
               <button
                 onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={t("services.clearSearch")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               </button>
+            ) : (
+              <kbd className="absolute right-4 top-1/2 -translate-y-1/2 rounded border border-border px-1.5 text-xs text-muted-foreground">
+                /
+              </kbd>
             )}
           </div>
 
-          <div className="mb-6 flex flex-wrap items-center gap-2">
-            {SOURCE_FILTERS.map((f) => (
+          <div className="mb-8 flex flex-wrap items-center gap-2">
+            {roleChips.map((chip) => (
               <button
-                key={f.value}
-                onClick={() => setSourceFilter(f.value)}
+                key={chip.value}
+                onClick={() => setRoleFilter(chip.value)}
                 className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
-                  sourceFilter === f.value
+                  roleFilter === chip.value
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {f.label}
+                {chip.label} <span className="font-mono opacity-70">{roleCounts[chip.value]}</span>
               </button>
             ))}
-            <span className="ml-auto text-xs text-muted-foreground">
-              · {filtered.length} {t("common.service", { count: filtered.length })}
-            </span>
+            <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+              {t("services.groupBy")}
+              <select
+                value={groupBy}
+                onChange={(e) => setGroupBy(e.target.value as GroupBy)}
+                className="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                {groupOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           {importPanel && (
@@ -292,8 +338,12 @@ export default function ServicesPage() {
             <PluginPanelSlot slot="services-import" serviceId={selectedId} />
           </div>
 
-          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-            <div>
+          <div
+            className={
+              selectedSvc ? "grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]" : undefined
+            }
+          >
+            <div className="space-y-8">
               {filtered.length === 0 ? (
                 <div className="rounded-xl border border-border bg-card px-4 py-12 text-center">
                   <p className="text-sm text-muted-foreground">
@@ -303,24 +353,41 @@ export default function ServicesPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                  {filtered.map((svc) => (
-                    <div id={`registry-service-${svc.id}`} key={svc.id}>
-                      <ServiceCard
-                        svc={svc}
-                        isSelected={selectedId === svc.id}
-                        isBulkSelected={isBulkIdSelected(svc.id)}
-                        onClick={(event) => handleServiceCardClick(svc, event)}
-                        usage={usageMap[svc.id] ?? []}
-                      />
+                groups.map((group) => (
+                  <section key={group.key}>
+                    <h2 className="mb-3 flex items-baseline gap-2 text-sm font-semibold text-foreground">
+                      {groupLabel(t, groupBy, group.key)}
+                      <span className="font-mono text-xs font-normal text-muted-foreground">
+                        {group.services.length}
+                      </span>
+                      {groupHint(t, groupBy, group.key) && (
+                        <span className="text-xs font-normal text-muted-foreground">
+                          · {groupHint(t, groupBy, group.key)}
+                        </span>
+                      )}
+                    </h2>
+                    <div
+                      className={`grid grid-cols-1 gap-3 md:grid-cols-2 ${selectedSvc ? "" : "xl:grid-cols-3"}`}
+                    >
+                      {group.services.map((svc) => (
+                        <div id={`registry-service-${svc.id}`} key={svc.id}>
+                          <ServiceCard
+                            svc={svc}
+                            isSelected={selectedId === svc.id}
+                            isBulkSelected={isBulkIdSelected(svc.id)}
+                            onClick={(event) => handleServiceCardClick(svc, event)}
+                            usage={usageMap[svc.id] ?? []}
+                          />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </section>
+                ))
               )}
             </div>
 
-            <div className="xl:sticky xl:top-24">
-              {selectedSvc ? (
+            {selectedSvc && (
+              <div className="xl:sticky xl:top-24">
                 <DetailPanel
                   key={selectedSvc.id}
                   svc={selectedSvc}
@@ -330,12 +397,8 @@ export default function ServicesPage() {
                   removeService={removeService}
                   onClose={() => setSelectedId(null)}
                 />
-              ) : (
-                <div className="rounded-2xl border border-dashed border-border bg-card/40 px-5 py-8 text-sm text-muted-foreground">
-                  {t("services.selectForDetails")}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

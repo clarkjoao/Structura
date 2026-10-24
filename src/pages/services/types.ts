@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import type { Diagram, ServiceDefinition, ServiceSource } from "@/features/diagram";
+import type { Diagram, ServiceDefinition, ServiceRole } from "@/features/diagram";
 
 export interface ServiceCardProps {
   svc: ServiceDefinition;
@@ -18,4 +18,6 @@ export interface DetailPanelProps {
   onClose: () => void;
 }
 
-export type SourceFilter = "all" | ServiceSource;
+export type RoleFilter = "all" | "none" | ServiceRole;
+
+export type GroupBy = "role" | "technology" | "source";

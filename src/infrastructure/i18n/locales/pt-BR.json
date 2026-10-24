@@ -487,7 +487,12 @@
   },
   "textStyle": {
     "size": "Tamanho do texto",
-    "sizes": { "sm": "Pequeno", "md": "Médio", "lg": "Grande", "xl": "Extra grande" },
+    "sizes": {
+      "sm": "Pequeno",
+      "md": "Médio",
+      "lg": "Grande",
+      "xl": "Extra grande"
+    },
     "color": "Cor do texto",
     "colors": {
       "default": "Padrão",
@@ -3060,14 +3065,12 @@
   },
   "services": {
     "title": "Serviços",
-    "subtitle": "Lista central de serviços e infraestrutura",
     "addService": "Add Service",
-    "searchPlaceholder": "Buscar por nome, tag, owner...",
+    "searchPlaceholder": "Buscar por nome, papel, tecnologia ou tag…",
     "filterAll": "All",
     "filterManual": "Manual",
     "emptyNoServices": "Nenhum serviço cadastrado. Clique em \"Add Service\" para começar.",
     "emptyFiltered": "Nenhum serviço encontrado para os filtros aplicados.",
-    "selectForDetails": "Selecione um serviço para ver os detalhes.",
     "chipAddPlaceholder": "Adicionar...",
     "newService": "Novo Serviço",
     "createService": "Criar Serviço",
@@ -3099,7 +3102,37 @@
     "productLabel": "Produto",
     "diagramUsage_one": "{{count}} diagrama",
     "diagramUsage_other": "{{count}} diagramas",
-    "chipAddButton": "+ add"
+    "chipAddButton": "+ add",
+    "repositoryCount_one": "{{count}} repositório",
+    "repositoryCount_other": "{{count}} repositórios",
+    "clearSearch": "Limpar busca",
+    "groupBy": "Agrupar",
+    "groupByRole": "Papel",
+    "groupByTechnology": "Tecnologia",
+    "groupBySource": "Fonte",
+    "none": {
+      "role": "Sem papel",
+      "technology": "Sem tecnologia",
+      "source": "Sem fonte"
+    },
+    "role": {
+      "api": "API",
+      "domain-engine": "Motor de domínio",
+      "worker": "Worker",
+      "integration": "Integração",
+      "none": "Sem papel"
+    },
+    "roleHint": {
+      "api": "expõe endpoints para clientes",
+      "domain-engine": "concentra as regras de negócio",
+      "worker": "processa em segundo plano",
+      "integration": "conversa com sistemas externos"
+    },
+    "roleLabel": "Papel",
+    "roleSuggested": "Sugerido: {{role}}",
+    "roleSuggestedTag": "sugerido",
+    "openRepository": "Abrir repositório",
+    "moreActions": "Mais ações"
   },
   "walkthrough": {
     "addScene": "Adicionar cena",

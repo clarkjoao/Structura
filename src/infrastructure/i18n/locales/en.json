@@ -487,7 +487,12 @@
   },
   "textStyle": {
     "size": "Text size",
-    "sizes": { "sm": "Small", "md": "Medium", "lg": "Large", "xl": "Extra large" },
+    "sizes": {
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large",
+      "xl": "Extra large"
+    },
     "color": "Text colour",
     "colors": {
       "default": "Default",
@@ -3060,14 +3065,12 @@
   },
   "services": {
     "title": "Services",
-    "subtitle": "Central list of services and infrastructure",
     "addService": "Add Service",
-    "searchPlaceholder": "Search by name, tag, owner...",
+    "searchPlaceholder": "Search by name, role, technology or tag…",
     "filterAll": "All",
     "filterManual": "Manual",
     "emptyNoServices": "No services yet. Click \"Add Service\" to get started.",
     "emptyFiltered": "No services match the current filters.",
-    "selectForDetails": "Select a service to see details.",
     "chipAddPlaceholder": "Add...",
     "newService": "New service",
     "createService": "Create service",
@@ -3099,7 +3102,37 @@
     "productLabel": "Product",
     "diagramUsage_one": "{{count}} diagram",
     "diagramUsage_other": "{{count}} diagrams",
-    "chipAddButton": "+ add"
+    "chipAddButton": "+ add",
+    "repositoryCount_one": "{{count}} repository",
+    "repositoryCount_other": "{{count}} repositories",
+    "clearSearch": "Clear search",
+    "groupBy": "Group by",
+    "groupByRole": "Role",
+    "groupByTechnology": "Technology",
+    "groupBySource": "Source",
+    "none": {
+      "role": "No role",
+      "technology": "No technology",
+      "source": "No source"
+    },
+    "role": {
+      "api": "API",
+      "domain-engine": "Domain engine",
+      "worker": "Worker",
+      "integration": "Integration",
+      "none": "No role"
+    },
+    "roleHint": {
+      "api": "exposes endpoints to clients",
+      "domain-engine": "holds the business rules",
+      "worker": "processes in the background",
+      "integration": "talks to external systems"
+    },
+    "roleLabel": "Role",
+    "roleSuggested": "Suggested: {{role}}",
+    "roleSuggestedTag": "suggested",
+    "openRepository": "Open repository",
+    "moreActions": "More actions"
   },
   "walkthrough": {
     "addScene": "Add scene",

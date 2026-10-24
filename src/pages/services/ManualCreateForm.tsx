@@ -2,9 +2,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { ServiceDefinition } from "@/features/diagram";
-import { ServiceSource } from "@/features/diagram";
+import { ServiceSource, suggestServiceRole } from "@/features/diagram";
+import type { ServiceRole } from "@/features/diagram";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { ChipInput } from "./ChipInput";
+import { RoleSelect } from "./RoleSelect";
 
 export const ManualCreateForm = ({
   onCancel,
@@ -17,17 +19,24 @@ export const ManualCreateForm = ({
   const [name, setName] = useState("");
   const [desc, setDesc] = useState("");
   const [owner, setOwner] = useState("");
+  const [role, setRole] = useState<ServiceRole | "">("");
+  const suggested = suggestServiceRole({ name, repositoryUrl: "" });
   const [tech, setTech] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
 
   const submit = () => {
     if (!name.trim()) return;
+    // A suggestion is stored as such so a later rename can still refresh it.
+    const declared = role || suggested;
     onCreate({
       name: name.trim(),
       description: desc.trim(),
       repositoryUrl: "",
       technology: tech,
       owner: owner.trim() || undefined,
+      ...(declared
+        ? { role: declared, roleSource: role ? ("user" as const) : ("suggested" as const) }
+        : {}),
       tags,
       sources: [{ type: ServiceSource.Manual }],
     });
@@ -76,6 +85,7 @@ export const ManualCreateForm = ({
           className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
+      <RoleSelect value={role} suggested={suggested} onChange={setRole} />
       <ChipInput
         label={t("common.technology")}
         items={tech}

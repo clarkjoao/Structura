@@ -163,6 +163,13 @@ export { isAwsIcon, isLucideIcon, isSvgIcon } from "./diagram.types";
 export type { DiagramLayoutSettings } from "./layout-settings";
 
 export type { ServiceDefinition, ServiceSourceRef } from "./service.types";
+export {
+  SERVICE_ROLES,
+  effectiveServiceRole,
+  isServiceRole,
+  suggestServiceRole,
+} from "./service-role";
+export type { ServiceRole } from "./service-role";
 export type { ServiceManifestEntry } from "./service-manifest.types";
 
 // ─── Component type constants ──────────────────────────────────────────────────
