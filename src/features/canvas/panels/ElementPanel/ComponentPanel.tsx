@@ -41,6 +41,7 @@ import { ElementTypeSelect } from "./sections/ElementTypeSelect";
 import { BoundarySections } from "./sections/BoundarySection";
 import { DiagramLinkField } from "@/features/canvas/palette/DiagramLinkField";
 import { toast } from "sonner";
+import { serviceEditOf, serviceSeedFromComponent } from "@/features/diagram/utils/service-sync";
 import { isComponentType } from "@/features/diagram";
 import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
 import { useElementTextLock } from "@/features/collaboration/hooks/useElementLocks";
@@ -119,6 +120,7 @@ const ComponentPanel = ({
   );
   const {
     linkComponentToService,
+    updateService,
     linkComponentToDiagram,
     addDiagram,
     updateNodeLayout,
@@ -167,6 +169,23 @@ const ComponentPanel = ({
 
   const textLock = useElementTextLock(component.id);
 
+  /**
+   * The registry is the golden source of what a linked service lends the element (name,
+   * description, technology, tags): editing one of them edits the service, which reaches every
+   * element linked to it. Anything else, and every unlinked element, writes to the element.
+   */
+  const editFields = (patch: ComponentPatch) => {
+    const serviceEdit = linkedService ? serviceEditOf(patch) : {};
+    if (!linkedService || Object.keys(serviceEdit).length === 0) {
+      updateComponent(component.id, patch);
+      return;
+    }
+    updateService(linkedService.id, serviceEdit);
+    const rest: Record<string, unknown> = { ...patch };
+    for (const key of ["name", "description", "technology", "tags"]) delete rest[key];
+    if (Object.keys(rest).length > 0) updateComponent(component.id, rest as ComponentPatch);
+  };
+
   const identity = useElementIdentity(component);
   const trail = useElementTrail(component);
   const menu = useElementMenu(
@@ -189,7 +208,7 @@ const ComponentPanel = ({
     updateComponent(component.id, buildComponentSyncPatch(service, component));
   };
 
-  const commitTags = (updated: string[]) => updateComponent(component.id, { tags: updated });
+  const commitTags = (updated: string[]) => editFields({ tags: updated });
 
   const handleRemoveTag = (tag: string) => commitTags(tags.filter((item) => item !== tag));
 
@@ -216,10 +235,7 @@ const ComponentPanel = ({
         name={headerName}
         namePlaceholder={namePlaceholder}
         onCommitName={(value) =>
-          updateComponent(
-            component.id,
-            isDbTable ? { name: value, tableName: value } : { name: value },
-          )
+          editFields(isDbTable ? { name: value, tableName: value } : { name: value })
         }
         nameInputRef={titleInputRef}
         textLock={textLock}
@@ -242,6 +258,7 @@ const ComponentPanel = ({
         <ServicesTab
           componentId={component.id}
           elementName={component.name}
+          seed={serviceSeedFromComponent(component)}
           serviceId={component.serviceId}
           linkedService={linkedService}
           onSync={() => linkedService && syncFromService(linkedService)}
@@ -253,6 +270,11 @@ const ComponentPanel = ({
         <>
           <div className="min-h-0 flex-1 overflow-y-auto">
             <PanelSection title={t("panelShell.sectionWhat")}>
+              {linkedService && (
+                <p className="rounded-md bg-primary/5 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+                  {t("serviceLink.golden", { name: linkedService.name })}
+                </p>
+              )}
               {!isSimple && cloudProvider && cloudServiceInfo && (
                 <div className="flex items-center gap-3 rounded-lg bg-secondary p-3">
                   <CloudIcon
@@ -321,9 +343,7 @@ const ComponentPanel = ({
                   value={technology}
                   addLabel={t("panelShell.addTechnology")}
                   onCommit={(value) =>
-                    updateComponent(component.id, {
-                      technology: value || undefined,
-                    } as ComponentPatch)
+                    editFields({ technology: value || undefined } as ComponentPatch)
                   }
                 />
               )}
@@ -336,7 +356,7 @@ const ComponentPanel = ({
                 hint={isNote ? t("endpointPanel.markdownHint") : undefined}
                 onFocus={textLock.onFocus}
                 onBlur={textLock.onBlur}
-                onCommit={(value) => updateComponent(component.id, { description: value })}
+                onCommit={(value) => editFields({ description: value })}
               />
               {isFlowchart && (
                 <FlowchartFieldsSection

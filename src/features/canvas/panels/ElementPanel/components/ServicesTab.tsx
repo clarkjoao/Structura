@@ -7,6 +7,7 @@ export interface ServicesTabProps {
   componentId: string;
   /** The element's name: it drives the palette's title, suggestion and "create". */
   elementName: string;
+  seed: Omit<ServiceDefinition, "id">;
   serviceId: string | null | undefined;
   linkedService: ServiceDefinition | null;
   onSync: () => void;
@@ -20,6 +21,7 @@ export interface ServicesTabProps {
  * <ServicesTab
  *   componentId={component.id}
  *   elementName={component.name}
+ *   seed={serviceSeedFromComponent(component)}
  *   serviceId={component.serviceId}
  *   linkedService={linkedService}
  *   onSync={() => linkedService && syncFromService(linkedService)}
@@ -29,6 +31,7 @@ export interface ServicesTabProps {
 export function ServicesTab({
   componentId,
   elementName,
+  seed,
   serviceId,
   linkedService,
   onSync,
@@ -41,6 +44,7 @@ export function ServicesTab({
       <ServiceLinkField
         componentId={componentId}
         elementName={elementName}
+        seed={seed}
         serviceId={serviceId}
         linkedService={linkedService}
         onSync={onSync}

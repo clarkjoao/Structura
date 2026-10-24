@@ -1919,6 +1919,7 @@
     "empty": "Nothing to explain yet: the legend lists the boundary types, domains and interactions this diagram uses."
   },
   "serviceLink": {
+    "golden": "Name, description, technology and tags come from the service “{{name}}”: editing them updates the service, and every element linked to it.",
     "title": "Link service to {{name}}",
     "searchPlaceholder": "Search services…",
     "sameName": "Same name as this element",

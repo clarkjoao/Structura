@@ -32,6 +32,14 @@ function renderField(props: Partial<Parameters<typeof ServiceLinkField>[0]> = {}
     <ServiceLinkField
       componentId="el"
       elementName="cob-api"
+      seed={{
+        name: "cob-api",
+        description: "",
+        repositoryUrl: "",
+        technology: [],
+        tags: [],
+        sources: [{ type: ServiceSource.Manual }],
+      }}
       serviceId={undefined}
       linkedService={null}
       onSync={onSync}
@@ -108,6 +116,33 @@ describe("ServiceLinkField", () => {
       (s) => s.name === "brand-new",
     );
     expect(created).toBeDefined();
+    expect(onServiceChange).toHaveBeenCalledWith(created?.id);
+  });
+
+  it("create-and-link seeds the new service with what the element already says", () => {
+    const { onServiceChange } = renderField({
+      elementName: "brand-new",
+      seed: {
+        name: "brand-new",
+        description: "Takes the orders",
+        repositoryUrl: "",
+        technology: ["Go", "gRPC"],
+        tags: ["core"],
+        externalLinks: [{ id: "l1", label: "Docs", url: "https://d", type: "generic" as never }],
+        sources: [{ type: ServiceSource.Manual }],
+      },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Link a service/ }));
+    fireEvent.click(screen.getByText("Create “brand-new” and link"));
+    const created = Object.values(useDiagramStore.getState().services).find(
+      (s) => s.name === "brand-new",
+    );
+    expect(created).toMatchObject({
+      description: "Takes the orders",
+      technology: ["Go", "gRPC"],
+      tags: ["core"],
+    });
+    expect(created?.externalLinks).toHaveLength(1);
     expect(onServiceChange).toHaveBeenCalledWith(created?.id);
   });
 

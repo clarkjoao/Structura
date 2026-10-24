@@ -1919,6 +1919,7 @@
     "empty": "Nada a explicar ainda: a legenda lista os tipos de fronteira, domínios e interações que este diagrama usa."
   },
   "serviceLink": {
+    "golden": "Nome, descrição, tecnologia e tags vêm do serviço “{{name}}”: editar atualiza o serviço e todos os elementos vinculados a ele.",
     "title": "Vincular serviço a {{name}}",
     "searchPlaceholder": "Buscar serviços…",
     "sameName": "Mesmo nome do elemento",

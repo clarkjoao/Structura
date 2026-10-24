@@ -10,6 +10,8 @@ import { buildServiceLinkSource, suggestService, type ServiceRef } from "./servi
 export interface ServiceLinkFieldProps {
   componentId: string;
   elementName: string;
+  /** What the element already says, so a service made from it keeps it. */
+  seed: Omit<ServiceDefinition, "id">;
   serviceId: string | null | undefined;
   linkedService: ServiceDefinition | null;
   onSync: () => void;
@@ -23,6 +25,7 @@ export interface ServiceLinkFieldProps {
 export function ServiceLinkField({
   componentId,
   elementName,
+  seed,
   serviceId,
   linkedService,
   onSync,
@@ -63,6 +66,7 @@ export function ServiceLinkField({
           open={open}
           onOpenChange={setOpen}
           elementName={elementName}
+          seed={seed}
           currentServiceId={serviceId}
           onPick={(id) => onServiceChange(id)}
         />
@@ -75,6 +79,7 @@ interface ServiceLinkPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   elementName: string;
+  seed: Omit<ServiceDefinition, "id">;
   currentServiceId: string | null | undefined;
   onPick: (serviceId: string) => void;
 }
@@ -84,6 +89,7 @@ function ServiceLinkPalette({
   open,
   onOpenChange,
   elementName,
+  seed,
   currentServiceId,
   onPick,
 }: ServiceLinkPaletteProps) {
@@ -122,14 +128,8 @@ function ServiceLinkPalette({
       searchPlaceholder={t("serviceLink.searchPlaceholder")}
       onPick={(item) => onPick(item.payload.id)}
       onCreate={() => {
-        const created = addService({
-          name,
-          description: "",
-          repositoryUrl: "",
-          technology: [],
-          tags: [],
-          sources: [{ type: ServiceSource.Manual }],
-        });
+        // The registry becomes the source of the element's data: seed it from the element.
+        const created = addService({ ...seed, name });
         onPick(created.id);
       }}
     />
