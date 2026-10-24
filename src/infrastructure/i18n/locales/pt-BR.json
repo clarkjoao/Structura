@@ -1831,6 +1831,14 @@
     "removeConnection": "Remover",
     "idLabel": "ID"
   },
+  "diagramPanel": {
+    "title": "Diagrama",
+    "untitled": "Diagrama sem nome",
+    "level": "Nível",
+    "legend": "Legenda",
+    "showLegend": "Mostrar legenda no canvas",
+    "legendHint": "Gerada a partir dos tipos de fronteira, domínios e interações usados neste diagrama."
+  },
   "panelShell": {
     "advanced": "Avançado",
     "copyId": "Copiar ID",

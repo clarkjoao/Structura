@@ -174,9 +174,9 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     !visualState.selectedEdgeId &&
     selectedComponent !== undefined &&
     isTextComponent(selectedComponent);
+  // With nothing selected the panel shows the diagram's own properties.
   const showElementPanel =
     !isLoneTextSelected &&
-    (visualState.selectedNodeId || visualState.selectedEdgeId || selectedCount > 0) &&
     interactionMode.canEditCanvas &&
     visualState.noteInlineEditingId === null &&
     visualState.jsonViewerInlineEditingId === null;

@@ -172,6 +172,7 @@ const selectDiagramActions = pickFromStore([
   "updateDiagram",
   "updateDiagramDescription",
   "setTextsVisible",
+  "setShowLegend",
   "deleteDiagram",
   "addFolder",
   "renameFolder",

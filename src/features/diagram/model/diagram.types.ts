@@ -175,6 +175,11 @@ export interface Diagram {
    * exports until the author turns it on and saves.
    */
   textsVisible?: boolean;
+  /**
+   * Whether the generated legend is drawn on the canvas. Absent means off, so an untouched
+   * diagram hashes as before.
+   */
+  showLegend?: boolean;
 
   /**
    * How the auto-layout arranges this diagram (`layout-settings.ts`). Absent

@@ -11,6 +11,7 @@ import { MultiSelectPanel } from "../MultiSelectPanel";
 import { getElement } from "@/features/elements/element.registry";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
+import DiagramPanel from "./DiagramPanel";
 import { PanelFrame } from "./shell";
 
 interface Props {
@@ -122,7 +123,11 @@ const ElementPanel = ({
     );
   }
 
-  return null;
+  return (
+    <PanelFrame>
+      <DiagramPanel />
+    </PanelFrame>
+  );
 };
 
 export default ElementPanel;
