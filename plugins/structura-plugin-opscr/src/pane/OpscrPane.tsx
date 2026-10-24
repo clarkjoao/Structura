@@ -27,7 +27,7 @@ import {
   type SourceLocation,
 } from "../generated/opscr-mapping";
 import type { AddChoice } from "../engine/adopt";
-import { OpscrEngine, type EngineEvent } from "../engine/engine";
+import { OpscrEngine, type EngineEvent, type ViewLink } from "../engine/engine";
 import type { UnwrittenConnection } from "../engine/reconcile";
 import { emptyBinding, type BindingState } from "../engine/sync";
 import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../engine/watch";
@@ -170,6 +170,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const [drawnThrough, setDrawnThrough] = useState<DrawnThrough[]>([]);
     /** The last projection with a graph: where elements are written, and what is not drawn. */
     const [projection, setProjection] = useState<Projection | null>(null);
+    /** The Views the workspace declares and the drawn view's boxes that open another one. */
+    const [views, setViews] = useState<{ names: string[]; links: ViewLink[] }>({ names: [], links: [] });
     const projectionRef = useRef(projection);
     // Read by callbacks: the values the user sees, i.e. the committed ones. Not written while
     // rendering, where an urgent update can render ahead of a pending one with older state.
@@ -200,6 +202,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       restored.current = session !== undefined;
       setDiagnostics([]);
       setProjection(null);
+      setViews({ names: [], links: [] });
       setUnwritten([]);
       setComparing(null);
       pointed.current = null;
@@ -283,6 +286,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         setFailed(false);
         setStatus(t.parseError);
       } else if (event.type === "diagnostics") setDiagnostics(event.diagnostics as Diagnostic[]);
+      else if (event.type === "views") setViews({ names: event.views, links: event.links });
       else if (event.type === "outside") setOutside(event.ids);
       else if (event.type === "unwritten") setUnwritten(event.connections);
       else if (event.type === "rename-refused") setStatus(t.renameRefused(event.name));
@@ -790,6 +794,45 @@ export function createOpscrPane(api: StructuraPluginApi) {
             {t.unbind}
           </button>
         </div>
+        {views.names.length > 0 && (
+          <div className="space-y-1 border-b px-2 py-1">
+            <label className="flex items-center gap-2">
+              <span className="text-muted-foreground">{t.viewLabel}</span>
+              <select
+                aria-label={t.viewLabel}
+                className="min-w-0 flex-1 rounded border bg-background px-1 py-0.5"
+                value={stored.state.view ?? ""}
+                onChange={(e) => void engine.showView(e.target.value || undefined)}
+              >
+                <option value="">{t.wholeWorkspace}</option>
+                {[...views.names].sort().map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {stored.state.view !== undefined && (
+              <p className="text-muted-foreground">{t.viewReadOnly}</p>
+            )}
+            {views.links.length > 0 && (
+              <ul className="flex flex-wrap gap-1">
+                {views.links.map((link) => (
+                  <li key={link.key}>
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-0.5 hover:bg-muted"
+                      title={t.opensTitle}
+                      onClick={() => void engine.showView(link.view)}
+                    >
+                      {t.opens(link.name, link.view)}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
         <div role="tablist" className="flex flex-wrap gap-1 border-b px-2 py-1">
           {buffers
             .filter((b) => !isSidecar(b.name))

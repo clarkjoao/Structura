@@ -78,7 +78,19 @@ export function buildViewDiagram(
   const knownIds = new Set(known.map((n) => n.id));
   const parents = new Set(known.map((n) => n.parent).filter((p): p is string => p !== null));
 
-  const nodes = known.map((n): ViewNode => {
+  // Parents before their children: an importer nests a child in a parent it has already seen.
+  const parentOf = new Map(known.map((n) => [n.id, n.parent]));
+  const depth = (id: string): number => {
+    let d = 0;
+    for (let p = parentOf.get(id); p && d <= known.length; p = parentOf.get(p)) d++;
+    return d;
+  };
+  const ordered = known
+    .map((n, i) => ({ n, i, d: depth(n.id) }))
+    .sort((a, b) => a.d - b.d || a.i - b.i)
+    .map(({ n }) => n);
+
+  const nodes = ordered.map((n): ViewNode => {
     const manifest = manifests.get(n.id)!;
     const holdsChildren = parents.has(n.id);
     const element = elementOf(n.kind, manifest.spec, n, holdsChildren);

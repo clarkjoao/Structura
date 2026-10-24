@@ -27,6 +27,8 @@ export interface Projection {
   /** Manifests of Kinds the diagram does not draw, and edges it cannot draw, with `graph`. */
   omitted?: OmittedManifest[];
   dropped?: DroppedEdge[];
+  /** The Views the workspace declares, by name. */
+  views?: string[];
 }
 
 export { CONFIG_FILE };
@@ -49,6 +51,7 @@ export async function projectWorkspace(
     return { diagnostics: result.diagnostics };
   }
   const view = buildTechnicalView(workspace);
+  const views = workspace.getByKind("View").map((v) => v.metadata.name);
   const seeded = previous && previous.boxes.size > 0 ? previous : undefined;
   // An edit of text alone moves nothing: the layout engine would only be ignored.
   const fresh = previousCoversView(view, seeded)
@@ -62,6 +65,7 @@ export async function projectWorkspace(
     sources: new SourceIndex(workspace.manifests, view),
     omitted: view.omitted,
     dropped: view.dropped,
+    views,
   };
 }
 
@@ -104,10 +108,12 @@ export async function projectView(
   };
 }
 
-/** `projectWorkspace` as the engine calls it (file name + text). */
-export const projector = ((manifests, config, previous) =>
-  projectWorkspace(
-    manifests.map((f) => ({ path: f.name, content: f.text })),
-    config ? { path: config.name, content: config.text } : undefined,
-    previous,
-  )) satisfies Projector;
+/** `projectWorkspace`, or `projectView` when a View is asked for, as the engine calls it (file name + text). */
+export const projector = (async (manifests, config, previous, view) => {
+  const files = manifests.map((f) => ({ path: f.name, content: f.text }));
+  const configFile = config ? { path: config.name, content: config.text } : undefined;
+  if (view === undefined) return projectWorkspace(files, configFile, previous);
+  const projected = await projectView(files, configFile, view, previous);
+  // Edits are a no-op in a View, so the source index and the dropped lists stay empty.
+  return { ...projected, views: projected.views };
+}) satisfies Projector;

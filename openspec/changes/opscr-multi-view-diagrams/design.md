@@ -7,6 +7,18 @@
 - `Component.linkedDiagramId` already drives drill-down in the host.
 - An element can now appear in several diagrams, so `Kind/name` is no longer a unique canvas key.
 
+## Phasing (decided 2026-10-24)
+
+**Phase A — views on the one bound diagram (done).** The pane gets a diagram picker; the bound
+diagram swaps to the chosen View's projection and `drillDown` links become buttons that switch
+views. Positions are stored per view in the sidecar (v2: `elements` stays the whole-workspace
+diagram's, `views` holds one entry per View). A View is a projection: reconcile, rename and
+add-to-YAML are off while one is shown, so the canvas follows the YAML and only positions flow back.
+The plugin API and the host do not change.
+
+**Phase B — one Structura diagram per View (plugin API 1.13).** The sections below describe it; it is
+not started. It reuses Phase A's projection and sidecar unchanged.
+
 ## Decisions
 
 1. **Canvas key = `View/Kind/name`.** Reconcile, tombstones and the source index key by the view as

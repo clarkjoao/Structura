@@ -76,11 +76,12 @@ export function overlayLayouts(
 
 /**
  * Version 2: one set of boxes per View (`views` → view name → `Kind/name` → box), because one
- * element can sit in several diagrams. A version 1 file is the layout of the workspace's default
- * (view-less) diagram.
+ * element can sit in several diagrams. The default (view-less) diagram keeps its boxes under
+ * `elements`, exactly where a version 1 file has them, so a version 1 file is a version 2 file
+ * with no views.
  */
 export interface LayoutFiles {
-  /** The default diagram's layout: a version 1 file's boxes. */
+  /** The default diagram's layout. */
   base: ViewLayoutResult | null;
   views: ReadonlyMap<string, ViewLayoutResult>;
 }
@@ -108,31 +109,64 @@ export function parseLayoutFiles(text: string): LayoutFiles | null {
   }
   if (typeof data !== "object" || data === null) return null;
   const record = data as Record<string, unknown>;
+  const base = parseLayoutFile(text);
+  const views = new Map<string, ViewLayoutResult>();
   if (record["version"] === 2) {
-    const views = new Map<string, ViewLayoutResult>();
     const raw = record["views"];
     if (typeof raw === "object" && raw !== null) {
       for (const [name, entries] of Object.entries(raw)) {
         views.set(name, { boxes: boxesOf(entries), edgeRoutes: new Map() });
       }
     }
-    return { base: null, views };
+    return { base, views };
   }
-  const base = parseLayoutFile(text);
-  return base ? { base, views: new Map() } : null;
+  return base ? { base, views } : null;
 }
 
-/** Stable text for a version 2 sidecar: sorted views and keys, whole numbers, one element per line. */
-export function serializeLayoutFiles(views: ReadonlyMap<string, ReadonlyMap<string, ViewBox>>): string {
+const boxLines = (boxes: ReadonlyMap<string, ViewBox>, indent: string): string[] =>
+  [...boxes.keys()].sort().map((key) => {
+    const b = boxes.get(key)!;
+    const box = [b.x, b.y, b.width, b.height].map(Math.round);
+    return `${indent}${JSON.stringify(key)}: { "x": ${box[0]}, "y": ${box[1]}, "width": ${box[2]}, "height": ${box[3]} }`;
+  });
+
+/**
+ * Stable text for a version 2 sidecar: the default diagram's boxes (when it has any) under
+ * `elements`, then the views — sorted keys, whole numbers, one element per line.
+ */
+export function serializeLayoutFiles(
+  views: ReadonlyMap<string, ReadonlyMap<string, ViewBox>>,
+  base?: ReadonlyMap<string, ViewBox>,
+): string {
   const blocks = [...views.keys()].sort().map((name) => {
-    const boxes = views.get(name)!;
-    const lines = [...boxes.keys()].sort().map((key) => {
-      const b = boxes.get(key)!;
-      const box = [b.x, b.y, b.width, b.height].map(Math.round);
-      return `      ${JSON.stringify(key)}: { "x": ${box[0]}, "y": ${box[1]}, "width": ${box[2]}, "height": ${box[3]} }`;
-    });
+    const lines = boxLines(views.get(name)!, "      ");
     return `    ${JSON.stringify(name)}: ${lines.length > 0 ? `{\n${lines.join(",\n")}\n    }` : "{}"}`;
   });
-  const body = blocks.length > 0 ? `{\n${blocks.join(",\n")}\n  }` : "{}";
-  return `{\n  "version": 2,\n  "views": ${body}\n}\n`;
+  const viewsText = blocks.length > 0 ? `{\n${blocks.join(",\n")}\n  }` : "{}";
+  const baseLines = base ? boxLines(base, "    ") : [];
+  const elements = baseLines.length > 0 ? `  "elements": {\n${baseLines.join(",\n")}\n  },\n` : "";
+  return `{\n  "version": 2,\n${elements}  "views": ${viewsText}\n}\n`;
+}
+
+/** The boxes of one diagram — the named View's, or the default diagram's — or null if none. */
+export function layoutFor(text: string, view: string | undefined): ViewLayoutResult | null {
+  const files = parseLayoutFiles(text);
+  if (!files) return null;
+  return view === undefined ? files.base : (files.views.get(view) ?? null);
+}
+
+/**
+ * The sidecar text after one diagram's boxes change, keeping every other diagram's. A file
+ * with no views stays a version 1 file, byte for byte what `serializeLayoutFile` writes.
+ */
+export function updateLayoutFile(
+  current: string | undefined,
+  view: string | undefined,
+  boxes: ReadonlyMap<string, ViewBox>,
+): string {
+  const files = current ? parseLayoutFiles(current) : null;
+  const views = new Map([...(files?.views ?? [])].map(([name, v]) => [name, v.boxes]));
+  if (view === undefined && views.size === 0) return serializeLayoutFile(boxes);
+  if (view !== undefined) views.set(view, boxes);
+  return serializeLayoutFiles(views, view === undefined ? boxes : files?.base?.boxes);
 }
