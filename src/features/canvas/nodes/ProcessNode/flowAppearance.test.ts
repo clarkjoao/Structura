@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { FLOW_DEFAULT_ACCENT, flowPalette, resolveFlowAppearance } from "./flowAppearance";
+import {
+  FLOW_DEFAULT_ACCENT,
+  accentToStore,
+  flowPalette,
+  resolveFlowAppearance,
+} from "./flowAppearance";
 
 describe("resolveFlowAppearance", () => {
   it("resolves every part to its default when nothing is stored", () => {
@@ -72,5 +77,24 @@ describe("shape defaults", () => {
     expect(resolveFlowAppearance({ flowShape: "evidence" }).stroke).toBe("dashed");
     expect(resolveFlowAppearance({ flowShape: "evidence", stroke: "solid" }).stroke).toBe("solid");
     expect(resolveFlowAppearance({ flowShape: "rectangle" }).stroke).toBe("solid");
+  });
+});
+
+describe("accentToStore", () => {
+  const teal = "hsl(var(--node-system))";
+  const slate = "hsl(var(--muted-foreground))";
+
+  it("stores the slate default as nothing", () => {
+    expect(accentToStore(slate)).toBeUndefined();
+    expect(accentToStore(teal)).toBe(teal);
+  });
+
+  it("stores nothing for the element's own default accent", () => {
+    expect(accentToStore("hsl(var(--node-person))", "hsl(var(--node-person))")).toBeUndefined();
+  });
+
+  it("inside a teal lane, stores slate explicitly and teal as nothing", () => {
+    expect(accentToStore(slate, teal)).toBe(slate);
+    expect(accentToStore(teal, teal)).toBeUndefined();
   });
 });

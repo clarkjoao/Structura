@@ -1,8 +1,6 @@
 import { useTranslation } from "react-i18next";
 import type { ComponentPatch, NodeFillMode, NodeStrokeMode } from "@/features/diagram";
-import { ColorPicker } from "@/features/canvas/selection-actions/ColorPicker";
 import {
-  accentToStore,
   defaultStrokeFor,
   resolveFlowAppearance,
   type FlowAppearanceInput,
@@ -18,8 +16,8 @@ export interface FlowAppearanceSectionProps {
 }
 
 /**
- * Colour in parts: accent, fill and stroke, each its own control. The accent is
- * the same picker (and the same `customColor` field) the canvas toolbar uses.
+ * Fill and stroke of a flow-skinned element. The accent is not here: the floating toolbar owns
+ * colour, and the panel is configuration.
  *
  * Picking a part's default clears it rather than storing it: the defaults are
  * resolved at render, and an unset part keeps the diagram's checksum where an
@@ -32,28 +30,10 @@ export function FlowAppearanceSection({
 }: FlowAppearanceSectionProps) {
   const { t } = useTranslation();
   const resolved = resolveFlowAppearance(appearance, defaultAccent);
-  // Only a flow node can carry the legacy nodeColor; clearing it elsewhere
-  // would only add an empty key.
-  const clearLegacy = appearance.nodeColor !== undefined ? { nodeColor: undefined } : {};
 
   return (
     <section className="space-y-3" aria-label={t("elementPanel.appearance")}>
       <p className="text-xs font-semibold text-foreground">{t("elementPanel.appearance")}</p>
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
-          {t("elementPanel.accent")}
-        </span>
-        <ColorPicker
-          group="flow"
-          align="end"
-          selectedColor={resolved.accent}
-          onSelectColor={(color) =>
-            // A legacy nodeColor is cleared with it, or it would keep winning as the fill.
-            onChange({ customColor: accentToStore(color, defaultAccent), ...clearLegacy })
-          }
-          onReset={() => onChange({ customColor: undefined, ...clearLegacy })}
-        />
-      </div>
       <SegmentedControl<NodeFillMode>
         label={t("elementPanel.fill")}
         value={resolved.fill}

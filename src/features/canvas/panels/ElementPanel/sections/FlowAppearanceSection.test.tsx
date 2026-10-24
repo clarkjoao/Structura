@@ -20,13 +20,17 @@ const radio = (key: string) => {
     name: i18n.t(key),
   });
 };
-const button = (key: string) => screen.getByRole("button", { name: i18n.t(key) });
 
 describe("FlowAppearanceSection", () => {
   it("shows the defaults as checked when nothing is stored", () => {
     renderSection({});
     expect(radio("elementPanel.fillNone").getAttribute("aria-checked")).toBe("true");
     expect(radio("elementPanel.strokeSolid").getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("leaves colour to the floating toolbar", () => {
+    renderSection({});
+    expect(screen.queryByRole("button", { name: i18n.t("canvas.quickActions.color") })).toBeNull();
   });
 
   it("stores a non-default fill and clears the default one", () => {
@@ -57,16 +61,6 @@ describe("FlowAppearanceSection", () => {
     });
   });
 
-  it("stores the slate default accent as nothing", () => {
-    const onChange = renderSection({ customColor: "hsl(var(--node-system))" });
-    fireEvent.click(button("canvas.quickActions.color"));
-    fireEvent.click(button("colors.slate"));
-    expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
-    fireEvent.click(button("canvas.quickActions.color"));
-    fireEvent.click(button("colors.amber"));
-    expect(onChange).toHaveBeenLastCalledWith({ customColor: "hsl(var(--node-person))" });
-  });
-
   it("stores solid on evidence, whose default is dashed", () => {
     const onChange = renderSection({ flowShape: "evidence" });
     expect(radio("elementPanel.strokeDashed").getAttribute("aria-checked")).toBe("true");
@@ -74,35 +68,6 @@ describe("FlowAppearanceSection", () => {
     expect(onChange).toHaveBeenLastCalledWith({ stroke: "solid" });
     fireEvent.click(radio("elementPanel.strokeDashed"));
     expect(onChange).toHaveBeenLastCalledWith({ stroke: undefined });
-  });
-
-  it("clears to nothing when the element's own default accent is picked", () => {
-    // An element whose default is amber: picking amber there stores nothing.
-    const onChange = vi.fn();
-    render(
-      <FlowAppearanceSection
-        appearance={{ customColor: "hsl(var(--node-system))" }}
-        defaultAccent="hsl(var(--node-person))"
-        onChange={onChange}
-      />,
-    );
-    fireEvent.click(button("canvas.quickActions.color"));
-    fireEvent.click(button("colors.amber"));
-    expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
-  });
-
-  it("inside a teal lane, stores slate explicitly and teal as nothing", () => {
-    // Unset, a node in a teal lane is drawn teal: so teal is its default here,
-    // and slate is a choice that has to be stored or it could never be made.
-    const teal = "hsl(var(--node-system))";
-    const onChange = vi.fn();
-    render(<FlowAppearanceSection appearance={{}} defaultAccent={teal} onChange={onChange} />);
-    fireEvent.click(button("canvas.quickActions.color"));
-    fireEvent.click(button("colors.slate"));
-    expect(onChange).toHaveBeenLastCalledWith({ customColor: "hsl(var(--muted-foreground))" });
-    fireEvent.click(button("canvas.quickActions.color"));
-    fireEvent.click(button("colors.teal"));
-    expect(onChange).toHaveBeenLastCalledWith({ customColor: undefined });
   });
 
   it("stores solid on evidence, whose default is dashed", () => {

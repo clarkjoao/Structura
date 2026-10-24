@@ -4,6 +4,7 @@ import { CommitField } from "./CommitField";
 import { AdvancedFooter } from "./AdvancedFooter";
 import { PanelFrame } from "./PanelFrame";
 import { PanelSection } from "./PanelSection";
+import { PanelHeader } from "./PanelHeader";
 import {
   ELEMENT_PANEL_DEFAULT_WIDTH,
   ELEMENT_PANEL_MAX_WIDTH,
@@ -191,5 +192,50 @@ describe("PanelFrame", () => {
     expect(screen.queryByText("content")).toBeNull();
     fireEvent.click(screen.getByLabelText(EXPAND));
     expect(screen.getByText("content")).toBeTruthy();
+  });
+});
+
+describe("PanelHeader", () => {
+  it("wraps a long name instead of truncating it", () => {
+    const name = "domínio Vendas e Faturamento de Pedidos Corporativos";
+    render(
+      <PanelHeader
+        icon={null}
+        typeLabel="Boundary"
+        name={name}
+        namePlaceholder="Name"
+        onCommitName={vi.fn()}
+        menu={[]}
+        onClose={vi.fn()}
+      />,
+    );
+    const field = screen.getByDisplayValue(name);
+    // A textarea wraps; a single-line input would clip to "domínio Vei…".
+    expect(field.tagName).toBe("TEXTAREA");
+    expect(field.className).not.toMatch(/truncate|text-ellipsis/);
+  });
+
+  it("selects the parent from the trail", () => {
+    const onSelect = vi.fn();
+    render(
+      <PanelHeader
+        icon={null}
+        typeLabel="System"
+        name="Checkout"
+        namePlaceholder="Name"
+        onCommitName={vi.fn()}
+        trail={[
+          { id: "q", name: "Quantum Q-Checkout" },
+          { id: "d", name: "Vendas" },
+        ]}
+        onSelectElement={onSelect}
+        menu={[]}
+        onClose={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByText("Quantum Q-Checkout"));
+    expect(onSelect).toHaveBeenCalledWith("q");
+    fireEvent.click(screen.getByText("Vendas"));
+    expect(onSelect).toHaveBeenCalledWith("d");
   });
 });
