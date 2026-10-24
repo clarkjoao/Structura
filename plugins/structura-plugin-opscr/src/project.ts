@@ -16,7 +16,7 @@ import {
   type ViewLayoutResult,
 } from "./generated/opscr-mapping";
 import { layoutView } from "./generated/opscr-layout";
-import type { Projector } from "./engine/engine";
+import type { Projector, ViewInfo } from "./engine/engine";
 
 export interface Projection {
   diagnostics: Diagnostic[];
@@ -29,6 +29,7 @@ export interface Projection {
   dropped?: DroppedEdge[];
   /** The Views the workspace declares, by name. */
   views?: string[];
+  viewInfos?: ViewInfo[];
 }
 
 export { CONFIG_FILE };
@@ -51,7 +52,8 @@ export async function projectWorkspace(
     return { diagnostics: result.diagnostics };
   }
   const view = buildTechnicalView(workspace);
-  const views = workspace.getByKind("View").map((v) => v.metadata.name);
+  const viewInfos = viewInfosOf(workspace);
+  const views = viewInfos.map((v) => v.name);
   const seeded = previous && previous.boxes.size > 0 ? previous : undefined;
   // An edit of text alone moves nothing: the layout engine would only be ignored.
   const fresh = previousCoversView(view, seeded)
@@ -66,13 +68,35 @@ export async function projectWorkspace(
     omitted: view.omitted,
     dropped: view.dropped,
     views,
+    viewInfos,
   };
+}
+
+/** The Views of a compiled workspace, in name order. */
+function viewInfosOf(workspace: {
+  getByKind(kind: string): Array<{ metadata: { name: string }; spec: Record<string, unknown> }>;
+}): ViewInfo[] {
+  const text = (v: unknown) => (typeof v === "string" && v.trim() !== "" ? v : undefined);
+  return workspace
+    .getByKind("View")
+    .map((v): ViewInfo => {
+      const title = text(v.spec["title"]);
+      const description = text(v.spec["description"]);
+      return {
+        name: v.metadata.name,
+        type: String(v.spec["type"] ?? ""),
+        ...(title ? { title } : {}),
+        ...(description ? { description } : {}),
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export interface ViewProjection {
   diagnostics: Diagnostic[];
   /** The Views the workspace declares, by name; empty for a workspace with none. */
   views: string[];
+  viewInfos: ViewInfo[];
   /** The named View laid out, absent while it does not resolve (unknown name, YAML errors). */
   graph?: ImporterGraph;
 }
@@ -89,12 +113,13 @@ export async function projectView(
   previous?: ViewLayoutResult,
 ): Promise<ViewProjection> {
   const { workspace, result } = await compileSources(config ? { files, config } : { files });
-  const views = workspace.getByKind("View").map((v) => v.metadata.name);
+  const viewInfos = viewInfosOf(workspace);
+  const views = viewInfos.map((v) => v.name);
   if (result.diagnostics.some((d) => d.ruleId === "loader/yaml-parse-error")) {
-    return { diagnostics: result.diagnostics, views };
+    return { diagnostics: result.diagnostics, views, viewInfos };
   }
   const resolved = resolveView(workspace, viewName);
-  if (!resolved) return { diagnostics: result.diagnostics, views };
+  if (!resolved) return { diagnostics: result.diagnostics, views, viewInfos };
   const view = buildViewDiagram(workspace, resolved);
   const seeded = previous && previous.boxes.size > 0 ? previous : undefined;
   const fresh = previousCoversView(view, seeded)
@@ -104,6 +129,7 @@ export async function projectView(
   return {
     diagnostics: result.diagnostics,
     views,
+    viewInfos,
     graph: toImporterGraph(placeView(view, stable), seeded ? { x: 0, y: 0 } : ORIGIN),
   };
 }

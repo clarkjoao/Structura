@@ -64,7 +64,14 @@ export const emptyBinding = (): BindingState => ({ ids: {}, connections: {}, sig
 
 /** Everything about an element that, when it changes, must reach the canvas. */
 export const signature = (c: ImporterGraphComponent) =>
-  JSON.stringify([c.name, c.description, c.technology ?? "", c.cloudServiceId ?? ""]);
+  JSON.stringify([
+    c.name,
+    c.description,
+    c.technology ?? "",
+    c.cloudServiceId ?? "",
+    // Only a diagram that opens another has this: the others keep their old signature.
+    ...(c.linkedDiagramId !== undefined ? [c.linkedDiagramId] : []),
+  ]);
 /** What cannot be updated in place: changing it means removing and re-adding the element. */
 export const identity = (c: ImporterGraphComponent) =>
   JSON.stringify([c.type, c.parentKey ?? null]);
@@ -290,6 +297,9 @@ export function planSync(
         description: component.description,
         technology: component.technology ?? "",
         cloudServiceId: component.cloudServiceId ?? "",
+        // A view's diagram owns its links (none clears one); the whole-workspace diagram's are
+        // the user's, drawn by hand, and are left alone.
+        ...(binding.view !== undefined ? { linkedDiagramId: component.linkedDiagramId ?? "" } : {}),
       });
     }
     const size = live.get(id)?.size;

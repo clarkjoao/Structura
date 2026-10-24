@@ -66,6 +66,7 @@ function diagramFor(
       serviceId: null,
       cloudServiceId: null,
       technology: null,
+      linkedDiagramId: null,
     }));
   edits(components);
   return {
@@ -81,6 +82,7 @@ function diagramFor(
       label: "writes",
       description: null,
       technology: null,
+      linkedDiagramId: null,
     })),
   } as unknown as DiagramSnapshot;
 }
@@ -197,6 +199,7 @@ describe("sidecarMoves", () => {
       serviceId: null,
       cloudServiceId: null,
       technology: null,
+      linkedDiagramId: null,
     });
     const diagram: DiagramSnapshot = {
       id: "d",

@@ -127,3 +127,16 @@ renaming) is edited in the YAML or in the whole-workspace diagram. Moving boxes 
 view). The folder's files must sit at its top level: the pane opens a folder's top-level files only.
 `e2e/views.mjs` drives all of this in a production build.
 
+### A diagram for each view
+
+With the views of a workspace picked in the **Diagram** list, one diagram at a time is drawn on the
+bound diagram. Tick **A Structura diagram for each view** to get the views as diagrams of their own
+instead (plugin API 1.13): one per View in the app's diagram list, named and levelled after it (context,
+container, component, deployment), filled from the YAML and kept in sync with it. A box that opens
+another view is linked to that view's diagram, so the card's **Explore inside** button takes you there.
+
+Like a picked view, these are projections: edit the YAML (or the whole-workspace diagram) to change
+structure; moving boxes is saved per view in `opscr.layout.json`. A view that leaves the YAML keeps its
+diagram, listed in the pane — delete it in the diagram list when you do not need it. A diagram you delete
+is made again on the next sync while the box is ticked; untick it to stop. `e2e/views.mjs` covers it.
+

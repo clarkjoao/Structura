@@ -16,8 +16,19 @@ diagram's, `views` holds one entry per View). A View is a projection: reconcile,
 add-to-YAML are off while one is shown, so the canvas follows the YAML and only positions flow back.
 The plugin API and the host do not change.
 
-**Phase B — one Structura diagram per View (plugin API 1.13).** The sections below describe it; it is
-not started. It reuses Phase A's projection and sidecar unchanged.
+**Phase B — one Structura diagram per View (plugin API 1.13) (done).** Switched on in the pane
+("A Structura diagram for each view"). Each View gets its own diagram in the app — made on first
+sight, named and levelled after the View, filled and kept in sync from the YAML — and a box that opens
+another view is linked to that view's diagram (`linkedDiagramId`), so the app's own drill-down
+button works. It reuses Phase A's projection and sidecar unchanged.
+
+What it needed from the host (API 1.13): `createDiagram`, `applyChanges(changes, { diagramId })`
+(history stays per diagram), `linkedDiagramId` on `add` and `update`, and `linkedDiagramId` in the
+component snapshot. In the plugin: a `ViewDiagrams` manager that owns one `OpscrEngine` per View
+diagram, each bound to its diagram in view mode — so **no change to the engine's keys was needed**:
+the key (`Kind/name`) is unique within a diagram, and each diagram has its own binding. A deleted
+diagram is made again; the diagram of a View that left the YAML is kept, listed as an orphan, and
+deleted only by the user.
 
 ## Decisions
 

@@ -28,6 +28,7 @@ import {
 } from "../generated/opscr-mapping";
 import type { AddChoice } from "../engine/adopt";
 import { OpscrEngine, type EngineEvent, type ViewLink } from "../engine/engine";
+import { useViewDiagrams } from "./useViewDiagrams";
 import type { UnwrittenConnection } from "../engine/reconcile";
 import { emptyBinding, type BindingState } from "../engine/sync";
 import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../engine/watch";
@@ -275,6 +276,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
     );
 
     // The binding engine over this pane's buffers, the active diagram and the plugin storage.
+    const syncViewDiagrams = useRef<() => Promise<void> | undefined>(() => undefined);
     const onEvent = useRef<(event: EngineEvent) => void>(() => {});
     onEvent.current = (event) => {
       // Only a sync that got through (or stopped at broken YAML) says the diagram is current again.
@@ -282,6 +284,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
       else if (event.type === "synced") {
         setFailed(false);
         setStatus(t.synced(event.elements));
+        // The diagrams of the Views follow the YAML the whole-workspace diagram just followed.
+        void syncViewDiagrams.current?.();
       } else if (event.type === "parse-error" || event.type === "invalid") {
         setFailed(false);
         setStatus(t.parseError);
@@ -344,6 +348,15 @@ export function createOpscrPane(api: StructuraPluginApi) {
     }, [diagramId, persist, setTexts]);
 
     const sync = useCallback(() => engine.sync(), [engine]);
+
+    const viewDiagrams = useViewDiagrams({
+      api,
+      diagramId,
+      ready: folder !== null && loadedFor === diagramId,
+      buffersRef,
+      setTexts,
+    });
+    syncViewDiagrams.current = viewDiagrams.sync;
 
     // Canvas edits (and undo/redo) of the bound diagram reach the YAML while the folder is open.
     useEffect(() => {
@@ -508,6 +521,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         const manifestsChanged = merged.reloaded.some((n) => !isSidecar(n));
         if (!sidecar && !visualChanged && !manifestsChanged) return;
         if (sidecar) await engine.sidecarChanged(sidecar);
+        if (sidecar) await viewDiagrams.sidecarChanged(sidecar);
         if (visualChanged) await engine.visualChanged();
         if (!sidecar && !visualChanged) await engine.sync();
       } catch (error) {
@@ -515,7 +529,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       } finally {
         checking.current = false;
       }
-    }, [folder, engine, t, commitBuffers]);
+    }, [folder, engine, t, commitBuffers, viewDiagrams]);
 
     useEffect(() => {
       if (!folder) return;
@@ -814,6 +828,26 @@ export function createOpscrPane(api: StructuraPluginApi) {
             </label>
             {stored.state.view !== undefined && (
               <p className="text-muted-foreground">{t.viewReadOnly}</p>
+            )}
+            <label className="flex items-start gap-2" title={t.viewDiagramsHint}>
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={viewDiagrams.enabled}
+                onChange={(e) => viewDiagrams.setEnabled(e.target.checked)}
+              />
+              <span>{t.viewDiagrams}</span>
+            </label>
+            {viewDiagrams.enabled && viewDiagrams.report.diagrams.length > 0 && (
+              <p className="text-muted-foreground">
+                {t.viewDiagramsMade(viewDiagrams.report.diagrams.length)}:{" "}
+                {viewDiagrams.report.diagrams.map((d) => d.name).join(" · ")}
+              </p>
+            )}
+            {viewDiagrams.enabled && viewDiagrams.report.orphans.length > 0 && (
+              <p className="text-amber-600">
+                {t.viewDiagramsOrphans(viewDiagrams.report.orphans.map((o) => o.view).join(", "))}
+              </p>
             )}
             {views.links.length > 0 && (
               <ul className="flex flex-wrap gap-1">

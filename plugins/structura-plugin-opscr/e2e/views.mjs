@@ -217,6 +217,47 @@ await picker.selectOption("");
 await waitNodes(whole).catch(async () => fail(`whole workspace again: expected ${whole}, got ${await nodes()}`));
 await check((await nodes()) === whole, "the whole workspace is back");
 
+// A diagram of its own for each view (plugin API 1.13): switched on in the pane, the four diagrams
+// appear in the app, each drawn from its view, and a box that opens another view opens its diagram.
+const storedDiagrams = () =>
+  page.evaluate(() => {
+    const raw = localStorage.getItem("structura_diagram-store");
+    return raw ? Object.values(JSON.parse(raw).state.diagrams) : [];
+  });
+await page.getByLabel(/A Structura diagram for each view/).check();
+const deadline = Date.now() + 30000;
+let made = [];
+while (Date.now() < deadline) {
+  made = (await storedDiagrams()).filter((d) => d.id !== DIAGRAM && d.id !== OTHER);
+  if (made.length === 4 && made.every((d) => Object.keys(d.snapshot.components).length > 0)) break;
+  await page.waitForTimeout(500);
+}
+await check(made.length === 4, `a diagram is made for each view (${made.length})`);
+const byName = Object.fromEntries(made.map((d) => [d.name, d]));
+const sizes = Object.fromEntries(made.map((d) => [d.name, Object.keys(d.snapshot.components).length]));
+await check(
+  sizes["Web shop — system context"] === 3 && sizes["Web shop — containers"] === 10 && sizes["Orders API — components"] === 8 && sizes["Web shop — production on AWS"] === 18,
+  `each is drawn from its view: ${JSON.stringify(sizes)}`,
+);
+const contextDiagram = byName["Web shop — system context"];
+const containers = byName["Web shop — containers"];
+const system = Object.values(contextDiagram.snapshot.components).find((c) => c.name === "webshop");
+await check(system?.linkedDiagramId === containers.id, "the system box opens the container diagram");
+await check(
+  contextDiagram.level === "context" && byName["Web shop — production on AWS"].level === "deployment",
+  "the diagrams carry their level",
+);
+await page.screenshot({ path: join(OUT, "views-5-diagrams.png") });
+
+// Opening one and drilling in with the app's own control (the card's explore button).
+await page.goto(`http://localhost:${PORT}/model/${contextDiagram.id}`);
+await page.waitForSelector(".react-flow__viewport", { timeout: 30000 });
+await waitNodes(3).catch(() => fail("the context diagram did not draw 3 elements"));
+await page.locator(".react-flow__node", { hasText: "webshop" }).first().getByRole("button", { name: /Drill into/i }).first().click();
+await waitNodes(10).catch(async () => fail(`drilling into the container diagram: got ${await nodes()} elements`));
+await check(page.url().endsWith(`/model/${containers.id}`), "the system box's drill-down button opens the container diagram");
+await page.screenshot({ path: join(OUT, "views-6-drilled.png") });
+
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 await browser.close();
 server.kill();
