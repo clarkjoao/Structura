@@ -3065,11 +3065,11 @@
   },
   "services": {
     "title": "Services",
-    "addService": "Add Service",
+    "addService": "Add service",
     "searchPlaceholder": "Search by name, role, technology or tag…",
     "filterAll": "All",
     "filterManual": "Manual",
-    "emptyNoServices": "No services yet. Click \"Add Service\" to get started.",
+    "emptyNoServices": "No services yet. Click \"Add service\" to get started.",
     "emptyFiltered": "No services match the current filters.",
     "chipAddPlaceholder": "Add...",
     "techPlaceholder": "java, spring...",
