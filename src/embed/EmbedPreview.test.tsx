@@ -6,6 +6,7 @@ import { EmbedPreview } from "./EmbedPreview";
 import {
   BLOCKED,
   LOAD_GRAPH,
+  OPEN,
   OPEN_PROBLEM,
   PROBE,
   PROBE_RESULT,
@@ -128,5 +129,18 @@ describe("EmbedPreview", () => {
     expect(selected()?.getAttribute("data-id")).toBe("a");
     await send({ type: SELECT, element: null });
     expect(selected()).toBeNull();
+  });
+
+  it("tells the host which element was double-clicked, so it can open what it stands for", async () => {
+    render(<EmbedPreview />, { wrapper: MemoryRouter });
+    await send(graph);
+    const node = await screen.findByText("orders");
+    await act(async () => {
+      node.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+    });
+    expect(postToHost).toHaveBeenCalledWith({
+      type: OPEN,
+      element: { kind: "component", key: "a" },
+    });
   });
 });

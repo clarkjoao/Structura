@@ -144,6 +144,40 @@ exports.run = async function run() {
   });
   console.log("[e2e] a view with no config finds its solution from the file alone");
 
+  // The Views of that solution: pick one, then follow a box that opens another (a double-click in
+  // the preview, posed as the webview's message).
+  const soloStatus = async () => (await vscode.commands.executeCommand("opscr._previewStatus"))[solo];
+  assert.equal((await soloStatus()).view, null);
+  assert.equal((await soloStatus()).views.length, 4);
+  await vscode.commands.executeCommand("opscr._previewView", solo, "shop-containers");
+  await until("the container view to be drawn", async () => {
+    const s = await soloStatus();
+    return s.view === "shop-containers" && s.blocked === 0 && s.components === 10;
+  });
+  console.log("[e2e] picking a view draws it (10 elements)");
+  await vscode.commands.executeCommand("opscr._previewMessage", solo, {
+    type: "STRUCTURA_OPEN",
+    element: { kind: "component", key: "Application/orders-api" },
+  });
+  await until("the component view to open from its box", async () => {
+    const s = await soloStatus();
+    return s.view === "orders-api-components" && s.components === 8;
+  });
+  console.log("[e2e] a double-click on a box opens the view it links to");
+  // A box that links nowhere does nothing.
+  await vscode.commands.executeCommand("opscr._previewMessage", solo, {
+    type: "STRUCTURA_OPEN",
+    element: { kind: "component", key: "Database/orders-db" },
+  });
+  await sleep(500);
+  assert.equal((await soloStatus()).view, "orders-api-components");
+  await vscode.commands.executeCommand("opscr._previewView", solo, undefined);
+  await until("the whole workspace to come back", async () => {
+    const s = await soloStatus();
+    return s.view === null && s.components === 9;
+  });
+  console.log("[e2e] the whole workspace comes back");
+
   // A click on an element opens the YAML that writes it (posed as the webview's message: a test
   // cannot click inside the webview).
   await vscode.commands.executeCommand("opscr._previewMessage", folder, {

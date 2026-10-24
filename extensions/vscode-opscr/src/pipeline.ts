@@ -1,14 +1,15 @@
 import { dirname, join as joinPath } from "node:path";
-import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
+import { compileSources, resolveView, type Diagnostic, type SourceFile } from "opscr/core";
 import {
   CONFIG_FILE,
   LAYOUT_FILE,
   SourceIndex,
   VISUAL_FILE,
   buildTechnicalView,
+  buildViewDiagram,
   isManifestName,
   overlayLayouts,
-  parseLayoutFile,
+  parseLayoutFiles,
   placeView,
   previousCoversView,
   stabilizeLayout,
@@ -41,6 +42,12 @@ export interface PreviewUpdate {
   graph?: ImporterGraph;
   /** Where each element of `graph` is written, and which element a line writes. */
   sources?: SourceIndex;
+  /** The Views the workspace declares, by name (empty when it has none). */
+  views?: string[];
+  /** The View drawn; undefined when the whole workspace is. */
+  view?: string;
+  /** Boxes of the drawn view that open another view: component key → View name. */
+  links?: Map<string, string>;
   /** Why there is no picture: the YAML does not parse, or how many opscr errors it has. */
   blocked?: { reason: "parse" } | { reason: "errors"; errors: number };
 }
@@ -55,7 +62,8 @@ const PARSE_ERROR = "loader/yaml-parse-error";
  * not block. No VSCode API here, so the whole path is unit-testable.
  */
 export class PreviewPipeline {
-  private previous: ViewLayoutResult | undefined;
+  /** The picture on screen, per diagram: the whole workspace's ("") and each View's. */
+  private readonly pictures = new Map<string, ViewLayoutResult>();
   /** The sidecar text last applied, so an unchanged sidecar is not re-applied. */
   private sidecar: string | undefined;
   /** Updates run one at a time: each builds on the picture the one before left. */
@@ -65,23 +73,29 @@ export class PreviewPipeline {
    * Forget the current picture: the next update lays everything out from scratch, ignoring
    * the sidecar until it changes.
    */
-  relayout(): void {
+  relayout(view?: string): void {
     // After any update in flight, which would otherwise put its picture back.
     this.queue = this.queue.then(() => {
-      this.previous = undefined;
+      this.pictures.delete(view ?? "");
     });
   }
 
-  update(workspace: WorkspaceText): Promise<PreviewUpdate> {
-    const next = this.queue.then(() => this.run(workspace));
+  /** `view`: the opscr View to draw; undefined draws the whole workspace. */
+  update(workspace: WorkspaceText, view?: string): Promise<PreviewUpdate> {
+    const next = this.queue.then(() => this.run(workspace, view));
     this.queue = next.catch(() => undefined);
     return next;
   }
 
-  private async run(workspace: WorkspaceText): Promise<PreviewUpdate> {
+  private async run(workspace: WorkspaceText, wanted?: string): Promise<PreviewUpdate> {
     if (workspace.layout !== undefined && workspace.layout !== this.sidecar) {
-      // A new or changed sidecar (Structura saved it): its boxes win over the current picture.
-      this.previous = overlayLayouts(this.previous, parseLayoutFile(workspace.layout));
+      // A new or changed sidecar (Structura saved it): its boxes win over the current pictures.
+      const files = parseLayoutFiles(workspace.layout);
+      for (const key of new Set(["", ...this.pictures.keys(), ...(files?.views.keys() ?? [])])) {
+        const sidecarBoxes = key === "" ? files?.base : files?.views.get(key);
+        const merged = overlayLayouts(this.pictures.get(key), sidecarBoxes);
+        if (merged) this.pictures.set(key, merged);
+      }
     }
     this.sidecar = workspace.layout;
     const { files, config } = workspace;
@@ -95,20 +109,33 @@ export class PreviewPipeline {
     const errors = diagnostics.filter((d) => d.severity === "error").length;
     if (errors > 0) return { diagnostics, blocked: { reason: "errors", errors } };
 
-    const view = buildTechnicalView(compiled);
+    const views = compiled.getByKind("View").map((v) => v.metadata.name);
+    // A View that is gone (renamed, deleted) falls back to the whole workspace.
+    const resolved = wanted !== undefined && views.includes(wanted) ? resolveView(compiled, wanted) : undefined;
+    const drawn = resolved ? wanted : undefined;
+    const view = resolved ? buildViewDiagram(compiled, resolved) : buildTechnicalView(compiled);
+    const key = drawn ?? "";
+    const previous = this.pictures.get(key);
     // An edit of text alone moves nothing: the layout engine would only be ignored.
-    const fresh = previousCoversView(view, this.previous)
+    const fresh = previousCoversView(view, previous)
       ? { boxes: new Map(), edgeRoutes: new Map() }
-      : await layoutView(toLayoutGraph(view), this.previous?.boxes);
-    const stable = stabilizeLayout(view, fresh, this.previous);
-    this.previous = stable;
+      : await layoutView(toLayoutGraph(view), previous?.boxes);
+    const stable = stabilizeLayout(view, fresh, previous);
+    this.pictures.set(key, stable);
     const graph = toImporterGraph(placeView(view, stable));
-    // Boundaries, services with no Kind and text, drawn as the plugin draws them.
-    const visual = workspace.visual ? parseVisualFile(workspace.visual) : null;
+    const links = new Map(
+      graph.components.flatMap((c) => (c.linkedView !== undefined ? [[c.key, c.linkedView] as const] : [])),
+    );
+    // Boundaries, services with no Kind and text, drawn as the plugin draws them — in the
+    // whole-workspace picture only: a View is a projection of the manifests.
+    const visual = !drawn && workspace.visual ? parseVisualFile(workspace.visual) : null;
     return {
       diagnostics,
       graph: visual ? withVisualLayer(graph, visual).graph : graph,
       sources: new SourceIndex(compiled.manifests, view),
+      views,
+      ...(drawn !== undefined ? { view: drawn } : {}),
+      links,
     };
   }
 }

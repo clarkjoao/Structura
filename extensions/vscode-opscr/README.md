@@ -19,6 +19,13 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
 
   `opscr.layout.json` and `opscr.visual.json` are read from the root only. Unsaved text in open
   editors is used as it is.
+- **Views:** when the workspace declares `View` manifests (system context, containers,
+  components, deployment), the status bar shows `opscr: <diagram>` and **opscr: Show View in
+  Preview…** (also the status bar item) lists the whole workspace and each view. **Double-click** a
+  box that opens another view (a `drillDown` in the YAML) to go there; the picker also lists those
+  links. Each diagram keeps its own layout, and `opscr.layout.json` (version 2) is read per view.
+  A view is a projection of the manifests, so the draw.io visual layer is drawn on the whole
+  workspace only.
 - **Live, validated:** ~300 ms after a change — typed, saved, or written to disk by another tool
   (Claude Code, git) — the folder is validated with opscr and, when it has no errors, drawn.
   While the YAML does not parse or has opscr errors, the preview keeps its last valid picture and

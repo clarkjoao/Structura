@@ -11,6 +11,7 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  *   host  → embed  STRUCTURA_BLOCKED { reason, errors, problems }    why there is no (new) picture
  *   host  → embed  STRUCTURA_SELECT { element: { kind, key } | null }  light an element, in view
  *   embed → host   STRUCTURA_REVEAL { element: { kind, key } }      the reader clicked an element
+ *   embed → host   STRUCTURA_OPEN { element: { kind, key } }        the reader double-clicked an element
  *   embed → host   STRUCTURA_OPEN_PROBLEM { index }                 the reader clicked a BLOCKED problem
  *   host  → embed  STRUCTURA_PROBE                                   say what is on screen
  *   embed → host   STRUCTURA_PROBE_RESULT { viewport, searchOpen, visible, blocked, selected }   …the answer (for tests)
@@ -32,6 +33,7 @@ export const PROBE = "STRUCTURA_PROBE";
 export const PROBE_RESULT = "STRUCTURA_PROBE_RESULT";
 export const SELECT = "STRUCTURA_SELECT";
 export const REVEAL = "STRUCTURA_REVEAL";
+export const OPEN = "STRUCTURA_OPEN";
 export const OPEN_PROBLEM = "STRUCTURA_OPEN_PROBLEM";
 
 /** A component by its key, or a connection by its `connectionKeys` key. */

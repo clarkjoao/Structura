@@ -12,6 +12,7 @@ import {
   PROBE_RESULT,
   READY,
   RENDERED,
+  OPEN,
   REVEAL,
   SEARCH,
   SELECT,
@@ -103,6 +104,12 @@ export function EmbedPreview() {
     [],
   );
 
+  const open = useCallback(
+    (element: ViewerElementRef) =>
+      postToHost({ type: OPEN, element: { kind: element.kind, key: element.id } }),
+    [],
+  );
+
   const openProblem = (index: number) => postToHost({ type: OPEN_PROBLEM, index });
 
   if (!diagram) {
@@ -168,6 +175,7 @@ export function EmbedPreview() {
         searchRequest={searchRequest}
         focus={focus}
         onElementClick={reveal}
+        onElementDoubleClick={open}
         select={select}
       />
     </div>
