@@ -18,7 +18,7 @@ const EXPANDED_MIN_H = 260;
 const PREVIEW_LINES = 3;
 
 const jsonViewerIncomingHandleClassName =
-  "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
+  "!border-background transition-[width,height,background-color,box-shadow] duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
 /**
  * The one anchor this node offers: an incoming handle, shared by every edge

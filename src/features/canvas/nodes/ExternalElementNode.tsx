@@ -51,7 +51,7 @@ function colorWithOpacity(color: string, opacity: number): string {
 }
 
 const handleClass =
-  "!border-background transition-all duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
+  "!border-background transition-[width,height,background-color,box-shadow] duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
 
 const ExternalElementNode = memo(
   ({ data: d, selected }: NodeProps<Node<ExternalElementNodeData>>) => {
