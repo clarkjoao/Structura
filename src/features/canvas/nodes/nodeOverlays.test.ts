@@ -30,8 +30,7 @@ import {
 /**
  * Each editor overlay on its own, over what `projectNodes` actually produces.
  *
- * The contract every overlay keeps (slice 5 of
- * docs/investigation/divergencia-edicao-visualizacao.md): it may add to the
+ * The contract every overlay keeps: it may add to the
  * style, add a class, turn an interaction off or mark the node selected, and
  * it may not move, resize, restack, re-nest, hide or rewrite the node. When it
  * does not apply it hands back the very same object.

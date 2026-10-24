@@ -29,7 +29,7 @@ vi.mock("sonner", () => ({
 
 /**
  * The edge of a gesture, with the editor drawing resting geometry from edge
- * data (slice 6 of docs/investigation/divergencia-edicao-visualizacao.md).
+ * data.
  *
  * The gesture hooks are fed exactly as EditableEdge feeds them: the store goes
  * through the editor's chain (selectors → view → useCanvasEdges) to edge A's

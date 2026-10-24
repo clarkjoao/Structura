@@ -24,8 +24,7 @@ vi.mock("sonner", () => ({
 /**
  * Which edges hand React Flow a new `data` object after a store write.
  *
- * Slice 6 of docs/investigation/divergencia-edicao-visualizacao.md moves the
- * editor's resting edge geometry from the store onto `data`, as the viewer
+ * The editor's resting edge geometry from the store onto `data`, as the viewer
  * already has it. That is only safe if a write that is not about an edge
  * leaves that edge's `data` — and so the edge object React Flow holds — alone:
  * otherwise every store write re-renders every edge, and one mid-gesture could

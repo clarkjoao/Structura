@@ -133,8 +133,7 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
   );
 
   /*
-   * What the canvas shows — the rule the viewer uses too (slice 5 of
-   * docs/investigation/divergencia-edicao-visualizacao.md). Keyed on exactly
+   * What the canvas shows — the rule the viewer uses too. Keyed on exactly
    * the resolved-snapshot references the store selectors already hand out
    * (`getCachedCanvasSnapshot`), so it is rebuilt when components, layouts or
    * connections change and never on an unrelated store write.

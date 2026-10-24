@@ -26,9 +26,8 @@ import { getFlowParamFromUrl, getViewerPayloadFromHash, splitSharedPayload } fro
  * **No source is re-arranged.** Every way in renders the positions and edge
  * waypoints the diagram carries — the same picture the editor draws. The
  * `?diagramId` and file sources used to run ELK on load, which replaced the
- * author's layout with a different one
- * (docs/investigation/divergencia-edicao-visualizacao.md §3.5). A diagram that
- * should read arranged is arranged in the editor, with auto layout, and saved.
+ * author's layout with a different one.
+ * A diagram that should read arranged is arranged in the editor, with auto layout, and saved.
  *
  * Nothing here writes: the route only reads the store and the file.
  *

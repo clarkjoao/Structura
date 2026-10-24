@@ -20,8 +20,8 @@ import { ViewerPage } from "./ViewerPage";
  * handing a diagram over by `postMessage`, a diagram named by id and one read
  * off disk all render at the positions they carry. The viewer used to run ELK
  * on the last two, which threw away the author's positions and waypoints and
- * drew a different picture from the editor's
- * (docs/investigation/divergencia-edicao-visualizacao.md §3.5). An author who
+ * drew a different picture from the editor's.
+ * An author who
  * wants an arranged diagram runs auto layout in the editor and saves it.
  */
 

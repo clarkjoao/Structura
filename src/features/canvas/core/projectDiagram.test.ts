@@ -11,7 +11,7 @@ import { resolveViewSnapshot } from "./resolveViewSnapshot";
 /**
  * The read policy locks a node — its interaction flags and its editing
  * controls — inside the projection, and the write policy leaves the same node
- * alone. Before slice 7 of docs/investigation/divergencia-edicao-visualizacao.md
+ * alone. Previously
  * the controls were locked by a separate `lockForReading` the viewer ran after
  * projecting.
  */

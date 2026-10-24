@@ -39,8 +39,7 @@ vi.mock("sonner", () => ({
  * editor's hooks and the viewer's `projectReadDiagram` — and every rule that
  * lived on one side only was a visible difference: children of a collapsed
  * panel drawn on the viewer, components with no layout drawn at the origin,
- * a stacking order the viewer ignored. See
- * docs/investigation/divergencia-edicao-visualizacao.md §3.
+ * a stacking order the viewer ignored.
  *
  * The editor side here is the chain `useCanvasGraphState` runs, fed by the
  * store's own selectors, with nothing selected. Only what the reader is meant

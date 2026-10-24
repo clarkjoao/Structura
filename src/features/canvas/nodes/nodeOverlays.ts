@@ -22,8 +22,7 @@ import { isDimmedByCoverage, resolveSelectionFocus } from "./nodeVisibility";
  *     selected,
  * and returns the node untouched when it does not apply, so an editor with
  * nothing selected, no comparison, no tag filter and no pending preview draws
- * exactly the projection. See docs/investigation/divergencia-edicao-visualizacao.md
- * §5.1 (slice 5).
+ * exactly the projection.
  *
  * Order matters for opacity only, and `applyEditorNodeOverlays` fixes it:
  * the focus and coverage dims replace the descriptor's opacity, compare mode

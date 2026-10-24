@@ -202,7 +202,6 @@ async function doReconnect(): Promise<boolean> {
     // silent backup (Zustand persist + forced flushes before merge/overwrite).
     // Pausing it was a root cause of filesystem instability: if the folder write
     // failed mid two-phase commit, there was no browser-side copy to recover from.
-    // See docs/discovery/bug3-filesystem-instability.md §P0.1.
     fileSystemAdapter.setFolders(useDiagramStore.getState().folders);
 
     const workspace = await fileSystemAdapter.loadWorkspace();

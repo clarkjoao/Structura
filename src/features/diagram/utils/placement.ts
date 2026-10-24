@@ -8,8 +8,7 @@ import { isTextType } from "../model/component-type-constants";
  * One rule for every surface. The editor's store selectors
  * (`useVisibleComponents` / `useVisibleConnections`) and the viewer's
  * projection (`resolveViewSnapshot`) both read it from here, so a component
- * with no layout can never be drawn by one and skipped by the other again
- * (docs/investigation/divergencia-edicao-visualizacao.md §3.3).
+ * with no layout can never be drawn by one and skipped by the other again.
  *
  * Free text is placed only while the diagram's text layer is on
  * (`Diagram.textsVisible`); with it off the texts are in the model but not on

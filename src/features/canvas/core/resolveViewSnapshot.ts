@@ -285,8 +285,7 @@ function parentDepth(comp: Component, components: Record<string, Component>): nu
  * among nodes with equal z the later one is on top. Both surfaces must hand it
  * the same order, or two overlapping panels stack one way in the editor and
  * the other way in a shared link. This is the editor's order, adopted by the
- * viewer (decision recorded with slice 4 of
- * docs/investigation/divergencia-edicao-visualizacao.md). It also puts every
+ * viewer. It also puts every
  * parent before its children, which React Flow requires.
  */
 export function sortForRender(
@@ -320,8 +319,7 @@ export function sortForRender(
  * — one pure function for the editor and the viewer.
  *
  * Selection (dimming the unselected, rings) is not here: it is the editor's
- * overlay and sits on top of this. See
- * docs/investigation/divergencia-edicao-visualizacao.md §4-§5.
+ * overlay and sits on top of this.
  *
  * The editor reaches the same answer through the steps exported above, at the
  * points where it already computes them — `placedComponents` in its store

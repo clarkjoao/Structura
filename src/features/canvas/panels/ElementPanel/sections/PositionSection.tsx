@@ -127,7 +127,7 @@ export function PositionSection({
    * drag made the panel write the rounded position straight back to the store. That
    * write and the ResizeObserver layout write then re-triggered each other, and the
    * node oscillated between its dragged and original position for as long as the
-   * panel stayed open. Measured 2026-09-13; see docs/epico-virtualizacao/.
+   * panel stayed open. Measured 2026-09-13.
    */
   const handleFocus = useCallback(() => {
     isEditingRef.current = true;

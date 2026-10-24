@@ -46,7 +46,7 @@ export function EmbedModal({ open, onOpenChange, diagram }: EmbedModalProps) {
   // Only while the dialog is open: generateViewerUrl lz-compresses the whole
   // diagram, and this component is mounted unconditionally, so keying it on the
   // diagram alone re-compressed everything on every store mutation with nobody
-  // looking at the result. Measured 2026-09-13; see docs/epico-virtualizacao/.
+  // looking at the result. Measured 2026-09-13.
   const hashIframeCode = useMemo(() => {
     if (!open) return "";
     const embedUrl = generateViewerUrl(diagram, { catalog: readerCatalogFromStore(diagram) });

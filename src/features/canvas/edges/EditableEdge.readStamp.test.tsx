@@ -15,8 +15,7 @@ import type { EdgeData } from "./data/edgeData.types";
  * `EditableEdge` reads control points and the label offset from the store's
  * active diagram. On the viewer that diagram is whatever the reader has open in
  * their workspace, so an edge the shared diagram had no waypoints for used to
- * be drawn through the reader's waypoints for the same connection id — measured
- * in docs/investigation/divergencia-edicao-visualizacao.md §3.6. The read
+ * be drawn through the reader's waypoints for the same connection id — measured. The read
  * projection now stamps every edge, and a stamp always wins over the store.
  */
 
