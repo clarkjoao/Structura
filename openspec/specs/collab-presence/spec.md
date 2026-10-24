@@ -1,6 +1,7 @@
 # collab-presence Specification
 
 ## Purpose
+
 Defines what participants of a live session see of each other — cursors, who is editing what —
 and the short-lived locks that keep two people from dragging or retyping the same element at
 once.

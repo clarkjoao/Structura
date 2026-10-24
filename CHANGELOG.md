@@ -240,8 +240,8 @@ flows (recording + playback), journeys, undo/redo, local-first persistence
 LLM-assisted diagramming, experimental real-time collaboration, and the plugin
 system foundation.
 
-This version was never tagged; the `version` field in `package.json` still
-reads `0.1.0`.
+This version was never tagged; the `version` field in `package.json` reads `0.2.0`
+to match it.
 
 ## Earlier tags
 

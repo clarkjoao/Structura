@@ -43,7 +43,8 @@ browser, and optionally in a folder on your disk that you can commit to Git.
 - **Flows** — record a request path across the diagram, play it back step by step with branches,
   and import/export it as a Mermaid sequence diagram.
 - **Versions** — keep AS-IS / TO-BE variants of a diagram and compare them.
-- **Auto layout** — ELK-based layered layout (`Cmd/Ctrl + Shift + L`).
+- **Auto layout** — ELK-based layered layout (`Cmd/Ctrl + Shift + L`), reading left to right or
+  top to bottom.
 - **Services catalog** — a registry of the services behind your diagrams, linkable from elements,
   with optional GitHub and DefectDojo importers.
 - **Import & export** — JSON (lossless), draw.io / diagrams.net, Mermaid; export a single diagram, a
@@ -52,7 +53,8 @@ browser, and optionally in a folder on your disk that you can commit to Git.
 - **Local-first persistence** — browser storage by default; connect a local folder (File System
   Access API) to keep the workspace as files.
 - **Live sessions** _(experimental)_ — real-time collaboration through a small self-hosted
-  WebSocket relay ([`server/`](server/)).
+  WebSocket relay ([`server/`](server/), or the wire-compatible Go one in
+  [`go-server/`](go-server/) for ECS, Kubernetes or AWS Lambda).
 - **AI assistant** — a chat grounded in the open diagram that proposes changes you review before
   they are applied. Bring your own OpenAI, Anthropic or compatible endpoint.
 - **Plugins** — add node types, importers, exporters and panels from a local JavaScript file.
@@ -115,6 +117,7 @@ npm run server       # installs and starts server/ in dev mode
 | `npm run format:check`       | Prettier check (`npm run format` to fix)               |
 | `npm run cy:run:stress`      | Cypress canvas stress suite                            |
 | `npm run plugins:sync-check` | Verifies the LeanIX plugin's generated files are fresh |
+| `npm run fallow:check`       | Import cycles and new dead code (CI gate)              |
 | `npm run media:capture`      | Regenerates the README screenshots and demo recording  |
 
 ## Plugins

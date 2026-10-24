@@ -39,9 +39,6 @@ tasks-ai
 *.tsbuildinfo
 .ds-sync/
 ds-bundle/
-.design-sync/.cache/
-.design-sync/learnings/
-.design-sync/node_modules
 ^\.pr-body\.md
 
 .pr-body.md
@@ -50,4 +47,6 @@ ds-bundle/
 *.test-diagram.json
 graphify-out
 .claude/worktrees/
+.fallow/
+.design-sync/
 .playwright-mcp

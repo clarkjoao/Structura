@@ -94,7 +94,7 @@ export function useCanvasDiagramNavigation(params: CanvasDiagramNavParams): Canv
   // new object, and re-recording on each one writes localStorage and re-renders,
   // which produces another object. Above ~600 nodes a cycle outlasts the debounce
   // and the loop never settles — ~23s of long tasks after one drag, and the drag
-  // itself can be lost. Measured 2026-09-13; see docs/epico-virtualizacao/.
+  // itself can be lost. Measured 2026-09-13.
   useEffect(() => {
     if (diagram) recordOpened(diagram.id);
     // Keyed on the diagram's identity, not its contents — re-running on every edit would re-navigate.

@@ -53,8 +53,7 @@ localStorage continues to receive Zustand persist writes in parallel with
 the folder. That is intentional: pausing localStorage was a root cause of
 filesystem instability (no browser-side fallback if a folder write failed
 mid two-phase commit). Merge/overwrite/push still force-flush a localStorage
-backup before mutating the folder. See
-`docs/discovery/bug3-filesystem-instability.md` §P0.1.
+backup before mutating the folder.
 
 ### Two-phase diagram writes
 

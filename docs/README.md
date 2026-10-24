@@ -15,7 +15,7 @@ the *why* behind them.
 | [guides/](guides/) | Task-oriented guides (adding a node type, embedding a diagram, …). |
 | [features.md](features.md) | User-facing feature map and keyboard shortcuts. |
 | [decisions/](decisions/) | Product decisions that are not architecture (for example, removing a feature). |
-| [collab-protocol-v3.md](collab-protocol-v3.md) | Wire protocol of the collaboration relay in `server/`. |
+| [collab-protocol-v3.md](collab-protocol-v3.md) | Wire protocol of the collaboration relay (`server/` and `go-server/`). |
 | [assets/](assets/) | Images and recordings used by the README (regenerate with `scripts/capture-media.mjs`). |
 | [../openspec/](../openspec/) | Spec Driven Development via [OpenSpec](https://github.com/Fission-AI/OpenSpec): active changes in `changes/`, accepted requirements in `specs/`. |
 
@@ -37,10 +37,3 @@ the *why* behind them.
 - English is the canonical language for all documentation.
 - When a doc contradicts the code, the code wins — and fixing the doc is part
   of the change that made it wrong.
-
-## Historical investigation logs
-
-`investigation/`, `epico-virtualizacao/`, `epico-layout-visualization/` and `discovery/` are dated engineering logs — measurements, hypotheses and the fixes
-they led to. They are **written in Portuguese** and kept as a record because source comments cite
-them by section. They describe the code at the time they were written, not today; see
-[investigation/README.md](investigation/README.md).

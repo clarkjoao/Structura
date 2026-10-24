@@ -3,7 +3,7 @@ import { familiesResolving, serviceForConcept } from "./conceptService";
 import { CATALOG_CONCEPTS } from "../search/concepts";
 import { getElement } from "../element.registry";
 
-/** The role → service table the pattern catalog audit approved (docs/investigation/pattern-catalog-audit.md §4). */
+/** The role → service table the pattern catalog audit approved. */
 const TABLE = {
   aws: {
     queue: "sqs",

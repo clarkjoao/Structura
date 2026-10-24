@@ -14,8 +14,6 @@
  * and it reaches the local copy through `dimensions` changes. So the rule this
  * file locks is: whatever `useLocalNodes` hands back, a node that had
  * `measured` still has it.
- *
- * See `docs/investigation/edge-relayer.md`.
  */
 
 import { act, renderHook } from "@testing-library/react";

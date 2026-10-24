@@ -1,6 +1,7 @@
 # walkthrough-file-persistence Specification
 
 ## Purpose
+
 How a walkthrough is written to, read back from, and removed from a connected workspace
 folder. A walkthrough lives in its own file beside the diagrams of the folder it explains,
 so a folder can be copied, committed or handed on whole — and so deleting those files is a

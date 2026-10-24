@@ -1,6 +1,7 @@
 # walkthrough-library Specification
 
 ## Purpose
+
 How a walkthrough library is browsed, searched, filtered and organised into the folders it
 shares with the diagrams, and what a walkthrough carries on its card and in the surfaces
 that create and edit it. Browsing walkthroughs SHALL feel like browsing diagrams, because

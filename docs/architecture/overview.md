@@ -8,17 +8,18 @@ in the code.
 
 Structura is a client-only SPA. There is no backend and no database: all state
 is client-side (localStorage, or a local folder via the File System Access
-API). A small optional Node server (`server/`) provides only the collaboration
-relay; it keeps a live session's room while the session lasts, never the workspace.
+API). A small optional relay provides only the collaboration — `server/` (Node) or
+`go-server/` (Go, wire-compatible, also deployable serverless; ADR-0012); it keeps a live session's room while the session lasts, never the workspace.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ Pages (route-level, lazy-loaded)                            │
-│   dashboard · canvas (Index) · Workspace ·              │
-│   ServicesPage · viewer                                  │
+│   dashboard · canvas (Index) · workspace · services ·       │
+│   settings · viewer                                         │
 ├──────────────┬──────────────────────────────────────────────┤
 │ Feature contexts                                            │
-│   canvas   collaboration   llm   viewer   cloud   custom-components              │
+│   canvas  elements  cloud  collaboration  llm  plugins      │
+│   viewer  integrations  element-presets  walkthrough        │
 ├──────────────┴──────────────────────────────────────────────┤
 │ Model  (features/diagram — types, guards, store; no React)  │
 ├─────────────────────────────────────────────────────────────┤
@@ -49,7 +50,7 @@ User interaction on the canvas → canvas hooks translate React Flow events
 into **store actions** (`features/diagram/store/slices/*`) → Immer produces
 the next immutable state, structural mutations push a history snapshot →
 subscribed selectors recompute → `useCanvasNodes` rebuilds React Flow nodes
-via the **node-type descriptor registry** → React Flow re-renders. A
+via the **element registry** (`features/elements`) → React Flow re-renders. A
 persistence subscription serializes the store through the active
 `IStoragePort` adapter (with schema version + migrations). Collaboration,
 when active, sends field-level patches to the relay, which orders them and fans them out
@@ -76,7 +77,7 @@ performance-sensitive code or to avoid circular dependencies.
 
 ## Quality gates
 
-- TypeScript strict mode, project references (`tsc -b`) — keep it green.
+- TypeScript strict mode, `npm run typecheck` (app + `vite.config.ts`) — keep it green.
 - ESLint + Prettier (printWidth 100), enforced in CI.
 - Vitest for unit tests (model utilities, slices, export builders).
 - Cypress `stress-*` e2e specs for canvas performance regressions.

@@ -1,6 +1,7 @@
 # flow-state-authoring Specification
 
 ## Purpose
+
 Gives an author one object for the whole script, seen from whichever step they have selected, so what
 they write and what the reading will hold are the same thing looked at from two places — and a key the
 reading will call undefined cannot look, while it is being written, exactly like a key that is defined.

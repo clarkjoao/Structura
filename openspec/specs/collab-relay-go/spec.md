@@ -1,6 +1,7 @@
 # collab-relay-go Specification
 
 ## Purpose
+
 The Go relay serves protocol v3 in two deployment shapes: a long-lived process and AWS Lambda
 behind an API Gateway WebSocket API.
 

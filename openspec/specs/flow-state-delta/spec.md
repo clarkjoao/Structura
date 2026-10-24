@@ -1,6 +1,7 @@
 # flow-state-delta Specification
 
 ## Purpose
+
 Says what the step in hand did to the running object — which values it introduced, which it wrote over,
 and which went out of scope when a call ended — so the reader sees an event rather than a list that
 happens to differ from the one before it.

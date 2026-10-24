@@ -1,6 +1,7 @@
 # collab-session Specification
 
 ## Purpose
+
 Defines the lifecycle of a live collaboration session on one diagram: how a host opens it, how
 people join and leave, what a host drop or a lost room does, and how the session ends without
 losing the host's work.

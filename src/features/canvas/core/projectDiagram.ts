@@ -21,7 +21,6 @@ import { withPodLinkStyle } from "@/features/diagram/utils/k8s-pod";
  * classes and interaction restrictions. Position, size, z-index, order and
  * edge geometry are decided here and nowhere else, which is what makes "same
  * diagram → same picture" a property of the code rather than a rule to keep.
- * See docs/investigation/divergencia-edicao-visualizacao.md §5.1 (slice 5).
  *
  * Pure: model, utils and leaf modules only — no store, LLM, collaboration or
  * React Flow at runtime (`resolveViewSnapshot.test.ts` walks the imports). The

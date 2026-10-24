@@ -1,6 +1,7 @@
 # shared-flow-reading Specification
 
 ## Purpose
+
 Lets a reader of a shared diagram start a script from the route in front of them, and lets the author
 of a share say which script the link opens on.
 

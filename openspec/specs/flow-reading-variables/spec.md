@@ -1,6 +1,7 @@
 # flow-reading-variables Specification
 
 ## Purpose
+
 Shows the reader the object a step carries — the body being sent, the body expected back, and the
 values accumulated so far — so a developer following a script can see the contract of a call without
 leaving the reading.

@@ -1,6 +1,7 @@
 # collab-relay Specification
 
 ## Purpose
+
 Defines the collaboration relay as a deployable service: how it runs as a single instance or as
 many stateless instances over shared storage, its abuse limits, and the measurable resilience and
 load targets that an automated harness must prove.

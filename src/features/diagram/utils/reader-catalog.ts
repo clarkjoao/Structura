@@ -14,7 +14,7 @@ export interface NamedRef {
  * editor reads them from the store; a reader of a shared link is on another
  * machine, where those ids mean nothing — and a card missing two rows is a
  * shorter, narrower card, so every waypoint the layout anchored against the
- * real one misses (docs/investigation/paridade-editor-viewer-caixa-do-no.md).
+ * real one misses.
  *
  * So the names travel with the diagram, as data: the share link carries them,
  * and a reader on the author's own machine builds them from the store. Only the

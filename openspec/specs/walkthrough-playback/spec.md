@@ -1,6 +1,7 @@
 # walkthrough-playback Specification
 
 ## Purpose
+
 How a reader moves through a walkthrough: forward and back within the flow of one scene,
 across the boundary into the next scene, and what a step waiting on a branch does to both.
 One key means "forward" everywhere, and the reader is always told when a scene has run out.

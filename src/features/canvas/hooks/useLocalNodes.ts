@@ -84,7 +84,6 @@ function shouldDiscardLocalNodes(
  * replacement the entire edge layer unmounts and only comes back once the
  * ResizeObserver has measured again. Measured on 400 nodes / 439 edges: 1756
  * `childList` mutations and ~184 ms of extra long task per drag commit.
- * See `docs/investigation/edge-relayer.md`.
  *
  * Only `measured` crosses over. Everything else — position, parenting,
  * selection — must come from the store, which is the point of the discard.

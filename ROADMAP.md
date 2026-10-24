@@ -9,7 +9,7 @@ This document reflects the current direction of Structura. Items are subject to 
 ## ✅ Completed
 
 - C4 Model levels (Context, Container, Component) with drill-down navigation
-- AWS Services catalog (80+ service types)
+- AWS Services catalog (~140 service types)
 - Flow recording, step-by-step playback, and Mermaid sequence diagram export
 - Full undo/redo history stack per diagram
 - Export: JSON, draw.io XML, Mermaid
@@ -31,7 +31,8 @@ This document reflects the current direction of Structura. Items are subject to 
 - Versions (AS-IS / TO-BE variants with compare mode)
 - Read-only viewer, share links and iframe embedding
 - Bulk export of diagrams, folders or the whole workspace
-- Experimental live sessions through a self-hosted WebSocket relay (`server/`)
+- Experimental live sessions through a self-hosted WebSocket relay (`server/`, plus a wire-compatible Go relay in `go-server/`)
+- Diagram reading direction (left to right or top to bottom, ADR-0013)
 
 ---
 
@@ -83,7 +84,7 @@ This document reflects the current direction of Structura. Items are subject to 
 
 ### Collaboration _(experimental)_
 
-- [ ] Harden live sessions (the WebSocket relay in `server/`) beyond experimental status
+- [ ] Harden live sessions (the WebSocket relays in `server/` and `go-server/`) beyond experimental status
 
 ---
 
@@ -93,4 +94,4 @@ Structura follows [Semantic Versioning](https://semver.org/). Breaking changes t
 
 ---
 
-_Last updated: September 2026._
+_Last updated: October 2026._
