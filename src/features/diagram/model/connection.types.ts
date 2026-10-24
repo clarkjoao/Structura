@@ -2,8 +2,24 @@ import type { EdgeStyle, StrokeStyle, EdgeMarker } from "../enums";
 
 export type { EdgeStyle, StrokeStyle, EdgeMarker };
 
+/**
+ * The pre-v16 connection vocabulary: one value that carried the dash, the width and the animation.
+ * Superseded by `ConnectionInteraction` × `ConnectionKind`; still read as a fallback for data that
+ * has not been through the migration (an old shared link, a peer on an older build), and still the
+ * type of `FlowStep.connectionIntent`.
+ */
 export type ConnectionIntent = "dependency" | "call" | "event" | "data-flow" | "async-message";
 
+/** How the two ends talk: it drives the stroke — solid for sync, dashed for async. */
+export type ConnectionInteraction = "sync" | "async";
+
+/** What the connection is, whatever its interaction. */
+export type ConnectionKind = "call" | "event" | "command" | "dependency";
+
+/**
+ * `"reverse"` is the pre-v16 value: an arrowhead at the source. It is migrated to a swapped
+ * connection and no longer offered; it stays in the union only so unmigrated data still types.
+ */
 export type ConnectionDirection = "unidirectional" | "bidirectional" | "reverse";
 
 export interface ConnectionStyle {
@@ -24,9 +40,15 @@ export interface Connection {
   label: string;
   technology?: string;
   description?: string;
-  intent?: ConnectionIntent;
+  /** Synchronous or asynchronous; drives the stroke. Absent reads as synchronous. */
+  interaction?: ConnectionInteraction;
+  kind?: ConnectionKind;
   direction?: ConnectionDirection;
+  /** @deprecated Pre-v16; migrated into `interaction` and `kind`. */
+  intent?: ConnectionIntent;
+  /** @deprecated Pre-v16, never read by anything; dropped by the migration. */
   communicationType?: "standard" | "custom";
+  /** @deprecated Pre-v16; migrated into `interaction` and `technology`. */
   transportPreset?: "sync" | "async" | "event" | "tcp" | "udp";
   style?: ConnectionStyle;
   /**

@@ -116,7 +116,8 @@ export const ALL_TOOLS: LLMTool[] = [
   },
   {
     name: "update_node",
-    description: "Update properties of an existing node.",
+    description:
+      'Update properties of an existing node. A group (panel) accepts "boundaryType" ("quantum", "system" or "network"); its colours are derived from the group it sits in and from the type.',
     parametersSchema: {
       type: "object",
       properties: {
@@ -128,7 +129,8 @@ export const ALL_TOOLS: LLMTool[] = [
   },
   {
     name: "add_edge",
-    description: "Add a connection between two nodes.",
+    description:
+      'Add a connection between two nodes. Optional patch fields: "interaction" ("sync" or "async" — async draws dashed) and "kind" ("call", "event", "command" or "dependency"); "technology" names the technology and transport (e.g. "gRPC", "HTTPS").',
     parametersSchema: {
       type: "object",
       properties: {

@@ -214,7 +214,7 @@ describe("parseMermaidSequence", () => {
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
 
     expect(result.newConnections).toHaveLength(1);
-    expect(result.newConnections[0].intent).toBe("call");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "sync", kind: "call" });
     expect(Object.values(result.steps)[0].isAsync).toBe(false);
   });
 
@@ -238,7 +238,7 @@ describe("parseMermaidSequence", () => {
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
 
     expect(result.newConnections).toHaveLength(1);
-    expect(result.newConnections[0].intent).toBe("dependency");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "sync", kind: "dependency" });
   });
 
   it("-x arrow creates connection with event intent", () => {
@@ -249,7 +249,7 @@ describe("parseMermaidSequence", () => {
     const result = parseMermaidSequence(input, {}, {}, { x: 0, y: 0 });
 
     expect(result.newConnections).toHaveLength(1);
-    expect(result.newConnections[0].intent).toBe("event");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "async", kind: "event" });
   });
 
   it("does not drop -->> steps when mixed with ->>", () => {
@@ -349,14 +349,14 @@ describe("parseMermaidSequence", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA->>B: msg", {}, {}, { x: 0, y: 0 });
-    expect(result.newConnections[0].intent).toBe("call");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "sync", kind: "call" });
   });
 
   it("maps -> to call intent", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA->B: msg", {}, {}, { x: 0, y: 0 });
-    expect(result.newConnections[0].intent).toBe("call");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "sync", kind: "call" });
   });
 
   it("maps -) to a call nobody waits for", () => {
@@ -365,7 +365,7 @@ describe("parseMermaidSequence", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA-)B: msg", {}, {}, { x: 0, y: 0 });
-    expect(result.newConnections[0].intent).toBe("async-message");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "async", kind: "command" });
     expect(Object.values(result.steps)[0].isAsync).toBe(true);
   });
 
@@ -373,7 +373,7 @@ describe("parseMermaidSequence", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA-xB: msg", {}, {}, { x: 0, y: 0 });
-    expect(result.newConnections[0].intent).toBe("event");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "async", kind: "event" });
     expect(Object.values(result.steps)[0].isAsync).toBe(false);
   });
 
@@ -381,7 +381,7 @@ describe("parseMermaidSequence", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA->>+B: msg", {}, {}, { x: 0, y: 0 });
-    expect(result.newConnections[0].intent).toBe("call");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "sync", kind: "call" });
     expect(result.errors).toEqual([]);
   });
 
@@ -389,7 +389,7 @@ describe("parseMermaidSequence", () => {
     let sequence = 0;
     generateIdMock.mockImplementation((prefix: string) => `${prefix}-${sequence++}`);
     const result = parseMermaidSequence("sequenceDiagram\nA-->>-B: msg", {}, {}, { x: 0, y: 0 });
-    expect(result.newConnections[0].intent).toBe("call");
+    expect(result.newConnections[0]).toMatchObject({ interaction: "sync", kind: "call" });
     expect(result.errors).toEqual([]);
   });
 

@@ -1,5 +1,6 @@
 import type { Component } from "../model/component.types";
 import type { Connection, ConnectionIntent } from "../model/connection.types";
+import { semanticsToIntent } from "../model/connection-defaults";
 import type { Flow, FlowStep } from "../model/flow.types";
 import { conditionKindOf } from "./flow-condition-kind";
 import { isTypedContainerType } from "@/features/elements/containment";
@@ -150,7 +151,7 @@ export function stepsToMermaid(
         const targetId = isResponse ? connection.sourceId : connection.targetId;
         const sourceName = participantName(sourceId, components) ?? "?";
         const targetName = participantName(targetId, components) ?? "?";
-        const intent = step.connectionIntent ?? connection.intent ?? "call";
+        const intent = step.connectionIntent ?? semanticsToIntent(connection);
         /**
          * The glyph carries two facts, and both have to survive the trip: a
          * dashed stem means the message is travelling back, and a `)` head

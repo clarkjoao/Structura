@@ -31,6 +31,8 @@ import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveD
 import { getNotePresetPair } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
 import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerModal";
 import { OpacityControl } from "./OpacityControl";
+import { OutlineControl } from "./OutlineControl";
+import { buildOutlineSections } from "./outlineSections";
 import { CreateRefButton, SharedModeControl } from "./SharedModeControl";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { canBeReferenced } from "@/features/elements/referencing";
@@ -285,6 +287,7 @@ export function NodeQuickActionsBar({
   const hasIcon = "customIconId" in component && !isRef;
   // Show color picker only for components that support color
   const hasColor = supportsColor(component);
+  const outlineSections = buildOutlineSections(component, defaultAccent, updateComponent, t);
 
   return (
     <>
@@ -365,6 +368,13 @@ export function NodeQuickActionsBar({
                 <ChevronsDownUp className="h-3.5 w-3.5" />
               )}
             </button>
+          )}
+
+          {/* Outline and fill — boundaries, lanes and flow elements */}
+          {outlineSections.length > 0 && (
+            <div className="mx-1 border-l border-border pl-1">
+              <OutlineControl label={t("canvas.quickActions.outline")} sections={outlineSections} />
+            </div>
           )}
 
           {/* Opacity control — only for panel components */}

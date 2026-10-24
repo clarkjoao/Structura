@@ -1,8 +1,9 @@
-import { Layers, User } from "lucide-react";
+import { Layers } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { ServiceSource } from "@/features/diagram";
 import { normalizeSources } from "@/features/integrations/merge-utils";
 import { cn } from "@/lib/utils";
-import { SOURCE_BADGE, SOURCE_DOT } from "./services.constants";
+import { SOURCE_DOT } from "./services.constants";
 import { sourceTypeLabel } from "./serviceLabels";
 import type { ServiceCardProps } from "./types";
 
@@ -14,73 +15,41 @@ export const ServiceCard = ({
   usage,
 }: ServiceCardProps) => {
   const { t } = useTranslation();
-  const sources = normalizeSources(svc);
-  const MAX_PILLS = 3;
+  // Manual is the default, so only an external source earns a mark.
+  const marks = normalizeSources(svc).filter((source) => source.type !== ServiceSource.Manual);
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full text-left rounded-xl border p-4 transition-all duration-150 hover:border-primary/40 hover:bg-accent/30",
+        "relative w-full rounded-xl border p-4 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent/30",
         isSelected ? "border-primary/60 bg-accent/40" : "border-border bg-card",
         isBulkSelected && "ring-2 ring-primary",
         isSelected && !isBulkSelected && "ring-1 ring-primary/20",
       )}
     >
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className="flex items-center gap-1 shrink-0">
-          {sources.map((source) => (
-            <span key={source.type} className={`h-2 w-2 rounded-full ${SOURCE_DOT[source.type]}`} />
-          ))}
-        </div>
-        <span className="font-semibold text-foreground text-sm truncate flex-1">{svc.name}</span>
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-          {sources.map((source) => (
+      {marks.length > 0 && (
+        <span className="absolute right-3 top-3 flex items-center gap-1">
+          {marks.map((source) => (
             <span
               key={source.type}
-              className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${SOURCE_BADGE[source.type]}`}
-            >
-              {sourceTypeLabel(t, source.type)}
-            </span>
+              title={sourceTypeLabel(t, source.type)}
+              className={`h-2 w-2 rounded-full ${SOURCE_DOT[source.type]}`}
+            />
           ))}
-        </div>
-      </div>
-
-      {svc.description && (
-        <p className="text-xs text-muted-foreground truncate mb-2">{svc.description}</p>
-      )}
-
-      {svc.technology.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1 mb-2">
-          {svc.technology.slice(0, MAX_PILLS).map((techStr) => (
-            <span
-              key={techStr}
-              className="text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground"
-            >
-              {techStr}
-            </span>
-          ))}
-          {svc.technology.length > MAX_PILLS && (
-            <span className="text-[10px] text-muted-foreground">
-              +{svc.technology.length - MAX_PILLS}
-            </span>
-          )}
-        </div>
-      )}
-
-      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-        {svc.owner && (
-          <span className="flex items-center gap-0.5">
-            <User className="h-3 w-3" />
-            {svc.owner}
-          </span>
-        )}
-        <span className="flex items-center gap-0.5">
-          <Layers className="h-3 w-3" />
-          {t("services.diagramUsage", { count: usage.length })}
         </span>
-      </div>
+      )}
+      <span className="block truncate pr-6 font-mono text-sm font-semibold text-foreground">
+        {svc.name}
+      </span>
+      <span className="mt-1 block truncate text-xs text-muted-foreground">
+        {svc.technology.length > 0 ? svc.technology.join(" · ") : "\u00a0"}
+      </span>
+      <span className="mt-3 flex items-center gap-1 text-[11px] text-muted-foreground">
+        <Layers className="h-3 w-3" />
+        {t("services.diagramUsage", { count: usage.length })}
+      </span>
     </button>
   );
 };

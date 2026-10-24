@@ -104,12 +104,13 @@ export const diagramsSlice = (
     });
   },
 
-  updateDiagram: (id: string, patch: { name?: string; domain?: string }) => {
+  updateDiagram: (id: string, patch: { name?: string; domain?: string; level?: Level }) => {
     set((s) => {
       const d = s.diagrams[id];
       if (!d) return;
       if (patch.name !== undefined) d.name = patch.name.trim() || d.name;
       if (patch.domain !== undefined) d.domain = patch.domain;
+      if (patch.level !== undefined) d.level = patch.level;
       touchDiagram(d);
     });
   },
@@ -130,6 +131,17 @@ export const diagramsSlice = (
       if (!diagram || (diagram.textsVisible ?? false) === visible) return;
       if (visible) diagram.textsVisible = true;
       else delete diagram.textsVisible;
+      touchDiagram(diagram);
+    });
+  },
+
+  /** Shows or hides the generated legend. Not written when off, like `textsVisible`. */
+  setShowLegend: (diagramId: string, visible: boolean) => {
+    set((s) => {
+      const diagram = s.diagrams[diagramId];
+      if (!diagram || (diagram.showLegend ?? false) === visible) return;
+      if (visible) diagram.showLegend = true;
+      else delete diagram.showLegend;
       touchDiagram(diagram);
     });
   },

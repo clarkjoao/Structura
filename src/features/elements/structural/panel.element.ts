@@ -13,6 +13,7 @@ import {
 } from "@/features/canvas/canvas.constants";
 import { COMPONENT_TYPE_PANEL } from "@/features/diagram/model/component-type-constants";
 import { isPanelComponent } from "@/features/diagram/model/component.guards";
+import { resolveBoundaryAppearance } from "@/features/diagram/model/boundary";
 import { PanelKind } from "@/features/diagram/enums";
 import { DEFAULT_PANEL_OPACITY } from "@/features/canvas/constants/panel.constants";
 import { getPanelKindDef, PANEL_KINDS } from "@/lib/catalogs/panels";
@@ -119,6 +120,7 @@ export const panelElement: ElementDescriptor = {
       "panelColor",
       "panelOpacity",
       "borderStyle",
+      "boundaryType",
       "collapsed",
       "collapsedWidth",
       "collapsedHeight",
@@ -163,15 +165,18 @@ export const panelElement: ElementDescriptor = {
       // so a panel that renders fewer handles than the assignment reaches for
       // loses the edge to React Flow error #008.
       const counts = ctx.connectionCounts[comp.id] ?? { incoming: 0, outgoing: 0 };
+      // A typed boundary takes its colours and outline from its domain and type; the editor and
+      // the viewer both build this data, so both draw the same.
+      const derived = resolveBoundaryAppearance(comp, ctx.resolvedComponents);
       return {
         elementId: comp.id,
         name: comp.name,
         description: comp.description || undefined,
         panelKind: comp.panelKind,
         awsIconName: def.awsIconName,
-        panelColor: comp.panelColor,
+        panelColor: derived?.color ?? comp.panelColor,
         panelOpacity: comp.panelOpacity,
-        borderStyle: comp.borderStyle ?? "solid",
+        borderStyle: derived?.borderStyle ?? comp.borderStyle ?? "solid",
         isSelected: ctx.selectedNodeId === comp.id,
         isDragTarget: ctx.dragTargetPanelId === comp.id,
         isUnparentCandidate: ctx.unparentCandidatePanelId === comp.id,
@@ -226,7 +231,7 @@ export const panelElement: ElementDescriptor = {
 
   export: {
     drawio: {
-      toExportNode: (comp, base) => {
+      toExportNode: (comp, base, context) => {
         if (!isPanelComponent(comp)) {
           throw new Error(`[elements] panel export received a ${comp.type} component.`);
         }
@@ -252,14 +257,15 @@ export const panelElement: ElementDescriptor = {
           };
         }
 
+        const derived = context ? resolveBoundaryAppearance(comp, context.components) : null;
         return {
           ...base,
           kind: "panel",
           name: comp.name,
-          panelColor: comp.panelColor,
+          panelColor: derived?.color ?? comp.panelColor,
           panelKindDefaultColor: kindDef.defaultColor,
           panelOpacity: comp.panelOpacity ?? DEFAULT_PANEL_OPACITY,
-          borderStyle: comp.borderStyle ?? "solid",
+          borderStyle: derived?.borderStyle ?? comp.borderStyle ?? "solid",
         };
       },
     },

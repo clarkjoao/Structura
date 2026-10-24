@@ -72,7 +72,7 @@ function containerSlot(role: K8sContainerRole, index: number): { x: number; y: n
 }
 
 const SELECT_CLASS =
-  "w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
+  "h-8 w-full rounded-md border border-border bg-secondary px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
 
 function Select<T extends string>({
   label,

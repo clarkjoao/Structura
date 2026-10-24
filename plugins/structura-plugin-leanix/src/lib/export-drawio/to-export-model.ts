@@ -101,18 +101,30 @@ function mapNode(c: PluginComponentSnapshot): ExportNode {
   return { ...base, kind: "note", name: c.label, description: c.description };
 }
 
-/** Infer edge intent from label/description/technology (the snapshot has no intent). */
-function inferIntent(conn: PluginConnectionSnapshot): string | undefined {
+/**
+ * Infer the edge's interaction and kind from label/description/technology (the plugin snapshot has
+ * neither): the same words the host's pre-v16 intents were named after, in the new vocabulary.
+ */
+function inferSemantics(conn: PluginConnectionSnapshot): Pick<ExportEdge, "interaction" | "kind"> {
   const desc = (conn.description ?? "").toLowerCase();
   const tech = (conn.technology ?? "").toLowerCase();
   const label = conn.label.toLowerCase();
-  if (desc.includes("sync") || tech.includes("sync") || label.includes("call")) return "call";
-  if (desc.includes("event") || tech.includes("event") || label.includes("event")) return "event";
-  if (desc.includes("data") || tech.includes("data") || label.includes("data")) return "data-flow";
-  if (desc.includes("async") || tech.includes("async") || label.includes("async"))
-    return "async-message";
-  if (desc.includes("depend") || tech.includes("depend")) return "dependency";
-  return undefined;
+  if (desc.includes("sync") || tech.includes("sync") || label.includes("call")) {
+    return { interaction: "sync", kind: "call" };
+  }
+  if (desc.includes("event") || tech.includes("event") || label.includes("event")) {
+    return { interaction: "async", kind: "event" };
+  }
+  if (desc.includes("data") || tech.includes("data") || label.includes("data")) {
+    return { interaction: "sync", kind: "call" };
+  }
+  if (desc.includes("async") || tech.includes("async") || label.includes("async")) {
+    return { interaction: "async", kind: "command" };
+  }
+  if (desc.includes("depend") || tech.includes("depend")) {
+    return { interaction: "sync", kind: "dependency" };
+  }
+  return {};
 }
 
 function mapEdge(conn: PluginConnectionSnapshot): ExportEdge {
@@ -122,7 +134,7 @@ function mapEdge(conn: PluginConnectionSnapshot): ExportEdge {
     targetId: conn.targetId,
     label: conn.label,
     technology: conn.technology ?? undefined,
-    intent: inferIntent(conn),
+    ...inferSemantics(conn),
     edgeStyle: "smoothstep",
     strokeStyle: "solid",
     strokeWidth: 1,

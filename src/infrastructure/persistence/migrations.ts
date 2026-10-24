@@ -1,6 +1,8 @@
 import type { Diagram } from "@/features/diagram";
 import { sanitizeComponentType } from "@/features/diagram";
 import type { Component } from "@/features/diagram/model/component.types";
+import type { Connection } from "@/features/diagram/model/connection.types";
+import { migrateConnectionsSemantics } from "@/features/diagram/utils/connection-semantics-migration";
 import { DIAGRAM_SCHEMA_VERSION } from "./versions";
 
 /**
@@ -24,6 +26,7 @@ export function migrateDiagram(diagram: Diagram, fromVersion: number): Diagram {
   // diagrams still pass through, and the sanitiser is a no-op for
   // diagrams that already have valid types.
   current = sanitizeCorruptedComponentTypes(current);
+  current = migrateConnectionSemanticsInDiagram(current);
 
   if (fromVersion >= DIAGRAM_SCHEMA_VERSION) {
     return current;
@@ -34,6 +37,46 @@ export function migrateDiagram(diagram: Diagram, fromVersion: number): Diagram {
   }
 
   return current;
+}
+
+const LEGACY_CONNECTION_FIELDS = ["intent", "transportPreset", "communicationType"] as const;
+
+function hasLegacyConnectionSemantics(
+  connections: Record<string, Connection> | undefined,
+): boolean {
+  return Object.values(connections ?? {}).some(
+    (conn) =>
+      conn.direction === "reverse" ||
+      LEGACY_CONNECTION_FIELDS.some((field) => conn[field] !== undefined),
+  );
+}
+
+/**
+ * A diagram file saved before schema v16 still speaks intent / transport / reverse: bring its
+ * connections to interaction × kind, as the local store does on load. Always runs; a diagram that
+ * is already current is returned as it came, and one that is not is cloned first so the caller's
+ * object is never mutated.
+ */
+function migrateConnectionSemanticsInDiagram(diagram: Diagram): Diagram {
+  const versions = Object.values(diagram.versions ?? {});
+  const needs =
+    hasLegacyConnectionSemantics(diagram.snapshot?.connections) ||
+    versions.some((scene) => hasLegacyConnectionSemantics(scene.addedConnections));
+  if (!needs) return diagram;
+  const next = structuredClone(diagram);
+  migrateConnectionsSemantics({
+    components: next.snapshot.components ?? {},
+    connections: next.snapshot.connections ?? {},
+    edgeLayouts: next.edgeLayouts,
+  });
+  for (const scene of Object.values(next.versions ?? {})) {
+    migrateConnectionsSemantics({
+      components: { ...(next.snapshot.components ?? {}), ...(scene.addedComponents ?? {}) },
+      connections: scene.addedConnections ?? {},
+      edgeLayouts: next.edgeLayouts,
+    });
+  }
+  return next;
 }
 
 /**

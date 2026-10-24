@@ -13,6 +13,7 @@ import type {
   EndpointComponent,
 } from "@/features/diagram";
 import { isEndpointComponent } from "@/features/diagram";
+import { CommitField, ElementScaffold, PanelSection } from "./shell";
 import { PROTOCOL_COLORS, METHOD_COLORS } from "../../nodes/ApiGroupNode/constants";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +25,8 @@ interface ApiGroupPanelProps {
   onClose: () => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
+  focusTitleTrigger?: number;
+  onFocusElement?: (componentId: string) => void;
 }
 
 export default function ApiGroupPanel({
@@ -31,6 +34,8 @@ export default function ApiGroupPanel({
   onClose,
   updateComponent,
   removeComponent,
+  focusTitleTrigger,
+  onFocusElement,
 }: ApiGroupPanelProps) {
   const { t } = useTranslation();
   const diagram = useActiveDiagram();
@@ -48,31 +53,21 @@ export default function ApiGroupPanel({
     }) as EndpointComponent[];
 
   return (
-    <div className="flex flex-1 min-h-0 w-full flex-col overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("apiGroup.panelTitle")}
-        </h3>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {}
+    <ElementScaffold
+      component={component}
+      onClose={onClose}
+      updateComponent={updateComponent}
+      removeComponent={removeComponent}
+      onFocusElement={onFocusElement}
+      focusTitleTrigger={focusTitleTrigger}
+      name={component.serviceName}
+      nameToPatch={(value) => ({ serviceName: value })}
+      namePlaceholder={t("apiGroup.orderServicePlaceholder")}
+      sizable
+    >
+      <PanelSection title={t("panelShell.sectionWhat")}>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            {t("apiGroup.serviceName")}
-          </label>
-          <input
-            value={component.serviceName}
-            onChange={(e) => updateComponent(component.id, { serviceName: e.target.value })}
-            placeholder={t("apiGroup.orderServicePlaceholder")}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             {t("apiGroup.protocolLabel")}
           </label>
           <div className="flex flex-wrap gap-1.5">
@@ -94,30 +89,29 @@ export default function ApiGroupPanel({
           </div>
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             {t("apiGroup.basePathLabel")}
           </label>
-          <input
+          <CommitField
+            mono
             value={component.basePath}
-            onChange={(e) => updateComponent(component.id, { basePath: e.target.value })}
+            onCommit={(value) => updateComponent(component.id, { basePath: value })}
             placeholder={t("apiGroup.basePathPlaceholder")}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             {t("apiGroup.slaRateLimitLabel")}
           </label>
-          <input
+          <CommitField
             value={component.sla ?? ""}
-            onChange={(e) => updateComponent(component.id, { sla: e.target.value || undefined })}
+            onCommit={(value) => updateComponent(component.id, { sla: value || undefined })}
             placeholder={t("apiGroup.slaPlaceholder")}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
           />
           <p className="text-[10px] text-muted-foreground mt-0.5">{t("apiGroup.slaHint")}</p>
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             {t("apiGroup.endpointsCount", { count: endpoints.length })}
           </label>
           <div className="space-y-1.5">
@@ -142,12 +136,14 @@ export default function ApiGroupPanel({
                     </option>
                   ))}
                 </select>
-                <input
-                  value={ep.path}
-                  onChange={(e) => updateComponent(ep.id, { path: e.target.value })}
-                  className="flex-1 min-w-0 text-[11px] font-mono bg-transparent border-0 text-foreground focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
-                  placeholder={t("apiGroup.pathPlaceholder")}
-                />
+                <div className="min-w-0 flex-1">
+                  <CommitField
+                    mono
+                    value={ep.path}
+                    onCommit={(value) => updateComponent(ep.id, { path: value })}
+                    placeholder={t("apiGroup.pathPlaceholder")}
+                  />
+                </div>
                 <select
                   value={ep.handlers?.[0]?.flowId ?? ""}
                   onChange={(e) => {
@@ -192,16 +188,7 @@ export default function ApiGroupPanel({
             {t("apiGroup.addEndpoint")}
           </button>
         </div>
-        <div className="pt-2 border-t border-border">
-          <button
-            type="button"
-            onClick={() => removeComponent(component.id)}
-            className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/50 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
-          >
-            <X className="h-3.5 w-3.5" /> {t("apiGroup.removeApiGroup")}
-          </button>
-        </div>
-      </div>
-    </div>
+      </PanelSection>
+    </ElementScaffold>
   );
 }

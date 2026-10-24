@@ -34,7 +34,20 @@ export interface CanvasPreferencesStore {
    */
   patternProvider: string;
   setPatternProvider: (provider: string) => void;
+  /** Width of the right-hand inspector, in px. A UI preference of this browser. */
+  elementPanelWidth: number;
+  setElementPanelWidth: (width: number) => void;
+  /** The inspector folded to its rail. */
+  elementPanelCollapsed: boolean;
+  setElementPanelCollapsed: (collapsed: boolean) => void;
+  /** The tab last used per element type, so switching between same-type elements keeps it. */
+  elementPanelTabByType: Record<string, string>;
+  setElementPanelTab: (type: string, tab: string) => void;
 }
+
+export const ELEMENT_PANEL_DEFAULT_WIDTH = 320;
+export const ELEMENT_PANEL_MIN_WIDTH = 280;
+export const ELEMENT_PANEL_MAX_WIDTH = 560;
 
 /** How many recent catalog entries are kept. */
 export const RECENT_CATALOG_ENTRIES_MAX = 8;
@@ -62,6 +75,21 @@ export const useCanvasPreferencesStore = create<CanvasPreferencesStore>()(
       setAutoHideBottomToolbar: (autoHide) => set({ autoHideBottomToolbar: autoHide }),
       patternProvider: "neutral",
       setPatternProvider: (provider) => set({ patternProvider: provider }),
+      elementPanelWidth: ELEMENT_PANEL_DEFAULT_WIDTH,
+      setElementPanelWidth: (width) =>
+        set({
+          elementPanelWidth: Math.min(
+            ELEMENT_PANEL_MAX_WIDTH,
+            Math.max(ELEMENT_PANEL_MIN_WIDTH, Math.round(width)),
+          ),
+        }),
+      elementPanelCollapsed: false,
+      setElementPanelCollapsed: (collapsed) => set({ elementPanelCollapsed: collapsed }),
+      elementPanelTabByType: {},
+      setElementPanelTab: (type, tab) =>
+        set((state) => ({
+          elementPanelTabByType: { ...state.elementPanelTabByType, [type]: tab },
+        })),
     }),
     {
       name: CANVAS_PREFERENCES_KEY,

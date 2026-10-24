@@ -1,6 +1,16 @@
 import type { EdgeControlPoint } from "../../model/diagram.types";
 import type { AppState } from "../store.types";
 import { pushHistory } from "./history.slice";
+import {
+  alignBoxes,
+  boxOf,
+  distributeBoxes,
+  parentOrigin,
+  selectionRoots,
+  type AlignBox,
+  type AlignMode,
+  type DistributeAxis,
+} from "../../utils/alignment";
 import { reconcileAutoRefs } from "./components.slice";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import type { AutoRefAssignment } from "../actions.types";
@@ -9,6 +19,7 @@ import {
   getActiveComponents,
   getActiveNodeLayouts,
   resolveActiveVersion,
+  resolveComponent,
   resolveNodeLayout,
 } from "../helpers/version-helpers";
 import { computeFitBounds } from "../../utils/fit-group-to-children";
@@ -20,6 +31,48 @@ import {
   type DiagramLayoutSettings,
 } from "../../model/layout-settings";
 import type { DiagramDirection } from "../../model/diagram.types";
+
+/**
+ * Moves a selection's roots by the diagram-space positions `plan` returns, in the caller's single
+ * `set()`. One checkpoint per gesture (never coalesced into the last edit), and the canvas is told
+ * to drop its local copies, as an inspector write does.
+ */
+function applyBoxMoves(
+  state: AppState,
+  ids: readonly string[],
+  plan: (boxes: AlignBox[]) => Map<string, { x: number; y: number }>,
+): void {
+  const d = getActiveDiagram(state);
+  if (!d) return;
+  const scene = resolveActiveVersion(d);
+  const parentOf = (id: string) => resolveComponent(d, scene, id)?.parentId ?? null;
+  const layoutOf = (id: string) => resolveNodeLayout(d, scene, id);
+  const boxes: AlignBox[] = [];
+  for (const id of selectionRoots(ids, parentOf)) {
+    const layout = layoutOf(id);
+    if (!layout) continue;
+    boxes.push(
+      boxOf(
+        id,
+        layout,
+        parentOrigin(id, parentOf, layoutOf),
+        resolveComponent(d, scene, id)?.locked,
+      ),
+    );
+  }
+  const moves = plan(boxes);
+  if (moves.size === 0) return;
+  pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+  for (const [id, abs] of moves) {
+    const layout = layoutOf(id);
+    if (!layout) continue;
+    const origin = parentOrigin(id, parentOf, layoutOf);
+    layout.x = abs.x - origin.x;
+    layout.y = abs.y - origin.y;
+  }
+  state._lastLayoutWriteAt = (state._lastLayoutWriteAt ?? 0) + 1;
+  touchDiagram(d);
+}
 
 export const layoutSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -231,6 +284,32 @@ export const layoutSlice = (
       const maxZ = vals.length > 0 ? Math.max(...vals) : 0;
       const layout = d.nodeLayouts[elementId];
       if (layout) layout.zIndex = maxZ + 1;
+    });
+  },
+
+  alignNodes: (ids: readonly string[], mode: AlignMode) => {
+    set((state) => {
+      applyBoxMoves(state, ids, (boxes) => alignBoxes(boxes, mode));
+    });
+  },
+
+  distributeNodes: (ids: readonly string[], axis: DistributeAxis) => {
+    set((state) => {
+      applyBoxMoves(state, ids, (boxes) => distributeBoxes(boxes, axis));
+    });
+  },
+
+  /** The inspector's z-index field: an explicit stacking order, like `bringToFront` without the ranking. */
+  setNodeZIndex: (elementId: string, zIndex: number) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveVersion(d);
+      const layout =
+        scene && scene.addedComponents[elementId]
+          ? resolveNodeLayout(d, scene, elementId)
+          : d.nodeLayouts[elementId];
+      if (layout) layout.zIndex = Math.round(zIndex);
     });
   },
 

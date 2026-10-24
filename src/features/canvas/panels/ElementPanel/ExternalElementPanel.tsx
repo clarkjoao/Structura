@@ -1,14 +1,19 @@
 import { useMemo, useState } from "react";
-import { ArrowUpRight, ChevronDown, ExternalLink, X } from "lucide-react";
-import { useAllDiagrams, useDiagramStore } from "@/features/diagram";
+import { ArrowUpRight, ChevronDown, X } from "lucide-react";
+import { useDiagramStore } from "@/features/diagram";
 import type { ExternalElementComponent, ComponentPatch } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
+import { DiagramLinkField } from "@/features/canvas/palette/DiagramLinkField";
+import { stripImportedSuffix } from "@/features/canvas/palette/diagramLinkItems";
+import { ElementScaffold, PanelSection } from "./shell";
 
 interface ExternalElementPanelProps {
   component: ExternalElementComponent;
   onClose: () => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
+  focusTitleTrigger?: number;
+  onFocusElement?: (componentId: string) => void;
 }
 
 export default function ExternalElementPanel({
@@ -16,35 +21,36 @@ export default function ExternalElementPanel({
   onClose,
   updateComponent,
   removeComponent,
+  focusTitleTrigger,
+  onFocusElement,
 }: ExternalElementPanelProps) {
   const { t } = useTranslation();
-  const allDiagrams = useAllDiagrams();
-  const diagrams = useDiagramStore((s) => s.diagrams);
+  // The id the node, the export and navigation all read. This panel once wrote `linkedDiagramId`
+  // (the C4 drill-down field), so a chosen target never reached the canvas.
+  const referenceDiagramId = component.referenceDiagramId || undefined;
+  const targetComponentMap = useDiagramStore((s) =>
+    referenceDiagramId ? s.diagrams[referenceDiagramId]?.snapshot.components : undefined,
+  );
 
-  const [diagramOpen, setDiagramOpen] = useState(false);
   const [elementOpen, setElementOpen] = useState(false);
 
-  const selectedDiagram = allDiagrams.find((d) => d.id === component.linkedDiagramId);
-
   const targetComponents = useMemo(() => {
-    if (!component.linkedDiagramId) return [];
-    const diagram = diagrams[component.linkedDiagramId];
-    if (!diagram) return [];
-    return Object.values(diagram.snapshot.components)
+    if (!targetComponentMap) return [];
+    return Object.values(targetComponentMap)
       .filter((c) => c.type !== "endpoint" && c.type !== "api-group")
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [component.linkedDiagramId, diagrams]);
+  }, [targetComponentMap]);
 
   const selectedElement = targetComponents.find((c) => c.id === component.linkedElementId);
 
-  function handleSelectDiagram(diagramId: string | undefined) {
+  function handleLinkDiagram(diagramId: string | undefined) {
+    const name = diagramId ? useDiagramStore.getState().diagrams[diagramId]?.name : undefined;
     updateComponent(component.id, {
-      linkedDiagramId: diagramId ?? "",
-      linkedDiagramName: diagramId ? allDiagrams.find((d) => d.id === diagramId)?.name : undefined,
+      referenceDiagramId: diagramId ?? "",
+      linkedDiagramName: name ? stripImportedSuffix(name).name : undefined,
       linkedElementId: undefined,
       linkedElementName: undefined,
     });
-    setDiagramOpen(false);
     setElementOpen(false);
   }
 
@@ -58,121 +64,41 @@ export default function ExternalElementPanel({
   }
 
   function handleOpen() {
-    if (!component.linkedDiagramId) return;
+    if (!referenceDiagramId) return;
     const nodeParam = component.linkedElementId ? `?nodeId=${component.linkedElementId}` : "";
-    window.open(`/model/${component.linkedDiagramId}${nodeParam}`, "_blank");
+    window.open(`/model/${referenceDiagramId}${nodeParam}`, "_blank");
   }
 
   return (
-    <div className="flex flex-1 min-h-0 w-full flex-col overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
-        <div className="flex items-center gap-1.5">
-          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            {t("externalElement.panelTitle")}
-          </h3>
-        </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <ElementScaffold
+      component={component}
+      onClose={onClose}
+      updateComponent={updateComponent}
+      removeComponent={removeComponent}
+      onFocusElement={onFocusElement}
+      focusTitleTrigger={focusTitleTrigger}
+      namePlaceholder={t("externalElement.placeholderName")}
+    >
+      <PanelSection title={t("panelShell.sectionRelates")}>
+        <DiagramLinkField
+          componentId={component.id}
+          label={t("diagramLink.target")}
+          elementName={component.name}
+          linkedDiagramId={referenceDiagramId}
+          canCreate={false}
+          onLink={handleLinkDiagram}
+          onCreateAndLink={() => undefined}
+        />
 
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            {t("externalElement.labelName")}
-          </label>
-          <input
-            value={component.name}
-            onChange={(e) => updateComponent(component.id, { name: e.target.value })}
-            placeholder={t("externalElement.placeholderName")}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-
-        <div className="relative">
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            {t("externalElement.labelDiagram")}
-          </label>
-          <button
-            type="button"
-            onClick={() => {
-              setDiagramOpen((v) => !v);
-              setElementOpen(false);
-            }}
-            className={[
-              "w-full flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring",
-              selectedDiagram
-                ? "border-border bg-secondary text-foreground"
-                : "border-dashed border-border bg-secondary text-muted-foreground",
-            ].join(" ")}
-          >
-            <span className="truncate">
-              {selectedDiagram?.name ?? t("externalElement.selectDiagram")}
-            </span>
-            <span className="flex items-center gap-1 shrink-0">
-              {selectedDiagram && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSelectDiagram(undefined);
-                  }}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && (e.stopPropagation(), handleSelectDiagram(undefined))
-                  }
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </span>
-              )}
-              <ChevronDown
-                className={`h-3.5 w-3.5 transition-transform ${diagramOpen ? "rotate-180" : ""}`}
-              />
-            </span>
-          </button>
-
-          {diagramOpen && (
-            <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md overflow-hidden">
-              <button
-                type="button"
-                onClick={() => handleSelectDiagram(undefined)}
-                className="w-full flex items-center px-3 py-2 text-sm text-left text-muted-foreground hover:bg-accent transition-colors"
-              >
-                {t("externalElement.noneOption")}
-              </button>
-              <div className="max-h-48 overflow-y-auto">
-                {allDiagrams.map((d) => (
-                  <button
-                    key={d.id}
-                    type="button"
-                    onClick={() => handleSelectDiagram(d.id)}
-                    className={[
-                      "w-full flex items-center px-3 py-2 text-sm text-left transition-colors",
-                      d.id === component.linkedDiagramId
-                        ? "bg-accent text-foreground font-medium"
-                        : "hover:bg-accent text-foreground",
-                    ].join(" ")}
-                  >
-                    {d.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {component.linkedDiagramId && (
+        {referenceDiagramId && (
           <div className="relative">
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
               {t("externalElement.labelElement")}
             </label>
             <button
               type="button"
               onClick={() => {
                 setElementOpen((v) => !v);
-                setDiagramOpen(false);
               }}
               className={[
                 "w-full flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring",
@@ -246,7 +172,7 @@ export default function ExternalElementPanel({
           </div>
         )}
 
-        {component.linkedDiagramId && (
+        {referenceDiagramId && (
           <button
             type="button"
             onClick={handleOpen}
@@ -256,17 +182,7 @@ export default function ExternalElementPanel({
             {t("externalElement.openButton")}
           </button>
         )}
-
-        <div className="pt-2 border-t border-border">
-          <button
-            type="button"
-            onClick={() => removeComponent(component.id)}
-            className="flex items-center gap-1.5 text-xs text-destructive hover:text-destructive/80 transition-colors"
-          >
-            {t("externalElement.delete")}
-          </button>
-        </div>
-      </div>
-    </div>
+      </PanelSection>
+    </ElementScaffold>
   );
 }

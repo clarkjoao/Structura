@@ -11,6 +11,8 @@ import { MultiSelectPanel } from "../MultiSelectPanel";
 import { getElement } from "@/features/elements/element.registry";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
+import DiagramPanel from "./DiagramPanel";
+import { PanelFrame } from "./shell";
 
 interface Props {
   selectedElementId: string | null;
@@ -19,6 +21,7 @@ interface Props {
   selectedNodes?: Node[];
   focusTitleTrigger?: number;
   onFocusElement?: (componentId: string) => void;
+  onTogglePanelCollapse?: (componentId: string) => void;
   onClose: () => void;
 }
 
@@ -29,6 +32,7 @@ const ElementPanel = ({
   selectedNodes = [],
   focusTitleTrigger = 0,
   onFocusElement,
+  onTogglePanelCollapse,
   onClose,
 }: Props) => {
   const { t } = useTranslation();
@@ -52,7 +56,7 @@ const ElementPanel = ({
     const conn = connections[selectedEdgeId];
     if (!conn) return null;
     return (
-      <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+      <PanelFrame>
         <CollabEditingWarning elementId={selectedEdgeId} />
         <ConnectionPanel
           conn={conn}
@@ -62,7 +66,7 @@ const ElementPanel = ({
           focusTitleTrigger={focusTitleTrigger}
           onFocusElement={onFocusElement}
         />
-      </div>
+      </PanelFrame>
     );
   }
 
@@ -72,7 +76,7 @@ const ElementPanel = ({
     const RegisteredPanel = getElement(component.type)?.inspector.panel;
     if (RegisteredPanel) {
       return (
-        <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+        <PanelFrame>
           <CollabEditingWarning elementId={selectedElementId} />
           <RegisteredPanel
             component={component}
@@ -80,15 +84,16 @@ const ElementPanel = ({
             updateComponent={updateComponent}
             removeComponent={removeComponent}
             focusTitleTrigger={focusTitleTrigger}
+            onFocusElement={onFocusElement}
           />
-        </div>
+        </PanelFrame>
       );
     }
 
     const canGroup = selectedNodeIds.length >= 2;
 
     return (
-      <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
+      <PanelFrame>
         <CollabEditingWarning elementId={selectedElementId} />
         {canGroup && (
           <div className="flex items-center gap-2 p-2 border-b border-border bg-secondary/30">
@@ -111,15 +116,21 @@ const ElementPanel = ({
           updateComponent={updateComponent}
           removeComponent={removeComponent}
           focusTitleTrigger={focusTitleTrigger}
+          onFocusElement={onFocusElement}
+          onTogglePanelCollapse={onTogglePanelCollapse}
         />
         <div className="shrink-0 overflow-y-auto p-2 empty:hidden">
           <PluginPanelSlot slot="element-inspector" selectionIds={[selectedElementId]} />
         </div>
-      </div>
+      </PanelFrame>
     );
   }
 
-  return null;
+  return (
+    <PanelFrame>
+      <DiagramPanel />
+    </PanelFrame>
+  );
 };
 
 export default ElementPanel;

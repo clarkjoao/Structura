@@ -13,6 +13,8 @@ import {
   type Diagram,
   type VersionDiff,
 } from "@/features/diagram";
+import { domainColor } from "@/features/diagram/model/boundary";
+import { LEGEND_NODE_ID, LEGEND_NODE_TYPE } from "./legendNode";
 import { useLLMStore, type PendingNodePreview } from "@/features/llm";
 import "@/features/canvas/nodes/node-types/registry";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
@@ -325,6 +327,138 @@ describe("editor and viewer project one diagram the same way", () => {
         ...writeGeometry(diagram, counterpart),
       });
     }
+  });
+
+  it("draws an edge's interaction the same on both sides: sync solid, async dashed", () => {
+    const diagram = parityDiagram();
+    diagram.snapshot.connections["x-p2"] = {
+      id: "x-p2",
+      sourceId: "x",
+      targetId: "q1",
+      label: "sync call",
+      interaction: "sync",
+      kind: "call",
+    };
+    diagram.snapshot.connections["q1-x"] = {
+      id: "q1-x",
+      sourceId: "q1",
+      targetId: "x",
+      label: "async event",
+      interaction: "async",
+      kind: "event",
+    };
+    // A saved diagram that predates the migration still draws as it did.
+    diagram.snapshot.connections["legacy"] = {
+      id: "legacy",
+      sourceId: "x",
+      targetId: "q1",
+      label: "legacy dependency",
+      intent: "dependency",
+    };
+    const write = writeProjection(diagram);
+    const read = projectReadDiagram(diagram);
+    const strokeOf = (edges: Edge[], id: string) =>
+      (edges.find((e) => e.id === id)?.data as EdgeData | undefined)?.strokeStyle;
+
+    expect(strokeOf(read.edges, "x-p2")).toBe("solid");
+    expect(strokeOf(read.edges, "q1-x")).toBe("dashed");
+    expect(strokeOf(read.edges, "legacy")).toBe("dashed");
+    for (const id of ["x-p2", "q1-x", "legacy"]) {
+      expect(strokeOf(write.edges, id)).toBe(strokeOf(read.edges, id));
+    }
+  });
+
+  it("derives a typed boundary's colour and outline the same on both sides", () => {
+    const diagram = parityDiagram();
+    diagram.snapshot.components["Vendas"] = component({
+      id: "Vendas",
+      name: "Vendas",
+      type: "panel",
+      panelKind: "default",
+    });
+    diagram.snapshot.components["Net"] = component({
+      id: "Net",
+      name: "Net",
+      type: "panel",
+      panelKind: "default",
+      parentId: "Vendas",
+      boundaryType: "network",
+    });
+    diagram.nodeLayouts["Vendas"] = { elementId: "Vendas", x: 0, y: 900, width: 600, height: 400 };
+    diagram.nodeLayouts["Net"] = { elementId: "Net", x: 20, y: 40, width: 300, height: 200 };
+    const write = writeProjection(diagram);
+    const read = projectReadDiagram(diagram);
+    const look = (nodes: Node[]) => {
+      const data = nodes.find((n) => n.id === "Net")?.data as
+        { panelColor?: string; borderStyle?: string } | undefined;
+      return { color: data?.panelColor, border: data?.borderStyle };
+    };
+    expect(look(read.nodes)).toEqual({ color: domainColor("Vendas"), border: "dashed" });
+    expect(look(write.nodes)).toEqual(look(read.nodes));
+  });
+
+  it("draws the generated legend, under the diagram, the same on both sides", () => {
+    const diagram = parityDiagram();
+    diagram.showLegend = true;
+    diagram.snapshot.components["Vendas"] = component({
+      id: "Vendas",
+      name: "Vendas",
+      type: "panel",
+      panelKind: "default",
+    });
+    diagram.snapshot.components["Net"] = component({
+      id: "Net",
+      name: "Net",
+      type: "panel",
+      panelKind: "default",
+      parentId: "Vendas",
+      boundaryType: "network",
+    });
+    diagram.nodeLayouts["Vendas"] = { elementId: "Vendas", x: 0, y: 900, width: 600, height: 400 };
+    diagram.nodeLayouts["Net"] = { elementId: "Net", x: 20, y: 40, width: 300, height: 200 };
+    diagram.snapshot.connections["x-p2"] = {
+      id: "x-p2",
+      sourceId: "x",
+      targetId: "q1",
+      label: "async",
+      interaction: "async",
+    };
+    const write = writeProjection(diagram);
+    const read = projectReadDiagram(diagram);
+    const legendOf = (nodes: Node[]) => nodes.find((n) => n.id === LEGEND_NODE_ID);
+
+    const readLegend = legendOf(read.nodes);
+    expect(readLegend).toBeDefined();
+    expect(readLegend?.type).toBe(LEGEND_NODE_TYPE);
+    const data = readLegend?.data as {
+      legend: { boundaryTypes: unknown[]; domains: unknown[]; interactions: string[] };
+    };
+    expect(data.legend.boundaryTypes).toHaveLength(1);
+    expect(data.legend.domains).toEqual([{ name: "Vendas", color: domainColor("Vendas") }]);
+    expect(data.legend.interactions).toEqual(["sync", "async"]);
+    // Under the lowest node, aligned with the leftmost.
+    expect(readLegend?.position.x).toBe(0);
+    expect(readLegend?.position.y).toBeGreaterThan(1300);
+    // Not draggable, not selectable: its place is derived, never stored.
+    expect(readLegend?.draggable).toBe(false);
+    expect(readLegend?.selectable).toBe(false);
+
+    const writeLegend = legendOf(write.nodes);
+    expect(writeLegend?.position).toEqual(readLegend?.position);
+    expect(writeLegend?.data).toEqual(readLegend?.data);
+  });
+
+  it("draws no legend unless the diagram asks, or when it has nothing to say", () => {
+    const off = parityDiagram();
+    expect(projectReadDiagram(off).nodes.some((n) => n.id === LEGEND_NODE_ID)).toBe(false);
+    const on = parityDiagram();
+    on.showLegend = true;
+    // Plain connections are synchronous: that alone is something to say.
+    expect(projectReadDiagram(on).nodes.some((n) => n.id === LEGEND_NODE_ID)).toBe(true);
+    const bare = parityDiagram();
+    bare.showLegend = true;
+    bare.snapshot.connections = {};
+    expect(projectReadDiagram(bare).nodes.some((n) => n.id === LEGEND_NODE_ID)).toBe(false);
   });
 
   it("drops an edge to a hidden or unplaced component on both sides", () => {

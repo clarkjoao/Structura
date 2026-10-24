@@ -1,29 +1,49 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  X,
+  AlignCenterHorizontal,
+  AlignCenterVertical,
+  AlignEndHorizontal,
+  AlignEndVertical,
+  AlignHorizontalDistributeCenter,
+  AlignStartHorizontal,
+  AlignStartVertical,
+  AlignVerticalDistributeCenter,
+  BookmarkPlus,
+  Copy,
   LayoutDashboard,
   LayoutGrid,
-  Copy,
-  Trash2,
-  BookmarkPlus,
+  Layers,
   RotateCcw,
+  Trash2,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Node } from "@xyflow/react";
 import { useReactFlow } from "@xyflow/react";
 import {
-  useActiveDiagram,
+  useActiveDiagramModel,
   useActiveDiagramId,
   useDiagramActions,
   resolveVersionSnapshot,
+  isPanelComponent,
+  isNoteComponent,
+  isDbTableComponent,
+  isProcessNodeComponent,
 } from "@/features/diagram";
 import {
   collectBoundaryConnectionIds,
   collectConnectionIdsToResetWaypoints,
   resetWaypointsForConnections,
 } from "@/features/canvas/edges/reset-edge-waypoints";
-import type { Component, ComponentType } from "@/features/diagram";
+import type { Component, ComponentPatch, ComponentType } from "@/features/diagram";
+import { cloudServiceIdClearingPatch } from "@/features/diagram/model/cloud-service-id";
+import {
+  selectionRoots,
+  type AlignMode,
+  type DistributeAxis,
+} from "@/features/diagram/utils/alignment";
+import { getElement } from "@/features/elements/element.registry";
 import { captureSelectionAsTemplate } from "@/features/canvas/utils/capture-template";
 import { duplicateSelection } from "@/features/canvas/utils/duplicateSelection";
 import { SaveTemplateModal } from "@/features/canvas/components/SaveTemplateModal";
@@ -32,6 +52,15 @@ import { KEY, keyIs } from "@/lib/core/keyboard";
 import { cn } from "@/lib/utils";
 import { layoutScopedNodes } from "@/features/canvas/layout/layoutScopedNodes";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
+import {
+  CommitField,
+  PANEL_INPUT_CLASS,
+  PANEL_LABEL_CLASS,
+  PanelFrame,
+  PanelHeader,
+  PanelSection,
+} from "./ElementPanel/shell";
+import { ElementTypeSelect } from "./ElementPanel/sections/ElementTypeSelect";
 
 function readTechnology(component: Component): string | undefined {
   if ("technology" in component && typeof component.technology === "string") {
@@ -40,14 +69,41 @@ function readTechnology(component: Component): string | undefined {
   return undefined;
 }
 
-function tagsEqual(left: string[], right: string[]): boolean {
-  if (left.length !== right.length) return false;
-  return left.every((tag, index) => tag === right[index]);
+const CHIP_KEYS = new Set(["person", "system", "container", "component", "panel", "note"]);
+
+/** The one value every item shares, or `null` when they differ. */
+function shared<T>(values: readonly T[]): T | null {
+  if (values.length === 0) return null;
+  return values.every((value) => value === values[0]) ? values[0] : null;
 }
 
 interface MultiSelectPanelProps {
   selectedNodes: Node[];
   onClose: () => void;
+}
+
+interface IconAction {
+  key: string;
+  label: string;
+  icon: LucideIcon;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+function IconButton({ action }: { action: IconAction }) {
+  const Icon = action.icon;
+  return (
+    <button
+      type="button"
+      title={action.label}
+      aria-label={action.label}
+      disabled={action.disabled}
+      onClick={action.onClick}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors enabled:hover:bg-accent enabled:hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      <Icon className="h-4 w-4" />
+    </button>
+  );
 }
 
 export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelProps) {
@@ -56,25 +112,14 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const reactFlowInstance = useReactFlow();
   const setSelectedNodeIds = useCanvasSelectionStore((state) => state.setSelectedNodeIds);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
-  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-  const [tagsAreMixed, setTagsAreMixed] = useState(false);
-  const typeLabelKeys: Record<string, string> = useMemo(
-    () => ({
-      person: "multiSelect.typePerson",
-      system: "multiSelect.typeSystem",
-      container: "multiSelect.typeContainer",
-      component: "multiSelect.typeComponent",
-      panel: "multiSelect.typePanel",
-      note: "multiSelect.typeNote",
-    }),
-    [],
-  );
-  const diagram = useActiveDiagram();
+  const diagram = useActiveDiagramModel();
   const {
     groupNodes,
     removeElements,
-    updateComponent,
+    batchUpdateComponents,
+    alignNodes,
+    distributeNodes,
     copyToClipboard,
     pasteFromClipboard,
     saveUserTemplate,
@@ -83,95 +128,96 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   } = useDiagramActions();
 
   const ids = useMemo(() => selectedNodes.map((n) => n.id), [selectedNodes]);
-  const idsKey = ids.join(",");
   const resolved = useMemo(
     () => (diagram ? resolveVersionSnapshot(diagram, diagram.activeVersionId ?? null) : null),
     [diagram],
   );
   const components = useMemo(
-    () => (resolved ? ids.map((id) => resolved.components[id]).filter(Boolean) : []),
+    () =>
+      resolved
+        ? ids.map((id) => resolved.components[id]).filter((c): c is Component => Boolean(c))
+        : [],
     [resolved, ids],
   );
-  const tagsHydratedForIdsRef = useRef("");
 
-  useEffect(() => {
-    if (tagsHydratedForIdsRef.current !== idsKey) {
-      tagsHydratedForIdsRef.current = "";
+  // Chips: how many of each type, in the order they first appear.
+  const typeGroups = useMemo(() => {
+    const groups = new Map<ComponentType, string[]>();
+    for (const component of components) {
+      const list = groups.get(component.type) ?? [];
+      list.push(component.id);
+      groups.set(component.type, list);
     }
-    if (components.length === 0) {
-      setTags([]);
-      setTagsAreMixed(false);
-      setTagInput("");
-      return;
-    }
-    if (tagsHydratedForIdsRef.current === idsKey) return;
-    tagsHydratedForIdsRef.current = idsKey;
-    const first = components[0].tags ?? [];
-    const allSame = components.every((component) => tagsEqual(component.tags ?? [], first));
-    setTags(allSame ? [...first] : []);
-    setTagsAreMixed(!allSame);
-    setTagInput("");
-  }, [idsKey, components]);
+    return [...groups.entries()].map(([type, groupIds]) => ({ type, ids: groupIds }));
+  }, [components]);
 
-  const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    selectedNodes.forEach((n) => {
-      const nodeType = (n.data?.type as string) ?? "component";
-      counts[nodeType] = (counts[nodeType] ?? 0) + 1;
+  const chipLabel = (type: ComponentType, count: number) => {
+    if (CHIP_KEYS.has(type)) return t(`multiSelect.chip.${type}`, { count });
+    const descriptor = getElement(type);
+    return t("multiSelect.chip.other", {
+      count,
+      type: descriptor ? t(descriptor.labelKey) : type,
     });
-    return counts;
-  }, [selectedNodes]);
+  };
 
-  const typeSummary = useMemo(
-    () =>
-      Object.entries(typeCounts)
-        .map(([type, count]) => {
-          const key = typeLabelKeys[type];
-          const label = key ? t(key) : type;
-          return `${count} ${label}${count > 1 ? "s" : ""}`;
-        })
-        .join(", "),
-    [typeCounts, t, typeLabelKeys],
+  const selectOnly = (onlyIds: readonly string[]) => {
+    const keep = new Set(onlyIds);
+    reactFlowInstance.setNodes((nodes) =>
+      nodes.map((node) => ({ ...node, selected: keep.has(node.id) })),
+    );
+    setSelectedNodeIds(keep);
+  };
+
+  const roots = useMemo(
+    () => selectionRoots(ids, (id) => resolved?.components[id]?.parentId ?? null).length,
+    [ids, resolved],
   );
 
-  const allSameType = useMemo(() => {
-    if (selectedNodes.length <= 1) return true;
-    const first = (selectedNodes[0].data?.type as ComponentType) ?? "component";
-    return selectedNodes.every((n) => ((n.data?.type as ComponentType) ?? "component") === first);
-  }, [selectedNodes]);
+  // Common properties; what differs reads "Mixed".
+  const sharedType = shared(components.map((c) => c.type));
+  const typeEditable =
+    components.length > 0 &&
+    components.every(
+      (c) =>
+        !isPanelComponent(c) &&
+        !isNoteComponent(c) &&
+        !isDbTableComponent(c) &&
+        !isProcessNodeComponent(c) &&
+        (c.type === "person" ||
+          c.type === "system" ||
+          c.type === "container" ||
+          c.type === "component" ||
+          getElement(c.type)?.family !== "structural"),
+    );
+  const technologyEditable =
+    components.length > 0 &&
+    components.every(
+      (c) => !isPanelComponent(c) && !isNoteComponent(c) && !isProcessNodeComponent(c),
+    );
+  const sharedTechnology = shared(components.map((c) => readTechnology(c) ?? ""));
 
-  const sharedTechnology = useMemo(() => {
-    if (components.length === 0) return undefined;
-    const first = readTechnology(components[0]) ?? "";
-    const allSame = components.every((c) => (readTechnology(c) ?? "") === first);
-    return allSame ? first : null;
-  }, [components]);
+  const tagSets = components.map((c) => c.tags ?? []);
+  const commonTags = tagSets.length
+    ? (tagSets[0] ?? []).filter((tag) => tagSets.every((set) => set.includes(tag)))
+    : [];
+  const tagsDiffer = tagSets.some((set) => set.some((tag) => !commonTags.includes(tag)));
 
-  const sharedDescription = useMemo(() => {
-    if (components.length === 0) return undefined;
-    const first = components[0].description ?? "";
-    const allSame = components.every((c) => (c.description ?? "") === first);
-    return allSame ? first : null;
-  }, [components]);
-
-  const applyTagsToSelection = (nextTags: string[]) => {
-    ids.forEach((id) => updateComponent(id, { tags: nextTags }));
-    setTags(nextTags);
-    setTagsAreMixed(false);
-  };
-
-  const handleCommitTagInput = () => {
+  const handleAddTag = () => {
     const newTag = tagInput.trim();
-    if (!newTag) return;
-    if (!tags.includes(newTag)) {
-      applyTagsToSelection([...tags, newTag]);
-    }
     setTagInput("");
+    if (!newTag) return;
+    // Added to each element, keeping what each already carries.
+    batchUpdateComponents(ids, (component) => ({
+      tags: (component.tags ?? []).includes(newTag)
+        ? (component.tags ?? [])
+        : [...(component.tags ?? []), newTag],
+    }));
   };
 
-  const handleRemoveTag = (tag: string) => {
-    applyTagsToSelection(tags.filter((item) => item !== tag));
-  };
+  const handleRemoveTag = (tag: string) =>
+    batchUpdateComponents(ids, (component) => ({
+      tags: (component.tags ?? []).filter((item) => item !== tag),
+    }));
 
   const handleGroup = () => {
     const panelId = groupNodes(ids);
@@ -187,23 +233,12 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
       pasteFromClipboard,
     });
     if (newIds.length === 0) return;
-    reactFlowInstance.setNodes((nodes) =>
-      nodes.map((node) => ({ ...node, selected: newIds.includes(node.id) })),
-    );
-    setSelectedNodeIds(new Set(newIds));
+    selectOnly(newIds);
   };
 
   const handleDelete = () => {
     removeElements(ids, []);
     onClose();
-  };
-
-  const handleTechnologyChange = (value: string) => {
-    ids.forEach((id) => updateComponent(id, { technology: value || undefined }));
-  };
-
-  const handleDescriptionChange = (value: string) => {
-    ids.forEach((id) => updateComponent(id, { description: value }));
   };
 
   const handleResetWaypoints = () => {
@@ -285,178 +320,192 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
     toast.success(t("saveTemplate.saved"));
   };
 
+  const alignActions: IconAction[] = (
+    [
+      ["left", "multiSelect.align.left", AlignStartVertical],
+      ["center-h", "multiSelect.align.centerH", AlignCenterVertical],
+      ["right", "multiSelect.align.right", AlignEndVertical],
+      ["top", "multiSelect.align.top", AlignStartHorizontal],
+      ["center-v", "multiSelect.align.centerV", AlignCenterHorizontal],
+      ["bottom", "multiSelect.align.bottom", AlignEndHorizontal],
+    ] satisfies [AlignMode, string, LucideIcon][]
+  ).map(([mode, key, icon]) => ({
+    key: mode,
+    label: t(key),
+    icon,
+    disabled: roots < 2,
+    onClick: () => alignNodes(ids, mode),
+  }));
+
+  const distributeActions: IconAction[] = (
+    [
+      ["horizontal", "multiSelect.distribute.horizontal", AlignHorizontalDistributeCenter],
+      ["vertical", "multiSelect.distribute.vertical", AlignVerticalDistributeCenter],
+    ] satisfies [DistributeAxis, string, LucideIcon][]
+  ).map(([axis, key, icon]) => ({
+    key: axis,
+    label: roots < 3 ? t("multiSelect.needThree") : t(key),
+    icon,
+    disabled: roots < 3,
+    onClick: () => distributeNodes(ids, axis),
+  }));
+
+  const quickActions: IconAction[] = [
+    { key: "duplicate", label: t("multiSelect.duplicate"), icon: Copy, onClick: handleDuplicate },
+    {
+      key: "auto-layout",
+      label: t("multiSelect.autoLayoutSelectionHint"),
+      icon: LayoutGrid,
+      onClick: handleAutoLayoutSelection,
+    },
+    {
+      key: "reset-paths",
+      label: t("multiSelect.resetWaypoints"),
+      icon: RotateCcw,
+      onClick: handleResetWaypoints,
+    },
+  ];
+
   return (
-    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("multiSelect.title")}
-        </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <PanelFrame>
+      <PanelHeader
+        icon={<Layers className="h-3.5 w-3.5" />}
+        typeLabel={t("multiSelect.title")}
+        name={t("multiSelect.elements", { count: selectedNodes.length })}
+        namePlaceholder={t("multiSelect.title")}
+        subheader={
+          <div
+            className="flex flex-wrap gap-1 px-0.5"
+            role="group"
+            aria-label={t("multiSelect.filterByType")}
+          >
+            {typeGroups.map((group) => (
+              <button
+                key={group.type}
+                type="button"
+                title={t("multiSelect.filterByType")}
+                disabled={typeGroups.length === 1}
+                onClick={() => selectOnly(group.ids)}
+                className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors enabled:hover:bg-accent enabled:hover:text-foreground disabled:cursor-default"
+              >
+                {chipLabel(group.type, group.ids.length)}
+              </button>
+            ))}
+          </div>
+        }
+        menu={[
+          {
+            key: "save-template",
+            label: t("canvas.multiSelect.saveAsTemplate"),
+            icon: BookmarkPlus,
+            onSelect: () => setSaveTemplateOpen(true),
+          },
+          {
+            key: "delete",
+            label: t("multiSelect.delete"),
+            icon: Trash2,
+            destructive: true,
+            separated: true,
+            onSelect: handleDelete,
+          },
+        ]}
+        onClose={onClose}
+      />
 
-      <div className="p-3 border-b border-border">
-        <p className="text-sm font-medium text-foreground">
-          {t("multiSelect.selectedCount", { count: selectedNodes.length })}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">{typeSummary}</p>
-      </div>
-
-      <div className="p-3 border-b border-border space-y-2">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("common.actions")}
-        </p>
-        <div className="flex flex-col gap-2">
-          {ids.length >= 2 && (
-            <button
-              type="button"
-              onClick={handleGroup}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              <LayoutDashboard className="h-3.5 w-3.5" />
-              {t("multiSelect.group")}
-            </button>
-          )}
-          {selectedNodes.length >= 2 && resolved && (
-            <button
-              type="button"
-              onClick={() => setSaveTemplateOpen(true)}
-              title={t("canvas.multiSelect.saveAsTemplate")}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
-            >
-              <BookmarkPlus size={14} className="shrink-0" aria-hidden />
-              {t("canvas.multiSelect.saveAsTemplate")}
-            </button>
-          )}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           <button
             type="button"
-            onClick={handleAutoLayoutSelection}
-            title={t("multiSelect.autoLayoutSelectionHint")}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
+            onClick={handleGroup}
+            className="inline-flex h-8 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            {t("multiSelect.autoLayoutSelection")}
+            <LayoutDashboard className="h-3.5 w-3.5" />
+            {t("multiSelect.group")}
           </button>
-          <button
-            type="button"
-            onClick={handleResetWaypoints}
-            title={t("multiSelect.resetWaypointsShortcut")}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            {t("multiSelect.resetWaypoints")}
-          </button>
-          <button
-            type="button"
-            onClick={handleDuplicate}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-border px-3 py-2 text-xs font-medium hover:bg-muted/50"
-          >
-            <Copy className="h-3.5 w-3.5" />
-            {t("multiSelect.duplicate")}
-          </button>
-          <button
-            type="button"
-            onClick={handleDelete}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-destructive/50 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("multiSelect.delete")}
-          </button>
+          {quickActions.map((action) => (
+            <IconButton key={action.key} action={action} />
+          ))}
         </div>
-      </div>
 
-      <div className="p-3 space-y-4 flex-1 min-h-0 overflow-y-auto">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("multiSelect.commonProps")}
-        </p>
-        <p className="text-[10px] text-muted-foreground italic">{t("multiSelect.editAllHint")}</p>
+        <PanelSection title={t("multiSelect.alignSection")}>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {alignActions.map((action) => (
+              <IconButton key={action.key} action={action} />
+            ))}
+            <span className="mx-1 h-5 w-px bg-border" aria-hidden />
+            {distributeActions.map((action) => (
+              <IconButton key={action.key} action={action} />
+            ))}
+          </div>
+        </PanelSection>
 
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            {t("common.tags")}
-          </label>
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-foreground leading-none"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-          <input
-            type="text"
-            value={tagInput}
-            onChange={(event) => setTagInput(event.target.value)}
-            onBlur={handleCommitTagInput}
-            onKeyDown={(event) => {
-              if (keyIs(event, KEY.ENTER) && tagInput.trim()) {
-                event.preventDefault();
-                handleCommitTagInput();
+        <PanelSection title={t("multiSelect.commonProps")}>
+          {typeEditable && (
+            <ElementTypeSelect
+              value={sharedType}
+              mixedLabel={t("multiSelect.mixed")}
+              onChange={(nextType) =>
+                batchUpdateComponents(ids, {
+                  type: nextType,
+                  ...cloudServiceIdClearingPatch(undefined),
+                } as unknown as ComponentPatch)
               }
-            }}
-            placeholder={
-              tagsAreMixed ? t("common.multipleValues") : t("elementPanel.tagsPlaceholder")
-            }
-            className={cn(
-              "w-full rounded-md border bg-background px-3 py-2 text-sm",
-              tagsAreMixed && tags.length === 0 && "italic text-muted-foreground",
+            />
+          )}
+          {technologyEditable && (
+            <CommitField
+              label={t("common.technology")}
+              value={sharedTechnology ?? ""}
+              placeholder={sharedTechnology === null ? t("multiSelect.mixed") : undefined}
+              addLabel={sharedTechnology === null ? undefined : t("panelShell.addTechnology")}
+              onCommit={(value) =>
+                batchUpdateComponents(ids, { technology: value || undefined } as ComponentPatch)
+              }
+            />
+          )}
+          <div>
+            <span className={PANEL_LABEL_CLASS}>{t("common.tags")}</span>
+            {(commonTags.length > 0 || tagsDiffer) && (
+              <div className="mb-2 flex flex-wrap gap-1">
+                {commonTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      aria-label={t("panelShell.removeTag")}
+                      onClick={() => handleRemoveTag(tag)}
+                      className="leading-none hover:text-foreground"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {tagsDiffer && (
+                  <span className="rounded-full border border-dashed border-border px-2 py-0.5 text-[11px] italic text-muted-foreground">
+                    {t("multiSelect.mixed")}
+                  </span>
+                )}
+              </div>
             )}
-          />
-        </div>
-
-        {allSameType && (
-          <>
-            <div>
-              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                {t("common.technology")}
-              </label>
-              <input
-                value={sharedTechnology ?? ""}
-                onChange={(e) => handleTechnologyChange(e.target.value)}
-                placeholder={
-                  sharedTechnology === null ? t("common.multipleValues") : t("common.techExample")
+            <input
+              type="text"
+              value={tagInput}
+              onChange={(event) => setTagInput(event.target.value)}
+              onBlur={handleAddTag}
+              onKeyDown={(event) => {
+                if (keyIs(event, KEY.ENTER) && tagInput.trim()) {
+                  event.preventDefault();
+                  handleAddTag();
                 }
-                className={cn(
-                  "w-full rounded-md border bg-background px-3 py-2 text-sm",
-                  sharedTechnology === null && "italic text-muted-foreground",
-                )}
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                {t("common.description")}
-              </label>
-              <textarea
-                value={sharedDescription ?? ""}
-                onChange={(e) => handleDescriptionChange(e.target.value)}
-                placeholder={
-                  sharedDescription === null ? t("common.multipleValues") : t("common.description")
-                }
-                rows={2}
-                className={cn(
-                  "w-full rounded-md border bg-background px-3 py-2 text-sm resize-none",
-                  sharedDescription === null && "italic text-muted-foreground",
-                )}
-              />
-            </div>
-          </>
-        )}
+              }}
+              placeholder={`+ ${t("panelShell.addTag")}`}
+              className={cn(PANEL_INPUT_CLASS)}
+            />
+          </div>
+        </PanelSection>
       </div>
 
       {saveTemplateOpen && resolved && (
@@ -467,6 +516,6 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           onClose={() => setSaveTemplateOpen(false)}
         />
       )}
-    </div>
+    </PanelFrame>
   );
 }

@@ -1,6 +1,7 @@
 import { ExternalLink, ExternalLink as ExternalLinkIcon, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { normalizeSources } from "@/features/integrations/merge-utils";
+import { effectiveServiceRole } from "@/features/diagram";
 import type { ServiceDefinition } from "@/features/diagram";
 import { SOURCE_BADGE } from "./services.constants";
 import { sourceTypeLabel } from "./serviceLabels";
@@ -18,6 +19,7 @@ export interface ServiceReadOnlyDetailsProps {
 export function ServiceReadOnlyDetails({ svc }: ServiceReadOnlyDetailsProps) {
   const { t } = useTranslation();
   const normalizedSources = normalizeSources(svc);
+  const role = effectiveServiceRole(svc);
   const defectDojoProductLink = (svc.metadata?.defectdojo as { productLink?: string } | undefined)
     ?.productLink;
 
@@ -48,6 +50,24 @@ export function ServiceReadOnlyDetails({ svc }: ServiceReadOnlyDetailsProps) {
             <span className="text-muted-foreground italic">{t("common.noDescription")}</span>
           )}
         </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] text-muted-foreground w-20 shrink-0">
+          {t("services.roleLabel")}
+        </span>
+        {role ? (
+          <span className="text-sm text-foreground">
+            {t(`services.role.${role}`)}
+            {!svc.role && (
+              <span className="ml-1.5 text-[10px] text-muted-foreground">
+                {t("services.roleSuggestedTag")}
+              </span>
+            )}
+          </span>
+        ) : (
+          <span className="text-sm text-muted-foreground italic">{t("common.emDash")}</span>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

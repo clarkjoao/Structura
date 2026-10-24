@@ -1,5 +1,6 @@
 export enum ServiceSource {
   Github = "github",
+  Gitlab = "gitlab",
   Defectdojo = "defectdojo",
   Manual = "manual",
 }

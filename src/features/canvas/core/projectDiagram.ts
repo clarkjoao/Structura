@@ -8,6 +8,7 @@ import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 import type { ViewNode, ViewSnapshot } from "./resolveViewSnapshot";
 import { compactTabBox } from "./compactView";
 import { withPodLinkStyle } from "@/features/diagram/utils/k8s-pod";
+import { projectLegendNode } from "./legendNode";
 
 /*
  * The whole projection, Diagram view → React Flow arrays, as one pure step.
@@ -209,8 +210,9 @@ export function projectDiagram(
   policy: DiagramSurfacePolicy,
   deps: ProjectionDeps,
 ): { nodes: Node[]; edges: Edge[] } {
+  const legend = projectLegendNode(view, view.showLegend);
   return {
-    nodes: projectNodes(view, ctx, policy, deps.describe),
+    nodes: [...projectNodes(view, ctx, policy, deps.describe), ...(legend ? [legend] : [])],
     edges: projectEdges(view, ctx, policy, deps.handleAssignments),
   };
 }

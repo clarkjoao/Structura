@@ -18,6 +18,24 @@ describe("MarkerCapsDropdown", () => {
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 
+  it("shows the marker as a glyph, not as text, on the toolbar button", () => {
+    const { container } = render(
+      <MarkerCapsDropdown currentCap={EdgeMarker.None} onChangeCap={vi.fn()} capType="end" />,
+    );
+    const button = screen.getByRole("button");
+    expect(button.querySelector("svg[data-marker='none']")).not.toBeNull();
+    // The label is for assistive tech only; nothing visible reads "markerNone".
+    expect(container.textContent).toBe("");
+    expect(button).toHaveAttribute("aria-label", expect.stringContaining("common.markerNone"));
+  });
+
+  it("mirrors the glyph for the start marker", () => {
+    render(
+      <MarkerCapsDropdown currentCap={EdgeMarker.Arrow} onChangeCap={vi.fn()} capType="start" />,
+    );
+    expect(screen.getByRole("button").querySelector("svg")).toHaveClass("-scale-x-100");
+  });
+
   it("calls onChangeCap when an option is clicked", () => {
     const onChangeCap = vi.fn();
     const { container } = render(

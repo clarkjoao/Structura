@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import type { NodeLayout } from "@/features/diagram";
-
-const MIN_PANEL_WIDTH = 200;
-const MIN_PANEL_HEIGHT = 150;
+import { MIN_PANEL_HEIGHT, MIN_PANEL_WIDTH } from "../../../constants/panel.constants";
+import { PANEL_INPUT_CLASS, PANEL_LABEL_CLASS } from "../shell/fieldStyles";
 
 export interface PositionSectionProps {
   componentId: string;
@@ -150,19 +149,15 @@ export function PositionSection({
     return null;
   }
 
-  const inputClassName =
-    "w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring [appearance:textfield]";
+  const inputClassName = `${PANEL_INPUT_CLASS} [appearance:textfield]`;
+  const labelClassName = PANEL_LABEL_CLASS;
 
   return (
     <div className="space-y-2">
-      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-        {t("elementPanel.positionSection")}
-      </label>
+      <label className={labelClassName}>{t("elementPanel.positionSection")}</label>
       <div className="grid grid-cols-2 gap-2">
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            {t("elementPanel.positionX")}
-          </label>
+          <label className={labelClassName}>{t("elementPanel.positionX")}</label>
           <input
             type="number"
             value={xInput}
@@ -174,9 +169,7 @@ export function PositionSection({
           />
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            {t("elementPanel.positionY")}
-          </label>
+          <label className={labelClassName}>{t("elementPanel.positionY")}</label>
           <input
             type="number"
             value={yInput}
@@ -191,9 +184,7 @@ export function PositionSection({
       {isPanel && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              {t("elementPanel.positionW")}
-            </label>
+            <label className={labelClassName}>{t("elementPanel.positionW")}</label>
             <input
               type="number"
               min={minWidth}
@@ -206,9 +197,7 @@ export function PositionSection({
             />
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              {t("elementPanel.positionH")}
-            </label>
+            <label className={labelClassName}>{t("elementPanel.positionH")}</label>
             <input
               type="number"
               min={minHeight}

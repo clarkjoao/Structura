@@ -9,6 +9,7 @@ function toManifestEntry(service: ServiceDefinition): ServiceManifestEntry {
     repositoryUrl: service.repositoryUrl,
     technology: service.technology,
     ...(service.owner ? { owner: service.owner } : {}),
+    ...(service.role ? { role: service.role } : {}),
     ...(service.tags?.length ? { tags: service.tags } : {}),
     ...(service.sources?.length ? { sources: service.sources } : {}),
     ...(github ? { github: { repoId: github.repoId, fullName: github.fullName } } : {}),

@@ -181,7 +181,7 @@ describe("a new optional field on a step needs no migration", () => {
     expect(readStep(reloaded).context).toEqual({ sets: { score: "0.12" } });
   });
 
-  it("is schema 15 after the Versions rename (scenes → versions)", () => {
-    expect(PERSIST_SCHEMA_VERSION).toBe(15);
+  it("is schema 16 after connection semantics (intent → interaction × kind)", () => {
+    expect(PERSIST_SCHEMA_VERSION).toBe(16);
   });
 });

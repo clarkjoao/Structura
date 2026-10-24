@@ -1,5 +1,6 @@
 import type { Connection, Diagram, VersionDiff } from "@/features/diagram";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import { resolveConnectionSemantics } from "@/features/diagram/model/connection-defaults";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { resolveShared } from "@/features/diagram/utils/shared";
 
@@ -102,8 +103,9 @@ function connectionLine(connection: Connection, byId: Components): string {
   if (connection.description?.trim()) {
     parts.push(`description="${connection.description.trim().slice(0, 80)}"`);
   }
-  if (connection.intent) parts.push(`intent=${connection.intent}`);
-  if (connection.transportPreset) parts.push(`transport=${connection.transportPreset}`);
+  const { interaction, kind } = resolveConnectionSemantics(connection);
+  parts.push(`interaction=${interaction}`);
+  if (kind) parts.push(`kind=${kind}`);
 
   return `  - ${parts.join("; ")}`;
 }

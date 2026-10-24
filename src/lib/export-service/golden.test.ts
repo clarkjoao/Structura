@@ -12,6 +12,7 @@ import {
   type ServiceDefinition,
 } from "@/features/diagram";
 import { exportDrawio } from "./export-drawio";
+import { domainColor } from "@/features/diagram/model/boundary";
 
 /**
  * GOLDEN FREEZE — captures the app draw.io XML byte-for-byte.
@@ -198,6 +199,23 @@ const richConnections: Record<string, Connection> = {
     style: { edgeStyle: EdgeStyle.Bezier, markerStart: EdgeMarker.Arrow },
   },
   e5: { id: "e5", sourceId: "sys", targetId: "db", label: "reads" },
+  // The interaction drives the stroke: a synchronous edge draws solid, an asynchronous one dashed.
+  eSync: {
+    id: "eSync",
+    sourceId: "cont",
+    targetId: "db",
+    label: "queries",
+    interaction: "sync",
+    kind: "call",
+  },
+  eAsync: {
+    id: "eAsync",
+    sourceId: "cont",
+    targetId: "db",
+    label: "publishes",
+    interaction: "async",
+    kind: "event",
+  },
   // Edge to Note: validates entryX=0 (left side) on the Note's target handle.
   eNote: { id: "eNote", sourceId: "sys", targetId: "note", label: "annotates" },
   // AWS as source: validates exitX=1 (right side) on Lambda's source handle.
@@ -699,5 +717,70 @@ describe("golden — shared", () => {
     );
     expect(xml).toMatch(/id="e2"[^>]*target="r1"/);
     expect(xml).toMatch(/structuraShared="ref"/);
+  });
+});
+
+describe("golden — typed boundaries", () => {
+  const boundaries: Record<string, Component> = {
+    vendas: {
+      id: "vendas",
+      name: "Vendas",
+      type: "panel",
+      description: "",
+      parentId: null,
+      panelKind: "default",
+    } as Component,
+    q: {
+      id: "q",
+      name: "Q-Checkout",
+      type: "panel",
+      description: "",
+      parentId: "vendas",
+      panelKind: "default",
+      boundaryType: "quantum",
+    } as Component,
+    net: {
+      id: "net",
+      name: "VPC edge",
+      type: "panel",
+      description: "",
+      parentId: "vendas",
+      panelKind: "default",
+      boundaryType: "network",
+    } as Component,
+    top: {
+      id: "top",
+      name: "Platform",
+      type: "panel",
+      description: "",
+      parentId: null,
+      panelKind: "default",
+      boundaryType: "system",
+    } as Component,
+  };
+  const layouts: Record<string, NodeLayout> = {
+    vendas: { elementId: "vendas", x: 0, y: 0, width: 600, height: 400 },
+    q: { elementId: "q", x: 20, y: 40, width: 260, height: 300 },
+    net: { elementId: "net", x: 300, y: 40, width: 260, height: 300 },
+    top: { elementId: "top", x: 700, y: 0, width: 400, height: 300 },
+  };
+
+  const xml = exportDrawio(diagram("Boundaries", boundaries, {}, layouts, {}), catalog);
+
+  it("freezes the XML", () => {
+    expect(xml).toMatchSnapshot();
+  });
+
+  it("colours a boundary by its domain, and the outline by its type", () => {
+    const cell = (id: string) =>
+      xml.match(new RegExp(`id="${id}"><mxCell style="([^"]*)"`))?.[1] ?? "";
+    const domain = domainColor("Vendas");
+    // Both boundaries sit in Vendas: same colour, outline from each one's type.
+    expect(cell("q")).toContain(domain);
+    expect(cell("net")).toContain(domain);
+    expect(cell("net")).toContain("dashed=1");
+    expect(cell("q")).not.toContain("dashed=1");
+    // A top-level boundary falls back to its type's colour.
+    expect(cell("top")).toContain("#0ea5e9");
   });
 });

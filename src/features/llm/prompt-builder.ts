@@ -112,8 +112,8 @@ CRITICAL RULES:
 Valid action types:
 - { "type": "ADD_NODE", "payload": { "nodeType": "<type>", "name": "<name>", "parentId": "<id or null>", "position": { "x": 0, "y": 0 }, "awsService": "<optional>" } }
 - { "type": "REMOVE_NODE", "payload": { "nodeId": "<id>" } }
-- { "type": "UPDATE_NODE", "payload": { "nodeId": "<id>", "patch": { "name": "..." } } }
-- { "type": "ADD_EDGE", "payload": { "sourceId": "<id>", "targetId": "<id>", "label": "<label>" } }
+- { "type": "UPDATE_NODE", "payload": { "nodeId": "<id>", "patch": { "name": "..." } } } (a group's "patch" may carry "boundaryType": "quantum | system | network"; its colours are derived from the group it sits in and from the type, so do not set colours)
+- { "type": "ADD_EDGE", "payload": { "sourceId": "<id>", "targetId": "<id>", "label": "<label>", "patch": { "interaction": "sync | async", "kind": "call | event | command | dependency", "technology": "<e.g. gRPC, HTTPS>" } } } (patch is optional; async draws dashed)
 - { "type": "REMOVE_EDGE", "payload": { "edgeId": "<id>" } }
 
 Position guidance for ADD_NODE:

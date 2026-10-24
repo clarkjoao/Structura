@@ -465,6 +465,7 @@
       "resetIcon": "Redefinir ícone",
       "edgeStyle": "Estilo da aresta",
       "color": "Cor",
+      "outline": "Borda e preenchimento",
       "markerStart": "Extremidade inicial",
       "markerEnd": "Extremidade final"
     }
@@ -486,7 +487,12 @@
   },
   "textStyle": {
     "size": "Tamanho do texto",
-    "sizes": { "sm": "Pequeno", "md": "Médio", "lg": "Grande", "xl": "Extra grande" },
+    "sizes": {
+      "sm": "Pequeno",
+      "md": "Médio",
+      "lg": "Grande",
+      "xl": "Extra grande"
+    },
     "color": "Cor do texto",
     "colors": {
       "default": "Padrão",
@@ -1827,9 +1833,132 @@
     }
   },
   "connectionPanel": {
+    "interaction": "Interação",
+    "kind": "Tipo",
+    "interactions": {
+      "sync": "Síncrona",
+      "async": "Assíncrona"
+    },
+    "kinds": {
+      "call": "Chamada",
+      "event": "Evento",
+      "command": "Comando",
+      "dependency": "Dependência"
+    },
+    "swap": "Inverter direção",
+    "swapRefused": "Esses elementos não podem ser conectados no sentido contrário",
+    "technologyTransport": "Tecnologia e transporte",
     "technologyLabel": "Tecnologia",
     "removeConnection": "Remover",
     "idLabel": "ID"
+  },
+  "diagramPanel": {
+    "title": "Diagrama",
+    "untitled": "Diagrama sem nome",
+    "level": "Nível",
+    "legend": "Legenda",
+    "showLegend": "Mostrar legenda no canvas",
+    "legendHint": "Gerada a partir dos tipos de fronteira, domínios e interações usados neste diagrama."
+  },
+  "linkPalette": {
+    "all": "Todos",
+    "recents": "Recentes",
+    "suggested": "Sugeridos",
+    "linked": "Vinculado",
+    "categories": "Categorias",
+    "description": "Busque e escolha um para vincular.",
+    "noResultsFor": "Nada corresponde a “{{query}}”",
+    "empty": "Nada por aqui ainda",
+    "hints": {
+      "link": "vincula",
+      "linkAndOpen": "vincula e abre",
+      "category": "categoria",
+      "close": "fecha"
+    }
+  },
+  "diagramLink": {
+    "title": "Vincular diagrama a {{name}}",
+    "searchPlaceholder": "Buscar diagramas…",
+    "sameName": "Mesmo nome do elemento",
+    "createAndLink": "Criar “{{name}}” e vincular",
+    "linkAction": "Vincular um diagrama",
+    "linked": "Diagrama vinculado",
+    "target": "Diagrama de destino",
+    "unlink": "Desvincular",
+    "open": "Abrir diagrama",
+    "imported": "Importado",
+    "noFolder": "Sem pasta",
+    "missing": "não encontrado",
+    "created": "Criamos “{{name}}” e vinculamos"
+  },
+  "boundary": {
+    "title": "Fronteira",
+    "type": "Tipo de fronteira",
+    "types": {
+      "none": "Nenhum",
+      "quantum": "Quantum",
+      "system": "Sistema",
+      "network": "Rede"
+    },
+    "domain": "Domínio",
+    "noDomain": "Nenhum — no nível raiz",
+    "domainHint": "O grupo em que esta fronteira está.",
+    "derivedAppearance": "Aparência derivada",
+    "background": "Fundo",
+    "border": "Borda",
+    "sourceDomain": "Cor do domínio “{{name}}”",
+    "sourceType": "Cor do tipo de fronteira",
+    "sourceCustom": "Cor personalizada",
+    "backToDerived": "Voltar ao derivado",
+    "content": "Conteúdo",
+    "contentCount_one": "{{count}} elemento",
+    "contentCount_other": "{{count}} elementos",
+    "empty": "Nada dentro ainda",
+    "collapseOnCanvas": "Recolher no canvas"
+  },
+  "legend": {
+    "title": "Legenda",
+    "boundaryTypes": "Fronteiras",
+    "domains": "Domínios",
+    "interactions": "Interações",
+    "empty": "Nada a explicar ainda: a legenda lista os tipos de fronteira, domínios e interações que este diagrama usa."
+  },
+  "serviceLink": {
+    "golden": "Nome, descrição, tecnologia e tags vêm do serviço “{{name}}”: editar atualiza o serviço e todos os elementos vinculados a ele.",
+    "title": "Vincular serviço a {{name}}",
+    "searchPlaceholder": "Buscar serviços…",
+    "sameName": "Mesmo nome do elemento",
+    "createAndLink": "Criar “{{name}}” e vincular",
+    "linkAction": "Vincular um serviço",
+    "unlink": "Desvincular",
+    "missing": "não encontrado",
+    "sources": {
+      "manual": "Manual",
+      "github": "GitHub",
+      "defectdojo": "DefectDojo"
+    }
+  },
+  "panelShell": {
+    "advanced": "Avançado",
+    "copyId": "Copiar ID",
+    "idCopied": "ID copiado",
+    "zIndex": "Ordem de empilhamento (z-index)",
+    "moreActions": "Mais ações",
+    "collapse": "Recolher painel",
+    "expand": "Expandir painel",
+    "resize": "Redimensionar painel",
+    "trail": "Localização",
+    "in": "em",
+    "duplicate": "Duplicar",
+    "lock": "Travar",
+    "unlock": "Destravar",
+    "sectionWhat": "O que é",
+    "sectionRelates": "Como se relaciona",
+    "sectionMeta": "Metadados",
+    "addTechnology": "Adicionar tecnologia",
+    "addDescription": "Adicionar descrição",
+    "addTag": "Adicionar tag",
+    "removeTag": "Remover tag"
   },
   "elementPanel": {
     "appearance": "Aparência",
@@ -1934,17 +2063,6 @@
     "dragReorderHint": "Arraste as linhas para reordenar os handles.",
     "selectAll": "Selecionar todas"
   },
-  "serviceCombobox": {
-    "unlinkAria": "Desvincular serviço",
-    "linkPrompt": "Vincular serviço...",
-    "newServiceName": "Nome do serviço",
-    "newServiceTags": "Tags (separadas por vírgula)",
-    "searchPlaceholder": "Buscar serviço...",
-    "emptyRegistered": "Nenhum serviço cadastrado.",
-    "noResultsFor": "Nenhum resultado para “{{query}}”.",
-    "createNewService": "Novo serviço",
-    "createAndLink": "Criar e vincular"
-  },
   "technologyCombobox": {
     "searchPlaceholder": "Buscar ou digitar...",
     "empty": "Nenhum resultado.",
@@ -1956,6 +2074,39 @@
     "default": "Padrão"
   },
   "multiSelect": {
+    "elements_one": "{{count}} elemento",
+    "elements_other": "{{count}} elementos",
+    "chip": {
+      "person_one": "{{count}} pessoa",
+      "person_other": "{{count}} pessoas",
+      "system_one": "{{count}} sistema",
+      "system_other": "{{count}} sistemas",
+      "container_one": "{{count}} aplicação",
+      "container_other": "{{count}} aplicações",
+      "component_one": "{{count}} componente",
+      "component_other": "{{count}} componentes",
+      "panel_one": "{{count}} fronteira",
+      "panel_other": "{{count}} fronteiras",
+      "note_one": "{{count}} nota",
+      "note_other": "{{count}} notas",
+      "other": "{{count}} × {{type}}"
+    },
+    "filterByType": "Selecionar só estes",
+    "mixed": "Misto",
+    "alignSection": "Alinhar e distribuir",
+    "align": {
+      "left": "Alinhar à esquerda",
+      "centerH": "Centralizar na horizontal",
+      "right": "Alinhar à direita",
+      "top": "Alinhar ao topo",
+      "centerV": "Centralizar na vertical",
+      "bottom": "Alinhar à base"
+    },
+    "distribute": {
+      "horizontal": "Distribuir na horizontal",
+      "vertical": "Distribuir na vertical"
+    },
+    "needThree": "Selecione ao menos três elementos para distribuir",
     "title": "Seleção múltipla",
     "selectedCount_one": "{{count}} elemento selecionado",
     "selectedCount_other": "{{count}} elementos selecionados",
@@ -2914,17 +3065,13 @@
   },
   "services": {
     "title": "Serviços",
-    "subtitle": "Lista central de serviços e infraestrutura",
-    "addService": "Add Service",
-    "searchPlaceholder": "Buscar por nome, tag, owner...",
-    "filterAll": "All",
+    "addService": "Adicionar serviço",
+    "searchPlaceholder": "Buscar por nome, papel, tecnologia ou tag…",
+    "filterAll": "Todos",
     "filterManual": "Manual",
-    "emptyNoServices": "Nenhum serviço cadastrado. Clique em \"Add Service\" para começar.",
+    "emptyNoServices": "Nenhum serviço cadastrado. Clique em \"Adicionar serviço\" para começar.",
     "emptyFiltered": "Nenhum serviço encontrado para os filtros aplicados.",
-    "selectForDetails": "Selecione um serviço para ver os detalhes.",
     "chipAddPlaceholder": "Adicionar...",
-    "newService": "Novo Serviço",
-    "createService": "Criar Serviço",
     "techPlaceholder": "java, spring...",
     "tagsPlaceholder": "backend, auth...",
     "repoPlaceholder": "https://github.com/...",
@@ -2953,7 +3100,81 @@
     "productLabel": "Produto",
     "diagramUsage_one": "{{count}} diagrama",
     "diagramUsage_other": "{{count}} diagramas",
-    "chipAddButton": "+ add"
+    "repositoryCount_one": "{{count}} repositório",
+    "repositoryCount_other": "{{count}} repositórios",
+    "clearSearch": "Limpar busca",
+    "groupBy": "Agrupar",
+    "groupByRole": "Papel",
+    "groupByTechnology": "Tecnologia",
+    "groupBySource": "Fonte",
+    "none": {
+      "role": "Sem papel",
+      "technology": "Sem tecnologia",
+      "source": "Sem fonte"
+    },
+    "role": {
+      "api": "API",
+      "domain-engine": "Motor de domínio",
+      "worker": "Worker",
+      "integration": "Integração",
+      "none": "Sem papel"
+    },
+    "roleHint": {
+      "api": "expõe endpoints para clientes",
+      "domain-engine": "concentra as regras de negócio",
+      "worker": "processa em segundo plano",
+      "integration": "conversa com sistemas externos"
+    },
+    "roleLabel": "Papel",
+    "roleSuggested": "Sugerido: {{role}}",
+    "roleSuggestedTag": "sugerido",
+    "openRepository": "Abrir repositório",
+    "moreActions": "Mais ações",
+    "addServiceTitle": "Adicionar serviço",
+    "sourceGitlab": "GitLab",
+    "repoUrlTitle": "URL do repositório",
+    "repoUrlHint": "Cole uma URL do GitHub ou GitLab. A fonte é detectada e os campos se preenchem sozinhos.",
+    "repoUrlInvalid": "Isso não é a URL de um repositório (host/dono/repo).",
+    "repoSourcePick": "Fonte…",
+    "repoReadFrom": "Lido do repositório · editável",
+    "repoErrorNotFound": "Repositório não encontrado, ou privado e invisível para a sua conexão. Preencha à mão.",
+    "repoErrorNoConfig": "Não há conexão configurada para {{host}}. Preencha à mão.",
+    "repoErrorGeneric": "Não foi possível ler o repositório ({{message}}). Preencha à mão.",
+    "syncSwitch": "Manter sincronizado com o repositório",
+    "syncSwitchUnavailable": "Precisa que o repositório seja lido antes.",
+    "alreadyInCatalog": "Já está no catálogo",
+    "registerWithoutRepo": "Cadastrar sem repositório",
+    "removeChip": "Remover {{item}}",
+    "optional": "opcional",
+    "batchBack": "Voltar para a URL",
+    "batchList": "Listar",
+    "batchSelectAll": "Selecionar todos",
+    "batchFilter": "Filtrar…",
+    "batchEmpty": "Nenhum repositório encontrado.",
+    "batchErrorGeneric": "Não foi possível listar os repositórios.",
+    "batchImport_one": "Importar {{count}} serviço",
+    "batchImport_other": "Importar {{count}} serviços",
+    "batchOr": "ou importe vários de uma vez",
+    "batchCard": {
+      "github": "GitHub",
+      "gitlab": "GitLab",
+      "defectdojo": "DefectDojo"
+    },
+    "batchCardHint": {
+      "github": "organização",
+      "gitlab": "grupo",
+      "defectdojo": "produto"
+    },
+    "batchInput": {
+      "github": "Organização do GitHub",
+      "gitlab": "Grupo do GitLab (subgrupos incluídos)",
+      "defectdojo": "Produto do DefectDojo (nome, opcional)"
+    },
+    "batchNoConfig": {
+      "github": "Conecte o GitHub primeiro: URL base e um token.",
+      "gitlab": "Conecte o GitLab primeiro: URL da instância e um token.",
+      "defectdojo": "Conecte o DefectDojo primeiro: URL base e um token de API."
+    }
   },
   "walkthrough": {
     "addScene": "Adicionar cena",
@@ -3263,5 +3484,12 @@
       "top": "C4",
       "openCatalog": "Abrir catálogo completo"
     }
+  },
+  "gitlab": {
+    "connectedTo": "Conectado a",
+    "disconnect": "Desconectar",
+    "baseUrl": "URL da instância",
+    "token": "Token de acesso",
+    "useProxy": "Usar o proxy (rede corporativa)"
   }
 }

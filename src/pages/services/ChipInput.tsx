@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 
@@ -7,11 +8,13 @@ export const ChipInput = ({
   items,
   onChange,
   placeholder,
+  disabled,
 }: {
   label: string;
   items: string[];
   onChange: (items: string[]) => void;
   placeholder?: string;
+  disabled?: boolean;
 }) => {
   const { t } = useTranslation();
   const resolvedPlaceholder = placeholder ?? t("services.chipAddPlaceholder");
@@ -26,27 +29,28 @@ export const ChipInput = ({
       <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
         {label}
       </label>
-      <div className="flex flex-wrap gap-1 mb-1.5">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-border bg-secondary px-2 py-1.5 focus-within:ring-1 focus-within:ring-ring">
         {items.map((item) => (
           <span
             key={item}
-            className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+            className="inline-flex items-center gap-1 rounded-full bg-background px-2 py-0.5 text-[11px] font-medium text-foreground"
           >
             {item}
             <button
               type="button"
+              disabled={disabled}
+              aria-label={t("services.removeChip", { item })}
               onClick={() => onChange(items.filter((i) => i !== item))}
-              className="hover:text-foreground leading-none"
+              className="text-muted-foreground hover:text-foreground"
             >
-              ×
+              <X className="h-3 w-3" />
             </button>
           </span>
         ))}
-      </div>
-      <div className="flex gap-2">
         <input
           type="text"
           value={input}
+          disabled={disabled}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
             if (keyIs(e, KEY.ENTER)) {
@@ -54,16 +58,10 @@ export const ChipInput = ({
               add();
             }
           }}
+          onBlur={add}
           placeholder={resolvedPlaceholder}
-          className="flex-1 rounded-md border border-border bg-secondary px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          className="min-w-[8rem] flex-1 bg-transparent px-1 py-0.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
-        <button
-          type="button"
-          onClick={add}
-          className="rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"
-        >
-          {t("services.chipAddButton")}
-        </button>
       </div>
     </div>
   );

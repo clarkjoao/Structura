@@ -169,6 +169,15 @@ describe("edge label offset and control points", () => {
   });
 });
 
+describe("setNodeZIndex", () => {
+  it("writes an explicit, rounded z-index", () => {
+    const ctx = setup();
+    const a = ctx.add("system", "A", 0, 0);
+    ctx.store.getState().setNodeZIndex(a.id, 4.6);
+    expect(ctx.d().nodeLayouts[a.id].zIndex).toBe(5);
+  });
+});
+
 describe("bringToFront and sendToBack", () => {
   it("put a node one step above the highest, or below the lowest, z-index", () => {
     const ctx = setup();
@@ -348,5 +357,120 @@ describe("applyAutoLayout", () => {
     ]);
     expect(ctx.d().versions![scene.id].nodeLayouts[own.id]).toMatchObject({ x: 400, y: 400 });
     expect(ctx.d().nodeLayouts[base.id]).toMatchObject({ x: 800, y: 800 });
+  });
+});
+
+describe("alignNodes and distributeNodes", () => {
+  function three() {
+    const ctx = setup();
+    const a = ctx.add("system", "A", 0, 0);
+    const b = ctx.add("system", "B", 300, 120);
+    const c = ctx.add("system", "C", 120, 400);
+    for (const n of [a, b, c]) {
+      ctx.store
+        .getState()
+        .updateNodeLayout(
+          n.id,
+          { x: ctx.d().nodeLayouts[n.id].x, y: ctx.d().nodeLayouts[n.id].y },
+          { width: 100, height: 50 },
+        );
+    }
+    settle();
+    return { ctx, a, b, c };
+  }
+
+  it("aligns the selection's left edges in one gesture", () => {
+    const { ctx, a, b, c } = three();
+    ctx.store.getState().alignNodes([a.id, b.id, c.id], "left");
+    expect(ctx.d().nodeLayouts[b.id].x).toBe(0);
+    expect(ctx.d().nodeLayouts[c.id].x).toBe(0);
+    expect(ctx.d().nodeLayouts[b.id].y).toBe(120);
+  });
+
+  it("makes every gesture its own undo step, even inside the coalescing window", () => {
+    const { ctx, a, b, c } = three();
+    const before = ctx.past();
+    ctx.store.getState().alignNodes([a.id, b.id, c.id], "left");
+    ctx.store.getState().alignNodes([a.id, b.id, c.id], "top");
+    expect(ctx.past()).toBe(before + 2);
+    ctx.store.getState().undo();
+    // The second gesture is undone, the first stays.
+    expect(ctx.d().nodeLayouts[b.id]).toMatchObject({ x: 0, y: 120 });
+  });
+
+  it("is one store write: subscribers are notified once", () => {
+    const { ctx, a, b, c } = three();
+    const listener = vi.fn();
+    const unsubscribe = ctx.store.subscribe(listener);
+    ctx.store.getState().alignNodes([a.id, b.id, c.id], "center-h");
+    unsubscribe();
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it("stamps the canvas so the local node copies follow", () => {
+    const { ctx, a, b } = three();
+    const before = ctx.store.getState()._lastLayoutWriteAt ?? 0;
+    ctx.store.getState().alignNodes([a.id, b.id], "left");
+    expect(ctx.store.getState()._lastLayoutWriteAt).toBe(before + 1);
+  });
+
+  it("writes nothing, not even history, when everything is already aligned", () => {
+    const { ctx, a, b, c } = three();
+    ctx.store.getState().alignNodes([a.id, b.id, c.id], "left");
+    const past = ctx.past();
+    ctx.store.getState().alignNodes([a.id, b.id, c.id], "left");
+    expect(ctx.past()).toBe(past);
+  });
+
+  it("aligns in diagram space across a parent panel", () => {
+    const ctx = setup();
+    const panel = ctx.add("panel", "P", 1000, 1000);
+    const inside = ctx.add("system", "In", 50, 60, panel.id);
+    const outside = ctx.add("system", "Out", 200, 0);
+    ctx.store.getState().updateNodeLayout(inside.id, { x: 50, y: 60 }, { width: 100, height: 50 });
+    ctx.store.getState().updateNodeLayout(outside.id, { x: 200, y: 0 }, { width: 100, height: 50 });
+    settle();
+    ctx.store.getState().alignNodes([inside.id, outside.id], "left");
+    // The leftmost box is Out (x 200) vs In (1050): In moves to 200 in diagram space,
+    // i.e. -800 relative to its panel.
+    expect(ctx.d().nodeLayouts[inside.id].x).toBe(200 - 1000);
+    expect(ctx.d().nodeLayouts[outside.id].x).toBe(200);
+  });
+
+  it("moves a selected panel and leaves its selected child riding along", () => {
+    const ctx = setup();
+    const panel = ctx.add("panel", "P", 500, 0);
+    const child = ctx.add("system", "C", 10, 10, panel.id);
+    const other = ctx.add("system", "O", 0, 300);
+    ctx.store.getState().updateNodeLayout(panel.id, { x: 500, y: 0 }, { width: 300, height: 200 });
+    ctx.store.getState().updateNodeLayout(other.id, { x: 0, y: 300 }, { width: 100, height: 50 });
+    settle();
+    const childBefore = { ...ctx.d().nodeLayouts[child.id] };
+    ctx.store.getState().alignNodes([panel.id, child.id, other.id], "left");
+    expect(ctx.d().nodeLayouts[panel.id].x).toBe(0);
+    // The child's layout is relative to its panel, so it is not rewritten when the panel moves.
+    expect(ctx.d().nodeLayouts[child.id]).toEqual(childBefore);
+  });
+
+  it("does not move a locked node", () => {
+    const { ctx, a, b } = three();
+    ctx.store.getState().updateComponent(b.id, { locked: true });
+    settle();
+    ctx.store.getState().alignNodes([a.id, b.id], "left");
+    expect(ctx.d().nodeLayouts[b.id].x).toBe(300);
+  });
+
+  it("distributes three nodes with equal gaps", () => {
+    const ctx = setup();
+    const ids = [0, 130, 700].map((x, i) => ctx.add("system", `N${i}`, x, 0).id);
+    ids.forEach((id, i) =>
+      ctx.store
+        .getState()
+        .updateNodeLayout(id, { x: [0, 130, 700][i], y: 0 }, { width: 100, height: 50 }),
+    );
+    settle();
+    ctx.store.getState().distributeNodes(ids, "horizontal");
+    // span 800, occupied 300 → gap 250: middle node at 350
+    expect(ctx.d().nodeLayouts[ids[1]].x).toBe(350);
   });
 });

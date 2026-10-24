@@ -465,6 +465,7 @@
       "resetIcon": "Reset icon",
       "edgeStyle": "Edge style",
       "color": "Color",
+      "outline": "Border and fill",
       "markerStart": "Start cap",
       "markerEnd": "End cap"
     }
@@ -486,7 +487,12 @@
   },
   "textStyle": {
     "size": "Text size",
-    "sizes": { "sm": "Small", "md": "Medium", "lg": "Large", "xl": "Extra large" },
+    "sizes": {
+      "sm": "Small",
+      "md": "Medium",
+      "lg": "Large",
+      "xl": "Extra large"
+    },
     "color": "Text colour",
     "colors": {
       "default": "Default",
@@ -1827,9 +1833,132 @@
     }
   },
   "connectionPanel": {
+    "interaction": "Interaction",
+    "kind": "Type",
+    "interactions": {
+      "sync": "Synchronous",
+      "async": "Asynchronous"
+    },
+    "kinds": {
+      "call": "Call",
+      "event": "Event",
+      "command": "Command",
+      "dependency": "Dependency"
+    },
+    "swap": "Swap direction",
+    "swapRefused": "These elements cannot be connected the other way round",
+    "technologyTransport": "Technology and transport",
     "technologyLabel": "Technology",
     "removeConnection": "Remove",
     "idLabel": "ID"
+  },
+  "diagramPanel": {
+    "title": "Diagram",
+    "untitled": "Untitled diagram",
+    "level": "Level",
+    "legend": "Legend",
+    "showLegend": "Show legend on canvas",
+    "legendHint": "Generated from the boundary types, domains and interactions this diagram uses."
+  },
+  "linkPalette": {
+    "all": "All",
+    "recents": "Recent",
+    "suggested": "Suggested",
+    "linked": "Linked",
+    "categories": "Categories",
+    "description": "Search and pick one to link.",
+    "noResultsFor": "Nothing matches “{{query}}”",
+    "empty": "Nothing here yet",
+    "hints": {
+      "link": "link",
+      "linkAndOpen": "link and open",
+      "category": "category",
+      "close": "close"
+    }
+  },
+  "diagramLink": {
+    "title": "Link diagram to {{name}}",
+    "searchPlaceholder": "Search diagrams…",
+    "sameName": "Same name as this element",
+    "createAndLink": "Create “{{name}}” and link",
+    "linkAction": "Link a diagram",
+    "linked": "Linked diagram",
+    "target": "Target diagram",
+    "unlink": "Unlink",
+    "open": "Open diagram",
+    "imported": "Imported",
+    "noFolder": "No folder",
+    "missing": "missing",
+    "created": "Created “{{name}}” and linked"
+  },
+  "boundary": {
+    "title": "Boundary",
+    "type": "Boundary type",
+    "types": {
+      "none": "None",
+      "quantum": "Quantum",
+      "system": "System",
+      "network": "Network"
+    },
+    "domain": "Domain",
+    "noDomain": "None — at the top level",
+    "domainHint": "The group this boundary sits in.",
+    "derivedAppearance": "Derived appearance",
+    "background": "Background",
+    "border": "Border",
+    "sourceDomain": "Colour from the domain “{{name}}”",
+    "sourceType": "Colour from the boundary type",
+    "sourceCustom": "Custom colour",
+    "backToDerived": "Back to derived",
+    "content": "Content",
+    "contentCount_one": "{{count}} element",
+    "contentCount_other": "{{count}} elements",
+    "empty": "Nothing inside yet",
+    "collapseOnCanvas": "Collapse on canvas"
+  },
+  "legend": {
+    "title": "Legend",
+    "boundaryTypes": "Boundaries",
+    "domains": "Domains",
+    "interactions": "Interactions",
+    "empty": "Nothing to explain yet: the legend lists the boundary types, domains and interactions this diagram uses."
+  },
+  "serviceLink": {
+    "golden": "Name, description, technology and tags come from the service “{{name}}”: editing them updates the service, and every element linked to it.",
+    "title": "Link service to {{name}}",
+    "searchPlaceholder": "Search services…",
+    "sameName": "Same name as this element",
+    "createAndLink": "Create “{{name}}” and link",
+    "linkAction": "Link a service",
+    "unlink": "Unlink",
+    "missing": "missing",
+    "sources": {
+      "manual": "Manual",
+      "github": "GitHub",
+      "defectdojo": "DefectDojo"
+    }
+  },
+  "panelShell": {
+    "advanced": "Advanced",
+    "copyId": "Copy ID",
+    "idCopied": "ID copied",
+    "zIndex": "Stacking order (z-index)",
+    "moreActions": "More actions",
+    "collapse": "Collapse panel",
+    "expand": "Expand panel",
+    "resize": "Resize panel",
+    "trail": "Location",
+    "in": "in",
+    "duplicate": "Duplicate",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "sectionWhat": "What it is",
+    "sectionRelates": "How it relates",
+    "sectionMeta": "Metadata",
+    "addTechnology": "Add technology",
+    "addDescription": "Add description",
+    "addTag": "Add tag",
+    "removeTag": "Remove tag"
   },
   "elementPanel": {
     "appearance": "Appearance",
@@ -1934,17 +2063,6 @@
     "dragReorderHint": "Drag rows to reorder handles.",
     "selectAll": "Select all"
   },
-  "serviceCombobox": {
-    "unlinkAria": "Unlink service",
-    "linkPrompt": "Link service...",
-    "newServiceName": "Service name",
-    "newServiceTags": "Tags (comma-separated)",
-    "searchPlaceholder": "Search service...",
-    "emptyRegistered": "No services registered.",
-    "noResultsFor": "No results for “{{query}}”.",
-    "createNewService": "New service",
-    "createAndLink": "Create and link"
-  },
   "technologyCombobox": {
     "searchPlaceholder": "Search or type...",
     "empty": "No results.",
@@ -1956,6 +2074,39 @@
     "default": "Default"
   },
   "multiSelect": {
+    "elements_one": "{{count}} element",
+    "elements_other": "{{count}} elements",
+    "chip": {
+      "person_one": "{{count}} person",
+      "person_other": "{{count}} people",
+      "system_one": "{{count}} system",
+      "system_other": "{{count}} systems",
+      "container_one": "{{count}} application",
+      "container_other": "{{count}} applications",
+      "component_one": "{{count}} component",
+      "component_other": "{{count}} components",
+      "panel_one": "{{count}} boundary",
+      "panel_other": "{{count}} boundaries",
+      "note_one": "{{count}} note",
+      "note_other": "{{count}} notes",
+      "other": "{{count}} × {{type}}"
+    },
+    "filterByType": "Select only these",
+    "mixed": "Mixed",
+    "alignSection": "Align and distribute",
+    "align": {
+      "left": "Align left",
+      "centerH": "Align horizontal centres",
+      "right": "Align right",
+      "top": "Align top",
+      "centerV": "Align vertical centres",
+      "bottom": "Align bottom"
+    },
+    "distribute": {
+      "horizontal": "Distribute horizontally",
+      "vertical": "Distribute vertically"
+    },
+    "needThree": "Select at least three elements to distribute",
     "title": "Multi-selection",
     "selectedCount_one": "{{count}} element selected",
     "selectedCount_other": "{{count}} elements selected",
@@ -2914,17 +3065,13 @@
   },
   "services": {
     "title": "Services",
-    "subtitle": "Central list of services and infrastructure",
-    "addService": "Add Service",
-    "searchPlaceholder": "Search by name, tag, owner...",
+    "addService": "Add service",
+    "searchPlaceholder": "Search by name, role, technology or tag…",
     "filterAll": "All",
     "filterManual": "Manual",
-    "emptyNoServices": "No services yet. Click \"Add Service\" to get started.",
+    "emptyNoServices": "No services yet. Click \"Add service\" to get started.",
     "emptyFiltered": "No services match the current filters.",
-    "selectForDetails": "Select a service to see details.",
     "chipAddPlaceholder": "Add...",
-    "newService": "New service",
-    "createService": "Create service",
     "techPlaceholder": "java, spring...",
     "tagsPlaceholder": "backend, auth...",
     "repoPlaceholder": "https://github.com/...",
@@ -2953,7 +3100,81 @@
     "productLabel": "Product",
     "diagramUsage_one": "{{count}} diagram",
     "diagramUsage_other": "{{count}} diagrams",
-    "chipAddButton": "+ add"
+    "repositoryCount_one": "{{count}} repository",
+    "repositoryCount_other": "{{count}} repositories",
+    "clearSearch": "Clear search",
+    "groupBy": "Group by",
+    "groupByRole": "Role",
+    "groupByTechnology": "Technology",
+    "groupBySource": "Source",
+    "none": {
+      "role": "No role",
+      "technology": "No technology",
+      "source": "No source"
+    },
+    "role": {
+      "api": "API",
+      "domain-engine": "Domain engine",
+      "worker": "Worker",
+      "integration": "Integration",
+      "none": "No role"
+    },
+    "roleHint": {
+      "api": "exposes endpoints to clients",
+      "domain-engine": "holds the business rules",
+      "worker": "processes in the background",
+      "integration": "talks to external systems"
+    },
+    "roleLabel": "Role",
+    "roleSuggested": "Suggested: {{role}}",
+    "roleSuggestedTag": "suggested",
+    "openRepository": "Open repository",
+    "moreActions": "More actions",
+    "addServiceTitle": "Add service",
+    "sourceGitlab": "GitLab",
+    "repoUrlTitle": "Repository URL",
+    "repoUrlHint": "Paste a GitHub or GitLab URL. The source is detected and the fields fill in on their own.",
+    "repoUrlInvalid": "That is not a repository URL (host/owner/repo).",
+    "repoSourcePick": "Source…",
+    "repoReadFrom": "Read from the repository · editable",
+    "repoErrorNotFound": "Repository not found, or private and not visible to your connection. Fill it in by hand.",
+    "repoErrorNoConfig": "No connection is configured for {{host}}. Fill it in by hand.",
+    "repoErrorGeneric": "Could not read the repository ({{message}}). Fill it in by hand.",
+    "syncSwitch": "Keep in sync with the repository",
+    "syncSwitchUnavailable": "Needs the repository to be read first.",
+    "alreadyInCatalog": "Already in the catalog",
+    "registerWithoutRepo": "Register without a repository",
+    "removeChip": "Remove {{item}}",
+    "optional": "optional",
+    "batchBack": "Back to URL",
+    "batchList": "List",
+    "batchSelectAll": "Select all",
+    "batchFilter": "Filter…",
+    "batchEmpty": "No repositories found.",
+    "batchErrorGeneric": "Could not list the repositories.",
+    "batchImport_one": "Import {{count}} service",
+    "batchImport_other": "Import {{count}} services",
+    "batchOr": "or import many at once",
+    "batchCard": {
+      "github": "GitHub",
+      "gitlab": "GitLab",
+      "defectdojo": "DefectDojo"
+    },
+    "batchCardHint": {
+      "github": "organization",
+      "gitlab": "group",
+      "defectdojo": "product"
+    },
+    "batchInput": {
+      "github": "GitHub organization",
+      "gitlab": "GitLab group (subgroups included)",
+      "defectdojo": "DefectDojo product (name, optional)"
+    },
+    "batchNoConfig": {
+      "github": "Connect GitHub first: base URL and a token.",
+      "gitlab": "Connect GitLab first: instance URL and a token.",
+      "defectdojo": "Connect DefectDojo first: base URL and an API token."
+    }
   },
   "walkthrough": {
     "addScene": "Add scene",
@@ -3263,5 +3484,12 @@
       "top": "C4",
       "openCatalog": "Open full catalog"
     }
+  },
+  "gitlab": {
+    "connectedTo": "Connected to",
+    "disconnect": "Disconnect",
+    "baseUrl": "Instance URL",
+    "token": "Access token",
+    "useProxy": "Use the proxy (corporate network)"
   }
 }

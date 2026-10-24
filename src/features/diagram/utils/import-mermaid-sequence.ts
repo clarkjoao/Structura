@@ -8,6 +8,7 @@ import type {
   PanelComponent,
 } from "../model/diagram.types";
 import { PanelKind } from "../enums";
+import { INTENT_TO_SEMANTICS } from "../model/connection-defaults";
 import { NODE_DRAG_PADDING } from "../model/layout.constants";
 import { generateId } from "./generate-id";
 import { parseCssColorToRgb, rgbToHex } from "./labelContrast";
@@ -298,7 +299,7 @@ function resolveMessageConnection(
     sourceId,
     targetId,
     label,
-    intent,
+    ...INTENT_TO_SEMANTICS[intent],
   };
   ctx.newConnections.push(created);
   return { connection: created, isResponse: false };

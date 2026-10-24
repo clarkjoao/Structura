@@ -1,6 +1,5 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import debounce from "lodash.debounce";
-import { X, Trash2, Table, Plus, GripVertical, Key, Link } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { X, Plus, GripVertical, Key, Link } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   generateId,
@@ -8,7 +7,7 @@ import {
   type DbTableComponent,
   type DbColumn,
 } from "@/features/diagram";
-import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
+import { CommitField, ElementScaffold, PanelSection } from "./shell";
 import { cn } from "@/lib/utils";
 
 interface DbTablePanelProps {
@@ -17,6 +16,7 @@ interface DbTablePanelProps {
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   focusTitleTrigger?: number;
+  onFocusElement?: (componentId: string) => void;
 }
 
 function makeColumn(id: string): DbColumn {
@@ -110,21 +110,9 @@ export default function DbTablePanel({
   updateComponent,
   removeComponent,
   focusTitleTrigger = 0,
+  onFocusElement,
 }: DbTablePanelProps) {
   const { t } = useTranslation();
-  const titleInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (focusTitleTrigger > 0) {
-      requestAnimationFrame(() => {
-        titleInputRef.current?.focus();
-        titleInputRef.current?.select();
-      });
-    }
-  }, [focusTitleTrigger]);
-
-  const [name, setName] = useState(component.name);
-  const [description, setDescription] = useState(component.description ?? "");
   const [columns, setColumns] = useState<DbColumn[]>(component.columns);
 
   const dragIndexRef = useRef<number | null>(null);
@@ -133,27 +121,9 @@ export default function DbTablePanel({
   columnsRef.current = columns;
 
   useEffect(() => {
-    setName(component.name);
-    setDescription(component.description ?? "");
-    setColumns(component.columns);
-    // Keyed on `component.id`: re-seeding on every field change would overwrite what is being typed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [component.id]);
-
-  useEffect(() => {
     if (draggingIndex !== null) return;
     setColumns(component.columns);
   }, [component.columns, draggingIndex]);
-
-  const debouncedUpdate = useMemo(
-    () =>
-      debounce((patch: ComponentPatch) => {
-        updateComponent(component.id, patch);
-      }, FIELD_DEBOUNCE_MS),
-    [component.id, updateComponent],
-  );
-
-  useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
 
   const commitColumns = useCallback(
     (nextColumns: DbColumn[]) => {
@@ -200,125 +170,68 @@ export default function DbTablePanel({
   }, [component.id, updateComponent]);
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
-        <Table className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex-1 truncate">
-          {t("dbTable.panelTitle")}
-        </span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground"
-          aria-label={t("common.close")}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <ElementScaffold
+      component={component}
+      onClose={onClose}
+      updateComponent={updateComponent}
+      removeComponent={removeComponent}
+      onFocusElement={onFocusElement}
+      focusTitleTrigger={focusTitleTrigger}
+      nameToPatch={(value) => ({ name: value, tableName: value })}
+      namePlaceholder={t("dbTable.panelTitle")}
+    >
+      <PanelSection title={t("panelShell.sectionWhat")}>
+        <CommitField
+          label={t("common.description")}
+          value={component.description ?? ""}
+          multiline
+          addLabel={t("panelShell.addDescription")}
+          onCommit={(value) => updateComponent(component.id, { description: value })}
+        />
 
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="flex flex-col gap-4 p-4">
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              {t("common.name")}
-            </label>
-            <input
-              ref={titleInputRef}
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-              value={name}
-              onChange={(event) => {
-                const value = event.target.value;
-                setName(value);
-                debouncedUpdate({ name: value, tableName: value });
-              }}
-            />
-          </div>
-
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              {t("common.description")}
-            </label>
-            <textarea
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-              rows={3}
-              value={description}
-              onChange={(event) => {
-                setDescription(event.target.value);
-                debouncedUpdate({ description: event.target.value });
-              }}
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
-                {t("dbTable.columnsLabel")}
-                <span className="ml-1 text-muted-foreground/60 normal-case font-normal">
-                  ({columns.length})
-                </span>
-              </label>
-              <button
-                type="button"
-                onClick={handleAddColumn}
-                className="flex items-center gap-1 text-[11px] text-primary hover:underline"
-                aria-label={t("dbTable.addRow")}
-              >
-                <Plus className="h-3 w-3" />
-                {t("dbTable.addRow")}
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-1" onDragOver={(event) => event.preventDefault()}>
-              {columns.length === 0 ? (
-                <p className="text-[11px] italic text-muted-foreground px-2 py-3 text-center border border-dashed border-border rounded-md">
-                  {t("dbTable.noColumns")}
-                </p>
-              ) : (
-                columns.map((column, index) => (
-                  <ColumnRowPanel
-                    key={column.id}
-                    column={column}
-                    index={index}
-                    isDragging={draggingIndex === index}
-                    onDragStart={handleDragStart}
-                    onDragEnter={handleDragEnter}
-                    onDragEnd={handleDragEnd}
-                    onRemove={handleRemoveColumn}
-                  />
-                ))
-              )}
-            </div>
-
-            <p className="text-[10px] text-muted-foreground/60 mt-1.5 text-center">
-              {t("dbTable.reorderHint")}
-            </p>
-          </div>
-
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              {t("elementPanel.idLabel")}
-            </label>
-            <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">
-              {component.id}
-            </p>
-          </div>
-
-          <div className="pt-2">
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t("dbTable.columnsLabel")}
+              <span className="ml-1 font-normal text-muted-foreground/60">({columns.length})</span>
+            </span>
             <button
               type="button"
-              onClick={() => {
-                debouncedUpdate.cancel();
-                removeComponent(component.id);
-                onClose();
-              }}
-              className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
+              onClick={handleAddColumn}
+              className="flex items-center gap-1 text-[11px] text-primary hover:underline"
+              aria-label={t("dbTable.addRow")}
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              {t("elementPanel.remove")}
+              <Plus className="h-3 w-3" />
+              {t("dbTable.addRow")}
             </button>
           </div>
+
+          <div className="flex flex-col gap-1" onDragOver={(event) => event.preventDefault()}>
+            {columns.length === 0 ? (
+              <p className="rounded-md border border-dashed border-border px-2 py-3 text-center text-[11px] italic text-muted-foreground">
+                {t("dbTable.noColumns")}
+              </p>
+            ) : (
+              columns.map((column, index) => (
+                <ColumnRowPanel
+                  key={column.id}
+                  column={column}
+                  index={index}
+                  isDragging={draggingIndex === index}
+                  onDragStart={handleDragStart}
+                  onDragEnter={handleDragEnter}
+                  onDragEnd={handleDragEnd}
+                  onRemove={handleRemoveColumn}
+                />
+              ))
+            )}
+          </div>
+
+          <p className="mt-1.5 text-center text-[10px] text-muted-foreground/60">
+            {t("dbTable.reorderHint")}
+          </p>
         </div>
-      </div>
-    </div>
+      </PanelSection>
+    </ElementScaffold>
   );
 }

@@ -41,7 +41,6 @@ export type {
   FlowNodeShape,
   NodeFillMode,
   NodeStrokeMode,
-  SkinParts,
   SharedComponentType,
   K8sStructureType,
   DeployComponentType,
@@ -110,16 +109,22 @@ export {
 } from "./text-style";
 export type { TextSize, TextColor } from "./text-style";
 
+// ─── Boundary ─────────────────────────────────────────────────────────────────
+export { BOUNDARY_TYPES } from "./boundary-type";
+export type { BoundaryType } from "./boundary-type";
+export { domainColor, elementDomain, resolveBoundaryAppearance } from "./boundary";
+
 // ─── Connection ───────────────────────────────────────────────────────────────
 export type {
   Connection,
   ConnectionStyle,
-  ConnectionIntent,
+  ConnectionInteraction,
+  ConnectionKind,
   ConnectionDirection,
 } from "./connection.types";
 
 export {
-  INTENT_DEFAULTS,
+  resolveConnectionSemantics,
   DIRECTION_MARKERS,
   getEffectiveConnectionStyle,
   getIntentDefault,
@@ -158,6 +163,13 @@ export { isAwsIcon, isLucideIcon, isSvgIcon } from "./diagram.types";
 export type { DiagramLayoutSettings } from "./layout-settings";
 
 export type { ServiceDefinition, ServiceSourceRef } from "./service.types";
+export {
+  SERVICE_ROLES,
+  effectiveServiceRole,
+  isServiceRole,
+  suggestServiceRole,
+} from "./service-role";
+export type { ServiceRole } from "./service-role";
 export type { ServiceManifestEntry } from "./service-manifest.types";
 
 // ─── Component type constants ──────────────────────────────────────────────────

@@ -11,11 +11,6 @@ export interface DDProduct {
   metadata?: Record<string, unknown>;
 }
 
-export interface DDProductType {
-  id: number;
-  name: string;
-}
-
 export interface DDUser {
   id: number;
   username: string;
@@ -30,13 +25,4 @@ export interface DefectDojoConfig {
   useProxy?: boolean;
   /** Custom proxy URL (defaults to http://localhost:3000/proxy) */
   proxyUrl?: string;
-}
-
-import type { DefectDojoImportStatus } from "./enums";
-
-export type ImportStatus = DefectDojoImportStatus;
-
-export interface DDSearchResult extends DDProduct {
-  status: DefectDojoImportStatus;
-  existingServiceId?: string;
 }

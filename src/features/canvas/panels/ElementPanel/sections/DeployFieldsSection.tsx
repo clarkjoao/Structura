@@ -59,7 +59,7 @@ export function DeployFieldsSection({
               const strategy = event.target.value as ShardStrategy;
               onChange({ strategy: strategy === "hash" ? undefined : strategy });
             }}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+            className="h-8 w-full rounded-md border border-border bg-secondary px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           >
             {STRATEGIES.map((strategy) => (
               <option key={strategy} value={strategy}>

@@ -22,13 +22,13 @@ const TabBar = ({ active, onChange, showConnections, showServices }: TabBarProps
   };
 
   return (
-    <div className="flex border-b border-border">
+    <div className="flex shrink-0 border-b border-border">
       {tabs.map((tab) => (
         <button
           key={tab}
           type="button"
           onClick={() => onChange(tab)}
-          className={`flex-1 px-3 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+          className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
             active === tab
               ? "border-b-2 border-primary text-primary"
               : "text-muted-foreground hover:text-foreground"

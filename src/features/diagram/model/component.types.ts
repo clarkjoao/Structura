@@ -5,6 +5,7 @@ import type { K8sCategoryId } from "@/features/elements/families/k8s/k8s.catalog
 import type { OssCategoryId } from "@/features/elements/families/oss/oss.catalog";
 import type { ExternalLinkType, PanelKind } from "../enums";
 import type { TextColor, TextSize } from "./text-style";
+import type { BoundaryType } from "./boundary-type";
 
 /**
  * Namespaced plugin component type: "<pluginId>/<name>". No built-in type contains "/",
@@ -125,6 +126,12 @@ export interface PanelComponent extends BaseComponent {
   collapsedWidth?: number;
   collapsedHeight?: number;
   swimlane?: SwimlaneStyle;
+  /**
+   * What the boundary stands for. With a type the colours and outline are derived (from the
+   * domain, or the type) instead of picked; see `resolveBoundaryAppearance`. Absent keeps the
+   * panel drawn as it always was.
+   */
+  boundaryType?: BoundaryType;
 }
 
 export interface NoteComponent extends BaseComponent {
