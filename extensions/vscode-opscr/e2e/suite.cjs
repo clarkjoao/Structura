@@ -120,6 +120,30 @@ exports.run = async function run() {
   assert.deepEqual(Object.keys(all), [folder], "the nested file opens the workspace's preview, not its own");
   console.log("[e2e] a file in a subfolder opens the workspace's preview");
 
+  // With no opscr.config.yaml at all, the workspace is found from the open file: a view in
+  // `views/` names elements in `model/`, so its own folder is not enough and the one above is.
+  const os = require("node:os");
+  const { execFileSync } = require("node:child_process");
+  const opscrRoot = path.dirname(require.resolve("opscr/package.json"));
+  const git = (...args) => execFileSync("git", ["-C", opscrRoot, ...args], { encoding: "utf8" });
+  const solo = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "opscr-solo-")));
+  for (const sub of ["model", "views"]) fs.mkdirSync(path.join(solo, sub));
+  for (const p of git("ls-tree", "--name-only", "HEAD", "examples/web-app-aws/").split("\n").filter((n) => n.endsWith(".opscr.yaml"))) {
+    const name = path.basename(p);
+    const dir = /^shop-(context|containers|production)|^orders-api-components/.test(name) ? "views" : "model";
+    fs.writeFileSync(path.join(solo, dir, name), git("show", `HEAD:${p}`));
+  }
+  await vscode.window.showTextDocument(
+    await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(solo, "views", "shop-context.opscr.yaml"))),
+    vscode.ViewColumn.One,
+  );
+  await vscode.commands.executeCommand("opscr.openPreview");
+  await until("the preview of a solution with no config to draw its model", async () => {
+    const s = (await vscode.commands.executeCommand("opscr._previewStatus"))[solo];
+    return s && s.ready && s.blocked === 0 && s.components >= 9;
+  });
+  console.log("[e2e] a view with no config finds its solution from the file alone");
+
   // A click on an element opens the YAML that writes it (posed as the webview's message: a test
   // cannot click inside the webview).
   await vscode.commands.executeCommand("opscr._previewMessage", folder, {

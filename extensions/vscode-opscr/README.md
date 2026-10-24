@@ -8,11 +8,17 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
   icon in the editor title).
 - **Workspace:** the folder, as `opscr compile <folder>` reads it: every `*.opscr.yaml` /
   `*.opscr.yml` in it **and in its subfolders** (not under `node_modules` or dot folders), plus its
-  `opscr.config.yaml`. The folder is the nearest one above the file — up to the VSCode workspace
-  folder — that holds an `opscr.config.yaml`; with none, the file's own folder. So a solution that
-  keeps its model and views in subfolders needs an `opscr.config.yaml` at its root, and opening the
-  preview from any file below it shows the whole solution. `opscr.layout.json` and
-  `opscr.visual.json` are read from the root only. Unsaved text in open editors is used as it is.
+  `opscr.config.yaml`. It is found from the file you open, with nothing to set up:
+  1. an `opscr.config.yaml` above the file (up to the VSCode workspace folder) marks the root —
+     the nearest one wins, which is also how to keep two solutions apart;
+  2. without one, the smallest folder, from the file's own upward, whose manifests leave no
+     reference pointing at nothing. A view in `shop/views/` names elements in `shop/model/`, so
+     `views/` alone has dangling references and `shop/` has none: the preview shows `shop/`, not
+     a sibling solution next to it. When a real typo leaves every folder with some, the one with
+     the fewest wins.
+
+  `opscr.layout.json` and `opscr.visual.json` are read from the root only. Unsaved text in open
+  editors is used as it is.
 - **Live, validated:** ~300 ms after a change — typed, saved, or written to disk by another tool
   (Claude Code, git) — the folder is validated with opscr and, when it has no errors, drawn.
   While the YAML does not parse or has opscr errors, the preview keeps its last valid picture and

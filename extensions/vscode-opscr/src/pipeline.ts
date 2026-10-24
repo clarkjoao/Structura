@@ -137,6 +137,73 @@ export async function workspaceRoot(
   }
 }
 
+/** What a reference that points at nothing is reported as: the sign a file's workspace is wider. */
+const DANGLING_RULES = new Set([
+  "relationship/components-exist",
+  "references/missing-target",
+  "references/kind-mismatch",
+  "views/reference",
+  "views/drilldown-target",
+  "structure/component-parent",
+]);
+
+/** How many folders above the file are tried when the editor has no workspace folder to stop at. */
+const MAX_LEVELS_UP = 4;
+
+export interface WorkspaceProbe {
+  hasConfig(folder: string): Promise<boolean>;
+  /**
+   * The workspace files below a folder as relative paths (manifests and sidecars), or undefined
+   * when the folder is too big to read — a repository root, say.
+   */
+  list(folder: string): Promise<string[] | undefined>;
+  read(path: string): Promise<string | undefined>;
+  /** The editor's workspace folder: the search for a wider workspace goes no higher. */
+  stopAt?: string;
+  parentOf?: (path: string) => string;
+  platformJoin?: (...parts: string[]) => string;
+}
+
+/**
+ * The folder whose workspace a manifest belongs to, found from the file alone.
+ *
+ * With an `opscr.config.yaml` above it, that folder (see `workspaceRoot`). Without one, the
+ * smallest folder from the file's own upward whose manifests leave no reference pointing at
+ * nothing — a view in `shop/views/` names elements in `shop/model/`, so `views/` alone has
+ * dangling references and `shop/` has none. When no folder is clean (a real typo), the one with
+ * the fewest, the lowest on a tie. A sibling solution does not matter: the climb stops at the
+ * first folder that holds everything the file refers to.
+ */
+export async function detectWorkspaceRoot(file: string, probe: WorkspaceProbe): Promise<string> {
+  const parentOf = probe.parentOf ?? dirname;
+  const own = parentOf(file);
+  const configured = await workspaceRoot(file, probe.hasConfig, probe.stopAt, parentOf);
+  if (configured !== own || (await probe.hasConfig(own))) return configured;
+
+  const dangling = async (folder: string): Promise<number | undefined> => {
+    const names = await probe.list(folder);
+    if (!names) return undefined;
+    const workspace = await collectWorkspace(folder, names, probe.read, probe.platformJoin);
+    const { files, config } = workspace;
+    const { result } = await compileSources(config ? { files, config } : { files });
+    return result.diagnostics.filter((d) => d.ruleId && DANGLING_RULES.has(d.ruleId)).length;
+  };
+
+  let best: { folder: string; count: number } | undefined;
+  let folder = own;
+  for (let level = 0; ; level++) {
+    const count = await dangling(folder);
+    if (count === undefined) break;
+    if (count === 0) return folder;
+    if (!best || count < best.count) best = { folder, count };
+    const above = parentOf(folder);
+    const stop = folder === probe.stopAt || above === folder || (!probe.stopAt && level >= MAX_LEVELS_UP);
+    if (stop) break;
+    folder = above;
+  }
+  return best?.folder ?? own;
+}
+
 /**
  * The workspace of a folder: every opscr manifest below it (in subfolders too, but not under
  * `node_modules` or a dot folder) plus the folder's own `opscr.config.yaml`, layout and visual
