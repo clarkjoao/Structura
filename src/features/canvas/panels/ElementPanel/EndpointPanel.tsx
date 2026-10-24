@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X, GripVertical, Plus } from "lucide-react";
+import { CommitField, ElementScaffold, PanelSection } from "./shell";
 import { generateId } from "@/features/diagram";
 import type {
   EndpointComponent,
@@ -18,6 +19,8 @@ interface EndpointPanelProps {
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   availableFlows: { id: string; name: string }[];
+  focusTitleTrigger?: number;
+  onFocusElement?: (componentId: string) => void;
 }
 
 export default function EndpointPanel({
@@ -26,6 +29,8 @@ export default function EndpointPanel({
   updateComponent,
   removeComponent,
   availableFlows,
+  focusTitleTrigger,
+  onFocusElement,
 }: EndpointPanelProps) {
   const { t } = useTranslation();
   const [expandedHandlerId, setExpandedHandlerId] = useState<string | null>(null);
@@ -65,20 +70,19 @@ export default function EndpointPanel({
   };
 
   return (
-    <div className="flex flex-1 min-h-0 w-full flex-col overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("endpointPanel.panelTitle")}
-        </h3>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-auto p-4 space-y-4">
-        {}
+    <ElementScaffold
+      component={component}
+      onClose={onClose}
+      updateComponent={updateComponent}
+      removeComponent={removeComponent}
+      onFocusElement={onFocusElement}
+      focusTitleTrigger={focusTitleTrigger}
+      namePlaceholder={t("endpointPanel.panelTitle")}
+      showPosition={false}
+    >
+      <PanelSection title={t("panelShell.sectionWhat")}>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             {t("endpointPanel.method")}
           </label>
           <div className="flex flex-wrap gap-1.5">
@@ -96,33 +100,32 @@ export default function EndpointPanel({
           </div>
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             {t("endpointPanel.pathLabel")}
           </label>
-          <input
+          <CommitField
+            mono
             value={component.path}
-            onChange={(e) => updateComponent(component.id, { path: e.target.value })}
+            onCommit={(value) => updateComponent(component.id, { path: value })}
             placeholder={t("endpointPanel.pathPlaceholder")}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm font-mono text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
         </div>
         <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">
             {t("endpointPanel.description")}
           </label>
-          <textarea
+          <CommitField
+            multiline
             value={component.endpointDescription ?? ""}
-            onChange={(e) =>
-              updateComponent(component.id, { endpointDescription: e.target.value || undefined })
+            onCommit={(value) =>
+              updateComponent(component.id, { endpointDescription: value || undefined })
             }
             placeholder={t("endpointPanel.optionalPlaceholder")}
-            rows={2}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
           />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+            <label className="text-xs font-medium text-muted-foreground">
               {t("endpointPanel.handlersLabel")}
             </label>
             <button
@@ -191,28 +194,22 @@ export default function EndpointPanel({
                       <label className="text-[10px] text-muted-foreground block mb-0.5">
                         {t("endpointPanel.labelField")}
                       </label>
-                      <input
+                      <CommitField
                         value={handler.label}
-                        onChange={(e) => updateHandler(handler.id, { label: e.target.value })}
+                        onCommit={(value) => updateHandler(handler.id, { label: value })}
                         placeholder={t("endpointPanel.handlerLabelPlaceholder")}
-                        className="w-full rounded border border-border bg-secondary px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                     <div>
                       <label className="text-[10px] text-muted-foreground block mb-0.5">
                         {t("endpointPanel.descriptionOptional")}
                       </label>
-                      <input
+                      <CommitField
                         value={handler.description ?? ""}
-                        onChange={(e) =>
-                          updateHandler(handler.id, {
-                            description: e.target.value || undefined,
-                          })
+                        onCommit={(value) =>
+                          updateHandler(handler.id, { description: value || undefined })
                         }
                         placeholder={t("endpointPanel.optionalPlaceholder")}
-                        className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </div>
                     <div onClick={(e) => e.stopPropagation()}>
@@ -242,16 +239,7 @@ export default function EndpointPanel({
             ))}
           </div>
         </div>
-        <div className="pt-2 border-t border-border">
-          <button
-            type="button"
-            onClick={() => removeComponent(component.id)}
-            className="w-full inline-flex items-center justify-center gap-1.5 rounded-md border border-destructive/50 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
-          >
-            <X className="h-3.5 w-3.5" /> {t("endpointPanel.removeEndpoint")}
-          </button>
-        </div>
-      </div>
-    </div>
+      </PanelSection>
+    </ElementScaffold>
   );
 }

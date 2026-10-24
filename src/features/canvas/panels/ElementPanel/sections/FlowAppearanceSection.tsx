@@ -40,7 +40,7 @@ export function FlowAppearanceSection({
     <section className="space-y-3" aria-label={t("elementPanel.appearance")}>
       <p className="text-xs font-semibold text-foreground">{t("elementPanel.appearance")}</p>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+        <span className="text-xs font-medium text-muted-foreground">
           {t("elementPanel.accent")}
         </span>
         <ColorPicker

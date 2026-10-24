@@ -1831,6 +1831,28 @@
     "removeConnection": "Remove",
     "idLabel": "ID"
   },
+  "panelShell": {
+    "advanced": "Advanced",
+    "copyId": "Copy ID",
+    "idCopied": "ID copied",
+    "zIndex": "Stacking order (z-index)",
+    "moreActions": "More actions",
+    "collapse": "Collapse panel",
+    "expand": "Expand panel",
+    "resize": "Resize panel",
+    "trail": "Location",
+    "in": "in",
+    "duplicate": "Duplicate",
+    "lock": "Lock",
+    "unlock": "Unlock",
+    "sectionWhat": "What it is",
+    "sectionRelates": "How it relates",
+    "sectionMeta": "Metadata",
+    "addTechnology": "Add technology",
+    "addDescription": "Add description",
+    "addTag": "Add tag",
+    "removeTag": "Remove tag"
+  },
   "elementPanel": {
     "appearance": "Appearance",
     "accent": "Accent",

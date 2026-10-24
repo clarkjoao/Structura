@@ -169,6 +169,15 @@ describe("edge label offset and control points", () => {
   });
 });
 
+describe("setNodeZIndex", () => {
+  it("writes an explicit, rounded z-index", () => {
+    const ctx = setup();
+    const a = ctx.add("system", "A", 0, 0);
+    ctx.store.getState().setNodeZIndex(a.id, 4.6);
+    expect(ctx.d().nodeLayouts[a.id].zIndex).toBe(5);
+  });
+});
+
 describe("bringToFront and sendToBack", () => {
   it("put a node one step above the highest, or below the lowest, z-index", () => {
     const ctx = setup();

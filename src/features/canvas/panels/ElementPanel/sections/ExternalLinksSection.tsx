@@ -51,7 +51,7 @@ export function ExternalLinksSection({
 
   return (
     <div>
-      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">
         {t("externalLinks.sectionTitle")}
       </label>
 

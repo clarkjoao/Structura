@@ -166,6 +166,8 @@ export interface ElementInspectorProps {
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   focusTitleTrigger?: number;
+  /** Select and frame another element — the header trail's parent link calls it. */
+  onFocusElement?: (componentId: string) => void;
 }
 
 export type ElementInspectorPanel = (props: ElementInspectorProps) => React.ReactNode;

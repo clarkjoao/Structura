@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ComponentPatch, PanelComponent, SwimlaneStyle } from "@/features/diagram";
 import { PanelKind } from "@/features/diagram";
@@ -8,7 +7,6 @@ import type { NodeLayout } from "@/features/diagram";
 import { SWIMLANE_DEFAULT_H, SWIMLANE_DEFAULT_W } from "@/features/canvas/canvas.constants";
 import Field from "../components/Field";
 import { SegmentedControl } from "../components/SegmentedControl";
-import { MIN_PANEL_WIDTH, MIN_PANEL_HEIGHT } from "../../../constants/panel.constants";
 
 function mergeSwimlane(
   current: SwimlaneStyle | undefined,
@@ -44,68 +42,10 @@ export function PanelStyleSection({
   componentNodeLayout,
 }: PanelStyleSectionProps) {
   const { t } = useTranslation();
-  const [widthInput, setWidthInput] = useState<string>("");
-  const [heightInput, setHeightInput] = useState<string>("");
-  /**
-   * Whether the fields hold something the user typed. They show the layout
-   * rounded, so without this the commit below wrote that rounding back on its
-   * own — showing the inspector changed a 933.333 panel to 933 in the store
-   * while the canvas kept drawing the old size.
-   */
-  const editedRef = useRef(false);
-  const editWidth = (value: string) => {
-    editedRef.current = true;
-    setWidthInput(value);
-  };
-  const editHeight = (value: string) => {
-    editedRef.current = true;
-    setHeightInput(value);
-  };
-
-  useEffect(() => {
-    // The fields are about to show the layout, not what was typed — including
-    // after another panel is selected, which must not inherit a pending edit.
-    editedRef.current = false;
-    if (!componentNodeLayout) {
-      setWidthInput("");
-      setHeightInput("");
-      return;
-    }
-    setWidthInput(String(Math.round(componentNodeLayout.width ?? 0)));
-    setHeightInput(String(Math.round(componentNodeLayout.height ?? 0)));
-  }, [componentNodeLayout]);
-
-  useEffect(() => {
-    if (!componentNodeLayout || !editedRef.current) return;
-    const timeoutId = window.setTimeout(() => {
-      editedRef.current = false;
-      const parsedWidth = Number(widthInput);
-      const parsedHeight = Number(heightInput);
-      if (!Number.isFinite(parsedWidth) || !Number.isFinite(parsedHeight)) return;
-
-      const clampedWidth = Math.max(MIN_PANEL_WIDTH, Math.round(parsedWidth));
-      const clampedHeight = Math.max(MIN_PANEL_HEIGHT, Math.round(parsedHeight));
-
-      if (
-        clampedWidth === componentNodeLayout.width &&
-        clampedHeight === componentNodeLayout.height
-      )
-        return;
-
-      updateNodeLayout(
-        component.id,
-        { x: componentNodeLayout.x, y: componentNodeLayout.y },
-        { width: clampedWidth, height: clampedHeight },
-      );
-    }, 300);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [component.id, componentNodeLayout, heightInput, updateNodeLayout, widthInput]);
-
   return (
     <>
       <div>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
           {t("endpointPanel.groupingType")}
         </label>
         <select
@@ -139,7 +79,7 @@ export function PanelStyleSection({
               } as ComponentPatch);
             }
           }}
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          className="h-8 w-full rounded-md border border-border bg-secondary px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
           {PANEL_KINDS.map((panelKind) => (
             <option key={panelKind.id} value={panelKind.id}>
@@ -162,7 +102,7 @@ export function PanelStyleSection({
             }}
           />
           <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
               {t("swimlane.orientation")}
             </label>
             <div className="flex gap-2">
@@ -203,34 +143,6 @@ export function PanelStyleSection({
               </button>
             </div>
           </div>
-          {componentNodeLayout && (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                  {t("elementPanel.widthLabel")}
-                </label>
-                <input
-                  type="number"
-                  min={MIN_PANEL_WIDTH}
-                  value={widthInput}
-                  onChange={(event) => editWidth(event.target.value)}
-                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                  {t("elementPanel.heightLabel")}
-                </label>
-                <input
-                  type="number"
-                  min={MIN_PANEL_HEIGHT}
-                  value={heightInput}
-                  onChange={(event) => editHeight(event.target.value)}
-                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-            </div>
-          )}
           {/* A lane's outline, as on any panel: the evidence lane is dashed. */}
           <SegmentedControl<"solid" | "dashed">
             label={t("elementPanel.stroke")}
@@ -248,36 +160,8 @@ export function PanelStyleSection({
         </>
       ) : (
         <>
-          {componentNodeLayout && (
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                  {t("elementPanel.widthLabel")}
-                </label>
-                <input
-                  type="number"
-                  min={MIN_PANEL_WIDTH}
-                  value={widthInput}
-                  onChange={(event) => editWidth(event.target.value)}
-                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-                  {t("elementPanel.heightLabel")}
-                </label>
-                <input
-                  type="number"
-                  min={MIN_PANEL_HEIGHT}
-                  value={heightInput}
-                  onChange={(event) => editHeight(event.target.value)}
-                  className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-              </div>
-            </div>
-          )}
           <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">
               {t("elementPanel.border")}
             </label>
             <select
@@ -287,7 +171,7 @@ export function PanelStyleSection({
                   borderStyle: event.target.value as "solid" | "dashed" | "dotted",
                 } as ComponentPatch)
               }
-              className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              className="h-8 w-full rounded-md border border-border bg-secondary px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="solid">{t("common.strokeSolid")}</option>
               <option value="dashed">{t("common.strokeDashed")}</option>

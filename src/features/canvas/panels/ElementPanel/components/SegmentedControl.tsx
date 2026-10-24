@@ -26,9 +26,7 @@ export function SegmentedControl<T extends string>({
 }: SegmentedControlProps<T>) {
   return (
     <div>
-      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5">
-        {label}
-      </p>
+      <p className="text-xs font-medium text-muted-foreground mb-1.5">{label}</p>
       <div role="radiogroup" aria-label={label} className="flex gap-1.5">
         {options.map((option) => {
           const checked = option.value === value;

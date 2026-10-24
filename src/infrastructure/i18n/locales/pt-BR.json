@@ -1831,6 +1831,28 @@
     "removeConnection": "Remover",
     "idLabel": "ID"
   },
+  "panelShell": {
+    "advanced": "Avançado",
+    "copyId": "Copiar ID",
+    "idCopied": "ID copiado",
+    "zIndex": "Ordem de empilhamento (z-index)",
+    "moreActions": "Mais ações",
+    "collapse": "Recolher painel",
+    "expand": "Expandir painel",
+    "resize": "Redimensionar painel",
+    "trail": "Localização",
+    "in": "em",
+    "duplicate": "Duplicar",
+    "lock": "Travar",
+    "unlock": "Destravar",
+    "sectionWhat": "O que é",
+    "sectionRelates": "Como se relaciona",
+    "sectionMeta": "Metadados",
+    "addTechnology": "Adicionar tecnologia",
+    "addDescription": "Adicionar descrição",
+    "addTag": "Adicionar tag",
+    "removeTag": "Remover tag"
+  },
   "elementPanel": {
     "appearance": "Aparência",
     "accent": "Acento",

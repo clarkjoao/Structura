@@ -1,10 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useEffectiveDefaultAccent } from "@/features/canvas/nodes/useEffectiveDefaultAccent";
-import debounce from "lodash.debounce";
-import { X, Trash2 } from "lucide-react";
 import {
   useAllDiagrams,
-  useActiveDiagram,
+  useActiveDiagramModel,
   useAllServices,
   useDiagramActions,
   resolveVersionSnapshot,
@@ -24,7 +22,6 @@ import {
   isPanelComponent,
   isNoteComponent,
   isDbTableComponent,
-  isJsonViewerComponent,
   isProcessNodeComponent,
   isSystemType,
   isContainerType,
@@ -36,9 +33,7 @@ import ConnectionsTab from "./components/ConnectionsTab";
 import { ServicesTab } from "./components/ServicesTab";
 import { useTranslation } from "react-i18next";
 import i18n from "@/infrastructure/i18n";
-import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
 import {
-  BasicFieldsSection,
   LinkedDiagramSection,
   PanelStyleSection,
   ExternalLinksSection,
@@ -49,6 +44,21 @@ import {
 import { isComponentType } from "@/features/diagram";
 import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
 import { useElementTextLock } from "@/features/collaboration/hooks/useElementLocks";
+import { useCanvasPreferencesStore } from "@/features/canvas/preferences";
+import { KEY, keyIs } from "@/lib/core/keyboard";
+import {
+  AdvancedFooter,
+  CommitField,
+  PANEL_INPUT_CLASS,
+  PANEL_LABEL_CLASS,
+  PanelHeader,
+  PanelSection,
+  useElementIdentity,
+  useElementMenu,
+  useElementTrail,
+} from "./shell";
+
+const TAB_IDS: readonly Tab[] = ["details", "connections", "services"];
 
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
@@ -70,6 +80,7 @@ interface ComponentPanelProps {
   updateComponent: (id: string, patch: ComponentPatch) => void;
   removeComponent: (id: string) => void;
   focusTitleTrigger?: number;
+  onFocusElement?: (componentId: string) => void;
 }
 
 const ComponentPanel = ({
@@ -78,9 +89,10 @@ const ComponentPanel = ({
   updateComponent,
   removeComponent,
   focusTitleTrigger = 0,
+  onFocusElement,
 }: ComponentPanelProps) => {
   const { t } = useTranslation();
-  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
       requestAnimationFrame(() => {
@@ -94,7 +106,7 @@ const ComponentPanel = ({
   }, [focusTitleTrigger]);
   const allDiagrams = useAllDiagrams();
   const allServices = useAllServices();
-  const activeDiagram = useActiveDiagram();
+  const activeDiagram = useActiveDiagramModel();
   const resolved = useMemo(
     () =>
       activeDiagram
@@ -107,30 +119,40 @@ const ComponentPanel = ({
     linkComponentToDiagram,
     addDiagram,
     updateNodeLayout,
+    setNodeZIndex,
     addExternalLink,
     updateExternalLink,
     removeExternalLink,
   } = useDiagramActions();
-  const [tab, setTab] = useState<Tab>("details");
-  const [name, setName] = useState(component.name);
-  const [desc, setDesc] = useState(component.description);
-  const [tech, setTech] = useState((component as { technology?: string }).technology ?? "");
-  const [tags, setTags] = useState<string[]>(component.tags ?? []);
-  const [tagInput, setTagInput] = useState("");
-  const [type, setType] = useState<ComponentType>(component.type);
-  const [cloudService, setCloudService] = useState(resolveCloudServiceId(component) ?? "");
-  const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
-  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPanel = isPanelComponent(component);
   const isNote = isNoteComponent(component);
   const isDbTable = isDbTableComponent(component);
   const isFlowchart = isProcessNodeComponent(component);
+  const isSimple = isPanel || isNote;
+
+  // The tab last used for this type survives switching to another element of it.
+  const storedTab = useCanvasPreferencesStore((s) => s.elementPanelTabByType[component.type]);
+  const setStoredTab = useCanvasPreferencesStore((s) => s.setElementPanelTab);
+  const showConnections = !isSimple;
+  const showServices = !isSimple && !isFlowchart;
+  const tab: Tab = (() => {
+    const wanted = TAB_IDS.find((id) => id === storedTab) ?? "details";
+    if (wanted === "connections" && !showConnections) return "details";
+    if (wanted === "services" && !showServices) return "details";
+    return wanted;
+  })();
+  const setTab = (next: Tab) => setStoredTab(component.type, next);
+
+  const [tagInput, setTagInput] = useState("");
+  const [createdDiagramName, setCreatedDiagramName] = useState<string | null>(null);
+  const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // A flow node in a lane that passes on its accent shows that accent unset.
   const defaultAccent = useEffectiveDefaultAccent(component);
-  const isSimple = isPanel || isNote;
-  const [flowShape, setFlowShape] = useState<FlowNodeShape>(
-    isFlowchart ? component.flowShape : "rectangle",
-  );
+  const type: ComponentType = component.type;
+  const cloudService = resolveCloudServiceId(component) ?? "";
+  const flowShape: FlowNodeShape = isFlowchart ? component.flowShape : "rectangle";
+  const tags = component.tags ?? [];
+  const technology = (component as { technology?: string }).technology ?? "";
   const cloudProvider = cloudRegistry.forType(type);
   const cloudServiceInfo =
     cloudProvider && cloudService ? cloudProvider.getService(cloudService) : null;
@@ -145,31 +167,23 @@ const ComponentPanel = ({
   );
 
   const textLock = useElementTextLock(component.id);
-  const debouncedUpdate = useMemo(
-    () =>
-      debounce((patch: ComponentPatch) => updateComponent(component.id, patch), FIELD_DEBOUNCE_MS),
-    [component.id, updateComponent],
-  );
-  useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
   useEffect(
     () => () => {
       if (confirmTimerRef.current) clearTimeout(confirmTimerRef.current);
     },
     [],
   );
-  useEffect(() => {
-    setTab("details");
-  }, [component.id]);
 
-  useEffect(() => {
-    setCloudService(resolveCloudServiceId(component) ?? "");
-  }, [component]);
-
-  useEffect(() => {
-    if (isProcessNodeComponent(component)) {
-      setFlowShape(component.flowShape);
-    }
-  }, [component.id, component]);
+  const identity = useElementIdentity(component);
+  const trail = useElementTrail(component);
+  const menu = useElementMenu(
+    component,
+    () => {
+      removeComponent(component.id);
+      onClose();
+    },
+    updateComponent,
+  );
 
   const handleCreateLinked = () => {
     const level = isSystemType(component.type) ? "container" : "component";
@@ -179,68 +193,57 @@ const ComponentPanel = ({
     confirmTimerRef.current = setTimeout(() => setCreatedDiagramName(null), 3000);
   };
 
-  const syncFromService = (service: ServiceDefinition, options?: { persist?: boolean }) => {
-    const patch = buildComponentSyncPatch(service, component);
-    debouncedUpdate.cancel();
-    setName(service.name);
-    setDesc(service.description);
-    setTags(service.tags ?? []);
-    setTagInput("");
-    if ("technology" in component) {
-      setTech(service.technology.join(", "));
-    }
-    if (options?.persist !== false) {
-      updateComponent(component.id, patch);
-    }
+  const syncFromService = (service: ServiceDefinition) => {
+    updateComponent(component.id, buildComponentSyncPatch(service, component));
   };
 
-  const handleRemoveTag = (tag: string) => {
-    const updated = tags.filter((item) => item !== tag);
-    setTags(updated);
-    debouncedUpdate({ tags: updated });
-  };
+  const commitTags = (updated: string[]) => updateComponent(component.id, { tags: updated });
+
+  const handleRemoveTag = (tag: string) => commitTags(tags.filter((item) => item !== tag));
 
   const handleCommitTagInput = () => {
     const newTag = tagInput.trim();
     if (!newTag) return;
-    if (!tags.includes(newTag)) {
-      const updated = [...tags, newTag];
-      setTags(updated);
-      debouncedUpdate({ tags: updated });
-    }
+    if (!tags.includes(newTag)) commitTags([...tags, newTag]);
     setTagInput("");
   };
 
+  const nodeLayout = resolved?.nodeLayouts[component.id];
+  const headerName = isDbTable ? component.tableName : component.name;
+  const namePlaceholder = isPanel
+    ? t("elementPanel.panelHeaderPanel")
+    : isNote
+      ? t("elementPanel.panelHeaderNote")
+      : t("common.unnamedElement");
+
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {isPanel
-            ? t("elementPanel.panelHeaderPanel")
-            : isNote
-              ? t("elementPanel.panelHeaderNote")
-              : isDbTableComponent(component)
-                ? component.tableName
-                : isJsonViewerComponent(component)
-                  ? component.name || t("jsonViewer.unnamed")
-                  : component.name}
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-      <TabBar
-        active={tab}
-        onChange={setTab}
-        showConnections={!isSimple}
-        showServices={!isSimple && !isFlowchart}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PanelHeader
+        icon={identity.icon}
+        typeLabel={identity.typeLabel}
+        name={headerName}
+        namePlaceholder={namePlaceholder}
+        onCommitName={(value) =>
+          updateComponent(
+            component.id,
+            isDbTable ? { name: value, tableName: value } : { name: value },
+          )
+        }
+        nameInputRef={titleInputRef}
+        textLock={textLock}
+        trail={trail}
+        onSelectElement={onFocusElement}
+        menu={menu}
+        onClose={onClose}
       />
+      {(showConnections || showServices) && (
+        <TabBar
+          active={tab}
+          onChange={setTab}
+          showConnections={showConnections}
+          showServices={showServices}
+        />
+      )}
       {tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
       ) : tab === "services" ? (
@@ -251,125 +254,44 @@ const ComponentPanel = ({
           onSync={() => linkedService && syncFromService(linkedService)}
           onServiceChange={(serviceId) => {
             linkComponentToService(component.id, serviceId ?? undefined);
-            const service = allServices.find((item) => item.id === serviceId);
-            if (service) syncFromService(service, { persist: false });
           }}
         />
       ) : (
-        <div className="p-4 space-y-4 overflow-auto flex-1">
-          <PositionSection
-            componentId={component.id}
-            nodeLayout={resolved?.nodeLayouts[component.id]}
-            updateNodeLayout={updateNodeLayout}
-            isPanel={isPanel || isNote}
-          />
-          {!isSimple && cloudProvider && cloudServiceInfo && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
-              <CloudIcon
-                providerId={cloudProvider.id}
-                iconName={cloudServiceInfo.iconName}
-                size={32}
-              />
-              <div>
-                <p className="text-xs font-semibold text-foreground">{cloudServiceInfo.name}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {cloudProvider.getCategoryForType(type)?.name}
-                </p>
-              </div>
-            </div>
-          )}
-          {isSimple ? (
-            <BasicFieldsSection
-              textLock={textLock}
-              name={name}
-              desc={desc}
-              tech={tech}
-              tags={tags}
-              tagInput={tagInput}
-              isNote={isNote}
-              showTechnology={false}
-              showTags={false}
-              titleInputRef={titleInputRef}
-              onChangeName={(value) => {
-                setName(value);
-                debouncedUpdate(isDbTable ? { name: value, tableName: value } : { name: value });
-              }}
-              onChangeDesc={(value) => {
-                setDesc(value);
-                debouncedUpdate({ description: value });
-              }}
-              onChangeTech={(value) => {
-                setTech(value);
-                debouncedUpdate({ technology: value || undefined } as ComponentPatch);
-              }}
-              onChangeTagInput={setTagInput}
-              onRemoveTag={handleRemoveTag}
-              onCommitTagInput={handleCommitTagInput}
-            />
-          ) : (
-            <>
-              <BasicFieldsSection
-                textLock={textLock}
-                name={name}
-                desc={desc}
-                tech={tech}
-                tags={tags}
-                tagInput={tagInput}
-                isNote={isNote}
-                showDescription={false}
-                showTechnology={false}
-                showTags={false}
-                titleInputRef={titleInputRef}
-                onChangeName={(value) => {
-                  setName(value);
-                  debouncedUpdate(isDbTable ? { name: value, tableName: value } : { name: value });
-                }}
-                onChangeDesc={(value) => {
-                  setDesc(value);
-                  debouncedUpdate({ description: value });
-                }}
-                onChangeTech={(value) => {
-                  setTech(value);
-                  debouncedUpdate({ technology: value || undefined } as ComponentPatch);
-                }}
-                onChangeTagInput={setTagInput}
-                onRemoveTag={handleRemoveTag}
-                onCommitTagInput={handleCommitTagInput}
-              />
-              {isFlowchart && (
-                <FlowchartFieldsSection
-                  flowShape={flowShape}
-                  onFlowShapeChange={(shape) => {
-                    setFlowShape(shape);
-                    updateComponent(component.id, { flowShape: shape } as ComponentPatch);
-                  }}
-                />
+        <>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <PanelSection title={t("panelShell.sectionWhat")}>
+              {!isSimple && cloudProvider && cloudServiceInfo && (
+                <div className="flex items-center gap-3 rounded-lg bg-secondary p-3">
+                  <CloudIcon
+                    providerId={cloudProvider.id}
+                    iconName={cloudServiceInfo.iconName}
+                    size={32}
+                  />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">{cloudServiceInfo.name}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {cloudProvider.getCategoryForType(type)?.name}
+                    </p>
+                  </div>
+                </div>
               )}
-              {isProcessNodeComponent(component) && (
-                <FlowAppearanceSection
-                  appearance={component}
-                  defaultAccent={defaultAccent}
-                  onChange={(patch) => updateComponent(component.id, patch)}
-                />
-              )}
-              {!isDbTable && !isFlowchart && (
+              {!isSimple && !isDbTable && !isFlowchart && (
                 <div>
-                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                  <label htmlFor="panel-type" className={PANEL_LABEL_CLASS}>
                     {t("endpointPanel.type")}
                   </label>
                   <select
+                    id="panel-type"
                     value={type}
                     onChange={(event) => {
                       const nextType = event.target.value as ComponentType;
-                      setType(nextType);
                       const nextProvider = cloudRegistry.forType(nextType);
-                      if (!nextProvider) setCloudService("");
                       updateComponent(component.id, {
                         type: nextType,
                         ...cloudServiceIdClearingPatch(nextProvider ? cloudService : undefined),
                       } as unknown as ComponentPatch);
                     }}
-                    className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    className={PANEL_INPUT_CLASS}
                   >
                     <optgroup label={t("elementPanel.c4ModelGroup")}>
                       <option value="person">{t("colors.c4Person")}</option>
@@ -393,30 +315,29 @@ const ComponentPanel = ({
                   </select>
                 </div>
               )}
-              {cloudProvider && (
+              {!isSimple && cloudProvider && (
                 <div>
-                  <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+                  <label htmlFor="panel-cloud-service" className={PANEL_LABEL_CLASS}>
                     {t("elementPanel.awsServiceLabel")}
                   </label>
                   <select
+                    id="panel-cloud-service"
                     value={cloudService}
                     onChange={(event) => {
                       const nextService = event.target.value;
-                      setCloudService(nextService);
                       const serviceEntry = cloudProvider.getService(nextService);
                       const shouldRename = shouldRenameForCloudIcon({
                         hasCloudCatalogEntry: !!serviceEntry,
                         businessServiceId: component.serviceId,
-                        currentName: name,
+                        currentName: component.name,
                         defaultNamePrefix: i18n.t("common.defaultNamePrefix"),
                       });
                       updateComponent(component.id, {
                         ...cloudServiceIdClearingPatch(nextService),
                         ...(shouldRename && serviceEntry ? { name: serviceEntry.name } : {}),
                       } as unknown as ComponentPatch);
-                      if (shouldRename && serviceEntry) setName(serviceEntry.name);
                     }}
-                    className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                    className={PANEL_INPUT_CLASS}
                   >
                     <option value="">{t("endpointPanel.selectAwsService")}</option>
                     {cloudProvider.services
@@ -429,92 +350,138 @@ const ComponentPanel = ({
                   </select>
                 </div>
               )}
-              <BasicFieldsSection
-                textLock={textLock}
-                name={name}
-                desc={desc}
-                tech={tech}
-                tags={tags}
-                tagInput={tagInput}
-                isNote={isNote}
-                showName={false}
-                showTechnology
-                showTags
-                onChangeName={(value) => {
-                  setName(value);
-                  debouncedUpdate(isDbTable ? { name: value, tableName: value } : { name: value });
-                }}
-                onChangeDesc={(value) => {
-                  setDesc(value);
-                  debouncedUpdate({ description: value });
-                }}
-                onChangeTech={(value) => {
-                  setTech(value);
-                  debouncedUpdate({ technology: value || undefined } as ComponentPatch);
-                }}
-                onChangeTagInput={setTagInput}
-                onRemoveTag={handleRemoveTag}
-                onCommitTagInput={handleCommitTagInput}
+              {!isSimple && (
+                <CommitField
+                  label={t("common.technology")}
+                  value={technology}
+                  addLabel={t("panelShell.addTechnology")}
+                  onCommit={(value) =>
+                    updateComponent(component.id, {
+                      technology: value || undefined,
+                    } as ComponentPatch)
+                  }
+                />
+              )}
+              <CommitField
+                label={isNote ? t("endpointPanel.content") : t("common.description")}
+                value={component.description}
+                multiline
+                addLabel={isNote ? undefined : t("panelShell.addDescription")}
+                placeholder={isNote ? t("elementPanel.notePlaceholder") : undefined}
+                hint={isNote ? t("endpointPanel.markdownHint") : undefined}
+                onFocus={textLock.onFocus}
+                onBlur={textLock.onBlur}
+                onCommit={(value) => updateComponent(component.id, { description: value })}
               />
-            </>
-          )}
-          {isPanel && !isFlowchart && (
-            <PanelStyleSection
-              component={component as Parameters<typeof PanelStyleSection>[0]["component"]}
-              updateComponent={updateComponent}
+              {isFlowchart && (
+                <FlowchartFieldsSection
+                  flowShape={flowShape}
+                  onFlowShapeChange={(shape) =>
+                    updateComponent(component.id, { flowShape: shape } as ComponentPatch)
+                  }
+                />
+              )}
+              {isProcessNodeComponent(component) && (
+                <FlowAppearanceSection
+                  appearance={component}
+                  defaultAccent={defaultAccent}
+                  onChange={(patch) => updateComponent(component.id, patch)}
+                />
+              )}
+              {isPanel && !isFlowchart && (
+                <PanelStyleSection
+                  component={component as Parameters<typeof PanelStyleSection>[0]["component"]}
+                  updateComponent={updateComponent}
+                  updateNodeLayout={updateNodeLayout}
+                  componentNodeLayout={nodeLayout}
+                />
+              )}
+            </PanelSection>
+            {!isSimple && !isFlowchart && (
+              <PanelSection title={t("panelShell.sectionRelates")}>
+                <LinkedDiagramSection
+                  componentId={component.id}
+                  linkedDiagramId={component.linkedDiagramId}
+                  canCreateLinked={canCreateLinked}
+                  createdDiagramName={createdDiagramName}
+                  diagrams={allDiagrams}
+                  suggestedDiagram={
+                    allDiagrams.find(
+                      (d) =>
+                        d.id === component.id ||
+                        d.name.toLowerCase().includes(component.name.toLowerCase()),
+                    ) ?? null
+                  }
+                  onCreateLinked={handleCreateLinked}
+                  onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
+                />
+              </PanelSection>
+            )}
+            {!isSimple && (
+              <PanelSection
+                title={t("panelShell.sectionMeta")}
+                summary={tags.length > 0 ? tags.join(", ") : undefined}
+              >
+                <div>
+                  <span className={PANEL_LABEL_CLASS}>{t("common.tags")}</span>
+                  {tags.length > 0 && (
+                    <div className="mb-2 flex flex-wrap gap-1">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            aria-label={t("panelShell.removeTag")}
+                            onClick={() => handleRemoveTag(tag)}
+                            className="leading-none hover:text-foreground"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(event) => setTagInput(event.target.value)}
+                    onBlur={handleCommitTagInput}
+                    onKeyDown={(event) => {
+                      if (keyIs(event, KEY.ENTER) && tagInput.trim()) {
+                        event.preventDefault();
+                        handleCommitTagInput();
+                      }
+                    }}
+                    placeholder={`+ ${t("panelShell.addTag")}`}
+                    className={PANEL_INPUT_CLASS}
+                  />
+                </div>
+                <ExternalLinksSection
+                  componentId={component.id}
+                  links={component.externalLinks ?? []}
+                  onAdd={(link) => addExternalLink(component.id, link)}
+                  onUpdate={(linkId, patch) => updateExternalLink(component.id, linkId, patch)}
+                  onRemove={(linkId) => removeExternalLink(component.id, linkId)}
+                />
+              </PanelSection>
+            )}
+          </div>
+          <AdvancedFooter
+            id={component.id}
+            zIndex={nodeLayout?.zIndex}
+            onCommitZIndex={nodeLayout ? (z) => setNodeZIndex(component.id, z) : undefined}
+          >
+            <PositionSection
+              componentId={component.id}
+              nodeLayout={nodeLayout}
               updateNodeLayout={updateNodeLayout}
-              componentNodeLayout={resolved?.nodeLayouts[component.id]}
+              isPanel={isPanel || isNote}
             />
-          )}
-          {!isSimple && !isFlowchart && (
-            <LinkedDiagramSection
-              componentId={component.id}
-              linkedDiagramId={component.linkedDiagramId}
-              canCreateLinked={canCreateLinked}
-              createdDiagramName={createdDiagramName}
-              diagrams={allDiagrams}
-              suggestedDiagram={
-                allDiagrams.find(
-                  (d) =>
-                    d.id === component.id ||
-                    d.name.toLowerCase().includes(component.name.toLowerCase()),
-                ) ?? null
-              }
-              onCreateLinked={handleCreateLinked}
-              onChangeLinked={(diagramId) => linkComponentToDiagram(component.id, diagramId)}
-            />
-          )}
-          {!isSimple && (
-            <ExternalLinksSection
-              componentId={component.id}
-              links={component.externalLinks ?? []}
-              onAdd={(link) => addExternalLink(component.id, link)}
-              onUpdate={(linkId, patch) => updateExternalLink(component.id, linkId, patch)}
-              onRemove={(linkId) => removeExternalLink(component.id, linkId)}
-            />
-          )}
-
-          <div>
-            <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-              {t("elementPanel.idLabel")}
-            </label>
-            <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">
-              {component.id}
-            </p>
-          </div>
-          <div className="pt-2">
-            <button
-              onClick={() => {
-                debouncedUpdate.cancel();
-                removeComponent(component.id);
-                onClose();
-              }}
-              className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
-            >
-              <Trash2 className="h-3.5 w-3.5" /> {t("elementPanel.remove")}
-            </button>
-          </div>
-        </div>
+          </AdvancedFooter>
+        </>
       )}
     </div>
   );

@@ -122,7 +122,7 @@ export function LinkedDiagramSection({
         </div>
       )}
 
-      <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold flex items-center gap-1">
+      <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
         <LayoutDashboard className="h-3 w-3" />
         {t("elementPanel.linkToDiagram")}
       </label>

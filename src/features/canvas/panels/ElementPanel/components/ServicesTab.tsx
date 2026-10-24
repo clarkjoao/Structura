@@ -43,7 +43,7 @@ export function ServicesTab({
       />
       {linkedService && (
         <div className="space-y-3 border-t border-border pt-4">
-          <span className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+          <span className="text-xs font-medium text-muted-foreground block">
             {t("common.details")}
           </span>
           <ServiceReadOnlyDetails svc={linkedService} />

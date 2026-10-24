@@ -1,5 +1,4 @@
-export const DEPLOY_LABEL_CLASS =
-  "text-[11px] text-muted-foreground uppercase tracking-wider font-semibold";
+export const DEPLOY_LABEL_CLASS = "text-xs font-medium text-muted-foreground";
 
 /** Free text; empty clears the field instead of storing "". */
 export const text = (value: string) => (value === "" ? undefined : value);

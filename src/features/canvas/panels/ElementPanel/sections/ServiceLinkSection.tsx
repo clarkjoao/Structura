@@ -36,7 +36,7 @@ export function ServiceLinkSection({
         </div>
       )}
       <div className="mb-1 flex items-center justify-between gap-2">
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold block">
+        <label className="text-xs font-medium text-muted-foreground block">
           <Link2 className="h-3 w-3 inline mr-1" />
           {t("elementPanel.linkService")}
         </label>

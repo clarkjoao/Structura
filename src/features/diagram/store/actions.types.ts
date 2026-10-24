@@ -152,6 +152,7 @@ export interface AppActions {
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
+  setNodeZIndex: (elementId: string, zIndex: number) => void;
   fitGroupToChildren: (panelId: string) => void;
   applyAutoLayout: (
     layouts: Array<{

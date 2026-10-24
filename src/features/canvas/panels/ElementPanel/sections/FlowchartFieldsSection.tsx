@@ -36,7 +36,7 @@ export function FlowchartFieldsSection({
   return (
     <>
       <div>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
           {t("endpointPanel.type")}
         </label>
         <select
@@ -48,14 +48,14 @@ export function FlowchartFieldsSection({
         </select>
       </div>
       <div>
-        <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
+        <label className="mb-1 block text-xs font-medium text-muted-foreground">
           {t("elementPanel.flowShape")}
         </label>
         <select
           // A legacy "start / end" circle shows as the start it is drawn as.
           value={readFlowShape(flowShape)}
           onChange={(event) => onFlowShapeChange(event.target.value as FlowNodeShape)}
-          className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          className="h-8 w-full rounded-md border border-border bg-secondary px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
           {FLOW_SHAPES.map((shape) => (
             <option key={shape} value={shape}>

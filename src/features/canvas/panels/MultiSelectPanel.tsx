@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  X,
+  Layers,
   LayoutDashboard,
   LayoutGrid,
   Copy,
@@ -30,6 +30,7 @@ import { SaveTemplateModal } from "@/features/canvas/components/SaveTemplateModa
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { cn } from "@/lib/utils";
+import { PanelFrame, PanelHeader } from "./ElementPanel/shell";
 import { layoutScopedNodes } from "@/features/canvas/layout/layoutScopedNodes";
 import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
 
@@ -286,19 +287,15 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   };
 
   return (
-    <div className="w-80 h-full min-h-0 border-l border-border bg-card overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("multiSelect.title")}
-        </h3>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <PanelFrame>
+      <PanelHeader
+        icon={<Layers className="h-3.5 w-3.5" />}
+        typeLabel={t("multiSelect.title")}
+        name={t("multiSelect.selectedCount", { count: selectedNodes.length })}
+        namePlaceholder={t("multiSelect.title")}
+        menu={[]}
+        onClose={onClose}
+      />
 
       <div className="p-3 border-b border-border">
         <p className="text-sm font-medium text-foreground">
@@ -467,6 +464,6 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
           onClose={() => setSaveTemplateOpen(false)}
         />
       )}
-    </div>
+    </PanelFrame>
   );
 }

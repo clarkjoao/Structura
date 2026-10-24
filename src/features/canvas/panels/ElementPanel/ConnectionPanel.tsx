@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import debounce from "lodash.debounce";
-import { X, Trash2, ArrowRight } from "lucide-react";
+import { Trash2, ArrowRight, Fingerprint, Spline } from "lucide-react";
+import { toast } from "sonner";
 import type { Connection, ConnectionIntent, ConnectionStyle } from "@/features/diagram";
 import {
   EdgeStyle,
@@ -12,9 +12,15 @@ import {
 } from "@/features/diagram";
 import { INTENT_DEFAULTS, useResolvedComponents } from "@/features/diagram";
 import { cn } from "@/lib/utils";
-import { FIELD_DEBOUNCE_MS } from "@/features/canvas/canvas.constants";
-import Field from "./components/Field";
 import TechnologyCombobox from "./components/TechnologyCombobox";
+import {
+  AdvancedFooter,
+  CommitField,
+  PANEL_INPUT_CLASS,
+  PANEL_LABEL_CLASS,
+  PanelHeader,
+  PanelSection,
+} from "./shell";
 
 const TRANSPORT_PRESET_DEFAULTS: Record<
   NonNullable<Connection["transportPreset"]>,
@@ -80,9 +86,7 @@ const EndpointButton = ({ id, caption, onFocusElement }: EndpointButtonProps) =>
       title={name}
       className="min-w-0 flex-1 rounded-md border border-border px-2 py-1.5 text-left enabled:hover:bg-accent disabled:cursor-default"
     >
-      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground">
-        {caption}
-      </span>
+      <span className="block text-[11px] text-muted-foreground">{caption}</span>
       <span className="block truncate text-sm font-medium">{name}</span>
       {parent && (
         <span className="block truncate text-xs text-muted-foreground">
@@ -104,8 +108,6 @@ const ConnectionPanel = ({
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
   const { resetEdgeControlPoints, setEdgeLabelOffset } = useDiagramActions();
-  const [label, setLabel] = useState(conn.label);
-  const [desc, setDesc] = useState(conn.description ?? "");
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
   const intentPills = useMemo(
@@ -130,14 +132,6 @@ const ConnectionPanel = ({
     [t],
   );
 
-  const debouncedUpdate = useMemo(
-    () =>
-      debounce((patch: Partial<Omit<Connection, "id">>) => {
-        updateConnection(conn.id, patch);
-      }, FIELD_DEBOUNCE_MS),
-    [conn.id, updateConnection],
-  );
-  useEffect(() => () => debouncedUpdate.cancel(), [debouncedUpdate]);
   useEffect(() => {
     if (focusTitleTrigger > 0) {
       requestAnimationFrame(() => {
@@ -158,167 +152,160 @@ const ConnectionPanel = ({
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 w-full overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between p-3 border-b border-border">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {t("common.connection")}
-        </h3>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        <div className="flex items-center gap-2">
-          <EndpointButton
-            id={conn.sourceId}
-            caption={t("common.connectionFrom")}
-            onFocusElement={onFocusElement}
-          />
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <EndpointButton
-            id={conn.targetId}
-            caption={t("common.connectionTo")}
-            onFocusElement={onFocusElement}
-          />
-        </div>
-        <Field
-          label={t("common.label")}
-          value={label}
-          onChange={(v) => {
-            setLabel(v);
-            debouncedUpdate({ label: v });
-          }}
-          inputRef={titleInputRef}
-        />
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            {t("common.intent")}
-          </label>
-          <div className="flex flex-wrap gap-1">
-            {intentPills.map((p) => {
-              const isCustom = p.value === "__custom__";
-              const isSelected = isCustom
-                ? conn.communicationType === "custom"
-                : (conn.intent ?? "call") === p.value && conn.communicationType !== "custom";
-              return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PanelHeader
+        icon={<Spline className="h-3.5 w-3.5" />}
+        typeLabel={t("common.connection")}
+        name={conn.label}
+        namePlaceholder={t("common.label")}
+        onCommitName={(value) => applyPatch({ label: value })}
+        nameInputRef={titleInputRef}
+        menu={[
+          {
+            key: "copy-id",
+            label: t("panelShell.copyId"),
+            icon: Fingerprint,
+            onSelect: () => {
+              void navigator.clipboard?.writeText(conn.id);
+              toast.success(t("panelShell.idCopied"));
+            },
+          },
+          {
+            key: "delete",
+            label: t("connectionPanel.removeConnection"),
+            icon: Trash2,
+            destructive: true,
+            separated: true,
+            onSelect: () => {
+              removeConnection(conn.id);
+              onClose();
+            },
+          },
+        ]}
+        onClose={onClose}
+      />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <PanelSection title={t("panelShell.sectionWhat")}>
+          <div className="flex items-center gap-2">
+            <EndpointButton
+              id={conn.sourceId}
+              caption={t("common.connectionFrom")}
+              onFocusElement={onFocusElement}
+            />
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <EndpointButton
+              id={conn.targetId}
+              caption={t("common.connectionTo")}
+              onFocusElement={onFocusElement}
+            />
+          </div>
+          <div>
+            <span className={PANEL_LABEL_CLASS}>{t("common.intent")}</span>
+            <div className="flex flex-wrap gap-1">
+              {intentPills.map((p) => {
+                const isCustom = p.value === "__custom__";
+                const isSelected = isCustom
+                  ? conn.communicationType === "custom"
+                  : (conn.intent ?? "call") === p.value && conn.communicationType !== "custom";
+                return (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() =>
+                      isCustom
+                        ? applyPatch({ communicationType: "custom" })
+                        : applyPatch({
+                            intent: p.value as ConnectionIntent,
+                            style: {
+                              ...conn.style,
+                              ...INTENT_DEFAULTS[p.value as ConnectionIntent],
+                            },
+                            communicationType: "standard",
+                          })
+                    }
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+                      isSelected
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div>
+            <span className={PANEL_LABEL_CLASS}>{t("common.direction")}</span>
+            <div className="flex flex-wrap gap-1">
+              {directionPills.map((p) => (
                 <button
                   key={p.value}
                   type="button"
-                  onClick={() =>
-                    isCustom
-                      ? applyPatch({ communicationType: "custom" })
-                      : applyPatch({
-                          intent: p.value as ConnectionIntent,
-                          style: { ...conn.style, ...INTENT_DEFAULTS[p.value as ConnectionIntent] },
-                          communicationType: "standard",
-                        })
-                  }
+                  onClick={() => applyPatch({ direction: p.value })}
                   className={cn(
                     "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                    isSelected
+                    (conn.direction ?? "unidirectional") === p.value
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
                   )}
                 >
                   {p.label}
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            {t("common.direction")}
-          </label>
-          <div className="flex flex-wrap gap-1">
-            {directionPills.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                onClick={() => applyPatch({ direction: p.value })}
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                  (conn.direction ?? "unidirectional") === p.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
+          <div>
+            <span className={PANEL_LABEL_CLASS}>{t("connectionPanel.technologyLabel")}</span>
+            <TechnologyCombobox
+              value={conn.technology ?? ""}
+              onSelect={(v) => applyPatch({ technology: v || undefined })}
+            />
           </div>
-        </div>
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            {t("connectionPanel.technologyLabel")}
-          </label>
-          <TechnologyCombobox
-            value={conn.technology ?? ""}
-            onSelect={(v) => applyPatch({ technology: v || undefined })}
+          <div>
+            <label htmlFor="connection-transport" className={PANEL_LABEL_CLASS}>
+              {t("common.transportTypeTitle")}
+            </label>
+            <select
+              id="connection-transport"
+              value={conn.transportPreset ?? ""}
+              onChange={(e) => {
+                const v = e.target.value as Connection["transportPreset"] | "";
+                if (!v) {
+                  applyPatch({ transportPreset: undefined });
+                  return;
+                }
+                const mergedStyle = {
+                  ...conn.style,
+                  ...TRANSPORT_PRESET_DEFAULTS[v],
+                } as ConnectionStyle;
+                const previousEdgeStyle = conn.style?.edgeStyle;
+                applyPatch({ transportPreset: v, style: mergedStyle });
+                if (previousEdgeStyle !== mergedStyle.edgeStyle) {
+                  resetEdgeLayout();
+                }
+              }}
+              className={PANEL_INPUT_CLASS}
+            >
+              <option value="">{t("common.none")}</option>
+              <option value="sync">{t("common.transportSync")}</option>
+              <option value="async">{t("common.transportAsync")}</option>
+              <option value="event">{t("common.transportEvent")}</option>
+              <option value="tcp">{t("common.transportTcp")}</option>
+              <option value="udp">{t("common.transportUdp")}</option>
+            </select>
+          </div>
+          <CommitField
+            label={t("common.description")}
+            value={conn.description ?? ""}
+            multiline
+            addLabel={t("panelShell.addDescription")}
+            onCommit={(v) => applyPatch({ description: v || undefined })}
           />
-        </div>
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1.5 block">
-            {t("common.transportTypeTitle")}
-          </label>
-          <select
-            value={conn.transportPreset ?? ""}
-            onChange={(e) => {
-              const v = e.target.value as Connection["transportPreset"] | "";
-              if (!v) {
-                applyPatch({ transportPreset: undefined });
-                return;
-              }
-              const mergedStyle = {
-                ...conn.style,
-                ...TRANSPORT_PRESET_DEFAULTS[v],
-              } as ConnectionStyle;
-              const previousEdgeStyle = conn.style?.edgeStyle;
-              applyPatch({ transportPreset: v, style: mergedStyle });
-              if (previousEdgeStyle !== mergedStyle.edgeStyle) {
-                resetEdgeLayout();
-              }
-            }}
-            className="w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">{t("common.none")}</option>
-            <option value="sync">{t("common.transportSync")}</option>
-            <option value="async">{t("common.transportAsync")}</option>
-            <option value="event">{t("common.transportEvent")}</option>
-            <option value="tcp">{t("common.transportTcp")}</option>
-            <option value="udp">{t("common.transportUdp")}</option>
-          </select>
-        </div>
-        <Field
-          label={t("common.description")}
-          value={desc}
-          onChange={(v) => {
-            setDesc(v);
-            debouncedUpdate({ description: v || undefined });
-          }}
-          multiline
-        />
-        <div>
-          <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
-            {t("connectionPanel.idLabel")}
-          </label>
-          <p className="text-xs font-mono text-muted-foreground bg-secondary rounded px-2 py-1.5">
-            {conn.id}
-          </p>
-        </div>
-        <div className="pt-2 space-y-2">
-          <button
-            onClick={() => {
-              debouncedUpdate.cancel();
-              removeConnection(conn.id);
-              onClose();
-            }}
-            className="flex items-center justify-center gap-1.5 rounded-md border border-destructive/30 px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> {t("connectionPanel.removeConnection")}
-          </button>
-        </div>
+        </PanelSection>
       </div>
+      <AdvancedFooter id={conn.id} />
     </div>
   );
 };

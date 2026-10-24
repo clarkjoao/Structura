@@ -39,7 +39,7 @@ const TechnologyCombobox = ({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex w-full items-center justify-between rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          className="flex w-full items-center justify-between h-8 w-full rounded-md border border-border bg-secondary px-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
           <span className={value ? undefined : "text-muted-foreground"}>
             {value || t("technologyCombobox.selectPlaceholder")}

@@ -234,6 +234,20 @@ export const layoutSlice = (
     });
   },
 
+  /** The inspector's z-index field: an explicit stacking order, like `bringToFront` without the ranking. */
+  setNodeZIndex: (elementId: string, zIndex: number) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveVersion(d);
+      const layout =
+        scene && scene.addedComponents[elementId]
+          ? resolveNodeLayout(d, scene, elementId)
+          : d.nodeLayouts[elementId];
+      if (layout) layout.zIndex = Math.round(zIndex);
+    });
+  },
+
   sendToBack: (elementId: string) => {
     set((state) => {
       const d = getActiveDiagram(state);

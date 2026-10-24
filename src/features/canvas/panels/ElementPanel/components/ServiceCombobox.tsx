@@ -121,7 +121,7 @@ const ServiceCombobox = ({ value, onChange }: ServiceComboboxProps) => {
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         {showCreate ? (
           <div className="p-3 space-y-2">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <p className="text-xs font-medium text-muted-foreground">
               {t("serviceCombobox.createNewService")}
             </p>
             <input

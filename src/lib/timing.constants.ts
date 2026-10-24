@@ -21,5 +21,3 @@ export const CHECK_INTERVAL_MS = 30_000;
 // Debounce / Throttle
 /** Debounce delay for diagram change notifications (300ms) */
 export const DIAGRAM_CHANGE_DEBOUNCE_MS = 300;
-/** Debounce delay for field updates (300ms) */
-export const FIELD_DEBOUNCE_MS = 300;
