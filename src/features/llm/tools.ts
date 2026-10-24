@@ -116,7 +116,8 @@ export const ALL_TOOLS: LLMTool[] = [
   },
   {
     name: "update_node",
-    description: "Update properties of an existing node.",
+    description:
+      'Update properties of an existing node. A group (panel) accepts "boundaryType" ("quantum", "system" or "network"); its colours are derived from the group it sits in and from the type.',
     parametersSchema: {
       type: "object",
       properties: {

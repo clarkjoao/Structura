@@ -110,6 +110,15 @@ export {
 } from "./text-style";
 export type { TextSize, TextColor } from "./text-style";
 
+// ─── Boundary ─────────────────────────────────────────────────────────────────
+export { BOUNDARY_TYPES } from "./boundary-type";
+export type { BoundaryType } from "./boundary-type";
+export {
+  domainColor,
+  elementDomain,
+  resolveBoundaryAppearance,
+} from "./boundary";
+
 // ─── Connection ───────────────────────────────────────────────────────────────
 export type {
   Connection,

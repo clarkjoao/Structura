@@ -21,6 +21,7 @@ interface Props {
   selectedNodes?: Node[];
   focusTitleTrigger?: number;
   onFocusElement?: (componentId: string) => void;
+  onTogglePanelCollapse?: (componentId: string) => void;
   onClose: () => void;
 }
 
@@ -31,6 +32,7 @@ const ElementPanel = ({
   selectedNodes = [],
   focusTitleTrigger = 0,
   onFocusElement,
+  onTogglePanelCollapse,
   onClose,
 }: Props) => {
   const { t } = useTranslation();
@@ -115,6 +117,7 @@ const ElementPanel = ({
           removeComponent={removeComponent}
           focusTitleTrigger={focusTitleTrigger}
           onFocusElement={onFocusElement}
+          onTogglePanelCollapse={onTogglePanelCollapse}
         />
         <div className="shrink-0 overflow-y-auto p-2 empty:hidden">
           <PluginPanelSlot slot="element-inspector" selectionIds={[selectedElementId]} />

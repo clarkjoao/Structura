@@ -208,6 +208,7 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     selectedNodes,
     selectedCount,
     showElementPanel,
+    handlePanelCollapseToggle: interaction.handlePanelCollapseToggle,
     isCompareMode: compareState.isCompareMode,
     allDiagramTags,
     handleAutoLayout,

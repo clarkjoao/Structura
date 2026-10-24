@@ -1885,6 +1885,31 @@
     "missing": "missing",
     "created": "Created “{{name}}” and linked"
   },
+  "boundary": {
+    "title": "Boundary",
+    "type": "Boundary type",
+    "types": {
+      "none": "None",
+      "quantum": "Quantum",
+      "system": "System",
+      "network": "Network"
+    },
+    "domain": "Domain",
+    "noDomain": "None — at the top level",
+    "domainHint": "The group this boundary sits in.",
+    "derivedAppearance": "Derived appearance",
+    "background": "Background",
+    "border": "Border",
+    "sourceDomain": "Colour from the domain “{{name}}”",
+    "sourceType": "Colour from the boundary type",
+    "sourceCustom": "Custom colour",
+    "backToDerived": "Back to derived",
+    "content": "Content",
+    "contentCount_one": "{{count}} element",
+    "contentCount_other": "{{count}} elements",
+    "empty": "Nothing inside yet",
+    "collapseOnCanvas": "Collapse on canvas"
+  },
   "panelShell": {
     "advanced": "Advanced",
     "copyId": "Copy ID",

@@ -13,6 +13,7 @@ import {
   type Diagram,
   type VersionDiff,
 } from "@/features/diagram";
+import { domainColor } from "@/features/diagram/model/boundary";
 import { useLLMStore, type PendingNodePreview } from "@/features/llm";
 import "@/features/canvas/nodes/node-types/registry";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
@@ -364,6 +365,35 @@ describe("editor and viewer project one diagram the same way", () => {
     for (const id of ["x-p2", "q1-x", "legacy"]) {
       expect(strokeOf(write.edges, id)).toBe(strokeOf(read.edges, id));
     }
+  });
+
+  it("derives a typed boundary's colour and outline the same on both sides", () => {
+    const diagram = parityDiagram();
+    diagram.snapshot.components["Vendas"] = component({
+      id: "Vendas",
+      name: "Vendas",
+      type: "panel",
+      panelKind: "default",
+    });
+    diagram.snapshot.components["Net"] = component({
+      id: "Net",
+      name: "Net",
+      type: "panel",
+      panelKind: "default",
+      parentId: "Vendas",
+      boundaryType: "network",
+    });
+    diagram.nodeLayouts["Vendas"] = { elementId: "Vendas", x: 0, y: 900, width: 600, height: 400 };
+    diagram.nodeLayouts["Net"] = { elementId: "Net", x: 20, y: 40, width: 300, height: 200 };
+    const write = writeProjection(diagram);
+    const read = projectReadDiagram(diagram);
+    const look = (nodes: Node[]) => {
+      const data = nodes.find((n) => n.id === "Net")?.data as
+        { panelColor?: string; borderStyle?: string } | undefined;
+      return { color: data?.panelColor, border: data?.borderStyle };
+    };
+    expect(look(read.nodes)).toEqual({ color: domainColor("Vendas"), border: "dashed" });
+    expect(look(write.nodes)).toEqual(look(read.nodes));
   });
 
   it("drops an edge to a hidden or unplaced component on both sides", () => {

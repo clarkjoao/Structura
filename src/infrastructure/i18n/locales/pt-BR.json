@@ -1885,6 +1885,31 @@
     "missing": "não encontrado",
     "created": "Criamos “{{name}}” e vinculamos"
   },
+  "boundary": {
+    "title": "Fronteira",
+    "type": "Tipo de fronteira",
+    "types": {
+      "none": "Nenhum",
+      "quantum": "Quantum",
+      "system": "Sistema",
+      "network": "Rede"
+    },
+    "domain": "Domínio",
+    "noDomain": "Nenhum — no nível raiz",
+    "domainHint": "O grupo em que esta fronteira está.",
+    "derivedAppearance": "Aparência derivada",
+    "background": "Fundo",
+    "border": "Borda",
+    "sourceDomain": "Cor do domínio “{{name}}”",
+    "sourceType": "Cor do tipo de fronteira",
+    "sourceCustom": "Cor personalizada",
+    "backToDerived": "Voltar ao derivado",
+    "content": "Conteúdo",
+    "contentCount_one": "{{count}} elemento",
+    "contentCount_other": "{{count}} elementos",
+    "empty": "Nada dentro ainda",
+    "collapseOnCanvas": "Recolher no canvas"
+  },
   "panelShell": {
     "advanced": "Avançado",
     "copyId": "Copiar ID",

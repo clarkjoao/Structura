@@ -40,6 +40,7 @@ import {
   PositionSection,
 } from "./sections";
 import { ElementTypeSelect } from "./sections/ElementTypeSelect";
+import { BoundarySections } from "./sections/BoundarySection";
 import { DiagramLinkField } from "@/features/canvas/palette/DiagramLinkField";
 import { toast } from "sonner";
 import { isComponentType } from "@/features/diagram";
@@ -47,6 +48,7 @@ import { shouldRenameForCloudIcon } from "./shouldRenameForCloudIcon";
 import { useElementTextLock } from "@/features/collaboration/hooks/useElementLocks";
 import { useCanvasPreferencesStore } from "@/features/canvas/preferences";
 import { KEY, keyIs } from "@/lib/core/keyboard";
+import { PanelKind } from "@/features/diagram/enums";
 import {
   AdvancedFooter,
   CommitField,
@@ -82,6 +84,8 @@ interface ComponentPanelProps {
   removeComponent: (id: string) => void;
   focusTitleTrigger?: number;
   onFocusElement?: (componentId: string) => void;
+  /** Collapses or expands a panel the way its canvas button does. */
+  onTogglePanelCollapse?: (componentId: string) => void;
 }
 
 const ComponentPanel = ({
@@ -91,6 +95,7 @@ const ComponentPanel = ({
   removeComponent,
   focusTitleTrigger = 0,
   onFocusElement,
+  onTogglePanelCollapse,
 }: ComponentPanelProps) => {
   const { t } = useTranslation();
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -360,6 +365,14 @@ const ComponentPanel = ({
                 />
               )}
             </PanelSection>
+            {isPanel && !isFlowchart && component.panelKind !== PanelKind.Swimlane && (
+              <BoundarySections
+                component={component}
+                updateComponent={updateComponent}
+                onSelectElement={onFocusElement}
+                onTogglePanelCollapse={onTogglePanelCollapse}
+              />
+            )}
             {!isSimple && !isFlowchart && (
               <PanelSection title={t("panelShell.sectionRelates")}>
                 <DiagramLinkField

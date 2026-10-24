@@ -86,3 +86,27 @@ describe("save → close → reopen", () => {
     expect(twice.snapshot.connections).toEqual(once.snapshot.connections);
   });
 });
+
+describe("save → close → reopen: boundaries", () => {
+  it("keeps a boundary's type, the group it sits in, and a picked colour", () => {
+    const raw = diagramWith({});
+    (raw.snapshot as { components: Record<string, unknown> }).components = {
+      vendas: { id: "vendas", name: "Vendas", type: "panel", description: "", parentId: null },
+      q: {
+        id: "q",
+        name: "Q-Checkout",
+        type: "panel",
+        description: "",
+        parentId: "vendas",
+        boundaryType: "quantum",
+        panelColor: "#123456",
+      },
+    };
+    const reopened = reopen(raw);
+    expect(reopened.snapshot.components.q).toMatchObject({
+      boundaryType: "quantum",
+      parentId: "vendas",
+      panelColor: "#123456",
+    });
+  });
+});

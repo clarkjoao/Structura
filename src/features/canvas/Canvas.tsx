@@ -173,6 +173,7 @@ const Canvas = (props: CanvasProps = {}) => {
     isPanelOpen,
     selectedNodes,
     showElementPanel,
+    handlePanelCollapseToggle,
     isCompareMode,
     allDiagramTags,
     handleAutoLayout,
@@ -757,6 +758,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 selectedNodes={selectedNodes}
                 focusTitleTrigger={focusTitleTrigger}
                 onFocusElement={handleSearchSelect}
+                onTogglePanelCollapse={handlePanelCollapseToggle}
                 onClose={eventHandlers.closePanel}
               />
             )}
