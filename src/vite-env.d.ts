@@ -6,5 +6,5 @@
  * tools/build-with-plugins.mjs. Empty array for a plain `npm run build` / `npm run dev`.
  */
 declare module "virtual:structura-bundled-plugins" {
-  export const bundledPlugins: { dir: string; code: string }[];
+  export const bundledPlugins: { dir: string; code: string; defaultEnabled?: boolean; locked?: boolean }[];
 }

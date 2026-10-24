@@ -14,6 +14,10 @@ export interface BundledPlugin {
   dir: string;
   /** The built IIFE bundle (dist/plugin.js) as a string, executed like an uploaded plugin. */
   code: string;
+  /** Starts enabled for a user who never touched it. Default true. */
+  defaultEnabled?: boolean;
+  /** Cannot be disabled from the UI (always on). Default false. */
+  locked?: boolean;
 }
 
 export function getBundledPlugins(): BundledPlugin[] {
