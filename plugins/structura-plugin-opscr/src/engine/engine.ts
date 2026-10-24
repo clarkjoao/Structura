@@ -59,7 +59,21 @@ export type Projector = (
   previous: ViewLayoutResult | undefined,
   /** The opscr View to draw; undefined draws the whole workspace. */
   view?: string,
-) => Promise<{ graph?: ImporterGraph; diagnostics: unknown[]; views?: string[] }>;
+) => Promise<{
+  graph?: ImporterGraph;
+  diagnostics: unknown[];
+  views?: string[];
+  /** What each View is (its type and heading), for the diagram that draws it. */
+  viewInfos?: ViewInfo[];
+}>;
+
+/** A View of the workspace: what a diagram made for it needs to know. */
+export interface ViewInfo {
+  name: string;
+  type: string;
+  title?: string;
+  description?: string;
+}
 
 /** What the engine reports; the host turns it into UI. */
 export type EngineEvent =
@@ -106,6 +120,11 @@ export interface EngineOptions {
    * tool, an agent writing them — rather than as the user types.
    */
   requireValid?: boolean;
+  /**
+   * The diagram that draws a View, for a box that opens one (`linkedView`): its id, or undefined
+   * when there is none. Without it a box opens nothing.
+   */
+  resolveLink?: (view: string) => string | undefined;
   onEvent?: (event: EngineEvent) => void;
 }
 
@@ -182,6 +201,19 @@ export class OpscrEngine {
       await this.options.texts.set([{ name: VISUAL_FILE, text }]);
   }
 
+  /** The graph with each `linkedView` turned into the diagram that draws it, when there is one. */
+  private withLinks(graph: ImporterGraph): ImporterGraph {
+    const resolve = this.options.resolveLink;
+    if (!resolve) return graph;
+    return {
+      ...graph,
+      components: graph.components.map((c) => {
+        const id = c.linkedView === undefined ? undefined : resolve(c.linkedView);
+        return id === undefined ? c : { ...c, linkedDiagramId: id };
+      }),
+    };
+  }
+
   /** The projection with the visual layer drawn on it, when the folder has one. */
   private withVisual(graph: ImporterGraph): ImporterGraph {
     if (this.options.binding.get().view !== undefined) return graph;
@@ -247,7 +279,7 @@ export class OpscrEngine {
       await this.reconcileNow();
       return this.syncNow(retries - 1);
     }
-    const plan = planSync(this.withVisual(projection.graph), binding, now);
+    const plan = planSync(this.withVisual(this.withLinks(projection.graph)), binding, now);
     const result = plan.empty
       ? { idsByKey: {}, connectionIds: [] }
       : await this.options.diagram.apply(plan.changes);

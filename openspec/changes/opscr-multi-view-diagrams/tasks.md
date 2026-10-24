@@ -1,7 +1,8 @@
 # Tasks
 
-> Phase A (views on the one bound diagram) is done: 1.x, 2.2, 2.3, 4.1 and the "Phase A" section at
-> the end. Phase B (2.1, 3.x: a diagram per View, API 1.13) is not started.
+> Phase A (views on the one bound diagram) and Phase B (a diagram per View, API 1.13) are done; see
+> the sections at the end. 2.1 became unnecessary: each View diagram has its own engine and binding,
+> so the `Kind/name` key stays unique.
 
 ## 1. Contract
 
@@ -12,15 +13,15 @@
 
 The mapping and projection steps below are done and tested (`buildViewDiagram`, `projectView`). What is not: the engine, reconcile and the host still bind one diagram to a workspace, so nothing draws these graphs yet — see 2.1 and section 3.
 
-- [ ] 2.1 Key reconcile, tombstones and source index by view; verify the view-less path with the current tests and a two-view test
+- [x] 2.1 ~~Key reconcile, tombstones and source index by view~~ not needed: one engine and binding per View diagram (see design); verify the view-less path with the current tests
 - [x] 2.2 Project each View into its own `ImporterGraph` with seeded ELK layout; verify a golden test for the four view types — `buildViewDiagram` + `projectView`, tested on the opscr `web-app-aws` example
 - [x] 2.3 Map `Person`, `Component`, `DeploymentNode` (AWS group styles) to elements; verify shapes in `elements.test.ts`
 
 ## 3. Host and plugin API
 
-- [ ] 3.1 Plugin API 1.13: a binding may own several diagrams with `linkedDiagramId`; verify with a fake plugin and the plugin-API docs
-- [ ] 3.2 Create, update, orphan diagrams in the engine; verify first sync, edit, view removal
-- [ ] 3.3 Pane: list views, jump between them, show orphaned diagrams; verify in the e2e pane test
+- [x] 3.1 Plugin API 1.13: `createDiagram`, `applyChanges` with `{ diagramId }`, `linkedDiagramId` on add/update and in the snapshot; verify `plugins/diagram-api.test.ts` (undo per diagram, unknown ids, links) and `generated-graph` store changes
+- [x] 3.2 Create, update, orphan diagrams (`ViewDiagrams`); verify `engine/view-diagrams.test.ts` (first sync, links, idempotence, edit, deleted diagram, removed view, added view, bad YAML, per-view sidecar)
+- [x] 3.3 Pane: switch on a diagram per view, list them, show orphans; verify `e2e/views.mjs` (four diagrams in the app, drawn from their views, linked, the app's drill-down button opens the container diagram)
 
 ## 4. VSCode preview
 

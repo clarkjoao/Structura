@@ -28,6 +28,12 @@ const en = {
     "A view is a projection: edit the YAML here, or switch to the whole workspace to add, delete or connect elements. Moving boxes is saved per view.",
   opens: (name: string, view: string) => `${name} → ${view}`,
   opensTitle: "Opens another view",
+  viewDiagrams: "A Structura diagram for each view",
+  viewDiagramsHint:
+    "Makes one diagram per view in the app, kept in sync with the YAML, with the boxes that open another view linked to it. Turning it off keeps them.",
+  viewDiagramsMade: (n: number) => `${n} diagram${n === 1 ? "" : "s"}, listed in the diagram list`,
+  viewDiagramsOrphans: (names: string) =>
+    `No longer in the YAML, kept: ${names}. Delete them in the diagram list if you do not need them.`,
   saved: (n: number) => (n === 0 ? "Nothing to save" : `Saved ${n} file${n === 1 ? "" : "s"}`),
   problemsElsewhere: (n: number) => `${n} error${n === 1 ? "" : "s"} in other files`,
   renameRefused: (name: string) =>
@@ -150,6 +156,12 @@ const ptBR: typeof en = {
     "Uma view é uma projeção: edite o YAML aqui, ou volte ao workspace inteiro para adicionar, apagar ou ligar elementos. Mover caixas fica salvo por view.",
   opens: (name: string, view: string) => `${name} → ${view}`,
   opensTitle: "Abre outra view",
+  viewDiagrams: "Um diagrama da Structura para cada view",
+  viewDiagramsHint:
+    "Cria um diagrama por view no app, em sincronia com o YAML, com as caixas que abrem outra view ligadas a ele. Desligar mantém os diagramas.",
+  viewDiagramsMade: (n: number) => `${n} diagrama${n === 1 ? "" : "s"}, na lista de diagramas`,
+  viewDiagramsOrphans: (names: string) =>
+    `Não estão mais no YAML, mantidos: ${names}. Apague na lista de diagramas se não precisar deles.`,
   saved: (n: number) =>
     n === 0 ? "Nada a salvar" : `${n} arquivo${n === 1 ? "" : "s"} salvo${n === 1 ? "" : "s"}`,
   problemsElsewhere: (n: number) => `${n} erro${n === 1 ? "" : "s"} em outros arquivos`,

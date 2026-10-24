@@ -19,6 +19,8 @@ export interface ImporterGraphComponent {
   panelKind?: string;
   /** Name of the opscr View this component opens; the host links it to that view's diagram. */
   linkedView?: string;
+  /** The diagram this component opens (plugin API 1.13), once `linkedView` is resolved to one. */
+  linkedDiagramId?: string;
   x: number;
   y: number;
   width?: number;

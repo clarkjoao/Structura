@@ -10,14 +10,16 @@ import type {
 export class FakeCanvas {
   components: PluginComponentSnapshot[] = [];
   connections: PluginConnectionSnapshot[] = [];
+
+  constructor(readonly id = "d") {}
   private next = 0;
   private history: Array<[PluginComponentSnapshot[], PluginConnectionSnapshot[]]> = [];
   private future: Array<[PluginComponentSnapshot[], PluginConnectionSnapshot[]]> = [];
 
   snapshot(): DiagramSnapshot {
     return {
-      id: "d",
-      name: "d",
+      id: this.id,
+      name: this.id,
       description: null,
       components: structuredClone(this.components),
       connections: structuredClone(this.connections),
@@ -79,6 +81,7 @@ export class FakeCanvas {
         if (u.description !== undefined) c.description = u.description;
         if (u.technology !== undefined) c.technology = u.technology || null;
         if (u.cloudServiceId !== undefined) c.cloudServiceId = u.cloudServiceId || null;
+        if (u.linkedDiagramId !== undefined) c.linkedDiagramId = u.linkedDiagramId || null;
       }
       for (const m of changes.move ?? []) {
         const c = this.components.find((x) => x.id === m.id);
@@ -107,6 +110,7 @@ export class FakeCanvas {
           serviceId: null,
           cloudServiceId: a.cloudServiceId ?? null,
           technology: a.technology ?? null,
+          linkedDiagramId: a.linkedDiagramId ?? null,
         });
       }
       for (const c of changes.connect ?? []) {

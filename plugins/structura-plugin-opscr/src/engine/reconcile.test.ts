@@ -332,6 +332,7 @@ describe("reconcile", () => {
         serviceId: null,
         cloudServiceId: null,
         technology: null,
+        linkedDiagramId: null,
       }),
     );
     const r = reconcile(s.canvas.snapshot(), s.binding, s.files);
@@ -357,6 +358,7 @@ describe("reconcile", () => {
         serviceId: null,
         cloudServiceId: null,
         technology: null,
+        linkedDiagramId: null,
       });
       http = s.canvas.connect(s.id("order-tracker"), s.id("catalog-db"), "HTTP");
       loose = s.canvas.connect(s.id("order-tracker"), "x", "calls");
@@ -495,6 +497,7 @@ describe("palette elements into the YAML", () => {
       serviceId: null,
       cloudServiceId: "dynamodb",
       technology: "DynamoDB",
+      linkedDiagramId: null,
       ...over,
     };
     s.canvas.step(() => s.canvas.components.push(component));
@@ -546,6 +549,7 @@ describe("palette elements into the YAML", () => {
       type: "container",
       cloudServiceId: null,
       technology: null,
+      linkedDiagramId: null,
       parentId: null,
       label: "Search",
     });
@@ -631,6 +635,7 @@ describe("moving an element into another panel", () => {
         serviceId: null,
         cloudServiceId: null,
         technology: null,
+        linkedDiagramId: null,
       }),
     );
     move("free-panel");
