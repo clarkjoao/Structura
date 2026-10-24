@@ -35,6 +35,9 @@ interface WebviewMessage {
   index?: number;
 }
 
+/** The label of the whole-workspace picture in the view picker. */
+const WHOLE_WORKSPACE = "Whole workspace";
+
 class Preview {
   private readonly pipeline = new PreviewPipeline();
   private timer: NodeJS.Timeout | undefined;
@@ -58,12 +61,20 @@ class Preview {
   private selected: GraphElementRef | null = null;
   /** Where each problem listed in the preview is, by its place in the list. */
   private problemLocations: Array<SourceLocation | null> = [];
+  /** The opscr View drawn; undefined draws the whole workspace. */
+  private view: string | undefined;
+  /** The Views the workspace declares, and which box of the picture opens which. */
+  private views: string[] = [];
+  private links = new Map<string, string>();
+  /** Names the picture on screen and opens the view picker; shown when there are Views. */
+  private readonly viewItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
 
   constructor(
     readonly folder: string,
     private readonly panel: vscode.WebviewPanel,
     private readonly diagnostics: vscode.DiagnosticCollection,
   ) {
+    this.viewItem.command = "opscr.selectView";
     panel.webview.onDidReceiveMessage((message: WebviewMessage) =>
       // Opening a file can fail (deleted meanwhile): nothing to do but say so in the log.
       this.receive(message).catch((error: unknown) => console.error("[opscr] preview:", error)),
@@ -82,6 +93,11 @@ class Preview {
       // The cursor lands in the element: that must not light it again.
       this.selected = message.element;
       await showSource(at);
+    }
+    if (message?.type === "STRUCTURA_OPEN" && message.element) {
+      // A double-click on a box that opens another view goes there.
+      const target = this.links.get(message.element.key);
+      if (target) this.showView(target);
     }
     if (message?.type === "STRUCTURA_OPEN_PROBLEM" && typeof message.index === "number") {
       const at = this.problemLocations[message.index];
@@ -114,8 +130,42 @@ class Preview {
   }
 
   relayout(): void {
-    this.pipeline.relayout();
+    this.pipeline.relayout(this.view);
     void this.update();
+  }
+
+  /** Draws another View (undefined: the whole workspace); the element lit before is not kept. */
+  showView(view: string | undefined): void {
+    if (view === this.view) return;
+    this.view = view;
+    this.selected = null;
+    void this.update();
+  }
+
+  /** The picker: the whole workspace, each view, and the views the picture's boxes open. */
+  async pickView(): Promise<void> {
+    if (this.views.length === 0) {
+      void vscode.window.showInformationMessage("This workspace has no View manifests.");
+      return;
+    }
+    type Item = vscode.QuickPickItem & { target?: string | undefined; pick: boolean };
+    const items: Item[] = [
+      { label: WHOLE_WORKSPACE, description: this.view === undefined ? "shown" : "", target: undefined, pick: true },
+      ...[...this.views].sort().map((name): Item => ({
+        label: name,
+        description: this.view === name ? "shown" : "",
+        target: name,
+        pick: true,
+      })),
+    ];
+    if (this.links.size > 0) {
+      items.push({ label: "Opens from this view", kind: vscode.QuickPickItemKind.Separator, pick: false });
+      for (const [key, target] of this.links) {
+        items.push({ label: `$(arrow-right) ${key.slice(key.indexOf("/") + 1)} → ${target}`, target, pick: true });
+      }
+    }
+    const chosen = await vscode.window.showQuickPick(items, { placeHolder: "Show which diagram?", title: "opscr views" });
+    if (chosen?.pick) this.showView(chosen.target);
   }
 
   isActive(): boolean {
@@ -163,11 +213,21 @@ class Preview {
     for (const file of this.published) this.diagnostics.delete(vscode.Uri.file(file));
     this.published.clear();
     this.statusItem.dispose();
+    this.viewItem.dispose();
   }
 
   /** For the end-to-end test: did the webview load, and what did it last receive. */
-  status(): { ready: boolean; components: number; rendered: number; blocked: number } {
+  status(): {
+    ready: boolean;
+    components: number;
+    rendered: number;
+    blocked: number;
+    view: string | null;
+    views: string[];
+  } {
     return {
+      view: this.view ?? null,
+      views: this.views,
       ready: this.ready,
       components: this.lastGraph?.components.length ?? 0,
       rendered: this.rendered,
@@ -184,8 +244,19 @@ class Preview {
     // Every workspace file below the folder, as paths relative to it: a workspace may use subfolders.
     const names = (await listWorkspaceFiles(this.folder)) ?? [];
     const workspace = await collectWorkspace(this.folder, names, readText);
-    const result = await this.pipeline.update(workspace);
+    const result = await this.pipeline.update(workspace, this.view);
     if (generation !== this.generation) return;
+    if (result.views) {
+      this.views = result.views;
+      // A view that is gone is drawn as the whole workspace: say so in the picker too.
+      if (this.view !== undefined && result.view === undefined) this.view = undefined;
+      this.links = result.links ?? new Map();
+      if (this.views.length > 0) {
+        this.viewItem.text = `$(layers) opscr: ${this.view ?? WHOLE_WORKSPACE}`;
+        this.viewItem.tooltip = "Show another diagram of this workspace";
+        this.viewItem.show();
+      } else this.viewItem.hide();
+    }
     const published = publishDiagnostics(
       this.diagnostics,
       workspace.files.map((f) => f.path),
@@ -404,6 +475,15 @@ export function activate(context: vscode.ExtensionContext): void {
       const preview = [...previews.values()].find((p) => p.isActive()) ?? [...previews.values()][0];
       preview?.search();
     }),
+    vscode.commands.registerCommand("opscr.selectView", () => {
+      // The focused preview, else the one of the file being edited.
+      const uri = vscode.window.activeTextEditor?.document.uri;
+      const preview =
+        [...previews.values()].find((p) => p.isActive()) ??
+        (uri && forDocument(uri)) ??
+        [...previews.values()][0];
+      return preview?.pickView();
+    }),
     vscode.commands.registerCommand("opscr.relayoutPreview", () => {
       // The focused preview (its shortcut), else the one of the file being edited.
       const uri = vscode.window.activeTextEditor?.document.uri;
@@ -427,6 +507,9 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
     vscode.commands.registerCommand("opscr._previewMessage", (folder: string, message: object) =>
       previews.get(folder)?.receive(message),
+    ),
+    vscode.commands.registerCommand("opscr._previewView", (folder: string, view?: string) =>
+      previews.get(folder)?.showView(view),
     ),
     vscode.commands.registerCommand("opscr._previewStatus", () =>
       Object.fromEntries([...previews].map(([folder, p]) => [folder, p.status()])),

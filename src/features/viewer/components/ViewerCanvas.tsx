@@ -116,6 +116,8 @@ interface ViewerCanvasProps {
   focus?: { ids: readonly string[]; token: number } | null;
   /** A click on an element — for a host that shows where the element comes from. */
   onElementClick?: (element: ViewerElementRef) => void;
+  /** A double-click on an element — for a host that opens what the element stands for. */
+  onElementDoubleClick?: (element: ViewerElementRef) => void;
   /**
    * An element the host points at (null: none): lit as a click would light it, and brought into
    * view when it is not. A new `token` points again.
@@ -144,6 +146,7 @@ const ViewerCanvasContent = ({
   searchRequest = 0,
   focus = null,
   onElementClick,
+  onElementDoubleClick,
   select = null,
 }: ViewerCanvasProps) => {
   const flows = useMemo(() => Object.values(diagram.snapshot.flows ?? {}), [diagram]);
@@ -255,6 +258,11 @@ const ViewerCanvasContent = ({
       onElementClick?.({ kind: "component", id: node.id });
     },
     [clearHighlight, onElementClick],
+  );
+
+  const handleNodeDoubleClick = useCallback(
+    (_: MouseEvent, node: Node) => onElementDoubleClick?.({ kind: "component", id: node.id }),
+    [onElementDoubleClick],
   );
 
   const handleEdgeClick = useCallback(
@@ -627,6 +635,7 @@ const ViewerCanvasContent = ({
               iconLookup={iconLookup}
               fitView={!framesPreviewEntry}
               onNodeClick={handleNodeClick}
+              onNodeDoubleClick={handleNodeDoubleClick}
               onEdgeClick={handleEdgeClick}
               onPaneClick={handlePaneClick}
             >
@@ -672,6 +681,7 @@ export const ViewerCanvas = ({
   searchRequest = 0,
   focus = null,
   onElementClick,
+  onElementDoubleClick,
   select = null,
 }: ViewerCanvasProps) => (
   <DiagramFlowProvider>
@@ -690,6 +700,7 @@ export const ViewerCanvas = ({
       searchRequest={searchRequest}
       focus={focus}
       onElementClick={onElementClick}
+      onElementDoubleClick={onElementDoubleClick}
       select={select}
     />
   </DiagramFlowProvider>

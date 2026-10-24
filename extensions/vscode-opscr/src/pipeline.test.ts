@@ -147,6 +147,84 @@ describe("a workspace in subfolders", () => {
   });
 });
 
+describe("views in the preview", () => {
+  const EXAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/web-app-aws");
+  const example = readdirSync(EXAMPLE_DIR).filter((n) => n.endsWith(".opscr.yaml"));
+  const readExample = async (path: string) => readFileSync(join(EXAMPLE_DIR, basename(path)), "utf8");
+  const workspace = (layout?: string) =>
+    collectWorkspace("/w", [...example, ...(layout ? ["opscr.layout.json"] : [])], async (p) =>
+      p.endsWith("opscr.layout.json") ? layout : readExample(p),
+    );
+  const keys = (graph: { components: Array<{ key: string }> } | undefined) =>
+    graph?.components.map((c) => c.key).sort();
+
+  it("lists the views and draws the whole workspace by default", async () => {
+    const update = await new PreviewPipeline().update(await workspace());
+    expect(update.views?.sort()).toEqual([
+      "orders-api-components",
+      "shop-containers",
+      "shop-context",
+      "shop-production",
+    ]);
+    expect(update.view).toBeUndefined();
+    expect(keys(update.graph)).toContain("BoundedContext/webshop");
+    expect(keys(update.graph)).not.toContain("Person/customer");
+  });
+
+  it("draws one view, with the boxes that open another", async () => {
+    const update = await new PreviewPipeline().update(await workspace(), "shop-context");
+    expect(update.view).toBe("shop-context");
+    expect(keys(update.graph)).toEqual(["BoundedContext/webshop", "ExternalSystem/payment-provider", "Person/customer"]);
+    expect([...update.links!]).toEqual([["BoundedContext/webshop", "shop-containers"]]);
+  });
+
+  it("falls back to the whole workspace when the view is gone", async () => {
+    const update = await new PreviewPipeline().update(await workspace(), "no-such-view");
+    expect(update.view).toBeUndefined();
+    expect(keys(update.graph)).toContain("BoundedContext/webshop");
+  });
+
+  it("keeps a picture per diagram, so going away and back changes nothing", async () => {
+    const pipeline = new PreviewPipeline();
+    const ws = await workspace();
+    const first = await pipeline.update(ws, "shop-containers");
+    await pipeline.update(ws, "shop-context");
+    await pipeline.update(ws);
+    const again = await pipeline.update(ws, "shop-containers");
+    expect(boxesOf(again.graph!)).toEqual(boxesOf(first.graph!));
+  });
+
+  it("takes each view's boxes from its own entry of the layout sidecar", async () => {
+    const layout = JSON.stringify({
+      version: 2,
+      views: {
+        "shop-context": {
+          "BoundedContext/webshop": { x: 700, y: 300, width: 180, height: 80 },
+          "ExternalSystem/payment-provider": { x: 900, y: 300, width: 180, height: 80 },
+          "Person/customer": { x: 100, y: 300, width: 180, height: 80 },
+        },
+      },
+    });
+    const update = await new PreviewPipeline().update(await workspace(layout), "shop-context");
+    expect(boxesOf(update.graph!).get("BoundedContext/webshop")).toEqual([700, 300]);
+    // The other diagrams ignore it.
+    const whole = await new PreviewPipeline().update(await workspace(layout));
+    expect(boxesOf(whole.graph!).get("BoundedContext/webshop")).not.toEqual([700, 300]);
+  });
+
+  it("does not draw the draw.io visual layer on a view", async () => {
+    const visual = JSON.stringify({
+      version: 1,
+      source: { file: "x.drawio", page: "p" },
+      elements: { "drawio:1": { role: "decoration", label: "Title text", style: "", box: { x: 0, y: 0, width: 100, height: 20 }, parent: null } },
+      edges: [],
+    });
+    const ws = { ...(await workspace()), visual };
+    expect(keys((await new PreviewPipeline().update(ws)).graph)).toContain("drawio:1");
+    expect(keys((await new PreviewPipeline().update(ws, "shop-context")).graph)).not.toContain("drawio:1");
+  });
+});
+
 describe("workspaceRoot", () => {
   const configAt = (...folders: string[]) => async (folder: string) => folders.includes(folder);
 

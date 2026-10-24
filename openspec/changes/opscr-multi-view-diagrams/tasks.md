@@ -1,7 +1,7 @@
 # Tasks
 
-> Phase A (views on the one bound diagram) is done: 1.x, 2.2, 2.3 and the "Phase A" section at the
-> end. Phase B (2.1, 3.x, 4.x: a diagram per View, API 1.13) is not started.
+> Phase A (views on the one bound diagram) is done: 1.x, 2.2, 2.3, 4.1 and the "Phase A" section at
+> the end. Phase B (2.1, 3.x: a diagram per View, API 1.13) is not started.
 
 ## 1. Contract
 
@@ -24,7 +24,7 @@ The mapping and projection steps below are done and tested (`buildViewDiagram`, 
 
 ## 4. VSCode preview
 
-- [ ] 4.1 View picker in the preview and drill-down navigation; verify in the extension e2e
+- [x] 4.1 View picker in the preview and drill-down navigation (status bar picker, double-click on a box that links to a view); verify in the extension e2e
 
 ## 5. Phase A — views on the bound diagram
 
