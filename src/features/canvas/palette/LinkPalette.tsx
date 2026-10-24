@@ -247,15 +247,14 @@ export function LinkPalette<T>({
               </span>
             )}
           </span>
-          {option.reason ? (
+          {item.description && (
+            <span className="line-clamp-1 text-xs text-muted-foreground">{item.description}</span>
+          )}
+          {option.reason && (
             <span className="flex items-center gap-1 truncate text-xs text-primary">
               <Sparkles className="h-3 w-3 shrink-0" />
               {option.reason}
             </span>
-          ) : (
-            item.description && (
-              <span className="line-clamp-1 text-xs text-muted-foreground">{item.description}</span>
-            )
           )}
         </span>
         {isCurrent && (

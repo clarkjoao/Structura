@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
 import type { ServiceDefinition } from "@/features/diagram";
 import { ServiceReadOnlyDetails } from "@/pages/services/ServiceReadOnlyDetails";
-import { ServiceLinkSection } from "../sections/ServiceLinkSection";
+import { ServiceLinkField } from "@/features/canvas/palette/ServiceLinkField";
 
 export interface ServicesTabProps {
   componentId: string;
+  /** The element's name: it drives the palette's title, suggestion and "create". */
+  elementName: string;
   serviceId: string | null | undefined;
   linkedService: ServiceDefinition | null;
   onSync: () => void;
@@ -17,6 +19,7 @@ export interface ServicesTabProps {
  * @example
  * <ServicesTab
  *   componentId={component.id}
+ *   elementName={component.name}
  *   serviceId={component.serviceId}
  *   linkedService={linkedService}
  *   onSync={() => linkedService && syncFromService(linkedService)}
@@ -25,6 +28,7 @@ export interface ServicesTabProps {
  */
 export function ServicesTab({
   componentId,
+  elementName,
   serviceId,
   linkedService,
   onSync,
@@ -34,8 +38,9 @@ export function ServicesTab({
 
   return (
     <div className="p-4 space-y-4 overflow-auto flex-1">
-      <ServiceLinkSection
+      <ServiceLinkField
         componentId={componentId}
+        elementName={elementName}
         serviceId={serviceId}
         linkedService={linkedService}
         onSync={onSync}

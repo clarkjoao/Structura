@@ -241,6 +241,7 @@ const ComponentPanel = ({
       ) : tab === "services" ? (
         <ServicesTab
           componentId={component.id}
+          elementName={component.name}
           serviceId={component.serviceId}
           linkedService={linkedService}
           onSync={() => linkedService && syncFromService(linkedService)}

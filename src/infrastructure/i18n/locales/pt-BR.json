@@ -1918,6 +1918,20 @@
     "interactions": "Interações",
     "empty": "Nada a explicar ainda: a legenda lista os tipos de fronteira, domínios e interações que este diagrama usa."
   },
+  "serviceLink": {
+    "title": "Vincular serviço a {{name}}",
+    "searchPlaceholder": "Buscar serviços…",
+    "sameName": "Mesmo nome do elemento",
+    "createAndLink": "Criar “{{name}}” e vincular",
+    "linkAction": "Vincular um serviço",
+    "unlink": "Desvincular",
+    "missing": "não encontrado",
+    "sources": {
+      "manual": "Manual",
+      "github": "GitHub",
+      "defectdojo": "DefectDojo"
+    }
+  },
   "panelShell": {
     "advanced": "Avançado",
     "copyId": "Copiar ID",
@@ -2042,17 +2056,6 @@
     "outgoing": "Saídas",
     "dragReorderHint": "Arraste as linhas para reordenar os handles.",
     "selectAll": "Selecionar todas"
-  },
-  "serviceCombobox": {
-    "unlinkAria": "Desvincular serviço",
-    "linkPrompt": "Vincular serviço...",
-    "newServiceName": "Nome do serviço",
-    "newServiceTags": "Tags (separadas por vírgula)",
-    "searchPlaceholder": "Buscar serviço...",
-    "emptyRegistered": "Nenhum serviço cadastrado.",
-    "noResultsFor": "Nenhum resultado para “{{query}}”.",
-    "createNewService": "Novo serviço",
-    "createAndLink": "Criar e vincular"
   },
   "technologyCombobox": {
     "searchPlaceholder": "Buscar ou digitar...",

@@ -1918,6 +1918,20 @@
     "interactions": "Interactions",
     "empty": "Nothing to explain yet: the legend lists the boundary types, domains and interactions this diagram uses."
   },
+  "serviceLink": {
+    "title": "Link service to {{name}}",
+    "searchPlaceholder": "Search services…",
+    "sameName": "Same name as this element",
+    "createAndLink": "Create “{{name}}” and link",
+    "linkAction": "Link a service",
+    "unlink": "Unlink",
+    "missing": "missing",
+    "sources": {
+      "manual": "Manual",
+      "github": "GitHub",
+      "defectdojo": "DefectDojo"
+    }
+  },
   "panelShell": {
     "advanced": "Advanced",
     "copyId": "Copy ID",
@@ -2042,17 +2056,6 @@
     "outgoing": "Outgoing",
     "dragReorderHint": "Drag rows to reorder handles.",
     "selectAll": "Select all"
-  },
-  "serviceCombobox": {
-    "unlinkAria": "Unlink service",
-    "linkPrompt": "Link service...",
-    "newServiceName": "Service name",
-    "newServiceTags": "Tags (comma-separated)",
-    "searchPlaceholder": "Search service...",
-    "emptyRegistered": "No services registered.",
-    "noResultsFor": "No results for “{{query}}”.",
-    "createNewService": "New service",
-    "createAndLink": "Create and link"
   },
   "technologyCombobox": {
     "searchPlaceholder": "Search or type...",
