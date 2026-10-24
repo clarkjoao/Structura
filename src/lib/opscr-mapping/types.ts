@@ -20,6 +20,8 @@ export interface OpscrWorkspaceInput {
  */
 export interface ViewElement {
   type: string;
+  /** Kind of a `panel` (Structura `PanelKind` value), e.g. "vpc"; absent for a plain panel. */
+  panelKind?: string;
   catalogServiceId?: string;
   technology?: string;
 }
@@ -35,6 +37,8 @@ export interface ViewNode {
   /** A panel that may hold children. */
   isBoundary: boolean;
   element: ViewElement;
+  /** Name of the opscr View this box opens (from the view's `drillDown`). */
+  drillDown?: string;
 }
 
 export interface ViewEdge {

@@ -1,8 +1,9 @@
-import { compileSources, type Diagnostic, type SourceFile } from "opscr/core";
+import { compileSources, resolveView, type Diagnostic, type SourceFile } from "opscr/core";
 import {
   CONFIG_FILE,
   SourceIndex,
   buildTechnicalView,
+  buildViewDiagram,
   isManifestName,
   placeView,
   previousCoversView,
@@ -61,6 +62,45 @@ export async function projectWorkspace(
     sources: new SourceIndex(workspace.manifests, view),
     omitted: view.omitted,
     dropped: view.dropped,
+  };
+}
+
+export interface ViewProjection {
+  diagnostics: Diagnostic[];
+  /** The Views the workspace declares, by name; empty for a workspace with none. */
+  views: string[];
+  /** The named View laid out, absent while it does not resolve (unknown name, YAML errors). */
+  graph?: ImporterGraph;
+}
+
+/**
+ * One opscr View as the graph its diagram should show. opscr chooses and lifts what the view
+ * contains (`resolveView`); Structura only lays it out — seeded by `previous` (the canvas, or
+ * the sidecar's boxes for this view) so what the reader placed stays where it is. Never throws.
+ */
+export async function projectView(
+  files: SourceFile[],
+  config: SourceFile | undefined,
+  viewName: string,
+  previous?: ViewLayoutResult,
+): Promise<ViewProjection> {
+  const { workspace, result } = await compileSources(config ? { files, config } : { files });
+  const views = workspace.getByKind("View").map((v) => v.metadata.name);
+  if (result.diagnostics.some((d) => d.ruleId === "loader/yaml-parse-error")) {
+    return { diagnostics: result.diagnostics, views };
+  }
+  const resolved = resolveView(workspace, viewName);
+  if (!resolved) return { diagnostics: result.diagnostics, views };
+  const view = buildViewDiagram(workspace, resolved);
+  const seeded = previous && previous.boxes.size > 0 ? previous : undefined;
+  const fresh = previousCoversView(view, seeded)
+    ? { boxes: new Map(), edgeRoutes: new Map() }
+    : await layoutView(toLayoutGraph(view), seeded?.boxes);
+  const stable = stabilizeLayout(view, fresh, seeded);
+  return {
+    diagnostics: result.diagnostics,
+    views,
+    graph: toImporterGraph(placeView(view, stable), seeded ? { x: 0, y: 0 } : ORIGIN),
   };
 }
 

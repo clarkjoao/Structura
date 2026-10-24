@@ -25,7 +25,17 @@ export { connectionKeys, toImporterGraph } from "./importer-graph";
 export { SourceIndex } from "./source-index";
 export type { GraphElementRef, LocatedManifestInput, SourceLocation } from "./source-index";
 export { CONFIG_FILE, isManifestName } from "./files";
-export { LAYOUT_FILE, overlayLayouts, parseLayoutFile, serializeLayoutFile } from "./layout-file";
+export {
+  LAYOUT_FILE,
+  overlayLayouts,
+  parseLayoutFile,
+  parseLayoutFiles,
+  serializeLayoutFile,
+  serializeLayoutFiles,
+} from "./layout-file";
+export type { LayoutFiles } from "./layout-file";
+export { buildViewDiagram } from "./view-diagram";
+export type { ResolvedViewInput } from "./view-diagram";
 export {
   VISUAL_FILE,
   VISUAL_SERVICES,
