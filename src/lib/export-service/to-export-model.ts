@@ -7,6 +7,7 @@ import {
   EdgeMarker,
   EdgeStyle,
   getEffectiveConnectionStyle,
+  resolveConnectionSemantics,
   isApiGroupComponent,
   isDbTableComponent,
   isNoteComponent,
@@ -276,6 +277,7 @@ function mapEdge(
   direction: DiagramDirection,
 ): ExportEdge {
   const eff = getEffectiveConnectionStyle(conn);
+  const semantics = resolveConnectionSemantics(conn);
   const cross = crossAxisSides(direction);
 
   // Resolve routing: handle positions (with slot offsets), sides, and waypoints.
@@ -336,7 +338,8 @@ function mapEdge(
     targetId: conn.targetId,
     label: conn.label,
     technology: conn.technology,
-    intent: conn.intent,
+    interaction: semantics.interaction,
+    kind: semantics.kind,
     edgeStyle: mapEdgeStyle(conn.style?.edgeStyle ?? EdgeStyle.Smoothstep),
     strokeStyle: mapStroke(eff.strokeStyle ?? StrokeStyle.Solid),
     strokeWidth: eff.strokeWidth ?? 1,

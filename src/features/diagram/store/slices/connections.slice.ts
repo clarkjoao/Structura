@@ -11,6 +11,7 @@ import { publishSewNotices } from "../helpers/publish-sew-notices";
 import { resolveActiveVersion } from "../helpers/version-helpers";
 import { mutateRemoveConnectionInVersion } from "../../utils/version-mutations";
 import { canBeConnectionSource, canBeConnectionTarget } from "../../model/connection-rules";
+import { swapConnectionEnds } from "../../utils/connection-semantics-migration";
 
 /**
  * The source component's type, looked up where the active scene can see it: a
@@ -114,6 +115,32 @@ export const connectionsSlice = (
       if (conn) Object.assign(conn, patch);
       touchDiagram(d);
     });
+  },
+
+  /**
+   * Turns a connection around — source and target trade places — as one undo step. Refused (and
+   * `false`) when the old target cannot be a source or the old source cannot be a target.
+   */
+  swapConnectionDirection: (id: string): boolean => {
+    let swapped = false;
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const scene = resolveActiveVersion(d);
+      const inScene = !!(scene && scene.addedConnections[id]);
+      const conn = inScene ? scene!.addedConnections[id] : d.snapshot.connections[id];
+      if (!conn) return;
+      const components = { ...d.snapshot.components, ...(scene?.addedComponents ?? {}) };
+      const newSourceType = components[conn.targetId]?.type;
+      const newTargetType = components[conn.sourceId]?.type;
+      if (newSourceType !== undefined && !canBeConnectionSource(newSourceType)) return;
+      if (newTargetType !== undefined && !canBeConnectionTarget(newTargetType)) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      swapConnectionEnds(conn, { components, connections: {}, edgeLayouts: d.edgeLayouts });
+      swapped = true;
+      touchDiagram(d);
+    });
+    return swapped;
   },
 
   removeConnection: (id: string) => {

@@ -198,6 +198,23 @@ const richConnections: Record<string, Connection> = {
     style: { edgeStyle: EdgeStyle.Bezier, markerStart: EdgeMarker.Arrow },
   },
   e5: { id: "e5", sourceId: "sys", targetId: "db", label: "reads" },
+  // The interaction drives the stroke: a synchronous edge draws solid, an asynchronous one dashed.
+  eSync: {
+    id: "eSync",
+    sourceId: "cont",
+    targetId: "db",
+    label: "queries",
+    interaction: "sync",
+    kind: "call",
+  },
+  eAsync: {
+    id: "eAsync",
+    sourceId: "cont",
+    targetId: "db",
+    label: "publishes",
+    interaction: "async",
+    kind: "event",
+  },
   // Edge to Note: validates entryX=0 (left side) on the Note's target handle.
   eNote: { id: "eNote", sourceId: "sys", targetId: "note", label: "annotates" },
   // AWS as source: validates exitX=1 (right side) on Lambda's source handle.

@@ -20,13 +20,14 @@ import { ServiceSource } from "../enums";
 import { generateId } from "../utils/generate-id";
 import { reparentOrphanDiagrams } from "./helpers/reparent-orphan-diagram";
 import { migrateFlow } from "../utils/flow-migration";
+import { migrateConnectionsSemantics } from "../utils/connection-semantics-migration";
 import { useSaveStatusStore } from "./saveStatus.store";
 import { isQuotaExceededError } from "@/infrastructure/persistence/storageQuota";
 import { PERSIST_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 export const PERSIST_KEY = "diagram-store";
 
-export const PERSIST_SCHEMA_VERSION = 15;
+export const PERSIST_SCHEMA_VERSION = 16;
 
 export const CURRENT_SCHEMA_VERSION = PERSIST_SCHEMA_VERSION;
 
@@ -367,6 +368,30 @@ function migrateExternalElementLinkedDiagramId(state: Partial<DiagramStore>): vo
   }
 }
 
+/**
+ * Schema v16: intent becomes interaction × kind, `reverse` becomes a swapped connection, the
+ * transport preset folds into interaction and technology. Runs on the base snapshot and on every
+ * version's additions; see `migrateConnectionSemantics`.
+ */
+function migrateConnectionSemanticsV16(state: Partial<DiagramStore>): void {
+  for (const diagram of Object.values(state.diagrams ?? {})) {
+    const d = diagram as Diagram;
+    if (!d.snapshot) continue;
+    migrateConnectionsSemantics({
+      components: d.snapshot.components ?? {},
+      connections: d.snapshot.connections ?? {},
+      edgeLayouts: d.edgeLayouts,
+    });
+    for (const scene of Object.values(d.versions ?? {})) {
+      migrateConnectionsSemantics({
+        components: { ...(d.snapshot.components ?? {}), ...(scene.addedComponents ?? {}) },
+        connections: scene.addedConnections ?? {},
+        edgeLayouts: d.edgeLayouts,
+      });
+    }
+  }
+}
+
 /** Schema v11: unify `Component.registryServiceId` into `serviceId`.
  * The two fields carried the same intent; the legacy field was used
  * by the custom-component template instancing path and by plugin
@@ -576,6 +601,7 @@ export function mergePersistedState(
   migrateServiceRegistryToServices(next as unknown as Record<string, unknown>);
   migrateServiceCatalogToServices(next as unknown as Record<string, unknown>);
   migrateExternalElementLinkedDiagramId(next);
+  migrateConnectionSemanticsV16(next);
   migrateUnifyRegistryServiceId(next);
   migrateUnifyCloudServiceId(next);
   migrateReparentOrphanDiagrams(next);

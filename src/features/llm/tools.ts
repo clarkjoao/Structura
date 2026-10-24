@@ -128,7 +128,8 @@ export const ALL_TOOLS: LLMTool[] = [
   },
   {
     name: "add_edge",
-    description: "Add a connection between two nodes.",
+    description:
+      'Add a connection between two nodes. Optional patch fields: "interaction" ("sync" or "async" — async draws dashed) and "kind" ("call", "event", "command" or "dependency"); "technology" names the technology and transport (e.g. "gRPC", "HTTPS").',
     parametersSchema: {
       type: "object",
       properties: {

@@ -113,7 +113,7 @@ Valid action types:
 - { "type": "ADD_NODE", "payload": { "nodeType": "<type>", "name": "<name>", "parentId": "<id or null>", "position": { "x": 0, "y": 0 }, "awsService": "<optional>" } }
 - { "type": "REMOVE_NODE", "payload": { "nodeId": "<id>" } }
 - { "type": "UPDATE_NODE", "payload": { "nodeId": "<id>", "patch": { "name": "..." } } }
-- { "type": "ADD_EDGE", "payload": { "sourceId": "<id>", "targetId": "<id>", "label": "<label>" } }
+- { "type": "ADD_EDGE", "payload": { "sourceId": "<id>", "targetId": "<id>", "label": "<label>", "patch": { "interaction": "sync | async", "kind": "call | event | command | dependency", "technology": "<e.g. gRPC, HTTPS>" } } } (patch is optional; async draws dashed)
 - { "type": "REMOVE_EDGE", "payload": { "edgeId": "<id>" } }
 
 Position guidance for ADD_NODE:

@@ -120,6 +120,8 @@ export interface AppActions {
   ) => Connection | null;
   updateConnection: (id: string, patch: Partial<Omit<Connection, "id">>) => void;
   removeConnection: (id: string) => void;
+  /** Source and target trade places, as one undo step. `false` when a connection rule refuses. */
+  swapConnectionDirection: (id: string) => boolean;
 
   updateNodeLayout: (
     elementId: string,

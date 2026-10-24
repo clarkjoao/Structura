@@ -1,5 +1,6 @@
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import { resolveConnectionSemantics } from "@/features/diagram/model/connection-defaults";
 
 export interface ChatSuggestion {
   id: string;
@@ -24,7 +25,10 @@ export function buildContextualSuggestions(
   const hasAws = components.some(
     (c) => c.type.startsWith("aws-") || resolveCloudServiceId(c) !== undefined,
   );
-  const hasSyncChain = connections.some((c) => c.transportPreset === "sync" || c.intent === "call");
+  const hasSyncChain = connections.some((c) => {
+    const { interaction, kind } = resolveConnectionSemantics(c);
+    return interaction === "sync" && kind === "call";
+  });
   const hasLambda = components.some((c) => resolveCloudServiceId(c) === "lambda");
   const hasRds = components.some((c) => resolveCloudServiceId(c) === "rds");
   const hasNoCache = !components.some((c) => resolveCloudServiceId(c) === "elasticache");

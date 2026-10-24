@@ -287,7 +287,8 @@ function resolveConnection(
     sourceId,
     targetId,
     label,
-    intent: "dependency",
+    interaction: "sync",
+    kind: "dependency",
   };
   newConnections.push(created);
   return created;

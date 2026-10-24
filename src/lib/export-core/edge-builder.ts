@@ -22,16 +22,15 @@ function toDrawioArrow(m: ExportMarker): string {
   return "none";
 }
 
-function getStrokeColor(intent: string | undefined): string {
-  const colorMap: Record<string, string> = {
+function getStrokeColor(kind: ExportEdge["kind"]): string {
+  const colorMap: Record<NonNullable<ExportEdge["kind"]>, string> = {
     call: THEME.strokes.call,
     event: THEME.strokes.event,
-    "data-flow": THEME.strokes.dataFlow,
-    "async-message": THEME.strokes.asyncMessage,
+    command: THEME.strokes.asyncMessage,
     dependency: THEME.strokes.dependency,
   };
 
-  return (intent ? colorMap[intent] : undefined) ?? THEME.strokes.default;
+  return (kind ? colorMap[kind] : undefined) ?? THEME.strokes.default;
 }
 
 export function buildEdgeCell(edge: ExportEdge, options?: BuildEdgeCellOptions): string {
@@ -42,7 +41,7 @@ export function buildEdgeCell(edge: ExportEdge, options?: BuildEdgeCellOptions):
   const startArrow = toDrawioArrow(edge.markerStart);
   const hasStartArrow = edge.markerStart !== "none";
 
-  const strokeColor = getStrokeColor(edge.intent);
+  const strokeColor = getStrokeColor(edge.kind);
   const strokeWidth = edge.strokeWidth ?? 1;
 
   const style = buildEdgeStyle(

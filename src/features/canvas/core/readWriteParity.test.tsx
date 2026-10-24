@@ -327,6 +327,45 @@ describe("editor and viewer project one diagram the same way", () => {
     }
   });
 
+  it("draws an edge's interaction the same on both sides: sync solid, async dashed", () => {
+    const diagram = parityDiagram();
+    diagram.snapshot.connections["x-p2"] = {
+      id: "x-p2",
+      sourceId: "x",
+      targetId: "q1",
+      label: "sync call",
+      interaction: "sync",
+      kind: "call",
+    };
+    diagram.snapshot.connections["q1-x"] = {
+      id: "q1-x",
+      sourceId: "q1",
+      targetId: "x",
+      label: "async event",
+      interaction: "async",
+      kind: "event",
+    };
+    // A saved diagram that predates the migration still draws as it did.
+    diagram.snapshot.connections["legacy"] = {
+      id: "legacy",
+      sourceId: "x",
+      targetId: "q1",
+      label: "legacy dependency",
+      intent: "dependency",
+    };
+    const write = writeProjection(diagram);
+    const read = projectReadDiagram(diagram);
+    const strokeOf = (edges: Edge[], id: string) =>
+      (edges.find((e) => e.id === id)?.data as EdgeData | undefined)?.strokeStyle;
+
+    expect(strokeOf(read.edges, "x-p2")).toBe("solid");
+    expect(strokeOf(read.edges, "q1-x")).toBe("dashed");
+    expect(strokeOf(read.edges, "legacy")).toBe("dashed");
+    for (const id of ["x-p2", "q1-x", "legacy"]) {
+      expect(strokeOf(write.edges, id)).toBe(strokeOf(read.edges, id));
+    }
+  });
+
   it("drops an edge to a hidden or unplaced component on both sides", () => {
     const edgeIds = projectReadDiagram(parityDiagram()).edges.map((e) => e.id);
     expect(edgeIds).not.toContain("x-h");

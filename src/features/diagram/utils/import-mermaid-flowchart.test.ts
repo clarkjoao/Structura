@@ -38,7 +38,8 @@ describe("parseMermaidFlowchart", () => {
       flowShape: "rectangle",
     });
     expect(result.newConnections[0]).toMatchObject({
-      intent: "dependency",
+      interaction: "sync",
+      kind: "dependency",
       label: "",
     });
   });

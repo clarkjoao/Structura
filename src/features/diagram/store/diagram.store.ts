@@ -195,6 +195,7 @@ const selectDiagramActions = pickFromStore([
   "addConnection",
   "updateConnection",
   "removeConnection",
+  "swapConnectionDirection",
   "updateNodeLayout",
   "batchUpdateNodeLayouts",
   "updateViewport",
@@ -280,6 +281,7 @@ const selectConnectionActions = pickFromStore([
   "addConnection",
   "updateConnection",
   "removeConnection",
+  "swapConnectionDirection",
 ]);
 
 const selectLayoutActions = pickFromStore([

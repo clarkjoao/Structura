@@ -1827,6 +1827,21 @@
     }
   },
   "connectionPanel": {
+    "interaction": "Interaction",
+    "kind": "Type",
+    "interactions": {
+      "sync": "Synchronous",
+      "async": "Asynchronous"
+    },
+    "kinds": {
+      "call": "Call",
+      "event": "Event",
+      "command": "Command",
+      "dependency": "Dependency"
+    },
+    "swap": "Swap direction",
+    "swapRefused": "These elements cannot be connected the other way round",
+    "technologyTransport": "Technology and transport",
     "technologyLabel": "Technology",
     "removeConnection": "Remove",
     "idLabel": "ID"

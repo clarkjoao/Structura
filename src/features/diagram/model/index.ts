@@ -114,12 +114,13 @@ export type { TextSize, TextColor } from "./text-style";
 export type {
   Connection,
   ConnectionStyle,
-  ConnectionIntent,
+  ConnectionInteraction,
+  ConnectionKind,
   ConnectionDirection,
 } from "./connection.types";
 
 export {
-  INTENT_DEFAULTS,
+  resolveConnectionSemantics,
   DIRECTION_MARKERS,
   getEffectiveConnectionStyle,
   getIntentDefault,

@@ -324,11 +324,11 @@ describe("buildMxGraphXml — edges", () => {
     expect(xml).toContain('entryY="0.5"');
   });
 
-  it("colors the edge by intent and transforms waypoints 1:1", () => {
+  it("colors the edge by kind and transforms waypoints 1:1", () => {
     const xml = buildMxGraphXml(
       model(
         [c4("a", 0, 0), c4("b", 300, 0)],
-        [edge("e", "a", "b", { intent: "call", waypoints: [{ x: 100, y: 100 }] })],
+        [edge("e", "a", "b", { kind: "call", waypoints: [{ x: 100, y: 100 }] })],
       ),
       { wrapper: "mxfile" },
     );

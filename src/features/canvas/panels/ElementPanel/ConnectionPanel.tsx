@@ -1,59 +1,21 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2, ArrowRight, Fingerprint, Spline } from "lucide-react";
+import { Trash2, ArrowRightLeft, Fingerprint, Spline } from "lucide-react";
 import { toast } from "sonner";
-import type { Connection, ConnectionIntent, ConnectionStyle } from "@/features/diagram";
-import {
-  EdgeStyle,
-  StrokeStyle,
-  EdgeMarker,
-  useActiveDiagramId,
-  useDiagramActions,
+import type {
+  Connection,
+  ConnectionDirection,
+  ConnectionInteraction,
+  ConnectionKind,
 } from "@/features/diagram";
-import { INTENT_DEFAULTS, useResolvedComponents } from "@/features/diagram";
+import {
+  resolveConnectionSemantics,
+  useDiagramActions,
+  useResolvedComponents,
+} from "@/features/diagram";
 import { cn } from "@/lib/utils";
 import TechnologyCombobox from "./components/TechnologyCombobox";
-import {
-  AdvancedFooter,
-  CommitField,
-  PANEL_INPUT_CLASS,
-  PANEL_LABEL_CLASS,
-  PanelHeader,
-  PanelSection,
-} from "./shell";
-
-const TRANSPORT_PRESET_DEFAULTS: Record<
-  NonNullable<Connection["transportPreset"]>,
-  Partial<ConnectionStyle>
-> = {
-  sync: {
-    edgeStyle: EdgeStyle.Straight,
-    strokeStyle: StrokeStyle.Solid,
-    markerEnd: EdgeMarker.ArrowClosed,
-  },
-  async: {
-    edgeStyle: EdgeStyle.Straight,
-    strokeStyle: StrokeStyle.Dashed,
-    markerEnd: EdgeMarker.ArrowClosed,
-  },
-  event: {
-    edgeStyle: EdgeStyle.EditableStep,
-    strokeStyle: StrokeStyle.Dashed,
-    markerEnd: EdgeMarker.Arrow,
-  },
-  tcp: {
-    edgeStyle: EdgeStyle.Straight,
-    strokeStyle: StrokeStyle.Solid,
-    markerEnd: EdgeMarker.Arrow,
-  },
-  udp: {
-    edgeStyle: EdgeStyle.Straight,
-    strokeStyle: StrokeStyle.Dotted,
-    markerEnd: EdgeMarker.Arrow,
-  },
-};
-
-const EDGE_LABEL_OFFSET_CENTER = 0.5;
+import { AdvancedFooter, CommitField, PANEL_LABEL_CLASS, PanelHeader, PanelSection } from "./shell";
 
 interface ConnectionPanelProps {
   conn: Connection;
@@ -97,6 +59,51 @@ const EndpointButton = ({ id, caption, onFocusElement }: EndpointButtonProps) =>
   );
 };
 
+const INTERACTIONS: readonly ConnectionInteraction[] = ["sync", "async"];
+const KINDS: readonly ConnectionKind[] = ["call", "event", "command", "dependency"];
+const DIRECTIONS: readonly Exclude<ConnectionDirection, "reverse">[] = [
+  "unidirectional",
+  "bidirectional",
+];
+
+/** What a pill row is: one choice among a few, shown as chips. */
+function ChoicePills<V extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: ReadonlyArray<{ value: V; label: string }>;
+  value: V | undefined;
+  onChange: (value: V) => void;
+}) {
+  return (
+    <div>
+      <span className={PANEL_LABEL_CLASS}>{label}</span>
+      <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+              value === option.value
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const ConnectionPanel = ({
   conn,
   onClose,
@@ -106,29 +113,21 @@ const ConnectionPanel = ({
   onFocusElement,
 }: ConnectionPanelProps) => {
   const { t } = useTranslation();
-  const activeDiagramId = useActiveDiagramId();
-  const { resetEdgeControlPoints, setEdgeLabelOffset } = useDiagramActions();
+  const { swapConnectionDirection } = useDiagramActions();
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const semantics = resolveConnectionSemantics(conn);
 
-  const intentPills = useMemo(
+  const interactionOptions = useMemo(
     () =>
-      [
-        { value: "__custom__" as const, label: t("common.custom") },
-        { value: "dependency" as const, label: t("common.dependency") },
-        { value: "call" as const, label: t("common.call") },
-        { value: "event" as const, label: t("common.event") },
-        { value: "data-flow" as const, label: t("common.dataFlow") },
-        { value: "async-message" as const, label: t("common.asyncMessage") },
-      ] as { value: ConnectionIntent | "__custom__"; label: string }[],
+      INTERACTIONS.map((value) => ({ value, label: t(`connectionPanel.interactions.${value}`) })),
     [t],
   );
-
-  const directionPills = useMemo(
-    () => [
-      { value: "unidirectional" as const, label: t("common.unidirectional") },
-      { value: "bidirectional" as const, label: t("common.bidirectional") },
-      { value: "reverse" as const, label: t("common.reverse") },
-    ],
+  const kindOptions = useMemo(
+    () => KINDS.map((value) => ({ value, label: t(`connectionPanel.kinds.${value}`) })),
+    [t],
+  );
+  const directionOptions = useMemo(
+    () => DIRECTIONS.map((value) => ({ value, label: t(`common.${value}`) })),
     [t],
   );
 
@@ -145,10 +144,35 @@ const ConnectionPanel = ({
   }, [focusTitleTrigger]);
   const applyPatch = (patch: Partial<Omit<Connection, "id">>) => updateConnection(conn.id, patch);
 
-  const resetEdgeLayout = () => {
-    if (!activeDiagramId) return;
-    resetEdgeControlPoints(activeDiagramId, conn.id);
-    setEdgeLabelOffset(activeDiagramId, conn.id, EDGE_LABEL_OFFSET_CENTER);
+  /**
+   * Writes the new vocabulary and retires the old: whatever the legacy intent said is carried
+   * into `interaction` and `kind` first, so changing one does not lose the other.
+   */
+  const withSemantics = (patch: Partial<Pick<Connection, "interaction" | "kind">>) => ({
+    interaction: semantics.interaction,
+    kind: semantics.kind,
+    ...patch,
+    intent: undefined,
+    transportPreset: undefined,
+    communicationType: undefined,
+  });
+
+  const setInteraction = (interaction: ConnectionInteraction) => {
+    // The interaction drives the stroke: drop what an earlier choice pinned on the edge.
+    const style = conn.style && { ...conn.style };
+    if (style) {
+      delete style.strokeStyle;
+      delete style.strokeWidth;
+      delete style.animated;
+    }
+    applyPatch({
+      ...withSemantics({ interaction }),
+      style: style && Object.keys(style).length > 0 ? style : undefined,
+    });
+  };
+
+  const swap = () => {
+    if (!swapConnectionDirection(conn.id)) toast.error(t("connectionPanel.swapRefused"));
   };
 
   return (
@@ -186,115 +210,51 @@ const ConnectionPanel = ({
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
         <PanelSection title={t("panelShell.sectionWhat")}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <EndpointButton
               id={conn.sourceId}
               caption={t("common.connectionFrom")}
               onFocusElement={onFocusElement}
             />
-            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <button
+              type="button"
+              title={t("connectionPanel.swap")}
+              aria-label={t("connectionPanel.swap")}
+              onClick={swap}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            >
+              <ArrowRightLeft className="h-4 w-4" />
+            </button>
             <EndpointButton
               id={conn.targetId}
               caption={t("common.connectionTo")}
               onFocusElement={onFocusElement}
             />
           </div>
+          <ChoicePills
+            label={t("connectionPanel.interaction")}
+            options={interactionOptions}
+            value={semantics.interaction}
+            onChange={setInteraction}
+          />
+          <ChoicePills
+            label={t("connectionPanel.kind")}
+            options={kindOptions}
+            value={semantics.kind}
+            onChange={(kind) => applyPatch(withSemantics({ kind }))}
+          />
+          <ChoicePills
+            label={t("common.direction")}
+            options={directionOptions}
+            value={conn.direction === "bidirectional" ? "bidirectional" : "unidirectional"}
+            onChange={(direction) => applyPatch({ direction })}
+          />
           <div>
-            <span className={PANEL_LABEL_CLASS}>{t("common.intent")}</span>
-            <div className="flex flex-wrap gap-1">
-              {intentPills.map((p) => {
-                const isCustom = p.value === "__custom__";
-                const isSelected = isCustom
-                  ? conn.communicationType === "custom"
-                  : (conn.intent ?? "call") === p.value && conn.communicationType !== "custom";
-                return (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() =>
-                      isCustom
-                        ? applyPatch({ communicationType: "custom" })
-                        : applyPatch({
-                            intent: p.value as ConnectionIntent,
-                            style: {
-                              ...conn.style,
-                              ...INTENT_DEFAULTS[p.value as ConnectionIntent],
-                            },
-                            communicationType: "standard",
-                          })
-                    }
-                    className={cn(
-                      "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                      isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div>
-            <span className={PANEL_LABEL_CLASS}>{t("common.direction")}</span>
-            <div className="flex flex-wrap gap-1">
-              {directionPills.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => applyPatch({ direction: p.value })}
-                  className={cn(
-                    "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-                    (conn.direction ?? "unidirectional") === p.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground",
-                  )}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <span className={PANEL_LABEL_CLASS}>{t("connectionPanel.technologyLabel")}</span>
+            <span className={PANEL_LABEL_CLASS}>{t("connectionPanel.technologyTransport")}</span>
             <TechnologyCombobox
               value={conn.technology ?? ""}
               onSelect={(v) => applyPatch({ technology: v || undefined })}
             />
-          </div>
-          <div>
-            <label htmlFor="connection-transport" className={PANEL_LABEL_CLASS}>
-              {t("common.transportTypeTitle")}
-            </label>
-            <select
-              id="connection-transport"
-              value={conn.transportPreset ?? ""}
-              onChange={(e) => {
-                const v = e.target.value as Connection["transportPreset"] | "";
-                if (!v) {
-                  applyPatch({ transportPreset: undefined });
-                  return;
-                }
-                const mergedStyle = {
-                  ...conn.style,
-                  ...TRANSPORT_PRESET_DEFAULTS[v],
-                } as ConnectionStyle;
-                const previousEdgeStyle = conn.style?.edgeStyle;
-                applyPatch({ transportPreset: v, style: mergedStyle });
-                if (previousEdgeStyle !== mergedStyle.edgeStyle) {
-                  resetEdgeLayout();
-                }
-              }}
-              className={PANEL_INPUT_CLASS}
-            >
-              <option value="">{t("common.none")}</option>
-              <option value="sync">{t("common.transportSync")}</option>
-              <option value="async">{t("common.transportAsync")}</option>
-              <option value="event">{t("common.transportEvent")}</option>
-              <option value="tcp">{t("common.transportTcp")}</option>
-              <option value="udp">{t("common.transportUdp")}</option>
-            </select>
           </div>
           <CommitField
             label={t("common.description")}

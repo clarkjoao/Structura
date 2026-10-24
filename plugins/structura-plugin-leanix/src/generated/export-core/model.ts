@@ -343,8 +343,10 @@ export interface ExportEdge {
   targetId: string;
   label?: string;
   technology?: string;
-  /** call | event | data-flow | async-message | dependency | undefined. */
-  intent?: string;
+  /** sync | async. Drives the stroke upstream; carried so a consumer can read it back. */
+  interaction?: "sync" | "async";
+  /** call | event | command | dependency | undefined. Colours the edge. */
+  kind?: "call" | "event" | "command" | "dependency";
   edgeStyle: ExportEdgeStyle;
   strokeStyle: ExportStrokeStyle;
   strokeWidth: number;
