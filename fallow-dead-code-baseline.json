@@ -12,11 +12,6 @@
   "unused_files": [
     "unused-file:plugins/examples/console-log/plugin.js",
     "unused-file:plugins/examples/mermaid-import/plugin.js",
-    "unused-file:scripts/canvas-render-profile.mjs",
-    "unused-file:scripts/collab-divergence.mjs",
-    "unused-file:scripts/collab-profile.mjs",
-    "unused-file:scripts/collab-trace.mjs",
-    "unused-file:scripts/collab-wire.mjs",
     "unused-file:server/loadtest/client.ts",
     "unused-file:server/loadtest/large-diagram.ts",
     "unused-file:server/scripts/export-merge-fixtures.ts",

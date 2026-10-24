@@ -1,8 +1,7 @@
 # Structura — Guide for AI Coding Agents
 
-Canonical project context for AI tools (Claude Code, Cursor, Copilot, …).
-Editor-specific rules live in `.cursor/rules/structura-*.mdc`; this file is the
-single long-form reference they point to.
+Canonical project context for AI tools (Claude Code, Copilot, …). This file is the
+single long-form reference.
 
 ## What it is
 
