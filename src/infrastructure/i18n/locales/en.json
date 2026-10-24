@@ -3147,7 +3147,36 @@
     "alreadyInCatalog": "Already in the catalog",
     "registerWithoutRepo": "Register without a repository",
     "removeChip": "Remove {{item}}",
-    "optional": "optional"
+    "optional": "optional",
+    "batchBack": "Back to URL",
+    "batchList": "List",
+    "batchSelectAll": "Select all",
+    "batchFilter": "Filter…",
+    "batchEmpty": "No repositories found.",
+    "batchErrorGeneric": "Could not list the repositories.",
+    "batchImport_one": "Import {{count}} service",
+    "batchImport_other": "Import {{count}} services",
+    "batchOr": "or import many at once",
+    "batchCard": {
+      "github": "GitHub",
+      "gitlab": "GitLab",
+      "defectdojo": "DefectDojo"
+    },
+    "batchCardHint": {
+      "github": "organization",
+      "gitlab": "group",
+      "defectdojo": "product"
+    },
+    "batchInput": {
+      "github": "GitHub organization",
+      "gitlab": "GitLab group (subgroups included)",
+      "defectdojo": "DefectDojo product (name, optional)"
+    },
+    "batchNoConfig": {
+      "github": "Connect GitHub first: base URL and a token.",
+      "gitlab": "Connect GitLab first: instance URL and a token.",
+      "defectdojo": "Connect DefectDojo first: base URL and an API token."
+    }
   },
   "walkthrough": {
     "addScene": "Add scene",
@@ -3457,5 +3486,12 @@
       "top": "C4",
       "openCatalog": "Open full catalog"
     }
+  },
+  "gitlab": {
+    "connectedTo": "Connected to",
+    "disconnect": "Disconnect",
+    "baseUrl": "Instance URL",
+    "token": "Access token",
+    "useProxy": "Use the proxy (corporate network)"
   }
 }

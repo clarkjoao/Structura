@@ -13,6 +13,7 @@ import type { RepoKind } from "@/features/integrations/repo/parseRepoUrl";
 import type { RepoMetadata } from "@/features/integrations/repo/repo.types";
 import { repoToService } from "@/features/integrations/repo/repoToService";
 import { useRepoLookup } from "@/features/integrations/repo/useRepoLookup";
+import type { BatchKind } from "@/features/integrations/batch/batchSources";
 import { ChipInput } from "./ChipInput";
 import { RoleSelect } from "./RoleSelect";
 
@@ -22,7 +23,7 @@ interface AddByUrlViewProps {
   onCancel: () => void;
   onManual: () => void;
   onOpenExisting: (serviceId: string) => void;
-  children?: React.ReactNode;
+  onBatch: (kind: BatchKind) => void;
 }
 
 const FIELD =
@@ -50,7 +51,7 @@ export function AddByUrlView({
   onCancel,
   onManual,
   onOpenExisting,
-  children,
+  onBatch,
 }: AddByUrlViewProps) {
   const { t } = useTranslation();
   const { config: github } = useGithubConfig();
@@ -154,7 +155,7 @@ export function AddByUrlView({
           onManual={onManual}
           onCreate={onCreate}
         >
-          {children}
+          <BatchCards onBatch={onBatch} />
         </RepoFields>
       </div>
     </>
@@ -312,5 +313,37 @@ function RepoFields({
         </div>
       </DialogFooter>
     </>
+  );
+}
+
+const BATCH_KINDS: BatchKind[] = ["github", "gitlab", "defectdojo"];
+
+function BatchCards({ onBatch }: { onBatch: (kind: BatchKind) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        {t("services.batchOr")}
+        <span className="h-px flex-1 bg-border" />
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {BATCH_KINDS.map((kind) => (
+          <button
+            key={kind}
+            type="button"
+            onClick={() => onBatch(kind)}
+            className="rounded-xl border border-border px-3 py-3 text-left transition-colors hover:border-primary/40 hover:bg-accent/30"
+          >
+            <span className="block text-sm font-semibold text-foreground">
+              {t(`services.batchCard.${kind}`)}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {t(`services.batchCardHint.${kind}`)}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

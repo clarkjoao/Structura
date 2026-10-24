@@ -6,7 +6,7 @@ import type { GitlabConfig, GitlabProject } from "../gitlab/gitlab.types";
 import type { RepoMetadata } from "./repo.types";
 import { hostOf, type ParsedRepoUrl, type RepoKind } from "./parseRepoUrl";
 
-export const DEFAULT_GITHUB_CONFIG: GithubConfig = { baseUrl: "https://api.github.com", token: "" };
+const DEFAULT_GITHUB_CONFIG: GithubConfig = { baseUrl: "https://api.github.com", token: "" };
 
 export interface RepoLookupConfigs {
   github: GithubConfig | null;
@@ -20,7 +20,7 @@ export function languagesBySize(languages: Record<string, number>): string[] {
     .map(([name]) => name);
 }
 
-export function githubRepoToMetadata(repo: GithubRepo, languages: string[]): RepoMetadata {
+function githubRepoToMetadata(repo: GithubRepo, languages: string[]): RepoMetadata {
   return {
     kind: "github",
     name: repo.name,

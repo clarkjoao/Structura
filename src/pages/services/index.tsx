@@ -273,6 +273,10 @@ export default function ServicesPage() {
             onOpenChange={setAddOpen}
             services={services}
             onCreate={handleCreate}
+            onCreateMany={(list) => {
+              for (const svc of list) addService(svc);
+              setAddOpen(false);
+            }}
             onOpenExisting={(id) => {
               setAddOpen(false);
               setSearch("");

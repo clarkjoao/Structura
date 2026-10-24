@@ -2,16 +2,19 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { ServiceDefinition } from "@/features/diagram";
+import type { BatchKind } from "@/features/integrations/batch/batchSources";
+import { AddBatchView } from "./AddBatchView";
 import { AddByUrlView } from "./AddByUrlView";
 import { ManualCreateForm } from "./ManualCreateForm";
 
-type View = "url" | "manual";
+type View = "url" | "manual" | BatchKind;
 
 interface AddServiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   services: ServiceDefinition[];
   onCreate: (svc: Omit<ServiceDefinition, "id">) => void;
+  onCreateMany: (services: Omit<ServiceDefinition, "id">[]) => void;
   onOpenExisting: (serviceId: string) => void;
 }
 
@@ -21,6 +24,7 @@ export function AddServiceDialog({
   onOpenChange,
   services,
   onCreate,
+  onCreateMany,
   onOpenExisting,
 }: AddServiceDialogProps) {
   const { t } = useTranslation();
@@ -44,6 +48,17 @@ export function AddServiceDialog({
             onCancel={close}
             onManual={() => setView("manual")}
             onOpenExisting={onOpenExisting}
+            onBatch={setView}
+          />
+        )}
+        {(view === "github" || view === "gitlab" || view === "defectdojo") && (
+          <AddBatchView
+            key={view}
+            kind={view}
+            services={services}
+            onBack={() => setView("url")}
+            onCancel={close}
+            onImport={onCreateMany}
           />
         )}
         {view === "manual" && <ManualCreateForm onCancel={close} onCreate={onCreate} />}
