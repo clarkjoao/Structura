@@ -150,7 +150,12 @@ class Preview {
     }
     type Item = vscode.QuickPickItem & { target?: string | undefined; pick: boolean };
     const items: Item[] = [
-      { label: WHOLE_WORKSPACE, description: this.view === undefined ? "shown" : "", target: undefined, pick: true },
+      {
+        label: WHOLE_WORKSPACE,
+        description: this.view === undefined ? "shown" : "",
+        target: undefined,
+        pick: true,
+      },
       ...[...this.views].sort().map((name): Item => ({
         label: name,
         description: this.view === name ? "shown" : "",
@@ -159,12 +164,23 @@ class Preview {
       })),
     ];
     if (this.links.size > 0) {
-      items.push({ label: "Opens from this view", kind: vscode.QuickPickItemKind.Separator, pick: false });
+      items.push({
+        label: "Opens from this view",
+        kind: vscode.QuickPickItemKind.Separator,
+        pick: false,
+      });
       for (const [key, target] of this.links) {
-        items.push({ label: `$(arrow-right) ${key.slice(key.indexOf("/") + 1)} → ${target}`, target, pick: true });
+        items.push({
+          label: `$(arrow-right) ${key.slice(key.indexOf("/") + 1)} → ${target}`,
+          target,
+          pick: true,
+        });
       }
     }
-    const chosen = await vscode.window.showQuickPick(items, { placeHolder: "Show which diagram?", title: "opscr views" });
+    const chosen = await vscode.window.showQuickPick(items, {
+      placeHolder: "Show which diagram?",
+      title: "opscr views",
+    });
     if (chosen?.pick) this.showView(chosen.target);
   }
 
@@ -272,18 +288,16 @@ class Preview {
         d.file ? { file: d.file, line: d.line ?? 1 } : null,
       );
       // Keep the last valid picture, and say why it is not following.
-      this.blocked = result.blocked.reason === "errors" ? result.blocked.errors : 1;
-      this.statusItem.text =
-        result.blocked.reason === "errors"
-          ? `$(warning) opscr: ${this.blocked} error${this.blocked === 1 ? "" : "s"} — preview not updated`
-          : "$(warning) opscr: the YAML does not parse — preview not updated";
+      this.blocked = 1;
+      this.statusItem.text = "$(warning) opscr: the YAML does not parse — preview not updated";
+      this.statusItem.tooltip = undefined;
       this.statusItem.command = "workbench.actions.view.problems";
       this.statusItem.show();
       // Inside the preview too: with nothing drawn yet it would otherwise just say "waiting".
       this.lastBlocked = {
         type: "STRUCTURA_BLOCKED",
         reason: result.blocked.reason,
-        errors: result.blocked.reason === "errors" ? result.blocked.errors : 0,
+        errors: 0,
         problems: errors.map((d) =>
           `${d.file ? basename(d.file) : ""}${d.line ? `:${d.line}` : ""} ${d.message}`.trim(),
         ),
@@ -294,7 +308,17 @@ class Preview {
     this.lastBlocked = null;
     this.problemLocations = [];
     this.blocked = 0;
-    this.statusItem.hide();
+    const errors = result.diagnostics.filter((d) => d.severity === "error").length;
+    if (errors > 0) {
+      // Drawn anyway, without the elements the errors are in: say what is missing and why.
+      const left = result.broken?.length ?? 0;
+      this.statusItem.text =
+        `$(warning) opscr: ${errors} error${errors === 1 ? "" : "s"}` +
+        (left > 0 ? ` — ${left} element${left === 1 ? "" : "s"} not drawn` : "");
+      this.statusItem.tooltip = result.broken?.join("\n");
+      this.statusItem.command = "workbench.actions.view.problems";
+      this.statusItem.show();
+    } else this.statusItem.hide();
     if (!result.graph) return;
     this.lastGraph = result.graph;
     this.sources = result.sources;
@@ -333,7 +357,9 @@ async function listWorkspaceFiles(folder: string): Promise<string[] | undefined>
   const found: string[] = [];
   let visited = 0;
   const walk = async (relative: string): Promise<boolean> => {
-    const entries = await readdir(joinPath(folder, relative), { withFileTypes: true }).catch(() => []);
+    const entries = await readdir(joinPath(folder, relative), { withFileTypes: true }).catch(
+      () => [],
+    );
     for (const entry of entries) {
       if (++visited > MAX_VISITED) return false;
       const next = relative === "" ? entry.name : `${relative}/${entry.name}`;

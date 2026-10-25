@@ -8,6 +8,7 @@ import {
   upsertDocument,
   type SourceText,
 } from "./patches";
+import { requiredFields } from "./required";
 import type { BindingState } from "./sync";
 import type { DiagramSnapshot } from "../types/plugin.types";
 
@@ -42,14 +43,28 @@ function uniqueName(files: readonly SourceText[], kind: string, base: string): s
   return name;
 }
 
+/** A value guessed from the schema, not taken from the canvas, says so in the YAML. */
+const REVIEW = " # set by Structura from the schema — review";
+
+/**
+ * A new manifest, valid on its own: besides the name, description and provider the canvas gives,
+ * it carries every spec field the Kind requires (`requiredFields`), so the folder still compiles
+ * for the CLI and the VSCode preview.
+ */
 export function manifestSource(kind: string, name: string, description: string, provider?: string) {
+  const fields = new Map<string, string>();
+  if (provider) fields.set("provider", JSON.stringify(provider));
+  for (const required of requiredFields(kind)) {
+    if (required.field === "description" || fields.has(required.field)) continue;
+    fields.set(required.field, JSON.stringify(required.value) + (required.guessed ? REVIEW : ""));
+  }
   return [
     "apiVersion: opscr.dev/v1",
     `kind: ${kind}`,
     "metadata:",
     `  name: ${name}`,
     "spec:",
-    ...(provider ? [`  provider: ${JSON.stringify(provider)}`] : []),
+    ...[...fields].map(([field, value]) => `  ${field}: ${value}`),
     `  description: ${JSON.stringify(description)}`,
     "",
   ].join("\n");

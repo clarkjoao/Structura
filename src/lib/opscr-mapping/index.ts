@@ -8,6 +8,8 @@
  */
 
 export { buildTechnicalView, nodeId } from "./technical-view";
+export { withoutBroken } from "./broken";
+export type { DiagnosticInput, WithoutBroken } from "./broken";
 export {
   BOUNDARY_KINDS,
   DRAWN_KINDS,
