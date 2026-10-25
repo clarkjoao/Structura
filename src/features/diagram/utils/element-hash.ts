@@ -30,6 +30,11 @@ function cyrb53(text: string): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, "0");
 }
 
+/** Whether two field values are the same content (key order and `undefined` members ignored). */
+export function sameContent(a: unknown, b: unknown): boolean {
+  return canonicalJson(a ?? null) === canonicalJson(b ?? null);
+}
+
 /** The hash of a component or connection. */
 export function hashElement(element: object): string {
   return cyrb53(canonicalJson(element));

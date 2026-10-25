@@ -28,6 +28,7 @@ import { DiagramSurface, writePolicy } from "./core";
 import { CanvasOverlays } from "./chrome/CanvasOverlays";
 import { CanvasRightRail } from "./chrome/CanvasRightRail";
 import { CompareModeBanner } from "./chrome/CompareModeBanner";
+import { VersionChangesLegend } from "./toolbar/VersionChangesLegend";
 import { PendingSuggestionToolbars } from "./chrome/PendingSuggestionToolbars";
 import { SelectionToolbars } from "./chrome/SelectionToolbars";
 import { useSelectedComponent } from "./chrome/useSelectedComponent";
@@ -231,6 +232,7 @@ const Canvas = (props: CanvasProps = {}) => {
               className="w-full h-full"
             >
               {isCompareMode && <CompareModeBanner />}
+              {!isCompareMode && <VersionChangesLegend diagram={diagram} />}
               <DiagramSurface
                 policy={writePolicy(interactionMode.canEditCanvas)}
                 readingDirection={diagram.direction ?? "LR"}

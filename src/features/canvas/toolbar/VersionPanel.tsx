@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { MergeVersionDialog } from "./MergeVersionDialog";
 import { groupVersionsByStatus, STATUS_LABEL } from "./version-groups";
+import { VersionChangesToggle } from "./VersionChangesLegend";
 
 export type VersionPanelVersion = VersionDiff;
 
@@ -312,6 +313,8 @@ export function VersionPanel({
             <X className="h-4 w-4" />
           </button>
         </div>
+
+        <VersionChangesToggle />
 
         {versionsLocked && (
           <div className="px-4 py-2 text-[11px] text-muted-foreground border-b border-border bg-muted/20">

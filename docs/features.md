@@ -109,6 +109,11 @@ snapshot, with a compare mode. A Version works like a branch:
 - Each Version can carry a status (Proposed, Approved, In progress, Done); the panel groups by it.
 - When the base changes after a Version copied an element, the element is marked as a conflict.
   Choose **Keep version** or **Use base** in the element panel; merging waits until none is left.
+- **Show changes** (on by default, switched in the Versions panel or hidden from the legend): with a
+  Version active, added elements and connections are outlined in green, changed ones in amber, and
+  what the Version removes is drawn as a ghost — faded, dashed red, struck through — where the base
+  has it. Ghosts are only drawn: nothing selects, moves, exports or syncs them. A changed element's
+  panel lists what changed, base → Version.
 - Merging writes what the Version added, changed and moved into the base, and removes what it
   removed.
 - Plugins can own Versions (the opscr plugin, one per initiative): their merge, rename and delete

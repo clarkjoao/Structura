@@ -7,7 +7,7 @@ import type {
   VersionDiff,
 } from "../model/diagram.types";
 
-import { hashElement } from "./element-hash";
+import { hashElement, sameContent } from "./element-hash";
 
 type VersionDiagram = Diagram | DiagramModel;
 
@@ -58,6 +58,83 @@ export function versionConflicts(diagram: VersionDiagram, versionId: string): Ve
   check("component", Object.keys(modifiedComponentsOf(version)), diagram.snapshot.components);
   check("connection", Object.keys(modifiedConnectionsOf(version)), diagram.snapshot.connections);
   return out;
+}
+
+/** One field of an element that a Version changed. */
+export interface FieldChange {
+  field: string;
+  base: unknown;
+  version: unknown;
+}
+
+/** What a Version changes against the base, for reading it (the changes view). */
+export interface VersionChanges {
+  added: { components: ReadonlySet<string>; connections: ReadonlySet<string> };
+  /** Replaced elements whose content differs from the base, by id, with the fields that do. */
+  changed: ReadonlyMap<string, FieldChange[]>;
+  /** Base elements the Version removes (and the base still has). */
+  removed: { components: string[]; connections: string[] };
+}
+
+/** The fields where `version` differs from `base` (the id never counts). */
+function fieldChanges(base: object, version: object): FieldChange[] {
+  const a = base as Record<string, unknown>;
+  const b = version as Record<string, unknown>;
+  return [...new Set([...Object.keys(a), ...Object.keys(b)])]
+    .filter((field) => field !== "id" && !sameContent(a[field], b[field]))
+    .sort()
+    .map((field) => ({ field, base: a[field], version: b[field] }));
+}
+
+const changesCache = new WeakMap<VersionDiff, { base: object; result: VersionChanges }>();
+
+/**
+ * What the Version changes against the base: added elements, replaced ones whose content differs
+ * (a copy equal to its base, or a moved node, is no change) and base elements it removes.
+ * Memoised per Version object and base snapshot.
+ */
+export function versionChanges(diagram: VersionDiagram, versionId: string): VersionChanges | null {
+  const version = diagram.versions?.[versionId];
+  if (!version) return null;
+  const cached = changesCache.get(version);
+  if (cached?.base === diagram.snapshot) return cached.result;
+  const changed = new Map<string, FieldChange[]>();
+  const compare = (copies: Readonly<Record<string, object>>, base: Record<string, object>) => {
+    for (const [id, copy] of Object.entries(copies)) {
+      const original = base[id];
+      if (!original) continue;
+      const fields = fieldChanges(original, copy);
+      if (fields.length > 0) changed.set(id, fields);
+    }
+  };
+  compare(modifiedComponentsOf(version), diagram.snapshot.components);
+  compare(modifiedConnectionsOf(version), diagram.snapshot.connections);
+  const result: VersionChanges = {
+    added: {
+      components: new Set(Object.keys(version.addedComponents)),
+      connections: new Set(Object.keys(version.addedConnections)),
+    },
+    changed,
+    removed: {
+      components: version.removedComponentIds.filter((id) => id in diagram.snapshot.components),
+      connections: version.removedConnectionIds.filter((id) => id in diagram.snapshot.connections),
+    },
+  };
+  changesCache.set(version, { base: diagram.snapshot, result });
+  return result;
+}
+
+/** How many changes a Version makes, for the legend. */
+export function countVersionChanges(changes: VersionChanges): {
+  added: number;
+  changed: number;
+  removed: number;
+} {
+  return {
+    added: changes.added.components.size + changes.added.connections.size,
+    changed: changes.changed.size,
+    removed: changes.removed.components.length + changes.removed.connections.length,
+  };
 }
 
 export const VERSION_COLOR_PALETTE = [

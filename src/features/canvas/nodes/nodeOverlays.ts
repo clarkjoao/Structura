@@ -47,6 +47,7 @@ const CLASS_ORDER = [
   "node-diff-modified",
   "node-diff-removed",
   "node-diff-added",
+  "node-version-removed",
 ];
 
 function withClass(node: Node, className: string): Node {
@@ -174,6 +175,27 @@ export function versionConflictOverlay(node: Node, conflicted: boolean): Node {
   return conflicted ? withClass(node, "node-version-conflict") : node;
 }
 
+/**
+ * The changes view: a node the active Version added, or changed against the base, outlined like
+ * the comparison outlines them.
+ */
+function versionChangeOverlay(node: Node, change: "added" | "changed" | undefined): Node {
+  if (change === "added") return withClass(node, "node-diff-added");
+  if (change === "changed") return withClass(node, "node-diff-modified");
+  return node;
+}
+
+/**
+ * A base element the active Version removes, drawn where the base has it: faded, struck through,
+ * under the live nodes, and inert — it is not part of the diagram.
+ */
+export function versionGhostOverlay(node: Node): Node {
+  return withoutInteraction(
+    withStyle(withClass(node, "node-version-removed"), { pointerEvents: "none" }),
+    ALL_INTERACTION,
+  );
+}
+
 /** A node an LLM suggestion would add, waiting to be kept or discarded. */
 export function pendingOverlay(node: Node, pending: boolean): Node {
   return pending ? withClass(node, "node-pending") : node;
@@ -195,6 +217,8 @@ export interface EditorNodeOverlayInput {
   locked: boolean;
   /** The active Version's copy of this node conflicts with the base. */
   versionConflict: boolean;
+  /** The changes view: what the active Version did to this node, if anything. */
+  versionChange?: "added" | "changed";
   pending: boolean;
 }
 
@@ -224,6 +248,8 @@ export function applyEditorNodeOverlays(
   next = tagFilterOverlay(next, input.hiddenByTag);
   next = readingOverlay(next, input.isReading);
   next = lockOverlay(next, input.locked);
+  // A conflict says more than "changed": its marker takes the outline.
+  next = versionChangeOverlay(next, input.versionConflict ? undefined : input.versionChange);
   next = versionConflictOverlay(next, input.versionConflict);
   return pendingOverlay(next, input.pending);
 }
