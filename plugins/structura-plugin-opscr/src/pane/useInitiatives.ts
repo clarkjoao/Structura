@@ -103,6 +103,8 @@ export function useInitiatives(options: {
             .filter((v) => v.ownerPluginId === "structura-plugin-opscr")
             .map((v) => ({ key: v.key, name: v.name, status: v.status })),
         removeVersion: (id, key) => api.versions.remove(key, { diagramId: id }),
+        activeVersion: (id) => api.getDiagram(id)?.activeVersion?.key ?? null,
+        setActiveVersion: (id, key) => api.versions.setActive(key, { diagramId: id }),
       },
       buffers: {
         get: texts,

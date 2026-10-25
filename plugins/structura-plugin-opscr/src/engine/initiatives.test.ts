@@ -223,6 +223,41 @@ describe("InitiativeVersions", () => {
     );
   });
 
+  it("draws the Version again when the root was drawn again with new canvas ids", async () => {
+    await s.start();
+    const before = s.files.map((f) => f.text);
+    // The bound diagram showed a View and came back: every root element has a new canvas id.
+    s.host.base.components = [];
+    s.host.base.connections = [];
+    s.rootBinding = emptyBinding();
+    await s.rootEngine.sync();
+    // The host's Version shows the base under it: the old ids are gone from it too.
+    const version = s.version();
+    const added = new Set(Object.values(s.initiativeBindings["d\u0000order-events"]!.state.ids));
+    version.components = [
+      ...structuredClone(s.host.base.components),
+      ...version.components.filter((c) => added.has(c.id) && !s.byLabel(s.host.base, c.label)),
+    ];
+    version.connections = structuredClone(s.host.base.connections);
+    await s.versions.sync();
+    expect(s.problems).toEqual([]);
+    expect(
+      s.files.filter((f, i) => f.text !== before[i]).map((f) => `${f.name}\n${f.text}`),
+    ).toEqual([]);
+    expect(s.host.removed).toEqual(["order-events"]);
+    const labels = s.version().components.map((c) => c.label);
+    expect(labels.filter((l) => l === "orders-api")).toHaveLength(1);
+    expect(labels).toContain("order-events");
+    expect(labels).not.toContain("sessions");
+    // An edit in it now goes to the initiative as usual.
+    const storefront = s.byLabel(s.version(), "storefront")!;
+    s.version().step(() => (storefront.description = "Shop pages, now with live order status"));
+    await s.versions.canvasChanged("d", "order-events");
+    expect(s.text("initiatives/order-events/retired.opscr.yaml")).toBe(
+      before[s.files.findIndex((f) => f.name === "initiatives/order-events/retired.opscr.yaml")],
+    );
+  });
+
   it("removes the Version of an initiative that is gone", async () => {
     await s.start();
     s.buffers.remove(s.files.filter((f) => f.name.startsWith("initiatives/")).map((f) => f.name));
