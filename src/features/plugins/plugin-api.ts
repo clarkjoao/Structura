@@ -8,6 +8,7 @@ import {
 } from "@/features/canvas/nodes/node-types/registry";
 // Leaf import (not the @/features/diagram barrel): this module loads at app boot.
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import type { GraphChanges } from "@/features/diagram/store/slices/generated-graph.slice";
 import {
   STRUCTURA_PLUGIN_API_VERSION,
   type DiagramSnapshot,
@@ -24,6 +25,8 @@ import {
   type PluginDiagramChangesResult,
   type PluginDiagramInput,
   type PluginFiles,
+  type PluginGetDiagramOptions,
+  type PluginVersions,
   type PluginManifest,
   type PluginNodeTypeDescriptor,
   type StructuraPluginApi,
@@ -38,7 +41,13 @@ import {
 import { registerPanelContribution, unregisterPanelContribution } from "./panel-registry";
 import { createPluginStorage } from "./plugin-storage";
 import { subscribeDiagramChange } from "./diagram-change-notifier";
-import { sanitizeComponentPatch, toComponentSnapshot, toDiagramSnapshot } from "./snapshots";
+import {
+  sanitizeComponentPatch,
+  toComponentSnapshot,
+  toDiagramSnapshot,
+  toVersionSnapshot,
+} from "./snapshots";
+import { onVersionAction } from "./version-actions";
 import { overlayRegistry } from "./overlay-registry";
 import { toGeneratedGraph } from "./import-graph";
 import { PluginCodeEditor } from "./components/PluginCodeEditor";
@@ -120,6 +129,139 @@ function toInternalDescriptor(descriptor: PluginNodeTypeDescriptor): NodeTypeDes
     defaultData: descriptor.defaultData,
     draggable: descriptor.draggable,
     selectable: descriptor.selectable,
+  };
+}
+
+/**
+ * Plugin changes as the store applies them. Plugin data is untrusted: adds go through the
+ * importer normalization (type policy, parent cycles), updates keep to their whitelist.
+ */
+function toGraphChanges(changes: PluginDiagramChanges): GraphChanges {
+  const diagramExists = (id: string) => useDiagramStore.getState().diagrams[id] !== undefined;
+  const strings = (value: unknown): string[] =>
+    Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+  const optionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
+  const graph = toGeneratedGraph(
+    {
+      components: Array.isArray(changes.add) ? changes.add : [],
+      connections: Array.isArray(changes.connect) ? changes.connect : [],
+    },
+    diagramExists,
+  );
+  return {
+    remove: strings(changes.remove),
+    disconnect: strings(changes.disconnect),
+    update: (Array.isArray(changes.update) ? changes.update : [])
+      .filter((u) => typeof u?.id === "string")
+      .map((u) => {
+        // Request data: the store writes the field through `cloudServiceIdClearingPatch`.
+        const cloudServiceId = optionalString(u.cloudServiceId);
+        return {
+          id: u.id,
+          name: optionalString(u.name),
+          description: optionalString(u.description),
+          technology: optionalString(u.technology),
+          cloudServiceId,
+          // "" clears the link; an id that is not a diagram is ignored.
+          ...(optionalString(u.linkedDiagramId) !== undefined &&
+          (u.linkedDiagramId === "" || diagramExists(u.linkedDiagramId as string))
+            ? { linkedDiagramId: u.linkedDiagramId as string }
+            : {}),
+        };
+      }),
+    move: (Array.isArray(changes.move) ? changes.move : [])
+      .filter((m) => typeof m?.id === "string" && Number.isFinite(m.x) && Number.isFinite(m.y))
+      .map(({ id, x, y, width, height }) => ({
+        id,
+        x,
+        y,
+        ...(Number.isFinite(width) ? { width } : {}),
+        ...(Number.isFinite(height) ? { height } : {}),
+      })),
+    add: graph.nodes,
+    connect: graph.edges,
+  };
+}
+
+const VERSION_STATUSES: ReadonlySet<string> = new Set([
+  "proposed",
+  "approved",
+  "in-progress",
+  "done",
+]);
+
+/** The diagram a call targets: `options.diagramId`, else the active one; undefined when absent. */
+function targetDiagramId(options?: PluginApplyOptions): string | undefined {
+  const state = useDiagramStore.getState();
+  const id = typeof options?.diagramId === "string" ? options.diagramId : state.activeDiagramId;
+  return id && state.diagrams[id] ? id : undefined;
+}
+
+/** `api.versions` for one plugin: what it upserts it owns, and its actions come back to it. */
+function scopedVersions(
+  manifest: PluginManifest,
+  tracker: PluginContributionTracker,
+): PluginVersions {
+  const read = () => warnUndeclaredCapability(manifest, "diagram:read");
+  const write = () => warnUndeclaredCapability(manifest, "diagram:write");
+  return {
+    list(diagramId) {
+      read();
+      const id = targetDiagramId({ diagramId });
+      const diagram = id ? useDiagramStore.getState().diagrams[id] : undefined;
+      if (!diagram) return [];
+      return Object.values(diagram.versions ?? {})
+        .sort((a, b) => a.createdAt - b.createdAt)
+        .map((version) => toVersionSnapshot(diagram, version));
+    },
+    upsert(input, options) {
+      write();
+      const diagramId = targetDiagramId(options);
+      // Plugin data is untrusted: a Version needs a key and a name.
+      if (!diagramId || typeof input?.key !== "string" || input.key === "") return null;
+      const diff = input.diff ?? {};
+      const status =
+        typeof input.status === "string" && VERSION_STATUSES.has(input.status)
+          ? input.status
+          : undefined;
+      const result = useDiagramStore.getState().applyGraphChanges(
+        toGraphChanges({
+          add: diff.add,
+          connect: diff.connect,
+          update: diff.modify,
+          remove: diff.remove,
+          disconnect: diff.disconnect,
+          move: diff.move,
+        }),
+        diagramId,
+        {
+          key: input.key,
+          name: typeof input.name === "string" && input.name.trim() ? input.name : input.key,
+          ...(status ? { status } : {}),
+          ownerPluginId: manifest.id,
+          reset: true,
+        },
+      );
+      return result.versionId ?? null;
+    },
+    remove(key, options) {
+      write();
+      const diagramId = targetDiagramId(options);
+      if (diagramId && typeof key === "string") {
+        useDiagramStore.getState().removeVersionByKey(diagramId, key);
+      }
+    },
+    setActive(key, options) {
+      write();
+      const diagramId = targetDiagramId(options);
+      if (diagramId && (key === null || typeof key === "string")) {
+        useDiagramStore.getState().setActiveVersionByKey(diagramId, key);
+      }
+    },
+    onAction(handler) {
+      write();
+      return trackUnsubscribe(tracker, onVersionAction(manifest.id, handler));
+    },
   };
 }
 
@@ -245,13 +387,16 @@ export function createScopedPluginApi(
       return useDiagramStore.getState().activeDiagramId ?? null;
     },
 
-    getDiagram(diagramId?: string): DiagramSnapshot | null {
+    getDiagram(diagramId?: string, options?: PluginGetDiagramOptions): DiagramSnapshot | null {
       warnUndeclaredCapability(manifest, "diagram:read");
       const state = useDiagramStore.getState();
       const id = diagramId ?? state.activeDiagramId;
       const diagram = id ? state.diagrams[id] : undefined;
-      // Fresh projection per call: plugins can never reach store objects through it.
-      return diagram ? toDiagramSnapshot(diagram) : null;
+      // Fresh projection per call: plugins can never reach store objects through it. Since
+      // 1.14 it is what the canvas shows: the active Version applied, unless the base is asked.
+      return diagram
+        ? toDiagramSnapshot(diagram, { version: options?.base === true ? "base" : "active" })
+        : null;
     },
 
     updateComponent(componentId: string, patch: PluginComponentPatch): void {
@@ -298,63 +443,17 @@ export function createScopedPluginApi(
       if (diagramId !== undefined && !useDiagramStore.getState().diagrams[diagramId]) {
         return { idsByKey: {}, connectionIds: [] };
       }
-      const diagramExists = (id: string) => useDiagramStore.getState().diagrams[id] !== undefined;
-      const strings = (value: unknown): string[] =>
-        Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
-      const optionalString = (value: unknown) => (typeof value === "string" ? value : undefined);
-      // Plugin data is untrusted: adds go through the importer normalization (type policy,
-      // parent cycles), updates keep to their whitelist.
-      const graph = toGeneratedGraph(
-        {
-          components: Array.isArray(changes.add) ? changes.add : [],
-          connections: Array.isArray(changes.connect) ? changes.connect : [],
-        },
-        diagramExists,
-      );
-      const result = useDiagramStore.getState().applyGraphChanges(
-        {
-          remove: strings(changes.remove),
-          disconnect: strings(changes.disconnect),
-          update: (Array.isArray(changes.update) ? changes.update : [])
-            .filter((u) => typeof u?.id === "string")
-            .map((u) => {
-              // Request data: the store writes the field through `cloudServiceIdClearingPatch`.
-              const cloudServiceId = optionalString(u.cloudServiceId);
-              return {
-                id: u.id,
-                name: optionalString(u.name),
-                description: optionalString(u.description),
-                technology: optionalString(u.technology),
-                cloudServiceId,
-                // "" clears the link; an id that is not a diagram is ignored.
-                ...(optionalString(u.linkedDiagramId) !== undefined &&
-                (u.linkedDiagramId === "" || diagramExists(u.linkedDiagramId as string))
-                  ? { linkedDiagramId: u.linkedDiagramId as string }
-                  : {}),
-              };
-            }),
-          move: (Array.isArray(changes.move) ? changes.move : [])
-            .filter(
-              (m) => typeof m?.id === "string" && Number.isFinite(m.x) && Number.isFinite(m.y),
-            )
-            .map(({ id, x, y, width, height }) => ({
-              id,
-              x,
-              y,
-              ...(Number.isFinite(width) ? { width } : {}),
-              ...(Number.isFinite(height) ? { height } : {}),
-            })),
-          add: graph.nodes,
-          connect: graph.edges,
-        },
-        diagramId,
-      );
+      const result = useDiagramStore
+        .getState()
+        .applyGraphChanges(toGraphChanges(changes), diagramId);
       return { idsByKey: result.componentIdByExternalId, connectionIds: result.connectionIds };
     },
 
     files: scopedFiles(manifest),
 
     canvas: scopedCanvas(manifest, tracker),
+
+    versions: scopedVersions(manifest, tracker),
 
     ui: { CodeEditor: PluginCodeEditor },
 

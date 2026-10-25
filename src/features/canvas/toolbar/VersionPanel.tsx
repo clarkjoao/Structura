@@ -1,19 +1,38 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Copy, GitBranch, GitMerge, Lock, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Copy,
+  GitBranch,
+  GitMerge,
+  Lock,
+  Pencil,
+  Plug,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import {
   computeMergePreview,
+  versionConflicts,
   versionHasDiff,
   useActiveDiagram,
   useDiagramActions,
+  VERSION_STATUSES,
   type MergePreview,
   type VersionDiff,
+  type VersionStatus,
 } from "@/features/diagram";
+import {
+  deliverVersionAction,
+  pluginHandlesVersionActions,
+} from "@/features/plugins/version-actions";
 import { useInteractionMode } from "../hooks/useInteractionMode";
 import { cn } from "@/lib/utils";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 import { MergeVersionDialog } from "./MergeVersionDialog";
+import { groupVersionsByStatus, STATUS_LABEL } from "./version-groups";
 
 export type VersionPanelVersion = VersionDiff;
 
@@ -34,6 +53,10 @@ export interface VersionPanelProps {
   onDelete: (id: string) => void;
   onMerge: (version: VersionDiff) => void;
   onSelectBase: () => void;
+  /** Sets the status of a Version not owned by a plugin. */
+  onSetStatus?: (id: string, status: VersionStatus | null) => void;
+  /** Version id → how many of its copies conflict with the base (merge waits for zero). */
+  conflictCounts?: Readonly<Record<string, number>>;
 
   versionsLocked?: boolean;
 
@@ -51,6 +74,8 @@ function VersionRow({
   onDuplicate,
   onDelete,
   onMerge,
+  onSetStatus,
+  conflictCount,
 }: {
   version: VersionPanelVersion;
   isActive: boolean;
@@ -62,10 +87,14 @@ function VersionRow({
   onDuplicate: () => void;
   onDelete: () => void;
   onMerge: () => void;
+  onSetStatus?: (status: VersionStatus | null) => void;
+  conflictCount: number;
 }) {
   const { t } = useTranslation();
   const [showActions, setShowActions] = useState(false);
   const hasDiff = versionHasDiff(version);
+  const owned = version.ownerPluginId !== undefined;
+  const mergeBlocked = conflictCount > 0;
   const structuralDisabled = Boolean(versionsLocked || versionsGuestReadOnly);
   const readOnlyTitle = versionsGuestReadOnly ? t("collaboration.versionsReadOnly") : undefined;
 
@@ -99,6 +128,28 @@ function VersionRow({
         <p className="text-xs font-medium truncate">{version.name}</p>
       </div>
 
+      {owned && (
+        <span
+          className="shrink-0 text-muted-foreground"
+          title={t("versions.ownedBy", { plugin: version.ownerPluginId })}
+        >
+          <Plug
+            className="h-3 w-3"
+            aria-label={t("versions.ownedBy", { plugin: version.ownerPluginId })}
+          />
+        </span>
+      )}
+
+      {conflictCount > 0 && (
+        <span
+          className="flex items-center gap-0.5 shrink-0 text-[9px] font-semibold text-warning"
+          title={t("versions.conflictCount", { count: conflictCount })}
+        >
+          <AlertTriangle className="h-3 w-3" aria-hidden />
+          {conflictCount}
+        </span>
+      )}
+
       {isCompare && (
         <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground shrink-0">
           ≠
@@ -113,6 +164,25 @@ function VersionRow({
 
       {showActions && (
         <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+          {!owned && onSetStatus && (
+            <select
+              aria-label={t("versions.statusLabel")}
+              title={t("versions.statusLabel")}
+              disabled={structuralDisabled}
+              value={version.status ?? ""}
+              onChange={(e) =>
+                onSetStatus(e.target.value === "" ? null : (e.target.value as VersionStatus))
+              }
+              className="h-6 rounded border border-border bg-background px-1 text-[10px] text-muted-foreground disabled:opacity-40"
+            >
+              <option value="">{t("versions.statusNone")}</option>
+              {VERSION_STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {t(STATUS_LABEL[status])}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             type="button"
             disabled={structuralDisabled}
@@ -134,11 +204,15 @@ function VersionRow({
           {hasDiff && (
             <button
               type="button"
-              disabled={structuralDisabled}
+              disabled={structuralDisabled || mergeBlocked}
               onClick={onMerge}
-              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:pointer-events-none disabled:opacity-40"
+              className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-40"
               title={
-                structuralDisabled && readOnlyTitle ? readOnlyTitle : t("versions.mergeIntoBase")
+                structuralDisabled && readOnlyTitle
+                  ? readOnlyTitle
+                  : mergeBlocked
+                    ? t("versions.mergeBlockedConflicts", { count: conflictCount })
+                    : t("versions.mergeIntoBase")
               }
             >
               <GitMerge className="h-3 w-3" />
@@ -177,6 +251,8 @@ export function VersionPanel({
   onDelete,
   onMerge,
   onSelectBase,
+  onSetStatus,
+  conflictCounts = {},
   versionsLocked = false,
   versionsGuestReadOnly = false,
 }: VersionPanelProps) {
@@ -275,46 +351,68 @@ export function VersionPanel({
             )}
           </button>
 
-          {versions.map((versionItem) =>
-            renamingId === versionItem.id ? (
-              <div key={versionItem.id} className="px-2 py-1">
-                <input
-                  autoFocus
-                  value={renameDraft}
-                  onChange={(e) => setRenameDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (keyIs(e, KEY.ENTER)) commitRename(versionItem.id);
-                    if (keyIs(e, KEY.ESCAPE)) {
-                      setRenamingId(null);
-                      setRenameDraft("");
+          {groupVersionsByStatus(versions).map((group) => (
+            <div key={group.status ?? "draft"} className="pt-1">
+              {(group.status !== null || versions.some((v) => v.status !== undefined)) && (
+                <p className="px-3 pt-1.5 pb-0.5 text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t(group.status === null ? "versions.statusDraft" : STATUS_LABEL[group.status])}
+                </p>
+              )}
+              {group.versions.map((versionItem) =>
+                renamingId === versionItem.id ? (
+                  <div key={versionItem.id} className="px-2 py-1">
+                    <input
+                      autoFocus
+                      value={renameDraft}
+                      onChange={(e) => setRenameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (keyIs(e, KEY.ENTER)) commitRename(versionItem.id);
+                        if (keyIs(e, KEY.ESCAPE)) {
+                          setRenamingId(null);
+                          setRenameDraft("");
+                        }
+                      }}
+                      onBlur={() => commitRename(versionItem.id)}
+                      className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs"
+                    />
+                  </div>
+                ) : (
+                  <VersionRow
+                    key={versionItem.id}
+                    version={versionItem}
+                    isActive={versionItem.id === activeVersionId}
+                    isCompare={versionItem.id === compareVersionId}
+                    versionsLocked={versionsLocked}
+                    versionsGuestReadOnly={versionsGuestReadOnly}
+                    onSelect={() => {
+                      onSelectVersion(versionItem.id);
+                      onClose();
+                    }}
+                    onRename={() => {
+                      // A plugin-owned Version is renamed by its plugin, from its own source.
+                      if (versionItem.ownerPluginId !== undefined) {
+                        onRename(versionItem.id, versionItem.name);
+                        return;
+                      }
+                      setRenamingId(versionItem.id);
+                      setRenameDraft(versionItem.name);
+                    }}
+                    onDuplicate={() => onDuplicate(versionItem.id)}
+                    onDelete={() => onDelete(versionItem.id)}
+                    onMerge={() =>
+                      versionItem.ownerPluginId !== undefined
+                        ? onMerge(versionItem)
+                        : openMergeDialog(versionItem)
                     }
-                  }}
-                  onBlur={() => commitRename(versionItem.id)}
-                  className="w-full h-9 rounded-lg border border-border bg-background px-3 text-xs"
-                />
-              </div>
-            ) : (
-              <VersionRow
-                key={versionItem.id}
-                version={versionItem}
-                isActive={versionItem.id === activeVersionId}
-                isCompare={versionItem.id === compareVersionId}
-                versionsLocked={versionsLocked}
-                versionsGuestReadOnly={versionsGuestReadOnly}
-                onSelect={() => {
-                  onSelectVersion(versionItem.id);
-                  onClose();
-                }}
-                onRename={() => {
-                  setRenamingId(versionItem.id);
-                  setRenameDraft(versionItem.name);
-                }}
-                onDuplicate={() => onDuplicate(versionItem.id)}
-                onDelete={() => onDelete(versionItem.id)}
-                onMerge={() => openMergeDialog(versionItem)}
-              />
-            ),
-          )}
+                    onSetStatus={
+                      onSetStatus ? (status) => onSetStatus(versionItem.id, status) : undefined
+                    }
+                    conflictCount={conflictCounts[versionItem.id] ?? 0}
+                  />
+                ),
+              )}
+            </div>
+          ))}
         </div>
 
         <div className="border-t border-border p-2">
@@ -402,9 +500,36 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
     renameVersion,
     mergeVersionIntoBase,
     duplicateVersion,
+    setVersionStatus,
   } = useDiagramActions();
 
   if (!diagram) return null;
+
+  /**
+   * Hands an action on a plugin-owned Version to its plugin. True when the Version is owned
+   * (whether or not the plugin was there to take it), so the caller leaves the store alone.
+   */
+  const routedToOwner = (version: VersionDiff, type: "merge" | "rename" | "delete"): boolean => {
+    const owner = version.ownerPluginId;
+    if (owner === undefined) return false;
+    const delivered =
+      version.key !== undefined &&
+      deliverVersionAction(owner, { type, diagramId: diagram.id, key: version.key });
+    if (!delivered) toast.warning(t("versions.ownerInactive", { plugin: owner }));
+    return true;
+  };
+  const conflictCounts = Object.fromEntries(
+    Object.keys(diagram.versions ?? {}).map((id) => [id, versionConflicts(diagram, id).length]),
+  );
+  const owners = [
+    ...new Set(
+      Object.values(diagram.versions ?? {}).flatMap((v) =>
+        v.ownerPluginId !== undefined ? [v.ownerPluginId] : [],
+      ),
+    ),
+  ];
+  /** "New version" on a diagram whose Versions a plugin owns: that plugin creates it. */
+  const creatingOwner = owners.find((id) => pluginHandlesVersionActions(id));
 
   const sceneRecord = diagram.versions ?? {};
   const versions = Object.values(sceneRecord).sort((a, b) => a.createdAt - b.createdAt);
@@ -455,11 +580,20 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
       onClose={onClose}
       versionsLocked={versionsLocked}
       versionsGuestReadOnly={versionsGuestReadOnly}
+      conflictCounts={conflictCounts}
+      onSetStatus={(id, status) => {
+        if (versionsGuestReadOnly) return;
+        setVersionStatus(id, status);
+      }}
       onSelectVersion={(id) => handleVersionPillClick(id)}
       onAddVersion={(trimmed) => {
         if (versionsGuestReadOnly) return;
         if (versionsLocked) {
           toast.warning(t("versions.switchBlockedDuringFlow"));
+          return;
+        }
+        if (creatingOwner !== undefined) {
+          deliverVersionAction(creatingOwner, { type: "create", diagramId: diagram.id });
           return;
         }
         const name = trimmed.trim() || t("versions.defaultVersionName");
@@ -468,6 +602,8 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
       }}
       onRename={(id, name) => {
         if (versionsGuestReadOnly) return;
+        const version = sceneRecord[id];
+        if (version && routedToOwner(version, "rename")) return;
         renameVersion(id, name);
       }}
       onDuplicate={(id) => {
@@ -492,6 +628,7 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
         }
         const sc = sceneRecord[id];
         if (!sc) return;
+        if (routedToOwner(sc, "delete")) return;
         if (versionHasDiff(sc)) {
           removeVersion(sc.id);
         } else {
@@ -504,6 +641,7 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
           toast.warning(t("versions.switchBlockedDuringFlow"));
           return;
         }
+        if (routedToOwner(scene, "merge")) return;
         mergeVersionIntoBase(scene.id);
       }}
       onSelectBase={() => {

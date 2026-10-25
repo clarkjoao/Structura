@@ -7,7 +7,58 @@ import type {
   VersionDiff,
 } from "../model/diagram.types";
 
+import { hashElement } from "./element-hash";
+
 type VersionDiagram = Diagram | DiagramModel;
+
+const EMPTY: Readonly<Record<string, never>> = Object.freeze({});
+
+/** The base components a Version replaces, by id (empty when it replaces none). */
+export function modifiedComponentsOf(version: VersionDiff): Readonly<Record<string, Component>> {
+  return version.modifiedComponents ?? EMPTY;
+}
+
+/** The base connections a Version replaces, by id (empty when it replaces none). */
+export function modifiedConnectionsOf(version: VersionDiff): Readonly<Record<string, Connection>> {
+  return version.modifiedConnections ?? EMPTY;
+}
+
+/** Whether the Version replaces the base element with this id (component or connection). */
+export function isModifiedInVersion(version: VersionDiff, id: string): boolean {
+  return id in modifiedComponentsOf(version) || id in modifiedConnectionsOf(version);
+}
+
+export type VersionConflictReason = "base-changed" | "base-removed";
+
+export interface VersionConflict {
+  id: string;
+  kind: "component" | "connection";
+  reason: VersionConflictReason;
+}
+
+/**
+ * Elements the Version replaced whose base moved on since the copy: the base element now hashes
+ * differently from the recorded hash, or is gone. The Version's copy would silently overwrite
+ * that change on merge, so merge waits until each one is kept or dropped.
+ */
+export function versionConflicts(diagram: VersionDiagram, versionId: string): VersionConflict[] {
+  const version = diagram.versions?.[versionId];
+  if (!version) return [];
+  const hashes = version.baseHashes ?? {};
+  const out: VersionConflict[] = [];
+  const check = (kind: VersionConflict["kind"], ids: string[], base: Record<string, object>) => {
+    for (const id of ids) {
+      const current = base[id];
+      if (!current) out.push({ id, kind, reason: "base-removed" });
+      else if (hashes[id] !== undefined && hashes[id] !== hashElement(current)) {
+        out.push({ id, kind, reason: "base-changed" });
+      }
+    }
+  };
+  check("component", Object.keys(modifiedComponentsOf(version)), diagram.snapshot.components);
+  check("connection", Object.keys(modifiedConnectionsOf(version)), diagram.snapshot.connections);
+  return out;
+}
 
 export const VERSION_COLOR_PALETTE = [
   "#10b981",
@@ -44,16 +95,23 @@ export function resolveVersionSnapshot(
   const removedComp = new Set(scene.removedComponentIds);
   const removedConn = new Set(scene.removedConnectionIds);
 
+  const modifiedComp = modifiedComponentsOf(scene);
+  const modifiedConn = modifiedConnectionsOf(scene);
+  // A copy stands in for its base element; one whose base is gone stays out until resolved.
   const components: Record<string, Component> = {
     ...Object.fromEntries(
-      Object.entries(diagram.snapshot.components).filter(([id]) => !removedComp.has(id)),
+      Object.entries(diagram.snapshot.components)
+        .filter(([id]) => !removedComp.has(id))
+        .map(([id, c]) => [id, modifiedComp[id] ?? c]),
     ),
     ...scene.addedComponents,
   };
 
   const connections: Record<string, Connection> = {
     ...Object.fromEntries(
-      Object.entries(diagram.snapshot.connections).filter(([id]) => !removedConn.has(id)),
+      Object.entries(diagram.snapshot.connections)
+        .filter(([id]) => !removedConn.has(id))
+        .map(([id, c]) => [id, modifiedConn[id] ?? c]),
     ),
     ...scene.addedConnections,
   };
@@ -92,19 +150,12 @@ export function exportFilenameSlug(diagram: Diagram): string {
   return `${base}-${sceneSlug}`;
 }
 
-export function isComponentAddedInActiveVersion(
-  diagram: VersionDiagram,
-  componentId: string,
-): boolean {
-  const sid = diagram.activeVersionId;
-  if (!sid || !diagram.versions?.[sid]) return false;
-  return componentId in diagram.versions[sid].addedComponents;
-}
-
-export function canMoveNodeInSceneMode(diagram: VersionDiagram, componentId: string): boolean {
-  if (isDiagramCompareMode(diagram)) return false;
-  if (!diagram.activeVersionId || !diagram.versions?.[diagram.activeVersionId]) return true;
-  return isComponentAddedInActiveVersion(diagram, componentId);
+/**
+ * Whether a node can be dragged. Inside a Version every node moves: a base node's new position is
+ * a layout override in the Version. Only compare mode, which shows two Versions at once, is fixed.
+ */
+export function canMoveNodeInSceneMode(diagram: VersionDiagram, _componentId: string): boolean {
+  return !isDiagramCompareMode(diagram);
 }
 
 export function collectBaseDescendantIds(
@@ -180,10 +231,20 @@ export function resolveCompareSnapshot(
   const baseC = diagram.snapshot.components;
   const baseConn = diagram.snapshot.connections;
   const onlyInBaseComp = Object.keys(mergedComponents).filter(
-    (id) => id in baseC && !sceneA.addedComponents[id] && !sceneB.addedComponents[id],
+    (id) =>
+      id in baseC &&
+      !sceneA.addedComponents[id] &&
+      !sceneB.addedComponents[id] &&
+      !isModifiedInVersion(sceneA, id) &&
+      !isModifiedInVersion(sceneB, id),
   );
   const onlyInBaseConn = Object.keys(mergedConnections).filter(
-    (id) => id in baseConn && !sceneA.addedConnections[id] && !sceneB.addedConnections[id],
+    (id) =>
+      id in baseConn &&
+      !sceneA.addedConnections[id] &&
+      !sceneB.addedConnections[id] &&
+      !isModifiedInVersion(sceneA, id) &&
+      !isModifiedInVersion(sceneB, id),
   );
 
   return {
@@ -247,8 +308,9 @@ export function buildCompareComponentVisuals(
   for (const id of mergedIds) {
     const inA = idsA.has(id);
     const inB = idsB.has(id);
-    const addedA = !!sceneA.addedComponents[id];
-    const addedB = !!sceneB.addedComponents[id];
+    // A replaced base element is the Version's own change, like an added one.
+    const addedA = !!sceneA.addedComponents[id] || id in modifiedComponentsOf(sceneA);
+    const addedB = !!sceneB.addedComponents[id] || id in modifiedComponentsOf(sceneB);
 
     if (inA && inB) {
       if (addedA || addedB) {
@@ -288,8 +350,8 @@ export function buildCompareConnectionVisuals(
   for (const id of mergedIds) {
     const inA = idsA.has(id);
     const inB = idsB.has(id);
-    const addedA = !!sceneA.addedConnections[id];
-    const addedB = !!sceneB.addedConnections[id];
+    const addedA = !!sceneA.addedConnections[id] || id in modifiedConnectionsOf(sceneA);
+    const addedB = !!sceneB.addedConnections[id] || id in modifiedConnectionsOf(sceneB);
 
     if (inA && inB) {
       if (addedA || addedB) {
@@ -323,6 +385,8 @@ export function versionHasDiff(scene: VersionDiff): boolean {
   return (
     Object.keys(scene.addedComponents).length > 0 ||
     Object.keys(scene.addedConnections).length > 0 ||
+    Object.keys(modifiedComponentsOf(scene)).length > 0 ||
+    Object.keys(modifiedConnectionsOf(scene)).length > 0 ||
     scene.removedComponentIds.length > 0 ||
     scene.removedConnectionIds.length > 0
   );
@@ -331,6 +395,11 @@ export function versionHasDiff(scene: VersionDiff): boolean {
 export interface MergePreview {
   componentsToAdd: Component[];
   connectionsToAdd: Connection[];
+  /** Base components and connections replaced by the Version's copies. */
+  componentsToReplace: Component[];
+  connectionsToReplace: Connection[];
+  /** Conflicts that block the merge (see `versionConflicts`). */
+  blocking: VersionConflict[];
   layoutsToAdd: Record<string, NodeLayout>;
   componentIdsToRemove: string[];
   connectionIdsToRemove: string[];
@@ -398,6 +467,13 @@ export function computeMergePreview(diagram: Diagram, versionId: string): MergeP
   return {
     componentsToAdd: Object.values(scene.addedComponents),
     connectionsToAdd: Object.values(scene.addedConnections),
+    componentsToReplace: Object.values(modifiedComponentsOf(scene)).filter(
+      (c) => diagram.snapshot.components[c.id] !== undefined,
+    ),
+    connectionsToReplace: Object.values(modifiedConnectionsOf(scene)).filter(
+      (c) => diagram.snapshot.connections[c.id] !== undefined,
+    ),
+    blocking: versionConflicts(diagram, versionId),
     layoutsToAdd: { ...scene.nodeLayouts },
     componentIdsToRemove: [...scene.removedComponentIds],
     connectionIdsToRemove: [...scene.removedConnectionIds],

@@ -282,7 +282,7 @@ describe("canMoveNodeInSceneMode", () => {
     expect(canMoveNodeInSceneMode(d, "sceneNode")).toBe(true);
   });
 
-  it("returns false for a base snapshot node while a scene is active", () => {
+  it("returns true for a base snapshot node while a scene is active (its move is a layout override)", () => {
     const d = emptyDiagram({
       activeVersionId: "s1",
       snapshot: {
@@ -307,6 +307,6 @@ describe("canMoveNodeInSceneMode", () => {
         },
       },
     });
-    expect(canMoveNodeInSceneMode(d, "baseNode")).toBe(false);
+    expect(canMoveNodeInSceneMode(d, "baseNode")).toBe(true);
   });
 });

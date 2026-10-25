@@ -169,9 +169,9 @@ export function lockOverlay(node: Node, locked: boolean): Node {
   return locked ? withoutInteraction(withClass(node, "cursor-not-allowed"), ["draggable"]) : node;
 }
 
-/** In a scene, a node that belongs to the base cannot be moved from the scene. */
-export function versionLockOverlay(node: Node, lockedByVersion: boolean): Node {
-  return lockedByVersion ? withoutInteraction(node, ["draggable"]) : node;
+/** In a Version, a node whose copy conflicts with the base (the base changed after the copy). */
+export function versionConflictOverlay(node: Node, conflicted: boolean): Node {
+  return conflicted ? withClass(node, "node-version-conflict") : node;
 }
 
 /** A node an LLM suggestion would add, waiting to be kept or discarded. */
@@ -193,7 +193,8 @@ export interface EditorNodeOverlayInput {
   hiddenByTag: boolean;
   isReading: boolean;
   locked: boolean;
-  lockedByVersion: boolean;
+  /** The active Version's copy of this node conflicts with the base. */
+  versionConflict: boolean;
   pending: boolean;
 }
 
@@ -223,6 +224,6 @@ export function applyEditorNodeOverlays(
   next = tagFilterOverlay(next, input.hiddenByTag);
   next = readingOverlay(next, input.isReading);
   next = lockOverlay(next, input.locked);
-  next = versionLockOverlay(next, input.lockedByVersion);
+  next = versionConflictOverlay(next, input.versionConflict);
   return pendingOverlay(next, input.pending);
 }

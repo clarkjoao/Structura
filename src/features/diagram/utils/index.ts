@@ -117,12 +117,13 @@ export {
   diagramWithResolvedScene,
   exportFilenameSlug,
   canMoveNodeInSceneMode,
-  isComponentAddedInActiveVersion,
   isDiagramCompareMode,
   buildCompareComponentVisuals,
   buildCompareConnectionVisuals,
   computeMergePreview,
   versionHasDiff,
+  versionConflicts,
+  modifiedComponentsOf,
 } from "./version.utils";
 export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./version.utils";
 
