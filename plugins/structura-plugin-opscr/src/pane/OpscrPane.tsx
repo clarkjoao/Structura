@@ -949,11 +949,18 @@ export function createOpscrPane(api: StructuraPluginApi) {
     /** Shows an initiative (null: the root) on the bound diagram, on another View first if asked. */
     const showInitiative = async (name: string | null, at?: { view: string | undefined }) => {
       if (at && at.view !== stored.state.view) {
+        initiatives.show(null);
         await engine.showView(at.view);
         // Its Version is made for that View once the root has drawn it.
         await initiatives.sync();
       }
       initiatives.show(name);
+    };
+    /** Another View on the bound diagram opens on the base (the root), not on an initiative. */
+    const switchView = (view: string | undefined) => {
+      if (view === stored.state.view) return;
+      initiatives.show(null);
+      void engine.showView(view);
     };
     const errorCount = diagnostics.filter((d) => d.severity === "error").length;
     const warningCount = diagnostics.filter((d) => d.severity === "warning").length;
@@ -1074,7 +1081,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
                     t={t}
                     views={[...views.names].sort()}
                     view={stored.state.view}
-                    onView={(view) => void engine.showView(view)}
+                    onView={switchView}
                     initiatives={initiatives.active ? initiatives.rows : []}
                     shown={initiatives.shown}
                     onShow={(name, at) => void showInitiative(name, at)}
@@ -1096,7 +1103,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
                             className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-accent"
                             title={t.opensTitle}
                             aria-label={t.opens(link.name, link.view)}
-                            onClick={() => void engine.showView(link.view)}
+                            onClick={() => switchView(link.view)}
                           >
                             {link.name}
                             <Icon path={ARROW_RIGHT} className="h-3 w-3 text-muted-foreground" />
@@ -1224,7 +1231,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
                 <button
                   type="button"
                   className={`${PRIMARY_BUTTON_CLASS} w-full`}
-                  onClick={() => void engine.showView(undefined)}
+                  onClick={() => switchView(undefined)}
                 >
                   {t.showWholeToAdd}
                 </button>

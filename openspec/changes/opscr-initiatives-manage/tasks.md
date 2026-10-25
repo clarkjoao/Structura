@@ -6,4 +6,5 @@
 - [x] 1.4 Overview `ViewPicker`: Showing (root / initiatives), View list with marks, links folded
 - [x] 1.5 Initiatives tab: list and detail (name, status, description, docs, changes, Views, files,
       lock, Promote…, Delete)
-- [x] 1.6 e2e `initiatives.mjs`, `views.mjs`, `pane.mjs`; typecheck, lint, tests
+- [x] 1.6 Switching the View on the bound diagram goes back to the base Version
+- [x] 1.7 e2e `initiatives.mjs`, `views.mjs`, `pane.mjs`; typecheck, lint, tests
