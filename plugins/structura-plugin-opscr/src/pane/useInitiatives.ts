@@ -13,6 +13,8 @@ import type { SourceText } from "../engine/patches";
 import { setSpecField } from "../engine/patches";
 import {
   InitiativeVersions,
+  initiativeFolderName,
+  initiativeOfPath,
   initiativeViewChanges,
   initiativesDir,
   productOf,
@@ -339,31 +341,35 @@ export function useInitiatives(options: {
   );
 
   /** A new initiative folder with its `Initiative`, unsaved; resolves to its name. */
-  const create = useCallback(async (): Promise<string | undefined> => {
-    const dir = initiativesDir(texts());
-    if (dir === undefined) return undefined;
-    const taken = new Set(product()?.initiatives.map((i) => i.name));
-    let n = 1;
-    while (taken.has(`initiative-${n}`)) n++;
-    const name = `initiative-${n}`;
-    await live.current.buffers.set([
-      {
-        name: `${dir}/${name}/initiative.opscr.yaml`,
-        text: [
-          "apiVersion: opscr.dev/v1",
-          "kind: Initiative",
-          "metadata:",
-          `  name: ${name}`,
-          "spec:",
-          `  displayName: ${JSON.stringify(newTitle)}`,
-          "  status: proposed",
-          "",
-        ].join("\n"),
-      },
-    ]);
-    await sync();
-    return name;
-  }, [texts, product, newTitle, sync]);
+  const create = useCallback(
+    async (title: string = newTitle): Promise<string | undefined> => {
+      const dir = initiativesDir(texts());
+      if (dir === undefined) return undefined;
+      const taken = new Set([
+        ...(product()?.initiatives.map((i) => i.name) ?? []),
+        ...texts().flatMap((t) => initiativeOfPath(t.name, dir) ?? []),
+      ]);
+      const name = initiativeFolderName(title, taken);
+      await live.current.buffers.set([
+        {
+          name: `${dir}/${name}/initiative.opscr.yaml`,
+          text: [
+            "apiVersion: opscr.dev/v1",
+            "kind: Initiative",
+            "metadata:",
+            `  name: ${name}`,
+            "spec:",
+            `  displayName: ${JSON.stringify(title.trim() || newTitle)}`,
+            "  status: proposed",
+            "",
+          ].join("\n"),
+        },
+      ]);
+      await sync();
+      return name;
+    },
+    [texts, product, newTitle, sync],
+  );
 
   /** Drops an initiative's files (deleted from the folder on Save). */
   const remove = useCallback(
@@ -431,7 +437,7 @@ export function useInitiatives(options: {
     shown,
     show,
     locate,
-    /** A new initiative, unsaved; resolves to its name. */
+    /** A new initiative called `title` (its folder named after it), unsaved; resolves to its name. */
     create,
     remove,
     setField,

@@ -373,7 +373,12 @@ describe("versionChanges", () => {
       { field: "description", base: "", version: "Publishes events" },
     ]);
     expect(changes.removed).toEqual({ components: ["cache"], connections: ["c1"] });
-    expect(countVersionChanges(changes)).toEqual({ added: 2, changed: 1, removed: 2 });
+    expect(countVersionChanges(changes, diagram().snapshot.connections)).toEqual({
+      added: 1,
+      changed: 1,
+      removed: 1,
+      connections: 2,
+    });
   });
 
   it("is null for a Version that is not there, and the same object while nothing changed", () => {

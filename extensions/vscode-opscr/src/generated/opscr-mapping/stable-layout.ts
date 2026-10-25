@@ -13,6 +13,12 @@ const PANEL_PADDING = 40;
 const STACK_GAP = 40;
 /** Gap between a new element and the sibling it is connected to, along the flow (left to right). */
 const FLOW_GAP = 80;
+/**
+ * The room a card takes on the canvas at most. The canvas draws a card as big as its content —
+ * its name, technology, the view it opens, "explore inside" — up to 260px wide, while the boxes
+ * the engine is given say 180×80: placing beside drawn cards by those boxes would overlap them.
+ */
+const CARD_ROOM = { width: 260, height: 160 };
 
 const overlaps = (a: ViewBox, b: ViewBox): boolean =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
@@ -145,6 +151,10 @@ export function stabilizeLayout(
     return undefined;
   };
 
+  /** The room a card placed beside its siblings takes on the canvas: its panel holds that. */
+  const roomFor = new Map<string, ViewBox>();
+  const extentOf = (id: string): ViewBox => roomFor.get(id) ?? boxes.get(id)!;
+
   const placeSiblings = (ids: readonly string[], insidePanel: boolean): void => {
     const survivors = ids.filter((id) => kept.has(id));
     const placed: ViewBox[] = [];
@@ -209,9 +219,21 @@ export function stabilizeLayout(
     // canvas draws cards as big as their content.
     const leaves = survivors.filter((id) => !childrenOf.has(id)).map((id) => boxes.get(id)!);
     const card = {
-      width: Math.max(0, ...leaves.map((b) => b.width)),
-      height: Math.max(0, ...leaves.map((b) => b.height)),
+      width: Math.max(CARD_ROOM.width, ...leaves.map((b) => b.width)),
+      height: Math.max(CARD_ROOM.height, ...leaves.map((b) => b.height)),
     };
+    /** What is drawn takes the room its card does, not the box it was given. */
+    const roomOf = (id: string): ViewBox => {
+      const box = boxes.get(id)!;
+      return childrenOf.has(id)
+        ? box
+        : {
+            ...box,
+            width: Math.max(box.width, card.width),
+            height: Math.max(box.height, card.height),
+          };
+    };
+    const occupied = survivors.map(roomOf);
     while (waiting.length > 0) {
       // One linked to what is placed first (the most linked), so a chain of new ones follows on.
       const linked = waiting.filter((id) => linkedTo(id).length > 0);
@@ -224,7 +246,7 @@ export function stabilizeLayout(
       )[0];
       let start: ViewBox;
       if (link) {
-        const at = boxes.get(link.other)!;
+        const at = roomOf(link.other);
         const x = link.calls
           ? at.x - Math.max(size.width, card.width) - FLOW_GAP
           : at.x + at.width + FLOW_GAP;
@@ -237,9 +259,10 @@ export function stabilizeLayout(
             width: Math.max(size.width, card.width),
             height: Math.max(size.height, card.height),
           };
-      const spot = nearestFree(room, placed, floor);
+      const spot = nearestFree(room, occupied, floor);
       boxes.set(id, { ...size, x: spot.x, y: spot.y });
-      placed.push(spot);
+      if (!childrenOf.has(id)) roomFor.set(id, spot);
+      occupied.push(spot);
       placedIds.add(id);
     }
   };
@@ -250,8 +273,8 @@ export function stabilizeLayout(
   for (const panel of panels) {
     const children = childrenOf.get(panel.id)!;
     placeSiblings(children, true);
-    const right = Math.max(...children.map((id) => boxes.get(id)!.x + boxes.get(id)!.width));
-    const bottom = Math.max(...children.map((id) => boxes.get(id)!.y + boxes.get(id)!.height));
+    const right = Math.max(...children.map((id) => extentOf(id).x + extentOf(id).width));
+    const bottom = Math.max(...children.map((id) => extentOf(id).y + extentOf(id).height));
     const base = previous.boxes.get(panel.id) ?? freshBox(panel.id);
     boxes.set(panel.id, {
       x: 0,

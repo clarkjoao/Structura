@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { initiativeFolderName } from "../engine/initiatives";
 import type { PluginVersionStatus } from "../types/plugin.types";
 import type { text } from "./i18n";
 import { ChangeCounts, StatusDot } from "./InitiativeBits";
@@ -27,7 +28,8 @@ export interface InitiativeActions {
   show(name: string | null): void;
   /** Shows its Version and lights one of its elements. */
   locate(name: string, key: string): void;
-  create(): void;
+  /** A new initiative called `title`, its folder named after it. */
+  create(title: string): void;
   remove(name: string): void;
   setField(name: string, field: "displayName" | "status" | "description", value: string): void;
   accept(name: string): void;
@@ -65,6 +67,7 @@ export function InitiativesTab({
   preview: ReactNode;
 }) {
   const row = rows.find((r) => r.name === picked);
+  const [creating, setCreating] = useState(false);
   return (
     <div className="space-y-3 px-4 py-3">
       {preview}
@@ -82,15 +85,28 @@ export function InitiativesTab({
         <>
           <div className="flex items-center gap-2">
             <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">{t.initiativesHint}</p>
-            <button
-              type="button"
-              className={`${BUTTON_CLASS} h-7 px-2`}
-              onClick={() => actions.create()}
-            >
-              <Icon path={PLUS} />
-              {t.newInitiative}
-            </button>
+            {!creating && (
+              <button
+                type="button"
+                className={`${BUTTON_CLASS} h-7 px-2`}
+                onClick={() => setCreating(true)}
+              >
+                <Icon path={PLUS} />
+                {t.newInitiative}
+              </button>
+            )}
           </div>
+          {creating && (
+            <NewInitiativeForm
+              t={t}
+              taken={new Set(rows.map((r) => r.name))}
+              onCreate={(title) => {
+                setCreating(false);
+                actions.create(title);
+              }}
+              onCancel={() => setCreating(false)}
+            />
+          )}
           {rows.length === 0 ? (
             <p className="text-xs text-muted-foreground">{t.initiativesNone}</p>
           ) : (
@@ -142,6 +158,60 @@ export function InitiativesTab({
         </>
       )}
     </div>
+  );
+}
+
+/** The name of a new initiative, with the folder it makes; Enter creates, Escape cancels. */
+function NewInitiativeForm({
+  t,
+  taken,
+  onCreate,
+  onCancel,
+}: {
+  t: Text;
+  taken: ReadonlySet<string>;
+  onCreate: (title: string) => void;
+  onCancel: () => void;
+}) {
+  const [title, setTitle] = useState("");
+  const name = title.trim();
+  return (
+    <form
+      aria-label={t.newInitiative}
+      className="space-y-2 rounded-md border border-primary/40 bg-primary/5 p-2.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (name) onCreate(name);
+      }}
+    >
+      <label className={LABEL_CLASS} htmlFor="opscr-new-initiative">
+        {t.initiativeName}
+      </label>
+      <input
+        id="opscr-new-initiative"
+        autoFocus
+        className={`${FIELD_CLASS} h-8 text-sm`}
+        placeholder={t.newInitiativePlaceholder}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onCancel();
+        }}
+      />
+      {name && (
+        <p className="font-mono text-[10px] text-muted-foreground">
+          initiatives/{initiativeFolderName(name, taken)}/
+        </p>
+      )}
+      <div className="flex gap-1.5">
+        <button type="submit" className={`${PRIMARY_BUTTON_CLASS} h-7 flex-1`} disabled={!name}>
+          {t.createInitiative}
+        </button>
+        <button type="button" className={`${BUTTON_CLASS} h-7`} onClick={onCancel}>
+          {t.previewCancel}
+        </button>
+      </div>
+    </form>
   );
 }
 

@@ -94,13 +94,20 @@ export default function WorkspacePage() {
     [activeDiagramId, openDiagram, navigate],
   );
 
-  const handleDrillUp = useCallback(() => {
-    const prev = navStack[navStack.length - 1];
-    if (!prev) return;
-    setNavStack((s) => s.slice(0, -1));
-    openDiagram(prev);
-    navigate(`/model/${prev}`);
-  }, [navStack, openDiagram, navigate]);
+  const handleDrillUpTo = useCallback(
+    (index: number) => {
+      const prev = navStack[index];
+      if (!prev) return;
+      setNavStack((s) => s.slice(0, index));
+      openDiagram(prev);
+      navigate(`/model/${prev}`);
+    },
+    [navStack, openDiagram, navigate],
+  );
+  const handleDrillUp = useCallback(
+    () => handleDrillUpTo(navStack.length - 1),
+    [handleDrillUpTo, navStack.length],
+  );
 
   const flashCopied = useCallback((kind: CopiedClipboardKind) => {
     setCopiedClipboardKind(kind);
@@ -228,6 +235,7 @@ export default function WorkspacePage() {
             handleOpenDiagram={handleOpenDiagram}
             handleDrillDownToDiagram={handleDrillDownToDiagram}
             handleDrillUp={handleDrillUp}
+            handleDrillUpTo={handleDrillUpTo}
             handleCopyDrawio={handleCopyDrawio}
             handleCopyJson={handleCopyJson}
             handleExportFormats={handleExportFormats}

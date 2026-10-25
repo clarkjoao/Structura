@@ -164,9 +164,49 @@ describe("stabilizeLayout", () => {
       "Application/mailer": box(300, 1000),
     });
     const boxes = stabilizeLayout(view, fresh, kept).boxes;
-    // Mostly kept: events after api, which publishes to it; mailer after events, which triggers it.
-    expect(boxes.get("Topic/events")).toEqual(box(660, 40));
-    expect(boxes.get("Application/mailer")).toEqual(box(920, 40));
+    // Mostly kept: events after api, which publishes to it; mailer after events, which triggers it
+    // — each past the room a drawn card takes (260 wide), not the 180 of its box.
+    expect(boxes.get("Topic/events")).toEqual(box(740, 40));
+    expect(boxes.get("Application/mailer")).toEqual(box(1080, 40));
+  });
+
+  it("keeps a new card clear of drawn cards by the room a card takes, not its 80px box", () => {
+    const view = buildTechnicalView({
+      manifests: [
+        m("BoundedContext", "orders"),
+        m("Application", "api"),
+        m("Application", "web"),
+        m("Topic", "events"),
+        m("Cache", "cache"),
+        m("Relationship", "r", {
+          edges: [
+            belongs(["Application", "api"], ["BoundedContext", "orders"]),
+            belongs(["Application", "web"], ["BoundedContext", "orders"]),
+            belongs(["Topic", "events"], ["BoundedContext", "orders"]),
+            belongs(["Cache", "cache"], ["BoundedContext", "orders"]),
+            {
+              from: { kind: "Application", id: "api" },
+              to: { kind: "Topic", id: "events" },
+              type: "publishes",
+            },
+          ],
+        }),
+      ],
+    });
+    // cache sits 20px below where events would go beside api: clear by the boxes, not on screen.
+    const kept = result({
+      "BoundedContext/orders": box(0, 0, 1200, 600),
+      "Application/web": box(100, 40),
+      "Application/api": box(400, 40),
+      "Cache/cache": box(660, 140),
+    });
+    const fresh = result({ ...Object.fromEntries(kept.boxes), "Topic/events": box(0, 500) });
+    const boxes = stabilizeLayout(view, fresh, kept).boxes;
+    const drawn = (b: ViewBox | undefined) => ({ ...b!, height: 140 });
+    expect(overlap(drawn(boxes.get("Topic/events")), drawn(boxes.get("Cache/cache")))).toBe(false);
+    expect(overlap(drawn(boxes.get("Topic/events")), drawn(boxes.get("Application/api")))).toBe(
+      false,
+    );
   });
 
   it("places a new element connected to nothing as the engine put it, by its nearest survivor", () => {
@@ -177,8 +217,9 @@ describe("stabilizeLayout", () => {
       "Database/db": box(900, 0),
     });
     const boxes = stabilizeLayout(after, fresh, result({ "Application/api": box(40, 40) })).boxes;
-    // worker is placed as the engine put it relative to api (140 below), db likewise.
-    expect(boxes.get("Application/worker")).toMatchObject({ x: 40, y: 180 });
+    // worker is placed as the engine put it relative to api (140 below), then clear of the room
+    // api's card takes on the canvas (160 tall).
+    expect(boxes.get("Application/worker")).toMatchObject({ x: 40, y: 240 });
   });
 
   it("grows a panel to hold its children and never shrinks it", () => {

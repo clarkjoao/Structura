@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -115,6 +116,7 @@ export function WorkspaceContent({
   handleOpenDiagram,
   handleDrillDownToDiagram,
   handleDrillUp,
+  handleDrillUpTo,
   handleCopyDrawio,
   handleCopyJson,
   handleExportFormats,
@@ -155,6 +157,17 @@ export function WorkspaceContent({
       };
     }),
   );
+  // The diagrams drilled down through to this one, for the breadcrumb.
+  const trailNames = useDiagramStore(
+    useShallow((state) => navStack.map((id) => state.diagrams[id]?.name ?? "")),
+  );
+  const trail = useMemo(
+    () => navStack.map((id, index) => ({ id, name: trailNames[index] ?? "" })),
+    [navStack, trailNames],
+  );
+  const activeVersion = diagram?.activeVersionId
+    ? diagram.versions?.[diagram.activeVersionId]
+    : undefined;
   const flowMode = useFlowMode();
   const playbackState = flowMode.mode.kind === "playing" ? flowMode.mode : null;
   const activeFlow = playbackState?.flow ?? null;
@@ -319,6 +332,11 @@ export function WorkspaceContent({
                 <DiagramTitle
                   diagram={diagram}
                   onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
+                  trail={trail}
+                  onOpenTrail={handleDrillUpTo}
+                  version={
+                    activeVersion ? { name: activeVersion.name, color: activeVersion.color } : null
+                  }
                 />
               )}
               {isRecording && (

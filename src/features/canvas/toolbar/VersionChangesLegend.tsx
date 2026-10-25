@@ -20,8 +20,8 @@ export function VersionChangesLegend({ diagram }: { diagram: Diagram | DiagramMo
   if (!show || !versionId || diagram.compareVersionId) return null;
   const changes = versionChanges(diagram, versionId);
   if (!changes) return null;
-  const counts = countVersionChanges(changes);
-  if (counts.added + counts.changed + counts.removed === 0) return null;
+  const counts = countVersionChanges(changes, diagram.snapshot.connections);
+  if (counts.added + counts.changed + counts.removed + counts.connections === 0) return null;
   const name = diagram.versions?.[versionId]?.name ?? "";
 
   return (
@@ -45,6 +45,12 @@ export function VersionChangesLegend({ diagram }: { diagram: Diagram | DiagramMo
         />
         {t("versions.changesRemoved", { count: counts.removed })}
       </span>
+      {counts.connections > 0 && (
+        <span className="flex items-center gap-1">
+          <span className="h-0.5 w-3 shrink-0 bg-muted-foreground" aria-hidden />
+          {t("versions.changesConnections", { count: counts.connections })}
+        </span>
+      )}
       <button
         type="button"
         onClick={() => setShow(false)}

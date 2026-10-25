@@ -26,7 +26,7 @@ import { getBundledPlugins } from "./bundled-plugins";
 export const PLUGIN_INSTALL_RECORDS_KEY = "plugins:installed";
 export const PLUGIN_BUNDLED_DISABLED_KEY = "plugins:bundled-disabled";
 /** Ids of default-off bundled plugins the user turned on. */
-export const PLUGIN_BUNDLED_ENABLED_KEY = "plugins:bundled-enabled";
+const PLUGIN_BUNDLED_ENABLED_KEY = "plugins:bundled-enabled";
 
 export type PluginSource = "user" | "bundled";
 

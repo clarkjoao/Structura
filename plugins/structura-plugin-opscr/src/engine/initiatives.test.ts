@@ -12,6 +12,7 @@ import { OpscrEngine } from "./engine";
 import { FakeCanvas } from "./fake-canvas.fixture";
 import {
   InitiativeVersions,
+  initiativeFolderName,
   initiativeOfPath,
   initiativeViewChanges,
   isRootFile,
@@ -135,6 +136,18 @@ describe("initiative paths", () => {
     );
     expect(initiativeOfPath("webshop.opscr.yaml", "initiatives")).toBeUndefined();
     expect(isRootFile("initiatives/order-events/x.opscr.yaml")).toBe(false);
+  });
+});
+
+describe("initiativeFolderName", () => {
+  it("names the folder after the title, numbered when it is taken", () => {
+    expect(initiativeFolderName("Order events", new Set())).toBe("order-events");
+    expect(initiativeFolderName("  Migração de sessões!  ", new Set())).toBe("migracao-de-sessoes");
+    expect(initiativeFolderName("Order events", new Set(["order-events"]))).toBe("order-events-2");
+    expect(initiativeFolderName("Order events", new Set(["order-events", "order-events-2"]))).toBe(
+      "order-events-3",
+    );
+    expect(initiativeFolderName("???", new Set())).toBe("initiative");
   });
 });
 
@@ -293,6 +306,16 @@ describe("InitiativeVersions", () => {
               b.y < a.y + a.height,
             `${a.label} × ${b.label}`,
           ).toBe(false);
+  });
+
+  it("tells the canvas id its Version gives an element: its own, or the root's it keeps", async () => {
+    await s.start();
+    const events = s.byLabel(s.version(), "order-events")!;
+    expect(s.versions.canvasIdOf("d", "order-events", "Topic/order-events")).toBe(events.id);
+    expect(s.versions.canvasIdOf("d", "order-events", "Application/storefront")).toBe(
+      s.rootBinding.ids["Application/storefront"],
+    );
+    expect(s.versions.canvasIdOf("nope", "order-events", "Topic/order-events")).toBeUndefined();
   });
 
   it("removes the Version of an initiative that is gone", async () => {

@@ -511,6 +511,8 @@
   },
   "canvasToolbar": {
     "drillUp": "Level up",
+    "trail": "Drilled down from",
+    "showingVersion": "The canvas shows the Version {{name}}",
     "panel": "Panel",
     "note": "Note",
     "awsServices": "AWS services",
@@ -839,6 +841,7 @@
     "changesAdded": "{{count}} added",
     "changesChanged": "{{count}} changed",
     "changesRemoved": "{{count}} removed",
+    "changesConnections": "{{count}} connection(s)",
     "hideChanges": "Hide",
     "changedIn": "Changed in {{name}}",
     "changeNone": "(empty)",
