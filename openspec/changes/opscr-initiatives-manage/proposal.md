@@ -19,7 +19,9 @@ only shows a status and Promote: an initiative can be seen and managed only from
   Version on the bound diagram; an initiative that changes nothing in the current View is disabled.
   The Diagram select becomes a list of the whole workspace and the Views, each marked with the
   initiatives that change it and how much (`+3 ~1 −1`); a mark shows that View with that initiative.
-  The boxes that open another view fold under their summary.
+  The boxes that open another view fold under their summary. Switching the bound diagram to
+  another View (the list, a box that opens a view, "show the whole workspace") goes back to the
+  base Version; a mark switches the View on the base, then shows its initiative.
 - **Initiatives tab: list and detail.** The list shows each initiative's status, its counts, the
   number of Views it changes, lock issues, whether it is on the canvas, and New initiative. The
   detail edits the name, status and description (written to the `Initiative` manifest, unsaved

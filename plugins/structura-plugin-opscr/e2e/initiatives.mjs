@@ -547,6 +547,17 @@ await check(
   (await activeKey(DIAGRAM)) === "order-events",
   "Show on canvas shows the initiative's Version",
 );
+// Another View on the bound diagram opens on the base.
+await pickView("shop-containers");
+await settle();
+await check(
+  (await activeKey(DIAGRAM)) === null,
+  "switching the View goes back to the base Version",
+);
+await pickView("");
+await settle();
+// The detail stays open across tabs.
+await openTab("initiatives");
 const description = detail.getByLabel(/^(Description|Descrição)$/);
 await description.fill("Orders publish events");
 await description.blur();
