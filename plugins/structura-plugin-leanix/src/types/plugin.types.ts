@@ -125,6 +125,8 @@ export interface DiagramSnapshot {
   id: string;
   name: string;
   description: string | null;
+  /** v1.14 — the workspace folder the diagram is in; null at the top. */
+  folderId?: string | null;
   /**
    * Since 1.14: the elements as the canvas shows them — with the active Version applied
    * (`activeVersion`), unless `getDiagram(id, { base: true })` asked for the base.
@@ -232,6 +234,35 @@ export interface ImporterContribution {
   /** Optional content sniffing when the extension is ambiguous. */
   canImport?(fileName: string, contents: string): boolean;
   import(contents: string, ctx: ImportContext): ImportResult | Promise<ImportResult>;
+}
+
+/** v1.14 — what a workspace importer is handed when the user picks it. */
+export interface WorkspaceImportContext {
+  /** The host's language, e.g. "pt-BR". */
+  locale: string;
+  /** The workspace folder the user is in (the new diagrams' parent), or null at the top. */
+  folderId: string | null;
+}
+
+/** v1.14 — what a workspace import made: the diagram to open, and the plugin's pane beside it. */
+export interface WorkspaceImportResult {
+  diagramId: string;
+  /** Id of one of the plugin's `document-pane` panels, opened beside the diagram. */
+  openPane?: string;
+}
+
+/**
+ * v1.14 — capability "io:importers". An import offered on the workspace home that sets up a
+ * whole source (a folder, say) instead of reading one file into the active diagram: the plugin
+ * asks what it needs (from the user's click), creates diagrams and folders, and names the
+ * diagram to open.
+ */
+export interface WorkspaceImporterContribution {
+  id: string;
+  label: LocalizedText;
+  description?: LocalizedText;
+  /** Resolves to null when the user cancelled; a thrown error's message is shown to the user. */
+  run(context: WorkspaceImportContext): Promise<WorkspaceImportResult | null>;
 }
 
 export interface ExporterContribution {
@@ -552,6 +583,13 @@ export interface PluginFiles {
    */
   open(bindingId: string): Promise<PluginFolder | null>;
   forget(bindingId: string): Promise<void>;
+  /**
+   * v1.14 — remember the folder of `fromBindingId` under `toBindingId` instead (a folder picked
+   * before the diagram it binds existed). False when there is none under `fromBindingId`.
+   */
+  move(fromBindingId: string, toBindingId: string): Promise<boolean>;
+  /** v1.14 — the two binding ids remember the same folder on disk. */
+  isSame(aBindingId: string, bBindingId: string): Promise<boolean>;
 }
 
 /** v1.4 — changes to the ACTIVE diagram applied as one history step (`applyChanges`). */
@@ -597,6 +635,15 @@ export interface PluginDiagramInput {
   description?: string;
   /** C4 level, e.g. "context", "container", "component" or "deployment"; "container" by default. */
   level?: string;
+  /** v1.14 — the workspace folder to put it in (`createFolder`); the top when omitted. */
+  folderId?: string | null;
+}
+
+/** v1.14 — a new workspace folder (`createFolder`). */
+export interface PluginFolderInput {
+  name: string;
+  /** The folder to nest it in; the top when omitted. */
+  parentId?: string | null;
 }
 
 export interface PluginDiagramChangesResult {
@@ -698,6 +745,8 @@ export interface StructuraPluginApi {
   registerNodeType(descriptor: PluginNodeTypeDescriptor): void;
   registerExporter(handler: ExporterContribution): void;
   registerImporter(handler: ImporterContribution): void;
+  /** v1.14 — capability "io:importers". An import offered on the workspace home. */
+  registerWorkspaceImporter(handler: WorkspaceImporterContribution): void;
   registerPanel(section: PanelContribution): void;
 
   /** Fires after any committed change to a diagram. Returns unsubscribe. */
@@ -742,6 +791,11 @@ export interface StructuraPluginApi {
    * to fill it and with `linkedDiagramId` to make a component open it.
    */
   createDiagram(input: PluginDiagramInput): string;
+  /**
+   * v1.14 — capability "diagram:write". Creates a workspace folder and returns its id; a
+   * `parentId` that is not a folder puts it at the top.
+   */
+  createFolder(input: PluginFolderInput): string;
 
   /** v1.4 — capability "files:folder". Folders the user picked for this plugin. */
   readonly files: PluginFiles;

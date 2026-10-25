@@ -574,6 +574,8 @@ export default function DashboardPage() {
                     variant="outline"
                     size="sm"
                     className="h-8"
+                    aria-label={t("import.title")}
+                    title={t("import.title")}
                     onClick={() => setImportModalOpen(true)}
                   >
                     <Upload className="h-3.5 w-3.5" />

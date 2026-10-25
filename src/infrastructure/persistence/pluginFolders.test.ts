@@ -151,6 +151,26 @@ describe("plugin folders", () => {
     expect(await later.open("d1")).toBeNull();
   });
 
+  it("moves a folder to another binding id, and tells the same folder from another", async () => {
+    const store = memoryStore();
+    const shop = fakeDirectory("shop", { "a.opscr.yaml": "a" }).handle;
+    const other = fakeDirectory("other", {}).handle;
+    let next = shop;
+    const folders = createPluginFolders("p", async () => next, store);
+    await folders.pick("pending");
+    expect(await folders.move("pending", "d1")).toBe(true);
+    expect((await folders.open("d1"))?.name).toBe("shop");
+    expect(await folders.open("pending")).toBeNull();
+    expect(await folders.move("pending", "d2")).toBe(false);
+
+    await folders.pick("again");
+    expect(await folders.isSame("again", "d1")).toBe(true);
+    next = other;
+    await folders.pick("again");
+    expect(await folders.isSame("again", "d1")).toBe(false);
+    expect(await folders.isSame("again", "missing")).toBe(false);
+  });
+
   it("gives nothing back when permission is denied or the picker is cancelled", async () => {
     const store = memoryStore();
     const { handle } = fakeDirectory("shop", {}, "denied");

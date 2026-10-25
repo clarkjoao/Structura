@@ -141,7 +141,7 @@ export interface ViewChanges {
 }
 
 /** Nothing the View shows changes. */
-export const unchanged = (c: ViewChanges) =>
+const unchanged = (c: ViewChanges) =>
   c.added.length + c.modified.length + c.retired.length + c.edges === 0;
 
 /**

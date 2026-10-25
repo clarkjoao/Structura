@@ -107,6 +107,7 @@ export function toDiagramSnapshot(
     id: diagram.id,
     name: diagram.name,
     description: diagram.description ?? null,
+    folderId: diagram.folderId ?? null,
     components: Object.values(resolved.components).map((component) =>
       toComponentSnapshot(component, resolved.nodeLayouts[component.id]),
     ),

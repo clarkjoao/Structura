@@ -7,9 +7,11 @@ import {
   getIoRegistrySnapshot,
   registerExporterContribution,
   registerImporterContribution,
+  registerWorkspaceImporterContribution,
   subscribeIoRegistry,
   unregisterExporterContribution,
   unregisterImporterContribution,
+  unregisterWorkspaceImporterContribution,
 } from "./io-registry";
 
 const importer: ImporterContribution = {
@@ -73,5 +75,19 @@ describe("io-registry", () => {
     expect(findImportersForFile("diagram.mmd", "sequenceDiagram")).toHaveLength(0);
     expect(findImportersForFile("diagram.txt", "flowchart TD")).toHaveLength(0);
     expect(findImportersForFile("no-extension", "flowchart TD")).toHaveLength(0);
+  });
+
+  it("registers workspace importers, once per id, and drops them", () => {
+    const workspace = {
+      id: "folder-setup",
+      label: "Folder",
+      run: async () => null,
+      ownsPanel: () => false,
+    };
+    registerWorkspaceImporterContribution(workspace);
+    expect(getIoRegistrySnapshot().workspaceImporters).toEqual([workspace]);
+    expect(() => registerWorkspaceImporterContribution(workspace)).toThrow(/already/);
+    unregisterWorkspaceImporterContribution("folder-setup");
+    expect(getIoRegistrySnapshot().workspaceImporters).toEqual([]);
   });
 });

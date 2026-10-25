@@ -239,6 +239,8 @@
     }
   },
   "import": {
+    "setup": "Set up from",
+    "setupFailed": "The import could not finish: {{reason}}",
     "title": "Import",
     "description": "Import one or more diagrams from JSON files exported from Structura. You can also pick a folder to preserve its structure.",
     "format": "Format",

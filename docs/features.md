@@ -164,7 +164,7 @@ snapshot, with a compare mode. A Version works like a branch:
 
 - **Share links** encode the diagram in the URL (`/viewer#data=…`) and open a read-only viewer.
 - **Embedding** — see [guides/embedding.md](guides/embedding.md).
-- Plugins can add more importers and exporters.
+- Plugins can add more importers and exporters, and whole-source imports on the workspace home: the opscr plugin's **opscr folder (product)** sets a folder up in one pick — a workspace folder named after the product, its diagram bound to the folder and opened with the opscr pane, a diagram per View, the initiatives as Versions.
 
 ## Persistence
 

@@ -171,6 +171,26 @@ describe("v1.1 diagram read/write API", () => {
       expect(() => api.createDiagram({ name: "  " })).toThrow(/name/);
     });
 
+    it("creates folders, and diagrams in them (API 1.14)", () => {
+      const folder = api.createFolder({ name: "Shop" });
+      const nested = api.createFolder({ name: "Views", parentId: folder });
+      const state = useDiagramStore.getState();
+      expect(state.folders[folder]?.name).toBe("Shop");
+      expect(state.folders[folder]?.parentId ?? null).toBe(null);
+      expect(state.folders[nested]).toMatchObject({ name: "Views", parentId: folder });
+      expect(
+        state.folders[api.createFolder({ name: "Top", parentId: "nope" })]?.parentId ?? null,
+      ).toBe(null);
+      expect(() => api.createFolder({ name: " " })).toThrow(/name/);
+
+      const inside = api.createDiagram({ name: "Main", folderId: folder });
+      expect(stateOf(inside).folderId).toBe(folder);
+      expect(api.getDiagram(inside)?.folderId).toBe(folder);
+      expect(stateOf(api.createDiagram({ name: "Lost", folderId: "nope" })).folderId ?? null).toBe(
+        null,
+      );
+    });
+
     it("applies changes to another diagram and leaves the active one alone", () => {
       const other = api.createDiagram({ name: "Other" });
       const before = JSON.stringify(stateOf(diagramId).snapshot);
