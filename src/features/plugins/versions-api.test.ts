@@ -124,4 +124,32 @@ describe("api.versions", () => {
     off();
     expect(pluginHandlesVersionActions(manifest.id)).toBe(false);
   });
+
+  it("writes into a Version by key, or into the base while a Version is shown", () => {
+    api.applyChanges(
+      { update: [{ id: apiId, name: "API v2" }] },
+      { version: { key: "plan", name: "Plan", status: "proposed" } },
+    );
+    const [plan] = api.versions.list();
+    expect(plan).toMatchObject({
+      key: "plan",
+      name: "Plan",
+      status: "proposed",
+      ownerPluginId: manifest.id,
+    });
+    expect(plan!.modified.componentIds).toEqual([apiId]);
+    // Incremental, unlike upsert: a second write keeps what the first did.
+    api.applyChanges({ remove: [dbId] }, { version: { key: "plan" } });
+    expect(api.versions.list()[0]!.modified.componentIds).toEqual([apiId]);
+    expect(api.getDiagram(diagramId, { version: "plan" })!.components.map((c) => c.label)).toEqual([
+      "API v2",
+    ]);
+
+    api.versions.setActive("plan");
+    api.applyChanges({ update: [{ id: dbId, name: "DB v2" }] }, { base: true });
+    expect(diagram().snapshot.components[dbId]!.name).toBe("DB v2");
+    expect(
+      api.getDiagram(diagramId, { base: true })!.components.find((c) => c.id === apiId)?.label,
+    ).toBe("API");
+  });
 });

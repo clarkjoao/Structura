@@ -11,8 +11,11 @@ export class FakeCanvas {
   components: PluginComponentSnapshot[] = [];
   connections: PluginConnectionSnapshot[] = [];
 
-  constructor(readonly id = "d") {}
-  private next = 0;
+  /** `next`: the first number for new ids (a Version's canvas continues after its base's). */
+  constructor(
+    readonly id = "d",
+    private next = 0,
+  ) {}
   private history: Array<[PluginComponentSnapshot[], PluginConnectionSnapshot[]]> = [];
   private future: Array<[PluginComponentSnapshot[], PluginConnectionSnapshot[]]> = [];
 

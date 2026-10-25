@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "rea
 import { CONFIG_FILE, isManifest, projector } from "../project";
 import type { SourceText } from "../engine/patches";
 import { ViewDiagrams, emptyViewDiagrams, type ViewDiagramsState } from "../engine/view-diagrams";
+import { isRootFile, type InitiativeTarget } from "../engine/initiatives";
+import { emptyBinding } from "../engine/sync";
 import type { StructuraPluginApi } from "../types/plugin.types";
 
 /**
@@ -36,8 +38,13 @@ export function useViewDiagrams(options: {
   ready: boolean;
   buffersRef: MutableRefObject<Array<{ name: string; text: string }>>;
   setTexts: (files: readonly SourceText[]) => void;
+  /** The initiative whose Version a diagram shows: its canvas edits are that initiative's. */
+  initiativeShownOn?: (diagramId: string) => string | undefined;
+  onInitiativeCanvas?: (diagramId: string, initiative: string) => void;
 }) {
   const { api, diagramId, ready, buffersRef, setTexts } = options;
+  const routes = useRef(options);
+  routes.current = options;
   const [enabled, setEnabled] = useState(false);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [report, setReport] = useState<ViewDiagramsReport>(EMPTY);
@@ -70,10 +77,14 @@ export function useViewDiagrams(options: {
       host: {
         createDiagram: (input) => api.createDiagram(input),
         getDiagram: (id) => api.getDiagram(id, BASE),
-        applyChanges: (changes, id) => api.applyChanges(changes, { diagramId: id }),
+        applyChanges: (changes, id) => api.applyChanges(changes, { diagramId: id, base: true }),
       },
       texts: {
-        get: () => buffersRef.current.map((b) => ({ name: b.name, text: b.text })),
+        // The root only: initiatives are drawn as Versions of these diagrams (`useInitiatives`).
+        get: () =>
+          buffersRef.current
+            .filter((b) => isRootFile(b.name))
+            .map((b) => ({ name: b.name, text: b.text })),
         set: (files) => setTextsRef.current(files),
       },
       state: {
@@ -103,7 +114,10 @@ export function useViewDiagrams(options: {
   useEffect(() => {
     if (!manager) return;
     return api.onDiagramChange((changed) => {
-      if (manager.viewOf(changed) !== undefined) void manager.canvasChanged(changed);
+      if (manager.viewOf(changed) === undefined) return;
+      const initiative = routes.current.initiativeShownOn?.(changed);
+      if (initiative !== undefined) routes.current.onInitiativeCanvas?.(changed, initiative);
+      else void manager.canvasChanged(changed);
     });
   }, [api, manager]);
 
@@ -120,5 +134,14 @@ export function useViewDiagrams(options: {
     sync: () => manager?.sync(),
     /** The layout sidecar changed outside. */
     sidecarChanged: (text: string) => manager?.sidecarChanged(text),
+    /** The View diagrams, for the initiatives to draw their Versions on. */
+    targets: (): InitiativeTarget[] =>
+      manager
+        ? Object.entries(stateRef.current.diagrams).map(([view, id]) => ({
+            diagramId: id,
+            view,
+            baseBinding: () => stateRef.current.bindings[id] ?? { ...emptyBinding(), view },
+          }))
+        : [],
   };
 }

@@ -29,6 +29,14 @@ import {
 import type { AddChoice } from "../engine/adopt";
 import { OpscrEngine, type EngineEvent, type ViewLink } from "../engine/engine";
 import { useViewDiagrams } from "./useViewDiagrams";
+import { useInitiatives } from "./useInitiatives";
+import {
+  WORKSPACE_FILE,
+  initiativeOfPath,
+  initiativesDir,
+  isRootFile,
+} from "../engine/initiatives";
+import { LOCK_FILE } from "opscr/core";
 import type { UnwrittenConnection } from "../engine/reconcile";
 import { emptyBinding, type BindingState } from "../engine/sync";
 import { changedFiles, mergeDisk, resolveConflict, toStats, type Stats } from "../engine/watch";
@@ -52,8 +60,8 @@ import {
 } from "./styles";
 
 /**
- * The bound folder is the AS-IS: the pane reads and writes the diagram's base, never the Version
- * the canvas may be showing (initiative editing comes with the Versions-as-initiatives work).
+ * The bound folder's root is the AS-IS: the root engine reads and writes the diagram's base, never
+ * the Version the canvas may be showing — initiatives are Versions, drawn by `useInitiatives`.
  */
 const BASE = { base: true } as const;
 
@@ -91,11 +99,30 @@ interface Buffer {
 
 /** How often the folder is checked for changes made outside Structura. */
 const WATCH_INTERVAL_MS = 2000;
-const isTracked = (name: string) =>
-  isManifest(name) || name === CONFIG_FILE || name === LAYOUT_FILE || name === VISUAL_FILE;
+const isRootTracked = (name: string) =>
+  isManifest(name) ||
+  name === CONFIG_FILE ||
+  name === LAYOUT_FILE ||
+  name === VISUAL_FILE ||
+  name === WORKSPACE_FILE;
+const baseName = (name: string) => name.slice(name.lastIndexOf("/") + 1);
+/**
+ * Files the pane keeps: the root's, and — in a product workspace (`dir`) — each initiative's
+ * manifests, lock and layout sidecar.
+ */
+const trackedIn =
+  (dir: string | undefined) =>
+  (name: string): boolean => {
+    if (isRootFile(name)) return isRootTracked(name);
+    if (initiativeOfPath(name, dir) === undefined) return false;
+    return isManifest(name) || baseName(name) === LOCK_FILE || baseName(name) === LAYOUT_FILE;
+  };
 /** The sidecars: written by the engine from the canvas, never shown as an editor tab. */
 const isSidecar = (name: string) =>
-  name === LAYOUT_FILE || name === VISUAL_FILE || name === ANALYSIS_FILE;
+  name === LAYOUT_FILE ||
+  name === VISUAL_FILE ||
+  name === ANALYSIS_FILE ||
+  (!isRootFile(name) && (baseName(name) === LAYOUT_FILE || baseName(name) === LOCK_FILE));
 /** Written by a draw.io import; read for its review list, never edited here. */
 const ANALYSIS_FILE = "analysis.json";
 
@@ -185,6 +212,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
       setBuffers(next);
     }, []);
     const timer = useRef<ReturnType<typeof setTimeout>>();
+    /** Files dropped from the buffers (an initiative deleted or promoted): deleted on Save. */
+    const deleted = useRef<Set<string>>(new Set());
+    const [deletedCount, setDeletedCount] = useState(0);
     /** The folder's file stats as of the last read or save, to notice outside changes. */
     const knownStats = useRef<Stats>({});
     /** The folder came back from `sessions`: canvas edits made meanwhile are not in the YAML yet. */
@@ -226,6 +256,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
       commitBuffers(session?.buffers ?? []);
       setSelected(session?.selected ?? null);
       knownStats.current = session?.knownStats ?? {};
+      deleted.current = new Set();
+      setDeletedCount(0);
       restored.current = session !== undefined;
       setDiagnostics([]);
       setProjection(null);
@@ -301,8 +333,21 @@ export function createOpscrPane(api: StructuraPluginApi) {
       [commitBuffers],
     );
 
+    /** Drops files from the buffers; the ones on disk are deleted on Save. */
+    const removeTexts = useCallback(
+      (names: readonly string[]) => {
+        const gone = new Set(names);
+        for (const b of buffersRef.current)
+          if (gone.has(b.name) && b.disk !== "") deleted.current.add(b.name);
+        setDeletedCount(deleted.current.size);
+        commitBuffers(buffersRef.current.filter((b) => !gone.has(b.name)));
+      },
+      [commitBuffers],
+    );
+
     // The binding engine over this pane's buffers, the active diagram and the plugin storage.
     const syncViewDiagrams = useRef<() => Promise<void> | undefined>(() => undefined);
+    const syncInitiatives = useRef<() => Promise<void> | undefined>(() => undefined);
     const onEvent = useRef<(event: EngineEvent) => void>(() => {});
     onEvent.current = (event) => {
       // Only a sync that got through (or stopped at broken YAML) says the diagram is current again.
@@ -310,8 +355,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
       else if (event.type === "synced") {
         setFailed(false);
         setStatus(t.synced(event.elements));
-        // The diagrams of the Views follow the YAML the whole-workspace diagram just followed.
-        void syncViewDiagrams.current?.();
+        // The diagrams of the Views follow the YAML the whole-workspace diagram just followed, then
+        // every initiative's Versions follow the root under them.
+        void Promise.resolve(syncViewDiagrams.current?.()).then(() => syncInitiatives.current?.());
       } else if (event.type === "parse-error" || event.type === "invalid") {
         setFailed(false);
         setStatus(t.parseError);
@@ -335,7 +381,11 @@ export function createOpscrPane(api: StructuraPluginApi) {
       let folderName: string | undefined;
       return new OpscrEngine({
         texts: {
-          get: () => buffersRef.current.map((b) => ({ name: b.name, text: b.text })),
+          // The root only: initiatives are overlays, drawn as Versions (`useInitiatives`).
+          get: () =>
+            buffersRef.current
+              .filter((b) => isRootFile(b.name))
+              .map((b) => ({ name: b.name, text: b.text })),
           set: (files) => (live() ? setTexts(files) : undefined),
         },
         diagram: {
@@ -344,7 +394,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
             const diagram = api.getDiagram(undefined, BASE);
             return diagram && diagram.id === diagramId ? diagram : null;
           },
-          apply: (changes) => api.applyChanges(changes),
+          apply: (changes) => api.applyChanges(changes, BASE),
         },
         binding: {
           get: () => {
@@ -375,14 +425,34 @@ export function createOpscrPane(api: StructuraPluginApi) {
 
     const sync = useCallback(() => engine.sync(), [engine]);
 
+    const initiativesRef = useRef<ReturnType<typeof useInitiatives> | null>(null);
     const viewDiagrams = useViewDiagrams({
       api,
       diagramId,
       ready: folder !== null && loadedFor === diagramId,
       buffersRef,
       setTexts,
+      initiativeShownOn: (id) => initiativesRef.current?.shownOn(id),
+      onInitiativeCanvas: (id, key) => void initiativesRef.current?.canvasChanged(id, key),
     });
     syncViewDiagrams.current = viewDiagrams.sync;
+    const initiatives = useInitiatives({
+      api,
+      diagramId,
+      ready: folder !== null && loadedFor === diagramId,
+      buffersRef,
+      buffers: {
+        get: () => buffersRef.current.map((b) => ({ name: b.name, text: b.text })),
+        set: (files) => setTexts(files),
+        remove: (names) => removeTexts(names),
+      },
+      baseBinding: () => bindingRef.current?.state,
+      viewTargets: () => viewDiagrams.targets(),
+      report: (message) => setStatus(message),
+      newTitle: t.newInitiative,
+    });
+    initiativesRef.current = initiatives;
+    syncInitiatives.current = initiatives.sync;
 
     // Canvas edits (and undo/redo) of the bound diagram reach the YAML while the folder is open.
     useEffect(() => {
@@ -394,7 +464,12 @@ export function createOpscrPane(api: StructuraPluginApi) {
         void engine.sync();
       }
       return api.onDiagramChange((changed) => {
-        if (changed === diagramId) void engine.canvasChanged();
+        if (changed !== diagramId) return;
+        // A Version of an initiative on the canvas: the edit is that initiative's.
+        const initiative = initiativesRef.current?.shownOn(diagramId);
+        if (initiative !== undefined)
+          void initiativesRef.current?.canvasChanged(diagramId, initiative);
+        else void engine.canvasChanged();
       });
     }, [folder, diagramId, engine, loadedFor]);
 
@@ -531,7 +606,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
       if (!folder || checking.current || document.hidden) return;
       checking.current = true;
       try {
-        const stats = await folder.stats();
+        const isTracked = trackedIn(initiativesDir(buffersRef.current));
+        const stats = await folder.stats({ recursive: true });
         const { read, removed } = changedFiles(knownStats.current, stats, isTracked);
         if (read.length === 0 && removed.length === 0) return;
         const disk = Object.fromEntries(
@@ -547,6 +623,11 @@ export function createOpscrPane(api: StructuraPluginApi) {
           : undefined;
         const visualChanged = merged.reloaded.includes(VISUAL_FILE);
         const manifestsChanged = merged.reloaded.some((n) => !isSidecar(n));
+        const initiativesChanged = merged.reloaded.some((n) => !isRootFile(n));
+        if (initiativesChanged) await initiatives.sync();
+        if (sidecar || merged.reloaded.some((n) => !isRootFile(n) && baseName(n) === LAYOUT_FILE)) {
+          await initiatives.sidecarChanged();
+        }
         if (!sidecar && !visualChanged && !manifestsChanged) return;
         if (sidecar) await engine.sidecarChanged(sidecar);
         if (sidecar) await viewDiagrams.sidecarChanged(sidecar);
@@ -557,7 +638,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       } finally {
         checking.current = false;
       }
-    }, [folder, engine, t, commitBuffers, viewDiagrams]);
+    }, [folder, engine, t, commitBuffers, viewDiagrams, initiatives]);
 
     useEffect(() => {
       if (!folder) return;
@@ -635,8 +716,16 @@ export function createOpscrPane(api: StructuraPluginApi) {
 
     const load = useCallback(
       async (opened: PluginFolder) => {
-        const listed = await opened.list();
-        const names = listed.filter((n) => isManifest(n) || n === CONFIG_FILE);
+        const all = await opened.list({ recursive: true });
+        const listed = all.filter(isRootFile);
+        // A product workspace (opscr.workspace.yaml) also has its initiatives' files.
+        const dir = listed.includes(WORKSPACE_FILE)
+          ? initiativesDir([{ name: WORKSPACE_FILE, text: await opened.read(WORKSPACE_FILE) }])
+          : undefined;
+        const names = [
+          ...listed.filter((n) => isManifest(n) || n === CONFIG_FILE || n === WORKSPACE_FILE),
+          ...all.filter((n) => !isRootFile(n) && trackedIn(dir)(n)),
+        ];
         // The visual layer only exists for folders imported from draw.io.
         const sidecars = [
           LAYOUT_FILE,
@@ -650,8 +739,11 @@ export function createOpscrPane(api: StructuraPluginApi) {
             return { name, disk: content, text: content };
           }),
         );
-        knownStats.current = toStats(await opened.stats());
+        knownStats.current = toStats(await opened.stats({ recursive: true }));
+        deleted.current = new Set();
+        setDeletedCount(0);
         engine.reset();
+        initiatives.reset();
         setFolder(opened);
         commitBuffers(loaded);
         setSelected((previous) =>
@@ -659,7 +751,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         );
         await sync();
       },
-      [engine, sync, commitBuffers],
+      [engine, sync, commitBuffers, initiatives],
     );
 
     const bind = async () => {
@@ -707,14 +799,31 @@ export function createOpscrPane(api: StructuraPluginApi) {
         buffersRef.current.filter((b) => b.text !== b.disk).map((b) => [b.name, b.text]),
       );
       for (const [name, text] of written) await folder.write(name, text);
+      // Files the buffers dropped, and the initiative folders left with nothing in them.
+      const gone = [...deleted.current];
+      for (const name of gone) await folder.remove(name);
+      const dir = initiativesDir(buffersRef.current);
+      const emptied = new Set(
+        gone.flatMap((name) => {
+          const initiative = initiativeOfPath(name, dir);
+          return initiative !== undefined &&
+            !buffersRef.current.some((b) => initiativeOfPath(b.name, dir) === initiative)
+            ? [`${dir}/${initiative}`]
+            : [];
+        }),
+      );
+      for (const folderPath of emptied) await folder.remove(folderPath, { recursive: true });
+      deleted.current = new Set();
+      setDeletedCount(0);
       // Our own writes are not outside changes.
-      const stats = toStats(await folder.stats());
+      const stats = toStats(await folder.stats({ recursive: true }));
       for (const name of written.keys()) if (stats[name]) knownStats.current[name] = stats[name]!;
       // The file on disk is now this text: any conflict with an older disk text is settled.
       const settle = (b: Buffer): Buffer =>
         written.has(b.name) ? { ...b, disk: written.get(b.name)!, conflict: undefined } : b;
       commitBuffers(buffersRef.current.map(settle));
-      setStatus(t.saved(written.size));
+      for (const name of gone) delete knownStats.current[name];
+      setStatus(t.saved(written.size + gone.length));
     };
 
     /** An empty folder starts with one manifest, unsaved, to copy from. */
@@ -797,7 +906,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
     }
 
     const current = buffers.find((b) => b.name === selected);
-    const dirtyCount = buffers.filter((b) => b.text !== b.disk).length;
+    const dirtyCount = buffers.filter((b) => b.text !== b.disk).length + deletedCount;
     const problemsHere = diagnostics.filter((d) => d.file === selected);
     const problemsElsewhere = diagnostics.filter(
       (d) => d.file !== selected && d.severity === "error",
@@ -966,6 +1075,101 @@ export function createOpscrPane(api: StructuraPluginApi) {
                   {t.viewDiagramsOrphans(viewDiagrams.report.orphans.map((o) => o.view).join(", "))}
                 </p>
               )}
+            </Section>
+          )}
+          {initiatives.active && (
+            <Section title={t.initiativesTitle(initiatives.rows.length)}>
+              <p className="text-[11px] text-muted-foreground">{t.initiativesHint}</p>
+              <ul className="space-y-2">
+                {initiatives.rows.map((row) => (
+                  <li
+                    key={row.name}
+                    className="space-y-2 rounded-md border border-border bg-secondary/40 p-2.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="min-w-0 flex-1 truncate font-medium" title={row.name}>
+                        {row.title}
+                      </span>
+                      <select
+                        aria-label={t.initiativeStatus(row.title)}
+                        className={`${SELECT_CLASS} h-7 w-auto`}
+                        value={row.status ?? ""}
+                        onChange={(e) =>
+                          void initiatives.setStatus(
+                            row.name,
+                            e.target.value as "proposed" | "approved" | "in-progress" | "done",
+                          )
+                        }
+                      >
+                        {row.status === null && <option value="">—</option>}
+                        <option value="proposed">{t.statusProposed}</option>
+                        <option value="approved">{t.statusApproved}</option>
+                        <option value="in-progress">{t.statusInProgress}</option>
+                        <option value="done">{t.statusDone}</option>
+                      </select>
+                    </div>
+                    {row.lockIssues.length > 0 && (
+                      <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+                        <span className="min-w-0 flex-1">
+                          {t.lockIssues(row.lockIssues.length)}
+                        </span>
+                        <button
+                          type="button"
+                          className={`${BUTTON_CLASS} h-7 px-2`}
+                          title={t.acceptRootHint}
+                          onClick={() => void initiatives.accept(row.name)}
+                        >
+                          {t.acceptRoot}
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        className={`${BUTTON_CLASS} h-7 flex-1`}
+                        onClick={() => initiatives.show(row.name)}
+                      >
+                        {t.showInitiative}
+                      </button>
+                      <button
+                        type="button"
+                        className={`${BUTTON_CLASS} h-7 flex-1`}
+                        title={t.promoteHint}
+                        disabled={row.status !== "done"}
+                        onClick={() =>
+                          void initiatives.promote(row.name).then((ok) => {
+                            if (ok) {
+                              initiatives.show(null);
+                              setStatus(t.promoted(row.title));
+                            }
+                          })
+                        }
+                      >
+                        {t.promote}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className={`${BUTTON_CLASS} flex-1`}
+                  onClick={() =>
+                    void initiatives.create().then((name) => name && initiatives.show(name))
+                  }
+                >
+                  <Icon path={PLUS} />
+                  {t.createInitiative}
+                </button>
+                <button
+                  type="button"
+                  className={`${BUTTON_CLASS} flex-1`}
+                  onClick={() => initiatives.show(null)}
+                >
+                  {t.showBase}
+                </button>
+              </div>
             </Section>
           )}
           {outside.length > 0 && stored.state.view !== undefined && (

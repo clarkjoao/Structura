@@ -237,7 +237,7 @@ function scopedVersions(
         {
           key: input.key,
           name: typeof input.name === "string" && input.name.trim() ? input.name : input.key,
-          ...(status ? { status } : {}),
+          status: status ?? null,
           ownerPluginId: manifest.id,
           reset: true,
         },
@@ -394,9 +394,12 @@ export function createScopedPluginApi(
       const diagram = id ? state.diagrams[id] : undefined;
       // Fresh projection per call: plugins can never reach store objects through it. Since
       // 1.14 it is what the canvas shows: the active Version applied, unless the base is asked.
-      return diagram
-        ? toDiagramSnapshot(diagram, { version: options?.base === true ? "base" : "active" })
-        : null;
+      if (!diagram) return null;
+      if (options?.base === true) return toDiagramSnapshot(diagram, { version: "base" });
+      if (typeof options?.version === "string") {
+        return toDiagramSnapshot(diagram, { version: { key: options.version } });
+      }
+      return toDiagramSnapshot(diagram, { version: "active" });
     },
 
     updateComponent(componentId: string, patch: PluginComponentPatch): void {
@@ -443,9 +446,28 @@ export function createScopedPluginApi(
       if (diagramId !== undefined && !useDiagramStore.getState().diagrams[diagramId]) {
         return { idsByKey: {}, connectionIds: [] };
       }
+      // Since 1.14: into one Version (by key, owned by this plugin), or into the base even while
+      // the canvas shows a Version; the active context otherwise.
+      const version = options?.version;
+      const target =
+        options?.base === true
+          ? ("base" as const)
+          : version && typeof version.key === "string" && version.key !== ""
+            ? {
+                key: version.key,
+                ...(typeof version.name === "string" && version.name.trim()
+                  ? { name: version.name }
+                  : {}),
+                ...(version.status === null ||
+                (typeof version.status === "string" && VERSION_STATUSES.has(version.status))
+                  ? { status: version.status }
+                  : {}),
+                ownerPluginId: manifest.id,
+              }
+            : undefined;
       const result = useDiagramStore
         .getState()
-        .applyGraphChanges(toGraphChanges(changes), diagramId);
+        .applyGraphChanges(toGraphChanges(changes), diagramId, target);
       return { idsByKey: result.componentIdByExternalId, connectionIds: result.connectionIds };
     },
 
