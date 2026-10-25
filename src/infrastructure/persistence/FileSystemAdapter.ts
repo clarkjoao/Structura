@@ -153,6 +153,20 @@ function resolveDiagramPathSegments(diagram: Diagram, folders: Record<string, Fo
   return resolveFolderPathSegments(diagram.folderId, folders);
 }
 
+/**
+ * False when the folder a handle points at is no longer on disk (deleted, moved or renamed
+ * outside the browser). The handle keeps its permission, but every read and write through it
+ * fails with `NotFoundError`.
+ */
+async function folderExists(handle: FileSystemDirectoryHandle): Promise<boolean> {
+  try {
+    await handle.entries().next();
+    return true;
+  } catch (e) {
+    return !(e instanceof DOMException && e.name === "NotFoundError");
+  }
+}
+
 async function getOrCreateDirectory(
   root: FileSystemDirectoryHandle,
   segments: string[],
@@ -236,6 +250,9 @@ export class FileSystemAdapter {
   private _hasPermissionError = false;
   /** Called (once) each time a write fails due to lost permission. */
   private _onPermissionError: (() => void) | null = null;
+  /** The connected folder's name once it was found gone from disk; null while it is there. */
+  private _missingFolderName: string | null = null;
+  private _onFolderMissing: ((folderName: string) => void) | null = null;
   /** Bound visibilitychange listener — kept so it can be removed on disconnect. */
   private _visibilityCleanup: (() => void) | null = null;
 
@@ -245,6 +262,32 @@ export class FileSystemAdapter {
    */
   setPermissionErrorCallback(cb: (() => void) | null): void {
     this._onPermissionError = cb;
+  }
+
+  /** Register a callback for when the connected folder turns out to be gone from disk. */
+  setFolderMissingCallback(cb: ((folderName: string) => void) | null): void {
+    this._onFolderMissing = cb;
+  }
+
+  /** The folder that was connected but is no longer on disk, if that is why none is. */
+  get missingFolderName(): string | null {
+    return this._missingFolderName;
+  }
+
+  /**
+   * Checks the connected folder is still on disk. When it is gone, drops the connection — the
+   * app falls back to the browser copy — and reports it, instead of failing every write. The
+   * handle stays in IndexedDB until the user connects another folder.
+   */
+  async ensureFolderExists(): Promise<boolean> {
+    const handle = this.handle;
+    if (!handle) return false;
+    if (await folderExists(handle)) return true;
+    this._stopPermissionMonitor();
+    this.handle = null;
+    this._missingFolderName = handle.name;
+    this._onFolderMissing?.(handle.name);
+    return false;
   }
 
   /**
@@ -355,9 +398,15 @@ export class FileSystemAdapter {
       const state = await directoryHandle.queryPermission?.({ mode: "readwrite" });
 
       if (state === "granted") {
+        // Permission outlives the folder: a deleted one would fail every write.
+        if (!(await folderExists(handle))) {
+          this._missingFolderName = handle.name;
+          return false;
+        }
         this.handle = handle;
         this._pendingHandle = null;
         this._hasPermissionError = false;
+        this._missingFolderName = null;
         this._startPermissionMonitor();
         // Best-effort: remove leftover .json.tmp from interrupted two-phase commits.
         void this.cleanupOrphanedTempFiles();
@@ -411,6 +460,7 @@ export class FileSystemAdapter {
       const ok = await verifyPermission(handle);
       if (!ok) return false;
       this.handle = handle;
+      this._missingFolderName = null;
       await saveHandleToIDB(handle);
       this._startPermissionMonitor();
       // Best-effort: remove leftover .json.tmp from interrupted two-phase commits.

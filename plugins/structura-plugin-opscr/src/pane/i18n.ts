@@ -18,10 +18,12 @@ const en = {
   save: "Save",
   reload: "Reload",
   reloadDiscards: "Reloading discards unsaved edits",
+  unsaved: (n: number) => `${n} unsaved`,
   parseError: "The YAML does not parse — the diagram keeps its last state.",
   syncFailed: "The diagram could not be updated — it may not match the YAML.",
   retrySync: "Try again",
   synced: (n: number) => `Diagram in sync · ${n} elements`,
+  viewSection: "View",
   viewLabel: "Diagram",
   wholeWorkspace: "Whole workspace",
   viewReadOnly:
@@ -50,6 +52,9 @@ const en = {
   noProvider: "No provider",
   addToYaml: "Add to YAML",
   addAllToYaml: "Add all to YAML",
+  outsideInView:
+    "A view does not add elements to the YAML. Show the whole workspace — they stay on the canvas — to add them.",
+  showWholeToAdd: "Show the whole workspace to add them",
   addedToYaml: (keys: string[]) => `Added to the YAML: ${keys.join(", ")}`,
   diskReloaded: (files: string[]) => `Updated from the folder: ${files.join(", ")}`,
   diskConflict: (files: string[]) =>
@@ -146,10 +151,12 @@ const ptBR: typeof en = {
   save: "Salvar",
   reload: "Recarregar",
   reloadDiscards: "Recarregar descarta edições não salvas",
+  unsaved: (n: number) => `${n} não salvo${n === 1 ? "" : "s"}`,
   parseError: "O YAML não faz parse — o diagrama mantém o último estado.",
   syncFailed: "Não foi possível atualizar o diagrama — ele pode não refletir o YAML.",
   retrySync: "Tentar de novo",
   synced: (n: number) => `Diagrama sincronizado · ${n} elementos`,
+  viewSection: "Visualização",
   viewLabel: "Diagrama",
   wholeWorkspace: "Workspace inteiro",
   viewReadOnly:
@@ -179,6 +186,9 @@ const ptBR: typeof en = {
   noProvider: "Sem provider",
   addToYaml: "Adicionar ao YAML",
   addAllToYaml: "Adicionar todos ao YAML",
+  outsideInView:
+    "Uma view não adiciona elementos ao YAML. Mostre o workspace inteiro — eles continuam no canvas — para adicioná-los.",
+  showWholeToAdd: "Mostrar o workspace inteiro para adicionar",
   addedToYaml: (keys: string[]) => `Adicionado ao YAML: ${keys.join(", ")}`,
   diskReloaded: (files: string[]) => `Atualizado a partir da pasta: ${files.join(", ")}`,
   diskConflict: (files: string[]) =>

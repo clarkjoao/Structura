@@ -353,8 +353,8 @@ await nameField
   .waitFor({ timeout: 10000 })
   .catch(() => fail("no name field for the selected element"));
 await nameField.fill("order-store");
-// The panel commits the name on a debounce; closing it right away would drop the edit.
-await page.waitForTimeout(1000);
+// The panel commits the name on Enter or blur.
+await nameField.press("Enter");
 await waitFor(async () => {
   const commerceText = await saveAndRead("commerce.opscr.yaml");
   const relationships = await saveAndRead("relationships.opscr.yaml");
@@ -625,7 +625,7 @@ await page.screenshot({ path: join(OUT, "7-source-to-canvas.png") });
 await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
 
 // What does not carry between the two sides is listed; an entry opens where it is written.
-const notCarried = page.locator("summary", { hasText: /not carried|não levad/ });
+const notCarried = page.locator("button[aria-expanded]", { hasText: /not carried|não levad/ });
 await check((await notCarried.count()) === 1, "the pane lists what the diagram does not draw");
 await notCarried.click();
 await page
@@ -641,6 +641,9 @@ await page.getByRole("tab", { name: /^commerce\.opscr\.yaml/ }).click();
 
 // An element drawn from the catalog is offered for the YAML, with a suggested Kind.
 // The chat stays open: the catalog must be drawn above it.
+// Beside the inspector, the pane and the chat, the canvas has no room left: fold the inspector.
+const inspectorToggle = page.getByRole("button", { name: /^(Properties|Propriedades)$/ });
+await inspectorToggle.click();
 const paletteCount = await nodes();
 await page
   .getByRole("button", { name: /^(Open the element catalog|Abrir o catálogo de elementos)$/ })
@@ -676,6 +679,7 @@ await waitFor(
 );
 await check((await nodes()) === paletteCount + 1, "the palette element is kept, not duplicated");
 await page.screenshot({ path: join(OUT, "7c-added.png") });
+await inspectorToggle.click();
 await page
   .getByRole("button", { name: /^(Close chat assistant|Fechar assistente de chat)$/ })
   .click();

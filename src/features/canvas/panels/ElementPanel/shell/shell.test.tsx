@@ -2,7 +2,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CommitField } from "./CommitField";
 import { AdvancedFooter } from "./AdvancedFooter";
-import { PanelFrame } from "./PanelFrame";
+import { InspectorRailToggle, PanelFrame } from "./PanelFrame";
+import { PanelRailContext } from "@/components/panelRail.context";
 import { PanelSection } from "./PanelSection";
 import { PanelHeader } from "./PanelHeader";
 import {
@@ -15,6 +16,7 @@ import {
 // The test setup initialises i18n, so labels are real; match either locale.
 const ADVANCED = /^(Advanced|Avançado)$/;
 const EXPAND = /^(Expand panel|Expandir painel)$/;
+const INSPECTOR = /^(Properties|Propriedades)$/;
 const Z_INDEX = /^(Stacking order|Ordem de empilhamento)/;
 
 describe("CommitField", () => {
@@ -192,6 +194,25 @@ describe("PanelFrame", () => {
     expect(screen.queryByText("content")).toBeNull();
     fireEvent.click(screen.getByLabelText(EXPAND));
     expect(screen.getByText("content")).toBeTruthy();
+  });
+
+  it("under the page's panel rail, folds away entirely and the rail brings it back", () => {
+    act(() => useCanvasPreferencesStore.getState().setElementPanelCollapsed(true));
+    render(
+      <PanelRailContext.Provider value>
+        <PanelFrame>
+          <p>content</p>
+        </PanelFrame>
+        <InspectorRailToggle />
+      </PanelRailContext.Provider>,
+    );
+    expect(screen.queryByText("content")).toBeNull();
+    expect(screen.queryByLabelText(EXPAND)).toBeNull();
+    const toggle = screen.getByRole("button", { name: INSPECTOR });
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(toggle);
+    expect(screen.getByText("content")).toBeTruthy();
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
   });
 });
 

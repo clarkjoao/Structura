@@ -171,8 +171,17 @@ export class OpscrEngine {
    */
   private async reconcileNow(): Promise<boolean> {
     const diagram = this.options.diagram.get();
-    // A View is a projection: its structure is not edited from the canvas.
-    if (!diagram || this.options.binding.get().view !== undefined) return false;
+    if (!diagram) return false;
+    // A View is a projection: its structure is not edited from the canvas. What is drawn on it
+    // anyway stays outside the YAML, and the pane says so instead of dropping it silently.
+    if (this.options.binding.get().view !== undefined) {
+      const bound = new Set(Object.values(this.options.binding.get().ids));
+      this.emit({
+        type: "outside",
+        ids: diagram.components.filter((c) => !bound.has(c.id)).map((c) => c.id),
+      });
+      return false;
+    }
     const { manifest, visual } = splitBinding(this.options.binding.get());
     const result = reconcile(withoutVisual(diagram, visual), manifest, this.manifests());
     if (result.skipped) return false;
@@ -284,7 +293,9 @@ export class OpscrEngine {
       ? { idsByKey: {}, connectionIds: [] }
       : await this.options.diagram.apply(plan.changes);
     const next = retire(binding, plan.commit(result), this.synced);
-    await this.options.binding.set(binding.view !== undefined ? { ...next, view: binding.view } : next);
+    await this.options.binding.set(
+      binding.view !== undefined ? { ...next, view: binding.view } : next,
+    );
     this.synced = manifests;
     await this.writeSidecar();
     this.emit({ type: "synced", elements: projection.graph.components.length });
@@ -308,7 +319,9 @@ export class OpscrEngine {
       const live = new Set(diagram.components.map((c) => c.id));
       const remove = Object.values(binding.ids).filter((id) => live.has(id));
       if (remove.length > 0) await this.options.diagram.apply({ remove });
-      await this.options.binding.set(view === undefined ? emptyBinding() : { ...emptyBinding(), view });
+      await this.options.binding.set(
+        view === undefined ? emptyBinding() : { ...emptyBinding(), view },
+      );
       this.synced = [];
       await this.syncNow();
     });
