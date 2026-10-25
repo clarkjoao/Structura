@@ -32,7 +32,9 @@ const graph = toImporterGraph(placed); // plugin importer result / embed preview
 
 Hosts that cannot import the app's layout engine use `src/lib/opscr-layout` (`layoutView`, same
 ELK options). To keep a picture still across edits, seed it with the previous boxes and pass the
-result through `stabilizeLayout(view, fresh, previous)`: surviving elements keep their place.
+result through `stabilizeLayout(view, fresh, previous)`: surviving elements keep their place. Where
+most of a panel is kept, a new element goes beside the sibling it is connected to, along the flow;
+where most is new, it goes where the engine put it.
 
 ## The technical view
 

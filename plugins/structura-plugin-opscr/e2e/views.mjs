@@ -213,7 +213,12 @@ await check(moved !== before, "dragging a box moves it");
 await show("shop-context", 3, "leaving for the context view");
 await show("shop-containers", 10, "coming back to the container view");
 const kept = await page.locator(".react-flow__node", { hasText: "storefront" }).first().evaluate((n) => n.style.transform);
-await check(kept === moved, "the moved box is kept for that view");
+// The sidecar keeps whole pixels: a box drawn at a half pixel comes back within one.
+const xy = (t) => /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(t).slice(1).map(Number);
+await check(
+  xy(kept).every((v, i) => Math.abs(v - xy(moved)[i]) <= 1),
+  `the moved box is kept for that view (${moved} → ${kept})`,
+);
 
 await picker.selectOption("");
 await waitNodes(whole).catch(async () => fail(`whole workspace again: expected ${whole}, got ${await nodes()}`));

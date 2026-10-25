@@ -86,6 +86,9 @@ describe("showView", () => {
   it("keeps each view's positions in its own sidecar entry, beside the default diagram's", async () => {
     const s = new Session();
     await s.engine.sync();
+    const api = s.canvas.components.find((c) => c.label === "orders-api")!;
+    s.canvas.step(() => (api.position = { x: 900, y: 40 }));
+    await s.engine.canvasChanged();
     await s.engine.showView("shop-containers");
     const web = s.canvas.components.find((c) => c.label === "storefront")!;
     s.canvas.step(() => (web.position = { x: 640, y: 320 }));
@@ -93,9 +96,9 @@ describe("showView", () => {
     expect(
       layoutFor(s.text(LAYOUT_FILE), "shop-containers")!.boxes.get("Application/storefront"),
     ).toMatchObject({ x: 640, y: 320 });
-    expect(layoutFor(s.text(LAYOUT_FILE), undefined)!.boxes.has("Application/orders-api")).toBe(
-      true,
-    );
+    expect(
+      layoutFor(s.text(LAYOUT_FILE), undefined)!.boxes.get("Application/orders-api"),
+    ).toMatchObject({ x: 900, y: 40 });
 
     // Leaving and coming back puts the box where the reader left it.
     await s.engine.showView("shop-context");

@@ -5,11 +5,46 @@ import type { TechnicalView } from "./types";
 const PANEL_PADDING = 40;
 /** Gap left between a new element and the sibling it was moved below. */
 const STACK_GAP = 40;
+/** Gap between a new element and the sibling it is connected to, along the flow (left to right). */
+const FLOW_GAP = 80;
 
 const overlaps = (a: ViewBox, b: ViewBox): boolean =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 
 const distance = (a: ViewBox, b: ViewBox): number => Math.hypot(a.x - b.x, a.y - b.y);
+
+/**
+ * `box` where it is if it overlaps nothing in `placed`; else the free spot nearest to it, beside
+ * (after) or above or below what is placed — never past `floor`. A column that is full sends it
+ * to the next one instead of far down.
+ */
+function nearestFree(box: ViewBox, placed: readonly ViewBox[], floor: number): ViewBox {
+  const free = (b: ViewBox) => !placed.some((p) => overlaps(p, b));
+  if (free(box)) return box;
+  const xs = [box.x, ...placed.map((p) => p.x + p.width + FLOW_GAP)];
+  const ys = [
+    box.y,
+    ...placed.map((p) => p.y + p.height + STACK_GAP),
+    ...placed.map((p) => p.y - box.height - STACK_GAP),
+  ];
+  let best: ViewBox | undefined;
+  for (const x of xs) {
+    for (const y of ys) {
+      if (x < floor || y < floor) continue;
+      const candidate = { ...box, x, y };
+      if (!free(candidate)) continue;
+      if (!best || distance(candidate, box) < distance(best, box)) best = candidate;
+    }
+  }
+  if (best) return best;
+  // Nothing beside anything: below everything in its column, as before.
+  const moved = { ...box };
+  for (let blocker = placed.find((p) => overlaps(p, moved)); blocker;) {
+    moved.y = blocker.y + blocker.height + STACK_GAP;
+    blocker = placed.find((p) => overlaps(p, moved));
+  }
+  return moved;
+}
 
 /** Whether `previous` still places `id`: it has a box there, under the same parent. */
 const keeps = (
@@ -39,9 +74,12 @@ export function previousCoversView(
  *
  * `fresh` is the layout engine's result for the new view (ideally seeded with `previous`);
  * `previous` is what the reader saw. Every element present in `previous` keeps its box
- * (position relative to its parent). A new element goes where `fresh` put it relative to
- * its nearest surviving sibling, then moves down until it overlaps no sibling. Panels keep
- * their position and grow — never shrink — to hold their children. Without `previous` the
+ * (position relative to its parent). Among siblings that are mostly new, a new element goes where
+ * `fresh` put it relative to its nearest surviving sibling, then moves down until it overlaps no
+ * sibling. Among siblings that are mostly kept, a new element connected to one already placed
+ * goes beside it along the flow — after what calls it, before what it calls — at the nearest
+ * free spot, with the room its drawn siblings take. Panels keep their position and grow — never
+ * shrink — to hold their children. Without `previous` the
  * fresh layout is returned as it is.
  *
  * Pure: no layout engine here, so the policy is testable and shared by every host.
@@ -92,19 +130,32 @@ export function stabilizeLayout(
     });
   }
 
+  /** The element among `siblings` that holds `id` (itself, or its ancestor there). */
+  const holder = (id: string, siblings: ReadonlySet<string>): string | undefined => {
+    for (let at: string | null = id, depth = 0; at !== null && depth < 64; depth++) {
+      if (siblings.has(at)) return at;
+      at = parentOf.get(at) ?? null;
+    }
+    return undefined;
+  };
+
   const placeSiblings = (ids: readonly string[], insidePanel: boolean): void => {
     const survivors = ids.filter((id) => kept.has(id));
     const placed: ViewBox[] = [];
+    const placedIds = new Set<string>();
     for (const id of survivors) {
       const before = kept.get(id)!;
       const box = { ...boxes.get(id)!, x: before.x, y: before.y };
       boxes.set(id, box);
       placed.push(box);
+      placedIds.add(id);
     }
-    const newcomers = ids
+    const floor = insidePanel ? PANEL_PADDING : -Infinity;
+    const waiting = ids
       .filter((id) => !kept.has(id))
       .sort((a, b) => freshBox(a).y - freshBox(b).y || a.localeCompare(b));
-    for (const id of newcomers) {
+    /** Where the engine put `id`, moved as its nearest surviving sibling was. */
+    const fromFresh = (id: string) => {
       const target = freshBox(id);
       const anchor = survivors
         .filter((s) => fresh.boxes.has(s))
@@ -115,18 +166,75 @@ export function stabilizeLayout(
             y: kept.get(anchor)!.y - freshBox(anchor).y,
           }
         : { x: 0, y: 0 };
-      const floor = insidePanel ? PANEL_PADDING : -Infinity;
-      const box = {
+      return {
         ...boxes.get(id)!,
         x: Math.max(floor, target.x + shift.x),
         y: Math.max(floor, target.y + shift.y),
       };
-      for (let blocker = placed.find((p) => overlaps(p, box)); blocker;) {
-        box.y = blocker.y + blocker.height + STACK_GAP;
-        blocker = placed.find((p) => overlaps(p, box));
+    };
+
+    // Mostly new (a first drawing, a big edit): the engine's arrangement is the better guide.
+    if (survivors.length === 0 || waiting.length > survivors.length) {
+      for (const id of waiting) {
+        const box = fromFresh(id);
+        for (let blocker = placed.find((p) => overlaps(p, box)); blocker;) {
+          box.y = blocker.y + blocker.height + STACK_GAP;
+          blocker = placed.find((p) => overlaps(p, box));
+        }
+        boxes.set(id, box);
+        placed.push(box);
       }
-      boxes.set(id, box);
-      placed.push(box);
+      return;
+    }
+
+    // Mostly kept (an initiative over the root, a few additions): each new one joins the picture
+    // beside what it is connected to, along the flow.
+    const siblings = new Set(ids);
+    const links = new Map<string, Array<{ other: string; calls: boolean }>>();
+    for (const edge of view.edges) {
+      const source = holder(edge.sourceId, siblings);
+      const target = holder(edge.targetId, siblings);
+      if (!source || !target || source === target) continue;
+      links.set(source, [...(links.get(source) ?? []), { other: target, calls: true }]);
+      links.set(target, [...(links.get(target) ?? []), { other: source, calls: false }]);
+    }
+    const linkedTo = (id: string) => (links.get(id) ?? []).filter((l) => placedIds.has(l.other));
+    // A new card takes the room its drawn siblings take: the engine's size is a guess, the
+    // canvas draws cards as big as their content.
+    const leaves = survivors.filter((id) => !childrenOf.has(id)).map((id) => boxes.get(id)!);
+    const card = {
+      width: Math.max(0, ...leaves.map((b) => b.width)),
+      height: Math.max(0, ...leaves.map((b) => b.height)),
+    };
+    while (waiting.length > 0) {
+      // One linked to what is placed first (the most linked), so a chain of new ones follows on.
+      const linked = waiting.filter((id) => linkedTo(id).length > 0);
+      const id = linked.sort((a, b) => linkedTo(b).length - linkedTo(a).length)[0] ?? waiting[0]!;
+      waiting.splice(waiting.indexOf(id), 1);
+      const size = boxes.get(id)!;
+      const target = freshBox(id);
+      const link = linkedTo(id).sort(
+        (a, b) => distance(freshBox(a.other), target) - distance(freshBox(b.other), target),
+      )[0];
+      let start: ViewBox;
+      if (link) {
+        const at = boxes.get(link.other)!;
+        const x = link.calls
+          ? at.x - Math.max(size.width, card.width) - FLOW_GAP
+          : at.x + at.width + FLOW_GAP;
+        start = { ...size, x: Math.max(floor, x), y: at.y };
+      } else start = fromFresh(id);
+      const room = childrenOf.has(id)
+        ? start
+        : {
+            ...start,
+            width: Math.max(size.width, card.width),
+            height: Math.max(size.height, card.height),
+          };
+      const spot = nearestFree(room, placed, floor);
+      boxes.set(id, { ...size, x: spot.x, y: spot.y });
+      placed.push(spot);
+      placedIds.add(id);
     }
   };
 

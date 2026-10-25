@@ -170,9 +170,8 @@ describe("InitiativeVersions", () => {
         .components.map((c) => `${c.id}:${c.label}`)
         .sort(),
     ).toEqual(before);
-    expect(s.files.filter((f) => f.name.startsWith("initiatives/")).map((f) => f.text)).toEqual(
-      EXAMPLE.filter((f) => f.name.startsWith("initiatives/")).map((f) => f.text),
-    );
+    // Drawing alone writes nothing: not the manifests, not the lock, not a sidecar.
+    expect(s.files).toEqual(EXAMPLE);
   });
 
   it("writes a canvas edit in the Version to the initiative, never to the root", async () => {
@@ -256,6 +255,42 @@ describe("InitiativeVersions", () => {
     expect(s.text("initiatives/order-events/retired.opscr.yaml")).toBe(
       before[s.files.findIndex((f) => f.name === "initiatives/order-events/retired.opscr.yaml")],
     );
+  });
+
+  it("places the initiative's new elements beside what they connect to, overlapping nothing", async () => {
+    s.files = s.files.filter((f) => f.name !== "initiatives/order-events/opscr.layout.json");
+    await s.start();
+    const version = s.version();
+    const at = (label: string) => {
+      const c = s.byLabel(version, label)!;
+      return {
+        ...c.position!,
+        width: c.size?.width ?? 180,
+        height: c.size?.height ?? 80,
+        parentId: c.parentId,
+      };
+    };
+    const api = at("orders-api");
+    const events = at("order-events");
+    const worker = at("notifications-worker");
+    // orders-api publishes to order-events, which triggers notifications-worker: left to right.
+    expect(events).toMatchObject({ y: api.y, parentId: api.parentId });
+    expect(events.x).toBeGreaterThan(api.x + api.width);
+    expect(worker).toMatchObject({ y: events.y });
+    expect(worker.x).toBeGreaterThan(events.x + events.width);
+    const siblings = version.components
+      .filter((c) => c.parentId === api.parentId)
+      .map((c) => ({ label: c.label, ...at(c.label) }));
+    for (const a of siblings)
+      for (const b of siblings)
+        if (a !== b)
+          expect(
+            a.x < b.x + b.width &&
+              b.x < a.x + a.width &&
+              a.y < b.y + b.height &&
+              b.y < a.y + a.height,
+            `${a.label} × ${b.label}`,
+          ).toBe(false);
   });
 
   it("removes the Version of an initiative that is gone", async () => {

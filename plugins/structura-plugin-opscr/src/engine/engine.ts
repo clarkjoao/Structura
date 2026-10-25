@@ -14,14 +14,16 @@ import { addElementsToYaml, type AddChoice } from "./adopt";
 import { keyOf, nameAt, renameElement, type SourceText } from "./patches";
 import { reconcile, renameInBinding, retire, type UnwrittenConnection } from "./reconcile";
 import {
+  canvasLayout,
   emptyBinding,
   planSync,
   previousLayout,
   sidecarMoves,
+  sameBox,
   sidecarText,
   type BindingState,
 } from "./sync";
-import type { ImporterGraph, ViewLayoutResult } from "../generated/opscr-mapping";
+import type { ImporterGraph, ViewBox, ViewLayoutResult } from "../generated/opscr-mapping";
 import { mergeBinding, splitBinding, visualMoves, visualText, withoutVisual } from "./visual";
 
 /**
@@ -132,6 +134,8 @@ export class OpscrEngine {
   private queue: Promise<void> = Promise.resolve();
   /** The manifests as of the last sync: the text a canvas undo of that sync brings back. */
   private synced: SourceText[] = [];
+  /** The boxes as the last sync left them: a box that differs since was moved by the reader. */
+  private drawn: ReadonlyMap<string, ViewBox> | undefined;
 
   constructor(private readonly options: EngineOptions) {}
 
@@ -163,6 +167,7 @@ export class OpscrEngine {
   /** Forget the last synced text (a new folder or diagram). */
   reset() {
     this.synced = [];
+    this.drawn = undefined;
   }
 
   /**
@@ -238,13 +243,34 @@ export class OpscrEngine {
     return layered.graph;
   }
 
+  /**
+   * The boxes as a sync left them, from the canvas before (`binding` over `before`) and after it.
+   * A box the sync placed or moved is the engine's; one it did not touch keeps what it was —
+   * the reader's if they had moved it (a rename, say, carries their box to the new key). On the
+   * first sync, what was already bound counts as drawn: opening the app again writes nothing.
+   */
+  private drawnAfter(binding: BindingState, before: DiagramSnapshot) {
+    const after = this.options.diagram.get();
+    if (!after) return undefined;
+    const was = canvasLayout(binding, before).boxes;
+    const previous = this.drawn ?? was;
+    const drawn = new Map<string, ViewBox>();
+    for (const [key, box] of canvasLayout(this.options.binding.get(), after).boxes) {
+      const kept = sameBox(box, was.get(key)) ? previous.get(key) : box;
+      if (kept) drawn.set(key, kept);
+    }
+    return drawn;
+  }
+
   /** Rewrites the layout sidecar from the canvas, when the arrangement changed. */
   private async writeSidecar() {
     const diagram = this.options.diagram.get();
     const current = this.text(LAYOUT_FILE);
     if (!diagram || current === undefined) return;
-    const text = sidecarText(this.options.binding.get(), diagram, current);
-    if (current !== text) await this.options.texts.set([{ name: LAYOUT_FILE, text }]);
+    const binding = this.options.binding.get();
+    const text = sidecarText(binding, diagram, current, this.drawn);
+    this.drawn = canvasLayout(binding, diagram).boxes;
+    if (text !== null) await this.options.texts.set([{ name: LAYOUT_FILE, text }]);
   }
 
   /** YAML → canvas. */
@@ -297,6 +323,7 @@ export class OpscrEngine {
       binding.view !== undefined ? { ...next, view: binding.view } : next,
     );
     this.synced = manifests;
+    this.drawn = this.drawnAfter(binding, now);
     await this.writeSidecar();
     this.emit({ type: "synced", elements: projection.graph.components.length });
   }
