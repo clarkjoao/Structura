@@ -273,7 +273,7 @@ export interface AppActions {
     /** Another diagram than the active one (a plugin keeping several in sync). */
     diagramId?: string,
     /** Write into the Version with this key (created if absent) instead of the active context. */
-    version?: import("./slices/generated-graph.slice").GraphChangesVersionTarget,
+    version?: import("./slices/generated-graph.slice").GraphChangesVersionTarget | "base",
   ) => import("./slices/generated-graph.slice").GraphChangesResult;
 
   undo: () => void;

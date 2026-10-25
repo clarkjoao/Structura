@@ -112,8 +112,10 @@ export interface GraphChanges {
 /** A Version to write into instead of the active context, found by `key` (created if absent). */
 export interface GraphChangesVersionTarget {
   key: string;
-  name: string;
-  status?: VersionStatus;
+  /** The Version's name; the key when a new Version gets none. Kept when omitted. */
+  name?: string;
+  /** Kept when omitted; null clears it. */
+  status?: VersionStatus | null;
   ownerPluginId?: string;
   /** Empty the Version first, so the changes are its whole content. */
   reset?: boolean;
@@ -287,7 +289,8 @@ export const generatedGraphSlice = (
   applyGraphChanges: (
     changes: GraphChanges,
     diagramId?: string,
-    version?: GraphChangesVersionTarget,
+    /** A Version by key instead of the active context, or "base" for the base even while a Version is shown. */
+    version?: GraphChangesVersionTarget | "base",
   ): GraphChangesResult => {
     const add = changes.add ?? [];
     const componentIdByExternalId: Record<string, string> = {};
@@ -301,8 +304,9 @@ export const generatedGraphSlice = (
         diagramId === undefined ? getActiveDiagram(state) : (state.diagrams[diagramId] ?? null);
       if (!d) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER, d);
-      const scene = version ? versionByKey(d, version) : resolveActiveVersion(d);
-      versionId = version ? scene?.id : undefined;
+      const scene =
+        version === "base" ? null : version ? versionByKey(d, version) : resolveActiveVersion(d);
+      versionId = version && version !== "base" ? scene?.id : undefined;
 
       const exists = (id: string) => resolveComponent(d, scene, id) !== undefined;
       const remove = (changes.remove ?? []).filter(exists);
@@ -369,7 +373,7 @@ function versionByKey(d: Diagram, target: GraphChangesVersionTarget): VersionDif
     const id = generateId("version");
     version = {
       id,
-      name: target.name,
+      name: target.name ?? target.key,
       color: nextVersionColor(Object.keys(versions).length),
       createdAt: Date.now(),
       addedComponents: {},
@@ -382,9 +386,9 @@ function versionByKey(d: Diagram, target: GraphChangesVersionTarget): VersionDif
     versions[id] = version;
     version = versions[id]!;
   }
-  version.name = target.name;
-  if (target.status) version.status = target.status;
-  else delete version.status;
+  if (target.name !== undefined) version.name = target.name;
+  if (target.status === null) delete version.status;
+  else if (target.status !== undefined) version.status = target.status;
   if (target.ownerPluginId) version.ownerPluginId = target.ownerPluginId;
   if (target.reset) {
     version.addedComponents = {};

@@ -131,6 +131,8 @@ export interface DiagramSnapshot {
 export interface PluginGetDiagramOptions {
   /** The base, ignoring the active Version. */
   base?: boolean;
+  /** The Version with this key applied, whether shown or not (the base when there is none). */
+  version?: string;
 }
 
 /** Whitelisted component fields a plugin may patch (applied via store actions, undoable). */
@@ -444,6 +446,11 @@ export interface PluginFolder {
   ): Promise<Array<{ name: string; lastModified: number; size: number }>>;
   read(fileName: string): Promise<string>;
   write(fileName: string, text: string): Promise<void>;
+  /**
+   * v1.14 — deletes a file, or with `{ recursive: true }` a sub-folder and everything in it.
+   * A path that does not exist is not an error.
+   */
+  remove(path: string, options?: PluginFolderListOptions): Promise<void>;
 }
 
 /** v1.14 — options of `PluginFolder.list`. */
@@ -566,6 +573,14 @@ export interface PluginDiagramChanges {
 export interface PluginApplyOptions {
   /** The diagram to change; the active one when omitted. */
   diagramId?: string;
+  /** v1.14 — the base, even while the canvas shows a Version (otherwise changes land in it). */
+  base?: boolean;
+  /**
+   * v1.14 — `applyChanges` only: into this Version (by key, created when absent, owned by the
+   * calling plugin) instead of the active context; edits of base elements are copied into it.
+   * `name` / `status` update it when given (`status: null` clears it).
+   */
+  version?: { key: string; name?: string; status?: PluginVersionStatus | null };
 }
 
 /** v1.13 — a new diagram (`createDiagram`). */
@@ -631,7 +646,8 @@ export interface PluginVersionInput {
 
 /** v1.14 — what the user did to one of the plugin's Versions; the plugin carries it out. */
 export type PluginVersionAction =
-  | { type: "merge" | "rename" | "delete"; diagramId: string; key: string }
+  | { type: "merge" | "delete"; diagramId: string; key: string }
+  | { type: "rename"; diagramId: string; key: string; name: string }
   | { type: "create"; diagramId: string };
 
 /**

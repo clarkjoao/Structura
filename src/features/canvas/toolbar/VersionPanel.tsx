@@ -389,11 +389,6 @@ export function VersionPanel({
                       onClose();
                     }}
                     onRename={() => {
-                      // A plugin-owned Version is renamed by its plugin, from its own source.
-                      if (versionItem.ownerPluginId !== undefined) {
-                        onRename(versionItem.id, versionItem.name);
-                        return;
-                      }
                       setRenamingId(versionItem.id);
                       setRenameDraft(versionItem.name);
                     }}
@@ -509,12 +504,22 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
    * Hands an action on a plugin-owned Version to its plugin. True when the Version is owned
    * (whether or not the plugin was there to take it), so the caller leaves the store alone.
    */
-  const routedToOwner = (version: VersionDiff, type: "merge" | "rename" | "delete"): boolean => {
+  const routedToOwner = (
+    version: VersionDiff,
+    type: "merge" | "rename" | "delete",
+    name = version.name,
+  ): boolean => {
     const owner = version.ownerPluginId;
     if (owner === undefined) return false;
+    const key = version.key;
     const delivered =
-      version.key !== undefined &&
-      deliverVersionAction(owner, { type, diagramId: diagram.id, key: version.key });
+      key !== undefined &&
+      deliverVersionAction(
+        owner,
+        type === "rename"
+          ? { type, diagramId: diagram.id, key, name }
+          : { type, diagramId: diagram.id, key },
+      );
     if (!delivered) toast.warning(t("versions.ownerInactive", { plugin: owner }));
     return true;
   };
@@ -603,7 +608,8 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
       onRename={(id, name) => {
         if (versionsGuestReadOnly) return;
         const version = sceneRecord[id];
-        if (version && routedToOwner(version, "rename")) return;
+        // A plugin-owned Version is renamed by its plugin, in its own source.
+        if (version && routedToOwner(version, "rename", name)) return;
         renameVersion(id, name);
       }}
       onDuplicate={(id) => {

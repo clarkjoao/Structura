@@ -86,16 +86,22 @@ export function toServiceSnapshot(service: ServiceDefinition): PluginServiceSnap
 
 /**
  * The diagram as plugins read it. With `version: "active"` (what `getDiagram` asks for since
- * 1.14) the active Version is applied and named in `activeVersion`; otherwise the base.
+ * 1.14) the active Version is applied and named in `activeVersion`; `{ key }` applies that
+ * Version (the base when there is none); otherwise the base.
  */
 export function toDiagramSnapshot(
   diagram: Diagram,
-  options: { version?: "active" | "base" } = {},
+  options: { version?: "active" | "base" | { key: string } } = {},
 ): DiagramSnapshot {
+  const wanted = options.version;
   const version =
-    options.version === "active" && diagram.activeVersionId
-      ? diagram.versions?.[diagram.activeVersionId]
-      : undefined;
+    wanted === "active"
+      ? diagram.activeVersionId
+        ? diagram.versions?.[diagram.activeVersionId]
+        : undefined
+      : typeof wanted === "object"
+        ? Object.values(diagram.versions ?? {}).find((v) => v.key === wanted.key)
+        : undefined;
   const resolved = resolveVersionSnapshot(diagram, version?.id ?? null);
   const snapshot: DiagramSnapshot = {
     id: diagram.id,

@@ -23,6 +23,8 @@ export interface PluginFolderAccess {
   }): Promise<Array<{ name: string; lastModified: number; size: number }>>;
   read(fileName: string): Promise<string>;
   write(fileName: string, text: string): Promise<void>;
+  /** Deletes a file, or a sub-folder with `recursive`; a missing path is not an error. */
+  remove(path: string, options?: { recursive?: boolean }): Promise<void>;
 }
 
 /** Where handles are remembered; IndexedDB in the app, a Map in tests. */
@@ -125,6 +127,16 @@ function access(handle: PermissionedHandle): PluginFolderAccess {
       const { dir, name } = await locate(handle, path, false);
       const file = await (await dir.getFileHandle(name)).getFile();
       return file.text();
+    },
+    async remove(path, options) {
+      const located = await locate(handle, path, false).catch(() => null);
+      if (!located) return;
+      await located.dir
+        .removeEntry(located.name, { recursive: options?.recursive === true })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === "NotFoundError") return;
+          throw error;
+        });
     },
     async write(path, text) {
       const { dir, name } = await locate(handle, path, true);

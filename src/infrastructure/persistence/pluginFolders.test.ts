@@ -72,6 +72,14 @@ function fakeTree(name: string, initial: Record<string, string>) {
         },
       };
     },
+    async removeEntry(entry: string, options?: { recursive?: boolean }) {
+      const path = prefix + entry;
+      if (files.delete(path)) return;
+      const under = [...files.keys()].filter((p) => p.startsWith(`${path}/`));
+      if (under.length === 0) throw new DOMException("missing", "NotFoundError");
+      if (!options?.recursive) throw new DOMException("not empty", "InvalidModificationError");
+      for (const p of under) files.delete(p);
+    },
     async getDirectoryHandle(sub: string, options?: { create?: boolean }) {
       const next = `${prefix}${sub}/`;
       if (!options?.create && ![...files.keys()].some((p) => p.startsWith(next))) {
@@ -193,6 +201,10 @@ describe("plugin folders", () => {
     expect((await folder.stats({ recursive: true })).map((s) => s.name)).toContain(
       "initiatives/next/initiative.opscr.yaml",
     );
+    await folder.remove("opscr.workspace.yaml");
+    await folder.remove("initiatives/plan", { recursive: true });
+    await folder.remove("initiatives/gone.yaml");
+    expect([...root.files.keys()]).toEqual(["initiatives/next/initiative.opscr.yaml"]);
   });
 
   it("is unsupported without a directory picker", () => {

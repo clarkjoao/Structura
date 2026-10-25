@@ -135,9 +135,48 @@ const en = {
   chatRemainingErrors: "opscr still reports these errors:",
   chatDiscardEdited:
     "The manifests changed after this reply, so it was kept — undo it in the text or on the canvas.",
+  newInitiative: "New initiative",
+  initiativesTitle: (n: number) => `Initiatives (${n})`,
+  initiativesHint:
+    "Planned work in initiatives/: each is a Version of the diagram. Pick one in Versions (or Show) and edit on the canvas — changes are written to that initiative, never to the root.",
+  initiativeStatus: (name: string) => `Status of ${name}`,
+  statusProposed: "Proposed",
+  statusApproved: "Approved",
+  statusInProgress: "In progress",
+  statusDone: "Done",
+  lockIssues: (n: number) => `${n} root change${n === 1 ? "" : "s"} to review`,
+  acceptRoot: "Accept root",
+  acceptRootHint:
+    "Record the root as it is now as this initiative's base (after bringing its changes in)",
+  showInitiative: "Show",
+  showBase: "Show root",
+  promote: "Promote",
+  promoteHint: "Move this initiative onto the root (it must be Done). Save, then commit.",
+  promoted: (name: string) => `Promoted ${name} — save, then commit the change.`,
+  createInitiative: "New initiative",
 };
 
 const ptBR: typeof en = {
+  newInitiative: "Nova iniciativa",
+  initiativesTitle: (n: number) => `Iniciativas (${n})`,
+  initiativesHint:
+    "Trabalho planejado em initiatives/: cada uma é uma Versão do diagrama. Escolha uma em Versões (ou Mostrar) e edite no canvas — as mudanças vão para essa iniciativa, nunca para a raiz.",
+  initiativeStatus: (name: string) => `Status de ${name}`,
+  statusProposed: "Proposta",
+  statusApproved: "Aprovada",
+  statusInProgress: "Em andamento",
+  statusDone: "Concluída",
+  lockIssues: (n: number) => `${n} mudança${n === 1 ? "" : "s"} da raiz para revisar`,
+  acceptRoot: "Aceitar raiz",
+  acceptRootHint:
+    "Registrar a raiz atual como base desta iniciativa (depois de trazer as mudanças dela)",
+  showInitiative: "Mostrar",
+  showBase: "Mostrar raiz",
+  promote: "Promover",
+  promoteHint:
+    "Levar esta iniciativa para a raiz (precisa estar Concluída). Salve e depois faça o commit.",
+  promoted: (name: string) => `${name} promovida — salve e depois faça o commit.`,
+  createInitiative: "Nova iniciativa",
   noDiagram: "Abra um diagrama para vinculá-lo a uma pasta opscr.",
   intro:
     "Vincule este diagrama a uma pasta de manifestos opscr: edite-os aqui ou no canvas e o outro lado acompanha. Elementos que você mover ficam onde você os colocou.",
