@@ -1,30 +1,62 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { LOCK_FILE, planPromote, serializeLock, updateLock, type Diagnostic } from "opscr/core";
+import {
+  LOCK_FILE,
+  planPromote,
+  serializeLock,
+  updateLock,
+  type Diagnostic,
+  type PromotePlan,
+  type WorkspaceDiff,
+} from "opscr/core";
 import { CONFIG_FILE, isManifest, projector } from "../project";
 import type { SourceText } from "../engine/patches";
 import { setSpecField } from "../engine/patches";
 import {
   InitiativeVersions,
+  initiativeViewChanges,
   initiativesDir,
   productOf,
   type BufferPort,
   type InitiativeBindings,
   type InitiativeInfo,
   type InitiativeTarget,
+  type ViewChanges,
 } from "../engine/initiatives";
 import type { BindingState } from "../engine/sync";
-import type { PluginVersionStatus, StructuraPluginApi } from "../types/plugin.types";
+import type { StructuraPluginApi } from "../types/plugin.types";
 
 /** Lock rules that block promote until the architect settles them. */
 const LOCK_RULES = new Set(["workspace/unlocked", "workspace/base-changed", "workspace/base-gone"]);
 
 /** An initiative as the pane lists it. */
-interface InitiativeRow extends InitiativeInfo {
+export interface InitiativeRow extends InitiativeInfo {
   /** Root elements the initiative copied that changed since (or were never locked). */
   lockIssues: Diagnostic[];
+  /** `spec.description`. */
+  description: string;
+  /** `metadata.links.docs`: the PRD, RFC or ADR. */
+  docs: string | undefined;
+  /** What it changes on the root. */
+  diff: WorkspaceDiff;
+  /** The Views it changes, and how. */
+  views: Array<{ view: string; changes: ViewChanges }>;
+  /** Its files in the folder. */
+  files: string[];
 }
 
 const storageKey = (diagramId: string) => `initiatives:${diagramId}`;
+
+/** What promoting an initiative would do, shown before it is done. */
+export interface PromotePreview {
+  name: string;
+  title: string;
+  /** The root against the root with the initiative applied. */
+  diff: WorkspaceDiff;
+  /** The file operations when promote can run; otherwise why it cannot. */
+  plan: PromotePlan;
+  /** The status is the only reason promote is refused: "Mark as done" settles it. */
+  onlyNotDone: boolean;
+}
 
 /**
  * opscr initiatives as Versions for the folder bound to `diagramId` (plugin API 1.14): one
@@ -50,6 +82,7 @@ export function useInitiatives(options: {
   const { api, diagramId, ready, buffersRef, buffers, baseBinding, viewTargets, report, newTitle } =
     options;
   const [rows, setRows] = useState<InitiativeRow[]>([]);
+  const [preview, setPreview] = useState<PromotePreview | null>(null);
   const bindingsRef = useRef<InitiativeBindings>({});
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const live = useRef({ baseBinding, viewTargets, report, buffers });
@@ -134,6 +167,10 @@ export function useInitiatives(options: {
     setRows(
       (p?.initiatives ?? []).map((i) => {
         const info = manager?.initiatives().find((x) => x.name === i.name);
+        const description = i.manifest?.spec["description"];
+        const links = (i.manifest?.metadata as { links?: Record<string, unknown> } | undefined)
+          ?.links;
+        const docs = typeof links?.["docs"] === "string" ? links["docs"] : undefined;
         return {
           name: i.name,
           title: info?.title ?? i.name,
@@ -141,10 +178,21 @@ export function useInitiatives(options: {
           lockIssues: i.diagnostics.filter(
             (d) => d.ruleId !== undefined && LOCK_RULES.has(d.ruleId),
           ),
+          description: typeof description === "string" ? description : "",
+          docs,
+          diff: i.diff,
+          views: [...initiativeViewChanges(p!, i.name)].map(([view, changes]) => ({
+            view,
+            changes,
+          })),
+          files: texts()
+            .map((t) => t.name)
+            .filter((name) => name.startsWith(`${i.sources.dir}/`))
+            .sort(),
         };
       }),
     );
-  }, [product, manager]);
+  }, [product, manager, texts]);
 
   /** After the folder changed: every Version follows its initiative. */
   const sync = useCallback(async () => {
@@ -159,6 +207,42 @@ export function useInitiatives(options: {
   useEffect(() => {
     void sync();
   }, [sync]);
+
+  /** The initiative the bound diagram shows (null: the root). */
+  const [shown, setShown] = useState<string | null>(null);
+  useEffect(() => {
+    if (!diagramId) return;
+    const read = () => setShown(api.getDiagram(diagramId)?.activeVersion?.key ?? null);
+    read();
+    return api.onDiagramChange((id) => {
+      if (id === diagramId) read();
+    });
+  }, [api, diagramId]);
+
+  /** Shows an initiative's Version on the bound diagram, or the root for null. */
+  const show = useCallback(
+    (name: string | null) => {
+      if (!diagramId) return;
+      api.versions.setActive(name, { diagramId });
+      setShown(name);
+    },
+    [api, diagramId],
+  );
+
+  /**
+   * Shows the initiative on the bound diagram and lights one of its elements: what it adds or
+   * changes in its Version, what it retires where the base has it (a ghost, with the changes view).
+   */
+  const locate = useCallback(
+    (name: string, key: string) => {
+      if (!diagramId) return;
+      show(name);
+      const id = manager?.canvasIdOf(diagramId, name, key) ?? live.current.baseBinding()?.ids[key];
+      // After the canvas has swapped to the Version.
+      if (id) setTimeout(() => api.canvas.highlight({ componentIds: [id] }), 120);
+    },
+    [api, diagramId, manager, show],
+  );
 
   /** The initiative whose Version a diagram shows, if it is one of this folder's. */
   const shownOn = useCallback(
@@ -189,8 +273,6 @@ export function useInitiatives(options: {
     [product, texts, sync],
   );
 
-  const setStatus = (name: string, status: PluginVersionStatus) => setField(name, "status", status);
-
   /** Records the current root version of what the initiative copied: its lock conflicts settle. */
   const accept = useCallback(
     async (name: string) => {
@@ -202,6 +284,28 @@ export function useInitiatives(options: {
       await sync();
     },
     [product, sync],
+  );
+
+  /** What promoting `name` would do, or why it cannot: shown before anything is written. */
+  const previewPromote = useCallback(
+    async (name: string) => {
+      const p = product();
+      const initiative = p?.initiatives.find((i) => i.name === name);
+      if (!p || !initiative) return;
+      const plan = await planPromote(p, name);
+      const title = manager?.initiatives().find((i) => i.name === name)?.title ?? name;
+      setPreview({
+        name,
+        title,
+        diff: initiative.diff,
+        plan,
+        onlyNotDone:
+          !plan.ok &&
+          plan.diagnostics.length > 0 &&
+          plan.diagnostics.every((d) => d.ruleId === "promote/not-done"),
+      });
+    },
+    [product, manager],
   );
 
   /** The initiative goes onto the root (opscr promote), in the buffers; or why it cannot. */
@@ -287,14 +391,36 @@ export function useInitiatives(options: {
           if (name) api.versions.setActive(name, { diagramId: action.diagramId });
         } else if (action.type === "rename") {
           await setField(action.key, "displayName", action.name);
+        } else if (action.type === "status") {
+          if (action.status !== null) await setField(action.key, "status", action.status);
         } else if (action.type === "delete") {
           await remove(action.key);
-        } else if (await promote(action.key)) {
-          api.versions.setActive(null, { diagramId: action.diagramId });
+        } else {
+          // Merge is promote: it is previewed in the pane first, and confirmed there.
+          await previewPromote(action.key);
         }
       })();
     });
-  }, [api, manager, diagramId, targets, create, setField, remove, promote]);
+  }, [api, manager, diagramId, targets, create, setField, remove, previewPromote]);
+
+  /** Promotes what the preview showed; the Versions go back to the base. */
+  const confirmPromote = useCallback(async (): Promise<boolean> => {
+    const shown = preview;
+    if (!shown) return false;
+    const ok = await promote(shown.name);
+    if (ok) {
+      setPreview(null);
+      for (const target of targets()) api.versions.setActive(null, { diagramId: target.diagramId });
+    } else await previewPromote(shown.name);
+    return ok;
+  }, [preview, promote, previewPromote, targets, api]);
+
+  /** Sets the previewed initiative done, and previews again. */
+  const markDone = useCallback(async () => {
+    if (!preview) return;
+    await setField(preview.name, "status", "done");
+    await previewPromote(preview.name);
+  }, [preview, setField, previewPromote]);
 
   return {
     /** The folder is a product workspace. */
@@ -302,13 +428,21 @@ export function useInitiatives(options: {
     rows,
     sync,
     shownOn,
+    shown,
+    show,
+    locate,
+    /** A new initiative, unsaved; resolves to its name. */
+    create,
+    remove,
+    setField,
     canvasChanged,
     sidecarChanged: () => manager?.sidecarChanged(),
-    setStatus,
     accept,
-    promote,
-    create,
-    show: (name: string | null) => diagramId && api.versions.setActive(name, { diagramId }),
+    preview,
+    previewPromote,
+    confirmPromote,
+    cancelPromote: () => setPreview(null),
+    markDone,
     reset: () => manager?.reset(),
   };
 }

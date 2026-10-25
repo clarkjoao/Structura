@@ -30,6 +30,11 @@ import type { AddChoice } from "../engine/adopt";
 import { OpscrEngine, type EngineEvent, type ViewLink } from "../engine/engine";
 import { useViewDiagrams } from "./useViewDiagrams";
 import { useInitiatives } from "./useInitiatives";
+import { PromotePreviewCard } from "./PromotePreviewCard";
+import { InitiativesTab } from "./InitiativesTab";
+import { ViewPicker } from "./ViewPicker";
+import { FileTree } from "./FileTree";
+import { DiagnosticsList, Overview, PaneTabs, type PaneTab } from "./PaneTabs";
 import {
   WORKSPACE_FILE,
   initiativeOfPath,
@@ -149,6 +154,8 @@ const toMarker = (d: Diagnostic): PluginEditorMarker => ({
  * in the host editor, saves them, and keeps the diagram in sync as the user types.
  */
 export function createOpscrPane(api: StructuraPluginApi) {
+  /** The tab the pane was last left on, for when it opens again. */
+  let lastTab: PaneTab = "overview";
   const { CodeEditor } = api.ui;
   /**
    * The open folder and its buffers per diagram, kept when the pane closes or another diagram
@@ -240,6 +247,14 @@ export function createOpscrPane(api: StructuraPluginApi) {
     });
     /** A line for the editor to go to; a new token goes again. */
     const [reveal, setReveal] = useState<{ line: number; token: number } | null>(null);
+    /** The pane's open tab (the file editor is one), kept while the pane is closed and opened. */
+    const [tab, setTabState] = useState<PaneTab>(() => lastTab);
+    const setTab = useCallback((next: PaneTab) => {
+      lastTab = next;
+      setTabState(next);
+    }, []);
+    /** The initiative whose detail the Initiatives tab shows (null: the list). */
+    const [picked, setPicked] = useState<string | null>(null);
     /** The element last pointed at from either side, so neither side echoes the other. */
     const pointed = useRef<GraphElementRef | null>(null);
     /** The file whose folder version is shown beside the user's, while comparing. */
@@ -920,9 +935,37 @@ export function createOpscrPane(api: StructuraPluginApi) {
     const flaggedPages = notArchitecturePages(sources);
     const openWritten = (id: string) => {
       const at = projection?.sources?.locateWritten(id);
-      if (at) showSource(at);
+      if (!at) return;
+      showSource(at);
+      setTab("files");
     };
     const files = buffers.filter((b) => !isSidecar(b.name));
+    // An empty folder starts in its files (create the first manifest, import a drawing).
+    const shownTab: PaneTab = !buffers.some((b) => isManifest(b.name))
+      ? "files"
+      : tab === "initiatives" && !initiatives.active
+        ? "overview"
+        : tab;
+    /** Shows an initiative (null: the root) on the bound diagram, on another View first if asked. */
+    const showInitiative = async (name: string | null, at?: { view: string | undefined }) => {
+      if (at && at.view !== stored.state.view) {
+        await engine.showView(at.view);
+        // Its Version is made for that View once the root has drawn it.
+        await initiatives.sync();
+      }
+      initiatives.show(name);
+    };
+    const errorCount = diagnostics.filter((d) => d.severity === "error").length;
+    const warningCount = diagnostics.filter((d) => d.severity === "warning").length;
+    const problemCount = errorCount + warningCount + outside.length + unwritten.length;
+    const summary = {
+      elements: projection?.graph?.components.length ?? 0,
+      files: files.filter((b) => isManifest(b.name)).length,
+      views: views.names.length,
+      initiatives: initiatives.rows.length,
+      errors: errorCount,
+      warnings: warningCount,
+    };
 
     return (
       <div className="flex h-full min-h-0 flex-col text-sm">
@@ -1003,452 +1046,435 @@ export function createOpscrPane(api: StructuraPluginApi) {
               </div>
             </div>
           ))}
-        {/* The sections share at most half the pane: the editor keeps the rest. */}
-        <div className="max-h-[50%] shrink-0 overflow-y-auto empty:hidden">
-          {views.names.length > 0 && (
-            <Section title={t.viewSection}>
-              <div>
-                <label htmlFor={`opscr-view-${diagramId}`} className={LABEL_CLASS}>
-                  {t.viewLabel}
-                </label>
-                <select
-                  id={`opscr-view-${diagramId}`}
-                  aria-label={t.viewLabel}
-                  className={SELECT_CLASS}
-                  value={stored.state.view ?? ""}
-                  onChange={(e) => void engine.showView(e.target.value || undefined)}
-                >
-                  <option value="">{t.wholeWorkspace}</option>
-                  {[...views.names].sort().map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
-                {stored.state.view !== undefined && (
-                  <p className="mt-1.5 text-[11px] text-muted-foreground">{t.viewReadOnly}</p>
-                )}
-              </div>
-              {views.links.length > 0 && (
+        <PaneTabs
+          tabs={[
+            { id: "overview", label: t.tabOverview },
+            ...(initiatives.active
+              ? [
+                  {
+                    id: "initiatives" as const,
+                    label: t.tabInitiatives,
+                    count: initiatives.rows.length,
+                  },
+                ]
+              : []),
+            { id: "files", label: t.tabFiles },
+            { id: "problems", label: t.tabProblems, count: problemCount, alert: problemCount > 0 },
+          ]}
+          active={shownTab}
+          onChange={setTab}
+        />
+        {shownTab === "overview" && (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <Overview t={t} summary={summary} showFiles={() => setTab("files")} />
+            {(views.names.length > 0 || initiatives.rows.length > 0) && (
+              <Section title={t.viewSection}>
                 <div>
-                  <span className={LABEL_CLASS}>{t.opensTitle}</span>
-                  <ul className="flex flex-wrap gap-1.5">
-                    {views.links.map((link) => (
-                      <li key={link.key}>
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-accent"
-                          title={t.opensTitle}
-                          aria-label={t.opens(link.name, link.view)}
-                          onClick={() => void engine.showView(link.view)}
-                        >
-                          {link.name}
-                          <Icon path={ARROW_RIGHT} className="h-3 w-3 text-muted-foreground" />
-                          {link.view}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                  <ViewPicker
+                    t={t}
+                    views={[...views.names].sort()}
+                    view={stored.state.view}
+                    onView={(view) => void engine.showView(view)}
+                    initiatives={initiatives.active ? initiatives.rows : []}
+                    shown={initiatives.shown}
+                    onShow={(name, at) => void showInitiative(name, at)}
+                  />
+                  {stored.state.view !== undefined && (
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">{t.viewReadOnly}</p>
+                  )}
                 </div>
-              )}
-              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border bg-secondary/40 px-3 py-2.5">
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium">{t.viewDiagrams}</span>
-                  <span className="mt-0.5 block text-[11px] text-muted-foreground">
-                    {t.viewDiagramsHint}
-                  </span>
-                </span>
-                <input
-                  type="checkbox"
-                  className="mt-1 h-4 w-4 shrink-0 accent-primary"
-                  checked={viewDiagrams.enabled}
-                  onChange={(e) => viewDiagrams.setEnabled(e.target.checked)}
-                />
-              </label>
-              {viewDiagrams.enabled && viewDiagrams.report.diagrams.length > 0 && (
-                <p className="text-[11px] text-muted-foreground">
-                  {t.viewDiagramsMade(viewDiagrams.report.diagrams.length)}:{" "}
-                  {viewDiagrams.report.diagrams.map((d) => d.name).join(" · ")}
-                </p>
-              )}
-              {viewDiagrams.enabled && viewDiagrams.report.orphans.length > 0 && (
-                <p className="text-[11px] text-amber-700 dark:text-amber-400">
-                  {t.viewDiagramsOrphans(viewDiagrams.report.orphans.map((o) => o.view).join(", "))}
-                </p>
-              )}
-            </Section>
-          )}
-          {initiatives.active && (
-            <Section title={t.initiativesTitle(initiatives.rows.length)}>
-              <p className="text-[11px] text-muted-foreground">{t.initiativesHint}</p>
-              <ul className="space-y-2">
-                {initiatives.rows.map((row) => (
-                  <li
-                    key={row.name}
-                    className="space-y-2 rounded-md border border-border bg-secondary/40 p-2.5"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="min-w-0 flex-1 truncate font-medium" title={row.name}>
-                        {row.title}
-                      </span>
-                      <select
-                        aria-label={t.initiativeStatus(row.title)}
-                        className={`${SELECT_CLASS} h-7 w-auto`}
-                        value={row.status ?? ""}
-                        onChange={(e) =>
-                          void initiatives.setStatus(
-                            row.name,
-                            e.target.value as "proposed" | "approved" | "in-progress" | "done",
-                          )
-                        }
-                      >
-                        {row.status === null && <option value="">—</option>}
-                        <option value="proposed">{t.statusProposed}</option>
-                        <option value="approved">{t.statusApproved}</option>
-                        <option value="in-progress">{t.statusInProgress}</option>
-                        <option value="done">{t.statusDone}</option>
-                      </select>
-                    </div>
-                    {row.lockIssues.length > 0 && (
-                      <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400">
-                        <span className="min-w-0 flex-1">
-                          {t.lockIssues(row.lockIssues.length)}
-                        </span>
-                        <button
-                          type="button"
-                          className={`${BUTTON_CLASS} h-7 px-2`}
-                          title={t.acceptRootHint}
-                          onClick={() => void initiatives.accept(row.name)}
-                        >
-                          {t.acceptRoot}
-                        </button>
-                      </div>
-                    )}
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        className={`${BUTTON_CLASS} h-7 flex-1`}
-                        onClick={() => initiatives.show(row.name)}
-                      >
-                        {t.showInitiative}
-                      </button>
-                      <button
-                        type="button"
-                        className={`${BUTTON_CLASS} h-7 flex-1`}
-                        title={t.promoteHint}
-                        disabled={row.status !== "done"}
-                        onClick={() =>
-                          void initiatives.promote(row.name).then((ok) => {
-                            if (ok) {
-                              initiatives.show(null);
-                              setStatus(t.promoted(row.title));
-                            }
-                          })
-                        }
-                      >
-                        {t.promote}
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  className={`${BUTTON_CLASS} flex-1`}
-                  onClick={() =>
-                    void initiatives.create().then((name) => name && initiatives.show(name))
-                  }
-                >
-                  <Icon path={PLUS} />
-                  {t.createInitiative}
-                </button>
-                <button
-                  type="button"
-                  className={`${BUTTON_CLASS} flex-1`}
-                  onClick={() => initiatives.show(null)}
-                >
-                  {t.showBase}
-                </button>
-              </div>
-            </Section>
-          )}
-          {outside.length > 0 && stored.state.view !== undefined && (
-            // A view does not add to the YAML: say so, and offer the whole workspace, where the
-            // element is kept and can be added.
-            <Section title={t.outsideTitle(outside.length)}>
-              <p className="text-xs text-amber-700 dark:text-amber-400">{t.outsideInView}</p>
-              <ul className="flex flex-wrap gap-1.5">
-                {outside.map((id) => {
-                  const label = outsideComponents.get(id)?.label;
-                  return label ? (
-                    <li
-                      key={id}
-                      className="rounded-full border border-border bg-secondary/40 px-2 py-0.5 text-xs"
-                    >
-                      {label}
-                    </li>
-                  ) : null;
-                })}
-              </ul>
-              <button
-                type="button"
-                className={`${PRIMARY_BUTTON_CLASS} w-full`}
-                onClick={() => void engine.showView(undefined)}
-              >
-                {t.showWholeToAdd}
-              </button>
-            </Section>
-          )}
-          {outside.length > 0 && stored.state.view === undefined && (
-            <Section title={t.outsideTitle(outside.length)}>
-              <ul className="space-y-2">
-                {outside.map((id) => {
-                  const component = outsideComponents.get(id);
-                  if (!component) return null;
-                  const pick = pickFor(id);
-                  const providers = providersFor(pick.kind);
-                  const setPick = (next: Partial<typeof pick>) =>
-                    setPicks((all) => ({ ...all, [id]: { ...pick, ...next } }));
-                  return (
-                    <li
-                      key={id}
-                      className="space-y-2 rounded-md border border-border bg-secondary/40 p-2.5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="min-w-0 flex-1 truncate font-medium"
-                          title={component.label}
-                        >
-                          {component.label}
-                        </span>
-                        <button
-                          type="button"
-                          className={`${BUTTON_CLASS} h-7 px-2`}
-                          disabled={!pick.kind}
-                          onClick={() => void addToYaml([id])}
-                        >
-                          <Icon path={PLUS} />
-                          {t.addToYaml}
-                        </button>
-                      </div>
-                      <div className={`grid gap-2 ${providers.length > 0 ? "grid-cols-2" : ""}`}>
-                        <select
-                          aria-label={t.kindFor(component.label)}
-                          className={SELECT_CLASS}
-                          value={pick.kind}
-                          onChange={(e) => setPick({ kind: e.target.value, provider: "" })}
-                        >
-                          <option value="">{t.pickKind}</option>
-                          {DRAWN_KINDS.map((kind) => (
-                            <option key={kind} value={kind}>
-                              {kind}
-                            </option>
-                          ))}
-                        </select>
-                        {providers.length > 0 && (
-                          <select
-                            aria-label={t.providerFor(component.label)}
-                            className={SELECT_CLASS}
-                            value={pick.provider}
-                            onChange={(e) => setPick({ provider: e.target.value })}
+                {views.links.length > 0 && (
+                  <details className="group">
+                    <summary className={`${LABEL_CLASS} cursor-pointer select-none`}>
+                      {t.opensTitle} ({views.links.length})
+                    </summary>
+                    <ul className="mt-1 flex flex-wrap gap-1.5">
+                      {views.links.map((link) => (
+                        <li key={link.key}>
+                          <button
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5 text-xs text-foreground hover:bg-accent"
+                            title={t.opensTitle}
+                            aria-label={t.opens(link.name, link.view)}
+                            onClick={() => void engine.showView(link.view)}
                           >
-                            <option value="">{t.noProvider}</option>
-                            {pick.provider && !providers.includes(pick.provider) && (
-                              <option value={pick.provider}>{pick.provider}</option>
-                            )}
-                            {providers.map((provider) => (
-                              <option key={provider} value={provider}>
-                                {provider}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              {outside.length > 1 && (
-                <button
-                  type="button"
-                  className={`${BUTTON_CLASS} w-full`}
-                  onClick={() => void addToYaml(outside)}
-                >
-                  <Icon path={PLUS} />
-                  {t.addAllToYaml}
-                </button>
-              )}
-            </Section>
-          )}
-          {notCarried > 0 && (
-            // Open when something needs a look: a canvas edit the YAML does not carry, or an edge
-            // the YAML gets wrong — not for Kinds and edges this view leaves out by design.
-            <Section
-              title={t.notCarriedTitle(notCarried)}
-              defaultOpen={unwritten.length > 0 || dropped.some((d) => d.reason !== "not-drawn")}
-            >
-              {unwritten.length > 0 && (
-                <div>
-                  <span className={LABEL_CLASS}>{t.onCanvasOnly}</span>
-                  <ul>
-                    {unwritten.map((u) => (
-                      <li key={`${u.id}-${u.reason}`}>
-                        <button
-                          type="button"
-                          className={LINK_ROW_CLASS}
-                          onClick={() => api.canvas.highlight({ connectionIds: [u.id] })}
-                        >
-                          {t.unwritten(u.reason, u.label, u.type)}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {omitted.length + dropped.length + drawnThrough.length > 0 && (
-                <div>
-                  <span className={LABEL_CLASS}>{t.inYamlOnly}</span>
-                  <ul>
-                    {dropped.map((d) => (
-                      <li key={`${d.relationship}#${d.index}`}>
-                        <button
-                          type="button"
-                          className={LINK_ROW_CLASS}
-                          onClick={() => openWritten(`${d.relationship}#${d.index}`)}
-                        >
-                          {t.dropped(d.type, d.from, d.to, d.reason)}
-                        </button>
-                      </li>
-                    ))}
-                    {drawnThrough.map((d) => (
-                      <li key={`through:${d.edge}`}>
-                        <button
-                          type="button"
-                          className={LINK_ROW_CLASS}
-                          onClick={() => openWritten(d.edge.split(" -")[0]!)}
-                        >
-                          {t.drawnThrough(d.edge, d.via)}
-                        </button>
-                      </li>
-                    ))}
-                    {omitted.map((o) => (
-                      <li key={`${o.kind}/${o.name}`}>
-                        <button
-                          type="button"
-                          className={LINK_ROW_CLASS}
-                          onClick={() => openWritten(`${o.kind}/${o.name}`)}
-                        >
-                          {t.omitted(o.kind, o.name)}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Section>
-          )}
-          {review.length + flaggedPages.length > 0 && (
-            <Section title={t.reviewTitle(review.length)} defaultOpen={false}>
-              {flaggedPages.length > 0 && (
-                <p className="text-xs text-destructive">{t.notArchitecture(flaggedPages)}</p>
-              )}
-              <ul>
-                {review.map((r) => (
-                  <li key={r.key}>
-                    <button
-                      type="button"
-                      className={LINK_ROW_CLASS}
-                      onClick={() => openWritten(r.key)}
-                      title={r.evidence}
-                    >
-                      <span className="font-medium">{r.key}</span>
-                      <span className="text-muted-foreground"> — {r.evidence}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-        </div>
-        {files.length > 0 && (
-          <div
-            role="tablist"
-            className="flex shrink-0 overflow-x-auto border-b border-border bg-secondary/40 px-2"
-          >
-            {files.map((b) => (
-              <button
-                key={b.name}
-                type="button"
-                role="tab"
-                aria-selected={b.name === selected}
-                title={b.name}
-                onClick={() => setSelected(b.name)}
-                className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-2.5 py-2 text-xs transition-colors ${
-                  b.name === selected
-                    ? "border-primary font-medium text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {b.name}
-                {b.conflict !== undefined ? " ⚠" : b.text !== b.disk ? " •" : ""}
-              </button>
-            ))}
+                            {link.name}
+                            <Icon path={ARROW_RIGHT} className="h-3 w-3 text-muted-foreground" />
+                            {link.view}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border bg-secondary/40 px-3 py-2.5">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{t.viewDiagrams}</span>
+                    <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                      {t.viewDiagramsHint}
+                    </span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 shrink-0 accent-primary"
+                    checked={viewDiagrams.enabled}
+                    onChange={(e) => viewDiagrams.setEnabled(e.target.checked)}
+                  />
+                </label>
+                {viewDiagrams.enabled && viewDiagrams.report.diagrams.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {t.viewDiagramsMade(viewDiagrams.report.diagrams.length)}:{" "}
+                    {viewDiagrams.report.diagrams.map((d) => d.name).join(" · ")}
+                  </p>
+                )}
+                {viewDiagrams.enabled && viewDiagrams.report.orphans.length > 0 && (
+                  <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                    {t.viewDiagramsOrphans(
+                      viewDiagrams.report.orphans.map((o) => o.view).join(", "),
+                    )}
+                  </p>
+                )}
+              </Section>
+            )}
           </div>
         )}
-        {current && comparing === current.name && current.conflict !== undefined && (
-          <p className="shrink-0 border-b border-border px-4 py-2 text-xs text-muted-foreground">
-            {t.compareHint}
-          </p>
+        {shownTab === "initiatives" && (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {initiatives.active && (
+              <InitiativesTab
+                t={t}
+                rows={initiatives.rows}
+                shown={initiatives.shown}
+                view={stored.state.view}
+                picked={picked}
+                onPick={setPicked}
+                preview={
+                  initiatives.preview && (
+                    <PromotePreviewCard
+                      preview={initiatives.preview}
+                      t={t}
+                      onConfirm={() => {
+                        const title = initiatives.preview?.title ?? "";
+                        void initiatives.confirmPromote().then((ok) => {
+                          if (ok) {
+                            setStatus(t.promoted(title));
+                            setPicked(null);
+                          }
+                        });
+                      }}
+                      onCancel={initiatives.cancelPromote}
+                      onMarkDone={() => void initiatives.markDone()}
+                    />
+                  )
+                }
+                actions={{
+                  show: initiatives.show,
+                  locate: initiatives.locate,
+                  create: () =>
+                    void initiatives.create().then((name) => {
+                      if (name) setPicked(name);
+                    }),
+                  remove: (name) => {
+                    if (initiatives.shown === name) initiatives.show(null);
+                    void initiatives.remove(name);
+                  },
+                  setField: (name, field, value) => void initiatives.setField(name, field, value),
+                  accept: (name) => void initiatives.accept(name),
+                  promote: (name) => void initiatives.previewPromote(name),
+                  openFile: (name) => {
+                    setSelected(name);
+                    setTab("files");
+                  },
+                  openView: (name, view) => void showInitiative(name, { view }),
+                }}
+              />
+            )}
+          </div>
         )}
-        <div className="min-h-0 flex-1">
-          {current ? (
-            <CodeEditor
-              // A model per file: each keeps its own undo history, cursor and scroll.
-              path={`structura-plugin-opscr/${diagramId}/${current.name}`}
-              value={current.text}
-              language="yaml"
-              onChange={edit}
-              onSave={() => void save()}
-              rename={renameSymbol}
-              markers={problemsHere.map(toMarker)}
-              revealLine={reveal}
-              onCursorLine={cursorAt}
-              {...(comparing === current.name && current.conflict !== undefined
-                ? { original: current.conflict }
-                : {})}
+        {shownTab === "problems" && (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <DiagnosticsList
+              t={t}
+              diagnostics={diagnostics}
+              onOpen={(d) => {
+                if (!d.file) return;
+                setSelected(d.file);
+                if (d.line) setReveal((r) => ({ line: d.line!, token: (r?.token ?? 0) + 1 }));
+                setTab("files");
+              }}
             />
-          ) : (
-            !buffers.some((b) => isManifest(b.name)) && (
-              <div className="space-y-3 px-4 py-4">
-                <p className="text-sm text-muted-foreground">{t.emptyFolder}</p>
+            {outside.length > 0 && stored.state.view !== undefined && (
+              // A view does not add to the YAML: say so, and offer the whole workspace, where the
+              // element is kept and can be added.
+              <Section title={t.outsideTitle(outside.length)}>
+                <p className="text-xs text-amber-700 dark:text-amber-400">{t.outsideInView}</p>
+                <ul className="flex flex-wrap gap-1.5">
+                  {outside.map((id) => {
+                    const label = outsideComponents.get(id)?.label;
+                    return label ? (
+                      <li
+                        key={id}
+                        className="rounded-full border border-border bg-secondary/40 px-2 py-0.5 text-xs"
+                      >
+                        {label}
+                      </li>
+                    ) : null;
+                  })}
+                </ul>
                 <button
                   type="button"
                   className={`${PRIMARY_BUTTON_CLASS} w-full`}
-                  onClick={() => void createFirst()}
+                  onClick={() => void engine.showView(undefined)}
                 >
-                  <Icon path={FILE_PLUS} />
-                  {t.createFirst}
+                  {t.showWholeToAdd}
                 </button>
-                <label className={`${BUTTON_CLASS} w-full cursor-pointer`}>
-                  <Icon path={UPLOAD} />
-                  {t.importDrawio}
-                  <input
-                    type="file"
-                    accept=".drawio,.xml,.svg"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      e.target.value = "";
-                      if (file) void importDrawioIntoFolder(file);
-                    }}
-                  />
-                </label>
-                <p className="text-[11px] text-muted-foreground">{t.importDrawioHint}</p>
+              </Section>
+            )}
+            {outside.length > 0 && stored.state.view === undefined && (
+              <Section title={t.outsideTitle(outside.length)}>
+                <ul className="space-y-2">
+                  {outside.map((id) => {
+                    const component = outsideComponents.get(id);
+                    if (!component) return null;
+                    const pick = pickFor(id);
+                    const providers = providersFor(pick.kind);
+                    const setPick = (next: Partial<typeof pick>) =>
+                      setPicks((all) => ({ ...all, [id]: { ...pick, ...next } }));
+                    return (
+                      <li
+                        key={id}
+                        className="space-y-2 rounded-md border border-border bg-secondary/40 p-2.5"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="min-w-0 flex-1 truncate font-medium"
+                            title={component.label}
+                          >
+                            {component.label}
+                          </span>
+                          <button
+                            type="button"
+                            className={`${BUTTON_CLASS} h-7 px-2`}
+                            disabled={!pick.kind}
+                            onClick={() => void addToYaml([id])}
+                          >
+                            <Icon path={PLUS} />
+                            {t.addToYaml}
+                          </button>
+                        </div>
+                        <div className={`grid gap-2 ${providers.length > 0 ? "grid-cols-2" : ""}`}>
+                          <select
+                            aria-label={t.kindFor(component.label)}
+                            className={SELECT_CLASS}
+                            value={pick.kind}
+                            onChange={(e) => setPick({ kind: e.target.value, provider: "" })}
+                          >
+                            <option value="">{t.pickKind}</option>
+                            {DRAWN_KINDS.map((kind) => (
+                              <option key={kind} value={kind}>
+                                {kind}
+                              </option>
+                            ))}
+                          </select>
+                          {providers.length > 0 && (
+                            <select
+                              aria-label={t.providerFor(component.label)}
+                              className={SELECT_CLASS}
+                              value={pick.provider}
+                              onChange={(e) => setPick({ provider: e.target.value })}
+                            >
+                              <option value="">{t.noProvider}</option>
+                              {pick.provider && !providers.includes(pick.provider) && (
+                                <option value={pick.provider}>{pick.provider}</option>
+                              )}
+                              {providers.map((provider) => (
+                                <option key={provider} value={provider}>
+                                  {provider}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                {outside.length > 1 && (
+                  <button
+                    type="button"
+                    className={`${BUTTON_CLASS} w-full`}
+                    onClick={() => void addToYaml(outside)}
+                  >
+                    <Icon path={PLUS} />
+                    {t.addAllToYaml}
+                  </button>
+                )}
+              </Section>
+            )}
+            {notCarried > 0 && (
+              // Open when something needs a look: a canvas edit the YAML does not carry, or an edge
+              // the YAML gets wrong — not for Kinds and edges this view leaves out by design.
+              <Section
+                title={t.notCarriedTitle(notCarried)}
+                defaultOpen={unwritten.length > 0 || dropped.some((d) => d.reason !== "not-drawn")}
+              >
+                {unwritten.length > 0 && (
+                  <div>
+                    <span className={LABEL_CLASS}>{t.onCanvasOnly}</span>
+                    <ul>
+                      {unwritten.map((u) => (
+                        <li key={`${u.id}-${u.reason}`}>
+                          <button
+                            type="button"
+                            className={LINK_ROW_CLASS}
+                            onClick={() => api.canvas.highlight({ connectionIds: [u.id] })}
+                          >
+                            {t.unwritten(u.reason, u.label, u.type)}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {omitted.length + dropped.length + drawnThrough.length > 0 && (
+                  <div>
+                    <span className={LABEL_CLASS}>{t.inYamlOnly}</span>
+                    <ul>
+                      {dropped.map((d) => (
+                        <li key={`${d.relationship}#${d.index}`}>
+                          <button
+                            type="button"
+                            className={LINK_ROW_CLASS}
+                            onClick={() => openWritten(`${d.relationship}#${d.index}`)}
+                          >
+                            {t.dropped(d.type, d.from, d.to, d.reason)}
+                          </button>
+                        </li>
+                      ))}
+                      {drawnThrough.map((d) => (
+                        <li key={`through:${d.edge}`}>
+                          <button
+                            type="button"
+                            className={LINK_ROW_CLASS}
+                            onClick={() => openWritten(d.edge.split(" -")[0]!)}
+                          >
+                            {t.drawnThrough(d.edge, d.via)}
+                          </button>
+                        </li>
+                      ))}
+                      {omitted.map((o) => (
+                        <li key={`${o.kind}/${o.name}`}>
+                          <button
+                            type="button"
+                            className={LINK_ROW_CLASS}
+                            onClick={() => openWritten(`${o.kind}/${o.name}`)}
+                          >
+                            {t.omitted(o.kind, o.name)}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </Section>
+            )}
+            {review.length + flaggedPages.length > 0 && (
+              <Section title={t.reviewTitle(review.length)} defaultOpen={false}>
+                {flaggedPages.length > 0 && (
+                  <p className="text-xs text-destructive">{t.notArchitecture(flaggedPages)}</p>
+                )}
+                <ul>
+                  {review.map((r) => (
+                    <li key={r.key}>
+                      <button
+                        type="button"
+                        className={LINK_ROW_CLASS}
+                        onClick={() => openWritten(r.key)}
+                        title={r.evidence}
+                      >
+                        <span className="font-medium">{r.key}</span>
+                        <span className="text-muted-foreground"> — {r.evidence}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </Section>
+            )}
+          </div>
+        )}
+        {shownTab === "files" && (
+          <div className="flex min-h-0 flex-1 flex-col">
+            {files.length > 0 && (
+              <div className="max-h-[35%] shrink-0 overflow-y-auto border-b border-border bg-secondary/30">
+                <FileTree
+                  label={t.tabFiles}
+                  selected={selected}
+                  onSelect={setSelected}
+                  files={files.map((b) => ({
+                    name: b.name,
+                    dirty: b.text !== b.disk,
+                    conflict: b.conflict !== undefined,
+                    errors: diagnostics.filter((d) => d.file === b.name && d.severity === "error")
+                      .length,
+                  }))}
+                />
               </div>
-            )
-          )}
-        </div>
+            )}
+            {current && comparing === current.name && current.conflict !== undefined && (
+              <p className="shrink-0 border-b border-border px-4 py-2 text-xs text-muted-foreground">
+                {t.compareHint}
+              </p>
+            )}
+            <div className="min-h-0 flex-1">
+              {current ? (
+                <CodeEditor
+                  // A model per file: each keeps its own undo history, cursor and scroll.
+                  path={`structura-plugin-opscr/${diagramId}/${current.name}`}
+                  value={current.text}
+                  language="yaml"
+                  onChange={edit}
+                  onSave={() => void save()}
+                  rename={renameSymbol}
+                  markers={problemsHere.map(toMarker)}
+                  revealLine={reveal}
+                  onCursorLine={cursorAt}
+                  {...(comparing === current.name && current.conflict !== undefined
+                    ? { original: current.conflict }
+                    : {})}
+                />
+              ) : (
+                !buffers.some((b) => isManifest(b.name)) && (
+                  <div className="space-y-3 px-4 py-4">
+                    <p className="text-sm text-muted-foreground">{t.emptyFolder}</p>
+                    <button
+                      type="button"
+                      className={`${PRIMARY_BUTTON_CLASS} w-full`}
+                      onClick={() => void createFirst()}
+                    >
+                      <Icon path={FILE_PLUS} />
+                      {t.createFirst}
+                    </button>
+                    <label className={`${BUTTON_CLASS} w-full cursor-pointer`}>
+                      <Icon path={UPLOAD} />
+                      {t.importDrawio}
+                      <input
+                        type="file"
+                        accept=".drawio,.xml,.svg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (file) void importDrawioIntoFolder(file);
+                        }}
+                      />
+                    </label>
+                    <p className="text-[11px] text-muted-foreground">{t.importDrawioHint}</p>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        )}
         <div
           className="flex shrink-0 items-center gap-2 border-t border-border px-4 py-1.5 text-[11px] text-muted-foreground"
           aria-live="polite"

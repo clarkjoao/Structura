@@ -25,7 +25,7 @@ sequencing live in
 | Inspector panels / property editors | 🟢 | Plugin `element-inspector` slot | Plugins add sections to element inspector via `ui:panels` capability. |
 | Toast notifications | 🟢 | Plugin `ui:overlays` capability | Plugins call `api.overlay.showToast()` to display toasts. |
 | Modal dialogs | 🟢 | Plugin `ui:overlays` capability | Plugins call `api.overlay.openModal()` to open modals. |
-| Versions (branches) | 🟢 | Plugin `api.versions` (API 1.14, `diagram:read` / `diagram:write`) | A plugin upserts Versions by `key` (whole content against the base, owned by the plugin), lists them with their conflicts, activates one, and receives the user's merge / rename / delete / create through `onAction` (`features/plugins/version-actions.ts`). `getDiagram` returns the active Version applied, `{ base: true }` the base. |
+| Versions (branches) | 🟢 | Plugin `api.versions` (API 1.14, `diagram:read` / `diagram:write`) | A plugin upserts Versions by `key` (whole content against the base, owned by the plugin), lists them with their conflicts, activates one, and receives the user's merge / rename / delete / status / create through `onAction` (`features/plugins/version-actions.ts`). `getDiagram` returns the active Version applied, `{ base: true }` the base. |
 | Element picker / palette entries | 🟡 | `features/elements` palette + family tabs | Largely derived from the element / cloud-family registries; remaining hardcoded chrome can become contributions. |
 | Validators | 🔴 | `validate-diagram.ts` (interchange only) | Model-level validation rules (per diagram profile) don't exist yet. |
 | Templates / patterns | 🟡 | `ElementPreset` store, `lib/catalogs/patterns.ts` | User presets are runtime data; built-in patterns should become contributions. |

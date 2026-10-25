@@ -54,7 +54,7 @@ export interface VersionPanelProps {
   onDelete: (id: string) => void;
   onMerge: (version: VersionDiff) => void;
   onSelectBase: () => void;
-  /** Sets the status of a Version not owned by a plugin. */
+  /** Sets the status of a Version (a plugin-owned one's goes to its plugin). */
   onSetStatus?: (id: string, status: VersionStatus | null) => void;
   /** Version id → how many of its copies conflict with the base (merge waits for zero). */
   conflictCounts?: Readonly<Record<string, number>>;
@@ -165,7 +165,7 @@ function VersionRow({
 
       {showActions && (
         <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-          {!owned && onSetStatus && (
+          {onSetStatus && (
             <select
               aria-label={t("versions.statusLabel")}
               title={t("versions.statusLabel")}
@@ -509,8 +509,9 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
    */
   const routedToOwner = (
     version: VersionDiff,
-    type: "merge" | "rename" | "delete",
+    type: "merge" | "rename" | "delete" | "status",
     name = version.name,
+    status: VersionStatus | null = version.status ?? null,
   ): boolean => {
     const owner = version.ownerPluginId;
     if (owner === undefined) return false;
@@ -521,7 +522,9 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
         owner,
         type === "rename"
           ? { type, diagramId: diagram.id, key, name }
-          : { type, diagramId: diagram.id, key },
+          : type === "status"
+            ? { type, diagramId: diagram.id, key, status }
+            : { type, diagramId: diagram.id, key },
       );
     if (!delivered) toast.warning(t("versions.ownerInactive", { plugin: owner }));
     return true;
@@ -591,6 +594,8 @@ export function ConnectedVersionPanel({ onClose }: { onClose: () => void }) {
       conflictCounts={conflictCounts}
       onSetStatus={(id, status) => {
         if (versionsGuestReadOnly) return;
+        const version = sceneRecord[id];
+        if (version && routedToOwner(version, "status", version.name, status)) return;
         setVersionStatus(id, status);
       }}
       onSelectVersion={(id) => handleVersionPillClick(id)}

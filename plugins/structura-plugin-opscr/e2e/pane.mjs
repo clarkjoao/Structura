@@ -194,6 +194,19 @@ const setEditorText = async (text) => {
 };
 const appendToEditor = (text) => setEditorText(commerce + text);
 
+/** Opens one of the pane's tabs. */
+const TABS = {
+  overview: /^(Overview|Visão)/,
+  initiatives: /^(Initiatives|Iniciativas)/,
+  files: /^(Files|Arquivos)/,
+  problems: /^(Problems|Problemas)/,
+};
+const openTab = (name) => page.getByRole("tab", { name: TABS[name] }).click();
+/** Opens a file from the Files tab's tree. */
+const openFile = async (name) => {
+  await openTab("files");
+  await page.locator(`button[title="${name}"]`).first().click();
+};
 await page.goto(`http://localhost:${PORT}/model/${DIAGRAM}`);
 await page.waitForSelector(".react-flow__viewport", { timeout: 30000 });
 await page.getByRole("button", { name: "opscr", exact: true }).click();
@@ -202,6 +215,7 @@ await waitNodes(23).catch(() => fail("binding did not draw the 23 elements of th
 await check((await nodes()) === 23, "bind draws the sample (23 elements)");
 await page.screenshot({ path: join(OUT, "1-bound.png") });
 
+await openTab("files");
 await editor.waitFor({ timeout: 20000 });
 await appendToEditor(CACHE);
 await waitNodes(24).catch(() => fail("adding a Cache in the editor did not reach the canvas"));
@@ -219,7 +233,7 @@ const dragged = await nodePos("public-api");
 await check(Math.abs(dragged.y - beforePos.y) > 50, "public-api was dragged");
 await check(
   (
-    (await page.locator('[role="tab"][aria-selected="true"]').first().textContent()) ?? ""
+    (await page.locator('button[aria-current="true"]').first().getAttribute("title")) ?? ""
   ).startsWith("commerce.opscr.yaml"),
   "dragging an element leaves the file being edited open",
 );
@@ -581,8 +595,9 @@ await check(
 
 // The canvas and the YAML point at each other: selecting an element opens the manifest that
 // writes it, and the element the cursor is in is lit on the canvas.
+/** The file open in the editor (the one marked in the file tree). */
 const activeTab = async () =>
-  (await page.locator('[role="tab"][aria-selected="true"]').first().textContent()) ?? "";
+  (await page.locator('button[aria-current="true"]').first().getAttribute("title")) ?? "";
 const activeLine = async () =>
   Number(
     await page
@@ -625,6 +640,7 @@ await page.screenshot({ path: join(OUT, "7-source-to-canvas.png") });
 await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
 
 // What does not carry between the two sides is listed; an entry opens where it is written.
+await openTab("problems");
 const notCarried = page.locator("button[aria-expanded]", { hasText: /not carried|não levad/ });
 await check((await notCarried.count()) === 1, "the pane lists what the diagram does not draw");
 await notCarried.click();
@@ -636,8 +652,7 @@ await waitFor(
   async () => (await activeTab()).startsWith("finance.opscr.yaml") && (await activeLine()) >= 12,
   "an entry of that list opens the manifest",
 );
-await notCarried.click();
-await page.getByRole("tab", { name: /^commerce\.opscr\.yaml/ }).click();
+await openFile("commerce.opscr.yaml");
 
 // An element drawn from the catalog is offered for the YAML, with a suggested Kind.
 // The chat stays open: the catalog must be drawn above it.
@@ -658,6 +673,7 @@ await page
   .click();
 await waitNodes(paletteCount + 1).catch(() => fail("the palette did not add an element"));
 await page.keyboard.press("Escape");
+await openTab("problems");
 const kindSelect = page.getByLabel(/^(Kind for|Kind de) /).first();
 await kindSelect
   .waitFor({ timeout: 8000 })
@@ -766,8 +782,7 @@ await check(
 );
 
 // Undo is per file: undoing in one file leaves another file's edits alone.
-const tab = (name) =>
-  page.getByRole("tab", { name: new RegExp(`^${name.replaceAll(".", "\\.")}`) });
+const tab = (name) => ({ click: () => openFile(name) });
 const typeAtEnd = async (text) => {
   await page.locator(".monaco-editor .view-lines").first().click();
   await page.keyboard.press("ControlOrMeta+End");
