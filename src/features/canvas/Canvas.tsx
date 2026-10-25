@@ -58,6 +58,7 @@ import { isPanelComponent, isApiGroupComponent, isTextComponent } from "@/featur
 import { DiagramSurface, writePolicy } from "./core";
 import { useCanvasSvgFileDrop } from "./hooks/useCanvasSvgFileDrop";
 import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
+import { VersionChangesLegend } from "./toolbar/VersionChangesLegend";
 
 /**
  * Phase 4 — selection epic.
@@ -557,6 +558,7 @@ const Canvas = (props: CanvasProps = {}) => {
                   </div>
                 </div>
               )}
+              {!isCompareMode && <VersionChangesLegend diagram={diagram} />}
               <DiagramSurface
                 policy={writePolicy(interactionMode.canEditCanvas)}
                 readingDirection={diagram.direction ?? "LR"}

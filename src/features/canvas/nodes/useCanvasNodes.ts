@@ -1,6 +1,7 @@
 import { useMemo, useRef, type CSSProperties } from "react";
 import type { Node } from "@xyflow/react";
 import type {
+  VersionChanges,
   CompareElementVisual,
   Component,
   ComponentPatch,
@@ -23,7 +24,7 @@ import { projectNodes } from "../core/projectDiagram";
 import { projectLegendNode } from "../core/legendNode";
 import type { ViewSnapshot } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
-import { applyEditorNodeOverlays } from "./nodeOverlays";
+import { applyEditorNodeOverlays, versionGhostOverlay } from "./nodeOverlays";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
 import { getPendingNodeIds, useLLMStore } from "@/features/llm";
 
@@ -88,6 +89,10 @@ interface UseCanvasNodesParams {
   setNoteInlineEditingId?: (id: string | null) => void;
   setJsonViewerInlineEditingId?: (id: string | null) => void;
   updateComponent: (id: string, patch: ComponentPatch) => void;
+  /** The changes view: what the active Version changes, when it is on. */
+  versionChanges?: VersionChanges | null;
+  /** The changes view: the base elements the active Version removes, drawn as ghosts. */
+  ghostView?: ViewSnapshot | null;
 }
 
 type DataCtx = Omit<
@@ -201,6 +206,8 @@ export function useCanvasNodes({
   setNoteInlineEditingId,
   setJsonViewerInlineEditingId,
   updateComponent,
+  versionChanges = null,
+  ghostView = null,
 }: UseCanvasNodesParams): Node[] {
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
@@ -392,6 +399,11 @@ export function useCanvasNodes({
         isReading,
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
         versionConflict: conflictIds.has(comp.id),
+        ...(versionChanges?.added.components.has(comp.id)
+          ? { versionChange: "added" as const }
+          : versionChanges?.changed.has(comp.id)
+            ? { versionChange: "changed" as const }
+            : {}),
         pending: pendingNodeIds.has(comp.id),
       });
 
@@ -438,7 +450,17 @@ export function useCanvasNodes({
     const legendNode =
       legend && previousLegend && sameLegendNode(previousLegend, legend) ? previousLegend : legend;
     prevLegendNodeRef.current = legendNode;
-    const allNodes = legendNode ? [...nextNodes, legendNode] : nextNodes;
+    // The changes view's ghosts: projected from the base, after the live nodes they may nest in.
+    const ghosts = ghostView
+      ? projectNodes(
+          ghostView,
+          { ...ctx, resolvedComponents: { ...ghostView.components, ...ctx.resolvedComponents } },
+          EDITOR_PROJECTION,
+          resolveNodeDescriptor,
+        ).map((node) => ({ ...versionGhostOverlay(node), zIndex: (node.zIndex ?? 0) - 1 }))
+      : [];
+    const withGhosts = ghosts.length > 0 ? [...nextNodes, ...ghosts] : nextNodes;
+    const allNodes = legendNode ? [...withGhosts, legendNode] : withGhosts;
 
     const prevArr = prevNodesArrayRef.current;
     if (
@@ -461,5 +483,7 @@ export function useCanvasNodes({
     view,
     isNodeHiddenByTagFilter,
     pendingNodeIds,
+    versionChanges,
+    ghostView,
   ]);
 }

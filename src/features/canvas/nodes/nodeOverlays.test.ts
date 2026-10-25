@@ -15,6 +15,7 @@ import type { CoverageInfo } from "../flow/flowState";
 import { resolveNodeDescriptor } from "./node-types";
 import {
   applyEditorNodeOverlays,
+  versionGhostOverlay,
   compareOverlay,
   coverageDimOverlay,
   focusDimOverlay,
@@ -262,5 +263,31 @@ describe("the one order overlays need", () => {
       "cursor-default cursor-not-allowed node-pending node-diff-modified",
     );
     expect(drawn(result)).toEqual(drawn(node));
+  });
+
+  it("the changes view outlines what the Version added or changed, a conflict before both", () => {
+    const changed = applyEditorNodeOverlays(node, viewNode, { ...none, versionChange: "changed" });
+    expect(changed.className).toBe("node-diff-modified");
+    const added = applyEditorNodeOverlays(node, viewNode, { ...none, versionChange: "added" });
+    expect(added.className).toBe("node-diff-added");
+    const conflict = applyEditorNodeOverlays(node, viewNode, {
+      ...none,
+      versionChange: "changed",
+      versionConflict: true,
+    });
+    expect(conflict.className).toBe("node-version-conflict");
+    expect(drawn(changed)).toEqual(drawn(node));
+  });
+
+  it("a ghost is marked removed and takes no interaction", () => {
+    const ghost = versionGhostOverlay(node);
+    expect(ghost.className).toBe("node-version-removed");
+    expect(ghost).toMatchObject({
+      draggable: false,
+      selectable: false,
+      focusable: false,
+      connectable: false,
+    });
+    expect(ghost.style?.pointerEvents).toBe("none");
   });
 });

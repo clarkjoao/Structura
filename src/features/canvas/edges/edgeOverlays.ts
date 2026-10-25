@@ -49,12 +49,39 @@ export function pendingEdgeOverlay(edge: Edge, pending: boolean): Edge {
   return pending ? { ...edge, className: `${edge.className ?? ""} edge-pending`.trim() } : edge;
 }
 
+/** The changes view: an edge the active Version added, or changed against the base. */
+function versionChangeEdgeOverlay(
+  edge: Edge,
+  change: "added" | "changed" | undefined,
+): Edge {
+  if (!change) return edge;
+  const className = change === "added" ? "edge-version-added" : "edge-version-changed";
+  return { ...edge, className: `${edge.className ?? ""} ${className}`.trim() };
+}
+
+/** A base connection the active Version removes: dashed, faded and inert. */
+export function versionGhostEdgeOverlay(edge: Edge): Edge {
+  return {
+    ...edge,
+    id: `version-ghost:${edge.id}`,
+    className: `${edge.className ?? ""} edge-version-removed`.trim(),
+    selectable: false,
+    focusable: false,
+    deletable: false,
+    reconnectable: false,
+    animated: false,
+    style: { ...edge.style, pointerEvents: "none" },
+  };
+}
+
 export interface EditorEdgeOverlayInput {
   selectedEdgeId: string | null;
   isCompareMode: boolean;
   compareConnectionOpacity: Record<string, number> | undefined;
   dimmedByTag: boolean;
   pending: boolean;
+  /** The changes view: what the active Version did to this edge, if anything. */
+  versionChange?: "added" | "changed";
 }
 
 /** Every editor edge overlay, compare before the tag filter (see the module note). */
@@ -62,5 +89,6 @@ export function applyEditorEdgeOverlays(edge: Edge, input: EditorEdgeOverlayInpu
   let next = selectedEdgeOverlay(edge, input.selectedEdgeId);
   next = compareEdgeOverlay(next, input.isCompareMode, input.compareConnectionOpacity);
   next = tagFilterEdgeOverlay(next, input.dimmedByTag);
+  next = versionChangeEdgeOverlay(next, input.versionChange);
   return pendingEdgeOverlay(next, input.pending);
 }

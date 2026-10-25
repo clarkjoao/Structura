@@ -214,6 +214,50 @@ await check(
   !version.components.some((c) => c.name === "sessions"),
   "the Version drops the retired Cache",
 );
+// The changes view (on by default): what the initiative changes against the root.
+const classOf = (name) =>
+  page.evaluate(
+    (name) =>
+      [...document.querySelectorAll(".react-flow__node")]
+        .filter((n) => n.textContent.includes(name))
+        .map((n) => n.className)
+        .join(" | "),
+    name,
+  );
+await check(
+  (await classOf("Shopping sessions")).includes("node-version-removed"),
+  `the retired Cache is drawn as a ghost (${await classOf("Shopping sessions")})`,
+);
+await check(
+  (await classOf("orders-api")).includes("node-diff-modified"),
+  "orders-api is outlined as changed",
+);
+await check(
+  (await classOf("order-events")).includes("node-diff-added"),
+  "order-events is outlined as added",
+);
+await check(
+  (await page.locator(".edge-version-removed").count()) > 0,
+  "the retired Cache's edges are drawn as ghosts",
+);
+await check(
+  await page.getByText(/Changes in Order events|Mudanças em Order events/).isVisible(),
+  "the legend names the initiative",
+);
+await page.screenshot({ path: join(OUT, "initiatives-2b-changes.png") });
+// Hidden from the legend, shown again from the Version panel.
+await page.getByRole("button", { name: /^(Hide|Ocultar)$/ }).click();
+await check(
+  (await page.locator(".node-version-removed").count()) === 0,
+  "hiding the changes view drops the ghosts",
+);
+await page.getByRole("button", { name: /^View versions/ }).click();
+await page.getByLabel(/Show changes on the canvas|Mostrar mudanças no canvas/).check();
+await page.keyboard.press("Escape");
+await check(
+  (await page.locator(".node-version-removed").count()) > 0,
+  "the Version panel switches it back on",
+);
 for (const edge of [
   "orders-api->order-events",
   "orders-service->order-events",
