@@ -648,6 +648,8 @@ export interface PluginVersionInput {
 export type PluginVersionAction =
   | { type: "merge" | "delete"; diagramId: string; key: string }
   | { type: "rename"; diagramId: string; key: string; name: string }
+  /** The user set the Version's status in the Versions panel (null: no status). */
+  | { type: "status"; diagramId: string; key: string; status: PluginVersionStatus | null }
   | { type: "create"; diagramId: string };
 
 /**

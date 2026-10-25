@@ -9,6 +9,7 @@ import {
   mergeLayouts,
   parseLayout,
   parseWorkspaceFile,
+  resolveView,
   serializeLayout,
   type Box,
   type LayoutFile,
@@ -128,6 +129,72 @@ function initiativeInfos(product: ProductWorkspace | null): InitiativeInfo[] {
       status: i.status && STATUSES.has(i.status) ? (i.status as PluginVersionStatus) : null,
     };
   });
+}
+
+/** What an initiative changes in one View, as the View shows it. */
+export interface ViewChanges {
+  added: string[];
+  modified: string[];
+  retired: string[];
+  /** Edges the View draws that the initiative adds or removes. */
+  edges: number;
+}
+
+/** Nothing the View shows changes. */
+export const unchanged = (c: ViewChanges) =>
+  c.added.length + c.modified.length + c.retired.length + c.edges === 0;
+
+/**
+ * Each View's changes under an initiative: the View resolved on the root against the View
+ * resolved on the root with the initiative applied. A View the initiative adds is all added; one
+ * it drops is all retired. Views it does not change are left out.
+ */
+export function initiativeViewChanges(
+  product: ProductWorkspace,
+  name: string,
+): Map<string, ViewChanges> {
+  const cached = viewChangesCache.get(product)?.get(name);
+  if (cached) return cached;
+  const result = computeViewChanges(product, name);
+  if (!viewChangesCache.has(product)) viewChangesCache.set(product, new Map());
+  viewChangesCache.get(product)!.set(name, result);
+  return result;
+}
+
+const viewChangesCache = new WeakMap<ProductWorkspace, Map<string, Map<string, ViewChanges>>>();
+
+function computeViewChanges(product: ProductWorkspace, name: string): Map<string, ViewChanges> {
+  const initiative = product.initiatives.find((i) => i.name === name);
+  const result = new Map<string, ViewChanges>();
+  if (!initiative) return result;
+  const views = new Set(
+    [product.root, initiative.workspace].flatMap((w) =>
+      w.getByKind("View").map((m) => m.metadata.name),
+    ),
+  );
+  const modified = new Set(initiative.diff.modified);
+  const edgeKey = (e: { from: string; to: string; type: string }) => `${e.from}>${e.to}:${e.type}`;
+  for (const view of [...views].sort()) {
+    const before = resolveView(product.root, view);
+    const after = resolveView(initiative.workspace, view);
+    const was = new Map((before?.nodes ?? []).map((n) => [n.id, n]));
+    const is = new Map((after?.nodes ?? []).map((n) => [n.id, n]));
+    const wasEdges = new Set((before?.edges ?? []).map(edgeKey));
+    const isEdges = new Set((after?.edges ?? []).map(edgeKey));
+    const changes: ViewChanges = {
+      added: [...is.keys()].filter((k) => !was.has(k)),
+      // Changed in the YAML, or moved to another box in this View.
+      modified: [...is.values()]
+        .filter((n) => was.has(n.id) && (modified.has(n.id) || was.get(n.id)!.parent !== n.parent))
+        .map((n) => n.id),
+      retired: [...was.keys()].filter((k) => !is.has(k)),
+      edges:
+        [...isEdges].filter((k) => !wasEdges.has(k)).length +
+        [...wasEdges].filter((k) => !isEdges.has(k)).length,
+    };
+    if (!unchanged(changes)) result.set(view, changes);
+  }
+  return result;
 }
 
 const sameBox = (a: Box, b: Box | undefined) =>
@@ -330,6 +397,42 @@ export class InitiativeVersions {
     return initiativeInfos(productOf(buffers.get(), isManifest, configFile));
   }
 
+  /**
+   * The initiatives a target draws as Versions: every one on the whole workspace; on a View, only
+   * those that change what the View shows — elsewhere the Version would be the base again.
+   */
+  private drawnOn(target: InitiativeTarget, infos: InitiativeInfo[]): InitiativeInfo[] {
+    const view = target.view ?? target.baseBinding().view;
+    if (view === undefined) return infos;
+    const { buffers, isManifest, configFile } = this.options;
+    const product = productOf(buffers.get(), isManifest, configFile);
+    if (!product) return [];
+    return infos.filter((i) => initiativeViewChanges(product, i.name).has(view));
+  }
+
+  /**
+   * Removes an initiative's Version from a target, with its engine and binding. Nothing is lost:
+   * every canvas edit in it was written to the initiative's buffers already.
+   */
+  private async drop(target: InitiativeTarget, name: string) {
+    const { host, bindings } = this.options;
+    const key = keyOf(target.diagramId, name);
+    host.removeVersion(target.diagramId, name);
+    this.engines.delete(key);
+    this.fresh.delete(key);
+    if (key in bindings.get()) {
+      const { [key]: _gone, ...rest } = bindings.get();
+      void _gone;
+      await bindings.set(rest);
+    }
+  }
+
+  /** The canvas id an initiative's Version gives an element key on a diagram, if it draws it. */
+  canvasIdOf(diagramId: string, name: string, key: string): string | undefined {
+    const target = this.options.targets().find((t) => t.diagramId === diagramId);
+    return target ? this.bindingFor(target, name).ids[key] : undefined;
+  }
+
   /** The root binding with the initiative's own entries on top, minus what it dropped. */
   private bindingFor(target: InitiativeTarget, name: string): BindingState {
     const base = target.baseBinding();
@@ -362,15 +465,9 @@ export class InitiativeVersions {
    * written to the initiative's buffers already. The Version stays on screen if it was.
    */
   private async rebuild(target: InitiativeTarget, info: InitiativeInfo) {
-    const { host, bindings } = this.options;
-    const key = keyOf(target.diagramId, info.name);
+    const { host } = this.options;
     const shown = host.activeVersion?.(target.diagramId) === info.name;
-    host.removeVersion(target.diagramId, info.name);
-    this.engines.delete(key);
-    this.fresh.delete(key);
-    const { [key]: _gone, ...rest } = bindings.get();
-    void _gone;
-    await bindings.set(rest);
+    await this.drop(target, info.name);
     host.applyChanges({}, target.diagramId, {
       key: info.name,
       name: info.title,
@@ -479,17 +576,14 @@ export class InitiativeVersions {
     return this.enqueue(async () => {
       const { host } = this.options;
       const infos = this.initiatives();
-      const names = new Set(infos.map((i) => i.name));
       for (const target of this.options.targets()) {
+        const drawn = this.drawnOn(target, infos);
+        const names = new Set(drawn.map((i) => i.name));
         const versions = host.versions(target.diagramId);
         for (const version of versions) {
-          if (version.key !== null && !names.has(version.key)) {
-            host.removeVersion(target.diagramId, version.key);
-            this.engines.delete(keyOf(target.diagramId, version.key));
-            this.fresh.delete(keyOf(target.diagramId, version.key));
-          }
+          if (version.key !== null && !names.has(version.key)) await this.drop(target, version.key);
         }
-        for (const info of infos) {
+        for (const info of drawn) {
           const known = versions.find((v) => v.key === info.name);
           if (!known || known.name !== info.title || known.status !== info.status) {
             host.applyChanges({}, target.diagramId, {
@@ -508,7 +602,9 @@ export class InitiativeVersions {
   sidecarChanged(): Promise<void> {
     return this.enqueue(async () => {
       for (const target of this.options.targets()) {
-        for (const info of this.initiatives()) await this.draw(target, info, true);
+        for (const info of this.drawnOn(target, this.initiatives())) {
+          await this.draw(target, info, true);
+        }
       }
     });
   }

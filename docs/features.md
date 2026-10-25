@@ -116,7 +116,7 @@ snapshot, with a compare mode. A Version works like a branch:
   panel lists what changed, base → Version.
 - Merging writes what the Version added, changed and moved into the base, and removes what it
   removed.
-- Plugins can own Versions (the opscr plugin, one per initiative): their merge, rename and delete
+- Plugins can own Versions (the opscr plugin, one per initiative): their merge, rename, delete and status
   go to the plugin. Drilling down to a linked diagram keeps the Version with the same key
   selected.
 

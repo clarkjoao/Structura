@@ -161,39 +161,71 @@ const waitNodes = (n) =>
   page.waitForFunction((n) => document.querySelectorAll(".react-flow__node").length === n, n, {
     timeout: 20000,
   });
+/** Opens one of the pane's tabs. */
+const TABS = {
+  overview: /^(Overview|Visão)/,
+  initiatives: /^(Initiatives|Iniciativas)/,
+  files: /^(Files|Arquivos)/,
+  problems: /^(Problems|Problemas)/,
+};
+const openTab = (name) => page.getByRole("tab", { name: TABS[name] }).click();
 await page.goto(`http://localhost:${PORT}/model/${DIAGRAM}`);
 await page.waitForSelector(".react-flow__viewport", { timeout: 30000 });
 // The views need the canvas's room: fold the inspector, the pane takes the side.
 await page.getByRole("button", { name: /^(Properties|Propriedades)$/ }).click();
 await page.getByRole("button", { name: "opscr", exact: true }).click();
 await page.getByRole("button", { name: /Bind to opscr folder|Vincular a uma pasta opscr/ }).click();
-const picker = page.getByRole("combobox", { name: /Diagram|Diagrama/ });
+const picker = page.getByRole("radiogroup", { name: /^(Diagram|Diagrama)$/ });
 await picker.waitFor({ timeout: 30000 });
 await check(
-  (await picker.locator("option").allTextContents()).length === 5,
+  (await picker.getByRole("radio").count()) === 5,
   "the pane lists the whole workspace and the four views",
 );
+/** The View the pane says the bound diagram shows. */
+const pickedView = () => picker.getByRole("radio", { checked: true }).textContent();
+/** Shows a View on the bound diagram ("" for the whole workspace). */
+const pickView = (view) =>
+  picker
+    .getByRole(
+      "radio",
+      view ? { name: view, exact: true } : { name: /^(Whole workspace|Workspace inteiro)$/ },
+    )
+    .click();
 const whole = await nodes();
 await check(whole >= 8, `the whole workspace is drawn (${whole} elements)`);
 await page.screenshot({ path: join(OUT, "views-0-whole.png") });
 
 const show = async (view, count, label) => {
-  await picker.selectOption(view);
-  await waitNodes(count).catch(async () => fail(`${label}: expected ${count} elements, got ${await nodes()}`));
+  await pickView(view);
+  await waitNodes(count).catch(async () =>
+    fail(`${label}: expected ${count} elements, got ${await nodes()}`),
+  );
   await check((await nodes()) === count, `${label} draws ${count} elements`);
 };
 await show("shop-context", 3, "the context view");
 await page.screenshot({ path: join(OUT, "views-1-context.png") });
 
 // The system box opens the container view: follow the link in the pane.
+// The boxes that open another view are folded under their summary.
+await page.getByText(/^(Opens another view|Abre outra view) \(\d+\)$/).click();
 await page.getByRole("button", { name: /webshop → shop-containers/ }).click();
-await waitNodes(10).catch(async () => fail(`drill-down: expected 10 elements, got ${await nodes()}`));
-await check((await picker.inputValue()) === "shop-containers", "the drill-down link opens the container view");
+await waitNodes(10).catch(async () =>
+  fail(`drill-down: expected 10 elements, got ${await nodes()}`),
+);
+await check(
+  (await pickedView()) === "shop-containers",
+  "the drill-down link opens the container view",
+);
 await page.screenshot({ path: join(OUT, "views-2-containers.png") });
 
 await page.getByRole("button", { name: /orders-api → orders-api-components/ }).click();
-await waitNodes(8).catch(async () => fail(`component view: expected 8 elements, got ${await nodes()}`));
-await check((await picker.inputValue()) === "orders-api-components", "a container opens its component view");
+await waitNodes(8).catch(async () =>
+  fail(`component view: expected 8 elements, got ${await nodes()}`),
+);
+await check(
+  (await pickedView()) === "orders-api-components",
+  "a container opens its component view",
+);
 await page.screenshot({ path: join(OUT, "views-3-components.png") });
 
 await show("shop-production", 18, "the deployment view");
@@ -201,18 +233,30 @@ await page.screenshot({ path: join(OUT, "views-4-production.png") });
 
 // A box the reader moves (staying inside its panel) stays where it is when the view is left and shown again.
 await show("shop-containers", 10, "the container view again");
-const before = await page.locator(".react-flow__node", { hasText: "storefront" }).first().evaluate((n) => n.style.transform);
-const box = await page.locator(".react-flow__node", { hasText: "storefront" }).first().boundingBox();
+const before = await page
+  .locator(".react-flow__node", { hasText: "storefront" })
+  .first()
+  .evaluate((n) => n.style.transform);
+const box = await page
+  .locator(".react-flow__node", { hasText: "storefront" })
+  .first()
+  .boundingBox();
 await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 await page.mouse.down();
 await page.mouse.move(box.x + box.width / 2 - 70, box.y + box.height / 2 - 60, { steps: 8 });
 await page.mouse.up();
 await page.waitForTimeout(1200);
-const moved = await page.locator(".react-flow__node", { hasText: "storefront" }).first().evaluate((n) => n.style.transform);
+const moved = await page
+  .locator(".react-flow__node", { hasText: "storefront" })
+  .first()
+  .evaluate((n) => n.style.transform);
 await check(moved !== before, "dragging a box moves it");
 await show("shop-context", 3, "leaving for the context view");
 await show("shop-containers", 10, "coming back to the container view");
-const kept = await page.locator(".react-flow__node", { hasText: "storefront" }).first().evaluate((n) => n.style.transform);
+const kept = await page
+  .locator(".react-flow__node", { hasText: "storefront" })
+  .first()
+  .evaluate((n) => n.style.transform);
 // The sidecar keeps whole pixels: a box drawn at a half pixel comes back within one.
 const xy = (t) => /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(t).slice(1).map(Number);
 await check(
@@ -220,8 +264,10 @@ await check(
   `the moved box is kept for that view (${moved} → ${kept})`,
 );
 
-await picker.selectOption("");
-await waitNodes(whole).catch(async () => fail(`whole workspace again: expected ${whole}, got ${await nodes()}`));
+await pickView("");
+await waitNodes(whole).catch(async () =>
+  fail(`whole workspace again: expected ${whole}, got ${await nodes()}`),
+);
 await check((await nodes()) === whole, "the whole workspace is back");
 
 // A diagram of its own for each view (plugin API 1.13): switched on in the pane, the four diagrams
@@ -241,17 +287,26 @@ while (Date.now() < deadline) {
 }
 await check(made.length === 4, `a diagram is made for each view (${made.length})`);
 const byName = Object.fromEntries(made.map((d) => [d.name, d]));
-const sizes = Object.fromEntries(made.map((d) => [d.name, Object.keys(d.snapshot.components).length]));
+const sizes = Object.fromEntries(
+  made.map((d) => [d.name, Object.keys(d.snapshot.components).length]),
+);
 await check(
-  sizes["Web shop — system context"] === 3 && sizes["Web shop — containers"] === 10 && sizes["Orders API — components"] === 8 && sizes["Web shop — production on AWS"] === 18,
+  sizes["Web shop — system context"] === 3 &&
+    sizes["Web shop — containers"] === 10 &&
+    sizes["Orders API — components"] === 8 &&
+    sizes["Web shop — production on AWS"] === 18,
   `each is drawn from its view: ${JSON.stringify(sizes)}`,
 );
 const contextDiagram = byName["Web shop — system context"];
 const containers = byName["Web shop — containers"];
 const system = Object.values(contextDiagram.snapshot.components).find((c) => c.name === "webshop");
-await check(system?.linkedDiagramId === containers.id, "the system box opens the container diagram");
 await check(
-  contextDiagram.level === "context" && byName["Web shop — production on AWS"].level === "deployment",
+  system?.linkedDiagramId === containers.id,
+  "the system box opens the container diagram",
+);
+await check(
+  contextDiagram.level === "context" &&
+    byName["Web shop — production on AWS"].level === "deployment",
   "the diagrams carry their level",
 );
 await page.screenshot({ path: join(OUT, "views-5-diagrams.png") });
@@ -260,9 +315,19 @@ await page.screenshot({ path: join(OUT, "views-5-diagrams.png") });
 await page.goto(`http://localhost:${PORT}/model/${contextDiagram.id}`);
 await page.waitForSelector(".react-flow__viewport", { timeout: 30000 });
 await waitNodes(3).catch(() => fail("the context diagram did not draw 3 elements"));
-await page.locator(".react-flow__node", { hasText: "webshop" }).first().getByRole("button", { name: /Drill into/i }).first().click();
-await waitNodes(10).catch(async () => fail(`drilling into the container diagram: got ${await nodes()} elements`));
-await check(page.url().endsWith(`/model/${containers.id}`), "the system box's drill-down button opens the container diagram");
+await page
+  .locator(".react-flow__node", { hasText: "webshop" })
+  .first()
+  .getByRole("button", { name: /Drill into/i })
+  .first()
+  .click();
+await waitNodes(10).catch(async () =>
+  fail(`drilling into the container diagram: got ${await nodes()} elements`),
+);
+await check(
+  page.url().endsWith(`/model/${containers.id}`),
+  "the system box's drill-down button opens the container diagram",
+);
 await page.screenshot({ path: join(OUT, "views-6-drilled.png") });
 
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);

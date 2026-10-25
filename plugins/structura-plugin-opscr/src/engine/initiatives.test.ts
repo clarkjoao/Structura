@@ -13,7 +13,9 @@ import { FakeCanvas } from "./fake-canvas.fixture";
 import {
   InitiativeVersions,
   initiativeOfPath,
+  initiativeViewChanges,
   isRootFile,
+  productOf,
   type InitiativeBindings,
   type VersionsHost,
 } from "./initiatives";
@@ -298,5 +300,39 @@ describe("InitiativeVersions", () => {
     s.buffers.remove(s.files.filter((f) => f.name.startsWith("initiatives/")).map((f) => f.name));
     await s.versions.sync();
     expect(s.host.removed).toEqual(["order-events"]);
+  });
+
+  it("draws a Version on a View only when the initiative changes what the View shows", async () => {
+    await s.rootEngine.showView("shop-context");
+    await s.versions.sync();
+    expect(s.host.versionsOf.has("order-events")).toBe(false);
+
+    await s.rootEngine.showView("shop-containers");
+    await s.versions.sync();
+    expect(s.host.versionsOf.has("order-events")).toBe(true);
+
+    // Back to a View it leaves alone: the Version goes, with its binding.
+    await s.rootEngine.showView("shop-context");
+    await s.versions.sync();
+    expect(s.host.removed).toEqual(["order-events"]);
+    expect(Object.keys(s.initiativeBindings)).toEqual([]);
+  });
+});
+
+describe("initiativeViewChanges", () => {
+  it("says what an initiative changes in each View, leaving out the Views it does not", () => {
+    const product = productOf(s.files, isManifest, CONFIG)!;
+    const changes = initiativeViewChanges(product, "order-events");
+    expect([...changes.keys()]).toEqual([
+      "orders-api-components",
+      "shop-containers",
+      "shop-production",
+    ]);
+    expect(changes.get("shop-containers")).toEqual({
+      added: ["Application/notifications-worker", "Database/sessions-store", "Topic/order-events"],
+      modified: ["Application/orders-api"],
+      retired: ["Cache/sessions"],
+      edges: 4,
+    });
   });
 });
