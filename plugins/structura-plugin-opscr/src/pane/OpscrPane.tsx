@@ -30,6 +30,7 @@ import type { AddChoice } from "../engine/adopt";
 import { OpscrEngine, type EngineEvent, type ViewLink } from "../engine/engine";
 import { useViewDiagrams } from "./useViewDiagrams";
 import { useInitiatives } from "./useInitiatives";
+import { takeHandedOff } from "./handoff";
 import { PromotePreviewCard } from "./PromotePreviewCard";
 import { InitiativesTab } from "./InitiativesTab";
 import { ViewPicker } from "./ViewPicker";
@@ -131,12 +132,13 @@ const isSidecar = (name: string) =>
 /** Written by a draw.io import; read for its review list, never edited here. */
 const ANALYSIS_FILE = "analysis.json";
 
-interface StoredBinding {
+export interface StoredBinding {
   folderName: string;
   state: BindingState;
 }
 
-const storageKey = (diagramId: string) => `binding:${diagramId}`;
+/** Where the pane keeps a diagram's binding (a workspace import writes it too). */
+export const bindingStorageKey = (diagramId: string) => `binding:${diagramId}`;
 
 const manifestsOf = (buffers: readonly Buffer[]): SourceText[] =>
   buffers.filter((b) => isManifest(b.name)).map((b) => ({ name: b.name, text: b.text }));
@@ -173,7 +175,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
   const bindings = {
     get: (diagramId: string) =>
       (saving.get(diagramId) ?? Promise.resolve()).then(() =>
-        api.storage.get<StoredBinding>(storageKey(diagramId)),
+        api.storage.get<StoredBinding>(bindingStorageKey(diagramId)),
       ),
     write: (diagramId: string, write: () => Promise<void>): Promise<void> => {
       const done = (saving.get(diagramId) ?? Promise.resolve()).then(write, write);
@@ -327,7 +329,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
         loadedForRef.current = diagramId;
         setStored(binding);
         setLoadedFor(diagramId);
-        await bindings.write(diagramId, () => api.storage.set(storageKey(diagramId), binding));
+        await bindings.write(diagramId, () =>
+          api.storage.set(bindingStorageKey(diagramId), binding),
+        );
       },
       [diagramId],
     );
@@ -421,7 +425,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
             if (diagramId && folderName) {
               const name = folderName;
               return bindings.write(diagramId, () =>
-                api.storage.set(storageKey(diagramId), { folderName: name, state }),
+                api.storage.set(bindingStorageKey(diagramId), { folderName: name, state }),
               );
             }
           },
@@ -770,6 +774,13 @@ export function createOpscrPane(api: StructuraPluginApi) {
       [engine, sync, commitBuffers, initiatives],
     );
 
+    // A folder a workspace import just picked for this diagram opens without asking again.
+    useEffect(() => {
+      if (!diagramId || loadedFor !== diagramId || !stored || folder) return;
+      const handed = takeHandedOff(diagramId);
+      if (handed) void load(handed);
+    }, [diagramId, loadedFor, stored, folder, load]);
+
     const bind = async () => {
       if (!diagramId) return;
       const picked = await api.files.pick(diagramId);
@@ -792,7 +803,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       if (!diagramId) return;
       sessions.delete(diagramId);
       await api.files.forget(diagramId);
-      await bindings.write(diagramId, () => api.storage.remove(storageKey(diagramId)));
+      await bindings.write(diagramId, () => api.storage.remove(bindingStorageKey(diagramId)));
       bindingRef.current = null;
       setStored(null);
       setFolder(null);

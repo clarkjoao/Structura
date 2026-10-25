@@ -18,12 +18,13 @@ export interface ViewDiagramsReport {
   orphans: Array<{ view: string; diagramId: string }>;
 }
 
-interface Stored {
+export interface StoredViewDiagrams {
   enabled: boolean;
   state: ViewDiagramsState;
 }
 
-const storageKey = (diagramId: string) => `view-diagrams:${diagramId}`;
+/** Where the switch is kept per bound diagram (a workspace import writes it too). */
+export const viewDiagramsStorageKey = (diagramId: string) => `view-diagrams:${diagramId}`;
 const EMPTY: ViewDiagramsReport = { diagrams: [], orphans: [] };
 
 /**
@@ -62,7 +63,7 @@ export function useViewDiagrams(options: {
     stateRef.current = emptyViewDiagrams();
     if (!diagramId) return;
     let current = true;
-    void api.storage.get<Stored>(storageKey(diagramId)).then((stored) => {
+    void api.storage.get<StoredViewDiagrams>(viewDiagramsStorageKey(diagramId)).then((stored) => {
       if (!current) return;
       stateRef.current = stored?.state ?? emptyViewDiagrams();
       setEnabled(stored?.enabled === true);
@@ -77,7 +78,9 @@ export function useViewDiagrams(options: {
     if (!enabled || !ready || !diagramId || loadedFor !== diagramId) return null;
     return new ViewDiagrams({
       host: {
-        createDiagram: (input) => api.createDiagram(input),
+        // Beside the bound diagram, in its workspace folder.
+        createDiagram: (input) =>
+          api.createDiagram({ ...input, folderId: api.getDiagram(diagramId)?.folderId ?? null }),
         getDiagram: (id) => api.getDiagram(id, BASE),
         applyChanges: (changes, id) => api.applyChanges(changes, { diagramId: id, base: true }),
       },
@@ -93,7 +96,7 @@ export function useViewDiagrams(options: {
         get: () => stateRef.current,
         set: (state) => {
           stateRef.current = state;
-          return api.storage.set(storageKey(diagramId), { enabled: true, state });
+          return api.storage.set(viewDiagramsStorageKey(diagramId), { enabled: true, state });
         },
       },
       project: projector,
@@ -131,7 +134,10 @@ export function useViewDiagrams(options: {
     setEnabled(next: boolean) {
       if (!diagramId) return;
       setEnabled(next);
-      void api.storage.set(storageKey(diagramId), { enabled: next, state: stateRef.current });
+      void api.storage.set(viewDiagramsStorageKey(diagramId), {
+        enabled: next,
+        state: stateRef.current,
+      });
     },
     /** After the YAML changed. */
     sync: () => manager?.sync(),

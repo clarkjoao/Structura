@@ -193,6 +193,10 @@ export interface PluginFolders {
   /** The folder remembered under the binding id, once permission is granted; null otherwise. */
   open(bindingId: string): Promise<PluginFolderAccess | null>;
   forget(bindingId: string): Promise<void>;
+  /** Remembers the folder of one binding id under another; false when there is none. */
+  move(fromBindingId: string, toBindingId: string): Promise<boolean>;
+  /** Both binding ids remember the same folder on disk. */
+  isSame(aBindingId: string, bBindingId: string): Promise<boolean>;
 }
 
 /** Folder access scoped to one plugin. `picker` and `store` are injectable for tests. */
@@ -223,6 +227,18 @@ export function createPluginFolders(
     },
     async forget(bindingId) {
       await store.delete(key(bindingId));
+    },
+    async move(fromBindingId, toBindingId) {
+      const handle = await store.get(key(fromBindingId));
+      if (!handle) return false;
+      await store.set(key(toBindingId), handle);
+      if (fromBindingId !== toBindingId) await store.delete(key(fromBindingId));
+      return true;
+    },
+    async isSame(aBindingId, bBindingId) {
+      const [a, b] = await Promise.all([store.get(key(aBindingId)), store.get(key(bBindingId))]);
+      if (!a || !b) return false;
+      return a.isSameEntry ? a.isSameEntry(b) : a === b;
     },
   };
 }

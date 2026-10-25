@@ -24,6 +24,8 @@ import {
   type PluginApplyOptions,
   type PluginDiagramChangesResult,
   type PluginDiagramInput,
+  type PluginFolderInput,
+  type WorkspaceImporterContribution,
   type PluginFiles,
   type PluginGetDiagramOptions,
   type PluginVersions,
@@ -35,8 +37,10 @@ import {
 import {
   registerExporterContribution,
   registerImporterContribution,
+  registerWorkspaceImporterContribution,
   unregisterExporterContribution,
   unregisterImporterContribution,
+  unregisterWorkspaceImporterContribution,
 } from "./io-registry";
 import { registerPanelContribution, unregisterPanelContribution } from "./panel-registry";
 import { createPluginStorage } from "./plugin-storage";
@@ -63,19 +67,28 @@ import { useHighlightRequests } from "@/features/canvas/focus/highlightRequests"
 export interface PluginContributionTracker {
   rfTypes: string[];
   importerIds: string[];
+  workspaceImporterIds: string[];
   exporterIds: string[];
   panelIds: string[];
   unsubscribers: Array<() => void>;
 }
 
 export function createContributionTracker(): PluginContributionTracker {
-  return { rfTypes: [], importerIds: [], exporterIds: [], panelIds: [], unsubscribers: [] };
+  return {
+    rfTypes: [],
+    importerIds: [],
+    workspaceImporterIds: [],
+    exporterIds: [],
+    panelIds: [],
+    unsubscribers: [],
+  };
 }
 
 /** Roll back every tracked contribution; registries end as if the plugin never registered. */
 export function rollbackContributions(tracker: PluginContributionTracker): void {
   for (const rfType of tracker.rfTypes) unregisterDescriptor(rfType);
   for (const id of tracker.importerIds) unregisterImporterContribution(id);
+  for (const id of tracker.workspaceImporterIds) unregisterWorkspaceImporterContribution(id);
   for (const id of tracker.exporterIds) unregisterExporterContribution(id);
   for (const id of tracker.panelIds) unregisterPanelContribution(id);
   for (const unsubscribe of tracker.unsubscribers) {
@@ -87,6 +100,7 @@ export function rollbackContributions(tracker: PluginContributionTracker): void 
   }
   tracker.rfTypes = [];
   tracker.importerIds = [];
+  tracker.workspaceImporterIds = [];
   tracker.exporterIds = [];
   tracker.panelIds = [];
   tracker.unsubscribers = [];
@@ -274,6 +288,8 @@ function scopedFiles(manifest: PluginManifest): PluginFiles {
     pick: (bindingId) => (check(), folders.pick(String(bindingId))),
     open: (bindingId) => (check(), folders.open(String(bindingId))),
     forget: (bindingId) => (check(), folders.forget(String(bindingId))),
+    move: (from, to) => (check(), folders.move(String(from), String(to))),
+    isSame: (a, b) => (check(), folders.isSame(String(a), String(b))),
   };
 }
 
@@ -349,6 +365,15 @@ export function createScopedPluginApi(
       warnUndeclaredCapability(manifest, "io:importers");
       registerImporterContribution(handler);
       tracker.importerIds.push(handler.id);
+    },
+
+    registerWorkspaceImporter(handler: WorkspaceImporterContribution): void {
+      warnUndeclaredCapability(manifest, "io:importers");
+      registerWorkspaceImporterContribution({
+        ...handler,
+        ownsPanel: (panelId) => tracker.panelIds.includes(panelId),
+      });
+      tracker.workspaceImporterIds.push(handler.id);
     },
 
     registerExporter(handler: ExporterContribution): void {
@@ -432,8 +457,22 @@ export function createScopedPluginApi(
           ? input.level.trim()
           : "container";
       const description = typeof input.description === "string" ? input.description : undefined;
+      const state = useDiagramStore.getState();
+      // Since 1.14: in a workspace folder; an id that is not one puts it at the top.
+      const folderId =
+        typeof input.folderId === "string" && state.folders[input.folderId] ? input.folderId : null;
       // Not opened: the user stays on the diagram they are on (`addDiagram` does not activate).
-      return useDiagramStore.getState().addDiagram(name, level, undefined, null, description).id;
+      return state.addDiagram(name, level, undefined, folderId, description).id;
+    },
+
+    createFolder(input: PluginFolderInput): string {
+      warnUndeclaredCapability(manifest, "diagram:write");
+      const name = typeof input?.name === "string" ? input.name.trim() : "";
+      if (name === "") throw new Error("[plugins] createFolder: a name is required.");
+      const state = useDiagramStore.getState();
+      const parentId =
+        typeof input.parentId === "string" && state.folders[input.parentId] ? input.parentId : null;
+      return state.addFolder(name, parentId).id;
     },
 
     applyChanges(
