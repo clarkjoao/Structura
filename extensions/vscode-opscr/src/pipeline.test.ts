@@ -595,3 +595,28 @@ describe("visual layer", () => {
     expect(isManifestPath("/w/opscr.visual.json")).toBe(true);
   });
 });
+
+describe("a product workspace", () => {
+  const PRODUCT_DIR = join(
+    dirname(require.resolve("opscr/package.json")),
+    "examples",
+    "web-shop-product",
+  );
+  const names = (dir: string, prefix = ""): string[] =>
+    readdirSync(join(dir, prefix), { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? names(dir, `${prefix}${e.name}/`) : [`${prefix}${e.name}`],
+    );
+  const fromProduct = async (path: string) => readFileSync(path, "utf8");
+
+  it("draws the AS-IS root: the initiatives are overlays, not part of it", async () => {
+    const text = await collectWorkspace(PRODUCT_DIR, names(PRODUCT_DIR), fromProduct);
+    expect(text.files.some((f) => /[\\/]initiatives[\\/]/.test(f.path))).toBe(false);
+    const update = await new PreviewPipeline().update(text);
+    expect(update.diagnostics.filter((d) => d.severity === "error")).toEqual([]);
+    expect(update.graph).toBeDefined();
+  });
+
+  it("recognises opscr.workspace.yaml as a workspace file", () => {
+    expect(isManifestPath("/shop/opscr.workspace.yaml")).toBe(true);
+  });
+});

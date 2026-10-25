@@ -13,7 +13,7 @@ import type { StructuraPluginApi } from "../types/plugin.types";
 const BASE = { base: true } as const;
 
 /** The diagrams made for Views, as the pane lists them. */
-export interface ViewDiagramsReport {
+interface ViewDiagramsReport {
   diagrams: Array<{ view: string; diagramId: string; name: string }>;
   orphans: Array<{ view: string; diagramId: string }>;
 }

@@ -124,16 +124,28 @@ export function versionChanges(diagram: VersionDiagram, versionId: string): Vers
   return result;
 }
 
-/** How many changes a Version makes, for the legend. */
-export function countVersionChanges(changes: VersionChanges): {
+/**
+ * How many changes a Version makes, for the legend: elements added, changed and removed, and the
+ * connections it adds, changes or removes, counted apart (as an initiative counts them).
+ */
+export function countVersionChanges(
+  changes: VersionChanges,
+  baseConnections: Readonly<Record<string, unknown>>,
+): {
   added: number;
   changed: number;
   removed: number;
+  connections: number;
 } {
+  const changedConnections = [...changes.changed.keys()].filter((id) => id in baseConnections);
   return {
-    added: changes.added.components.size + changes.added.connections.size,
-    changed: changes.changed.size,
-    removed: changes.removed.components.length + changes.removed.connections.length,
+    added: changes.added.components.size,
+    changed: changes.changed.size - changedConnections.length,
+    removed: changes.removed.components.length,
+    connections:
+      changes.added.connections.size +
+      changedConnections.length +
+      changes.removed.connections.length,
   };
 }
 

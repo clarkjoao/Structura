@@ -1188,8 +1188,8 @@ export function createOpscrPane(api: StructuraPluginApi) {
                 actions={{
                   show: initiatives.show,
                   locate: initiatives.locate,
-                  create: () =>
-                    void initiatives.create().then((name) => {
+                  create: (title) =>
+                    void initiatives.create(title).then((name) => {
                       if (name) setPicked(name);
                     }),
                   remove: (name) => {

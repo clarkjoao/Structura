@@ -1,5 +1,13 @@
 import { dirname, join as joinPath } from "node:path";
-import { compileSources, resolveView, type Diagnostic, type SourceFile } from "opscr/core";
+import {
+  DEFAULT_INITIATIVES_DIR,
+  WORKSPACE_FILE,
+  compileSources,
+  parseWorkspaceFile,
+  resolveView,
+  type Diagnostic,
+  type SourceFile,
+} from "opscr/core";
 import {
   CONFIG_FILE,
   LAYOUT_FILE,
@@ -258,9 +266,22 @@ export async function collectWorkspace(
   // file, the Problems panel's), which uses backslashes on Windows.
   const segmentsOf = (name: string) => name.split(/[\\/]/);
   const join = (name: string) => platformJoin(folder, ...segmentsOf(name));
+  // A product workspace (`opscr.workspace.yaml`): the root is the AS-IS and each initiative
+  // folder an overlay on it, so the initiatives are not part of the picture drawn here.
+  const workspaceText = fileNames.includes(WORKSPACE_FILE)
+    ? await readText(join(WORKSPACE_FILE))
+    : undefined;
+  const initiatives =
+    workspaceText === undefined
+      ? undefined
+      : (parseWorkspaceFile(workspaceText, WORKSPACE_FILE).workspace?.initiatives ??
+        DEFAULT_INITIATIVES_DIR);
+  const inInitiatives = (name: string) =>
+    initiatives !== undefined && segmentsOf(name).join("/").startsWith(`${initiatives}/`);
   const wanted = [...fileNames]
     .filter(isManifestName)
     .filter((name) => !segmentsOf(name).slice(0, -1).some(SKIPPED_FOLDER))
+    .filter((name) => !inInitiatives(name))
     .sort((a, b) => segmentsOf(a).join("/").localeCompare(segmentsOf(b).join("/")));
   const files: SourceFile[] = [];
   for (const name of wanted) {
@@ -285,6 +306,8 @@ export async function collectWorkspace(
 export function isManifestPath(path: string): boolean {
   return (
     isManifestName(path) ||
+    path.endsWith(`/${WORKSPACE_FILE}`) ||
+    path.endsWith(`\\${WORKSPACE_FILE}`) ||
     path.endsWith(`/${CONFIG_FILE}`) ||
     path.endsWith(`\\${CONFIG_FILE}`) ||
     path.endsWith(`/${LAYOUT_FILE}`) ||

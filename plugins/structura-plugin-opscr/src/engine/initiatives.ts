@@ -58,6 +58,26 @@ export function initiativeOfPath(name: string, dir: string | undefined): string 
   return rest.length >= 2 ? rest[0] : undefined;
 }
 
+/**
+ * The folder (and `metadata.name`) for a new initiative called `title`: lower-case words joined by
+ * dashes, accents dropped — "Order events" → `order-events` — numbered when `taken` has it.
+ */
+export function initiativeFolderName(title: string, taken: ReadonlySet<string>): string {
+  const slug =
+    title
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48)
+      .replace(/-+$/, "") || "initiative";
+  if (!taken.has(slug)) return slug;
+  let n = 2;
+  while (taken.has(`${slug}-${n}`)) n++;
+  return `${slug}-${n}`;
+}
+
 /** What the root engine reads: the folder's top level only (initiatives are overlays). */
 export const isRootFile = (name: string) => !name.includes("/");
 

@@ -337,33 +337,36 @@ await check(
   `the Version copies only the root element the initiative changes (${version.version.copies})`,
 );
 // The initiative's new elements overlap nothing but the panels holding them.
-const overlapping = await page.evaluate(() => {
-  const rects = [...document.querySelectorAll(".react-flow__node")].map((n) => ({
-    name:
-      n.querySelector("[data-testid], .font-semibold, span")?.textContent ??
-      n.textContent.slice(0, 30),
-    text: n.textContent,
-    r: n.getBoundingClientRect(),
-  }));
-  const contains = (a, b) =>
-    a.left <= b.left && a.top <= b.top && a.right >= b.right && a.bottom >= b.bottom;
-  const hits = [];
-  for (const a of rects.filter((x) =>
-    /order-events|notifications-worker|sessions-store/.test(x.text),
-  )) {
-    for (const b of rects) {
-      if (a === b || contains(a.r, b.r) || contains(b.r, a.r)) continue;
-      if (
-        a.r.left < b.r.right &&
-        b.r.left < a.r.right &&
-        a.r.top < b.r.bottom &&
-        b.r.top < a.r.bottom
-      )
-        hits.push(`${a.text.slice(0, 20)} × ${b.text.slice(0, 20)}`);
+/** The initiative's new elements on the canvas that overlap another box (not their panels). */
+const newOverlaps = () =>
+  page.evaluate(() => {
+    const rects = [...document.querySelectorAll(".react-flow__node")].map((n) => ({
+      name:
+        n.querySelector("[data-testid], .font-semibold, span")?.textContent ??
+        n.textContent.slice(0, 30),
+      text: n.textContent,
+      r: n.getBoundingClientRect(),
+    }));
+    const contains = (a, b) =>
+      a.left <= b.left && a.top <= b.top && a.right >= b.right && a.bottom >= b.bottom;
+    const hits = [];
+    for (const a of rects.filter((x) =>
+      /order-events|notifications-worker|sessions-store/.test(x.text),
+    )) {
+      for (const b of rects) {
+        if (a === b || contains(a.r, b.r) || contains(b.r, a.r)) continue;
+        if (
+          a.r.left < b.r.right &&
+          b.r.left < a.r.right &&
+          a.r.top < b.r.bottom &&
+          b.r.top < a.r.bottom
+        )
+          hits.push(`${a.text.slice(0, 20)} × ${b.text.slice(0, 20)}`);
+      }
     }
-  }
-  return hits;
-});
+    return hits;
+  });
+const overlapping = await newOverlaps();
 await check(
   overlapping.length === 0,
   `the initiative's new elements overlap nothing (${overlapping.join("; ")})`,
@@ -476,12 +479,17 @@ await check(
   (await activeKey(idOf("Web shop — containers"))) === "order-events",
   "the container diagram shows the initiative's Version",
 );
+const containerOverlaps = await newOverlaps();
+await check(
+  containerOverlaps.length === 0,
+  `in the container diagram too, the new elements overlap nothing (${containerOverlaps.join("; ")})`,
+);
 await page
   .locator(".react-flow__node", { hasText: "orders-api" })
   .first()
   .getByRole("button", { name: /Drill into/i })
   .first()
-  .dispatchEvent("click");
+  .click();
 await settle();
 await check(
   page.url().endsWith(`/model/${idOf("Orders API — components")}`),
@@ -494,6 +502,23 @@ await check(
 await check(
   (await page.locator(".react-flow__node", { hasText: "order-events" }).count()) > 0,
   "the component diagram draws the initiative's elements",
+);
+// The header shows where the drill-down came from, and the Version shown.
+const trail = page.getByRole("navigation", { name: /^(Drilled down from|Aberto a partir de)$/ });
+await check(
+  (await trail.textContent()).includes("Web shop — containers") &&
+    (await page.getByTitle(/Version Order events|Versão Order events/).count()) > 0,
+  "the header has the breadcrumb and the Version shown",
+);
+await page.screenshot({
+  path: join(OUT, "initiatives-5c-breadcrumb.png"),
+  clip: { x: 0, y: 0, width: 900, height: 60 },
+});
+await trail.getByRole("button", { name: "Web shop — containers" }).click();
+await settle();
+await check(
+  page.url().endsWith(`/model/${idOf("Web shop — containers")}`),
+  "a crumb opens that diagram again",
 );
 await page.screenshot({ path: join(OUT, "initiatives-5-drilled.png") });
 
@@ -629,6 +654,29 @@ await check(
   "Confirm promotes: the initiative folder is gone and the root has its changes",
 );
 await page.screenshot({ path: join(OUT, "initiatives-6-promoted.png") });
+
+// A new initiative is named first; its folder is named after it.
+await openTab("initiatives");
+await page.getByRole("button", { name: /^(New initiative|Nova iniciativa)$/ }).click();
+const form = page.getByRole("form", { name: /^(New initiative|Nova iniciativa)$/ });
+await form.getByLabel(/^(Name|Nome)$/).fill("Migração de sessões");
+await check(
+  (await form.textContent()).includes("initiatives/migracao-de-sessoes/"),
+  "the form shows the folder the name makes",
+);
+await page.screenshot({ path: join(OUT, "initiatives-7-new.png") });
+await page.keyboard.press("Enter");
+await settle();
+await check(
+  await page.getByRole("region", { name: "Migração de sessões" }).isVisible(),
+  "Create opens the new initiative's detail",
+);
+await save();
+const created = (await folder())["initiatives/migracao-de-sessoes/initiative.opscr.yaml"] ?? "";
+await check(
+  created.includes("name: migracao-de-sessoes") && created.includes('"Migração de sessões"'),
+  "the new initiative is written under its folder, with its name",
+);
 
 await check(errors.length === 0, `no page errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 await browser.close();
