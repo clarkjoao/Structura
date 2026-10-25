@@ -4,7 +4,13 @@ import type {
   PluginDiagramChangesResult,
   PluginDiagramInput,
 } from "../types/plugin.types";
-import { OpscrEngine, type EngineEvent, type Projector, type TextsPort, type ViewInfo } from "./engine";
+import {
+  OpscrEngine,
+  type EngineEvent,
+  type Projector,
+  type TextsPort,
+  type ViewInfo,
+} from "./engine";
 import type { SourceText } from "./patches";
 import { emptyBinding, type BindingState } from "./sync";
 
@@ -89,9 +95,19 @@ export class ViewDiagrams {
     return this.options.texts.get().filter((f) => this.options.isManifest(f.name));
   }
 
+  /** The diagram drawing a View the YAML declares, for a box that opens it; undefined if none. */
+  diagramFor(view: string): string | undefined {
+    const id = this.options.state.get().diagrams[view];
+    return this.live.has(view) && id !== undefined && this.options.host.getDiagram(id) !== null
+      ? id
+      : undefined;
+  }
+
   /** The view a diagram was made for, if this folder made it. */
   viewOf(diagramId: string): string | undefined {
-    return Object.entries(this.options.state.get().diagrams).find(([, id]) => id === diagramId)?.[0];
+    return Object.entries(this.options.state.get().diagrams).find(
+      ([, id]) => id === diagramId,
+    )?.[0];
   }
 
   private engineFor(view: string, diagramId: string): OpscrEngine {
@@ -114,10 +130,7 @@ export class ViewDiagrams {
       project: (manifests, config, previous) => project(manifests, config, previous, view),
       isManifest,
       configFile,
-      resolveLink: (target) => {
-        const id = state.get().diagrams[target];
-        return this.live.has(target) && id !== undefined && host.getDiagram(id) !== null ? id : undefined;
-      },
+      resolveLink: (target) => this.diagramFor(target),
       onEvent: (event) => this.options.onEvent?.({ type: "engine", view, event }),
     });
     this.engines.set(diagramId, engine);
@@ -162,7 +175,8 @@ export class ViewDiagrams {
       }
       await state.set(current);
 
-      for (const info of infos) await this.engineFor(info.name, current.diagrams[info.name]!).sync();
+      for (const info of infos)
+        await this.engineFor(info.name, current.diagrams[info.name]!).sync();
       this.report(infos);
     });
   }
@@ -174,7 +188,9 @@ export class ViewDiagrams {
     this.options.onEvent?.({
       type: "view-diagrams",
       diagrams: infos.flatMap((i) =>
-        diagrams[i.name] ? [{ view: i.name, diagramId: diagrams[i.name]!, name: i.title ?? i.name }] : [],
+        diagrams[i.name]
+          ? [{ view: i.name, diagramId: diagrams[i.name]!, name: i.title ?? i.name }]
+          : [],
       ),
       orphans: Object.entries(diagrams)
         .filter(([view, id]) => !live.has(view) && host.getDiagram(id) !== null)
@@ -195,7 +211,8 @@ export class ViewDiagrams {
   sidecarChanged(sidecar: string): Promise<void> {
     return this.enqueue(async () => {
       for (const [view, id] of Object.entries(this.options.state.get().diagrams)) {
-        if (this.options.host.getDiagram(id)) await this.engineFor(view, id).sidecarChanged(sidecar);
+        if (this.options.host.getDiagram(id))
+          await this.engineFor(view, id).sidecarChanged(sidecar);
       }
     });
   }

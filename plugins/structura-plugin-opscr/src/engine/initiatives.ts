@@ -241,10 +241,15 @@ function initiativeTexts(options: {
 /** A diagram bound to the folder, as the initiative engines draw on it. */
 export interface InitiativeTarget {
   diagramId: string;
-  /** The opscr View it draws; undefined for the whole workspace (where edits are written). */
+  /**
+   * The opscr View it draws; undefined for the bound diagram, which draws what the root engine
+   * draws there (the whole workspace, where edits are written, or the View the pane shows).
+   */
   view?: string;
   /** What the root engine created on it: root elements keep their canvas ids in a Version. */
   baseBinding(): BindingState;
+  /** The diagram that draws a View, for a box that opens one (as the base's boxes do). */
+  resolveLink?: (view: string) => string | undefined;
 }
 
 /** What the host offers (the plugin API's 1.14 Versions surface). */
@@ -260,6 +265,9 @@ export interface VersionsHost {
     diagramId: string,
   ): Array<{ key: string | null; name: string; status: PluginVersionStatus | null }>;
   removeVersion(diagramId: string, key: string): void;
+  /** The key of the Version a diagram shows (null: the base). */
+  activeVersion?(diagramId: string): string | null;
+  setActiveVersion?(diagramId: string, key: string): void;
 }
 
 /** An initiative engine's own part of the binding, kept on top of the root's. */
@@ -268,6 +276,15 @@ export interface InitiativeBinding {
   /** Root keys the initiative's Version no longer draws (retired, or changed beyond an update). */
   droppedIds: string[];
   droppedConnections: string[];
+  /**
+   * The root's canvas ids the Version was drawn over. When the root draws an element again (the
+   * bound diagram showed a View, the folder was bound again) the Version is drawn again from the
+   * YAML: its binding would name ids that are no longer there, and a sync would read them as
+   * deleted.
+   */
+  baseIds?: Record<string, string>;
+  /** The View it was drawn for (none: the whole workspace). */
+  view?: string;
 }
 
 export type InitiativeBindings = Record<string, InitiativeBinding>;
@@ -319,18 +336,54 @@ export class InitiativeVersions {
     const own = this.options.bindings.get()[keyOf(target.diagramId, name)];
     const droppedIds = new Set(own?.droppedIds ?? []);
     const droppedConnections = new Set(own?.droppedConnections ?? []);
+    const view = target.view ?? base.view;
     return {
       ids: { ...without(base.ids, droppedIds), ...own?.state.ids },
       connections: { ...without(base.connections, droppedConnections), ...own?.state.connections },
       signatures: { ...without(base.signatures, droppedIds), ...own?.state.signatures },
       ...(own?.state.tombstones ? { tombstones: own.state.tombstones } : {}),
-      ...(target.view !== undefined ? { view: target.view } : {}),
+      ...(view !== undefined ? { view } : {}),
     };
+  }
+
+  /** The Version was drawn over root canvas ids the root no longer has under those keys. */
+  private stale(target: InitiativeTarget, name: string): boolean {
+    const own = this.options.bindings.get()[keyOf(target.diagramId, name)];
+    if (!own) return false;
+    if (!own.baseIds) return true;
+    const base = target.baseBinding();
+    if ((target.view ?? base.view) !== own.view) return true;
+    return Object.entries(own.baseIds).some(([key, id]) => key in base.ids && base.ids[key] !== id);
+  }
+
+  /**
+   * Drops a stale Version — its copies of root elements hold ids the root no longer draws — so
+   * the next draw makes it again from the YAML. Nothing is lost: every canvas edit in it was
+   * written to the initiative's buffers already. The Version stays on screen if it was.
+   */
+  private async rebuild(target: InitiativeTarget, info: InitiativeInfo) {
+    const { host, bindings } = this.options;
+    const key = keyOf(target.diagramId, info.name);
+    const shown = host.activeVersion?.(target.diagramId) === info.name;
+    host.removeVersion(target.diagramId, info.name);
+    this.engines.delete(key);
+    this.fresh.delete(key);
+    const { [key]: _gone, ...rest } = bindings.get();
+    void _gone;
+    await bindings.set(rest);
+    host.applyChanges({}, target.diagramId, {
+      key: info.name,
+      name: info.title,
+      status: info.status,
+    });
+    if (shown) host.setActiveVersion?.(target.diagramId, info.name);
   }
 
   private saveBinding(target: InitiativeTarget, name: string, state: BindingState) {
     const key = keyOf(target.diagramId, name);
     const all = this.options.bindings.get();
+    const base = target.baseBinding();
+    const view = target.view ?? base.view;
     const before = this.bindingFor(target, name);
     const own = all[key];
     // What the engine let go of stays let go of, even though the root binding still has it.
@@ -344,7 +397,13 @@ export class InitiativeVersions {
     ]);
     return this.options.bindings.set({
       ...all,
-      [key]: { state, droppedIds: [...droppedIds], droppedConnections: [...droppedConnections] },
+      [key]: {
+        state,
+        droppedIds: [...droppedIds],
+        droppedConnections: [...droppedConnections],
+        baseIds: { ...base.ids },
+        ...(view !== undefined ? { view } : {}),
+      },
     });
   }
 
@@ -373,9 +432,10 @@ export class InitiativeVersions {
         get: () => this.bindingFor(target, info.name),
         set: (state) => this.saveBinding(target, info.name, state),
       },
-      project: (manifests, config, previous) => project(manifests, config, previous, target.view),
+      project,
       isManifest,
       configFile,
+      ...(target.resolveLink ? { resolveLink: target.resolveLink } : {}),
       onEvent: (event) =>
         this.options.onEvent?.({ initiative: info.name, diagramId: target.diagramId, event }),
     });
@@ -398,6 +458,7 @@ export class InitiativeVersions {
    */
   private async draw(target: InitiativeTarget, info: InitiativeInfo, sidecar = false) {
     const key = keyOf(target.diagramId, info.name);
+    if (this.stale(target, info.name)) await this.rebuild(target, info);
     const engine = this.engineFor(target, info);
     const layout = this.sidecarFor(info.name);
     if ((sidecar || this.fresh.has(key)) && layout !== undefined) {
@@ -458,6 +519,8 @@ export class InitiativeVersions {
       const target = this.options.targets().find((t) => t.diagramId === diagramId);
       const info = this.initiatives().find((i) => i.name === name);
       if (!target || !info) return;
+      // Over a stale Version the edit cannot be told from the ids it lost: draw it again.
+      if (this.stale(target, info.name)) return this.draw(target, info);
       await this.engineFor(target, info).canvasChanged();
     });
   }

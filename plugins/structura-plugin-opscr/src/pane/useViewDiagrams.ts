@@ -41,6 +41,8 @@ export function useViewDiagrams(options: {
   /** The initiative whose Version a diagram shows: its canvas edits are that initiative's. */
   initiativeShownOn?: (diagramId: string) => string | undefined;
   onInitiativeCanvas?: (diagramId: string, initiative: string) => void;
+  /** After the diagrams were made or followed the YAML on their own (switched on, reopened). */
+  onSynced?: () => void;
 }) {
   const { api, diagramId, ready, buffersRef, setTexts } = options;
   const routes = useRef(options);
@@ -105,9 +107,10 @@ export function useViewDiagrams(options: {
     });
   }, [api, enabled, ready, diagramId, loadedFor, buffersRef]);
 
-  // The diagrams follow the folder from the moment they are switched on.
+  // The diagrams follow the folder from the moment they are switched on; the initiatives' Versions
+  // then follow them.
   useEffect(() => {
-    if (manager) void manager.sync();
+    if (manager) void manager.sync().then(() => routes.current.onSynced?.());
   }, [manager]);
 
   // A box moved on one of them (or an undo) reaches the layout sidecar.
@@ -141,6 +144,7 @@ export function useViewDiagrams(options: {
             diagramId: id,
             view,
             baseBinding: () => stateRef.current.bindings[id] ?? { ...emptyBinding(), view },
+            resolveLink: (target: string) => manager.diagramFor(target),
           }))
         : [],
   };

@@ -434,6 +434,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       setTexts,
       initiativeShownOn: (id) => initiativesRef.current?.shownOn(id),
       onInitiativeCanvas: (id, key) => void initiativesRef.current?.canvasChanged(id, key),
+      onSynced: () => void initiativesRef.current?.sync(),
     });
     syncViewDiagrams.current = viewDiagrams.sync;
     const initiatives = useInitiatives({
