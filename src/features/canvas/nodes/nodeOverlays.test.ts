@@ -21,7 +21,7 @@ import {
   lockOverlay,
   pendingOverlay,
   readingOverlay,
-  versionLockOverlay,
+  versionConflictOverlay,
   selectedOverlay,
   tagFilterOverlay,
   type EditorNodeOverlayInput,
@@ -181,13 +181,13 @@ describe("each node overlay, applied alone", () => {
       off: (n) => lockOverlay(n, false),
     },
     {
-      name: "scene lock",
-      apply: (n) => versionLockOverlay(n, true),
+      name: "version conflict",
+      apply: (n) => versionConflictOverlay(n, true),
       expectOn: (n) => {
-        expect(n.draggable).toBe(false);
-        expect(n.selectable).toBe(node.selectable);
+        expect(n.className).toBe("node-version-conflict");
+        expect(n.draggable).toBe(node.draggable);
       },
-      off: (n) => versionLockOverlay(n, false),
+      off: (n) => versionConflictOverlay(n, false),
     },
     {
       name: "pending",
@@ -223,7 +223,7 @@ describe("the one order overlays need", () => {
     hiddenByTag: false,
     isReading: false,
     locked: false,
-    lockedByVersion: false,
+    versionConflict: false,
     pending: false,
   };
 

@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.13.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.14.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -109,13 +109,36 @@ export interface PluginServiceSnapshot {
   tags: readonly string[];
 }
 
+/** v1.14 — where a Version is in its lifecycle. */
+export type PluginVersionStatus = "proposed" | "approved" | "in-progress" | "done";
+
+/** v1.14 — the Version a diagram shows. */
+export interface PluginActiveVersion {
+  id: string;
+  /** The stable key it was created with (`versions.upsert`), or null for a user's own Version. */
+  key: string | null;
+  status: PluginVersionStatus | null;
+}
+
 /** Read-only diagram projection handed to exporters. */
 export interface DiagramSnapshot {
   id: string;
   name: string;
   description: string | null;
+  /**
+   * Since 1.14: the elements as the canvas shows them — with the active Version applied
+   * (`activeVersion`), unless `getDiagram(id, { base: true })` asked for the base.
+   */
   components: readonly PluginComponentSnapshot[];
   connections: readonly PluginConnectionSnapshot[];
+  /** v1.14 — the Version applied to `components` / `connections`; null on the base. */
+  activeVersion?: PluginActiveVersion | null;
+}
+
+/** v1.14 — options of `getDiagram`. */
+export interface PluginGetDiagramOptions {
+  /** The base, ignoring the active Version. */
+  base?: boolean;
 }
 
 /** Whitelisted component fields a plugin may patch (applied via store actions, undoable). */
@@ -412,14 +435,28 @@ export interface PluginEditorRename {
  */
 export interface PluginFolder {
   readonly name: string;
-  list(): Promise<string[]>;
+  /**
+   * Top-level file names. v1.14 — `{ recursive: true }`: every file in the folder and its
+   * sub-folders, as POSIX paths relative to it (`initiatives/x/initiative.opscr.yaml`), sorted.
+   * Since 1.14 `read` and `write` accept such paths; one that would leave the folder is
+   * rejected, and `write` creates missing sub-folders.
+   */
+  list(options?: PluginFolderListOptions): Promise<string[]>;
   /**
    * v1.9 — top-level files with last-modified time (ms) and size, sorted by name: a cheap way
    * to notice changes made outside the app (another editor, git) without reading every file.
+   * v1.14 — `{ recursive: true }` covers sub-folders too; `name` is then the relative path.
    */
-  stats(): Promise<Array<{ name: string; lastModified: number; size: number }>>;
+  stats(
+    options?: PluginFolderListOptions,
+  ): Promise<Array<{ name: string; lastModified: number; size: number }>>;
   read(fileName: string): Promise<string>;
   write(fileName: string, text: string): Promise<void>;
+}
+
+/** v1.14 — options of `PluginFolder.list`. */
+export interface PluginFolderListOptions {
+  recursive?: boolean;
 }
 
 /** v1.6 — what a chat context is told about the turn. */
@@ -554,6 +591,81 @@ export interface PluginDiagramChangesResult {
   connectionIds: Array<string | null>;
 }
 
+/** v1.14 — element ids, by what a Version does to them. */
+export interface PluginVersionElementIds {
+  componentIds: readonly string[];
+  connectionIds: readonly string[];
+}
+
+/** v1.14 — one Version of a diagram. */
+export interface PluginVersionSnapshot {
+  id: string;
+  key: string | null;
+  name: string;
+  status: PluginVersionStatus | null;
+  /** The plugin that owns it (its merge, rename and delete go to that plugin), or null. */
+  ownerPluginId: string | null;
+  added: PluginVersionElementIds;
+  /** Base elements the Version replaces with its own copy. */
+  modified: PluginVersionElementIds;
+  removed: PluginVersionElementIds;
+  /** Ids of modified elements whose base changed (or vanished) since the copy. */
+  conflicts: readonly string[];
+}
+
+/** v1.14 — the whole content of a Version, relative to the diagram's base. */
+export interface PluginVersionDiff {
+  add?: PluginComponentInput[];
+  /** Ends are `add` keys or existing component ids. */
+  connect?: PluginConnectionInput[];
+  /** Base components replaced in the Version: the base copy with these fields changed. */
+  modify?: PluginDiagramChanges["update"];
+  /** Base component ids the Version hides, with their connections. */
+  remove?: string[];
+  /** Base connection ids the Version hides. */
+  disconnect?: string[];
+  /** Positions inside the Version (of added nodes, or overrides of base nodes). */
+  move?: PluginDiagramChanges["move"];
+}
+
+/** v1.14 — a Version a plugin owns, written whole by `versions.upsert`. */
+export interface PluginVersionInput {
+  /** Stable id from the plugin's source (an opscr initiative name); the same in every diagram. */
+  key: string;
+  name: string;
+  status?: PluginVersionStatus;
+  diff: PluginVersionDiff;
+}
+
+/** v1.14 — what the user did to one of the plugin's Versions; the plugin carries it out. */
+export type PluginVersionAction =
+  | { type: "merge" | "rename" | "delete"; diagramId: string; key: string }
+  | { type: "create"; diagramId: string };
+
+/**
+ * v1.14 — capabilities "diagram:read" (list) and "diagram:write" (the rest). Versions are per
+ * diagram; a plugin keeps one source item (an initiative) in several diagrams under one `key`.
+ */
+export interface PluginVersions {
+  list(diagramId?: string): PluginVersionSnapshot[];
+  /**
+   * Creates the Version with `input.key`, or replaces its whole content, against the current
+   * base: `modify` copies each base element and patches the copy, recording its base hash. The
+   * Version is owned by the calling plugin. One history step. Returns the Version id, or null
+   * when the diagram does not exist.
+   */
+  upsert(input: PluginVersionInput, options?: PluginApplyOptions): string | null;
+  /** Deletes the Version with that key (no-op when there is none). */
+  remove(key: string, options?: PluginApplyOptions): void;
+  /** Shows the Version with that key, or the base for null. */
+  setActive(key: string | null, options?: PluginApplyOptions): void;
+  /**
+   * The user's merge / rename / delete on this plugin's Versions, and "New version" on a diagram
+   * that has them, instead of the store changing. Returns unsubscribe.
+   */
+  onAction(handler: (action: PluginVersionAction) => void): () => void;
+}
+
 /** Plugin-scoped persistent key-value storage, namespaced per plugin id. */
 export interface PluginStorage {
   get<T>(key: string): Promise<T | null>;
@@ -580,7 +692,7 @@ export interface StructuraPluginApi {
    * v1.1 — capability "diagram:read". Read-only snapshot of the requested diagram
    * (defaults to the active one); null when it does not exist.
    */
-  getDiagram(diagramId?: string): DiagramSnapshot | null;
+  getDiagram(diagramId?: string, options?: PluginGetDiagramOptions): DiagramSnapshot | null;
 
   /**
    * v1.1 — capability "diagram:write". Patch whitelisted fields of a component on the
@@ -618,6 +730,9 @@ export interface StructuraPluginApi {
 
   /** v1.11 — capability "diagram:read". The canvas's selection, and lighting elements on it. */
   readonly canvas: PluginCanvas;
+
+  /** v1.14 — the diagrams' Versions, as branches a plugin can own. */
+  readonly versions: PluginVersions;
 
   /**
    * v1.6 — capability "llm:context". Provide the chat's context and reply handling for the

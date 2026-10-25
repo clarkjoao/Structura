@@ -3,7 +3,7 @@ import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
-import { resolveActiveVersion } from "../helpers/version-helpers";
+import { resolveActiveVersion, writableComponent } from "../helpers/version-helpers";
 
 export const componentLinksSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -17,8 +17,7 @@ export const componentLinksSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveVersion(d);
-      const comp = scene?.addedComponents[componentId] ?? d.snapshot.components[componentId];
+      const comp = writableComponent(d, resolveActiveVersion(d), componentId)?.component;
       if (!comp) return;
       if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
       comp.handleOrder[side] = orderedConnectionIds;
@@ -31,11 +30,12 @@ export const componentLinksSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
-      const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
-      if (!scene || !inSceneAdds) pushHistory(state);
-      const comp = inSceneAdds
-        ? scene!.addedComponents[componentId]
-        : d.snapshot.components[componentId];
+      const sceneOwned = !!(
+        scene &&
+        (scene.addedComponents[componentId] || scene.modifiedComponents?.[componentId])
+      );
+      if (!sceneOwned) pushHistory(state);
+      const comp = writableComponent(d, scene, componentId)?.component;
       if (!comp) return;
       if (!comp.externalLinks) comp.externalLinks = [];
       comp.externalLinks.push({ ...link, id: generateId("lnk") });
@@ -52,11 +52,12 @@ export const componentLinksSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
-      const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
-      if (!scene || !inSceneAdds) pushHistory(state);
-      const comp = inSceneAdds
-        ? scene!.addedComponents[componentId]
-        : d.snapshot.components[componentId];
+      const sceneOwned = !!(
+        scene &&
+        (scene.addedComponents[componentId] || scene.modifiedComponents?.[componentId])
+      );
+      if (!sceneOwned) pushHistory(state);
+      const comp = writableComponent(d, scene, componentId)?.component;
       if (!comp) return;
       const link = comp.externalLinks?.find((l) => l.id === linkId);
       if (link) Object.assign(link, patch);
@@ -69,11 +70,12 @@ export const componentLinksSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
-      const inSceneAdds = !!(scene && scene.addedComponents[componentId]);
-      if (!scene || !inSceneAdds) pushHistory(state);
-      const comp = inSceneAdds
-        ? scene!.addedComponents[componentId]
-        : d.snapshot.components[componentId];
+      const sceneOwned = !!(
+        scene &&
+        (scene.addedComponents[componentId] || scene.modifiedComponents?.[componentId])
+      );
+      if (!sceneOwned) pushHistory(state);
+      const comp = writableComponent(d, scene, componentId)?.component;
       if (!comp) return;
       comp.externalLinks = (comp.externalLinks ?? []).filter((l) => l.id !== linkId);
       touchDiagram(d);

@@ -12,7 +12,7 @@ import type {
 } from "@/features/diagram";
 import {
   endpointCallersByRoute,
-  isComponentAddedInActiveVersion,
+  versionConflicts,
   isAncestorLocked,
   buildChildrenIndex,
   isTextType,
@@ -326,7 +326,11 @@ export function useCanvasNodes({
       return EMPTY_CANVAS_NODE_LIST;
     }
 
-    const sceneActive = diagramVersionState?.hasActiveVersion ?? false;
+    // Copies in the active Version whose base changed since: marked until the user resolves them.
+    const activeVersionId = diagramVersionState?.activeVersionId ?? null;
+    const conflictIds = new Set(
+      activeVersionId ? versionConflicts(diagram, activeVersionId).map((c) => c.id) : [],
+    );
 
     const { highlightedNodeIds: hIds, isViewingCoverage: viewingCov, ...restForCtx } = dataCtx;
 
@@ -387,7 +391,7 @@ export function useCanvasNodes({
         hiddenByTag: isNodeHiddenByTagFilter(comp),
         isReading,
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
-        lockedByVersion: sceneActive && !isComponentAddedInActiveVersion(diagram, comp.id),
+        versionConflict: conflictIds.has(comp.id),
         pending: pendingNodeIds.has(comp.id),
       });
 

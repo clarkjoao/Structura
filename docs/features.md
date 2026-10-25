@@ -102,7 +102,18 @@ element picker. Custom icons can be added through the icon picker.
 ## Versions
 
 Named variants of a diagram (for example AS-IS / TO-BE) stored as differences from the base
-snapshot, with a compare mode.
+snapshot, with a compare mode. A Version works like a branch:
+
+- Editing an element of the base inside a Version edits the Version's own copy; the base does not
+  change. Moving a base node inside a Version keeps the new position in the Version.
+- Each Version can carry a status (Proposed, Approved, In progress, Done); the panel groups by it.
+- When the base changes after a Version copied an element, the element is marked as a conflict.
+  Choose **Keep version** or **Use base** in the element panel; merging waits until none is left.
+- Merging writes what the Version added, changed and moved into the base, and removes what it
+  removed.
+- Plugins can own Versions (the opscr plugin, one per initiative): their merge, rename and delete
+  go to the plugin. Drilling down to a linked diagram keeps the Version with the same key
+  selected.
 
 ## Layout
 

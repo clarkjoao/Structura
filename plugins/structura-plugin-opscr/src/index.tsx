@@ -25,7 +25,7 @@ window.StructuraPlugin.define({
     version: "0.16.0",
     author: "Structura",
     description: "Import opscr manifests, or edit a folder of them beside a diagram that follows",
-    apiVersion: "^1.13",
+    apiVersion: "^1.14",
     capabilities: [
       "io:importers",
       "ui:panels",

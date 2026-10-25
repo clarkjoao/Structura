@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { CONFIG_FILE, isManifest, projector } from "../project";
 import type { SourceText } from "../engine/patches";
-import {
-  ViewDiagrams,
-  emptyViewDiagrams,
-  type ViewDiagramsState,
-} from "../engine/view-diagrams";
+import { ViewDiagrams, emptyViewDiagrams, type ViewDiagramsState } from "../engine/view-diagrams";
 import type { StructuraPluginApi } from "../types/plugin.types";
+
+/**
+ * The bound folder is the AS-IS: the pane reads and writes the diagram's base, never the Version
+ * the canvas may be showing (initiative editing comes with the Versions-as-initiatives work).
+ */
+const BASE = { base: true } as const;
 
 /** The diagrams made for Views, as the pane lists them. */
 export interface ViewDiagramsReport {
@@ -67,7 +69,7 @@ export function useViewDiagrams(options: {
     return new ViewDiagrams({
       host: {
         createDiagram: (input) => api.createDiagram(input),
-        getDiagram: (id) => api.getDiagram(id),
+        getDiagram: (id) => api.getDiagram(id, BASE),
         applyChanges: (changes, id) => api.applyChanges(changes, { diagramId: id }),
       },
       texts: {

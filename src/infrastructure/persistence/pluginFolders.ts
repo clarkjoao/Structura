@@ -2,8 +2,8 @@
  * Folders that plugins read and write, picked by the user and remembered per plugin and
  * binding id (plugin API `files:folder`).
  *
- * The directory handle never leaves this module: plugins get a facade over one folder's
- * top-level text files. Handles are kept in IndexedDB (they are structured-cloneable), the
+ * The directory handle never leaves this module: plugins get a facade over one folder's text
+ * files — top-level by default, and its sub-folders by relative POSIX path (since API 1.14). Handles are kept in IndexedDB (they are structured-cloneable), the
  * same way the app's own connected folder is, and permission is re-verified on reopen —
  * which may prompt, so `open` belongs in a user gesture.
  */
@@ -15,10 +15,12 @@ const DB_STORE = "handles";
 export interface PluginFolderAccess {
   /** The folder's name, for display. */
   name: string;
-  /** Top-level file names, sorted. */
-  list(): Promise<string[]>;
-  /** Top-level files with their last-modified time (ms) and size, sorted by name. */
-  stats(): Promise<Array<{ name: string; lastModified: number; size: number }>>;
+  /** Top-level file names, sorted; with `recursive`, every file's relative path. */
+  list(options?: { recursive?: boolean }): Promise<string[]>;
+  /** Files with their last-modified time (ms) and size, sorted by name (path when recursive). */
+  stats(options?: {
+    recursive?: boolean;
+  }): Promise<Array<{ name: string; lastModified: number; size: number }>>;
   read(fileName: string): Promise<string>;
   write(fileName: string, text: string): Promise<void>;
 }
@@ -41,6 +43,19 @@ type DirectoryPicker = (options?: {
   id?: string;
 }) => Promise<FileSystemDirectoryHandle>;
 
+/**
+ * The segments of a relative POSIX path inside the folder; throws for anything that could leave
+ * it (absolute, `..`, `.`, empty segments, backslashes, NUL).
+ */
+function pathSegments(path: string): string[] {
+  if (typeof path !== "string" || path === "" || path.startsWith("/") || path.includes("\\")) {
+    throw new Error(`[plugins] "${String(path)}" is not a path inside the folder.`);
+  }
+  const segments = path.split("/");
+  for (const segment of segments) assertFileName(segment);
+  return segments;
+}
+
 /** A plain file name inside the folder — never a path that could leave it. */
 export function assertFileName(fileName: string): void {
   if (
@@ -55,43 +70,65 @@ export function assertFileName(fileName: string): void {
   }
 }
 
+type EntriesHandle = FileSystemDirectoryHandle & {
+  entries?: () => AsyncIterable<[string, FileSystemHandle]>;
+};
+
+/** Every file under `dir`, as relative paths; sub-folders only when `recursive`. */
+async function listFiles(dir: EntriesHandle, recursive: boolean, prefix = ""): Promise<string[]> {
+  const out: string[] = [];
+  if (!dir.entries) return out;
+  for await (const [name, entry] of dir.entries()) {
+    if (entry.kind === "file") out.push(prefix + name);
+    else if (recursive && entry.kind === "directory") {
+      out.push(...(await listFiles(entry as EntriesHandle, true, `${prefix}${name}/`)));
+    }
+  }
+  return out;
+}
+
+/** The directory holding `path` and the file name, creating sub-folders on `create`. */
+async function locate(
+  root: FileSystemDirectoryHandle,
+  path: string,
+  create: boolean,
+): Promise<{ dir: FileSystemDirectoryHandle; name: string }> {
+  const segments = pathSegments(path);
+  let dir = root;
+  for (const segment of segments.slice(0, -1)) {
+    dir = await dir.getDirectoryHandle(segment, { create });
+  }
+  return { dir, name: segments[segments.length - 1]! };
+}
+
 function access(handle: PermissionedHandle): PluginFolderAccess {
   return {
     name: handle.name,
-    async list() {
-      const names: string[] = [];
-      if (!handle.entries) return names;
-      for await (const [name, entry] of handle.entries()) {
-        if (entry.kind === "file") names.push(name);
-      }
-      return names.sort();
+    async list(options) {
+      return (await listFiles(handle, options?.recursive === true)).sort();
     },
-    async stats() {
-      const names: string[] = [];
-      if (handle.entries) {
-        for await (const [name, entry] of handle.entries()) {
-          if (entry.kind === "file") names.push(name);
-        }
-      }
+    async stats(options) {
+      const paths = (await listFiles(handle, options?.recursive === true)).sort();
       const stats = await Promise.all(
-        names.sort().map(async (name) => {
+        paths.map(async (path) => {
           // A file removed between listing and reading is simply absent.
-          const file = await (await handle.getFileHandle(name)).getFile().catch(() => null);
-          return file ? { name, lastModified: file.lastModified, size: file.size } : null;
+          const file = await locate(handle, path, false)
+            .then(({ dir, name }) => dir.getFileHandle(name))
+            .then((h) => h.getFile())
+            .catch(() => null);
+          return file ? { name: path, lastModified: file.lastModified, size: file.size } : null;
         }),
       );
       return stats.filter((s): s is NonNullable<typeof s> => s !== null);
     },
-    async read(fileName) {
-      assertFileName(fileName);
-      const file = await (await handle.getFileHandle(fileName)).getFile();
+    async read(path) {
+      const { dir, name } = await locate(handle, path, false);
+      const file = await (await dir.getFileHandle(name)).getFile();
       return file.text();
     },
-    async write(fileName, text) {
-      assertFileName(fileName);
-      const writable = await (
-        await handle.getFileHandle(fileName, { create: true })
-      ).createWritable();
+    async write(path, text) {
+      const { dir, name } = await locate(handle, path, true);
+      const writable = await (await dir.getFileHandle(name, { create: true })).createWritable();
       await writable.write(text);
       await writable.close();
     },

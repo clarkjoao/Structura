@@ -5,10 +5,16 @@ import type {
   Diagram,
   NodeLayout,
   VersionDiff,
+  VersionStatus,
 } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { computeMergePreview, nextVersionColor } from "../../utils/version.utils";
+import {
+  computeMergePreview,
+  isModifiedInVersion,
+  nextVersionColor,
+} from "../../utils/version.utils";
+import { hashElement } from "../../utils/element-hash";
 import {
   mutateRemoveComponentInVersion,
   mutateRemoveConnectionInVersion,
@@ -47,6 +53,9 @@ export const versionsSlice = (
       copy.name = baseName;
       copy.createdAt = Date.now();
       copy.color = nextVersionColor(index);
+      // A duplicate is the user's own: not tied to the original's outside key or owning plugin.
+      delete copy.key;
+      delete copy.ownerPluginId;
       versions[id] = copy;
       created = copy;
       touchDiagram(d);
@@ -151,7 +160,12 @@ export const versionsSlice = (
     });
   },
 
-  mergeVersionIntoBase: (versionId: string) => {
+  /**
+   * Writes the Version into the base and deletes it. Refused (`false`) while the Version has
+   * conflicts: a copy whose base changed since would overwrite that change silently.
+   */
+  mergeVersionIntoBase: (versionId: string): boolean => {
+    let merged = false;
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d?.versions?.[versionId]) return;
@@ -161,13 +175,14 @@ export const versionsSlice = (
       } catch {
         return;
       }
+      if (preview.blocking.length > 0) return;
 
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
 
-      for (const comp of preview.componentsToAdd) {
+      for (const comp of [...preview.componentsToAdd, ...preview.componentsToReplace]) {
         d.snapshot.components[comp.id] = comp;
       }
-      for (const conn of preview.connectionsToAdd) {
+      for (const conn of [...preview.connectionsToAdd, ...preview.connectionsToReplace]) {
         d.snapshot.connections[conn.id] = conn;
       }
       Object.assign(d.nodeLayouts, preview.layoutsToAdd);
@@ -203,6 +218,16 @@ export const versionsSlice = (
             delete other.addedConnections[conn.id];
           }
         }
+        // Copies of what the merge removed have no base left; the ones of what it replaced keep
+        // their old base hash and so report a conflict — the base moved on under them.
+        for (const id of preview.componentIdsToRemove) {
+          if (other.modifiedComponents) delete other.modifiedComponents[id];
+          if (other.baseHashes) delete other.baseHashes[id];
+        }
+        for (const id of preview.connectionIdsToRemove) {
+          if (other.modifiedConnections) delete other.modifiedConnections[id];
+          if (other.baseHashes) delete other.baseHashes[id];
+        }
       }
 
       delete scenesMap[versionId];
@@ -215,6 +240,94 @@ export const versionsSlice = (
       if (d.compareVersionId === versionId) {
         d.compareVersionId = null;
       }
+      merged = true;
+      touchDiagram(d);
+    });
+    return merged;
+  },
+
+  /** Deletes the Version with `key` in that diagram (a plugin's own source dropped it). */
+  removeVersionByKey: (diagramId: string, key: string) => {
+    set((state) => {
+      const d = state.diagrams[diagramId];
+      const version = Object.values(d?.versions ?? {}).find((v) => v.key === key);
+      if (!d?.versions || !version) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER, d);
+      delete d.versions[version.id];
+      if (Object.keys(d.versions).length === 0) d.versions = undefined;
+      if (d.activeVersionId === version.id) d.activeVersionId = null;
+      if (d.compareVersionId === version.id) d.compareVersionId = null;
+      touchDiagram(d);
+    });
+  },
+
+  /** Shows the Version with `key` in that diagram, or its base for null / an unknown key. */
+  setActiveVersionByKey: (diagramId: string, key: string | null) => {
+    set((state) => {
+      const d = state.diagrams[diagramId];
+      if (!d) return;
+      const version =
+        key === null ? undefined : Object.values(d.versions ?? {}).find((v) => v.key === key);
+      d.activeVersionId = version?.id ?? null;
+      d.compareVersionId = null;
+      touchDiagram(d);
+    });
+  },
+
+  /**
+   * Keeps one initiative selected across linked diagrams: when `fromDiagramId` shows a Version
+   * with a `key`, `toDiagramId` shows its Version with the same key, or its base when it has
+   * none. A source on its base or on a Version without a key changes nothing.
+   */
+  carryActiveVersionKey: (fromDiagramId: string, toDiagramId: string) => {
+    set((state) => {
+      const from = state.diagrams[fromDiagramId];
+      const to = state.diagrams[toDiagramId];
+      if (!from || !to || from === to) return;
+      const key = from.activeVersionId ? from.versions?.[from.activeVersionId]?.key : undefined;
+      if (key === undefined) return;
+      const match = Object.values(to.versions ?? {}).find((v) => v.key === key);
+      to.activeVersionId = match?.id ?? null;
+      to.compareVersionId = null;
+    });
+  },
+
+  setVersionStatus: (versionId: string, status: VersionStatus | null) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      const version = d?.versions?.[versionId];
+      if (!version) return;
+      if (status === null) delete version.status;
+      else version.status = status;
+      touchDiagram(d);
+    });
+  },
+
+  /** Resolves a conflict for the Version's copy: it stays, rebased on the base as it is now. */
+  keepVersionCopy: (versionId: string, elementId: string) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      const version = d?.versions?.[versionId];
+      if (!version) return;
+      const base = d.snapshot.components[elementId] ?? d.snapshot.connections[elementId];
+      if (!base || !isModifiedInVersion(version, elementId)) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      version.baseHashes ??= {};
+      version.baseHashes[elementId] = hashElement(current(base));
+      touchDiagram(d);
+    });
+  },
+
+  /** Resolves a conflict by dropping the Version's copy: the element shows the base again. */
+  takeBaseVersion: (versionId: string, elementId: string) => {
+    set((state) => {
+      const d = getActiveDiagram(state);
+      const version = d?.versions?.[versionId];
+      if (!version || !isModifiedInVersion(version, elementId)) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      if (version.modifiedComponents) delete version.modifiedComponents[elementId];
+      if (version.modifiedConnections) delete version.modifiedConnections[elementId];
+      if (version.baseHashes) delete version.baseHashes[elementId];
       touchDiagram(d);
     });
   },

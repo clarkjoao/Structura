@@ -7,6 +7,13 @@ import type {
   ServiceDefinition,
 } from "@/features/diagram";
 import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import type { VersionDiff } from "@/features/diagram/model/diagram.types";
+import {
+  modifiedComponentsOf,
+  modifiedConnectionsOf,
+  resolveVersionSnapshot,
+  versionConflicts,
+} from "@/features/diagram/utils/version.utils";
 import type {
   DiagramSnapshot,
   PluginComponentPatch,
@@ -14,6 +21,7 @@ import type {
   PluginConnectionSnapshot,
   PluginServicePatch,
   PluginServiceSnapshot,
+  PluginVersionSnapshot,
 } from "./plugin.types";
 
 /**
@@ -76,15 +84,57 @@ export function toServiceSnapshot(service: ServiceDefinition): PluginServiceSnap
   };
 }
 
-export function toDiagramSnapshot(diagram: Diagram): DiagramSnapshot {
-  return {
+/**
+ * The diagram as plugins read it. With `version: "active"` (what `getDiagram` asks for since
+ * 1.14) the active Version is applied and named in `activeVersion`; otherwise the base.
+ */
+export function toDiagramSnapshot(
+  diagram: Diagram,
+  options: { version?: "active" | "base" } = {},
+): DiagramSnapshot {
+  const version =
+    options.version === "active" && diagram.activeVersionId
+      ? diagram.versions?.[diagram.activeVersionId]
+      : undefined;
+  const resolved = resolveVersionSnapshot(diagram, version?.id ?? null);
+  const snapshot: DiagramSnapshot = {
     id: diagram.id,
     name: diagram.name,
     description: diagram.description ?? null,
-    components: Object.values(diagram.snapshot.components).map((component) =>
-      toComponentSnapshot(component, diagram.nodeLayouts[component.id]),
+    components: Object.values(resolved.components).map((component) =>
+      toComponentSnapshot(component, resolved.nodeLayouts[component.id]),
     ),
-    connections: Object.values(diagram.snapshot.connections).map(toConnectionSnapshot),
+    connections: Object.values(resolved.connections).map(toConnectionSnapshot),
+  };
+  if (options.version !== undefined) {
+    snapshot.activeVersion = version
+      ? { id: version.id, key: version.key ?? null, status: version.status ?? null }
+      : null;
+  }
+  return snapshot;
+}
+
+/** One Version as plugins see it. */
+export function toVersionSnapshot(diagram: Diagram, version: VersionDiff): PluginVersionSnapshot {
+  return {
+    id: version.id,
+    key: version.key ?? null,
+    name: version.name,
+    status: version.status ?? null,
+    ownerPluginId: version.ownerPluginId ?? null,
+    added: {
+      componentIds: Object.keys(version.addedComponents),
+      connectionIds: Object.keys(version.addedConnections),
+    },
+    modified: {
+      componentIds: Object.keys(modifiedComponentsOf(version)),
+      connectionIds: Object.keys(modifiedConnectionsOf(version)),
+    },
+    removed: {
+      componentIds: [...version.removedComponentIds],
+      connectionIds: [...version.removedConnectionIds],
+    },
+    conflicts: versionConflicts(diagram, version.id).map((c) => c.id),
   };
 }
 

@@ -6,6 +6,7 @@ import type {
   NodeLayout,
   PanelKind,
   VersionDiff,
+  VersionStatus,
 } from "../../model/diagram.types";
 import { canContain } from "@/features/elements/containment";
 import {
@@ -23,9 +24,11 @@ import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import {
   resolveActiveVersion,
   resolveComponent,
-  resolveNodeLayout,
+  writableComponent,
+  writableNodeLayout,
   writeComponentAndLayout,
 } from "../helpers/version-helpers";
+import { nextVersionColor } from "../../utils/version.utils";
 import { cloudServiceIdClearingPatch } from "../../model/cloud-service-id";
 import { buildComponentForType, removeElementsInDraft } from "./components.slice";
 
@@ -106,10 +109,22 @@ export interface GraphChanges {
   connect?: GeneratedEdgeInput[];
 }
 
+/** A Version to write into instead of the active context, found by `key` (created if absent). */
+export interface GraphChangesVersionTarget {
+  key: string;
+  name: string;
+  status?: VersionStatus;
+  ownerPluginId?: string;
+  /** Empty the Version first, so the changes are its whole content. */
+  reset?: boolean;
+}
+
 export interface GraphChangesResult {
   componentIdByExternalId: Record<string, string>;
   /** Per `connect` entry, in order: the connection created, or null when its ends did not resolve. */
   connectionIds: Array<string | null>;
+  /** The Version written, when a version target was given. */
+  versionId?: string;
 }
 
 const EMPTY_RESULT: GeneratedGraphResult = {
@@ -269,18 +284,25 @@ export const generatedGraphSlice = (
    * folder of manifests). Ids that are not in the diagram are skipped. Adds link to
    * existing components (`linkExisting`).
    */
-  applyGraphChanges: (changes: GraphChanges, diagramId?: string): GraphChangesResult => {
+  applyGraphChanges: (
+    changes: GraphChanges,
+    diagramId?: string,
+    version?: GraphChangesVersionTarget,
+  ): GraphChangesResult => {
     const add = changes.add ?? [];
     const componentIdByExternalId: Record<string, string> = {};
     for (const node of add) componentIdByExternalId[node.externalId] = generateId("el");
     let connectionIds: Array<string | null> = (changes.connect ?? []).map(() => null);
+    let versionId: string | undefined;
 
     set((state) => {
       // `diagramId`: another diagram than the active one — a plugin keeps several in sync.
-      const d = diagramId === undefined ? getActiveDiagram(state) : (state.diagrams[diagramId] ?? null);
+      const d =
+        diagramId === undefined ? getActiveDiagram(state) : (state.diagrams[diagramId] ?? null);
       if (!d) return;
-      const scene = resolveActiveVersion(d);
       pushHistory(state, STRUCTURAL_MUTATION_MARKER, d);
+      const scene = version ? versionByKey(d, version) : resolveActiveVersion(d);
+      versionId = version ? scene?.id : undefined;
 
       const exists = (id: string) => resolveComponent(d, scene, id) !== undefined;
       const remove = (changes.remove ?? []).filter(exists);
@@ -289,10 +311,11 @@ export const generatedGraphSlice = (
         : d.snapshot.connections;
       const disconnect = (changes.disconnect ?? []).filter((id) => connections[id] !== undefined);
       if (remove.length > 0 || disconnect.length > 0)
-        removeElementsInDraft(state, d, remove, disconnect);
+        removeElementsInDraft(state, d, remove, disconnect, scene);
 
       for (const update of changes.update ?? []) {
-        const component = resolveComponent(d, scene, update.id);
+        // Inside a Version, updating a base element copies it there (copy-on-write).
+        const component = writableComponent(d, scene, update.id)?.component;
         if (!component) continue;
         if (update.name !== undefined) component.name = update.name;
         if (update.description !== undefined) component.description = update.description;
@@ -307,8 +330,9 @@ export const generatedGraphSlice = (
 
       let moved = false;
       for (const move of changes.move ?? []) {
-        const layout = resolveNodeLayout(d, scene, move.id);
-        if (!layout || !Number.isFinite(move.x) || !Number.isFinite(move.y)) continue;
+        if (!Number.isFinite(move.x) || !Number.isFinite(move.y)) continue;
+        const layout = writableNodeLayout(d, scene, move.id);
+        if (!layout) continue;
         layout.x = move.x;
         layout.y = move.y;
         if (move.width !== undefined) layout.width = move.width;
@@ -330,6 +354,47 @@ export const generatedGraphSlice = (
       touchDiagram(d);
     });
 
-    return { componentIdByExternalId, connectionIds };
+    return versionId === undefined
+      ? { componentIdByExternalId, connectionIds }
+      : { componentIdByExternalId, connectionIds, versionId };
   },
 });
+
+/** The Version with `target.key`, created when absent, its name, status and owner set; emptied on `reset`. */
+function versionByKey(d: Diagram, target: GraphChangesVersionTarget): VersionDiff {
+  d.versions ??= {};
+  const versions = d.versions;
+  let version = Object.values(versions).find((v) => v.key === target.key);
+  if (!version) {
+    const id = generateId("version");
+    version = {
+      id,
+      name: target.name,
+      color: nextVersionColor(Object.keys(versions).length),
+      createdAt: Date.now(),
+      addedComponents: {},
+      addedConnections: {},
+      removedComponentIds: [],
+      removedConnectionIds: [],
+      nodeLayouts: {},
+      key: target.key,
+    };
+    versions[id] = version;
+    version = versions[id]!;
+  }
+  version.name = target.name;
+  if (target.status) version.status = target.status;
+  else delete version.status;
+  if (target.ownerPluginId) version.ownerPluginId = target.ownerPluginId;
+  if (target.reset) {
+    version.addedComponents = {};
+    version.addedConnections = {};
+    version.removedComponentIds = [];
+    version.removedConnectionIds = [];
+    version.nodeLayouts = {};
+    delete version.modifiedComponents;
+    delete version.modifiedConnections;
+    delete version.baseHashes;
+  }
+  return version;
+}

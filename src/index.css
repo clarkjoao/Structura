@@ -318,6 +318,12 @@
     border-radius: inherit;
   }
 
+  .node-version-conflict {
+    outline: 2px dashed #f59e0b;
+    outline-offset: 3px;
+    border-radius: inherit;
+  }
+
   .edge-pending .react-flow__edge-path {
     stroke: #22c55e;
     stroke-dasharray: 6 4;

@@ -51,6 +51,12 @@ import {
   UPLOAD,
 } from "./styles";
 
+/**
+ * The bound folder is the AS-IS: the pane reads and writes the diagram's base, never the Version
+ * the canvas may be showing (initiative editing comes with the Versions-as-initiatives work).
+ */
+const BASE = { base: true } as const;
+
 const SYNC_DELAY_MS = 300;
 
 /** What an empty folder starts with: one valid manifest to copy from. */
@@ -335,7 +341,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
         diagram: {
           get: () => {
             if (!live()) return null;
-            const diagram = api.getDiagram();
+            const diagram = api.getDiagram(undefined, BASE);
             return diagram && diagram.id === diagramId ? diagram : null;
           },
           apply: (changes) => api.applyChanges(changes),
@@ -422,7 +428,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
       window.addEventListener("pointerup", release, true);
       window.addEventListener("pointercancel", release, true);
       const positionOf = (id: string | undefined) => {
-        const at = id ? api.getDiagram()?.components.find((c) => c.id === id)?.position : null;
+        const at = id
+          ? api.getDiagram(undefined, BASE)?.components.find((c) => c.id === id)?.position
+          : null;
         return at ? `${at.x},${at.y}` : "";
       };
       const stop = api.canvas.onSelectionChange(({ componentIds, connectionId }) => {
@@ -567,7 +575,9 @@ export function createOpscrPane(api: StructuraPluginApi) {
      * renders on every keystroke, and each read is a copy of the whole diagram.
      */
     const outsideComponents = new Map(
-      outside.length > 0 ? (api.getDiagram()?.components.map((c) => [c.id, c]) ?? []) : [],
+      outside.length > 0
+        ? (api.getDiagram(undefined, BASE)?.components.map((c) => [c.id, c]) ?? [])
+        : [],
     );
 
     /** The Kind/provider shown for an element outside the YAML: the user's pick, else a guess. */
@@ -598,7 +608,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
 
     /** Writes the chosen elements (and any panel they sit in that is outside too) into the YAML. */
     const addToYaml = (ids: readonly string[]) => {
-      const diagram = api.getDiagram();
+      const diagram = api.getDiagram(undefined, BASE);
       if (!diagram || diagram.id !== diagramId) return;
       const bound = new Set(Object.values(bindingRef.current?.state.ids ?? {}));
       const parentOf = new Map(diagram.components.map((c) => [c.id, c.parentId]));
