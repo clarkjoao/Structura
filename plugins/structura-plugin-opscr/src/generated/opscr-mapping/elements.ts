@@ -7,7 +7,7 @@
 import type { OpscrManifestInput, ViewElement } from "./types";
 
 /** Kinds drawn as panels that hold the elements belonging to them. */
-export const BOUNDARY_KINDS: ReadonlySet<string> = new Set(["Domain", "BoundedContext"]);
+export const BOUNDARY_KINDS: ReadonlySet<string> = new Set(["Product", "Domain", "BoundedContext"]);
 
 /** Kinds drawn as a leaf element. */
 export const LEAF_KINDS: ReadonlySet<string> = new Set([
@@ -173,7 +173,7 @@ export interface KindGuess {
 /**
  * The inverse of `elementFor`, for an element drawn on the canvas (from the palette): which Kind
  * and provider would draw it this way. A panel is a Domain, or a BoundedContext inside a
- * Domain; a catalog service picks the Kind listing it (the technology breaks ties between
+ * Domain or a Product; a catalog service picks the Kind listing it (the technology breaks ties between
  * providers sharing a service). Null when nothing in the technical view draws it so (notes,
  * people, other shapes).
  */
@@ -185,7 +185,7 @@ export function kindFor(
   const withProvider = (kind: string): KindGuess =>
     technology ? { kind, provider: technology } : { kind };
   if (element.type === "panel") {
-    return { kind: parentKind === "Domain" ? "BoundedContext" : "Domain" };
+    return { kind: parentKind === "Domain" || parentKind === "Product" ? "BoundedContext" : "Domain" };
   }
   if (element.type === "system") return withProvider("ExternalSystem");
   if (element.type === "container") return withProvider("Application");

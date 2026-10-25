@@ -17,6 +17,7 @@ export interface ResolvedViewInput {
     parent: string | null;
     collapsed: boolean;
     drillDown?: string;
+    realizes?: readonly string[];
   }>;
   edges: ReadonlyArray<{
     from: string;
@@ -55,6 +56,7 @@ function elementOf(
       const panelKind = NODE_PANEL_KINDS[String(spec["type"])];
       return panelKind ? { type: "panel", panelKind } : { type: "panel" };
     }
+    case "Product":
     case "BoundedContext":
     case "Domain":
       // Seen from outside it is a system box; opened up, it is the panel around its contents.
@@ -103,6 +105,7 @@ export function buildViewDiagram(
       isBoundary: element.type === "panel",
       element,
       ...(n.drillDown !== undefined ? { drillDown: n.drillDown } : {}),
+      ...(n.realizes !== undefined && n.realizes.length > 0 ? { realizes: n.realizes } : {}),
     };
   });
 

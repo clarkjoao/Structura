@@ -38,7 +38,7 @@ result through `stabilizeLayout(view, fresh, previous)`: surviving elements keep
 
 | opscr                           | Drawn as                                                                                             |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `Domain`, `BoundedContext`      | panel; `belongsTo` nests into it                                                                     |
+| `Product`, `Domain`, `BoundedContext` | panel; `belongsTo` nests into it                                                               |
 | `Subdomain`                     | not drawn — a bounded context that belongs to one lands in its Domain                                |
 | Technical Kinds                 | the catalog service of `spec.provider` (`PROVIDER_SERVICES`), else a C4 container naming the product |
 | `ExternalSystem` / `Channel`    | C4 system / C4 container                                                                             |
