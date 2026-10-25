@@ -195,3 +195,54 @@ describe("updateLayoutFile", () => {
     expect(layoutFor(next, "b")!.boxes.has("B/b")).toBe(true);
   });
 });
+
+describe("buildViewDiagram for a product", () => {
+  const product: OpscrWorkspaceInput = {
+    manifests: [
+      m("Product", "acme", { description: "Acme" }),
+      m("BoundedContext", "sessions", { description: "Sessions" }),
+      m("Application", "session-api", { description: "Session API" }),
+      m("APIGateway", "session-gw", { provider: "AWS API Gateway", description: "Gateway" }),
+    ],
+  };
+
+  it("draws the product like a system: a box seen from outside, a panel when opened", () => {
+    const c1 = buildViewDiagram(product, {
+      name: "c1",
+      type: "SystemContext",
+      scope: "Product/acme",
+      nodes: [{ id: "Product/acme", kind: "Product", name: "acme", parent: null, collapsed: true }],
+      edges: [],
+    });
+    expect(c1.nodes[0]?.element).toEqual({ type: "system" });
+    const c2 = buildViewDiagram(product, {
+      name: "c2",
+      type: "Container",
+      scope: "Product/acme",
+      nodes: [
+        { id: "Product/acme", kind: "Product", name: "acme", parent: null, collapsed: false },
+        { id: "BoundedContext/sessions", kind: "BoundedContext", name: "sessions", parent: "Product/acme", collapsed: false },
+        { id: "Application/session-api", kind: "Application", name: "session-api", parent: "BoundedContext/sessions", collapsed: false },
+      ],
+      edges: [],
+    });
+    expect(c2.nodes.map((n) => [n.id, n.element.type, n.parentId])).toEqual([
+      ["Product/acme", "panel", null],
+      ["BoundedContext/sessions", "panel", "Product/acme"],
+      ["Application/session-api", "container", "BoundedContext/sessions"],
+    ]);
+  });
+
+  it("passes realizes through on deployment nodes", () => {
+    const prod = buildViewDiagram(product, {
+      name: "prod",
+      type: "Deployment",
+      scope: "Product/acme",
+      nodes: [
+        { id: "APIGateway/session-gw", kind: "APIGateway", name: "session-gw", parent: null, collapsed: false, realizes: ["Application/session-api"] },
+      ],
+      edges: [],
+    });
+    expect(prod.nodes[0]?.realizes).toEqual(["Application/session-api"]);
+  });
+});

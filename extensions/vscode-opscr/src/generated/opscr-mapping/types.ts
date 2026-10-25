@@ -45,6 +45,8 @@ export interface ViewNode {
   element: ViewElement;
   /** Name of the opscr View this box opens (from the view's `drillDown`). */
   drillDown?: string;
+  /** Deployment views: the logical boxes (`Kind/name`) this node realizes, to highlight on drill-down. */
+  realizes?: readonly string[];
 }
 
 export interface ViewEdge {

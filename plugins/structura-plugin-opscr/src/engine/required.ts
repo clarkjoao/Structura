@@ -23,7 +23,10 @@ export function requiredFields(kind: string): RequiredField[] {
   const file = resolver.kindFile(apiVersion, kind);
   if (!resolver.exists(file)) return [];
   const spec = resolver.resolveComponent(file, `${kind}Spec`);
-  const required = Array.isArray(spec?.required) ? spec.required.map(String) : [];
+  // A new element realizes nothing and nothing realizes it, so what is required "unless
+  // realized" (Application provider and language) is required too.
+  const listed = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : []);
+  const required = [...new Set([...listed(spec?.required), ...listed(spec?.["x-opscr-required-unless-realized"])])];
   const properties = (spec?.properties ?? {}) as Record<string, Record<string, unknown>>;
   return required.map((field) => {
     const schema = properties[field] ?? {};
