@@ -446,6 +446,10 @@ export function startFileSystemSync(): void {
           if (!(await fileSystemAdapter.checkPermission())) {
             return;
           }
+          // A folder deleted or moved on disk keeps its permission but fails every write.
+          if (!(await fileSystemAdapter.ensureFolderExists())) {
+            return;
+          }
 
           const diagramState = useDiagramStore.getState();
           const prevDiagrams = lastFlushedDiagrams;

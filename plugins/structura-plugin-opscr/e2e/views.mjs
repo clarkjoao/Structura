@@ -163,6 +163,8 @@ const waitNodes = (n) =>
   });
 await page.goto(`http://localhost:${PORT}/model/${DIAGRAM}`);
 await page.waitForSelector(".react-flow__viewport", { timeout: 30000 });
+// The views need the canvas's room: fold the inspector, the pane takes the side.
+await page.getByRole("button", { name: /^(Properties|Propriedades)$/ }).click();
 await page.getByRole("button", { name: "opscr", exact: true }).click();
 await page.getByRole("button", { name: /Bind to opscr folder|Vincular a uma pasta opscr/ }).click();
 const picker = page.getByRole("combobox", { name: /Diagram|Diagrama/ });

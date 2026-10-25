@@ -1,11 +1,13 @@
-import { useRef, useState, type ReactNode } from "react";
-import { ChevronsLeft, ChevronsRight } from "lucide-react";
+import { useContext, useRef, useState, type ReactNode } from "react";
+import { ChevronsLeft, ChevronsRight, PanelRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   ELEMENT_PANEL_MAX_WIDTH,
   ELEMENT_PANEL_MIN_WIDTH,
   useCanvasPreferencesStore,
 } from "@/features/canvas/preferences";
+import { PanelRailButton } from "@/components/PanelRail";
+import { PanelRailContext } from "@/components/panelRail.context";
 
 import { PanelFrameContext, usePanelFrame } from "./panelFrame.context";
 
@@ -22,6 +24,7 @@ export function PanelFrame({ children }: { children: ReactNode }) {
   const collapsed = useCanvasPreferencesStore((s) => s.elementPanelCollapsed);
   const setWidth = useCanvasPreferencesStore((s) => s.setElementPanelWidth);
   const setCollapsed = useCanvasPreferencesStore((s) => s.setElementPanelCollapsed);
+  const hasRail = useContext(PanelRailContext);
   const [dragWidth, setDragWidth] = useState<number | null>(null);
   const startRef = useRef<{ x: number; width: number } | null>(null);
 
@@ -29,6 +32,8 @@ export function PanelFrame({ children }: { children: ReactNode }) {
     Math.min(ELEMENT_PANEL_MAX_WIDTH, Math.max(ELEMENT_PANEL_MIN_WIDTH, value));
 
   if (collapsed) {
+    // The page's rail expands it again.
+    if (hasRail) return null;
     return (
       <div className="flex h-full w-8 shrink-0 flex-col items-center border-l border-border bg-card pt-2">
         <button
@@ -101,5 +106,21 @@ export function PanelCollapseButton() {
     >
       <ChevronsRight className="h-4 w-4" />
     </button>
+  );
+}
+
+/** The inspector's button on the panel rail: folds the panel away and brings it back. */
+export function InspectorRailToggle({ disabled }: { disabled?: boolean }) {
+  const { t } = useTranslation();
+  const collapsed = useCanvasPreferencesStore((s) => s.elementPanelCollapsed);
+  const setCollapsed = useCanvasPreferencesStore((s) => s.setElementPanelCollapsed);
+  return (
+    <PanelRailButton
+      label={t("panelShell.inspector")}
+      icon={<PanelRight className="h-4 w-4" />}
+      active={!collapsed && !disabled}
+      disabled={disabled}
+      onClick={() => setCollapsed(!collapsed)}
+    />
   );
 }

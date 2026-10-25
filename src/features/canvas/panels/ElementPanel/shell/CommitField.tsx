@@ -12,6 +12,8 @@ import {
 export interface CommitFieldProps {
   /** Omitted for a field whose label is the section it sits in. */
   label?: string;
+  /** The field's accessible name when no `label` is shown. */
+  ariaLabel?: string;
   value: string;
   /** Called on blur or Enter with the new value, and only when it changed. */
   onCommit: (value: string) => void;
@@ -40,6 +42,7 @@ export interface CommitFieldProps {
  */
 export function CommitField({
   label,
+  ariaLabel,
   value,
   onCommit,
   multiline = false,
@@ -105,6 +108,7 @@ export function CommitField({
 
   const common = {
     id,
+    "aria-label": label ? undefined : ariaLabel,
     value: draft,
     placeholder,
     onChange: (event: { target: { value: string } }) => {

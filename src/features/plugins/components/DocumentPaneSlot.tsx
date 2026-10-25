@@ -1,6 +1,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { FileCode2, X } from "lucide-react";
+import { PanelRailButton } from "@/components/PanelRail";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import type { PluginComponentPatch, PluginPanelContext, PluginServicePatch } from "../plugin.types";
 import { resolveLocalizedText } from "../localized-text";
@@ -12,7 +13,7 @@ import { getOpenPaneId, setOpenPaneId, subscribe } from "./document-pane-state";
 const MIN_WIDTH = 320;
 const DEFAULT_WIDTH = 480;
 
-/** Canvas-toolbar toggles, one per `document-pane` panel (plugin API 1.4). */
+/** Panel-rail toggles, one per `document-pane` panel (plugin API 1.4). */
 export function DocumentPaneToggles() {
   const { i18n } = useTranslation();
   const panels = usePluginPanels("document-pane");
@@ -23,20 +24,13 @@ export function DocumentPaneToggles() {
       {panels.map((panel) => {
         const active = open === panel.id;
         return (
-          <button
+          <PanelRailButton
             key={panel.id}
-            type="button"
-            aria-pressed={active}
+            label={resolveLocalizedText(panel.title, i18n.language)}
+            icon={<FileCode2 className="h-4 w-4" />}
+            active={active}
             onClick={() => setOpenPaneId(active ? null : panel.id)}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-              active
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-            }`}
-          >
-            <FileCode2 className="h-3.5 w-3.5" />
-            {resolveLocalizedText(panel.title, i18n.language)}
-          </button>
+          />
         );
       })}
     </>
@@ -87,7 +81,7 @@ export function DocumentPaneSlot({ isEditMode }: { isEditMode: boolean }) {
 
   return (
     <aside
-      className="relative flex min-h-0 shrink-0 flex-col border-l border-border bg-background"
+      className="relative flex min-h-0 shrink-0 flex-col border-l border-border bg-card"
       style={{ width }}
       aria-label={resolveLocalizedText(panel.title, i18n.language)}
     >
@@ -98,19 +92,22 @@ export function DocumentPaneSlot({ isEditMode }: { isEditMode: boolean }) {
         onPointerDown={startResize}
         className="absolute left-0 top-0 z-10 h-full w-1 -translate-x-1/2 cursor-col-resize hover:bg-primary/40"
       />
-      <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-        <span className="text-xs font-medium">
-          {resolveLocalizedText(panel.title, i18n.language)}
+      <header className="flex shrink-0 items-center gap-2 border-b border-border px-4 py-2.5">
+        <span className="flex min-w-0 items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <FileCode2 className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">{resolveLocalizedText(panel.title, i18n.language)}</span>
         </span>
+        <span className="flex-1" />
         <button
           type="button"
           onClick={() => setOpenPaneId(null)}
+          title={t("plugins.documentPane.close")}
           aria-label={t("plugins.documentPane.close")}
-          className="rounded p-1 text-muted-foreground hover:text-foreground"
+          className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-4 w-4" />
         </button>
-      </div>
+      </header>
       <div className="min-h-0 flex-1 overflow-hidden">
         <PluginErrorBoundary
           key={panel.id}

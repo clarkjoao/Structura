@@ -37,7 +37,15 @@ import {
 } from "@/features/canvas";
 import { SaveStatusIndicator } from "@/features/canvas/components/SaveStatusIndicator";
 import { FileSystemStatus } from "@/components/FileSystemStatus";
-import { DiagramTitle, EmbedModal, useFlowMode, useInteractionMode } from "@/features/canvas";
+import {
+  DiagramTitle,
+  EmbedModal,
+  InspectorRailToggle,
+  useFlowMode,
+  useInteractionMode,
+} from "@/features/canvas";
+import { PanelRail } from "@/components/PanelRail";
+import { PanelRailContext } from "@/components/panelRail.context";
 import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
 import { useDiagramStore, useStorageMonitor, type Diagram, type Flow } from "@/features/diagram";
@@ -310,7 +318,6 @@ export function WorkspaceContent({
               {diagram && (
                 <DiagramTitle
                   diagram={diagram}
-                  editLocked={canvasInteractionLocked}
                   onDrillUp={navStack.length > 0 ? handleDrillUp : undefined}
                 />
               )}
@@ -351,7 +358,6 @@ export function WorkspaceContent({
               >
                 <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
               </button>
-              <DocumentPaneToggles />
               <button
                 type="button"
                 disabled={canvasInteractionLocked}
@@ -424,90 +430,96 @@ export function WorkspaceContent({
             <ActiveDiagramShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} />
           </>
         ) : null}
-        <div className="flex flex-1 min-h-0 overflow-hidden">
-          <DiagramFlowProvider>
-            {activeFlow && (
-              <FlowReadingRail
-                flow={activeFlow}
-                currentStepId={currentStepId}
-                currentStep={currentStep}
-                history={playbackState?.history ?? EMPTY_HISTORY}
-                seen={playbackState?.seen ?? EMPTY_HISTORY}
-                flows={flows}
-                onSelectFlow={(flowId) => {
-                  const target = flows.find((candidate) => candidate.id === flowId);
-                  if (target) switchFlow(target);
-                }}
-                isCondition={isCondition}
-                canGoBack={canGoBack}
-                canGoForward={canGoForward}
-                onGoNext={goNext}
-                onGoBack={goBack}
-                onGoToStep={goToStep}
-                onChooseBranch={chooseBranch}
-                onExit={exitPlay}
-                callStack={callStack}
-                canStepOver={stepOverTarget !== null}
-                onStepOver={stepOver}
-                stepOutFrameId={stepOutFrameId}
-                onStepOut={stepOut}
-                pinnedKeys={playbackState?.pinnedKeys ?? EMPTY_HISTORY}
-                onTogglePin={togglePinnedKey}
-              />
-            )}
-            <div
-              className="flex min-h-0 min-w-0 flex-1 flex-col relative"
-              onPointerMove={handleCanvasPointerMove}
-              onPointerLeave={handleCanvasPointerLeave}
-            >
-              <DiagramFlowInstanceBridge
-                onReady={(instance) => {
-                  reactFlowInstanceRef.current = instance;
-                }}
-              />
-              <Canvas
-                onOpenDiagram={handleOpenDiagram}
-                onDrillDownToDiagram={handleDrillDownToDiagram}
-                isViewingCoverage={isViewingCoverage}
-                isFlowPanelOpen={showFlows}
-                diagramSidebarOpen={diagramSidebarOpen}
-                onDiagramSidebarOpenChange={setDiagramSidebarOpen}
-                focusMode={focusMode}
-                onToggleFocusMode={onToggleFocusMode}
-                onPlayFlow={(flowId) => {
-                  const targetFlow = flows.find((candidate) => candidate.id === flowId);
-                  if (targetFlow) play(targetFlow);
-                }}
-              />
-              {showFlows && !activeFlow && !isRecording && (
-                <FlowPanel
-                  onClose={() => setShowFlows(false)}
-                  onPlay={play}
-                  onStartRecording={startRecordingWhenAllowed}
-                  onEditFlow={editFlowWhenAllowed}
-                  onGetInsertPosition={() => {
-                    const instance = reactFlowInstanceRef.current;
-                    if (!instance) return { x: 0, y: 0 };
-                    return getViewportCenter(instance, !!showFlows);
+        <PanelRailContext.Provider value>
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            <DiagramFlowProvider>
+              {activeFlow && (
+                <FlowReadingRail
+                  flow={activeFlow}
+                  currentStepId={currentStepId}
+                  currentStep={currentStep}
+                  history={playbackState?.history ?? EMPTY_HISTORY}
+                  seen={playbackState?.seen ?? EMPTY_HISTORY}
+                  flows={flows}
+                  onSelectFlow={(flowId) => {
+                    const target = flows.find((candidate) => candidate.id === flowId);
+                    if (target) switchFlow(target);
                   }}
-                  panelActionsLocked={compareModeBlocksRecorder || !interaction.canUseFlow}
-                  panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
+                  isCondition={isCondition}
+                  canGoBack={canGoBack}
+                  canGoForward={canGoForward}
+                  onGoNext={goNext}
+                  onGoBack={goBack}
+                  onGoToStep={goToStep}
+                  onChooseBranch={chooseBranch}
+                  onExit={exitPlay}
+                  callStack={callStack}
+                  canStepOver={stepOverTarget !== null}
+                  onStepOver={stepOver}
+                  stepOutFrameId={stepOutFrameId}
+                  onStepOut={stepOut}
+                  pinnedKeys={playbackState?.pinnedKeys ?? EMPTY_HISTORY}
+                  onTogglePin={togglePinnedKey}
                 />
               )}
-            </div>
-          </DiagramFlowProvider>
-          <DocumentPaneSlot isEditMode={!canvasInteractionLocked} />
-          {isRecording && recordingState && (
-            <FlowRecorderPanel
-              flowId={recordingState.flowId}
-              recordingContext={recordingContext}
-              setRecordingContext={setRecordingContext}
-              onCancel={cancelRecording}
-              onFinalize={finalizeRecording}
-              isEditing={isEditingFlow}
-            />
-          )}
-        </div>
+              <div
+                className="flex min-h-0 min-w-0 flex-1 flex-col relative"
+                onPointerMove={handleCanvasPointerMove}
+                onPointerLeave={handleCanvasPointerLeave}
+              >
+                <DiagramFlowInstanceBridge
+                  onReady={(instance) => {
+                    reactFlowInstanceRef.current = instance;
+                  }}
+                />
+                <Canvas
+                  onOpenDiagram={handleOpenDiagram}
+                  onDrillDownToDiagram={handleDrillDownToDiagram}
+                  isViewingCoverage={isViewingCoverage}
+                  isFlowPanelOpen={showFlows}
+                  diagramSidebarOpen={diagramSidebarOpen}
+                  onDiagramSidebarOpenChange={setDiagramSidebarOpen}
+                  focusMode={focusMode}
+                  onToggleFocusMode={onToggleFocusMode}
+                  onPlayFlow={(flowId) => {
+                    const targetFlow = flows.find((candidate) => candidate.id === flowId);
+                    if (targetFlow) play(targetFlow);
+                  }}
+                />
+                {showFlows && !activeFlow && !isRecording && (
+                  <FlowPanel
+                    onClose={() => setShowFlows(false)}
+                    onPlay={play}
+                    onStartRecording={startRecordingWhenAllowed}
+                    onEditFlow={editFlowWhenAllowed}
+                    onGetInsertPosition={() => {
+                      const instance = reactFlowInstanceRef.current;
+                      if (!instance) return { x: 0, y: 0 };
+                      return getViewportCenter(instance, !!showFlows);
+                    }}
+                    panelActionsLocked={compareModeBlocksRecorder || !interaction.canUseFlow}
+                    panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
+                  />
+                )}
+              </div>
+            </DiagramFlowProvider>
+            <DocumentPaneSlot isEditMode={!canvasInteractionLocked} />
+            {isRecording && recordingState && (
+              <FlowRecorderPanel
+                flowId={recordingState.flowId}
+                recordingContext={recordingContext}
+                setRecordingContext={setRecordingContext}
+                onCancel={cancelRecording}
+                onFinalize={finalizeRecording}
+                isEditing={isEditingFlow}
+              />
+            )}
+            <PanelRail label={t("panelShell.rail")}>
+              <InspectorRailToggle disabled={canvasInteractionLocked} />
+              <DocumentPaneToggles />
+            </PanelRail>
+          </div>
+        </PanelRailContext.Provider>
       </div>
     </>
   );

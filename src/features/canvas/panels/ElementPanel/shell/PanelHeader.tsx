@@ -125,6 +125,7 @@ export function PanelHeader({
       {onCommitName ? (
         <CommitField
           variant="title"
+          ariaLabel={t("common.name")}
           value={name}
           onCommit={onCommitName}
           placeholder={namePlaceholder}

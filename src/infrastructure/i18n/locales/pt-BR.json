@@ -365,7 +365,11 @@
       "disconnect": "Desconectar pasta",
       "disconnectHint": "Esquece esta conexão de pasta e continua só no navegador."
     },
-    "foldersImported": "Importadas {{count}} pastas do filesystem"
+    "foldersImported": "Importadas {{count}} pastas do filesystem",
+    "manifestWriteFailed": "Falha ao gravar manifest — diagramas salvos, mas metadados podem estar fora de sincronia. Tentativa na próxima edição.",
+    "deleteFailed": "Falha ao excluir um ou mais arquivos da pasta — seu workspace pode conter cópias desatualizadas.",
+    "diagramWriteFailed": "{{count}} diagrama(s) falhou ao salvar na pasta — suas alterações ainda estão no navegador.",
+    "folderMissing": "A pasta “{{name}}” não existe mais no disco (apagada, movida ou renomeada). Seus diagramas continuam no navegador — conecte uma pasta de novo para voltar a sincronizar."
   },
   "workspaceMerge": {
     "title": "Pasta com arquivos existentes",
@@ -416,10 +420,7 @@
     "keepCopyHintNoCopy": "Salva uma cópia de todos os diagramas no navegador e desconecta a pasta. Recomendado.",
     "keepCopyTitle": "Salvar estado atual no navegador e depois desconectar a pasta",
     "keepCopy": "Salvar no navegador e desconectar",
-    "disconnectOnly": "Desconectar sem salvar",
-    "manifestWriteFailed": "Falha ao gravar manifest — diagramas salvos, mas metadados podem estar fora de sincronia. Tentativa na próxima edição.",
-    "deleteFailed": "Falha ao excluir um ou mais arquivos da pasta — seu workspace pode conter cópias desatualizadas.",
-    "diagramWriteFailed": "{{count}} diagrama(s) falhou ao salvar na pasta — suas alterações ainda estão no navegador."
+    "disconnectOnly": "Desconectar sem salvar"
   },
   "bulkDelete": {
     "title": "Excluir itens selecionados",
@@ -532,8 +533,6 @@
     "scrollBehaviorZoomHint": "A rolagem dá zoom no ponteiro.",
     "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal.",
     "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente",
-    "renameDiagram": "Nome do diagrama",
-    "renameDiagramHint": "Clique duas vezes para renomear",
     "arrange": {
       "label": "Organizar",
       "action": "Organizar o diagrama",
@@ -1939,6 +1938,8 @@
     }
   },
   "panelShell": {
+    "inspector": "Propriedades",
+    "rail": "Painéis laterais",
     "advanced": "Avançado",
     "copyId": "Copiar ID",
     "idCopied": "ID copiado",

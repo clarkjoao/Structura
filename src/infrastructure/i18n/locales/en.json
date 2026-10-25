@@ -365,7 +365,11 @@
       "disconnect": "Disconnect folder",
       "disconnectHint": "Forget this folder connection and keep working in the browser."
     },
-    "foldersImported": "Imported {{count}} folder from filesystem"
+    "foldersImported": "Imported {{count}} folder from filesystem",
+    "manifestWriteFailed": "Failed to write manifest — diagrams saved but metadata may be out of sync. Retry on next edit.",
+    "deleteFailed": "Failed to delete one or more files from the folder — your workspace may contain outdated copies.",
+    "diagramWriteFailed": "{{count}} diagram(s) failed to save to the folder — your changes are still in the browser.",
+    "folderMissing": "The folder “{{name}}” is no longer on disk (deleted, moved or renamed). Your diagrams stay in the browser — connect a folder again to keep syncing."
   },
   "workspaceMerge": {
     "title": "Folder with existing files",
@@ -416,10 +420,7 @@
     "keepCopyHintNoCopy": "Saves a copy of all diagrams in the browser and disconnects the folder. Recommended.",
     "keepCopyTitle": "Save current state in the browser, then disconnect the folder",
     "keepCopy": "Save in browser and disconnect",
-    "disconnectOnly": "Disconnect without saving",
-    "manifestWriteFailed": "Failed to write manifest — diagrams saved but metadata may be out of sync. Retry on next edit.",
-    "deleteFailed": "Failed to delete one or more files from the folder — your workspace may contain outdated copies.",
-    "diagramWriteFailed": "{{count}} diagram(s) failed to save to the folder — your changes are still in the browser."
+    "disconnectOnly": "Disconnect without saving"
   },
   "bulkDelete": {
     "title": "Delete selected items",
@@ -532,8 +533,6 @@
     "scrollBehaviorZoomHint": "Scrolling zooms on the pointer.",
     "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways.",
     "autoHideBottomToolbar": "Automatically hide the bottom toolbar",
-    "renameDiagram": "Diagram name",
-    "renameDiagramHint": "Double-click to rename",
     "arrange": {
       "label": "Arrange",
       "action": "Arrange the diagram",
@@ -1939,6 +1938,8 @@
     }
   },
   "panelShell": {
+    "inspector": "Properties",
+    "rail": "Side panels",
     "advanced": "Advanced",
     "copyId": "Copy ID",
     "idCopied": "ID copied",
