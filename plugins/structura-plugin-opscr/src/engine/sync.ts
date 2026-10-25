@@ -181,12 +181,67 @@ export function sidecarMoves(
   return moves;
 }
 
+/** Two boxes the same to the pixel (b may be missing). */
+export const sameBox = (a: ViewBox, b: ViewBox | undefined) =>
+  b !== undefined &&
+  Math.round(a.x) === Math.round(b.x) &&
+  Math.round(a.y) === Math.round(b.y) &&
+  Math.round(a.width) === Math.round(b.width) &&
+  Math.round(a.height) === Math.round(b.height);
+
 /**
  * The sidecar text for what the canvas shows now (bound elements only): the shown View's boxes
  * replace its entry, every other diagram's stay as `current` has them.
+ *
+ * With `drawn` (the boxes as the engine's last sync left them) only what the reader changed
+ * since is written: a box moved, or a panel resized, takes the canvas's box; every other keeps
+ * what the file says (or stays out of it). A card's size is the canvas's own (it measures what
+ * it renders), so a size change alone is not the reader's. Drawing alone changes nothing on
+ * disk. Null when the file would not change.
  */
-export const sidecarText = (binding: BindingState, diagram: DiagramSnapshot, current?: string) =>
-  updateLayoutFile(current, binding.view, canvasLayout(binding, diagram).boxes);
+export function sidecarText(
+  binding: BindingState,
+  diagram: DiagramSnapshot,
+  current?: string,
+  drawn?: ReadonlyMap<string, ViewBox>,
+): string | null {
+  const layout = canvasLayout(binding, diagram);
+  const canvas = layout.boxes;
+  if (!drawn) {
+    const text = updateLayoutFile(current, binding.view, canvas);
+    return text === current ? null : text;
+  }
+  const file = (current ? layoutFor(current, binding.view)?.boxes : undefined) ?? new Map();
+  const panels = new Set(diagram.components.flatMap((c) => (c.parentId ? [c.parentId] : [])));
+  const boxes = new Map<string, ViewBox>();
+  const moved: string[] = [];
+  for (const [key, box] of canvas) {
+    const before = drawn.get(key);
+    const kept = file.get(key);
+    const changed = panels.has(binding.ids[key] ?? "")
+      ? !sameBox(box, before)
+      : !before ||
+        Math.round(box.x) !== Math.round(before.x) ||
+        Math.round(box.y) !== Math.round(before.y);
+    if (changed) {
+      boxes.set(key, box);
+      moved.push(key);
+    } else if (kept) boxes.set(key, kept);
+  }
+  // A box is relative to its panel: the panels holding a moved box are kept with it, or the
+  // next drawing could put them — and the box with them — elsewhere.
+  const parents = layout.parents ?? new Map<string, string | null>();
+  for (const key of moved) {
+    for (let at = parents.get(key), depth = 0; at && depth < 64; at = parents.get(at), depth++) {
+      if (boxes.has(at)) continue;
+      const box = file.get(at) ?? canvas.get(at);
+      if (box) boxes.set(at, box);
+    }
+  }
+  const same =
+    boxes.size === file.size && [...boxes].every(([key, box]) => sameBox(box, file.get(key)));
+  return same ? null : updateLayoutFile(current, binding.view, boxes);
+}
 
 /**
  * Elements the binding does not know but the canvas already shows — the diagram was bound

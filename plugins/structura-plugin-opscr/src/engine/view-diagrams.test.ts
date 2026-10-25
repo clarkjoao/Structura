@@ -191,6 +191,13 @@ describe("ViewDiagrams", () => {
     expect(s.host.created).toHaveLength(4);
   });
 
+  it("writes nothing to the sidecar for drawing alone", async () => {
+    const before = s.text(LAYOUT_FILE);
+    await s.manager.sync();
+    await s.manager.canvasChanged(s.canvasOf("shop-containers").id);
+    expect(s.text(LAYOUT_FILE)).toBe(before);
+  });
+
   it("keeps each diagram's positions in its own entry of the sidecar", async () => {
     await s.manager.sync();
     const containers = s.canvasOf("shop-containers");
@@ -199,9 +206,10 @@ describe("ViewDiagrams", () => {
     await s.manager.canvasChanged(containers.id);
     const sidecar = s.text(LAYOUT_FILE);
     expect(layoutFor(sidecar, "shop-containers")!.boxes.get("Application/storefront")).toMatchObject({ x: 640, y: 320 });
-    // Another view's entry is not touched by it.
-    expect(layoutFor(sidecar, "shop-context")).not.toBeNull();
-    expect(layoutFor(sidecar, "shop-context")!.boxes.has("Application/storefront")).toBe(false);
+    // Another view, where nothing moved, gets no entry from it.
+    expect(layoutFor(sidecar, "shop-context")?.boxes.has("Application/storefront") ?? false).toBe(
+      false,
+    );
   });
 
   it("puts a box where the sidecar says when it changes outside", async () => {

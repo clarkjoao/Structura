@@ -168,7 +168,7 @@ const stored = (id, key) =>
         connections: Object.values(connections).map(
           (c) => `${name(c.sourceId)}->${name(c.targetId)}`,
         ),
-        version: v ? { conflicts: Object.keys(v.baseHashes ?? {}).length } : null,
+        version: v ? { copies: Object.keys(v.baseHashes ?? {}).length } : null,
       };
     },
     [id, key],
@@ -176,7 +176,9 @@ const stored = (id, key) =>
 const settle = () => page.waitForTimeout(2500);
 /** The pane's Save (Ctrl/Cmd+S needs the focus in the pane). */
 const save = async () => {
-  await page.getByRole("button", { name: /^(Save|Salvar)$/ }).click();
+  const button = page.getByRole("button", { name: /^(Save|Salvar)$/ });
+  if (await button.isDisabled()) return; // nothing unsaved
+  await button.click();
   await settle();
 };
 
@@ -227,8 +229,49 @@ for (const edge of [
 await save();
 await settle();
 await check(
-  (await changedInitiative()).length === 0,
-  `saving without an edit changes no initiative manifest (${(await changedInitiative()).join(", ")})`,
+  (await changedInitiativeFiles()).length === 0,
+  `saving without an edit changes no initiative file, sidecar included (${(await changedInitiativeFiles()).join(", ")})`,
+);
+const rootLayout = (await folder())["opscr.layout.json"];
+await check(
+  rootLayout === SAMPLE["opscr.layout.json"],
+  "drawing alone leaves the root's sidecar as it was",
+);
+await check(
+  version.version.copies === 1,
+  `the Version copies only the root element the initiative changes (${version.version.copies})`,
+);
+// The initiative's new elements overlap nothing but the panels holding them.
+const overlapping = await page.evaluate(() => {
+  const rects = [...document.querySelectorAll(".react-flow__node")].map((n) => ({
+    name:
+      n.querySelector("[data-testid], .font-semibold, span")?.textContent ??
+      n.textContent.slice(0, 30),
+    text: n.textContent,
+    r: n.getBoundingClientRect(),
+  }));
+  const contains = (a, b) =>
+    a.left <= b.left && a.top <= b.top && a.right >= b.right && a.bottom >= b.bottom;
+  const hits = [];
+  for (const a of rects.filter((x) =>
+    /order-events|notifications-worker|sessions-store/.test(x.text),
+  )) {
+    for (const b of rects) {
+      if (a === b || contains(a.r, b.r) || contains(b.r, a.r)) continue;
+      if (
+        a.r.left < b.r.right &&
+        b.r.left < a.r.right &&
+        a.r.top < b.r.bottom &&
+        b.r.top < a.r.bottom
+      )
+        hits.push(`${a.text.slice(0, 20)} × ${b.text.slice(0, 20)}`);
+    }
+  }
+  return hits;
+});
+await check(
+  overlapping.length === 0,
+  `the initiative's new elements overlap nothing (${overlapping.join("; ")})`,
 );
 const sidecarText = async () => (await folder())["initiatives/order-events/opscr.layout.json"];
 const sidecarBefore = await sidecarText();

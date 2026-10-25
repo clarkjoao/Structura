@@ -407,7 +407,7 @@ describe("layout sidecar", () => {
       () =>
         (s.canvas.components.find((c) => c.label === "orders-db")!.position = { x: 900, y: 300 }),
     );
-    s.sidecar = sidecarText(s.binding, s.canvas.snapshot());
+    s.sidecar = sidecarText(s.binding, s.canvas.snapshot())!;
     expect(s.sidecar).toContain('"Database/orders-db": { "x": 900, "y": 300');
 
     const fresh = new Session();

@@ -119,6 +119,68 @@ describe("stabilizeLayout", () => {
     expect(worker.x).toBe(api.x);
   });
 
+  it("places a new element beside the sibling it is connected to, along the flow", () => {
+    const edge = (from: [string, string], to: [string, string], type: string) => ({
+      from: { kind: from[0], id: from[1] },
+      to: { kind: to[0], id: to[1] },
+      type,
+    });
+    const view = buildTechnicalView({
+      manifests: [
+        m("BoundedContext", "orders"),
+        m("Application", "api"),
+        m("Application", "web"),
+        m("Topic", "events"),
+        m("Application", "mailer"),
+        m("Database", "db"),
+        m("Relationship", "r", {
+          edges: [
+            belongs(["Application", "api"], ["BoundedContext", "orders"]),
+            belongs(["Application", "web"], ["BoundedContext", "orders"]),
+            belongs(["Topic", "events"], ["BoundedContext", "orders"]),
+            belongs(["Application", "mailer"], ["BoundedContext", "orders"]),
+            belongs(["Database", "db"], ["BoundedContext", "orders"]),
+            edge(["Application", "api"], ["Topic", "events"], "publishes"),
+            edge(["Topic", "events"], ["Application", "mailer"], "triggers"),
+            edge(["Application", "web"], ["Application", "api"], "calls"),
+            edge(["Application", "api"], ["Database", "db"], "writes"),
+          ],
+        }),
+      ],
+    });
+    const kept = result({
+      "BoundedContext/orders": box(0, 0, 1200, 400),
+      "Application/web": box(100, 40),
+      "Application/api": box(400, 40),
+      "Database/db": box(400, 200),
+    });
+    // The engine puts the new ones by db: the nearest survivor would be db, not what they talk to.
+    const fresh = result({
+      "BoundedContext/orders": box(0, 0, 1200, 400),
+      "Application/web": box(40, 600),
+      "Application/api": box(300, 600),
+      "Database/db": box(300, 800),
+      "Topic/events": box(300, 900),
+      "Application/mailer": box(300, 1000),
+    });
+    const boxes = stabilizeLayout(view, fresh, kept).boxes;
+    // Mostly kept: events after api, which publishes to it; mailer after events, which triggers it.
+    expect(boxes.get("Topic/events")).toEqual(box(660, 40));
+    expect(boxes.get("Application/mailer")).toEqual(box(920, 40));
+  });
+
+  it("places a new element connected to nothing as the engine put it, by its nearest survivor", () => {
+    const fresh = result({
+      "BoundedContext/orders": box(100, 100, 260, 300),
+      "Application/api": box(40, 160),
+      "Application/worker": box(40, 300),
+      "Database/db": box(900, 0),
+    });
+    const boxes = stabilizeLayout(after, fresh, result({ "Application/api": box(40, 40) })).boxes;
+    // worker is placed as the engine put it relative to api (140 below), db likewise.
+    expect(boxes.get("Application/worker")).toMatchObject({ x: 40, y: 180 });
+  });
+
   it("grows a panel to hold its children and never shrinks it", () => {
     const fresh = result({
       "BoundedContext/orders": box(100, 100, 10, 10),

@@ -62,7 +62,8 @@ Two ways to bring opscr into Structura:
   Positions go to the **layout sidecar** `opscr.layout.json` beside the manifests (one
   `"Kind/name": { x, y, width, height }` per line, parent-relative), saved with them. Binding a
   fresh diagram — or opening the VSCode preview — restores that arrangement; elements the sidecar
-  does not list are placed by the stable layout.
+  does not list are placed by the stable layout. The sidecar keeps what you arranged: a box you
+  moved (or a panel you resized) and the panels holding it. Drawing alone writes nothing.
 
 - **Import one file**, described below.
 
