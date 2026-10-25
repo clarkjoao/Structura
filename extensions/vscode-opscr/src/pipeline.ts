@@ -17,6 +17,7 @@ import {
   toLayoutGraph,
   parseVisualFile,
   withVisualLayer,
+  withoutBroken,
   type ImporterGraph,
   type ViewLayoutResult,
 } from "./generated/opscr-mapping";
@@ -48,8 +49,10 @@ export interface PreviewUpdate {
   view?: string;
   /** Boxes of the drawn view that open another view: component key → View name. */
   links?: Map<string, string>;
-  /** Why there is no picture: the YAML does not parse, or how many opscr errors it has. */
-  blocked?: { reason: "parse" } | { reason: "errors"; errors: number };
+  /** `Kind/name` of the elements left out of the picture for an opscr error in them. */
+  broken?: string[];
+  /** Why there is no picture: the YAML does not parse. */
+  blocked?: { reason: "parse" };
 }
 
 const PARSE_ERROR = "loader/yaml-parse-error";
@@ -57,9 +60,10 @@ const PARSE_ERROR = "loader/yaml-parse-error";
 /**
  * YAML text → the graph the preview draws, keeping the previous picture still: every
  * element that survives an edit keeps its place (`stabilizeLayout`), new ones are laid out
- * next to their neighbours. Only YAML that opscr validates without errors is drawn — files here
- * change whole (Claude Code, git, a save), and a half-valid picture would mislead; warnings do
- * not block. No VSCode API here, so the whole path is unit-testable.
+ * next to their neighbours. An element opscr reports an error in is left out (`withoutBroken`) and
+ * the rest is drawn — one manifest written without a required field (by hand, or from a canvas)
+ * must not freeze the preview; the errors stay in the Problems panel. Only YAML that does not
+ * parse keeps the last picture. No VSCode API here, so the whole path is unit-testable.
  */
 export class PreviewPipeline {
   /** The picture on screen, per diagram: the whole workspace's ("") and each View's. */
@@ -106,14 +110,15 @@ export class PreviewPipeline {
     if (diagnostics.some((d) => d.ruleId === PARSE_ERROR)) {
       return { diagnostics, blocked: { reason: "parse" } };
     }
-    const errors = diagnostics.filter((d) => d.severity === "error").length;
-    if (errors > 0) return { diagnostics, blocked: { reason: "errors", errors } };
+    const { manifests, broken } = withoutBroken(compiled.manifests, diagnostics);
+    const drawable = { manifests };
 
     const views = compiled.getByKind("View").map((v) => v.metadata.name);
     // A View that is gone (renamed, deleted) falls back to the whole workspace.
-    const resolved = wanted !== undefined && views.includes(wanted) ? resolveView(compiled, wanted) : undefined;
+    const resolved =
+      wanted !== undefined && views.includes(wanted) ? resolveView(compiled, wanted) : undefined;
     const drawn = resolved ? wanted : undefined;
-    const view = resolved ? buildViewDiagram(compiled, resolved) : buildTechnicalView(compiled);
+    const view = resolved ? buildViewDiagram(drawable, resolved) : buildTechnicalView(drawable);
     const key = drawn ?? "";
     const previous = this.pictures.get(key);
     // An edit of text alone moves nothing: the layout engine would only be ignored.
@@ -124,7 +129,9 @@ export class PreviewPipeline {
     this.pictures.set(key, stable);
     const graph = toImporterGraph(placeView(view, stable));
     const links = new Map(
-      graph.components.flatMap((c) => (c.linkedView !== undefined ? [[c.key, c.linkedView] as const] : [])),
+      graph.components.flatMap((c) =>
+        c.linkedView !== undefined ? [[c.key, c.linkedView] as const] : [],
+      ),
     );
     // Boundaries, services with no Kind and text, drawn as the plugin draws them — in the
     // whole-workspace picture only: a View is a projection of the manifests.
@@ -132,10 +139,11 @@ export class PreviewPipeline {
     return {
       diagnostics,
       graph: visual ? withVisualLayer(graph, visual).graph : graph,
-      sources: new SourceIndex(compiled.manifests, view),
+      sources: new SourceIndex(manifests, view),
       views,
       ...(drawn !== undefined ? { view: drawn } : {}),
       links,
+      ...(broken.length > 0 ? { broken } : {}),
     };
   }
 }
@@ -224,7 +232,8 @@ export async function detectWorkspaceRoot(file: string, probe: WorkspaceProbe): 
     if (count === 0) return folder;
     if (!best || count < best.count) best = { folder, count };
     const above = parentOf(folder);
-    const stop = folder === probe.stopAt || above === folder || (!probe.stopAt && level >= MAX_LEVELS_UP);
+    const stop =
+      folder === probe.stopAt || above === folder || (!probe.stopAt && level >= MAX_LEVELS_UP);
     if (stop) break;
     folder = above;
   }

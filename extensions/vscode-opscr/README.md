@@ -27,9 +27,10 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
   A view is a projection of the manifests, so the draw.io visual layer is drawn on the whole
   workspace only.
 - **Live, validated:** ~300 ms after a change — typed, saved, or written to disk by another tool
-  (Claude Code, git) — the folder is validated with opscr and, when it has no errors, drawn.
-  While the YAML does not parse or has opscr errors, the preview keeps its last valid picture and
-  the status bar says why (click it for the Problems panel). Warnings do not block.
+  (Claude Code, git) — the folder is validated with opscr and drawn. An element opscr reports an
+  error in is left out of the picture (and the edges to it), the rest is drawn, and the status bar
+  says how many errors and elements are missing (click it for the Problems panel). Only YAML that
+  does not parse keeps the last picture.
 - **Still:** elements already drawn keep their place when you add, remove or edit others; new ones
   are placed next to their neighbours. **opscr: Re-layout Preview** (Ctrl/Cmd+Shift+L in the
   preview) arranges everything from scratch.
@@ -40,8 +41,8 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
   picking one zooms to it — handy on large diagrams. Also **opscr: Find Element in Preview**.
 - **From the picture to the YAML and back:** clicking an element or a connection opens the
   manifest or edge that writes it, at its line; the element the cursor is in is lit in the preview
-  (brought into view when it is off screen). While the YAML has errors, each problem listed in the
-  preview, and its "Not updated" banner, opens the line to fix.
+  (brought into view when it is off screen). While the YAML does not parse, each problem listed in
+  the preview, and its "Not updated" banner, opens the line to fix.
 - **Follows changes:** when an update adds or changes elements (or connects them), the preview
   zooms to them; moving things alone does not.
 - **Problems:** opscr errors and warnings appear in the Problems panel, on their file and line.

@@ -2,8 +2,8 @@
 
 Two ways to bring opscr into Structura:
 
-- **Edit a folder (document pane, plugin API 1.4).** Open a diagram, click **opscr** in the canvas
-  toolbar, and **Bind to opscr folder…**. The pane lists the folder's manifests and edits them in
+- **Edit a folder (document pane, plugin API 1.4).** Open a diagram, click the **opscr** icon on the
+  panel rail (right edge), and **Bind to opscr folder…**. The pane lists the folder's manifests and edits them in
   Structura's editor, with opscr problems marked on their lines; the diagram follows ~300 ms after
   you stop typing. Elements already on the canvas — including ones you dragged — stay where they
   are; new ones are placed next to their neighbours; removed ones disappear. Each sync is one undo
@@ -53,7 +53,11 @@ Two ways to bring opscr into Structura:
 
   **Elements drawn from the palette** are listed in the pane as "not in the YAML", with a
   suggested Kind and provider (a DynamoDB → `Database`/`DynamoDB`, a panel → `Domain`). _Add to
-  YAML_ writes the manifest (named after the label, kebab-case), its `belongsTo` and its edges.
+  YAML_ writes the manifest (named after the label, kebab-case), its `belongsTo` and its edges. The
+  manifest carries every spec field its Kind's schema requires, so the folder stays valid for the
+  CLI and the VSCode preview: a field the canvas cannot say (a Topic's `type`) gets the schema's
+  first choice, marked `# set by Structura from the schema — review`. On a view, such elements are
+  listed too, with a button to the whole workspace, where they can be added.
 
   Positions go to the **layout sidecar** `opscr.layout.json` beside the manifests (one
   `"Kind/name": { x, y, width, height }` per line, parent-relative), saved with them. Binding a

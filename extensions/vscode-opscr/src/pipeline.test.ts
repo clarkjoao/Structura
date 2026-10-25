@@ -150,7 +150,8 @@ describe("a workspace in subfolders", () => {
 describe("views in the preview", () => {
   const EXAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/web-app-aws");
   const example = readdirSync(EXAMPLE_DIR).filter((n) => n.endsWith(".opscr.yaml"));
-  const readExample = async (path: string) => readFileSync(join(EXAMPLE_DIR, basename(path)), "utf8");
+  const readExample = async (path: string) =>
+    readFileSync(join(EXAMPLE_DIR, basename(path)), "utf8");
   const workspace = (layout?: string) =>
     collectWorkspace("/w", [...example, ...(layout ? ["opscr.layout.json"] : [])], async (p) =>
       p.endsWith("opscr.layout.json") ? layout : readExample(p),
@@ -174,7 +175,11 @@ describe("views in the preview", () => {
   it("draws one view, with the boxes that open another", async () => {
     const update = await new PreviewPipeline().update(await workspace(), "shop-context");
     expect(update.view).toBe("shop-context");
-    expect(keys(update.graph)).toEqual(["BoundedContext/webshop", "ExternalSystem/payment-provider", "Person/customer"]);
+    expect(keys(update.graph)).toEqual([
+      "BoundedContext/webshop",
+      "ExternalSystem/payment-provider",
+      "Person/customer",
+    ]);
     expect([...update.links!]).toEqual([["BoundedContext/webshop", "shop-containers"]]);
   });
 
@@ -216,17 +221,30 @@ describe("views in the preview", () => {
     const visual = JSON.stringify({
       version: 1,
       source: { file: "x.drawio", page: "p" },
-      elements: { "drawio:1": { role: "decoration", label: "Title text", style: "", box: { x: 0, y: 0, width: 100, height: 20 }, parent: null } },
+      elements: {
+        "drawio:1": {
+          role: "decoration",
+          label: "Title text",
+          style: "",
+          box: { x: 0, y: 0, width: 100, height: 20 },
+          parent: null,
+        },
+      },
       edges: [],
     });
     const ws = { ...(await workspace()), visual };
     expect(keys((await new PreviewPipeline().update(ws)).graph)).toContain("drawio:1");
-    expect(keys((await new PreviewPipeline().update(ws, "shop-context")).graph)).not.toContain("drawio:1");
+    expect(keys((await new PreviewPipeline().update(ws, "shop-context")).graph)).not.toContain(
+      "drawio:1",
+    );
   });
 });
 
 describe("workspaceRoot", () => {
-  const configAt = (...folders: string[]) => async (folder: string) => folders.includes(folder);
+  const configAt =
+    (...folders: string[]) =>
+    async (folder: string) =>
+      folders.includes(folder);
 
   it("is the nearest folder above the file that has the config", async () => {
     expect(await workspaceRoot("/w/shop/views/a.opscr.yaml", configAt("/w/shop"))).toBe("/w/shop");
@@ -250,7 +268,8 @@ describe("workspaceRoot", () => {
 describe("detectWorkspaceRoot", () => {
   const EXAMPLE_DIR = join(dirname(require.resolve("opscr/package.json")), "examples/web-app-aws");
   const example = readdirSync(EXAMPLE_DIR).filter((n) => n.endsWith(".opscr.yaml"));
-  const isView = (name: string) => /^shop-(context|containers|production)|^orders-api-components/.test(name);
+  const isView = (name: string) =>
+    /^shop-(context|containers|production)|^orders-api-components/.test(name);
 
   /** A disk of `path → text`; `list` answers like the extension's walker. */
   const disk = (files: Record<string, string>, tooBig: string[] = []) => ({
@@ -442,7 +461,8 @@ describe("PreviewPipeline", () => {
     expect(result.diagnostics.map((d) => d.ruleId)).toContain("loader/yaml-parse-error");
   });
 
-  it("reports schema errors on their file and line, and does not draw until they are fixed", async () => {
+  it("reports schema errors on their file and line, and draws everything but the broken element", async () => {
+    const whole = await new PreviewPipeline().update(await sample());
     const result = await new PreviewPipeline().update(
       await edited("finance.opscr.yaml", (t) =>
         t.replace(/(\n\s+description:)/, "\n  inventedField: 1$1"),
@@ -451,8 +471,20 @@ describe("PreviewPipeline", () => {
     const error = result.diagnostics.find((d) => d.message.includes("inventedField"));
     expect(error?.file).toMatch(/finance\.opscr\.yaml$/);
     expect(error?.line).toBeGreaterThan(0);
+    expect(result.blocked).toBeUndefined();
+    expect(result.broken).toHaveLength(1);
+    const keys = (r: typeof result) => r.graph!.components.map((c) => c.key);
+    expect(keys(result)).not.toContain(result.broken![0]);
+    expect(keys(result).length).toBeGreaterThan(0);
+    expect(keys(result)).toEqual(keys(whole).filter((k) => k !== result.broken![0]));
+  });
+
+  it("still keeps the last picture while the YAML does not parse", async () => {
+    const result = await new PreviewPipeline().update(
+      await edited("finance.opscr.yaml", (t) => t + "\n  : : [unclosed"),
+    );
     expect(result.graph).toBeUndefined();
-    expect(result.blocked).toMatchObject({ reason: "errors" });
+    expect(result.blocked).toEqual({ reason: "parse" });
   });
 
   it("runs overlapping updates one after another, each from the picture before it", async () => {
