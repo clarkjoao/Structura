@@ -1,5 +1,6 @@
 import { current, isDraft, type Draft } from "immer";
 import type { AppState, DiagramSnapshot } from "../store.types";
+import type { Diagram } from "../../model/diagram.types";
 import {
   HISTORY_COALESCE_MS,
   MAX_HISTORY_STEPS,
@@ -26,8 +27,8 @@ function toPlain<T>(v: T): T {
  *
  * Returns whether a checkpoint was recorded, so a caller can find it again.
  */
-export function pushHistoryCheckpoint(state: AppState): boolean {
-  const d = getActiveDiagram(state);
+export function pushHistoryCheckpoint(state: AppState, diagram?: Diagram): boolean {
+  const d = diagram ?? getActiveDiagram(state);
   if (!d) return false;
   state.past.push({
     diagramId: d.id,
@@ -45,15 +46,20 @@ export function pushHistoryCheckpoint(state: AppState): boolean {
 }
 
 /** Snapshot clone for undo — O(n) per checkpoint; coalescing limits frequency (see HISTORY_COALESCE_MS). */
-export function pushHistory(state: AppState, mutationType: HistoryMutationKind = "soft"): void {
-  const d = getActiveDiagram(state);
+export function pushHistory(
+  state: AppState,
+  mutationType: HistoryMutationKind = "soft",
+  /** The diagram being changed, when it is not the active one (a plugin keeping several in sync). */
+  diagram?: Diagram,
+): void {
+  const d = diagram ?? getActiveDiagram(state);
   if (!d) return;
   if (Date.now() - state._lastUndoRedoTimestamp < UNDO_REDO_COOLDOWN_MS) return;
   if (mutationType !== STRUCTURAL_MUTATION_MARKER) {
     const last = state.past[state.past.length - 1];
     if (last?.diagramId === d.id && Date.now() - last.timestamp < HISTORY_COALESCE_MS) return;
   }
-  pushHistoryCheckpoint(state);
+  pushHistoryCheckpoint(state, d);
 }
 
 export const historySlice = (

@@ -45,6 +45,8 @@ import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
 import {
   resolveActiveVersion,
+  writableComponent,
+  writableNodeLayout,
   resolveComponent,
   resolveNodeLayout,
   writeComponentAndLayout,
@@ -633,6 +635,32 @@ function placeNewComponent(
   }
 }
 
+/**
+ * The body of `removeElements` for callers that already opened a `set()` and pushed
+ * history — a batch that removes as one of several changes in a single undo step.
+ */
+export function removeElementsInDraft(
+  state: AppState,
+  d: Diagram,
+  nodeIds: string[],
+  edgeIds: string[],
+  /** The Version to remove from; the active one (or the base) when omitted. */
+  target?: VersionDiff | null,
+): void {
+  const scene = target === undefined ? resolveActiveVersion(d) : target;
+  const refs = refsRemovedWith(d, nodeIds);
+  const allNodeIds = [...nodeIds, ...refs.ids];
+  if (scene) {
+    publishSewNotices(state, [
+      ...allNodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
+      ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
+    ]);
+  } else {
+    publishSewNotices(state, removeElementsFromSnapshot(d, allNodeIds, edgeIds));
+  }
+  publishRefNotice(state, refs);
+}
+
 export const componentsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
@@ -817,38 +845,23 @@ export const componentsSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
-      const inSceneAdds = !!(scene && scene.addedComponents[id]);
-      if (!isDimensionOnly) {
-        if (!scene || !inSceneAdds) pushHistory(state);
-      }
+      // The Version's own elements (added, or already copied) edit without history, as before;
+      // the first edit of a base element in a Version copies it, and that copy is undoable.
+      const sceneOwned = !!(scene && (scene.addedComponents[id] || scene.modifiedComponents?.[id]));
+      if (!isDimensionOnly && !sceneOwned) pushHistory(state);
 
-      if (inSceneAdds) {
-        if (Object.keys(compPatch).length > 0) {
-          Object.assign(scene!.addedComponents[id], compPatch);
-          if (shouldDetachTemplate && scene!.addedComponents[id].templateId) {
-            delete scene!.addedComponents[id].templateId;
-          }
+      if (Object.keys(compPatch).length > 0) {
+        const target = writableComponent(d, scene, id)?.component;
+        if (target) {
+          Object.assign(target, compPatch);
+          if (shouldDetachTemplate && target.templateId) delete target.templateId;
         }
-        if (hasDimensions) {
-          const layout = scene!.nodeLayouts[id];
-          if (layout) {
-            if (width !== undefined) layout.width = width;
-            if (height !== undefined) layout.height = height;
-          }
-        }
-      } else {
-        if (Object.keys(compPatch).length > 0) {
-          Object.assign(d.snapshot.components[id], compPatch);
-          if (shouldDetachTemplate && d.snapshot.components[id].templateId) {
-            delete d.snapshot.components[id].templateId;
-          }
-        }
-        if (hasDimensions) {
-          const layout = d.nodeLayouts[id];
-          if (layout) {
-            if (width !== undefined) layout.width = width;
-            if (height !== undefined) layout.height = height;
-          }
+      }
+      if (hasDimensions) {
+        const layout = writableNodeLayout(d, scene, id);
+        if (layout) {
+          if (width !== undefined) layout.width = width;
+          if (height !== undefined) layout.height = height;
         }
       }
       touchDiagram(d);
@@ -864,16 +877,25 @@ export const componentsSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
+      const exists = (id: string) =>
+        !!(
+          scene?.addedComponents[id] ??
+          scene?.modifiedComponents?.[id] ??
+          d.snapshot.components[id]
+        );
+      if (!ids.some(exists)) return;
+      // Scene-only edits write no history, like `updateComponent`; the rest share one checkpoint,
+      // taken before any copy-on-write so undo removes the copies too.
+      const touchesBase = ids.some(
+        (id) =>
+          exists(id) && !(scene && (scene.addedComponents[id] || scene.modifiedComponents?.[id])),
+      );
+      if (touchesBase) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       const written: Component[] = [];
       for (const id of ids) {
-        const target = scene?.addedComponents[id] ?? d.snapshot.components[id];
-        if (!target) continue;
-        written.push(target);
+        const target = writableComponent(d, scene, id)?.component;
+        if (target) written.push(target);
       }
-      if (written.length === 0) return;
-      // Scene-only edits write no history, like `updateComponent`; the rest share one checkpoint.
-      const touchesBase = ids.some((id) => !(scene && scene.addedComponents[id]));
-      if (touchesBase) pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       for (const target of written) {
         const own = typeof patch === "function" ? patch(target) : patch;
         Object.assign(target, own);
@@ -921,23 +943,8 @@ export const componentsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveVersion(d);
-      const refs = refsRemovedWith(d, nodeIds);
-      const allNodeIds = [...nodeIds, ...refs.ids];
-      if (scene) {
-        pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-        publishSewNotices(state, [
-          ...allNodeIds.flatMap((id) => mutateRemoveComponentInVersion(d, scene.id, id)),
-          ...edgeIds.flatMap((id) => mutateRemoveConnectionInVersion(d, scene.id, id)),
-        ]);
-        publishRefNotice(state, refs);
-        touchDiagram(d);
-        return;
-      }
-
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
-      publishSewNotices(state, removeElementsFromSnapshot(d, allNodeIds, edgeIds));
-      publishRefNotice(state, refs);
+      removeElementsInDraft(state, d, nodeIds, edgeIds);
       touchDiagram(d);
     });
   },

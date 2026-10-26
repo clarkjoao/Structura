@@ -10,6 +10,7 @@ import type {
   Folder,
   PanelKind,
   VersionDiff,
+  VersionStatus,
   NodeLayout,
   IconDefinition,
   EdgeControlPoint,
@@ -264,7 +265,16 @@ export interface AppActions {
   insertGeneratedGraph: (
     nodes: import("./slices/generated-graph.slice").GeneratedNodeInput[],
     edges: import("./slices/generated-graph.slice").GeneratedEdgeInput[],
+    options?: import("./slices/generated-graph.slice").InsertGeneratedGraphOptions,
   ) => import("./slices/generated-graph.slice").GeneratedGraphResult;
+
+  applyGraphChanges: (
+    changes: import("./slices/generated-graph.slice").GraphChanges,
+    /** Another diagram than the active one (a plugin keeping several in sync). */
+    diagramId?: string,
+    /** Write into the Version with this key (created if absent) instead of the active context. */
+    version?: import("./slices/generated-graph.slice").GraphChangesVersionTarget | "base",
+  ) => import("./slices/generated-graph.slice").GraphChangesResult;
 
   undo: () => void;
   redo: () => void;
@@ -294,7 +304,13 @@ export interface AppActions {
   addVersion: (name: string) => VersionDiff;
   duplicateVersion: (versionId: string, name?: string) => VersionDiff | null;
   removeVersion: (versionId: string) => void;
-  mergeVersionIntoBase: (versionId: string) => void;
+  mergeVersionIntoBase: (versionId: string) => boolean;
+  setVersionStatus: (versionId: string, status: VersionStatus | null) => void;
+  carryActiveVersionKey: (fromDiagramId: string, toDiagramId: string) => void;
+  removeVersionByKey: (diagramId: string, key: string) => void;
+  setActiveVersionByKey: (diagramId: string, key: string | null) => void;
+  keepVersionCopy: (versionId: string, elementId: string) => void;
+  takeBaseVersion: (versionId: string, elementId: string) => void;
   setActiveVersion: (versionId: string | null) => void;
   setCompareVersion: (versionId: string | null) => void;
   renameVersion: (versionId: string, name: string) => void;

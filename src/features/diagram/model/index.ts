@@ -147,6 +147,7 @@ export type {
   Diagram,
   DiagramModel,
   VersionDiff,
+  VersionStatus,
   UserTemplate,
   UserTemplateComponent,
   ExternalLink,
@@ -158,7 +159,7 @@ export type {
   DiagramDirection,
 } from "./diagram.types";
 
-export { isAwsIcon, isLucideIcon, isSvgIcon } from "./diagram.types";
+export { isAwsIcon, isLucideIcon, isSvgIcon, VERSION_STATUSES } from "./diagram.types";
 
 export type { DiagramLayoutSettings } from "./layout-settings";
 

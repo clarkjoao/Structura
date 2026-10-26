@@ -6,6 +6,14 @@ import type {
   NodeLayout,
   ServiceDefinition,
 } from "@/features/diagram";
+import { resolveCloudServiceId } from "@/features/diagram/model/cloud-service-id";
+import type { VersionDiff } from "@/features/diagram/model/diagram.types";
+import {
+  modifiedComponentsOf,
+  modifiedConnectionsOf,
+  resolveVersionSnapshot,
+  versionConflicts,
+} from "@/features/diagram/utils/version.utils";
 import type {
   DiagramSnapshot,
   PluginComponentPatch,
@@ -13,6 +21,7 @@ import type {
   PluginConnectionSnapshot,
   PluginServicePatch,
   PluginServiceSnapshot,
+  PluginVersionSnapshot,
 } from "./plugin.types";
 
 /**
@@ -27,6 +36,12 @@ export function toComponentSnapshot(
 ): PluginComponentSnapshot {
   const x = layout?.x ?? component.x;
   const y = layout?.y ?? component.y;
+  // Read only: plugins change the catalog service through applyChanges, never here.
+  const cloudServiceId = resolveCloudServiceId(component) ?? null;
+  const technology =
+    "technology" in component && typeof component.technology === "string"
+      ? component.technology
+      : null;
   return {
     id: component.id,
     type: component.type,
@@ -40,6 +55,9 @@ export function toComponentSnapshot(
         : null,
     tags: [...(component.tags ?? [])],
     serviceId: component.serviceId ?? null,
+    cloudServiceId,
+    technology,
+    linkedDiagramId: component.linkedDiagramId ?? null,
   };
 }
 
@@ -66,15 +84,64 @@ export function toServiceSnapshot(service: ServiceDefinition): PluginServiceSnap
   };
 }
 
-export function toDiagramSnapshot(diagram: Diagram): DiagramSnapshot {
-  return {
+/**
+ * The diagram as plugins read it. With `version: "active"` (what `getDiagram` asks for since
+ * 1.14) the active Version is applied and named in `activeVersion`; `{ key }` applies that
+ * Version (the base when there is none); otherwise the base.
+ */
+export function toDiagramSnapshot(
+  diagram: Diagram,
+  options: { version?: "active" | "base" | { key: string } } = {},
+): DiagramSnapshot {
+  const wanted = options.version;
+  const version =
+    wanted === "active"
+      ? diagram.activeVersionId
+        ? diagram.versions?.[diagram.activeVersionId]
+        : undefined
+      : typeof wanted === "object"
+        ? Object.values(diagram.versions ?? {}).find((v) => v.key === wanted.key)
+        : undefined;
+  const resolved = resolveVersionSnapshot(diagram, version?.id ?? null);
+  const snapshot: DiagramSnapshot = {
     id: diagram.id,
     name: diagram.name,
     description: diagram.description ?? null,
-    components: Object.values(diagram.snapshot.components).map((component) =>
-      toComponentSnapshot(component, diagram.nodeLayouts[component.id]),
+    folderId: diagram.folderId ?? null,
+    components: Object.values(resolved.components).map((component) =>
+      toComponentSnapshot(component, resolved.nodeLayouts[component.id]),
     ),
-    connections: Object.values(diagram.snapshot.connections).map(toConnectionSnapshot),
+    connections: Object.values(resolved.connections).map(toConnectionSnapshot),
+  };
+  if (options.version !== undefined) {
+    snapshot.activeVersion = version
+      ? { id: version.id, key: version.key ?? null, status: version.status ?? null }
+      : null;
+  }
+  return snapshot;
+}
+
+/** One Version as plugins see it. */
+export function toVersionSnapshot(diagram: Diagram, version: VersionDiff): PluginVersionSnapshot {
+  return {
+    id: version.id,
+    key: version.key ?? null,
+    name: version.name,
+    status: version.status ?? null,
+    ownerPluginId: version.ownerPluginId ?? null,
+    added: {
+      componentIds: Object.keys(version.addedComponents),
+      connectionIds: Object.keys(version.addedConnections),
+    },
+    modified: {
+      componentIds: Object.keys(modifiedComponentsOf(version)),
+      connectionIds: Object.keys(modifiedConnectionsOf(version)),
+    },
+    removed: {
+      componentIds: [...version.removedComponentIds],
+      connectionIds: [...version.removedConnectionIds],
+    },
+    conflicts: versionConflicts(diagram, version.id).map((c) => c.id),
   };
 }
 

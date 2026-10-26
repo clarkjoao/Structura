@@ -16,7 +16,7 @@ import type { DiagramNodeComponent } from "@/features/canvas";
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.2.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.14.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -29,6 +29,8 @@ export const KNOWN_PLUGIN_CAPABILITIES = [
   "diagram:write",
   "storage",
   "network",
+  "files:folder",
+  "llm:context",
 ] as const;
 
 export type PluginCapability = (typeof KNOWN_PLUGIN_CAPABILITIES)[number];
@@ -80,6 +82,12 @@ export interface PluginComponentSnapshot {
   size: { width: number; height: number } | null;
   tags: readonly string[];
   serviceId: string | null;
+  /** v1.10 — the catalog service drawn (lambda, dynamodb, …), or null. */
+  cloudServiceId: string | null;
+  /** v1.10 — the technology label, or null. */
+  technology: string | null;
+  /** v1.13 — the diagram this component opens (drill-down), or null. */
+  linkedDiagramId: string | null;
 }
 
 export interface PluginConnectionSnapshot {
@@ -101,13 +109,40 @@ export interface PluginServiceSnapshot {
   tags: readonly string[];
 }
 
+/** v1.14 — where a Version is in its lifecycle. */
+export type PluginVersionStatus = "proposed" | "approved" | "in-progress" | "done";
+
+/** v1.14 — the Version a diagram shows. */
+export interface PluginActiveVersion {
+  id: string;
+  /** The stable key it was created with (`versions.upsert`), or null for a user's own Version. */
+  key: string | null;
+  status: PluginVersionStatus | null;
+}
+
 /** Read-only diagram projection handed to exporters. */
 export interface DiagramSnapshot {
   id: string;
   name: string;
   description: string | null;
+  /** v1.14 — the workspace folder the diagram is in; null at the top. */
+  folderId?: string | null;
+  /**
+   * Since 1.14: the elements as the canvas shows them — with the active Version applied
+   * (`activeVersion`), unless `getDiagram(id, { base: true })` asked for the base.
+   */
   components: readonly PluginComponentSnapshot[];
   connections: readonly PluginConnectionSnapshot[];
+  /** v1.14 — the Version applied to `components` / `connections`; null on the base. */
+  activeVersion?: PluginActiveVersion | null;
+}
+
+/** v1.14 — options of `getDiagram`. */
+export interface PluginGetDiagramOptions {
+  /** The base, ignoring the active Version. */
+  base?: boolean;
+  /** The Version with this key applied, whether shown or not (the base when there is none). */
+  version?: string;
 }
 
 /** Whitelisted component fields a plugin may patch (applied via store actions, undoable). */
@@ -134,9 +169,35 @@ export interface PluginServicePatch {
 export interface PluginComponentInput {
   key: string;
   name: string;
-  /** Defaults to "unknown" when omitted; plugin node types must be "<pluginId>/<name>". */
+  /**
+   * Kept when it is a C4 type, `"panel"`, `"text"` (since 1.12; its text is `name`), a catalog family category (`"aws-database"`,
+   * `"gcp-compute"`, `"oss-messaging"`, …) or a plugin node type `"<pluginId>/<name>"`;
+   * anything else, or omitted, becomes `"unknown"`.
+   */
   type?: string;
   description?: string;
+  /**
+   * The component to nest this one in (since 1.3): another input's `key`, or an existing
+   * component id from ImportContext. Ignored — the component lands at the top level — when
+   * the parent is missing, cannot hold this type, or the parent keys form a cycle.
+   */
+  parentKey?: string;
+  /** Catalog service of a catalog family component, e.g. "dynamodb" (since 1.3). */
+  cloudServiceId?: string;
+  /**
+   * Kind of a `panel` (since 1.12): `"vpc"`, `"public-subnet"`, `"private-subnet"`,
+   * `"availability-zone"`, `"auto-scaling-group"`, `"eks-cluster"`, `"ecs-cluster"`,
+   * `"swimlane"`; anything else is a default panel.
+   */
+  panelKind?: string;
+  /** Technology label of a C4 or catalog component (since 1.3). */
+  technology?: string;
+  /**
+   * The diagram this component opens, as the host's drill-down (since 1.13): an id from
+   * `createDiagram` or `getDiagram`. Ignored when no such diagram exists.
+   */
+  linkedDiagramId?: string;
+  /** Relative to the parent when `parentKey` is honoured; otherwise canvas coordinates. */
   x: number;
   y: number;
   width?: number;
@@ -175,6 +236,35 @@ export interface ImporterContribution {
   import(contents: string, ctx: ImportContext): ImportResult | Promise<ImportResult>;
 }
 
+/** v1.14 — what a workspace importer is handed when the user picks it. */
+export interface WorkspaceImportContext {
+  /** The host's language, e.g. "pt-BR". */
+  locale: string;
+  /** The workspace folder the user is in (the new diagrams' parent), or null at the top. */
+  folderId: string | null;
+}
+
+/** v1.14 — what a workspace import made: the diagram to open, and the plugin's pane beside it. */
+export interface WorkspaceImportResult {
+  diagramId: string;
+  /** Id of one of the plugin's `document-pane` panels, opened beside the diagram. */
+  openPane?: string;
+}
+
+/**
+ * v1.14 — capability "io:importers". An import offered on the workspace home that sets up a
+ * whole source (a folder, say) instead of reading one file into the active diagram: the plugin
+ * asks what it needs (from the user's click), creates diagrams and folders, and names the
+ * diagram to open.
+ */
+export interface WorkspaceImporterContribution {
+  id: string;
+  label: LocalizedText;
+  description?: LocalizedText;
+  /** Resolves to null when the user cancelled; a thrown error's message is shown to the user. */
+  run(context: WorkspaceImportContext): Promise<WorkspaceImportResult | null>;
+}
+
 export interface ExporterContribution {
   id: string;
   label: LocalizedText;
@@ -190,7 +280,12 @@ export type PluginPanelSlot =
   | "services-import"
   /** @deprecated Prefer `services-import`. Accepted for one release. */
   | "service-registry-import"
-  | "canvas-toolbar";
+  | "canvas-toolbar"
+  /**
+   * v1.4 — a pane docked beside the canvas, opened from a canvas-toolbar toggle titled with
+   * the contribution's `title`. One document pane is open at a time.
+   */
+  | "document-pane";
 
 /**
  * Context handed to every plugin panel, whatever slot it fills. v1.2 unified the former
@@ -290,6 +385,352 @@ export interface PluginNodeTypeDescriptor {
   selectable?: boolean;
 }
 
+/** v1.4 — a problem shown on a line of `CodeEditor`. Lines are 1-based. */
+export interface PluginEditorMarker {
+  line: number;
+  message: string;
+  severity: "error" | "warning" | "info";
+}
+
+/** v1.4 — props of the host's code editor (`api.ui.CodeEditor`). */
+export interface PluginCodeEditorProps {
+  value: string;
+  /** Monaco language id, e.g. "yaml". */
+  language?: string;
+  onChange?: (value: string) => void;
+  /** Called on Ctrl/Cmd+S inside the editor. */
+  onSave?: () => void;
+  readOnly?: boolean;
+  markers?: readonly PluginEditorMarker[];
+  /** CSS height; fills its container by default. */
+  height?: string | number;
+  /** v1.5 — F2 "Rename symbol" in this editor, answered by the plugin. */
+  rename?: PluginEditorRename;
+  /**
+   * v1.11 — the file the text is. Each path keeps its own undo history, cursor and scroll, so
+   * one editor can switch between files; make it unique to the plugin and the document.
+   */
+  path?: string;
+  /** v1.11 — puts the cursor on this 1-based line and scrolls to it; a new `token` does it again. */
+  revealLine?: { line: number; token: number } | null;
+  /**
+   * v1.11 — the user moved the cursor to this 1-based line, with a click or the arrow keys: not
+   * by typing, pasting or undoing, nor through `revealLine` or a new value.
+   */
+  onCursorLine?: (line: number) => void;
+  /**
+   * v1.11 — shows a comparison instead: this text, read-only, against `value`, editable — side
+   * by side when there is room, interleaved in one column when not.
+   */
+  original?: string;
+}
+
+/** v1.11 — what is selected on the canvas of the active diagram. */
+export interface PluginCanvasSelection {
+  componentIds: readonly string[];
+  connectionId: string | null;
+}
+
+/** v1.11 — capability "diagram:read". The editor canvas, for plugins that show where its elements come from. */
+export interface PluginCanvas {
+  getSelection(): PluginCanvasSelection;
+  /** Called on every change of the selection. Returns unsubscribe. */
+  onSelectionChange(listener: (selection: PluginCanvasSelection) => void): () => void;
+  /**
+   * Lights these elements, as a click on a connection lights its ends (the rest dims), and
+   * brings them into view when they are not. Ids not on the canvas are ignored; nothing clears
+   * it. The selection is left as it is.
+   */
+  highlight(target: { componentIds?: readonly string[]; connectionIds?: readonly string[] }): void;
+}
+
+/** v1.5 — a symbol the editor can rename, as UTF-16 offsets into the editor's text. */
+export interface PluginRenameSymbol {
+  start: number;
+  end: number;
+  text: string;
+}
+
+/** v1.5 — what F2 does in a plugin's code editor. */
+export interface PluginEditorRename {
+  /** The renameable symbol at `offset`, or null when there is none. */
+  resolve(offset: number): PluginRenameSymbol | null;
+  /**
+   * Renames the symbol at `offset` (the plugin applies the change itself, e.g. across files).
+   * Resolves to a message to refuse the rename, shown in the editor, or to nothing.
+   */
+  rename(offset: number, newName: string): void | string | Promise<void | string>;
+}
+
+/**
+ * v1.4 — capability "files:folder". One folder the user picked: its top-level text files.
+ * Names are plain file names; anything that would leave the folder is rejected.
+ */
+export interface PluginFolder {
+  readonly name: string;
+  /**
+   * Top-level file names. v1.14 — `{ recursive: true }`: every file in the folder and its
+   * sub-folders, as POSIX paths relative to it (`initiatives/x/initiative.opscr.yaml`), sorted.
+   * Since 1.14 `read` and `write` accept such paths; one that would leave the folder is
+   * rejected, and `write` creates missing sub-folders.
+   */
+  list(options?: PluginFolderListOptions): Promise<string[]>;
+  /**
+   * v1.9 — top-level files with last-modified time (ms) and size, sorted by name: a cheap way
+   * to notice changes made outside the app (another editor, git) without reading every file.
+   * v1.14 — `{ recursive: true }` covers sub-folders too; `name` is then the relative path.
+   */
+  stats(
+    options?: PluginFolderListOptions,
+  ): Promise<Array<{ name: string; lastModified: number; size: number }>>;
+  read(fileName: string): Promise<string>;
+  write(fileName: string, text: string): Promise<void>;
+  /**
+   * v1.14 — deletes a file, or with `{ recursive: true }` a sub-folder and everything in it.
+   * A path that does not exist is not an error.
+   */
+  remove(path: string, options?: PluginFolderListOptions): Promise<void>;
+}
+
+/** v1.14 — options of `PluginFolder.list`. */
+export interface PluginFolderListOptions {
+  recursive?: boolean;
+}
+
+/** v1.6 — what a chat context is told about the turn. */
+export interface PluginChatTurnInput {
+  diagramId: string;
+  /** The app language the reply should be written in. */
+  locale: "en" | "pt-BR";
+  /** 0 for the user's message; 1, 2… for retries the context asked for. */
+  attempt: number;
+  maxAttempts: number;
+}
+
+/**
+ * v1.7 — what a reply changed, shown as pending (highlighted, Keep / Discard) and focused on
+ * the canvas until the user decides.
+ */
+export interface PluginChatPreview {
+  /** Components the reply created or changed. */
+  componentIds: string[];
+  /** Connections the reply created. */
+  connectionIds: string[];
+  /** Title of the suggestion card in the chat. */
+  title: string;
+  /** Called on Keep. */
+  keep?: () => void;
+  /**
+   * Called on Discard: undo the reply. Resolve to a message to refuse (it is shown, and the
+   * change is kept). Without it, Discard is not offered.
+   */
+  discard?: () => void | string | Promise<void | string>;
+}
+
+/** v1.6 — the outcome of one model reply. */
+export interface PluginChatTurnResult {
+  /** Text shown in the thread as the assistant's message. */
+  reply: string;
+  /** v1.7 — the change to show as pending. */
+  preview?: PluginChatPreview;
+  /**
+   * Sent back to the model as the next user turn (not shown), e.g. validation errors to fix.
+   * Ignored once `attempt` reaches `maxAttempts - 1`.
+   */
+  retry?: string;
+}
+
+/**
+ * v1.6 — capability "llm:context". Takes over the chat for the diagrams it applies to: its
+ * system prompt replaces the built-in one and it handles the model's replies itself.
+ */
+/** v1.8 — how the chat presents itself while a context applies. */
+export interface PluginChatPresentation {
+  /** Shown in the chat header instead of "Diagram assistant", e.g. "opscr · my-folder". */
+  title: string;
+  /** Empty-state line under the title. */
+  subtitle?: string;
+  /** Empty-state suggestions; clicking one sends it as the user's message. */
+  suggestions?: string[];
+}
+
+export interface PluginChatContext {
+  id: string;
+  appliesTo(diagramId: string): boolean;
+  /** v1.8 — the chat's title and suggestions while this context applies. */
+  presentation?(input: { diagramId: string; locale: "en" | "pt-BR" }): PluginChatPresentation;
+  /**
+   * v1.8 — call `listener` whenever `appliesTo` or `presentation` may answer differently (e.g.
+   * a folder was opened), so the chat updates. Returns an unsubscribe function.
+   */
+  subscribe?(listener: () => void): () => void;
+  systemPrompt(input: PluginChatTurnInput): string | Promise<string>;
+  handleReply(
+    text: string,
+    input: PluginChatTurnInput,
+  ): PluginChatTurnResult | Promise<PluginChatTurnResult>;
+}
+
+/** v1.4 — capability "files:folder". Folders are remembered per plugin and binding id. */
+export interface PluginFiles {
+  /** False where the browser cannot pick folders (no File System Access API). */
+  isSupported(): boolean;
+  /** Ask the user for a folder and remember it under `bindingId`. Null if cancelled. */
+  pick(bindingId: string): Promise<PluginFolder | null>;
+  /**
+   * The folder remembered under `bindingId`, once the user grants permission again (the
+   * browser may prompt, so call it from a user gesture). Null when there is none.
+   */
+  open(bindingId: string): Promise<PluginFolder | null>;
+  forget(bindingId: string): Promise<void>;
+  /**
+   * v1.14 — remember the folder of `fromBindingId` under `toBindingId` instead (a folder picked
+   * before the diagram it binds existed). False when there is none under `fromBindingId`.
+   */
+  move(fromBindingId: string, toBindingId: string): Promise<boolean>;
+  /** v1.14 — the two binding ids remember the same folder on disk. */
+  isSame(aBindingId: string, bBindingId: string): Promise<boolean>;
+}
+
+/** v1.4 — changes to the ACTIVE diagram applied as one history step (`applyChanges`). */
+export interface PluginDiagramChanges {
+  /** Component ids to remove, with their connections. */
+  remove?: string[];
+  /** Connection ids to remove. */
+  disconnect?: string[];
+  update?: Array<{
+    id: string;
+    name?: string;
+    description?: string;
+    technology?: string;
+    /** Catalog service; "" clears it. */
+    cloudServiceId?: string;
+    /** The diagram the component opens (since 1.13); "" clears it. */
+    linkedDiagramId?: string;
+  }>;
+  move?: Array<{ id: string; x: number; y: number; width?: number; height?: number }>;
+  /** New components, as importers return them (type policy and nesting included). */
+  add?: PluginComponentInput[];
+  /** New connections; ends are `add` keys or existing component ids. */
+  connect?: PluginConnectionInput[];
+}
+
+/** v1.13 — where `applyChanges` writes. */
+export interface PluginApplyOptions {
+  /** The diagram to change; the active one when omitted. */
+  diagramId?: string;
+  /** v1.14 — the base, even while the canvas shows a Version (otherwise changes land in it). */
+  base?: boolean;
+  /**
+   * v1.14 — `applyChanges` only: into this Version (by key, created when absent, owned by the
+   * calling plugin) instead of the active context; edits of base elements are copied into it.
+   * `name` / `status` update it when given (`status: null` clears it).
+   */
+  version?: { key: string; name?: string; status?: PluginVersionStatus | null };
+}
+
+/** v1.13 — a new diagram (`createDiagram`). */
+export interface PluginDiagramInput {
+  name: string;
+  description?: string;
+  /** C4 level, e.g. "context", "container", "component" or "deployment"; "container" by default. */
+  level?: string;
+  /** v1.14 — the workspace folder to put it in (`createFolder`); the top when omitted. */
+  folderId?: string | null;
+}
+
+/** v1.14 — a new workspace folder (`createFolder`). */
+export interface PluginFolderInput {
+  name: string;
+  /** The folder to nest it in; the top when omitted. */
+  parentId?: string | null;
+}
+
+export interface PluginDiagramChangesResult {
+  /** The component id created for each `add` key. */
+  idsByKey: Record<string, string>;
+  /** Per `connect` entry, in order: the connection created, or null when its ends did not resolve. */
+  connectionIds: Array<string | null>;
+}
+
+/** v1.14 — element ids, by what a Version does to them. */
+export interface PluginVersionElementIds {
+  componentIds: readonly string[];
+  connectionIds: readonly string[];
+}
+
+/** v1.14 — one Version of a diagram. */
+export interface PluginVersionSnapshot {
+  id: string;
+  key: string | null;
+  name: string;
+  status: PluginVersionStatus | null;
+  /** The plugin that owns it (its merge, rename and delete go to that plugin), or null. */
+  ownerPluginId: string | null;
+  added: PluginVersionElementIds;
+  /** Base elements the Version replaces with its own copy. */
+  modified: PluginVersionElementIds;
+  removed: PluginVersionElementIds;
+  /** Ids of modified elements whose base changed (or vanished) since the copy. */
+  conflicts: readonly string[];
+}
+
+/** v1.14 — the whole content of a Version, relative to the diagram's base. */
+export interface PluginVersionDiff {
+  add?: PluginComponentInput[];
+  /** Ends are `add` keys or existing component ids. */
+  connect?: PluginConnectionInput[];
+  /** Base components replaced in the Version: the base copy with these fields changed. */
+  modify?: PluginDiagramChanges["update"];
+  /** Base component ids the Version hides, with their connections. */
+  remove?: string[];
+  /** Base connection ids the Version hides. */
+  disconnect?: string[];
+  /** Positions inside the Version (of added nodes, or overrides of base nodes). */
+  move?: PluginDiagramChanges["move"];
+}
+
+/** v1.14 — a Version a plugin owns, written whole by `versions.upsert`. */
+export interface PluginVersionInput {
+  /** Stable id from the plugin's source (an opscr initiative name); the same in every diagram. */
+  key: string;
+  name: string;
+  status?: PluginVersionStatus;
+  diff: PluginVersionDiff;
+}
+
+/** v1.14 — what the user did to one of the plugin's Versions; the plugin carries it out. */
+export type PluginVersionAction =
+  | { type: "merge" | "delete"; diagramId: string; key: string }
+  | { type: "rename"; diagramId: string; key: string; name: string }
+  /** The user set the Version's status in the Versions panel (null: no status). */
+  | { type: "status"; diagramId: string; key: string; status: PluginVersionStatus | null }
+  | { type: "create"; diagramId: string };
+
+/**
+ * v1.14 — capabilities "diagram:read" (list) and "diagram:write" (the rest). Versions are per
+ * diagram; a plugin keeps one source item (an initiative) in several diagrams under one `key`.
+ */
+export interface PluginVersions {
+  list(diagramId?: string): PluginVersionSnapshot[];
+  /**
+   * Creates the Version with `input.key`, or replaces its whole content, against the current
+   * base: `modify` copies each base element and patches the copy, recording its base hash. The
+   * Version is owned by the calling plugin. One history step. Returns the Version id, or null
+   * when the diagram does not exist.
+   */
+  upsert(input: PluginVersionInput, options?: PluginApplyOptions): string | null;
+  /** Deletes the Version with that key (no-op when there is none). */
+  remove(key: string, options?: PluginApplyOptions): void;
+  /** Shows the Version with that key, or the base for null. */
+  setActive(key: string | null, options?: PluginApplyOptions): void;
+  /**
+   * The user's merge / rename / delete on this plugin's Versions, and "New version" on a diagram
+   * that has them, instead of the store changing. Returns unsubscribe.
+   */
+  onAction(handler: (action: PluginVersionAction) => void): () => void;
+}
+
 /** Plugin-scoped persistent key-value storage, namespaced per plugin id. */
 export interface PluginStorage {
   get<T>(key: string): Promise<T | null>;
@@ -304,6 +745,8 @@ export interface StructuraPluginApi {
   registerNodeType(descriptor: PluginNodeTypeDescriptor): void;
   registerExporter(handler: ExporterContribution): void;
   registerImporter(handler: ImporterContribution): void;
+  /** v1.14 — capability "io:importers". An import offered on the workspace home. */
+  registerWorkspaceImporter(handler: WorkspaceImporterContribution): void;
   registerPanel(section: PanelContribution): void;
 
   /** Fires after any committed change to a diagram. Returns unsubscribe. */
@@ -316,7 +759,7 @@ export interface StructuraPluginApi {
    * v1.1 — capability "diagram:read". Read-only snapshot of the requested diagram
    * (defaults to the active one); null when it does not exist.
    */
-  getDiagram(diagramId?: string): DiagramSnapshot | null;
+  getDiagram(diagramId?: string, options?: PluginGetDiagramOptions): DiagramSnapshot | null;
 
   /**
    * v1.1 — capability "diagram:write". Patch whitelisted fields of a component on the
@@ -330,6 +773,50 @@ export interface StructuraPluginApi {
    * are ignored.
    */
   moveComponents(moves: Array<{ id: string; x: number; y: number }>): void;
+
+  /**
+   * v1.4 — capability "diagram:write". Remove, update, move, add and connect as one history
+   * step (of that diagram: undo is per diagram). Ids not in the diagram are ignored.
+   * Since 1.13 `options.diagramId` names another diagram than the active one; an id that is not
+   * a diagram changes nothing and returns an empty result.
+   */
+  applyChanges(
+    changes: PluginDiagramChanges,
+    options?: PluginApplyOptions,
+  ): PluginDiagramChangesResult;
+
+  /**
+   * v1.13 — capability "diagram:write". Creates an empty diagram and returns its id. It is not
+   * opened: the user keeps the diagram they are on. Pair it with `applyChanges({ diagramId })`
+   * to fill it and with `linkedDiagramId` to make a component open it.
+   */
+  createDiagram(input: PluginDiagramInput): string;
+  /**
+   * v1.14 — capability "diagram:write". Creates a workspace folder and returns its id; a
+   * `parentId` that is not a folder puts it at the top.
+   */
+  createFolder(input: PluginFolderInput): string;
+
+  /** v1.4 — capability "files:folder". Folders the user picked for this plugin. */
+  readonly files: PluginFiles;
+
+  /** v1.11 — capability "diagram:read". The canvas's selection, and lighting elements on it. */
+  readonly canvas: PluginCanvas;
+
+  /** v1.14 — the diagrams' Versions, as branches a plugin can own. */
+  readonly versions: PluginVersions;
+
+  /**
+   * v1.6 — capability "llm:context". Provide the chat's context and reply handling for the
+   * diagrams `context.appliesTo` accepts. Unregistered when the plugin deactivates.
+   */
+  registerChatContext(context: PluginChatContext): void;
+
+  /** v1.4 — host UI building blocks plugins render instead of bundling their own. */
+  readonly ui: {
+    /** The host's code editor (Monaco, loaded on first render). */
+    CodeEditor: ReactComponentType<PluginCodeEditorProps>;
+  };
 
   /** Plugin-scoped persistent key-value storage. */
   readonly storage: PluginStorage;

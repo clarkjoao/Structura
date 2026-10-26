@@ -1,6 +1,6 @@
-import type { Component, Connection, NodeLayout } from "@/features/diagram";
-import { generateId, isC4Type, isPluginComponentType, useDiagramStore } from "@/features/diagram";
-import type { ImportContext, ImporterContribution, PluginComponentInput } from "./plugin.types";
+import { useDiagramStore } from "@/features/diagram";
+import { toGeneratedGraph } from "./import-graph";
+import type { ImportContext, ImporterContribution } from "./plugin.types";
 import { toComponentSnapshot, toConnectionSnapshot } from "./snapshots";
 
 export type PluginImportOutcome =
@@ -15,25 +15,11 @@ export type PluginImportOutcome =
   | { ok: false; reason: "no-active-diagram" }
   | { ok: false; reason: "importer-failed"; error: unknown };
 
-function buildComponentFromInput(input: PluginComponentInput, id: string): Component {
-  const base = {
-    id,
-    name: input.name,
-    description: input.description ?? "",
-    parentId: null,
-  };
-  const type = input.type ?? "unknown";
-  // MVP-supported types: C4 shapes, plugin-namespaced types, everything else degrades to
-  // `unknown` — other built-ins carry required fields a plain data input cannot guarantee.
-  if (isC4Type(type)) return { ...base, type };
-  if (isPluginComponentType(type)) return { ...base, type };
-  return { ...base, type: "unknown", rawContent: "" };
-}
-
 /**
- * Run a plugin importer against the active diagram: build the read-only ImportContext,
- * normalize the returned plain data (host-assigned ids), and commit everything through
- * `importDrawioResult`, which pushes one history step — a single undo reverts the import.
+ * Run a plugin importer against the active diagram: build the read-only ImportContext, then
+ * normalize the returned plain data (`toGeneratedGraph`) and commit it through
+ * `insertGeneratedGraph` — the store mints the ids, nests what can be nested, and the whole
+ * import is a single undo step.
  */
 export async function runPluginImport(
   importer: ImporterContribution,
@@ -69,38 +55,14 @@ export async function runPluginImport(
   }
 
   const warnings = (result.warnings ?? []).filter((w): w is string => typeof w === "string");
+  const connections = result.connections ?? [];
+  const graph = toGeneratedGraph({ components: result.components ?? [], connections });
+  const inserted = state.insertGeneratedGraph(graph.nodes, graph.edges, { linkExisting: true });
 
-  const keyToId: Record<string, string> = {};
-  const components: Component[] = [];
-  const layouts: NodeLayout[] = [];
-  for (const input of result.components ?? []) {
-    const id = generateId("el");
-    keyToId[input.key] = id;
-    components.push(buildComponentFromInput(input, id));
-    layouts.push({
-      elementId: id,
-      x: input.x,
-      y: input.y,
-      ...(input.width !== undefined ? { width: input.width } : {}),
-      ...(input.height !== undefined ? { height: input.height } : {}),
-    });
-  }
-
-  const resolveEndpoint = (ref: string): string | null =>
-    keyToId[ref] ?? (diagram.snapshot.components[ref] ? ref : null);
-
-  const connections: Connection[] = [];
-  let skippedConnections = 0;
-  for (const input of result.connections ?? []) {
-    const sourceId = resolveEndpoint(input.source);
-    const targetId = resolveEndpoint(input.target);
-    if (!sourceId || !targetId) {
-      skippedConnections += 1;
-      continue;
-    }
-    connections.push({ id: generateId("conn"), sourceId, targetId, label: input.label ?? "" });
-  }
-
-  const importedComponentIds = state.importDrawioResult(components, connections, layouts);
-  return { ok: true, importedComponentIds, warnings, skippedConnections };
+  return {
+    ok: true,
+    importedComponentIds: inserted.componentIds,
+    warnings,
+    skippedConnections: connections.length - inserted.connectionIds.length,
+  };
 }

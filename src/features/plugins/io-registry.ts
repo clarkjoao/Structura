@@ -1,4 +1,13 @@
-import type { ExporterContribution, ImporterContribution } from "./plugin.types";
+import type {
+  ExporterContribution,
+  ImporterContribution,
+  WorkspaceImporterContribution,
+} from "./plugin.types";
+
+/** A workspace importer, with whether a panel is its plugin's (the pane it may open). */
+export type RegisteredWorkspaceImporter = WorkspaceImporterContribution & {
+  ownsPanel(panelId: string): boolean;
+};
 
 /**
  * Registry for plugin importers/exporters. Built-in formats stay on the
@@ -8,16 +17,40 @@ import type { ExporterContribution, ImporterContribution } from "./plugin.types"
 
 const importers = new Map<string, ImporterContribution>();
 const exporters = new Map<string, ExporterContribution>();
+const workspaceImporters = new Map<string, RegisteredWorkspaceImporter>();
 const listeners = new Set<() => void>();
 
-let snapshot: { importers: ImporterContribution[]; exporters: ExporterContribution[] } = {
-  importers: [],
-  exporters: [],
-};
+interface IoRegistrySnapshot {
+  importers: ImporterContribution[];
+  exporters: ExporterContribution[];
+  workspaceImporters: RegisteredWorkspaceImporter[];
+}
+
+let snapshot: IoRegistrySnapshot = { importers: [], exporters: [], workspaceImporters: [] };
 
 function notifyChanged(): void {
-  snapshot = { importers: [...importers.values()], exporters: [...exporters.values()] };
+  snapshot = {
+    importers: [...importers.values()],
+    exporters: [...exporters.values()],
+    workspaceImporters: [...workspaceImporters.values()],
+  };
   for (const listener of listeners) listener();
+}
+
+export function registerWorkspaceImporterContribution(
+  contribution: RegisteredWorkspaceImporter,
+): void {
+  if (workspaceImporters.has(contribution.id)) {
+    throw new Error(
+      `[plugins] A workspace importer with id "${contribution.id}" is already registered.`,
+    );
+  }
+  workspaceImporters.set(contribution.id, contribution);
+  notifyChanged();
+}
+
+export function unregisterWorkspaceImporterContribution(id: string): void {
+  if (workspaceImporters.delete(id)) notifyChanged();
 }
 
 export function registerImporterContribution(contribution: ImporterContribution): void {
@@ -53,10 +86,7 @@ export function getExporterContribution(id: string): ExporterContribution | unde
 }
 
 /** Stable snapshot for useSyncExternalStore; new identity after every change. */
-export function getIoRegistrySnapshot(): {
-  importers: ImporterContribution[];
-  exporters: ExporterContribution[];
-} {
+export function getIoRegistrySnapshot(): IoRegistrySnapshot {
   return snapshot;
 }
 

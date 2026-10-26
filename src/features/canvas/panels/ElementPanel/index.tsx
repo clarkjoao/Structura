@@ -13,6 +13,8 @@ import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
 import DiagramPanel from "./DiagramPanel";
 import { PanelFrame } from "./shell";
+import { VersionConflictNotice } from "./components/VersionConflictNotice";
+import { VersionChangesNotice } from "./components/VersionChangesNotice";
 
 interface Props {
   selectedElementId: string | null;
@@ -58,6 +60,8 @@ const ElementPanel = ({
     return (
       <PanelFrame>
         <CollabEditingWarning elementId={selectedEdgeId} />
+        <VersionConflictNotice elementId={selectedEdgeId} />
+        <VersionChangesNotice elementId={selectedEdgeId} />
         <ConnectionPanel
           conn={conn}
           onClose={onClose}
@@ -78,6 +82,8 @@ const ElementPanel = ({
       return (
         <PanelFrame>
           <CollabEditingWarning elementId={selectedElementId} />
+          <VersionConflictNotice elementId={selectedElementId} />
+          <VersionChangesNotice elementId={selectedElementId} />
           <RegisteredPanel
             component={component}
             onClose={onClose}
@@ -95,6 +101,8 @@ const ElementPanel = ({
     return (
       <PanelFrame>
         <CollabEditingWarning elementId={selectedElementId} />
+        <VersionConflictNotice elementId={selectedElementId} />
+        <VersionChangesNotice elementId={selectedElementId} />
         {canGroup && (
           <div className="flex items-center gap-2 p-2 border-b border-border bg-secondary/30">
             <button

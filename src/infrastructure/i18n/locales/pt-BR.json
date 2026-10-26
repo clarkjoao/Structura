@@ -239,6 +239,8 @@
     }
   },
   "import": {
+    "setup": "Configurar a partir de",
+    "setupFailed": "Não foi possível concluir a importação: {{reason}}",
     "title": "Importar",
     "description": "Importe um ou mais diagramas a partir de JSON exportado do Structura. Também pode escolher uma pasta para preservar a estrutura.",
     "format": "Formato",
@@ -365,7 +367,11 @@
       "disconnect": "Desconectar pasta",
       "disconnectHint": "Esquece esta conexão de pasta e continua só no navegador."
     },
-    "foldersImported": "Importadas {{count}} pastas do filesystem"
+    "foldersImported": "Importadas {{count}} pastas do filesystem",
+    "manifestWriteFailed": "Falha ao gravar manifest — diagramas salvos, mas metadados podem estar fora de sincronia. Tentativa na próxima edição.",
+    "deleteFailed": "Falha ao excluir um ou mais arquivos da pasta — seu workspace pode conter cópias desatualizadas.",
+    "diagramWriteFailed": "{{count}} diagrama(s) falhou ao salvar na pasta — suas alterações ainda estão no navegador.",
+    "folderMissing": "A pasta “{{name}}” não existe mais no disco (apagada, movida ou renomeada). Seus diagramas continuam no navegador — conecte uma pasta de novo para voltar a sincronizar."
   },
   "workspaceMerge": {
     "title": "Pasta com arquivos existentes",
@@ -416,10 +422,7 @@
     "keepCopyHintNoCopy": "Salva uma cópia de todos os diagramas no navegador e desconecta a pasta. Recomendado.",
     "keepCopyTitle": "Salvar estado atual no navegador e depois desconectar a pasta",
     "keepCopy": "Salvar no navegador e desconectar",
-    "disconnectOnly": "Desconectar sem salvar",
-    "manifestWriteFailed": "Falha ao gravar manifest — diagramas salvos, mas metadados podem estar fora de sincronia. Tentativa na próxima edição.",
-    "deleteFailed": "Falha ao excluir um ou mais arquivos da pasta — seu workspace pode conter cópias desatualizadas.",
-    "diagramWriteFailed": "{{count}} diagrama(s) falhou ao salvar na pasta — suas alterações ainda estão no navegador."
+    "disconnectOnly": "Desconectar sem salvar"
   },
   "bulkDelete": {
     "title": "Excluir itens selecionados",
@@ -508,6 +511,8 @@
   },
   "canvasToolbar": {
     "drillUp": "Nível acima",
+    "trail": "Aberto a partir de",
+    "showingVersion": "O canvas mostra a Versão {{name}}",
     "panel": "Painel",
     "note": "Nota",
     "awsServices": "AWS Services",
@@ -532,8 +537,6 @@
     "scrollBehaviorZoomHint": "A rolagem dá zoom no ponteiro.",
     "scrollBehaviorShortcut": "Ctrl/⌘ + rolagem sempre dá zoom. Shift + rolagem desliza na horizontal.",
     "autoHideBottomToolbar": "Ocultar a barra inferior automaticamente",
-    "renameDiagram": "Nome do diagrama",
-    "renameDiagramHint": "Clique duas vezes para renomear",
     "arrange": {
       "label": "Organizar",
       "action": "Organizar o diagrama",
@@ -808,7 +811,57 @@
     "emptyVersionDeleted": "Versão vazia \"{{name}}\" removida",
     "mergeDialogVersionDeleted": "A versão \"{{name}}\" será deletada.",
     "drawerVersionCount": "{{count}} versão(s)",
-    "duplicatedVersionName": "{{name}} (cópia)"
+    "duplicatedVersionName": "{{name}} (cópia)",
+    "statusProposed": "Proposta",
+    "statusApproved": "Aprovada",
+    "statusInProgress": "Em andamento",
+    "statusDone": "Concluída",
+    "statusDraft": "Rascunho",
+    "statusLabel": "Status",
+    "statusNone": "Sem status",
+    "conflictCount_one": "{{count}} conflito",
+    "conflictCount_other": "{{count}} conflitos",
+    "mergeBlockedConflicts_one": "Resolva {{count}} conflito antes do merge",
+    "mergeBlockedConflicts_other": "Resolva {{count}} conflitos antes do merge",
+    "ownedBy": "Gerenciada por {{plugin}}",
+    "ownerInactive": "Esta versão é gerenciada por {{plugin}}, que não está ativo",
+    "mergeSectionModified": "Alterados ({{count}})",
+    "mergeSectionBlocking": "Conflitos a resolver antes ({{count}})",
+    "conflictBaseChanged": "{{name}} mudou na base depois que esta versão o copiou",
+    "conflictBaseRemoved": "{{name}} foi removido da base depois que esta versão o copiou",
+    "conflictNotice": "Este elemento mudou na base depois que a versão o copiou. Manter a cópia da versão ou usar a base?",
+    "conflictNoticeRemoved": "Este elemento foi removido da base depois que a versão o copiou.",
+    "keepVersion": "Manter versão",
+    "useBase": "Usar base",
+    "modifiedMarker": "Alterado nesta versão",
+    "conflictMarker": "Conflito com a base",
+    "showChanges": "Mostrar mudanças no canvas",
+    "showChangesHint": "Elementos adicionados e alterados ficam contornados; os retirados aparecem como fantasmas onde a base os tem.",
+    "changesIn": "Mudanças em {{name}}",
+    "changesAdded": "{{count}} adicionado(s)",
+    "changesChanged": "{{count}} alterado(s)",
+    "changesRemoved": "{{count}} retirado(s)",
+    "changesConnections": "{{count}} conexão(ões)",
+    "hideChanges": "Ocultar",
+    "changedIn": "Alterado em {{name}}",
+    "changeNone": "(vazio)",
+    "changeField": {
+      "name": "Nome",
+      "description": "Descrição",
+      "technology": "Tecnologia",
+      "tags": "Tags",
+      "parentId": "Pai",
+      "cloudServiceId": "Serviço",
+      "label": "Rótulo",
+      "kind": "Tipo de conexão",
+      "interaction": "Interação",
+      "linkedDiagramId": "Diagrama de drill-down",
+      "type": "Tipo",
+      "sourceId": "De",
+      "targetId": "Para",
+      "repositoryUrl": "Repositório",
+      "owner": "Responsável"
+    }
   },
   "canvasSearch": {
     "placeholder": "Buscar componente...",
@@ -1939,6 +1992,8 @@
     }
   },
   "panelShell": {
+    "inspector": "Propriedades",
+    "rail": "Painéis laterais",
     "advanced": "Avançado",
     "copyId": "Copiar ID",
     "idCopied": "ID copiado",
@@ -2414,7 +2469,14 @@
     "waiting": "Aguardando diagrama...",
     "errors": {
       "invalidDiagram": "Diagrama inválido"
-    }
+    },
+    "blockedTitle_one": "O YAML tem {{count}} erro do opscr",
+    "blockedTitle_other": "O YAML tem {{count}} erros do opscr",
+    "blockedParse": "O YAML não faz parse",
+    "blockedHint": "O diagrama é desenhado assim que o opscr valida o workspace. Clique num problema para abrir a linha dele; o painel Problems lista todos os erros.",
+    "blockedStale_one": "Não atualizado: {{count}} erro do opscr — clique para abrir",
+    "blockedStale_other": "Não atualizado: {{count}} erros do opscr — clique para abrir o primeiro",
+    "blockedStaleParse": "Não atualizado: o YAML não faz parse — clique para abrir onde"
   },
   "viewPage": {
     "openInStructura": {
@@ -3023,7 +3085,14 @@
     "importFailed": "Este arquivo não pôde ser importado pelo plugin.",
     "importNoActiveDiagram": "Abra um diagrama antes de importar com um plugin.",
     "importSkippedConnections": "{{count}} conexões foram ignoradas (extremidades desconhecidas).",
-    "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin."
+    "importHint": "Importe um arquivo ({{extensions}}) para o diagrama atual através deste plugin.",
+    "editor": {
+      "nothingToRename": "Nada aqui pode ser renomeado"
+    },
+    "documentPane": {
+      "resize": "Redimensionar o painel",
+      "close": "Fechar o painel"
+    }
   },
   "panelKinds": {
     "default": {

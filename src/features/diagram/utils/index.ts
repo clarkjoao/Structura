@@ -117,14 +117,23 @@ export {
   diagramWithResolvedScene,
   exportFilenameSlug,
   canMoveNodeInSceneMode,
-  isComponentAddedInActiveVersion,
   isDiagramCompareMode,
   buildCompareComponentVisuals,
   buildCompareConnectionVisuals,
   computeMergePreview,
   versionHasDiff,
+  versionConflicts,
+  modifiedComponentsOf,
+  versionChanges,
+  countVersionChanges,
 } from "./version.utils";
-export type { CompareSnapshotResult, CompareElementVisual, MergePreview } from "./version.utils";
+export type {
+  CompareSnapshotResult,
+  CompareElementVisual,
+  MergePreview,
+  VersionChanges,
+  FieldChange,
+} from "./version.utils";
 
 export { buildChildrenIndex, getDescendantIdsFromIndex } from "./children-index";
 

@@ -1,5 +1,5 @@
 export { CommitField } from "./CommitField";
-export { PanelFrame } from "./PanelFrame";
+export { InspectorRailToggle, PanelFrame } from "./PanelFrame";
 export { PanelHeader } from "./PanelHeader";
 export { PanelSection } from "./PanelSection";
 export { AdvancedFooter } from "./AdvancedFooter";

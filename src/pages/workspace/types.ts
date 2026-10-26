@@ -14,6 +14,8 @@ export interface WorkspaceContentProps {
   handleOpenDiagram: (id: string) => void;
   handleDrillDownToDiagram: (id: string) => void;
   handleDrillUp: () => void;
+  /** Back to the diagram at `index` of `navStack` (a breadcrumb), dropping what came after it. */
+  handleDrillUpTo: (index: number) => void;
   handleCopyDrawio: () => void;
   handleCopyJson: () => void;
   handleExportFormats: (formats: DiagramExportFormat[], pluginExporterIds: string[]) => void;
