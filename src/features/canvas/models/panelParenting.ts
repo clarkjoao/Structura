@@ -60,9 +60,15 @@ export function findPanelContainingPoint(
   excludeParentId?: string | null,
   nodeLayouts?: Record<string, NodeLayout>,
   components?: Record<string, Component>,
+  /**
+   * Nodes that can never be the answer: what the gesture moved and everything
+   * under it. A dropped panel found inside its own pre-drag box became its own
+   * parent, and the parent-chain walks then never ended.
+   */
+  exclude?: ReadonlySet<string>,
 ): Node | undefined {
   const panels = nodes.filter(
-    (n) => isDropContainerType(String(n.type)) && n.id !== excludeParentId,
+    (n) => isDropContainerType(String(n.type)) && n.id !== excludeParentId && !exclude?.has(n.id),
   );
 
   let bestPanel: Node | undefined;

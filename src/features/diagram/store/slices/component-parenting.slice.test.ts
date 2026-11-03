@@ -142,6 +142,49 @@ describe("batchCommitNodeDrag", () => {
     expect(layout(ctx, b.id)).toMatchObject({ x: 500, y: 600 });
   });
 
+  /*
+   * A node that became its own parent froze the tab: every walk up the parent
+   * chain (`hasCollapsedOrHiddenAncestor` in the canvas view) loops forever.
+   * The drag commit is where the cycle was written, so the commit refuses it.
+   */
+  it("refuses to make a panel its own parent, and leaves it where it was", () => {
+    const ctx = setup();
+    const panel = ctx.store.getState().addComponent("panel", "P", null, { x: 100, y: 100 });
+    ctx.store
+      .getState()
+      .batchCommitNodeDrag([
+        { nodeId: panel.id, newParentId: panel.id, newPosition: { x: 20, y: 10 } },
+      ]);
+    expect(component(ctx, panel.id).parentId).toBeNull();
+    expect(layout(ctx, panel.id)).toMatchObject({ x: 100, y: 100 });
+  });
+
+  it("refuses to nest a panel inside one of its own descendants", () => {
+    const ctx = setup();
+    const outer = ctx.store.getState().addComponent("panel", "Outer", null, { x: 0, y: 0 });
+    const inner = ctx.store.getState().addComponent("panel", "Inner", null, { x: 40, y: 40 });
+    ctx.store.getState().setParent(inner.id, outer.id);
+    ctx.store
+      .getState()
+      .batchCommitNodeDrag([
+        { nodeId: outer.id, newParentId: inner.id, newPosition: { x: 5, y: 5 } },
+      ]);
+    expect(component(ctx, outer.id).parentId).toBeNull();
+    expect(component(ctx, inner.id).parentId).toBe(outer.id);
+  });
+
+  it("refuses the second half of a batch that would close a cycle", () => {
+    const ctx = setup();
+    const a = ctx.store.getState().addComponent("panel", "A", null, { x: 0, y: 0 });
+    const b = ctx.store.getState().addComponent("panel", "B", null, { x: 900, y: 0 });
+    ctx.store.getState().batchCommitNodeDrag([
+      { nodeId: a.id, newParentId: b.id, newPosition: { x: 10, y: 10 } },
+      { nodeId: b.id, newParentId: a.id, newPosition: { x: 10, y: 10 } },
+    ]);
+    expect(component(ctx, a.id).parentId).toBe(b.id);
+    expect(component(ctx, b.id).parentId).toBeNull();
+  });
+
   it("in a scene, skips base components and moves the ones the scene added", () => {
     const ctx = setup();
     const base = ctx.store.getState().addComponent("system", "Base", null, { x: 5, y: 5 });
