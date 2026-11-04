@@ -7,7 +7,6 @@ import {
   isNoteComponent,
   isEndpointComponent,
   isEndpointType,
-  isReactFlowParentPanelType,
   buildChildrenIndex,
   getDescendantIdsFromIndex,
   isAncestorLocked,
@@ -472,6 +471,24 @@ export function useNodeDragParenting({
       const components = r.components;
 
       /**
+       * What the gesture moved — the dragged node and the selection travelling
+       * with it — plus everything nested under them. None of these can be a
+       * drop target: `nodes` is the list as of the last render, and drag frames
+       * do not render (`publishDragFrame`), so it still holds their pre-drag
+       * boxes. A panel dropped a little down and to the right landed inside its
+       * own old box and was committed as its own parent, which froze the tab.
+       */
+      const movedThisGesture = new Set<string>([draggedNode.id]);
+      for (const node of nodes) if (node.selected) movedThisGesture.add(node.id);
+      const gestureChildrenIndex = buildChildrenIndex(components);
+      const notADropTarget = new Set<string>(movedThisGesture);
+      for (const id of movedThisGesture) {
+        for (const descendant of getDescendantIdsFromIndex(id, gestureChildrenIndex)) {
+          notADropTarget.add(descendant);
+        }
+      }
+
+      /**
        * Whether the container under the drop takes this node. A typed
        * container that does not (a pod into a shard, say) refuses it with a
        * message, and the node lands where it would have without the container.
@@ -580,6 +597,7 @@ export function useNodeDragParenting({
             node.parentId,
             r.nodeLayouts,
             components,
+            notADropTarget,
           );
 
           if (match && match.id !== node.parentId && acceptsDrop(match.id, node.id)) {
@@ -613,34 +631,6 @@ export function useNodeDragParenting({
         if (entries.length > 0) batchCommitNodeDrag(entries);
       };
 
-      const isDraggedPanel = isReactFlowParentPanelType(nodeType);
-
-      if (isDraggedPanel) {
-        const childrenIndex = buildChildrenIndex(components);
-        const descendantIds = getDescendantIdsFromIndex(draggedNode.id, childrenIndex);
-        const match = findPanelContainingPoint(
-          nodes,
-          absX,
-          absY,
-          undefined,
-          r.nodeLayouts,
-          components,
-        );
-        if (match && descendantIds.has(match.id)) {
-          entries.push(
-            draggedNode.parentId
-              ? {
-                  nodeId: draggedNode.id,
-                  newParentId: draggedNode.parentId,
-                  newPosition: { x: draggedNode.position.x, y: draggedNode.position.y },
-                }
-              : { nodeId: draggedNode.id, newParentId: null, newPosition: { x: absX, y: absY } },
-          );
-          flush();
-          return;
-        }
-      }
-
       const parent = draggedNode.parentId ? (nodeMap.get(draggedNode.parentId) ?? null) : null;
 
       if (parent) {
@@ -669,6 +659,7 @@ export function useNodeDragParenting({
         undefined,
         r.nodeLayouts,
         components,
+        notADropTarget,
       );
       if (match && acceptsDrop(match.id, draggedNode.id)) {
         const matchAbsPos = resolveAbsolutePosition(

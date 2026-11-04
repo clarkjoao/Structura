@@ -24,6 +24,30 @@ import {
   resolveNodeLayout,
 } from "../helpers/version-helpers";
 
+/**
+ * Whether `parentId` is `nodeId` itself or sits somewhere below it.
+ *
+ * Nesting a node there closes a cycle in the parent chain, and every walk up
+ * that chain (the canvas view's visibility check, absolute positions) then runs
+ * forever — a panel dropped onto itself froze the tab exactly this way.
+ */
+function wouldCloseCycle(
+  d: Diagram,
+  scene: VersionDiff | null,
+  nodeId: string,
+  parentId: string,
+): boolean {
+  const seen = new Set<string>();
+  let current: string | null | undefined = parentId;
+  while (current) {
+    if (current === nodeId) return true;
+    if (seen.has(current)) return true;
+    seen.add(current);
+    current = resolveComponent(d, scene, current)?.parentId;
+  }
+  return false;
+}
+
 function applySingleNodeDrag(
   d: Diagram,
   scene: VersionDiff | null,
@@ -32,6 +56,8 @@ function applySingleNodeDrag(
   newPosition: { x: number; y: number },
 ): boolean {
   if (scene && !scene.addedComponents[nodeId]) return false;
+  // The position is relative to the refused parent, so it is not written either.
+  if (newParentId && wouldCloseCycle(d, scene, nodeId, newParentId)) return false;
   const comp = resolveComponent(d, scene, nodeId);
   // A typed container refuses what it does not take; the node keeps its parent.
   const parentType = newParentId ? resolveComponent(d, scene, newParentId)?.type : undefined;
