@@ -1,0 +1,358 @@
+{
+  "note": "Median of 3 runs, production build (vite preview), headless Chromium 1600x1000, Apple Silicon. Compare only against runs on the same machine.",
+  "measuredAt": "2026-11-05",
+  "baseline": {
+    "url": "http://localhost:4173",
+    "runs": 3,
+    "fixture": {
+      "nodes": 657,
+      "edges": 711,
+      "routePoints": 3064,
+      "bytes": 1054949,
+      "canvasWidth": 28920,
+      "canvasHeight": 65800
+    },
+    "open": {
+      "firstNodesMs": 1761,
+      "longTasks": 3,
+      "longTaskMs": 898,
+      "nodes": 657,
+      "edges": 711,
+      "domElements": 20651
+    },
+    "openViewport": "transform: translate(150px, 150px) scale(0.3);",
+    "dragChild": {
+      "durationMs": 2554,
+      "frames": 116,
+      "fps": 45.4,
+      "frameP50": 8.4,
+      "frameP95": 41.7,
+      "frameMax": 166.8,
+      "longTasks": 3,
+      "longTaskMs": 466,
+      "moved": true,
+      "settleMs": 0
+    },
+    "dragPanel": {
+      "durationMs": 4255,
+      "frames": 105,
+      "fps": 25,
+      "frameP50": 8.4,
+      "frameP95": 91.8,
+      "frameMax": 150,
+      "longTasks": 38,
+      "longTaskMs": 2585,
+      "moved": true,
+      "settleMs": 0
+    },
+    "pan": {
+      "durationMs": 4288,
+      "frames": 219,
+      "fps": 51.1,
+      "frameP50": 16.6,
+      "frameP95": 50,
+      "frameMax": 91.7,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "zoom": {
+      "durationMs": 1094,
+      "frames": 55,
+      "fps": 50.3,
+      "frameP50": 16.6,
+      "frameP95": 50,
+      "frameMax": 58.4,
+      "longTasks": 0,
+      "longTaskMs": 0
+    }
+  },
+  "after": {
+    "viewport": {
+      "url": "http://localhost:4173",
+      "runs": 3,
+      "fixture": {
+        "nodes": 657,
+        "edges": 711,
+        "routePoints": 3064,
+        "bytes": 1054949,
+        "canvasWidth": 28920,
+        "canvasHeight": 65800
+      },
+      "open": {
+        "firstNodesMs": 1709,
+        "longTasks": 4,
+        "longTaskMs": 955,
+        "nodes": 657,
+        "edges": 711,
+        "domElements": 20651
+      },
+      "openViewport": "transform: translate(150px, 150px) scale(0.3);",
+      "dragChild": {
+        "durationMs": 2557,
+        "frames": 111,
+        "fps": 43.7,
+        "frameP50": 8.4,
+        "frameP95": 41.8,
+        "frameMax": 166.8,
+        "longTasks": 3,
+        "longTaskMs": 470,
+        "moved": true,
+        "settleMs": 0
+      },
+      "dragPanel": {
+        "durationMs": 4235,
+        "frames": 101,
+        "fps": 23.9,
+        "frameP50": 8.4,
+        "frameP95": 100,
+        "frameMax": 149.9,
+        "longTasks": 39,
+        "longTaskMs": 2623,
+        "moved": true,
+        "settleMs": 0
+      },
+      "pan": {
+        "durationMs": 3572,
+        "frames": 275,
+        "fps": 76.4,
+        "frameP50": 8.4,
+        "frameP95": 33.4,
+        "frameMax": 83.7,
+        "longTasks": 0,
+        "longTaskMs": 0
+      },
+      "zoom": {
+        "durationMs": 971,
+        "frames": 83,
+        "fps": 82,
+        "frameP50": 8.3,
+        "frameP95": 33.2,
+        "frameMax": 49.9,
+        "longTasks": 0,
+        "longTaskMs": 0
+      }
+    },
+    "serialization": {
+      "url": "http://localhost:4173",
+      "runs": 3,
+      "fixture": {
+        "nodes": 657,
+        "edges": 711,
+        "routePoints": 3064,
+        "bytes": 1054949,
+        "canvasWidth": 28920,
+        "canvasHeight": 65800
+      },
+      "open": {
+        "firstNodesMs": 1742,
+        "longTasks": 4,
+        "longTaskMs": 980,
+        "nodes": 657,
+        "edges": 711,
+        "domElements": 20651
+      },
+      "openViewport": "transform: translate(150px, 150px) scale(0.3);",
+      "dragChild": {
+        "durationMs": 2572,
+        "frames": 113,
+        "fps": 44.2,
+        "frameP50": 8.4,
+        "frameP95": 42.5,
+        "frameMax": 167,
+        "longTasks": 3,
+        "longTaskMs": 463,
+        "moved": true,
+        "settleMs": 0
+      },
+      "dragPanel": {
+        "durationMs": 4290,
+        "frames": 102,
+        "fps": 23.8,
+        "frameP50": 8.4,
+        "frameP95": 92.5,
+        "frameMax": 149.9,
+        "longTasks": 41,
+        "longTaskMs": 2789,
+        "moved": true,
+        "settleMs": 0
+      },
+      "pan": {
+        "durationMs": 3507,
+        "frames": 279,
+        "fps": 78.6,
+        "frameP50": 8.4,
+        "frameP95": 33.3,
+        "frameMax": 75,
+        "longTasks": 0,
+        "longTaskMs": 0
+      },
+      "zoom": {
+        "durationMs": 994,
+        "frames": 80,
+        "fps": 78,
+        "frameP50": 8.3,
+        "frameP95": 33.6,
+        "frameMax": 50.8,
+        "longTasks": 0,
+        "longTaskMs": 0
+      }
+    }
+  },
+  "comparison": {
+    "note": "main (60d51ec2) vs branch after groups 1-3, same session, median of 3 runs each",
+    "main": {
+      "url": "http://localhost:4177",
+      "runs": 3,
+      "fixture": {
+        "nodes": 657,
+        "edges": 711,
+        "routePoints": 3064,
+        "bytes": 1054949,
+        "canvasWidth": 28920,
+        "canvasHeight": 65800
+      },
+      "open": {
+        "firstNodesMs": 1723,
+        "longTasks": 4,
+        "longTaskMs": 954,
+        "nodes": 657,
+        "edges": 711,
+        "domElements": 20651
+      },
+      "openViewport": "transform: translate(150px, 150px) scale(0.3);",
+      "dragChild": {
+        "durationMs": 2547,
+        "frames": 115,
+        "fps": 45.7,
+        "frameP50": 8.4,
+        "frameP95": 41.7,
+        "frameMax": 183.3,
+        "longTasks": 3,
+        "longTaskMs": 488,
+        "moved": true,
+        "settleMs": 0
+      },
+      "dragPanel": {
+        "durationMs": 4184,
+        "frames": 104,
+        "fps": 24.9,
+        "frameP50": 8.7,
+        "frameP95": 92,
+        "frameMax": 149.4,
+        "longTasks": 38,
+        "longTaskMs": 2546,
+        "moved": true,
+        "settleMs": 0
+      },
+      "nudge": {
+        "durationMs": 2992,
+        "frames": 69,
+        "fps": 23.1,
+        "frameP50": 8.4,
+        "frameP95": 133.4,
+        "frameMax": 141,
+        "longTasks": 20,
+        "longTaskMs": 2222,
+        "moved": true,
+        "settleMs": 0
+      },
+      "pan": {
+        "durationMs": 4400,
+        "frames": 201,
+        "fps": 45.2,
+        "frameP50": 16.7,
+        "frameP95": 58.2,
+        "frameMax": 91.7,
+        "longTasks": 0,
+        "longTaskMs": 0
+      },
+      "zoom": {
+        "durationMs": 1142,
+        "frames": 61,
+        "fps": 54.6,
+        "frameP50": 8.8,
+        "frameP95": 50.1,
+        "frameMax": 58.5,
+        "longTasks": 0,
+        "longTaskMs": 0
+      }
+    },
+    "branch": {
+      "url": "http://localhost:4173",
+      "runs": 3,
+      "fixture": {
+        "nodes": 657,
+        "edges": 711,
+        "routePoints": 3064,
+        "bytes": 1054949,
+        "canvasWidth": 28920,
+        "canvasHeight": 65800
+      },
+      "open": {
+        "firstNodesMs": 1552,
+        "longTasks": 3,
+        "longTaskMs": 791,
+        "nodes": 657,
+        "edges": 711,
+        "domElements": 20651
+      },
+      "openViewport": "transform: translate(150px, 150px) scale(0.3);",
+      "dragChild": {
+        "durationMs": 2396,
+        "frames": 117,
+        "fps": 48.8,
+        "frameP50": 8.4,
+        "frameP95": 49.6,
+        "frameMax": 158.4,
+        "longTasks": 2,
+        "longTaskMs": 222,
+        "moved": true,
+        "settleMs": 0
+      },
+      "dragPanel": {
+        "durationMs": 4043,
+        "frames": 104,
+        "fps": 25.7,
+        "frameP50": 8.4,
+        "frameP95": 91.7,
+        "frameMax": 116.6,
+        "longTasks": 36,
+        "longTaskMs": 2316,
+        "moved": true,
+        "settleMs": 0
+      },
+      "nudge": {
+        "durationMs": 1389,
+        "frames": 66,
+        "fps": 47.5,
+        "frameP50": 8.4,
+        "frameP95": 50.5,
+        "frameMax": 58.5,
+        "longTasks": 1,
+        "longTaskMs": 50,
+        "moved": true,
+        "settleMs": 0
+      },
+      "pan": {
+        "durationMs": 3968,
+        "frames": 262,
+        "fps": 66,
+        "frameP50": 8.4,
+        "frameP95": 41.7,
+        "frameMax": 83.4,
+        "longTasks": 0,
+        "longTaskMs": 0
+      },
+      "zoom": {
+        "durationMs": 1009,
+        "frames": 80,
+        "fps": 80.3,
+        "frameP50": 8.3,
+        "frameP95": 41.6,
+        "frameMax": 58.3,
+        "longTasks": 0,
+        "longTaskMs": 0
+      }
+    }
+  }
+}

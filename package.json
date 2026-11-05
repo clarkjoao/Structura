@@ -54,7 +54,8 @@
     "cy:report:html": "marge cypress/reports/mochawesome/merged.json -o cypress/reports/mochawesome/html -f index --charts --inline",
     "cy:report": "npm run cy:report:merge && npm run cy:report:html",
     "collab:stress": "node scripts/collab-stress.mjs",
-    "media:capture": "node scripts/capture-media.mjs"
+    "media:capture": "node scripts/capture-media.mjs",
+    "perf:large": "npx --yes tsx scripts/perf-large-diagram.ts"
   },
   "dependencies": {
     "@assistant-ui/core": "^0.3.15",
