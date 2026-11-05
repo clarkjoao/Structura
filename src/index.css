@@ -394,6 +394,14 @@
 [data-edge-label] {
   transition: opacity 120ms ease;
 }
+/*
+ * Far level of detail (canvas/contexts/canvasLod.ts): secondary node content is
+ * not painted. `visibility`, never `display`: the node keeps its size, so React
+ * Flow does not re-measure it and no handle or edge moves at the threshold.
+ */
+.react-flow[data-lod="far"] [data-lod-secondary] {
+  visibility: hidden;
+}
 
 /*
  * An auto-layout run glides the nodes to where the layout put them

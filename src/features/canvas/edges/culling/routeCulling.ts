@@ -24,6 +24,8 @@ export interface Box {
 export interface CullingWindow extends Box {
   /** Identifies the window: equal keys, equal windows. */
   key: string;
+  /** The zoom, snapped to quarter octaves: larger means zoomed further in. */
+  zoomStep: number;
 }
 
 /** What the culling needs from an edge: its ends, its stored corners, and whether it must stay. */
@@ -68,6 +70,7 @@ export function cullingWindow(
   const originY = cellY * cellH;
   return {
     key: `${zoomStep}:${cellX}:${cellY}`,
+    zoomStep,
     minX: originX - margin * viewW,
     minY: originY - margin * viewH,
     maxX: originX + viewW + cellW + margin * viewW,

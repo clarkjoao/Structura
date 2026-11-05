@@ -61,7 +61,7 @@ function setup(edges: Edge[]) {
   });
   return {
     hook,
-    pan: (x: number, y: number) => act(() => api!.setState({ transform: [x, y, 1] })),
+    pan: (x: number, y: number, zoom = 1) => act(() => api!.setState({ transform: [x, y, zoom] })),
   };
 }
 
@@ -100,6 +100,17 @@ describe("useRouteCulledEdges", () => {
       vi.advanceTimersByTime(EDGE_CULLING_RELEASE_MS);
     });
     expect(hook.result.current).toEqual(edges.filter((edge) => edge.source === "f1"));
+  });
+
+  it("releases what a zoom-in leaves behind at once, without waiting for the viewport to settle", () => {
+    const edges = edgesOf(EDGE_CULLING_MIN_EDGES + 100);
+    const { hook, pan } = setup(edges);
+    // Zoomed far out: both clusters are in the window.
+    pan(0, 0, 0.02);
+    expect(hook.result.current).toBe(edges);
+    // Back in on the near cluster: the far one goes now, not after the delay.
+    pan(0, 0, 1);
+    expect(hook.result.current).toEqual(edges.filter((edge) => edge.source === "n1"));
   });
 
   it("does not report deleted edges as mounted", () => {

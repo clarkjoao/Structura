@@ -34,6 +34,7 @@ function withIds(set: Set<string>, ids: readonly string[]): Set<string> {
 
 interface CullCache {
   windowKey: string | null;
+  zoomStep: number;
   nodes: ReactFlowState["nodes"] | null;
   edges: readonly Edge[] | null;
   ids: Set<string> | null;
@@ -54,7 +55,13 @@ interface CullCache {
  * all, delete, export, the store) works from the full list, never from this one.
  */
 export function useRouteCulledEdges<E extends Edge>(edges: E[] | undefined): E[] | undefined {
-  const cache = useRef<CullCache>({ windowKey: null, nodes: null, edges: null, ids: null });
+  const cache = useRef<CullCache>({
+    windowKey: null,
+    zoomStep: 0,
+    nodes: null,
+    edges: null,
+    ids: null,
+  });
   const enabled = (edges?.length ?? 0) >= EDGE_CULLING_MIN_EDGES;
 
   const selector = useCallback(
@@ -77,7 +84,13 @@ export function useRouteCulledEdges<E extends Edge>(edges: E[] | undefined): E[]
       };
       const next = visibleEdgeIds(edges as readonly CullableEdge[], nodeBox, window);
       const ids = c.ids && sameIds(c.ids, next) ? c.ids : next;
-      cache.current = { windowKey: window.key, nodes: s.nodes, edges, ids };
+      cache.current = {
+        windowKey: window.key,
+        zoomStep: window.zoomStep,
+        nodes: s.nodes,
+        edges,
+        ids,
+      };
       return ids;
     },
     [edges, enabled],
@@ -91,8 +104,15 @@ export function useRouteCulledEdges<E extends Edge>(edges: E[] | undefined): E[]
   // in batches over several frames was measured and was slower: every batch
   // pays React Flow's edge update and the line-hop recompute again.
   const [mounted, setMounted] = useState<Set<string> | null>(visible);
+  // Zooming in shrinks the window: what it leaves behind is off screen and
+  // tiny, and keeping it mounted made a zoom-in that crossed into full detail
+  // render hundreds of off-screen edges in full. Release it at once.
+  const zoomStep = cache.current.zoomStep;
+  const previousZoomStep = useRef(zoomStep);
+  const zoomingIn = zoomStep > previousZoomStep.current;
+  previousZoomStep.current = zoomStep;
   let shown = mounted;
-  if (!visible || !mounted) {
+  if (!visible || !mounted || zoomingIn) {
     shown = visible;
   } else {
     const missing = missingIds(mounted, visible);

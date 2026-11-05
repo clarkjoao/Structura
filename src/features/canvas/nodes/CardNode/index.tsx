@@ -248,6 +248,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
         </div>
         {d.description && (
           <p
+            data-lod-secondary
             className={`text-xs text-muted-foreground leading-snug mb-1.5 ${
               isActive
                 ? "min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words nowheel nodrag"
@@ -258,11 +259,14 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
           </p>
         )}
         {technologyLabel && (
-          <span className="inline-block self-start text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground shrink-0">
+          <span
+            data-lod-secondary
+            className="inline-block self-start text-[10px] font-mono rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground shrink-0"
+          >
             {technologyLabel}
           </span>
         )}
-        <div className="shrink-0">
+        <div data-lod-secondary className="shrink-0">
           <NodeActions
             d={d}
             controlsDisabled={controlsDisabled || isGuest}

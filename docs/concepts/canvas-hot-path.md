@@ -138,6 +138,16 @@ frame. Anything that acts on edges (select all, delete, export) reads the store
 or React Flow's nodes, never the culled array; selected edges and the playback
 step are always kept.
 
+### 5d. Far zoom draws less, decided once per canvas
+
+`CanvasLodSync` is the only zoom subscriber for the level of detail: it writes
+`data-lod` on the React Flow wrapper and the `CanvasLodContext` value, which
+changes once per threshold crossing. Below it, edges nothing points at render
+`FarEdge` (stroke, arrowheads, click target — no editing hooks, label or line
+hops), and node secondary content marked `data-lod-secondary` is hidden with
+`visibility`. Never hide node content with `display`: the node would change
+size, React Flow would re-measure it and every edge on it would move.
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -229,6 +239,7 @@ places to look.
 | Stable `onNodeClick` (React Flow's `NodeWrapper` is not memoised: a new identity re-renders every node) | `useCanvasEventHandlers.node-click-identity.test.tsx` |
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
 | Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |
+| Far level of detail: `FarEdge` on the same path, selected/revealed edges stay full | `EditableEdge.lod.test.tsx`, `canvasLod.test.ts` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
 | One viewport write per pan/zoom gesture, flushed before any read (`useSettledViewportWrite`) | `useSettledViewportWrite.test.ts`, `update-viewport.test.ts` |

@@ -20,6 +20,7 @@ import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 import { diagramEdgeTypes } from "./edgeTypes";
 import { buildReactFlowShellProps } from "./reactFlowBaseConfig";
 import { useRouteCulledEdges } from "../edges/culling/useRouteCulledEdges";
+import { CanvasLodProvider, CanvasLodSync } from "../contexts/CanvasLodContext";
 
 type FlowHandlerProps = Pick<
   ReactFlowProps,
@@ -120,71 +121,74 @@ export function DiagramSurface({
   const flow = (
     <ElementsSelectableProvider value={policy.graphInteractive}>
       <LineHopsProvider>
-        <ReadingDirectionContext.Provider value={readingDirection}>
-          <EdgeLabelPortalProvider>
-            <ReactFlow
-              nodes={nodes}
-              edges={renderedEdges}
-              nodeTypes={nodeTypes}
-              edgeTypes={diagramEdgeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onConnectEnd={onConnectEnd}
-              onReconnect={onReconnect}
-              onReconnectStart={onReconnectStart}
-              onReconnectEnd={onReconnectEnd}
-              onNodeClick={onNodeClick}
-              onEdgeClick={onEdgeClick}
-              onNodeDoubleClick={onNodeDoubleClick}
-              onEdgeDoubleClick={onEdgeDoubleClick}
-              onPaneClick={onPaneClick}
-              onPaneContextMenu={onPaneContextMenu}
-              onNodeContextMenu={onNodeContextMenu}
-              onNodeDragStart={onNodeDragStart}
-              onNodeDragStop={onNodeDragStop}
-              onSelectionChange={onSelectionChange}
-              panOnDrag={shell.panOnDrag}
-              panOnScroll={shell.panOnScroll}
-              panOnScrollMode={shell.panOnScrollMode}
-              selectionOnDrag={shell.selectionOnDrag}
-              panActivationKeyCode={shell.panActivationKeyCode}
-              selectionMode={shell.selectionMode}
-              zoomOnScroll={shell.zoomOnScroll}
-              zoomOnPinch={shell.zoomOnPinch}
-              zoomOnDoubleClick={shell.zoomOnDoubleClick}
-              deleteKeyCode={shell.deleteKeyCode}
-              minZoom={shell.minZoom}
-              maxZoom={shell.maxZoom}
-              multiSelectionKeyCode={
-                shell.multiSelectionKeyCode ? [...shell.multiSelectionKeyCode] : undefined
-              }
-              selectionKeyCode={shell.selectionKeyCode}
-              nodeDragThreshold={nodeDragThreshold}
-              snapToGrid={shell.snapToGrid}
-              snapGrid={shell.snapGrid}
-              defaultViewport={defaultViewport}
-              fitView={fitView}
-              fitViewOptions={resolvedFitViewOptions}
-              onMoveEnd={onMoveEnd}
-              nodesDraggable={shell.nodesDraggable}
-              nodesConnectable={shell.nodesConnectable}
-              elementsSelectable={shell.elementsSelectable}
-              proOptions={{ ...shell.proOptions }}
-              className={shell.className}
-            >
-              <EdgeLabelPortalHost />
-              <HandleSidesSync direction={readingDirection} />
-              <Background
-                variant={BackgroundVariant.Lines}
-                gap={10}
-                lineWidth={1}
-                color="hsl(var(--muted) / 0.6)"
-              />
-              {children}
-            </ReactFlow>
-          </EdgeLabelPortalProvider>
-        </ReadingDirectionContext.Provider>
+        <CanvasLodProvider>
+          <ReadingDirectionContext.Provider value={readingDirection}>
+            <EdgeLabelPortalProvider>
+              <ReactFlow
+                nodes={nodes}
+                edges={renderedEdges}
+                nodeTypes={nodeTypes}
+                edgeTypes={diagramEdgeTypes}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onConnectEnd={onConnectEnd}
+                onReconnect={onReconnect}
+                onReconnectStart={onReconnectStart}
+                onReconnectEnd={onReconnectEnd}
+                onNodeClick={onNodeClick}
+                onEdgeClick={onEdgeClick}
+                onNodeDoubleClick={onNodeDoubleClick}
+                onEdgeDoubleClick={onEdgeDoubleClick}
+                onPaneClick={onPaneClick}
+                onPaneContextMenu={onPaneContextMenu}
+                onNodeContextMenu={onNodeContextMenu}
+                onNodeDragStart={onNodeDragStart}
+                onNodeDragStop={onNodeDragStop}
+                onSelectionChange={onSelectionChange}
+                panOnDrag={shell.panOnDrag}
+                panOnScroll={shell.panOnScroll}
+                panOnScrollMode={shell.panOnScrollMode}
+                selectionOnDrag={shell.selectionOnDrag}
+                panActivationKeyCode={shell.panActivationKeyCode}
+                selectionMode={shell.selectionMode}
+                zoomOnScroll={shell.zoomOnScroll}
+                zoomOnPinch={shell.zoomOnPinch}
+                zoomOnDoubleClick={shell.zoomOnDoubleClick}
+                deleteKeyCode={shell.deleteKeyCode}
+                minZoom={shell.minZoom}
+                maxZoom={shell.maxZoom}
+                multiSelectionKeyCode={
+                  shell.multiSelectionKeyCode ? [...shell.multiSelectionKeyCode] : undefined
+                }
+                selectionKeyCode={shell.selectionKeyCode}
+                nodeDragThreshold={nodeDragThreshold}
+                snapToGrid={shell.snapToGrid}
+                snapGrid={shell.snapGrid}
+                defaultViewport={defaultViewport}
+                fitView={fitView}
+                fitViewOptions={resolvedFitViewOptions}
+                onMoveEnd={onMoveEnd}
+                nodesDraggable={shell.nodesDraggable}
+                nodesConnectable={shell.nodesConnectable}
+                elementsSelectable={shell.elementsSelectable}
+                proOptions={{ ...shell.proOptions }}
+                className={shell.className}
+              >
+                <EdgeLabelPortalHost />
+                <CanvasLodSync />
+                <HandleSidesSync direction={readingDirection} />
+                <Background
+                  variant={BackgroundVariant.Lines}
+                  gap={10}
+                  lineWidth={1}
+                  color="hsl(var(--muted) / 0.6)"
+                />
+                {children}
+              </ReactFlow>
+            </EdgeLabelPortalProvider>
+          </ReadingDirectionContext.Provider>
+        </CanvasLodProvider>
       </LineHopsProvider>
     </ElementsSelectableProvider>
   );

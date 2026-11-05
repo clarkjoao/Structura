@@ -33,15 +33,15 @@
 
 ## 5. Far-zoom level of detail
 
-- [ ] 5.1 Add a single canvas-level component that writes `data-lod` with hysteresis from the zoom (threshold in `canvas.constants.ts`) and a context exposing the bucket; verify with a test: crossing the threshold changes the attribute once, and node and edge components do not re-render
-- [ ] 5.2 Add the CSS rules that hide node secondary content, edge label chrome and widened hit areas under `[data-lod="far"]`; verify with an e2e check at zoom 0.3 that descriptions and icons are not displayed, and at zoom 1 that they are
-- [ ] 5.3 Verify that clicking, header panel drag and box selection work at far zoom (e2e)
-- [ ] 5.4 Re-measure; verify that open, pan and zoom improve, attach screenshots at 0.3 and 1 to the PR, and record the numbers
+- [x] 5.1 Add `CanvasLodSync` (one zoom subscriber writing `data-lod` and the `CanvasLodContext` value, with hysteresis 0.45/0.5 from `canvas.constants.ts`); verify `canvasLod.test.ts` covers both thresholds and holding between them
+- [x] 5.2 Render a `FarEdge` (resting path, stroke and arrowheads, clickable, no editing hooks, no label, no hops) for edges nothing points at under far detail, and hide node secondary content with `visibility` under `[data-lod="far"]`; verify `EditableEdge.lod.test.tsx` (same path as the full edge; selected and revealed edges stay full) and, on a production build, that 1,740 of 1,740 `data-lod-secondary` elements are hidden at 0.3 and visible after zooming in, with node size unchanged
+- [x] 5.3 Verify at far zoom on a production build, with the same script run against the previous commit as the reference: clicking a node selects it, clicking an exposed edge selects it and switches it to the full edge (segment handles shown), box selection selects the same 3 nodes, and header panel drag moves the panel (`perf:large` `dragPanel.moved`)
+- [x] 5.4 Re-measure against the previous commit in one session: open 878 → 608 ms long tasks, pan 58 → 78 fps, zoom 263 → 57 ms long tasks (the group 4 regression, fixed by releasing on zoom-in), panel drag 33 → 42 fps. The node CSS alone measured no effect
 
 ## 6. Incremental line hops
 
 - [ ] 6.1 Make the line-hops registry track route boxes and recompute only the changed edges plus the edges whose box overlaps them; verify with a property test (random orthogonal routes, random changed subset, result equals a full recompute) and with the existing `lineHops` tests
-- [ ] 6.2 Skip hop computation while the level of detail is far (edges publish `null`); verify that a registry test shows zero recompute work under far
+- [x] 6.2 Skip hop computation while the level of detail is far; done by 5.2, because `FarEdge` never publishes a path to the registry. Verify that `EditableEdge.lod.test.tsx` renders no hop arcs at far detail
 - [ ] 6.3 Re-measure; verify that `findLineHops` time during panel drag drops in a profile and that panel-drag long tasks improve; record the numbers
 
 ## 7. Integration

@@ -89,7 +89,12 @@ serialized.
   - _Measured and rejected:_ mounting a large growth in batches of 50 per frame. Each batch pays
     React Flow's edge update and the global line-hop recompute again. Zoom long tasks went from
     260 ms to 406 ms, so growth stays immediate.
-- **Nodes (spike, task 4.5): deferred until after the level of detail (group 5).** Measured after
+- **Nodes (spike, task 4.5): option (a), no node culling for now.** Re-measured after group 5:
+  opening costs ~608 ms of long tasks (from 954 ms on `main`), pan runs at ~78 fps, and panel drag
+  at ~42 fps with one long task. Node culling would cut opening further, at the risk described in
+  (b) and (c). It is not worth taking on until a diagram measures worse than the fixture. The
+  earlier analysis follows.
+- **Nodes (history): deferred until after the level of detail (group 5).** Measured after
   edge culling, opening costs the same (~820 ms of long tasks) with 151 edges mounted as with 711. Opening is dominated by the 657 nodes and their first measurement. But node culling means
   options (b) or (c) below, both larger and riskier than edge culling, while group 5 lowers the
   cost of every node at far zoom with no structural risk. Re-measure after group 5, then pick:
@@ -109,22 +114,35 @@ serialized.
   0 edges mounted. The only `getEdges()` reader (reset waypoints) looks for selected edges, and
   those are always kept.
 
-### 4. Level of detail: CSS first, one context for JavaScript-only work
+### 4. Level of detail: a light edge component, CSS for nodes
 
-- A single canvas-level component (next to `EdgeLabelPortalHost`) reads the zoom once and
-  writes `data-lod="far" | "full"` on the React Flow wrapper, with hysteresis around the
-  threshold so a zoom resting at the line does not flicker. CSS hides the secondary node content,
-  the edge label chrome and the widened hit areas under `[data-lod="far"]`. Crossing the
-  threshold costs no React renders.
-- Work that CSS cannot remove, which is line-hop computation and arc paths, reads the level from
-  a context whose value changes only when the bucket changes. That is one notification per
-  crossing, not per frame.
-- The threshold starts at 0.45, which is where node text is about 6 px. It is tuned with the
-  harness, and lives in `canvas.constants.ts`.
+- A single canvas-level component, `CanvasLodSync` (next to `EdgeLabelPortalHost`), reads the
+  zoom once. It writes `data-lod="far" | "full"` on the React Flow wrapper and publishes the level
+  through `CanvasLodContext`, with hysteresis: far below 0.45, full again above 0.5. Both
+  thresholds live in `canvas.constants.ts`. The context changes once per crossing, never per zoom
+  frame.
+- **Edges (JavaScript).** The first draft hid edge chrome with CSS. A profile of the zoom-out
+  showed that the cost is React mounting edges, which CSS cannot remove. So `EditableEdge` became
+  a thin chooser. At far detail, an edge that is not selected, not revealed by a selected end,
+  not highlighted and not the step being played renders `FarEdge`. `FarEdge` draws only the
+  stroke and arrowheads on the resting path (`geometry/restingEdgePath.ts`, the same geometry
+  minus line hops), keeps React Flow's interaction path so it can still be clicked, and runs none
+  of the editing hooks. It also publishes no line-hop path. Crossing the threshold remounts the
+  edges on screen once, which is accepted, because every mount after that at far zoom is cheap.
+- **Nodes (CSS).** Secondary content (`data-lod-secondary`: description, technology tag and
+  action row on `CardNode`) gets `visibility: hidden`, never `display: none`. The node keeps its
+  size, so React Flow does not re-measure it and no handle or edge moves at the threshold. Measured
+  in headless Chromium, this had **no measurable effect** (open 607 vs 608 ms, pan 81 vs 78 fps,
+  within noise). It is kept because it is the node half of the spec and costs nothing, and paint
+  on a real GPU may differ.
+- **Found while measuring:** the culling hook kept what a zoom-in left behind for the 400 ms
+  release delay. A zoom-in that crossed into full detail therefore rendered all ~580 retained
+  edges in full (1,758 `FullEditableEdge` renders). Zooming in now releases at once. The
+  grow-only rule still holds for pans and zoom-outs.
 - **Alternative: per-node `useStore(s => s.transform[2] < T)`.** Rejected, because it violates
   §6.
 - **Alternative: swap whole node components at far zoom.** Rejected. It remounts every node at
-  the crossing, which is the most expensive moment to do it.
+  the crossing, and nodes are the most expensive part of the canvas.
 
 ### 5. Line hops: incremental by route box
 

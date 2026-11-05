@@ -48,25 +48,20 @@ import { EdgePayloadOverlay } from "./overlays/EdgePayloadOverlay";
 import { CollabEdgeHighlight } from "./overlays/CollabEdgeHighlight";
 import type { EdgeData } from "./data/edgeData.types";
 import { EdgeLabelPortal } from "./EdgeLabelPortal";
+import { DEFAULT_STROKE, HIGHLIGHT_STROKE, strokeDasharrayByStyle } from "./edgeStroke";
+import { FarEdge } from "./FarEdge";
+import { useCanvasLod } from "../contexts/canvasLod";
 
 export type { EdgeData };
 
-const DEFAULT_STROKE = "hsl(220 20% 30%)";
-const HIGHLIGHT_STROKE = "hsl(187 72% 51%)";
 const ALIGN_STROKE = "hsl(316 80% 63%)";
 
 /** Resting points for an edge whose data carries none (a harness, a legacy caller). */
 const NO_RESTING_POINTS: EdgeControlPoint[] = [];
 
-const strokeDasharrayByStyle: Record<StrokeStyle, string | undefined> = {
-  [StrokeStyle.Solid]: undefined,
-  [StrokeStyle.Dashed]: "8 4",
-  [StrokeStyle.Dotted]: "2 4",
-};
-
 type EditableEdgeType = Edge<EdgeData, "editable">;
 
-const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
+function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
   const {
     id,
     sourceX,
@@ -491,6 +486,27 @@ const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
       )}
     </>
   );
+}
+
+/**
+ * Picks how much of the edge to draw. At the far level of detail an edge that
+ * nothing points at — not selected, not revealed by a selected end, not
+ * highlighted, not the step being played — is a `FarEdge`. Crossing the
+ * threshold remounts the edges on screen once; every mount after that, at far
+ * zoom, is a cheap one.
+ */
+const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
+  const lod = useCanvasLod();
+  const revealed = useEdgeLabelReveal();
+  const { highlightedConnectionIds } = useHandleHighlight();
+  const connectionId = props.data?.connectionId ?? props.id;
+  const simplified =
+    lod === "far" &&
+    !props.selected &&
+    !props.data?.isActivePlayback &&
+    !revealed.has(connectionId) &&
+    !highlightedConnectionIds.has(connectionId);
+  return simplified ? <FarEdge {...props} /> : <FullEditableEdge {...props} />;
 });
 
 EditableEdge.displayName = "EditableEdge";
