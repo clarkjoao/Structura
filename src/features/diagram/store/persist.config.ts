@@ -1,4 +1,4 @@
-import { createJSONStorage } from "zustand/middleware";
+import type { PersistStorage, StorageValue } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
 import {
@@ -612,17 +612,30 @@ export function mergePersistedState(
   return next;
 }
 
-export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort): IStoragePort {
+/**
+ * The tracking port, plus a write whose value is produced only when it is
+ * flushed. Zustand's persist hands the store state over on every `set()`;
+ * serialising it there (what `createJSONStorage` does) stringified the whole
+ * workspace once per store write, although the I/O below is debounced and only
+ * the last value is ever written.
+ */
+export interface DiagramPersistPort extends IStoragePort {
+  setItemDeferred(name: string, serialize: () => string): void;
+}
+
+export function wrapIStoragePortWithDiagramPersistTracking(
+  storage: IStoragePort,
+): DiagramPersistPort {
   let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let pendingPersist: { name: string; value: string } | null = null;
+  let pendingPersist: { name: string; serialize: () => string } | null = null;
 
   const flushPersist = async (): Promise<void> => {
     persistDebounceTimer = null;
     if (!pendingPersist) return;
-    const { name, value } = pendingPersist;
+    const { name, serialize } = pendingPersist;
     pendingPersist = null;
     try {
-      await storage.setItem(name, value);
+      await storage.setItem(name, serialize());
       if (name !== PERSIST_KEY) return;
       useSaveStatusStore.getState()._setSaved();
       if (storage instanceof LocalStorageAdapter && storage.paused) return;
@@ -636,11 +649,11 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
     }
   };
 
-  const schedulePersist = (name: string, value: string, force = false): void => {
+  const schedulePersist = (name: string, serialize: () => string, force = false): void => {
     if (name === PERSIST_KEY) {
       useSaveStatusStore.getState()._setSaving();
     }
-    pendingPersist = { name, value };
+    pendingPersist = { name, serialize };
 
     // Force flush: cancel debounce and write immediately
     if (force) {
@@ -674,9 +687,10 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         persistDebounceTimer = null;
       }
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
-      const { name, value } = pendingPersist;
+      const { name, serialize } = pendingPersist;
       pendingPersist = null;
       try {
+        const value = serialize();
         if (storage instanceof LocalStorageAdapter) {
           storage.setItemSync(name, value);
           if (storage.paused) return;
@@ -716,8 +730,15 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         persistDebounceTimer = null;
       }
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
-      const { name, value } = pendingPersist;
+      const { name, serialize } = pendingPersist;
       pendingPersist = null;
+      let value: string;
+      try {
+        value = serialize();
+      } catch {
+        useSaveStatusStore.getState()._setError();
+        return;
+      }
       void storage
         .setItem(name, value)
         .then(() => {
@@ -740,7 +761,14 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         await storage.setItem(name, value);
         return;
       }
-      schedulePersist(name, value);
+      schedulePersist(name, () => value);
+    },
+    setItemDeferred: (name, serialize) => {
+      if (name !== PERSIST_KEY) {
+        void storage.setItem(name, serialize());
+        return;
+      }
+      schedulePersist(name, serialize);
     },
     removeItem: async (key) => {
       if (key === PERSIST_KEY) {
@@ -775,13 +803,31 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
   };
 }
 
+/**
+ * `createJSONStorage` without the eager `JSON.stringify`: the state object is
+ * kept and serialised when the debounced write flushes. Holding the reference
+ * is safe — Immer state is immutable, so it is the snapshot of that `set()`.
+ */
+export function createDeferredJSONStorage<S>(port: DiagramPersistPort): PersistStorage<S> {
+  return {
+    getItem: async (name) => {
+      const raw = await port.getItem(name);
+      return raw === null ? null : (JSON.parse(raw) as StorageValue<S>);
+    },
+    setItem: (name, value) => {
+      port.setItemDeferred(name, () => JSON.stringify(value));
+    },
+    removeItem: (name) => port.removeItem(name),
+  };
+}
+
 export function createPersistConfig(storage: IStoragePort) {
   const trackedStorage = wrapIStoragePortWithDiagramPersistTracking(storage);
   const SCHEMA_VERSION_EDGE_LAYOUTS_RECORD = 5;
   const SCHEMA_VERSION_EDGE_CONTROL_POINTS = 6;
   return {
     name: PERSIST_KEY,
-    storage: createJSONStorage(() => trackedStorage),
+    storage: createDeferredJSONStorage<PersistedDiagramStoreSlice>(trackedStorage),
     partialize: partializeState,
     merge: mergePersistedState,
     version: PERSIST_SCHEMA_VERSION,
