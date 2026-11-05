@@ -136,7 +136,8 @@ export interface AppActions {
       dimensions?: { width: number; height: number };
     }>,
   ) => void;
-  updateViewport: (viewport: { x: number; y: number; zoom: number }) => void;
+  /** `diagramId` defaults to the active diagram. Skips the write when the viewport is unchanged. */
+  updateViewport: (viewport: { x: number; y: number; zoom: number }, diagramId?: string) => void;
   setEdgeControlPoints: (
     diagramId: string,
     connectionId: string,

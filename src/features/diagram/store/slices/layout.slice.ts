@@ -74,10 +74,7 @@ function applyBoxMoves(
   touchDiagram(d);
 }
 
-export const layoutSlice = (
-  set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
-) => ({
+export const layoutSlice = (set: (fn: (state: AppState) => void) => void, get: () => AppState) => ({
   updateNodeLayout: (
     elementId: string,
     position: { x: number; y: number },
@@ -166,9 +163,29 @@ export const layoutSlice = (
     });
   },
 
-  updateViewport: (viewport: { x: number; y: number; zoom: number }) => {
+  /**
+   * Writes the viewport of `diagramId`, or of the active diagram when absent. A
+   * write that lands after the user switched diagrams (the canvas defers it to
+   * the end of a pan) must still reach the diagram that was panned, so the
+   * canvas passes the id it captured. An unchanged viewport is not written:
+   * every `set()` serialises the workspace for persistence.
+   */
+  updateViewport: (viewport: { x: number; y: number; zoom: number }, diagramId?: string) => {
+    const current = get();
+    const targetId = diagramId ?? current.activeDiagramId;
+    const existing = targetId ? current.diagrams[targetId]?.viewport : undefined;
+    if (
+      !targetId ||
+      !current.diagrams[targetId] ||
+      (existing &&
+        existing.x === viewport.x &&
+        existing.y === viewport.y &&
+        existing.zoom === viewport.zoom)
+    ) {
+      return;
+    }
     set((state) => {
-      const d = getActiveDiagram(state);
+      const d = state.diagrams[targetId];
       if (!d) return;
       d.viewport = viewport;
     });
