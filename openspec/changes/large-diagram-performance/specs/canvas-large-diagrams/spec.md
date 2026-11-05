@@ -147,25 +147,23 @@ per-entity subscription.
 - **WHEN** the app is shown in English or Brazilian Portuguese
 - **THEN** the string comes from `t()` with entries in both `en.json` and `pt-BR.json`
 
-### Requirement: Line hops are recomputed only where routes changed
+### Requirement: Line hops are computed only between edges drawn in full
 
-When some edges' routes change, line hops MUST be recomputed only for the edges whose route
-changed and the edges whose route box overlaps them. The resulting hops MUST equal those of a
-full recompute. Line hops MUST NOT be computed while the canvas is in the simplified level of
-detail.
+Line hops MUST be computed only between edges that are mounted and drawn at full detail. Culled
+edges and edges drawn at the far level of detail MUST NOT take part in the computation, either as
+hoppers or as obstacles.
 
-#### Scenario: Moving one panel leaves unrelated hops untouched
+#### Scenario: No hops at far detail
 
-- **GIVEN** two clusters of edges far apart, each with crossings
-- **WHEN** a panel in the first cluster is dragged
-- **THEN** the hops of the first cluster update
-- **AND** no edge in the second cluster re-renders because of hops
+- **GIVEN** two edges whose routes cross
+- **WHEN** the canvas is at the far level of detail and neither edge is selected
+- **THEN** neither path contains a hop arc
 
-#### Scenario: Incremental and full recompute agree
+#### Scenario: Hops at full detail
 
-- **GIVEN** any set of orthogonal routes and any subset of them changed
-- **WHEN** hops are recomputed incrementally
-- **THEN** the hops equal those of a full recompute over all routes
+- **GIVEN** the same two edges
+- **WHEN** the canvas is at full detail
+- **THEN** the horizontal edge hops over the vertical one
 
 ### Requirement: Store writes do not serialize the workspace each time
 

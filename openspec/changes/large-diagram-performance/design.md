@@ -144,13 +144,15 @@ serialized.
 - **Alternative: swap whole node components at far zoom.** Rejected. It remounts every node at
   the crossing, and nodes are the most expensive part of the canvas.
 
-### 5. Line hops: incremental by route box
+### 5. Line hops: scoped by culling and level of detail, not made incremental
 
-The registry keeps each path's box. On recompute it collects the changed and removed ids, finds
-the edges whose boxes overlap the changed ones (a linear scan over boxes is fine at around 700
-edges, and a grid comes only if the measurement says so), and runs `findLineHops` on that
-neighbourhood only. A property test checks the result against a full recompute. While
-`data-lod` is far, edges publish `null` (no hops), and the registry skips work.
+The plan was to make the registry recompute only the neighbourhood of changed routes. After groups
+4 and 5 that was measured first. The registry only sees mounted edges drawn in full: culled edges
+are not mounted, and `FarEdge` publishes nothing. Dragging the 97-child panel at full detail
+spent about 10 ms of 899 ms of JavaScript in line hops at zoom 0.6 (69 edges mounted), and about
+3 ms of 539 ms at zoom 1.0 (31 edges mounted), roughly 1%. The incremental recompute is
+therefore **not implemented**. It would add a second algorithm and a property test to save about
+1%. Revisit only if a profile shows `findLineHops` above about 10% of a gesture.
 
 ### 6. Measurement harness
 

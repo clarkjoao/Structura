@@ -38,14 +38,14 @@
 - [x] 5.3 Verify at far zoom on a production build, with the same script run against the previous commit as the reference: clicking a node selects it, clicking an exposed edge selects it and switches it to the full edge (segment handles shown), box selection selects the same 3 nodes, and header panel drag moves the panel (`perf:large` `dragPanel.moved`)
 - [x] 5.4 Re-measure against the previous commit in one session: open 878 → 608 ms long tasks, pan 58 → 78 fps, zoom 263 → 57 ms long tasks (the group 4 regression, fixed by releasing on zoom-in), panel drag 33 → 42 fps. The node CSS alone measured no effect
 
-## 6. Incremental line hops
+## 6. Line hops
 
-- [ ] 6.1 Make the line-hops registry track route boxes and recompute only the changed edges plus the edges whose box overlaps them; verify with a property test (random orthogonal routes, random changed subset, result equals a full recompute) and with the existing `lineHops` tests
-- [x] 6.2 Skip hop computation while the level of detail is far; done by 5.2, because `FarEdge` never publishes a path to the registry. Verify that `EditableEdge.lod.test.tsx` renders no hop arcs at far detail
-- [ ] 6.3 Re-measure; verify that `findLineHops` time during panel drag drops in a profile and that panel-drag long tasks improve; record the numbers
+- [x] 6.1 Measure line-hop cost at full detail before making the recompute incremental; verify with a profile of the 97-child panel drag: about 10 ms of 899 ms of JavaScript at zoom 0.6 and about 3 ms of 539 ms at zoom 1.0, so the incremental recompute is not implemented (design Decision 5)
+- [x] 6.2 Skip hop computation while the level of detail is far; done by 5.2, because `FarEdge` never publishes a path to the registry. Verify that `EditableEdge.lod.test.tsx` shows a hop arc at full detail and none at far detail
+- [x] 6.3 Rewrite the spec requirement to what holds and is tested ("Line hops are computed only between edges drawn in full"); verify that `openspec validate --strict` passes
 
 ## 7. Integration
 
-- [ ] 7.1 Run `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test`, `npm run fallow:check` and the stress Cypress specs; verify all pass
-- [ ] 7.2 Add the culling and level-of-detail rules to `docs/concepts/canvas-hot-path.md` ("Strategies that must not regress"), with the tests that lock them; verify that each rule names its test
-- [ ] 7.3 Write the before and after table (baseline compared with the final numbers for every scenario) into the PR description and into `baseline.json`; verify it covers every scenario
+- [x] 7.1 Run `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test`, `npm run fallow:check` and the stress Cypress specs; verify all pass. Gates and stress specs pass; `editable-edges-smoke`, `panel-hit-geometry` and `selection-behavior-matrix` each fail one test with identical errors on `main` (60d51ec2), so those failures are pre-existing and outside this change
+- [x] 7.2 Add the culling and level-of-detail rules to `docs/concepts/canvas-hot-path.md` ("Strategies that must not regress"), with the tests that lock them; verify that each rule names its test (§5b, §5c, §5d and the "Already in place" table)
+- [x] 7.3 Write the before and after table (`main` compared with the final branch for every scenario, same session) into `baseline.json` `final`, for the PR description; verify it covers every scenario

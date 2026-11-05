@@ -42,8 +42,9 @@ Profiling (unminified production build) attributes the cost to:
 - Zoom-based level of detail. Below a zoom threshold, nodes render a simplified body, and edges
   drop line hops, label chrome and hover hit areas. The level is read once per canvas, never
   subscribed to per node or per edge.
-- Line hops are scoped. They are skipped under the low level of detail, and a recompute only
-  revisits edges whose route changed and the edges whose box overlaps them.
+- Line hops are scoped. Only edges that are mounted and drawn in full take part, so culling and
+  the level of detail already bound the work. An incremental recompute was planned, and was
+  dropped after measuring that line hops cost about 1% of a panel drag.
 - Persisted-state serialization runs once per persist debounce, not once per store `set()`.
 - Smaller items that the profile showed are cheap get done only if the re-measure shows
   remaining cost: stable minimap `nodeColor`, per-edge selector hoisting.
