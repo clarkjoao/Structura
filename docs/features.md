@@ -102,7 +102,23 @@ element picker. Custom icons can be added through the icon picker.
 ## Versions
 
 Named variants of a diagram (for example AS-IS / TO-BE) stored as differences from the base
-snapshot, with a compare mode.
+snapshot, with a compare mode. A Version works like a branch:
+
+- Editing an element of the base inside a Version edits the Version's own copy; the base does not
+  change. Moving a base node inside a Version keeps the new position in the Version.
+- Each Version can carry a status (Proposed, Approved, In progress, Done); the panel groups by it.
+- When the base changes after a Version copied an element, the element is marked as a conflict.
+  Choose **Keep version** or **Use base** in the element panel; merging waits until none is left.
+- **Show changes** (on by default, switched in the Versions panel or hidden from the legend): with a
+  Version active, added elements and connections are outlined in green, changed ones in amber, and
+  what the Version removes is drawn as a ghost — faded, dashed red, struck through — where the base
+  has it. Ghosts are only drawn: nothing selects, moves, exports or syncs them. A changed element's
+  panel lists what changed, base → Version.
+- Merging writes what the Version added, changed and moved into the base, and removes what it
+  removed.
+- Plugins can own Versions (the opscr plugin, one per initiative): their merge, rename, delete and status
+  go to the plugin. Drilling down to a linked diagram keeps the Version with the same key
+  selected.
 
 ## Layout
 
@@ -148,7 +164,7 @@ snapshot, with a compare mode.
 
 - **Share links** encode the diagram in the URL (`/viewer#data=…`) and open a read-only viewer.
 - **Embedding** — see [guides/embedding.md](guides/embedding.md).
-- Plugins can add more importers and exporters.
+- Plugins can add more importers and exporters, and whole-source imports on the workspace home: the opscr plugin's **opscr folder (product)** sets a folder up in one pick — a workspace folder named after the product, its diagram bound to the folder and opened with the opscr pane, a diagram per View, the initiatives as Versions.
 
 ## Persistence
 

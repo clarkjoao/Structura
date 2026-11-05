@@ -1,52 +1,114 @@
 #!/usr/bin/env node
-// Build the Structura app with selected plugins pre-installed ("built-in" layer).
+// Run or build the Structura app with selected plugins pre-installed ("built-in" layer).
 //
 // Usage:
-//   npm run build:plugins -- structura-plugin-leanix
-//   npm run build:plugins -- --plugins structura-plugin-leanix,structura-plugin-example-ui
-//   npm run build:plugins -- --no-build structura-plugin-leanix   (reuse existing dist/plugin.js)
+//   npm run build:plugins                                   (interactive: pick plugins and options)
+//   npm run build:plugins -- opscr leanix:off               (leanix ships, but starts disabled)
+//   npm run build:plugins -- opscr:locked                   (opscr ships and cannot be disabled)
+//   npm run dev:plugins  -- opscr                           (same, but starts the dev server)
+//   npm run build:plugins -- --no-build opscr               (reuse existing dist/plugin.js)
 //
-// It builds each selected plugin (plugins/<name>), then runs the app build with
-// STRUCTURA_BUNDLED_PLUGINS set so vite.config.ts's `structura-bundled-plugins` plugin embeds
-// each dist/plugin.js as a string. Plain `npm run build` (no env) ships zero built-in plugins.
+// A plugin is `<name>[:off][:locked]`; `<name>` may drop the `structura-plugin-` prefix.
+//   off     starts disabled for a user who never touched it (they can turn it on)
+//   locked  always on: the Plugins page shows the switch but it cannot be turned off
+// Also accepted: `--plugins a,b:off`, comma- or space-separated lists, and `--dev`.
+//
+// It builds each selected plugin (plugins/<name>), then runs the app build (or `vite` with
+// --dev) with STRUCTURA_BUNDLED_PLUGINS set so vite.config.ts's `structura-bundled-plugins`
+// plugin embeds each dist/plugin.js as a string. Plain `npm run build` / `npm run dev` ship
+// zero built-in plugins.
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const PLUGINS_DIR = path.join(ROOT, "plugins");
 const NPM = process.platform === "win32" ? "npm.cmd" : "npm";
+const PREFIX = "structura-plugin-";
 
 function fail(message) {
   console.error(`\n[build:plugins] ${message}\n`);
   process.exit(1);
 }
 
-// Parse args: `--plugins a,b`, bare positional names, and comma- or space-separated lists.
+function available() {
+  return fs
+    .readdirSync(PLUGINS_DIR, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && fs.existsSync(path.join(PLUGINS_DIR, e.name, "package.json")))
+    .map((e) => e.name);
+}
+
+/** "opscr:off:locked" -> { dir, off, locked }; accepts the name without the prefix. */
+function parseSpec(raw) {
+  const [name, ...flags] = raw.trim().split(":");
+  for (const f of flags)
+    if (f !== "off" && f !== "locked")
+      fail(`Unknown flag ":${f}" in "${raw}" (use :off or :locked).`);
+  const dir = available().find((d) => d === name || d === PREFIX + name);
+  if (!dir) fail(`Plugin "${name}" not found in plugins/ (have: ${available().join(", ")}).`);
+  return { dir, off: flags.includes("off"), locked: flags.includes("locked") };
+}
+
+async function askInteractively() {
+  if (!process.stdin.isTTY)
+    fail("No plugins given. Example: npm run build:plugins -- opscr leanix:off");
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const yes = async (q, def) => {
+    const a = (await rl.question(`${q} [${def ? "Y/n" : "y/N"}] `)).trim().toLowerCase();
+    return a === "" ? def : a.startsWith("y");
+  };
+  const chosen = [];
+  for (const dir of available()) {
+    if (!(await yes(`Include ${dir}?`, false))) continue;
+    const on = await yes("  Enabled by default?", true);
+    const canOff = await yes("  Can the user disable it?", true);
+    chosen.push({ dir, off: !on, locked: !canOff });
+  }
+  rl.close();
+  return chosen;
+}
+
+// Parse args: `--plugins a,b`, bare positional specs, and comma- or space-separated lists.
 const argv = process.argv.slice(2);
 let build = true;
-const names = [];
+let dev = false;
+const specs = [];
 for (let i = 0; i < argv.length; i++) {
   const arg = argv[i];
   if (arg === "--no-build") {
     build = false;
+  } else if (arg === "--dev") {
+    dev = true;
   } else if (arg === "--plugins") {
     const value = argv[++i];
-    if (value) names.push(...value.split(","));
+    if (value) specs.push(...value.split(","));
   } else if (arg.startsWith("--plugins=")) {
-    names.push(...arg.slice("--plugins=".length).split(","));
+    specs.push(...arg.slice("--plugins=".length).split(","));
   } else if (arg.startsWith("-")) {
     fail(`Unknown flag "${arg}".`);
   } else {
-    names.push(...arg.split(","));
+    specs.push(...arg.split(","));
   }
 }
 
-const plugins = [...new Set(names.map((name) => name.trim()).filter(Boolean))];
-if (plugins.length === 0) {
-  fail("No plugins given. Example: npm run build:plugins -- structura-plugin-leanix");
+const parsed = specs
+  .map((s) => s.trim())
+  .filter(Boolean)
+  .map(parseSpec);
+const selected = parsed.length > 0 ? parsed : await askInteractively();
+if (selected.length === 0) fail("No plugins selected.");
+// De-duplicate by dir; the last spec wins.
+const byDir = new Map(selected.map((p) => [p.dir, p]));
+const plugins = [...byDir.keys()];
+const envValue = [...byDir.values()]
+  .map((p) => [p.dir, p.off && "off", p.locked && "locked"].filter(Boolean).join(":"))
+  .join(",");
+
+if (selected.some((p) => p.off && p.locked)) {
+  console.warn("[build:plugins] note: a locked plugin is always on, so :off has no effect on it.");
 }
 
 function run(cmd, args, cwd) {
@@ -95,10 +157,12 @@ for (const name of plugins) {
   }
 }
 
-console.log(`[build:plugins] building app with built-in plugins: ${plugins.join(", ")}`);
-const appBuild = spawnSync(NPM, ["run", "build"], {
+console.log(
+  `[build:plugins] ${dev ? "starting dev server" : "building app"} with built-in plugins: ${envValue}`,
+);
+const app = spawnSync(NPM, ["run", dev ? "dev" : "build"], {
   cwd: ROOT,
   stdio: "inherit",
-  env: { ...process.env, STRUCTURA_BUNDLED_PLUGINS: plugins.join(",") },
+  env: { ...process.env, STRUCTURA_BUNDLED_PLUGINS: envValue },
 });
-process.exit(appBuild.status ?? 1);
+process.exit(app.status ?? 1);

@@ -10,3 +10,6 @@ src/fixtures/seeds
 .claude/worktrees
 go-server/internal/merge/testdata
 fallow-dead-code-baseline.json
+
+# Generated from the linked opscr package (build-skill)
+plugins/structura-plugin-opscr/src/generated/opscr-skill.ts

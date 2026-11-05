@@ -1,0 +1,265 @@
+{
+  "source": "example-microservices.drawio",
+  "manifests": [
+    {
+      "kind": "Channel",
+      "metadata": {
+        "name": "users"
+      },
+      "spec": {
+        "type": "Web",
+        "description": "Users"
+      }
+    },
+    {
+      "kind": "ExternalSystem",
+      "metadata": {
+        "name": "external-api"
+      },
+      "spec": {
+        "category": "Payment",
+        "description": "External API — Stripe"
+      }
+    },
+    {
+      "kind": "LoadBalancer",
+      "metadata": {
+        "name": "path-routing"
+      },
+      "spec": {
+        "provider": "ALB",
+        "description": "Load Balancer — Application LB — path routing"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "orders-service"
+      },
+      "spec": {
+        "provider": "Fargate",
+        "language": "Java",
+        "description": "Orders Service — AWS Fargate — orders"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "payments-service"
+      },
+      "spec": {
+        "provider": "Fargate",
+        "language": "Java",
+        "description": "Payments Service — AWS Fargate — payments"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "inventory-service"
+      },
+      "spec": {
+        "provider": "Fargate",
+        "language": "Java",
+        "description": "Inventory Service — AWS Fargate — inventory"
+      }
+    },
+    {
+      "kind": "Database",
+      "metadata": {
+        "name": "orders-and-inventory"
+      },
+      "spec": {
+        "provider": "DynamoDB",
+        "description": "Database — Amazon DynamoDB — orders & inventory"
+      }
+    },
+    {
+      "kind": "Topic",
+      "metadata": {
+        "name": "order-events"
+      },
+      "spec": {
+        "provider": "SNS",
+        "type": "IntegrationEvent",
+        "description": "Notifications — Amazon SNS — order events"
+      }
+    },
+    {
+      "kind": "Database",
+      "metadata": {
+        "name": "payments-data"
+      },
+      "spec": {
+        "provider": "RDSPostgres",
+        "description": "Database — Amazon RDS — payments data"
+      }
+    },
+    {
+      "kind": "Topic",
+      "metadata": {
+        "name": "stock-events"
+      },
+      "spec": {
+        "provider": "EventBridge",
+        "type": "IntegrationEvent",
+        "description": "Event Bus — Amazon EventBridge — stock events"
+      }
+    },
+    {
+      "kind": "Application",
+      "metadata": {
+        "name": "reorder-automation"
+      },
+      "spec": {
+        "provider": "Lambda",
+        "language": "Java",
+        "description": "Compute — AWS Lambda — reorder automation"
+      }
+    },
+    {
+      "kind": "Relationship",
+      "metadata": {
+        "name": "example-microservices-relationships"
+      },
+      "spec": {
+        "edges": [
+          {
+            "from": {
+              "kind": "LoadBalancer",
+              "id": "path-routing"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "orders-service"
+            },
+            "type": "calls",
+            "description": "/orders"
+          },
+          {
+            "from": {
+              "kind": "LoadBalancer",
+              "id": "path-routing"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "payments-service"
+            },
+            "type": "calls",
+            "description": "/payments"
+          },
+          {
+            "from": {
+              "kind": "LoadBalancer",
+              "id": "path-routing"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "inventory-service"
+            },
+            "type": "calls",
+            "description": "/inventory"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "orders-service"
+            },
+            "to": {
+              "kind": "Database",
+              "id": "orders-and-inventory"
+            },
+            "type": "writes",
+            "description": "write orders"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "orders-service"
+            },
+            "to": {
+              "kind": "Topic",
+              "id": "order-events"
+            },
+            "type": "publishes",
+            "description": "publish events"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "payments-service"
+            },
+            "to": {
+              "kind": "ExternalSystem",
+              "id": "external-api"
+            },
+            "type": "calls",
+            "description": "charge API"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "payments-service"
+            },
+            "to": {
+              "kind": "Database",
+              "id": "payments-data"
+            },
+            "type": "writes",
+            "description": "write payments"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "inventory-service"
+            },
+            "to": {
+              "kind": "Database",
+              "id": "orders-and-inventory"
+            },
+            "type": "reads",
+            "description": "read/write stock"
+          },
+          {
+            "from": {
+              "kind": "Application",
+              "id": "inventory-service"
+            },
+            "to": {
+              "kind": "Topic",
+              "id": "stock-events"
+            },
+            "type": "publishes",
+            "description": "stock updates"
+          },
+          {
+            "from": {
+              "kind": "Topic",
+              "id": "stock-events"
+            },
+            "to": {
+              "kind": "Application",
+              "id": "reorder-automation"
+            },
+            "type": "triggers",
+            "description": "trigger reorder"
+          },
+          {
+            "from": {
+              "kind": "Channel",
+              "id": "users"
+            },
+            "to": {
+              "kind": "LoadBalancer",
+              "id": "path-routing"
+            },
+            "type": "calls",
+            "description": "via Amazon Route 53 → Amazon CloudFront (drawio)"
+          }
+        ]
+      }
+    }
+  ],
+  "layout": "{\n  \"version\": 1,\n  \"elements\": {\n    \"Application/inventory-service\": { \"x\": 830, \"y\": 650, \"width\": 130, \"height\": 120 },\n    \"Application/orders-service\": { \"x\": 300, \"y\": 650, \"width\": 120, \"height\": 120 },\n    \"Application/payments-service\": { \"x\": 560, \"y\": 650, \"width\": 130, \"height\": 120 },\n    \"Application/reorder-automation\": { \"x\": 1100, \"y\": 870, \"width\": 120, \"height\": 120 },\n    \"Channel/users\": { \"x\": 50, \"y\": 221, \"width\": 107, \"height\": 98 },\n    \"Database/orders-and-inventory\": { \"x\": 300, \"y\": 870, \"width\": 120, \"height\": 120 },\n    \"Database/payments-data\": { \"x\": 565, \"y\": 870, \"width\": 120, \"height\": 120 },\n    \"ExternalSystem/external-api\": { \"x\": 1440, \"y\": 580, \"width\": 120, \"height\": 98 },\n    \"LoadBalancer/path-routing\": { \"x\": 560, \"y\": 430, \"width\": 120, \"height\": 120 },\n    \"Topic/order-events\": { \"x\": 302, \"y\": 1037, \"width\": 120, \"height\": 120 },\n    \"Topic/stock-events\": { \"x\": 835, \"y\": 870, \"width\": 120, \"height\": 120 }\n  }\n}\n",
+  "visual": "{\n  \"edges\": [\n    {\n      \"collapsedInto\": \"Channel/users -calls-> LoadBalancer/path-routing\",\n      \"from\": \"drawio:svc-group-cf\",\n      \"id\": \"drawio:edge-cf-to-alb\",\n      \"label\": \"forward origin\",\n      \"style\": \"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;\",\n      \"to\": \"LoadBalancer/path-routing\"\n    },\n    {\n      \"collapsedInto\": \"Channel/users -calls-> LoadBalancer/path-routing\",\n      \"from\": \"drawio:svc-group-r53\",\n      \"id\": \"drawio:edge-r53-to-cf\",\n      \"label\": \"resolve\",\n      \"style\": \"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;\",\n      \"to\": \"drawio:svc-group-cf\"\n    },\n    {\n      \"collapsedInto\": \"Channel/users -calls-> LoadBalancer/path-routing\",\n      \"from\": \"Channel/users\",\n      \"id\": \"drawio:edge-users-to-r53\",\n      \"label\": \"DNS query\",\n      \"style\": \"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;\",\n      \"to\": \"drawio:svc-group-r53\"\n    }\n  ],\n  \"elements\": {\n    \"drawio:aux-group\": {\n      \"box\": {\n        \"height\": 230,\n        \"width\": 300,\n        \"x\": 792,\n        \"y\": 24\n      },\n      \"hint\": \"generic:group\",\n      \"label\": \"Auxiliary Services\",\n      \"members\": [\n        \"drawio:svc-group-cloudwatch\",\n        \"drawio:svc-group-xray\"\n      ],\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"boundary\",\n      \"style\": \"rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=none;dashed=1;fontFamily=Helvetica;fontSize=12;fontStyle=1;\"\n    },\n    \"drawio:aws-cloud\": {\n      \"box\": {\n        \"height\": 1060,\n        \"width\": 1180,\n        \"x\": 220,\n        \"y\": 140\n      },\n      \"hint\": \"aws:cloud\",\n      \"label\": \"AWS Cloud\",\n      \"members\": [\n        \"drawio:region-1\"\n      ],\n      \"parent\": null,\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=0;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud;strokeColor=light-dark(#232F3E,#E0ECFB);fillColor=light-dark(#232F3E0D,#90C7FF0D);fillStyle=auto;verticalAlign=top;align=left;spacingLeft=30;fontColor=light-dark(#000000,#FFFFFF);dashed=0;container=1;pointerEvents=0;collapsible=0;recursiveResize=0;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-aux-note\": {\n      \"box\": {\n        \"height\": 40,\n        \"width\": 600,\n        \"x\": 20,\n        \"y\": 750\n      },\n      \"label\": \"CloudWatch and X-Ray monitor all services (shown in Auxiliary Services group, no dedicated edges)\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=13;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;fontStyle=2;\"\n    },\n    \"drawio:legend-bg\": {\n      \"box\": {\n        \"height\": 1170,\n        \"width\": 650,\n        \"x\": 1569,\n        \"y\": 28\n      },\n      \"label\": \"DNS Resolution\\n- Users hit Route 53 for domain resolution\\n- Route 53 resolves to CloudFront distribution\",\n      \"parent\": null,\n      \"role\": \"decoration\",\n      \"style\": \"verticalLabelPosition=bottom;verticalAlign=top;html=1;shape=mxgraph.basic.rect;fillColor2=none;strokeWidth=1;size=20;indent=5;fillColor=light-dark(#EDF3FF,#305363);strokeColor=#6c8ebf;\"\n    },\n    \"drawio:legend-line-bg\": {\n      \"box\": {\n        \"height\": 133,\n        \"width\": 600,\n        \"x\": 20,\n        \"y\": 800\n      },\n      \"label\": \"Line Styles\\n---- Solid: Request/response and data flow\\n---- Solid italic: Path-based routing rules (/orders, /payments, /inventory)\\nDashed boundary = Auxiliary monitoring services\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"fillColor=light-dark(#F5F5F5,#29393B);strokeColor=#666666;rounded=1;whiteSpace=wrap;html=1;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-step-1-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 22\n      },\n      \"label\": \"1\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-2-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 112\n      },\n      \"label\": \"2\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-2-desc\": {\n      \"box\": {\n        \"height\": 80,\n        \"width\": 548,\n        \"x\": 72,\n        \"y\": 110\n      },\n      \"label\": \"CDN Edge Delivery\\n- CloudFront caches static content at edge locations\\n- Dynamic requests forwarded to ALB origin\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-step-3-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 202\n      },\n      \"label\": \"3\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-3-desc\": {\n      \"box\": {\n        \"height\": 80,\n        \"width\": 548,\n        \"x\": 72,\n        \"y\": 200\n      },\n      \"label\": \"Load Balancing\\n- ALB routes traffic by path to Fargate services\\n- /orders, /payments, /inventory path-based routing\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-step-4-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 292\n      },\n      \"label\": \"4\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-4-desc\": {\n      \"box\": {\n        \"height\": 80,\n        \"width\": 548,\n        \"x\": 72,\n        \"y\": 290\n      },\n      \"label\": \"Fargate Processing\\n- Three microservices handle orders, payments, and inventory\\n- Each service independently scales on ECS Fargate\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-step-5-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 382\n      },\n      \"label\": \"5\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-5-desc\": {\n      \"box\": {\n        \"height\": 80,\n        \"width\": 548,\n        \"x\": 72,\n        \"y\": 380\n      },\n      \"label\": \"Orders Data Flow\\n- Orders service writes to DynamoDB\\n- Publishes order events to SNS topic\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-step-6-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 472\n      },\n      \"label\": \"6\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-6-desc\": {\n      \"box\": {\n        \"height\": 80,\n        \"width\": 548,\n        \"x\": 72,\n        \"y\": 470\n      },\n      \"label\": \"Payment Processing\\n- Payments service calls external Stripe API\\n- Writes payment records to RDS\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-step-7-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 562\n      },\n      \"label\": \"7\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-7-desc\": {\n      \"box\": {\n        \"height\": 80,\n        \"width\": 548,\n        \"x\": 72,\n        \"y\": 560\n      },\n      \"label\": \"Inventory Management\\n- Inventory service reads/writes DynamoDB stock data\\n- Publishes stock updates to EventBridge\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;\"\n    },\n    \"drawio:legend-step-8-badge\": {\n      \"box\": {\n        \"height\": 38,\n        \"width\": 40,\n        \"x\": 20,\n        \"y\": 652\n      },\n      \"label\": \"8\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=22;labelBackgroundColor=none;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;\"\n    },\n    \"drawio:legend-step-8-desc\": {\n      \"box\": {\n        \"height\": 80,\n        \"width\": 548,\n        \"x\": 72,\n        \"y\": 650\n      },\n      \"label\": \"Reorder Automation\\n- EventBridge triggers Lambda on low-stock events\\n- Lambda automates reorder workflows\",\n      \"parent\": \"drawio:legend-bg\",\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=14;labelBackgroundColor=none;whiteSpace=wrap;fontFamily=Helvetica;\"\n    },\n    \"drawio:region-1\": {\n      \"box\": {\n        \"height\": 1000,\n        \"width\": 1120,\n        \"x\": 30,\n        \"y\": 30\n      },\n      \"hint\": \"generic:region\",\n      \"label\": \"Region: us-east-1\",\n      \"members\": [\n        \"Application/inventory-service\",\n        \"Application/orders-service\",\n        \"Application/payments-service\",\n        \"Application/reorder-automation\",\n        \"Database/orders-and-inventory\",\n        \"Database/payments-data\",\n        \"LoadBalancer/path-routing\",\n        \"Topic/order-events\",\n        \"Topic/stock-events\",\n        \"drawio:aux-group\",\n        \"drawio:svc-group-cf\",\n        \"drawio:svc-group-r53\"\n      ],\n      \"parent\": \"drawio:aws-cloud\",\n      \"role\": \"boundary\",\n      \"style\": \"points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=14;fontStyle=1;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_region;strokeColor=#00A4A6;fillColor=light-dark(#0C7B7D0D,#0C7B7D0D);fillStyle=auto;verticalAlign=top;align=left;spacingLeft=30;fontColor=#00A4A6;dashed=1;container=0;pointerEvents=0;collapsible=0;recursiveResize=0;fontFamily=Helvetica;\"\n    },\n    \"drawio:step-1\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 190,\n        \"y\": 200\n      },\n      \"label\": \"1\",\n      \"parent\": null,\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:step-2\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 160,\n        \"y\": 25\n      },\n      \"label\": \"2\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:step-3\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 313,\n        \"y\": 186\n      },\n      \"label\": \"3\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:step-4\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 288,\n        \"y\": 390\n      },\n      \"label\": \"4\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:step-5\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 38,\n        \"y\": 640\n      },\n      \"label\": \"5\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:step-6\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 248,\n        \"y\": 560\n      },\n      \"label\": \"6\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:step-7\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 528,\n        \"y\": 550\n      },\n      \"label\": \"7\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:step-8\": {\n      \"box\": {\n        \"height\": 28,\n        \"width\": 28,\n        \"x\": 738,\n        \"y\": 685\n      },\n      \"label\": \"8\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"decoration\",\n      \"style\": \"rounded=1;whiteSpace=wrap;html=1;fillColor=#007CBD;strokeColor=default;fontColor=#FFFFFF;fontStyle=1;fontSize=16;fontFamily=Helvetica;shadow=1;glass=0;strokeWidth=2;align=center;verticalAlign=middle;labelBackgroundColor=none;\"\n    },\n    \"drawio:subtitle-text\": {\n      \"box\": {\n        \"height\": 25,\n        \"width\": 800,\n        \"x\": 55,\n        \"y\": 70\n      },\n      \"label\": \"Containerized microservices with ALB routing, event-driven integrations, and centralized observability\",\n      \"parent\": null,\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;resizable=0;points=[];autosize=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=16;fontFamily=Helvetica;\"\n    },\n    \"drawio:svc-group-cf\": {\n      \"box\": {\n        \"height\": 120,\n        \"width\": 120,\n        \"x\": 310,\n        \"y\": 40\n      },\n      \"hint\": \"aws:cloudfront\",\n      \"label\": \"CDN\\nAmazon CloudFront\\nedge caching\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"service\",\n      \"style\": \"sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudfront;fontFamily=Helvetica;shadow=1;\"\n    },\n    \"drawio:svc-group-cloudwatch\": {\n      \"box\": {\n        \"height\": 120,\n        \"width\": 120,\n        \"x\": 15,\n        \"y\": 55\n      },\n      \"hint\": \"aws:cloudwatch\",\n      \"label\": \"Monitoring\\nAmazon CloudWatch\\nmetrics & logs\",\n      \"parent\": \"drawio:aux-group\",\n      \"role\": \"service\",\n      \"style\": \"sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#E7157B;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudwatch;fontFamily=Helvetica;shadow=1;\"\n    },\n    \"drawio:svc-group-r53\": {\n      \"box\": {\n        \"height\": 120,\n        \"width\": 120,\n        \"x\": 30,\n        \"y\": 40\n      },\n      \"hint\": \"aws:route53\",\n      \"label\": \"DNS\\nAmazon Route 53\\nDNS resolution\",\n      \"parent\": \"drawio:region-1\",\n      \"role\": \"service\",\n      \"style\": \"sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.route_53;fontFamily=Helvetica;shadow=1;\"\n    },\n    \"drawio:svc-group-xray\": {\n      \"box\": {\n        \"height\": 120,\n        \"width\": 120,\n        \"x\": 165,\n        \"y\": 55\n      },\n      \"hint\": \"aws:xray\",\n      \"label\": \"Tracing\\nAWS X-Ray\\ndistributed tracing\",\n      \"parent\": \"drawio:aux-group\",\n      \"role\": \"service\",\n      \"style\": \"sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#8C4FFF;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=10;fontStyle=0;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.xray;fontFamily=Helvetica;shadow=1;\"\n    },\n    \"drawio:title-separator\": {\n      \"box\": {\n        \"height\": 10,\n        \"width\": 1505,\n        \"x\": 55,\n        \"y\": 100\n      },\n      \"label\": \"\",\n      \"parent\": null,\n      \"role\": \"decoration\",\n      \"style\": \"line;strokeWidth=2;html=1;fontSize=14;strokeColor=#FF9900;fontFamily=Helvetica;\"\n    },\n    \"drawio:title-text\": {\n      \"box\": {\n        \"height\": 42,\n        \"width\": 800,\n        \"x\": 50,\n        \"y\": 30\n      },\n      \"label\": \"Microservices on ECS Fargate\",\n      \"parent\": null,\n      \"role\": \"decoration\",\n      \"style\": \"text;html=1;resizable=1;points=[];autosize=1;align=left;verticalAlign=top;spacingTop=-4;fontSize=30;fontStyle=1;fontFamily=Helvetica;\"\n    }\n  },\n  \"source\": {\n    \"file\": \"example-microservices.drawio\",\n    \"page\": \"Page-1\"\n  },\n  \"version\": 1\n}\n"
+}

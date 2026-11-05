@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Minus, Plus } from "lucide-react";
+import { AlertTriangle, Minus, Pencil, Plus } from "lucide-react";
 import type { Diagram, MergePreview, VersionDiff } from "@/features/diagram";
 import {
   Dialog,
@@ -51,6 +51,12 @@ export function MergeVersionDialog({
 
   const addedCount = preview.componentsToAdd.length + preview.connectionsToAdd.length;
   const removedCount = preview.componentIdsToRemove.length + preview.connectionIdsToRemove.length;
+  const modifiedCount = preview.componentsToReplace.length + preview.connectionsToReplace.length;
+  const blocked = preview.blocking.length > 0;
+  const nameOf = (id: string) =>
+    version.modifiedComponents?.[id]?.name ??
+    diagram.snapshot.components[id]?.name ??
+    connectionLabel(diagram, id);
 
   const handleCancel = () => {
     onCancel();
@@ -58,7 +64,7 @@ export function MergeVersionDialog({
   };
 
   const handleConfirm = () => {
-    if (!acknowledged) return;
+    if (!acknowledged || blocked) return;
     onConfirm();
     onOpenChange(false);
   };
@@ -93,6 +99,50 @@ export function MergeVersionDialog({
                   <li key={c.id} className="flex gap-1">
                     <span className="text-emerald-600 dark:text-emerald-500">+</span>
                     <span>{c.label?.trim() || c.technology?.trim() || c.id}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {modifiedCount > 0 && (
+            <section>
+              <h3 className="mb-2 flex items-center gap-1.5 font-medium text-sky-600 dark:text-sky-400">
+                <Pencil className="h-4 w-4 shrink-0" aria-hidden />
+                {t("versions.mergeSectionModified", { count: modifiedCount })}
+              </h3>
+              <ul className="space-y-1 pl-5 text-foreground">
+                {preview.componentsToReplace.map((c) => (
+                  <li key={c.id} className="flex gap-1">
+                    <span className="text-sky-600 dark:text-sky-400">~</span>
+                    <span>{c.name}</span>
+                  </li>
+                ))}
+                {preview.connectionsToReplace.map((c) => (
+                  <li key={c.id} className="flex gap-1">
+                    <span className="text-sky-600 dark:text-sky-400">~</span>
+                    <span>{c.label?.trim() || c.technology?.trim() || c.id}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {blocked && (
+            <section>
+              <h3 className="mb-2 flex items-center gap-1.5 font-medium text-amber-600 dark:text-amber-500">
+                <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
+                {t("versions.mergeSectionBlocking", { count: preview.blocking.length })}
+              </h3>
+              <ul className="space-y-1 pl-5 text-foreground">
+                {preview.blocking.map((c) => (
+                  <li key={c.id}>
+                    {t(
+                      c.reason === "base-removed"
+                        ? "versions.conflictBaseRemoved"
+                        : "versions.conflictBaseChanged",
+                      { name: nameOf(c.id) },
+                    )}
                   </li>
                 ))}
               </ul>
@@ -168,7 +218,12 @@ export function MergeVersionDialog({
           <Button type="button" variant="outline" onClick={handleCancel}>
             {t("versions.mergeCancel")}
           </Button>
-          <Button type="button" variant="default" disabled={!acknowledged} onClick={handleConfirm}>
+          <Button
+            type="button"
+            variant="default"
+            disabled={!acknowledged || blocked}
+            onClick={handleConfirm}
+          >
             {t("versions.mergeConfirm")}
           </Button>
         </DialogFooter>

@@ -19,6 +19,7 @@ import {
   getActiveComponents,
   getActiveNodeLayouts,
   resolveActiveVersion,
+  writableNodeLayout,
   resolveComponent,
   resolveNodeLayout,
 } from "../helpers/version-helpers";
@@ -64,9 +65,9 @@ function applyBoxMoves(
   if (moves.size === 0) return;
   pushHistory(state, STRUCTURAL_MUTATION_MARKER);
   for (const [id, abs] of moves) {
-    const layout = layoutOf(id);
-    if (!layout) continue;
     const origin = parentOrigin(id, parentOf, layoutOf);
+    const layout = writableNodeLayout(d, scene, id);
+    if (!layout) continue;
     layout.x = abs.x - origin.x;
     layout.y = abs.y - origin.y;
   }
@@ -93,30 +94,17 @@ export const layoutSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
-      const scene = resolveActiveVersion(d);
+      // Inside a Version a base node's move is a layout override there (copy-on-write).
+      const layout = writableNodeLayout(d, resolveActiveVersion(d), elementId);
       let wrote = false;
-      if (scene && scene.addedComponents[elementId]) {
-        const layout = scene.nodeLayouts[elementId];
-        if (layout) {
-          layout.x = position.x;
-          layout.y = position.y;
-          if (dimensions) {
-            layout.width = dimensions.width;
-            layout.height = dimensions.height;
-          }
-          wrote = true;
+      if (layout) {
+        layout.x = position.x;
+        layout.y = position.y;
+        if (dimensions) {
+          layout.width = dimensions.width;
+          layout.height = dimensions.height;
         }
-      } else {
-        const layout = d.nodeLayouts[elementId];
-        if (layout) {
-          layout.x = position.x;
-          layout.y = position.y;
-          if (dimensions) {
-            layout.width = dimensions.width;
-            layout.height = dimensions.height;
-          }
-          wrote = true;
-        }
+        wrote = true;
       }
       // Inspector X/Y (and siblings) write the store while the canvas still
       // holds the pre-edit local position. Without the stamp, useLocalNodes
@@ -152,8 +140,8 @@ export const layoutSlice = (
       if (!d) return;
       const scene = resolveActiveVersion(d);
       for (const { elementId, position, dimensions } of entries) {
-        const target =
-          scene && scene.addedComponents[elementId] ? scene.nodeLayouts : d.nodeLayouts;
+        // A measurement lands where the node's layout lives; it never creates an override.
+        const target = scene && scene.nodeLayouts[elementId] ? scene.nodeLayouts : d.nodeLayouts;
         const layout = target[elementId];
         if (!layout) continue;
         layout.x = position.x;

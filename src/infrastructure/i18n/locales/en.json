@@ -239,6 +239,8 @@
     }
   },
   "import": {
+    "setup": "Set up from",
+    "setupFailed": "The import could not finish: {{reason}}",
     "title": "Import",
     "description": "Import one or more diagrams from JSON files exported from Structura. You can also pick a folder to preserve its structure.",
     "format": "Format",
@@ -365,7 +367,11 @@
       "disconnect": "Disconnect folder",
       "disconnectHint": "Forget this folder connection and keep working in the browser."
     },
-    "foldersImported": "Imported {{count}} folder from filesystem"
+    "foldersImported": "Imported {{count}} folder from filesystem",
+    "manifestWriteFailed": "Failed to write manifest — diagrams saved but metadata may be out of sync. Retry on next edit.",
+    "deleteFailed": "Failed to delete one or more files from the folder — your workspace may contain outdated copies.",
+    "diagramWriteFailed": "{{count}} diagram(s) failed to save to the folder — your changes are still in the browser.",
+    "folderMissing": "The folder “{{name}}” is no longer on disk (deleted, moved or renamed). Your diagrams stay in the browser — connect a folder again to keep syncing."
   },
   "workspaceMerge": {
     "title": "Folder with existing files",
@@ -416,10 +422,7 @@
     "keepCopyHintNoCopy": "Saves a copy of all diagrams in the browser and disconnects the folder. Recommended.",
     "keepCopyTitle": "Save current state in the browser, then disconnect the folder",
     "keepCopy": "Save in browser and disconnect",
-    "disconnectOnly": "Disconnect without saving",
-    "manifestWriteFailed": "Failed to write manifest — diagrams saved but metadata may be out of sync. Retry on next edit.",
-    "deleteFailed": "Failed to delete one or more files from the folder — your workspace may contain outdated copies.",
-    "diagramWriteFailed": "{{count}} diagram(s) failed to save to the folder — your changes are still in the browser."
+    "disconnectOnly": "Disconnect without saving"
   },
   "bulkDelete": {
     "title": "Delete selected items",
@@ -508,6 +511,8 @@
   },
   "canvasToolbar": {
     "drillUp": "Level up",
+    "trail": "Drilled down from",
+    "showingVersion": "The canvas shows the Version {{name}}",
     "panel": "Panel",
     "note": "Note",
     "awsServices": "AWS services",
@@ -532,8 +537,6 @@
     "scrollBehaviorZoomHint": "Scrolling zooms on the pointer.",
     "scrollBehaviorShortcut": "Ctrl/⌘ + scroll always zooms. Shift + scroll pans sideways.",
     "autoHideBottomToolbar": "Automatically hide the bottom toolbar",
-    "renameDiagram": "Diagram name",
-    "renameDiagramHint": "Double-click to rename",
     "arrange": {
       "label": "Arrange",
       "action": "Arrange the diagram",
@@ -808,7 +811,57 @@
     "emptyVersionDeleted": "Empty version \"{{name}}\" removed",
     "mergeDialogVersionDeleted": "The version \"{{name}}\" will be deleted.",
     "drawerVersionCount": "{{count}} version(s)",
-    "duplicatedVersionName": "{{name}} (copy)"
+    "duplicatedVersionName": "{{name}} (copy)",
+    "statusProposed": "Proposed",
+    "statusApproved": "Approved",
+    "statusInProgress": "In progress",
+    "statusDone": "Done",
+    "statusDraft": "Draft",
+    "statusLabel": "Status",
+    "statusNone": "No status",
+    "conflictCount_one": "{{count}} conflict",
+    "conflictCount_other": "{{count}} conflicts",
+    "mergeBlockedConflicts_one": "Resolve {{count}} conflict before merging",
+    "mergeBlockedConflicts_other": "Resolve {{count}} conflicts before merging",
+    "ownedBy": "Managed by {{plugin}}",
+    "ownerInactive": "This version is managed by {{plugin}}, which is not active",
+    "mergeSectionModified": "Changed ({{count}})",
+    "mergeSectionBlocking": "Conflicts to resolve first ({{count}})",
+    "conflictBaseChanged": "{{name}} changed in the base after this version copied it",
+    "conflictBaseRemoved": "{{name}} was removed from the base after this version copied it",
+    "conflictNotice": "This element changed in the base after the version copied it. Keep the version's copy, or use the base?",
+    "conflictNoticeRemoved": "This element was removed from the base after the version copied it.",
+    "keepVersion": "Keep version",
+    "useBase": "Use base",
+    "modifiedMarker": "Changed in this version",
+    "conflictMarker": "Conflict with the base",
+    "showChanges": "Show changes on the canvas",
+    "showChangesHint": "Added and changed elements are outlined; removed ones are drawn as ghosts where the base has them.",
+    "changesIn": "Changes in {{name}}",
+    "changesAdded": "{{count}} added",
+    "changesChanged": "{{count}} changed",
+    "changesRemoved": "{{count}} removed",
+    "changesConnections": "{{count}} connection(s)",
+    "hideChanges": "Hide",
+    "changedIn": "Changed in {{name}}",
+    "changeNone": "(empty)",
+    "changeField": {
+      "name": "Name",
+      "description": "Description",
+      "technology": "Technology",
+      "tags": "Tags",
+      "parentId": "Parent",
+      "cloudServiceId": "Service",
+      "label": "Label",
+      "kind": "Kind",
+      "interaction": "Interaction",
+      "linkedDiagramId": "Drill-down diagram",
+      "type": "Type",
+      "sourceId": "From",
+      "targetId": "To",
+      "repositoryUrl": "Repository",
+      "owner": "Owner"
+    }
   },
   "canvasSearch": {
     "placeholder": "Search component...",
@@ -1939,6 +1992,8 @@
     }
   },
   "panelShell": {
+    "inspector": "Properties",
+    "rail": "Side panels",
     "advanced": "Advanced",
     "copyId": "Copy ID",
     "idCopied": "ID copied",
@@ -2414,7 +2469,14 @@
     "waiting": "Waiting for diagram...",
     "errors": {
       "invalidDiagram": "Invalid diagram"
-    }
+    },
+    "blockedTitle_one": "The YAML has {{count}} opscr error",
+    "blockedTitle_other": "The YAML has {{count}} opscr errors",
+    "blockedParse": "The YAML does not parse",
+    "blockedHint": "The diagram is drawn once opscr validates the workspace. Click a problem to open its line; the Problems panel lists every error.",
+    "blockedStale_one": "Not updated: {{count}} opscr error — click to open it",
+    "blockedStale_other": "Not updated: {{count}} opscr errors — click to open the first",
+    "blockedStaleParse": "Not updated: the YAML does not parse — click to open where"
   },
   "viewPage": {
     "openInStructura": {
@@ -3023,7 +3085,14 @@
     "importFailed": "This file could not be imported by the plugin.",
     "importNoActiveDiagram": "Open a diagram before importing with a plugin.",
     "importSkippedConnections": "{{count}} connections were skipped (unknown endpoints).",
-    "importHint": "Import a file ({{extensions}}) into the current diagram via this plugin."
+    "importHint": "Import a file ({{extensions}}) into the current diagram via this plugin.",
+    "editor": {
+      "nothingToRename": "Nothing here can be renamed"
+    },
+    "documentPane": {
+      "resize": "Resize the pane",
+      "close": "Close the pane"
+    }
   },
   "panelKinds": {
     "default": {

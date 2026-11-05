@@ -43,6 +43,12 @@ export interface CanvasPreferencesStore {
   /** The tab last used per element type, so switching between same-type elements keeps it. */
   elementPanelTabByType: Record<string, string>;
   setElementPanelTab: (type: string, tab: string) => void;
+  /**
+   * With a Version active, the canvas shows what it changes against the base: added and changed
+   * elements outlined, removed ones as ghosts. On by default.
+   */
+  showVersionChanges: boolean;
+  setShowVersionChanges: (show: boolean) => void;
 }
 
 export const ELEMENT_PANEL_DEFAULT_WIDTH = 320;
@@ -90,6 +96,8 @@ export const useCanvasPreferencesStore = create<CanvasPreferencesStore>()(
         set((state) => ({
           elementPanelTabByType: { ...state.elementPanelTabByType, [type]: tab },
         })),
+      showVersionChanges: true,
+      setShowVersionChanges: (show) => set({ showVersionChanges: show }),
     }),
     {
       name: CANVAS_PREFERENCES_KEY,

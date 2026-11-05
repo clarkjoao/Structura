@@ -46,7 +46,7 @@ describe("v1.1 diagram read/write API", () => {
 
   it("exposes the bumped apiVersion", () => {
     expect(api.apiVersion).toBe(STRUCTURA_PLUGIN_API_VERSION);
-    expect(api.apiVersion).toBe("1.2.0");
+    expect(api.apiVersion).toBe("1.14.0");
   });
 
   it("reads the active diagram as a detached snapshot (spec scenario)", () => {
@@ -101,5 +101,156 @@ describe("v1.1 diagram read/write API", () => {
     const reverted = useDiagramStore.getState().diagrams[diagramId].nodeLayouts;
     expect(reverted[componentA]).toMatchObject({ x: 10, y: 20 });
     expect(reverted[componentB]).toMatchObject({ x: 300, y: 20 });
+  });
+
+  it("applies a batch of changes as one history step (API 1.4)", () => {
+    const result = api.applyChanges({
+      remove: [componentB, "ghost"],
+      update: [{ id: componentA, name: "Alpha 2", description: "d" }],
+      add: [
+        { key: "p", name: "Panel", type: "panel", x: 0, y: 0, width: 400, height: 300 },
+        {
+          key: "db",
+          name: "DB",
+          type: "aws-database",
+          cloudServiceId: "dynamodb",
+          parentKey: "p",
+          x: 40,
+          y: 40,
+        },
+      ],
+      connect: [{ source: componentA, target: "db", label: "writes" }],
+    });
+
+    const diagram = useDiagramStore.getState().diagrams[diagramId];
+    expect(diagram.snapshot.components[componentB]).toBeUndefined();
+    expect(diagram.snapshot.components[componentA]).toMatchObject({
+      name: "Alpha 2",
+      description: "d",
+    });
+    expect(diagram.snapshot.components[result.idsByKey.db]).toMatchObject({
+      type: "aws-database",
+      cloudServiceId: "dynamodb",
+      parentId: result.idsByKey.p,
+    });
+    expect(diagram.snapshot.connections[result.connectionIds[0]!]).toMatchObject({
+      sourceId: componentA,
+      targetId: result.idsByKey.db,
+    });
+
+    vi.advanceTimersByTime(100);
+    useDiagramStore.getState().undo();
+    const reverted = useDiagramStore.getState().diagrams[diagramId].snapshot;
+    expect(Object.keys(reverted.components).sort()).toEqual([componentA, componentB].sort());
+    expect(reverted.components[componentA]).toMatchObject({ name: "Alpha" });
+  });
+
+  it("exposes the host code editor and folder access (API 1.4)", () => {
+    expect(typeof api.ui.CodeEditor).toBe("function");
+    expect(typeof api.files.isSupported()).toBe("boolean");
+  });
+
+  describe("several diagrams (API 1.13)", () => {
+    const stateOf = (id: string) => useDiagramStore.getState().diagrams[id]!;
+
+    it("creates a diagram without opening it", () => {
+      const created = api.createDiagram({ name: "Context", level: "context", description: "who" });
+      expect(created).not.toBe(diagramId);
+      expect(stateOf(created)).toMatchObject({
+        name: "Context",
+        level: "context",
+        description: "who",
+      });
+      expect(Object.keys(stateOf(created).snapshot.components)).toEqual([]);
+      expect(api.getActiveDiagramId()).toBe(diagramId);
+      expect(api.createDiagram({ name: "Plain" })).toBeTruthy();
+      expect(stateOf(api.createDiagram({ name: "Plain" })).level).toBe("container");
+    });
+
+    it("needs a name", () => {
+      expect(() => api.createDiagram({ name: "  " })).toThrow(/name/);
+    });
+
+    it("creates folders, and diagrams in them (API 1.14)", () => {
+      const folder = api.createFolder({ name: "Shop" });
+      const nested = api.createFolder({ name: "Views", parentId: folder });
+      const state = useDiagramStore.getState();
+      expect(state.folders[folder]?.name).toBe("Shop");
+      expect(state.folders[folder]?.parentId ?? null).toBe(null);
+      expect(state.folders[nested]).toMatchObject({ name: "Views", parentId: folder });
+      expect(
+        state.folders[api.createFolder({ name: "Top", parentId: "nope" })]?.parentId ?? null,
+      ).toBe(null);
+      expect(() => api.createFolder({ name: " " })).toThrow(/name/);
+
+      const inside = api.createDiagram({ name: "Main", folderId: folder });
+      expect(stateOf(inside).folderId).toBe(folder);
+      expect(api.getDiagram(inside)?.folderId).toBe(folder);
+      expect(stateOf(api.createDiagram({ name: "Lost", folderId: "nope" })).folderId ?? null).toBe(
+        null,
+      );
+    });
+
+    it("applies changes to another diagram and leaves the active one alone", () => {
+      const other = api.createDiagram({ name: "Other" });
+      const before = JSON.stringify(stateOf(diagramId).snapshot);
+      const result = api.applyChanges(
+        { add: [{ key: "a", name: "Elsewhere", type: "system", x: 5, y: 6 }] },
+        { diagramId: other },
+      );
+      expect(stateOf(other).snapshot.components[result.idsByKey.a!]).toMatchObject({
+        name: "Elsewhere",
+      });
+      expect(JSON.stringify(stateOf(diagramId).snapshot)).toBe(before);
+      expect(api.getActiveDiagramId()).toBe(diagramId);
+    });
+
+    it("undo is per diagram: undoing the active one does not touch the other", () => {
+      const other = api.createDiagram({ name: "Other" });
+      vi.advanceTimersByTime(2000);
+      api.applyChanges(
+        { add: [{ key: "a", name: "Elsewhere", type: "system", x: 0, y: 0 }] },
+        { diagramId: other },
+      );
+      vi.advanceTimersByTime(2000);
+      api.applyChanges({ update: [{ id: componentA, name: "Alpha 2" }] });
+      vi.advanceTimersByTime(2000);
+      useDiagramStore.getState().undo();
+      expect(stateOf(diagramId).snapshot.components[componentA]).toMatchObject({ name: "Alpha" });
+      expect(Object.keys(stateOf(other).snapshot.components)).toHaveLength(1);
+    });
+
+    it("changes nothing for an id that is not a diagram", () => {
+      const before = JSON.stringify(useDiagramStore.getState().diagrams);
+      const result = api.applyChanges({ remove: [componentA] }, { diagramId: "ghost" });
+      expect(result).toEqual({ idsByKey: {}, connectionIds: [] });
+      expect(JSON.stringify(useDiagramStore.getState().diagrams)).toBe(before);
+    });
+
+    it("links a component to a diagram, on add and on update, and clears it", () => {
+      const target = api.createDiagram({ name: "Target" });
+      const added = api.applyChanges({
+        add: [{ key: "n", name: "Opens", type: "system", x: 0, y: 0, linkedDiagramId: target }],
+      });
+      const id = added.idsByKey.n!;
+      expect(stateOf(diagramId).snapshot.components[id]).toMatchObject({ linkedDiagramId: target });
+
+      const second = api.createDiagram({ name: "Second" });
+      api.applyChanges({ update: [{ id, linkedDiagramId: second }] });
+      expect(stateOf(diagramId).snapshot.components[id]).toMatchObject({ linkedDiagramId: second });
+
+      api.applyChanges({ update: [{ id, linkedDiagramId: "" }] });
+      expect(stateOf(diagramId).snapshot.components[id]!.linkedDiagramId).toBeUndefined();
+    });
+
+    it("ignores a link to a diagram that does not exist", () => {
+      const added = api.applyChanges({
+        add: [{ key: "n", name: "Opens", type: "system", x: 0, y: 0, linkedDiagramId: "ghost" }],
+      });
+      const id = added.idsByKey.n!;
+      expect(stateOf(diagramId).snapshot.components[id]!.linkedDiagramId).toBeUndefined();
+      api.applyChanges({ update: [{ id, linkedDiagramId: "ghost" }] });
+      expect(stateOf(diagramId).snapshot.components[id]!.linkedDiagramId).toBeUndefined();
+    });
   });
 });

@@ -132,6 +132,14 @@ export function useFileSystemStorage() {
       });
     });
 
+    // The folder was deleted or moved on disk: the app is back on the browser copy.
+    fileSystemAdapter.setFolderMissingCallback((name) => {
+      defaultStorage.paused = false;
+      setStatus("disconnected");
+      setFolderName(null);
+      toast.error(t("filesystem.folderMissing", { name }));
+    });
+
     if (fileSystemAdapter.isConnected) {
       // localStorage remains active while the folder is connected (no
       // `defaultStorage.paused = true`) — silent backup for two-phase commit
@@ -163,6 +171,9 @@ export function useFileSystemStorage() {
           setStatus("connected");
         }
       })();
+
+      const missing = fileSystemAdapter.missingFolderName;
+      if (missing) toast.error(t("filesystem.folderMissing", { name: missing }));
 
       // Handle retrieved from IDB but awaiting a user-gesture to grant permission.
       if (fileSystemAdapter.needsPermission) {
