@@ -71,32 +71,43 @@ serialized.
 
 ### 3. Culling: own route-aware edge culling first, node culling gated on a spike
 
-- **Edges (always):** `buildEdge` stamps a route box on `edge.data`, from the endpoints and the
-  stored corners. A single canvas-level hook keeps the set of visible edge ids for the viewport
-  plus a margin. The margin is one viewport on each side, so short pans do not churn the set. The
-  set is recomputed on viewport settle and at most once per frame during a pan, and only when the
-  viewport has left the margin band. The `edges` array handed to React Flow is filtered by that
-  set, and edge **objects** keep their identity, so only the array reference changes when the
-  set changes. Edges that are selected, being edited, hovered by a collaborator or part of the
-  active flow step are always kept.
-- **Nodes (spike, task 4.1):** React Flow's flag would also apply its endpoint-box test to edges,
-  which drops detoured or long edges that our filter kept. That violates the spec ("A detoured
-  edge outside its endpoints' box"). The spike measures node-side cost after phases 1–3 and picks
-  one of these:
-  - **(a)** No node culling, if the remaining node cost is small. Expected once pan no longer
-    re-renders `Canvas`.
+- **Edges (implemented, `edges/culling/`):** `DiagramSurface` (editor and viewer) passes React
+  Flow only the edges whose route box overlaps the culling window. The route box covers both
+  endpoint node boxes (from React Flow's `nodeLookup`, absolute and measured) and every stored
+  corner (`data.layoutPoints`, already stamped on both surfaces), so it holds everything the edge
+  draws. The window is the viewport grown by one viewport on every side, with its origin snapped
+  to half-viewport cells and its zoom snapped to quarter octaves, so it only changes when a pan
+  crosses a cell. It is computed by **one** React Flow store selector for the whole canvas,
+  memoised on (window, React Flow's node array, our edge array). Selected edges, the playback
+  step, and edges with an unmeasured endpoint are always kept. Below 200 edges, nothing is
+  culled.
+  - _Changed from the first draft:_ the route box is **not** stamped on `edge.data`. That would
+    give every edge attached to a moving node new `data` on every frame, which undoes the identity
+    work of group 3.
+  - _Mounted set:_ during a gesture it only grows. Edges that left the window unmount together
+    once it has been still for 400 ms, so a pan back and forth never pays unmount plus remount.
+  - _Measured and rejected:_ mounting a large growth in batches of 50 per frame. Each batch pays
+    React Flow's edge update and the global line-hop recompute again. Zoom long tasks went from
+    260 ms to 406 ms, so growth stays immediate.
+- **Nodes (spike, task 4.5): deferred until after the level of detail (group 5).** Measured after
+  edge culling, opening costs the same (~820 ms of long tasks) with 151 edges mounted as with 711. Opening is dominated by the 657 nodes and their first measurement. But node culling means
+  options (b) or (c) below, both larger and riskier than edge culling, while group 5 lowers the
+  cost of every node at far zoom with no structural risk. Re-measure after group 5, then pick:
+  - **(a)** No node culling, if the remaining node cost is small.
   - **(b)** Our own node culling through a lightweight off-screen renderer that keeps the node
     box and its handles mounted, so handle bounds stay valid, and drops everything else.
-  - **(c)** A `patch-package` patch to `isEdgeVisible` that reads the route box from
-    `edge.data`. Only if (a) and (b) leave over 25% of the open or pan cost on the table, and
-    only with a decision recorded in an ADR.
+  - **(c)** A `patch-package` patch to `isEdgeVisible` that reads the route box, so that React
+    Flow's `onlyRenderVisibleElements` can cull nodes without dropping long or detoured edges.
+    Only with an ADR.
 
-  Declaring `node.handles` statically for every node type was considered and rejected for now.
-  It would have to reproduce `buildHandles` for every element family, both reading directions,
-  `verticalSides` and panel ports, which is a second source of truth for ADR-0013.
+  Declaring `node.handles` statically for every node type stays rejected. It would be a second
+  source of truth for the handle sides of ADR-0013.
 
-- **Selection and other non-visual consumers** keep reading the store and React Flow's full
-  `nodes` and `edges`, never the DOM. `useViewportOccupancy` keeps counting from `nodeLookup`.
+- **Non-render consumers** read the store or React Flow's nodes, never the culled edge array.
+  Verified on the fixture in a production build: select all + delete removes all 711
+  connections, one undo restores them, and the empty-viewport card counts all 657 elements with
+  0 edges mounted. The only `getEdges()` reader (reset waypoints) looks for selected edges, and
+  those are always kept.
 
 ### 4. Level of detail: CSS first, one context for JavaScript-only work
 

@@ -196,6 +196,163 @@
         "longTasks": 0,
         "longTaskMs": 0
       }
+    },
+    "edgeCulling": {
+      "note": "pre-culling commit 165abd14 vs branch with edge culling, same session, median of 3",
+      "before": {
+        "url": "http://localhost:4177",
+        "runs": 3,
+        "fixture": {
+          "nodes": 657,
+          "edges": 711,
+          "routePoints": 3064,
+          "bytes": 1054949,
+          "canvasWidth": 28920,
+          "canvasHeight": 65800
+        },
+        "open": {
+          "firstNodesMs": 1565,
+          "longTasks": 3,
+          "longTaskMs": 818,
+          "nodes": 657,
+          "edges": 711,
+          "domElements": 20651
+        },
+        "openViewport": "transform: translate(150px, 150px) scale(0.3);",
+        "dragChild": {
+          "durationMs": 2462,
+          "frames": 117,
+          "fps": 47.5,
+          "frameP50": 8.8,
+          "frameP95": 41.9,
+          "frameMax": 175,
+          "longTasks": 3,
+          "longTaskMs": 281,
+          "moved": true,
+          "settleMs": 0
+        },
+        "dragPanel": {
+          "durationMs": 4178,
+          "frames": 102,
+          "fps": 24.4,
+          "frameP50": 8.5,
+          "frameP95": 99.9,
+          "frameMax": 141.6,
+          "longTasks": 37,
+          "longTaskMs": 2413,
+          "moved": true,
+          "settleMs": 0
+        },
+        "nudge": {
+          "durationMs": 1411,
+          "frames": 60,
+          "fps": 41,
+          "frameP50": 9.2,
+          "frameP95": 58.5,
+          "frameMax": 66.7,
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "moved": true,
+          "settleMs": 0
+        },
+        "pan": {
+          "durationMs": 3980,
+          "frames": 251,
+          "fps": 64.7,
+          "frameP50": 8.4,
+          "frameP95": 49.8,
+          "frameMax": 84.1,
+          "longTasks": 0,
+          "longTaskMs": 0
+        },
+        "zoom": {
+          "durationMs": 1082,
+          "frames": 80,
+          "fps": 78.4,
+          "frameP50": 8.4,
+          "frameP95": 34.2,
+          "frameMax": 59.2,
+          "longTasks": 0,
+          "longTaskMs": 0
+        }
+      },
+      "after": {
+        "url": "http://localhost:4173",
+        "runs": 3,
+        "fixture": {
+          "nodes": 657,
+          "edges": 711,
+          "routePoints": 3064,
+          "bytes": 1054949,
+          "canvasWidth": 28920,
+          "canvasHeight": 65800
+        },
+        "open": {
+          "firstNodesMs": 1580,
+          "longTasks": 3,
+          "longTaskMs": 825,
+          "nodes": 657,
+          "edges": 151,
+          "domElements": 13931
+        },
+        "openViewport": "transform: translate(150px, 150px) scale(0.3);",
+        "dragChild": {
+          "durationMs": 1588,
+          "frames": 59,
+          "fps": 37.1,
+          "frameP50": 25,
+          "frameP95": 41.6,
+          "frameMax": 124.5,
+          "longTasks": 1,
+          "longTaskMs": 126,
+          "moved": true,
+          "settleMs": 0
+        },
+        "dragPanel": {
+          "durationMs": 3025,
+          "frames": 100,
+          "fps": 33.3,
+          "frameP50": 8.5,
+          "frameP95": 67.3,
+          "frameMax": 91.7,
+          "longTasks": 1,
+          "longTaskMs": 95,
+          "moved": true,
+          "settleMs": 0
+        },
+        "nudge": {
+          "durationMs": 1151,
+          "frames": 53,
+          "fps": 46,
+          "frameP50": 8.8,
+          "frameP95": 49.8,
+          "frameMax": 75.7,
+          "longTasks": 0,
+          "longTaskMs": 0,
+          "moved": true,
+          "settleMs": 0
+        },
+        "pan": {
+          "durationMs": 4286,
+          "frames": 251,
+          "fps": 58.6,
+          "frameP50": 8.5,
+          "frameP95": 50,
+          "frameMax": 83.4,
+          "longTasks": 0,
+          "longTaskMs": 0
+        },
+        "zoom": {
+          "durationMs": 1474,
+          "frames": 75,
+          "fps": 51.8,
+          "frameP50": 8.4,
+          "frameP95": 83.3,
+          "frameMax": 133.4,
+          "longTasks": 5,
+          "longTaskMs": 406
+        }
+      }
     }
   },
   "comparison": {

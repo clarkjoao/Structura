@@ -19,6 +19,7 @@ import type { CanvasInputProfile } from "../hooks/useCanvasInputProfile";
 import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 import { diagramEdgeTypes } from "./edgeTypes";
 import { buildReactFlowShellProps } from "./reactFlowBaseConfig";
+import { useRouteCulledEdges } from "../edges/culling/useRouteCulledEdges";
 
 type FlowHandlerProps = Pick<
   ReactFlowProps,
@@ -110,6 +111,10 @@ export function DiagramSurface({
   children,
 }: DiagramSurfaceProps) {
   const shell = buildReactFlowShellProps(policy, { inputProfile, snapToGrid });
+  // Mount only the edges whose drawn route reaches the viewport (plus a margin):
+  // on a large diagram most edges are off screen. React Flow's own culling
+  // judges an edge by its endpoints, which misses long and detoured routes.
+  const renderedEdges = useRouteCulledEdges(edges);
   const resolvedFitViewOptions = fitViewOptions ?? shell.fitViewOptions;
 
   const flow = (
@@ -119,7 +124,7 @@ export function DiagramSurface({
           <EdgeLabelPortalProvider>
             <ReactFlow
               nodes={nodes}
-              edges={edges}
+              edges={renderedEdges}
               nodeTypes={nodeTypes}
               edgeTypes={diagramEdgeTypes}
               onNodesChange={onNodesChange}

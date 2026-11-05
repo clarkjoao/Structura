@@ -126,6 +126,18 @@ fixture: one arrow-key nudge re-rendered all 711 edges (a fresh `Set` in
 To check a change, count renders on a production build with `npm run perf:large`
 (`nudge` scenario) rather than trusting `memo`.
 
+### 5c. Edges are culled by their drawn route, in one selector
+
+`DiagramSurface` hands React Flow only the edges whose route box (both endpoint
+node boxes plus every stored corner) reaches the viewport grown by one viewport
+(`edges/culling/`). Do not switch on React Flow's `onlyRenderVisibleElements`
+instead: it judges an edge by its endpoints, so long cross-panel edges never
+cull and detoured ones vanish while on screen. Do not stamp the route box on
+`edge.data` either — every edge on a moving node would get new `data` per
+frame. Anything that acts on edges (select all, delete, export) reads the store
+or React Flow's nodes, never the culled array; selected edges and the playback
+step are always kept.
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -216,6 +228,7 @@ places to look.
 | `EdgeLabelRevealContext` keeps its identity while its members are unchanged | `useRevealedLabelEdgeIds.test.ts` |
 | Stable `onNodeClick` (React Flow's `NodeWrapper` is not memoised: a new identity re-renders every node) | `useCanvasEventHandlers.node-click-identity.test.tsx` |
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
+| Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
 | One viewport write per pan/zoom gesture, flushed before any read (`useSettledViewportWrite`) | `useSettledViewportWrite.test.ts`, `update-viewport.test.ts` |

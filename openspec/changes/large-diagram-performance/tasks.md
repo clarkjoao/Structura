@@ -25,11 +25,11 @@
 
 ## 4. Route-aware edge culling
 
-- [ ] 4.1 Stamp a route box on `edge.data` in `buildEdge` from endpoints and stored corners, keeping identity when the box is unchanged; verify `useCanvasEdges.identity.test.ts` still passes and a new test checks the box for a detoured route
-- [ ] 4.2 Add a canvas-level visible-edge-set hook (viewport plus a one-viewport margin, recomputed only when the viewport leaves the band, pinned ids always kept) and filter the array handed to React Flow; verify unit tests for the long off-screen-endpoints edge, the detour lane, pinned edges, and that unchanged sets keep the same array reference
-- [ ] 4.3 Verify that culled edges stay reachable by non-render consumers: select-all and delete removes culled edges, reconnect works, export includes them, and the empty-viewport card counts every element (unit or e2e tests for each)
-- [ ] 4.4 Re-measure; verify that mounted edges at the opening viewport are under half of 711, and that pan and panel-drag improve; record the numbers
-- [ ] 4.5 Node-culling spike: measure the remaining node-side cost and choose option (a), (b) or (c) from design Decision 3; verify the decision and the numbers are written into `design.md` (and an ADR if it is (c)) before any node-culling code
+- [x] 4.1 Compute each edge's route box from React Flow's absolute node boxes and the stamped `data.layoutPoints`, without adding anything to `edge.data` (so identity holds while nodes move); verify `routeCulling.test.ts`: detour lane, a long edge with both endpoints off screen, pinned and unmeasured edges, and a 2,000-case property test that the window always contains the viewport plus its margin
+- [x] 4.2 Add `useRouteCulledEdges` (one store selector, a snapped window, the mounted set growing during a gesture and released after 400 ms of stillness) and use it in `DiagramSurface`; verify `useRouteCulledEdges.test.tsx`: off-screen edges left out, the same array for a small pan, release after settling, deleted ids not counted, small diagrams untouched
+- [x] 4.3 Verify on a production build of the fixture that culled edges stay reachable: select all + delete removes 657 elements and 711 connections, one undo restores them, the empty-viewport card reads "657 elements are off screen" with 0 edges mounted. Waypoint reset only reads selected edges, which are pinned
+- [x] 4.4 Re-measure against the pre-culling build in one session: 711 → 151 edges mounted at open, DOM 20.6k → 13.9k, panel drag long tasks 2,350 → 95 ms (37 → 1), child drag 273 → 127 ms. Regression: zoom-out over the whole canvas mounts ~560 edges, 0 → ~260 ms of long tasks (batched mounting was tried and was worse); group 5 targets it
+- [x] 4.5 Node-culling spike: open costs the same with 151 or 711 edges mounted, so nodes dominate opening; decision deferred until after group 5 and recorded in `design.md` Decision 3
 
 ## 5. Far-zoom level of detail
 
