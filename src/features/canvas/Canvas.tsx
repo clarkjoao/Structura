@@ -23,6 +23,7 @@ import { DiagramSidebar } from "./navigation/DiagramSidebar";
 import { DiagramCommandPalette } from "./navigation/DiagramCommandPalette";
 import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
+import { useRevealedLabelEdgeIds } from "./contexts/useRevealedLabelEdgeIds";
 import { NodeQuickActionsBar } from "./selection-actions/NodeQuickActionsBar";
 import { TextStyleToolbar } from "./selection-actions/TextStyleToolbar";
 import { useTextLayer } from "./text/useTextLayer";
@@ -369,19 +370,10 @@ const Canvas = (props: CanvasProps = {}) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [textLayer.visible, selectedIsText]);
 
-  const revealedLabelEdgeIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (!diagram || visualState.selectedNodeIds.size === 0) return ids;
-    for (const connection of Object.values(getCachedCanvasSnapshot(diagram).connections)) {
-      if (
-        visualState.selectedNodeIds.has(connection.sourceId) ||
-        visualState.selectedNodeIds.has(connection.targetId)
-      ) {
-        ids.add(connection.id);
-      }
-    }
-    return ids;
-  }, [diagram, visualState.selectedNodeIds]);
+  const revealedLabelEdgeIds = useRevealedLabelEdgeIds(
+    diagram ? getCachedCanvasSnapshot(diagram).connections : null,
+    visualState.selectedNodeIds,
+  );
 
   if (!diagram) {
     return (

@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { Component, Connection } from "@/features/diagram";
 import {
   buildPanelIds,
   buildConnectionCountPerNode,
   buildEdgeHandleAssignments,
   buildEffectiveHandleOrder,
+  stabilizeHandleOrder,
 } from "./connectionDerivations";
 import { resolveNodeDescriptor } from "../nodes/node-types/registry";
 import { useActiveDirection } from "../hooks/useActiveDirection";
@@ -48,10 +49,17 @@ export function useCanvasConnectionDerivations({
     [visibleConnections, connectionCountPerNode, resolvedComponents, direction],
   );
 
-  const effectiveHandleOrder = useMemo(
-    () => buildEffectiveHandleOrder(edgeHandleAssignments, visibleConnections),
-    [edgeHandleAssignments, visibleConnections],
-  );
+  // Rebuilt on every store write (its inputs are); each node keeps its entry's
+  // identity while its slots are unchanged, so the node identity cache holds.
+  const previousHandleOrder = useRef<ReturnType<typeof buildEffectiveHandleOrder>>({});
+  const effectiveHandleOrder = useMemo(() => {
+    const next = stabilizeHandleOrder(
+      previousHandleOrder.current,
+      buildEffectiveHandleOrder(edgeHandleAssignments, visibleConnections),
+    );
+    previousHandleOrder.current = next;
+    return next;
+  }, [edgeHandleAssignments, visibleConnections]);
 
   return {
     panelIds,

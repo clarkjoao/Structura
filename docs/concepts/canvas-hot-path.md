@@ -25,8 +25,11 @@ Related: [canvas-engine.md](./canvas-engine.md),
 | **Idle / other writes** | Unchanged nodes/edges keep the same object identity | Rebuilding the one entity that actually changed |
 
 A drag frame never writes the diagram store (`useLocalNodes`). A store write
-never happens “a little” — persist middleware still `JSON.stringify`s the
-whole workspace on every `set()`.
+never happens “a little” — every `set()` notifies every subscriber, re-runs the
+canvas projection and schedules a persist. The workspace itself is serialised
+once per persist debounce, at flush time, not per `set()`
+(`persist.deferred-serialization.test.ts`). A continuous viewport gesture writes
+the store once, when it settles (`useSettledViewportWrite.test.ts`).
 
 ---
 
@@ -112,6 +115,17 @@ leave all edge objects (and the array) identical.
 > `withLocalMeasured`): `measured` must survive any node array replacement,
 > including the discard path for undo/redo.
 
+### 5b. Context values every node or edge reads keep their identity
+
+A context consumed by every node or edge re-renders all of them when its value
+changes identity — `memo` does not help. Derive it so the identity moves only
+when its content does (`useStableSetByContent`, `useRevealedLabelEdgeIds`), and
+hand React Flow handlers through `useStableCallback`. Measured on the 657-node
+fixture: one arrow-key nudge re-rendered all 711 edges (a fresh `Set` in
+`EdgeLabelRevealContext`) and every node (a new `onNodeClick`) before this rule.
+To check a change, count renders on a production build with `npm run perf:large`
+(`nudge` scenario) rather than trusting `memo`.
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -159,13 +173,12 @@ places to look.
 | --- | --- | --- | --- |
 | Hoist `elementsSelectable` out of `EditableEdge` | §6 | `EditableEdge.tsx` `useStore((s) => s.elementsSelectable)` | One subscriber per visible edge; RF notifies all of them every `setNodes` |
 | Stop `useLocalNodes` `setTick` from re-rendering `Canvas` every frame | §3 / local copy | `useLocalNodes.ts` `setTick((t) => t + 1)` | Forces the whole controller / graph-state hook chain each pointermove. The local node array is already in a ref; the tick exists so React notices. A narrower subscription (or RF as the only reader of local positions) would cut that walk |
-| Local (or batched) writes while dragging edge control points / label offsets | §4 | `useControlPoints.ts`, `useEdgeLabelDrag.ts`, `useSegmentDrag.ts` | Node drag stays off the store; **edge** edit still `set()`s every pointermove → full persist stringify + collab diff per frame |
+| Local (or batched) writes while dragging edge control points / label offsets | §4 | `useControlPoints.ts`, `useEdgeLabelDrag.ts`, `useSegmentDrag.ts` | Node drag stays off the store; **edge** edit still `set()`s every pointermove → subscriber fan-out, projection + collab diff per frame |
 
 ### High — collaboration / persist (not node-drag FPS)
 
 | Opportunity | Strategy | Where | Why |
 | --- | --- | --- | --- |
-| Persist: stringify once per debounce, not per `set()` | §4 | `persist.config.ts` + Zustand `createJSONStorage` | I/O is already debounced 1 s; `JSON.stringify` of the workspace still runs on every `set()`. Edge-point drags and typing pay this today |
 | Key collab highlight by element, not by `session` | §5 / §6 | `CollabProvider` `editingComponents` depends on `session`; `useCollabHighlight` / `usePeerOnNode` | Cursor packets rebuild `session` → new Map → every node that reads collab context re-renders, even when `activeElementId` did not change |
 
 ### Medium
@@ -176,7 +189,6 @@ places to look.
 | Skip occupancy math until the boolean can flip | §2 / §6 | `useViewportOccupancy.ts` | Equality stops the **re-render**, not the O(N) `nodeLookup` scan on every RF notification |
 | Reuse the gesture panel index on **commit** | §2 | `useNodeDragParenting` `onNodeDragStop` still calls `findPanelContainingPoint` | Frames are O(1); multi-select commit is still O(S × N) |
 | Identity-cache `edgeHandleAssignments` | §5 | `useCanvasConnectionDerivations.ts` | A new array reference rebuilds the `useCanvasEdges` memo even when most assignments are unchanged |
-| Stabilize `usePointerFunnel`'s return object | §3 | `pointerFunnel.ts` | New object every Canvas render; `onNodeClick` depends on `funnel`. Cheap until `setTick` makes Canvas render every frame |
 
 ### Lower / situational
 
@@ -201,7 +213,12 @@ places to look.
 | Per-node identity (`useCanvasNodes`) | existing node identity tests |
 | Per-edge identity + `shallowEqualRecord` (`useCanvasEdges`) | `useCanvasEdges.identity.test.ts` |
 | `HandleHighlightContext` not rebuilt from Canvas render | comment on `Canvas.tsx` |
+| `EdgeLabelRevealContext` keeps its identity while its members are unchanged | `useRevealedLabelEdgeIds.test.ts` |
+| Stable `onNodeClick` (React Flow's `NodeWrapper` is not memoised: a new identity re-renders every node) | `useCanvasEventHandlers.node-click-identity.test.tsx` |
+| Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
+| Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
+| One viewport write per pan/zoom gesture, flushed before any read (`useSettledViewportWrite`) | `useSettledViewportWrite.test.ts`, `update-viewport.test.ts` |
 
 `useLocalNodes` itself is a sharp edge (`AGENTS.md`): the local copy during
 drag is deliberate. Changing how it notifies React (`setTick`) is a

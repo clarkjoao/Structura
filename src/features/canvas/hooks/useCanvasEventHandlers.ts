@@ -18,13 +18,15 @@ import { sidesFromHandles, type ConnectionSides } from "../nodes/node-types/hand
 import { dragSelectionRef } from "./useLocalNodes";
 import { usePointerFunnel, type GestureTarget } from "../selection/pointerFunnel";
 import { activeDirection } from "./useActiveDirection";
+import { useSettledViewportWrite } from "./useSettledViewportWrite";
+import { useStableCallback } from "./useStableCallback";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
   isPlaying: boolean;
   isCompareMode?: boolean;
   isFlowPanelOpen: boolean;
-  updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
+  updateViewport: (vp: { x: number; y: number; zoom: number }, diagramId?: string) => void;
   addConnection: (
     source: string,
     target: string,
@@ -174,11 +176,13 @@ export function useCanvasEventHandlers({
 
   const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
 
+  // One persisted write per pan/zoom gesture, not one per frame (see the hook).
+  const writeSettledViewport = useSettledViewportWrite(updateViewport);
   const onMoveEnd = useCallback(
     (_: unknown, vp: { x: number; y: number; zoom: number }) => {
-      updateViewport(vp);
+      writeSettledViewport(vp);
     },
-    [updateViewport],
+    [writeSettledViewport],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -225,7 +229,7 @@ export function useCanvasEventHandlers({
     [setQuickInsert],
   );
 
-  const onNodeClick = useCallback(
+  const onNodeClickLatest = useCallback(
     (e: React.MouseEvent, node: Node) => {
       setQuickInsert(null);
       setPaneContextMenu(null);
@@ -292,6 +296,9 @@ export function useCanvasEventHandlers({
       funnel,
     ],
   );
+  // React Flow hands this to every node; its identity must not follow `funnel`
+  // and the rest of the closure, which change on every Canvas render.
+  const onNodeClick = useStableCallback(onNodeClickLatest);
 
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
