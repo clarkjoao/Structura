@@ -1,9 +1,9 @@
-import type { IStoragePort } from "./IStoragePort";
+import type { BrowserWorkspaceStorage } from "./BrowserWorkspaceStorage";
 import { isQuotaExceededError } from "./storageQuota";
 
 const KEY_PREFIX = "structura_";
 
-export class LocalStorageAdapter implements IStoragePort {
+export class LocalStorageAdapter implements BrowserWorkspaceStorage {
   paused = false;
 
   constructor(private readonly prefix: string = KEY_PREFIX) {}

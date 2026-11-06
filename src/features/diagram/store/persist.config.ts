@@ -1,6 +1,7 @@
 import type { PersistStorage, StorageValue } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
+import { isBrowserWorkspaceStorage } from "@/infrastructure/persistence/BrowserWorkspaceStorage";
 import {
   clearLocalStorageDiagramSyncTimestamp,
   recordLocalStorageDiagramSyncSuccess,
@@ -638,7 +639,7 @@ export function wrapIStoragePortWithDiagramPersistTracking(
       await storage.setItem(name, serialize());
       if (name !== PERSIST_KEY) return;
       useSaveStatusStore.getState()._setSaved();
-      if (storage instanceof LocalStorageAdapter && storage.paused) return;
+      if (isBrowserWorkspaceStorage(storage) && storage.paused) return;
       recordLocalStorageDiagramSyncSuccess();
     } catch (err: unknown) {
       if (name !== PERSIST_KEY) return;
