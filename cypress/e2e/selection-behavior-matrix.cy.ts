@@ -162,13 +162,17 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
   // ============================================================
 
   describe("H2: Seleciono sem querer ao arrastar", () => {
-    it("H2a: Arraste de 3px move o nó?", () => {
+    // Era "arraste de 3 px move o nó?". Com o snap à grade de 10 ligado neste
+    // bloco, 3 px nunca move; o limiar de 4 px (decisão #4) é testado com o snap
+    // desligado em "Phase 4 — Limiar de arraste". Aqui: acima do limiar e da
+    // grade, o nó se move.
+    it("H2a: Arraste acima do limiar e da grade move o nó", () => {
       cy.getNode("standalone_1")
         .invoke("attr", "style")
         .then((before) => {
           const startPos = renderedTranslate(before as string);
 
-          cy.dragNode("standalone_1", 3, 3);
+          cy.dragNode("standalone_1", 30, 30);
 
           cy.getNode("standalone_1")
             .invoke("attr", "style")
@@ -176,10 +180,9 @@ describe("Phase 1 — Seleção: Hipóteses Centrais", () => {
               const afterPos = renderedTranslate(after as string);
               const movedX = Math.abs(afterPos.x - startPos.x);
               const movedY = Math.abs(afterPos.y - startPos.y);
-              cy.log(`Arraste de 3px: deltaX=${movedX.toFixed(1)}, deltaY=${movedY.toFixed(1)}`);
+              cy.log(`Arraste de 30px: deltaX=${movedX.toFixed(1)}, deltaY=${movedY.toFixed(1)}`);
 
-              // Documenta: se moved > 1, não há limiar de arraste
-              expect(movedX > 1 || movedY > 1, "nó deve ter se movido com 3px").to.be.true;
+              expect(movedX > 1 || movedY > 1, "nó deve ter se movido com 30px").to.be.true;
             });
         });
     });

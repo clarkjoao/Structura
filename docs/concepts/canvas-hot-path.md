@@ -189,26 +189,17 @@ Ranked by where they fire and how closely they match a strategy already
 proven. None of these are required to keep current FPS; they are the next
 places to look.
 
-### High — still on the drag frame or every store write
-
-| Opportunity | Strategy | Where | Why |
-| --- | --- | --- | --- |
-| Hoist `elementsSelectable` out of `EditableEdge` | §6 | `EditableEdge.tsx` `useStore((s) => s.elementsSelectable)` | One subscriber per visible edge; RF notifies all of them every `setNodes` |
-| Stop `useLocalNodes` `setTick` from re-rendering `Canvas` every frame | §3 / local copy | `useLocalNodes.ts` `setTick((t) => t + 1)` | Forces the whole controller / graph-state hook chain each pointermove. The local node array is already in a ref; the tick exists so React notices. A narrower subscription (or RF as the only reader of local positions) would cut that walk |
-| Local (or batched) writes while dragging edge control points / label offsets | §4 | `useControlPoints.ts`, `useEdgeLabelDrag.ts`, `useSegmentDrag.ts` | Node drag stays off the store; **edge** edit still `set()`s every pointermove → subscriber fan-out, projection + collab diff per frame |
-
-### High — collaboration / persist (not node-drag FPS)
-
-| Opportunity | Strategy | Where | Why |
-| --- | --- | --- | --- |
-| Key collab highlight by element, not by `session` | §5 / §6 | `CollabProvider` `editingComponents` depends on `session`; `useCollabHighlight` / `usePeerOnNode` | Cursor packets rebuild `session` → new Map → every node that reads collab context re-renders, even when `activeElementId` did not change |
+The four "High" items this list used to open with are done; they are in
+"Already in place" below with the tests that lock them. Rechecked on
+2026-11-05 against the 657-node fixture (`npm run perf:large`): what is left
+here costs little on that diagram.
 
 ### Medium
 
 | Opportunity | Strategy | Where | Why |
 | --- | --- | --- | --- |
 | Treat `NodeToolbar` like edge labels | §1 | `NodeQuickActionsBar`, `PendingNodeToolbar` | Same RF portal/subscriber family. One instance is fine; N pending LLM toolbars scale with preview count |
-| Skip occupancy math until the boolean can flip | §2 / §6 | `useViewportOccupancy.ts` | Equality stops the **re-render**, not the O(N) `nodeLookup` scan on every RF notification |
+| Skip occupancy math until the boolean can flip | §2 / §6 | `useViewportOccupancy.ts` | Equality stops the **re-render**, not the O(N) `nodeLookup` scan on every RF notification — about 20 µs per frame at 657 nodes |
 | Reuse the gesture panel index on **commit** | §2 | `useNodeDragParenting` `onNodeDragStop` still calls `findPanelContainingPoint` | Frames are O(1); multi-select commit is still O(S × N) |
 | Identity-cache `edgeHandleAssignments` | §5 | `useCanvasConnectionDerivations.ts` | A new array reference rebuilds the `useCanvasEdges` memo even when most assignments are unchanged |
 
@@ -220,7 +211,6 @@ places to look.
 | `flowBadges` / `coverage` new object graphs | Flow panel / playback — invalidates node+edge memos |
 | `useConnection` / `useEdgeControlPoints` per edge | Store writes (edge edit, commit), not node-drag frames |
 | `useConnectionInternalsSync` key-diff | Connect / disconnect only |
-| `updateViewport` full persist stringify | Pan/zoom **end**, not every frame |
 
 ---
 
@@ -242,8 +232,12 @@ places to look.
 | Far level of detail: `FarEdge` on the same path, selected/revealed edges stay full | `EditableEdge.lod.test.tsx`, `canvasLod.test.ts` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
+| `EditableEdge` reads `elementsSelectable` from `ElementsSelectableContext`, not one store subscription per edge | `EditableEdge.selectable.test.tsx` |
+| Node drag frames go to React Flow (`publishDragFrame`) without a `Canvas` render | `useNodeDragParenting.panelSelfDrop.test.tsx` |
+| Edge control point, segment and label drags write the store once per gesture | `edge-gesture-writes.test.tsx` |
+| Collaboration presence: per-element selectors returning a peer's stable `user`, so cursor packets re-render no node | `usePeerOnNode.test.tsx` |
 | One viewport write per pan/zoom gesture, flushed before any read (`useSettledViewportWrite`) | `useSettledViewportWrite.test.ts`, `update-viewport.test.ts` |
 
 `useLocalNodes` itself is a sharp edge (`AGENTS.md`): the local copy during
-drag is deliberate. Changing how it notifies React (`setTick`) is a
-performance project, not a cleanup.
+drag is deliberate. Drag frames already skip its `setTick`; changing how the
+rest notifies React is a performance project, not a cleanup.

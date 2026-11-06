@@ -165,9 +165,21 @@ function selectedIds(): Cypress.Chainable<string[]> {
     );
 }
 
-/** A point on empty pane, far from every node in this fixture. */
+/**
+ * A point on empty pane: the first one, scanning the lower part of the canvas,
+ * where nothing covers the pane. A fixed spot went stale when the canvas
+ * toolbar moved over the bottom centre.
+ */
 const emptyPanePoint: PointOf = (doc) => {
-  const r = (doc.querySelector(".react-flow__pane") as HTMLElement).getBoundingClientRect();
+  const pane = doc.querySelector(".react-flow__pane") as HTMLElement;
+  const r = pane.getBoundingClientRect();
+  for (const fy of [0.9, 0.8, 0.7]) {
+    for (const fx of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+      const x = r.left + r.width * fx;
+      const y = r.top + r.height * fy;
+      if (doc.elementFromPoint(x, y) === pane) return [x, y];
+    }
+  }
   return [r.left + r.width * 0.5, r.bottom - 40];
 };
 
