@@ -3,6 +3,7 @@ import {
   DIAGRAM_STORE_LOCAL_STORAGE_KEY,
   type SeedResult,
 } from "./seed-stress-diagram";
+import { readSavedWorkspace } from "./workspace-storage";
 
 declare global {
   namespace Cypress {
@@ -13,6 +14,9 @@ declare global {
       }): Chainable<SeedResult>;
 
       waitForCanvas(minNodes?: number): Chainable<void>;
+
+      /** The workspace JSON the app saved (IndexedDB, or localStorage), or null. */
+      readSavedWorkspace(): Chainable<string | null>;
 
       getNode(componentId: string): Chainable<JQuery<HTMLElement>>;
 
@@ -79,6 +83,10 @@ Cypress.Commands.add("seedAndVisitStress", (options) => {
   cy.waitForCanvas(10);
   return cy.wrap(seed, { log: false });
 });
+
+Cypress.Commands.add("readSavedWorkspace", () =>
+  cy.window({ log: false }).then((win) => cy.wrap(readSavedWorkspace(win), { log: false })),
+);
 
 Cypress.Commands.add("waitForCanvas", (minNodes = 1) => {
   cy.get(".react-flow__node", { timeout: 60000 }).should("have.length.gte", minNodes);

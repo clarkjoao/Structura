@@ -7,8 +7,8 @@ in the code.
 ## System shape
 
 Structura is a client-only SPA. There is no backend and no database: all state
-is client-side (localStorage, or a local folder via the File System Access
-API). A small optional relay provides only the collaboration — `server/` (Node) or
+is client-side (IndexedDB, localStorage as fallback, or a local folder via the
+File System Access API). A small optional relay provides only the collaboration — `server/` (Node) or
 `go-server/` (Go, wire-compatible, also deployable serverless; ADR-0012); it keeps a live session's room while the session lasts, never the workspace.
 
 ```
@@ -38,7 +38,8 @@ API). A small optional relay provides only the collaboration — `server/` (Node
 2. Only `features/canvas` imports `@xyflow/react`. React Flow types do not
    appear in the Model or in any other feature.
 3. Persistence goes through `IStoragePort`
-   (`infrastructure/persistence/`); nothing else touches `localStorage`.
+   (`infrastructure/persistence/`); nothing else touches `localStorage` or IndexedDB
+   for the workspace.
 4. Features communicate through the store's actions/selectors and through
    registries — never by importing each other's internals.
 5. Cross-cutting UI (shadcn/ui) lives in `components/ui/` and is regenerated

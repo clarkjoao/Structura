@@ -6,7 +6,7 @@ single long-form reference.
 ## What it is
 
 Open source C4-model architecture diagramming SPA. No backend and no database:
-all state is client-side (localStorage and, optionally, a local folder via the
+all state is client-side (IndexedDB, localStorage as fallback, and optionally a local folder via the
 File System Access API). A small optional Node server in `server/` provides the
 collaboration relay only; `go-server/` is the same relay in Go, long-lived (ECS, Kubernetes) or
 serverless (AWS Lambda + API Gateway), see ADR-0012.
@@ -60,7 +60,7 @@ src/
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
 │   └── viewer/             # read-only shared-diagram viewer
 ├── infrastructure/
-│   ├── persistence/        # IStoragePort, LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
+│   ├── persistence/        # IStoragePort, IndexedDb/LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
 │   └── i18n/               # i18next setup + locales
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
@@ -125,8 +125,8 @@ src/
   `updateNodeLayout` at a time costs one `set()` each — every `set()` notifies
   every store subscriber and re-runs the canvas projection. Do not add a history checkpoint
   here, and do not split the batch, without a measurement that justifies it.
-- **Persistence goes through `IStoragePort`** — never touch `localStorage` directly
-  outside `infrastructure/persistence/`.
+- **Persistence goes through `IStoragePort`** — never touch `localStorage` or IndexedDB for the
+  workspace directly outside `infrastructure/persistence/` (ADR-0007).
 - **`@` alias** resolves to `./src`.
 - Prefer incremental changes; leave the codebase simpler than you found it.
 - **Significant features start with a spec** via OpenSpec in `openspec/`

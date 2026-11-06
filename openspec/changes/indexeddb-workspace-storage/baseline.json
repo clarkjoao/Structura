@@ -1,0 +1,312 @@
+{
+  "note": "npm run perf:large, production build (vite preview), headless Chromium 1600x1000, median of 3, same session, 2026-11-06. 'perfLargeDiagrams' = branch perf/large-diagrams (workspace in localStorage); 'indexedDb' = this change. perf:large opens every scenario in a fresh browser with the seed in localStorage, so every opening here includes the one-time migration to IndexedDB.",
+  "perfLargeDiagrams": {
+    "open": {
+      "firstNodesMs": 831,
+      "longTasks": 3,
+      "longTaskMs": 193,
+      "maxLongTaskMs": 92,
+      "nodes": 125,
+      "edges": 227,
+      "domElements": 3922
+    },
+    "openFull": {
+      "firstNodesMs": 810,
+      "longTasks": 5,
+      "longTaskMs": 343,
+      "maxLongTaskMs": 89,
+      "nodes": 657,
+      "edges": 31,
+      "domElements": 12491
+    },
+    "viewerOpen": {
+      "firstNodesMs": 558,
+      "longTasks": 2,
+      "longTaskMs": 150,
+      "maxLongTaskMs": 79,
+      "nodes": 125,
+      "edges": 249,
+      "domElements": 3116
+    },
+    "dragPanel": {
+      "durationMs": 1523,
+      "frames": 87,
+      "fps": 56.5,
+      "frameP50": 12.4,
+      "frameP95": 41.7,
+      "frameMax": 66.7,
+      "longTasks": 1,
+      "longTaskMs": 69,
+      "moved": true,
+      "settleMs": 0
+    },
+    "pan": {
+      "durationMs": 2113,
+      "frames": 201,
+      "fps": 95.5,
+      "frameP50": 8.3,
+      "frameP95": 24.3,
+      "frameMax": 42.2,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "zoom": {
+      "durationMs": 884,
+      "frames": 80,
+      "fps": 90.5,
+      "frameP50": 8.4,
+      "frameP95": 26.1,
+      "frameMax": 50.4,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "zoomIn": {
+      "durationMs": 310,
+      "frames": 18,
+      "fps": 58,
+      "frameP50": 8.5,
+      "frameP95": 50,
+      "frameMax": 50,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "zoomFrom": 0.1875,
+      "zoomTo": 1.72305,
+      "afterLongTasks": 3,
+      "afterLongTaskMs": 162,
+      "afterFrameMax": 90.6,
+      "nodes": 657,
+      "edges": 77,
+      "domElements": 13340
+    },
+    "dragChild": {
+      "durationMs": 1536,
+      "frames": 116,
+      "fps": 72.1,
+      "frameP50": 8.3,
+      "frameP95": 33.5,
+      "frameMax": 116.6,
+      "longTasks": 1,
+      "longTaskMs": 122,
+      "moved": true,
+      "settleMs": 0
+    },
+    "nudge": {
+      "durationMs": 1104,
+      "frames": 59,
+      "fps": 53.4,
+      "frameP50": 8.9,
+      "frameP95": 41.8,
+      "frameMax": 49.7,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "moved": true,
+      "settleMs": 0
+    },
+    "dragPanelFull": {
+      "durationMs": 1750,
+      "frames": 121,
+      "fps": 68.1,
+      "frameP50": 8.3,
+      "frameP95": 41.1,
+      "frameMax": 83.9,
+      "longTasks": 1,
+      "longTaskMs": 90,
+      "moved": true,
+      "settleMs": 0
+    },
+    "panFull": {
+      "durationMs": 3906,
+      "frames": 215,
+      "fps": 55.3,
+      "frameP50": 8.6,
+      "frameP95": 41.6,
+      "frameMax": 67.2,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "viewerPan": {
+      "durationMs": 2000,
+      "frames": 241,
+      "fps": 120.6,
+      "frameP50": 8.3,
+      "frameP95": 8.7,
+      "frameMax": 9.2,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "viewerZoom": {
+      "durationMs": 674,
+      "frames": 80,
+      "fps": 118.8,
+      "frameP50": 8.3,
+      "frameP95": 8.9,
+      "frameMax": 16.6,
+      "longTasks": 0,
+      "longTaskMs": 0
+    }
+  },
+  "indexedDb": {
+    "open": {
+      "firstNodesMs": 775,
+      "longTasks": 2,
+      "longTaskMs": 141,
+      "maxLongTaskMs": 85,
+      "nodes": 125,
+      "edges": 227,
+      "domElements": 3922
+    },
+    "openFull": {
+      "firstNodesMs": 808,
+      "longTasks": 3,
+      "longTaskMs": 219,
+      "maxLongTaskMs": 85,
+      "nodes": 657,
+      "edges": 31,
+      "domElements": 12491
+    },
+    "viewerOpen": {
+      "firstNodesMs": 580,
+      "longTasks": 2,
+      "longTaskMs": 149,
+      "maxLongTaskMs": 78,
+      "nodes": 125,
+      "edges": 249,
+      "domElements": 3116
+    },
+    "dragPanel": {
+      "durationMs": 1496,
+      "frames": 88,
+      "fps": 58.8,
+      "frameP50": 16.5,
+      "frameP95": 41.7,
+      "frameMax": 66.7,
+      "longTasks": 1,
+      "longTaskMs": 65,
+      "moved": true,
+      "settleMs": 0
+    },
+    "pan": {
+      "durationMs": 2122,
+      "frames": 206,
+      "fps": 96.6,
+      "frameP50": 8.4,
+      "frameP95": 17.3,
+      "frameMax": 33.7,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "zoom": {
+      "durationMs": 859,
+      "frames": 77,
+      "fps": 87.3,
+      "frameP50": 8.4,
+      "frameP95": 25,
+      "frameMax": 66.8,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "zoomIn": {
+      "durationMs": 297,
+      "frames": 18,
+      "fps": 60.7,
+      "frameP50": 8.5,
+      "frameP95": 50.7,
+      "frameMax": 50.7,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "zoomFrom": 0.1875,
+      "zoomTo": 1.72305,
+      "afterLongTasks": 2,
+      "afterLongTaskMs": 108,
+      "afterFrameMax": 91.7,
+      "nodes": 657,
+      "edges": 77,
+      "domElements": 13340
+    },
+    "dragChild": {
+      "durationMs": 1574,
+      "frames": 117,
+      "fps": 73.4,
+      "frameP50": 8.4,
+      "frameP95": 33.3,
+      "frameMax": 108.5,
+      "longTasks": 1,
+      "longTaskMs": 115,
+      "moved": true,
+      "settleMs": 0
+    },
+    "nudge": {
+      "durationMs": 1100,
+      "frames": 56,
+      "fps": 50.9,
+      "frameP50": 8.7,
+      "frameP95": 42.1,
+      "frameMax": 49.7,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "moved": true,
+      "settleMs": 0
+    },
+    "dragPanelFull": {
+      "durationMs": 1685,
+      "frames": 118,
+      "fps": 69.8,
+      "frameP50": 8.4,
+      "frameP95": 41.6,
+      "frameMax": 84,
+      "longTasks": 1,
+      "longTaskMs": 90,
+      "moved": true,
+      "settleMs": 0
+    },
+    "panFull": {
+      "durationMs": 3972,
+      "frames": 215,
+      "fps": 53.8,
+      "frameP50": 8.4,
+      "frameP95": 41.7,
+      "frameMax": 66.6,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "viewerPan": {
+      "durationMs": 1998,
+      "frames": 241,
+      "fps": 120.6,
+      "frameP50": 8.3,
+      "frameP95": 8.7,
+      "frameMax": 9.3,
+      "longTasks": 0,
+      "longTaskMs": 0
+    },
+    "viewerZoom": {
+      "durationMs": 674,
+      "frames": 80,
+      "fps": 118.6,
+      "frameP50": 8.3,
+      "frameP95": 9.1,
+      "frameMax": 16.7,
+      "longTasks": 0,
+      "longTaskMs": 0
+    }
+  },
+  "steadyOpen": {
+    "note": "/tmp/steady-open.ts: second load of /model/<id> in the same profile (workspace already in place), median of 5",
+    "perfLargeDiagrams": {
+      "firstNodesMs": 539,
+      "longTaskMs": 64,
+      "maxLongTaskMs": 64
+    },
+    "indexedDb": {
+      "firstNodesMs": 524,
+      "longTaskMs": 64,
+      "maxLongTaskMs": 64
+    }
+  },
+  "writeCost": {
+    "note": "measured before the change on the same fixture: one workspace save",
+    "stringifyMs": 3.5,
+    "localStorageSetItemMs": 2.7,
+    "fixtureChars": 1054949
+  }
+}
