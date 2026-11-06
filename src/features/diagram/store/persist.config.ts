@@ -578,6 +578,11 @@ export function mergePersistedState(
   state._flowSewNotices = null;
   state._sharedRefNotice = null;
 
+  // Nothing stored: the state is this build's own initial state and needs no
+  // migration. The migrators mutate in place, and with IndexedDB a `set()` may
+  // have run (and Immer frozen that state) before the read resolved.
+  if (!persistedState) return state;
+
   if (!state.services) state.services = {};
   if (!state.folders) state.folders = {};
   migrateAddUserTemplates(state);
@@ -630,6 +635,14 @@ export function wrapIStoragePortWithDiagramPersistTracking(
 ): DiagramPersistPort {
   let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingPersist: { name: string; serialize: () => string } | null = null;
+  /**
+   * Whether the stored workspace has been read. zustand's persist writes on
+   * every `set()`, hydrated or not; a write before the read would replace the
+   * stored workspace with the one in memory, still empty. Until the read
+   * resolves those writes are dropped (the hydrated state replaces them
+   * anyway); after a failed read they are refused and reported.
+   */
+  let workspaceRead: "pending" | "done" | "failed" = "pending";
 
   const flushPersist = async (): Promise<void> => {
     persistDebounceTimer = null;
@@ -652,6 +665,10 @@ export function wrapIStoragePortWithDiagramPersistTracking(
   };
 
   const schedulePersist = (name: string, serialize: () => string, force = false): void => {
+    if (name === PERSIST_KEY && workspaceRead !== "done") {
+      if (workspaceRead === "failed") useSaveStatusStore.getState()._setError();
+      return;
+    }
     if (name === PERSIST_KEY) {
       useSaveStatusStore.getState()._setSaving();
     }
@@ -763,7 +780,17 @@ export function wrapIStoragePortWithDiagramPersistTracking(
   }
 
   return {
-    getItem: (key) => storage.getItem(key),
+    getItem: async (key) => {
+      if (key !== PERSIST_KEY) return storage.getItem(key);
+      try {
+        const value = await storage.getItem(key);
+        workspaceRead = "done";
+        return value;
+      } catch (error) {
+        if (workspaceRead !== "done") workspaceRead = "failed";
+        throw error;
+      }
+    },
     setItem: async (name, value) => {
       if (name !== PERSIST_KEY) {
         await storage.setItem(name, value);

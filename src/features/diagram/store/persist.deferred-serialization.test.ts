@@ -27,8 +27,9 @@ describe("deferred workspace serialization", () => {
     vi.useRealTimers();
   });
 
-  it("serializes once for a burst of writes inside one debounce window", () => {
+  it("serializes once for a burst of writes inside one debounce window", async () => {
     const port = wrapIStoragePortWithDiagramPersistTracking(new InMemoryAdapter());
+    await port.getItem(PERSIST_KEY);
     const storage = createDeferredJSONStorage<{ n: number }>(port);
     let serialized = 0;
     for (let n = 0; n < 50; n += 1) {
@@ -47,8 +48,9 @@ describe("deferred workspace serialization", () => {
     expect(serialized).toBe(1);
   });
 
-  it("is what the diagram store's persist config uses", () => {
+  it("is what the diagram store's persist config uses", async () => {
     const { storage } = createPersistConfig(new InMemoryAdapter());
+    await storage.getItem(PERSIST_KEY);
     let serialized = 0;
     const state = {
       toJSON() {
@@ -66,6 +68,7 @@ describe("deferred workspace serialization", () => {
     const adapter = new InMemoryAdapter();
     const setItem = vi.spyOn(adapter, "setItem");
     const store = createDiagramStore(adapter);
+    await vi.advanceTimersByTimeAsync(0); // hydration: writes before the read are dropped
     const diagram = store.getState().addDiagram("Deferred", "container");
     store.getState().openDiagram(diagram.id);
     for (let i = 0; i < 50; i += 1) {
@@ -90,16 +93,18 @@ describe("deferred workspace serialization", () => {
   it("reads back what it wrote", async () => {
     const port = wrapIStoragePortWithDiagramPersistTracking(new InMemoryAdapter());
     const storage = createDeferredJSONStorage<{ a: number }>(port);
+    await storage.getItem(PERSIST_KEY);
     void storage.setItem(PERSIST_KEY, { state: { a: 1 }, version: 3 });
     await vi.advanceTimersByTimeAsync(PERSIST_DEBOUNCE_MS);
     await expect(storage.getItem(PERSIST_KEY)).resolves.toEqual({ state: { a: 1 }, version: 3 });
     await expect(storage.getItem("missing")).resolves.toBeNull();
   });
 
-  it("serializes and writes synchronously when the page is left", () => {
+  it("serializes and writes synchronously when the page is left", async () => {
     const adapter = new LocalStorageAdapter("deferred_test_");
     const port = wrapIStoragePortWithDiagramPersistTracking(adapter);
     const storage = createDeferredJSONStorage<{ last: string }>(port);
+    await storage.getItem(PERSIST_KEY);
     void storage.setItem(PERSIST_KEY, { state: { last: "edit" }, version: 1 });
 
     window.dispatchEvent(new Event("pagehide"));
@@ -112,6 +117,7 @@ describe("deferred workspace serialization", () => {
   it("keeps the save-status transitions: pending when scheduled, saved after the flush", async () => {
     const port = wrapIStoragePortWithDiagramPersistTracking(new InMemoryAdapter());
     const storage = createDeferredJSONStorage<{ a: number }>(port);
+    await storage.getItem(PERSIST_KEY);
     void storage.setItem(PERSIST_KEY, { state: { a: 2 }, version: 1 });
     expect(useSaveStatusStore.getState().status).toBe("pending");
 
@@ -121,6 +127,7 @@ describe("deferred workspace serialization", () => {
 
   it("reports a save error when serialization fails at flush time", async () => {
     const port = wrapIStoragePortWithDiagramPersistTracking(new InMemoryAdapter());
+    await port.getItem(PERSIST_KEY);
     port.setItemDeferred(PERSIST_KEY, () => {
       throw new Error("cannot serialize");
     });

@@ -88,6 +88,10 @@ A failed IndexedDB read rejects instead of returning null: hydrated as "no works
 save would replace the stored one. The store then stays unhydrated and `diagramStoreHydrated`
 settles with the error, so the app still renders.
 
+With nothing stored, hydration returns the in-memory state without running the migrators: they
+mutate in place, and a `set()` before the read has Immer-frozen that state. Before this change the
+read ended in a microtask, so no `set()` came first.
+
 ### 6. The last save on leaving
 
 IndexedDB has no synchronous write. Two paths, both already wired by `flushOnLeave`:

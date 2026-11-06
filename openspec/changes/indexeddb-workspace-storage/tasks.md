@@ -12,8 +12,8 @@
 
 ## 3. Write safety
 
-- [ ] 3.1 Drop workspace writes until the first read of the key has resolved; verify with a test whose `getItem` is held open while the store is set
-- [ ] 3.2 Leaving: IndexedDB on hidden, IndexedDB plus synchronous rescue on `pagehide` / `beforeunload`; update `flushDiagramStoreToLocalStorageNow` and `flushDiagramStoreToLocalStorageBeforeUnloadSync` (and their names) for both adapters; verify with tests and, on a production build, an edit followed at once by a reload survives
+- [x] 3.1 Drop workspace writes until the first read of the key has resolved, and refuse them (save status error) after a failed read; with nothing stored, hydration no longer runs the in-place migrators over the in-memory state, which a write before the read had frozen (it threw, and the session never saved); verify with `persist.read-before-write.test.ts` (read held open, failed read, empty store after an early write — fails without the fix). `autoArrangeWatcher.test.ts` now waits for hydration: it passed only because hydration used to throw
+- [x] 3.2 Leaving: IndexedDB on hidden, IndexedDB plus synchronous rescue on `pagehide` / `beforeunload` (`WorkspaceStorage.writeOnLeave`); `flushDiagramStoreToLocalStorageNow` renamed `flushWorkspaceToBrowserStorageNow`, the unused `flushDiagramStoreToLocalStorageBeforeUnloadSync` removed; verify with tests (pagehide → rescue and record, hidden → record and no rescue) and, on a production build, a panel nudged 100 px and reloaded 50 ms later is at 100 px after the reload
 
 ## 4. Quota
 
