@@ -2,6 +2,7 @@ import type { PersistStorage, StorageValue } from "zustand/middleware";
 import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
 import { isBrowserWorkspaceStorage } from "@/infrastructure/persistence/BrowserWorkspaceStorage";
+import { WorkspaceStorage } from "@/infrastructure/persistence/workspaceStorage";
 import {
   clearLocalStorageDiagramSyncTimestamp,
   recordLocalStorageDiagramSyncSuccess,
@@ -692,7 +693,13 @@ export function wrapIStoragePortWithDiagramPersistTracking(
       pendingPersist = null;
       try {
         const value = serialize();
-        if (storage instanceof LocalStorageAdapter) {
+        if (storage instanceof WorkspaceStorage) {
+          // IndexedDB has no synchronous write: a best-effort put plus a
+          // synchronous rescue the next start adopts (workspaceRescue.ts).
+          if (!storage.writeOnLeave(name, value)) return;
+          recordLocalStorageDiagramSyncSuccess();
+          useSaveStatusStore.getState()._setSaved();
+        } else if (storage instanceof LocalStorageAdapter) {
           storage.setItemSync(name, value);
           if (storage.paused) return;
           recordLocalStorageDiagramSyncSuccess();
@@ -822,7 +829,10 @@ export function createDeferredJSONStorage<S>(port: DiagramPersistPort): PersistS
   };
 }
 
-export function createPersistConfig(storage: IStoragePort) {
+export function createPersistConfig(
+  storage: IStoragePort,
+  options: { onRehydrated?: (error?: unknown) => void } = {},
+) {
   const trackedStorage = wrapIStoragePortWithDiagramPersistTracking(storage);
   const SCHEMA_VERSION_EDGE_LAYOUTS_RECORD = 5;
   const SCHEMA_VERSION_EDGE_CONTROL_POINTS = 6;
@@ -832,6 +842,8 @@ export function createPersistConfig(storage: IStoragePort) {
     partialize: partializeState,
     merge: mergePersistedState,
     version: PERSIST_SCHEMA_VERSION,
+    /** Called once hydration ends, failed or not (zustand's finish listeners skip failures). */
+    onRehydrateStorage: () => (_state: unknown, error?: unknown) => options.onRehydrated?.(error),
     migrate: (persistedState: unknown, fromVersion: number) => {
       if (typeof fromVersion !== "number") {
         return persistedState as PersistedDiagramStoreSlice;

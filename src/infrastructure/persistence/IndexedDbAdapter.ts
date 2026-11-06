@@ -1,4 +1,5 @@
 import type { BrowserWorkspaceStorage } from "./BrowserWorkspaceStorage";
+import type { IStoragePort } from "./IStoragePort";
 import { isQuotaExceededError } from "./storageQuota";
 
 /*
@@ -40,7 +41,7 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-export function openWorkspaceDatabase(factory: IDBFactory): Promise<IDBDatabase> {
+function openWorkspaceDatabase(factory: IDBFactory): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = factory.open(WORKSPACE_DB_NAME, WORKSPACE_DB_VERSION);
     request.onupgradeneeded = () => {
@@ -53,7 +54,7 @@ export function openWorkspaceDatabase(factory: IDBFactory): Promise<IDBDatabase>
   });
 }
 
-export class IndexedDbAdapter implements BrowserWorkspaceStorage {
+export class IndexedDbAdapter implements IStoragePort, BrowserWorkspaceStorage {
   paused = false;
 
   private db: IDBDatabase | null;
@@ -71,6 +72,12 @@ export class IndexedDbAdapter implements BrowserWorkspaceStorage {
   /** Opens the database; rejects when IndexedDB cannot be used. */
   static async open(factory: IDBFactory, now?: () => number): Promise<IndexedDbAdapter> {
     return new IndexedDbAdapter(factory, await openWorkspaceDatabase(factory), now);
+  }
+
+  /** Closes the connection; the next call reopens it. */
+  close(): void {
+    this.db?.close();
+    this.db = null;
   }
 
   /** Let another connection delete or upgrade the database; the next call reopens. */
@@ -115,13 +122,12 @@ export class IndexedDbAdapter implements BrowserWorkspaceStorage {
     await transactionDone(transaction);
   }
 
+  /**
+   * Rejects when the database cannot be read, unlike a missing key (null): a
+   * failed read hydrated as "no workspace" would let the next save replace it.
+   */
   async getItem(key: string): Promise<string | null> {
-    try {
-      return (await this.getRecord(key))?.value ?? null;
-    } catch (error) {
-      console.warn("[Structura] IndexedDbAdapter getItem", error);
-      return null;
-    }
+    return (await this.getRecord(key))?.value ?? null;
   }
 
   async setItem(key: string, value: string): Promise<void> {

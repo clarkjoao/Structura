@@ -13,7 +13,7 @@ import { useSearchParams, type NavigateFunction } from "react-router-dom";
 import { focusComponentsOnCanvas } from "../focus/focusComponents";
 import { useFlowMode } from "../flow/FlowModeContext";
 import {
-  flushDiagramStoreToLocalStorageNow,
+  flushWorkspaceToBrowserStorageNow,
   type Diagram,
   type DiagramModel,
   type ServiceDefinition,
@@ -122,14 +122,14 @@ export function useCanvasInteraction(
 
     if (fsResult === "error") {
       toast.error(t("filesystem.saveError"));
-      const localOk = await flushDiagramStoreToLocalStorageNow({ force: true });
+      const localOk = await flushWorkspaceToBrowserStorageNow({ force: true });
       if (localOk) {
         toast.success(t("localStorage.savedSuccess"));
       }
       return;
     }
 
-    const localOk = await flushDiagramStoreToLocalStorageNow();
+    const localOk = await flushWorkspaceToBrowserStorageNow();
     if (localOk) {
       toast.success(t("localStorage.savedSuccess"));
     }

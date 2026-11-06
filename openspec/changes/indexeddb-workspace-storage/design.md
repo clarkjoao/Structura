@@ -52,8 +52,12 @@ store hydrates:
 1. `indexedDB` missing, or `open` failing or taking over 3 s → `LocalStorageAdapter`, as today.
 2. Otherwise run the migration (Decision 4) and select `IndexedDbAdapter`.
 
-`defaultStorage` becomes a delegating port whose target is set by the boot, so the many importers of
-`defaultStorage` need no change. Until the boot ends its reads wait for it.
+`defaultStorage` stays `LocalStorageAdapter`: besides the workspace it holds element presets and
+the GitLab, GitHub and DefectDojo configs, some of which are also read straight from
+`localStorage`. The workspace gets its own port, `workspaceStorage` (`WorkspaceStorage`), whose
+target the boot sets. Every call on it waits for the boot, so the store's hydration at import
+reads the right copy; the boot starts on first use. The diagram store and folder sync's workspace
+calls (`PERSIST_KEY`, `paused`) use it.
 
 ### 4. Migration: copy, read back, compare, then delete
 
@@ -64,10 +68,13 @@ legacy key the current fallback lookup finds):
 2. Read it back in a new transaction and compare it to the source, character for character.
 3. Only if equal, remove the `localStorage` key.
 
+4. Then set the marker `structura:workspaceInIndexedDb`.
+
 Any failure leaves `localStorage` untouched and the boot falls back to `LocalStorageAdapter` for
-this session; the next start tries again. If both copies exist (a tab still running the old build
-saved after another tab migrated), IndexedDB is kept, the `localStorage` copy is left in place and
-a warning is logged; nothing is deleted.
+this session; the next start tries again. If both copies exist and the marker is set (a tab still
+running the old build saved after another tab migrated), IndexedDB is kept, the `localStorage`
+copy is left in place and a warning is logged; nothing is deleted. Both copies without the marker
+mean a migration cut short between steps 1 and 3: it is redone from `localStorage`.
 
 ### 5. Read before write
 
@@ -76,6 +83,10 @@ resolved. Anything written before then is about to be replaced by the hydrated s
 it loses nothing, and writing it would replace the saved workspace. The boot gate (Decision 3)
 makes this rare; the guard makes it impossible, including for writes from module-level
 bootstraps.
+
+A failed IndexedDB read rejects instead of returning null: hydrated as "no workspace", the next
+save would replace the stored one. The store then stays unhydrated and `diagramStoreHydrated`
+settles with the error, so the app still renders.
 
 ### 6. The last save on leaving
 

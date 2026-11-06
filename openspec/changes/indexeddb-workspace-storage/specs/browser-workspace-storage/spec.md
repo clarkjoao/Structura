@@ -32,9 +32,11 @@ schema version MUST be identical to the one written to `localStorage` before thi
 
 On start, if IndexedDB holds no workspace and `localStorage` holds one, the workspace MUST be
 copied to IndexedDB, read back and compared with the source, and the `localStorage` copy MUST be
-removed only when they are equal. If any step fails, the `localStorage` copy MUST be left untouched
-and the session MUST use `LocalStorageAdapter`. If both stores hold a workspace, neither MUST be
-deleted and the IndexedDB copy MUST be used.
+removed only when they are equal; a marker MUST then record that the migration completed. If any
+step fails, the `localStorage` copy MUST be left untouched and the session MUST use
+`LocalStorageAdapter`. If both stores hold a workspace and the marker is set, neither MUST be
+deleted and the IndexedDB copy MUST be used; without the marker the migration MUST be redone from
+`localStorage`.
 
 #### Scenario: First start after the upgrade
 
@@ -53,14 +55,16 @@ deleted and the IndexedDB copy MUST be used.
 
 #### Scenario: Both copies exist
 
-- **GIVEN** IndexedDB and `localStorage` both hold a workspace
+- **GIVEN** IndexedDB and `localStorage` both hold a workspace, and the migration marker is set
 - **WHEN** the app starts
 - **THEN** the IndexedDB workspace is loaded
 - **AND** the `localStorage` workspace is not deleted
 
 ### Requirement: Nothing is written before the workspace is read
 
-The app MUST NOT render before the browser workspace boot has finished. The diagram store MUST NOT
+The app MUST NOT render before the browser workspace boot has finished and the store has read
+the workspace or failed to. A failed read MUST NOT be treated as an empty workspace. The diagram
+store MUST NOT
 write the workspace key before its first read of that key has resolved; writes requested earlier
 MUST be dropped.
 
@@ -83,6 +87,13 @@ a rescue newer than the IndexedDB record MUST replace it; any rescue MUST then b
 - **GIVEN** an edit whose debounced write has not flushed
 - **WHEN** the tab is closed
 - **THEN** after reopening, the edit is present
+
+#### Scenario: A migration cut short
+
+- **GIVEN** IndexedDB and `localStorage` both hold a workspace, and no migration marker is set
+- **WHEN** the app starts
+- **THEN** IndexedDB holds the `localStorage` workspace
+- **AND** `structura_diagram-store` is removed from `localStorage`
 
 #### Scenario: A stale rescue
 

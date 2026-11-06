@@ -7,8 +7,8 @@
 
 ## 2. Boot and migration
 
-- [ ] 2.1 Add `bootBrowserWorkspaceStorage()`: open with a 3 s timeout, migrate (copy, read back, compare, delete), adopt or drop the rescue, select the adapter behind a delegating `defaultStorage`; verify with tests for each path (no IDB, open fails, migration ok, mismatch, both copies, rescue newer / older)
-- [ ] 2.2 Await it in `main.tsx` before rendering, and hydrate the diagram store after it; verify the app starts with a migrated workspace on a production build and the dashboard lists the same diagrams
+- [x] 2.1 Add `bootWorkspaceStorage()`: open with a 3 s timeout, migrate (copy, read back, compare, delete, mark), adopt or drop the rescue, select the adapter behind `workspaceStorage` (`defaultStorage` stays localStorage for the small keys); verify with tests for each path (`bootWorkspaceStorage.test.ts`, 12: no IDB, open fails, open times out, migration ok, mismatch, write fails, both copies with and without marker, rescue newer / older / alone; `workspaceStorage.test.ts`, 9)
+- [x] 2.2 Render in `main.tsx` once `diagramStoreHydrated` settles (read or failed); the store hydrates through `workspaceStorage`, which waits for the boot; verify on a production build: the 1.05 M-char fixture migrates (IndexedDB holds the same length, the localStorage key is gone, marker set), the editor opens it, and with `indexedDB` undefined localStorage is kept and used; no console errors
 
 ## 3. Write safety
 
