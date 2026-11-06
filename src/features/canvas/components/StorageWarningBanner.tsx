@@ -19,13 +19,17 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) {
     return `${Math.round(bytes / 1024)} KB`;
   }
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
 export function StorageWarningBanner() {
   const { t } = useTranslation();
   const storageHealthLevel = useSaveStatusStore((state) => state.storageHealthLevel);
   const storageUsedBytes = useSaveStatusStore((state) => state.storageUsedBytes);
+  const storageQuotaBytes = useSaveStatusStore((state) => state.storageQuotaBytes);
   const folderSyncStatus = useFileSystemStorage().status;
   const [dismissed, setDismissed] = useState(false);
   const [freedBytes, setFreedBytes] = useState<number | null>(null);
@@ -51,7 +55,7 @@ export function StorageWarningBanner() {
   const handleClearStorage = () => {
     const freed = clearNonEssentialStorage();
     setFreedBytes(freed);
-    checkStorageHealth();
+    void checkStorageHealth();
   };
 
   const handleConnectFolder = () => {
@@ -102,7 +106,13 @@ export function StorageWarningBanner() {
       <div className="flex-1 min-w-0">
         <p className="font-medium">{t(titleKey)}</p>
         <p className="text-xs opacity-80 mt-0.5">
-          {t(descKey, { used: formatBytes(storageUsedBytes) })}
+          {t(descKey, {
+            used: formatBytes(storageUsedBytes),
+            quota:
+              storageQuotaBytes === null
+                ? t("storage.localStorageQuota")
+                : formatBytes(storageQuotaBytes),
+          })}
         </p>
         {freedBytes !== null && freedBytes > 0 ? (
           <p className="text-xs font-medium mt-1">

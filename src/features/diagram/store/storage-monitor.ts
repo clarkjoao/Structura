@@ -1,4 +1,5 @@
 import type { StorageHealthLevel } from "./saveStatus.store";
+import { workspaceStorage } from "@/infrastructure/persistence/workspaceStorage";
 import { useSaveStatusStore } from "./saveStatus.store";
 
 /**
@@ -56,10 +57,35 @@ export function clearNonEssentialStorage(): number {
   return Math.max(0, before - after);
 }
 
-/** Runs a measurement and updates the store. */
-export function checkStorageHealth(): void {
-  const used = measureLocalStorageUsage();
-  useSaveStatusStore.getState()._setStorageUsage(used);
+/**
+ * Usage and quota of the origin, when the browser reports them. This is what
+ * bounds a workspace in IndexedDB.
+ */
+async function estimateOriginStorage(): Promise<{ usage: number; quota: number } | null> {
+  if (typeof navigator === "undefined" || !navigator.storage?.estimate) return null;
+  try {
+    const { usage, quota } = await navigator.storage.estimate();
+    return typeof usage === "number" && typeof quota === "number" && quota > 0
+      ? { usage, quota }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Runs a measurement and updates the store: against the origin quota when the
+ * workspace is in IndexedDB, against localStorage's ~5 MB otherwise.
+ */
+export async function checkStorageHealth(): Promise<void> {
+  if (workspaceStorage.location === "indexeddb") {
+    const estimate = await estimateOriginStorage();
+    if (estimate) {
+      useSaveStatusStore.getState()._setStorageUsage(estimate.usage, estimate.quota);
+      return;
+    }
+  }
+  useSaveStatusStore.getState()._setStorageUsage(measureLocalStorageUsage());
 }
 
 /**

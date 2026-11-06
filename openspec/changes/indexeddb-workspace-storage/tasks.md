@@ -17,7 +17,7 @@
 
 ## 4. Quota
 
-- [ ] 4.1 `checkStorageHealth` from `navigator.storage.estimate()` with IndexedDB (80 % / 95 %), unchanged otherwise; verify with tests; any new strings in en and pt-BR
+- [x] 4.1 `checkStorageHealth` from `navigator.storage.estimate()` with IndexedDB (80 % / 95 %), unchanged otherwise (also when the browser gives no estimate); the banner states the quota (`{{quota}}`: the origin quota, or `storage.localStorageQuota` "~5 MB", en and pt-BR) instead of a fixed "~5 MB"; verify with `storage-monitor.test.ts` (thresholds both ways, critical kept, estimate vs localStorage vs no estimate) and the banner test
 
 ## 5. Folder mode, seeds, docs
 

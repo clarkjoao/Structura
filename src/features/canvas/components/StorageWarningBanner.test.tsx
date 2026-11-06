@@ -28,9 +28,13 @@ vi.mock("@/infrastructure/persistence/requestConnectFolder", () => ({
 import { StorageWarningBanner } from "./StorageWarningBanner";
 import { shouldSuggestFolderSync, useSaveStatusStore } from "@/features/diagram";
 
-function setHealth(level: "ok" | "warning" | "danger" | "critical"): void {
+function setHealth(
+  level: "ok" | "warning" | "danger" | "critical",
+  storageQuotaBytes: number | null = null,
+): void {
   useSaveStatusStore.setState({
     storageHealthLevel: level,
+    storageQuotaBytes,
     storageUsedBytes: 3_500_000,
     lastStorageCheckAt: Date.now(),
   });
@@ -104,5 +108,17 @@ describe("StorageWarningBanner", () => {
     // Both remediation buttons remain accessible.
     expect(screen.getByRole("button", { name: /free up space/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /connect folder/i })).toBeInTheDocument();
+  });
+
+  it("states the localStorage ceiling, or the origin quota when the workspace is in IndexedDB", () => {
+    mockState.folderStatus = "connected";
+    setHealth("warning");
+    const { unmount } = render(<StorageWarningBanner />);
+    expect(screen.getByText(/Using 3\.3 MB of ~5 MB available/)).toBeInTheDocument();
+    unmount();
+
+    setHealth("warning", 4 * 1024 * 1024);
+    render(<StorageWarningBanner />);
+    expect(screen.getByText(/Using 3\.3 MB of 4\.0 MB available/)).toBeInTheDocument();
   });
 });

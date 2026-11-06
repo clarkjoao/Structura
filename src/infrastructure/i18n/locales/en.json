@@ -296,11 +296,11 @@
   "storage": {
     "warning": {
       "title": "Local storage almost full",
-      "description": "Using {{used}} of ~5 MB available. Future diagrams may not be saved."
+      "description": "Using {{used}} of {{quota}} available. Future diagrams may not be saved."
     },
     "danger": {
       "title": "Local storage critically low",
-      "description": "Using {{used}} of ~5 MB. New elements may not be saved."
+      "description": "Using {{used}} of {{quota}}. New elements may not be saved."
     },
     "critical": {
       "title": "Could not save",
@@ -315,6 +315,7 @@
       "description": "Browser storage is almost full. Connect a folder so nothing is lost if storage is cleared."
     },
     "freed": "{{amount}} freed successfully.",
+    "localStorageQuota": "~5 MB",
     "action": {
       "clear": "Free up space",
       "connectFolder": "Connect folder"

@@ -296,11 +296,11 @@
   "storage": {
     "warning": {
       "title": "Espaço local quase esgotado",
-      "description": "A usar {{used}} de ~5 MB disponíveis. Diagramas futuros podem não ser guardados."
+      "description": "A usar {{used}} de {{quota}} disponíveis. Diagramas futuros podem não ser guardados."
     },
     "danger": {
       "title": "Espaço local crítico",
-      "description": "A usar {{used}} de ~5 MB. Novos elementos podem não ser guardados."
+      "description": "A usar {{used}} de {{quota}}. Novos elementos podem não ser guardados."
     },
     "critical": {
       "title": "Não foi possível guardar",
@@ -315,6 +315,7 @@
       "description": "O armazenamento do navegador está quase cheio. Ligue uma pasta para não perder nada se o armazenamento for limpo."
     },
     "freed": "{{amount}} libertados com sucesso.",
+    "localStorageQuota": "~5 MB",
     "action": {
       "clear": "Libertar espaço",
       "connectFolder": "Ligar pasta"

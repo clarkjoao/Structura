@@ -53,6 +53,12 @@ export class WorkspaceStorage implements IStoragePort, BrowserWorkspaceStorage {
     return this.target;
   }
 
+  /** Where the workspace lives this session; null before the boot has finished. */
+  get location(): "indexeddb" | "localstorage" | null {
+    if (!this.target) return null;
+    return this.target instanceof IndexedDbAdapter ? "indexeddb" : "localstorage";
+  }
+
   get outcome(): Promise<WorkspaceBootOutcome> {
     return this.ready().then((result) => result.outcome);
   }
