@@ -162,6 +162,12 @@ export interface AppActions {
     offset: number,
     options?: { history?: boolean },
   ) => void;
+  /**
+   * What an arrangement writes to edges after the positions, in one `set()`:
+   * `updateHandleOrder`, `resetEdgeControlPoints`, then `setEdgeControlPoints`
+   * and `setEdgeLabelOffset` without history, as those calls did one by one.
+   */
+  applyLayoutEdges: (diagramId: string, effects: LayoutEdgeEffects) => void;
 
   bringToFront: (elementId: string) => void;
   sendToBack: (elementId: string) => void;
@@ -322,4 +328,22 @@ export interface AppActions {
     patch: Partial<Pick<UserTemplate, "name" | "description" | "category">>,
   ) => void;
   deleteUserTemplate: (id: string) => void;
+}
+
+/** The edge writes of one arrangement (`applyLayoutEdges`). */
+export interface LayoutEdgeEffects {
+  /** Handle orders on the active diagram, as `updateHandleOrder` writes them. */
+  handleOrders: ReadonlyArray<{
+    componentId: string;
+    side: "incoming" | "outgoing";
+    connectionIds: string[];
+  }>;
+  /** Connections whose control points are cleared, as `resetEdgeControlPoints` does. */
+  resetConnectionIds: readonly string[];
+  /** Routes written after the resets, with the label's offset where ELK placed it. */
+  routes: ReadonlyArray<{
+    connectionId: string;
+    points: EdgeControlPoint[];
+    labelOffset?: number;
+  }>;
 }

@@ -1,6 +1,7 @@
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { useDiagramStore } from "@/features/diagram";
 import type { DiagramDirection, EdgeLayout } from "@/features/diagram";
+import type { LayoutEdgeEffects } from "@/features/diagram/store/actions.types";
 import {
   edgeLayoutsFromLayoutResult,
   type EdgeLayoutsFromResultOptions,
@@ -34,6 +35,8 @@ const identity = (id: string): string | undefined => id;
  *   3. write handle-aligned ELK corridors as edge control points, and each
  *      label's offset to where ELK placed it
  *
+ * (2) and (3) are one store write (`applyLayoutEdges`).
+ *
  * Separating positions from (2) and (3) allows the caller to pass their own
  * offset (`toAppliedLayouts(graph, result, resizable, offset)`) without
  * duplicating the edge-writing logic.
@@ -58,6 +61,7 @@ export function applyLayoutResultEdges(
   const edgesToStyle =
     edgeIds === null ? graph.edges : graph.edges.filter((edge) => edgeIds.has(edge.id));
 
+  const handleOrders: LayoutEdgeEffects["handleOrders"][number][] = [];
   for (const node of graph.nodes) {
     const storeNodeId = nodeIdOf(node.id);
     if (storeNodeId === undefined) continue;
@@ -66,36 +70,42 @@ export function applyLayoutResultEdges(
       if (!ordering?.length) continue;
       const storeOrdering = ordering.map(edgeIdOf).filter((id): id is string => id !== undefined);
       if (storeOrdering.length === 0) continue;
-      store.updateHandleOrder(storeNodeId, side, storeOrdering);
+      handleOrders.push({ componentId: storeNodeId, side, connectionIds: storeOrdering });
     }
   }
 
+  const resetConnectionIds: string[] = [];
   for (const edge of edgesToStyle) {
     const storeEdgeId = edgeIdOf(edge.id);
-    if (storeEdgeId !== undefined) store.resetEdgeControlPoints(diagramId, storeEdgeId);
+    if (storeEdgeId !== undefined) resetConnectionIds.push(storeEdgeId);
   }
 
-  if (resetPaths) return;
-
-  const layouts = edgeLayoutsInDirection(graph, result, { ...options, resetPaths: false });
-  const connections = store.diagrams?.[diagramId]?.snapshot?.connections ?? {};
-
-  for (const edge of edgesToStyle) {
-    const storeEdgeId = edgeIdOf(edge.id);
-    if (storeEdgeId === undefined) continue;
-    // ELK routes every edge out of the right and into the left. An edge the user
-    // put on a top or bottom handle would be forced through that corridor, so it
-    // keeps the default route, which starts from the handle it actually uses.
-    const conn = connections[storeEdgeId];
-    if (conn?.sourceSide || conn?.targetSide) continue;
-    const points = layouts[storeEdgeId]?.points ?? [];
-    if (points.length === 0) continue;
-    store.setEdgeControlPoints(diagramId, storeEdgeId, points, { history: false });
-    const labelOffset = layouts[storeEdgeId]?.labelOffset;
-    if (labelOffset !== undefined) {
-      store.setEdgeLabelOffset(diagramId, storeEdgeId, labelOffset, { history: false });
+  const routes: LayoutEdgeEffects["routes"][number][] = [];
+  if (!resetPaths) {
+    const layouts = edgeLayoutsInDirection(graph, result, { ...options, resetPaths: false });
+    const connections = store.diagrams?.[diagramId]?.snapshot?.connections ?? {};
+    for (const edge of edgesToStyle) {
+      const storeEdgeId = edgeIdOf(edge.id);
+      if (storeEdgeId === undefined) continue;
+      // ELK routes every edge out of the right and into the left. An edge the user
+      // put on a top or bottom handle would be forced through that corridor, so it
+      // keeps the default route, which starts from the handle it actually uses.
+      const conn = connections[storeEdgeId];
+      if (conn?.sourceSide || conn?.targetSide) continue;
+      const points = layouts[storeEdgeId]?.points ?? [];
+      if (points.length === 0) continue;
+      const labelOffset = layouts[storeEdgeId]?.labelOffset;
+      routes.push({
+        connectionId: storeEdgeId,
+        points,
+        ...(labelOffset !== undefined && { labelOffset }),
+      });
     }
   }
+
+  // One `set()` for every edge: one per edge cost ~2 s on a 700-edge diagram,
+  // each one copying the workspace and notifying every subscriber.
+  store.applyLayoutEdges(diagramId, { handleOrders, resetConnectionIds, routes });
 }
 
 /**

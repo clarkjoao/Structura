@@ -4,6 +4,7 @@ import { layout } from "./layoutEngine";
 import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
 import { useDiagramStore } from "@/features/diagram";
+import { applyLayoutEdgesAsCalls } from "@/test/layoutEdgeCalls";
 
 /** Diagonal route for an edge: three points so interiorWaypoints returns one. */
 function makeResult(graph: {
@@ -66,7 +67,9 @@ function makeFakeStore(diagramId: string) {
         waypoints.push({ connectionId, points });
       },
     ),
-    setEdgeLabelOffset: vi.fn(),
+    setEdgeLabelOffset: vi.fn(
+      (_diagramId: string, _connectionId: string, _offset: number, _opts?: unknown) => {},
+    ),
     resetEdgeControlPoints: vi.fn((_diagramId: string, connectionId: string) => {
       resets.push(connectionId);
     }),
@@ -77,7 +80,7 @@ function makeFakeStore(diagramId: string) {
     _nodeLayouts: nodeLayouts,
   };
 
-  return store;
+  return { ...store, applyLayoutEdges: applyLayoutEdgesAsCalls(store) };
 }
 
 describe("applyLayoutResultEdges", () => {
