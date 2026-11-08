@@ -23,3 +23,14 @@
   - the Arrange menu.
 - [x] 4.2 The rules measured on the `perf:large` fixture and the 1,000-node test diagram, with occupied columns. Results are in `RELATORIO-REFS.md`, Part 3.
 - [x] 4.3 Typecheck, lint, format, fallow, the full unit suite and `openspec validate --strict`.
+
+## 5. Compact automatic references
+
+- [x] 5.1 `AUTO_REF_W`/`AUTO_REF_H`: planned at that size (`autoRefOptionsFor`), written by `reconcileAutoRefs`, also for an existing reference.
+- [x] 5.2 `SharedRefNode` draws an automatic reference as a pill; a user's reference keeps the card.
+- [x] 5.3 Tests: the store size and the two drawings.
+
+## 6. Sources start the reading
+
+- [x] 6.1 `LayoutNode.firstLayer` → ELK `layerConstraint=FIRST`; `withSourcesFirst` in `planDiagramAutoLayout`.
+- [x] 6.2 Tests: which nodes are pinned (containers included) and a source in the first column under real ELK.

@@ -16,6 +16,7 @@ import {
   type DiagramLayoutSettings,
 } from "@/features/diagram/model/layout-settings";
 import { planRuleRefs, type RuleRefStats } from "./ruleRefs";
+import { withSourcesFirst } from "./sourcesFirst";
 import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 import { isTopToBottom, transposeGraph, transposeResult } from "./axis";
 import { isArrangeBlockedInSession } from "./sessionArrangeGuard";
@@ -31,7 +32,8 @@ import { handleSpecFor } from "../nodes/node-types/registry";
  *
  *   1. automatic references from the last run are folded back into their
  *      originals (what the last run drew is not an input to the next one);
- *   2. `fromDiagram` builds the graph, edge labels included;
+ *   2. `fromDiagram` builds the graph, edge labels included, and every element
+ *      no connection enters starts its container's reading (`sourcesFirst.ts`);
  *   3. references are made the way the settings ask (`referenceRules`): by
  *      reading rules (`ruleRefs.ts`, the default), where they measurably read
  *      better (`chooseAutoRefs`), or not at all;
@@ -96,10 +98,12 @@ export async function planDiagramAutoLayout(
   const planned = input.autoRefs
     ? withoutAutoRefs(components, connections)
     : { components, connections: [...connections] };
-  const baseGraph = fromDiagram(planned.components, planned.connections, nodeLayouts, {
-    ...(measured ? { measured } : {}),
-    handleSpecFor,
-  });
+  const baseGraph = withSourcesFirst(
+    fromDiagram(planned.components, planned.connections, nodeLayouts, {
+      ...(measured ? { measured } : {}),
+      handleSpecFor,
+    }),
+  );
 
   const direction = input.direction ?? "LR";
   const mirrored = isTopToBottom(direction);

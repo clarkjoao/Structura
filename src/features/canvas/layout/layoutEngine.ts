@@ -317,6 +317,9 @@ function edgePorts(
   return { byNode, ends };
 }
 
+/** ELK's per-node layer constraint: what `LayoutNode.firstLayer` sets. */
+const FIRST_LAYER_KEY = "elk.layered.layering.layerConstraint";
+
 function buildElkNode(
   node: LayoutNode,
   childrenByParent: Map<string | null, LayoutNode[]>,
@@ -325,6 +328,7 @@ function buildElkNode(
   visited: Set<string>,
 ): ElkNode {
   const ports = portsByNode.get(node.id);
+  const first = node.firstLayer ? { [FIRST_LAYER_KEY]: "FIRST" } : undefined;
   const shape: ElkNode = {
     id: node.id,
     width: node.width,
@@ -337,8 +341,10 @@ function buildElkNode(
       layoutOptions: {
         "elk.portConstraints": options["elk.portConstraints"]!,
         "elk.portAlignment.default": options["elk.portAlignment.default"]!,
+        ...first,
       },
     }),
+    ...(!ports && first && { layoutOptions: first }),
   };
   // A containment cycle would recurse forever and hang the tab. The IR validator
   // rejects cycles and the store should not create them, so this is insurance
@@ -353,7 +359,11 @@ function buildElkNode(
     ...shape,
     layoutOptions: (() => {
       const padding = containerPadding(node, options["elk.padding"]);
-      return padding === undefined ? { ...options } : { ...options, "elk.padding": padding };
+      return {
+        ...options,
+        ...(padding !== undefined && { "elk.padding": padding }),
+        ...first,
+      };
     })(),
     children: children.map((child) =>
       buildElkNode(child, childrenByParent, options, portsByNode, visited),

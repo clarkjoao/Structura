@@ -125,6 +125,10 @@ snapshot, with a compare mode.
     - **Trial**: references on the busiest elements, kept only where the layout measurably reads
       better (few trials on large diagrams).
     - **Off**: none, and the ones an earlier arrangement made are removed.
+    - Automatic references are drawn as small pills (the link glyph and the name); a reference
+      you made yourself keeps its card.
+  - An element no connection enters always starts the reading: it is placed in the first column
+    (first row top to bottom) of its panel, so the diagram grows right or down from it.
   - Changing a setting re-arranges at once; one undo restores both the setting and the positions.
   - **Mode**: Manual (default) moves nothing on its own. Automatic places what you add next to
     what it connects to (a column to the right of its source, sliding down past anything in the

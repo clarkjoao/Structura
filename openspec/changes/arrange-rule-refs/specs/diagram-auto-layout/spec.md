@@ -89,3 +89,32 @@ unrecognised are clamped or dropped.
 - **WHEN** the user arranges it under Rules
 - **THEN** the success message says how many connections point back, how many stay back-edges,
   how many moved, and how many references were made
+
+### Requirement: Automatic references are compact
+
+An automatic reference SHALL be laid out and stored at the compact size (`AUTO_REF_W` × `AUTO_REF_H`)
+and drawn as a pill with the link glyph and the original's name. A reference the user made SHALL
+keep its card.
+
+#### Scenario: An arrangement makes a reference
+
+- **WHEN** an arrangement makes or keeps an automatic reference
+- **THEN** its stored size is the compact one, even if it was stored larger before
+- **AND** it is drawn without the `ref` chip
+
+#### Scenario: A user's reference
+
+- **WHEN** the user made the reference
+- **THEN** it is drawn as a card with the `ref` chip
+
+### Requirement: An element nothing enters starts the reading
+
+The whole-diagram arrangement SHALL place every element that no connection enters, and every
+container no connection enters from outside, in the first layer of its container, so the diagram
+grows along the reading direction from it.
+
+#### Scenario: A source connected far ahead
+
+- **WHEN** an element's only connection goes to an element several columns along the reading
+- **AND** no connection enters it
+- **THEN** it is placed in the first column of its container
