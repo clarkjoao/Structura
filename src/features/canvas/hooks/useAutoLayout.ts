@@ -99,6 +99,7 @@ export function useAutoLayout() {
         const writeDirection = options.direction !== undefined;
         const direction = options.direction ?? active?.direction;
         const settings = writeSettings ? options.settings : active?.layoutSettings;
+        const startedOn = arrangedState(store);
         // The same plan the assistant and generation run (`autoLayoutDiagram.ts`),
         // with the sizes React Flow measured.
         const plan = await planDiagramAutoLayout({
@@ -111,6 +112,13 @@ export function useAutoLayout() {
           ...(direction ? { direction } : {}),
         });
         const { groups } = plan;
+
+        // ELK runs in a worker, so the page stays live while it plans: the plan
+        // is only for the diagram, scene and structure it was made from.
+        if (!sameArrangedState(startedOn, arrangedState(useDiagramStore.getState()))) {
+          toast.info(t("autoLayout.discardedChanged"));
+          return;
+        }
 
         if (plan.result.boxes.size === 0) {
           toast.info(t("autoLayout.nothingToLayout"));
@@ -185,4 +193,35 @@ export function useAutoLayout() {
   );
 
   return { runAutoLayout, placeTouched, isRunning };
+}
+
+type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
+
+/**
+ * What a whole-diagram plan is made from: the open diagram, its scene and
+ * their structure (components and connections). Positions are not part of it:
+ * a node moved while the plan ran is placed by the plan, as arranging does.
+ */
+function arrangedState(state: DiagramStoreState) {
+  const id = state.activeDiagramId;
+  const diagram = id ? state.diagrams[id] : undefined;
+  const versionId = diagram?.activeVersionId ?? null;
+  return {
+    id,
+    snapshot: diagram?.snapshot,
+    versionId,
+    version: versionId ? diagram?.versions?.[versionId] : undefined,
+  };
+}
+
+function sameArrangedState(
+  a: ReturnType<typeof arrangedState>,
+  b: ReturnType<typeof arrangedState>,
+): boolean {
+  return (
+    a.id === b.id &&
+    a.snapshot === b.snapshot &&
+    a.versionId === b.versionId &&
+    a.version === b.version
+  );
 }

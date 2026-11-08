@@ -11,6 +11,7 @@
 //   PERF_RUNS           repeat the whole scenario N times and report medians (default 3)
 //   PERF_OUT            also write the report to this path
 //   HEADED=1            show the browser
+//   PERF_ARRANGE=1      also measure arranging the whole diagram (Cmd/Ctrl+Shift+L)
 //
 // Each scenario reports frame timings (rAF deltas) and long tasks (>50 ms main
 // thread blocks) captured inside the page. Numbers are for comparing a change
@@ -290,6 +291,32 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
   await page.keyboard.up("Control");
   result.zoom = await stopWindow(page);
   await settle(page, 800);
+
+  // --- arrange the whole diagram (opt-in: on `main` one run takes ~47 s) -------
+  // From the shortcut to the success toast: planning (ELK and the reference
+  // trials) and writing the result. Last, because it moves everything.
+  if (process.env.PERF_ARRANGE) {
+    await page.mouse.click(VIEWPORT.width - 400, 120);
+    await settle(page, 800);
+    await startWindow(page);
+    await page.keyboard.press("ControlOrMeta+Shift+KeyL");
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          // A passive wait: polling the DOM from here would add main-thread work.
+          const done = () =>
+            document.querySelector("[data-sonner-toast]")?.textContent?.includes("Layout applied");
+          if (done()) return resolve();
+          const observer = new MutationObserver(() => {
+            if (!done()) return;
+            observer.disconnect();
+            resolve();
+          });
+          observer.observe(document.body, { childList: true, subtree: true });
+        }),
+    );
+    result.arrange = await stopWindow(page);
+  }
 
   await browser.close();
   return result;

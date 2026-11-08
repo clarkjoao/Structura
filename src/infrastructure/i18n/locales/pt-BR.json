@@ -2955,7 +2955,8 @@
     "organizeChildren": "Organizar filhos (LR)",
     "error": "Erro ao calcular layout",
     "nothingToLayout": "Nada para organizar",
-    "blockedInSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos."
+    "blockedInSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos.",
+    "discardedChanged": "O diagrama mudou enquanto era organizado. Organize de novo para aplicar à versão mais recente."
   },
   "plugins": {
     "title": "Plugins",

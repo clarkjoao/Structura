@@ -2955,7 +2955,8 @@
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",
     "nothingToLayout": "Nothing to lay out",
-    "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements."
+    "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements.",
+    "discardedChanged": "The diagram changed while it was being arranged. Arrange it again to lay out the latest version."
   },
   "plugins": {
     "title": "Plugins",
