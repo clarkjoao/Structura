@@ -34,6 +34,34 @@ export const AUTO_REF_MIN_EDGES = 2;
 export const AUTO_REF_MAX_TRIALS = 6;
 /** One-edge references tried per run, after the hubs: each is one more ELK run. */
 const AUTO_REF_MAX_LONE_TRIALS = 12;
+/**
+ * How much layout work the trials may add, in graph elements (nodes plus
+ * edges) laid out: a trial costs about one whole-graph ELK run, which grows
+ * with the graph. Diagrams up to ~166 elements keep every trial; a larger one
+ * gets fewer, busiest hubs first. A count, not a clock, so the same diagram
+ * always gets the same references.
+ */
+export const AUTO_REF_TRIAL_BUDGET = 3000;
+
+/** How many trials `chooseAutoRefs` may run. */
+export interface AutoRefTrialLimits {
+  hubTrials: number;
+  loneTrials: number;
+}
+
+/** The trials a graph this size gets under `AUTO_REF_TRIAL_BUDGET`: hubs first, then lone references. */
+export function autoRefTrialLimits(
+  graph: Pick<LayoutGraph, "nodes" | "edges">,
+  budget = AUTO_REF_TRIAL_BUDGET,
+): AutoRefTrialLimits {
+  const size = Math.max(1, graph.nodes.length + graph.edges.length);
+  const trials = Math.floor(budget / size);
+  const hubTrials = Math.min(AUTO_REF_MAX_TRIALS, trials);
+  return {
+    hubTrials,
+    loneTrials: Math.min(AUTO_REF_MAX_LONE_TRIALS, trials - hubTrials),
+  };
+}
 /** A route this much shorter in total wins a tie on crossings and overlaps. */
 const LENGTH_TIE_BREAK = 0.9;
 
@@ -311,6 +339,7 @@ export async function chooseAutoRefs(
   graph: LayoutGraph,
   options: AutoRefPlanOptions,
   run: (graph: LayoutGraph) => Promise<LayoutResult>,
+  limits: AutoRefTrialLimits = autoRefTrialLimits(graph),
 ): Promise<AutoRefChoice> {
   const result = await run(graph);
   const baseline = scoreLayout(graph, result);
@@ -326,7 +355,7 @@ export async function chooseAutoRefs(
     return true;
   };
 
-  for (const hub of hubs.filter((plan) => plan.groups.length > 0).slice(0, AUTO_REF_MAX_TRIALS)) {
+  for (const hub of hubs.filter((plan) => plan.groups.length > 0).slice(0, limits.hubTrials)) {
     await tryGroups([...best.groups, ...hub.groups]);
   }
 
@@ -334,7 +363,7 @@ export async function chooseAutoRefs(
   for (const hub of hubs) {
     let kept = 0;
     for (const group of hub.lone) {
-      if (kept >= hub.maxLone || loneTrials >= AUTO_REF_MAX_LONE_TRIALS) break;
+      if (kept >= hub.maxLone || loneTrials >= limits.loneTrials) break;
       loneTrials += 1;
       if (await tryGroups([...best.groups, group])) kept += 1;
     }

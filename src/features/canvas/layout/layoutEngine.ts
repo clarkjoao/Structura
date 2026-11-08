@@ -8,6 +8,7 @@ import {
 } from "@/features/diagram/model/layout-settings";
 import { readLaidOutGraph } from "./layoutReadability";
 import { readElkHandleOrder } from "./elkHandleOrder";
+import { runElk } from "./elkRunner";
 import type {
   LayoutBox,
   LayoutEdge,
@@ -183,17 +184,6 @@ export function layoutWithSettings(
 }
 
 const ELK_ROOT_ID = "__structura_layout_root__";
-
-let elkConstructor: (new () => { layout(graph: ElkNode): Promise<ElkNode> }) | null = null;
-
-async function getElk(): Promise<{ layout(graph: ElkNode): Promise<ElkNode> }> {
-  if (!elkConstructor) {
-    // Dynamic import to keep ELK's ~250KB out of the initial bundle.
-    const module = await import("elkjs/lib/elk.bundled.js");
-    elkConstructor = module.default;
-  }
-  return new elkConstructor();
-}
 
 /**
  * Input order is not information.
@@ -458,8 +448,7 @@ export async function layoutElkGraph(
     edges: elkEdges,
   };
 
-  const elk = await getElk();
-  return elk.layout(elkGraph);
+  return runElk(elkGraph);
 }
 
 /**
