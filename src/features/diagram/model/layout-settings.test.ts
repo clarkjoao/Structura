@@ -4,6 +4,11 @@ import {
   LAYOUT_GAP_MAX,
   LAYOUT_GAP_MIN,
   normalizeLayoutSettings,
+  REF_MIN_KEEP_DEFAULT,
+  REF_NEIGHBOR_COLUMNS_DEFAULT,
+  REF_NEIGHBOR_COLUMNS_MAX,
+  REF_NEIGHBOR_COLUMNS_MIN,
+  referenceRules,
   sameLayoutSettings,
   type DiagramLayoutSettings,
 } from "./layout-settings";
@@ -68,5 +73,60 @@ describe("sameLayoutSettings", () => {
     expect(sameLayoutSettings(undefined, { density: "normal" })).toBe(true);
     expect(sameLayoutSettings({ density: "compact" }, { density: "normal" })).toBe(false);
     expect(sameLayoutSettings({ layerGap: 300 }, { layerGap: 300 })).toBe(true);
+  });
+});
+
+describe("reference settings", () => {
+  it("defaults to references by rules, two columns, one connection kept, forward off", () => {
+    expect(referenceRules(undefined)).toEqual({
+      mode: "rules",
+      neighborColumns: REF_NEIGHBOR_COLUMNS_DEFAULT,
+      minKeep: REF_MIN_KEEP_DEFAULT,
+      forward: false,
+    });
+    expect(
+      normalizeLayoutSettings({
+        references: "rules",
+        refNeighborColumns: REF_NEIGHBOR_COLUMNS_DEFAULT,
+        refMinKeep: REF_MIN_KEEP_DEFAULT,
+        refForward: false,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("keeps a chosen mode and rule, clamped to whole columns in range", () => {
+    expect(
+      normalizeLayoutSettings({
+        references: "auto",
+        refNeighborColumns: 99,
+        refMinKeep: 2.4,
+        refForward: true,
+      }),
+    ).toEqual({
+      references: "auto",
+      refNeighborColumns: REF_NEIGHBOR_COLUMNS_MAX,
+      refMinKeep: 2,
+      refForward: true,
+    });
+    expect(normalizeLayoutSettings({ references: "off" })).toEqual({ references: "off" });
+    expect(normalizeLayoutSettings({ refNeighborColumns: 0 })).toEqual({
+      refNeighborColumns: REF_NEIGHBOR_COLUMNS_MIN,
+    });
+  });
+
+  it("drops reference values it does not recognise", () => {
+    // As a file or a collaborator could send it.
+    const received: DiagramLayoutSettings = JSON.parse(
+      '{"references":"always","refNeighborColumns":"3","refMinKeep":null,"refForward":"yes"}',
+    );
+    expect(normalizeLayoutSettings(received)).toBeUndefined();
+    expect(referenceRules(received).mode).toBe("rules");
+  });
+
+  it("tells settings apart by their references", () => {
+    expect(sameLayoutSettings({ references: "rules" }, undefined)).toBe(true);
+    expect(sameLayoutSettings({ references: "off" }, undefined)).toBe(false);
+    expect(sameLayoutSettings({ refNeighborColumns: 3 }, { refNeighborColumns: 4 })).toBe(false);
+    expect(sameLayoutSettings({ refForward: true }, {})).toBe(false);
   });
 });
