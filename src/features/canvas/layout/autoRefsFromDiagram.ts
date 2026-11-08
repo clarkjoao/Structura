@@ -4,14 +4,12 @@ import type { Component } from "@/features/diagram/model/component.types";
 import type { Connection } from "@/features/diagram/model/connection.types";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { COMPONENT_TYPE_SHARED_REF } from "@/features/diagram/model/component-type-constants";
+import { AUTO_REF_H, AUTO_REF_W } from "@/features/diagram/model/layout.constants";
 import { generateId } from "@/features/diagram/utils/generate-id";
 import { sharedMode } from "@/features/diagram/utils/shared";
 import { canContain } from "@/features/elements/containment";
-import { elementDefaultSize, getElement } from "@/features/elements/element.registry";
 import { canBeReferenced } from "@/features/elements/referencing";
 import type { AutoRefPlanOptions } from "./autoRefs";
-
-const FALLBACK_REF_SIZE = { width: 200, height: 48 };
 
 /**
  * The diagram as the auto-layout plans it: every automatic reference folded
@@ -53,8 +51,6 @@ export function withoutAutoRefs(
  * reference that stays put should not move for being renamed.
  */
 export function autoRefOptionsFor(components: Record<string, Component>): AutoRefPlanOptions {
-  const descriptor = getElement(COMPONENT_TYPE_SHARED_REF);
-  const size = descriptor ? elementDefaultSize(descriptor) : FALLBACK_REF_SIZE;
   const existing = Object.values(components).filter(
     (component) => isSharedRefComponent(component) && component.auto,
   );
@@ -85,9 +81,7 @@ export function autoRefOptionsFor(components: Record<string, Component>): AutoRe
       );
       return reused?.id ?? generateId("el");
     },
-    refSize: {
-      width: size.width ?? FALLBACK_REF_SIZE.width,
-      height: size.height ?? FALLBACK_REF_SIZE.height,
-    },
+    // Planned at the compact size the store gives every automatic reference.
+    refSize: { width: AUTO_REF_W, height: AUTO_REF_H },
   };
 }

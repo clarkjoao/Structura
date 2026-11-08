@@ -3,6 +3,7 @@ import "@/features/elements/bootstrap";
 import { PanelKind } from "../../enums";
 import { HISTORY_COALESCE_MS } from "../store.constants";
 import { createTestDiagramStore } from "../test-utils";
+import { AUTO_REF_H, AUTO_REF_W } from "../../model/layout.constants";
 
 /**
  * The auto-layout's references: written in the same step as the positions,
@@ -84,6 +85,42 @@ describe("applyAutoLayout with automatic references", () => {
     // A consumer not assigned keeps its edge on the original.
     expect(ctx.targetOf(ctx.e.a2.id)).toBe(ctx.auth.id);
     expect(ctx.components()[ctx.auth.id].shared).toEqual({ mode: "ref" });
+  });
+
+  it("draws an automatic reference at the compact size, even one drawn larger before", () => {
+    const ctx = setup();
+    const assignment = {
+      refId: "ref-z1",
+      originalId: ctx.auth.id,
+      parentId: ctx.zone1.id,
+      sourceIds: [ctx.a1.id],
+    };
+    ctx.store.getState().applyAutoLayout([ctx.position], [assignment]);
+    expect(ctx.diagram().nodeLayouts["ref-z1"]).toMatchObject({
+      width: AUTO_REF_W,
+      height: AUTO_REF_H,
+    });
+    // One made at the card size by an earlier version is brought down on the next run.
+    ctx.store.setState((state) => {
+      const layout = state.diagrams[ctx.diagram().id]!.nodeLayouts["ref-z1"]!;
+      return {
+        diagrams: {
+          ...state.diagrams,
+          [ctx.diagram().id]: {
+            ...ctx.diagram(),
+            nodeLayouts: {
+              ...ctx.diagram().nodeLayouts,
+              "ref-z1": { ...layout, width: 200, height: 48 },
+            },
+          },
+        },
+      };
+    });
+    ctx.store.getState().applyAutoLayout([ctx.position], [assignment]);
+    expect(ctx.diagram().nodeLayouts["ref-z1"]).toMatchObject({
+      width: AUTO_REF_W,
+      height: AUTO_REF_H,
+    });
   });
 
   it("is undone in one step: reference, targets and positions together", () => {
