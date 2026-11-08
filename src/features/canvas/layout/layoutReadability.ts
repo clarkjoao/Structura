@@ -225,13 +225,72 @@ function samePoint(a: Point, b: Point): boolean {
  * is not a crossing. Only count an intersection when the edges do not share an
  * endpoint node, or when they do but the segments meet away from both ends.
  */
+/** Axis-aligned bounds of a polyline or a segment. */
+interface Bounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+/**
+ * Slack on every bounds test below. `segmentsIntersect` tolerates `EPSILON`;
+ * a pixel is far more, so a pair the bounds test drops can never be one it
+ * would count: the tests only skip work, never change a count.
+ */
+const BOUNDS_SLACK = 1;
+
+function boundsOf(points: readonly Point[]): Bounds {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { minX, minY, maxX, maxY };
+}
+
+function boundsTouch(a: Bounds, b: Bounds): boolean {
+  return (
+    a.minX <= b.maxX + BOUNDS_SLACK &&
+    b.minX <= a.maxX + BOUNDS_SLACK &&
+    a.minY <= b.maxY + BOUNDS_SLACK &&
+    b.minY <= a.maxY + BOUNDS_SLACK
+  );
+}
+
+function segmentsMayTouch(p1: Point, p2: Point, p3: Point, p4: Point): boolean {
+  return (
+    Math.min(p1.x, p2.x) <= Math.max(p3.x, p4.x) + BOUNDS_SLACK &&
+    Math.min(p3.x, p4.x) <= Math.max(p1.x, p2.x) + BOUNDS_SLACK &&
+    Math.min(p1.y, p2.y) <= Math.max(p3.y, p4.y) + BOUNDS_SLACK &&
+    Math.min(p3.y, p4.y) <= Math.max(p1.y, p2.y) + BOUNDS_SLACK
+  );
+}
+
+/**
+ * Pairs of edges that cross. Every pair whose bounds touch is tested segment
+ * by segment, as before; pairs whose bounds are apart cannot cross and are
+ * skipped by a sweep along x. On a 700-edge diagram that is most pairs: the
+ * count is what it was, the cost is what is near.
+ */
 function countPolylineCrossings(
   edges: Array<{ source: string; target: string; points: Point[] }>,
 ): number {
   let crossings = 0;
+  const bounds = edges.map((edge) => boundsOf(edge.points));
+  const order = edges.map((_, index) => index).sort((i, j) => bounds[i].minX - bounds[j].minX);
 
-  for (let i = 0; i < edges.length; i += 1) {
-    for (let j = i + 1; j < edges.length; j += 1) {
+  for (let oi = 0; oi < order.length; oi += 1) {
+    const i = order[oi];
+    for (let oj = oi + 1; oj < order.length; oj += 1) {
+      const j = order[oj];
+      if (bounds[j].minX > bounds[i].maxX + BOUNDS_SLACK) break;
+      if (!boundsTouch(bounds[i], bounds[j])) continue;
       const a = edges[i];
       const b = edges[j];
       const sharesNode =
@@ -243,6 +302,9 @@ function countPolylineCrossings(
       let found = false;
       for (let s = 0; s < a.points.length - 1 && !found; s += 1) {
         for (let t = 0; t < b.points.length - 1 && !found; t += 1) {
+          if (!segmentsMayTouch(a.points[s], a.points[s + 1], b.points[t], b.points[t + 1])) {
+            continue;
+          }
           if (!segmentsIntersect(a.points[s], a.points[s + 1], b.points[t], b.points[t + 1])) {
             continue;
           }
@@ -299,8 +361,17 @@ function countEdgeNodeOverlaps(walked: WalkedGraph, rootId: string): number {
   }
 
   for (const edge of walked.edges) {
+    const edgeBounds = boundsOf(edge.points);
     for (const [nodeId, box] of walked.boxes) {
       if (nodeId === rootId) continue;
+      // A segment crosses a box only through one of its sides: apart, it cannot.
+      const boxBounds = {
+        minX: box.x,
+        minY: box.y,
+        maxX: box.x + box.width,
+        maxY: box.y + box.height,
+      };
+      if (!boundsTouch(edgeBounds, boxBounds)) continue;
       if (nodeId === edge.source || nodeId === edge.target) continue;
       if (hasChildren.has(nodeId)) continue;
       if (isAncestorOf(nodeId, edge.source, walked.parentOf)) continue;
