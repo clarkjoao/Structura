@@ -563,7 +563,20 @@
       "directionVertical": "Vertical",
       "directionHint": "Reorganiza o diagrama inteiro e refaz as conexões. Desfazer volta como estava.",
       "directionLockedSession": "Indisponível durante uma sessão ao vivo.",
-      "running": "Organizando…"
+      "running": "Organizando…",
+      "references": "Referências",
+      "referencesRules": "Regras",
+      "referencesAuto": "Teste",
+      "referencesOff": "Desligadas",
+      "referencesRulesHint": "Uma conexão que volta para um elemento distante termina numa referência ao lado de quem a usa.",
+      "referencesAutoHint": "Testa referências nos elementos mais usados e mantém só as que reduzem cruzamentos. Lento em diagramas grandes.",
+      "referencesOffHint": "Sem referências automáticas; as que um Organizar anterior criou são desfeitas.",
+      "refNeighborColumns": "Volta curta até",
+      "refColumns_one": "{{count}} coluna",
+      "refColumns_other": "{{count}} colunas",
+      "refMinKeep": "Conexões mantidas no original",
+      "refForward": "Também linhas longas para frente",
+      "refForwardHint": "Mais de {{count}} colunas. Reduz muito os cruzamentos, mas cria muitas referências."
     }
   },
   "diagram": {
@@ -2951,12 +2964,16 @@
     "applied": "Layout aplicado com sucesso",
     "appliedWithRefs_one": "Layout aplicado — 1 referência desembaraça um elemento muito usado",
     "appliedWithRefs_other": "Layout aplicado — {{count}} referências desembaraçam elementos muito usados",
+    "appliedWithRuleRefs_one": "Layout aplicado — 1 referência encurta uma conexão que volta",
+    "appliedWithRuleRefs_other": "Layout aplicado — {{count}} referências encurtam conexões que voltam",
     "panelApplied": "Layout do painel aplicado",
     "organizeChildren": "Organizar filhos (LR)",
     "error": "Erro ao calcular layout",
     "nothingToLayout": "Nada para organizar",
     "blockedInSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos.",
-    "discardedChanged": "O diagrama mudou enquanto era organizado. Organize de novo para aplicar à versão mais recente."
+    "discardedChanged": "O diagrama mudou enquanto era organizado. Organize de novo para aplicar à versão mais recente.",
+    "ruleRefsSummary_one": "1 conexão volta: {{neighbor}} fica como volta curta, {{moved}} passa para uma referência, {{kept}} fica no original.",
+    "ruleRefsSummary_other": "{{count}} conexões voltam: {{neighbor}} ficam como volta curta, {{moved}} passam para referências, {{kept}} ficam no original."
   },
   "plugins": {
     "title": "Plugins",

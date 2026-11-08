@@ -563,7 +563,20 @@
       "directionVertical": "Vertical",
       "directionHint": "Rearranges the whole diagram and redraws its connections. Undo puts it back.",
       "directionLockedSession": "Not available during a live session.",
-      "running": "Arranging…"
+      "running": "Arranging…",
+      "references": "References",
+      "referencesRules": "Rules",
+      "referencesAuto": "Trial",
+      "referencesOff": "Off",
+      "referencesRulesHint": "A connection that points back to a distant element ends on a reference beside the element that uses it.",
+      "referencesAutoHint": "Tries references on the busiest elements and keeps only those that cut crossings. Slow on large diagrams.",
+      "referencesOffHint": "No automatic references; the ones an earlier arrangement made are removed.",
+      "refNeighborColumns": "Short back-edge up to",
+      "refColumns_one": "{{count}} column",
+      "refColumns_other": "{{count}} columns",
+      "refMinKeep": "Connections kept on the original",
+      "refForward": "Long forward connections too",
+      "refForwardHint": "Longer than {{count}} columns. Cuts crossings sharply, but makes many references."
     }
   },
   "diagram": {
@@ -2951,12 +2964,16 @@
     "applied": "Layout applied successfully",
     "appliedWithRefs_one": "Layout applied — 1 reference untangles a busy element",
     "appliedWithRefs_other": "Layout applied — {{count}} references untangle busy elements",
+    "appliedWithRuleRefs_one": "Layout applied — 1 reference shortens a connection that points back",
+    "appliedWithRuleRefs_other": "Layout applied — {{count}} references shorten connections that point back",
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",
     "nothingToLayout": "Nothing to lay out",
     "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements.",
-    "discardedChanged": "The diagram changed while it was being arranged. Arrange it again to lay out the latest version."
+    "discardedChanged": "The diagram changed while it was being arranged. Arrange it again to lay out the latest version.",
+    "ruleRefsSummary_one": "1 connection points back: {{neighbor}} stays as a short back-edge, {{moved}} moved onto a reference, {{kept}} stays on its original.",
+    "ruleRefsSummary_other": "{{count}} connections point back: {{neighbor}} stay as short back-edges, {{moved}} moved onto references, {{kept}} stay on their original."
   },
   "plugins": {
     "title": "Plugins",

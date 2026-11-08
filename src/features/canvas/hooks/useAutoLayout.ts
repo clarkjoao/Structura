@@ -134,10 +134,24 @@ export function useAutoLayout() {
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });
         });
+        const stats = plan.ruleRefStats;
         toast.success(
-          groups.length > 0
-            ? t("autoLayout.appliedWithRefs", { count: groups.length })
-            : t("autoLayout.applied"),
+          groups.length === 0
+            ? t("autoLayout.applied")
+            : stats
+              ? t("autoLayout.appliedWithRuleRefs", { count: groups.length })
+              : t("autoLayout.appliedWithRefs", { count: groups.length }),
+          // What the reading rules did, so a large diagram says how it was untangled.
+          stats && stats.backEdges > 0
+            ? {
+                description: t("autoLayout.ruleRefsSummary", {
+                  count: stats.backEdges,
+                  neighbor: stats.neighborBackEdges,
+                  moved: stats.movedEdges,
+                  kept: stats.keptOnOriginal,
+                }),
+              }
+            : undefined,
         );
       } catch (err) {
         console.error("[autoLayout] ELK error", err);
