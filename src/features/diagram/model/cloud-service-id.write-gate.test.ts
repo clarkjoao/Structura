@@ -34,6 +34,10 @@ const ALLOWED = new Set(
     // `resolveCloudServiceId`. The key appears on the way in, not on the way
     // to storage.
     "features/element-presets/components/ElementPresetPreviewCard.tsx",
+    // Declares the plugin importer input (API 1.3 `PluginComponentInput.cloudServiceId`) for
+    // the opscr projection. It is request data: the host writes the persisted field through
+    // `cloudServiceIdWrite()` when it inserts the graph (`features/plugins/import-graph.ts`).
+    "lib/opscr-mapping/importer-graph.ts",
   ].map((p) => path.join(SRC, p)),
 );
 

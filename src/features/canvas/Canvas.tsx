@@ -1,7 +1,7 @@
 import { useSharedRefNotices } from "./shared/useSharedRefNotices";
 import { SharedLayer } from "./shared/SharedLayer";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
+import { useReactFlow, useStoreApi, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
@@ -37,6 +37,8 @@ import { useElementFocusFromUrl } from "./hooks/useElementFocusFromUrl";
 import { getCachedCanvasSnapshot, useDiagramStore } from "@/features/diagram";
 import type { DiagramDirection, DiagramLayoutSettings } from "@/features/diagram";
 import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
+import { frameComponents, frameUnlessInView } from "./focus/focusComponents";
+import { useHighlightRequests } from "./focus/highlightRequests";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
 import type { CanvasProps } from "./canvas.types";
@@ -118,11 +120,13 @@ const PendingNodeToolbars = React.memo(function PendingNodeToolbars({
       {pendingNodeIds.map((nodeId) => {
         const suggestionId = getSuggestionIdForNode(pendingPreviews, nodeId);
         if (!suggestionId) return null;
+        const preview = pendingPreviews.find((p) => p.suggestionId === suggestionId);
         return (
           <PendingNodeToolbar
             key={nodeId}
             nodeId={nodeId}
             suggestionId={suggestionId}
+            canDiscard={preview?.discardable !== false}
             onKeep={onKeep}
             onDiscard={onDiscard}
           />
@@ -254,7 +258,43 @@ const Canvas = (props: CanvasProps = {}) => {
   );
 
   useServiceFocusFromUrl(visualState);
+
+  // A plugin's chat reply (API 1.7) arrives already on the canvas: bring it into view once.
+  const focusedPreviews = useRef(new Set<string>());
+  useEffect(() => {
+    const preview = pendingPreviews.find(
+      (p) => p.focus && p.nodeIds.length > 0 && !focusedPreviews.current.has(p.suggestionId),
+    );
+    if (!preview) return;
+    focusedPreviews.current.add(preview.suggestionId);
+    // Next frame: React Flow has rendered and measured the new nodes by then.
+    requestAnimationFrame(() => frameComponents(reactFlowInstance, preview.nodeIds));
+  }, [pendingPreviews, reactFlowInstance]);
   useElementFocusFromUrl(visualState);
+
+  // A plugin lights elements it points at (API 1.11): brought into view only when they are not.
+  const highlightRequest = useHighlightRequests((state) => state.request);
+  const flowStore = useStoreApi();
+  const handledHighlight = useRef(highlightRequest?.token ?? 0);
+  useEffect(() => {
+    if (!highlightRequest || highlightRequest.token === handledHighlight.current) return;
+    handledHighlight.current = highlightRequest.token;
+    const nodeIds = new Set(
+      highlightRequest.componentIds.filter((id) => reactFlowInstance.getNode(id)),
+    );
+    const connectionIds = highlightRequest.connectionIds.filter((id) => {
+      const edge = reactFlowInstance.getEdge(id);
+      if (edge) [edge.source, edge.target].forEach((end) => nodeIds.add(end));
+      return edge !== undefined;
+    });
+    if (nodeIds.size === 0) {
+      visualState.clearHighlight();
+      return;
+    }
+    visualState.setHighlight(connectionIds, [...nodeIds]);
+    const { width, height } = flowStore.getState();
+    frameUnlessInView(reactFlowInstance, [...nodeIds], { width, height });
+  }, [highlightRequest, reactFlowInstance, flowStore, visualState]);
 
   const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);
   const occupancy = useViewportOccupancy();
@@ -730,24 +770,26 @@ const Canvas = (props: CanvasProps = {}) => {
                   </button>
                 </div>
               ) : null}
-              <div className="mt-auto flex pb-5 pr-4">
-                <div className="pointer-events-auto">
-                  <FloatingChatButton
-                    isOpen={isChatOpen}
-                    hasUnread={hasUnread}
-                    onClick={() => {
-                      if (isFlowActive) return;
-                      setIsChatOpen((previous) => {
-                        const next = !previous;
-                        if (next) {
-                          setHasUnread(false);
-                        }
-                        return next;
-                      });
-                    }}
-                  />
+              {props.showChat !== false && (
+                <div className="mt-auto flex pb-5 pr-4">
+                  <div className="pointer-events-auto">
+                    <FloatingChatButton
+                      isOpen={isChatOpen}
+                      hasUnread={hasUnread}
+                      onClick={() => {
+                        if (isFlowActive) return;
+                        setIsChatOpen((previous) => {
+                          const next = !previous;
+                          if (next) {
+                            setHasUnread(false);
+                          }
+                          return next;
+                        });
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             {showElementPanel && (
               <ElementPanel
@@ -762,7 +804,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 onClose={eventHandlers.closePanel}
               />
             )}
-            {isChatOpen ? (
+            {isChatOpen && props.showChat !== false ? (
               <AssistantUIChatPanel
                 onClose={() => setIsChatOpen(false)}
                 selectedNodeIds={visualState.selectedNodeIds}

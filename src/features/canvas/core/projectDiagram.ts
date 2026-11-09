@@ -107,9 +107,9 @@ function projectNode(
     type: descriptor.rfType,
     position: tab ? { x: tab.x, y: tab.y } : { x: layout?.x ?? 0, y: layout?.y ?? 0 },
     zIndex: viewNode.zIndex,
-    ...(viewNode.isChild
-      ? { parentId: component.parentId!, ...(tab ? {} : { extent: "parent" as const }) }
-      : {}),
+    // No `extent: "parent"`: a child may be dragged out of its panel, or into another one —
+    // the drop decides its parent (useNodeDragParenting).
+    ...(viewNode.isChild ? { parentId: component.parentId! } : {}),
     hidden: viewNode.isHidden,
     data: descriptor.buildData(component, ctx) as Record<string, unknown>,
   };

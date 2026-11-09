@@ -55,6 +55,21 @@ describe("toComponentSnapshot", () => {
       size: { width: 200, height: 100 },
       tags: ["core"],
       serviceId: null,
+      cloudServiceId: null,
+      technology: null,
+    });
+  });
+
+  it("exposes the catalog service and technology of a cloud component (API 1.10)", () => {
+    const lambda = {
+      ...component,
+      type: "aws-compute",
+      ...{ ["cloudServiceId"]: "lambda" },
+      technology: "Python",
+    } as unknown as Component;
+    expect(toComponentSnapshot(lambda)).toMatchObject({
+      cloudServiceId: "lambda",
+      technology: "Python",
     });
   });
 

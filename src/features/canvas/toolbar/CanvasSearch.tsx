@@ -21,9 +21,16 @@ interface CanvasSearchProps {
   onClose: () => void;
   onSelectResult: (componentId: string) => void;
   components: Record<string, Component>;
+  /** Focuses the input again whenever it changes — for a shortcut pressed while already open. */
+  focusRequest?: number;
 }
 
-export default function CanvasSearch({ onClose, onSelectResult, components }: CanvasSearchProps) {
+export default function CanvasSearch({
+  onClose,
+  onSelectResult,
+  components,
+  focusRequest,
+}: CanvasSearchProps) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +61,7 @@ export default function CanvasSearch({ onClose, onSelectResult, components }: Ca
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+  }, [focusRequest]);
 
   useEffect(() => {
     setSelectedIndex((i) => Math.min(Math.max(i, 0), Math.max(0, results.length - 1)));
