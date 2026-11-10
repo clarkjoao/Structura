@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { BrowserRouter, Routes, Route, Navigate, type FutureConfig } from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -63,9 +64,10 @@ function ChatThreadsHydrator(): null {
 }
 
 function RouteFallback() {
+  const { t } = useTranslation();
   return (
     <div className="flex h-screen w-full items-center justify-center text-sm text-muted-foreground">
-      Loading…
+      {t("common.loading")}
     </div>
   );
 }
