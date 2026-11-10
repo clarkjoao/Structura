@@ -175,6 +175,7 @@
     "heroNodeDatabase": "Database"
   },
   "dashboard": {
+    "addDiagramDescription": "Dê um nome ao diagrama e escolha o nível C4.",
     "allDiagrams": "Todos os diagramas",
     "searchComponentPlaceholder": "Buscar componente...",
     "noComponentsFound": "Nenhum componente encontrado.",
