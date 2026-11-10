@@ -1,6 +1,6 @@
 import { useSharedRefNotices } from "./shared/useSharedRefNotices";
 import { SharedLayer } from "./shared/SharedLayer";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import ElementPanel from "./panels/ElementPanel/index";
@@ -48,7 +48,8 @@ import {
   ELEMENT_PRESET_DRAG_MIME,
   useElementPresetLibrary,
 } from "@/features/element-presets";
-import { AssistantUIChatPanel, FloatingChatButton } from "@/features/llm/components";
+import { FloatingChatButton } from "@/features/llm/components/FloatingChatButton";
+
 import { useLLMChat } from "./chat";
 import { getPendingNodeIds, getSuggestionIdForNode, useLLMStore } from "@/features/llm";
 import { usePanelChildLayout } from "./hooks/usePanelChildLayout";
@@ -100,6 +101,13 @@ import { PendingNodeToolbar } from "./selection-actions/PendingNodeToolbar";
 
 /* ── Memoized sub-component ─────────────────────────────────────────────── */
 import type { PendingNodePreview } from "@/features/llm";
+
+// The chat UI (@assistant-ui/*) loads when the panel first opens, not with the canvas.
+const AssistantUIChatPanel = lazy(() =>
+  import("@/features/llm/components/AssistantUIChatPanel").then((m) => ({
+    default: m.AssistantUIChatPanel,
+  })),
+);
 
 interface PendingNodeToolbarsProps {
   pendingNodeIds: string[];
@@ -755,11 +763,13 @@ const Canvas = (props: CanvasProps = {}) => {
               />
             )}
             {isChatOpen ? (
-              <AssistantUIChatPanel
-                onClose={() => setIsChatOpen(false)}
-                selectedNodeIds={visualState.selectedNodeIds}
-                selectedNodeId={visualState.selectedNodeId}
-              />
+              <Suspense fallback={null}>
+                <AssistantUIChatPanel
+                  onClose={() => setIsChatOpen(false)}
+                  selectedNodeIds={visualState.selectedNodeIds}
+                  selectedNodeId={visualState.selectedNodeId}
+                />
+              </Suspense>
             ) : null}
           </div>
         </div>
