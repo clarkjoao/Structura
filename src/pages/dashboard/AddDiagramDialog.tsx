@@ -1,8 +1,14 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { Level } from "@/features/diagram";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { AddDiagramDialogProps } from "@/pages/dashboard/dashboard.types";
 
 export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
@@ -13,17 +19,14 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
   const [description, setDescription] = useState("");
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="text-lg font-bold mb-4">{t("dashboard.addDiagramTitle")}</h3>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("dashboard.addDiagramTitle")}</DialogTitle>
+          <DialogDescription className="sr-only">
+            {t("dashboard.addDiagramDescription")}
+          </DialogDescription>
+        </DialogHeader>
         <div className="space-y-3">
           <div>
             <label className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1 block">
@@ -95,7 +98,7 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
             {t("dashboard.createDiagram")}
           </Button>
         </div>
-      </motion.div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -176,6 +176,7 @@
     "heroNodeDatabase": "Database"
   },
   "dashboard": {
+    "addDiagramDescription": "Dê um nome ao diagrama e escolha o nível C4.",
     "allDiagrams": "Todos os diagramas",
     "searchComponentPlaceholder": "Buscar componente...",
     "noComponentsFound": "Nenhum componente encontrado.",
@@ -435,6 +436,10 @@
     "deleteSelected": "Deletar selecionados"
   },
   "canvas": {
+    "diagramNotFound": "Diagrama não encontrado",
+    "elementsDeleted_one": "{{count}} elemento excluído",
+    "elementsDeleted_other": "{{count}} elementos excluídos",
+    "elementsDeletedUndo": "Desfazer",
     "noDiagramSelected": "Nenhum diagrama selecionado",
     "nothingInView": "Nada à vista",
     "nothingInViewHint_one": "{{count}} elemento está fora da tela.",
@@ -2094,12 +2099,12 @@
     "elements_one": "{{count}} elemento",
     "elements_other": "{{count}} elementos",
     "chip": {
+      "container_one": "{{count}} contêiner",
+      "container_other": "{{count}} contêineres",
       "person_one": "{{count}} pessoa",
       "person_other": "{{count}} pessoas",
       "system_one": "{{count}} sistema",
       "system_other": "{{count}} sistemas",
-      "container_one": "{{count}} aplicação",
-      "container_other": "{{count}} aplicações",
       "component_one": "{{count}} componente",
       "component_other": "{{count}} componentes",
       "panel_one": "{{count}} fronteira",

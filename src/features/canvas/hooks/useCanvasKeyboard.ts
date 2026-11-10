@@ -17,6 +17,7 @@ import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
 import { KEY, type KeyHandler } from "./keyboard/helpers";
 import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
 import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
+import { withDeleteFeedback } from "../utils/notifyElementsDeleted";
 import { useUndoRedoShortcuts } from "./keyboard/useUndoRedoShortcuts";
 import { useGroupShortcuts } from "./keyboard/useGroupShortcuts";
 import { useEdgeWaypointShortcuts } from "./keyboard/useEdgeWaypointShortcuts";
@@ -226,6 +227,10 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   });
 
   const recordingHandler = useRecordingShortcuts();
+  const removeElementsWithFeedback = useMemo(
+    () => withDeleteFeedback(removeElements, undo, t),
+    [removeElements, undo, t],
+  );
   const selectionHandler = useSelectionShortcuts({
     diagram,
     selectedNodeId,
@@ -237,7 +242,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setContextMenu,
     clearClipboard,
     clearHighlight,
-    removeElements,
+    removeElements: removeElementsWithFeedback,
     cancelInFlightGesture,
     onExitFlowPlayback,
     onExitFocusMode,

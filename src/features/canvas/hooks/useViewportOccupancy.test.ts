@@ -33,19 +33,25 @@ describe("computeViewportOccupancy", () => {
       hasNodes: false,
       anyNodeVisible: false,
       nodeCount: 0,
+      visibleCount: 0,
     });
   });
 
   it("sees a node inside the viewport", () => {
     const result = computeViewportOccupancy([node("a", 100, 100)], IDENTITY, PANE_W, PANE_H);
 
-    expect(result).toEqual({ hasNodes: true, anyNodeVisible: true, nodeCount: 1 });
+    expect(result).toEqual({ hasNodes: true, anyNodeVisible: true, nodeCount: 1, visibleCount: 1 });
   });
 
   it("does not see a node far off to the right", () => {
     const result = computeViewportOccupancy([node("a", 5000, 100)], IDENTITY, PANE_W, PANE_H);
 
-    expect(result).toEqual({ hasNodes: true, anyNodeVisible: false, nodeCount: 1 });
+    expect(result).toEqual({
+      hasNodes: true,
+      anyNodeVisible: false,
+      nodeCount: 1,
+      visibleCount: 0,
+    });
   });
 
   it("does not see a node far above", () => {
@@ -69,7 +75,7 @@ describe("computeViewportOccupancy", () => {
       PANE_H,
     );
 
-    expect(result).toEqual({ hasNodes: true, anyNodeVisible: true, nodeCount: 2 });
+    expect(result).toEqual({ hasNodes: true, anyNodeVisible: true, nodeCount: 2, visibleCount: 1 });
   });
 
   it("ignores hidden nodes", () => {
@@ -80,7 +86,12 @@ describe("computeViewportOccupancy", () => {
       PANE_H,
     );
 
-    expect(result).toEqual({ hasNodes: false, anyNodeVisible: false, nodeCount: 0 });
+    expect(result).toEqual({
+      hasNodes: false,
+      anyNodeVisible: false,
+      nodeCount: 0,
+      visibleCount: 0,
+    });
   });
 
   it("accounts for the pan offset", () => {
@@ -102,7 +113,7 @@ describe("computeViewportOccupancy", () => {
   it("assumes content is reachable before the pane is measured", () => {
     const result = computeViewportOccupancy([node("a", 9000, 9000)], IDENTITY, 0, 0);
 
-    expect(result).toEqual({ hasNodes: true, anyNodeVisible: true, nodeCount: 1 });
+    expect(result).toEqual({ hasNodes: true, anyNodeVisible: true, nodeCount: 1, visibleCount: 1 });
   });
 
   it("falls back to the default node size when unmeasured", () => {
