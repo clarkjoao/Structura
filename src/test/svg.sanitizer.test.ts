@@ -63,3 +63,27 @@ describe("sanitizeSvg", () => {
     expect(result).toContain(dataUri);
   });
 });
+
+describe("sanitizeSvg hardening", () => {
+  const wrap = (inner: string) => `<svg xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+
+  it("removes foreignObject and everything inside it", () => {
+    const result = sanitizeSvg(
+      wrap('<foreignObject><div xmlns="http://www.w3.org/1999/xhtml">x</div></foreignObject>'),
+    );
+    expect(result!.toLowerCase()).not.toContain("foreignobject");
+  });
+
+  it("removes javascript: hrefs hidden behind control characters", () => {
+    const result = sanitizeSvg(wrap('<a href="java&#9;script:alert(1)"><rect/></a>'));
+    expect(result!.toLowerCase()).not.toContain("script:");
+    expect(result).not.toContain("href");
+  });
+
+  it("removes SMIL elements that write into an href", () => {
+    const result = sanitizeSvg(
+      wrap('<a href="#"><set attributeName="href" to="javascript:alert(1)"/></a>'),
+    );
+    expect(result!.toLowerCase()).not.toContain("javascript");
+  });
+});

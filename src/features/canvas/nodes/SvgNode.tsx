@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
+import { safeSvgMarkup } from "../utils/svg.render";
 import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 export type SvgNodeData = {
@@ -94,7 +95,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
           <div
             className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
             style={{ pointerEvents: "none" }}
-            dangerouslySetInnerHTML={{ __html: d.svgContent }}
+            dangerouslySetInnerHTML={{ __html: safeSvgMarkup(d.svgContent) }}
           />
         </div>
       ) : (
@@ -118,7 +119,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
           <div
             className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-full [&>svg]:h-full"
             style={{ pointerEvents: "none" }}
-            dangerouslySetInnerHTML={{ __html: d.svgContent }}
+            dangerouslySetInnerHTML={{ __html: safeSvgMarkup(d.svgContent) }}
           />
         </div>
       )}

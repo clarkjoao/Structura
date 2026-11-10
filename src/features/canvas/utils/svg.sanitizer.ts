@@ -1,4 +1,26 @@
-const DANGEROUS_TAG_NAMES = new Set(["script", "iframe", "object", "embed", "link"]);
+const DANGEROUS_TAG_NAMES = new Set([
+  "script",
+  "iframe",
+  "object",
+  "embed",
+  "link",
+  "foreignobject",
+]);
+
+/** Browsers ignore tabs, newlines and other control characters inside a URL scheme. */
+function isJavascriptUrl(value: string): boolean {
+  // eslint-disable-next-line no-control-regex
+  const compact = value.replace(/[\u0000-\u0020]/g, "").toLowerCase();
+  return compact.startsWith("javascript:");
+}
+
+/** SMIL `<set>` / `<animate>` can write a `javascript:` value into an href at runtime. */
+function animatesHref(element: Element): boolean {
+  const tag = element.tagName.toLowerCase();
+  if (tag !== "set" && tag !== "animate") return false;
+  const target = (element.getAttribute("attributeName") ?? "").toLowerCase();
+  return target === "href" || target.endsWith(":href");
+}
 
 function walkElements(root: Element, visit: (element: Element) => void): void {
   visit(root);
@@ -10,7 +32,7 @@ function walkElements(root: Element, visit: (element: Element) => void): void {
 function removeDangerousTags(svgRoot: Element): void {
   const toRemove: Element[] = [];
   walkElements(svgRoot, (element) => {
-    if (DANGEROUS_TAG_NAMES.has(element.tagName.toLowerCase())) {
+    if (DANGEROUS_TAG_NAMES.has(element.tagName.toLowerCase()) || animatesHref(element)) {
       toRemove.push(element);
     }
   });
@@ -31,8 +53,7 @@ function sanitizeAttributes(svgRoot: Element): void {
       const isHref =
         nameLower === "href" || nameLower === "xlink:href" || nameLower.endsWith(":href");
       if (isHref) {
-        const valueLower = attribute.value.trim().toLowerCase();
-        if (valueLower.startsWith("javascript:")) {
+        if (isJavascriptUrl(attribute.value)) {
           element.removeAttribute(attribute.name);
         }
         continue;

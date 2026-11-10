@@ -6,6 +6,7 @@ import type { Diagram } from "@/features/diagram";
 import { readerCatalogFrom, type ReaderCatalog } from "@/features/diagram/utils/reader-catalog";
 import { READER_CATALOG_KEY } from "./encode";
 import { currentHashParams } from "./utils";
+import { sanitizeDiagramSvg } from "@/lib/export-service/sanitize-diagram-svg";
 import { logger } from "@/lib/core/logger";
 
 /** A diagram as a link hands it over, with the names it shows but does not hold. */
@@ -23,10 +24,10 @@ export interface SharedPayload {
  */
 export function splitSharedPayload(parsed: Diagram): SharedPayload {
   if (!(READER_CATALOG_KEY in parsed)) {
-    return { diagram: parsed, catalog: readerCatalogFrom(undefined) };
+    return { diagram: sanitizeDiagramSvg(parsed), catalog: readerCatalogFrom(undefined) };
   }
   const { [READER_CATALOG_KEY]: raw, ...diagram } = parsed as Diagram & Record<string, unknown>;
-  return { diagram: diagram as Diagram, catalog: readerCatalogFrom(raw) };
+  return { diagram: sanitizeDiagramSvg(diagram as Diagram), catalog: readerCatalogFrom(raw) };
 }
 
 export function decodeDiagramPayloadWithCatalog(encoded: string): SharedPayload {

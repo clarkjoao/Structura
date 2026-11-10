@@ -1,6 +1,7 @@
 import type { Diagram, IconDefinition } from "@/features/diagram";
 import { logger } from "@/lib/core/logger";
 import { useIconStore } from "@/features/diagram";
+import { sanitizeDiagramSvg, sanitizeSvgIcon } from "./sanitize-diagram-svg";
 import { normalizeLayoutSettings } from "@/features/diagram/model/layout-settings";
 
 function normalizeOneIconEntry(key: string, value: unknown): IconDefinition | null {
@@ -79,7 +80,8 @@ function sanitizeIconLibrary(raw: unknown): Record<string, IconDefinition> {
   }
   const next: Record<string, IconDefinition> = {};
   for (const [key, value] of Object.entries(raw)) {
-    const icon = normalizeOneIconEntry(key, value);
+    const normalized = normalizeOneIconEntry(key, value);
+    const icon = normalized && sanitizeSvgIcon(normalized);
     if (icon) {
       next[icon.id] = icon;
     }
@@ -87,7 +89,8 @@ function sanitizeIconLibrary(raw: unknown): Record<string, IconDefinition> {
   return next;
 }
 
-export function normalizeImportedDiagram(diagram: Diagram): Diagram {
+export function normalizeImportedDiagram(untrusted: Diagram): Diagram {
+  const diagram = untrusted.snapshot ? sanitizeDiagramSvg(untrusted) : untrusted;
   const snapshot = diagram.snapshot ?? {
     components: {},
     connections: {},
