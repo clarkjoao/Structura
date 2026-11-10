@@ -1,9 +1,11 @@
 import { useReactFlow } from "@xyflow/react";
+import { useTranslation } from "react-i18next";
 import type { Diagram, DiagramModel, ResolvedSnapshot } from "@/features/diagram";
 import { isApiGroupComponent, isPanelComponent, useDiagramActions } from "@/features/diagram";
 import NodeContextMenu from "./NodeContextMenu";
 import { getCenterOfNodes, getCopyableIds, getPlatform } from "../hooks/keyboard/helpers";
 import { duplicateSelection } from "../utils/duplicateSelection";
+import { withDeleteFeedback } from "../utils/notifyElementsDeleted";
 
 interface CanvasContextMenuProps {
   contextMenu: { x: number; y: number; elementId: string };
@@ -34,6 +36,7 @@ export function CanvasContextMenu({
 }: CanvasContextMenuProps) {
   const reactFlowInstance = useReactFlow();
   const actions = useDiagramActions();
+  const { t } = useTranslation();
 
   const contextMenuId = contextMenu.elementId;
   const contextMenuComponent = resolvedSnapshot.components[contextMenuId];
@@ -83,7 +86,7 @@ export function CanvasContextMenu({
 
   const handleDelete = canEditCanvas
     ? () => {
-        actions.removeElements(effectiveIds, []);
+        withDeleteFeedback(actions.removeElements, actions.undo, t)(effectiveIds, []);
       }
     : undefined;
 

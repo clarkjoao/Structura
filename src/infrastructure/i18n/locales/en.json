@@ -433,6 +433,9 @@
   },
   "canvas": {
     "diagramNotFound": "Diagram not found",
+    "elementsDeleted_one": "{{count}} element deleted",
+    "elementsDeleted_other": "{{count}} elements deleted",
+    "elementsDeletedUndo": "Undo",
     "noDiagramSelected": "No diagram selected",
     "nothingInView": "Nothing in view",
     "nothingInViewHint_one": "{{count}} element is off screen.",
