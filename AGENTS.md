@@ -153,8 +153,8 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
   identity caches for RF node/edge arrays. Do not reintroduce per-edge
   `EdgeLabelRenderer` / `useStore` for canvas-wide flags. Rules and remaining
   opportunities: `docs/concepts/canvas-hot-path.md`.
-- Undo/redo stores full diagram snapshots with coalescing; bounded by
-  `MAX_HISTORY_STEPS`.
+- Undo/redo stores diagram snapshots taken with Immer `current()` (structurally shared,
+  not deep copies) with coalescing; bounded by `MAX_HISTORY_STEPS`.
 - The `@/features/diagram` and `@/features/canvas` barrels couple the bundle
   graph; route chunks stay small only if always-mounted code (App shell, LLM
   chat) imports leaf modules directly instead of the barrels.
