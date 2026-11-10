@@ -3,7 +3,7 @@ import { applyLayoutEdgesAsCalls } from "@/test/layoutEdgeCalls";
 import { useDiagramStore } from "@/features/diagram";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { REFERENCE_DIAGRAMS } from "@/features/canvas/layout/reference-diagrams";
-import { GENERATED_DIAGRAMS } from "@/features/canvas/layout/generated-diagrams";
+import { REF_FORWARD_COLUMNS } from "@/features/diagram/model/layout-settings";
 import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
 import { applyIRToDiagram } from "./apply-ir";
 import type { DiagramIR } from "./ir.types";
@@ -200,8 +200,33 @@ describe("applyIRToDiagram — into an empty diagram", () => {
   }
 
   it("lays the result out as the auto-layout would, references included", async () => {
-    // B-run2: a generated diagram where the auto-layout keeps references.
-    const ir = GENERATED_DIAGRAMS.find((diagram) => diagram.name.startsWith("B-run2"))!.ir;
+    // A chain one column longer than `REF_FORWARD_COLUMNS`, plus a shortcut from
+    // its head to its tail: whatever ids the store mints, the shortcut spans
+    // more columns than the forward rule allows, so the default reading rules
+    // must end it on a reference. A generated fixture cannot pin this: the
+    // layout follows the minted ids (ELK input is sorted by id), and a diagram
+    // whose far connections depend on that order yields references only on
+    // some runs.
+    const chain = Array.from({ length: REF_FORWARD_COLUMNS + 2 }, (_, index) => `n${index}`);
+    const last = chain[chain.length - 1]!;
+    const ir: DiagramIR = {
+      type: "c4-container",
+      nodes: chain.map((id) => ({
+        id,
+        semanticType: "container",
+        name: id.toUpperCase(),
+        parentId: null,
+        tier: "compute",
+      })),
+      edges: [
+        ...chain.slice(1).map((id, index) => ({
+          id: `${chain[index]}-${id}`,
+          sourceId: chain[index]!,
+          targetId: id,
+        })),
+        { id: "shortcut", sourceId: chain[0]!, targetId: last },
+      ],
+    };
     const { store, diagramId } = emptyDiagramStore();
 
     const applied = await applyIRToDiagram(ir);
