@@ -334,7 +334,8 @@ export default function DashboardPage() {
   );
 
   const isModifierClick = useCallback(
-    (event: React.MouseEvent<HTMLElement>) => event.ctrlKey || event.metaKey || isModifierActive,
+    (event: React.MouseEvent<HTMLElement>) =>
+      event.ctrlKey || event.metaKey || event.shiftKey || isModifierActive,
     [isModifierActive],
   );
 
