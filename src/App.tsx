@@ -4,7 +4,6 @@ import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDiagramPreviewSync } from "@/lib/diagram-preview";
-import { useLLMStore } from "@/features/llm";
 import { ModalOverlay } from "@/features/plugins/components/ModalOverlay";
 
 const ViewerPage = lazy(() =>
@@ -57,7 +56,8 @@ function DiagramPreviewSync(): null {
  */
 function ChatThreadsHydrator(): null {
   useEffect(() => {
-    void useLLMStore.getState().initChatThreads();
+    // Dynamic import: the LLM store (and its catalogs) stays out of the initial payload.
+    void import("@/features/llm/store").then((m) => m.useLLMStore.getState().initChatThreads());
   }, []);
   return null;
 }
