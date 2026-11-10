@@ -44,10 +44,12 @@ export interface RuleRefStats {
   backEdges: number;
   /** Back-connections left as short back-edges, their target close enough. */
   neighborBackEdges: number;
-  /** Connections moved onto a reference. */
+  /** Back-connections moved onto a reference. */
   movedEdges: number;
-  /** Connections the rules would have moved, left on the original for `minKeep`. */
+  /** Back-connections the rules would have moved, left on the original for `minKeep`. */
   keptOnOriginal: number;
+  /** Long forward connections moved onto a reference (rule 3). */
+  forwardMovedEdges: number;
   /** References made. */
   refs: number;
 }
@@ -143,6 +145,7 @@ export function planRuleRefs(
   const groups = new Map<string, AutoRefGroup>();
   let movedEdges = 0;
   let keptOnOriginal = 0;
+  let forwardMovedEdges = 0;
   for (const [targetId, consumers] of byTarget) {
     // A consumer moves only when every connection it has to the target is one a rule moves.
     const moving = [...consumers.entries()]
@@ -155,7 +158,7 @@ export function planRuleRefs(
     while (left < rules.minKeep && moving.length > 0) {
       const [, entry] = moving.shift()!;
       left += entry.edges.length;
-      keptOnOriginal += entry.edges.length;
+      keptOnOriginal += entry.edges.filter((m) => m.back).length;
     }
     for (const [sourceId, entry] of moving) {
       const parentId = options.refParentFor(parentOf.get(sourceId) ?? null);
@@ -173,7 +176,10 @@ export function planRuleRefs(
       }
       group.sourceIds.push(sourceId);
       for (const m of entry.edges) group.edgeIds.push(m.edge.id);
-      movedEdges += entry.edges.length;
+      for (const m of entry.edges) {
+        if (m.back) movedEdges += 1;
+        else forwardMovedEdges += 1;
+      }
     }
   }
 
@@ -184,6 +190,7 @@ export function planRuleRefs(
       neighborBackEdges,
       movedEdges,
       keptOnOriginal,
+      forwardMovedEdges,
       refs: groups.size,
     },
   };

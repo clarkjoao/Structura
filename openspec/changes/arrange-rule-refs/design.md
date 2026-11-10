@@ -69,6 +69,13 @@ the diagram grows right, or down in TB, from its sources. Computed before refere
 Always on: measured with references by rules, sources outside the first column went 49 → 5 and
 158 → 0, at +6% / +3% crossings and +13% / +22% length.
 
+## Decision 8 — Long forward lines go to references by default
+
+`refForward` is on unless stored `false`. On the two large diagrams it cut crossings a further
+~90% (5,600 → 640; 10,700 → 430) for ~2.5× the references; the author found the result reads
+better. The summary counts forward moves apart from back-connections (`forwardMovedEdges`), and
+the menu says what a reference is and what the option trades.
+
 ## Risks
 
 - **More boxes.** A large diagram gets one reference pill per far back-connection, about 130–180 on

@@ -120,7 +120,9 @@ snapshot, with a compare mode.
       - A nearer one stays a short back-edge.
       - There is one reference per element and panel, and the original keeps at least K
         connections (default 1).
-      - Optionally, forward connections longer than 6 columns get references too.
+      - **Long forward lines too** (on by default): a connection running more than 6 columns
+        ahead ends on a reference as well. Far fewer lines cross the diagram, in exchange for more
+        references; turn it off to keep those lines drawn.
       - The success message says how many connections pointed back and what happened to them.
     - **Trial**: references on the busiest elements, kept only where the layout measurably reads
       better (few trials on large diagrams).

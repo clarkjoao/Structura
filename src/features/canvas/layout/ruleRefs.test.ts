@@ -117,6 +117,7 @@ describe("references by reading rules", () => {
       neighborBackEdges: 1,
       movedEdges: 1,
       keptOnOriginal: 0,
+      forwardMovedEdges: 0,
       refs: 1,
     });
   });
@@ -195,6 +196,7 @@ describe("references by reading rules", () => {
     const forward = plan(placed, edges, { forwardColumns: 6 });
     // Both are long; the closer consumer stays so `b` keeps a connection.
     expect(forward.groups.flatMap((g) => g.sourceIds)).toEqual(["a"]);
+    expect(forward.stats).toMatchObject({ movedEdges: 0, forwardMovedEdges: 1 });
   });
 
   it("never references what cannot be referenced", () => {

@@ -51,7 +51,8 @@ export interface DiagramLayoutSettings {
   refMinKeep?: number;
   /**
    * Under `rules`, whether a forward connection longer than
-   * `REF_FORWARD_COLUMNS` columns ends on a reference too. Absent means off.
+   * `REF_FORWARD_COLUMNS` columns ends on a reference too. Absent means on;
+   * only `false` is stored.
    */
   refForward?: boolean;
 }
@@ -111,7 +112,7 @@ export function referenceRules(settings: DiagramLayoutSettings | undefined): Ref
     minKeep:
       clampedInteger(settings?.refMinKeep, REF_MIN_KEEP_MIN, REF_MIN_KEEP_MAX) ??
       REF_MIN_KEEP_DEFAULT,
-    forward: settings?.refForward === true,
+    forward: settings?.refForward !== false,
   };
 }
 
@@ -152,7 +153,7 @@ export function normalizeLayoutSettings(
     normalized.refNeighborColumns = rules.neighborColumns;
   }
   if (rules.minKeep !== REF_MIN_KEEP_DEFAULT) normalized.refMinKeep = rules.minKeep;
-  if (rules.forward) normalized.refForward = true;
+  if (!rules.forward) normalized.refForward = false;
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 

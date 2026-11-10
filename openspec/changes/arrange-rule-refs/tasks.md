@@ -34,3 +34,9 @@
 
 - [x] 6.1 `LayoutNode.firstLayer` → ELK `layerConstraint=FIRST`; `withSourcesFirst` in `planDiagramAutoLayout`.
 - [x] 6.2 Tests: which nodes are pinned (containers included) and a source in the first column under real ELK.
+
+## 7. Forward references by default
+
+- [x] 7.1 `refForward` absent means on; only `false` is stored.
+- [x] 7.2 `forwardMovedEdges` in the stats and its own sentence in the summary.
+- [x] 7.3 Menu copy explains references and the forward trade-off (en, pt-BR).

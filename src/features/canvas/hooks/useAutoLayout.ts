@@ -142,14 +142,21 @@ export function useAutoLayout() {
               ? t("autoLayout.appliedWithRuleRefs", { count: groups.length })
               : t("autoLayout.appliedWithRefs", { count: groups.length }),
           // What the reading rules did, so a large diagram says how it was untangled.
-          stats && stats.backEdges > 0
+          stats && (stats.backEdges > 0 || stats.forwardMovedEdges > 0)
             ? {
-                description: t("autoLayout.ruleRefsSummary", {
-                  count: stats.backEdges,
-                  neighbor: stats.neighborBackEdges,
-                  moved: stats.movedEdges,
-                  kept: stats.keptOnOriginal,
-                }),
+                description: [
+                  stats.backEdges > 0 &&
+                    t("autoLayout.ruleRefsSummary", {
+                      count: stats.backEdges,
+                      neighbor: stats.neighborBackEdges,
+                      moved: stats.movedEdges,
+                      kept: stats.keptOnOriginal,
+                    }),
+                  stats.forwardMovedEdges > 0 &&
+                    t("autoLayout.ruleRefsForward", { count: stats.forwardMovedEdges }),
+                ]
+                  .filter(Boolean)
+                  .join(" "),
               }
             : undefined,
         );

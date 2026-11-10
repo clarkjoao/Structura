@@ -77,21 +77,23 @@ describe("sameLayoutSettings", () => {
 });
 
 describe("reference settings", () => {
-  it("defaults to references by rules, two columns, one connection kept, forward off", () => {
+  it("defaults to references by rules, two columns, one connection kept, forward on", () => {
     expect(referenceRules(undefined)).toEqual({
       mode: "rules",
       neighborColumns: REF_NEIGHBOR_COLUMNS_DEFAULT,
       minKeep: REF_MIN_KEEP_DEFAULT,
-      forward: false,
+      forward: true,
     });
     expect(
       normalizeLayoutSettings({
         references: "rules",
         refNeighborColumns: REF_NEIGHBOR_COLUMNS_DEFAULT,
         refMinKeep: REF_MIN_KEEP_DEFAULT,
-        refForward: false,
+        refForward: true,
       }),
     ).toBeUndefined();
+    // Only turning it off is stored.
+    expect(normalizeLayoutSettings({ refForward: false })).toEqual({ refForward: false });
   });
 
   it("keeps a chosen mode and rule, clamped to whole columns in range", () => {
@@ -100,13 +102,13 @@ describe("reference settings", () => {
         references: "auto",
         refNeighborColumns: 99,
         refMinKeep: 2.4,
-        refForward: true,
+        refForward: false,
       }),
     ).toEqual({
       references: "auto",
       refNeighborColumns: REF_NEIGHBOR_COLUMNS_MAX,
       refMinKeep: 2,
-      refForward: true,
+      refForward: false,
     });
     expect(normalizeLayoutSettings({ references: "off" })).toEqual({ references: "off" });
     expect(normalizeLayoutSettings({ refNeighborColumns: 0 })).toEqual({
@@ -127,6 +129,7 @@ describe("reference settings", () => {
     expect(sameLayoutSettings({ references: "rules" }, undefined)).toBe(true);
     expect(sameLayoutSettings({ references: "off" }, undefined)).toBe(false);
     expect(sameLayoutSettings({ refNeighborColumns: 3 }, { refNeighborColumns: 4 })).toBe(false);
-    expect(sameLayoutSettings({ refForward: true }, {})).toBe(false);
+    expect(sameLayoutSettings({ refForward: false }, {})).toBe(false);
+    expect(sameLayoutSettings({ refForward: true }, {})).toBe(true);
   });
 });

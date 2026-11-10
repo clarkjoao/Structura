@@ -568,15 +568,15 @@
       "referencesRules": "Rules",
       "referencesAuto": "Trial",
       "referencesOff": "Off",
-      "referencesRulesHint": "A connection that points back to a distant element ends on a reference beside the element that uses it.",
+      "referencesRulesHint": "Long lines become references: instead of crossing the diagram, a connection ends on a small dashed copy of its target, placed beside the element that uses it. The original stays where it is, and selecting the copy shows a button that leads to it.",
       "referencesAutoHint": "Tries references on the busiest elements and keeps only those that cut crossings. Slow on large diagrams.",
       "referencesOffHint": "No automatic references; the ones an earlier arrangement made are removed.",
       "refNeighborColumns": "Short back-edge up to",
       "refColumns_one": "{{count}} column",
       "refColumns_other": "{{count}} columns",
       "refMinKeep": "Connections kept on the original",
-      "refForward": "Long forward connections too",
-      "refForwardHint": "Longer than {{count}} columns. Cuts crossings sharply, but makes many references."
+      "refForward": "Long forward lines too",
+      "refForwardHint": "A connection that runs more than {{count}} columns ahead also ends on a reference. Far fewer lines cross the diagram, in exchange for more references. Turn off to keep those lines drawn."
     }
   },
   "diagram": {
@@ -2964,8 +2964,8 @@
     "applied": "Layout applied successfully",
     "appliedWithRefs_one": "Layout applied — 1 reference untangles a busy element",
     "appliedWithRefs_other": "Layout applied — {{count}} references untangle busy elements",
-    "appliedWithRuleRefs_one": "Layout applied — 1 reference shortens a connection that points back",
-    "appliedWithRuleRefs_other": "Layout applied — {{count}} references shorten connections that point back",
+    "appliedWithRuleRefs_one": "Layout applied — 1 reference replaces a long line",
+    "appliedWithRuleRefs_other": "Layout applied — {{count}} references replace long lines",
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",
@@ -2973,7 +2973,9 @@
     "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements.",
     "discardedChanged": "The diagram changed while it was being arranged. Arrange it again to lay out the latest version.",
     "ruleRefsSummary_one": "1 connection points back: {{neighbor}} stays as a short back-edge, {{moved}} moved onto a reference, {{kept}} stays on its original.",
-    "ruleRefsSummary_other": "{{count}} connections point back: {{neighbor}} stay as short back-edges, {{moved}} moved onto references, {{kept}} stay on their original."
+    "ruleRefsSummary_other": "{{count}} connections point back: {{neighbor}} stay as short back-edges, {{moved}} moved onto references, {{kept}} stay on their original.",
+    "ruleRefsForward_one": "1 long forward line moved onto a reference.",
+    "ruleRefsForward_other": "{{count}} long forward lines moved onto references."
   },
   "plugins": {
     "title": "Plugins",

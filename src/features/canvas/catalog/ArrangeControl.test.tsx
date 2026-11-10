@@ -231,7 +231,7 @@ describe("ArrangeControl", () => {
     ).toHaveAttribute("aria-checked", "true");
   });
 
-  it("debounces the neighbour distance into one run, and turns forward references on", () => {
+  it("debounces the neighbour distance into one run, and turns forward references off", () => {
     vi.useFakeTimers();
     const { props } = setup();
     openMenu();
@@ -249,7 +249,7 @@ describe("ArrangeControl", () => {
     fireEvent.click(screen.getByLabelText(/canvasToolbar.arrange.refForward/));
     expect(props.onSettingsChange).toHaveBeenLastCalledWith({
       refNeighborColumns: 4,
-      refForward: true,
+      refForward: false,
     });
   });
 

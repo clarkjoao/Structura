@@ -13,7 +13,7 @@ When the diagram's `references` setting is absent or `rules`, the whole-diagram 
 measure a layout without automatic references and, for each connection:
 
 - whose target sits more than `refNeighborColumns` columns back along the reading (default 2), or
-- with `refForward` on, whose target sits more than 6 columns ahead,
+- with `refForward` on (the default), whose target sits more than 6 columns ahead,
 
 end it on an automatic reference to the target inside the consumer's container.
 
@@ -70,7 +70,7 @@ Under Rules it MUST offer:
 
 - the neighbour distance (1–6 columns);
 - the connections kept on the original (1–5);
-- whether long forward connections make references.
+- whether long forward connections make references (on by default).
 
 A change MUST re-arrange the diagram and store the setting as one undo step, like the other layout
 settings. The settings MUST be normalised: defaults are dropped, and values out of range or

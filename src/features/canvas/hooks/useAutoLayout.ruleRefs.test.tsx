@@ -57,12 +57,33 @@ describe("the arrangement's message under the reading rules", () => {
     await arrange();
 
     expect(toast.success).toHaveBeenCalledWith(
-      expect.stringContaining("shortens a connection that points back"),
+      expect.stringContaining("1 reference replaces a long line"),
       {
         description: expect.stringMatching(
           /^1 connection points back: 0 stays .*, 1 moved onto a reference, 0 stays/,
         ),
       },
+    );
+  });
+
+  it("says how many long forward lines moved onto references", async () => {
+    const store = useDiagramStore.getState();
+    const diagram = store.addDiagram("Forward toast", "container");
+    store.openDiagram(diagram.id);
+    const ids = ["A", "B", "C", "D", "E", "F", "G", "H", "I"].map(
+      (name) => useDiagramStore.getState().addComponent("system", name, null).id,
+    );
+    for (let i = 0; i < ids.length - 1; i += 1) {
+      useDiagramStore.getState().addConnection(ids[i]!, ids[i + 1]!, "");
+    }
+    // Eight columns ahead, past the forward limit.
+    useDiagramStore.getState().addConnection(ids[0]!, ids[8]!, "");
+
+    await arrange();
+
+    expect(toast.success).toHaveBeenCalledWith(
+      expect.stringContaining("1 reference replaces a long line"),
+      { description: "1 long forward line moved onto a reference." },
     );
   });
 
