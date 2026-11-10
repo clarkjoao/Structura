@@ -1,5 +1,3 @@
-import JSZip from "jszip";
-
 export interface ZipEntryFile {
   filename: string;
   content: string;
@@ -19,6 +17,7 @@ export function downloadFile(content: string, filename: string, mime: string): v
 }
 
 export async function downloadZip(files: ZipEntryFile[], zipFilename: string): Promise<void> {
+  const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
 
   for (const file of files) {

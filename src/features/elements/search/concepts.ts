@@ -44,7 +44,7 @@ function conceptKey(id: CatalogConceptId): string {
 
 /** Every locale the app ships, read from i18n rather than written out. */
 function shippedLanguages(): string[] {
-  return Object.keys(i18n.options.resources ?? {});
+  return (i18n.options.supportedLngs || []).filter((lng) => lng !== "cimode");
 }
 
 /**

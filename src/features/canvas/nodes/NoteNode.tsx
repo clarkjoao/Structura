@@ -1,6 +1,5 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, lazy, memo, useCallback, useEffect, useRef, useState } from "react";
 import { Handle, NodeResizer, type Node, type NodeProps } from "@xyflow/react";
-import ReactMarkdown from "react-markdown";
 import { ChevronDown, ChevronUp, FileText } from "lucide-react";
 import { useDiagramActions } from "@/features/diagram";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
@@ -18,6 +17,8 @@ import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { singleIncomingTargetHandleId } from "./node-types/handle-spec";
 import { useHandleSides } from "../contexts/ReadingDirectionContext";
+
+const NoteMarkdown = lazy(() => import("./NoteMarkdown"));
 
 const noteIncomingHandleClassName =
   "!border-background transition-[width,height,background-color,box-shadow] duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
@@ -329,61 +330,11 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
                 <div
                   className={`prose prose-sm prose-neutral max-w-none ${dark ? "prose-invert" : ""}`}
                 >
-                  <ReactMarkdown
-                    components={{
-                      p: ({ children }) => (
-                        <p className="mb-2 last:mb-0 text-[13px] leading-relaxed">{children}</p>
-                      ),
-                      h1: ({ children }) => (
-                        <h1 className="text-base font-semibold mt-3 mb-1 first:mt-0">{children}</h1>
-                      ),
-                      h2: ({ children }) => (
-                        <h2 className="text-sm font-semibold mt-2 mb-1 first:mt-0">{children}</h2>
-                      ),
-                      h3: ({ children }) => (
-                        <h3 className="text-sm font-medium mt-2 mb-0.5 first:mt-0">{children}</h3>
-                      ),
-                      ul: ({ children }) => (
-                        <ul className="list-disc pl-4 mb-2 space-y-0.5 text-[13px]">{children}</ul>
-                      ),
-                      ol: ({ children }) => (
-                        <ol className="list-decimal pl-4 mb-2 space-y-0.5 text-[13px]">
-                          {children}
-                        </ol>
-                      ),
-                      li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-                      code: ({ children }) => (
-                        <code className="px-1 py-0.5 rounded bg-foreground/10 text-[12px] font-mono">
-                          {children}
-                        </code>
-                      ),
-                      pre: ({ children }) => (
-                        <pre className="p-2 rounded-md bg-foreground/10 text-[12px] overflow-x-auto mb-2">
-                          {children}
-                        </pre>
-                      ),
-                      blockquote: ({ children }) => (
-                        <blockquote className="border-l-2 border-foreground/30 pl-3 my-2 italic text-[13px]">
-                          {children}
-                        </blockquote>
-                      ),
-                      strong: ({ children }) => (
-                        <strong className="font-semibold">{children}</strong>
-                      ),
-                      a: ({ href, children }) => (
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:no-underline"
-                        >
-                          {children}
-                        </a>
-                      ),
-                    }}
+                  <Suspense
+                    fallback={<p className="mb-2 text-[13px] leading-relaxed">{content}</p>}
                   >
-                    {content}
-                  </ReactMarkdown>
+                    <NoteMarkdown content={content} />
+                  </Suspense>
                 </div>
               ) : (
                 <p className={`text-sm italic px-5 py-4 ${mutedClass}`}>
