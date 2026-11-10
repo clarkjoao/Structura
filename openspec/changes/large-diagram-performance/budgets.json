@@ -1,0 +1,14 @@
+{
+  "note": "Ceilings for the CI perf gate (scripts/perf-budget-check.mjs), checked against the median of 3 runs on a GitHub runner. They sit between the current numbers (baseline.json, measured on Apple Silicon: dragPanel 1 long task / ~100 ms) and the pre-optimisation numbers (dragPanel 38 long tasks / ~2.6 s), so noise on a slower runner does not trip them but losing the drag hot-path work does. Tighten only with measurements from a runner, not a laptop.",
+  "limits": {
+    "open.firstNodesMs": 10000,
+    "dragPanel.longTasks": 15,
+    "dragPanel.longTaskMs": 1200,
+    "dragChild.longTasks": 15,
+    "dragChild.longTaskMs": 1200,
+    "nudge.longTaskMs": 1200,
+    "pan.longTasks": 8,
+    "zoom.longTasks": 8
+  },
+  "mustBeTrue": ["dragChild.moved", "dragPanel.moved", "nudge.moved"]
+}
