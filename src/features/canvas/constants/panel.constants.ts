@@ -3,6 +3,15 @@
  */
 
 export const DEFAULT_PANEL_OPACITY = 10;
+
+/**
+ * Dark theme: a panel's translucent tint and 40%-alpha border nearly vanish on the dark canvas.
+ * The fill never drops below this alpha (unless the panel is transparent on purpose) and the
+ * resting border is drawn at the higher alpha. Regular nodes are not affected.
+ */
+export const DARK_PANEL_MIN_FILL_ALPHA = 0.25;
+export const DARK_PANEL_BORDER_ALPHA = 0.8;
+export const LIGHT_PANEL_BORDER_ALPHA = 0.4;
 export const MIN_PANEL_WIDTH = 200;
 export const MIN_PANEL_HEIGHT = 150;
 

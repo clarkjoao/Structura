@@ -13,7 +13,14 @@ import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPrese
 import { useIsNodeLocked, usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { contrastLabelColor } from "@/features/diagram";
 import { useCanvasBackdrop } from "./use-canvas-backdrop";
-import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
+import {
+  DARK_PANEL_BORDER_ALPHA,
+  DARK_PANEL_MIN_FILL_ALPHA,
+  DEFAULT_PANEL_OPACITY,
+  LIGHT_PANEL_BORDER_ALPHA,
+  PANEL_BORDER_HIT_PX,
+} from "../constants/panel.constants";
+import { useTheme } from "@/hooks/useTheme";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 import { buildPanelHandles } from "./CardNode/Handles";
 import { useHandleSides } from "../contexts/ReadingDirectionContext";
@@ -91,7 +98,10 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const Icon = kindDef.icon;
   const opacity = d.panelOpacity ?? DEFAULT_PANEL_OPACITY;
   const backdrop = useCanvasBackdrop();
-  const labelColor = contrastLabelColor(color, opacity, backdrop);
+  const isDark = useTheme().theme === "dark";
+  const effectiveOpacity =
+    isDark && opacity > 0 ? Math.max(opacity, DARK_PANEL_MIN_FILL_ALPHA * 100) : opacity;
+  const labelColor = contrastLabelColor(color, effectiveOpacity, backdrop);
   const isSelected = selected || d.isSelected;
   const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
   const isActive = isSelected || isHighlighted;
@@ -123,7 +133,9 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
     </>
   );
 
-  const bgAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
+  const baseAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
+  const bgAlpha =
+    isDark && opacity > 0 ? Math.max(baseAlpha, DARK_PANEL_MIN_FILL_ALPHA) : baseAlpha;
   const isTransparent = opacity === 0;
   const collabHighlight = useCollabHighlight(d.elementId);
   const activePeer = usePeerOnNode(d.elementId);
@@ -135,7 +147,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
     ? UNPARENT_BORDER
     : isActive || isDragTarget
       ? color
-      : colorWithAlpha(color, 0.4);
+      : colorWithAlpha(color, isDark ? DARK_PANEL_BORDER_ALPHA : LIGHT_PANEL_BORDER_ALPHA);
   const borderStyle = (d.borderStyle ?? "solid") as "solid" | "dashed" | "dotted";
 
   /** CSS transitions fight RF drag/resize — disable while moving or resizing. */
