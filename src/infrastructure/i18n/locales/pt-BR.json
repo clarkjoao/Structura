@@ -250,6 +250,8 @@
     "chooseFile": "Escolher ficheiro",
     "jsonErrorWithReason": "Não foi possível importar o JSON do diagrama: {{reason}}",
     "jsonErrorNamed": "Não foi possível importar {{name}}: {{reason}}",
+    "tooLarge": "Este arquivo é grande demais para importar (limite de 25 MB).",
+    "tooLargeNamed": "Não foi possível importar {{name}}: o arquivo é grande demais (limite de 25 MB).",
     "noJsonFiles": "Nenhum ficheiro .json de diagrama importável encontrado.",
     "successOne": "Diagrama importado",
     "successMany": "{{count}} diagramas importados",

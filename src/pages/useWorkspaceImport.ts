@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { MAX_WORKSPACE_IMPORT_CHARS } from "@/infrastructure/persistence/import-limits";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -165,6 +166,10 @@ export function useWorkspaceImport(options: UseWorkspaceImportOptions = {}) {
 
   const importJsonText = useCallback(
     (text: string): boolean => {
+      if (text.length > MAX_WORKSPACE_IMPORT_CHARS) {
+        toast.error(t("import.tooLarge"));
+        return false;
+      }
       try {
         const parsed = JSON.parse(text) as unknown;
         const destination = resolveDestinationFolderId(undefined, targetFolderId);
@@ -188,6 +193,11 @@ export function useWorkspaceImport(options: UseWorkspaceImportOptions = {}) {
       let pendingRelink = 0;
 
       for (const source of importable) {
+        if (source.text.length > MAX_WORKSPACE_IMPORT_CHARS) {
+          failed += 1;
+          toast.error(t("import.tooLargeNamed", { name: source.name }));
+          continue;
+        }
         try {
           const parsed = JSON.parse(source.text) as unknown;
           const destination = resolveDestinationFolderId(source.relativePath, targetFolderId);
