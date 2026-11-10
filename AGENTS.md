@@ -108,9 +108,10 @@ src/
   [docs/guides/adding-a-node-type.md](docs/guides/adding-a-node-type.md).
 - **Cloud service ids persist as `cloudServiceId`**, written only through
   `cloudServiceIdWrite()` / `cloudServiceIdClearingPatch()` and read through
-  `resolveCloudServiceId`. It is **not** `BaseComponent.serviceId`, which is the business
-  service catalog. `npm run build` is gated on `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE`
-  (F6b release decision — see ADR-0010).
+  `resolveCloudServiceId` (all in `features/diagram/model/cloud-service-id.ts`). It is **not**
+  `BaseComponent.serviceId`, which is the business service catalog. There is no build or
+  runtime flag: the build gate was removed at the F6b cutover (ADR-0010), and
+  `cloud-service-id.write-gate.test.ts` fails the suite if another source file emits the field.
 - **Store changes go through slices** (`features/diagram/store/slices/*`); mutating
   actions that change structure must call `pushHistory` for undo/redo. Persisted
   schema changes need a migration in `persist.config.ts` (bump `PERSIST_SCHEMA_VERSION`).
@@ -152,8 +153,8 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
   identity caches for RF node/edge arrays. Do not reintroduce per-edge
   `EdgeLabelRenderer` / `useStore` for canvas-wide flags. Rules and remaining
   opportunities: `docs/concepts/canvas-hot-path.md`.
-- Undo/redo stores full diagram snapshots with coalescing; bounded by
-  `MAX_HISTORY_STEPS`.
+- Undo/redo stores diagram snapshots taken with Immer `current()` (structurally shared,
+  not deep copies) with coalescing; bounded by `MAX_HISTORY_STEPS`.
 - The `@/features/diagram` and `@/features/canvas` barrels couple the bundle
   graph; route chunks stay small only if always-mounted code (App shell, LLM
   chat) imports leaf modules directly instead of the barrels.

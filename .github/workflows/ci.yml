@@ -324,6 +324,45 @@ jobs:
         if: always()
         run: docker compose -f deploy/compose/docker-compose.yml down
 
+  perf-large:
+    name: Large-diagram performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies and browser
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      # Production build: dev-mode React is several times slower and hides regressions.
+      - name: Build
+        run: npx vite build
+
+      # Replays the 657-node fixture (open, drag, nudge, pan, zoom) and fails when the
+      # median of 3 runs exceeds the ceilings in
+      # openspec/changes/large-diagram-performance/budgets.json.
+      - name: Measure and check budgets
+        run: |
+          npx vite preview --port 4173 --strictPort > /tmp/preview.log 2>&1 &
+          for i in $(seq 1 30); do curl -fs http://localhost:4173/ > /dev/null && break; sleep 1; done
+          PERF_RUNS=3 PERF_OUT=perf-report.json npm run perf:large
+          node scripts/perf-budget-check.mjs perf-report.json
+
+      - name: Upload perf report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: perf-large-report
+          path: perf-report.json
+          if-no-files-found: ignore
+
   build:
     name: Build
     runs-on: ubuntu-latest
