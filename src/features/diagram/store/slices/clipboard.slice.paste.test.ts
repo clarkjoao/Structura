@@ -240,3 +240,24 @@ describe("importMermaidSequenceResult", () => {
     expect(ctx.d().nodeLayouts.s1).toMatchObject({ x: 1, y: 2 });
   });
 });
+
+describe("clearClipboard", () => {
+  it("does not write the store when the clipboard is already empty", () => {
+    const ctx = setup();
+    let writes = 0;
+    const unsubscribe = ctx.store.subscribe(() => writes++);
+    ctx.store.getState().clearClipboard();
+    unsubscribe();
+    // Escape clears the clipboard with every deselect; a write here would
+    // persist the whole workspace for nothing.
+    expect(writes).toBe(0);
+  });
+
+  it("still clears a clipboard that holds something", () => {
+    const ctx = setup();
+    const a = ctx.add("system", "A", 0, 0);
+    ctx.store.getState().copyToClipboard([a.id]);
+    ctx.store.getState().clearClipboard();
+    expect(ctx.store.getState().clipboard).toBeNull();
+  });
+});
