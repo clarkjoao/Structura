@@ -56,7 +56,7 @@ describe("MultiSelectPanel", () => {
     const { nodes } = seed();
     renderPanel(nodes);
     expect(screen.getByText("5 elementos")).toBeTruthy();
-    expect(screen.getByText("3 aplicações")).toBeTruthy();
+    expect(screen.getByText("3 contêineres")).toBeTruthy();
     expect(screen.getByText("1 sistema")).toBeTruthy();
     expect(screen.getByText("1 nota")).toBeTruthy();
     // The old summary was English in pt-BR ("3 containers").
@@ -68,13 +68,13 @@ describe("MultiSelectPanel", () => {
     const { nodes } = seed();
     renderPanel(nodes);
     expect(screen.getByText("1 system")).toBeTruthy();
-    expect(screen.getByText("3 applications")).toBeTruthy();
+    expect(screen.getByText("3 containers")).toBeTruthy();
   });
 
   it("clicking a type chip narrows the selection to that type", () => {
     const { nodes, apps } = seed();
     renderPanel(nodes);
-    fireEvent.click(screen.getByText("3 aplicações"));
+    fireEvent.click(screen.getByText("3 contêineres"));
     // The canvas selection store is what the panel router reads.
     const selected = [...useCanvasSelectionStore.getState().selectedNodeIds];
     expect(selected.sort()).toEqual(apps.map((a) => a.id).sort());
