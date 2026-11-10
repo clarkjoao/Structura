@@ -233,9 +233,9 @@ here costs little on that diagram.
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
 | `EditableEdge` reads `elementsSelectable` from `ElementsSelectableContext`, not one store subscription per edge | `EditableEdge.selectable.test.tsx` |
-| Node drag frames go to React Flow (`publishDragFrame`) without a `Canvas` render | `useNodeDragParenting.panelSelfDrop.test.tsx` |
+| Node drag frames go straight to React Flow's `setNodes` (`publishDragFrame`, in `useLocalNodes.ts` / `useCanvasGraphState.ts`) without a `Canvas` render | `useNodeDragParenting.panelSelfDrop.test.tsx` |
 | Edge control point, segment and label drags write the store once per gesture | `edge-gesture-writes.test.tsx` |
-| An arrangement writes its edges (handle order, route resets, routes, label offsets) in one `set()` (`applyLayoutEdges`), and runs ELK in a worker (`elkRunner.ts`) | `applyLayoutEdges.test.ts`, `elkRunner.test.ts` |
+| An arrangement writes its edges (handle order, route resets, routes, label offsets) in one `set()` (`applyLayoutEdges`, `slices/applyLayoutEdges.test.ts`), and runs ELK in a worker (`layout/elkRunner.ts`) | `applyLayoutEdges.test.ts`, `elkRunner.test.ts` |
 | Collaboration presence: per-element selectors returning a peer's stable `user`, so cursor packets re-render no node | `usePeerOnNode.test.tsx` |
 | One viewport write per pan/zoom gesture, flushed before any read (`useSettledViewportWrite`) | `useSettledViewportWrite.test.ts`, `update-viewport.test.ts` |
 
