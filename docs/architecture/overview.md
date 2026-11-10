@@ -70,11 +70,18 @@ only if always-mounted code (app shell, LLM chat) imports leaf modules
 directly instead of the barrels. Keep this in mind when adding imports to
 anything that mounts at startup.
 
-Each feature sub-directory has its own `index.ts` barrel (e.g.
-`canvas/edges/`, `canvas/nodes/`, `canvas/toolbar/`). These are the
-canonical entry points — other features should import from barrels, not
-from internal leaf modules. Direct leaf imports are acceptable for
-performance-sensitive code or to avoid circular dependencies.
+Leaf imports are the norm inside a feature; barrels exist only where a module is
+a public surface used from many places. Measured on this branch, the barrels
+that carry real traffic are `@/features/diagram` (the domain layer, ~670
+imports), `@/infrastructure/i18n`, `@/infrastructure/persistence`,
+`@/features/llm`, `@/features/element-presets`, `@/features/collaboration`,
+`@/features/cloud`, `@/lib/export-service` and `@/features/canvas` (6 imports).
+Several other `index.ts` files are imported by nothing: `canvas/{components,
+edges,hooks,navigation,panels,toolbar}`, `elements`, `plugins`, `walkthrough`,
+`lib/catalogs` and `lib/core`. They are listed as unused files in
+`fallow-dead-code-baseline.json` and are kept as documentation of each folder's
+surface, not as entry points — import from the leaf module, and do not add a
+barrel import to code that mounts at startup (see above).
 
 ## Quality gates
 
