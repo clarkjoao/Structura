@@ -76,6 +76,13 @@ export default function WorkspacePage() {
     }
   }, [urlId, urlDiagramExists, activeDiagramId, openDiagram]);
 
+  // A URL id that matches no diagram must not keep showing whichever diagram was active before.
+  useEffect(() => {
+    if (!isInitialLoadComplete || !urlId || urlDiagramExists || !activeDiagramId) return;
+    toast.error(t("canvas.diagramNotFound"));
+    navigate("/workspace", { replace: true });
+  }, [isInitialLoadComplete, urlId, urlDiagramExists, activeDiagramId, navigate, t]);
+
   const handleOpenDiagram = useCallback(
     (id: string) => {
       setNavStack([]);

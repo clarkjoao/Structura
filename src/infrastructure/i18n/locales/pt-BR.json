@@ -432,6 +432,7 @@
     "deleteSelected": "Deletar selecionados"
   },
   "canvas": {
+    "diagramNotFound": "Diagrama não encontrado",
     "noDiagramSelected": "Nenhum diagrama selecionado",
     "nothingInView": "Nada à vista",
     "nothingInViewHint_one": "{{count}} elemento está fora da tela.",

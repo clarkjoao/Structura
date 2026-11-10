@@ -432,6 +432,7 @@
     "deleteSelected": "Delete selected"
   },
   "canvas": {
+    "diagramNotFound": "Diagram not found",
     "noDiagramSelected": "No diagram selected",
     "nothingInView": "Nothing in view",
     "nothingInViewHint_one": "{{count}} element is off screen.",
