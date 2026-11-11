@@ -1,5 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import {
   BaseEdge,
   getBezierPath,
@@ -12,7 +12,7 @@ import {
   EdgeStyle,
   StrokeStyle,
   useActiveDiagramId,
-  useDiagramActions,
+  useDiagramStore,
   type ConnectionStyle,
   type EdgeControlPoint,
   type Point,
@@ -61,6 +61,41 @@ const NO_RESTING_POINTS: EdgeControlPoint[] = [];
 
 type EditableEdgeType = Edge<EdgeData, "editable">;
 
+interface HoppedEdgePathProps {
+  id: string;
+  /** The step path's points, or `null` for an edge that takes no part in hops. */
+  stepPoints: readonly Point[] | null;
+  /** The path as drawn without hops. */
+  plainPath: string;
+  /** Dashed strokes get the hop arcs drawn again, solid, on top. */
+  isDashed: boolean;
+  children: (edgePath: string, hopArcs: string) => ReactNode;
+}
+
+/**
+ * Where an edge hops over the edges it crosses, and what of the edge draws its path.
+ *
+ * Hops arrive a frame after the paths they depend on (`lineHopsRegistry`), so
+ * while nodes are dragged a moving edge hears about them on every frame. The
+ * subscription lives here rather than in `FullEditableEdge` so a hop change
+ * re-renders the path layer only — not the edge's gesture hooks, store reads,
+ * translations and label. Measured dragging 91 of 400 nodes: every moving
+ * edge rendered twice per frame, and the second render cost a third of the
+ * gesture's main-thread time.
+ */
+function HoppedEdgePath({ id, stepPoints, plainPath, isDashed, children }: HoppedEdgePathProps) {
+  const lineHops = useLineHops(id, stepPoints);
+  const edgePath = useMemo(
+    () => (stepPoints && lineHops.length > 0 ? buildPathWithHops(stepPoints, lineHops) : plainPath),
+    [stepPoints, lineHops, plainPath],
+  );
+  const hopArcs = useMemo(
+    () => (isDashed && lineHops.length > 0 ? hopArcsPath(edgePath) : ""),
+    [isDashed, lineHops, edgePath],
+  );
+  return <>{children(edgePath, hopArcs)}</>;
+}
+
 function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
   const {
     id,
@@ -81,7 +116,9 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
 
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
-  const { resetEdgeControlPoints, removeConnection, updateConnection } = useDiagramActions();
+  // Store actions never change identity, so they are read, not subscribed to: a
+  // subscription per edge ran its selector on every render of every moving edge.
+  const { resetEdgeControlPoints, removeConnection, updateConnection } = useDiagramStore.getState();
   // The connection's style, as the projection read it: the toolbar edits it,
   // and nothing on the read path needs the store's record.
   const connectionStyle = edgeData.connectionStyle;
@@ -186,17 +223,14 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
 
   const [hovered, setHovered] = useState(false);
 
-  const lineHops = useLineHops(id, stepPoints);
-
-  const { edgePath } = useMemo(() => {
+  // The path without hops; `HoppedEdgePath` adds them.
+  const { edgePath: plainPath } = useMemo(() => {
     if (isStep) {
       return {
         edgePath:
-          stepPoints && lineHops.length > 0
-            ? buildPathWithHops(stepPoints, lineHops)
-            : vertical && stepPoints
-              ? pathThroughPoints(stepPoints)
-              : buildStepPath(source, target, stepCorners),
+          vertical && stepPoints
+            ? pathThroughPoints(stepPoints)
+            : buildStepPath(source, target, stepCorners),
       };
     }
     if (isCurve) {
@@ -222,7 +256,6 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
     points,
     stepCorners,
     stepPoints,
-    lineHops,
     edgeStyle,
     sourceX,
     sourceY,
@@ -245,10 +278,6 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
   const drawnStrokeWidth = isHighlighted ? Math.max(2, strokeWidth + 1) : strokeWidth;
   // React Flow dashes every path of an animated edge, whatever its style says.
   const isDashed = strokeStyle !== StrokeStyle.Solid || Boolean(props.animated);
-  const hopArcs = useMemo(
-    () => (isDashed && lineHops.length > 0 ? hopArcsPath(edgePath) : ""),
-    [isDashed, lineHops, edgePath],
-  );
 
   const showAffordances = isEditable && (Boolean(selected) || hovered) && !!activeDiagramId;
   const ghosts = useMemo(
@@ -284,7 +313,7 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
   const isActivePlayback = Boolean(edgeData.isActivePlayback);
   const payloadDirection = edgeData.activePayloadDirection ?? null;
 
-  return (
+  const renderPathLayer = (edgePath: string, hopArcs: string) => (
     <>
       <g>
         <BaseEdge
@@ -403,6 +432,14 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
       </g>
 
       <CollabEdgeHighlight edgeId={connectionId} edgePath={edgePath} labelPoint={labelPoint} />
+    </>
+  );
+
+  return (
+    <>
+      <HoppedEdgePath id={id} stepPoints={stepPoints} plainPath={plainPath} isDashed={isDashed}>
+        {renderPathLayer}
+      </HoppedEdgePath>
 
       {selected && elementsSelectable && (
         <EdgeToolbar

@@ -24,6 +24,18 @@ export const dragSelectionRef = {
   selectedBeforeDrag: new Set<string>(),
   /** Set while a drag gesture is in progress; cleared on drag end. */
   isDragging: false,
+  /**
+   * Set when the pointer funnel wrote the selection for the current press
+   * (Shift/Cmd toggle, or replacing the selection with an unselected node);
+   * cleared by the funnel on the next press or key. React Flow still runs its
+   * own click selection for that press, from the `selected` flags it holds —
+   * which may or may not include the funnel's write yet, depending on whether
+   * the canvas rendered in between. Applied, it toggled the clicked node back
+   * out or replaced the selection with it, so on a busy main thread most
+   * shift-clicks were lost. The store already has the answer; React Flow's
+   * `select` changes for that press are dropped.
+   */
+  selectionWrittenByFunnel: false,
 };
 
 function filterNodeChangesForSceneMoveLock(
@@ -413,7 +425,28 @@ export function useLocalNodes(
         }
       }
 
-      const sanitizedChanges = changes.map((change) => {
+      const ownChanges = dragSelectionRef.selectionWrittenByFunnel
+        ? changes.filter((change) => change.type !== "select")
+        : changes;
+      if (ownChanges.length < changes.length) {
+        // React Flow unselects by mutating its internal node before it reports
+        // the change, so its picture of those nodes already disagrees with the
+        // store. A new object for each hands them back: React Flow re-adopts a
+        // node, `selected` included, only when its identity changes.
+        const dropped = new Set<string>();
+        for (const change of changes) if (change.type === "select") dropped.add(change.id);
+        const reissued = localNodesStateRef.current.map((node) =>
+          dropped.has(node.id) ? { ...node } : node,
+        );
+        localNodesStateRef.current = reissued;
+        localNodesRef.current = reissued;
+        if (!ownChanges.length) {
+          setTick((tick) => tick + 1);
+          return;
+        }
+      }
+
+      const sanitizedChanges = ownChanges.map((change) => {
         if (change.type !== "replace") return change;
         const previousNode = localNodesRef.current.find((node) => node.id === change.item.id);
         const previousData = previousNode?.data as Record<string, unknown> | undefined;
@@ -438,7 +471,7 @@ export function useLocalNodes(
           },
         };
       });
-      const hasSelect = changes.some((c) => c.type === "select");
+      const hasSelect = ownChanges.some((c) => c.type === "select");
       innerOnNodesChange(sanitizedChanges);
       const forApply = filterNodeChangesForSceneMoveLock(diagram, sanitizedChanges);
 
@@ -451,7 +484,7 @@ export function useLocalNodes(
         onSelectionFromChanges(selectedIds);
       }
 
-      if (publishDragFrame && isDragFrame(changes)) {
+      if (publishDragFrame && isDragFrame(ownChanges)) {
         publishDragFrame(updated);
         return;
       }

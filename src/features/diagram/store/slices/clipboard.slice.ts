@@ -34,7 +34,7 @@ function resolveAbsoluteLayoutPosition(
 
 export const clipboardSlice = (
   set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
+  get: () => AppState,
 ) => ({
   clipboard: null as ClipboardEntry | null,
   copyToClipboard: (componentIds: string[]) => {
@@ -250,6 +250,10 @@ export const clipboardSlice = (
   },
 
   clearClipboard: () => {
+    // Escape clears the clipboard every time it clears the selection. Every
+    // `set()` schedules a write of the whole workspace, so an empty clipboard
+    // is left alone: deselecting is not an edit and must not light "Saving…".
+    if (get().clipboard === null) return;
     set((state) => {
       state.clipboard = null;
     });

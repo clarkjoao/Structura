@@ -3,7 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
 import {
   useActiveDiagramId,
-  useDiagramActions,
+  useDiagramStore,
   generateId,
   type EdgeControlPoint,
 } from "@/features/diagram";
@@ -39,7 +39,10 @@ export function useControlPoints(
 ): UseControlPointsResult {
   const activeDiagramId = useActiveDiagramId();
   const { screenToFlowPosition } = useReactFlow();
-  const { setEdgeControlPoints, addEdgeControlPoint, removeEdgeControlPoint } = useDiagramActions();
+  // Store actions never change identity, so they are read, not subscribed to: a
+  // subscription per edge ran its selector on every render of every moving edge.
+  const { setEdgeControlPoints, addEdgeControlPoint, removeEdgeControlPoint } =
+    useDiagramStore.getState();
   const { capture } = useEdgeSnapping();
   const points = restingPoints;
   const pointsRef = useRef(points);

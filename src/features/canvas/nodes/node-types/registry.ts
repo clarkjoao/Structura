@@ -13,6 +13,7 @@ import {
 import type { ElementCanvasSlice, ElementDescriptor } from "@/features/elements/element.types";
 import { LEGEND_NODE_TYPE } from "../../core/legendNode";
 import { LegendNode } from "../LegendNode";
+import { positionBlindNode } from "./positionBlindNode";
 
 /**
  * Plugin-contributed React Flow descriptors only.
@@ -138,10 +139,10 @@ function buildNodeTypes(): NodeTypes {
     ...(Object.fromEntries(
       descriptors
         .filter((d, i, arr) => arr.findIndex((x) => x.rfType === d.rfType) === i)
-        .map((d) => [d.rfType, d.component]),
+        .map((d) => [d.rfType, positionBlindNode(d.component)]),
     ) as NodeTypes),
     // Not an element: the generated legend both surfaces append to what they project.
-    [LEGEND_NODE_TYPE]: LegendNode,
+    [LEGEND_NODE_TYPE]: positionBlindNode(LegendNode),
   };
 }
 
