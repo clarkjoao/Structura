@@ -18,6 +18,7 @@ import {
   type Point,
 } from "@/features/diagram";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
 import { useHandleHighlight } from "../contexts/HandleHighlightContext";
 import { useEdgeLabelReveal } from "../contexts/EdgeLabelRevealContext";
@@ -96,6 +97,17 @@ function HoppedEdgePath({ id, stepPoints, plainPath, isDashed, children }: Hoppe
   return <>{children(edgePath, hopArcs)}</>;
 }
 
+/**
+ * Translations for the editing affordances, read only while they are shown.
+ * An edge on a moving node renders on every drag frame; a translation hook at
+ * the top of the edge ran for each of those renders although only a selected
+ * or hovered edge draws anything translated.
+ */
+function WithTranslation({ children }: { children: (t: TFunction) => ReactNode }) {
+  const { t } = useTranslation();
+  return <>{children(t)}</>;
+}
+
 function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
   const {
     id,
@@ -114,7 +126,6 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
   const edgeData = data ?? ({ label: "", connectionId: id } as EdgeData);
   const connectionId = edgeData.connectionId ?? id;
 
-  const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
   // Store actions never change identity, so they are read, not subscribed to: a
   // subscription per edge ran its selector on every render of every moving edge.
@@ -378,55 +389,63 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
           />
         )}
         {showAffordances && isStep && (
-          <>
-            <EdgeSegmentHandles
-              segments={segmentDrag.segments}
-              activeSegmentIndex={segmentDrag.activeSegmentIndex}
-              ariaLabel={(index) => t("customEdge.segmentHandleAria", { index: index + 1 })}
-              onSegmentPointerDown={segmentDrag.startSegmentDrag}
-            />
-            <CornerHandles
-              corners={segmentDrag.corners}
-              activeCornerIndex={segmentDrag.activeCornerIndex}
-              ariaLabel={(index) => t("customEdge.cornerHandleAria", { index: index + 1 })}
-              onCornerPointerDown={segmentDrag.startCornerDrag}
-              onCornerRemove={segmentDrag.removeCorner}
-              onCornerNudge={segmentDrag.nudgeCorner}
-            />
-            {stepGhosts.map((ghost) => (
-              <GhostCorner
-                key={`bend-${ghost.segmentIndex}`}
-                position={{ x: ghost.x, y: ghost.y }}
-                ariaLabel={t("customEdge.addPointAria")}
-                onAdd={() =>
-                  segmentDrag.addCornerAt(ghost.segmentIndex, { x: ghost.x, y: ghost.y })
-                }
-              />
-            ))}
-          </>
+          <WithTranslation>
+            {(t) => (
+              <>
+                <EdgeSegmentHandles
+                  segments={segmentDrag.segments}
+                  activeSegmentIndex={segmentDrag.activeSegmentIndex}
+                  ariaLabel={(index) => t("customEdge.segmentHandleAria", { index: index + 1 })}
+                  onSegmentPointerDown={segmentDrag.startSegmentDrag}
+                />
+                <CornerHandles
+                  corners={segmentDrag.corners}
+                  activeCornerIndex={segmentDrag.activeCornerIndex}
+                  ariaLabel={(index) => t("customEdge.cornerHandleAria", { index: index + 1 })}
+                  onCornerPointerDown={segmentDrag.startCornerDrag}
+                  onCornerRemove={segmentDrag.removeCorner}
+                  onCornerNudge={segmentDrag.nudgeCorner}
+                />
+                {stepGhosts.map((ghost) => (
+                  <GhostCorner
+                    key={`bend-${ghost.segmentIndex}`}
+                    position={{ x: ghost.x, y: ghost.y }}
+                    ariaLabel={t("customEdge.addPointAria")}
+                    onAdd={() =>
+                      segmentDrag.addCornerAt(ghost.segmentIndex, { x: ghost.x, y: ghost.y })
+                    }
+                  />
+                ))}
+              </>
+            )}
+          </WithTranslation>
         )}
         {showAffordances && isCurve && (
-          <>
-            {ghosts.map((ghost) => (
-              <GhostControlPoint
-                key={`ghost-${ghost.insertIndex}`}
-                ghost={ghost}
-                ariaLabel={t("customEdge.addPointAria")}
-                onAdd={addPoint}
-              />
-            ))}
-            {points.map((point, index) => (
-              <ControlPoint
-                key={point.id}
-                point={point}
-                active={activePointId === point.id}
-                ariaLabel={t("customEdge.controlPointAria", { index: index + 1 })}
-                onPointerDown={startPointDrag}
-                onRemove={removePoint}
-                onNudge={nudgePoint}
-              />
-            ))}
-          </>
+          <WithTranslation>
+            {(t) => (
+              <>
+                {ghosts.map((ghost) => (
+                  <GhostControlPoint
+                    key={`ghost-${ghost.insertIndex}`}
+                    ghost={ghost}
+                    ariaLabel={t("customEdge.addPointAria")}
+                    onAdd={addPoint}
+                  />
+                ))}
+                {points.map((point, index) => (
+                  <ControlPoint
+                    key={point.id}
+                    point={point}
+                    active={activePointId === point.id}
+                    ariaLabel={t("customEdge.controlPointAria", { index: index + 1 })}
+                    onPointerDown={startPointDrag}
+                    onRemove={removePoint}
+                    onNudge={nudgePoint}
+                  />
+                ))}
+              </>
+            )}
+          </WithTranslation>
         )}
         {isActivePlayback && <EdgeParticle edgePath={edgePath} direction={payloadDirection} />}
       </g>
