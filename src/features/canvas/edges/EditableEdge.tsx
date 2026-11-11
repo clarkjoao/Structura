@@ -12,7 +12,7 @@ import {
   EdgeStyle,
   StrokeStyle,
   useActiveDiagramId,
-  useDiagramActions,
+  useDiagramStore,
   type ConnectionStyle,
   type EdgeControlPoint,
   type Point,
@@ -116,7 +116,9 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
 
   const { t } = useTranslation();
   const activeDiagramId = useActiveDiagramId();
-  const { resetEdgeControlPoints, removeConnection, updateConnection } = useDiagramActions();
+  // Store actions never change identity, so they are read, not subscribed to: a
+  // subscription per edge ran its selector on every render of every moving edge.
+  const { resetEdgeControlPoints, removeConnection, updateConnection } = useDiagramStore.getState();
   // The connection's style, as the projection read it: the toolbar edits it,
   // and nothing on the read path needs the store's record.
   const connectionStyle = edgeData.connectionStyle;
