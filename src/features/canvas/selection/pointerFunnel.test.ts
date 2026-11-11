@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { usePointerFunnel, isMultiSelectModifier, type GestureTarget } from "./pointerFunnel";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
+import { dragSelectionRef } from "../hooks/useLocalNodes";
 
 function readSelection() {
   const s = useCanvasSelectionStore.getState();
@@ -116,5 +117,56 @@ describe("selection/pointerFunnel", () => {
       { kind: "pane", atScreen: { x: 0, y: 0 } },
     ];
     expect(targets.length).toBe(5);
+  });
+
+  describe("a real browser's press: pointerdown, then its compatibility mousedown", () => {
+    function press(el: HTMLElement, type: "pointerdown" | "mousedown" | "pointerup" | "mouseup") {
+      el.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          clientX: 10,
+          clientY: 10,
+          shiftKey: true,
+        }),
+      );
+    }
+
+    it("toggles a Shift-clicked node once, not in and straight back out", () => {
+      renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
+      useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
+      fixture = mountNodeFixture("b");
+      press(fixture, "pointerdown");
+      press(fixture, "mousedown");
+      press(fixture, "pointerup");
+      press(fixture, "mouseup");
+      expect(readSelection().selectedNodeIds).toEqual(["a", "b"]);
+    });
+
+    it("still handles the next mouse-only press after a press whose mousedown never came", () => {
+      renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
+      useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
+      fixture = mountNodeFixture("b");
+      press(fixture, "pointerdown");
+      press(fixture, "pointerup");
+      // Cypress-style press: mousedown only, same spot.
+      press(fixture, "mousedown");
+      expect(readSelection().selectedNodeIds).toEqual(["a"]);
+    });
+
+    it("marks the press as the funnel's, until the next press", () => {
+      renderHook(() => usePointerFunnel({ openContextMenu: () => {} }));
+      useCanvasSelectionStore.getState().setSelectedNodeIds(new Set(["a"]));
+      fixture = mountNodeFixture("b");
+      press(fixture, "pointerdown");
+      expect(dragSelectionRef.selectionWrittenByFunnel).toBe(true);
+
+      // Holding the modifier is not a new gesture; any other key is.
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Shift" }));
+      expect(dragSelectionRef.selectionWrittenByFunnel).toBe(true);
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+      expect(dragSelectionRef.selectionWrittenByFunnel).toBe(false);
+    });
   });
 });

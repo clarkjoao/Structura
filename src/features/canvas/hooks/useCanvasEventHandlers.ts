@@ -16,6 +16,7 @@ import { getLastEdgeStyle } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
 import { sidesFromHandles, type ConnectionSides } from "../nodes/node-types/handle-spec";
 import { dragSelectionRef } from "./useLocalNodes";
+import { useCanvasSelectionStore } from "./useCanvasSelectionStore";
 import { usePointerFunnel, type GestureTarget } from "../selection/pointerFunnel";
 import { activeDirection } from "./useActiveDirection";
 import { useSettledViewportWrite } from "./useSettledViewportWrite";
@@ -337,6 +338,15 @@ export function useCanvasEventHandlers({
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
+      // The pointer funnel wrote this press's selection; what React Flow reports
+      // now is its own click handling of the same press, which may predate that
+      // write (see `dragSelectionRef.selectionWrittenByFunnel`). The store wins.
+      if (dragSelectionRef.selectionWrittenByFunnel) {
+        prevSelectionRef.current = [...useCanvasSelectionStore.getState().selectedNodeIds]
+          .sort()
+          .join(",");
+        return;
+      }
 
       if (isCompareMode) return;
       const key = [...selectedIds].sort().join(",");

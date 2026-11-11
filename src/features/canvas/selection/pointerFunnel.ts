@@ -203,11 +203,43 @@ export function usePointerFunnel(params: {
 }) {
   const inFlightRef = useRef<InFlightGesture | null>(null);
   const consumedClickByNodeRef = useRef<Map<string, number>>(new Map());
+  /**
+   * The press a `pointerdown` already handled, until its compatibility
+   * `mousedown` arrives. A real browser fires both for one press, and both
+   * reach `onPointerDown`: handled twice, a Shift/Cmd click toggled the node
+   * in and straight back out. Whether it then ended up selected was left to
+   * React Flow's own select change racing the store — under load (a busy
+   * main thread on 400+ nodes) most shift-clicks were lost.
+   *
+   * A ref, not a variable of the effect: the selection write on `pointerdown`
+   * re-renders the canvas, which can re-run the effect before the
+   * `mousedown` is dispatched.
+   */
+  const pressSeenAsPointerRef = useRef<{ button: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
 
     const onPointerDown = (event: PointerEvent | MouseEvent) => {
+      const seen = pressSeenAsPointerRef.current;
+      if (event.type === "pointerdown") {
+        pressSeenAsPointerRef.current = {
+          button: event.button,
+          x: event.clientX,
+          y: event.clientY,
+        };
+      } else if (
+        seen &&
+        seen.button === event.button &&
+        // Pointer coordinates are fractional; the mouse event's are whole pixels.
+        Math.abs(seen.x - event.clientX) < 1 &&
+        Math.abs(seen.y - event.clientY) < 1
+      ) {
+        pressSeenAsPointerRef.current = null;
+        return;
+      }
+      // A new press: whatever the funnel wrote for the previous one is settled.
+      dragSelectionRef.selectionWrittenByFunnel = false;
       const target = resolveTarget(event);
       if (!target) return;
 
@@ -271,6 +303,7 @@ export function usePointerFunnel(params: {
             store.setSelectedNodeIds(next);
             store.setSelectedNodeId(next.values().next().value ?? null);
             inFlightRef.current.selectionWritten = true;
+            dragSelectionRef.selectionWrittenByFunnel = true;
             consumedClickByNodeRef.current.set(nodeId, performance.now());
             params.onNodePointerDown?.(nodeId, true);
           } else if (!selectedNodeIds.has(nodeId) && selectedNodeIds.size > 0) {
@@ -278,6 +311,7 @@ export function usePointerFunnel(params: {
             store.setSelectedNodeIds(new Set([nodeId]));
             store.setSelectedNodeId(nodeId);
             inFlightRef.current.selectionWritten = true;
+            dragSelectionRef.selectionWrittenByFunnel = true;
             consumedClickByNodeRef.current.set(nodeId, performance.now());
             params.onNodePointerDown?.(nodeId, false);
           }
@@ -322,6 +356,9 @@ export function usePointerFunnel(params: {
     };
 
     const onPointerUp = (event: PointerEvent | MouseEvent) => {
+      // A press whose `mousedown` never came (suppressed by a `preventDefault`
+      // on `pointerdown`) must not swallow the next mouse-only press.
+      if (event.type === "pointerup") pressSeenAsPointerRef.current = null;
       const inFlight = inFlightRef.current;
       inFlightRef.current = null;
       if (!inFlight) return;
@@ -386,6 +423,15 @@ export function usePointerFunnel(params: {
     //
     // Listen to BOTH pointerdown and mousedown: real browsers fire pointer
     // events, but Cypress's `cy.get(...).click()` only fires mousedown.
+    // A key (Space/Enter on a focused node) is React Flow selecting on its own
+    // again. Modifiers are not: a held Shift auto-repeats on some systems while
+    // the click it modifies is still on its way.
+    const MODIFIER_KEYS = new Set(["Shift", "Meta", "Control", "Alt"]);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (MODIFIER_KEYS.has(event.key)) return;
+      dragSelectionRef.selectionWrittenByFunnel = false;
+    };
+    window.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("mousedown", onPointerDown, true);
     window.addEventListener("pointermove", onPointerMove, true);
@@ -393,6 +439,7 @@ export function usePointerFunnel(params: {
     window.addEventListener("pointerup", onPointerUp, true);
     window.addEventListener("mouseup", onPointerUp, true);
     return () => {
+      window.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("mousedown", onPointerDown, true);
       window.removeEventListener("pointermove", onPointerMove, true);
