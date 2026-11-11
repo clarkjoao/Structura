@@ -2,7 +2,7 @@ import { toast } from "sonner";
 import type { TFunction } from "i18next";
 
 /** Deleting this many elements in one gesture is announced with an Undo toast. */
-export const MASS_DELETE_TOAST_THRESHOLD = 2;
+const MASS_DELETE_TOAST_THRESHOLD = 2;
 
 interface NotifyElementsDeletedParams {
   /** Elements (nodes and edges) the gesture removed. */

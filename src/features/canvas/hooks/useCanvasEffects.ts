@@ -75,7 +75,7 @@ function cursorCenteredZoom(
  * a default viewport means "never panned/zoomed" and we fit the view instead.
  */
 /** Below this share of nodes inside a restored viewport, the canvas fits the view instead. */
-export const MIN_RESTORED_VIEWPORT_OCCUPANCY = 0.2;
+const MIN_RESTORED_VIEWPORT_OCCUPANCY = 0.2;
 
 export function hasSavedViewport(
   viewport: { x: number; y: number; zoom: number } | undefined,
