@@ -40,6 +40,7 @@ import type { DiagramDirection, DiagramLayoutSettings } from "@/features/diagram
 import { CANVAS_STYLES, isSnapToGridDisabledForE2E } from "./canvas.constants";
 import { DRAG_THRESHOLD_PX } from "./selection/dragThreshold";
 import { useEdgeReconnect } from "./edges/interaction/useEdgeReconnect";
+import { useReconnectAnchorsOffWhileDragging } from "./edges/interaction/useReconnectAnchorsOffWhileDragging";
 import type { CanvasProps } from "./canvas.types";
 import {
   SaveElementPresetModal,
@@ -194,13 +195,22 @@ const Canvas = (props: CanvasProps = {}) => {
     actions,
   } = useCanvasController(props);
   const dragLocks = useNodeDragLocks();
+  const reconnectAnchors = useReconnectAnchorsOffWhileDragging();
   const lockedNodes = useMemo(() => dragLocks.applyLocks(nodes), [dragLocks, nodes]);
+  const handleNodeDragStart = useCallback(
+    (...args: Parameters<typeof dragLocks.onNodeDragStart>) => {
+      reconnectAnchors.onNodeDragStart();
+      dragLocks.onNodeDragStart(...args);
+    },
+    [dragLocks, reconnectAnchors],
+  );
   const handleNodeDragStop = useCallback(
     (event: Parameters<typeof onNodeDragStop>[0], node: Parameters<typeof onNodeDragStop>[1]) => {
+      reconnectAnchors.onNodeDragStop();
       dragLocks.onNodeDragStop();
       onNodeDragStop(event, node);
     },
-    [dragLocks, onNodeDragStop],
+    [dragLocks, onNodeDragStop, reconnectAnchors],
   );
   const { onDragOver: onSvgDragOver, onDropFiles: onSvgDropFiles } = useCanvasSvgFileDrop({
     canEdit: interactionMode.canEditCanvas,
@@ -540,7 +550,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 onPaneClick={eventHandlers.onPaneClick}
                 onPaneContextMenu={eventHandlers.onPaneContextMenu}
                 onNodeContextMenu={eventHandlers.onNodeContextMenu}
-                onNodeDragStart={dragLocks.onNodeDragStart}
+                onNodeDragStart={handleNodeDragStart}
                 onNodeDragStop={handleNodeDragStop}
                 onSelectionChange={eventHandlers.onSelectionChange}
                 defaultViewport={initialViewport}
