@@ -1,3 +1,4 @@
+import { kvSetItem } from "@/infrastructure/persistence/kvStorage";
 import { useTranslation } from "react-i18next";
 import { Moon, Sun, Monitor, Check, Settings as SettingsIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -82,7 +83,7 @@ export function SettingsMenu() {
                 type="button"
                 onClick={() => {
                   void i18n.changeLanguage(code);
-                  localStorage.setItem(I18N_STORAGE_KEY, code);
+                  kvSetItem(I18N_STORAGE_KEY, code);
                 }}
                 className={cn(
                   "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted/60",

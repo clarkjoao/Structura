@@ -1,15 +1,16 @@
+import { kvGetItem } from "@/infrastructure/persistence/kvStorage";
 import { useEffect, useState } from "react";
 
 function readTimestampFromStorage(key: string): number | null {
   if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(key);
+  const raw = kvGetItem(key);
   if (raw === null) return null;
   const parsed = parseInt(raw, 10);
   return Number.isNaN(parsed) ? null : parsed;
 }
 
 /**
- * Generic hook that tracks a timestamp stored in localStorage and updates
+ * Generic hook that tracks a timestamp stored in the preference store and updates
  * whenever the given event fires.
  */
 export function useLastSync(storageKey: string, eventName: string): number | null {

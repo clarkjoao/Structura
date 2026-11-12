@@ -1,3 +1,5 @@
+import { kvGetItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
+
 const KEY = "structura:collab";
 
 interface CollabPrefs {
@@ -36,7 +38,7 @@ const DEFAULTS: CollabPrefs = {
 
 export function readPrefs(): CollabPrefs {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = kvGetItem(KEY);
     if (!raw) return { ...DEFAULTS, serverUrl: defaultServerUrl() };
     const parsed = JSON.parse(raw) as Partial<CollabPrefs>;
     return { ...DEFAULTS, ...parsed };
@@ -47,7 +49,7 @@ export function readPrefs(): CollabPrefs {
 
 export function writePrefs(prefs: Partial<CollabPrefs>): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify({ ...readPrefs(), ...prefs }));
+    kvSetItem(KEY, JSON.stringify({ ...readPrefs(), ...prefs }));
   } catch (err) {
     console.warn("[collab-preferences] Failed to write preferences:", err);
   }

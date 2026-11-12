@@ -1,3 +1,4 @@
+import { kvGetItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
 import { useCallback, useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
@@ -8,7 +9,7 @@ const STORAGE_KEY = "structura_theme";
 const DEFAULT_THEME: Theme = "light";
 
 function getStoredTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = kvGetItem(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
   return DEFAULT_THEME;
 }
@@ -33,7 +34,7 @@ function getSnapshot(): Theme {
 
 function setTheme(theme: Theme) {
   currentTheme = theme;
-  localStorage.setItem(STORAGE_KEY, theme);
+  kvSetItem(STORAGE_KEY, theme);
   applyTheme(theme);
   listeners.forEach((cb) => cb());
 }

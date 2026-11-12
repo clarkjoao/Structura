@@ -1,3 +1,4 @@
+import { kvGetItem, kvKeys, kvRemoveItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
 import type { PreviewTheme } from "./generatePreviewSvg";
 
 const PREVIEW_KEY_PREFIX = "structura_diagram-preview:";
@@ -10,20 +11,13 @@ function previewKey(diagramId: string, theme: PreviewTheme = "light"): string {
 }
 
 export function setPreview(diagramId: string, svg: string, theme: PreviewTheme = "light"): void {
-  try {
-    localStorage.setItem(previewKey(diagramId, theme), svg);
-  } catch {
-    try {
-      localStorage.removeItem(previewKey(diagramId, theme));
-    } catch {
-      // ignore
-    }
-  }
+  // A failed write (quota) drops the stale entry rather than leaving an outdated preview.
+  if (!kvSetItem(previewKey(diagramId, theme), svg)) kvRemoveItem(previewKey(diagramId, theme));
 }
 
 export function getPreview(diagramId: string, theme: PreviewTheme = "light"): string | null {
   try {
-    return localStorage.getItem(previewKey(diagramId, theme));
+    return kvGetItem(previewKey(diagramId, theme));
   } catch {
     return null;
   }
@@ -31,8 +25,8 @@ export function getPreview(diagramId: string, theme: PreviewTheme = "light"): st
 
 export function deletePreview(diagramId: string): void {
   try {
-    localStorage.removeItem(previewKey(diagramId, "light"));
-    localStorage.removeItem(previewKey(diagramId, "dark"));
+    kvRemoveItem(previewKey(diagramId, "light"));
+    kvRemoveItem(previewKey(diagramId, "dark"));
   } catch {
     // ignore
   }
@@ -41,18 +35,7 @@ export function deletePreview(diagramId: string): void {
 export function clearAllPreviews(): void {
   if (typeof window === "undefined") return;
 
-  const keysToRemove: string[] = [];
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const storageKey = localStorage.key(index);
-    if (storageKey?.startsWith(PREVIEW_KEY_PREFIX)) {
-      keysToRemove.push(storageKey);
-    }
-  }
-  for (const key of keysToRemove) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      // ignore
-    }
+  for (const key of kvKeys()) {
+    if (key.startsWith(PREVIEW_KEY_PREFIX)) kvRemoveItem(key);
   }
 }
