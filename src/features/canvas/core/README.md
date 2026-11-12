@@ -10,6 +10,7 @@ Import from `@/features/canvas/core` (or the main `@/features/canvas` barrel):
 | Export                                                                       | Role                                                 |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `DiagramSurface`                                                             | React Flow shell, providers, Background, edge portal |
+| `DiagramSurfaceProviders` (internal)                                         | The five surface contexts, split one value each      |
 | `readPolicy` / `writePolicy`                                                 | Cohesive interaction policy                          |
 | `buildReactFlowShellProps`                                                   | RF prop defaults from policy                         |
 | `projectReadDiagram` / `useReadDiagramFlow`                                  | Reader IR → RF projection (golden source)            |

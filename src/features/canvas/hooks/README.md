@@ -10,9 +10,17 @@ private and are composed by [`Canvas.tsx`](../Canvas.tsx) through
 2. `useCanvasStore`, `useCanvasVisualState`, `useCanvasCompareState`, and
    `useCanvasFlowState` gather the state needed to render the canvas.
 3. `useCanvasInteraction` wires navigation, events, keyboard shortcuts, drag
-   parenting, and side effects.
-4. `useCanvasGraphState` turns the current diagram snapshot into React Flow
+   parenting, and side effects; its side jobs are hooks of their own
+   (`useCanvasModeExits`, `useForceSaveToFolder`, `useInsertToolByKey`,
+   `useFocusTitleRequest`).
+4. `useCanvasArrange`, `useElementPanelGate` and `useCollabSelectionBroadcast`
+   hold the controller's Arrange, element-panel and collaboration-selection
+   pieces.
+5. `useCanvasGraphState` turns the current diagram snapshot into React Flow
    `nodes` and `edges`.
+
+Where each fact lives (stores, contexts, overlaps):
+[`docs/concepts/canvas-state-map.md`](../../../../docs/concepts/canvas-state-map.md).
 
 ## Node selection
 

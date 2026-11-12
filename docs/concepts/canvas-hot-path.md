@@ -263,7 +263,7 @@ here costs little on that diagram.
 | One `batchCommitNodeDrag` / one `batchUpdateNodeLayouts` | `singleCommit` + `dimensionFlush` tests |
 | Per-node identity (`useCanvasNodes`) | existing node identity tests |
 | Per-edge identity + `shallowEqualRecord` (`useCanvasEdges`) | `useCanvasEdges.identity.test.ts` |
-| `HandleHighlightContext` not rebuilt from Canvas render | comment on `Canvas.tsx` |
+| `HandleHighlightContext` not rebuilt from Canvas render (the provider keys its value on the four fields) | comment in `HandleHighlightProvider` |
 | `EdgeLabelRevealContext` keeps its identity while its members are unchanged | `useRevealedLabelEdgeIds.test.ts` |
 | Canvas-wide id sets reach nodes and edges as membership (`idSetStore.ts`): handle highlight and revealed labels re-render only the elements that joined or left the set | `idSetStore.test.tsx` |
 | What a selection disables on a card is read by its controls (`selection/selectionControls.ts`), not carried on every card's data | `selectionControls.test.tsx`, `CardNode.selectionControls.test.tsx` |

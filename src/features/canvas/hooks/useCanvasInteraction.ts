@@ -1,23 +1,14 @@
 import {
   useCallback,
-  useEffect,
   useRef,
   type Dispatch,
   type MutableRefObject,
   type SetStateAction,
 } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import type { Node, ReactFlowInstance } from "@xyflow/react";
 import { useSearchParams, type NavigateFunction } from "react-router-dom";
 import { focusComponentsOnCanvas } from "../focus/focusComponents";
-import { useFlowMode } from "../flow/FlowModeContext";
-import {
-  flushWorkspaceToBrowserStorageNow,
-  type Diagram,
-  type DiagramModel,
-  type ServiceDefinition,
-} from "@/features/diagram";
+import type { Diagram, DiagramModel, ServiceDefinition } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
@@ -26,12 +17,12 @@ import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { useCanvasKeyboard } from "./useCanvasKeyboard";
 import { useCanvasEffects } from "./useCanvasEffects";
 import { useNodeDragParenting } from "./useNodeDragParenting";
-import { forceSaveToConnectedFolder } from "@/infrastructure/persistence";
 import { useCatalogUiStore } from "../catalog/catalogUi.store";
-import { registryCatalog, TOOLBAR_TOOLS } from "../catalog/toolbarTools";
-import { useCreateTextAtPointer } from "../text/useCreateTextAtPointer";
-import { KEY } from "@/lib/core/keyboard";
-import { useInsertAtCenter } from "../catalog/useInsertAtCenter";
+import { useCanvasModeExits } from "./useCanvasModeExits";
+import { useFocusTitleRequest } from "./useFocusTitleRequest";
+import { useForceSaveToFolder } from "./useForceSaveToFolder";
+import { useInsertToolByKey } from "./useInsertToolByKey";
+import { useSelectInsertedNodes } from "./useSelectInsertedNodes";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -97,43 +88,14 @@ export function useCanvasInteraction(
     onAutoLayout,
   } = params;
 
-  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const skipInitialFit = !!searchParams.get("serviceId");
-  const flowMode = useFlowMode();
-  const exitFlowPlayback = useCallback(() => {
-    if (!flowState.isPlaying) return false;
-    flowMode.exitPlay();
-    return true;
-  }, [flowState.isPlaying, flowMode]);
-  const exitCompareMode = useCallback(() => {
-    if (!compareState.isCompareMode) return false;
-    actions.setCompareVersion(null);
-    return true;
-  }, [compareState.isCompareMode, actions]);
-
-  const forceSaveToFolder = useCallback(async () => {
-    const fsResult = await forceSaveToConnectedFolder();
-
-    if (fsResult === "ok") {
-      toast.success(t("filesystem.savedSuccess"));
-      return;
-    }
-
-    if (fsResult === "error") {
-      toast.error(t("filesystem.saveError"));
-      const localOk = await flushWorkspaceToBrowserStorageNow({ force: true });
-      if (localOk) {
-        toast.success(t("localStorage.savedSuccess"));
-      }
-      return;
-    }
-
-    const localOk = await flushWorkspaceToBrowserStorageNow();
-    if (localOk) {
-      toast.success(t("localStorage.savedSuccess"));
-    }
-  }, [t]);
+  const { exitFlowPlayback, exitCompareMode } = useCanvasModeExits({
+    isPlaying: flowState.isPlaying,
+    isCompareMode: compareState.isCompareMode,
+    setCompareVersion: actions.setCompareVersion,
+  });
+  const forceSaveToFolder = useForceSaveToFolder();
 
   const diagramNavLocked =
     flowState.isRecording || flowState.isPlaying || compareState.isCompareMode;
@@ -194,16 +156,11 @@ export function useCanvasInteraction(
     addSharedRef: actions.addSharedRef,
   });
 
-  // Reset focus title trigger when selection changes (e.g., user selects a different node).
-  // This signals any child component focused on a title input to clear/blur.
-  useEffect(() => {
-    setFocusTitleTrigger(0);
-  }, [visualState.selectedNodeId, visualState.selectedEdgeId, setFocusTitleTrigger]);
-
-  // Request focus title: increment trigger to signal child to focus title input.
-  const handleRequestFocusTitle = useCallback(() => {
-    setFocusTitleTrigger((value) => value + 1);
-  }, [setFocusTitleTrigger]);
+  const handleRequestFocusTitle = useFocusTitleRequest(
+    visualState.selectedNodeId,
+    visualState.selectedEdgeId,
+    setFocusTitleTrigger,
+  );
 
   /**
    * Wrapped once: an inline arrow here re-creates `onConnectEnd`, which React
@@ -234,33 +191,8 @@ export function useCanvasInteraction(
     visualState.noteInlineEditingId === null &&
     visualState.jsonViewerInlineEditingId === null;
 
-  const selectInsertedNode = useCallback(
-    (nodeId: string) => {
-      visualState.setSelectedNodeId(nodeId);
-      visualState.setSelectedNodeIds(new Set([nodeId]));
-      visualState.setSelectedEdgeId(null);
-    },
-    [visualState],
-  );
-  const insertAtCenter = useInsertAtCenter(isPanelOpen, selectInsertedNode);
-
-  const createTextAtPointer = useCreateTextAtPointer(reactFlowWrapperRef, selectInsertedNode);
-
-  /** A toolbar insert (N, P, L) or the text tool (T); false when the key is not one, so the key stays free. */
-  const insertToolByKey = useCallback(
-    (key: string) => {
-      if (key === KEY.T) {
-        return createTextAtPointer();
-      }
-      const tool = TOOLBAR_TOOLS.find((candidate) => candidate.key === key);
-      if (!tool) return false;
-      const entry = registryCatalog().byId.get(tool.entryId);
-      if (!entry) return false;
-      insertAtCenter(entry);
-      return true;
-    },
-    [insertAtCenter, createTextAtPointer],
-  );
+  const { selectInsertedNode } = useSelectInsertedNodes(visualState);
+  const insertToolByKey = useInsertToolByKey(reactFlowWrapperRef, isPanelOpen, selectInsertedNode);
 
   const handleSearchSelect = useCallback(
     (componentId: string) => {
