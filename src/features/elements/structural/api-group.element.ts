@@ -74,12 +74,10 @@ export const apiGroupElement: ElementDescriptor = {
         flows: apiGroupFlows(comp.id, ctx.resolvedComponents, ctx.flows, ctx.endpointCallsByRoute),
         onPlayFlow: ctx.onPlayFlow,
         isSelected: ctx.selectedNodeId === comp.id,
-        controlsDisabled:
-          !!ctx.isCompareMode ||
-          (!ctx.isPlaying &&
-            !ctx.isRecording &&
-            ctx.selectedNodeIds.size > 0 &&
-            !ctx.selectedNodeIds.has(comp.id)),
+        // What a selection disables is read by the group's footer itself
+        // (`useSelectionDisablesControls`): on the data, the first selection
+        // handed every group on the canvas new data.
+        controlsDisabled: !!ctx.isCompareMode,
         onAddEndpoint: ctx.onAddEndpointToGroup
           ? () => ctx.onAddEndpointToGroup!(comp.id)
           : undefined,

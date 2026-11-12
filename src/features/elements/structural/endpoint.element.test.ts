@@ -23,6 +23,8 @@ function context(
     calls?: [string, EndpointCall[]][];
     components?: Record<string, Component>;
     isPlaying?: boolean;
+    selectedNodeIds?: string[];
+    isCompareMode?: boolean;
   } = {},
 ): NodeBuildContext {
   return {
@@ -35,7 +37,8 @@ function context(
     services: {},
     allDiagrams: {},
     selectedNodeId: null,
-    selectedNodeIds: new Set<string>(),
+    selectedNodeIds: new Set<string>(overrides.selectedNodeIds ?? []),
+    isCompareMode: overrides.isCompareMode ?? false,
     dragTargetPanelId: null,
     unparentCandidatePanelId: null,
     panelIds: new Set<string>(),
@@ -147,5 +150,32 @@ describe("what a group offers", () => {
     const data = apiGroupDescriptor.buildData(group(), context({ flows: [CREATE], components }));
 
     expect(flowsOf(data)).toEqual([]);
+  });
+});
+
+/**
+ * What a selection disables on a group or a route is read by the node's own
+ * controls (`selection/selectionControls.ts`). On the data, the first
+ * selection handed every group and route on the canvas new data.
+ */
+describe("the selection is not on a group's or a route's data", () => {
+  it("builds the same controlsDisabled whatever is selected", () => {
+    const components = { g1: group(), e1: route() };
+    const idle = apiGroupDescriptor.buildData(group(), context({ components }));
+    const elsewhere = apiGroupDescriptor.buildData(
+      group(),
+      context({ components, selectedNodeIds: ["other"] }),
+    );
+
+    expect(idle.controlsDisabled).toBe(false);
+    expect(elsewhere.controlsDisabled).toBe(false);
+    expect(
+      endpointDescriptor.buildData(route(), context({ selectedNodeIds: ["other"] })),
+    ).not.toHaveProperty("controlsDisabled");
+  });
+
+  it("keeps a group's controls off in compare mode", () => {
+    const data = apiGroupDescriptor.buildData(group(), context({ isCompareMode: true }));
+    expect(data.controlsDisabled).toBe(true);
   });
 });

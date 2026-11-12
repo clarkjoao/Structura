@@ -98,12 +98,6 @@ export const endpointElement: ElementDescriptor = {
         description: comp.endpointDescription ?? comp.description,
         handlers: comp.handlers ?? [],
         isSelected: ctx.selectedNodeId === comp.id,
-        controlsDisabled:
-          !!ctx.isCompareMode ||
-          (!ctx.isPlaying &&
-            !ctx.isRecording &&
-            ctx.selectedNodeIds.size > 0 &&
-            !ctx.selectedNodeIds.has(comp.id)),
         isPlaying: ctx.isCompareMode ? false : ctx.isPlaying,
         onPlayFlow: ctx.onPlayFlow,
         ...versionBadgePropsForNode(ctx, comp.id),
