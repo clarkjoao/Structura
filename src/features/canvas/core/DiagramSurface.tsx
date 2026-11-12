@@ -21,6 +21,7 @@ import { diagramEdgeTypes } from "./edgeTypes";
 import { buildReactFlowShellProps } from "./reactFlowBaseConfig";
 import { useRouteCulledEdges } from "../edges/culling/useRouteCulledEdges";
 import { CanvasLodProvider, CanvasLodSync } from "../contexts/CanvasLodContext";
+import { ViewportGestureSync } from "./ViewportGestureSync";
 
 type FlowHandlerProps = Pick<
   ReactFlowProps,
@@ -177,6 +178,7 @@ export function DiagramSurface({
               >
                 <EdgeLabelPortalHost />
                 <CanvasLodSync />
+                <ViewportGestureSync />
                 <HandleSidesSync direction={readingDirection} />
                 <Background
                   variant={BackgroundVariant.Lines}

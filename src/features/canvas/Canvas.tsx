@@ -1,7 +1,7 @@
 import { useSharedRefNotices } from "./shared/useSharedRefNotices";
 import { SharedLayer } from "./shared/SharedLayer";
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useReactFlow, Panel, MiniMap, Controls } from "@xyflow/react";
+import { useReactFlow, Panel, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import ElementPanel from "./panels/ElementPanel/index";
 import { CanvasContextMenu } from "./panels/CanvasContextMenu";
@@ -14,6 +14,8 @@ import { CanvasViewOptions } from "./toolbar/components/CanvasViewOptions";
 import { NothingInViewCard } from "./components/NothingInViewCard";
 import { CollabPresenceLayer } from "./components/CollabPresenceLayer";
 import { makeMiniMapNodeColor } from "./components/miniMapNodeColor";
+import { DragThrottledMiniMap } from "./components/DragThrottledMiniMap";
+import { createDragActivity } from "./components/miniMapDragThrottle";
 import { useViewportOccupancy } from "./hooks/useViewportOccupancy";
 import { useCollab } from "@/features/collaboration";
 import { isArrangeBlockedInSession } from "./layout/sessionArrangeGuard";
@@ -196,21 +198,24 @@ const Canvas = (props: CanvasProps = {}) => {
   } = useCanvasController(props);
   const dragLocks = useNodeDragLocks();
   const reconnectAnchors = useReconnectAnchorsOffWhileDragging();
+  const [dragActivity] = useState(createDragActivity);
   const lockedNodes = useMemo(() => dragLocks.applyLocks(nodes), [dragLocks, nodes]);
   const handleNodeDragStart = useCallback(
     (...args: Parameters<typeof dragLocks.onNodeDragStart>) => {
       reconnectAnchors.onNodeDragStart();
+      dragActivity.start();
       dragLocks.onNodeDragStart(...args);
     },
-    [dragLocks, reconnectAnchors],
+    [dragActivity, dragLocks, reconnectAnchors],
   );
   const handleNodeDragStop = useCallback(
     (event: Parameters<typeof onNodeDragStop>[0], node: Parameters<typeof onNodeDragStop>[1]) => {
       reconnectAnchors.onNodeDragStop();
+      dragActivity.stop();
       dragLocks.onNodeDragStop();
       onNodeDragStop(event, node);
     },
-    [dragLocks, onNodeDragStop, reconnectAnchors],
+    [dragActivity, dragLocks, onNodeDragStop, reconnectAnchors],
   );
   const { onDragOver: onSvgDragOver, onDropFiles: onSvgDropFiles } = useCanvasSvgFileDrop({
     canEdit: interactionMode.canEditCanvas,
@@ -635,7 +640,8 @@ const Canvas = (props: CanvasProps = {}) => {
                       <CanvasViewOptions />
                     </Panel>
                     {showMiniMap && (
-                      <MiniMap
+                      <DragThrottledMiniMap
+                        dragActivity={dragActivity}
                         pannable
                         zoomable
                         position="bottom-right"

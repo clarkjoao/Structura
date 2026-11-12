@@ -148,6 +148,45 @@ hops), and node secondary content marked `data-lod-secondary` is hidden with
 `visibility`. Never hide node content with `display`: the node would change
 size, React Flow would re-measure it and every edge on it would move.
 
+Panels and API groups mark the element that blurs what is behind them
+`data-canvas-blur`, and at far zoom the stylesheet turns that `backdrop-filter`
+off (`index.css`); the translucent fill stays. A backdrop filter makes the
+compositor re-layerize the canvas on every frame that paints, and it is a cost
+no profile of script shows: 1000 nodes at fit view (zoom 0.11, 40 panels), 30
+wheel ticks went from about 20 long tasks / 1.2–1.3 s, with 1.7–2.9 s of
+`Layerize` in the trace, to none. A node renderer that adds a `backdrop-blur`
+must mark it (`nodes/canvasBlur.guard.test.ts`).
+
+At full zoom the blur stays at rest and is off only while the viewport moves:
+`ViewportGestureSync` (inside `<ReactFlow>`, `core/`) writes
+`data-viewport-moving` on the wrapper from React Flow's viewport start/end and
+clears it 200 ms after the last movement — a wheel pan reports a start and an
+end on every tick, and clearing it at once toggled the filter 60 times in 30
+ticks, which cost more than the blur. Measured at 1000 nodes, zoom 0.71–0.73,
+9–12 panels on screen: 30 wheel ticks 6 long tasks / ~415 ms → none (frame
+p95 34–50 → 25 ms). Node drags keep the blur: removing it during a drag
+measured within noise (one node: 2 long tasks either way, ~205 → ~180 ms;
+twelve nodes: no difference). Do not keep the blur with
+compositing hints instead (`will-change` on the node or edge layers): each one
+measured changed the stacking order — panels over edges, or 470–1271 layers.
+
+### 5e. The minimap follows a drag five times a second
+
+React Flow's `<MiniMap>` subscribes to React Flow's store itself: every drag
+frame it recomputes the bounds of all nodes, runs one selector per node and
+redraws every moved rectangle — all of them when the whole selection moves.
+`DragThrottledMiniMap` (`components/`) renders the same `<MiniMap>` inside its
+own `ReactFlowProvider` whose store mirrors the canvas store (it is handed the
+canvas state object as is). At rest every change reaches the mirror at once, so
+panning, zooming and clicking the minimap behave as before; while a node drag
+is in progress (`dragActivity`, started and stopped by the canvas drag
+handlers) the mirror is refreshed every `MINIMAP_DRAG_REFRESH_MS` (200 ms) and
+once more when the drag ends. Measured dragging all 1000 nodes at fit view:
+minimap attribute writes per gesture −65 % (31 686 → 11 226 at 400 nodes), long
+tasks ~4.9 s → ~4.6 s, the same as with the minimap switched off. Do not hand
+the minimap the live store again, and do not put `dragging` on React state in
+`Canvas` to drive it: the drag frames bypass `Canvas` renders on purpose.
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -233,6 +272,8 @@ here costs little on that diagram.
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
 | Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |
 | Far level of detail: `FarEdge` on the same path, selected/revealed edges stay full | `EditableEdge.lod.test.tsx`, `canvasLod.test.ts` |
+| The minimap reads a store mirror refreshed at most every 200 ms during a node drag (`DragThrottledMiniMap`) | `miniMapDragThrottle.test.ts` |
+| Node backdrop blur is off at far zoom and while the viewport moves (`data-canvas-blur`, `ViewportGestureSync`) | `canvasBlur.guard.test.ts`, `ViewportGestureSync.test.tsx` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
 | `EditableEdge` reads `elementsSelectable` from `ElementsSelectableContext`, not one store subscription per edge | `EditableEdge.selectable.test.tsx` |
