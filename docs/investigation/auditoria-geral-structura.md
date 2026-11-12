@@ -662,3 +662,67 @@ Long tasks n/ms (p95 de frame quando relevante), duas execuções; "depois" = `6
 - `LIDO`: o espelho do minimapa compartilha o objeto de estado do store do canvas (incluindo `panZoom` e o `nodeLookup` mutável); se uma versão futura do `MiniMap` escrever no store pelo `useStoreApi()`, escreverá no espelho, não no canvas.
 - `LIDO`: o arraste da caixa de seleção (`onSelectionDragStart`) não é sinalizado ao minimapa; nesse gesto ele segue ao vivo, como antes.
 - O pan pela roda, programático, também dispara início/fim no auto-pan do arraste e no `fitView`: a marca aparece nesses casos por ≤ 200 ms após o fim.
+
+### 9.8 D6 e D2
+
+Branch `audit/perf-d6-d2` sobre `4f9a9f8a`; build de produção, Chromium headless (rAF a 120 Hz). "Antes" = `4f9a9f8a`; cada build servido à parte com `vite preview --port 4220`. Harness `perf.mjs` 2× em 400 e 1000 nós antes e depois; arraste de todos via `profile.mjs` (2× antes, 2× depois); zoom completo (0,71–0,73, região das folhas) com `focus.mjs`, 2× por massa. As builds de comparação foram tiradas de `git archive` de cada commit, sem tocar no worktree.
+
+| Commit | O que muda |
+| --- | --- |
+| `93dde2f2` | D6: o registro de line hops segue o `dragActivity` do canvas (o mesmo sinal do minimapa, `chrome/useLockedNodeDrag.ts`). Durante um arraste de nós recalcula no máximo a cada 120 ms (`LINE_HOPS_DRAG_REFRESH_MS`) e uma vez no instante em que o arraste termina; em repouso, como antes, um recálculo por frame com mudança. Ligação: `Canvas` → `DiagramSurface` → `DiagramSurfaceProviders` → `LineHopsProvider` (`registry.followDrag`). Testes: `lineHopsRegistry.test.ts` (intervalo, soltar, liberar). |
+| `3f21974b` | D2: o rodapé do grupo de API (botão de adicionar rota / faixa de scripts) lê o store de `selectionControls`, como os controles do `CardNode`; o `data` guarda `controlsDisabled` só para o modo comparação, e as superfícies de leitura continuam com `controlsDisabled: true`. O builder do endpoint deixa de emitir o campo, que o `EndpointNode` nunca leu. Teste: `ApiGroupNode.selectionControls.test.tsx`. |
+| `b5e720e3` | D2, a causa real: listas derivadas (`flows`, `callerNames`, `handlers`) de grupos e rotas mantêm a identidade entre builds enquanto o conteúdo é igual (`elements/structural/stableNodeLists.ts`); nota e JSON viewer constroem o slot `onStartEdit`/`onClickBody` que o renderizador escreve no próprio `data`. Testes: `stableNodeLists.test.ts`, `endpoint.element.test.ts`. |
+
+#### D6 — decisão `MEDIDO`
+
+**Recalcular em intervalo (120 ms) durante o arraste e na hora ao soltar.** Congelar até soltar foi descartado sem medir: uma linha que cruza um nó movido manteria o arco no lugar errado durante todo o gesto. O intervalo deixa os hops atrasados no máximo 120 ms, o que não se percebe no meio de um arraste; ao soltar ficam exatamente iguais aos da base.
+
+- Onde roda `LIDO`/`MEDIDO`: no nível distante (`FarEdge`) não há hops, mas as arestas de nós selecionados são reveladas e desenham a aresta completa — por isso o arraste de marquee e o de todos do harness (vista ajustada) pagam os hops.
+- Recalcular só as arestas que tocam nós movidos: não feito. O recálculo é global por natureza (um cruzamento depende das duas arestas), mas só as arestas cujo hop mudou são notificadas; com o intervalo, o recálculo cai de ~120/s para ~8/s e sai do perfil.
+
+Long tasks n/ms e p95 de frame; duas execuções.
+
+| Fase | 400 antes → depois | 1000 antes → depois |
+| --- | --- | --- |
+| Arraste de marquee, harness (169 / 107–128 selecionados) | 2/104 · 41,7; 0/0 · 41,6 → **0/0 · 33,3; 0/0 · 33,4** | 1/87 · 41,7; 1/84 · 41,5 → 1/83 · 41,6 (128 sel.); final 3/193 · 41,7, 2/132 · 33,8 — ruído. Uma execução "depois" pegou 450 nós (54/4477 · 91,7), não comparável |
+| Arraste de 1 nó, harness | 1/74, 1/76 · 9,3 → 1/71, 1/72 · 9,2 | 2/204, 2/181 → 2/194, 2/182 |
+| Arraste de todos, `profile.mjs` (1000 sel.) | — | 39/6566, 39/6285 (script 4272, 4153 ms) → 58/5804, 58/5809 (script 3449, 3388 ms); máx. 203–218 → 149–158 ms. Mais tarefas, mais curtas: o total cai ~8 %, o script ~18 % |
+| Arraste de todos, zoom completo | 25/1461 · 58,4; 27/1588 · 59,1 → **3/156 · 41,7; 5/258 · 41,8** | 27/3277 · 122; 25/3795 · 150 → 31/2815 · 92,5; 32/2909 · 100 (build final 34/3606 · 117) |
+| Arraste de 1 nó, zoom completo | 1/53 · 9,2 (2×) → 0/0 · 9,0; 1/53 · 8,6 | 3/240 · 42; 2/159 · 33,5 → 2/153 · 25,0; 3/199 · 24,8 |
+| 12 nós (cmd-clique), zoom completo | 0/0 · 16,7 → 0/0 · 16,7 | 1/90 · 25,9; 2/163 · 33,7 → 1/86 · 32,5; 1/87 · 32,9 |
+| Marquee, zoom completo (49 / 57 sel.) | 0/0 · 9,2 → 0/0 · 9,1; 0/0 · 8,9 | 0/0 · 21,5 (uma execução; nas outras o script não achou seleção na tela) |
+
+- Perfil `MEDIDO`: antes, `findLineHops` (196–210 ms) e `buildPathWithHops` (216–227 ms) estavam entre as maiores funções por tempo próprio no arraste de todos a 1000; depois não aparecem no topo.
+- Meta A3 (p95 ≤ 33 ms a 400, 9.5): **atingida** no marquee do harness (33,3–33,5 nas quatro execuções depois).
+- Conferência visual `MEDIDO` (`hopshots.mjs`, 400 nós, zoom 0,93, 11 nós arrastados 121 px): arcos depois de soltar **idênticos aos da base, arco a arco** (2844, nenhuma diferença). No meio do arraste, 391 de 2869 arcos estão fora de um cruzamento (atrasados até 120 ms) contra 19 na base (os mesmos 19 em repouso: artefatos do parser do script). Capturas: `scratchpad/shots/d6d2/{A,base}-400-{middrag,drop}.png`.
+- `perf.mjs` "drag whole selection" falha com "no visible node" antes e depois (o harness procura um nó visível depois do `Cmd+A`); o arraste de todos vem do `profile.mjs` e do `focus.mjs`.
+
+#### D2 — `MEDIDO`
+
+Seed próprio (`count-d2.mjs`): 1000 nós com 50 grupos de API, 150 rotas, 40 notas, 40 textos, vista ajustada; contadores de render temporários (`instr-d2.py`, nunca commitados).
+
+| Renders no primeiro clique (de nada selecionado) | Base `4f9a9f8a` | `3f21974b` | `b5e720e3` |
+| --- | --- | --- | --- |
+| `ApiGroupNode` | 50 | 50 | **0** |
+| `EndpointNode` | 150 | 150 | **0** |
+| `NoteNode` | 40 | 40 | **0** |
+| `CardNode` / `TextNode` | 0 / 0 | 0 / 0 | 0 / 0 |
+| `ApiGroupFooter` (novo) | — | 50 | 50 |
+
+O mesmo na volta a nada selecionado (Escape). O `3f21974b` sozinho **não** mudou nada: a instrumentação de diferenças de props mostrou que os 240 renders vinham de `flows`/`callerNames` novos a cada build e do `data` da nota, um campo mais longo que cada build novo porque o `NoteNode` escreve `onStartEdit`/`onClickBody` nele — o cache de identidade de `useCanvasNodes` (que ignora funções) nunca o mantinha. Daí o `b5e720e3`.
+
+- 6 cliques a 1000, seed D2, 6 execuções: base 5/362, 6/423, 6/407, 7/510, 6/414, 4/278 (média 5,7/399 ms) → depois 7/518, 6/453, 4/305, 5/329, 3/184, 5/292 (média 5,0/347 ms): −13 %, dentro do ruído de execução a execução.
+- 6 cliques no harness a 1000 (seed sem esses tipos): 5/335, 5/358 → 5/326, 6/377 — inalterado, como esperado.
+- `TextNode` e `NoteNode` `LIDO`: nunca receberam o `controlsDisabled` da seleção (só o `true` das superfícies de leitura, mantido); o texto não re-renderizava, a nota sim, pelo motivo acima. `JsonViewerNode` tem o mesmo padrão de escrever no `data` (`LIDO`) e recebeu o mesmo slot; não medido (o seed não tem JSON viewer).
+
+#### Gates (MEDIDO)
+
+`typecheck` OK · `lint` 0 erros, 7 avisos (os mesmos `react-refresh` da base) · `format:check` OK · `fallow:check` OK · `vitest run --retry 0`: 474 arquivos, **4555 testes, todos passam**.
+
+#### Riscos
+
+- `LIDO`: o arraste da caixa de seleção (`onSelectionDragStart`) não sinaliza o `dragActivity`; nesse gesto os hops seguem ao vivo, como antes (mesmo caso do minimapa, 9.6).
+- `LIDO`: arrastar um ponto de controle ou segmento de aresta não é arraste de nó — os hops continuam por frame.
+- `HIPÓTESE`: o recálculo de 120 ms cai num frame só; num diagrama com muitos cruzamentos ele pode ser um frame longo a cada intervalo (não visto a 1000).
+- `LIDO`: `stableNodeLists` é indexado pelo registro do componente (`WeakMap`); se a projeção passar a clonar componentes a cada build, a identidade das listas volta a mudar (os testes do builder pegam a regressão só no builder, não na projeção).
+- `LIDO`: o slot `onStartEdit` é uma função vazia até o renderizador montar; antes era `undefined`. O único leitor (`useCanvasEventHandlers`, duplo clique no JSON viewer) chama `startEdit?.()`, então o comportamento é o mesmo.
