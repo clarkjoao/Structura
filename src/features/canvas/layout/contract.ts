@@ -64,6 +64,11 @@ export interface LayoutNode {
    * grows along the reading (`firstLayerIds`).
    */
   firstLayer?: true;
+  /**
+   * What the node is, for ordering only: its type and name. Nodes the engine
+   * receives in any order are put in the same one by this, never by `id`.
+   */
+  sortKey?: string;
 }
 
 export interface LayoutEdge {
