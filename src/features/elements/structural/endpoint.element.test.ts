@@ -179,3 +179,43 @@ describe("the selection is not on a group's or a route's data", () => {
     expect(data.controlsDisabled).toBe(true);
   });
 });
+
+/**
+ * The canvas keeps a node's previous data while every field is the same value.
+ * A list rebuilt as a new array defeated that on every build: the first
+ * selection re-ran every group and route renderer on the canvas.
+ */
+describe("a rebuild that changes nothing keeps the derived lists", () => {
+  it("hands a route the same lists on every build", () => {
+    const comp = route(["f1"]);
+    const ctx = context({ flows: [CREATE], calls: [["e1", [call(REDIRECT)]]] });
+    const first = endpointDescriptor.buildData(comp, ctx);
+    const second = endpointDescriptor.buildData(
+      comp,
+      context({ flows: [CREATE], calls: [["e1", [call(REDIRECT)]]], selectedNodeIds: ["other"] }),
+    );
+
+    expect(second.flows).toBe(first.flows);
+    expect(second.callerNames).toBe(first.callerNames);
+    expect(second.handlers).toBe(first.handlers);
+  });
+
+  it("hands a group the same scripts on every build", () => {
+    const g = group();
+    const components = { g1: g, e1: route(["f1"]) };
+    const first = apiGroupDescriptor.buildData(g, context({ flows: [CREATE], components }));
+    const second = apiGroupDescriptor.buildData(g, context({ flows: [CREATE], components }));
+    expect(second.flows).toBe(first.flows);
+  });
+
+  it("hands a new list once the content changes", () => {
+    const comp = route(["f1"]);
+    const first = endpointDescriptor.buildData(comp, context({ flows: [CREATE] }));
+    const renamed = endpointDescriptor.buildData(
+      comp,
+      context({ flows: [{ ...CREATE, name: "Create link" }] }),
+    );
+    expect(renamed.flows).not.toBe(first.flows);
+    expect(flowsOf(renamed)).toEqual([{ id: "f1", name: "Create link" }]);
+  });
+});

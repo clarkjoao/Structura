@@ -9,6 +9,7 @@ import { isApiGroupComponent } from "@/features/diagram/model/component.guards";
 import { isEndpointType } from "@/features/diagram/model/component-type-constants";
 import { computeApiGroupSize } from "@/features/diagram/utils/api-group-size";
 import { apiGroupFlows } from "@/features/diagram/utils/flow-endpoint";
+import { stableFlowRefs } from "./stableNodeLists";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
 
 /** See `JsonViewerInspector`: narrowing here is what keeps the contract cast-free. */
@@ -71,7 +72,10 @@ export const apiGroupElement: ElementDescriptor = {
         protocol: comp.protocol,
         sla: comp.sla,
         customColor: (comp as { customColor?: string }).customColor,
-        flows: apiGroupFlows(comp.id, ctx.resolvedComponents, ctx.flows, ctx.endpointCallsByRoute),
+        flows: stableFlowRefs(
+          comp,
+          apiGroupFlows(comp.id, ctx.resolvedComponents, ctx.flows, ctx.endpointCallsByRoute),
+        ),
         onPlayFlow: ctx.onPlayFlow,
         isSelected: ctx.selectedNodeId === comp.id,
         // What a selection disables is read by the group's footer itself

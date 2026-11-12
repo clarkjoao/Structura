@@ -13,6 +13,7 @@ import { API_GROUP_ENDPOINT_H, API_GROUP_FRAME_W } from "@/features/diagram/mode
 import { endpointFlows } from "@/features/diagram/utils/flow-endpoint";
 import { useFlows } from "@/features/diagram/store/selectors/flows.selectors";
 import i18n from "@/infrastructure/i18n";
+import { orNone, stableFlowRefs, stableNames } from "./stableNodeLists";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
 
 /** Width a standalone endpoint is created at; inside a group the frame decides. */
@@ -83,7 +84,7 @@ export const endpointElement: ElementDescriptor = {
       return {
         // Derived, never kept on the endpoint: the route does not learn who calls
         // it, so deleting a step leaves nothing to clean up.
-        callerNames: [...new Set(calls.map((call) => call.flowName))],
+        callerNames: stableNames(comp, [...new Set(calls.map((call) => call.flowName))]),
         /**
          * What runs through this route: the scripts its handlers implement and
          * the ones whose steps call it. It used to be `handlers[0].flowId` — the
@@ -91,12 +92,12 @@ export const endpointElement: ElementDescriptor = {
          * being read, which put a play button on every route on the diagram
          * mid-reading, all of them for the same script.
          */
-        flows: endpointFlows(comp, ctx.flows, ctx.endpointCallsByRoute),
+        flows: stableFlowRefs(comp, endpointFlows(comp, ctx.flows, ctx.endpointCallsByRoute)),
         elementId: comp.id,
         method: comp.method,
         path: comp.path,
         description: comp.endpointDescription ?? comp.description,
-        handlers: comp.handlers ?? [],
+        handlers: orNone(comp.handlers),
         isSelected: ctx.selectedNodeId === comp.id,
         isPlaying: ctx.isCompareMode ? false : ctx.isPlaying,
         onPlayFlow: ctx.onPlayFlow,
