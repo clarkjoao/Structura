@@ -43,6 +43,7 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
           : "border-border bg-card/40 backdrop-blur-sm"
       }`}
       style={{ borderColor: isSelected ? undefined : `${PROTOCOL_COLORS[d.protocol]}66` }}
+      data-canvas-blur={isSelected ? undefined : ""}
     >
       {collabHighlight && (
         <div

@@ -148,6 +148,17 @@ hops), and node secondary content marked `data-lod-secondary` is hidden with
 `visibility`. Never hide node content with `display`: the node would change
 size, React Flow would re-measure it and every edge on it would move.
 
+Panels and API groups mark the element that blurs what is behind them
+`data-canvas-blur`, and at far zoom the stylesheet turns that `backdrop-filter`
+off (`index.css`); the translucent fill stays. A backdrop filter makes the
+compositor re-layerize the canvas on every frame that paints, and it is a cost
+no profile of script shows: 1000 nodes at fit view (zoom 0.11, 40 panels), 30
+wheel ticks went from about 20 long tasks / 1.2–1.3 s, with 1.7–2.9 s of
+`Layerize` in the trace, to none. A node renderer that adds a `backdrop-blur`
+must mark it (`nodes/canvasBlur.guard.test.ts`). Do not keep the blur with
+compositing hints instead (`will-change` on the node or edge layers): each one
+measured changed the stacking order — panels over edges, or 470–1271 layers.
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -233,6 +244,7 @@ here costs little on that diagram.
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
 | Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |
 | Far level of detail: `FarEdge` on the same path, selected/revealed edges stay full | `EditableEdge.lod.test.tsx`, `canvasLod.test.ts` |
+| Node backdrop blur is off at far zoom (`data-canvas-blur`, `index.css`) | `canvasBlur.guard.test.ts` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
 | `EditableEdge` reads `elementsSelectable` from `ElementsSelectableContext`, not one store subscription per edge | `EditableEdge.selectable.test.tsx` |

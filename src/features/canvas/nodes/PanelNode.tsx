@@ -234,6 +234,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
       />
       <div
         className={`w-full h-full rounded-xl ${motionClass} relative flex flex-col ${!isTransparent ? "backdrop-blur-sm" : ""} ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+        data-canvas-blur={isTransparent ? undefined : ""}
         style={{
           backgroundColor,
           border: `2px ${borderStyle} ${borderColor}`,
