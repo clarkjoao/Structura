@@ -608,3 +608,57 @@ O número de nós selecionados por 10 shift-clicks a 1000 varia entre execuçõe
 - `edgesReconnectable` é escrito direto no store do React Flow (a `<ReactFlow>` nunca recebe a prop; se um dia receber, o `StoreUpdater` passa a disputar o valor). Arrastar a caixa de seleção (`onSelectionDragStart`) não desliga as âncoras — só fica sem o ganho.
 - `selectionControls` e `idSetStore` notificam no layout effect: controles e destaques mudam num render síncrono logo após o da seleção, antes da pintura. Os outros tipos de nó (grupo de API, endpoint) ainda recebem `controlsDisabled` pelo `data`.
 - O seletor Cypress `.react-flow__edge-interaction` não foi tocado (a tentativa de unificar os dois paths de acerto deu ~2 % e foi descartada).
+
+### 9.6 D5 e D7: blur dos painéis e minimapa
+
+Branch `audit/perf-d5-d7` sobre `004634d5`; build de produção, Chromium headless (rAF a 120 Hz). Harness `perf.mjs` 2× em 400 e 1000 nós antes e depois de cada mudança; arraste de todos via `profile.mjs` e por script focado sem profiler; nível de detalhe completo medido com script focado (zoom 0,71–0,73 na região dos painéis, 9–12 painéis na tela, 2 repetições, trace `devtools.timeline`).
+
+| Commit | O que muda |
+| --- | --- |
+| `bc1f5d24` | O elemento que borra o fundo em `PanelNode` e `ApiGroupNode` ganha `data-canvas-blur`; `index.css` zera o `backdrop-filter` sob `.react-flow[data-lod="far"]`. O fundo translúcido continua. Guarda: `nodes/canvasBlur.guard.test.ts` (todo nó com `backdrop-blur` tem a marca; a regra existe). |
+| `a116ff9e` | `ViewportGestureSync` (dentro do `<ReactFlow>`) escreve `data-viewport-moving` no wrapper a partir do início/fim de viewport do React Flow e limpa 200 ms após o último movimento; a mesma regra zera o blur sob essa marca. Em repouso, no zoom completo, o blur é o de antes. |
+| `6c611d03` | `DragThrottledMiniMap`: o `<MiniMap>` do React Flow dentro de um `ReactFlowProvider` próprio cujo store espelha o do canvas (recebe o objeto de estado tal qual). Em repouso cada mudança passa na hora; durante um arraste de nós o espelho é atualizado no máximo a cada 200 ms e uma vez no soltar. Teste: `miniMapDragThrottle.test.ts`. |
+
+#### Zoom em que o harness roda `MEDIDO`
+
+`fitView` deixa 400 nós em zoom 0,133 e 1000 em 0,108: **todas as fases do harness rodam no nível distante** (`data-lod="far"`). Por isso o primeiro commit sozinho já leva o pan a 1000 a zero; o zoom completo foi medido à parte.
+
+#### Antes/depois, harness (MEDIDO)
+
+Long tasks n/ms (p95 de frame quando relevante), duas execuções; "depois" = `6c611d03`.
+
+| Fase | 400 antes → depois | 1000 antes → depois |
+| --- | --- | --- |
+| Pan ×30 | 0/0, 0/0 → 0/0, 0/0 | 20/1233, 23/1332 (p95 58,5) → **0/0, 0/0** (p95 16,7) |
+| Zoom ctrl+roda ×20 | 0/0 → 0/0 | 0/0, 10/2036 → 0/0, 0/0 |
+| 6 cliques | 0/0, 0/0 → 2/101, 0/0 (ruído: base em script focado 2/143, 0/0, 0/0) | 7/526, 6/391 → 7/568, 7/535 (p95 92/75 → 67/25) |
+| Arraste de marquee | 3/154, 16/870 → 4/215, 0/0 | 41/5322, 41/3416 → 40/4822, 40/4377 — **ruído**: em execuções alternadas do mesmo harness, `bc1f5d24` deu 2312, 2490, 4531 e 5278 ms e `a116ff9e` 4681, 4806, 4860 e 4634 ms; não há ganho nem perda mensurável |
+| Arraste de 1 nó | 1/86, 1/92 → 1/88, 1/80 | 5/370, 6/444 (p95 42) → **2/191, 2/187** (p95 17) |
+| Arraste de todos, `profile.mjs` (39–40 long tasks) | 2935 → 2501 ms | 6550, 6954, 7089 → 6764 ms (com profiler; `bc1f5d24` deu 7563–7709, sem explicação além do ruído do profiler) |
+| Arraste de todos, script focado sem profiler | — | antes do D7 4931, 4899 ms → **4653, 4550 ms**; com o minimapa desligado 4680, 4476, 4479 ms |
+
+#### Zoom completo, 1000 nós (MEDIDO)
+
+| Fase | Base | Sem blur (CSS injetado) | `a116ff9e` |
+| --- | --- | --- | --- |
+| Pan ×30 | 6/414, 6/416 · p95 34/50 · Layerize ~555 ms | 0/0, 0/0 · p95 16,6 | **0/0, 0/0** · p95 25 · Layerize ~225 ms |
+| Arraste de 1 nó | 2/196, 2/216 | 2/160, 2/197 | 2/153, 2/150 |
+| Arraste de 12 nós (cmd-clique) | 8/488, 8/457 | 6/372, 10/618 | — |
+| 6 cliques | 7/610, 6/499 | 6/445, 6/513 | 5/332, 2/164 |
+
+- **Decisão D5** `MEDIDO`: no nível distante o blur sai sempre (é onde o harness e a vista ajustada de diagramas grandes ficam; o custo era 1,2–1,3 s por pan de 30 ticks). No zoom completo o blur ainda dominava o pan (6 long tasks → 0), mas não o arraste (1 nó: ~205 → ~180 ms, 2 long tasks nos dois; 12 nós: sem diferença) nem os cliques. Por isso sai só enquanto a viewport se move, e o arraste de nós mantém o blur — trocar o filtro no início e no fim de cada arraste custaria um re-layerize a mais por gesto, por um ganho dentro do ruído. Em repouso no zoom completo o visual é o mesmo; tirar o blur também em repouso não foi feito porque as medições não mostram custo em repouso.
+- **Por que 200 ms de espera** `MEDIDO`: o pan pela roda move a viewport programaticamente, com um início e um fim por tick. Limpando a marca na hora, ela alternou 60 vezes em 30 ticks e o pan ficou **pior** que a base (10/724, 9/607). Com a espera: 2 alternâncias por gesto.
+- **D7** `MEDIDO`: o minimapa assina o store do React Flow diretamente (bounds de todos os nós + um seletor por nó a cada notificação, `LIDO` em `@xyflow/react` 12.11.2), por isso o espelho em vez de um wrapper. Escritas de atributo no SVG do minimapa durante um arraste de todos a 400: 31 686 → 11 226 (−65 %). Arraste de todos a 1000: −6 %, igual a desligar o minimapa. Pan, zoom e clique no minimapa continuam funcionando em repouso (verificado por eventos sintéticos; no layout do harness o minimapa fica sob o painel lateral direito, também na base).
+- **Bug pré-existente** `MEDIDO`: arrastar uma seleção de marquee de 450 nós na vista ajustada a 1000 nós dispara o React #185 (profundidade máxima de atualização) após uma tarefa de ~3,3 s e derruba o canvas. Reproduz na base `004634d5`, sem estes commits. Não investigado aqui.
+- **Variantes descartadas**: compositing hints para manter o blur (ver 9.5) não foram retomadas.
+
+#### Gates (MEDIDO)
+
+`typecheck` OK · `lint` 0 erros, 7 avisos (os mesmos da base) · `format:check` OK · `fallow:check` OK · `vitest run --retry 0`: 469 arquivos, 4523 testes, 2 falhas não relacionadas — `element.registry.test.ts` ("note" já registrado) falha igual na base `004634d5` com retry 0; `CollabClient.test.ts` (timeout) passa isolado.
+
+#### Riscos
+
+- `HIPÓTESE`: um gesto de viewport muito longo e lento (trackpad com pausas > 200 ms) pode alternar o blur no meio do gesto; cada alternância custa um re-layerize.
+- `LIDO`: o espelho do minimapa compartilha o objeto de estado do store do canvas (incluindo `panZoom` e o `nodeLookup` mutável); se uma versão futura do `MiniMap` escrever no store pelo `useStoreApi()`, escreverá no espelho, não no canvas.
+- `LIDO`: o arraste da caixa de seleção (`onSelectionDragStart`) não é sinalizado ao minimapa; nesse gesto ele segue ao vivo, como antes.
+- O pan pela roda, programático, também dispara início/fim no auto-pan do arraste e no `fitView`: a marca aparece nesses casos por ≤ 200 ms após o fim.
