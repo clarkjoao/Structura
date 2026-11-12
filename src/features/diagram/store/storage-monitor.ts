@@ -1,3 +1,4 @@
+import { kvGetItem, kvKeys, kvRemoveItem } from "@/infrastructure/persistence/kvStorage";
 import type { StorageHealthLevel } from "./saveStatus.store";
 import { workspaceStorage } from "@/infrastructure/persistence/workspaceStorage";
 import { useSaveStatusStore } from "./saveStatus.store";
@@ -14,18 +15,12 @@ export type FolderSyncStatus =
 
 /** Soma o tamanho de todas as chaves/valores do localStorage em bytes (UTF-16: char × 2). */
 export function measureLocalStorageUsage(): number {
-  try {
-    let total = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      const value = localStorage.getItem(key) ?? "";
-      total += (key.length + value.length) * 2;
-    }
-    return total;
-  } catch {
-    return 0;
+  let total = 0;
+  for (const key of kvKeys()) {
+    const value = kvGetItem(key) ?? "";
+    total += (key.length + value.length) * 2;
   }
+  return total;
 }
 
 /** Chaves que podem ser limpas sem perda de dados de diagrama. */
@@ -47,11 +42,7 @@ const CLEARABLE_KEYS = [
 export function clearNonEssentialStorage(): number {
   const before = measureLocalStorageUsage();
   for (const key of CLEARABLE_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* ignore */
-    }
+    kvRemoveItem(key);
   }
   const after = measureLocalStorageUsage();
   return Math.max(0, before - after);

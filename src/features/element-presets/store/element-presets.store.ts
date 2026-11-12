@@ -1,3 +1,9 @@
+import {
+  createZustandStorage,
+  kvGetItem,
+  kvRemoveItem,
+  kvSetItem,
+} from "@/infrastructure/persistence/kvStorage";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { ElementPreset, ElementPresetStoreState } from "../types";
@@ -60,7 +66,11 @@ function migratePresets(presets: Record<string, ElementPreset>): Record<string, 
  * after the rename. Removes the legacy key after a successful copy.
  */
 export function migrateZustandPresetStorageKey(
-  storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> = localStorage,
+  storage: Pick<Storage, "getItem" | "setItem" | "removeItem"> = {
+    getItem: kvGetItem,
+    setItem: kvSetItem,
+    removeItem: kvRemoveItem,
+  },
 ): boolean {
   const legacy = storage.getItem(LEGACY_CUSTOM_COMPONENTS_ZUSTAND_KEY);
   if (legacy === null) return false;
@@ -118,7 +128,7 @@ export const useElementPresetStore = create<ElementPresetStoreState>()(
     }),
     {
       name: ELEMENT_PRESETS_ZUSTAND_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(createZustandStorage),
       partialize: (state) => ({ presets: state.presets }),
       // Pre-F10 persisted `{ templates: ... }` under the migrated key blob.
       merge: (persisted, current) => {
