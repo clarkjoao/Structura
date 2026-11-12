@@ -20,8 +20,8 @@ import {
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { useElementsSelectable } from "../contexts/ElementsSelectableContext";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
-import { useEdgeLabelReveal } from "../contexts/EdgeLabelRevealContext";
+import { useIsConnectionHandleHighlighted } from "../contexts/highlightMembership";
+import { useIsEdgeLabelRevealed } from "../contexts/edgeLabelReveal";
 import { buildEditableEdgePath, getRenderedPathKnots } from "./geometry/paths";
 import {
   buildStepPath,
@@ -133,8 +133,8 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
   // The connection's style, as the projection read it: the toolbar edits it,
   // and nothing on the read path needs the store's record.
   const connectionStyle = edgeData.connectionStyle;
-  const { highlightedConnectionIds } = useHandleHighlight();
-  const revealedLabelEdgeIds = useEdgeLabelReveal();
+  const isHandleHighlighted = useIsConnectionHandleHighlighted(connectionId);
+  const isLabelRevealed = useIsEdgeLabelRevealed(connectionId);
 
   const source = useMemo<Point>(() => ({ x: sourceX, y: sourceY }), [sourceX, sourceY]);
   const target = useMemo<Point>(() => ({ x: targetX, y: targetY }), [targetX, targetY]);
@@ -281,7 +281,7 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
     [source, target, projectionPoints, labelOffset],
   );
 
-  const isHighlighted = Boolean(selected) || highlightedConnectionIds.has(connectionId);
+  const isHighlighted = Boolean(selected) || isHandleHighlighted;
   const strokeStyle = edgeData.strokeStyle ?? StrokeStyle.Solid;
   const strokeWidth = edgeData.strokeWidth ?? 1;
   const baseStroke = edgeData.color ?? DEFAULT_STROKE;
@@ -512,7 +512,7 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
           revealed={
             isHighlighted ||
             hovered ||
-            revealedLabelEdgeIds.has(connectionId) ||
+            isLabelRevealed ||
             Boolean(edgeData.stepBadges?.length) ||
             Boolean(edgeData.isLastRecorded)
           }
@@ -553,15 +553,11 @@ function FullEditableEdge(props: EdgeProps<EditableEdgeType>) {
  */
 const EditableEdge = memo((props: EdgeProps<EditableEdgeType>) => {
   const lod = useCanvasLod();
-  const revealed = useEdgeLabelReveal();
-  const { highlightedConnectionIds } = useHandleHighlight();
   const connectionId = props.data?.connectionId ?? props.id;
+  const revealed = useIsEdgeLabelRevealed(connectionId);
+  const highlighted = useIsConnectionHandleHighlighted(connectionId);
   const simplified =
-    lod === "far" &&
-    !props.selected &&
-    !props.data?.isActivePlayback &&
-    !revealed.has(connectionId) &&
-    !highlightedConnectionIds.has(connectionId);
+    lod === "far" && !props.selected && !props.data?.isActivePlayback && !revealed && !highlighted;
   return simplified ? <FarEdge {...props} /> : <FullEditableEdge {...props} />;
 });
 

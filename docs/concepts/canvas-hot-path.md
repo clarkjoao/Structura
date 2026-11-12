@@ -226,6 +226,9 @@ here costs little on that diagram.
 | Per-edge identity + `shallowEqualRecord` (`useCanvasEdges`) | `useCanvasEdges.identity.test.ts` |
 | `HandleHighlightContext` not rebuilt from Canvas render | comment on `Canvas.tsx` |
 | `EdgeLabelRevealContext` keeps its identity while its members are unchanged | `useRevealedLabelEdgeIds.test.ts` |
+| Canvas-wide id sets reach nodes and edges as membership (`idSetStore.ts`): handle highlight and revealed labels re-render only the elements that joined or left the set | `idSetStore.test.tsx` |
+| What a selection disables on a card is read by its controls (`selection/selectionControls.ts`), not carried on every card's data | `selectionControls.test.tsx`, `CardNode.selectionControls.test.tsx` |
+| Edge reconnect anchors are off while nodes are dragged (`useReconnectAnchorsOffWhileDragging`) | `useReconnectAnchorsOffWhileDragging.test.tsx` |
 | Stable `onNodeClick` (React Flow's `NodeWrapper` is not memoised: a new identity re-renders every node) | `useCanvasEventHandlers.node-click-identity.test.tsx` |
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
 | Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |

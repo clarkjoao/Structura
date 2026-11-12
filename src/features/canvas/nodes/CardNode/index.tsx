@@ -9,7 +9,7 @@ import { cloudRegistry, CloudIcon } from "@/features/cloud";
 import { getElement } from "@/features/elements/element.registry";
 import { borderClassForAccent } from "@/features/elements/accent-border";
 import { MIN_HANDLES, MAX_HANDLES } from "../../canvas.constants";
-import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../../contexts/highlightMembership";
 import type { NodeData } from "./types";
 import { TypeConfig } from "./TypeConfig";
 import { buildHandles } from "./Handles";
@@ -47,8 +47,7 @@ function useExpandMaxHeight(
 }
 
 function useNodeState(d: NodeData, selected: boolean | undefined) {
-  const { highlightedNodeIds } = useHandleHighlight();
-  const isHighlighted = highlightedNodeIds.has(d.elementId);
+  const isHighlighted = useIsNodeHandleHighlighted(d.elementId);
   const isActive = selected || d.isSelected || d.isHighlighted || isHighlighted;
 
   const incomingCount = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, d.incomingCount ?? 1));

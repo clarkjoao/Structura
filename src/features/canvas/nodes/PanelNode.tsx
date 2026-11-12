@@ -3,7 +3,7 @@ import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { getPanelKindDef, panelKindLabel } from "@/lib/catalogs/panels";
 import CloudIcon from "./CloudIcon";
 import { useTranslation } from "react-i18next";
@@ -89,7 +89,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
     "resizing" in props ? Boolean((props as NodeProps & { resizing?: boolean }).resizing) : false;
   const { t } = useTranslation();
   const customDiagramIcon = useResolvedComponentIcon(d.elementId);
-  const { highlightedNodeIds } = useHandleHighlight();
+  const isHandleHighlighted = useIsNodeHandleHighlighted(d.elementId);
   const kindDef = getPanelKindDef(
     d.panelKind as import("@/features/diagram").PanelKind | undefined,
   );
@@ -103,7 +103,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
     isDark && opacity > 0 ? Math.max(opacity, DARK_PANEL_MIN_FILL_ALPHA * 100) : opacity;
   const labelColor = contrastLabelColor(color, effectiveOpacity, backdrop);
   const isSelected = selected || d.isSelected;
-  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || isHandleHighlighted;
   const isActive = isSelected || isHighlighted;
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;

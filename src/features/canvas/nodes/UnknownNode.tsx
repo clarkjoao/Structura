@@ -2,7 +2,7 @@ import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { CircleHelp } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { DeployHandles } from "./DeployNodes/DeployParts";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
@@ -25,9 +25,9 @@ export type UnknownNodeData = {
 
 const UnknownNode = memo(({ data: d, selected }: NodeProps<Node<UnknownNodeData>>) => {
   const { t } = useTranslation();
-  const { highlightedNodeIds } = useHandleHighlight();
+  const isHandleHighlighted = useIsNodeHandleHighlighted(d.elementId);
   const isSelected = selected || d.isSelected;
-  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || isHandleHighlighted;
   const isActive = isSelected || isHighlighted;
   const collabHighlight = useCollabHighlight(d.elementId);
 

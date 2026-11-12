@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Handle, NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { safeSvgMarkup } from "../utils/svg.render";
@@ -28,9 +28,9 @@ const SVG_ACCENT_DEFAULT = "#f97316";
 const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
   const { t } = useTranslation();
   const sides = useHandleSides();
-  const { highlightedNodeIds } = useHandleHighlight();
+  const isHandleHighlighted = useIsNodeHandleHighlighted(d.elementId);
   const isSelected = selected || d.isSelected;
-  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || isHandleHighlighted;
   const isActive = isSelected || isHighlighted;
   const collabHighlight = useCollabHighlight(d.elementId);
   const showBorder = d.showBorder !== false;

@@ -8,7 +8,7 @@ import {
   NOTE_DEFAULT_DARK,
   NOTE_DEFAULT_LIGHT,
 } from "@/features/canvas/panels/ElementPanel/components/colorPresets";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { KEY, keyIs } from "@/lib/core/keyboard";
 
 import { useTranslation } from "react-i18next";
@@ -91,7 +91,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
   const collapsed = d.collapsed ?? false;
   const onToggleCollapse = d.onToggleCollapse;
   const customDiagramIcon = useResolvedComponentIcon(elementId);
-  const { highlightedNodeIds } = useHandleHighlight();
+  const isHandleHighlighted = useIsNodeHandleHighlighted(elementId);
   const { updateComponent } = useDiagramActions();
 
   const paperColor =
@@ -99,7 +99,7 @@ const NoteNode = memo(({ data: d, selected }: NodeProps<Node<NoteNodeData>>) => 
       ? (d.panelColorDark ?? NOTE_DEFAULT_DARK)
       : (d.panelColor ?? NOTE_DEFAULT_LIGHT);
   const isSelected = selected || d.isSelected;
-  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || isHandleHighlighted;
   const isActive = isSelected || isHighlighted;
   const dark = isDarkBg(paperColor);
   const collabHighlight = useCollabHighlight(elementId);

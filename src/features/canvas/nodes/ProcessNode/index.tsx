@@ -2,7 +2,7 @@ import { memo, type CSSProperties } from "react";
 import { Handle, NodeResizer, type Node, type NodeProps, type Position } from "@xyflow/react";
 import { Plus } from "lucide-react";
 import type { FlowNodeShape } from "@/features/diagram";
-import { useHandleHighlight } from "../../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../../contexts/highlightMembership";
 import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 import { CARD_MAX_W, CARD_MIN_W } from "../CardNode/constants";
 import type { ProcessNodeData } from "./ProcessNode.types";
@@ -510,9 +510,8 @@ function FlowHandles({ shape, w, h }: { shape: FlowNodeShape; w: number; h: numb
 
 const ProcessNode = memo(
   ({ data: d, selected, width, height }: NodeProps<Node<ProcessNodeData>>) => {
-    const { highlightedNodeIds } = useHandleHighlight();
+    const isHighlighted = useIsNodeHandleHighlighted(d.elementId);
     const isSelected = selected || d.isSelected;
-    const isHighlighted = highlightedNodeIds.has(d.elementId);
     const isActive = !!(isSelected || isHighlighted);
 
     const shape = readFlowShape(d.flowShape);
