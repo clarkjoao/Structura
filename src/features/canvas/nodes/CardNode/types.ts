@@ -9,6 +9,12 @@ export type NodeData = {
   cloudService?: string;
   isSelected: boolean;
   isHighlighted?: boolean;
+  /**
+   * Every control off whatever the selection (the read-only surfaces). What a
+   * selection disables is not on the data: the controls read it themselves
+   * (`useSelectionDisablesControls`), so a selection change does not hand
+   * every card new data.
+   */
   controlsDisabled?: boolean;
   serviceId?: string;
   serviceName?: string;

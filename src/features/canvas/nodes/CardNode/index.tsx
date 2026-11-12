@@ -22,6 +22,7 @@ import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadg
 import { useIsCollabGuest } from "@/features/collaboration/hooks/useIsCollabGuest";
 import { CARD_MAX_W, CARD_MIN_W } from "./constants";
 import { useHandleSides } from "../../contexts/ReadingDirectionContext";
+import { useSelectionDisablesControls } from "../../selection/selectionControls";
 
 /**
  * Remembers the collapsed height and, while active, caps vertical growth at
@@ -49,29 +50,37 @@ function useNodeState(d: NodeData, selected: boolean | undefined) {
   const { highlightedNodeIds } = useHandleHighlight();
   const isHighlighted = highlightedNodeIds.has(d.elementId);
   const isActive = selected || d.isSelected || d.isHighlighted || isHighlighted;
-  const controlsDisabled = !!d.controlsDisabled;
-
-  const handlePointer = controlsDisabled
-    ? { pointerEvents: "none" as const }
-    : d.isRecording || !!d.activeHandleId
-      ? { pointerEvents: "all" as const }
-      : undefined;
 
   const incomingCount = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, d.incomingCount ?? 1));
   const outgoingCount = Math.min(MAX_HANDLES, Math.max(MIN_HANDLES, d.outgoingCount ?? 1));
 
-  return { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount };
+  return { d, isActive, incomingCount, outgoingCount };
+}
+
+/**
+ * Whether the card's controls are off: always on a read-only surface, and
+ * while something else is selected. Read by the controls themselves, not by
+ * the card: a selection change re-renders them, never the whole card.
+ */
+function useControlsDisabled(d: NodeData): boolean {
+  const disabledBySelection = useSelectionDisablesControls(d.elementId);
+  return !!d.controlsDisabled || disabledBySelection;
 }
 
 interface NodeHandlesProps {
   d: NodeData;
   incomingCount: number;
   outgoingCount: number;
-  handlePointer: CSSProperties | undefined;
 }
 
-const NodeHandles = ({ d, incomingCount, outgoingCount, handlePointer }: NodeHandlesProps) => {
+const NodeHandles = ({ d, incomingCount, outgoingCount }: NodeHandlesProps) => {
   const sides = useHandleSides();
+  const controlsDisabled = useControlsDisabled(d);
+  const handlePointer: CSSProperties | undefined = controlsDisabled
+    ? { pointerEvents: "none" }
+    : d.isRecording || !!d.activeHandleId
+      ? { pointerEvents: "all" }
+      : undefined;
   return (
     <>
       {buildHandles(incomingCount, "target", sides.input, d, handlePointer)}
@@ -83,12 +92,13 @@ const NodeHandles = ({ d, incomingCount, outgoingCount, handlePointer }: NodeHan
 
 interface NodeActionsProps {
   d: NodeData;
-  controlsDisabled: boolean;
   colorClass: string;
   customColor?: string;
 }
 
-const NodeActions = ({ d, controlsDisabled, colorClass, customColor }: NodeActionsProps) => {
+const NodeActions = ({ d, colorClass, customColor }: NodeActionsProps) => {
+  const isGuest = useIsCollabGuest();
+  const controlsDisabled = useControlsDisabled(d) || isGuest;
   // Drawn whenever the card links somewhere, a control only where it can go:
   // the reader keeps the row (and so the card's size) without the action.
   const hasDrillDown = !!d.linkedDiagramName;
@@ -121,9 +131,7 @@ const NodeActions = ({ d, controlsDisabled, colorClass, customColor }: NodeActio
 
 const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
   const { t } = useTranslation();
-  const { d, isActive, controlsDisabled, handlePointer, incomingCount, outgoingCount } =
-    useNodeState(data, selected);
-  const isGuest = useIsCollabGuest();
+  const { d, isActive, incomingCount, outgoingCount } = useNodeState(data, selected);
   const rootRef = useRef<HTMLDivElement>(null);
   const expandStyle = useExpandMaxHeight(isActive, rootRef);
 
@@ -227,12 +235,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       {d.stepBadges && d.stepBadges.length > 0 && (
         <StepBadge badges={d.stepBadges} isLastRecorded={d.isLastRecorded} />
       )}
-      <NodeHandles
-        d={d}
-        incomingCount={incomingCount}
-        outgoingCount={outgoingCount}
-        handlePointer={handlePointer}
-      />
+      <NodeHandles d={d} incomingCount={incomingCount} outgoingCount={outgoingCount} />
       <div
         className={`px-3 py-2.5 flex flex-col min-h-0 ${isActive ? "flex-1 overflow-hidden" : ""}`}
       >
@@ -267,12 +270,7 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
           </span>
         )}
         <div data-lod-secondary className="shrink-0">
-          <NodeActions
-            d={d}
-            controlsDisabled={controlsDisabled || isGuest}
-            colorClass={actionColorClass}
-            customColor={d.customColor}
-          />
+          <NodeActions d={d} colorClass={actionColorClass} customColor={d.customColor} />
         </div>
       </div>
     </div>

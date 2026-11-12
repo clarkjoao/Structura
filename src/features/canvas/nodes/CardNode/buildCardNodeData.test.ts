@@ -113,3 +113,16 @@ describe("buildCardNodeData drill-down", () => {
     expect(data.onDrillDown).toBeUndefined();
   });
 });
+
+describe("buildCardNodeData and the selection", () => {
+  it("builds the same data whether or not another node is selected", () => {
+    const nothingSelected = buildCardNodeData(container, ctxWithCounts(1, 1));
+    const otherSelected = buildCardNodeData(container, {
+      ...ctxWithCounts(1, 1),
+      selectedNodeIds: new Set(["other"]),
+    });
+    // The controls read what a selection disables themselves (`selectionControls.ts`).
+    expect(otherSelected).toEqual(nothingSelected);
+    expect(otherSelected).not.toHaveProperty("controlsDisabled");
+  });
+});
