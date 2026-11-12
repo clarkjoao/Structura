@@ -1,3 +1,4 @@
+import { createZustandStorage } from "@/infrastructure/persistence/kvStorage";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { IconDefinition } from "../model";
@@ -68,7 +69,7 @@ export const useIconStore = create<IconStore>()(
     }),
     {
       name: "structura:icon-library",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(createZustandStorage),
       partialize: (state) => ({ icons: state.icons }),
     },
   ),

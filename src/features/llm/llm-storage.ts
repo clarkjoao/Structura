@@ -1,3 +1,4 @@
+import { kvGetItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
 import type {
   ChatMessage,
   ConversationThread,
@@ -277,7 +278,7 @@ export function deriveThreadTitle(messages: ChatMessage[]): string {
 
 export function loadConnections(): ConnectionsPayload {
   try {
-    const rawValue = localStorage.getItem(LLM_CONNECTIONS_STORAGE_KEY);
+    const rawValue = kvGetItem(LLM_CONNECTIONS_STORAGE_KEY);
     if (rawValue) {
       const parsed: unknown = JSON.parse(rawValue);
       if (isObject(parsed)) {
@@ -306,8 +307,8 @@ export function loadConnections(): ConnectionsPayload {
   // Legacy fallback: migrate from old key shape.
   let migrated: ConnectionsPayload | null = null;
   try {
-    const legacyConfig = localStorage.getItem(LLM_CONFIG_STORAGE_KEY);
-    const legacyKeys = localStorage.getItem(PROVIDER_KEY_STORAGE);
+    const legacyConfig = kvGetItem(LLM_CONFIG_STORAGE_KEY);
+    const legacyKeys = kvGetItem(PROVIDER_KEY_STORAGE);
     if (legacyConfig || legacyKeys) {
       migrated = migrateLegacyConfig(legacyConfig, legacyKeys);
     }
@@ -335,7 +336,9 @@ export function saveConnections(payload: ConnectionsPayload): void {
       ? payload.activeConnectionId
       : (payload.connections[0]?.id ?? DEFAULT_LLM_CONNECTION.id),
   };
-  localStorage.setItem(LLM_CONNECTIONS_STORAGE_KEY, JSON.stringify(normalized));
+  if (!kvSetItem(LLM_CONNECTIONS_STORAGE_KEY, JSON.stringify(normalized))) {
+    console.warn("[llm-storage] Failed to save connections");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -397,7 +400,7 @@ export function loadThreadsForDiagram(diagramId: string): DiagramThreadState {
     return chatThreadsCache[diagramId];
   }
   try {
-    const rawValue = localStorage.getItem(CHAT_HISTORY_KEY);
+    const rawValue = kvGetItem(CHAT_HISTORY_KEY);
     const migrated = migrateLegacyThreads(rawValue);
     if (isObject(migrated) && diagramId in migrated) {
       return migrated[diagramId];
@@ -441,7 +444,7 @@ export function saveThreadsForDiagram(diagramId: string, state: DiagramThreadSta
           "",
       };
     }
-    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(snapshot));
+    kvSetItem(CHAT_HISTORY_KEY, JSON.stringify(snapshot));
   } catch (err) {
     console.warn("[llm-storage] Failed to save threads snapshot:", err);
   }
@@ -460,7 +463,7 @@ export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
   // (covers the case where IDB is empty but the legacy blob is present).
   const merged: Record<string, DiagramThreadState> = { ...idbPayload };
   try {
-    const rawLegacy = localStorage.getItem(CHAT_HISTORY_KEY);
+    const rawLegacy = kvGetItem(CHAT_HISTORY_KEY);
     if (rawLegacy) {
       const legacy = migrateLegacyThreads(rawLegacy);
       for (const [diagramId, state] of Object.entries(legacy)) {
@@ -477,7 +480,7 @@ export async function hydrateChatThreadsCacheFromIdb(): Promise<void> {
 
   // Run the one-shot migration in the background. The flag inside the IDB
   // helper makes this a no-op after the first run.
-  void migrateThreadsFromLocalStorageToIdb(localStorage.getItem(CHAT_HISTORY_KEY));
+  void migrateThreadsFromLocalStorageToIdb(kvGetItem(CHAT_HISTORY_KEY));
 }
 
 // Compatibility shims for callers still relying on the old shape. These are

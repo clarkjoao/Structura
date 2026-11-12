@@ -80,3 +80,18 @@ costs ~6 ms. The escape this ADR planned was due
   hidden.
 - Review rules: the rule above now reads "`localStorage` or IndexedDB access for
   the workspace outside `infrastructure/persistence/`".
+
+## Amendment: two storage boundaries
+
+- **Workspace**: `IStoragePort` (`workspaceStorage`), unchanged.
+- **Key-value preferences**: `infrastructure/persistence/kvStorage.ts` guards
+  `localStorage`/`sessionStorage` (private mode, quota) and is the only way for
+  the rest of the app to read or write user preferences, caches, one-shot flags
+  and integration tokens (`readSecretItem`/`writeSecretItem`, a single seam for
+  any later hardening). Keys are unchanged. `createZustandStorage()` backs every
+  zustand `persist`.
+- An ESLint rule (`no-restricted-globals` / `no-restricted-properties`) forbids
+  `localStorage`/`sessionStorage` outside `src/infrastructure/persistence/` and
+  tests, so the boundary is enforced rather than documented.
+- Behaviour change: a failed preference write (quota) no longer throws into the
+  caller; `kvSetItem` returns `false`.

@@ -126,8 +126,11 @@ src/
   `updateNodeLayout` at a time costs one `set()` each — every `set()` notifies
   every store subscriber and re-runs the canvas projection. Do not add a history checkpoint
   here, and do not split the batch, without a measurement that justifies it.
-- **Persistence goes through `IStoragePort`** — never touch `localStorage` or IndexedDB for the
-  workspace directly outside `infrastructure/persistence/` (ADR-0007).
+- **Persistence goes through `infrastructure/persistence/`** — the workspace through
+  `IStoragePort`; preferences, caches, one-shot flags and integration secrets through
+  `kvStorage` (`kvGetItem`/`kvSetItem`, `createZustandStorage()` for zustand `persist`,
+  `readSecretItem` for tokens). Nothing else touches `localStorage`, `sessionStorage` or
+  IndexedDB: ESLint (`no-restricted-globals`) enforces it outside that folder and tests (ADR-0007).
 - **`@` alias** resolves to `./src`.
 - Prefer incremental changes; leave the codebase simpler than you found it.
 - **Significant features start with a spec** via OpenSpec in `openspec/`

@@ -1,3 +1,5 @@
+import { kvGetItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
+
 export interface RecentDiagramRef {
   id: string;
   openedAt: number;
@@ -8,7 +10,7 @@ const MAX_RECENT = 5;
 
 export function readRecentRefs(): RecentDiagramRef[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = kvGetItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as RecentDiagramRef[];
     if (!Array.isArray(parsed)) return [];
@@ -21,7 +23,7 @@ export function readRecentRefs(): RecentDiagramRef[] {
 }
 
 export function writeRecentRefs(refs: RecentDiagramRef[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(refs));
+  kvSetItem(STORAGE_KEY, JSON.stringify(refs));
 }
 
 export function removeRecentRef(id: string): void {
