@@ -442,3 +442,16 @@
   inset: -10px;
   background: transparent;
 }
+
+/*
+ * One keyboard focus ring for buttons, links and icon buttons that carry no focus style of their
+ * own (plain <button>s fell back to the browser's `outline: auto`, which differs per browser and
+ * vanishes on dark surfaces). In the base layer so any Tailwind utility, such as the shadcn
+ * button's `focus-visible:ring-2`, still wins. Inputs are left alone.
+ */
+@layer base {
+  :where(button, a[href], [role="button"], summary):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}

@@ -280,6 +280,8 @@
     "signalComponentLink": "elemento aponta para este repositório"
   },
   "folderTree": {
+    "expandFolder": "Expandir pasta",
+    "collapseFolder": "Recolher pasta",
     "newFolderTitle": "Nova pasta",
     "newFolder": "Nova pasta",
     "recentLabel": "Recentes",
@@ -906,6 +908,7 @@
     "addRow": "Adicionar linha",
     "addCol": "Adicionar coluna",
     "removeRow": "Remover linha",
+    "cellAria": "{{column}}, linha {{row}}",
     "removeCol": "Remover coluna",
     "expandAria": "Expandir tabela",
     "expandTitle": "Expandir",

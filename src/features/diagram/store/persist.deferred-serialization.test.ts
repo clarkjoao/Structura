@@ -134,4 +134,26 @@ describe("deferred workspace serialization", () => {
     await vi.advanceTimersByTimeAsync(PERSIST_DEBOUNCE_MS);
     expect(useSaveStatusStore.getState().status).toBe("error");
   });
+
+  it("does not report saving when a set() changes nothing that is persisted", async () => {
+    const adapter = new InMemoryAdapter();
+    const store = createDiagramStore(adapter);
+    await vi.advanceTimersByTimeAsync(0);
+    const diagram = store.getState().addDiagram("Quiet", "container");
+    store.getState().openDiagram(diagram.id);
+    const comp = store.getState().addComponent("container", "A", null, { x: 0, y: 0 });
+    await vi.advanceTimersByTimeAsync(PERSIST_DEBOUNCE_MS);
+    expect(useSaveStatusStore.getState().status).toBe("saved");
+
+    // Fields outside the persisted slice (clipboard, undo stacks, transient
+    // notices) change the store but not the workspace.
+    store.setState((state) => {
+      state._lastLayoutWriteAt = 123;
+    });
+    store.getState().clearClipboard();
+    expect(useSaveStatusStore.getState().status).toBe("saved");
+
+    store.getState().updateComponent(comp.id, { name: "B" });
+    expect(useSaveStatusStore.getState().status).toBe("pending");
+  });
 });

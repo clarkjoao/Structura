@@ -280,6 +280,8 @@
     "signalComponentLink": "element links to this repository"
   },
   "folderTree": {
+    "expandFolder": "Expand folder",
+    "collapseFolder": "Collapse folder",
     "newFolderTitle": "New folder",
     "newFolder": "New folder",
     "recentLabel": "Recent",
@@ -906,6 +908,7 @@
     "addRow": "Add row",
     "addCol": "Add column",
     "removeRow": "Remove row",
+    "cellAria": "{{column}}, row {{row}}",
     "removeCol": "Remove column",
     "expandAria": "Expand table",
     "expandTitle": "Expand",

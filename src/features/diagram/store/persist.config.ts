@@ -844,12 +844,32 @@ export function wrapIStoragePortWithDiagramPersistTracking(
  * is safe — Immer state is immutable, so it is the snapshot of that `set()`.
  */
 export function createDeferredJSONStorage<S>(port: DiagramPersistPort): PersistStorage<S> {
+  // zustand's persist calls `setItem` on every `set()`, including the ones that
+  // touch no persisted field (selection, palette, clipboard). Immer shares
+  // untouched branches, so a slice whose fields are all the same references is
+  // the slice already handed over: nothing to write and nothing to report as saving.
+  let last: S | null = null;
+  // Writes before the stored workspace is read are dropped by the port, so they
+  // must not count as handed over.
+  let read = false;
+  const sameSlice = (a: S, b: S): boolean => {
+    if (a === b) return true;
+    if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+    const ea = Object.entries(a);
+    const rb = new Map(Object.entries(b));
+    return ea.length === rb.size && ea.every(([k, v]) => rb.has(k) && Object.is(v, rb.get(k)));
+  };
   return {
     getItem: async (name) => {
       const raw = await port.getItem(name);
+      if (name === PERSIST_KEY) read = true;
       return raw === null ? null : (JSON.parse(raw) as StorageValue<S>);
     },
     setItem: (name, value) => {
+      if (name === PERSIST_KEY) {
+        if (last !== null && sameSlice(last, value.state)) return;
+        if (read) last = value.state;
+      }
       port.setItemDeferred(name, () => JSON.stringify(value));
     },
     removeItem: (name) => port.removeItem(name),
