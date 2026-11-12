@@ -1,3 +1,4 @@
+import { readSecretItem, removeSecretItem } from "@/infrastructure/persistence/kvStorage";
 import { useState, useCallback } from "react";
 import type { DefectDojoConfig } from "../types";
 import { defaultStorage } from "@/infrastructure/persistence";
@@ -10,7 +11,7 @@ const LEGACY_KEY = "structura:defectdojo:config";
 export function useDefectDojoConfig() {
   const [config, setConfig] = useState<DefectDojoConfig | null>(() => {
     try {
-      const raw = localStorage.getItem(ADAPTER_KEY) ?? localStorage.getItem(LEGACY_KEY);
+      const raw = readSecretItem(ADAPTER_KEY) ?? readSecretItem(LEGACY_KEY);
       return raw ? (JSON.parse(raw) as DefectDojoConfig) : null;
     } catch {
       return null;
@@ -26,7 +27,7 @@ export function useDefectDojoConfig() {
     await defaultStorage.removeItem(STORAGE_KEY);
 
     try {
-      localStorage.removeItem(LEGACY_KEY);
+      removeSecretItem(LEGACY_KEY);
     } catch (error) {
       console.warn("[StructuraContext] DefectDojo clearConfig legacy localStorage key", error);
     }

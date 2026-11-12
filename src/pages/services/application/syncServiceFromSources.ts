@@ -1,3 +1,4 @@
+import { readSecretItem } from "@/infrastructure/persistence/kvStorage";
 import { i18n } from "@/infrastructure/i18n";
 import { createGitlabClient } from "@/features/integrations/gitlab/gitlabClient";
 import {
@@ -29,8 +30,7 @@ type DefectDojoConfig = {
 
 function readDefectDojoConfig(): DefectDojoConfig {
   const rawConfig =
-    localStorage.getItem("structura_defectdojo:config") ??
-    localStorage.getItem("structura:defectdojo:config");
+    readSecretItem("structura_defectdojo:config") ?? readSecretItem("structura:defectdojo:config");
   if (!rawConfig) throw new Error(i18n.t("services.errorDefectDojoNotConfigured"));
   return JSON.parse(rawConfig) as DefectDojoConfig;
 }
