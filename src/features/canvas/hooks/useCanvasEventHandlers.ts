@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useCanvasPreferencesStore } from "../preferences/canvas-preferences.store";
 import type { Node, Edge, OnEdgesChange, OnConnect, Connection } from "@xyflow/react";
-import { useReactFlow } from "@xyflow/react";
+import { useReactFlow, useStoreApi } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useFlowMode } from "../flow/FlowModeContext";
@@ -17,6 +17,7 @@ import { getNodeType } from "../utils/node-type-utils";
 import { sidesFromHandles, type ConnectionSides } from "../nodes/node-types/handle-spec";
 import { dragSelectionRef } from "./useLocalNodes";
 import { useCanvasSelectionStore } from "./useCanvasSelectionStore";
+import { isStaleSelectionReport } from "../selection/staleSelectionReport";
 import { usePointerFunnel, type GestureTarget } from "../selection/pointerFunnel";
 import { activeDirection } from "./useActiveDirection";
 import { useSettledViewportWrite } from "./useSettledViewportWrite";
@@ -62,6 +63,7 @@ export function useCanvasEventHandlers({
   const { t } = useTranslation();
   const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useFlowMode();
   const reactFlowInstance = useReactFlow();
+  const reactFlowStore = useStoreApi();
   const {
     setSelectedNodeId,
     setSelectedNodeIds,
@@ -349,6 +351,10 @@ export function useCanvasEventHandlers({
       }
 
       if (isCompareMode) return;
+      // A report React Flow's own selection has already moved past would write back the
+      // selection the store just replaced, and the two would swap forever (React #185).
+      // React Flow reports again with its current selection; wait for that one.
+      if (isStaleSelectionReport(selectedIds, reactFlowStore.getState().nodeLookup)) return;
       const key = [...selectedIds].sort().join(",");
       if (key === prevSelectionRef.current) return;
       prevSelectionRef.current = key;
@@ -403,6 +409,7 @@ export function useCanvasEventHandlers({
     },
     [
       isCompareMode,
+      reactFlowStore,
       setSelectedNodeId,
       setSelectedNodeIds,
       setSelectedEdgeId,
