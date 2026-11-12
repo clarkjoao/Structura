@@ -1,4 +1,5 @@
 import {
+  loadedLocalesKey,
   registryCatalogEntries,
   type CatalogEntry,
   type CatalogGroup,
@@ -42,7 +43,7 @@ interface RegistryCatalog {
   byId: Map<string, CatalogEntry>;
 }
 
-let cached: { language: string; catalog: RegistryCatalog } | null = null;
+let cached: { language: string; loaded: string; catalog: RegistryCatalog } | null = null;
 
 // A plugin registering elements later must show up on the next read.
 subscribeElements(() => {
@@ -55,10 +56,12 @@ subscribeElements(() => {
  * at any time and should not rebuild the index to get them.
  */
 export function registryCatalog(): RegistryCatalog {
-  if (cached?.language !== i18n.language) {
+  const loaded = loadedLocalesKey();
+  if (cached?.language !== i18n.language || cached.loaded !== loaded) {
     const { groups, entries } = registryCatalogEntries();
     cached = {
       language: i18n.language,
+      loaded,
       catalog: { groups, entries, byId: new Map(entries.map((entry) => [entry.id, entry])) },
     };
   }

@@ -11,5 +11,10 @@ export {
   type CatalogMatchField,
   type CatalogSearchResult,
 } from "./catalog-index";
-export { CATALOG_CONCEPTS, conceptTerms, type CatalogConceptId } from "./concepts";
+export {
+  CATALOG_CONCEPTS,
+  conceptTerms,
+  loadedLocalesKey,
+  type CatalogConceptId,
+} from "./concepts";
 export { findMatchRanges, fold, type MatchRange } from "./normalize";

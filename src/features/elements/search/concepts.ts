@@ -48,6 +48,18 @@ function shippedLanguages(): string[] {
 }
 
 /**
+ * Which shipped locales have their bundle loaded, as a string that changes when
+ * one arrives. Locales load on demand (the second one in idle time), so an index
+ * built before then holds no terms of that language; a consumer keys its index on
+ * this to rebuild once the bundle lands.
+ */
+export function loadedLocalesKey(): string {
+  return shippedLanguages()
+    .filter((lng) => i18n.hasResourceBundle(lng, "translation"))
+    .join(",");
+}
+
+/**
  * The terms a concept matches on, from every shipped locale, de-duplicated.
  * A missing entry yields nothing rather than the raw key.
  */

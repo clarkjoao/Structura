@@ -57,7 +57,7 @@ await i18n
       lookupLocalStorage: I18N_STORAGE_KEY,
       convertDetectedLanguage,
     },
-    react: { useSuspense: false },
+    react: { useSuspense: false, bindI18n: "languageChanged loaded" },
   });
 
 // Cross-locale catalog search reads every shipped locale. Fetch the remaining
