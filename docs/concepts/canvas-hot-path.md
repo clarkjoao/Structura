@@ -170,6 +170,23 @@ twelve nodes: no difference). Do not keep the blur with
 compositing hints instead (`will-change` on the node or edge layers): each one
 measured changed the stacking order — panels over edges, or 470–1271 layers.
 
+### 5e. The minimap follows a drag five times a second
+
+React Flow's `<MiniMap>` subscribes to React Flow's store itself: every drag
+frame it recomputes the bounds of all nodes, runs one selector per node and
+redraws every moved rectangle — all of them when the whole selection moves.
+`DragThrottledMiniMap` (`components/`) renders the same `<MiniMap>` inside its
+own `ReactFlowProvider` whose store mirrors the canvas store (it is handed the
+canvas state object as is). At rest every change reaches the mirror at once, so
+panning, zooming and clicking the minimap behave as before; while a node drag
+is in progress (`dragActivity`, started and stopped by the canvas drag
+handlers) the mirror is refreshed every `MINIMAP_DRAG_REFRESH_MS` (200 ms) and
+once more when the drag ends. Measured dragging all 1000 nodes at fit view:
+minimap attribute writes per gesture −65 % (31 686 → 11 226 at 400 nodes), long
+tasks ~4.9 s → ~4.6 s, the same as with the minimap switched off. Do not hand
+the minimap the live store again, and do not put `dragging` on React state in
+`Canvas` to drive it: the drag frames bypass `Canvas` renders on purpose.
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -255,6 +272,7 @@ here costs little on that diagram.
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
 | Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |
 | Far level of detail: `FarEdge` on the same path, selected/revealed edges stay full | `EditableEdge.lod.test.tsx`, `canvasLod.test.ts` |
+| The minimap reads a store mirror refreshed at most every 200 ms during a node drag (`DragThrottledMiniMap`) | `miniMapDragThrottle.test.ts` |
 | Node backdrop blur is off at far zoom and while the viewport moves (`data-canvas-blur`, `ViewportGestureSync`) | `canvasBlur.guard.test.ts`, `ViewportGestureSync.test.tsx` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
