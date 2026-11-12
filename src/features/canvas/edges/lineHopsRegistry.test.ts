@@ -1,5 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
-import { createLineHopsRegistry, NO_LINE_HOPS } from "./lineHopsRegistry";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createDragActivity } from "../components/miniMapDragThrottle";
+import {
+  createLineHopsRegistry,
+  LINE_HOPS_DRAG_REFRESH_MS,
+  NO_LINE_HOPS,
+} from "./lineHopsRegistry";
 
 const p = (x: number, y: number) => ({ x, y });
 const now = (run: () => void) => run();
@@ -64,5 +69,77 @@ describe("line hops registry", () => {
     queued[0]!();
     expect(registry.getHops("a")).toHaveLength(1);
     expect(registry.getHops("c")).toHaveLength(1);
+  });
+});
+
+describe("line hops registry while nodes are dragged", () => {
+  afterEach(() => vi.useRealTimers());
+
+  /** A registry following a drag, recomputing synchronously once released. */
+  function dragged() {
+    vi.useFakeTimers();
+    const activity = createDragActivity();
+    const registry = createLineHopsRegistry(now);
+    const stop = registry.followDrag(activity);
+    registry.publish("h", [p(0, 50), p(100, 50)]);
+    registry.publish("v", [p(50, 0), p(50, 100)]);
+    return { activity, registry, stop };
+  }
+
+  it("recomputes at once at rest", () => {
+    const { registry } = dragged();
+    expect(registry.getHops("h")).toEqual([{ segIndex: 0, x: 50, y: 50 }]);
+  });
+
+  it("recomputes at most once per interval during a drag, not per frame", () => {
+    const { activity, registry } = dragged();
+    const onH = vi.fn();
+    registry.subscribe("h", onH);
+    activity.start();
+
+    // Twelve frames at 120 Hz move the vertical along h: no recompute yet.
+    for (let frame = 1; frame <= 12; frame += 1) {
+      registry.publish("v", [p(50 + frame, 0), p(50 + frame, 100)]);
+      vi.advanceTimersByTime(1000 / 120);
+    }
+    expect(onH).not.toHaveBeenCalled();
+    expect(registry.getHops("h")).toEqual([{ segIndex: 0, x: 50, y: 50 }]);
+
+    // The interval elapses: one recompute, with the latest path.
+    vi.advanceTimersByTime(LINE_HOPS_DRAG_REFRESH_MS);
+    expect(onH).toHaveBeenCalledTimes(1);
+    expect(registry.getHops("h")).toEqual([{ segIndex: 0, x: 62, y: 50 }]);
+  });
+
+  it("recomputes the moment the drag ends, without waiting for the interval", () => {
+    const { activity, registry } = dragged();
+    activity.start();
+    registry.publish("v", [p(70, 0), p(70, 100)]);
+    expect(registry.getHops("h")).toEqual([{ segIndex: 0, x: 50, y: 50 }]);
+
+    activity.stop();
+    expect(registry.getHops("h")).toEqual([{ segIndex: 0, x: 70, y: 50 }]);
+    // Nothing left on the timer to recompute again.
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("drops the hop of an edge the drag moved off the crossing at the drop", () => {
+    const { activity, registry } = dragged();
+    activity.start();
+    registry.publish("v", [p(150, 0), p(150, 100)]);
+    activity.stop();
+    expect(registry.getHops("h")).toBe(NO_LINE_HOPS);
+  });
+
+  it("stops following the drag once released, and keeps a held change", () => {
+    const { activity, registry, stop } = dragged();
+    activity.start();
+    registry.publish("v", [p(70, 0), p(70, 100)]);
+    stop();
+    expect(registry.getHops("h")).toEqual([{ segIndex: 0, x: 70, y: 50 }]);
+
+    // No longer following: a drag in progress recomputes every change again.
+    registry.publish("v", [p(80, 0), p(80, 100)]);
+    expect(registry.getHops("h")).toEqual([{ segIndex: 0, x: 80, y: 50 }]);
   });
 });

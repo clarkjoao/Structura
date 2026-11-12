@@ -15,6 +15,7 @@ import {
   NO_LINE_HOPS,
   type LineHopsRegistry,
 } from "../edges/lineHopsRegistry";
+import type { DragActivity } from "../components/miniMapDragThrottle";
 
 /**
  * One line-hops registry per canvas surface.
@@ -24,11 +25,24 @@ import {
  * is their sibling, not their ancestor. The value is created once and never
  * changes, so the context itself re-renders nothing; edges hear about hops
  * through their own subscription. With no provider, edges draw no hops.
+ *
+ * Handed the surface's `dragActivity`, the registry recomputes on a timer
+ * while nodes are dragged and once more on the drop (`followDrag`).
  */
 const LineHopsContext = createContext<LineHopsRegistry | null>(null);
 
-export function LineHopsProvider({ children }: { children: ReactNode }) {
-  const [registry] = useState(createLineHopsRegistry);
+export function LineHopsProvider({
+  dragActivity,
+  children,
+}: {
+  dragActivity?: DragActivity;
+  children: ReactNode;
+}) {
+  const [registry] = useState(() => createLineHopsRegistry());
+  useEffect(
+    () => (dragActivity ? registry.followDrag(dragActivity) : undefined),
+    [registry, dragActivity],
+  );
   return <LineHopsContext.Provider value={registry}>{children}</LineHopsContext.Provider>;
 }
 

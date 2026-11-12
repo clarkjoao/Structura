@@ -5,6 +5,7 @@ import { LineHopsProvider } from "../contexts/LineHopsContext";
 import { ReadingDirectionContext } from "../contexts/ReadingDirectionContext";
 import { EdgeLabelPortalProvider } from "../edges/EdgeLabelPortal";
 import type { ReadingDirection } from "../nodes/node-types/handle-sides";
+import type { DragActivity } from "../components/miniMapDragThrottle";
 
 /**
  * Every context a diagram surface gives its nodes and edges, in one place.
@@ -22,15 +23,18 @@ import type { ReadingDirection } from "../nodes/node-types/handle-sides";
 export function DiagramSurfaceProviders({
   elementsSelectable,
   readingDirection,
+  dragActivity,
   children,
 }: {
   elementsSelectable: boolean;
   readingDirection: ReadingDirection;
+  /** A node drag in progress on this surface; line hops follow it on a timer. */
+  dragActivity?: DragActivity;
   children: ReactNode;
 }) {
   return (
     <ElementsSelectableProvider value={elementsSelectable}>
-      <LineHopsProvider>
+      <LineHopsProvider dragActivity={dragActivity}>
         <CanvasLodProvider>
           <ReadingDirectionContext.Provider value={readingDirection}>
             <EdgeLabelPortalProvider>{children}</EdgeLabelPortalProvider>

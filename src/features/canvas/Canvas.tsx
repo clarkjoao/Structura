@@ -233,6 +233,7 @@ const Canvas = (props: CanvasProps = {}) => {
               <DiagramSurface
                 policy={writePolicy(interactionMode.canEditCanvas)}
                 readingDirection={diagram.direction ?? "LR"}
+                dragActivity={drag.dragActivity}
                 nodes={drag.lockedNodes}
                 edges={edges}
                 nodeTypes={nodeTypes}
