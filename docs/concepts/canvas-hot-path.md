@@ -187,6 +187,38 @@ tasks ~4.9 s → ~4.6 s, the same as with the minimap switched off. Do not hand
 the minimap the live store again, and do not put `dragging` on React state in
 `Canvas` to drive it: the drag frames bypass `Canvas` renders on purpose.
 
+### 5f. Line hops follow a drag on a timer
+
+Line hops depend on every edge, so one recompute (`lineHopsRegistry`) runs
+over all step paths on screen, and every edge whose hops moved re-renders its
+path. While nodes are dragged (`dragActivity`, the same signal as the
+minimap) the registry recomputes at most every `LINE_HOPS_DRAG_REFRESH_MS`
+(120 ms) instead of every frame, and once more the moment the drag ends. At
+rest it recomputes once per frame that changed something, as before. Between
+recomputes a moving edge keeps the hops it had; one no longer on its segment
+is skipped by `buildPathWithHops`, the rest lag by at most one interval.
+After the drop the hops are exactly the live ones (checked arc by arc against
+the previous build: 2844 arcs, no difference). Measured at full zoom,
+dragging every node: 400 nodes 25–27 long tasks / ~1.5 s (frame p95 58 ms)
+→ 3–5 / 156–258 ms (p95 42 ms); 1000 nodes p95 122–150 → 92–100 ms. Do not
+freeze hops for the whole drag (a line crossing a moved node keeps an arc in
+the wrong place for seconds), and do not go back to a per-frame recompute.
+
+### 5g. A rebuild that changes nothing keeps every node's data
+
+`useCanvasNodes` keeps a node's previous `data` while every field is the
+same value (functions excepted), and the renderer is skipped. Any field that
+is a fresh object on every build defeats it, for every node of that type, on
+every build — and selecting, deselecting, flow and compare state all rebuild.
+Derived lists go through `stableNodeLists.ts` (the same array while the
+content is equal, one shared empty list), and a renderer that writes a
+callback onto its own data (`NoteNode`, `JsonViewerNode`) gets the key
+built as a placeholder so the kept data stays the same shape. What a
+selection disables is read by the controls (`selection/selectionControls.ts`),
+not put on `data`. Measured on a 1000-node diagram with 50 API groups, 150
+routes and 40 notes, the first selection re-rendered all 240 of them; it now
+re-renders none (50 API group footers, whose answer changed, re-render).
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -266,7 +298,9 @@ here costs little on that diagram.
 | `HandleHighlightContext` not rebuilt from Canvas render (the provider keys its value on the four fields) | comment in `HandleHighlightProvider` |
 | `EdgeLabelRevealContext` keeps its identity while its members are unchanged | `useRevealedLabelEdgeIds.test.ts` |
 | Canvas-wide id sets reach nodes and edges as membership (`idSetStore.ts`): handle highlight and revealed labels re-render only the elements that joined or left the set | `idSetStore.test.tsx` |
-| What a selection disables on a card is read by its controls (`selection/selectionControls.ts`), not carried on every card's data | `selectionControls.test.tsx`, `CardNode.selectionControls.test.tsx` |
+| What a selection disables on a card or an API group is read by its controls (`selection/selectionControls.ts`), not carried on every node's data | `selectionControls.test.tsx`, `CardNode.selectionControls.test.tsx`, `ApiGroupNode.selectionControls.test.tsx` |
+| Derived lists on group and route data keep their identity across rebuilds; note and JSON viewer data carry the callback slot their renderer writes (`elements/structural/stableNodeLists.ts`) | `stableNodeLists.test.ts`, `endpoint.element.test.ts` |
+| Line hops recompute on a 120 ms timer during a node drag and at once on the drop (`lineHopsRegistry.followDrag`) | `lineHopsRegistry.test.ts` |
 | Edge reconnect anchors are off while nodes are dragged (`useReconnectAnchorsOffWhileDragging`) | `useReconnectAnchorsOffWhileDragging.test.tsx` |
 | Stable `onNodeClick` (React Flow's `NodeWrapper` is not memoised: a new identity re-renders every node) | `useCanvasEventHandlers.node-click-identity.test.tsx` |
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |

@@ -20,6 +20,7 @@ import { useRouteCulledEdges } from "../edges/culling/useRouteCulledEdges";
 import { CanvasLodSync } from "../contexts/CanvasLodContext";
 import { DiagramSurfaceProviders } from "./DiagramSurfaceProviders";
 import { ViewportGestureSync } from "./ViewportGestureSync";
+import type { DragActivity } from "../components/miniMapDragThrottle";
 
 type FlowHandlerProps = Pick<
   ReactFlowProps,
@@ -61,6 +62,11 @@ export interface DiagramSurfaceProps extends FlowHandlerProps {
    * their handles on. Absent is left-to-right.
    */
   readingDirection?: ReadingDirection;
+  /**
+   * Whether a node drag is in progress, on a surface whose nodes can be
+   * dragged: line hops then follow the edges on a timer instead of every frame.
+   */
+  dragActivity?: DragActivity;
   /** Content inside `<ReactFlow>` (Controls, MiniMap, toolbars). */
   children?: ReactNode;
 }
@@ -108,6 +114,7 @@ export function DiagramSurface({
   onNodeDragStop,
   onSelectionChange,
   readingDirection = DEFAULT_READING_DIRECTION,
+  dragActivity,
   children,
 }: DiagramSurfaceProps) {
   const shell = buildReactFlowShellProps(policy, { inputProfile, snapToGrid });
@@ -121,6 +128,7 @@ export function DiagramSurface({
     <DiagramSurfaceProviders
       elementsSelectable={policy.graphInteractive}
       readingDirection={readingDirection}
+      dragActivity={dragActivity}
     >
       <ReactFlow
         nodes={nodes}
