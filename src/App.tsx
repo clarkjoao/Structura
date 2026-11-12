@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { MotionConfig } from "framer-motion";
 import { BrowserRouter, Routes, Route, Navigate, type FutureConfig } from "react-router-dom";
 import { useSharedDiagram } from "@/features/viewer/hooks/useSharedDiagram";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -103,33 +104,35 @@ const App = () => {
   const { sharedDiagram, sharedCatalog, sharedFlowId, ShareProvider } = useSharedDiagram();
 
   return (
-    <BrowserRouter future={ROUTER_FUTURE}>
-      <ChatThreadsHydrator />
-      {sharedDiagram ? (
-        <ShareProvider>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter future={ROUTER_FUTURE}>
+        <ChatThreadsHydrator />
+        {sharedDiagram ? (
+          <ShareProvider>
+            <Suspense fallback={<RouteFallback />}>
+              <SharedDiagramView
+                diagram={sharedDiagram}
+                catalog={sharedCatalog}
+                flowId={sharedFlowId}
+              />
+            </Suspense>
+          </ShareProvider>
+        ) : (
           <Suspense fallback={<RouteFallback />}>
-            <SharedDiagramView
-              diagram={sharedDiagram}
-              catalog={sharedCatalog}
-              flowId={sharedFlowId}
-            />
-          </Suspense>
-        </ShareProvider>
-      ) : (
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            {/*
+            <Routes>
+              {/*
               The reading route, and the only one. Outside `MainPages` on
               purpose: it is a whole-window surface with no app chrome, and a
               webview pointed at it should not mount the toaster, the plugin
               modal host or the preview sync.
             */}
-            <Route path="/viewer" element={<ViewerPage />} />
-            <Route path="*" element={<MainPages />} />
-          </Routes>
-        </Suspense>
-      )}
-    </BrowserRouter>
+              <Route path="/viewer" element={<ViewerPage />} />
+              <Route path="*" element={<MainPages />} />
+            </Routes>
+          </Suspense>
+        )}
+      </BrowserRouter>
+    </MotionConfig>
   );
 };
 
