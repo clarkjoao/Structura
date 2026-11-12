@@ -19,6 +19,11 @@ const CONTAINER_SEED_H = 160;
 const EMPTY_BOUNDARY_W = 360;
 const EMPTY_BOUNDARY_H = 200;
 
+/** What orders the node for the engine: its type and name, never its id. */
+function sortKeyOf(node: { semanticType: string; name: string }): string {
+  return `${node.semanticType}\u0000${node.name}`;
+}
+
 /**
  * Turns a generated IR into a layout graph.
  *
@@ -38,6 +43,7 @@ export function irToLayoutGraph(ir: DiagramIR): LayoutGraph {
       return {
         id: node.id,
         parentId: node.parentId,
+        sortKey: sortKeyOf(node),
         width: CONTAINER_SEED_W,
         height: CONTAINER_SEED_H,
       };
@@ -46,6 +52,7 @@ export function irToLayoutGraph(ir: DiagramIR): LayoutGraph {
     return {
       id: node.id,
       parentId: node.parentId,
+      sortKey: sortKeyOf(node),
       width: emptyBoundary ? EMPTY_BOUNDARY_W : DEFAULT_NODE_W,
       height: emptyBoundary ? EMPTY_BOUNDARY_H : DEFAULT_NODE_H,
     };

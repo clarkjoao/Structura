@@ -9,6 +9,7 @@ import {
 import { readLaidOutGraph } from "./layoutReadability";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import { runElk } from "./elkRunner";
+import { orderLayoutGraph } from "./layoutOrder";
 import type {
   LayoutBox,
   LayoutEdge,
@@ -184,19 +185,6 @@ export function layoutWithSettings(
 }
 
 const ELK_ROOT_ID = "__structura_layout_root__";
-
-/**
- * Input order is not information.
- *
- * ELK's result depends on the order it receives nodes and edges in, so an
- * unsorted caller makes the same architecture lay out differently depending on
- * how a `Record` happened to enumerate or an array happened to be built. Sorting
- * by id here is what makes the contract deterministic for every caller at once,
- * and it is locked by the permutation test.
- */
-function sortById<T extends { id: string }>(items: readonly T[]): T[] {
-  return [...items].sort((a, b) => a.id.localeCompare(b.id));
-}
 
 /**
  * Children per parent, with a `parentId` pointing outside the graph collapsed to
@@ -413,14 +401,15 @@ export async function layoutElkGraph(
     ...optionOverrides,
   };
 
-  const nodes = sortById(graph.nodes);
+  const ordered = orderLayoutGraph(graph);
+  const nodes = ordered.nodes;
   const present = new Set(nodes.map((node) => node.id));
   const childrenByParent = buildChildrenByParent(nodes);
   const roots = childrenByParent.get(null) ?? [];
 
   // An edge with an endpoint outside the graph has nothing to attach to; ELK
   // throws on an unresolvable endpoint rather than ignoring it.
-  const edges: LayoutEdge[] = sortById(graph.edges).filter(
+  const edges: LayoutEdge[] = ordered.edges.filter(
     (edge) => present.has(edge.sourceId) && present.has(edge.targetId),
   );
 

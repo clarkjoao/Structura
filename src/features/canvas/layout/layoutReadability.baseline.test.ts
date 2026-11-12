@@ -232,16 +232,22 @@ describe("layout readability baseline", () => {
  * Measured 2026-10-22 when ELK ports started bundling each side's edges where
  * the canvas draws its handles (`HANDLE_PITCH`): crossings 11 → 8 (AWS
  * microservices 7 → 4), corners 174 → 176, no label overlap.
+ *
+ * Measured 2026-11-12 when ELK's input order stopped following ids and followed
+ * content (`orderLayoutGraph`): ECS Fargate crossings 3 → 2 but one label
+ * overlap (0 → 1), healthcare 1 → 0, corners 176 → 170. Which ELK order wins is
+ * arbitrary per diagram; the ordering is chosen for being stable, not for beating
+ * the old id order on four fixtures.
  */
 describe("auto-layout path baseline", () => {
   const AUTO_LAYOUT_BASELINE: Record<string, { crossings: number; labelOverlaps: number }> = {
     "C4 e-commerce": { crossings: 0, labelOverlaps: 0 },
-    "AWS ECS Fargate": { crossings: 3, labelOverlaps: 0 },
-    "C4 Context healthcare": { crossings: 1, labelOverlaps: 0 },
+    "AWS ECS Fargate": { crossings: 2, labelOverlaps: 1 },
+    "C4 Context healthcare": { crossings: 0, labelOverlaps: 0 },
     "AWS microservices": { crossings: 4, labelOverlaps: 0 },
   };
 
-  const CORNERS_BASELINE = 176;
+  const CORNERS_BASELINE = 170;
 
   it("stays within the recorded crossings, label overlaps and corners", async () => {
     const failures: string[] = [];
