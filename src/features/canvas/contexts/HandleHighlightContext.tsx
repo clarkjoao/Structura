@@ -25,11 +25,21 @@ export function HandleHighlightProvider({
   children: ReactNode;
   value: HandleHighlightState;
 }) {
-  const nodes = useIdSetStore(value.highlightedNodeIds);
-  const connections = useIdSetStore(value.highlightedConnectionIds);
+  const { highlightedConnectionIds, highlightedNodeIds, setHighlight, clearHighlight } = value;
+  /**
+   * Keyed on the four values it carries, not on `value`: the canvas hands a
+   * fresh object each render — and `useLocalNodes` ticks one per drag frame —
+   * so the context identity moves only when a highlight does.
+   */
+  const stableValue = useMemo(
+    () => ({ highlightedConnectionIds, highlightedNodeIds, setHighlight, clearHighlight }),
+    [highlightedConnectionIds, highlightedNodeIds, setHighlight, clearHighlight],
+  );
+  const nodes = useIdSetStore(highlightedNodeIds);
+  const connections = useIdSetStore(highlightedConnectionIds);
   const membership = useMemo(() => ({ nodes, connections }), [nodes, connections]);
   return (
-    <HandleHighlightContext.Provider value={value}>
+    <HandleHighlightContext.Provider value={stableValue}>
       <HighlightMembershipContext.Provider value={membership}>
         {children}
       </HighlightMembershipContext.Provider>
