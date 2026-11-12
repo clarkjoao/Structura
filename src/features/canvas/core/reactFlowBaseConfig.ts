@@ -17,9 +17,21 @@ export const PRO_OPTIONS = { hideAttribution: true } as const;
 
 export const SNAP_GRID: [number, number] = [GRID_SIZE, GRID_SIZE];
 
-export const FIT_VIEW_OPTIONS_WRITE = { padding: FIT_VIEW_INITIAL_PADDING } as const;
+/*
+ * Handed to <ReactFlow fitViewOptions> as these very objects, never a copy. React Flow's
+ * StoreUpdater writes the prop into its store whenever its identity changes, and that store
+ * field is also where `reactFlowInstance.fitView(options)` parks its options until the nodes
+ * are measured. A fresh copy per render overwrote a pending fit's options (the opening fit's
+ * min/max zoom among them) with these, so the opening zoom depended on whether the canvas
+ * re-rendered before React Flow measured the nodes (audit R8).
+ */
+export const FIT_VIEW_OPTIONS_WRITE: { readonly padding: number } = Object.freeze({
+  padding: FIT_VIEW_INITIAL_PADDING,
+});
 
-export const FIT_VIEW_OPTIONS_READ = { padding: FIT_VIEW_READING_PADDING } as const;
+export const FIT_VIEW_OPTIONS_READ: { readonly padding: number } = Object.freeze({
+  padding: FIT_VIEW_READING_PADDING,
+});
 
 /** Middle + right button pan (draw.io-style). Left button selects / marquees. */
 export const PAN_ON_DRAG_MOUSE: [number, number] = [1, 2];
@@ -57,7 +69,7 @@ export interface ReactFlowShellProps {
   selectionKeyCode?: string | null;
   snapToGrid?: boolean;
   snapGrid?: [number, number];
-  fitViewOptions: { padding: number };
+  fitViewOptions: { readonly padding: number };
   proOptions: typeof PRO_OPTIONS;
   className: string;
 }
@@ -84,7 +96,7 @@ export function buildReactFlowShellProps(
       zoomOnDoubleClick: false,
       minZoom: VIEWPORT_MIN_ZOOM,
       maxZoom: FIT_VIEW_MAX_ZOOM,
-      fitViewOptions: { ...FIT_VIEW_OPTIONS_READ },
+      fitViewOptions: FIT_VIEW_OPTIONS_READ,
       proOptions: PRO_OPTIONS,
       className: "bg-background",
     };
@@ -112,7 +124,7 @@ export function buildReactFlowShellProps(
     selectionKeyCode: SELECTION_KEY_CODE,
     snapToGrid: options.snapToGrid ?? true,
     snapGrid: SNAP_GRID,
-    fitViewOptions: { ...FIT_VIEW_OPTIONS_WRITE },
+    fitViewOptions: FIT_VIEW_OPTIONS_WRITE,
     proOptions: PRO_OPTIONS,
     className: "bg-background",
   };
