@@ -53,6 +53,16 @@ describe("buildReactFlowShellProps", () => {
     expect(open.maxZoom).toBe(CANVAS_MAX_ZOOM);
   });
 
+  it("hands React Flow the same fitViewOptions object on every render (audit R8)", () => {
+    // React Flow writes the prop into the store slot where a pending `fitView(options)` waits
+    // for the nodes to be measured; a new object per render overwrote those options.
+    for (const policy of [readPolicy(), writePolicy(true)]) {
+      expect(buildReactFlowShellProps(policy).fitViewOptions).toBe(
+        buildReactFlowShellProps(policy).fitViewOptions,
+      );
+    }
+  });
+
   it("uses a single edge RF type key", () => {
     expect(DIAGRAM_EDGE_RF_TYPE).toBe("editable");
   });

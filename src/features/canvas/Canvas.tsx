@@ -17,7 +17,6 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
 import { useRevealedLabelEdgeIds } from "./contexts/useRevealedLabelEdgeIds";
 import { useCanvasController } from "./hooks/useCanvasController";
-import { hasSavedViewport } from "./hooks/useCanvasEffects";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useSelectInsertedNodes } from "./hooks/useSelectInsertedNodes";
 import { getCachedCanvasSnapshot, useDiagramStore, isTextComponent } from "@/features/diagram";
@@ -258,7 +257,6 @@ const Canvas = (props: CanvasProps = {}) => {
                 onNodeDragStop={drag.onNodeDragStop}
                 onSelectionChange={eventHandlers.onSelectionChange}
                 defaultViewport={initialViewport}
-                fitView={!hasSavedViewport(initialViewport)}
                 onMoveEnd={eventHandlers.onMoveEnd}
               >
                 <SharedLayer

@@ -112,7 +112,7 @@ Not stores, but state the canvas holds in React and passes down:
 
 | Fact | Where | Status |
 | --- | --- | --- |
-| Which nodes are selected | `useCanvasSelectionStore.selectedNodeIds` and React Flow's `node.selected` (projected from the store by `useCanvasNodes`, reported back by `onSelectionChange`; the pointer funnel's write wins for a press, `dragSelectionRef.selectionWrittenByFunnel`) | **known, product decision; not touched here** |
+| Which nodes are selected | `useCanvasSelectionStore.selectedNodeIds` and React Flow's `node.selected` (projected from the store by `useCanvasNodes`, reported back by `onSelectionChange`; the pointer funnel's write wins for a press, `dragSelectionRef.selectionWrittenByFunnel`; a report React Flow has already moved past is dropped, `selection/staleSelectionReport.ts`, or the two swap forever — React #185, audit R7) | **known, product decision; not touched here** |
 | Which nodes are selected, for card controls | `SelectionControls` mirrors the store (layout effect) | deliberate, a read-only mirror for the hot path (§9.5 of the audit) |
 | Highlight / revealed labels | `useCanvasVisualState` holds the sets; `IdSetStore`s mirror them per element | deliberate, a read-only mirror |
 | Collaboration session | `useCollabStore.session` and `CollabContext.session` (the context is built from the store, minus cursors) | deliberate: the context's identity ignores cursor packets |

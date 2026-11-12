@@ -663,6 +663,49 @@ Long tasks n/ms (p95 de frame quando relevante), duas execuções; "depois" = `6
 - `LIDO`: o arraste da caixa de seleção (`onSelectionDragStart`) não é sinalizado ao minimapa; nesse gesto ele segue ao vivo, como antes.
 - O pan pela roda, programático, também dispara início/fim no auto-pan do arraste e no `fitView`: a marca aparece nesses casos por ≤ 200 ms após o fim.
 
+### 9.7 R7 e R8
+
+Branch `audit/fix-r7-r8` sobre `4f9a9f8a`; build de produção e servidor de desenvolvimento (pilha do React), Chromium headless. Commits: `af3eeac0` (R7), `951af05c` (R8).
+
+#### R7 · React #185 ao "arrastar" uma seleção de marquee grande
+
+- **Reprodução** `MEDIDO`: o gesto do D5/D7 aperta o centro de um **painel selecionado** (`panel_f1000_6`). O interior do painel deixa o ponteiro passar para o pane, então o "arraste" é na verdade um **novo marquee** começando dentro do painel. Com o painel e outros nós já selecionados, o canvas trava numa tarefa de 1,3–3,8 s e o React lança #185. Não depende do tamanho: disparou com **9 nós selecionados a 1000** e **27 a 400** (com 5 a 400 não disparou); só o painel selecionado, ou nenhuma seleção, não dispara. Arrastar um nó folha de uma seleção de 476 (1000) ou 272 (400) nunca disparou.
+- **O ciclo** `MEDIDO` (gravação de commits pelo hook de DevTools + pilhas dos `set` do `useCanvasSelectionStore`): o seletor do marquee (`commitUserSelectionRect`) marca o painel como selecionado **no nó interno** do React Flow enquanto as mudanças que ele emite limpam o store (`onSelectionFromChanges` → `{}`). Daí em diante o `SelectionListener` do React Flow relata, num `useEffect`, a seleção que leu no render; no mesmo commit o `StoreUpdater` (efeito anterior, irmão) já entregou ao React Flow a projeção nova do store. Cada relato é portanto o valor que o store acabou de substituir: `onSelectionChange` grava `{painel}`, a projeção leva `{painel}`, o próximo relato traz `{}`, e assim por diante — 50+ commits seguidos de ~100 ms (Canvas + 1000 `NodeWrapper`) até o React desistir; o estouro aparece no detach de um ref (Switch do `DiagramPanel`), que é só o 50.º. O guarda `prevSelectionRef` não segura porque os relatos alternam.
+- **Correção** `MEDIDO`: `onSelectionChange` descarta um relato que o `nodeLookup` atual do React Flow já não sustenta (`selection/staleSelectionReport.ts`); o React Flow relata de novo com a seleção atual e os dois assentam. Sem contador nem guarda de profundidade. Teste `useCanvasEventHandlers.staleSelectionReport.test.tsx`: `<ReactFlow>` real + o `onSelectionChange` real + o store; **sem a correção o teste falha com o próprio #185**, com ela passa.
+- **Efeito colateral corrigido** `MEDIDO`: o mesmo relato atrasado cortava os últimos passos de todo marquee — a seleção final voltava ao penúltimo passo. Mesmo retângulo: 1000 nós 476 → **540** selecionados, focado 472 → **518**; 400 nós 272 → **288**, focado 385 → **394**; harness a 400 (zoom 0,133) 91 → **169**.
+
+| Fase (viewport semeada a zoom 0,108) | Antes | Depois |
+| --- | --- | --- |
+| Marquee + aperto no painel, 1000 | #185, canvas desmonta (1 tarefa de 3,4–3,8 s) | 0/0 long tasks, p95 16,7 |
+| Marquee + aperto no painel, 400 | #185 (tarefa de 1,7 s) | 2/~160 ms, p95 16,8 |
+| Arraste de folha, 1000 | 476 sel.: 41/5565, 41/5186 ms | 540 sel.: 40/5364, 41/5606 ms |
+| Arraste de folha, 400 | 272 sel.: 39/2177, 40/2308 ms | 288 sel.: 39/2176, 40/2438 ms |
+
+Sem regressão por nó arrastado; a diferença é a seleção, agora completa. No harness a 400 o arraste de marquee subiu de 0/0 para 1/50 ms porque passou a mover 169 nós em vez de 91 (`MEDIDO`).
+
+#### R8 · Dois `fitView` disputando a abertura
+
+- **Causa** `MEDIDO` + `LIDO`: eram três peças. (1) `Canvas` passava `fitView` ao `<ReactFlow>` (min zoom do React Flow, 0,1) e `useCanvasEffects` ajustava de novo dois frames depois (padding 0,3, zoom 0,3–1,5). (2) O ajuste do React Flow podia persistir a viewport (`onMoveEnd`) antes da leitura do efeito, que então "restaurava" 0,133. (3) `buildReactFlowShellProps` devolvia um `fitViewOptions` novo a cada render; o `StoreUpdater` grava a prop no mesmo campo do store onde `fitView(options)` aguarda a medição dos nós, e sobrescrevia o min/max zoom do ajuste pendente. Só tirar a prop (1) ainda deu 9× 0,133 e 1× 0,30 a 400.
+- **Correção**: o `useCanvasEffects` é o único dono do ajuste inicial e o pede já no efeito (o React Flow aplica ao medir os nós, antes de pintar); `fitViewOptions` passa a ser o mesmo objeto congelado em todo render. Testes: `useCanvasEffects.initialFit.test.tsx` (um ajuste com as opções do produto; viewport salva restaura; `Canvas.tsx` sem `fitView`) e identidade em `reactFlowBaseConfig.test.ts`.
+
+| 10 aberturas, mesmo diagrama, sem viewport salva | Antes | Depois |
+| --- | --- | --- |
+| 400 nós | 0,133 ×9, 0,30 ×1 | **0,30 ×10** |
+| 1000 nós | 0,30 ×10, mas passando por 0,108 em todas (dois ajustes visíveis) | **0,30 ×10**, primeiro frame já em 0,30 |
+
+- `MEDIDO`: viewport salva continua restaurada (0,108 e 0,5); o viewer compartilhado (`/viewer#data=`, política de leitura, `fitView` próprio) dá a mesma viewport antes e depois (0,30 em 40 e 400 nós). A versão intermediária, com o ajuste ainda em duplo rAF, mostrava 3 frames (~108 ms) no zoom 1 antes do ajuste; descartada.
+
+#### Gates (MEDIDO)
+
+`typecheck` OK · `lint` 0 erros, 7 avisos (os mesmos da base) · `format:check` OK · `fallow:check` OK · `vitest run --retry 0`: 474 arquivos, **4545 testes, todos passam**.
+
+#### Riscos
+
+- `MEDIDO`: o harness agora abre 400 nós em zoom 0,30 (antes quase sempre 0,133, nível distante): as fases de 400 deixam de ser comparáveis com 9.5/9.6 (menos nós na tela; parte das fases sai do nível distante). A 1000 já era 0,30.
+- `LIDO`: descartar relatos atrasados depende de o `SelectionListener` relatar de novo quando a seleção interna muda (ele assina o `nodeLookup` com igualdade por ids). Um relato descartado sem relato seguinte deixaria o store para trás; não observado.
+- `HIPÓTESE`: o aperto no interior de um painel selecionado iniciar um marquee (em vez de arrastar a seleção) é comportamento do painel, não deste bug; não alterado.
+- `LIDO`: com `?serviceId=` o efeito não ajusta e o React Flow também não ajusta mais; o foco do serviço enquadra os elementos. Se o serviço não existir, o parâmetro é limpo e o efeito ajusta.
+
 ### 9.8 D6 e D2
 
 Branch `audit/perf-d6-d2` sobre `4f9a9f8a`; build de produção, Chromium headless (rAF a 120 Hz). "Antes" = `4f9a9f8a`; cada build servido à parte com `vite preview --port 4220`. Harness `perf.mjs` 2× em 400 e 1000 nós antes e depois; arraste de todos via `profile.mjs` (2× antes, 2× depois); zoom completo (0,71–0,73, região das folhas) com `focus.mjs`, 2× por massa. As builds de comparação foram tiradas de `git archive` de cada commit, sem tocar no worktree.

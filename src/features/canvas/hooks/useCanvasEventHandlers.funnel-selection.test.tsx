@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
-import { ReactFlowProvider } from "@xyflow/react";
+import { ReactFlowProvider, useStoreApi } from "@xyflow/react";
 import type { Node } from "@xyflow/react";
 import { FlowModeProvider } from "../flow/FlowModeContext";
 import type { CanvasVisualState } from "./useCanvasVisualState";
@@ -60,7 +60,9 @@ describe("onSelectionChange while the pointer funnel owns the press", () => {
   function mount() {
     const state = visualState();
     const held: { current: ReturnType<typeof useCanvasEventHandlers> | null } = { current: null };
+    const flow: { current: ReturnType<typeof useStoreApi> | null } = { current: null };
     function Harness() {
+      flow.current = useStoreApi();
       held.current = useCanvasEventHandlers({
         visualState: state,
         isPlaying: false,
@@ -78,13 +80,17 @@ describe("onSelectionChange while the pointer funnel owns the press", () => {
         </FlowModeProvider>
       </ReactFlowProvider>,
     );
-    return { state, handlers: () => held.current! };
+    return { state, handlers: () => held.current!, flow: () => flow.current! };
   }
 
   const report = (ids: string[]) => ({
     nodes: ids.map((id) => ({ id, position: { x: 0, y: 0 }, data: {}, selected: true }) as Node),
     edges: [],
   });
+
+  /** React Flow reports the selection its store holds; a report it no longer holds is dropped. */
+  const holdInReactFlow = (flow: ReturnType<typeof useStoreApi>, ids: string[]) =>
+    flow.getState().setNodes(report(ids).nodes);
 
   it("does not write React Flow's report to the selection", () => {
     const { state, handlers } = mount();
@@ -97,7 +103,8 @@ describe("onSelectionChange while the pointer funnel owns the press", () => {
   });
 
   it("writes it once the press is over", () => {
-    const { state, handlers } = mount();
+    const { state, handlers, flow } = mount();
+    holdInReactFlow(flow(), ["a"]);
 
     handlers().onSelectionChange(report(["a"]));
 
