@@ -22,16 +22,3 @@ export type { ForceSaveToFolderResult } from "./fileSystemBoot";
 export { validateDiagramFile, validateManifest } from "./validateWorkspaceFile";
 export type { ValidationResult, ManifestValidationResult } from "./validateWorkspaceFile";
 export { ElementPresetStore, elementPresetStore } from "./elementPresetStore";
-export {
-  createZustandStorage,
-  kvGetItem,
-  kvKeys,
-  kvRemoveItem,
-  kvSessionGetItem,
-  kvSessionRemoveItem,
-  kvSessionSetItem,
-  kvSetItem,
-  readSecretItem,
-  removeSecretItem,
-  writeSecretItem,
-} from "./kvStorage";
