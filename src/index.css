@@ -408,10 +408,13 @@
  * blur makes the compositor re-layerize the canvas on every frame that paints:
  * at far zoom, with dozens of panels on screen, that was most of the cost of a
  * pan (1000 nodes, 40 panels: 1.7-2.9 s of Layerize in 30 wheel ticks). At far
- * zoom a 4 px blur is barely visible, so it is off there; the translucent fill
- * stays, so edges behind a panel still read as behind it.
+ * zoom a 4 px blur is barely visible, so it is off there. At full zoom it is
+ * off only while the viewport pans or zooms (`ViewportGestureSync`) and comes
+ * back at rest. Either way the translucent fill stays, so edges behind a panel
+ * still read as behind it.
  */
-.react-flow[data-lod="far"] [data-canvas-blur] {
+.react-flow[data-lod="far"] [data-canvas-blur],
+.react-flow[data-viewport-moving] [data-canvas-blur] {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }

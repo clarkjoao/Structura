@@ -6,9 +6,9 @@ import path from "node:path";
  * A node that blurs what is behind it (`backdrop-blur`) makes the compositor
  * re-layerize the canvas on every frame that paints: at far zoom on 1000
  * nodes, 40 panels cost 1.7-2.9 s of Layerize in 30 wheel ticks. The stylesheet
- * switches the blur off at far zoom for every element marked
- * `data-canvas-blur` — so a node renderer that blurs must mark the element,
- * and the stylesheet must keep the rule.
+ * switches the blur off at far zoom and while the viewport moves, for every
+ * element marked `data-canvas-blur` — so a node renderer that blurs must mark
+ * the element, and the stylesheet must keep both rules.
  */
 
 const NODES = __dirname;
@@ -46,13 +46,13 @@ describe("node backdrop blur", () => {
     expect(unmarked).toEqual([]);
   });
 
-  it.each([['.react-flow[data-lod="far"] [data-canvas-blur]']])(
-    "is switched off by %s",
-    (selector) => {
-      const body = ruleBody(selector);
-      expect(body).not.toBeNull();
-      expect(body).toMatch(/(^|[;\s])backdrop-filter:\s*none/);
-      expect(body).toMatch(/-webkit-backdrop-filter:\s*none/);
-    },
-  );
+  it.each([
+    ['.react-flow[data-lod="far"] [data-canvas-blur]'],
+    [".react-flow[data-viewport-moving] [data-canvas-blur]"],
+  ])("is switched off by %s", (selector) => {
+    const body = ruleBody(selector);
+    expect(body).not.toBeNull();
+    expect(body).toMatch(/(^|[;\s])backdrop-filter:\s*none/);
+    expect(body).toMatch(/-webkit-backdrop-filter:\s*none/);
+  });
 });

@@ -155,7 +155,18 @@ compositor re-layerize the canvas on every frame that paints, and it is a cost
 no profile of script shows: 1000 nodes at fit view (zoom 0.11, 40 panels), 30
 wheel ticks went from about 20 long tasks / 1.2–1.3 s, with 1.7–2.9 s of
 `Layerize` in the trace, to none. A node renderer that adds a `backdrop-blur`
-must mark it (`nodes/canvasBlur.guard.test.ts`). Do not keep the blur with
+must mark it (`nodes/canvasBlur.guard.test.ts`).
+
+At full zoom the blur stays at rest and is off only while the viewport moves:
+`ViewportGestureSync` (inside `<ReactFlow>`, `core/`) writes
+`data-viewport-moving` on the wrapper from React Flow's viewport start/end and
+clears it 200 ms after the last movement — a wheel pan reports a start and an
+end on every tick, and clearing it at once toggled the filter 60 times in 30
+ticks, which cost more than the blur. Measured at 1000 nodes, zoom 0.71–0.73,
+9–12 panels on screen: 30 wheel ticks 6 long tasks / ~415 ms → none (frame
+p95 34–50 → 25 ms). Node drags keep the blur: removing it during a drag
+measured within noise (one node: 2 long tasks either way, ~205 → ~180 ms;
+twelve nodes: no difference). Do not keep the blur with
 compositing hints instead (`will-change` on the node or edge layers): each one
 measured changed the stacking order — panels over edges, or 470–1271 layers.
 
@@ -244,7 +255,7 @@ here costs little on that diagram.
 | Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
 | Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |
 | Far level of detail: `FarEdge` on the same path, selected/revealed edges stay full | `EditableEdge.lod.test.tsx`, `canvasLod.test.ts` |
-| Node backdrop blur is off at far zoom (`data-canvas-blur`, `index.css`) | `canvasBlur.guard.test.ts` |
+| Node backdrop blur is off at far zoom and while the viewport moves (`data-canvas-blur`, `ViewportGestureSync`) | `canvasBlur.guard.test.ts`, `ViewportGestureSync.test.tsx` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
 | Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
 | `EditableEdge` reads `elementsSelectable` from `ElementsSelectableContext`, not one store subscription per edge | `EditableEdge.selectable.test.tsx` |
