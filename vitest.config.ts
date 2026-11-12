@@ -22,7 +22,8 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.tsx"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     testTimeout: 90000,
-    retry: 2,
+    // No retries: a retry hides test-isolation bugs (a flaky test passes on the second try).
+    retry: 0,
   },
   resolve: {
     alias: {

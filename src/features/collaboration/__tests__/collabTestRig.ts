@@ -140,9 +140,16 @@ export async function createRig(options: RelayOptions = {}): Promise<Rig> {
 
 export const tick = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Polls until `check` holds. The deadline is only a failure bound, never an expectation of
+ * speed: every caller waits for a positive condition, so a generous bound costs nothing on
+ * the happy path and keeps a loaded CI box (or a full parallel run) from failing the wait.
+ */
+export const UNTIL_TIMEOUT_MS = 20_000;
+
 export async function until(
   check: () => boolean,
-  timeoutMs = 3_000,
+  timeoutMs = UNTIL_TIMEOUT_MS,
   what = "condition",
 ): Promise<void> {
   const start = Date.now();
