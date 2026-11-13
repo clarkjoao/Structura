@@ -28,6 +28,7 @@ import {
   userTemplatesSlice,
 } from "./slices";
 import { buildPersistStoragePayload, createPersistConfig, PERSIST_KEY } from "./persist.config";
+import { loadSeedWorkspace, type FreshWorkspace } from "./seedWorkspace";
 
 export type { AppState, DiagramSnapshot } from "./store.types";
 export type { ClipboardEntry, DiagramStore } from "./store.types";
@@ -50,6 +51,7 @@ export function createDiagramStore(
   storage: IStoragePort = workspaceStorage,
   iconStoreOverride?: Pick<StoreApi<IconStore>, "getState">,
   onRehydrated?: (error?: unknown) => void,
+  loadFreshWorkspace?: () => Promise<FreshWorkspace>,
 ) {
   const iconStore = iconStoreOverride ?? useIconStore;
   return create<import("./store.types").DiagramStore>()(
@@ -101,13 +103,16 @@ export function createDiagramStore(
           iconStore.getState().decrementIconUsage(iconId);
         },
       })),
-      createPersistConfig(storage, { onRehydrated }),
+      createPersistConfig(storage, { onRehydrated, loadFreshWorkspace }),
     ),
   );
 }
 
-export const useDiagramStore = createDiagramStore(workspaceStorage, undefined, (error) =>
-  settleHydration(error),
+export const useDiagramStore = createDiagramStore(
+  workspaceStorage,
+  undefined,
+  (error) => settleHydration(error),
+  loadSeedWorkspace,
 );
 
 /**

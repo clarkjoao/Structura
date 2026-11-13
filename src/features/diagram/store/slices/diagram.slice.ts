@@ -1,4 +1,3 @@
-import { SEED_DIAGRAMS } from "@/fixtures/seeds";
 import { AppState } from "../store.types";
 import { Diagram, Level } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
@@ -10,7 +9,8 @@ export const diagramsSlice = (
   set: (fn: (state: AppState) => void) => void,
   get: () => AppState,
 ) => ({
-  diagrams: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_DIAGRAMS,
+  // Demo seeds arrive on a fresh workspace during hydration (seedWorkspace.ts).
+  diagrams: {} as Record<string, Diagram>,
   activeDiagramId: null as string | null,
 
   addDiagram: (

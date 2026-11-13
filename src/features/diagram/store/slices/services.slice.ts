@@ -2,7 +2,6 @@ import type { Component } from "../../model/diagram.types";
 import type { ServiceDefinition } from "../../model/service.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
-import { SEED_SERVICES } from "@/fixtures/seeds";
 import { normalizeSources } from "@/features/integrations/merge-utils";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { pushHistory } from "./history.slice";
@@ -93,7 +92,8 @@ export const servicesSlice = (
   set: (fn: (state: AppState) => void) => void,
   _get: () => AppState,
 ) => ({
-  services: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_SERVICES,
+  // Demo seeds arrive on a fresh workspace during hydration (seedWorkspace.ts).
+  services: {} as Record<string, ServiceDefinition>,
 
   addService: (service: Omit<ServiceDefinition, "id">): ServiceDefinition => {
     const svc: ServiceDefinition = {

@@ -1,4 +1,5 @@
 import type { PersistStorage, StorageValue } from "zustand/middleware";
+import type { FreshWorkspace } from "./seedWorkspace";
 import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
 import { isBrowserWorkspaceStorage } from "@/infrastructure/persistence/BrowserWorkspaceStorage";
@@ -878,16 +879,48 @@ export function createDeferredJSONStorage<S>(port: DiagramPersistPort): PersistS
 
 export function createPersistConfig(
   storage: IStoragePort,
-  options: { onRehydrated?: (error?: unknown) => void } = {},
+  options: {
+    onRehydrated?: (error?: unknown) => void;
+    /**
+     * What a workspace with nothing stored starts with (the demo seeds). Fetched
+     * after the stored read comes back empty and applied by `merge`, which runs on
+     * zustand's raw `set`: the seeds are shown, not written, until the user edits.
+     */
+    loadFreshWorkspace?: () => Promise<FreshWorkspace>;
+  } = {},
 ) {
   const trackedStorage = wrapIStoragePortWithDiagramPersistTracking(storage);
   const SCHEMA_VERSION_EDGE_LAYOUTS_RECORD = 5;
   const SCHEMA_VERSION_EDGE_CONTROL_POINTS = 6;
+  const jsonStorage = createDeferredJSONStorage<PersistedDiagramStoreSlice>(trackedStorage);
+  const { loadFreshWorkspace } = options;
+  let fresh: FreshWorkspace | null = null;
+  const persistStorage: typeof jsonStorage = loadFreshWorkspace
+    ? {
+        ...jsonStorage,
+        getItem: async (name) => {
+          const stored = await jsonStorage.getItem(name);
+          if (stored === null && name === PERSIST_KEY) {
+            fresh = await loadFreshWorkspace().catch((error: unknown) => {
+              console.error("[Structura] demo workspace could not be loaded", error);
+              return null;
+            });
+          }
+          return stored;
+        },
+      }
+    : jsonStorage;
   return {
     name: PERSIST_KEY,
-    storage: createDeferredJSONStorage<PersistedDiagramStoreSlice>(trackedStorage),
+    storage: persistStorage,
     partialize: partializeState,
-    merge: mergePersistedState,
+    merge: (persistedState: unknown, currentState: DiagramStore): DiagramStore => {
+      const next = mergePersistedState(persistedState, currentState);
+      if (persistedState || !fresh) return next;
+      const seeds = fresh;
+      fresh = null;
+      return { ...next, ...seeds };
+    },
     version: PERSIST_SCHEMA_VERSION,
     /** Called once hydration ends, failed or not (zustand's finish listeners skip failures). */
     onRehydrateStorage: () => (_state: unknown, error?: unknown) => options.onRehydrated?.(error),
