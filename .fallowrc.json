@@ -10,5 +10,6 @@
     "src/lib/opscr-layout/index.ts",
     "src/lib/opscr-mapping/index.ts"
   ],
-  "ignorePatterns": ["**/generated/**"]
+  "ignorePatterns": ["**/generated/**"],
+  "ignoreDependencies": ["@vscode/vsce"]
 }
