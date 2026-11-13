@@ -8,4 +8,6 @@ export interface CanvasProps {
   onDiagramSidebarOpenChange?: (open: boolean) => void;
   focusMode?: boolean;
   onToggleFocusMode?: () => void;
+  /** Offer the LLM chat (default true). Hosts with their own assistant — VSCode — turn it off. */
+  showChat?: boolean;
 }

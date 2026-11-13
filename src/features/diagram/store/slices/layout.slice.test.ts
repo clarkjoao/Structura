@@ -77,16 +77,31 @@ describe("updateNodeLayout", () => {
     expect(stamp()).toBe(start + 1);
   });
 
-  it("in a scene, writes the scene's own layout and leaves a base node's alone", () => {
+  it("in a scene, writes the scene's own layout, and a base node's move as an override there", () => {
     const ctx = setup();
     const base = ctx.add("system", "Base", 5, 5);
     const scene = openScene(ctx.store);
     const own = ctx.add("system", "Own", 9, 9);
     ctx.store.getState().updateNodeLayout(own.id, { x: 70, y: 80 });
     expect(ctx.d().versions![scene.id].nodeLayouts[own.id]).toMatchObject({ x: 70, y: 80 });
-    // A node the scene did not add falls through to the base layout map.
+    // A node the scene did not add: the base layout stays, the scene holds the new position.
     ctx.store.getState().updateNodeLayout(base.id, { x: 11, y: 12 });
-    expect(ctx.d().nodeLayouts[base.id]).toMatchObject({ x: 11, y: 12 });
+    expect(ctx.d().nodeLayouts[base.id]).toMatchObject({ x: 5, y: 5 });
+    expect(ctx.d().versions![scene.id].nodeLayouts[base.id]).toMatchObject({ x: 11, y: 12 });
+    expect(ctx.d().versions![scene.id].modifiedComponents?.[base.id]).toBeUndefined();
+  });
+
+  it("in a scene, a measurement writes where the layout lives and creates no override", () => {
+    const ctx = setup();
+    const base = ctx.add("system", "Base", 5, 5);
+    const scene = openScene(ctx.store);
+    ctx.store
+      .getState()
+      .batchUpdateNodeLayouts([
+        { elementId: base.id, position: { x: 5, y: 5 }, dimensions: { width: 300, height: 90 } },
+      ]);
+    expect(ctx.d().nodeLayouts[base.id]).toMatchObject({ width: 300, height: 90 });
+    expect(ctx.d().versions![scene.id].nodeLayouts[base.id]).toBeUndefined();
   });
 });
 

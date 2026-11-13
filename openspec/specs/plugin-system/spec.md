@@ -283,3 +283,224 @@ corrupting state.
 - **GIVEN** an active plugin calling `api.updateComponent(id, { name: "Ok", parentId: "hijack" })`
 - **WHEN** the patch is applied
 - **THEN** the name changes and `parentId` is unchanged
+
+### Requirement: Importers create panels and catalog components
+
+An imported component SHALL keep its `type` when it is a C4 type, `panel`, a category of a registered catalog family (AWS, GCP, Azure, OSS…) or a plugin-namespaced type; any other type SHALL degrade to `unknown`. A catalog component SHALL carry the `cloudServiceId` the importer gave, written through the host's single `cloudServiceId` writer, and C4 and catalog components SHALL carry the given `technology`.
+
+#### Scenario: Cloud database with its service
+
+- **GIVEN** an importer returns a component of type `aws-database` with `cloudServiceId: "dynamodb"` and `technology: "DynamoDB"`
+- **WHEN** the import runs
+- **THEN** the diagram has an `aws-database` component whose `cloudServiceId` is `dynamodb` and whose technology is `DynamoDB`
+
+#### Scenario: Unsupported built-in type degrades
+
+- **GIVEN** an importer returns a component of type `endpoint`
+- **WHEN** the import runs
+- **THEN** the component is created as `unknown`
+
+### Requirement: Importers nest components
+
+An imported component with a `parentKey` SHALL be created inside the component that key names — another component of the same import or an existing component of the diagram — with its position relative to that parent. When the parent does not exist, cannot hold the child, or the parent keys form a cycle, the component SHALL be created at the top level instead of failing the import.
+
+#### Scenario: Application inside a new panel
+
+- **GIVEN** an importer returns a `panel` with key `orders` and a `container` with key `api` and `parentKey: "orders"`
+- **WHEN** the import runs
+- **THEN** the container's `parentId` is the new panel's id
+
+#### Scenario: Child of an existing panel
+
+- **GIVEN** the diagram has a panel with id `p1` and an importer returns a component with `parentKey: "p1"`
+- **WHEN** the import runs
+- **THEN** the new component's `parentId` is `p1`
+
+#### Scenario: Parent cycle
+
+- **GIVEN** an importer returns components `a` with `parentKey: "b"` and `b` with `parentKey: "a"`, both panels
+- **WHEN** the import runs
+- **THEN** both are created, and neither is its own ancestor
+
+#### Scenario: Missing parent
+
+- **GIVEN** an importer returns a component with `parentKey: "nowhere"`
+- **WHEN** the import runs
+- **THEN** the component is created at the top level
+
+### Requirement: Imports respect the active diagram version and undo as one step
+
+A plugin import SHALL be committed as a single history step on the active diagram, written to the active diagram version when one is open, so one undo reverts the whole import.
+
+#### Scenario: Nested import undone at once
+
+- **GIVEN** an import that created two panels, five nested components and four connections
+- **WHEN** the user undoes once
+- **THEN** none of those components and connections remain
+
+### Requirement: Document pane slot
+
+A plugin with the `ui:panels` capability SHALL be able to register a panel in the `document-pane`
+slot. The host SHALL offer each such panel as a toggle in the canvas toolbar, render the open one
+docked beside the canvas inside an error boundary, and keep the canvas usable while it is open.
+
+#### Scenario: Opening a document pane
+
+- **GIVEN** a plugin registered a `document-pane` panel titled "opscr"
+- **WHEN** the user clicks its toolbar toggle
+- **THEN** the panel renders beside the canvas, and clicking the toggle again closes it
+
+#### Scenario: A failing pane does not break the workspace
+
+- **WHEN** the document pane's component throws while rendering
+- **THEN** the pane shows an error state and the canvas keeps working
+
+### Requirement: Host code editor for plugins
+
+The API SHALL expose the host's code editor as `api.ui.CodeEditor`, a React component taking a
+value, a language, an optional change callback, an optional read-only flag and optional problem
+markers (line, message, severity), so a plugin can edit text without bundling an editor.
+
+#### Scenario: Markers on lines
+
+- **GIVEN** a plugin renders `CodeEditor` with a marker on line 3
+- **WHEN** the editor mounts
+- **THEN** line 3 shows the marker's message with its severity
+
+### Requirement: Folder access for plugins
+
+A plugin with the `files:folder` capability SHALL be able to ask the user to pick a folder under a
+binding id, list its files, read and write UTF-8 text files in it, and get the same folder back in
+a later session under the same binding id after the user grants permission again. Paths SHALL be
+file names inside the picked folder; anything that escapes it SHALL be rejected. The directory
+handle SHALL never be exposed to plugin code.
+
+#### Scenario: Remembered folder
+
+- **GIVEN** a plugin picked a folder under binding id `d1` and the page reloads
+- **WHEN** the plugin opens binding `d1` again and the user grants permission
+- **THEN** it reads the same folder's files without picking it again
+
+#### Scenario: Escaping the folder
+
+- **WHEN** a plugin reads or writes `../secret.txt` or `sub/../../x`
+- **THEN** the call is rejected and nothing outside the folder is touched
+
+### Requirement: Batched diagram changes
+
+With the `diagram:write` capability, `api.applyChanges` SHALL add components (importer component
+shape: key, type, name, parent key, catalog service, technology, position, size), update their
+name, description, technology and catalog service, move and remove components, and add and remove
+connections in the active diagram as a single history step, returning the id created for each key.
+It SHALL apply the same type policy and normalization as importers, and ignore changes to ids that
+do not exist.
+
+#### Scenario: One undo
+
+- **GIVEN** a call that adds two components and a connection, updates one and removes another
+- **WHEN** the user undoes once
+- **THEN** the diagram is back to how it was before the call
+
+#### Scenario: Unknown ids
+
+- **WHEN** a call removes or updates an id that is not in the diagram
+- **THEN** that change is ignored and the rest applies
+
+### Requirement: Plugin-answered rename in the host code editor
+
+`api.ui.CodeEditor` SHALL accept a `rename` handler. F2 in that editor SHALL ask the handler for
+the symbol at the cursor, open the rename box on it, and pass the new name to the handler, showing
+the message the handler refuses with. Where the handler has no symbol, the editor SHALL say that
+nothing can be renamed. The handler SHALL never be asked about another editor's text.
+
+#### Scenario: Rename refused
+
+- **GIVEN** a plugin editor whose handler refuses `taken` with "Already used"
+- **WHEN** the user renames a symbol to `taken`
+- **THEN** the editor shows "Already used" and the text is unchanged
+
+### Requirement: Plugin chat context
+
+A plugin with the `llm:context` capability SHALL be able to register a chat context. When a
+context applies to the active diagram, the chat SHALL use its system prompt, hand it the model's
+reply, show the reply text it returns, and send its retry text back to the model, at most 3
+attempts per user message. Diagrams no context applies to SHALL keep the built-in chat.
+
+#### Scenario: Retry on validation errors
+
+- **GIVEN** a context whose first `handleReply` returns a retry and the second a reply
+- **WHEN** the user sends a message
+- **THEN** the model is called twice, the second time with its first reply and the retry text, and
+  the thread shows the user message and the final reply
+
+### Requirement: Previewing plugin chat replies
+
+When a plugin chat context returns a preview, the host SHALL show its components and connections
+as pending (highlighted, with Keep and Discard), fit the canvas to them, and list the change as a
+suggestion in the chat. Keep SHALL call the plugin's `keep`; Discard SHALL call its `discard` and,
+when that returns a message, show it and keep the change. A new message on the diagram SHALL keep
+the plugin's earlier pending reply.
+
+#### Scenario: Discarding a reply
+
+- **GIVEN** a plugin reply previewed component `c1`
+- **WHEN** the user clicks Discard on `c1`
+- **THEN** the plugin's `discard` runs once and `c1` is no longer pending
+
+### Requirement: Plugin chat presentation
+
+While a plugin chat context applies to the active diagram and provides a presentation, the chat
+header and empty state SHALL show its title, subtitle and suggestions instead of the built-in ones,
+and SHALL switch back when the context stops applying, as signalled through its `subscribe`.
+
+#### Scenario: A folder opens
+
+- **GIVEN** the chat panel is open on a diagram with the built-in assistant
+- **WHEN** the opscr pane opens the diagram's bound folder
+- **THEN** the chat header reads "opscr · <folder>" and the suggestions are opscr edits
+
+### Requirement: Folder stats
+
+`PluginFolder.stats()` SHALL list the folder's top-level files with their last-modified time and
+size, sorted by name, without reading their contents.
+
+#### Scenario: A write changes the stats
+
+- **WHEN** a plugin writes `a.yaml` and calls `stats()`
+- **THEN** `a.yaml` has a newer last-modified time and its new size
+
+### Requirement: Snapshots expose catalog service and technology
+
+Component snapshots SHALL include the catalog service id and the technology label of the component,
+or null.
+
+#### Scenario: A Lambda
+
+- **WHEN** a plugin reads a diagram holding an AWS Lambda with technology "Python"
+- **THEN** its snapshot has `cloudServiceId: "lambda"` and `technology: "Python"`
+
+### Requirement: Canvas selection and highlight
+
+The API SHALL expose `api.canvas` (capability `diagram:read`): the selected components and
+connection of the active diagram, a subscription to their changes, and `highlight()`, which lights
+the given components and connections (others dim) and brings them into view only when they are
+not, leaving the selection as it is.
+
+#### Scenario: Highlighting an element off screen
+
+- **WHEN** a plugin highlights a component that is outside the visible canvas
+- **THEN** the component is lit and the canvas pans to it; a component already on screen is lit
+  without moving the canvas
+
+### Requirement: Editor files, lines and comparison
+
+`CodeEditor` SHALL keep a separate model per `path` (undo history, cursor and scroll), move the
+cursor to `revealLine` when its token changes, report the user's cursor moves through
+`onCursorLine` (clicks and arrow keys; not typing, nor the moves `revealLine` makes), and show a comparison of `original` against the
+editable `value` when `original` is given.
+
+#### Scenario: Undo after switching files
+
+- **GIVEN** an edit in file A, then a switch to file B
+- **WHEN** the user presses undo in B
+- **THEN** only B's own edits are undone; A keeps its text

@@ -18,6 +18,8 @@ interface CanvasRightRailProps {
   focusMode?: boolean;
   onToggleFocusMode?: () => void;
   chat: CanvasChat;
+  /** The chat button and panel; off in the editable embed, whose host has its own assistant. */
+  showChat: boolean;
   showElementPanel: boolean;
   visualState: CanvasVisualState;
   selectedNodes: Node[];
@@ -32,6 +34,7 @@ export function CanvasRightRail({
   focusMode,
   onToggleFocusMode,
   chat,
+  showChat,
   showElementPanel,
   visualState,
   selectedNodes,
@@ -57,15 +60,17 @@ export function CanvasRightRail({
             </button>
           </div>
         ) : null}
-        <div className="mt-auto flex pb-5 pr-4">
-          <div className="pointer-events-auto">
-            <FloatingChatButton
-              isOpen={chat.isOpen}
-              hasUnread={chat.hasUnread}
-              onClick={chat.toggle}
-            />
+        {showChat && (
+          <div className="mt-auto flex pb-5 pr-4">
+            <div className="pointer-events-auto">
+              <FloatingChatButton
+                isOpen={chat.isOpen}
+                hasUnread={chat.hasUnread}
+                onClick={chat.toggle}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
       {showElementPanel && (
         <ElementPanel
@@ -80,7 +85,7 @@ export function CanvasRightRail({
           onClose={onClosePanel}
         />
       )}
-      {chat.isOpen ? (
+      {showChat && chat.isOpen ? (
         <Suspense fallback={null}>
           <AssistantUIChatPanel
             onClose={chat.close}

@@ -69,3 +69,20 @@ describe("keyIsEnterOrSpace", () => {
     expect(keyIsEnterOrSpace(keyEv("Escape"))).toBe(false);
   });
 });
+
+describe("isEditableTarget — Monaco's EditContext", () => {
+  it("treats the native edit context inside a Monaco editor as editable", async () => {
+    const { isEditableTarget } = await import("./keyboard");
+    const editor = document.createElement("div");
+    editor.className = "monaco-editor";
+    const inner = document.createElement("div");
+    const target = document.createElement("div");
+    target.className = "native-edit-context";
+    inner.appendChild(target);
+    editor.appendChild(inner);
+    document.body.appendChild(editor);
+    expect(isEditableTarget(target)).toBe(true);
+    expect(isEditableTarget(document.createElement("div"))).toBe(false);
+    editor.remove();
+  });
+});
