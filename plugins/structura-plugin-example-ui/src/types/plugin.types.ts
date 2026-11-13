@@ -7,7 +7,7 @@
  */
 
 import type { ComponentType as ReactComponentType } from "react";
-import type { DiagramNodeComponent } from "@/features/canvas";
+import type { NodeTypes } from "@xyflow/react";
 
 /**
  * React component contract for a registered diagram node type. Spelled out from
