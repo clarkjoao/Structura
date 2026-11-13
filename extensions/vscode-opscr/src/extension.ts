@@ -49,6 +49,8 @@ class Preview {
   private lastBlocked: object | null = null;
   /** Opscr errors keeping the last picture on screen (0 while it follows the YAML). */
   private blocked = 0;
+  /** Elements left out of the last picture for an opscr error in them. */
+  private broken = 0;
   /** Says why the preview is not following the YAML, while it is not. */
   private readonly statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
   /** Files this preview put in the Problems panel, cleared when they leave the workspace. */
@@ -238,6 +240,7 @@ class Preview {
     components: number;
     rendered: number;
     blocked: number;
+    broken: number;
     view: string | null;
     views: string[];
   } {
@@ -248,6 +251,7 @@ class Preview {
       components: this.lastGraph?.components.length ?? 0,
       rendered: this.rendered,
       blocked: this.blocked,
+      broken: this.broken,
     };
   }
 
@@ -308,6 +312,7 @@ class Preview {
     this.lastBlocked = null;
     this.problemLocations = [];
     this.blocked = 0;
+    this.broken = result.broken?.length ?? 0;
     const errors = result.diagnostics.filter((d) => d.severity === "error").length;
     if (errors > 0) {
       // Drawn anyway, without the elements the errors are in: say what is missing and why.

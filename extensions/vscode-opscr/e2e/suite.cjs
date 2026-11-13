@@ -51,14 +51,13 @@ exports.run = async function run() {
   assert.ok(await vscode.workspace.applyEdit(edit));
   assert.ok(doc.isDirty, "the edit is not saved");
 
-  // opscr reports an error: the preview keeps its last valid picture until it is fixed.
-  await until("the preview to hold its picture while opscr reports errors", async () => {
+  // opscr reports an error in the new Cache: it is left out and the rest is still drawn.
+  await until("the preview to draw around the element with an opscr error", async () => {
     const s = await status(folder);
-    return s.blocked > 0;
+    return s.blocked === 0 && s.broken === 1;
   });
   assert.equal((await status(folder)).components, first.components);
-  await until("the preview to say it is not updated", async () => (await probe()).blocked);
-  console.log("[e2e] an edit with opscr errors is not drawn; the last valid picture stays");
+  console.log("[e2e] an element with an opscr error is left out; the rest is drawn");
 
   const problems = await until("an opscr problem on the edited file", () =>
     vscode.languages
@@ -71,14 +70,35 @@ exports.run = async function run() {
 
   // The search took the focus into the preview: back to the file before reverting it.
   // In the first column: the active one is the preview's now, and covering it would hide it.
-  await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
-  await sleep(500);
-  await vscode.commands.executeCommand("workbench.action.files.revert");
+  const revert = async () => {
+    await vscode.window.showTextDocument(doc, vscode.ViewColumn.One);
+    await sleep(500);
+    await vscode.commands.executeCommand("workbench.action.files.revert");
+  };
+  await revert();
   await until(
     "the problem to clear after revert",
     () => !vscode.languages.getDiagnostics(file).some((d) => d.message.includes("inventedField")),
   );
   console.log("[e2e] problem cleared");
+
+  // YAML that does not parse: nothing can be drawn from it, so the last picture stays.
+  const unparsable = new vscode.WorkspaceEdit();
+  unparsable.insert(file, doc.lineAt(doc.lineCount - 1).range.end, "\n---\nkind: [unclosed\n");
+  assert.ok(await vscode.workspace.applyEdit(unparsable));
+  await until("the preview to hold its picture while the YAML does not parse", async () => {
+    const s = await status(folder);
+    return s.blocked > 0;
+  });
+  assert.equal((await status(folder)).components, first.components);
+  await until("the preview to say it is not updated", async () => (await probe()).blocked);
+  console.log("[e2e] YAML that does not parse is not drawn; the last valid picture stays");
+  await revert();
+  await until("the preview to follow again after revert", async () => {
+    const s = await status(folder);
+    return s.blocked === 0 && s.broken === 0;
+  });
+  console.log("[e2e] the preview follows again");
 
   // A valid file written straight to disk (Claude Code, git) is drawn, laid out automatically.
   require("node:fs").writeFileSync(
@@ -113,11 +133,18 @@ exports.run = async function run() {
     return s.blocked === 0 && s.components === first.components + 2;
   });
   console.log("[e2e] a manifest in a subfolder is drawn");
-  await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(nested)), vscode.ViewColumn.One);
+  await vscode.window.showTextDocument(
+    await vscode.workspace.openTextDocument(vscode.Uri.file(nested)),
+    vscode.ViewColumn.One,
+  );
   await vscode.commands.executeCommand("opscr.openPreview");
   await sleep(500);
   const all = await vscode.commands.executeCommand("opscr._previewStatus");
-  assert.deepEqual(Object.keys(all), [folder], "the nested file opens the workspace's preview, not its own");
+  assert.deepEqual(
+    Object.keys(all),
+    [folder],
+    "the nested file opens the workspace's preview, not its own",
+  );
   console.log("[e2e] a file in a subfolder opens the workspace's preview");
 
   // With no opscr.config.yaml at all, the workspace is found from the open file: a view in
@@ -128,13 +155,19 @@ exports.run = async function run() {
   const git = (...args) => execFileSync("git", ["-C", opscrRoot, ...args], { encoding: "utf8" });
   const solo = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "opscr-solo-")));
   for (const sub of ["model", "views"]) fs.mkdirSync(path.join(solo, sub));
-  for (const p of git("ls-tree", "--name-only", "HEAD", "examples/web-app-aws/").split("\n").filter((n) => n.endsWith(".opscr.yaml"))) {
+  for (const p of git("ls-tree", "--name-only", "HEAD", "examples/web-app-aws/")
+    .split("\n")
+    .filter((n) => n.endsWith(".opscr.yaml"))) {
     const name = path.basename(p);
-    const dir = /^shop-(context|containers|production)|^orders-api-components/.test(name) ? "views" : "model";
+    const dir = /^shop-(context|containers|production)|^orders-api-components/.test(name)
+      ? "views"
+      : "model";
     fs.writeFileSync(path.join(solo, dir, name), git("show", `HEAD:${p}`));
   }
   await vscode.window.showTextDocument(
-    await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(solo, "views", "shop-context.opscr.yaml"))),
+    await vscode.workspace.openTextDocument(
+      vscode.Uri.file(path.join(solo, "views", "shop-context.opscr.yaml")),
+    ),
     vscode.ViewColumn.One,
   );
   await vscode.commands.executeCommand("opscr.openPreview");
@@ -146,7 +179,8 @@ exports.run = async function run() {
 
   // The Views of that solution: pick one, then follow a box that opens another (a double-click in
   // the preview, posed as the webview's message).
-  const soloStatus = async () => (await vscode.commands.executeCommand("opscr._previewStatus"))[solo];
+  const soloStatus = async () =>
+    (await vscode.commands.executeCommand("opscr._previewStatus"))[solo];
   assert.equal((await soloStatus()).view, null);
   assert.equal((await soloStatus()).views.length, 4);
   await vscode.commands.executeCommand("opscr._previewView", solo, "shop-containers");
