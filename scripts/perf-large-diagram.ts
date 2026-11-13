@@ -23,11 +23,17 @@ import { writeFileSync } from "node:fs";
 import { chromium, type Page } from "playwright";
 import { buildLargeDiagramSeed } from "../cypress/support/seed-large-diagram";
 import { DIAGRAM_STORE_LOCAL_STORAGE_KEY } from "../cypress/support/seed-stress-diagram";
+import {
+  applyCpuThrottle,
+  bringOnScreen,
+  cpuThrottleRate,
+  type OnScreenDriver,
+} from "./perf/onScreen";
 
 const BASE = (process.env.STRUCTURA_URL ?? "http://localhost:4173").replace(/\/$/, "");
 const CHANNEL = process.env.PLAYWRIGHT_CHANNEL || undefined;
 const RUNS = Number(process.env.PERF_RUNS ?? 3);
-const CPU_THROTTLE = Number(process.env.PERF_CPU_THROTTLE ?? 1);
+const CPU_THROTTLE = cpuThrottleRate(process.env.PERF_CPU_THROTTLE);
 const VIEWPORT = { width: 1600, height: 1000 };
 
 interface PerfWindow {
@@ -156,37 +162,17 @@ async function nodeCenter(page: Page, id: string, at: { fx: number; fy: number }
   return { x: box.x + box.width * at.fx, y: box.y + box.height * at.fy };
 }
 
-/**
- * Pans (wheel, as a user would) until `selector`'s box sits inside the canvas, away
- * from the toolbars. The opening viewport is the app's choice, not the fixture's:
- * since the opening fit centres a canvas that shows too little of the diagram (audit
- * C3/R8), the nodes the scenarios press can start off screen, where a press lands
- * nowhere and every drag reported `moved: false`.
- */
-async function bringOnScreen(page: Page, selector: string) {
-  const pane = await page.locator(".react-flow__renderer").boundingBox();
-  if (!pane) throw new Error("canvas not found");
-  const margin = 160;
-  for (let i = 0; i < 60; i += 1) {
-    const box = await page.locator(selector).first().boundingBox();
-    if (!box) throw new Error(`${selector} is not rendered`);
-    const cx = box.x + Math.min(box.width, 400) / 2;
-    const cy = box.y + Math.min(box.height, 300) / 2;
-    const inside =
-      cx > pane.x + margin &&
-      cx < pane.x + pane.width - margin &&
-      cy > pane.y + margin &&
-      cy < pane.y + pane.height - margin;
-    if (inside) return;
-    const clamp = (v: number) => Math.max(-500, Math.min(500, v));
-    await page.mouse.move(pane.x + pane.width / 2, pane.y + pane.height / 2);
-    await page.mouse.wheel(
-      clamp(cx - (pane.x + pane.width / 2)),
-      clamp(cy - (pane.y + pane.height / 2)),
-    );
-    await page.waitForTimeout(60);
-  }
-  throw new Error(`could not bring ${selector} on screen`);
+/** Playwright's page as the harness's on-screen driver. */
+function pageDriver(page: Page): OnScreenDriver {
+  return {
+    paneBox: () => page.locator(".react-flow__renderer").boundingBox(),
+    targetBox: (selector) => page.locator(selector).first().boundingBox(),
+    wheelAt: async (x, y, dx, dy) => {
+      await page.mouse.move(x, y);
+      await page.mouse.wheel(dx, dy);
+    },
+    wait: (ms) => page.waitForTimeout(ms),
+  };
 }
 
 async function dragFrom(page: Page, from: { x: number; y: number }, dx: number, dy: number) {
@@ -218,10 +204,7 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
   await context.addInitScript({ content: "globalThis.__name = (fn) => fn;" });
   await context.addInitScript(instrument);
   const page = await context.newPage();
-  if (CPU_THROTTLE > 1) {
-    const cdp = await context.newCDPSession(page);
-    await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU_THROTTLE });
-  }
+  await applyCpuThrottle(CPU_THROTTLE, () => context.newCDPSession(page));
   const result: Record<string, unknown> = {};
 
   // --- open -----------------------------------------------------------------
@@ -247,7 +230,7 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
 
   // --- drag one child node ------------------------------------------------------
   const leaf = seed.leafIds.find((id) => id.startsWith("leaf_"))!;
-  await bringOnScreen(page, `.react-flow__node[data-id="${leaf}"]`);
+  await bringOnScreen(pageDriver(page), `.react-flow__node[data-id="${leaf}"]`);
   await settle(page, 500);
   const leafBefore = await flowPosition(page, leaf);
   const leafAt = await nodeCenter(page, leaf, { fx: 0.5, fy: 0.5 });
@@ -267,7 +250,7 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
 
   // --- drag the largest panel (97 children) -----------------------------------
   const panel = seed.largePanelIds[0]!;
-  await bringOnScreen(page, `.react-flow__node[data-id="${panel}"] .panel-header`);
+  await bringOnScreen(pageDriver(page), `.react-flow__node[data-id="${panel}"] .panel-header`);
   await settle(page, 500);
   const before = await flowPosition(page, panel);
   // Panels drag by their header only; a press on the body starts a selection box.
@@ -295,7 +278,7 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
   // The drags above commit once per gesture; this is the scenario where the
   // cost of a single store write (persist, projection, subscribers) adds up.
   const nudged = seed.leafIds.filter((id) => id.startsWith("leaf_"))[1]!;
-  await bringOnScreen(page, `.react-flow__node[data-id="${nudged}"]`);
+  await bringOnScreen(pageDriver(page), `.react-flow__node[data-id="${nudged}"]`);
   await settle(page, 500);
   const nudgeBefore = await flowPosition(page, nudged);
   await page.mouse.click(
