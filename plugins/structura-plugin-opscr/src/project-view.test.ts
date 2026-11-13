@@ -19,7 +19,12 @@ const byKey = (graph: { components: Array<{ key: string }> }, key: string) =>
 describe("projectView", () => {
   it("lists the views of the workspace", async () => {
     const { views, diagnostics } = await projectView(FILES, undefined, "shop-context");
-    expect(views.sort()).toEqual(["orders-api-components", "shop-containers", "shop-context", "shop-production"]);
+    expect(views.sort()).toEqual([
+      "orders-api-components",
+      "shop-containers",
+      "shop-context",
+      "shop-production",
+    ]);
     expect(diagnostics.filter((d) => d.severity === "error")).toEqual([]);
   });
 
@@ -30,39 +35,66 @@ describe("projectView", () => {
       "ExternalSystem/payment-provider",
       "Person/customer",
     ]);
-    expect(byKey(graph!, "BoundedContext/webshop")).toMatchObject({ type: "system", linkedView: "shop-containers" });
+    expect(byKey(graph!, "BoundedContext/webshop")).toMatchObject({
+      type: "system",
+      linkedView: "shop-containers",
+    });
     expect(byKey(graph!, "Person/customer")).toMatchObject({ type: "person" });
     expect(graph!.connections).toHaveLength(2);
   });
 
   it("containers: a panel for the system, catalog icons for what runs in it, and two drill-downs", async () => {
     const { graph } = await projectView(FILES, undefined, "shop-containers");
-    expect(byKey(graph!, "BoundedContext/webshop")).toMatchObject({ type: "panel", linkedView: "shop-production" });
+    expect(byKey(graph!, "BoundedContext/webshop")).toMatchObject({
+      type: "panel",
+      linkedView: "shop-production",
+    });
     expect(byKey(graph!, "Application/orders-api")).toMatchObject({
       parentKey: "BoundedContext/webshop",
       type: "aws-compute",
       cloudServiceId: "fargate",
       linkedView: "orders-api-components",
     });
-    expect(byKey(graph!, "Database/orders-db")).toMatchObject({ type: "aws-database", cloudServiceId: "aurora" });
+    expect(byKey(graph!, "Database/orders-db")).toMatchObject({
+      type: "aws-database",
+      cloudServiceId: "aurora",
+    });
   });
 
   it("deployment: AWS group panels nested zone → subnet, holding the deployed things", async () => {
     const { graph } = await projectView(FILES, undefined, "shop-production");
-    expect(byKey(graph!, "DeploymentNode/az-a")).toMatchObject({ type: "panel", panelKind: "availability-zone", parentKey: "DeploymentNode/eu-west-1" });
+    expect(byKey(graph!, "DeploymentNode/az-a")).toMatchObject({
+      type: "panel",
+      panelKind: "availability-zone",
+      parentKey: "DeploymentNode/eu-west-1",
+    });
     expect(byKey(graph!, "DeploymentNode/public-a")).toMatchObject({ panelKind: "public-subnet" });
-    expect(byKey(graph!, "DeploymentNode/private-a")).toMatchObject({ panelKind: "private-subnet" });
-    expect(byKey(graph!, "Application/storefront")).toMatchObject({ parentKey: "DeploymentNode/private-a" });
-    expect(byKey(graph!, "LoadBalancer/shop-alb")).toMatchObject({ parentKey: "DeploymentNode/public-a" });
+    expect(byKey(graph!, "DeploymentNode/private-a")).toMatchObject({
+      panelKind: "private-subnet",
+    });
+    expect(byKey(graph!, "Application/storefront")).toMatchObject({
+      parentKey: "DeploymentNode/private-a",
+    });
+    expect(byKey(graph!, "LoadBalancer/shop-alb")).toMatchObject({
+      parentKey: "DeploymentNode/public-a",
+    });
   });
 
   it("lays every box out and keeps a box the reader placed", async () => {
     const first = await projectView(FILES, undefined, "shop-containers");
     const web = byKey(first.graph!, "Application/storefront") as { x: number; y: number };
     expect(Number.isFinite(web.x) && Number.isFinite(web.y)).toBe(true);
-    const placed = new Map(first.graph!.components.map((c) => [c.key, { x: c.x, y: c.y, width: c.width ?? 180, height: c.height ?? 80 }]));
+    const placed = new Map(
+      first.graph!.components.map((c) => [
+        c.key,
+        { x: c.x, y: c.y, width: c.width ?? 180, height: c.height ?? 80 },
+      ]),
+    );
     placed.set("Application/storefront", { x: 777, y: 333, width: 180, height: 80 });
-    const second = await projectView(FILES, undefined, "shop-containers", { boxes: placed, edgeRoutes: new Map() });
+    const second = await projectView(FILES, undefined, "shop-containers", {
+      boxes: placed,
+      edgeRoutes: new Map(),
+    });
     expect(byKey(second.graph!, "Application/storefront")).toMatchObject({ x: 777, y: 333 });
   });
 

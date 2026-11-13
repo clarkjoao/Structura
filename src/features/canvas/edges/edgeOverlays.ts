@@ -50,10 +50,7 @@ export function pendingEdgeOverlay(edge: Edge, pending: boolean): Edge {
 }
 
 /** The changes view: an edge the active Version added, or changed against the base. */
-function versionChangeEdgeOverlay(
-  edge: Edge,
-  change: "added" | "changed" | undefined,
-): Edge {
+function versionChangeEdgeOverlay(edge: Edge, change: "added" | "changed" | undefined): Edge {
   if (!change) return edge;
   const className = change === "added" ? "edge-version-added" : "edge-version-changed";
   return { ...edge, className: `${edge.className ?? ""} ${className}`.trim() };

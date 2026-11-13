@@ -19,6 +19,7 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
 
   `opscr.layout.json` and `opscr.visual.json` are read from the root only. Unsaved text in open
   editors is used as it is.
+
 - **Views:** when the workspace declares `View` manifests (system context, containers,
   components, deployment), the status bar shows `opscr: <diagram>` and **opscr: Show View in
   Preview…** (also the status bar item) lists the whole workspace and each view. **Double-click** a

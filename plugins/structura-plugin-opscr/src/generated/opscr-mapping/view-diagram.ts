@@ -117,15 +117,13 @@ export function buildViewDiagram(
 
   const edges = view.edges
     .filter((e) => knownIds.has(e.from) && knownIds.has(e.to))
-    .map(
-      (e): ViewEdge => ({
-        id: `${view.name}:${e.from}|${e.to}|${e.type}`,
-        sourceId: e.from,
-        targetId: e.to,
-        type: e.type,
-        description: e.descriptions.join("; "),
-      }),
-    );
+    .map((e): ViewEdge => ({
+      id: `${view.name}:${e.from}|${e.to}|${e.type}`,
+      sourceId: e.from,
+      targetId: e.to,
+      type: e.type,
+      description: e.descriptions.join("; "),
+    }));
 
   return { nodes, edges, omitted: [], dropped: [] };
 }

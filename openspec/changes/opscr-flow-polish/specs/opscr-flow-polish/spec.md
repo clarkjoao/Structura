@@ -33,7 +33,7 @@ when the name is taken.
 
 - **WHEN** the user creates "Migração de sessões"
 - **THEN** `initiatives/migracao-de-sessoes/initiative.opscr.yaml` has `displayName: "Migração de
-  sessões"`, and its detail opens
+sessões"`, and its detail opens
 
 ### Requirement: The header shows the drill-down trail and the Version shown
 

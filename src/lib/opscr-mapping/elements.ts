@@ -179,7 +179,9 @@ export function kindFor(
   const withProvider = (kind: string): KindGuess =>
     technology ? { kind, provider: technology } : { kind };
   if (element.type === "panel") {
-    return { kind: parentKind === "Domain" || parentKind === "Product" ? "BoundedContext" : "Domain" };
+    return {
+      kind: parentKind === "Domain" || parentKind === "Product" ? "BoundedContext" : "Domain",
+    };
   }
   if (element.type === "system") return withProvider("ExternalSystem");
   if (element.type === "container") return withProvider("Application");

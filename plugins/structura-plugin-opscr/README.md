@@ -144,4 +144,3 @@ Like a picked view, these are projections: edit the YAML (or the whole-workspace
 structure; moving boxes is saved per view in `opscr.layout.json`. A view that leaves the YAML keeps its
 diagram, listed in the pane — delete it in the diagram list when you do not need it. A diagram you delete
 is made again on the next sync while the box is ticked; untick it to stop. `e2e/views.mjs` covers it.
-

@@ -3,7 +3,7 @@
 ## Context
 
 - The plugin binds one diagram to one workspace; `ImportResult` is `{components, connections,
-  warnings}`; reconcile/patches map canvas edits to YAML ranges keyed by `Kind/name`.
+warnings}`; reconcile/patches map canvas edits to YAML ranges keyed by `Kind/name`.
 - `Component.linkedDiagramId` already drives drill-down in the host.
 - An element can now appear in several diagrams, so `Kind/name` is no longer a unique canvas key.
 
@@ -38,7 +38,7 @@ deleted only by the user.
    lifting; Structura adds only layout (ELK via `opscr-layout`, seeded by the sidecar).
 3. **Layout sidecar v2** `{version: 2, views: {<view>: {<Kind/name>: box}}}`; v1 is read as the
    default view. Writing always produces v2 once the workspace has a View.
-4. **One binding, many diagrams.** The host binds a workspace *set* of diagrams; the plugin owns
+4. **One binding, many diagrams.** The host binds a workspace _set_ of diagrams; the plugin owns
    their creation. A removed View keeps its diagram, marked orphaned, to avoid silent data loss.
 5. **Canvas edits in a derived diagram:** moving or resizing writes the sidecar; editing text on an
    element patches the one manifest that defines it; adding or deleting elements is allowed only in

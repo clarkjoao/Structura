@@ -75,12 +75,14 @@ class Session {
     onEvent: (event) => void this.events.push(event),
   });
   canvasOf = (view: string) => this.host.canvases.get(this.state.diagrams[view]!)!;
-  labels = (view: string) => this.canvasOf(view).components.map((c) => c.label).sort();
+  labels = (view: string) =>
+    this.canvasOf(view)
+      .components.map((c) => c.label)
+      .sort();
   text = (name: string) => this.files.find((f) => f.name === name)?.text ?? "";
   lastReport = () =>
     this.events.filter((e) => e.type === "view-diagrams").at(-1) as
-      | Extract<ViewDiagramsEvent, { type: "view-diagrams" }>
-      | undefined;
+      Extract<ViewDiagramsEvent, { type: "view-diagrams" }> | undefined;
 }
 
 let s: Session;
@@ -125,7 +127,9 @@ describe("ViewDiagrams", () => {
     const before = [...s.host.canvases].map(([id, c]) => [id, JSON.stringify(c.components)]);
     await s.manager.sync();
     expect(s.host.created).toHaveLength(made);
-    expect([...s.host.canvases].map(([id, c]) => [id, JSON.stringify(c.components)])).toEqual(before);
+    expect([...s.host.canvases].map(([id, c]) => [id, JSON.stringify(c.components)])).toEqual(
+      before,
+    );
   });
 
   it("follows an edit of the YAML in every diagram that shows the element", async () => {
@@ -160,14 +164,16 @@ describe("ViewDiagrams", () => {
     await s.manager.sync();
     expect(s.host.canvases.has(gone)).toBe(true);
     expect(s.lastReport()?.orphans).toEqual([{ view: "orders-api-components", diagramId: gone }]);
-    expect(s.lastReport()?.diagrams.map((d) => d.view).sort()).toEqual([
-      "shop-containers",
-      "shop-context",
-      "shop-production",
-    ]);
+    expect(
+      s
+        .lastReport()
+        ?.diagrams.map((d) => d.view)
+        .sort(),
+    ).toEqual(["shop-containers", "shop-context", "shop-production"]);
     // The box that opened it no longer does.
     expect(
-      s.canvasOf("shop-containers").components.find((c) => c.label === "orders-api")?.linkedDiagramId,
+      s.canvasOf("shop-containers").components.find((c) => c.label === "orders-api")
+        ?.linkedDiagramId,
     ).toBeNull();
   });
 
@@ -205,7 +211,9 @@ describe("ViewDiagrams", () => {
     containers.step(() => (storefront.position = { x: 640, y: 320 }));
     await s.manager.canvasChanged(containers.id);
     const sidecar = s.text(LAYOUT_FILE);
-    expect(layoutFor(sidecar, "shop-containers")!.boxes.get("Application/storefront")).toMatchObject({ x: 640, y: 320 });
+    expect(
+      layoutFor(sidecar, "shop-containers")!.boxes.get("Application/storefront"),
+    ).toMatchObject({ x: 640, y: 320 });
     // Another view, where nothing moved, gets no entry from it.
     expect(layoutFor(sidecar, "shop-context")?.boxes.has("Application/storefront") ?? false).toBe(
       false,
@@ -217,17 +225,24 @@ describe("ViewDiagrams", () => {
     const containers = s.canvasOf("shop-containers");
     const moved = JSON.stringify({
       version: 2,
-      views: { "shop-containers": { "Application/storefront": { x: 777, y: 333, width: 200, height: 90 } } },
+      views: {
+        "shop-containers": { "Application/storefront": { x: 777, y: 333, width: 200, height: 90 } },
+      },
     });
     await s.manager.sidecarChanged(moved);
-    expect(containers.components.find((c) => c.label === "storefront")!.position).toMatchObject({ x: 777, y: 333 });
+    expect(containers.components.find((c) => c.label === "storefront")!.position).toMatchObject({
+      x: 777,
+      y: 333,
+    });
   });
 
   it("does not edit the YAML from any of these diagrams", async () => {
     await s.manager.sync();
     const before = s.files.map((f) => f.text);
     const containers = s.canvasOf("shop-containers");
-    containers.step(() => containers.remove([containers.components.find((c) => c.label === "sessions")!.id]));
+    containers.step(() =>
+      containers.remove([containers.components.find((c) => c.label === "sessions")!.id]),
+    );
     await s.manager.canvasChanged(containers.id);
     await s.manager.sync();
     expect(s.files.filter((f) => f.name.endsWith(".opscr.yaml")).map((f) => f.text)).toEqual(

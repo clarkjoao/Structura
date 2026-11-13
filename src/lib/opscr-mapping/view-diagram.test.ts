@@ -33,10 +33,24 @@ const context: ResolvedViewInput = {
   type: "SystemContext",
   scope: "BoundedContext/shop",
   nodes: [
-    { id: "BoundedContext/shop", kind: "BoundedContext", name: "shop", parent: null, collapsed: true, drillDown: "containers" },
+    {
+      id: "BoundedContext/shop",
+      kind: "BoundedContext",
+      name: "shop",
+      parent: null,
+      collapsed: true,
+      drillDown: "containers",
+    },
     { id: "Person/customer", kind: "Person", name: "customer", parent: null, collapsed: false },
   ],
-  edges: [{ from: "Person/customer", to: "BoundedContext/shop", type: "calls", descriptions: ["Orders", "Browses"] }],
+  edges: [
+    {
+      from: "Person/customer",
+      to: "BoundedContext/shop",
+      type: "calls",
+      descriptions: ["Orders", "Browses"],
+    },
+  ],
 };
 
 describe("buildViewDiagram", () => {
@@ -50,7 +64,13 @@ describe("buildViewDiagram", () => {
     });
     expect(byId.get("Person/customer")?.element).toEqual({ type: "person" });
     expect(view.edges).toEqual([
-      { id: "ctx:Person/customer|BoundedContext/shop|calls", sourceId: "Person/customer", targetId: "BoundedContext/shop", type: "calls", description: "Orders; Browses" },
+      {
+        id: "ctx:Person/customer|BoundedContext/shop|calls",
+        sourceId: "Person/customer",
+        targetId: "BoundedContext/shop",
+        type: "calls",
+        description: "Orders; Browses",
+      },
     ]);
   });
 
@@ -60,13 +80,28 @@ describe("buildViewDiagram", () => {
       type: "Container",
       scope: "BoundedContext/shop",
       nodes: [
-        { id: "BoundedContext/shop", kind: "BoundedContext", name: "shop", parent: null, collapsed: false },
-        { id: "Application/web", kind: "Application", name: "web", parent: "BoundedContext/shop", collapsed: false },
+        {
+          id: "BoundedContext/shop",
+          kind: "BoundedContext",
+          name: "shop",
+          parent: null,
+          collapsed: false,
+        },
+        {
+          id: "Application/web",
+          kind: "Application",
+          name: "web",
+          parent: "BoundedContext/shop",
+          collapsed: false,
+        },
       ],
       edges: [],
     });
     const byId = new Map(view.nodes.map((n) => [n.id, n]));
-    expect(byId.get("BoundedContext/shop")).toMatchObject({ element: { type: "panel" }, isBoundary: true });
+    expect(byId.get("BoundedContext/shop")).toMatchObject({
+      element: { type: "panel" },
+      isBoundary: true,
+    });
     expect(byId.get("Application/web")).toMatchObject({
       parentId: "BoundedContext/shop",
       element: { type: "aws-compute", catalogServiceId: "ecs" },
@@ -79,8 +114,20 @@ describe("buildViewDiagram", () => {
       type: "Container",
       scope: "BoundedContext/shop",
       nodes: [
-        { id: "Application/web", kind: "Application", name: "web", parent: "BoundedContext/shop", collapsed: false },
-        { id: "BoundedContext/shop", kind: "BoundedContext", name: "shop", parent: null, collapsed: false },
+        {
+          id: "Application/web",
+          kind: "Application",
+          name: "web",
+          parent: "BoundedContext/shop",
+          collapsed: false,
+        },
+        {
+          id: "BoundedContext/shop",
+          kind: "BoundedContext",
+          name: "shop",
+          parent: null,
+          collapsed: false,
+        },
       ],
       edges: [],
     });
@@ -93,23 +140,56 @@ describe("buildViewDiagram", () => {
       type: "Deployment",
       scope: "BoundedContext/shop",
       nodes: [
-        { id: "DeploymentNode/az", kind: "DeploymentNode", name: "az", parent: null, collapsed: false },
-        { id: "DeploymentNode/priv", kind: "DeploymentNode", name: "priv", parent: "DeploymentNode/az", collapsed: false },
-        { id: "Component/cart", kind: "Component", name: "cart", parent: "DeploymentNode/priv", collapsed: false },
+        {
+          id: "DeploymentNode/az",
+          kind: "DeploymentNode",
+          name: "az",
+          parent: null,
+          collapsed: false,
+        },
+        {
+          id: "DeploymentNode/priv",
+          kind: "DeploymentNode",
+          name: "priv",
+          parent: "DeploymentNode/az",
+          collapsed: false,
+        },
+        {
+          id: "Component/cart",
+          kind: "Component",
+          name: "cart",
+          parent: "DeploymentNode/priv",
+          collapsed: false,
+        },
       ],
       edges: [],
     });
     const byId = new Map(view.nodes.map((n) => [n.id, n]));
-    expect(byId.get("DeploymentNode/az")?.element).toEqual({ type: "panel", panelKind: "availability-zone" });
-    expect(byId.get("DeploymentNode/priv")?.element).toEqual({ type: "panel", panelKind: "private-subnet" });
-    expect(byId.get("Component/cart")?.element).toEqual({ type: "component", technology: "NestJS" });
+    expect(byId.get("DeploymentNode/az")?.element).toEqual({
+      type: "panel",
+      panelKind: "availability-zone",
+    });
+    expect(byId.get("DeploymentNode/priv")?.element).toEqual({
+      type: "panel",
+      panelKind: "private-subnet",
+    });
+    expect(byId.get("Component/cart")?.element).toEqual({
+      type: "component",
+      technology: "NestJS",
+    });
   });
 
   it("skips boxes and lines whose manifest is not in the workspace", () => {
     const view = buildViewDiagram(workspace, {
       ...context,
-      nodes: [...context.nodes, { id: "Person/ghost", kind: "Person", name: "ghost", parent: null, collapsed: false }],
-      edges: [...context.edges, { from: "Person/ghost", to: "BoundedContext/shop", type: "calls", descriptions: [] }],
+      nodes: [
+        ...context.nodes,
+        { id: "Person/ghost", kind: "Person", name: "ghost", parent: null, collapsed: false },
+      ],
+      edges: [
+        ...context.edges,
+        { from: "Person/ghost", to: "BoundedContext/shop", type: "calls", descriptions: [] },
+      ],
     });
     expect(view.nodes.map((n) => n.id)).not.toContain("Person/ghost");
     expect(view.edges).toHaveLength(1);
@@ -118,10 +198,17 @@ describe("buildViewDiagram", () => {
   it("goes through layout and the importer graph, carrying panel kind and the linked view", () => {
     const view = buildViewDiagram(workspace, context);
     const graph = toLayoutGraph(view);
-    const boxes = new Map(graph.nodes.map((n, i) => [n.id, { x: i * 300, y: 0, width: n.width, height: n.height }]));
+    const boxes = new Map(
+      graph.nodes.map((n, i) => [n.id, { x: i * 300, y: 0, width: n.width, height: n.height }]),
+    );
     const out = toImporterGraph(placeView(view, { boxes, edgeRoutes: new Map() }));
-    expect(out.components.find((c) => c.key === "BoundedContext/shop")).toMatchObject({ type: "system", linkedView: "containers" });
-    expect(out.connections).toEqual([{ source: "Person/customer", target: "BoundedContext/shop", label: "calls" }]);
+    expect(out.components.find((c) => c.key === "BoundedContext/shop")).toMatchObject({
+      type: "system",
+      linkedView: "containers",
+    });
+    expect(out.connections).toEqual([
+      { source: "Person/customer", target: "BoundedContext/shop", label: "calls" },
+    ]);
   });
 });
 
@@ -138,15 +225,32 @@ describe("layout sidecar version 2", () => {
     expect(text.indexOf('"a"')).toBeLessThan(text.indexOf('"b"'));
     const parsed = parseLayoutFiles(text)!;
     expect(parsed.base).toBeNull();
-    expect(parsed.views.get("a")!.boxes.get("Application/web")).toEqual({ x: 99, y: 20, width: 180, height: 80 });
-    expect(parsed.views.get("b")!.boxes.get("Application/web")).toEqual({ x: 10, y: 20, width: 180, height: 80 });
-    expect(serializeLayoutFiles(new Map([...parsed.views].map(([k, v]) => [k, v.boxes])))).toBe(text);
+    expect(parsed.views.get("a")!.boxes.get("Application/web")).toEqual({
+      x: 99,
+      y: 20,
+      width: 180,
+      height: 80,
+    });
+    expect(parsed.views.get("b")!.boxes.get("Application/web")).toEqual({
+      x: 10,
+      y: 20,
+      width: 180,
+      height: 80,
+    });
+    expect(serializeLayoutFiles(new Map([...parsed.views].map(([k, v]) => [k, v.boxes])))).toBe(
+      text,
+    );
   });
 
   it("reads a version 1 file as the default diagram's layout", () => {
     const v1 = serializeLayoutFile(new Map([["Application/web", box]]));
     const parsed = parseLayoutFiles(v1)!;
-    expect(parsed.base!.boxes.get("Application/web")).toEqual({ x: 10, y: 20, width: 180, height: 80 });
+    expect(parsed.base!.boxes.get("Application/web")).toEqual({
+      x: 10,
+      y: 20,
+      width: 180,
+      height: 80,
+    });
     expect(parsed.views.size).toBe(0);
   });
 
@@ -155,7 +259,10 @@ describe("layout sidecar version 2", () => {
   });
 
   it("keeps the default diagram's boxes beside the views", () => {
-    const text = serializeLayoutFiles(new Map([["a", new Map([["Application/web", box]])]]), new Map([["Domain/d", box]]));
+    const text = serializeLayoutFiles(
+      new Map([["a", new Map([["Application/web", box]])]]),
+      new Map([["Domain/d", box]]),
+    );
     const parsed = parseLayoutFiles(text)!;
     expect(parsed.base!.boxes.get("Domain/d")).toBeDefined();
     expect(parsed.views.get("a")!.boxes.size).toBe(1);
@@ -170,7 +277,9 @@ describe("updateLayoutFile", () => {
   const boxes = (key: string) => new Map([[key, box]]);
 
   it("stays a version 1 file while there are no views", () => {
-    expect(updateLayoutFile(undefined, undefined, boxes("A/a"))).toBe(serializeLayoutFile(boxes("A/a")));
+    expect(updateLayoutFile(undefined, undefined, boxes("A/a"))).toBe(
+      serializeLayoutFile(boxes("A/a")),
+    );
   });
 
   it("adds a view without losing the default diagram's boxes", () => {
@@ -221,8 +330,20 @@ describe("buildViewDiagram for a product", () => {
       scope: "Product/acme",
       nodes: [
         { id: "Product/acme", kind: "Product", name: "acme", parent: null, collapsed: false },
-        { id: "BoundedContext/sessions", kind: "BoundedContext", name: "sessions", parent: "Product/acme", collapsed: false },
-        { id: "Application/session-api", kind: "Application", name: "session-api", parent: "BoundedContext/sessions", collapsed: false },
+        {
+          id: "BoundedContext/sessions",
+          kind: "BoundedContext",
+          name: "sessions",
+          parent: "Product/acme",
+          collapsed: false,
+        },
+        {
+          id: "Application/session-api",
+          kind: "Application",
+          name: "session-api",
+          parent: "BoundedContext/sessions",
+          collapsed: false,
+        },
       ],
       edges: [],
     });
@@ -239,7 +360,14 @@ describe("buildViewDiagram for a product", () => {
       type: "Deployment",
       scope: "Product/acme",
       nodes: [
-        { id: "APIGateway/session-gw", kind: "APIGateway", name: "session-gw", parent: null, collapsed: false, realizes: ["Application/session-api"] },
+        {
+          id: "APIGateway/session-gw",
+          kind: "APIGateway",
+          name: "session-gw",
+          parent: null,
+          collapsed: false,
+          realizes: ["Application/session-api"],
+        },
       ],
       edges: [],
     });
