@@ -53,6 +53,24 @@ describe("buildReactFlowShellProps", () => {
     expect(open.maxZoom).toBe(CANVAS_MAX_ZOOM);
   });
 
+  it("left-drag on the empty canvas draws a marquee; pan stays on Space / middle / right (audit C4)", () => {
+    const mouse = buildReactFlowShellProps(writePolicy(true), {
+      inputProfile: { isTouchDevice: false, isCoarsePointer: false, prefersTouchCanvasUi: false },
+    });
+    expect(mouse.selectionOnDrag).toBe(true);
+    expect(mouse.panOnDrag).toEqual([1, 2]);
+    expect(mouse.panOnDrag).not.toContain(0);
+    expect(mouse.panActivationKeyCode).toBe("Space");
+    // Shift stays a multi-select modifier; React Flow's Shift = selection mode is off.
+    expect(mouse.selectionKeyCode).toBeNull();
+
+    const touch = buildReactFlowShellProps(writePolicy(true), {
+      inputProfile: { isTouchDevice: true, isCoarsePointer: true, prefersTouchCanvasUi: true },
+    });
+    expect(touch.selectionOnDrag).toBe(false);
+    expect(touch.panOnDrag).toBe(true);
+  });
+
   it("hands React Flow the same fitViewOptions object on every render (audit R8)", () => {
     // React Flow writes the prop into the store slot where a pending `fitView(options)` waits
     // for the nodes to be measured; a new object per render overwrote those options.

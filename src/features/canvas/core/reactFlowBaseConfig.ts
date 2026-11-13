@@ -33,7 +33,12 @@ export const FIT_VIEW_OPTIONS_READ: { readonly padding: number } = Object.freeze
   padding: FIT_VIEW_READING_PADDING,
 });
 
-/** Middle + right button pan (draw.io-style). Left button selects / marquees. */
+/**
+ * Middle + right button pan (draw.io-style). Left button selects / marquees: a
+ * left-drag on the empty canvas draws a selection box (`selectionOnDrag`), as in
+ * draw.io, Figma and Excalidraw. Product decision C4 (2026-11-13) keeps it that way;
+ * the audit's "drag on empty canvas does nothing" was a box that covered no element.
+ */
 export const PAN_ON_DRAG_MOUSE: [number, number] = [1, 2];
 
 export const MULTI_SELECTION_KEY_CODES = ["Meta", "Control", "Shift"] as const;
