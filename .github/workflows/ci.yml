@@ -419,7 +419,7 @@ jobs:
     env:
       # opscr is not on npm yet: it comes from its private repository, at the commit these were
       # built against. Without the token (a fork's pull request) the job only says so.
-      OPSCR_REF: 34c90119e520975a3147b78170f9d651aebe6f61
+      OPSCR_REF: 24a934b33bd0d0941d1f3220830c71006c2b374f
       HAS_OPSCR: ${{ secrets.OPSCR_REPO_TOKEN != '' }}
     steps:
       - name: No opscr token
