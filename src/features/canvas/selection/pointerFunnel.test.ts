@@ -119,6 +119,46 @@ describe("selection/pointerFunnel", () => {
     expect(targets.length).toBe(5);
   });
 
+  describe("a click inside a panel body (decision #1)", () => {
+    function at(el: HTMLElement, type: string) {
+      el.dispatchEvent(
+        new MouseEvent(type, {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          clientX: 40,
+          clientY: 40,
+        }),
+      );
+    }
+
+    it("clears the selection even after PanelNode forwards the press to the pane", () => {
+      let cleared = 0;
+      renderHook(() =>
+        usePointerFunnel({ openContextMenu: () => {}, onBackgroundClick: () => (cleared += 1) }),
+      );
+      const pane = document.createElement("div");
+      pane.className = "react-flow__pane";
+      const panel = mountNodeFixture("panel");
+      const body = document.createElement("div");
+      body.className = "panel-body";
+      panel.appendChild(body);
+      document.body.appendChild(pane);
+      try {
+        at(body, "pointerdown");
+        // PanelNode's copy, so React Flow arms its marquee (same coordinates).
+        at(pane, "pointerdown");
+        at(body, "mousedown");
+        at(body, "pointerup");
+        at(body, "mouseup");
+        expect(cleared).toBe(1);
+      } finally {
+        panel.remove();
+        pane.remove();
+      }
+    });
+  });
+
   describe("a real browser's press: pointerdown, then its compatibility mousedown", () => {
     function press(el: HTMLElement, type: "pointerdown" | "mousedown" | "pointerup" | "mouseup") {
       el.dispatchEvent(

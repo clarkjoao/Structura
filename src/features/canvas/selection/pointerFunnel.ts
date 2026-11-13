@@ -222,19 +222,26 @@ export function usePointerFunnel(params: {
 
     const onPointerDown = (event: PointerEvent | MouseEvent) => {
       const seen = pressSeenAsPointerRef.current;
+      const samePress =
+        seen !== null &&
+        seen.button === event.button &&
+        // Pointer coordinates are fractional; the mouse event's are whole pixels.
+        Math.abs(seen.x - event.clientX) < 1 &&
+        Math.abs(seen.y - event.clientY) < 1;
       if (event.type === "pointerdown") {
+        // A second `pointerdown` before the press ends is the copy `PanelNode`
+        // dispatches on the pane so React Flow arms its marquee. It is the same
+        // press: taken as a new one, its `pane` target replaced the panel body's
+        // and a click inside the panel no longer cleared the selection (decision
+        // #1), which the compatibility `mousedown` used to paper over by
+        // re-resolving the press before it was deduplicated.
+        if (samePress) return;
         pressSeenAsPointerRef.current = {
           button: event.button,
           x: event.clientX,
           y: event.clientY,
         };
-      } else if (
-        seen &&
-        seen.button === event.button &&
-        // Pointer coordinates are fractional; the mouse event's are whole pixels.
-        Math.abs(seen.x - event.clientX) < 1 &&
-        Math.abs(seen.y - event.clientY) < 1
-      ) {
+      } else if (samePress) {
         pressSeenAsPointerRef.current = null;
         return;
       }
