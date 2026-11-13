@@ -16,6 +16,8 @@ import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MIGRATED_MARKER, STORE_KEY, savedWorkspace } from "./workspace.mjs";
+import { zoomUntilFull } from "./canvas.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(here, "../../..");
@@ -91,8 +93,10 @@ page.on("pageerror", (e) => {
 page.on("console", (m) => m.type() === "error" && console.log(`console: ${m.text()}`));
 
 await page.addInitScript(
-  ([storeKey, payload, files]) => {
-    if (!localStorage.getItem(storeKey)) localStorage.setItem(storeKey, payload);
+  ([storeKey, migratedMarker, payload, files]) => {
+    // Once: the app moves the seed into IndexedDB and removes it here, and must not get it again.
+    if (!localStorage.getItem(storeKey) && !localStorage.getItem(migratedMarker))
+      localStorage.setItem(storeKey, payload);
     window.showDirectoryPicker = async () => {
       const root = await navigator.storage.getDirectory();
       const dir = await root.getDirectoryHandle("opscr-product", { create: true });
@@ -115,7 +119,7 @@ await page.addInitScript(
       return dir;
     };
   },
-  ["structura_diagram-store", seed, SAMPLE],
+  [STORE_KEY, MIGRATED_MARKER, seed, SAMPLE],
 );
 
 /** Every file of the folder, by path. */
@@ -144,35 +148,29 @@ const changedInitiativeFiles = async () => {
 const changedInitiative = async () =>
   (await changedInitiativeFiles()).filter((p) => !p.endsWith("/opscr.layout.json"));
 /** A diagram as stored, with the Version keyed `key` applied (what the canvas shows). */
-const stored = (id, key) =>
-  page.evaluate(
-    ([id, key]) => {
-      const d = JSON.parse(localStorage.getItem("structura_diagram-store")).state.diagrams[id];
-      if (!d) return null;
-      const v = key && Object.values(d.versions ?? {}).find((x) => x.key === key);
-      const components = { ...d.snapshot.components };
-      const connections = { ...d.snapshot.connections };
-      if (v) {
-        for (const id of v.removedComponentIds ?? []) delete components[id];
-        for (const id of v.removedConnectionIds ?? []) delete connections[id];
-        Object.assign(components, v.modifiedComponents ?? {}, v.addedComponents ?? {});
-        Object.assign(connections, v.modifiedConnections ?? {}, v.addedConnections ?? {});
-      }
-      const name = (cid) => components[cid]?.name ?? `?${cid}`;
-      return {
-        name: d.name,
-        components: Object.values(components).map((c) => ({
-          name: c.name,
-          link: c.linkedDiagramId ?? null,
-        })),
-        connections: Object.values(connections).map(
-          (c) => `${name(c.sourceId)}->${name(c.targetId)}`,
-        ),
-        version: v ? { copies: Object.keys(v.baseHashes ?? {}).length } : null,
-      };
-    },
-    [id, key],
-  );
+const stored = async (id, key) => {
+  const d = (await savedWorkspace(page))?.diagrams[id];
+  if (!d) return null;
+  const v = key && Object.values(d.versions ?? {}).find((x) => x.key === key);
+  const components = { ...d.snapshot.components };
+  const connections = { ...d.snapshot.connections };
+  if (v) {
+    for (const id of v.removedComponentIds ?? []) delete components[id];
+    for (const id of v.removedConnectionIds ?? []) delete connections[id];
+    Object.assign(components, v.modifiedComponents ?? {}, v.addedComponents ?? {});
+    Object.assign(connections, v.modifiedConnections ?? {}, v.addedConnections ?? {});
+  }
+  const name = (cid) => components[cid]?.name ?? `?${cid}`;
+  return {
+    name: d.name,
+    components: Object.values(components).map((c) => ({
+      name: c.name,
+      link: c.linkedDiagramId ?? null,
+    })),
+    connections: Object.values(connections).map((c) => `${name(c.sourceId)}->${name(c.targetId)}`),
+    version: v ? { copies: Object.keys(v.baseHashes ?? {}).length } : null,
+  };
+};
 const settle = () => page.waitForTimeout(2500);
 /** Shows a Version (or the base) from the Versions panel — where initiatives are picked. */
 const pickVersion = async (label) => {
@@ -415,15 +413,11 @@ await page
   .check();
 await settle();
 await settle();
-const diagrams = await page.evaluate(() =>
-  Object.values(JSON.parse(localStorage.getItem("structura_diagram-store")).state.diagrams).map(
-    (d) => ({
-      id: d.id,
-      name: d.name,
-      versions: Object.values(d.versions ?? {}).map((v) => v.key),
-    }),
-  ),
-);
+const diagrams = Object.values((await savedWorkspace(page)).diagrams).map((d) => ({
+  id: d.id,
+  name: d.name,
+  versions: Object.values(d.versions ?? {}).map((v) => v.key),
+}));
 const views = diagrams.filter((d) => d.id !== DIAGRAM);
 await check(views.length === 4, `a diagram for each of the 4 views (${views.length})`);
 const idOf = (name) => views.find((d) => d.name === name)?.id;
@@ -468,11 +462,10 @@ await check(
 await page.goto(`http://localhost:${PORT}/model/${idOf("Web shop — containers")}`);
 await page.waitForSelector(".react-flow__viewport", { timeout: 30000 });
 await settle();
-const activeKey = (id) =>
-  page.evaluate((id) => {
-    const d = JSON.parse(localStorage.getItem("structura_diagram-store")).state.diagrams[id];
-    return d.activeVersionId ? (d.versions[d.activeVersionId]?.key ?? null) : null;
-  }, id);
+const activeKey = async (id) => {
+  const d = (await savedWorkspace(page)).diagrams[id];
+  return d.activeVersionId ? (d.versions[d.activeVersionId]?.key ?? null) : null;
+};
 await pickVersion("Order events");
 await page.screenshot({ path: join(OUT, "initiatives-4-containers.png") });
 await check(
@@ -484,9 +477,9 @@ await check(
   containerOverlaps.length === 0,
   `in the container diagram too, the new elements overlap nothing (${containerOverlaps.join("; ")})`,
 );
-await page
-  .locator(".react-flow__node", { hasText: "orders-api" })
-  .first()
+const ordersApi = page.locator(".react-flow__node", { hasText: "orders-api" }).first();
+await zoomUntilFull(page, ordersApi);
+await ordersApi
   .getByRole("button", { name: /Drill into/i })
   .first()
   .click();

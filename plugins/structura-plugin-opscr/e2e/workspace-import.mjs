@@ -16,6 +16,7 @@ import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MIGRATED_MARKER, STORE_KEY, savedWorkspace } from "./workspace.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(here, "../../..");
@@ -76,8 +77,10 @@ page.on("pageerror", (e) => {
 page.on("console", (m) => m.type() === "error" && console.log(`console: ${m.text()}`));
 
 await page.addInitScript(
-  ([storeKey, payload, files]) => {
-    if (!localStorage.getItem(storeKey)) localStorage.setItem(storeKey, payload);
+  ([storeKey, migratedMarker, payload, files]) => {
+    // Once: the app moves the seed into IndexedDB and removes it here, and must not get it again.
+    if (!localStorage.getItem(storeKey) && !localStorage.getItem(migratedMarker))
+      localStorage.setItem(storeKey, payload);
     window.showDirectoryPicker = async () => {
       const root = await navigator.storage.getDirectory();
       const dir = await root.getDirectoryHandle("opscr-product", { create: true });
@@ -100,12 +103,11 @@ await page.addInitScript(
       return dir;
     };
   },
-  ["structura_diagram-store", seed, SAMPLE],
+  [STORE_KEY, MIGRATED_MARKER, seed, SAMPLE],
 );
 
 const settle = () => page.waitForTimeout(2500);
-const store = () =>
-  page.evaluate(() => JSON.parse(localStorage.getItem("structura_diagram-store")).state);
+const store = () => savedWorkspace(page);
 const importFolder = async () => {
   await page.goto(`http://localhost:${PORT}/workspace`);
   await page.getByRole("button", { name: /^(Import|Importar)$/ }).click();

@@ -15,6 +15,7 @@ import { mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MIGRATED_MARKER, STORE_KEY, savedWorkspace } from "./workspace.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(here, "../../..");
@@ -117,8 +118,10 @@ page.on("pageerror", (e) => {
 page.on("console", (m) => m.type() === "error" && console.log(`console: ${m.text()}`));
 
 await page.addInitScript(
-  ([storeKey, payload, files]) => {
-    if (!localStorage.getItem(storeKey)) localStorage.setItem(storeKey, payload);
+  ([storeKey, migratedMarker, payload, files]) => {
+    // Once: the app moves the seed into IndexedDB and removes it here, and must not get it again.
+    if (!localStorage.getItem(storeKey) && !localStorage.getItem(migratedMarker))
+      localStorage.setItem(storeKey, payload);
     // A chat connection whose endpoint the test answers (see the chat step).
     localStorage.setItem(
       "structura:llm:connections",
@@ -153,7 +156,7 @@ await page.addInitScript(
       return dir;
     };
   },
-  ["structura_diagram-store", seed, SAMPLE],
+  [STORE_KEY, MIGRATED_MARKER, seed, SAMPLE],
 );
 
 const nodes = () => page.locator(".react-flow__node").count();
@@ -272,11 +275,7 @@ await check((await nodes()) === whole, "the whole workspace is back");
 
 // A diagram of its own for each view (plugin API 1.13): switched on in the pane, the four diagrams
 // appear in the app, each drawn from its view, and a box that opens another view opens its diagram.
-const storedDiagrams = () =>
-  page.evaluate(() => {
-    const raw = localStorage.getItem("structura_diagram-store");
-    return raw ? Object.values(JSON.parse(raw).state.diagrams) : [];
-  });
+const storedDiagrams = async () => Object.values((await savedWorkspace(page))?.diagrams ?? {});
 await page.getByLabel(/A Structura diagram for each view/).check();
 const deadline = Date.now() + 30000;
 let made = [];
