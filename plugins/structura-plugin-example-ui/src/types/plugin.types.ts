@@ -10,6 +10,14 @@ import type { ComponentType as ReactComponentType } from "react";
 import type { NodeTypes } from "@xyflow/react";
 
 /**
+ * React component contract for a registered diagram node type. Spelled out from
+ * `@xyflow/react` because this file is copied verbatim into every plugin
+ * (`sync-types`): an `@/` import resolves only inside the host, so the copy did not
+ * type-check.
+ */
+type DiagramNodeComponent = NodeTypes[string];
+
+/**
  * Public surface of the Structura plugin system (RFC:
  * openspec/changes/archive/2026-07-03-add-plugin-system-foundation/design.md).
  * Everything in this file is an API contract versioned by STRUCTURA_PLUGIN_API_VERSION —
@@ -185,7 +193,12 @@ export interface ExporterContribution {
   export(diagram: DiagramSnapshot): string | Promise<string>;
 }
 
-export type PluginPanelSlot = "element-inspector" | "service-registry-import" | "canvas-toolbar";
+export type PluginPanelSlot =
+  | "element-inspector"
+  | "services-import"
+  /** @deprecated Prefer `services-import`. Accepted for one release. */
+  | "service-registry-import"
+  | "canvas-toolbar";
 
 /**
  * Context handed to every plugin panel, whatever slot it fills. v1.2 unified the former
@@ -196,7 +209,7 @@ export type PluginPanelSlot = "element-inspector" | "service-registry-import" | 
 export interface PluginPanelContext {
   /** Read-only snapshot of the current selection (element-inspector slot; [] elsewhere). */
   selection: readonly PluginComponentSnapshot[];
-  /** Read-only snapshot of the service being viewed (service-registry slot; null elsewhere). */
+  /** Read-only snapshot of the service being viewed (services-import slot; null elsewhere). */
   service: PluginServiceSnapshot | null;
   /** Sanctioned mutations — routed through store actions, pushHistory included. */
   updateComponent(id: string, patch: PluginComponentPatch): void;
@@ -270,8 +283,8 @@ export interface PluginNodeTypeDescriptor {
    * so plugin types can never collide with built-ins or other plugins.
    */
   rfType: string;
-  /** React component rendered for the node (same contract as NodeTypes[string]). */
-  component: NodeTypes[string];
+  /** React component rendered for the node (canvas node-type contract). */
+  component: DiagramNodeComponent;
   /** Domain component type this descriptor matches, namespaced the same way. */
   componentType: string;
   zIndex?: number;

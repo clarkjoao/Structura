@@ -7,7 +7,15 @@
  */
 
 import type { ComponentType as ReactComponentType } from "react";
-import type { DiagramNodeComponent } from "@/features/canvas";
+import type { NodeTypes } from "@xyflow/react";
+
+/**
+ * React component contract for a registered diagram node type. Spelled out from
+ * `@xyflow/react` because this file is copied verbatim into every plugin
+ * (`sync-types`): an `@/` import resolves only inside the host, so the copy did not
+ * type-check.
+ */
+type DiagramNodeComponent = NodeTypes[string];
 
 /**
  * Public surface of the Structura plugin system (RFC:

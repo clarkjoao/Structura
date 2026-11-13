@@ -66,7 +66,6 @@ export type {
   DiagramSurfaceKind,
   DiagramFlowInstance,
   DiagramNode,
-  DiagramNodeComponent,
   DiagramNodeTypes,
   ReadDiagramReading,
   ReadDiagramRoutePlay,
