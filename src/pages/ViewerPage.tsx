@@ -6,6 +6,7 @@ import type { Diagram, ReaderCatalog } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import { ViewerCanvas, useStoreReaderCatalog } from "@/features/viewer";
 import { useStructuraFile } from "@/features/viewer/hooks/useStructuraFile";
+import { EMBED_ALLOWED_ORIGINS, acceptsEmbedMessage } from "@/features/viewer/embedMessageGuard";
 import { getFlowParamFromUrl, getViewerPayloadFromHash, splitSharedPayload } from "@/lib/share-url";
 
 /**
@@ -180,6 +181,15 @@ function HandedOverDiagram() {
 
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type !== "STRUCTURA_LOAD") return;
+      if (
+        !acceptsEmbedMessage(event, {
+          self: window,
+          parent: window.parent,
+          allowedOrigins: EMBED_ALLOWED_ORIGINS,
+        })
+      ) {
+        return;
+      }
 
       const json = event.data.diagram;
       const replyOrigin = event.origin && event.origin !== "null" ? event.origin : "*";

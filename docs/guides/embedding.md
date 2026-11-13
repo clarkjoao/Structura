@@ -28,6 +28,11 @@ once it is listening, and accepts a `STRUCTURA_LOAD` message carrying a diagram 
 **Export → JSON**. It answers with `STRUCTURA_LOADED` (`success: true`, or `success: false` and an
 `error` message when the payload is not a valid diagram).
 
+Only the page that embeds the viewer can load a diagram into it: a `STRUCTURA_LOAD` from any other
+window (another frame, a popup opener) is ignored, and so is any message when `/viewer` is open
+outside a frame. Any origin may embed by default; a self-hosted build can restrict that (see
+below).
+
 ```html
 <iframe id="structura" src="https://structur.dev/viewer" width="100%" height="500"></iframe>
 <script>
@@ -81,3 +86,11 @@ embedded payload) to open the diagram with one of its flows ready to play.
 
 Replace `https://structur.dev` with the origin where you deploy `dist/`. The viewer is part of
 the same build; there is no separate artifact.
+
+To accept `STRUCTURA_LOAD` only from known sites, list their origins at build time:
+
+```sh
+VITE_EMBED_ALLOWED_ORIGINS="https://docs.example.com,https://wiki.example.com" npm run build
+```
+
+Messages from any other origin are ignored. The `#data=` URL embed is not affected.
