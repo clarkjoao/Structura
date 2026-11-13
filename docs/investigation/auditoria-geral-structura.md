@@ -803,3 +803,26 @@ Calibração do R3 (mediana de 3 execuções; fixture 657 nós):
 - `HIPÓTESE`: a desaceleração de CPU no Apple Silicon não reproduz GPU, disco nem a variância de um runner compartilhado. Apertar os tetos a partir do artefato `perf-large-report` das primeiras execuções reais.
 - `LIDO`: com os seeds fora do estado inicial, `getState()` antes da hidratação mostra workspace vazio em vez dos seeds. A app só renderiza depois de `diagramStoreHydrated`, e os testes que criam stores próprios nunca dependeram dos seeds (suíte verde).
 - `LIDO`: D1 vale para cards com `zIndex` ≥ 1. Rótulos continuam acima de divisores de fluxo e legenda (`zIndex` 0); texto livre (`zIndex` 2) continua acima dos rótulos.
+
+### 9.10 E2E, plugins, relays e extensão (2026-11-13, sobre `feat/audit-fixes` @ `eb73db03`)
+
+Tudo `MEDIDO`, build de produção (`vite preview`), Cypress 15 em Electron (Chrome nos specs de colaboração).
+
+| Alvo | Resultado |
+| --- | --- |
+| Cypress, 11 specs sem relay | **143/150** passam, 1 pendente. As 6 falhas são os dois specs de paridade editor/viewer, idênticas em `main` (`60d51ec2`) e na base `84f6d014`: pré-existentes. |
+| Cypress, colaboração | `collab-cursors` e `collab-load` 5/5 contra o relay TypeScript (memória) e 5/5 contra o relay Go (memória). |
+| `server/` | build OK, 119 testes passam. |
+| `go-server/` | `go build ./...` e `go vet ./...` limpos, 280 testes passam. |
+| Plugins | `leanix` e `example-ui`: typecheck e build OK depois da correção abaixo; `build:plugins` com os dois embutidos OK, ambos ativam no app sem erro. Exemplos JS sem build: sintaxe OK. |
+| Extensão VSCode (`feat/vscode-opscr-editor` @ `56ab55f2`, outro branch) | `build:embed`, typecheck, 14/14 testes, `.vsix` 3,3 MB e e2e num VSCode real (23/23 elementos desenhados, Problems, navegação) — **contra o opscr anterior a `740227a`**. Contra o checkout atual do opscr (`feat/product-workspace`), 1 teste falha: a extensão ainda espera `ApplicationService`, que o opscr renomeou para `BoundedContext`. |
+
+**Regressão encontrada e corrigida — clique no interior de um painel não limpava a seleção.** 3 testes (`panel-hit-geometry` ×2, `selection-behavior-matrix` ×1) falhavam na branch e passavam na base. Bisect: `a9b5bdf1` ("a Shift/Cmd click toggles its node exactly once"). Causa: o `PanelNode` redespacha o `pointerdown` no pane para armar o marquee do React Flow; o funil tratava a cópia como um press novo, com alvo `pane`, e no `pointerup` não chamava o clique de fundo (decisão #1). Antes do `a9b5bdf1`, o `mousedown` de compatibilidade re-resolvia o alvo e escondia o problema; com a deduplicação, deixou de esconder. Num navegador real o React Flow ainda limpava pela captura de ponteiro, então o efeito visível era só em eventos sem captura (Cypress, eventos sintéticos), mas o caminho da decisão #1 estava contornado. Correção em `pointerFunnel.ts`: um segundo `pointerdown` com o mesmo botão e coordenadas antes do fim do press é o mesmo press. Teste de unidade novo falha sem a correção; os 3 testes Cypress voltam a passar.
+
+**Defeito pré-existente corrigido — contrato de plugins não compilava nos plugins.** `src/features/plugins/plugin.types.ts` importava `DiagramNodeComponent` de `@/features/canvas` (desde #226); a cópia sincronizada em cada plugin não resolve `@/`, e o typecheck do `leanix` falhava. O tipo agora é declarado no contrato a partir de `@xyflow/react` (import só de tipo, dependência que os plugins já têm); o `DiagramNodeComponent` do canvas ficou sem uso e saiu (`fallow`). A cópia do `example-ui` estava desatualizada porque `plugins:sync-check` só verificava o `leanix`; agora verifica os dois.
+
+Gates depois das correções: `typecheck` OK · `lint` 0 erros, 7 avisos · `format:check` OK · `fallow:check` OK · `vitest run` 480 arquivos, 4578 testes · `npm run build` OK.
+
+Riscos:
+- `LIDO`: o contrato de plugins passa a importar `@xyflow/react` fora de `features/canvas`, contra a intenção do ADR-0001 registrada em `DiagramFlowProvider.ts`. Outras features (`viewer`, `elements`, `collaboration`) já fazem o mesmo; a alternativa sem React Flow seria um `ComponentType` sem tipagem de props.
+- `HIPÓTESE`: as falhas de paridade (no editor os cards medem menos que a caixa do layout, ex. 87 vs 120 de altura) são uma divergência de medição real entre editor e viewer, não ruído; não investigadas aqui.
