@@ -769,3 +769,37 @@ O mesmo na volta a nada selecionado (Escape). O `3f21974b` sozinho **não** mudo
 - `HIPÓTESE`: o recálculo de 120 ms cai num frame só; num diagrama com muitos cruzamentos ele pode ser um frame longo a cada intervalo (não visto a 1000).
 - `LIDO`: `stableNodeLists` é indexado pelo registro do componente (`WeakMap`); se a projeção passar a clonar componentes a cada build, a identidade das listas volta a mudar (os testes do builder pegam a regressão só no builder, não na projeção).
 - `LIDO`: o slot `onStartEdit` é uma função vazia até o renderizador montar; antes era `undefined`. O único leitor (`useCanvasEventHandlers`, duplo clique no JSON viewer) chama `startEdit?.()`, então o comportamento é o mesmo.
+
+### 9.9 Decisões D1, D4, C4 e backlog R3, R5 (2026-11-13, sobre `feat/audit-fixes` @ `250d4686`)
+
+Decisões de produto delegadas pelo dono do produto ("resolva"); a escolha e o motivo de cada uma ficam aqui. Tudo medido com build de produção (`vite preview`), Chromium headless 1600×1000, fixture de 657 nós.
+
+| Item | Decisão | O que mudou | Evidência |
+| --- | --- | --- | --- |
+| D1 rótulos sobre nós vs. Shift-click | **Rótulos abaixo dos cards.** O alvo do clique é o card; o rótulo fica no meio da aresta, entre os nós, e só cobre um card quando é revelado pela seleção de um vizinho em zoom distante. | `EdgeLabel` com `zIndex` 1 (`EDGE_LABEL_Z_INDEX`) em vez de `z-[2]`. O React Flow desenha a camada de rótulos depois das arestas e antes dos nós, então no `zIndex` 1 dos cards a ordem do DOM decide e o card ganha; o rótulo continua acima das arestas, divisores e legenda (0). Não mudei o modelo de seleção: ele guarda uma aresta só, e Shift na aresta sem limpar nós seria seleção mista. | `MEDIDO`: rótulo revelado movido para o centro de um card de `zIndex` 1, 10 amostras — antes o rótulo recebe o ponto 4/10, depois 0/10 (as outras amostras caem fora do card pelo deslocamento com escala, nos dois builds). Teste: `EdgeLabel.stacking.test.tsx` liga a constante aos `zIndex` padrão dos elementos. |
+| D4 origem do `postMessage` do embed | **Origem aberta por padrão, remetente fechado.** Embutir em qualquer site é o produto (docs, wiki, Docusaurus); uma allowlist fixa quebraria isso. O que se fecha é quem pode postar: só a janela que embute o viewer. Self-host pode fechar a origem com `VITE_EMBED_ALLOWED_ORIGINS`. | `features/viewer/embedMessageGuard.ts`: `STRUCTURA_LOAD` é ignorado se `event.source` não é `window.parent`, se o viewer não está num frame, ou se a origem não está na lista (quando há lista). `docs/guides/embedding.md` e `.env.example` documentam. O payload já era validado e o SVG sanitizado; o viewer não escreve no store. | `MEDIDO`: página em `127.0.0.1` embutindo `localhost:4173/viewer` recebe `STRUCTURA_READY` e `STRUCTURA_LOADED`. Testes: guarda (4 casos + parser) e `ViewerPage.unified.test.tsx` com frame simulado; o teste de remetente estranho falha sem a guarda (verificado). |
+| C4 arrastar no canvas vazio | **Manter o marquee.** Botão esquerdo no vazio desenha a caixa de seleção (como draw.io, Figma, Excalidraw); pan fica em Space, botão do meio e direito. | Nada no comportamento: já era `selectionOnDrag` para mouse em `main` e na branch. O achado "não faz nada" da seção 7 era uma caixa que não cobria nenhum elemento. Teste em `reactFlowBaseConfig.test.ts` fixa a configuração; comentário registra a decisão. | `MEDIDO`: arraste esquerdo a partir do pane vazio mostra `.react-flow__selection`, seleciona 3 nós, viewport inalterado. |
+| R5 seeds sob demanda | Seeds só para workspace sem nada salvo. | Os slices começam vazios. `createPersistConfig` recebe `loadFreshWorkspace`; quando a leitura do workspace volta vazia, o `import()` de `fixtures/seeds` roda e o `merge` aplica os seeds. O `merge` usa o `set` cru do zustand: os seeds aparecem e não são escritos até a primeira edição, como antes. Workspace salvo (mesmo vazio, depois de o usuário apagar tudo) nunca busca o chunk. Falha do chunk abre workspace vazio com `console.error`. `VITE_DISABLE_SEEDS=true` nem referencia o loader. | `MEDIDO`: conjunto do boot (entrada + `modulepreload` + CSS do `index.html`, gzip -9) **484,6 → 462,2 kB**; chunk `seeds` 23 kB gzip fora do boot. Visita nova pede o chunk 1 vez e mostra o PixLedger; recarga com workspace salvo não pede. A meta de 450 kB **não** fecha (faltam ~12 kB). Testes: `persist.fresh-workspace.test.ts` (3 casos). |
+| R3 calibrar `perf-large` | Tetos recalibrados com CPU desacelerada como substituto do runner; **e um defeito no harness que deixava o job vermelho**. | **Defeito**: desde o R8 a abertura centraliza o canvas (zoom 0,30), e os nós que o harness arrasta ficavam fora da tela — `dragChild`, `dragPanel` e `nudge` davam `moved: false` em `250d4686` sem nenhuma mudança minha (`MEDIDO`), então o job falharia em todo PR. `bringOnScreen` panoramiza com a roda até o alvo ficar no canvas antes de cada cenário. Novo `PERF_CPU_THROTTLE` no harness (CDP `Emulation.setCPUThrottlingRate`). `budgets.json` com os números e o critério na nota. | `MEDIDO`, mediana de 3 por linha, tabela abaixo. Os tetos antigos falhavam a 3× (nudge 1302 > 1200) e ficavam no limite em pan/zoom (7 e 8 de 8). Os novos passam a 1× e 4× e falham a 6×, e continuam abaixo da regressão histórica (dragPanel 38 long tasks / 2585 ms sem desaceleração). **Não rodado num runner do GitHub** — exige push. |
+
+Calibração do R3 (mediana de 3 execuções; fixture 657 nós):
+
+| Métrica | 1× | 3× | 4× | 6× | Teto antigo | Teto novo |
+| --- | --- | --- | --- | --- | --- | --- |
+| `open.firstNodesMs` | 1501 | 3023 | 3890 | 5442 | 10000 | 10000 |
+| `dragPanel.longTasks` / `longTaskMs` | 1 / 87 | 3 / 440 | 9 / 867 | 43 / 3850 | 15 / 1200 | 20 / 1800 |
+| `dragChild.longTasks` / `longTaskMs` | 1 / 90 | 3 / 434 | 4 / 613 | 7 / 1202 | 15 / 1200 | 15 / 1200 |
+| `nudge.longTaskMs` | 0 | 1302 | 1768 | 2710 | 1200 | 3000 |
+| `pan.longTasks` | 0 | 7 | 12 | 58 | 8 | 20 |
+| `zoom.longTasks` | 1 | 8 | 12 | 13 | 8 | 20 |
+
+#### Gates (MEDIDO)
+
+`typecheck` OK · `lint` 0 erros, 7 avisos (os mesmos da base) · `format:check` OK · `fallow:check` OK · `vitest run`: 480 arquivos, **4577 testes, todos passam** · `npm run build` OK.
+
+#### Riscos
+
+- `LIDO`: rodar a suíte inteira regenera `src/fixtures/seeds/pixledger/layouts.generated.ts` (`generate-layouts.test.ts` escreve o arquivo). Revertido aqui, como na fatia layout-d3; quem rodar a suíte antes de commitar precisa descartar ou decidir regenerar os seeds.
+- `HIPÓTESE`: a desaceleração de CPU no Apple Silicon não reproduz GPU, disco nem a variância de um runner compartilhado. Apertar os tetos a partir do artefato `perf-large-report` das primeiras execuções reais.
+- `LIDO`: com os seeds fora do estado inicial, `getState()` antes da hidratação mostra workspace vazio em vez dos seeds. A app só renderiza depois de `diagramStoreHydrated`, e os testes que criam stores próprios nunca dependeram dos seeds (suíte verde).
+- `LIDO`: D1 vale para cards com `zIndex` ≥ 1. Rótulos continuam acima de divisores de fluxo e legenda (`zIndex` 0); texto livre (`zIndex` 2) continua acima dos rótulos.
