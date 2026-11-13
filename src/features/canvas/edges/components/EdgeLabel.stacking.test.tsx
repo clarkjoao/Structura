@@ -29,8 +29,8 @@ describe("edge label stacking", () => {
     for (const z of cardLevels) expect(EDGE_LABEL_Z_INDEX).toBeLessThanOrEqual(z);
   });
 
-  it("renders the label with that stacking", () => {
-    const { container } = render(
+  function renderLabel(canDrag: boolean) {
+    return render(
       <EdgeLabelPortalProvider>
         <Host />
         <EdgeLabel
@@ -40,16 +40,28 @@ describe("edge label stacking", () => {
           dragPath={null}
           labelPosition={0.5}
           connectionId="c1"
-          canDrag={false}
+          canDrag={canDrag}
           onDragStart={() => {}}
           onDragMove={() => {}}
           onDragEnd={() => {}}
         />
       </EdgeLabelPortalProvider>,
     );
+  }
+
+  it("renders the label with that stacking", () => {
+    const { container } = renderLabel(false);
     const label = container.querySelector<HTMLElement>("[data-edge-label]");
     expect(label).not.toBeNull();
     expect(label!.style.zIndex).toBe(String(EDGE_LABEL_Z_INDEX));
     expect(label!.className).not.toMatch(/\bz-\[/);
+    expect(label!.className).not.toContain("cursor-grab");
+  });
+
+  it("keeps the same stacking when the label can be dragged, with a grab cursor", () => {
+    const { container } = renderLabel(true);
+    const label = container.querySelector<HTMLElement>("[data-edge-label]");
+    expect(label!.style.zIndex).toBe(String(EDGE_LABEL_Z_INDEX));
+    expect(label!.className).toContain("cursor-grab");
   });
 });
