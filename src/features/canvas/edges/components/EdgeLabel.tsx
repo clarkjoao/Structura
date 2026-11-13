@@ -2,6 +2,18 @@ import { useTranslation } from "react-i18next";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { EdgeLabelPortal } from "../EdgeLabelPortal";
 
+/**
+ * Stacking of an edge label, inside the viewport's stacking context.
+ *
+ * Labels sit above edges and below elements (audit D1). React Flow renders the
+ * label layer after the edges and before the nodes, so at the cards' default
+ * `zIndex` of 1 the DOM order decides: the card wins. At 2, a label that overlapped a
+ * card (most often one revealed by selecting a neighbour at far zoom) took the
+ * click meant for the card, so a Shift-click selected the edge and cleared the
+ * node selection instead of adding the card.
+ */
+export const EDGE_LABEL_Z_INDEX = 1;
+
 export interface EdgeLabelProps {
   labelPoint: { x: number; y: number };
   label: string;
@@ -45,7 +57,7 @@ export function EdgeLabel({
   return (
     <EdgeLabelPortal>
       <div
-        className={`nodrag nopan absolute z-[2] pointer-events-auto ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`nodrag nopan absolute pointer-events-auto ${canDrag ? "cursor-grab active:cursor-grabbing" : ""}`}
         data-edge-label=""
         data-revealed={revealed ? "true" : undefined}
         data-connection-id={connectionId}
@@ -56,6 +68,7 @@ export function EdgeLabel({
         onPointerUp={onDragEnd}
         onPointerCancel={onDragEnd}
         style={{
+          zIndex: EDGE_LABEL_Z_INDEX,
           transform: `translate(-50%, -50%) translate(${labelPoint.x}px, ${labelPoint.y}px) scale(var(--edge-label-scale, 1))`,
         }}
       >
