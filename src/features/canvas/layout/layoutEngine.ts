@@ -8,6 +8,8 @@ import {
 } from "@/features/diagram/model/layout-settings";
 import { readLaidOutGraph } from "./layoutReadability";
 import { readElkHandleOrder } from "./elkHandleOrder";
+import { runElk } from "./elkRunner";
+import { orderLayoutGraph } from "./layoutOrder";
 import type {
   LayoutBox,
   LayoutEdge,
@@ -184,30 +186,6 @@ export function layoutWithSettings(
 
 const ELK_ROOT_ID = "__structura_layout_root__";
 
-let elkConstructor: (new () => { layout(graph: ElkNode): Promise<ElkNode> }) | null = null;
-
-async function getElk(): Promise<{ layout(graph: ElkNode): Promise<ElkNode> }> {
-  if (!elkConstructor) {
-    // Dynamic import to keep ELK's ~250KB out of the initial bundle.
-    const module = await import("elkjs/lib/elk.bundled.js");
-    elkConstructor = module.default;
-  }
-  return new elkConstructor();
-}
-
-/**
- * Input order is not information.
- *
- * ELK's result depends on the order it receives nodes and edges in, so an
- * unsorted caller makes the same architecture lay out differently depending on
- * how a `Record` happened to enumerate or an array happened to be built. Sorting
- * by id here is what makes the contract deterministic for every caller at once,
- * and it is locked by the permutation test.
- */
-function sortById<T extends { id: string }>(items: readonly T[]): T[] {
-  return [...items].sort((a, b) => a.id.localeCompare(b.id));
-}
-
 /**
  * Children per parent, with a `parentId` pointing outside the graph collapsed to
  * a root. That is what lets a caller hand over a panel's children on their own.
@@ -327,6 +305,9 @@ function edgePorts(
   return { byNode, ends };
 }
 
+/** ELK's per-node layer constraint: what `LayoutNode.firstLayer` sets. */
+const FIRST_LAYER_KEY = "elk.layered.layering.layerConstraint";
+
 function buildElkNode(
   node: LayoutNode,
   childrenByParent: Map<string | null, LayoutNode[]>,
@@ -335,6 +316,7 @@ function buildElkNode(
   visited: Set<string>,
 ): ElkNode {
   const ports = portsByNode.get(node.id);
+  const first = node.firstLayer ? { [FIRST_LAYER_KEY]: "FIRST" } : undefined;
   const shape: ElkNode = {
     id: node.id,
     width: node.width,
@@ -347,8 +329,10 @@ function buildElkNode(
       layoutOptions: {
         "elk.portConstraints": options["elk.portConstraints"]!,
         "elk.portAlignment.default": options["elk.portAlignment.default"]!,
+        ...first,
       },
     }),
+    ...(!ports && first && { layoutOptions: first }),
   };
   // A containment cycle would recurse forever and hang the tab. The IR validator
   // rejects cycles and the store should not create them, so this is insurance
@@ -363,7 +347,11 @@ function buildElkNode(
     ...shape,
     layoutOptions: (() => {
       const padding = containerPadding(node, options["elk.padding"]);
-      return padding === undefined ? { ...options } : { ...options, "elk.padding": padding };
+      return {
+        ...options,
+        ...(padding !== undefined && { "elk.padding": padding }),
+        ...first,
+      };
     })(),
     children: children.map((child) =>
       buildElkNode(child, childrenByParent, options, portsByNode, visited),
@@ -413,14 +401,15 @@ export async function layoutElkGraph(
     ...optionOverrides,
   };
 
-  const nodes = sortById(graph.nodes);
+  const ordered = orderLayoutGraph(graph);
+  const nodes = ordered.nodes;
   const present = new Set(nodes.map((node) => node.id));
   const childrenByParent = buildChildrenByParent(nodes);
   const roots = childrenByParent.get(null) ?? [];
 
   // An edge with an endpoint outside the graph has nothing to attach to; ELK
   // throws on an unresolvable endpoint rather than ignoring it.
-  const edges: LayoutEdge[] = sortById(graph.edges).filter(
+  const edges: LayoutEdge[] = ordered.edges.filter(
     (edge) => present.has(edge.sourceId) && present.has(edge.targetId),
   );
 
@@ -458,8 +447,7 @@ export async function layoutElkGraph(
     edges: elkEdges,
   };
 
-  const elk = await getElk();
-  return elk.layout(elkGraph);
+  return runElk(elkGraph);
 }
 
 /**

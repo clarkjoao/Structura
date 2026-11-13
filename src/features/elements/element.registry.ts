@@ -1,5 +1,4 @@
-import en from "@/infrastructure/i18n/locales/en.json";
-import ptBR from "@/infrastructure/i18n/locales/pt-BR.json";
+import i18n from "@/infrastructure/i18n/i18n";
 import type { Component } from "@/features/diagram/model/component.types";
 import type {
   ElementCanvasSlice,
@@ -25,7 +24,20 @@ import type {
  * holds that.
  */
 
-const LOCALES: Record<string, unknown> = { en, "pt-BR": ptBR };
+const LOCALE_IDS = ["en", "pt-BR"] as const;
+
+/**
+ * The bundles i18n has loaded. Locales are fetched on demand, so a registration
+ * is checked against the active and fallback bundles; the other locale is held
+ * to parity by `locales.parity.test.ts`. Importing i18n (which awaits its first
+ * bundles) also keeps this module from evaluating before they exist.
+ */
+function loadedLocales(): [string, unknown][] {
+  return LOCALE_IDS.filter((id) => i18n.hasResourceBundle(id, "translation")).map((id) => [
+    id,
+    i18n.getResourceBundle(id, "translation"),
+  ]);
+}
 
 /** Reads a dotted i18n key out of a locale bundle, or `undefined`. */
 function lookupLocaleKey(bundle: unknown, key: string): unknown {
@@ -39,7 +51,7 @@ function lookupLocaleKey(bundle: unknown, key: string): unknown {
 
 /** Locale ids missing a usable string for `key`. */
 function localesMissing(key: string): string[] {
-  return Object.entries(LOCALES)
+  return loadedLocales()
     .filter(([, bundle]) => {
       const value = lookupLocaleKey(bundle, key);
       return typeof value !== "string" || value.length === 0;

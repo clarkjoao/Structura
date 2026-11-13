@@ -1,4 +1,6 @@
+import { kvGetItem, kvKeys, kvRemoveItem } from "@/infrastructure/persistence/kvStorage";
 import type { StorageHealthLevel } from "./saveStatus.store";
+import { workspaceStorage } from "@/infrastructure/persistence/workspaceStorage";
 import { useSaveStatusStore } from "./saveStatus.store";
 
 /**
@@ -13,18 +15,12 @@ export type FolderSyncStatus =
 
 /** Soma o tamanho de todas as chaves/valores do localStorage em bytes (UTF-16: char × 2). */
 export function measureLocalStorageUsage(): number {
-  try {
-    let total = 0;
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      const value = localStorage.getItem(key) ?? "";
-      total += (key.length + value.length) * 2;
-    }
-    return total;
-  } catch {
-    return 0;
+  let total = 0;
+  for (const key of kvKeys()) {
+    const value = kvGetItem(key) ?? "";
+    total += (key.length + value.length) * 2;
   }
+  return total;
 }
 
 /** Chaves que podem ser limpas sem perda de dados de diagrama. */
@@ -46,20 +42,41 @@ const CLEARABLE_KEYS = [
 export function clearNonEssentialStorage(): number {
   const before = measureLocalStorageUsage();
   for (const key of CLEARABLE_KEYS) {
-    try {
-      localStorage.removeItem(key);
-    } catch {
-      /* ignore */
-    }
+    kvRemoveItem(key);
   }
   const after = measureLocalStorageUsage();
   return Math.max(0, before - after);
 }
 
-/** Runs a measurement and updates the store. */
-export function checkStorageHealth(): void {
-  const used = measureLocalStorageUsage();
-  useSaveStatusStore.getState()._setStorageUsage(used);
+/**
+ * Usage and quota of the origin, when the browser reports them. This is what
+ * bounds a workspace in IndexedDB.
+ */
+async function estimateOriginStorage(): Promise<{ usage: number; quota: number } | null> {
+  if (typeof navigator === "undefined" || !navigator.storage?.estimate) return null;
+  try {
+    const { usage, quota } = await navigator.storage.estimate();
+    return typeof usage === "number" && typeof quota === "number" && quota > 0
+      ? { usage, quota }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Runs a measurement and updates the store: against the origin quota when the
+ * workspace is in IndexedDB, against localStorage's ~5 MB otherwise.
+ */
+export async function checkStorageHealth(): Promise<void> {
+  if (workspaceStorage.location === "indexeddb") {
+    const estimate = await estimateOriginStorage();
+    if (estimate) {
+      useSaveStatusStore.getState()._setStorageUsage(estimate.usage, estimate.quota);
+      return;
+    }
+  }
+  useSaveStatusStore.getState()._setStorageUsage(measureLocalStorageUsage());
 }
 
 /**

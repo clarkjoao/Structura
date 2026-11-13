@@ -8,6 +8,8 @@ export interface ViewportOccupancy {
   anyNodeVisible: boolean;
   /** How many non-hidden nodes the diagram has, for the recovery message. */
   nodeCount: number;
+  /** How many of those nodes intersect the visible area. */
+  visibleCount: number;
 }
 
 interface Rect {
@@ -47,13 +49,19 @@ export function computeViewportOccupancy(
   paneHeight: number,
 ): ViewportOccupancy {
   const visible = nodes.filter((node) => !node.hidden);
-  if (visible.length === 0) return { hasNodes: false, anyNodeVisible: false, nodeCount: 0 };
+  if (visible.length === 0)
+    return { hasNodes: false, anyNodeVisible: false, nodeCount: 0, visibleCount: 0 };
 
   const [translateX, translateY, zoom] = transform;
   if (zoom === 0 || paneWidth === 0 || paneHeight === 0) {
     // The pane has not been measured yet; assume content is reachable rather than
     // flashing the recovery card on mount.
-    return { hasNodes: true, anyNodeVisible: true, nodeCount: visible.length };
+    return {
+      hasNodes: true,
+      anyNodeVisible: true,
+      nodeCount: visible.length,
+      visibleCount: visible.length,
+    };
   }
 
   const viewport: Rect = {
@@ -63,10 +71,12 @@ export function computeViewportOccupancy(
     height: paneHeight / zoom,
   };
 
+  const visibleCount = visible.filter((node) => intersects(nodeRect(node), viewport)).length;
   return {
     hasNodes: true,
-    anyNodeVisible: visible.some((node) => intersects(nodeRect(node), viewport)),
+    anyNodeVisible: visibleCount > 0,
     nodeCount: visible.length,
+    visibleCount,
   };
 }
 

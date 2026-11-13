@@ -5,12 +5,18 @@ import type { AutoRefAssignment } from "@/features/diagram/store/actions.types";
 import { useDiagramStore } from "@/features/diagram";
 import { fitContainersToChildren, toAppliedLayouts, type AppliedLayout } from "./applyLayout";
 import { applyLayoutResultEdges } from "./applyLayoutResult";
-import { chooseAutoRefs, type AutoRefGroup } from "./autoRefs";
+import { chooseAutoRefs, splitGraph, type AutoRefGroup, type AutoRefPlanOptions } from "./autoRefs";
 import { autoRefOptionsFor, withoutAutoRefs } from "./autoRefsFromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { fitToContentIds, fromDiagram, resizableIds } from "./fromDiagram";
 import { layoutWithSettings } from "./layoutEngine";
-import type { DiagramLayoutSettings } from "@/features/diagram/model/layout-settings";
+import {
+  REF_FORWARD_COLUMNS,
+  referenceRules,
+  type DiagramLayoutSettings,
+} from "@/features/diagram/model/layout-settings";
+import { planRuleRefs, type RuleRefStats } from "./ruleRefs";
+import { withSourcesFirst } from "./sourcesFirst";
 import type { DiagramDirection } from "@/features/diagram/model/diagram.types";
 import { isTopToBottom, transposeGraph, transposeResult } from "./axis";
 import { isArrangeBlockedInSession } from "./sessionArrangeGuard";
@@ -26,8 +32,11 @@ import { handleSpecFor } from "../nodes/node-types/registry";
  *
  *   1. automatic references from the last run are folded back into their
  *      originals (what the last run drew is not an input to the next one);
- *   2. `fromDiagram` builds the graph, edge labels included;
- *   3. `chooseAutoRefs` keeps the references that make it read better;
+ *   2. `fromDiagram` builds the graph, edge labels included, and every element
+ *      no connection enters starts its container's reading (`sourcesFirst.ts`);
+ *   3. references are made the way the settings ask (`referenceRules`): by
+ *      reading rules (`ruleRefs.ts`, the default), where they measurably read
+ *      better (`chooseAutoRefs`), or not at all;
  *   4. every container is wrapped the way "Fit to content" leaves it.
  *
  * Planning is pure; `applyDiagramAutoLayout` writes the plan to the store.
@@ -72,6 +81,8 @@ export interface DiagramAutoLayoutPlan {
   layouts: AppliedLayout[];
   /** The references to reconcile; `undefined` leaves references alone. */
   autoRefs: AutoRefAssignment[] | undefined;
+  /** What the reading rules found, when references were made by them. */
+  ruleRefStats?: RuleRefStats;
   offset: { x: number; y: number };
   /** The settings the plan was made with, for the caller that writes them. */
   settings: DiagramLayoutSettings | undefined;
@@ -87,17 +98,19 @@ export async function planDiagramAutoLayout(
   const planned = input.autoRefs
     ? withoutAutoRefs(components, connections)
     : { components, connections: [...connections] };
-  const baseGraph = fromDiagram(planned.components, planned.connections, nodeLayouts, {
-    ...(measured ? { measured } : {}),
-    handleSpecFor,
-  });
+  const baseGraph = withSourcesFirst(
+    fromDiagram(planned.components, planned.connections, nodeLayouts, {
+      ...(measured ? { measured } : {}),
+      handleSpecFor,
+    }),
+  );
 
   const direction = input.direction ?? "LR";
   const mirrored = isTopToBottom(direction);
   const run = layoutWithSettings(input.settings);
   const laidOut = mirrored ? transposeGraph(baseGraph) : baseGraph;
   const chosen = input.autoRefs
-    ? await chooseAutoRefs(laidOut, autoRefOptionsFor(components), run)
+    ? await chooseRefs(laidOut, autoRefOptionsFor(components), run, input.settings)
     : { graph: laidOut, result: await run(laidOut), groups: [] };
   const { groups } = chosen;
   const graph = mirrored ? transposeGraph(chosen.graph) : chosen.graph;
@@ -117,6 +130,7 @@ export async function planDiagramAutoLayout(
     offset,
     settings: input.settings,
     direction,
+    ...(chosen.ruleRefStats && { ruleRefStats: chosen.ruleRefStats }),
     autoRefs: input.autoRefs
       ? groups.map(({ refId, originalId, parentId, sourceIds }) => ({
           refId,
@@ -125,6 +139,41 @@ export async function planDiagramAutoLayout(
           sourceIds,
         }))
       : undefined,
+  };
+}
+
+interface ChosenRefs {
+  graph: LayoutGraph;
+  result: LayoutResult;
+  groups: AutoRefGroup[];
+  ruleRefStats?: RuleRefStats;
+}
+
+/** Lays `graph` out with the references the settings' mode makes (`referenceRules`). */
+async function chooseRefs(
+  graph: LayoutGraph,
+  options: AutoRefPlanOptions,
+  run: (graph: LayoutGraph) => Promise<LayoutResult>,
+  settings: DiagramLayoutSettings | undefined,
+): Promise<ChosenRefs> {
+  const rules = referenceRules(settings);
+  if (rules.mode === "auto") return chooseAutoRefs(graph, options, run);
+  const result = await run(graph);
+  if (rules.mode === "off") return { graph, result, groups: [] };
+
+  // The rules read the layout without references; the one applied is laid out with them.
+  const plan = planRuleRefs(graph, result, options, {
+    neighborColumns: rules.neighborColumns,
+    minKeep: rules.minKeep,
+    ...(rules.forward && { forwardColumns: REF_FORWARD_COLUMNS }),
+  });
+  if (plan.groups.length === 0) return { graph, result, groups: [], ruleRefStats: plan.stats };
+  const split = splitGraph(graph, plan.groups, options.refSize);
+  return {
+    graph: split,
+    result: await run(split),
+    groups: plan.groups,
+    ruleRefStats: plan.stats,
   };
 }
 

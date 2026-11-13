@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useCollab } from "@/features/collaboration";
 import { useReactFlow, useUpdateNodeInternals } from "@xyflow/react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,8 +9,6 @@ import {
   useDiagramTags,
   useResolvedComponents,
   useResolvedNodeLayouts,
-  isTextComponent,
-  type DiagramLayoutSettings,
 } from "@/features/diagram";
 import type { CanvasProps } from "../canvas.types";
 import { useCanvasCompareState } from "./useCanvasCompareState";
@@ -21,8 +18,9 @@ import { useCanvasInteraction } from "./useCanvasInteraction";
 import { useCanvasStore } from "./useCanvasStore";
 import { useCanvasVisualState } from "./useCanvasVisualState";
 import { useInteractionMode } from "./useInteractionMode";
-import { useAutoLayout, type AutoLayoutRunOptions } from "./useAutoLayout";
-import { edgeLabelBox } from "../layout/edgeLabelBox";
+import { useCanvasArrange } from "./useCanvasArrange";
+import { useCollabSelectionBroadcast } from "./useCollabSelectionBroadcast";
+import { useElementPanelGate } from "./useElementPanelGate";
 
 export function useCanvasController(canvasProps: CanvasProps = {}) {
   const { t } = useTranslation();
@@ -41,7 +39,6 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   const diagramVersionState = useActiveDiagramVersionState();
   const allDiagramTags = useDiagramTags();
   const visualState = useCanvasVisualState(diagram?.id ?? null);
-  const { updateSelectedNode } = useCollab();
   const compareState = useCanvasCompareState({
     diagram,
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
@@ -59,50 +56,22 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
         : null,
     [activeDiagramId, resolvedComponents, resolvedNodeLayouts, resolvedConnections],
   );
-  const { runAutoLayout, placeTouched, isRunning: isAutoLayoutRunning } = useAutoLayout();
-  /**
-   * Arranges the diagram. With `settings`, arranges with those instead of the
-   * diagram's and stores them in the same undo step (the Arrange menu).
-   */
-  const arrange = useCallback(
-    async (options: AutoLayoutRunOptions = {}) => {
-      if (!diagram) return;
-      const measuredNodes = reactFlowInstance.getNodes();
-      await runAutoLayout(
-        resolvedComponents,
-        Object.values(resolvedConnections),
-        resolvedNodeLayouts,
-        measuredNodes,
-        options,
-      );
-    },
-    [
-      diagram,
-      runAutoLayout,
-      resolvedComponents,
-      resolvedConnections,
-      resolvedNodeLayouts,
-      reactFlowInstance,
-    ],
-  );
-  const handleAutoLayout = useCallback(() => void arrange(), [arrange]);
-  const handleArrangeWithSettings = useCallback(
-    (settings: DiagramLayoutSettings) => void arrange({ settings }),
-    [arrange],
-  );
-  /** Whether the layout reserves room for edge labels, which picks its tuned layer gap. */
-  const arrangeLabelled = useMemo(
-    () =>
-      Object.values(resolvedConnections).some(
-        (connection) => edgeLabelBox(connection.label, connection.technology) !== undefined,
-      ),
-    [resolvedConnections],
-  );
+  const {
+    arrange,
+    handleAutoLayout,
+    handleArrangeWithSettings,
+    arrangeLabelled,
+    placeTouched,
+    isAutoLayoutRunning,
+  } = useCanvasArrange({
+    diagram,
+    reactFlowInstance,
+    resolvedComponents,
+    resolvedConnections,
+    resolvedNodeLayouts,
+  });
   const flowState = useCanvasFlowState({ flows, isCompareMode: compareState.isCompareMode });
-  const activeCollabElementId = visualState.selectedEdgeId ?? visualState.selectedNodeId;
-  useEffect(() => {
-    updateSelectedNode(activeCollabElementId);
-  }, [activeCollabElementId, updateSelectedNode]);
+  useCollabSelectionBroadcast(visualState.selectedEdgeId, visualState.selectedNodeId);
   const interaction = useCanvasInteraction({
     canvasProps,
     navigate,
@@ -159,27 +128,12 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
   });
   const interactionMode = useInteractionMode(diagram);
 
-  const selectedNodes = useMemo(
-    () => graphState.nodes.filter((node) => visualState.selectedNodeIds.has(node.id)),
-    [graphState.nodes, visualState.selectedNodeIds],
-  );
-  const selectedCount = visualState.selectedNodeIds.size;
-  // A lone text is edited on the canvas and styled from its floating bar; the
-  // side panel would only offer a type switch and fields it has no use for.
-  const selectedComponent = visualState.selectedNodeId
-    ? resolvedComponents[visualState.selectedNodeId]
-    : undefined;
-  const isLoneTextSelected =
-    selectedCount <= 1 &&
-    !visualState.selectedEdgeId &&
-    selectedComponent !== undefined &&
-    isTextComponent(selectedComponent);
-  // With nothing selected the panel shows the diagram's own properties.
-  const showElementPanel =
-    !isLoneTextSelected &&
-    interactionMode.canEditCanvas &&
-    visualState.noteInlineEditingId === null &&
-    visualState.jsonViewerInlineEditingId === null;
+  const { selectedNodes, selectedCount, showElementPanel } = useElementPanelGate({
+    nodes: graphState.nodes,
+    visualState,
+    resolvedComponents,
+    canEditCanvas: interactionMode.canEditCanvas,
+  });
   return {
     t,
     diagram,

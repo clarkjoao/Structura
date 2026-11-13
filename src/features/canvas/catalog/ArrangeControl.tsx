@@ -8,8 +8,17 @@ import {
   LAYOUT_DENSITIES,
   LAYOUT_GAP_MAX,
   LAYOUT_GAP_MIN,
+  normalizeLayoutSettings,
+  REF_FORWARD_COLUMNS,
+  REF_MIN_KEEP_MAX,
+  REF_MIN_KEEP_MIN,
+  REF_NEIGHBOR_COLUMNS_MAX,
+  REF_NEIGHBOR_COLUMNS_MIN,
+  REFERENCE_MODES,
+  referenceRules,
   type DiagramLayoutSettings,
   type LayoutDensity,
+  type ReferenceMode,
 } from "@/features/diagram/model/layout-settings";
 import { effectiveLayoutGaps } from "../layout/layoutEngine";
 import { SESSION_ARRANGE_MAX_ELEMENTS } from "../layout/sessionArrangeGuard";
@@ -54,10 +63,29 @@ const DENSITY_LABEL_KEY: Record<LayoutDensity, string> = {
   spacious: "canvasToolbar.arrange.densitySpacious",
 };
 
+const REFERENCE_LABEL_KEY: Record<ReferenceMode, string> = {
+  rules: "canvasToolbar.arrange.referencesRules",
+  auto: "canvasToolbar.arrange.referencesAuto",
+  off: "canvasToolbar.arrange.referencesOff",
+};
+
+const REFERENCE_HINT_KEY: Record<ReferenceMode, string> = {
+  rules: "canvasToolbar.arrange.referencesRulesHint",
+  auto: "canvasToolbar.arrange.referencesAutoHint",
+  off: "canvasToolbar.arrange.referencesOffHint",
+};
+
+/** The menu's sliders: each re-arranges once it rests. */
+type SliderKey = "layerGap" | "nodeGap" | "refNeighborColumns" | "refMinKeep";
+
 const DIRECTIONS = [
   { value: "LR", labelKey: "canvasToolbar.arrange.directionHorizontal", Icon: ArrowRight },
   { value: "TB", labelKey: "canvasToolbar.arrange.directionVertical", Icon: ArrowDown },
 ] as const satisfies ReadonlyArray<{ value: DiagramDirection; labelKey: string; Icon: unknown }>;
+
+/** From 40 in steps of 4 the gap sliders reach the 308 maximum exactly. */
+const GAP_RANGE = { min: LAYOUT_GAP_MIN, max: LAYOUT_GAP_MAX, step: 4 };
+const px = (value: number) => `${value}px`;
 
 /** How long a slider rests before it re-arranges: one run per gesture, not per tick. */
 export const ARRANGE_SLIDER_DEBOUNCE_MS = 250;
@@ -91,7 +119,10 @@ export function ArrangeControl({
   const { t } = useTranslation();
   const [pending, setPending] = useState<DiagramLayoutSettings | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(
-    () => settings?.layerGap !== undefined || settings?.nodeGap !== undefined,
+    () =>
+      settings?.layerGap !== undefined ||
+      settings?.nodeGap !== undefined ||
+      referenceRules(settings).mode !== "rules",
   );
   const queued = useRef<DiagramLayoutSettings | null>(null);
   const sliderTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -100,7 +131,14 @@ export function ArrangeControl({
   const density = shown.density ?? "normal";
   const automatic = shown.mode === "automatic";
   const gaps = effectiveLayoutGaps(shown, labelled);
-  const [draftGaps, setDraftGaps] = useState<{ layerGap?: number; nodeGap?: number }>({});
+  const refs = referenceRules(shown);
+  const sliderValues: Record<SliderKey, number> = {
+    layerGap: gaps.layerGap,
+    nodeGap: gaps.nodeGap,
+    refNeighborColumns: refs.neighborColumns,
+    refMinKeep: refs.minKeep,
+  };
+  const [drafts, setDrafts] = useState<Partial<Record<SliderKey, number>>>({});
 
   const request = (next: DiagramLayoutSettings) => {
     setPending(next);
@@ -122,17 +160,23 @@ export function ArrangeControl({
 
   useEffect(() => () => clearTimeout(sliderTimer.current), []);
 
-  const changeGap = (key: "layerGap" | "nodeGap", value: number) => {
-    setDraftGaps((current) => ({ ...current, [key]: value }));
+  const changeSlider = (key: SliderKey, value: number) => {
+    setDrafts((current) => ({ ...current, [key]: value }));
     clearTimeout(sliderTimer.current);
     sliderTimer.current = setTimeout(() => {
-      setDraftGaps({});
+      setDrafts({});
       request({ ...shown, [key]: value });
     }, ARRANGE_SLIDER_DEBOUNCE_MS);
   };
 
   const hasGapOverride = shown.layerGap !== undefined || shown.nodeGap !== undefined;
-  const isDefault = density === "normal" && !hasGapOverride && !automatic;
+  const isDefault = normalizeLayoutSettings(shown) === undefined;
+
+  /** Only the gaps go: the mode, density and references stay as they are. */
+  const resetGaps = () => {
+    const { layerGap: _layerGap, nodeGap: _nodeGap, ...rest } = shown;
+    request(rest);
+  };
 
   /**
    * Switching the mode moves nothing in either direction: automatic places what
@@ -144,10 +188,10 @@ export function ArrangeControl({
     onSettingsSave({ ...shown, mode });
   };
 
-  /** Back to the layout the editor always ran: manual, normal spacing, no gap overrides. */
+  /** Back to the default arrangement: manual, normal spacing, references by rules. */
   const resetToDefaults = () => {
     clearTimeout(sliderTimer.current);
-    setDraftGaps({});
+    setDrafts({});
     request({});
   };
   const shortcut = arrangeShortcutLabel();
@@ -156,8 +200,13 @@ export function ArrangeControl({
     ? t(arrangeLockedReasonKey, { max: SESSION_ARRANGE_MAX_ELEMENTS })
     : t("canvasToolbar.arrange.withShortcut", { shortcut });
 
-  const renderSlider = (key: "layerGap" | "nodeGap", labelKey: string) => {
-    const value = draftGaps[key] ?? gaps[key];
+  const renderSlider = (
+    key: SliderKey,
+    labelKey: string,
+    range: { min: number; max: number; step: number },
+    format: (value: number) => string,
+  ) => {
+    const value = drafts[key] ?? sliderValues[key];
     const id = `arrange-${key}`;
     return (
       <div className="flex flex-col gap-1">
@@ -166,18 +215,17 @@ export function ArrangeControl({
           className="flex items-center justify-between text-xs font-medium text-foreground"
         >
           {t(labelKey)}
-          <span className="font-mono text-[11px] text-muted-foreground">{value}px</span>
+          <span className="font-mono text-[11px] text-muted-foreground">{format(value)}</span>
         </label>
         <input
           id={id}
           type="range"
-          min={LAYOUT_GAP_MIN}
-          max={LAYOUT_GAP_MAX}
-          // From 40 in steps of 4 the slider reaches the 308 maximum exactly.
-          step={4}
+          min={range.min}
+          max={range.max}
+          step={range.step}
           value={value}
           disabled={arrangeLocked}
-          onChange={(event) => changeGap(key, Number(event.target.value))}
+          onChange={(event) => changeSlider(key, Number(event.target.value))}
           className="h-1.5 w-full cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
@@ -224,7 +272,8 @@ export function ArrangeControl({
           align="center"
           sideOffset={10}
           aria-label={t("canvasToolbar.arrange.title")}
-          className="w-72 p-3"
+          // The Advanced section is tall: on a short window the menu scrolls instead of clipping.
+          className="max-h-[var(--radix-popover-content-available-height)] w-72 overflow-y-auto p-3"
         >
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-semibold text-foreground">
@@ -366,16 +415,87 @@ export function ArrangeControl({
             </button>
             {showAdvanced && (
               <div className="mt-2 flex flex-col gap-3">
-                {renderSlider("layerGap", "canvasToolbar.arrange.layerGap")}
-                {renderSlider("nodeGap", "canvasToolbar.arrange.nodeGap")}
+                {renderSlider("layerGap", "canvasToolbar.arrange.layerGap", GAP_RANGE, px)}
+                {renderSlider("nodeGap", "canvasToolbar.arrange.nodeGap", GAP_RANGE, px)}
                 <button
                   type="button"
                   disabled={!hasGapOverride || arrangeLocked}
-                  onClick={() => request(shown.density ? { density: shown.density } : {})}
+                  onClick={resetGaps}
                   className="self-start text-[11px] text-primary hover:underline disabled:pointer-events-none disabled:text-muted-foreground"
                 >
                   {t("canvasToolbar.arrange.resetGaps")}
                 </button>
+
+                <div>
+                  <p className={SECTION_TITLE_CLASS}>{t("canvasToolbar.arrange.references")}</p>
+                  <div
+                    role="radiogroup"
+                    aria-label={t("canvasToolbar.arrange.references")}
+                    className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1"
+                  >
+                    {REFERENCE_MODES.map((mode) => {
+                      const checked = refs.mode === mode;
+                      return (
+                        <button
+                          key={mode}
+                          type="button"
+                          role="radio"
+                          aria-checked={checked}
+                          disabled={!checked && arrangeLocked}
+                          onClick={() => {
+                            if (!checked) request({ ...shown, references: mode });
+                          }}
+                          className={cn(
+                            "rounded-md px-2 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                            checked
+                              ? "bg-card text-foreground shadow-sm"
+                              : "text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {t(REFERENCE_LABEL_KEY[mode])}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                    {t(REFERENCE_HINT_KEY[refs.mode])}
+                  </p>
+                </div>
+                {refs.mode === "rules" && (
+                  <>
+                    {renderSlider(
+                      "refNeighborColumns",
+                      "canvasToolbar.arrange.refNeighborColumns",
+                      { min: REF_NEIGHBOR_COLUMNS_MIN, max: REF_NEIGHBOR_COLUMNS_MAX, step: 1 },
+                      (count) => t("canvasToolbar.arrange.refColumns", { count }),
+                    )}
+                    {renderSlider(
+                      "refMinKeep",
+                      "canvasToolbar.arrange.refMinKeep",
+                      { min: REF_MIN_KEEP_MIN, max: REF_MIN_KEEP_MAX, step: 1 },
+                      String,
+                    )}
+                    <label className="flex items-start gap-2 text-xs font-medium text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={refs.forward}
+                        disabled={arrangeLocked}
+                        onChange={(event) =>
+                          request({ ...shown, refForward: event.target.checked })
+                        }
+                        className="mt-0.5 accent-primary disabled:cursor-not-allowed"
+                      />
+                      <span>
+                        {t("canvasToolbar.arrange.refForward")}
+                        <span className="block text-[11px] font-normal text-muted-foreground">
+                          {t("canvasToolbar.arrange.refForwardHint", {
+                            count: REF_FORWARD_COLUMNS,
+                          })}
+                        </span>
+                      </span>
+                    </label>
+                  </>
+                )}
               </div>
             )}
           </div>

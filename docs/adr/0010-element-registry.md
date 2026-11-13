@@ -69,6 +69,10 @@ registries. This ADR records the domain-level registry that closes that gap for
   it. `cloudServiceIdReleaseGate` in `vite.config.ts` aborted `npm run build`
   unless `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE=true` was set deliberately.
 
+  _Note (2026-11-10): that variable and `cloudServiceIdReleaseGate` no longer exist anywhere in
+  the repository; the paragraph above is history. The only remaining guard is the write-gate
+  unit test described below._
+
   **The decision was taken on 2026-09-20 and the gate deleted**, on these facts:
 
   - F6a tolerant reads (`resolveCloudServiceId`) shipped in 49416c0 on

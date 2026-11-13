@@ -5,8 +5,11 @@ import { AUTO_ARRANGE_DEBOUNCE_MS, watchAutoArrange } from "./autoArrangeWatcher
 
 type Store = ReturnType<typeof createTestDiagramStore>;
 
-function setup({ automatic = true, enabled = true } = {}) {
+async function setup({ automatic = true, enabled = true } = {}) {
   const store = createTestDiagramStore();
+  // Let persist read the (empty) stored workspace first: hydration replaces
+  // the state and resets history, which would land in the middle of the edits.
+  await vi.advanceTimersByTimeAsync(0);
   const diagram = store.getState().addDiagram("Auto", "context");
   store.getState().openDiagram(diagram.id);
   const a = store.getState().addComponent("system", "A", null, { x: 0, y: 0 });
@@ -59,7 +62,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("arranges once after a structural edit comes to rest", async () => {
-    const { store, arrange, stop } = setup();
+    const { store, arrange, stop } = await setup();
 
     add(store, "B");
     expect(arrange).not.toHaveBeenCalled();
@@ -70,7 +73,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("hands on only what the edits touched", async () => {
-    const { store, aId, arrange, stop } = setup();
+    const { store, aId, arrange, stop } = await setup();
 
     const b = add(store, "B");
     store.getState().addConnection(aId, b, "calls");
@@ -81,7 +84,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("does nothing for a deletion or a connection between elements already in place", async () => {
-    const { store, aId, arrange, stop } = setup();
+    const { store, aId, arrange, stop } = await setup();
     const b = add(store, "B");
     store.getState().addConnection(aId, b, "calls");
     await settle();
@@ -97,7 +100,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("arranges a burst of edits once", async () => {
-    const { store, aId, arrange, stop } = setup();
+    const { store, aId, arrange, stop } = await setup();
 
     const b = add(store, "B");
     await vi.advanceTimersByTimeAsync(AUTO_ARRANGE_DEBOUNCE_MS / 2);
@@ -111,7 +114,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("does not arrange for a move or a rename", async () => {
-    const { store, aId, arrange, stop } = setup();
+    const { store, aId, arrange, stop } = await setup();
 
     store.getState().updateNodeLayout(aId, { x: 999, y: 999 });
     store.getState().updateComponent(aId, { name: "Renamed" });
@@ -122,7 +125,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("joins the edit's undo step, and undo/redo do not arrange again", async () => {
-    const { store, diagramId, aId, arrange, stop } = setup();
+    const { store, diagramId, aId, arrange, stop } = await setup();
     const b = add(store, "B");
     await settle();
     expect(arrange).toHaveBeenCalledTimes(1);
@@ -142,7 +145,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("cancels a pending run when the edit is undone before it fires", async () => {
-    const { store, arrange, stop } = setup();
+    const { store, arrange, stop } = await setup();
 
     add(store, "B");
     store.getState().undo();
@@ -153,7 +156,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("does not arrange a peer's change", async () => {
-    const { store, diagramId, arrange, stop } = setup();
+    const { store, diagramId, arrange, stop } = await setup();
 
     // What `StoreBridge.write` does: the peer's state plus the marker, in one update.
     store.setState((previous) => {
@@ -184,7 +187,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("skips the run when the diagram was arranged after the edit (the assistant)", async () => {
-    const { store, aId, arrange, stop } = setup();
+    const { store, aId, arrange, stop } = await setup();
 
     const b = add(store, "B");
     store.getState().applyAutoLayout([
@@ -198,13 +201,13 @@ describe("watchAutoArrange", () => {
   });
 
   it("never arranges in manual mode or while the canvas cannot be edited", async () => {
-    const manual = setup({ automatic: false });
+    const manual = await setup({ automatic: false });
     add(manual.store, "B");
     await settle();
     expect(manual.arrange).not.toHaveBeenCalled();
     manual.stop();
 
-    const locked = setup({ enabled: false });
+    const locked = await setup({ enabled: false });
     add(locked.store, "B");
     await settle();
     expect(locked.arrange).not.toHaveBeenCalled();
@@ -212,7 +215,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("does not arrange when the user switches diagrams", async () => {
-    const { store, arrange, stop } = setup();
+    const { store, arrange, stop } = await setup();
     const other = store.getState().addDiagram("Other", "context");
 
     store.getState().openDiagram(other.id);
@@ -223,7 +226,7 @@ describe("watchAutoArrange", () => {
   });
 
   it("stops watching when disposed", async () => {
-    const { store, arrange, stop } = setup();
+    const { store, arrange, stop } = await setup();
 
     add(store, "B");
     stop();

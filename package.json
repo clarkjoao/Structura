@@ -41,7 +41,7 @@
     "format:check": "prettier --check .",
     "fallow:check": "npx --yes fallow@3.33.1 architecture --fail-on-issues --quiet && npx --yes fallow@3.33.1 dead-code --baseline fallow-dead-code-baseline.json --fail-on-issues --quiet",
     "fallow:baseline": "npx --yes fallow@3.33.1 dead-code --save-baseline fallow-dead-code-baseline.json --quiet || true",
-    "plugins:sync-check": "node plugins/structura-plugin-leanix/scripts/sync-types.mjs --check && node plugins/structura-plugin-leanix/scripts/sync-shared.mjs --check",
+    "plugins:sync-check": "node plugins/structura-plugin-leanix/scripts/sync-types.mjs --check && node plugins/structura-plugin-leanix/scripts/sync-shared.mjs --check && node plugins/structura-plugin-example-ui/scripts/sync-types.mjs --check",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -54,7 +54,8 @@
     "cy:report:html": "marge cypress/reports/mochawesome/merged.json -o cypress/reports/mochawesome/html -f index --charts --inline",
     "cy:report": "npm run cy:report:merge && npm run cy:report:html",
     "collab:stress": "node scripts/collab-stress.mjs",
-    "media:capture": "node scripts/capture-media.mjs"
+    "media:capture": "node scripts/capture-media.mjs",
+    "perf:large": "npx --yes tsx scripts/perf-large-diagram.ts"
   },
   "dependencies": {
     "@assistant-ui/core": "^0.3.15",
@@ -113,6 +114,7 @@
     "eslint": "^10.8.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.4",
+    "fake-indexeddb": "^6.2.7",
     "globals": "^17.11.0",
     "jsdom": "^29.1.1",
     "mochawesome": "^8.0.1",

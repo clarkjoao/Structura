@@ -1,5 +1,6 @@
 {
   "common": {
+    "loading": "Loading…",
     "cancel": "Cancel",
     "save": "Save",
     "confirm": "Confirm",
@@ -175,6 +176,7 @@
     "heroNodeDatabase": "Database"
   },
   "dashboard": {
+    "addDiagramDescription": "Name the diagram and choose its C4 level.",
     "allDiagrams": "All diagrams",
     "searchComponentPlaceholder": "Search component...",
     "noComponentsFound": "No components found.",
@@ -250,6 +252,8 @@
     "chooseFile": "Choose file",
     "jsonErrorWithReason": "Could not import the diagram JSON: {{reason}}",
     "jsonErrorNamed": "Could not import {{name}}: {{reason}}",
+    "tooLarge": "This file is too large to import (limit 25 MB).",
+    "tooLargeNamed": "Could not import {{name}}: the file is too large (limit 25 MB).",
     "noJsonFiles": "No importable .json diagram files found.",
     "successOne": "Diagram imported",
     "successMany": "{{count}} diagrams imported",
@@ -276,6 +280,8 @@
     "signalComponentLink": "element links to this repository"
   },
   "folderTree": {
+    "expandFolder": "Expand folder",
+    "collapseFolder": "Collapse folder",
     "newFolderTitle": "New folder",
     "newFolder": "New folder",
     "recentLabel": "Recent",
@@ -288,7 +294,7 @@
     "delete": "Delete"
   },
   "localStorage": {
-    "savedSuccess": "State saved to localStorage",
+    "savedSuccess": "State saved in the browser",
     "syncNow": "· synced now",
     "syncAgo": "· synced {{time}}",
     "neverSynced": "· never synced"
@@ -296,11 +302,11 @@
   "storage": {
     "warning": {
       "title": "Local storage almost full",
-      "description": "Using {{used}} of ~5 MB available. Future diagrams may not be saved."
+      "description": "Using {{used}} of {{quota}} available. Future diagrams may not be saved."
     },
     "danger": {
       "title": "Local storage critically low",
-      "description": "Using {{used}} of ~5 MB. New elements may not be saved."
+      "description": "Using {{used}} of {{quota}}. New elements may not be saved."
     },
     "critical": {
       "title": "Could not save",
@@ -315,6 +321,7 @@
       "description": "Browser storage is almost full. Connect a folder so nothing is lost if storage is cleared."
     },
     "freed": "{{amount}} freed successfully.",
+    "localStorageQuota": "~5 MB",
     "action": {
       "clear": "Free up space",
       "connectFolder": "Connect folder"
@@ -331,13 +338,13 @@
     "syncPullTitle": "Sync: pull updates from folder",
     "disconnectTitle": "Disconnect folder",
     "connecting": "Connecting...",
-    "localStorageTitle": "Data saved in the browser (localStorage)",
-    "localStorageLabel": "localStorage",
+    "localStorageTitle": "Data saved in the browser",
+    "localStorageLabel": "Browser",
     "connectFolderTitle": "Sync with local folder",
     "connectFolder": "Connect folder",
-    "backupFailedSerialize": "Could not serialize diagrams for localStorage. Check the console for details.",
+    "backupFailedSerialize": "Could not serialize diagrams for the browser copy. Check the console for details.",
     "backupFailedQuota": "Browser storage is full or blocked. Free space or allow storage, then try again.",
-    "backupFailedVerify": "Backup was not found in localStorage after saving. Check site permissions.",
+    "backupFailedVerify": "Backup was not found in the browser after saving. Check site permissions.",
     "backupFailedGeneric": "Could not save a copy to the browser. Try again or export JSON manually.",
     "backupFailedBeforeOverwrite": "Could not save a safety copy in the browser before overwriting. Operation cancelled to protect your data.",
     "backupFailedBeforeMerge": "Could not save a safety copy in the browser before merging. Operation cancelled to protect your data.",
@@ -405,14 +412,14 @@
     "title": "Disconnect folder",
     "messageNamed": "Disconnect \"{{name}}\"?",
     "messageGeneric": "Disconnect the local folder?",
-    "explanation": "Current data is only on your filesystem (not saved in the browser). Keep a copy in the browser (localStorage) before disconnecting?",
+    "explanation": "Current data is only on your filesystem (not saved in the browser). Keep a copy in the browser before disconnecting?",
     "localCopyBadgeTitle": "Browser backup",
     "localCopyBadgePresent": "{{count}} diagram(s) are already saved in the browser.",
     "localCopyBadgeMissing": "Nothing is saved in the browser yet. If you disconnect without saving, your data will only exist in the folder.",
     "cancelHint": "Closes this window. The folder stays connected.",
     "disconnectOnlyHint": "Disconnects the folder. Diagrams in the folder stay intact on disk; the app falls back to browser-only editing.",
     "disconnectOnlyHintNoCopy": "⚠ Disconnects the folder. Since there's no browser copy, you'll only be able to access this data by reconnecting the same folder later.",
-    "keepCopyHint": "Saves a copy of all diagrams in the browser (localStorage) and only then disconnects the folder. You can keep editing offline.",
+    "keepCopyHint": "Saves a copy of all diagrams in the browser and only then disconnects the folder. You can keep editing offline.",
     "keepCopyHintNoCopy": "Saves a copy of all diagrams in the browser and disconnects the folder. Recommended.",
     "keepCopyTitle": "Save current state in the browser, then disconnect the folder",
     "keepCopy": "Save in browser and disconnect",
@@ -431,6 +438,10 @@
     "deleteSelected": "Delete selected"
   },
   "canvas": {
+    "diagramNotFound": "Diagram not found",
+    "elementsDeleted_one": "{{count}} element deleted",
+    "elementsDeleted_other": "{{count}} elements deleted",
+    "elementsDeletedUndo": "Undo",
     "noDiagramSelected": "No diagram selected",
     "nothingInView": "Nothing in view",
     "nothingInViewHint_one": "{{count}} element is off screen.",
@@ -562,7 +573,20 @@
       "directionVertical": "Vertical",
       "directionHint": "Rearranges the whole diagram and redraws its connections. Undo puts it back.",
       "directionLockedSession": "Not available during a live session.",
-      "running": "Arranging…"
+      "running": "Arranging…",
+      "references": "References",
+      "referencesRules": "Rules",
+      "referencesAuto": "Trial",
+      "referencesOff": "Off",
+      "referencesRulesHint": "Long lines become references: instead of crossing the diagram, a connection ends on a small dashed copy of its target, placed beside the element that uses it. The original stays where it is, and selecting the copy shows a button that leads to it.",
+      "referencesAutoHint": "Tries references on the busiest elements and keeps only those that cut crossings. Slow on large diagrams.",
+      "referencesOffHint": "No automatic references; the ones an earlier arrangement made are removed.",
+      "refNeighborColumns": "Short back-edge up to",
+      "refColumns_one": "{{count}} column",
+      "refColumns_other": "{{count}} columns",
+      "refMinKeep": "Connections kept on the original",
+      "refForward": "Long forward lines too",
+      "refForwardHint": "A connection that runs more than {{count}} columns ahead also ends on a reference. Far fewer lines cross the diagram, in exchange for more references. Turn off to keep those lines drawn."
     }
   },
   "diagram": {
@@ -884,6 +908,7 @@
     "addRow": "Add row",
     "addCol": "Add column",
     "removeRow": "Remove row",
+    "cellAria": "{{column}}, row {{row}}",
     "removeCol": "Remove column",
     "expandAria": "Expand table",
     "expandTitle": "Expand",
@@ -2077,12 +2102,12 @@
     "elements_one": "{{count}} element",
     "elements_other": "{{count}} elements",
     "chip": {
+      "container_one": "{{count}} container",
+      "container_other": "{{count}} containers",
       "person_one": "{{count}} person",
       "person_other": "{{count}} people",
       "system_one": "{{count}} system",
       "system_other": "{{count}} systems",
-      "container_one": "{{count}} application",
-      "container_other": "{{count}} applications",
       "component_one": "{{count}} component",
       "component_other": "{{count}} components",
       "panel_one": "{{count}} boundary",
@@ -2950,11 +2975,18 @@
     "applied": "Layout applied successfully",
     "appliedWithRefs_one": "Layout applied — 1 reference untangles a busy element",
     "appliedWithRefs_other": "Layout applied — {{count}} references untangle busy elements",
+    "appliedWithRuleRefs_one": "Layout applied — 1 reference replaces a long line",
+    "appliedWithRuleRefs_other": "Layout applied — {{count}} references replace long lines",
     "panelApplied": "Panel layout applied",
     "organizeChildren": "Organize children (LR)",
     "error": "Error computing layout",
     "nothingToLayout": "Nothing to lay out",
-    "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements."
+    "blockedInSession": "Arranging is off during a live session for diagrams with more than {{max}} elements.",
+    "discardedChanged": "The diagram changed while it was being arranged. Arrange it again to lay out the latest version.",
+    "ruleRefsSummary_one": "1 connection points back: {{neighbor}} stays as a short back-edge, {{moved}} moved onto a reference, {{kept}} stays on its original.",
+    "ruleRefsSummary_other": "{{count}} connections point back: {{neighbor}} stay as short back-edges, {{moved}} moved onto references, {{kept}} stay on their original.",
+    "ruleRefsForward_one": "1 long forward line moved onto a reference.",
+    "ruleRefsForward_other": "{{count}} long forward lines moved onto references."
   },
   "plugins": {
     "title": "Plugins",

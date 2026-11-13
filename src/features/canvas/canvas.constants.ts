@@ -25,6 +25,16 @@ export const CANVAS_MIN_ZOOM = 0.1;
 export const CANVAS_MAX_ZOOM = 3;
 
 /**
+ * Level of detail (`contexts/CanvasLodContext.tsx`). Below `LOD_FAR_ENTER_ZOOM`
+ * node text is ~6 px and edge labels are already hidden (`EDGE_LABEL_MIN_ZOOM`
+ * is 0.6), so the canvas draws edges as plain strokes and hides node detail.
+ * It returns to full detail above `LOD_FAR_EXIT_ZOOM`: the gap keeps a zoom
+ * resting on the line from flipping back and forth.
+ */
+export const LOD_FAR_ENTER_ZOOM = 0.45;
+export const LOD_FAR_EXIT_ZOOM = 0.5;
+
+/**
  * Pixel-mode scale used to turn a wheel `deltaY` into a d3-zoom-compatible log2 step.
  * Same constant as `@xyflow/system`'s `wheelDelta` for `deltaMode === 0`.
  */

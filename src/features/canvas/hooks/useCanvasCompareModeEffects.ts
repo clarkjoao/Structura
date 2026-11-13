@@ -1,3 +1,4 @@
+import { kvGetItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type { TFunction } from "i18next";
@@ -22,8 +23,8 @@ export function useCanvasCompareModeEffects(params: UseCanvasCompareModeEffectsP
     compareModeEnteredRef.current = true;
     try {
       const k = "structura:compareTooltipSeen";
-      if (typeof localStorage !== "undefined" && !localStorage.getItem(k)) {
-        localStorage.setItem(k, "1");
+      if (!kvGetItem(k)) {
+        kvSetItem(k, "1");
         toast.message(t("versions.compareModeTooltip"));
       }
     } catch (error) {

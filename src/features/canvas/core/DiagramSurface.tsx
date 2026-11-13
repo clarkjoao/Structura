@@ -9,16 +9,18 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { ComponentIconLookup } from "../components/icons/componentIconLookupContext";
 import { ComponentIconLookupProvider } from "../components/icons/ComponentIconLookupProvider";
-import { ElementsSelectableProvider } from "../contexts/ElementsSelectableContext";
-import { LineHopsProvider } from "../contexts/LineHopsContext";
-import { ReadingDirectionContext } from "../contexts/ReadingDirectionContext";
 import { HandleSidesSync } from "./HandleSidesSync";
 import { DEFAULT_READING_DIRECTION, type ReadingDirection } from "../nodes/node-types/handle-sides";
-import { EdgeLabelPortalHost, EdgeLabelPortalProvider } from "../edges/EdgeLabelPortal";
+import { EdgeLabelPortalHost } from "../edges/EdgeLabelPortal";
 import type { CanvasInputProfile } from "../hooks/useCanvasInputProfile";
 import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
 import { diagramEdgeTypes } from "./edgeTypes";
 import { buildReactFlowShellProps } from "./reactFlowBaseConfig";
+import { useRouteCulledEdges } from "../edges/culling/useRouteCulledEdges";
+import { CanvasLodSync } from "../contexts/CanvasLodContext";
+import { DiagramSurfaceProviders } from "./DiagramSurfaceProviders";
+import { ViewportGestureSync } from "./ViewportGestureSync";
+import type { DragActivity } from "../components/miniMapDragThrottle";
 
 type FlowHandlerProps = Pick<
   ReactFlowProps,
@@ -60,6 +62,11 @@ export interface DiagramSurfaceProps extends FlowHandlerProps {
    * their handles on. Absent is left-to-right.
    */
   readingDirection?: ReadingDirection;
+  /**
+   * Whether a node drag is in progress, on a surface whose nodes can be
+   * dragged: line hops then follow the edges on a timer instead of every frame.
+   */
+  dragActivity?: DragActivity;
   /** Content inside `<ReactFlow>` (Controls, MiniMap, toolbars). */
   children?: ReactNode;
 }
@@ -107,81 +114,86 @@ export function DiagramSurface({
   onNodeDragStop,
   onSelectionChange,
   readingDirection = DEFAULT_READING_DIRECTION,
+  dragActivity,
   children,
 }: DiagramSurfaceProps) {
   const shell = buildReactFlowShellProps(policy, { inputProfile, snapToGrid });
+  // Mount only the edges whose drawn route reaches the viewport (plus a margin):
+  // on a large diagram most edges are off screen. React Flow's own culling
+  // judges an edge by its endpoints, which misses long and detoured routes.
+  const renderedEdges = useRouteCulledEdges(edges);
   const resolvedFitViewOptions = fitViewOptions ?? shell.fitViewOptions;
 
   const flow = (
-    <ElementsSelectableProvider value={policy.graphInteractive}>
-      <LineHopsProvider>
-        <ReadingDirectionContext.Provider value={readingDirection}>
-          <EdgeLabelPortalProvider>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              nodeTypes={nodeTypes}
-              edgeTypes={diagramEdgeTypes}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onConnectEnd={onConnectEnd}
-              onReconnect={onReconnect}
-              onReconnectStart={onReconnectStart}
-              onReconnectEnd={onReconnectEnd}
-              onNodeClick={onNodeClick}
-              onEdgeClick={onEdgeClick}
-              onNodeDoubleClick={onNodeDoubleClick}
-              onEdgeDoubleClick={onEdgeDoubleClick}
-              onPaneClick={onPaneClick}
-              onPaneContextMenu={onPaneContextMenu}
-              onNodeContextMenu={onNodeContextMenu}
-              onNodeDragStart={onNodeDragStart}
-              onNodeDragStop={onNodeDragStop}
-              onSelectionChange={onSelectionChange}
-              panOnDrag={shell.panOnDrag}
-              panOnScroll={shell.panOnScroll}
-              panOnScrollMode={shell.panOnScrollMode}
-              selectionOnDrag={shell.selectionOnDrag}
-              panActivationKeyCode={shell.panActivationKeyCode}
-              selectionMode={shell.selectionMode}
-              zoomOnScroll={shell.zoomOnScroll}
-              zoomOnPinch={shell.zoomOnPinch}
-              zoomOnDoubleClick={shell.zoomOnDoubleClick}
-              deleteKeyCode={shell.deleteKeyCode}
-              minZoom={shell.minZoom}
-              maxZoom={shell.maxZoom}
-              multiSelectionKeyCode={
-                shell.multiSelectionKeyCode ? [...shell.multiSelectionKeyCode] : undefined
-              }
-              selectionKeyCode={shell.selectionKeyCode}
-              nodeDragThreshold={nodeDragThreshold}
-              snapToGrid={shell.snapToGrid}
-              snapGrid={shell.snapGrid}
-              defaultViewport={defaultViewport}
-              fitView={fitView}
-              fitViewOptions={resolvedFitViewOptions}
-              onMoveEnd={onMoveEnd}
-              nodesDraggable={shell.nodesDraggable}
-              nodesConnectable={shell.nodesConnectable}
-              elementsSelectable={shell.elementsSelectable}
-              proOptions={{ ...shell.proOptions }}
-              className={shell.className}
-            >
-              <EdgeLabelPortalHost />
-              <HandleSidesSync direction={readingDirection} />
-              <Background
-                variant={BackgroundVariant.Lines}
-                gap={10}
-                lineWidth={1}
-                color="hsl(var(--muted) / 0.6)"
-              />
-              {children}
-            </ReactFlow>
-          </EdgeLabelPortalProvider>
-        </ReadingDirectionContext.Provider>
-      </LineHopsProvider>
-    </ElementsSelectableProvider>
+    <DiagramSurfaceProviders
+      elementsSelectable={policy.graphInteractive}
+      readingDirection={readingDirection}
+      dragActivity={dragActivity}
+    >
+      <ReactFlow
+        nodes={nodes}
+        edges={renderedEdges}
+        nodeTypes={nodeTypes}
+        edgeTypes={diagramEdgeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
+        onReconnect={onReconnect}
+        onReconnectStart={onReconnectStart}
+        onReconnectEnd={onReconnectEnd}
+        onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
+        onNodeDoubleClick={onNodeDoubleClick}
+        onEdgeDoubleClick={onEdgeDoubleClick}
+        onPaneClick={onPaneClick}
+        onPaneContextMenu={onPaneContextMenu}
+        onNodeContextMenu={onNodeContextMenu}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDragStop={onNodeDragStop}
+        onSelectionChange={onSelectionChange}
+        panOnDrag={shell.panOnDrag}
+        panOnScroll={shell.panOnScroll}
+        panOnScrollMode={shell.panOnScrollMode}
+        selectionOnDrag={shell.selectionOnDrag}
+        panActivationKeyCode={shell.panActivationKeyCode}
+        selectionMode={shell.selectionMode}
+        zoomOnScroll={shell.zoomOnScroll}
+        zoomOnPinch={shell.zoomOnPinch}
+        zoomOnDoubleClick={shell.zoomOnDoubleClick}
+        deleteKeyCode={shell.deleteKeyCode}
+        minZoom={shell.minZoom}
+        maxZoom={shell.maxZoom}
+        multiSelectionKeyCode={
+          shell.multiSelectionKeyCode ? [...shell.multiSelectionKeyCode] : undefined
+        }
+        selectionKeyCode={shell.selectionKeyCode}
+        nodeDragThreshold={nodeDragThreshold}
+        snapToGrid={shell.snapToGrid}
+        snapGrid={shell.snapGrid}
+        defaultViewport={defaultViewport}
+        fitView={fitView}
+        fitViewOptions={resolvedFitViewOptions}
+        onMoveEnd={onMoveEnd}
+        nodesDraggable={shell.nodesDraggable}
+        nodesConnectable={shell.nodesConnectable}
+        elementsSelectable={shell.elementsSelectable}
+        proOptions={{ ...shell.proOptions }}
+        className={shell.className}
+      >
+        <EdgeLabelPortalHost />
+        <CanvasLodSync />
+        <ViewportGestureSync />
+        <HandleSidesSync direction={readingDirection} />
+        <Background
+          variant={BackgroundVariant.Lines}
+          gap={10}
+          lineWidth={1}
+          color="hsl(var(--muted) / 0.6)"
+        />
+        {children}
+      </ReactFlow>
+    </DiagramSurfaceProviders>
   );
 
   if (iconLookup) {

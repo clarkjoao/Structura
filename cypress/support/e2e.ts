@@ -1,4 +1,7 @@
 import "./commands";
+import { installSeedsWinOverIndexedDb } from "./workspace-storage";
+
+installSeedsWinOverIndexedDb();
 
 if (typeof window !== "undefined") {
   const win = window as unknown as {

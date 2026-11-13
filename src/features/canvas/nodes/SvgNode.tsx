@@ -1,9 +1,10 @@
 import { memo } from "react";
 import { Handle, NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
+import { safeSvgMarkup } from "../utils/svg.render";
 import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 export type SvgNodeData = {
@@ -27,9 +28,9 @@ const SVG_ACCENT_DEFAULT = "#f97316";
 const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
   const { t } = useTranslation();
   const sides = useHandleSides();
-  const { highlightedNodeIds } = useHandleHighlight();
+  const isHandleHighlighted = useIsNodeHandleHighlighted(d.elementId);
   const isSelected = selected || d.isSelected;
-  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || isHandleHighlighted;
   const isActive = isSelected || isHighlighted;
   const collabHighlight = useCollabHighlight(d.elementId);
   const showBorder = d.showBorder !== false;
@@ -94,7 +95,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
           <div
             className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
             style={{ pointerEvents: "none" }}
-            dangerouslySetInnerHTML={{ __html: d.svgContent }}
+            dangerouslySetInnerHTML={{ __html: safeSvgMarkup(d.svgContent) }}
           />
         </div>
       ) : (
@@ -118,7 +119,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
           <div
             className="w-full h-full flex items-center justify-center [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-full [&>svg]:h-full"
             style={{ pointerEvents: "none" }}
-            dangerouslySetInnerHTML={{ __html: d.svgContent }}
+            dangerouslySetInnerHTML={{ __html: safeSvgMarkup(d.svgContent) }}
           />
         </div>
       )}

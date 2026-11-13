@@ -59,6 +59,8 @@ import {
   API_GROUP_HEADER_H,
   API_GROUP_ENDPOINT_H,
   API_GROUP_FRAME_W,
+  AUTO_REF_W,
+  AUTO_REF_H,
 } from "../../model/layout.constants";
 import i18n from "@/infrastructure/i18n";
 import { computeApiGroupSize } from "../../utils/api-group-size";
@@ -509,6 +511,12 @@ export function reconcileAutoRefs(d: Diagram, assignments: readonly AutoRefAssig
       );
       const stored = components[created.id];
       if (stored && isSharedRefComponent(stored)) stored.auto = true;
+    }
+    // Laid out at the compact size, whatever it was drawn at before.
+    const refLayout = d.nodeLayouts[assignment.refId];
+    if (refLayout) {
+      refLayout.width = AUTO_REF_W;
+      refLayout.height = AUTO_REF_H;
     }
     kept.add(assignment.refId);
     const consumers = new Set(assignment.sourceIds);

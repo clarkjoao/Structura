@@ -1,4 +1,5 @@
 import type { Point } from "@/features/diagram";
+import { createDragThrottle, type DragActivity } from "../components/miniMapDragThrottle";
 import { findLineHops, type LineHop } from "./geometry/lineHops";
 
 /**
@@ -11,13 +12,28 @@ import { findLineHops, type LineHop } from "./geometry/lineHops";
  * because some other edge moved. That is what keeps this off the drag-frame
  * budget in `docs/concepts/canvas-hot-path.md` — no per-edge store
  * subscription to a canvas-wide value, no walk of all edges per edge.
+ *
+ * While nodes are dragged (`followDrag`) the recompute runs at most every
+ * `LINE_HOPS_DRAG_REFRESH_MS` instead of every frame, and once more the moment
+ * the drag ends. In between a moving edge keeps the hops it had: a hop no
+ * longer on its segment is skipped (`buildPathWithHops`), the rest lag by at
+ * most one interval — too short to see, and it took a recompute plus a path
+ * rebuild on every edge whose hops moved off each drag frame.
  */
 export interface LineHopsRegistry {
   publish(id: string, points: readonly Point[]): void;
   remove(id: string): void;
   subscribe(id: string, listener: () => void): () => void;
   getHops(id: string): readonly LineHop[];
+  /** Recompute on a timer while `activity` reports a node drag. Returns the unsubscribe. */
+  followDrag(activity: DragActivity): () => void;
 }
+
+/**
+ * How often hops follow the edges while nodes are dragged. Measured in
+ * `docs/investigation/auditoria-geral-structura.md` §9.8.
+ */
+export const LINE_HOPS_DRAG_REFRESH_MS = 120;
 
 export const NO_LINE_HOPS: readonly LineHop[] = Object.freeze([]);
 
@@ -44,6 +60,7 @@ export function createLineHopsRegistry(schedule: Schedule = nextFrame): LineHops
   let hops = new Map<string, readonly LineHop[]>();
   const listeners = new Map<string, Set<() => void>>();
   let pending = false;
+  let throttle: ReturnType<typeof createDragThrottle> | null = null;
 
   const recompute = () => {
     pending = false;
@@ -69,7 +86,8 @@ export function createLineHopsRegistry(schedule: Schedule = nextFrame): LineHops
   const invalidate = () => {
     if (pending) return;
     pending = true;
-    schedule(recompute);
+    if (throttle) throttle.sourceChanged();
+    else schedule(recompute);
   };
 
   return {
@@ -96,6 +114,20 @@ export function createLineHopsRegistry(schedule: Schedule = nextFrame): LineHops
     },
     getHops(id) {
       return hops.get(id) ?? NO_LINE_HOPS;
+    },
+    followDrag(activity) {
+      const own = createDragThrottle(
+        () => schedule(recompute),
+        activity,
+        LINE_HOPS_DRAG_REFRESH_MS,
+      );
+      throttle = own;
+      return () => {
+        own.dispose();
+        if (throttle === own) throttle = null;
+        // A change the throttle was holding still needs its recompute.
+        if (pending) schedule(recompute);
+      };
     },
   };
 }

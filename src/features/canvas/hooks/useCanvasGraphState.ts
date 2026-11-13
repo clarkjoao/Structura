@@ -17,6 +17,8 @@ import { useSharedRevealStore } from "../shared/useSharedRevealStore";
 import { useTextToolStore } from "../text/textLayer.store";
 import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
+import { useSyncSelectionControls } from "../selection/selectionControls";
+import { useFlowMode } from "../flow/FlowModeContext";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -289,6 +291,11 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
    * gesture -- the drag's last change carries `dragging: false`.
    */
   const reactFlowStore = useStoreApi();
+
+  // What the selection disables on each node, read by the nodes' own controls
+  // (see `selectionControls.ts`); the card data no longer carries it.
+  const { isRecording } = useFlowMode();
+  useSyncSelectionControls(selectedNodeIds, !flowState.isPlayingEffective && !isRecording);
   const publishDragFrame = useCallback(
     (dragged: Node[]) => {
       reactFlowStore.getState().setNodes(dragged);

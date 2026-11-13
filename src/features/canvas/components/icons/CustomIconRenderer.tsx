@@ -1,6 +1,7 @@
 import { Suspense, type CSSProperties } from "react";
 import { isAwsIcon, isLucideIcon, isSvgIcon, type IconDefinition } from "@/features/diagram";
 import CloudIcon from "@/features/canvas/nodes/CloudIcon";
+import { safeSvgMarkup } from "@/features/canvas/utils/svg.render";
 import { cn } from "@/lib/utils";
 import { getLazyLucideIcon, resolveLucideDynamicImportKey } from "./lucideDynamicIcon";
 
@@ -17,7 +18,7 @@ export function CustomIconRenderer({ icon, size = 32, className }: CustomIconRen
         style={{ width: size, height: size, pointerEvents: "none" }}
         className={cn(className)}
 
-        dangerouslySetInnerHTML={{ __html: icon.source.svgContent }}
+        dangerouslySetInnerHTML={{ __html: safeSvgMarkup(icon.source.svgContent) }}
       />
     );
   }

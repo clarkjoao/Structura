@@ -43,6 +43,45 @@ function structuraBundledPlugins(): Plugin {
   };
 }
 
+/**
+ * The locale bundles are separate chunks, imported by `i18n.ts` after the entry has run,
+ * which makes their fetch a round trip behind the entry chunk. This hints them from
+ * `index.html` instead, so it starts with the entry: an inline script picks the language the
+ * way i18n's detector does (stored choice, then the browser's) and adds a `modulepreload` for
+ * that locale and for the `pt-BR` fallback. The JSON stays out of the entry chunk. The hashed
+ * chunk names are read from the bundle, so they stay right across builds.
+ */
+function structuraLocalePreload(): Plugin {
+  let base = "/";
+  return {
+    name: "structura-locale-preload",
+    apply: "build",
+    configResolved(config) {
+      base = config.base;
+    },
+    transformIndexHtml: {
+      order: "post",
+      handler(_html, ctx) {
+        const urls: Record<string, string> = {};
+        for (const chunk of Object.values(ctx.bundle ?? {})) {
+          if (chunk.type !== "chunk" || !chunk.facadeModuleId) continue;
+          const match = /\/i18n\/locales\/([^/]+)\.json$/.exec(chunk.facadeModuleId);
+          if (match) urls[match[1]] = base + chunk.fileName;
+        }
+        if (Object.keys(urls).length === 0) return;
+        const script =
+          `(function(){var u=${JSON.stringify(urls)},l="pt-BR";try{` +
+          `var s=localStorage.getItem("structura_language")||navigator.language||"";` +
+          `if(/^en/i.test(s))l="en"}catch(e){}` +
+          `[l,"pt-BR"].filter(function(k,i,a){return u[k]&&a.indexOf(k)===i}).forEach(function(k){` +
+          `var e=document.createElement("link");e.rel="modulepreload";e.href=u[k];` +
+          `document.head.appendChild(e)})})();`;
+        return [{ tag: "script", children: script, injectTo: "head-prepend" }];
+      },
+    },
+  };
+}
+
 export default defineConfig(() => ({
   base: process.env.VITE_BASE_PATH ?? "/",
   server: {
@@ -52,7 +91,7 @@ export default defineConfig(() => ({
       overlay: false,
     },
   },
-  plugins: [react(), structuraBundledPlugins()],
+  plugins: [react(), structuraBundledPlugins(), structuraLocalePreload()],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),

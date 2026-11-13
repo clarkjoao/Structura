@@ -10,6 +10,7 @@ import {
 } from "@/features/canvas/canvas.constants";
 import { COMPONENT_TYPE_NOTE } from "@/features/diagram/model/component-type-constants";
 import { isNoteComponent } from "@/features/diagram/model/component.guards";
+import { unmountedRendererCallback } from "./stableNodeLists";
 import type { ElementDescriptor } from "../element.types";
 
 /** The note's own light-mode paper colour when the user has not picked one. */
@@ -64,6 +65,9 @@ export const noteElement: ElementDescriptor = {
       onInlineEditingChange: ctx.setNoteInlineEditingId
         ? (editing: boolean) => ctx.setNoteInlineEditingId!(editing ? comp.id : null)
         : undefined,
+      // Written by `NoteNode` once mounted; see `unmountedRendererCallback`.
+      onStartEdit: unmountedRendererCallback,
+      onClickBody: unmountedRendererCallback,
       ...versionBadgePropsForNode(ctx, comp.id),
     }),
 

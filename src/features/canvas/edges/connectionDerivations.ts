@@ -160,3 +160,41 @@ export function buildEffectiveHandleOrder(
   }
   return result;
 }
+
+type HandleOrder = { incoming: string[]; outgoing: string[] };
+
+function sameSlots(a: readonly string[], b: readonly string[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+/**
+ * `next`, with every node's entry replaced by the one in `previous` when its
+ * slots are unchanged — and `previous` itself when no entry changed.
+ *
+ * The order is rebuilt on every store write, and each node's entry lands on its
+ * `data.handleOrder`. A new object per node defeated the node identity cache, so
+ * moving one node re-rendered every connected node on the canvas (434 of them
+ * on the large-diagram fixture).
+ */
+export function stabilizeHandleOrder(
+  previous: Readonly<Record<string, HandleOrder>>,
+  next: Record<string, HandleOrder>,
+): Record<string, HandleOrder> {
+  let changed = Object.keys(previous).length !== Object.keys(next).length;
+  for (const id of Object.keys(next)) {
+    const before = previous[id];
+    const after = next[id]!;
+    if (
+      before &&
+      sameSlots(before.incoming, after.incoming) &&
+      sameSlots(before.outgoing, after.outgoing)
+    ) {
+      next[id] = before;
+    } else {
+      changed = true;
+    }
+  }
+  return changed ? next : (previous as Record<string, HandleOrder>);
+}

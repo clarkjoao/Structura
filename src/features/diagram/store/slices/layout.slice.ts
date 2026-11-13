@@ -13,7 +13,7 @@ import {
 } from "../../utils/alignment";
 import { reconcileAutoRefs } from "./components.slice";
 import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
-import type { AutoRefAssignment } from "../actions.types";
+import type { AutoRefAssignment, LayoutEdgeEffects } from "../actions.types";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import {
   getActiveComponents,
@@ -74,10 +74,7 @@ function applyBoxMoves(
   touchDiagram(d);
 }
 
-export const layoutSlice = (
-  set: (fn: (state: AppState) => void) => void,
-  _get: () => AppState,
-) => ({
+export const layoutSlice = (set: (fn: (state: AppState) => void) => void, get: () => AppState) => ({
   updateNodeLayout: (
     elementId: string,
     position: { x: number; y: number },
@@ -166,9 +163,29 @@ export const layoutSlice = (
     });
   },
 
-  updateViewport: (viewport: { x: number; y: number; zoom: number }) => {
+  /**
+   * Writes the viewport of `diagramId`, or of the active diagram when absent. A
+   * write that lands after the user switched diagrams (the canvas defers it to
+   * the end of a pan) must still reach the diagram that was panned, so the
+   * canvas passes the id it captured. An unchanged viewport is not written:
+   * every `set()` serialises the workspace for persistence.
+   */
+  updateViewport: (viewport: { x: number; y: number; zoom: number }, diagramId?: string) => {
+    const current = get();
+    const targetId = diagramId ?? current.activeDiagramId;
+    const existing = targetId ? current.diagrams[targetId]?.viewport : undefined;
+    if (
+      !targetId ||
+      !current.diagrams[targetId] ||
+      (existing &&
+        existing.x === viewport.x &&
+        existing.y === viewport.y &&
+        existing.zoom === viewport.zoom)
+    ) {
+      return;
+    }
     set((state) => {
-      const d = getActiveDiagram(state);
+      const d = state.diagrams[targetId];
       if (!d) return;
       d.viewport = viewport;
     });
@@ -263,6 +280,50 @@ export const layoutSlice = (
         existing.labelOffset = safe;
       } else {
         diagram.edgeLayouts[connectionId] = { labelOffset: safe };
+      }
+    });
+  },
+
+  applyLayoutEdges: (diagramId: string, effects: LayoutEdgeEffects) => {
+    set((state) => {
+      const diagram = state.diagrams[diagramId];
+      if (!diagram) return;
+
+      const active = getActiveDiagram(state);
+      if (active && effects.handleOrders.length > 0) {
+        const scene = resolveActiveVersion(active);
+        let touched = false;
+        for (const { componentId, side, connectionIds } of effects.handleOrders) {
+          const comp =
+            scene?.addedComponents[componentId] ?? active.snapshot.components[componentId];
+          if (!comp) continue;
+          if (!comp.handleOrder) comp.handleOrder = { incoming: [], outgoing: [] };
+          comp.handleOrder[side] = connectionIds;
+          touched = true;
+        }
+        if (touched) touchDiagram(active);
+      }
+
+      // The first reset that cleared something took the (coalescing) checkpoint.
+      if (effects.resetConnectionIds.some((id) => diagram.edgeLayouts[id]?.points?.length)) {
+        pushHistory(state);
+      }
+      for (const connectionId of effects.resetConnectionIds) {
+        const existing = diagram.edgeLayouts[connectionId];
+        if (!existing?.points?.length) continue;
+        delete existing.points;
+        if (existing.labelOffset === undefined && existing.pathType === undefined) {
+          delete diagram.edgeLayouts[connectionId];
+        }
+      }
+
+      for (const { connectionId, points, labelOffset } of effects.routes) {
+        const existing = diagram.edgeLayouts[connectionId];
+        if (existing) existing.points = points;
+        else diagram.edgeLayouts[connectionId] = { points };
+        if (labelOffset !== undefined) {
+          diagram.edgeLayouts[connectionId]!.labelOffset = Math.max(0, Math.min(1, labelOffset));
+        }
       }
     });
   },

@@ -8,10 +8,11 @@ import { useElementPresetStore } from "@/features/element-presets";
 import { useIconStore } from "@/features/diagram/store";
 import {
   buildPersistStoragePayload,
-  flushDiagramStoreToLocalStorageNow,
+  flushWorkspaceToBrowserStorageNow,
   PERSIST_KEY,
 } from "@/features/diagram";
 import { defaultStorage } from "./LocalStorageAdapter";
+import { workspaceStorage } from "./workspaceStorage";
 import {
   clearLocalStorageDiagramSyncTimestamp,
   recordLocalStorageDiagramSyncSuccess,
@@ -134,7 +135,7 @@ export function useFileSystemStorage() {
 
     if (fileSystemAdapter.isConnected) {
       // localStorage remains active while the folder is connected (no
-      // `defaultStorage.paused = true`) — silent backup for two-phase commit
+      // `workspaceStorage.paused = true`) — silent backup for two-phase commit
       // failures. See doReconnect in fileSystemBoot.ts / bug3 §P0.1.
       setStatus("connected");
       setFolderName(fileSystemAdapter.folderName);
@@ -171,17 +172,17 @@ export function useFileSystemStorage() {
         return;
       }
 
-      defaultStorage.paused = false;
+      workspaceStorage.paused = false;
 
       queueMicrotask(async () => {
-        const existing = await defaultStorage.getItem(PERSIST_KEY);
+        const existing = await workspaceStorage.getItem(PERSIST_KEY);
         if (existing !== null) return;
 
         const diagramCount = Object.keys(useDiagramStore.getState().diagrams).length;
         if (diagramCount === 0) return;
 
         const payload = buildPersistStoragePayload(useDiagramStore.getState());
-        const written = await defaultStorage.forceSave(PERSIST_KEY, payload);
+        const written = await workspaceStorage.forceSave(PERSIST_KEY, payload);
         if (!written) {
           console.warn(
             "[Structura] Could not seed localStorage from in-memory diagrams (quota or blocked).",
@@ -302,7 +303,7 @@ export function useFileSystemStorage() {
       // Backup the current in-memory state to localStorage BEFORE we touch the
       // store or the folder. If anything below fails, the user's existing
       // diagrams survive in the browser.
-      const backupOk = await flushDiagramStoreToLocalStorageNow({ force: true });
+      const backupOk = await flushWorkspaceToBrowserStorageNow({ force: true });
       if (!backupOk) {
         toast.error(t("filesystem.backupFailedBeforePush"));
         return;
@@ -334,7 +335,7 @@ export function useFileSystemStorage() {
       // Backup current state BEFORE touching the store or the folder. The merge
       // path is non-destructive on its face, but the subsequent flush will
       // rewrite the manifest; if it fails partway, localStorage is our fallback.
-      const backupOk = await flushDiagramStoreToLocalStorageNow({ force: true });
+      const backupOk = await flushWorkspaceToBrowserStorageNow({ force: true });
       if (!backupOk) {
         toast.error(t("filesystem.backupFailedBeforeMerge"));
         return;
@@ -403,7 +404,7 @@ export function useFileSystemStorage() {
       // in-memory store with folder data, so a pre-flush failure without this
       // backup would leave the user with neither their original work nor a
       // guaranteed fresh copy on disk.
-      const backupOk = await flushDiagramStoreToLocalStorageNow({ force: true });
+      const backupOk = await flushWorkspaceToBrowserStorageNow({ force: true });
       if (!backupOk) {
         toast.error(t("filesystem.backupFailedBeforeOverwrite"));
         return;
@@ -476,7 +477,7 @@ export function useFileSystemStorage() {
 
   const performDisconnect = useCallback(async () => {
     await fileSystemAdapter.disconnect();
-    defaultStorage.paused = false;
+    workspaceStorage.paused = false;
     resetBootState();
     setStatus("disconnected");
     setFolderName(null);
@@ -501,7 +502,7 @@ export function useFileSystemStorage() {
         return;
       }
 
-      const wrote = await flushDiagramStoreToLocalStorageNow({ force: true });
+      const wrote = await flushWorkspaceToBrowserStorageNow({ force: true });
       if (!wrote) {
         toast.error(t("filesystem.backupFailedQuota"));
         setStatus("error");
@@ -509,7 +510,7 @@ export function useFileSystemStorage() {
         return;
       }
 
-      const saved = await defaultStorage.getItem(PERSIST_KEY);
+      const saved = await workspaceStorage.getItem(PERSIST_KEY);
       if (saved === null) {
         toast.error(t("filesystem.backupFailedVerify"));
         setStatus("error");
@@ -543,7 +544,7 @@ export function useFileSystemStorage() {
 
       await performDisconnect();
 
-      const flushed = await flushDiagramStoreToLocalStorageNow({ force: true });
+      const flushed = await flushWorkspaceToBrowserStorageNow({ force: true });
       if (!flushed) {
         toast.error(t("filesystem.backupFailedQuota"));
       }
@@ -560,7 +561,7 @@ export function useFileSystemStorage() {
 
   const confirmDisconnectWithoutBackup = useCallback(async () => {
     clearStore();
-    await defaultStorage.delete(PERSIST_KEY);
+    await workspaceStorage.delete(PERSIST_KEY);
     clearLocalStorageDiagramSyncTimestamp();
     await performDisconnect();
   }, [clearStore, performDisconnect]);

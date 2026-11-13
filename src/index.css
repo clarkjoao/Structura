@@ -394,6 +394,30 @@
 [data-edge-label] {
   transition: opacity 120ms ease;
 }
+/*
+ * Far level of detail (canvas/contexts/canvasLod.ts): secondary node content is
+ * not painted. `visibility`, never `display`: the node keeps its size, so React
+ * Flow does not re-measure it and no handle or edge moves at the threshold.
+ */
+.react-flow[data-lod="far"] [data-lod-secondary] {
+  visibility: hidden;
+}
+
+/*
+ * Panels and API groups blur what is behind them (`data-canvas-blur`). The
+ * blur makes the compositor re-layerize the canvas on every frame that paints:
+ * at far zoom, with dozens of panels on screen, that was most of the cost of a
+ * pan (1000 nodes, 40 panels: 1.7-2.9 s of Layerize in 30 wheel ticks). At far
+ * zoom a 4 px blur is barely visible, so it is off there. At full zoom it is
+ * off only while the viewport pans or zooms (`ViewportGestureSync`) and comes
+ * back at rest. Either way the translucent fill stays, so edges behind a panel
+ * still read as behind it.
+ */
+.react-flow[data-lod="far"] [data-canvas-blur],
+.react-flow[data-viewport-moving] [data-canvas-blur] {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 
 /*
  * An auto-layout run glides the nodes to where the layout put them
@@ -420,5 +444,30 @@
   /* Same selector as the rule above, so it wins on order, not lose on specificity. */
   [data-layout-animating] .react-flow__node:not(.dragging) {
     transition: none;
+  }
+}
+
+/*
+ * Connection handles are 8-10 px dots, about 3 px on screen at fit zoom. An invisible
+ * pseudo-element widens the grab area around each dot (10 flow px per side, so >= 12 px on
+ * screen down to ~0.5 zoom) without touching the dot or the handle's side and position.
+ */
+.react-flow__handle::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  background: transparent;
+}
+
+/*
+ * One keyboard focus ring for buttons, links and icon buttons that carry no focus style of their
+ * own (plain <button>s fell back to the browser's `outline: auto`, which differs per browser and
+ * vanishes on dark surfaces). In the base layer so any Tailwind utility, such as the shadcn
+ * button's `focus-visible:ring-2`, still wins. Inputs are left alone.
+ */
+@layer base {
+  :where(button, a[href], [role="button"], summary):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }

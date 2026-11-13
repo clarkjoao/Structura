@@ -25,7 +25,8 @@ import type { DiagramIR } from "@/features/llm/ir/ir.types";
  * What the exactness does and does not buy, measured rather than assumed
  * (`docs/fatia2-arestas-container/measure-id-sensitivity-frozen.json`): the
  * layout is insensitive to the *value* of an id — swapping one for another, or
- * prefixing all of them, moves nothing — and sensitive to their relative *order*,
+ * prefixing all of them, moves nothing — and sensitive to their relative *order* (since 2026-11-12 the order is
+ * the content's, not the ids'),
  * where a full permutation moves A-run1 from 10 rendered crossings to 5 and
  * B-run1 from 23 to 11. So these numbers reproduce because the fixtures are
  * frozen literals in declaration order, not because any single id is special.
@@ -74,6 +75,11 @@ interface Expected {
  * auto-layout does. ELK-routed crossings 97 → 117 (B-run3 52 → 72), mid-X
  * step crossings 284 → 263, edges through a node 69 → 47.
  *
+ * Refreshed 2026-11-12: ELK's input order no longer follows ids but content
+ * (`orderLayoutGraph`: type and name first). ELK-routed crossings 116 → 108
+ * (B-run3 72 → 63), mid-X step crossings 258 → 245, rendered edges through a
+ * node +5 (A-run1 +1, B-run2 +2, B-run3 +2).
+ *
  * Refreshed 2026-10-22: ELK ports bundle each side's edges around its middle,
  * `HANDLE_PITCH` apart, where the canvas now draws its handles. ELK-routed
  * crossings 117 → 116, mid-X step crossings 263 → 258 (B-run2 75 → 61), edges
@@ -91,10 +97,10 @@ const EXPECTED: Record<string, Expected> = {
     nodes: 33,
     edges: 33,
     containerEdges: 0,
-    elkCrossings: 1,
+    elkCrossings: 2,
     renderedCrossings: 11,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 6,
+    renderedEdgeNodeOverlaps: 7,
     maxNestingDepth: 2,
   },
   "A-run2 C4 insurer": {
@@ -132,19 +138,19 @@ const EXPECTED: Record<string, Expected> = {
     edges: 33,
     containerEdges: 0,
     elkCrossings: 31,
-    renderedCrossings: 61,
+    renderedCrossings: 60,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 9,
+    renderedEdgeNodeOverlaps: 11,
     maxNestingDepth: 3,
   },
   "B-run3 AWS deployment": {
     nodes: 33,
     edges: 37,
     containerEdges: 0,
-    elkCrossings: 72,
-    renderedCrossings: 120,
+    elkCrossings: 63,
+    renderedCrossings: 108,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 1,
+    renderedEdgeNodeOverlaps: 3,
     maxNestingDepth: 4,
   },
 };
@@ -285,7 +291,7 @@ describe("frozen generated diagram measurements", () => {
         `TOTAL elk ${elkTotal} -> rendered ${renderedTotal}   gap ${renderedTotal - elkTotal}\n`,
     );
 
-    expect(elkTotal).toBe(116);
-    expect(renderedTotal).toBe(258);
+    expect(elkTotal).toBe(108);
+    expect(renderedTotal).toBe(245);
   });
 });

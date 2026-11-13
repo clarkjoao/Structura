@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useStore, type ReactFlowInstance } from "@xyflow/react";
+import { useStore, useStoreApi, type ReactFlowInstance } from "@xyflow/react";
 import type { Diagram, DiagramModel, Flow } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import {
@@ -14,6 +14,7 @@ import {
 import { useCanvasPreferencesStore } from "../preferences";
 import { useFrameReadStep } from "../flow/reading/useFrameReadStep";
 import { resolveWheelIntent } from "./resolve-wheel-intent";
+import { computeViewportOccupancy } from "./useViewportOccupancy";
 
 interface UseCanvasEffectsParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -73,7 +74,10 @@ function cursorCenteredZoom(
  * New diagrams are created with viewport {0, 0, 1} (see diagram.slice.ts), so
  * a default viewport means "never panned/zoomed" and we fit the view instead.
  */
-export function hasSavedViewport(
+/** Below this share of nodes inside a restored viewport, the canvas fits the view instead. */
+const MIN_RESTORED_VIEWPORT_OCCUPANCY = 0.2;
+
+function hasSavedViewport(
   viewport: { x: number; y: number; zoom: number } | undefined,
 ): viewport is { x: number; y: number; zoom: number } {
   if (!viewport) return false;
@@ -90,34 +94,62 @@ export function useCanvasEffects({
   skipInitialFit = false,
 }: UseCanvasEffectsParams) {
   const diagramId = diagram?.id ?? null;
+  const store = useStoreApi();
   const scrollMode = useCanvasPreferencesStore((state) => state.scrollMode);
 
+  // The one owner of the opening viewport: the editor's <ReactFlow> gets no `fitView` prop.
+  // With both, React Flow's own fit (its default min zoom, once nodes are measured) and this
+  // one raced, and whichever landed last decided the opening zoom; React Flow's fit could
+  // also persist its viewport before this read it and turn this fit into a restore.
   useEffect(() => {
     if (!diagramId || skipInitialFit) return;
+    const fit = () =>
+      void reactFlowInstance.fitView({
+        padding: FIT_VIEW_INITIAL_PADDING,
+        minZoom: VIEWPORT_MIN_ZOOM,
+        maxZoom: FIT_VIEW_MAX_ZOOM,
+        duration: 0,
+      });
+    // Non-reactive read: subscribing to the viewport would re-run this
+    // effect on every pan/zoom (onMoveEnd persists it to the store).
+    if (!hasSavedViewport(useDiagramStore.getState().diagrams[diagramId]?.viewport)) {
+      // Asked now, React Flow holds the fit until it has measured the nodes and applies it
+      // before they paint, as its own `fitView` prop did. Asked later, the canvas would
+      // paint a frame or two at the default zoom first.
+      fit();
+      return;
+    }
     let cancelled = false;
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (cancelled) return;
-        // Non-reactive read: subscribing to the viewport would re-run this
-        // effect on every pan/zoom (onMoveEnd persists it to the store).
         const savedViewport = useDiagramStore.getState().diagrams[diagramId]?.viewport;
         if (hasSavedViewport(savedViewport)) {
-          void reactFlowInstance.setViewport(savedViewport, { duration: 0 });
-          return;
+          // A saved viewport that leaves most of the diagram off screen (a stale pan from
+          // before the content moved, a different window size) opens on a sliver: fit instead.
+          const { nodeLookup, width, height } = store.getState();
+          const occupancy = computeViewportOccupancy(
+            Array.from(nodeLookup.values()),
+            [savedViewport.x, savedViewport.y, savedViewport.zoom],
+            width,
+            height,
+          );
+          const mostlyOffScreen =
+            occupancy.nodeCount > 0 &&
+            occupancy.visibleCount / occupancy.nodeCount < MIN_RESTORED_VIEWPORT_OCCUPANCY;
+          if (!mostlyOffScreen) {
+            void reactFlowInstance.setViewport(savedViewport, { duration: 0 });
+            return;
+          }
         }
-        void reactFlowInstance.fitView({
-          padding: FIT_VIEW_INITIAL_PADDING,
-          minZoom: VIEWPORT_MIN_ZOOM,
-          maxZoom: FIT_VIEW_MAX_ZOOM,
-          duration: 0,
-        });
+        fit();
       });
     });
     return () => {
       cancelled = true;
       cancelAnimationFrame(id);
     };
-  }, [diagramId, reactFlowInstance, skipInitialFit]);
+  }, [diagramId, reactFlowInstance, skipInitialFit, store]);
 
   useEffect(() => {
     if (!isPlaying) return;

@@ -113,6 +113,24 @@ snapshot, with a compare mode.
     so the measured proportions hold. Normal is the default layout.
   - **Advanced**: the gap between layers and the gap between elements in a layer (40–308px), each
     overriding the spacing for that gap only.
+  - **References** (under Advanced): how arranging makes automatic references.
+    - **Rules** (the default): a connection whose target sits more than N columns back against the
+      reading direction (default 2, adjustable 1–6) ends on a reference to the target, beside the
+      element that uses it.
+      - A nearer one stays a short back-edge.
+      - There is one reference per element and panel, and the original keeps at least K
+        connections (default 1).
+      - **Long forward lines too** (on by default): a connection running more than 6 columns
+        ahead ends on a reference as well. Far fewer lines cross the diagram, in exchange for more
+        references; turn it off to keep those lines drawn.
+      - The success message says how many connections pointed back and what happened to them.
+    - **Trial**: references on the busiest elements, kept only where the layout measurably reads
+      better (few trials on large diagrams).
+    - **Off**: none, and the ones an earlier arrangement made are removed.
+    - Automatic references are drawn as small pills (the link glyph and the name); a reference
+      you made yourself keeps its card.
+  - An element no connection enters always starts the reading: it is placed in the first column
+    (first row top to bottom) of its panel, so the diagram grows right or down from it.
   - Changing a setting re-arranges at once; one undo restores both the setting and the positions.
   - **Mode**: Manual (default) moves nothing on its own. Automatic places what you add next to
     what it connects to (a column to the right of its source, sliding down past anything in the
@@ -128,7 +146,7 @@ snapshot, with a compare mode.
     attaches connections on the diagram's axis, a Mermaid `flowchart TD` imported into an empty
     diagram makes it vertical (into one with content it follows that diagram's direction), and
     the assistant can generate a vertical diagram.
-  - **Restore defaults** goes back to Manual, Normal spacing, no overrides.
+  - **Restore defaults** goes back to Manual, Normal spacing, no overrides, references by rules.
   - **Live sessions**: on a diagram with more than 50 elements, arranging the whole diagram (button,
     shortcut, menus, spacing changes, the assistant) is off, since it would rewrite every position
     for every participant at once. The automatic mode's placement of what was just added stays on.

@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import LZString from "lz-string";
+import { MAX_SHARE_PAYLOAD_CHARS } from "./decode";
 import { generateShareUrl, getShareParamFromUrl, decodeShareParam, getAppBaseUrl } from "./index";
 import type { Diagram } from "@/features/diagram";
 import { EdgeStyle } from "@/features/diagram";
@@ -151,5 +153,72 @@ describe("getAppBaseUrl", () => {
     expect(getAppBaseUrl()).toBe(
       `${window.location.origin}${import.meta.env.BASE_URL.replace(/\/$/, "")}`,
     );
+  });
+});
+
+describe("Share payload hardening", () => {
+  const base = {
+    id: "d1",
+    name: "D",
+    level: "context",
+    createdAt: 1,
+    updatedAt: 1,
+    nodeLayouts: {},
+    edgeLayouts: {},
+    viewport: { x: 0, y: 0, zoom: 1 },
+  };
+  const encode = (value: unknown) => LZString.compressToEncodedURIComponent(JSON.stringify(value));
+
+  it("rejects a payload whose snapshot has no components", () => {
+    const param = encode({ ...base, snapshot: { connections: {}, flows: {} } });
+    expect(decodeShareParam(param)).toBeNull();
+  });
+
+  it("rejects a payload that is not an object", () => {
+    expect(decodeShareParam(encode(["a"]))).toBeNull();
+    expect(decodeShareParam(encode({ id: 5, snapshot: {} }))).toBeNull();
+  });
+
+  it("rejects a payload over the size cap", () => {
+    const filler = "x".repeat(MAX_SHARE_PAYLOAD_CHARS + 1);
+    const param = encode({
+      ...base,
+      snapshot: { components: {}, connections: {}, flows: {}, filler },
+    });
+    expect(decodeShareParam(param)).toBeNull();
+  });
+
+  it("sanitizes svg content that arrives through a link", () => {
+    const hostile = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script/></svg>';
+    const param = encode({
+      ...base,
+      snapshot: {
+        components: { s: { id: "s", type: "svg", name: "S", svgContent: hostile } },
+        connections: {},
+        flows: {},
+        iconLibrary: {
+          i: {
+            id: "i",
+            name: "i",
+            createdAt: 1,
+            usageCount: 0,
+            source: { kind: "svg", svgContent: hostile },
+          },
+        },
+      },
+    });
+    const decoded = decodeShareParam(param);
+    expect(decoded).not.toBeNull();
+    expect(JSON.stringify(decoded?.snapshot).toLowerCase()).not.toMatch(/onload|<script/);
+  });
+
+  it("round-trips a valid diagram", () => {
+    const diagram = {
+      ...base,
+      snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
+    } as unknown as Diagram;
+    const decoded = decodeShareParam(shareParamOf(generateShareUrl(diagram).url));
+    expect(decoded?.id).toBe("d1");
+    expect(decoded?.snapshot.components).toEqual({});
   });
 });

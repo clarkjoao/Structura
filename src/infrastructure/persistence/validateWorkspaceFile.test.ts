@@ -194,3 +194,40 @@ describe("validateManifest", () => {
     }
   });
 });
+
+describe("validateDiagramFile SVG sanitizing", () => {
+  const HOSTILE =
+    '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(2)</script><rect/></svg>';
+
+  it("sanitizes svg components and icon library entries on import", () => {
+    const result = validateDiagramFile(
+      minimalDiagram({
+        snapshot: {
+          components: {
+            c1: { id: "c1", type: "svg", name: "Art", svgContent: HOSTILE },
+            c2: { id: "c2", type: "svg", name: "Bad", svgContent: "<img src=x onerror=alert(1)>" },
+          },
+          connections: {},
+          flows: {},
+          iconLibrary: {
+            i1: {
+              id: "i1",
+              name: "Icon",
+              createdAt: 1,
+              usageCount: 0,
+              source: { kind: "svg", svgContent: HOSTILE },
+            },
+          },
+        },
+      }),
+    );
+    expect(result.valid).toBe(true);
+    if (!result.valid) return;
+    const components = result.diagram.snapshot.components;
+    const c1 = components.c1;
+    const c2 = components.c2;
+    expect(c1?.type === "svg" && c1.svgContent).toBeTruthy();
+    expect(JSON.stringify(components).toLowerCase()).not.toMatch(/onload|<script|onerror/);
+    expect(c2?.type === "svg" && c2.svgContent).toContain("<svg");
+  });
+});

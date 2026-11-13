@@ -27,7 +27,11 @@ The canvas must **not** own:
 ## Hook architecture
 
 `useCanvasController.ts` composes the per-concern hooks; each hook has one
-job (this is composition over inheritance applied to hooks):
+job (this is composition over inheritance applied to hooks). `Canvas.tsx`
+renders what the controller returns; the chrome around the surface (right
+rail, overlays, selection toolbars, drop target, Arrange control) lives in
+`features/canvas/chrome/`. Which store or context holds each fact:
+[canvas-state-map.md](./canvas-state-map.md).
 
 | Hook | Concern |
 | --- | --- |
@@ -38,6 +42,8 @@ job (this is composition over inheritance applied to hooks):
 | `useCanvasFlowState` | Flow recording/playback state feeding descriptor context |
 | `useCanvasCompareMode*` | Scene compare visuals |
 | `useCanvasDiagramNavigation` / `useCanvasDrillHandlers` | Drill-down and cross-diagram navigation |
+| `useCanvasArrange` / `useElementPanelGate` / `useCollabSelectionBroadcast` | Arrange runs, whether the element panel shows, the selection sent to a session |
+| `useCanvasModeExits` / `useForceSaveToFolder` / `useInsertToolByKey` / `useFocusTitleRequest` | Escape out of a mode, the save shortcut, keyboard inserts, the panel's focus-title signal |
 
 ## Why React Flow, and why behind an abstraction
 
@@ -72,3 +78,15 @@ Known residual violations (tracked, to be absorbed into descriptors):
 swimlane special-case in `resolveNodeDescriptor`, and assorted
 panel-awareness inside drag hooks (`panelIds` in `NodeBuildContext` is the
 sanctioned mechanism).
+
+## Arrange: deterministic input order
+
+ELK's result depends on the order it receives nodes and edges in, and ids are
+random, so sorting by id made two diagrams with the same content lay out
+differently. `orderLayoutGraph` (`layout/layoutOrder.ts`) fixes the order from
+content: nodes by `LayoutNode.sortKey` (type and name, set by `fromDiagram` and
+`irToLayoutGraph`), then current position, size and connection count; edges by
+the rank of their ends, then label text. An id breaks only a tie between nodes
+that are otherwise identical, so the order stays total. A new caller of the
+layout engine should set `sortKey`; without it, nodes tie on everything but
+position, size and degree.

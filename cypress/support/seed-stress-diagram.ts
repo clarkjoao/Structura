@@ -1,12 +1,13 @@
 /**
  * Serialized `diagram-store` payload for Cypress (Zustand persist + merge).
- * Must match `PERSIST_SCHEMA_VERSION` (4) and `LocalStorageAdapter` key prefix.
+ * Must match `PERSIST_SCHEMA_VERSION` (16, see `persist.config.ts`) and `LocalStorageAdapter` key prefix.
  */
 
 /** Same as `structura_` + `diagram-store` from LocalStorageAdapter + PERSIST_KEY. */
 export const DIAGRAM_STORE_LOCAL_STORAGE_KEY = "structura_diagram-store";
 
-const PERSIST_VERSION = 4;
+/** Must equal `PERSIST_SCHEMA_VERSION`; a lower value would run every migration on load. */
+const PERSIST_VERSION = 16;
 
 interface NodeLayout {
   elementId: string;
@@ -194,13 +195,13 @@ export function buildStressSeed(options?: {
       iconLibrary: {},
     },
     nodeLayouts,
-    edgeLayouts: [],
+    edgeLayouts: {},
     viewport: { x: 0, y: 0, zoom: 0.4 },
     versions: {},
-    activeVersionId: undefined,
-    compareVersionId: undefined,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    activeVersionId: null,
+    compareVersionId: null,
+    createdAt: Date.UTC(2026, 10, 5),
+    updatedAt: Date.UTC(2026, 10, 5),
   };
 
   const payload = {
@@ -210,9 +211,6 @@ export function buildStressSeed(options?: {
       userTemplates: {},
       services: {},
       activeDiagramId: diagramId,
-      past: [],
-      future: [],
-      _lastUndoRedoAt: 0,
     },
     version: PERSIST_VERSION,
   };

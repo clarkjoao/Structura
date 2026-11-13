@@ -1,3 +1,5 @@
+import { kvGetItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
+
 const STORAGE_KEY = "structura:favoriteDiagrams";
 
 function uniqueIds(ids: string[]): string[] {
@@ -13,7 +15,7 @@ function uniqueIds(ids: string[]): string[] {
 
 export function readFavoriteIds(): string[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = kvGetItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
@@ -24,7 +26,7 @@ export function readFavoriteIds(): string[] {
 }
 
 export function writeFavoriteIds(ids: string[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(uniqueIds(ids)));
+  kvSetItem(STORAGE_KEY, JSON.stringify(uniqueIds(ids)));
 }
 
 export function isFavoriteDiagram(id: string): boolean {

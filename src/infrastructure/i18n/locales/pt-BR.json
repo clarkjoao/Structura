@@ -1,5 +1,6 @@
 {
   "common": {
+    "loading": "Carregando…",
     "cancel": "Cancelar",
     "save": "Salvar",
     "confirm": "Confirmar",
@@ -175,6 +176,7 @@
     "heroNodeDatabase": "Database"
   },
   "dashboard": {
+    "addDiagramDescription": "Dê um nome ao diagrama e escolha o nível C4.",
     "allDiagrams": "Todos os diagramas",
     "searchComponentPlaceholder": "Buscar componente...",
     "noComponentsFound": "Nenhum componente encontrado.",
@@ -250,6 +252,8 @@
     "chooseFile": "Escolher ficheiro",
     "jsonErrorWithReason": "Não foi possível importar o JSON do diagrama: {{reason}}",
     "jsonErrorNamed": "Não foi possível importar {{name}}: {{reason}}",
+    "tooLarge": "Este arquivo é grande demais para importar (limite de 25 MB).",
+    "tooLargeNamed": "Não foi possível importar {{name}}: o arquivo é grande demais (limite de 25 MB).",
     "noJsonFiles": "Nenhum ficheiro .json de diagrama importável encontrado.",
     "successOne": "Diagrama importado",
     "successMany": "{{count}} diagramas importados",
@@ -276,6 +280,8 @@
     "signalComponentLink": "elemento aponta para este repositório"
   },
   "folderTree": {
+    "expandFolder": "Expandir pasta",
+    "collapseFolder": "Recolher pasta",
     "newFolderTitle": "Nova pasta",
     "newFolder": "Nova pasta",
     "recentLabel": "Recentes",
@@ -288,7 +294,7 @@
     "delete": "Excluir"
   },
   "localStorage": {
-    "savedSuccess": "Estado salvo no localStorage",
+    "savedSuccess": "Estado salvo no navegador",
     "syncNow": "· sync agora",
     "syncAgo": "· sync {{time}}",
     "neverSynced": "· nunca sincronizado"
@@ -296,11 +302,11 @@
   "storage": {
     "warning": {
       "title": "Espaço local quase esgotado",
-      "description": "A usar {{used}} de ~5 MB disponíveis. Diagramas futuros podem não ser guardados."
+      "description": "A usar {{used}} de {{quota}} disponíveis. Diagramas futuros podem não ser guardados."
     },
     "danger": {
       "title": "Espaço local crítico",
-      "description": "A usar {{used}} de ~5 MB. Novos elementos podem não ser guardados."
+      "description": "A usar {{used}} de {{quota}}. Novos elementos podem não ser guardados."
     },
     "critical": {
       "title": "Não foi possível guardar",
@@ -315,6 +321,7 @@
       "description": "O armazenamento do navegador está quase cheio. Ligue uma pasta para não perder nada se o armazenamento for limpo."
     },
     "freed": "{{amount}} libertados com sucesso.",
+    "localStorageQuota": "~5 MB",
     "action": {
       "clear": "Libertar espaço",
       "connectFolder": "Ligar pasta"
@@ -331,13 +338,13 @@
     "syncPullTitle": "Sync: puxar atualizações da pasta",
     "disconnectTitle": "Desconectar pasta",
     "connecting": "Conectando...",
-    "localStorageTitle": "Dados salvos no navegador (localStorage)",
-    "localStorageLabel": "localStorage",
+    "localStorageTitle": "Dados salvos no navegador",
+    "localStorageLabel": "Navegador",
     "connectFolderTitle": "Sincronizar com pasta local",
     "connectFolder": "Conectar pasta",
-    "backupFailedSerialize": "Não foi possível serializar os diagramas para o localStorage. Veja o console.",
+    "backupFailedSerialize": "Não foi possível serializar os diagramas para a cópia no navegador. Veja o console.",
     "backupFailedQuota": "Armazenamento do navegador cheio ou bloqueado. Libere espaço ou permita armazenamento e tente de novo.",
-    "backupFailedVerify": "O backup não apareceu no localStorage após salvar. Verifique permissões do site.",
+    "backupFailedVerify": "O backup não apareceu no navegador após salvar. Verifique permissões do site.",
     "backupFailedGeneric": "Não foi possível salvar cópia no navegador. Tente de novo ou exporte JSON manualmente.",
     "backupFailedBeforeOverwrite": "Não foi possível salvar cópia de segurança no navegador antes de sobrescrever. Operação cancelada para proteger seus dados.",
     "backupFailedBeforeMerge": "Não foi possível salvar cópia de segurança no navegador antes de fazer merge. Operação cancelada para proteger seus dados.",
@@ -405,14 +412,14 @@
     "title": "Desconectar pasta",
     "messageNamed": "Deseja desconectar \"{{name}}\"?",
     "messageGeneric": "Deseja desconectar a pasta local?",
-    "explanation": "Os dados atuais estão apenas no seu filesystem (não foram salvos no navegador). Quer manter uma cópia no navegador (localStorage) antes de desconectar?",
+    "explanation": "Os dados atuais estão apenas no seu filesystem (não foram salvos no navegador). Quer manter uma cópia no navegador antes de desconectar?",
     "localCopyBadgeTitle": "Backup no navegador",
     "localCopyBadgePresent": "Há {{count}} diagrama(s) já salvos no navegador.",
     "localCopyBadgeMissing": "Nada está salvo no navegador ainda. Se desconectar sem salvar, seus dados existirão apenas na pasta.",
     "cancelHint": "Fecha esta janela. A pasta continua conectada.",
     "disconnectOnlyHint": "Desconecta a pasta. Diagramas na pasta ficam intactos no disco; o app volta a trabalhar só com o navegador.",
     "disconnectOnlyHintNoCopy": "⚠ Desconecta a pasta. Como não há cópia no navegador, você só conseguirá acessar esses dados reconectando a mesma pasta depois.",
-    "keepCopyHint": "Salva uma cópia de todos os diagramas no navegador (localStorage) e só então desconecta a pasta. Você poderá continuar editando offline.",
+    "keepCopyHint": "Salva uma cópia de todos os diagramas no navegador e só então desconecta a pasta. Você poderá continuar editando offline.",
     "keepCopyHintNoCopy": "Salva uma cópia de todos os diagramas no navegador e desconecta a pasta. Recomendado.",
     "keepCopyTitle": "Salvar estado atual no navegador e depois desconectar a pasta",
     "keepCopy": "Salvar no navegador e desconectar",
@@ -431,6 +438,10 @@
     "deleteSelected": "Deletar selecionados"
   },
   "canvas": {
+    "diagramNotFound": "Diagrama não encontrado",
+    "elementsDeleted_one": "{{count}} elemento excluído",
+    "elementsDeleted_other": "{{count}} elementos excluídos",
+    "elementsDeletedUndo": "Desfazer",
     "noDiagramSelected": "Nenhum diagrama selecionado",
     "nothingInView": "Nada à vista",
     "nothingInViewHint_one": "{{count}} elemento está fora da tela.",
@@ -562,7 +573,20 @@
       "directionVertical": "Vertical",
       "directionHint": "Reorganiza o diagrama inteiro e refaz as conexões. Desfazer volta como estava.",
       "directionLockedSession": "Indisponível durante uma sessão ao vivo.",
-      "running": "Organizando…"
+      "running": "Organizando…",
+      "references": "Referências",
+      "referencesRules": "Regras",
+      "referencesAuto": "Teste",
+      "referencesOff": "Desligadas",
+      "referencesRulesHint": "Linhas longas viram referências: em vez de atravessar o diagrama, a conexão termina numa pequena cópia tracejada do destino, ao lado de quem a usa. O original fica onde está; ao selecionar a cópia, um botão leva até ele.",
+      "referencesAutoHint": "Testa referências nos elementos mais usados e mantém só as que reduzem cruzamentos. Lento em diagramas grandes.",
+      "referencesOffHint": "Sem referências automáticas; as que um Organizar anterior criou são desfeitas.",
+      "refNeighborColumns": "Volta curta até",
+      "refColumns_one": "{{count}} coluna",
+      "refColumns_other": "{{count}} colunas",
+      "refMinKeep": "Conexões mantidas no original",
+      "refForward": "Também linhas longas para frente",
+      "refForwardHint": "Uma conexão que avança mais de {{count}} colunas também termina numa referência. Bem menos linhas cruzando o diagrama, em troca de mais referências. Desmarque para manter essas linhas desenhadas."
     }
   },
   "diagram": {
@@ -884,6 +908,7 @@
     "addRow": "Adicionar linha",
     "addCol": "Adicionar coluna",
     "removeRow": "Remover linha",
+    "cellAria": "{{column}}, linha {{row}}",
     "removeCol": "Remover coluna",
     "expandAria": "Expandir tabela",
     "expandTitle": "Expandir",
@@ -2077,12 +2102,12 @@
     "elements_one": "{{count}} elemento",
     "elements_other": "{{count}} elementos",
     "chip": {
+      "container_one": "{{count}} contêiner",
+      "container_other": "{{count}} contêineres",
       "person_one": "{{count}} pessoa",
       "person_other": "{{count}} pessoas",
       "system_one": "{{count}} sistema",
       "system_other": "{{count}} sistemas",
-      "container_one": "{{count}} aplicação",
-      "container_other": "{{count}} aplicações",
       "component_one": "{{count}} componente",
       "component_other": "{{count}} componentes",
       "panel_one": "{{count}} fronteira",
@@ -2950,11 +2975,18 @@
     "applied": "Layout aplicado com sucesso",
     "appliedWithRefs_one": "Layout aplicado — 1 referência desembaraça um elemento muito usado",
     "appliedWithRefs_other": "Layout aplicado — {{count}} referências desembaraçam elementos muito usados",
+    "appliedWithRuleRefs_one": "Layout aplicado — 1 referência substitui uma linha longa",
+    "appliedWithRuleRefs_other": "Layout aplicado — {{count}} referências substituem linhas longas",
     "panelApplied": "Layout do painel aplicado",
     "organizeChildren": "Organizar filhos (LR)",
     "error": "Erro ao calcular layout",
     "nothingToLayout": "Nada para organizar",
-    "blockedInSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos."
+    "blockedInSession": "Organizar fica desligado numa sessão ao vivo para diagramas com mais de {{max}} elementos.",
+    "discardedChanged": "O diagrama mudou enquanto era organizado. Organize de novo para aplicar à versão mais recente.",
+    "ruleRefsSummary_one": "1 conexão volta: {{neighbor}} fica como volta curta, {{moved}} passa para uma referência, {{kept}} fica no original.",
+    "ruleRefsSummary_other": "{{count}} conexões voltam: {{neighbor}} ficam como volta curta, {{moved}} passam para referências, {{kept}} ficam no original.",
+    "ruleRefsForward_one": "1 linha longa para frente passa para uma referência.",
+    "ruleRefsForward_other": "{{count}} linhas longas para frente passam para referências."
   },
   "plugins": {
     "title": "Plugins",

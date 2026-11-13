@@ -239,7 +239,13 @@ export function fromDiagram(
     const component = components[id];
     if (component === undefined) continue;
     const { width, height } = sizeOf(component, nodeLayouts, options.measured, components);
-    const node: LayoutNode = { id, parentId: component.parentId ?? null, width, height };
+    const node: LayoutNode = {
+      id,
+      parentId: component.parentId ?? null,
+      width,
+      height,
+      sortKey: `${component.type}\u0000${component.name}`,
+    };
     if (isPanelType(component.type)) node.topInset = panelTopInset(component.description);
     const singlePort = options.handleSpecFor && singlePortOf(options.handleSpecFor(component));
     if (singlePort) node.singlePort = singlePort;

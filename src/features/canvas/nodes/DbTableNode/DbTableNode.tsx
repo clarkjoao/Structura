@@ -74,10 +74,11 @@ function totalWidth(visibleColDefs: ColDef[]): number {
 interface TextCellProps {
   value: string;
   colWidth: number;
+  label: string;
   onBlur: (value: string) => void;
 }
 
-function TextCell({ value, colWidth, onBlur }: TextCellProps) {
+function TextCell({ value, colWidth, label, onBlur }: TextCellProps) {
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
@@ -86,6 +87,7 @@ function TextCell({ value, colWidth, onBlur }: TextCellProps) {
 
   return (
     <input
+      aria-label={label}
       className={cn(
         "h-full bg-transparent border-r border-border/40 px-1.5",
         "text-[11px] font-mono text-foreground outline-none",
@@ -107,10 +109,11 @@ function TextCell({ value, colWidth, onBlur }: TextCellProps) {
 interface BoolCellProps {
   value: boolean;
   colWidth: number;
+  label: string;
   onChange: (value: boolean) => void;
 }
 
-function BoolCell({ value, colWidth, onChange }: BoolCellProps) {
+function BoolCell({ value, colWidth, label, onChange }: BoolCellProps) {
   return (
     <div
       className={cn(
@@ -121,6 +124,7 @@ function BoolCell({ value, colWidth, onChange }: BoolCellProps) {
       onClick={() => onChange(!value)}
       role="checkbox"
       aria-checked={value}
+      aria-label={label}
     >
       {value ? <div className="w-3 h-3 rounded-sm bg-primary/80" /> : null}
     </div>
@@ -385,7 +389,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
           </div>
         </div>
 
-        {rows.map((row) => (
+        {rows.map((row, rowIndex) => (
           <div
             key={row.id}
             className="flex shrink-0 border-b border-border/30 group hover:bg-muted/20"
@@ -414,6 +418,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
               col.isBoolean ? (
                 <BoolCell
                   key={col.key}
+                  label={t("dbTable.cellAria", { column: t(col.labelKey), row: rowIndex + 1 })}
                   value={row[col.key] as boolean}
                   colWidth={col.width}
                   onChange={(val) => applyRowPatch(row.id, col.key, val)}
@@ -421,6 +426,7 @@ const DbTableNode = memo(({ data: d, selected }: NodeProps<Node<DbTableNodeData>
               ) : (
                 <TextCell
                   key={col.key}
+                  label={t("dbTable.cellAria", { column: t(col.labelKey), row: rowIndex + 1 })}
                   value={row[col.key] as string}
                   colWidth={col.width}
                   onBlur={(val) => applyRowPatch(row.id, col.key, val)}

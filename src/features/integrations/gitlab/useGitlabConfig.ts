@@ -1,3 +1,4 @@
+import { readSecretItem } from "@/infrastructure/persistence/kvStorage";
 import { useCallback, useState } from "react";
 import { defaultStorage } from "@/infrastructure/persistence";
 import type { GitlabConfig } from "./gitlab.types";
@@ -10,7 +11,7 @@ export const DEFAULT_GITLAB_CONFIG: GitlabConfig = { baseUrl: "https://gitlab.co
 /** Stored GitLab connection, read the same way as the GitHub one. */
 export function readGitlabConfig(): GitlabConfig | null {
   try {
-    const raw = localStorage.getItem(ADAPTER_KEY);
+    const raw = readSecretItem(ADAPTER_KEY);
     return raw ? (JSON.parse(raw) as GitlabConfig) : null;
   } catch {
     return null;

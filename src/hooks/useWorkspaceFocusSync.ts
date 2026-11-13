@@ -1,3 +1,4 @@
+import { kvGetItem } from "@/infrastructure/persistence/kvStorage";
 import { useState, useEffect, useRef } from "react";
 import { fileSystemAdapter } from "@/infrastructure/persistence/FileSystemAdapter";
 import { hydrateIconStoreFromWorkspace } from "@/infrastructure/persistence/fileSystemBoot";
@@ -22,7 +23,7 @@ const FS_STALENESS_TOLERANCE_MS = 3_000;
 
 function readLastFolderSyncMs(): number | null {
   try {
-    const raw = localStorage.getItem(LAST_FOLDER_SYNC_STORAGE_KEY);
+    const raw = kvGetItem(LAST_FOLDER_SYNC_STORAGE_KEY);
     if (raw === null) return null;
     const parsed = parseInt(raw, 10);
     return Number.isNaN(parsed) ? null : parsed;

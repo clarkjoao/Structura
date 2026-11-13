@@ -30,7 +30,6 @@ export type EndpointNodeData = {
    */
   flows?: FlowRef[];
   isSelected: boolean;
-  controlsDisabled?: boolean;
   isPlaying?: boolean;
   onPlayFlow?: (flowId: string) => void;
   versionBadge?: { name: string; color: string };

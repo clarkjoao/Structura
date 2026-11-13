@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { withDeleteFeedback } from "../utils/notifyElementsDeleted";
 import { useTranslation } from "react-i18next";
 import {
   AlignCenterHorizontal,
@@ -117,6 +118,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   const {
     groupNodes,
     removeElements,
+    undo,
     batchUpdateComponents,
     alignNodes,
     distributeNodes,
@@ -237,7 +239,7 @@ export function MultiSelectPanel({ selectedNodes, onClose }: MultiSelectPanelPro
   };
 
   const handleDelete = () => {
-    removeElements(ids, []);
+    withDeleteFeedback(removeElements, undo, t)(ids, []);
     onClose();
   };
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { useActiveDiagramId, useDiagramActions, type Point } from "@/features/diagram";
+import { useActiveDiagramId, useDiagramStore, type Point } from "@/features/diagram";
 import { getClosestOffsetOnPath } from "../geometry/projection";
 
 interface UseEdgeLabelDragParams {
@@ -35,7 +35,9 @@ export function useEdgeLabelDrag({
 }: UseEdgeLabelDragParams): UseEdgeLabelDragResult {
   const activeDiagramId = useActiveDiagramId();
   const { screenToFlowPosition } = useReactFlow();
-  const { setEdgeLabelOffset } = useDiagramActions();
+  // Store actions never change identity, so they are read, not subscribed to: a
+  // subscription per edge ran its selector on every render of every moving edge.
+  const { setEdgeLabelOffset } = useDiagramStore.getState();
   const draggingRef = useRef(false);
   const lastOffsetRef = useRef<number | null>(null);
   const [offset, setOffset] = useState<number | null>(null);

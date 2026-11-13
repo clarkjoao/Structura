@@ -44,7 +44,19 @@ function conceptKey(id: CatalogConceptId): string {
 
 /** Every locale the app ships, read from i18n rather than written out. */
 function shippedLanguages(): string[] {
-  return Object.keys(i18n.options.resources ?? {});
+  return (i18n.options.supportedLngs || []).filter((lng) => lng !== "cimode");
+}
+
+/**
+ * Which shipped locales have their bundle loaded, as a string that changes when
+ * one arrives. Locales load on demand (the second one in idle time), so an index
+ * built before then holds no terms of that language; a consumer keys its index on
+ * this to rebuild once the bundle lands.
+ */
+export function loadedLocalesKey(): string {
+  return shippedLanguages()
+    .filter((lng) => i18n.hasResourceBundle(lng, "translation"))
+    .join(",");
 }
 
 /**

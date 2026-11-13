@@ -46,13 +46,41 @@ export default tseslint.config(
       "react-hooks/immutability": "off",
       // Back on, as an error. It was off globally, which meant no dependency array in
       // the app was checked — including in code written after the suppression landed.
-      // The sixteen pre-existing sites are each deliberate (an effect keyed on identity,
-      // a value read through a ref on a hot path) and now carry a per-site disable with
+      // Every existing site is deliberate (an effect keyed on identity,
+      // a value read through a ref on a hot path) and now carries a per-site disable with
       // the reason, so an exception has to be argued for rather than inherited.
       "react-hooks/exhaustive-deps": "error",
       "react-hooks/static-components": "off",
       "react-hooks/preserve-manual-memoization": "off",
       "react-hooks/purity": "off",
+    },
+  },
+  {
+    // The persistence boundary (AGENTS.md, ADR-0007): the browser's key-value stores are
+    // reached only through `src/infrastructure/persistence/` — the workspace via
+    // `IStoragePort`, preferences / caches / secrets via `kvStorage`. Tests may poke the
+    // real thing to arrange or assert state.
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/infrastructure/persistence/**", "src/test/**", "**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        ...["localStorage", "sessionStorage"].map((name) => ({
+          name,
+          message: `Do not use ${name} directly: use infrastructure/persistence (IStoragePort for the workspace, kvStorage for preferences, caches and secrets).`,
+        })),
+      ],
+      "no-restricted-properties": [
+        "error",
+        ...["window", "globalThis", "self"].flatMap((object) =>
+          ["localStorage", "sessionStorage"].map((property) => ({
+            object,
+            property,
+            message:
+              "Do not use browser storage directly: use infrastructure/persistence (kvStorage).",
+          })),
+        ),
+      ],
     },
   },
   {

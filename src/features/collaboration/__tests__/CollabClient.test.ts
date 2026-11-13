@@ -7,7 +7,15 @@ import {
   type ClosedReason,
   type SocketLike,
 } from "../sync/CollabClient";
-import { LegacyRelaySocket, createRig, tick, until, type Rig } from "./collabTestRig";
+import {
+  FakeSocket,
+  LegacyRelaySocket,
+  UNTIL_TIMEOUT_MS,
+  createRig,
+  tick,
+  until,
+  type Rig,
+} from "./collabTestRig";
 
 const SEED: DiagramState = makeState(
   {
@@ -34,6 +42,8 @@ interface Probe {
   closed: ClosedReason | null;
   token: string | null;
   resumeVersion: number | null;
+  /** The probe's own most recent socket (the rig's last socket may belong to another client). */
+  socket: FakeSocket | null;
 }
 
 function probe(
@@ -55,8 +65,11 @@ function probe(
     closed: null,
     token: null,
     resumeVersion: null,
+    socket: null,
   };
   const name = extra.name ?? role;
+  // Bound now: a client left running by an earlier test must keep talking to its own rig.
+  const createSocket = extra.createSocket ?? rig.createSocket;
   p.client = new CollabClient({
     url: "ws://test/ws",
     roomId: room,
@@ -65,7 +78,11 @@ function probe(
     hostToken: extra.hostToken ?? null,
     getSeed: role === "host" ? () => extra.seed ?? SEED : undefined,
     getResumeVersion: () => p.resumeVersion,
-    createSocket: extra.createSocket ?? rig.createSocket,
+    createSocket: (url) => {
+      const socket = createSocket(url);
+      p.socket = socket instanceof FakeSocket ? socket : null;
+      return socket;
+    },
     reconnectDelaysMs: [10, 20],
     notReadyRetryMs: 20,
     callbacks: {
@@ -81,7 +98,8 @@ function probe(
   return p;
 }
 
-const ready = (p: Probe) => until(() => p.client.currentPhase === "ready", 3_000, "ready");
+const ready = (p: Probe) =>
+  until(() => p.client.currentPhase === "ready", UNTIL_TIMEOUT_MS, "ready");
 
 describe("CollabClient", () => {
   it("a host seeds the room and becomes ready through one path", async () => {
@@ -144,7 +162,7 @@ describe("CollabClient", () => {
     await ready(guest);
 
     guest.resumeVersion = 0;
-    rig.sockets[rig.sockets.length - 1].drop();
+    guest.socket?.drop();
     await until(() => guest.phases.includes("reconnecting"));
     await ready(guest);
     expect(guest.catchups).toEqual([{ version: 0, entries: [] }]);
@@ -161,7 +179,7 @@ describe("CollabClient", () => {
     guest.client.start();
     await ready(guest);
     guest.resumeVersion = null;
-    rig.sockets[rig.sockets.length - 1].drop();
+    guest.socket?.drop();
     await until(() => guest.snapshots.length === 2);
     await ready(guest);
   });
@@ -176,7 +194,7 @@ describe("CollabClient", () => {
     guest.client.start();
     await ready(guest);
     rig.online = false;
-    rig.sockets[rig.sockets.length - 1].drop();
+    guest.socket?.drop();
     await tick(120);
     expect(guest.client.currentPhase).toBe("reconnecting");
     rig.online = true;
@@ -215,12 +233,14 @@ describe("CollabClient", () => {
     host.client.start();
     await ready(host);
     const token = host.token as string;
+    // The first host is gone (a closed tab); left running it would reconnect and race the new one.
+    host.client.leaveSilently();
     await rig.store.discardRoom(room);
 
     const again = probe("host", room, { hostToken: token });
     again.client.start();
     await ready(again);
-    const sent = rig.sockets[rig.sockets.length - 1].sentTypes();
+    const sent = again.socket!.sentTypes();
     expect(sent.slice(0, 2)).toEqual(["join", "create"]);
     expect(again.closed).toBeNull();
   });
@@ -231,10 +251,11 @@ describe("CollabClient", () => {
     const host = probe("host", room);
     host.client.start();
     await ready(host);
+    host.client.leaveSilently();
     const again = probe("host", room, { hostToken: host.token });
     again.client.start();
     await ready(again);
-    expect(rig.sockets[rig.sockets.length - 1].sentTypes()).not.toContain("create");
+    expect(again.socket!.sentTypes()).not.toContain("create");
     expect(again.snapshots[0]?.state).toEqual(SEED);
   });
 
@@ -277,7 +298,7 @@ describe("CollabClient", () => {
     host.client.leaveSilently();
     await tick(150);
     expect(guest.closed).toBeNull();
-    await until(() => guest.closed !== null, 3_000);
+    await until(() => guest.closed !== null, UNTIL_TIMEOUT_MS);
     expect(guest.closed).toBe("host_timeout");
   });
 
@@ -293,7 +314,11 @@ describe("CollabClient", () => {
     guest.resumeVersion = 0;
 
     await rig.store.discardRoom(room);
-    await until(() => guest.phases.filter((p) => p === "ready").length >= 2, 5_000, "guest back");
+    await until(
+      () => guest.phases.filter((p) => p === "ready").length >= 2,
+      UNTIL_TIMEOUT_MS,
+      "guest back",
+    );
     expect(guest.closed).toBeNull();
     expect(host.closed).toBeNull();
     // The host reseeded: the guest got the host's copy as a fresh snapshot.
@@ -308,7 +333,11 @@ describe("CollabClient", () => {
     guest.client.start();
     host.client.start();
 
-    await until(() => guest.closed !== null && host.closed !== null, 1_000, "both closed");
+    await until(
+      () => guest.closed !== null && host.closed !== null,
+      UNTIL_TIMEOUT_MS,
+      "both closed",
+    );
     expect(guest.closed).toBe("protocol_mismatch");
     expect(host.closed).toBe("protocol_mismatch");
     expect(guest.phases).not.toContain("ready");

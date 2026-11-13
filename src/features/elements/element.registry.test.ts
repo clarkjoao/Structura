@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { SINGLE_PAIR_HANDLES } from "@/features/canvas/nodes/node-types/handle-spec";
 import type { Component } from "@/features/diagram";
 import {
@@ -57,8 +57,19 @@ function makeDescriptor(overrides: Partial<ElementDescriptor> = {}): ElementDesc
   };
 }
 
+// "note" is a real element that the bootstrap (loaded by the test setup) already
+// registered. Lift it out for each test so the fixture can claim the id, then put the
+// original back so nothing leaks into later tests.
+let bootstrapped: ElementDescriptor | undefined;
+
+beforeEach(() => {
+  bootstrapped = getElement(FIXTURE_ID);
+  unregisterElement(FIXTURE_ID);
+});
+
 afterEach(() => {
   unregisterElement(FIXTURE_ID);
+  if (bootstrapped) registerElement(bootstrapped);
 });
 
 describe("registerElement", () => {

@@ -241,6 +241,17 @@ function drawingAt(url: string, into: (drawing: Drawing) => void): void {
   cy.window().then((win) => into(collect(win)));
 }
 
+/** The saved workspace once it holds diagrams; retried for up to a minute. */
+function waitForSavedWorkspace(attempt = 0): Cypress.Chainable<string> {
+  return cy.readSavedWorkspace().then((raw) => {
+    const diagrams = raw ? (JSON.parse(raw).state?.diagrams ?? {}) : {};
+    if (raw && Object.keys(diagrams).length > 0) return cy.wrap(raw, { log: false });
+    if (attempt >= 120) throw new Error("the seeded workspace was never saved");
+    cy.wait(500, { log: false });
+    return waitForSavedWorkspace(attempt + 1);
+  });
+}
+
 describe("every way of reading a diagram draws what the editor draws", () => {
   const editor: Record<string, Drawing> = {};
   const reading: Record<Surface, Record<string, Drawing>> = { diagramId: {}, data: {}, share: {} };
@@ -253,22 +264,19 @@ describe("every way of reading a diagram draws what the editor draws", () => {
         win.localStorage.clear();
       },
     });
-    // The seeds are written on the first load.
-    cy.window({ timeout: 60000 }).should((win) => {
-      const raw = win.localStorage.getItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY);
-      expect(raw, "seeded store").to.be.a("string");
-      const diagrams = JSON.parse(raw!).state?.diagrams ?? {};
-      expect(Object.keys(diagrams)).to.have.length.greaterThan(0);
-    });
-    cy.window().then((win) => {
-      const stored = JSON.parse(win.localStorage.getItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY)!);
+    // The seeds are written on the first load (to IndexedDB, after the save debounce).
+    waitForSavedWorkspace().then((raw) => {
+      const stored = JSON.parse(raw);
       const diagrams = stored.state.diagrams as Record<string, StoredDiagram>;
       diagramIds = Object.keys(diagrams)
         .filter((id) => Object.keys(diagrams[id].nodeLayouts ?? {}).length >= 2)
         .sort();
       sceneDiagramId = diagramIds[0];
       openInScene(diagrams[sceneDiagramId]);
-      win.localStorage.setItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY, JSON.stringify(stored));
+      // A workspace written to localStorage is a seed: the next load adopts it.
+      cy.window().then((win) =>
+        win.localStorage.setItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY, JSON.stringify(stored)),
+      );
     });
 
     cy.then(() => {
@@ -301,8 +309,8 @@ describe("every way of reading a diagram draws what the editor draws", () => {
     // The scene removed a component: the editor must not draw it, or the
     // comparisons below would pass on two pictures of the base.
     const drawn = Object.keys(editor[sceneDiagramId].nodes);
-    cy.window().then((win) => {
-      const stored = JSON.parse(win.localStorage.getItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY)!);
+    cy.readSavedWorkspace().then((raw) => {
+      const stored = JSON.parse(raw!);
       const scene = stored.state.diagrams[sceneDiagramId].versions[SCENE_ID];
       expect(drawn).not.to.include(scene.removedComponentIds[0]);
     });

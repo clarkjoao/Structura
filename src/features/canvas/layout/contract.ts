@@ -58,6 +58,17 @@ export interface LayoutNode {
    * strategies read it (as the order to keep); the default layout ignores it.
    */
   position?: LayoutPoint;
+  /**
+   * Placed in the first layer of its container: nothing reads before it. Set
+   * on an element no connection enters, so the diagram starts from it and
+   * grows along the reading (`firstLayerIds`).
+   */
+  firstLayer?: true;
+  /**
+   * What the node is, for ordering only: its type and name. Nodes the engine
+   * receives in any order are put in the same one by this, never by `id`.
+   */
+  sortKey?: string;
 }
 
 export interface LayoutEdge {

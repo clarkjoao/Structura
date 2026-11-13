@@ -6,7 +6,7 @@ single long-form reference.
 ## What it is
 
 Open source C4-model architecture diagramming SPA. No backend and no database:
-all state is client-side (localStorage and, optionally, a local folder via the
+all state is client-side (IndexedDB, localStorage as fallback, and optionally a local folder via the
 File System Access API). A small optional Node server in `server/` provides the
 collaboration relay only; `go-server/` is the same relay in Go, long-lived (ECS, Kubernetes) or
 serverless (AWS Lambda + API Gateway), see ADR-0012.
@@ -60,7 +60,7 @@ src/
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
 │   └── viewer/             # read-only shared-diagram viewer
 ├── infrastructure/
-│   ├── persistence/        # IStoragePort, LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
+│   ├── persistence/        # IStoragePort, IndexedDb/LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
 │   └── i18n/               # i18next setup + locales
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
@@ -108,9 +108,10 @@ src/
   [docs/guides/adding-a-node-type.md](docs/guides/adding-a-node-type.md).
 - **Cloud service ids persist as `cloudServiceId`**, written only through
   `cloudServiceIdWrite()` / `cloudServiceIdClearingPatch()` and read through
-  `resolveCloudServiceId`. It is **not** `BaseComponent.serviceId`, which is the business
-  service catalog. `npm run build` is gated on `VITE_ENABLE_CLOUD_SERVICE_ID_WRITE`
-  (F6b release decision — see ADR-0010).
+  `resolveCloudServiceId` (all in `features/diagram/model/cloud-service-id.ts`). It is **not**
+  `BaseComponent.serviceId`, which is the business service catalog. There is no build or
+  runtime flag: the build gate was removed at the F6b cutover (ADR-0010), and
+  `cloud-service-id.write-gate.test.ts` fails the suite if another source file emits the field.
 - **Store changes go through slices** (`features/diagram/store/slices/*`); mutating
   actions that change structure must call `pushHistory` for undo/redo. Persisted
   schema changes need a migration in `persist.config.ts` (bump `PERSIST_SCHEMA_VERSION`).
@@ -122,11 +123,14 @@ src/
   node on screen: that is the canvas reporting the size it just painted, not an
   edit the user made. Checkpointing it would put entries in the undo stack that
   the user never caused and cannot meaningfully undo, and writing the batch one
-  `updateNodeLayout` at a time costs one `set()` each — every `set()` serialises
-  the whole workspace for the persist middleware. Do not add a history checkpoint
+  `updateNodeLayout` at a time costs one `set()` each — every `set()` notifies
+  every store subscriber and re-runs the canvas projection. Do not add a history checkpoint
   here, and do not split the batch, without a measurement that justifies it.
-- **Persistence goes through `IStoragePort`** — never touch `localStorage` directly
-  outside `infrastructure/persistence/`.
+- **Persistence goes through `infrastructure/persistence/`** — the workspace through
+  `IStoragePort`; preferences, caches, one-shot flags and integration secrets through
+  `kvStorage` (`kvGetItem`/`kvSetItem`, `createZustandStorage()` for zustand `persist`,
+  `readSecretItem` for tokens). Nothing else touches `localStorage`, `sessionStorage` or
+  IndexedDB: ESLint (`no-restricted-globals`) enforces it outside that folder and tests (ADR-0007).
 - **`@` alias** resolves to `./src`.
 - Prefer incremental changes; leave the codebase simpler than you found it.
 - **Significant features start with a spec** via OpenSpec in `openspec/`
@@ -152,8 +156,8 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
   identity caches for RF node/edge arrays. Do not reintroduce per-edge
   `EdgeLabelRenderer` / `useStore` for canvas-wide flags. Rules and remaining
   opportunities: `docs/concepts/canvas-hot-path.md`.
-- Undo/redo stores full diagram snapshots with coalescing; bounded by
-  `MAX_HISTORY_STEPS`.
+- Undo/redo stores diagram snapshots taken with Immer `current()` (structurally shared,
+  not deep copies) with coalescing; bounded by `MAX_HISTORY_STEPS`.
 - The `@/features/diagram` and `@/features/canvas` barrels couple the bundle
   graph; route chunks stay small only if always-mounted code (App shell, LLM
   chat) imports leaf modules directly instead of the barrels.

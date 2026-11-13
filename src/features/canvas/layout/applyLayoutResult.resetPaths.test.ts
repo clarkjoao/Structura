@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { applyLayoutEdgesAsCalls } from "@/test/layoutEdgeCalls";
 import { applyLayoutResultEdges } from "./applyLayoutResult";
 import { useDiagramStore } from "@/features/diagram";
 
@@ -45,7 +46,7 @@ function makeFakeStore(diagramId: string) {
   const resets: string[] = [];
   const handleOrders: Array<{ componentId: string; side: string; ids: string[] }> = [];
 
-  return {
+  const fake = {
     getState: () => ({ activeDiagramId: diagramId, diagrams: { [diagramId]: {} } }),
     updateHandleOrder: vi.fn((componentId: string, side: string, ids: string[]) => {
       handleOrders.push({ componentId, side, ids });
@@ -60,6 +61,7 @@ function makeFakeStore(diagramId: string) {
     _resets: resets,
     _handleOrders: handleOrders,
   };
+  return { ...fake, applyLayoutEdges: applyLayoutEdgesAsCalls(fake) };
 }
 
 const GRAPH = {

@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { useCanvasPreferencesStore } from "../preferences/canvas-preferences.store";
 import type { Node, Edge, OnEdgesChange, OnConnect, Connection } from "@xyflow/react";
-import { useReactFlow } from "@xyflow/react";
+import { useReactFlow, useStoreApi } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import type { CanvasVisualState } from "./useCanvasVisualState";
 import { useFlowMode } from "../flow/FlowModeContext";
@@ -16,15 +16,19 @@ import { getLastEdgeStyle } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
 import { sidesFromHandles, type ConnectionSides } from "../nodes/node-types/handle-spec";
 import { dragSelectionRef } from "./useLocalNodes";
+import { useCanvasSelectionStore } from "./useCanvasSelectionStore";
+import { isStaleSelectionReport } from "../selection/staleSelectionReport";
 import { usePointerFunnel, type GestureTarget } from "../selection/pointerFunnel";
 import { activeDirection } from "./useActiveDirection";
+import { useSettledViewportWrite } from "./useSettledViewportWrite";
+import { useStableCallback } from "./useStableCallback";
 
 interface UseCanvasEventHandlersParams {
   visualState: CanvasVisualState;
   isPlaying: boolean;
   isCompareMode?: boolean;
   isFlowPanelOpen: boolean;
-  updateViewport: (vp: { x: number; y: number; zoom: number }) => void;
+  updateViewport: (vp: { x: number; y: number; zoom: number }, diagramId?: string) => void;
   addConnection: (
     source: string,
     target: string,
@@ -59,6 +63,7 @@ export function useCanvasEventHandlers({
   const { t } = useTranslation();
   const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useFlowMode();
   const reactFlowInstance = useReactFlow();
+  const reactFlowStore = useStoreApi();
   const {
     setSelectedNodeId,
     setSelectedNodeIds,
@@ -174,11 +179,13 @@ export function useCanvasEventHandlers({
 
   const onEdgesChange: OnEdgesChange = useCallback(() => {}, []);
 
+  // One persisted write per pan/zoom gesture, not one per frame (see the hook).
+  const writeSettledViewport = useSettledViewportWrite(updateViewport);
   const onMoveEnd = useCallback(
     (_: unknown, vp: { x: number; y: number; zoom: number }) => {
-      updateViewport(vp);
+      writeSettledViewport(vp);
     },
-    [updateViewport],
+    [writeSettledViewport],
   );
 
   const onConnect: OnConnect = useCallback(
@@ -225,7 +232,7 @@ export function useCanvasEventHandlers({
     [setQuickInsert],
   );
 
-  const onNodeClick = useCallback(
+  const onNodeClickLatest = useCallback(
     (e: React.MouseEvent, node: Node) => {
       setQuickInsert(null);
       setPaneContextMenu(null);
@@ -292,6 +299,9 @@ export function useCanvasEventHandlers({
       funnel,
     ],
   );
+  // React Flow hands this to every node; its identity must not follow `funnel`
+  // and the rest of the closure, which change on every Canvas render.
+  const onNodeClick = useStableCallback(onNodeClickLatest);
 
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
@@ -330,8 +340,21 @@ export function useCanvasEventHandlers({
   const onSelectionChange = useCallback(
     ({ nodes: updatedNodes }: { nodes: Node[]; edges: Edge[] }) => {
       const selectedIds = updatedNodes.filter((n) => n.selected).map((n) => n.id);
+      // The pointer funnel wrote this press's selection; what React Flow reports
+      // now is its own click handling of the same press, which may predate that
+      // write (see `dragSelectionRef.selectionWrittenByFunnel`). The store wins.
+      if (dragSelectionRef.selectionWrittenByFunnel) {
+        prevSelectionRef.current = [...useCanvasSelectionStore.getState().selectedNodeIds]
+          .sort()
+          .join(",");
+        return;
+      }
 
       if (isCompareMode) return;
+      // A report React Flow's own selection has already moved past would write back the
+      // selection the store just replaced, and the two would swap forever (React #185).
+      // React Flow reports again with its current selection; wait for that one.
+      if (isStaleSelectionReport(selectedIds, reactFlowStore.getState().nodeLookup)) return;
       const key = [...selectedIds].sort().join(",");
       if (key === prevSelectionRef.current) return;
       prevSelectionRef.current = key;
@@ -386,6 +409,7 @@ export function useCanvasEventHandlers({
     },
     [
       isCompareMode,
+      reactFlowStore,
       setSelectedNodeId,
       setSelectedNodeIds,
       setSelectedEdgeId,

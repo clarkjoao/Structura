@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { applyLayoutEdgesAsCalls } from "@/test/layoutEdgeCalls";
 import { useDiagramStore } from "@/features/diagram";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
 import { REFERENCE_DIAGRAMS } from "@/features/canvas/layout/reference-diagrams";
@@ -36,7 +37,7 @@ function makeFakeStore(viewport: { x: number; y: number; zoom: number }) {
   const handleOrders: Array<{ componentId: string; side: string; ids: string[] }> = [];
   const waypoints: Array<{ connectionId: string; points: Array<{ x: number; y: number }> }> = [];
 
-  return {
+  const fake = {
     activeDiagramId: "diag-1",
     // The diagram already holds something: a generated graph is then placed on
     // its own, through the id translation these tests pin. Into an empty
@@ -72,6 +73,7 @@ function makeFakeStore(viewport: { x: number; y: number; zoom: number }) {
     _handleOrders: handleOrders,
     _waypoints: waypoints,
   };
+  return { ...fake, applyLayoutEdges: applyLayoutEdgesAsCalls(fake) };
 }
 
 describe("applyIRToDiagram — ids that reach the store", () => {

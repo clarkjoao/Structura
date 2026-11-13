@@ -1,3 +1,9 @@
+import {
+  kvSessionGetItem,
+  kvSessionRemoveItem,
+  kvSessionSetItem,
+} from "@/infrastructure/persistence/kvStorage";
+
 /**
  * The host's hold on a live session, kept in `sessionStorage`: it survives a reload of the host's
  * tab (which reconnects as host within the grace period) and dies with the tab, so a second tab or
@@ -30,7 +36,7 @@ function isStoredHostSession(value: unknown): value is StoredHostSession {
 
 export function readHostSession(diagramId: string): StoredHostSession | null {
   try {
-    const raw = sessionStorage.getItem(key(diagramId));
+    const raw = kvSessionGetItem(key(diagramId));
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
     return isStoredHostSession(parsed) ? parsed : null;
@@ -41,7 +47,7 @@ export function readHostSession(diagramId: string): StoredHostSession | null {
 
 export function writeHostSession(diagramId: string, session: StoredHostSession): void {
   try {
-    sessionStorage.setItem(key(diagramId), JSON.stringify(session));
+    kvSessionSetItem(key(diagramId), JSON.stringify(session));
   } catch {
     // Storage unavailable: a reload ends the session instead of resuming it.
   }
@@ -49,7 +55,7 @@ export function writeHostSession(diagramId: string, session: StoredHostSession):
 
 export function clearHostSession(diagramId: string): void {
   try {
-    sessionStorage.removeItem(key(diagramId));
+    kvSessionRemoveItem(key(diagramId));
   } catch {
     // Nothing to clear.
   }

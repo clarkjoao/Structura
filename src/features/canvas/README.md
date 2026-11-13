@@ -36,6 +36,7 @@ Canvas.tsx
 | Path          | Responsibility                                                                                                                    |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `Canvas.tsx`  | Mounts React Flow, toolbars, side panels, chat, sidebar, and feature overlays.                                                    |
+| `chrome/`     | What `Canvas.tsx` renders around the surface: right rail, overlays, selection toolbars, drop target, Arrange control, chat state. |
 | `hooks/`      | Canvas orchestration hooks: graph derivation, interaction wiring, visual state, compare state, flow state, and keyboard behavior. |
 | `nodes/`      | Node rendering, node descriptors, and node-to-React-Flow transformation.                                                          |
 | `edges/`      | Edge rendering, handle assignment, waypoint editing, and label drag behavior.                                                     |

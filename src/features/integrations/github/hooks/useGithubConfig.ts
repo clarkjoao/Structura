@@ -1,3 +1,4 @@
+import { readSecretItem } from "@/infrastructure/persistence/kvStorage";
 import { useCallback, useState } from "react";
 import type { GithubConfig } from "../github.types";
 import { defaultStorage } from "@/infrastructure/persistence";
@@ -8,7 +9,7 @@ const ADAPTER_KEY = `structura_${STORAGE_KEY}`;
 export function useGithubConfig() {
   const [config, setConfig] = useState<GithubConfig | null>(() => {
     try {
-      const raw = localStorage.getItem(ADAPTER_KEY);
+      const raw = readSecretItem(ADAPTER_KEY);
       return raw ? (JSON.parse(raw) as GithubConfig) : null;
     } catch {
       return null;

@@ -20,9 +20,11 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.tsx"],
-    include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    // scripts/: pure helpers of the dev tooling (e.g. the perf:large harness), not the app.
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "scripts/**/*.test.ts"],
     testTimeout: 90000,
-    retry: 2,
+    // No retries: a retry hides test-isolation bugs (a flaky test passes on the second try).
+    retry: 0,
   },
   resolve: {
     alias: {

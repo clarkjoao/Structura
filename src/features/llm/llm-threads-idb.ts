@@ -1,3 +1,4 @@
+import { kvGetItem, kvRemoveItem, kvSetItem } from "@/infrastructure/persistence/kvStorage";
 import type { DiagramThreadState } from "./types";
 
 const DB_NAME = "structura";
@@ -150,7 +151,7 @@ export async function migrateThreadsFromLocalStorageToIdb(
     return false;
   }
   try {
-    if (localStorage.getItem(MIGRATION_FLAG_KEY) === "1") {
+    if (kvGetItem(MIGRATION_FLAG_KEY) === "1") {
       return false;
     }
     let legacy: unknown;
@@ -177,7 +178,7 @@ export async function migrateThreadsFromLocalStorageToIdb(
     } finally {
       db.close();
     }
-    localStorage.setItem(MIGRATION_FLAG_KEY, "1");
+    kvSetItem(MIGRATION_FLAG_KEY, "1");
     return true;
   } catch {
     return false;
@@ -192,7 +193,7 @@ export async function migrateThreadsFromLocalStorageToIdb(
  * semantics and leave a fresh test running against a half-cleared store.
  */
 export function resetThreadsIdbForTests(): void {
-  localStorage.removeItem(MIGRATION_FLAG_KEY);
+  kvRemoveItem(MIGRATION_FLAG_KEY);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {

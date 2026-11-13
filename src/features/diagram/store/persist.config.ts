@@ -1,6 +1,9 @@
-import { createJSONStorage } from "zustand/middleware";
+import type { PersistStorage, StorageValue } from "zustand/middleware";
+import type { FreshWorkspace } from "./seedWorkspace";
 import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { LocalStorageAdapter } from "@/infrastructure/persistence/LocalStorageAdapter";
+import { isBrowserWorkspaceStorage } from "@/infrastructure/persistence/BrowserWorkspaceStorage";
+import { WorkspaceStorage } from "@/infrastructure/persistence/workspaceStorage";
 import {
   clearLocalStorageDiagramSyncTimestamp,
   recordLocalStorageDiagramSyncSuccess,
@@ -576,6 +579,11 @@ export function mergePersistedState(
   state._flowSewNotices = null;
   state._sharedRefNotice = null;
 
+  // Nothing stored: the state is this build's own initial state and needs no
+  // migration. The migrators mutate in place, and with IndexedDB a `set()` may
+  // have run (and Immer frozen that state) before the read resolved.
+  if (!persistedState) return state;
+
   if (!state.services) state.services = {};
   if (!state.folders) state.folders = {};
   migrateAddUserTemplates(state);
@@ -612,20 +620,41 @@ export function mergePersistedState(
   return next;
 }
 
-export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort): IStoragePort {
+/**
+ * The tracking port, plus a write whose value is produced only when it is
+ * flushed. Zustand's persist hands the store state over on every `set()`;
+ * serialising it there (what `createJSONStorage` does) stringified the whole
+ * workspace once per store write, although the I/O below is debounced and only
+ * the last value is ever written.
+ */
+export interface DiagramPersistPort extends IStoragePort {
+  setItemDeferred(name: string, serialize: () => string): void;
+}
+
+export function wrapIStoragePortWithDiagramPersistTracking(
+  storage: IStoragePort,
+): DiagramPersistPort {
   let persistDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let pendingPersist: { name: string; value: string } | null = null;
+  let pendingPersist: { name: string; serialize: () => string } | null = null;
+  /**
+   * Whether the stored workspace has been read. zustand's persist writes on
+   * every `set()`, hydrated or not; a write before the read would replace the
+   * stored workspace with the one in memory, still empty. Until the read
+   * resolves those writes are dropped (the hydrated state replaces them
+   * anyway); after a failed read they are refused and reported.
+   */
+  let workspaceRead: "pending" | "done" | "failed" = "pending";
 
   const flushPersist = async (): Promise<void> => {
     persistDebounceTimer = null;
     if (!pendingPersist) return;
-    const { name, value } = pendingPersist;
+    const { name, serialize } = pendingPersist;
     pendingPersist = null;
     try {
-      await storage.setItem(name, value);
+      await storage.setItem(name, serialize());
       if (name !== PERSIST_KEY) return;
       useSaveStatusStore.getState()._setSaved();
-      if (storage instanceof LocalStorageAdapter && storage.paused) return;
+      if (isBrowserWorkspaceStorage(storage) && storage.paused) return;
       recordLocalStorageDiagramSyncSuccess();
     } catch (err: unknown) {
       if (name !== PERSIST_KEY) return;
@@ -636,11 +665,15 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
     }
   };
 
-  const schedulePersist = (name: string, value: string, force = false): void => {
+  const schedulePersist = (name: string, serialize: () => string, force = false): void => {
+    if (name === PERSIST_KEY && workspaceRead !== "done") {
+      if (workspaceRead === "failed") useSaveStatusStore.getState()._setError();
+      return;
+    }
     if (name === PERSIST_KEY) {
       useSaveStatusStore.getState()._setSaving();
     }
-    pendingPersist = { name, value };
+    pendingPersist = { name, serialize };
 
     // Force flush: cancel debounce and write immediately
     if (force) {
@@ -674,10 +707,17 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         persistDebounceTimer = null;
       }
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
-      const { name, value } = pendingPersist;
+      const { name, serialize } = pendingPersist;
       pendingPersist = null;
       try {
-        if (storage instanceof LocalStorageAdapter) {
+        const value = serialize();
+        if (storage instanceof WorkspaceStorage) {
+          // IndexedDB has no synchronous write: a best-effort put plus a
+          // synchronous rescue the next start adopts (workspaceRescue.ts).
+          if (!storage.writeOnLeave(name, value)) return;
+          recordLocalStorageDiagramSyncSuccess();
+          useSaveStatusStore.getState()._setSaved();
+        } else if (storage instanceof LocalStorageAdapter) {
           storage.setItemSync(name, value);
           if (storage.paused) return;
           recordLocalStorageDiagramSyncSuccess();
@@ -716,8 +756,15 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
         persistDebounceTimer = null;
       }
       if (!pendingPersist || pendingPersist.name !== PERSIST_KEY) return;
-      const { name, value } = pendingPersist;
+      const { name, serialize } = pendingPersist;
       pendingPersist = null;
+      let value: string;
+      try {
+        value = serialize();
+      } catch {
+        useSaveStatusStore.getState()._setError();
+        return;
+      }
       void storage
         .setItem(name, value)
         .then(() => {
@@ -734,13 +781,30 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
   }
 
   return {
-    getItem: (key) => storage.getItem(key),
+    getItem: async (key) => {
+      if (key !== PERSIST_KEY) return storage.getItem(key);
+      try {
+        const value = await storage.getItem(key);
+        workspaceRead = "done";
+        return value;
+      } catch (error) {
+        if (workspaceRead !== "done") workspaceRead = "failed";
+        throw error;
+      }
+    },
     setItem: async (name, value) => {
       if (name !== PERSIST_KEY) {
         await storage.setItem(name, value);
         return;
       }
-      schedulePersist(name, value);
+      schedulePersist(name, () => value);
+    },
+    setItemDeferred: (name, serialize) => {
+      if (name !== PERSIST_KEY) {
+        void storage.setItem(name, serialize());
+        return;
+      }
+      schedulePersist(name, serialize);
     },
     removeItem: async (key) => {
       if (key === PERSIST_KEY) {
@@ -775,16 +839,91 @@ export function wrapIStoragePortWithDiagramPersistTracking(storage: IStoragePort
   };
 }
 
-export function createPersistConfig(storage: IStoragePort) {
+/**
+ * `createJSONStorage` without the eager `JSON.stringify`: the state object is
+ * kept and serialised when the debounced write flushes. Holding the reference
+ * is safe — Immer state is immutable, so it is the snapshot of that `set()`.
+ */
+export function createDeferredJSONStorage<S>(port: DiagramPersistPort): PersistStorage<S> {
+  // zustand's persist calls `setItem` on every `set()`, including the ones that
+  // touch no persisted field (selection, palette, clipboard). Immer shares
+  // untouched branches, so a slice whose fields are all the same references is
+  // the slice already handed over: nothing to write and nothing to report as saving.
+  let last: S | null = null;
+  // Writes before the stored workspace is read are dropped by the port, so they
+  // must not count as handed over.
+  let read = false;
+  const sameSlice = (a: S, b: S): boolean => {
+    if (a === b) return true;
+    if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+    const ea = Object.entries(a);
+    const rb = new Map(Object.entries(b));
+    return ea.length === rb.size && ea.every(([k, v]) => rb.has(k) && Object.is(v, rb.get(k)));
+  };
+  return {
+    getItem: async (name) => {
+      const raw = await port.getItem(name);
+      if (name === PERSIST_KEY) read = true;
+      return raw === null ? null : (JSON.parse(raw) as StorageValue<S>);
+    },
+    setItem: (name, value) => {
+      if (name === PERSIST_KEY) {
+        if (last !== null && sameSlice(last, value.state)) return;
+        if (read) last = value.state;
+      }
+      port.setItemDeferred(name, () => JSON.stringify(value));
+    },
+    removeItem: (name) => port.removeItem(name),
+  };
+}
+
+export function createPersistConfig(
+  storage: IStoragePort,
+  options: {
+    onRehydrated?: (error?: unknown) => void;
+    /**
+     * What a workspace with nothing stored starts with (the demo seeds). Fetched
+     * after the stored read comes back empty and applied by `merge`, which runs on
+     * zustand's raw `set`: the seeds are shown, not written, until the user edits.
+     */
+    loadFreshWorkspace?: () => Promise<FreshWorkspace>;
+  } = {},
+) {
   const trackedStorage = wrapIStoragePortWithDiagramPersistTracking(storage);
   const SCHEMA_VERSION_EDGE_LAYOUTS_RECORD = 5;
   const SCHEMA_VERSION_EDGE_CONTROL_POINTS = 6;
+  const jsonStorage = createDeferredJSONStorage<PersistedDiagramStoreSlice>(trackedStorage);
+  const { loadFreshWorkspace } = options;
+  let fresh: FreshWorkspace | null = null;
+  const persistStorage: typeof jsonStorage = loadFreshWorkspace
+    ? {
+        ...jsonStorage,
+        getItem: async (name) => {
+          const stored = await jsonStorage.getItem(name);
+          if (stored === null && name === PERSIST_KEY) {
+            fresh = await loadFreshWorkspace().catch((error: unknown) => {
+              console.error("[Structura] demo workspace could not be loaded", error);
+              return null;
+            });
+          }
+          return stored;
+        },
+      }
+    : jsonStorage;
   return {
     name: PERSIST_KEY,
-    storage: createJSONStorage(() => trackedStorage),
+    storage: persistStorage,
     partialize: partializeState,
-    merge: mergePersistedState,
+    merge: (persistedState: unknown, currentState: DiagramStore): DiagramStore => {
+      const next = mergePersistedState(persistedState, currentState);
+      if (persistedState || !fresh) return next;
+      const seeds = fresh;
+      fresh = null;
+      return { ...next, ...seeds };
+    },
     version: PERSIST_SCHEMA_VERSION,
+    /** Called once hydration ends, failed or not (zustand's finish listeners skip failures). */
+    onRehydrateStorage: () => (_state: unknown, error?: unknown) => options.onRehydrated?.(error),
     migrate: (persistedState: unknown, fromVersion: number) => {
       if (typeof fromVersion !== "number") {
         return persistedState as PersistedDiagramStoreSlice;

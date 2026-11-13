@@ -212,4 +212,57 @@ describe("ArrangeControl", () => {
     expect(props.onSettingsSave).toHaveBeenCalled();
     expect(props.onSettingsChange).not.toHaveBeenCalled();
   });
+  it("re-arranges with the picked reference mode and shows the rules only for rules", () => {
+    const { props } = setup();
+    openMenu();
+    fireEvent.click(screen.getByRole("button", { name: "canvasToolbar.arrange.advanced" }));
+    expect(screen.getByLabelText(/canvasToolbar.arrange.refNeighborColumns/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: "canvasToolbar.arrange.referencesOff" }));
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ references: "off" });
+    expect(screen.queryByLabelText(/canvasToolbar.arrange.refNeighborColumns/)).toBeNull();
+  });
+
+  it("opens the advanced section on a diagram whose references are not the default", () => {
+    setup({ settings: { references: "auto" } });
+    openMenu();
+    expect(
+      screen.getByRole("radio", { name: "canvasToolbar.arrange.referencesAuto" }),
+    ).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("debounces the neighbour distance into one run, and turns forward references off", () => {
+    vi.useFakeTimers();
+    const { props } = setup();
+    openMenu();
+    fireEvent.click(screen.getByRole("button", { name: "canvasToolbar.arrange.advanced" }));
+
+    const slider = screen.getByLabelText(/canvasToolbar.arrange.refNeighborColumns/);
+    fireEvent.change(slider, { target: { value: "3" } });
+    fireEvent.change(slider, { target: { value: "4" } });
+    act(() => {
+      vi.advanceTimersByTime(ARRANGE_SLIDER_DEBOUNCE_MS);
+    });
+    expect(props.onSettingsChange).toHaveBeenCalledTimes(1);
+    expect(props.onSettingsChange).toHaveBeenCalledWith({ refNeighborColumns: 4 });
+
+    fireEvent.click(screen.getByLabelText(/canvasToolbar.arrange.refForward/));
+    expect(props.onSettingsChange).toHaveBeenLastCalledWith({
+      refNeighborColumns: 4,
+      refForward: false,
+    });
+  });
+
+  it("resets only the gaps, keeping the mode and the references", () => {
+    const { props } = setup({
+      settings: { mode: "automatic", references: "off", density: "compact", layerGap: 300 },
+    });
+    openMenu();
+    fireEvent.click(screen.getByRole("button", { name: "canvasToolbar.arrange.resetGaps" }));
+    expect(props.onSettingsChange).toHaveBeenCalledWith({
+      mode: "automatic",
+      references: "off",
+      density: "compact",
+    });
+  });
 });

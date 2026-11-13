@@ -6,6 +6,7 @@ import type { ApiProtocol, FlowRef } from "@/features/diagram";
 import { HEADER_H, FOOTER_H, PROTOCOL_COLORS } from "./constants";
 import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
+import { useSelectionDisablesControls } from "../../selection/selectionControls";
 
 export { PROTOCOL_COLORS } from "./constants";
 
@@ -17,6 +18,10 @@ export type ApiGroupNodeData = {
   sla?: string;
   customColor?: string;
   isSelected: boolean;
+  /**
+   * Every control off whatever the selection: read-only surfaces and compare
+   * mode. What a selection disables is not on the data (`ApiGroupFooter`).
+   */
   controlsDisabled?: boolean;
   onAddEndpoint?: () => void;
   /** Every script running through one of this group's routes, named once. */
@@ -30,10 +35,8 @@ export type ApiGroupNodeData = {
 };
 
 const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeData>>) => {
-  const { t } = useTranslation();
   const isSelected = selected || d.isSelected;
   const collabHighlight = useCollabHighlight(d.elementId);
-  const flows = d.flows ?? [];
 
   return (
     <div
@@ -43,6 +46,7 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
           : "border-border bg-card/40 backdrop-blur-sm"
       }`}
       style={{ borderColor: isSelected ? undefined : `${PROTOCOL_COLORS[d.protocol]}66` }}
+      data-canvas-blur={isSelected ? undefined : ""}
     >
       {collabHighlight && (
         <div
@@ -83,54 +87,67 @@ const ApiGroupNode = memo(({ data: d, selected }: NodeProps<Node<ApiGroupNodeDat
         <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{d.serviceName}</p>
       </div>
 
-      {/*
-        One strip, two states. Where a route can be added — the editor — it is
-        the button that adds one. Where it cannot, it used to render empty, and
-        that is the mode with the most to say: which scripts run through here.
-      */}
-      <div
-        className="absolute bottom-0 left-0 right-0 border-t border-border"
-        style={{ height: FOOTER_H }}
-      >
-        {!d.controlsDisabled ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              d.onAddEndpoint?.();
-            }}
-            className="w-full h-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors rounded-b-xl"
-          >
-            <Plus className="h-3.5 w-3.5" /> {t("apiGroup.addEndpoint")}
-          </button>
-        ) : (
-          flows.length > 0 && (
-            <div
-              data-testid="api-group-scripts"
-              className="flex h-full items-center gap-1 overflow-x-auto px-2"
-            >
-              {flows.map((flow) => (
-                <button
-                  key={flow.id}
-                  type="button"
-                  title={t("apiGroup.playScript", { names: flow.name })}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    d.onPlayFlow?.(flow.id);
-                  }}
-                  className="flow-play-control inline-flex shrink-0 items-center gap-1 rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
-                >
-                  <Play className="h-2.5 w-2.5 shrink-0 text-primary" />
-                  <span className="max-w-[12rem] truncate">{flow.name}</span>
-                </button>
-              ))}
-            </div>
-          )
-        )}
-      </div>
+      <ApiGroupFooter d={d} />
     </div>
   );
 });
+
+/**
+ * One strip, two states. Where a route can be added — the editor — it is the
+ * button that adds one. Where it cannot, it used to render empty, and that is
+ * the mode with the most to say: which scripts run through here.
+ *
+ * It reads what the selection disables itself, so a selection change
+ * re-renders this strip on the groups whose answer changed, never the group.
+ */
+function ApiGroupFooter({ d }: { d: ApiGroupNodeData }) {
+  const { t } = useTranslation();
+  const disabledBySelection = useSelectionDisablesControls(d.elementId);
+  const controlsDisabled = !!d.controlsDisabled || disabledBySelection;
+  const flows = d.flows ?? [];
+  return (
+    <div
+      className="absolute bottom-0 left-0 right-0 border-t border-border"
+      style={{ height: FOOTER_H }}
+    >
+      {!controlsDisabled ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            d.onAddEndpoint?.();
+          }}
+          className="w-full h-full flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-surface-hover transition-colors rounded-b-xl"
+        >
+          <Plus className="h-3.5 w-3.5" /> {t("apiGroup.addEndpoint")}
+        </button>
+      ) : (
+        flows.length > 0 && (
+          <div
+            data-testid="api-group-scripts"
+            className="flex h-full items-center gap-1 overflow-x-auto px-2"
+          >
+            {flows.map((flow) => (
+              <button
+                key={flow.id}
+                type="button"
+                title={t("apiGroup.playScript", { names: flow.name })}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  d.onPlayFlow?.(flow.id);
+                }}
+                className="flow-play-control inline-flex shrink-0 items-center gap-1 rounded border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-foreground transition-colors hover:border-primary/40 hover:bg-surface-hover"
+              >
+                <Play className="h-2.5 w-2.5 shrink-0 text-primary" />
+                <span className="max-w-[12rem] truncate">{flow.name}</span>
+              </button>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
 
 ApiGroupNode.displayName = "ApiGroupNode";
 

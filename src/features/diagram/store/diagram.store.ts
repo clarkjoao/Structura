@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { StoreApi } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { persist } from "zustand/middleware";
-import { defaultStorage } from "@/infrastructure/persistence/LocalStorageAdapter";
+import { workspaceStorage } from "@/infrastructure/persistence/workspaceStorage";
 import type { IStoragePort } from "@/infrastructure/persistence/IStoragePort";
 import { recordLocalStorageDiagramSyncSuccess } from "@/infrastructure/persistence/localStorageSyncTimestamp";
 import { useIconStore, type IconStore } from "./icon-store";
@@ -28,13 +28,30 @@ import {
   userTemplatesSlice,
 } from "./slices";
 import { buildPersistStoragePayload, createPersistConfig, PERSIST_KEY } from "./persist.config";
+import { loadSeedWorkspace, type FreshWorkspace } from "./seedWorkspace";
 
 export type { AppState, DiagramSnapshot } from "./store.types";
 export type { ClipboardEntry, DiagramStore } from "./store.types";
 
+let settleHydration: (error?: unknown) => void = () => {};
+
+/**
+ * Resolves when the workspace store has read its persisted copy, or failed
+ * to: the app renders only after it (openspec indexeddb-workspace-storage),
+ * so nothing is shown or edited on an empty workspace that is about to load.
+ */
+export const diagramStoreHydrated = new Promise<void>((resolve) => {
+  settleHydration = (error) => {
+    if (error) console.error("[Structura] workspace could not be loaded", error);
+    resolve();
+  };
+});
+
 export function createDiagramStore(
-  storage: IStoragePort = defaultStorage,
+  storage: IStoragePort = workspaceStorage,
   iconStoreOverride?: Pick<StoreApi<IconStore>, "getState">,
+  onRehydrated?: (error?: unknown) => void,
+  loadFreshWorkspace?: () => Promise<FreshWorkspace>,
 ) {
   const iconStore = iconStoreOverride ?? useIconStore;
   return create<import("./store.types").DiagramStore>()(
@@ -86,24 +103,35 @@ export function createDiagramStore(
           iconStore.getState().decrementIconUsage(iconId);
         },
       })),
-      createPersistConfig(storage),
+      createPersistConfig(storage, { onRehydrated, loadFreshWorkspace }),
     ),
   );
 }
 
-export const useDiagramStore = createDiagramStore();
+export const useDiagramStore = createDiagramStore(
+  workspaceStorage,
+  undefined,
+  (error) => settleHydration(error),
+  loadSeedWorkspace,
+);
 
-export async function flushDiagramStoreToLocalStorageNow(
+/**
+ * Writes the workspace to the browser copy now (IndexedDB or localStorage,
+ * whichever the boot chose), outside the debounce. `force` writes through
+ * folder sync's pause. False when paused without `force`, or when the forced
+ * write fails.
+ */
+export async function flushWorkspaceToBrowserStorageNow(
   options: { force?: boolean } = {},
 ): Promise<boolean> {
   const payload = buildPersistStoragePayload(useDiagramStore.getState());
 
-  if (defaultStorage.paused && !options.force) {
+  if (workspaceStorage.paused && !options.force) {
     return false;
   }
 
-  if (defaultStorage.paused && options.force) {
-    const ok = await defaultStorage.forceSave(PERSIST_KEY, payload);
+  if (workspaceStorage.paused && options.force) {
+    const ok = await workspaceStorage.forceSave(PERSIST_KEY, payload);
     if (ok) {
       recordLocalStorageDiagramSyncSuccess();
     }
@@ -114,32 +142,9 @@ export async function flushDiagramStoreToLocalStorageNow(
     state: payload.state,
     version: payload.version,
   });
-  await defaultStorage.setItem(PERSIST_KEY, json);
+  await workspaceStorage.setItem(PERSIST_KEY, json);
   recordLocalStorageDiagramSyncSuccess();
   return true;
-}
-
-/**
- * Best-effort synchronous persist on tab close. Uses the same semantics as
- * {@link flushDiagramStoreToLocalStorageNow} with `{ force: true }` when folder sync pauses local writes.
- */
-export function flushDiagramStoreToLocalStorageBeforeUnloadSync(): void {
-  const payload = buildPersistStoragePayload(useDiagramStore.getState());
-
-  if (defaultStorage.paused) {
-    const ok = defaultStorage.forceSaveSync(PERSIST_KEY, payload);
-    if (ok) {
-      recordLocalStorageDiagramSyncSuccess();
-    }
-    return;
-  }
-
-  const json = JSON.stringify({
-    state: payload.state,
-    version: payload.version,
-  });
-  defaultStorage.setItemSync(PERSIST_KEY, json);
-  recordLocalStorageDiagramSyncSuccess();
 }
 
 export function updateDiagramDescription(diagramId: string, description: string): void {

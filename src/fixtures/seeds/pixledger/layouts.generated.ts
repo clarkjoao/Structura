@@ -17,78 +17,78 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
     "nodeLayouts": {
       "pl-ctx-payer": {
         "elementId": "pl-ctx-payer",
-        "x": 774,
-        "y": 77.5,
+        "x": 116,
+        "y": 40,
         "width": 260,
         "height": 85
       },
       "pl-ctx-merchant": {
         "elementId": "pl-ctx-merchant",
         "x": 116,
-        "y": 329,
+        "y": 820,
         "width": 260,
         "height": 85
       },
       "pl-ctx-hub": {
         "elementId": "pl-ctx-hub",
         "x": 1432,
-        "y": 80.5,
+        "y": 277.5,
         "width": 260,
         "height": 146
       },
       "pl-ctx-ledger": {
         "elementId": "pl-ctx-ledger",
         "x": 2080,
-        "y": 387,
+        "y": 592,
         "width": 260,
         "height": 131
       },
       "pl-ctx-risk": {
         "elementId": "pl-ctx-risk",
         "x": 2686,
-        "y": 86.25,
+        "y": 388.75,
         "width": 260,
         "height": 131
       },
       "pl-ctx-platform": {
         "elementId": "pl-ctx-platform",
         "x": 774,
-        "y": 306,
+        "y": 797,
         "width": 260,
         "height": 131
       },
       "pl-ctx-spi": {
         "elementId": "pl-ctx-spi",
         "x": 2080,
-        "y": 192,
+        "y": 118.75,
         "width": 260,
         "height": 85
       },
       "pl-ctx-bank": {
         "elementId": "pl-ctx-bank",
         "x": 2686,
-        "y": 443.5,
+        "y": 648.5,
         "width": 260,
         "height": 85
       },
       "pl-ctx-kyc": {
         "elementId": "pl-ctx-kyc",
         "x": 3280,
-        "y": 109.25,
+        "y": 411.75,
         "width": 260,
         "height": 85
       },
       "pl-ctx-notify": {
         "elementId": "pl-ctx-notify",
         "x": 1432,
-        "y": 614,
+        "y": 766.75,
         "width": 260,
         "height": 85
       },
       "pl-ctx-note": {
         "elementId": "pl-ctx-note",
         "x": 40,
-        "y": 524,
+        "y": 235,
         "width": 336,
         "height": 475
       }
@@ -113,8 +113,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-ctx-hub": {
         "outgoing": [
-          "pl-ctx-r5",
           "pl-ctx-r4",
+          "pl-ctx-r5",
           "pl-ctx-r3"
         ],
         "incoming": [
@@ -144,8 +144,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-ctx-platform": {
         "outgoing": [
           "pl-ctx-r8",
-          "pl-ctx-r9",
-          "pl-ctx-r10"
+          "pl-ctx-r10",
+          "pl-ctx-r9"
         ],
         "incoming": [
           "pl-ctx-r2"
@@ -182,27 +182,27 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r1-cp0",
             "x": 1332,
-            "y": 120
+            "y": 82.5
           },
           {
             "id": "pl-ctx-r1-cp1",
             "x": 1332,
-            "y": 149.5
+            "y": 346.5
           }
         ],
-        "labelOffset": 0.4655
+        "labelOffset": 0.4
       },
       "pl-ctx-r2": {
         "points": [
           {
             "id": "pl-ctx-r2-cp0",
             "x": 575,
-            "y": 371.5
+            "y": 862.5
           },
           {
             "id": "pl-ctx-r2-cp1",
             "x": 575,
-            "y": 371.5
+            "y": 862.5
           }
         ],
         "labelOffset": 0.5
@@ -212,77 +212,67 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r3-cp0",
             "x": 1702,
-            "y": 161.5
+            "y": 358.5
           },
           {
             "id": "pl-ctx-r3-cp1",
             "x": 1702,
-            "y": 422
+            "y": 462
           },
           {
             "id": "pl-ctx-r3-cp2",
             "x": 1980,
-            "y": 422
+            "y": 462
           },
           {
             "id": "pl-ctx-r3-cp3",
             "x": 1980,
-            "y": 448.5
+            "y": 653.5
           }
         ],
-        "labelOffset": 0.6733
+        "labelOffset": 0.4356
       },
       "pl-ctx-r4": {
         "points": [
           {
             "id": "pl-ctx-r4-cp0",
-            "x": 1722,
-            "y": 153.5
+            "x": 1702,
+            "y": 342.5
           },
           {
             "id": "pl-ctx-r4-cp1",
-            "x": 1722,
-            "y": 234.5
+            "x": 1702,
+            "y": 161.25
           }
         ],
-        "labelOffset": 0.5864
+        "labelOffset": 0.6592
       },
       "pl-ctx-r5": {
         "points": [
           {
             "id": "pl-ctx-r5-cp0",
-            "x": 1702,
-            "y": 145.5
+            "x": 2586,
+            "y": 350.5
           },
           {
             "id": "pl-ctx-r5-cp1",
-            "x": 1702,
-            "y": 61
-          },
-          {
-            "id": "pl-ctx-r5-cp2",
             "x": 2586,
-            "y": 61
-          },
-          {
-            "id": "pl-ctx-r5-cp3",
-            "x": 2586,
-            "y": 147.75
+            "y": 450.25
           }
         ],
-        "labelOffset": 0.5171
+        "labelOffset": 0.4736
       },
       "pl-ctx-r6": {
         "points": [
           {
             "id": "pl-ctx-r6-cp0",
             "x": 2350,
-            "y": 456.5
+            "y": 661.5
           },
           {
             "id": "pl-ctx-r6-cp1",
             "x": 2350,
-            "y": 486
+            "y": 691
           }
         ],
         "labelOffset": 0.5393
@@ -292,12 +282,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r7-cp0",
             "x": 3113,
-            "y": 151.75
+            "y": 454.25
           },
           {
             "id": "pl-ctx-r7-cp1",
             "x": 3113,
-            "y": 151.75
+            "y": 454.25
           }
         ],
         "labelOffset": 0.5
@@ -307,90 +297,90 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-ctx-r8-cp0",
             "x": 1044,
-            "y": 363.5
+            "y": 854.5
           },
           {
             "id": "pl-ctx-r8-cp1",
             "x": 1044,
-            "y": 258.5
+            "y": 462.25
           },
           {
             "id": "pl-ctx-r8-cp2",
             "x": 1332,
-            "y": 258.5
+            "y": 462.25
           },
           {
             "id": "pl-ctx-r8-cp3",
             "x": 1332,
-            "y": 157.5
+            "y": 354.5
           }
         ],
-        "labelOffset": 0.5033
+        "labelOffset": 0.6584
       },
       "pl-ctx-r9": {
         "points": [
           {
             "id": "pl-ctx-r9-cp0",
-            "x": 1064,
-            "y": 371.5
+            "x": 1044,
+            "y": 870.5
           },
           {
             "id": "pl-ctx-r9-cp1",
-            "x": 1064,
-            "y": 483
+            "x": 1044,
+            "y": 982.75
           },
           {
             "id": "pl-ctx-r9-cp2",
             "x": 1980,
-            "y": 483
+            "y": 982.75
           },
           {
             "id": "pl-ctx-r9-cp3",
             "x": 1980,
-            "y": 456.5
+            "y": 661.5
           }
         ],
-        "labelOffset": 0.5401
+        "labelOffset": 0.4327
       },
       "pl-ctx-r10": {
         "points": [
           {
             "id": "pl-ctx-r10-cp0",
-            "x": 1044,
-            "y": 379.5
+            "x": 1064,
+            "y": 862.5
           },
           {
             "id": "pl-ctx-r10-cp1",
-            "x": 1044,
-            "y": 656.5
+            "x": 1064,
+            "y": 809.25
           }
         ],
-        "labelOffset": 0.7052
+        "labelOffset": 0.559
       },
       "pl-ctx-r11": {
         "points": [
           {
             "id": "pl-ctx-r11-cp0",
             "x": 2350,
-            "y": 448.5
+            "y": 653.5
           },
           {
             "id": "pl-ctx-r11-cp1",
             "x": 2350,
-            "y": 345.5
+            "y": 550.5
           },
           {
             "id": "pl-ctx-r11-cp2",
             "x": 2586,
-            "y": 345.5
+            "y": 550.5
           },
           {
             "id": "pl-ctx-r11-cp3",
             "x": 2586,
-            "y": 155.75
+            "y": 458.25
           }
         ],
-        "labelOffset": 0.4321
+        "labelOffset": 0.5099
       }
     }
   },
@@ -399,28 +389,28 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-payer": {
         "elementId": "pl-hub-payer",
         "x": 116,
-        "y": 579.5,
+        "y": 625,
         "width": 260,
         "height": 85
       },
       "pl-hub-merchant-sys": {
         "elementId": "pl-hub-merchant-sys",
-        "x": 774,
-        "y": 770.5,
+        "x": 116,
+        "y": 1080.75,
         "width": 260,
         "height": 85
       },
       "pl-hub-boundary": {
         "elementId": "pl-hub-boundary",
-        "x": 1428.5,
-        "y": 101,
+        "x": 1404.5,
+        "y": 433.25,
         "width": 2662,
-        "height": 1265.75
+        "height": 1224
       },
       "pl-hub-cob-api": {
         "elementId": "pl-hub-cob-api",
         "x": 1762,
-        "y": 85,
+        "y": 83,
         "width": 260,
         "height": 174
       },
@@ -434,7 +424,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-webhook": {
         "elementId": "pl-hub-webhook",
         "x": 1762,
-        "y": 596.5,
+        "y": 795.5,
         "width": 260,
         "height": 174
       },
@@ -448,77 +438,77 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-queue": {
         "elementId": "pl-hub-queue",
         "x": 2362,
-        "y": 962,
+        "y": 934,
         "width": 260,
         "height": 104
       },
       "pl-hub-worker": {
         "elementId": "pl-hub-worker",
-        "x": 1762,
-        "y": 880.5,
+        "x": 40,
+        "y": 1040,
         "width": 260,
         "height": 104
       },
       "pl-hub-spi": {
         "elementId": "pl-hub-spi",
         "x": 774,
-        "y": 575.5,
+        "y": 621,
         "width": 260,
         "height": 85
       },
       "pl-hub-risk-ext": {
         "elementId": "pl-hub-risk-ext",
-        "x": 4485,
-        "y": 725.75,
+        "x": 4461,
+        "y": 1327,
         "width": 260,
         "height": 85
       },
       "pl-hub-ledger-ext": {
         "elementId": "pl-hub-ledger-ext",
-        "x": 4485,
-        "y": 1261,
+        "x": 4461,
+        "y": 1522,
         "width": 260,
         "height": 68
       },
       "pl-hub-note": {
         "elementId": "pl-hub-note",
         "x": 40,
-        "y": 774.5,
+        "y": 40,
         "width": 336,
         "height": 475
       },
       "pl-hub-ep-post": {
         "elementId": "pl-hub-ep-post",
         "x": 40,
-        "y": 362.25,
+        "y": 384.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-auth-guard": {
         "elementId": "pl-hub-auth-guard",
         "x": 598,
-        "y": 362.25,
+        "y": 384.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-cob-svc": {
         "elementId": "pl-hub-cob-svc",
         "x": 1186,
-        "y": 362.25,
+        "y": 384.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-cache-svc": {
         "elementId": "pl-hub-cache-svc",
         "x": 1762,
-        "y": 369.5,
+        "y": 384.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-event-pub": {
         "elementId": "pl-hub-event-pub",
         "x": 1765.5,
-        "y": 1098.75,
+        "y": 598.5,
         "width": 253,
         "height": 87
       }
@@ -567,8 +557,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           "pl-hub-c-queue"
         ],
         "incoming": [
-          "pl-hub-c-merchant-wh",
-          "pl-hub-c-spi"
+          "pl-hub-c-spi",
+          "pl-hub-c-merchant-wh"
         ]
       },
       "pl-hub-cache": {
@@ -582,16 +572,16 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-queue": {
         "outgoing": [],
         "incoming": [
-          "pl-hub-c-worker",
+          "pl-hub-c-pub-queue",
           "pl-hub-c-queue",
-          "pl-hub-c-pub-queue"
+          "pl-hub-c-worker"
         ]
       },
       "pl-hub-worker": {
         "outgoing": [
-          "pl-hub-c-worker-risk",
           "pl-hub-c-worker",
-          "pl-hub-c-ledger"
+          "pl-hub-c-ledger",
+          "pl-hub-c-worker-risk"
         ],
         "incoming": []
       },
@@ -607,8 +597,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-risk-ext": {
         "outgoing": [],
         "incoming": [
-          "pl-hub-c-worker-risk",
-          "pl-hub-c-risk"
+          "pl-hub-c-risk",
+          "pl-hub-c-worker-risk"
         ]
       },
       "pl-hub-ledger-ext": {
@@ -664,12 +654,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-payer-cp0",
             "x": 575,
-            "y": 622
+            "y": 667.5
           },
           {
             "id": "pl-hub-c-payer-cp1",
             "x": 575,
-            "y": 622
+            "y": 667.5
           }
         ],
         "labelOffset": 0.5
@@ -678,303 +668,323 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-merchant-cp0",
-            "x": 1044,
-            "y": 809
+            "x": 386,
+            "y": 1119.25
           },
           {
             "id": "pl-hub-c-merchant-cp1",
-            "x": 1044,
-            "y": 323.5
+            "x": 386,
+            "y": 847.75
           },
           {
             "id": "pl-hub-c-merchant-cp2",
-            "x": 1316,
-            "y": 323.5
+            "x": 1292,
+            "y": 847.75
           },
           {
             "id": "pl-hub-c-merchant-cp3",
-            "x": 1316,
-            "y": 242.5
+            "x": 1292,
+            "y": 574.75
           },
           {
             "id": "pl-hub-c-merchant-cp4",
-            "x": 3090.5,
-            "y": 242.5
+            "x": 3066.5,
+            "y": 574.75
           },
           {
             "id": "pl-hub-c-merchant-cp5",
-            "x": 3090.5,
-            "y": 269
+            "x": 3066.5,
+            "y": 599.25
           }
         ],
-        "labelOffset": 0.246
+        "labelOffset": 0.238
       },
       "pl-hub-c-dict": {
         "points": [
           {
             "id": "pl-hub-c-dict-cp0",
-            "x": 3460.5,
-            "y": 269
+            "x": 3436.5,
+            "y": 599.25
           },
           {
             "id": "pl-hub-c-dict-cp1",
-            "x": 3460.5,
-            "y": 240
+            "x": 3436.5,
+            "y": 572.25
           }
         ],
-        "labelOffset": 0.5393
+        "labelOffset": 0.5368
       },
       "pl-hub-c-spi": {
         "points": [
           {
             "id": "pl-hub-c-spi-cp0",
-            "x": 1084,
-            "y": 618
+            "x": 1312,
+            "y": 663.5
           },
           {
             "id": "pl-hub-c-spi-cp1",
-            "x": 1084,
-            "y": 818
+            "x": 1312,
+            "y": 1294.75
           },
           {
             "id": "pl-hub-c-spi-cp2",
-            "x": 1316,
-            "y": 818
+            "x": 3086.5,
+            "y": 1294.75
           },
           {
             "id": "pl-hub-c-spi-cp3",
-            "x": 1316,
-            "y": 788.5
+            "x": 3086.5,
+            "y": 1311.75
           }
         ],
-        "labelOffset": 0.1639
+        "labelOffset": 0.0644
       },
       "pl-hub-c-cache": {
         "points": [
           {
             "id": "pl-hub-c-cache-cp0",
-            "x": 3460.5,
-            "y": 776.5
+            "x": 3436.5,
+            "y": 1307.75
           },
           {
             "id": "pl-hub-c-cache-cp1",
-            "x": 3460.5,
-            "y": 635.25
+            "x": 3436.5,
+            "y": 1201.75
           },
           {
             "id": "pl-hub-c-cache-cp2",
-            "x": 3690.5,
-            "y": 635.25
+            "x": 3686.5,
+            "y": 1201.75
           },
           {
             "id": "pl-hub-c-cache-cp3",
-            "x": 3690.5,
-            "y": 530.5
+            "x": 3686.5,
+            "y": 862.75
           }
         ],
-        "labelOffset": 0.5311
+        "labelOffset": 0.3516
       },
       "pl-hub-c-risk": {
         "points": [
           {
             "id": "pl-hub-c-risk-cp0",
-            "x": 4113,
-            "y": 784.5
+            "x": 4089,
+            "y": 1315.75
           },
           {
             "id": "pl-hub-c-risk-cp1",
-            "x": 4113,
-            "y": 801.75
+            "x": 4089,
+            "y": 1317.75
           },
           {
             "id": "pl-hub-c-risk-cp2",
-            "x": 4385,
-            "y": 801.75
+            "x": 4361,
+            "y": 1317.75
           },
           {
             "id": "pl-hub-c-risk-cp3",
-            "x": 4385,
-            "y": 772.25
+            "x": 4361,
+            "y": 1365.5
           }
         ],
-        "labelOffset": 0.7961
+        "labelOffset": 0.7798
       },
       "pl-hub-c-worker-risk": {
         "points": [
           {
             "id": "pl-hub-c-worker-risk-cp0",
-            "x": 3480.5,
-            "y": 1025.5
+            "x": 1714.5,
+            "y": 1533.25
           },
           {
             "id": "pl-hub-c-worker-risk-cp1",
-            "x": 3480.5,
-            "y": 755.25
+            "x": 1714.5,
+            "y": 1554.75
           },
           {
             "id": "pl-hub-c-worker-risk-cp2",
-            "x": 4113,
-            "y": 755.25
+            "x": 4089,
+            "y": 1554.75
           },
           {
             "id": "pl-hub-c-worker-risk-cp3",
-            "x": 4113,
-            "y": 734.75
+            "x": 4089,
+            "y": 1575.25
           },
           {
             "id": "pl-hub-c-worker-risk-cp4",
-            "x": 4385,
-            "y": 734.75
+            "x": 4361,
+            "y": 1575.25
           },
           {
             "id": "pl-hub-c-worker-risk-cp5",
-            "x": 4385,
-            "y": 764.25
+            "x": 4361,
+            "y": 1373.5
           }
         ],
-        "labelOffset": 0.8372
+        "labelOffset": 0.8691
       },
       "pl-hub-c-merchant-wh": {
         "points": [
           {
             "id": "pl-hub-c-merchant-wh-cp0",
-            "x": 1064,
-            "y": 817
+            "x": 386,
+            "y": 1127.25
           },
           {
             "id": "pl-hub-c-merchant-wh-cp1",
-            "x": 1064,
-            "y": 751
+            "x": 386,
+            "y": 1156.75
           },
           {
             "id": "pl-hub-c-merchant-wh-cp2",
-            "x": 1316,
-            "y": 751
+            "x": 1292,
+            "y": 1156.75
           },
           {
             "id": "pl-hub-c-merchant-wh-cp3",
-            "x": 1316,
-            "y": 780.5
+            "x": 1292,
+            "y": 1319.75
           }
         ],
-        "labelOffset": 0.1141
+        "labelOffset": 0.1869
       },
       "pl-hub-c-queue": {
         "points": [
           {
             "id": "pl-hub-c-queue-cp0",
-            "x": 3520.5,
-            "y": 792.5
+            "x": 3436.5,
+            "y": 1323.75
           },
           {
             "id": "pl-hub-c-queue-cp1",
-            "x": 3520.5,
-            "y": 1133
+            "x": 3436.5,
+            "y": 1395.25
           },
           {
             "id": "pl-hub-c-queue-cp2",
-            "x": 3690.5,
-            "y": 1133
+            "x": 3666.5,
+            "y": 1395.25
           },
           {
             "id": "pl-hub-c-queue-cp3",
-            "x": 3690.5,
-            "y": 1115
+            "x": 3666.5,
+            "y": 1419.25
           }
         ],
-        "labelOffset": 0.7309
+        "labelOffset": 0.5545
       },
       "pl-hub-c-worker": {
         "points": [
           {
             "id": "pl-hub-c-worker-cp0",
-            "x": 3690.5,
-            "y": 1033.5
+            "x": 1714.5,
+            "y": 1517.25
           },
           {
             "id": "pl-hub-c-worker-cp1",
-            "x": 3690.5,
-            "y": 1107
+            "x": 1714.5,
+            "y": 1458.75
+          },
+          {
+            "id": "pl-hub-c-worker-cp2",
+            "x": 3666.5,
+            "y": 1458.75
+          },
+          {
+            "id": "pl-hub-c-worker-cp3",
+            "x": 3666.5,
+            "y": 1427.25
           }
         ],
-        "labelOffset": 0.4111
+        "labelOffset": 0.4993
       },
       "pl-hub-c-ledger": {
         "points": [
           {
             "id": "pl-hub-c-ledger-cp0",
-            "x": 3460.5,
-            "y": 1041.5
+            "x": 4089,
+            "y": 1525.25
           },
           {
             "id": "pl-hub-c-ledger-cp1",
-            "x": 3460.5,
-            "y": 1295
+            "x": 4089,
+            "y": 1508.25
+          },
+          {
+            "id": "pl-hub-c-ledger-cp2",
+            "x": 4381,
+            "y": 1508.25
+          },
+          {
+            "id": "pl-hub-c-ledger-cp3",
+            "x": 4381,
+            "y": 1556
           }
         ],
-        "labelOffset": 0.8517
+        "labelOffset": 0.9154
       },
       "pl-hub-c-dict-spi": {
         "points": [
           {
             "id": "pl-hub-c-dict-spi-cp0",
-            "x": 4113,
-            "y": 240
+            "x": 4089,
+            "y": 572.25
           },
           {
             "id": "pl-hub-c-dict-spi-cp1",
-            "x": 4113,
-            "y": 61
+            "x": 4089,
+            "y": 321
           },
           {
             "id": "pl-hub-c-dict-spi-cp2",
             "x": 674,
-            "y": 61
+            "y": 321
           },
           {
             "id": "pl-hub-c-dict-spi-cp3",
             "x": 674,
-            "y": 614
+            "y": 659.5
           }
         ],
-        "labelOffset": 0.7222
+        "labelOffset": 0.7654
       },
       "pl-hub-c-cob-cache": {
         "points": [
           {
             "id": "pl-hub-c-cob-cache-cp0",
-            "x": 3460.5,
-            "y": 277
+            "x": 3436.5,
+            "y": 607.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp1",
-            "x": 3460.5,
-            "y": 307
+            "x": 3436.5,
+            "y": 639.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp2",
-            "x": 3690.5,
-            "y": 307
+            "x": 3666.5,
+            "y": 639.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp3",
-            "x": 3690.5,
-            "y": 514.5
+            "x": 3666.5,
+            "y": 846.75
           }
         ],
-        "labelOffset": 0.3463
+        "labelOffset": 0.3486
       },
       "pl-hub-c-ep-guard": {
         "points": [
           {
             "id": "pl-hub-c-ep-guard-cp0",
-            "x": 1877.5,
-            "y": 515.25
+            "x": 1853.5,
+            "y": 869.75
           },
           {
             "id": "pl-hub-c-ep-guard-cp1",
-            "x": 1877.5,
-            "y": 515.25
+            "x": 1853.5,
+            "y": 869.75
           }
         ],
         "labelOffset": 0.5
@@ -983,13 +993,13 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-guard-svc-cp0",
-            "x": 2450.5,
-            "y": 515.25
+            "x": 2426.5,
+            "y": 869.75
           },
           {
             "id": "pl-hub-c-guard-svc-cp1",
-            "x": 2450.5,
-            "y": 515.25
+            "x": 2426.5,
+            "y": 869.75
           }
         ],
         "labelOffset": 0.5
@@ -998,96 +1008,86 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-hub-c-svc-api-cp0",
-            "x": 2884.5,
-            "y": 507.25
+            "x": 2860.5,
+            "y": 861.75
           },
           {
             "id": "pl-hub-c-svc-api-cp1",
-            "x": 2884.5,
-            "y": 304.5
+            "x": 2860.5,
+            "y": 636.75
           },
           {
             "id": "pl-hub-c-svc-api-cp2",
-            "x": 3090.5,
-            "y": 304.5
+            "x": 3066.5,
+            "y": 636.75
           },
           {
             "id": "pl-hub-c-svc-api-cp3",
-            "x": 3090.5,
-            "y": 277
+            "x": 3066.5,
+            "y": 607.25
           }
         ],
-        "labelOffset": 0.6604
+        "labelOffset": 0.6713
       },
       "pl-hub-c-svc-cache": {
         "points": [
           {
             "id": "pl-hub-c-svc-cache-cp0",
-            "x": 2904.5,
-            "y": 515.25
+            "x": 3008.5,
+            "y": 869.75
           },
           {
             "id": "pl-hub-c-svc-cache-cp1",
-            "x": 2904.5,
-            "y": 522.5
+            "x": 3008.5,
+            "y": 869.75
           }
         ],
-        "labelOffset": 0.5112
+        "labelOffset": 0.5
       },
       "pl-hub-c-cache-redis": {
         "points": [
           {
             "id": "pl-hub-c-cache-redis-cp0",
-            "x": 3620.5,
-            "y": 522.5
+            "x": 3666.5,
+            "y": 869.75
           },
           {
             "id": "pl-hub-c-cache-redis-cp1",
-            "x": 3620.5,
-            "y": 522.5
+            "x": 3666.5,
+            "y": 854.75
           }
         ],
-        "labelOffset": 0.5
+        "labelOffset": 0.4789
       },
       "pl-hub-c-svc-pub": {
         "points": [
           {
             "id": "pl-hub-c-svc-pub-cp0",
-            "x": 2884.5,
-            "y": 523.25
+            "x": 2860.5,
+            "y": 877.75
           },
           {
             "id": "pl-hub-c-svc-pub-cp1",
-            "x": 2884.5,
-            "y": 1243.25
+            "x": 2860.5,
+            "y": 1075.25
           }
         ],
-        "labelOffset": 0.8446
+        "labelOffset": 0.6876
       },
       "pl-hub-c-pub-queue": {
         "points": [
           {
             "id": "pl-hub-c-pub-queue-cp0",
-            "x": 3480.5,
-            "y": 1243.25
+            "x": 3706.5,
+            "y": 1075.25
           },
           {
             "id": "pl-hub-c-pub-queue-cp1",
-            "x": 3480.5,
-            "y": 1222.5
-          },
-          {
-            "id": "pl-hub-c-pub-queue-cp2",
-            "x": 3710.5,
-            "y": 1222.5
-          },
-          {
-            "id": "pl-hub-c-pub-queue-cp3",
-            "x": 3710.5,
-            "y": 1123
+            "x": 3706.5,
+            "y": 1411.25
           }
         ],
-        "labelOffset": 0.4189
+        "labelOffset": 0.2553
       }
     }
   },

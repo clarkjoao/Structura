@@ -101,3 +101,12 @@ export const PATTERN_FRAME_PAD_BOTTOM = 30;
 /** What an existing node with no stored size is taken to cover when placing a fragment. */
 export const UNSIZED_NODE_EXTENT_W = 260;
 export const UNSIZED_NODE_EXTENT_H = 120;
+
+/**
+ * The size of a reference the auto-layout makes: a compact pill rather than
+ * the card a user's own reference is. The auto-layout makes one for every far
+ * connection, so each should weigh as little as it can on the canvas; the
+ * layout is planned at this size and the store writes it.
+ */
+export const AUTO_REF_W = 160;
+export const AUTO_REF_H = 40;

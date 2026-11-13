@@ -25,8 +25,11 @@ Related: [canvas-engine.md](./canvas-engine.md),
 | **Idle / other writes** | Unchanged nodes/edges keep the same object identity | Rebuilding the one entity that actually changed |
 
 A drag frame never writes the diagram store (`useLocalNodes`). A store write
-never happens “a little” — persist middleware still `JSON.stringify`s the
-whole workspace on every `set()`.
+never happens “a little” — every `set()` notifies every subscriber, re-runs the
+canvas projection and schedules a persist. The workspace itself is serialised
+once per persist debounce, at flush time, not per `set()`
+(`persist.deferred-serialization.test.ts`). A continuous viewport gesture writes
+the store once, when it settles (`useSettledViewportWrite.test.ts`).
 
 ---
 
@@ -112,6 +115,110 @@ leave all edge objects (and the array) identical.
 > `withLocalMeasured`): `measured` must survive any node array replacement,
 > including the discard path for undo/redo.
 
+### 5b. Context values every node or edge reads keep their identity
+
+A context consumed by every node or edge re-renders all of them when its value
+changes identity — `memo` does not help. Derive it so the identity moves only
+when its content does (`useStableSetByContent`, `useRevealedLabelEdgeIds`), and
+hand React Flow handlers through `useStableCallback`. Measured on the 657-node
+fixture: one arrow-key nudge re-rendered all 711 edges (a fresh `Set` in
+`EdgeLabelRevealContext`) and every node (a new `onNodeClick`) before this rule.
+To check a change, count renders on a production build with `npm run perf:large`
+(`nudge` scenario) rather than trusting `memo`.
+
+### 5c. Edges are culled by their drawn route, in one selector
+
+`DiagramSurface` hands React Flow only the edges whose route box (both endpoint
+node boxes plus every stored corner) reaches the viewport grown by one viewport
+(`edges/culling/`). Do not switch on React Flow's `onlyRenderVisibleElements`
+instead: it judges an edge by its endpoints, so long cross-panel edges never
+cull and detoured ones vanish while on screen. Do not stamp the route box on
+`edge.data` either — every edge on a moving node would get new `data` per
+frame. Anything that acts on edges (select all, delete, export) reads the store
+or React Flow's nodes, never the culled array; selected edges and the playback
+step are always kept.
+
+### 5d. Far zoom draws less, decided once per canvas
+
+`CanvasLodSync` is the only zoom subscriber for the level of detail: it writes
+`data-lod` on the React Flow wrapper and the `CanvasLodContext` value, which
+changes once per threshold crossing. Below it, edges nothing points at render
+`FarEdge` (stroke, arrowheads, click target — no editing hooks, label or line
+hops), and node secondary content marked `data-lod-secondary` is hidden with
+`visibility`. Never hide node content with `display`: the node would change
+size, React Flow would re-measure it and every edge on it would move.
+
+Panels and API groups mark the element that blurs what is behind them
+`data-canvas-blur`, and at far zoom the stylesheet turns that `backdrop-filter`
+off (`index.css`); the translucent fill stays. A backdrop filter makes the
+compositor re-layerize the canvas on every frame that paints, and it is a cost
+no profile of script shows: 1000 nodes at fit view (zoom 0.11, 40 panels), 30
+wheel ticks went from about 20 long tasks / 1.2–1.3 s, with 1.7–2.9 s of
+`Layerize` in the trace, to none. A node renderer that adds a `backdrop-blur`
+must mark it (`nodes/canvasBlur.guard.test.ts`).
+
+At full zoom the blur stays at rest and is off only while the viewport moves:
+`ViewportGestureSync` (inside `<ReactFlow>`, `core/`) writes
+`data-viewport-moving` on the wrapper from React Flow's viewport start/end and
+clears it 200 ms after the last movement — a wheel pan reports a start and an
+end on every tick, and clearing it at once toggled the filter 60 times in 30
+ticks, which cost more than the blur. Measured at 1000 nodes, zoom 0.71–0.73,
+9–12 panels on screen: 30 wheel ticks 6 long tasks / ~415 ms → none (frame
+p95 34–50 → 25 ms). Node drags keep the blur: removing it during a drag
+measured within noise (one node: 2 long tasks either way, ~205 → ~180 ms;
+twelve nodes: no difference). Do not keep the blur with
+compositing hints instead (`will-change` on the node or edge layers): each one
+measured changed the stacking order — panels over edges, or 470–1271 layers.
+
+### 5e. The minimap follows a drag five times a second
+
+React Flow's `<MiniMap>` subscribes to React Flow's store itself: every drag
+frame it recomputes the bounds of all nodes, runs one selector per node and
+redraws every moved rectangle — all of them when the whole selection moves.
+`DragThrottledMiniMap` (`components/`) renders the same `<MiniMap>` inside its
+own `ReactFlowProvider` whose store mirrors the canvas store (it is handed the
+canvas state object as is). At rest every change reaches the mirror at once, so
+panning, zooming and clicking the minimap behave as before; while a node drag
+is in progress (`dragActivity`, started and stopped by the canvas drag
+handlers) the mirror is refreshed every `MINIMAP_DRAG_REFRESH_MS` (200 ms) and
+once more when the drag ends. Measured dragging all 1000 nodes at fit view:
+minimap attribute writes per gesture −65 % (31 686 → 11 226 at 400 nodes), long
+tasks ~4.9 s → ~4.6 s, the same as with the minimap switched off. Do not hand
+the minimap the live store again, and do not put `dragging` on React state in
+`Canvas` to drive it: the drag frames bypass `Canvas` renders on purpose.
+
+### 5f. Line hops follow a drag on a timer
+
+Line hops depend on every edge, so one recompute (`lineHopsRegistry`) runs
+over all step paths on screen, and every edge whose hops moved re-renders its
+path. While nodes are dragged (`dragActivity`, the same signal as the
+minimap) the registry recomputes at most every `LINE_HOPS_DRAG_REFRESH_MS`
+(120 ms) instead of every frame, and once more the moment the drag ends. At
+rest it recomputes once per frame that changed something, as before. Between
+recomputes a moving edge keeps the hops it had; one no longer on its segment
+is skipped by `buildPathWithHops`, the rest lag by at most one interval.
+After the drop the hops are exactly the live ones (checked arc by arc against
+the previous build: 2844 arcs, no difference). Measured at full zoom,
+dragging every node: 400 nodes 25–27 long tasks / ~1.5 s (frame p95 58 ms)
+→ 3–5 / 156–258 ms (p95 42 ms); 1000 nodes p95 122–150 → 92–100 ms. Do not
+freeze hops for the whole drag (a line crossing a moved node keeps an arc in
+the wrong place for seconds), and do not go back to a per-frame recompute.
+
+### 5g. A rebuild that changes nothing keeps every node's data
+
+`useCanvasNodes` keeps a node's previous `data` while every field is the
+same value (functions excepted), and the renderer is skipped. Any field that
+is a fresh object on every build defeats it, for every node of that type, on
+every build — and selecting, deselecting, flow and compare state all rebuild.
+Derived lists go through `stableNodeLists.ts` (the same array while the
+content is equal, one shared empty list), and a renderer that writes a
+callback onto its own data (`NoteNode`, `JsonViewerNode`) gets the key
+built as a placeholder so the kept data stays the same shape. What a
+selection disables is read by the controls (`selection/selectionControls.ts`),
+not put on `data`. Measured on a 1000-node diagram with 50 API groups, 150
+routes and 40 notes, the first selection re-rendered all 240 of them; it now
+re-renders none (50 API group footers, whose answer changed, re-render).
+
 ### 6. Do not subscribe per entity to a canvas-wide value
 
 A selector that returns the same canvas-wide flag (`elementsSelectable`,
@@ -153,30 +260,19 @@ Ranked by where they fire and how closely they match a strategy already
 proven. None of these are required to keep current FPS; they are the next
 places to look.
 
-### High — still on the drag frame or every store write
-
-| Opportunity | Strategy | Where | Why |
-| --- | --- | --- | --- |
-| Hoist `elementsSelectable` out of `EditableEdge` | §6 | `EditableEdge.tsx` `useStore((s) => s.elementsSelectable)` | One subscriber per visible edge; RF notifies all of them every `setNodes` |
-| Stop `useLocalNodes` `setTick` from re-rendering `Canvas` every frame | §3 / local copy | `useLocalNodes.ts` `setTick((t) => t + 1)` | Forces the whole controller / graph-state hook chain each pointermove. The local node array is already in a ref; the tick exists so React notices. A narrower subscription (or RF as the only reader of local positions) would cut that walk |
-| Local (or batched) writes while dragging edge control points / label offsets | §4 | `useControlPoints.ts`, `useEdgeLabelDrag.ts`, `useSegmentDrag.ts` | Node drag stays off the store; **edge** edit still `set()`s every pointermove → full persist stringify + collab diff per frame |
-
-### High — collaboration / persist (not node-drag FPS)
-
-| Opportunity | Strategy | Where | Why |
-| --- | --- | --- | --- |
-| Persist: stringify once per debounce, not per `set()` | §4 | `persist.config.ts` + Zustand `createJSONStorage` | I/O is already debounced 1 s; `JSON.stringify` of the workspace still runs on every `set()`. Edge-point drags and typing pay this today |
-| Key collab highlight by element, not by `session` | §5 / §6 | `CollabProvider` `editingComponents` depends on `session`; `useCollabHighlight` / `usePeerOnNode` | Cursor packets rebuild `session` → new Map → every node that reads collab context re-renders, even when `activeElementId` did not change |
+The four "High" items this list used to open with are done; they are in
+"Already in place" below with the tests that lock them. Rechecked on
+2026-11-05 against the 657-node fixture (`npm run perf:large`): what is left
+here costs little on that diagram.
 
 ### Medium
 
 | Opportunity | Strategy | Where | Why |
 | --- | --- | --- | --- |
 | Treat `NodeToolbar` like edge labels | §1 | `NodeQuickActionsBar`, `PendingNodeToolbar` | Same RF portal/subscriber family. One instance is fine; N pending LLM toolbars scale with preview count |
-| Skip occupancy math until the boolean can flip | §2 / §6 | `useViewportOccupancy.ts` | Equality stops the **re-render**, not the O(N) `nodeLookup` scan on every RF notification |
+| Skip occupancy math until the boolean can flip | §2 / §6 | `useViewportOccupancy.ts` | Equality stops the **re-render**, not the O(N) `nodeLookup` scan on every RF notification — about 20 µs per frame at 657 nodes |
 | Reuse the gesture panel index on **commit** | §2 | `useNodeDragParenting` `onNodeDragStop` still calls `findPanelContainingPoint` | Frames are O(1); multi-select commit is still O(S × N) |
 | Identity-cache `edgeHandleAssignments` | §5 | `useCanvasConnectionDerivations.ts` | A new array reference rebuilds the `useCanvasEdges` memo even when most assignments are unchanged |
-| Stabilize `usePointerFunnel`'s return object | §3 | `pointerFunnel.ts` | New object every Canvas render; `onNodeClick` depends on `funnel`. Cheap until `setTick` makes Canvas render every frame |
 
 ### Lower / situational
 
@@ -186,7 +282,6 @@ places to look.
 | `flowBadges` / `coverage` new object graphs | Flow panel / playback — invalidates node+edge memos |
 | `useConnection` / `useEdgeControlPoints` per edge | Store writes (edge edit, commit), not node-drag frames |
 | `useConnectionInternalsSync` key-diff | Connect / disconnect only |
-| `updateViewport` full persist stringify | Pan/zoom **end**, not every frame |
 
 ---
 
@@ -200,9 +295,28 @@ places to look.
 | One `batchCommitNodeDrag` / one `batchUpdateNodeLayouts` | `singleCommit` + `dimensionFlush` tests |
 | Per-node identity (`useCanvasNodes`) | existing node identity tests |
 | Per-edge identity + `shallowEqualRecord` (`useCanvasEdges`) | `useCanvasEdges.identity.test.ts` |
-| `HandleHighlightContext` not rebuilt from Canvas render | comment on `Canvas.tsx` |
+| `HandleHighlightContext` not rebuilt from Canvas render (the provider keys its value on the four fields) | comment in `HandleHighlightProvider` |
+| `EdgeLabelRevealContext` keeps its identity while its members are unchanged | `useRevealedLabelEdgeIds.test.ts` |
+| Canvas-wide id sets reach nodes and edges as membership (`idSetStore.ts`): handle highlight and revealed labels re-render only the elements that joined or left the set | `idSetStore.test.tsx` |
+| What a selection disables on a card or an API group is read by its controls (`selection/selectionControls.ts`), not carried on every node's data | `selectionControls.test.tsx`, `CardNode.selectionControls.test.tsx`, `ApiGroupNode.selectionControls.test.tsx` |
+| Derived lists on group and route data keep their identity across rebuilds; note and JSON viewer data carry the callback slot their renderer writes (`elements/structural/stableNodeLists.ts`) | `stableNodeLists.test.ts`, `endpoint.element.test.ts` |
+| Line hops recompute on a 120 ms timer during a node drag and at once on the drop (`lineHopsRegistry.followDrag`) | `lineHopsRegistry.test.ts` |
+| Edge reconnect anchors are off while nodes are dragged (`useReconnectAnchorsOffWhileDragging`) | `useReconnectAnchorsOffWhileDragging.test.tsx` |
+| Stable `onNodeClick` (React Flow's `NodeWrapper` is not memoised: a new identity re-renders every node) | `useCanvasEventHandlers.node-click-identity.test.tsx` |
+| Per-node `handleOrder` identity kept while its slots are unchanged | `connectionDerivations.stableHandleOrder.test.ts` |
+| Route-aware edge culling, one selector, same array inside a grid cell | `routeCulling.test.ts`, `useRouteCulledEdges.test.tsx` |
+| Far level of detail: `FarEdge` on the same path, selected/revealed edges stay full | `EditableEdge.lod.test.tsx`, `canvasLod.test.ts` |
+| The minimap reads a store mirror refreshed at most every 200 ms during a node drag (`DragThrottledMiniMap`) | `miniMapDragThrottle.test.ts` |
+| Node backdrop blur is off at far zoom and while the viewport moves (`data-canvas-blur`, `ViewportGestureSync`) | `canvasBlur.guard.test.ts`, `ViewportGestureSync.test.tsx` |
 | `useDiagramActions` stable slice | `stableSlice.ts` |
+| Workspace serialised once per persist flush (`createDeferredJSONStorage`) | `persist.deferred-serialization.test.ts` |
+| `EditableEdge` reads `elementsSelectable` from `ElementsSelectableContext`, not one store subscription per edge | `EditableEdge.selectable.test.tsx` |
+| Node drag frames go straight to React Flow's `setNodes` (`publishDragFrame`, in `useLocalNodes.ts` / `useCanvasGraphState.ts`) without a `Canvas` render | `useNodeDragParenting.panelSelfDrop.test.tsx` |
+| Edge control point, segment and label drags write the store once per gesture | `edge-gesture-writes.test.tsx` |
+| An arrangement writes its edges (handle order, route resets, routes, label offsets) in one `set()` (`applyLayoutEdges`, `slices/applyLayoutEdges.test.ts`), and runs ELK in a worker (`layout/elkRunner.ts`) | `applyLayoutEdges.test.ts`, `elkRunner.test.ts` |
+| Collaboration presence: per-element selectors returning a peer's stable `user`, so cursor packets re-render no node | `usePeerOnNode.test.tsx` |
+| One viewport write per pan/zoom gesture, flushed before any read (`useSettledViewportWrite`) | `useSettledViewportWrite.test.ts`, `update-viewport.test.ts` |
 
 `useLocalNodes` itself is a sharp edge (`AGENTS.md`): the local copy during
-drag is deliberate. Changing how it notifies React (`setTick`) is a
-performance project, not a cleanup.
+drag is deliberate. Drag frames already skip its `setTick`; changing how the
+rest notifies React is a performance project, not a cleanup.

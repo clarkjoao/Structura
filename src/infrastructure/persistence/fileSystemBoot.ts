@@ -12,7 +12,7 @@ import {
 } from "./FileSystemAdapter";
 import { clearLocalStorageDiagramSyncTimestamp } from "./localStorageSyncTimestamp";
 import { clearFolderSyncTimestamp, recordFolderSyncSuccess } from "./folderSyncTimestamp";
-import { defaultStorage } from "./LocalStorageAdapter";
+import { workspaceStorage } from "./workspaceStorage";
 import { useElementPresetStore } from "@/features/element-presets";
 import { useIconStore } from "@/features/diagram/store";
 import { mergeElementPresets } from "./merge-element-presets";
@@ -177,7 +177,7 @@ export function getReconnectPromise(): Promise<boolean> | null {
 }
 
 async function clearLocalCache(): Promise<void> {
-  await defaultStorage.delete(PERSIST_KEY);
+  await workspaceStorage.delete(PERSIST_KEY);
   clearLocalStorageDiagramSyncTimestamp();
 }
 
@@ -197,7 +197,7 @@ async function doReconnect(): Promise<boolean> {
       return false;
     }
 
-    // Deliberately do NOT set `defaultStorage.paused = true` here.
+    // Deliberately do NOT set `workspaceStorage.paused = true` here.
     // When a folder is connected, localStorage stays writable in parallel as a
     // silent backup (Zustand persist + forced flushes before merge/overwrite).
     // Pausing it was a root cause of filesystem instability: if the folder write

@@ -7,8 +7,8 @@ in the code.
 ## System shape
 
 Structura is a client-only SPA. There is no backend and no database: all state
-is client-side (localStorage, or a local folder via the File System Access
-API). A small optional relay provides only the collaboration — `server/` (Node) or
+is client-side (IndexedDB, localStorage as fallback, or a local folder via the
+File System Access API). A small optional relay provides only the collaboration — `server/` (Node) or
 `go-server/` (Go, wire-compatible, also deployable serverless; ADR-0012); it keeps a live session's room while the session lasts, never the workspace.
 
 ```
@@ -38,7 +38,8 @@ API). A small optional relay provides only the collaboration — `server/` (Node
 2. Only `features/canvas` imports `@xyflow/react`. React Flow types do not
    appear in the Model or in any other feature.
 3. Persistence goes through `IStoragePort`
-   (`infrastructure/persistence/`); nothing else touches `localStorage`.
+   (`infrastructure/persistence/`); nothing else touches `localStorage` or IndexedDB
+   for the workspace.
 4. Features communicate through the store's actions/selectors and through
    registries — never by importing each other's internals.
 5. Cross-cutting UI (shadcn/ui) lives in `components/ui/` and is regenerated
@@ -69,11 +70,18 @@ only if always-mounted code (app shell, LLM chat) imports leaf modules
 directly instead of the barrels. Keep this in mind when adding imports to
 anything that mounts at startup.
 
-Each feature sub-directory has its own `index.ts` barrel (e.g.
-`canvas/edges/`, `canvas/nodes/`, `canvas/toolbar/`). These are the
-canonical entry points — other features should import from barrels, not
-from internal leaf modules. Direct leaf imports are acceptable for
-performance-sensitive code or to avoid circular dependencies.
+Leaf imports are the norm inside a feature; barrels exist only where a module is
+a public surface used from many places. Measured on this branch, the barrels
+that carry real traffic are `@/features/diagram` (the domain layer, ~670
+imports), `@/infrastructure/i18n`, `@/infrastructure/persistence`,
+`@/features/llm`, `@/features/element-presets`, `@/features/collaboration`,
+`@/features/cloud`, `@/lib/export-service` and `@/features/canvas` (6 imports).
+Several other `index.ts` files are imported by nothing: `canvas/{components,
+edges,hooks,navigation,panels,toolbar}`, `elements`, `plugins`, `walkthrough`,
+`lib/catalogs` and `lib/core`. They are listed as unused files in
+`fallow-dead-code-baseline.json` and are kept as documentation of each folder's
+surface, not as entry points — import from the leaf module, and do not add a
+barrel import to code that mounts at startup (see above).
 
 ## Quality gates
 

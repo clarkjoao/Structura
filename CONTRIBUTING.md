@@ -105,8 +105,8 @@ docs/                    # architecture, ADRs, concepts, guides
   keeps working. Persisted schema changes need a migration (`persist.config.ts`).
 - **Node drags commit once per gesture** (`batchCommitNodeDrag`) — do not call `setParent` /
   `updateNodeLayout` per node from drag handlers.
-- **Persistence goes through `IStoragePort`** — no direct `localStorage` access outside
-  `src/infrastructure/persistence/`.
+- **Persistence goes through `IStoragePort`** — no direct `localStorage` or IndexedDB access for
+  the workspace outside `src/infrastructure/persistence/`.
 - **New element types go on the element registry** (`src/features/elements/`) — see
   [docs/guides/adding-a-node-type.md](docs/guides/adding-a-node-type.md).
 - **Don't hand-edit** `src/components/ui/` (regenerate with the shadcn CLI) or

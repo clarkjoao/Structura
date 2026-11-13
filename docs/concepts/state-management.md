@@ -37,19 +37,21 @@ cleans up all `customIconId` references in diagram components and scenes.
 
 ## History (undo/redo)
 
-- `past`/`future` hold `DiagramSnapshot`s: **full `ModelDraft` copies** per
-  diagram plus node layouts, with a timestamp.
+- `past`/`future` hold `DiagramSnapshot`s: the `ModelDraft` plus node layouts, with a
+  timestamp. A checkpoint is taken with Immer `current()`, so it is a reference that
+  shares every unchanged subtree with the live state (O(1) to take, no deep copy).
 - Every structural mutation calls `pushHistory` *before* mutating.
 - Rapid consecutive edits coalesce (timestamp window) so typing a name is one
   undo step, not twelve.
-- Bounded by `MAX_HISTORY_STEPS` to cap memory.
+- Bounded by `MAX_HISTORY_STEPS`; memory per step is only what that edit changed,
+  because snapshots share structure.
 
 **Why snapshots, not command inversion:** snapshots are impossible to get
 wrong per-action — any new mutation is automatically undoable, which matters
 enormously when mutations will eventually come from plugins and AI patches.
-The cost (memory) is bounded and acceptable at current diagram sizes. If
-profiling ever says otherwise, the migration path is structural sharing
-(Immer patches), not hand-written inverse commands.
+Structural sharing keeps the cost bounded: a step retains only the subtrees
+that changed. If profiling ever says otherwise, the migration path is Immer
+patches, not hand-written inverse commands.
 
 ## Persistence coupling
 

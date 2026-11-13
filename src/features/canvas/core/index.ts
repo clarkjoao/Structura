@@ -11,12 +11,7 @@ export {
   DiagramPosition,
   useDiagramFlow,
 } from "./DiagramFlowProvider";
-export type {
-  DiagramFlowInstance,
-  DiagramNode,
-  DiagramNodeComponent,
-  DiagramNodeTypes,
-} from "./DiagramFlowProvider";
+export type { DiagramFlowInstance, DiagramNode, DiagramNodeTypes } from "./DiagramFlowProvider";
 export { diagramEdgeTypes } from "./edgeTypes";
 export {
   DIAGRAM_EDGE_RF_TYPE,

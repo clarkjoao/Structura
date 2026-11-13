@@ -55,7 +55,7 @@ export function DiagramCard({
       onClick={(event) => onSelect(diagram, event)}
       className={cn(
         "group cursor-pointer rounded-lg border border-border bg-card overflow-hidden transition-all hover:border-primary/40 hover:shadow-md",
-        isSelected && "ring-2 ring-primary",
+        isSelected && "border-primary bg-primary/5 ring-2 ring-primary",
       )}
     >
       <DiagramCardPreview diagram={diagram} preview={preview} actions={actions} />

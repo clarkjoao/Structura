@@ -1,11 +1,11 @@
-import { SEED_FOLDERS } from "@/fixtures/seeds";
 import type { Folder } from "../../model/diagram.types";
 import { generateId } from "../../utils/generate-id";
 import type { AppState } from "../store.types";
 
 export function foldersSlice(set: (fn: (state: AppState) => void) => void, _get: () => AppState) {
   return {
-    folders: import.meta.env.VITE_DISABLE_SEEDS === "true" ? {} : SEED_FOLDERS,
+    // Demo seeds arrive on a fresh workspace during hydration (seedWorkspace.ts).
+    folders: {} as Record<string, Folder>,
 
     addFolder: (name: string, parentId: string | null, domain?: string) => {
       const folder: Folder = {

@@ -175,30 +175,76 @@ describe("the share link still works", () => {
 });
 
 describe("the postMessage protocol still works", () => {
-  it("announces itself and renders what STRUCTURA_LOAD hands it", async () => {
+  /** Puts the viewer in a frame: `window.parent` becomes a stand-in embedding page. */
+  function embedIn(): { parent: Window; announced: unknown[]; restore: () => void } {
     const announced: unknown[] = [];
-    const realPost = window.parent.postMessage.bind(window.parent);
-    window.parent.postMessage = ((message: unknown) => {
-      announced.push(message);
-    }) as typeof window.parent.postMessage;
+    const parent = {
+      postMessage: (message: unknown) => {
+        announced.push(message);
+      },
+    } as unknown as Window;
+    const descriptor = Object.getOwnPropertyDescriptor(window, "parent");
+    Object.defineProperty(window, "parent", { configurable: true, get: () => parent });
+    return {
+      parent,
+      announced,
+      restore: () => {
+        if (descriptor) Object.defineProperty(window, "parent", descriptor);
+      },
+    };
+  }
 
+  function load(source: unknown, diagram: unknown) {
+    const event = new MessageEvent("message", {
+      data: { type: "STRUCTURA_LOAD", diagram },
+      origin: "https://docs.example.com",
+    });
+    // jsdom only takes a real Window as `source` in the constructor.
+    Object.defineProperty(event, "source", { value: source });
+    act(() => {
+      window.dispatchEvent(event);
+    });
+  }
+
+  it("announces itself and renders what STRUCTURA_LOAD hands it", async () => {
+    const frame = embedIn();
     try {
       renderAt();
       await waitFor(() =>
-        expect(announced).toContainEqual(expect.objectContaining({ type: "STRUCTURA_READY" })),
+        expect(frame.announced).toContainEqual(
+          expect.objectContaining({ type: "STRUCTURA_READY" }),
+        ),
       );
 
-      act(() => {
-        window.dispatchEvent(
-          new MessageEvent("message", {
-            data: { type: "STRUCTURA_LOAD", diagram: diagramOf("sent", "Sent") },
-          }),
-        );
-      });
+      load(frame.parent, diagramOf("sent", "Sent"));
 
       expect(await screen.findByText("Sent A")).toBeInTheDocument();
+      expect(frame.announced).toContainEqual(
+        expect.objectContaining({ type: "STRUCTURA_LOADED", success: true }),
+      );
     } finally {
-      window.parent.postMessage = realPost;
+      frame.restore();
+    }
+  });
+
+  it("ignores a diagram posted by anything but the embedding page (audit D4)", async () => {
+    const frame = embedIn();
+    try {
+      renderAt();
+      await waitFor(() =>
+        expect(frame.announced).toContainEqual(
+          expect.objectContaining({ type: "STRUCTURA_READY" }),
+        ),
+      );
+      const sibling = { postMessage: () => {} };
+
+      load(sibling, diagramOf("sent", "Sent"));
+      load(null, diagramOf("sent", "Sent"));
+
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(screen.queryByText("Sent A")).not.toBeInTheDocument();
+    } finally {
+      frame.restore();
     }
   });
 });

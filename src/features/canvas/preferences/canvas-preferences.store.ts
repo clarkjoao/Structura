@@ -1,3 +1,4 @@
+import { createZustandStorage } from "@/infrastructure/persistence/kvStorage";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
@@ -93,7 +94,7 @@ export const useCanvasPreferencesStore = create<CanvasPreferencesStore>()(
     }),
     {
       name: CANVAS_PREFERENCES_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(createZustandStorage),
     },
   ),
 );

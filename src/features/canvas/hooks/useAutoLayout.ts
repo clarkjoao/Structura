@@ -99,6 +99,7 @@ export function useAutoLayout() {
         const writeDirection = options.direction !== undefined;
         const direction = options.direction ?? active?.direction;
         const settings = writeSettings ? options.settings : active?.layoutSettings;
+        const startedOn = arrangedState(store);
         // The same plan the assistant and generation run (`autoLayoutDiagram.ts`),
         // with the sizes React Flow measured.
         const plan = await planDiagramAutoLayout({
@@ -111,6 +112,13 @@ export function useAutoLayout() {
           ...(direction ? { direction } : {}),
         });
         const { groups } = plan;
+
+        // ELK runs in a worker, so the page stays live while it plans: the plan
+        // is only for the diagram, scene and structure it was made from.
+        if (!sameArrangedState(startedOn, arrangedState(useDiagramStore.getState()))) {
+          toast.info(t("autoLayout.discardedChanged"));
+          return;
+        }
 
         if (plan.result.boxes.size === 0) {
           toast.info(t("autoLayout.nothingToLayout"));
@@ -126,10 +134,31 @@ export function useAutoLayout() {
         requestAnimationFrame(() => {
           fitView({ duration: 400, padding: 0.2 });
         });
+        const stats = plan.ruleRefStats;
         toast.success(
-          groups.length > 0
-            ? t("autoLayout.appliedWithRefs", { count: groups.length })
-            : t("autoLayout.applied"),
+          groups.length === 0
+            ? t("autoLayout.applied")
+            : stats
+              ? t("autoLayout.appliedWithRuleRefs", { count: groups.length })
+              : t("autoLayout.appliedWithRefs", { count: groups.length }),
+          // What the reading rules did, so a large diagram says how it was untangled.
+          stats && (stats.backEdges > 0 || stats.forwardMovedEdges > 0)
+            ? {
+                description: [
+                  stats.backEdges > 0 &&
+                    t("autoLayout.ruleRefsSummary", {
+                      count: stats.backEdges,
+                      neighbor: stats.neighborBackEdges,
+                      moved: stats.movedEdges,
+                      kept: stats.keptOnOriginal,
+                    }),
+                  stats.forwardMovedEdges > 0 &&
+                    t("autoLayout.ruleRefsForward", { count: stats.forwardMovedEdges }),
+                ]
+                  .filter(Boolean)
+                  .join(" "),
+              }
+            : undefined,
         );
       } catch (err) {
         console.error("[autoLayout] ELK error", err);
@@ -185,4 +214,35 @@ export function useAutoLayout() {
   );
 
   return { runAutoLayout, placeTouched, isRunning };
+}
+
+type DiagramStoreState = ReturnType<typeof useDiagramStore.getState>;
+
+/**
+ * What a whole-diagram plan is made from: the open diagram, its scene and
+ * their structure (components and connections). Positions are not part of it:
+ * a node moved while the plan ran is placed by the plan, as arranging does.
+ */
+function arrangedState(state: DiagramStoreState) {
+  const id = state.activeDiagramId;
+  const diagram = id ? state.diagrams[id] : undefined;
+  const versionId = diagram?.activeVersionId ?? null;
+  return {
+    id,
+    snapshot: diagram?.snapshot,
+    versionId,
+    version: versionId ? diagram?.versions?.[versionId] : undefined,
+  };
+}
+
+function sameArrangedState(
+  a: ReturnType<typeof arrangedState>,
+  b: ReturnType<typeof arrangedState>,
+): boolean {
+  return (
+    a.id === b.id &&
+    a.snapshot === b.snapshot &&
+    a.versionId === b.versionId &&
+    a.version === b.version
+  );
 }

@@ -3,7 +3,7 @@ import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { accentTextColor, tintOver } from "@/features/diagram";
 import { resolveThemeColor } from "./ProcessNode/useOnAccentColor";
 import { useCanvasBackdrop } from "./use-canvas-backdrop";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { withAlpha } from "./swimlane-color";
 import { useTranslation } from "react-i18next";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
@@ -45,7 +45,7 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
   const isResizing =
     "resizing" in props ? Boolean((props as NodeProps & { resizing?: boolean }).resizing) : false;
   const { t } = useTranslation();
-  const { highlightedNodeIds } = useHandleHighlight();
+  const isHandleHighlighted = useIsNodeHandleHighlighted(d.elementId);
   const isHorizontal = d.orientation !== "vertical";
   const backdrop = useCanvasBackdrop();
   // A lane accent may be a theme token (the flow presets): resolved against the
@@ -61,7 +61,7 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
   const labelColor = accentTextColor(laneColor, headerBg);
 
   const isSelected = selected || d.isSelected;
-  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || isHandleHighlighted;
   const isActive = isSelected || isHighlighted;
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;

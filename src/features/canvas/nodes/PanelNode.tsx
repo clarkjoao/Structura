@@ -3,7 +3,7 @@ import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { CustomIconRenderer } from "@/features/canvas/components/icons/CustomIconRenderer";
 import { useResolvedComponentIcon } from "@/features/canvas/components/icons/componentIconLookupContext";
-import { useHandleHighlight } from "../contexts/HandleHighlightContext";
+import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { getPanelKindDef, panelKindLabel } from "@/lib/catalogs/panels";
 import CloudIcon from "./CloudIcon";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,14 @@ import { CollabPeerPresence } from "@/features/canvas/components/CollabPeerPrese
 import { useIsNodeLocked, usePeerOnNode } from "@/features/canvas/hooks/usePeerOnNode";
 import { contrastLabelColor } from "@/features/diagram";
 import { useCanvasBackdrop } from "./use-canvas-backdrop";
-import { DEFAULT_PANEL_OPACITY, PANEL_BORDER_HIT_PX } from "../constants/panel.constants";
+import {
+  DARK_PANEL_BORDER_ALPHA,
+  DARK_PANEL_MIN_FILL_ALPHA,
+  DEFAULT_PANEL_OPACITY,
+  LIGHT_PANEL_BORDER_ALPHA,
+  PANEL_BORDER_HIT_PX,
+} from "../constants/panel.constants";
+import { useTheme } from "@/hooks/useTheme";
 import { buildPanelHeaderLabel, buildPanelSubLabel } from "./panelLabel";
 import { buildPanelHandles } from "./CardNode/Handles";
 import { useHandleSides } from "../contexts/ReadingDirectionContext";
@@ -82,7 +89,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
     "resizing" in props ? Boolean((props as NodeProps & { resizing?: boolean }).resizing) : false;
   const { t } = useTranslation();
   const customDiagramIcon = useResolvedComponentIcon(d.elementId);
-  const { highlightedNodeIds } = useHandleHighlight();
+  const isHandleHighlighted = useIsNodeHandleHighlighted(d.elementId);
   const kindDef = getPanelKindDef(
     d.panelKind as import("@/features/diagram").PanelKind | undefined,
   );
@@ -91,9 +98,12 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
   const Icon = kindDef.icon;
   const opacity = d.panelOpacity ?? DEFAULT_PANEL_OPACITY;
   const backdrop = useCanvasBackdrop();
-  const labelColor = contrastLabelColor(color, opacity, backdrop);
+  const isDark = useTheme().theme === "dark";
+  const effectiveOpacity =
+    isDark && opacity > 0 ? Math.max(opacity, DARK_PANEL_MIN_FILL_ALPHA * 100) : opacity;
+  const labelColor = contrastLabelColor(color, effectiveOpacity, backdrop);
   const isSelected = selected || d.isSelected;
-  const isHighlighted = (d.isHighlighted ?? false) || highlightedNodeIds.has(d.elementId);
+  const isHighlighted = (d.isHighlighted ?? false) || isHandleHighlighted;
   const isActive = isSelected || isHighlighted;
   const isDragTarget = d.isDragTarget;
   const isUnparentCandidate = d.isUnparentCandidate ?? false;
@@ -123,7 +133,9 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
     </>
   );
 
-  const bgAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
+  const baseAlpha = isDragTarget ? Math.min(opacity + 15, 40) / 100 : opacity / 100;
+  const bgAlpha =
+    isDark && opacity > 0 ? Math.max(baseAlpha, DARK_PANEL_MIN_FILL_ALPHA) : baseAlpha;
   const isTransparent = opacity === 0;
   const collabHighlight = useCollabHighlight(d.elementId);
   const activePeer = usePeerOnNode(d.elementId);
@@ -135,7 +147,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
     ? UNPARENT_BORDER
     : isActive || isDragTarget
       ? color
-      : colorWithAlpha(color, 0.4);
+      : colorWithAlpha(color, isDark ? DARK_PANEL_BORDER_ALPHA : LIGHT_PANEL_BORDER_ALPHA);
   const borderStyle = (d.borderStyle ?? "solid") as "solid" | "dashed" | "dotted";
 
   /** CSS transitions fight RF drag/resize — disable while moving or resizing. */
@@ -222,6 +234,7 @@ const PanelNode = memo((props: NodeProps<Node<PanelNodeData>>) => {
       />
       <div
         className={`w-full h-full rounded-xl ${motionClass} relative flex flex-col ${!isTransparent ? "backdrop-blur-sm" : ""} ${isActive ? "ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110" : "opacity-90"}`}
+        data-canvas-blur={isTransparent ? undefined : ""}
         style={{
           backgroundColor,
           border: `2px ${borderStyle} ${borderColor}`,

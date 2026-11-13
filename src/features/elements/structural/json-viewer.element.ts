@@ -6,6 +6,7 @@ import { SINGLE_INCOMING_HANDLES } from "@/features/canvas/nodes/node-types/hand
 import { versionBadgePropsForNode } from "@/features/canvas/nodes/node-types/compare-node-badges";
 import { COMPONENT_TYPE_JSON_VIEWER } from "@/features/diagram/model/component-type-constants";
 import { isJsonViewerComponent } from "@/features/diagram/model/component.guards";
+import { unmountedRendererCallback } from "./stableNodeLists";
 import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
 
 const JSON_VIEWER_DEFAULT_W = 240;
@@ -70,6 +71,8 @@ export const jsonViewerElement: ElementDescriptor = {
         onInlineEditingChange: ctx.setJsonViewerInlineEditingId
           ? (editing: boolean) => ctx.setJsonViewerInlineEditingId!(editing ? comp.id : null)
           : undefined,
+        // Written by `JsonViewerNode` once mounted; see `unmountedRendererCallback`.
+        onStartEdit: unmountedRendererCallback,
         ...versionBadgePropsForNode(ctx, comp.id),
       };
     },

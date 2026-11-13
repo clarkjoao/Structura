@@ -63,6 +63,7 @@ export const sharedRefElement: ElementDescriptor = {
         name: original?.name ?? comp.name,
         accent: refAccent(comp, original),
         dangling: !original,
+        auto: comp.auto === true,
         isSelected: ctx.isPlaying
           ? ctx.flowHighlight.litNodeIds.has(comp.id)
           : ctx.selectedNodeId === comp.id,

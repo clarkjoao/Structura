@@ -1,3 +1,4 @@
+import { readSecretItem } from "@/infrastructure/persistence/kvStorage";
 import type { DefectDojoClient } from "./defectdojo.client";
 import type { DDProduct, DDUser } from "./types";
 import type { ServiceDefinition } from "@/features/diagram";
@@ -42,8 +43,7 @@ const DEFECTDOJO_CONFIG_LEGACY_KEY = "structura:defectdojo:config";
 function getStoredDefectDojoBaseUrl(): string {
   try {
     const raw =
-      localStorage.getItem(DEFECTDOJO_CONFIG_KEY) ??
-      localStorage.getItem(DEFECTDOJO_CONFIG_LEGACY_KEY);
+      readSecretItem(DEFECTDOJO_CONFIG_KEY) ?? readSecretItem(DEFECTDOJO_CONFIG_LEGACY_KEY);
     if (!raw) return "";
     const parsed = JSON.parse(raw) as { baseUrl?: string };
     return (parsed.baseUrl ?? "").replace(/\/+$/, "");
