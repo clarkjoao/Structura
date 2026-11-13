@@ -12,6 +12,8 @@
 //   PERF_OUT            also write the report to this path
 //   HEADED=1            show the browser
 //   PERF_ARRANGE=1      also measure arranging the whole diagram (Cmd/Ctrl+Shift+L)
+//   PERF_CPU_THROTTLE   slow the page's CPU by this factor (Chromium only), e.g. 4 to
+//                       rehearse a CI runner on a fast laptop when calibrating budgets.json
 //
 // Each scenario reports frame timings (rAF deltas) and long tasks (>50 ms main
 // thread blocks) captured inside the page. Numbers are for comparing a change
@@ -25,6 +27,7 @@ import { DIAGRAM_STORE_LOCAL_STORAGE_KEY } from "../cypress/support/seed-stress-
 const BASE = (process.env.STRUCTURA_URL ?? "http://localhost:4173").replace(/\/$/, "");
 const CHANNEL = process.env.PLAYWRIGHT_CHANNEL || undefined;
 const RUNS = Number(process.env.PERF_RUNS ?? 3);
+const CPU_THROTTLE = Number(process.env.PERF_CPU_THROTTLE ?? 1);
 const VIEWPORT = { width: 1600, height: 1000 };
 
 interface PerfWindow {
@@ -153,6 +156,39 @@ async function nodeCenter(page: Page, id: string, at: { fx: number; fy: number }
   return { x: box.x + box.width * at.fx, y: box.y + box.height * at.fy };
 }
 
+/**
+ * Pans (wheel, as a user would) until `selector`'s box sits inside the canvas, away
+ * from the toolbars. The opening viewport is the app's choice, not the fixture's:
+ * since the opening fit centres a canvas that shows too little of the diagram (audit
+ * C3/R8), the nodes the scenarios press can start off screen, where a press lands
+ * nowhere and every drag reported `moved: false`.
+ */
+async function bringOnScreen(page: Page, selector: string) {
+  const pane = await page.locator(".react-flow__renderer").boundingBox();
+  if (!pane) throw new Error("canvas not found");
+  const margin = 160;
+  for (let i = 0; i < 60; i += 1) {
+    const box = await page.locator(selector).first().boundingBox();
+    if (!box) throw new Error(`${selector} is not rendered`);
+    const cx = box.x + Math.min(box.width, 400) / 2;
+    const cy = box.y + Math.min(box.height, 300) / 2;
+    const inside =
+      cx > pane.x + margin &&
+      cx < pane.x + pane.width - margin &&
+      cy > pane.y + margin &&
+      cy < pane.y + pane.height - margin;
+    if (inside) return;
+    const clamp = (v: number) => Math.max(-500, Math.min(500, v));
+    await page.mouse.move(pane.x + pane.width / 2, pane.y + pane.height / 2);
+    await page.mouse.wheel(
+      clamp(cx - (pane.x + pane.width / 2)),
+      clamp(cy - (pane.y + pane.height / 2)),
+    );
+    await page.waitForTimeout(60);
+  }
+  throw new Error(`could not bring ${selector} on screen`);
+}
+
 async function dragFrom(page: Page, from: { x: number; y: number }, dx: number, dy: number) {
   // Paced like a real pointer: unpaced moves arrive in one task and React Flow
   // never sees a drag.
@@ -182,6 +218,10 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
   await context.addInitScript({ content: "globalThis.__name = (fn) => fn;" });
   await context.addInitScript(instrument);
   const page = await context.newPage();
+  if (CPU_THROTTLE > 1) {
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Emulation.setCPUThrottlingRate", { rate: CPU_THROTTLE });
+  }
   const result: Record<string, unknown> = {};
 
   // --- open -----------------------------------------------------------------
@@ -207,6 +247,8 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
 
   // --- drag one child node ------------------------------------------------------
   const leaf = seed.leafIds.find((id) => id.startsWith("leaf_"))!;
+  await bringOnScreen(page, `.react-flow__node[data-id="${leaf}"]`);
+  await settle(page, 500);
   const leafBefore = await flowPosition(page, leaf);
   const leafAt = await nodeCenter(page, leaf, { fx: 0.5, fy: 0.5 });
   await startWindow(page);
@@ -225,6 +267,8 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
 
   // --- drag the largest panel (97 children) -----------------------------------
   const panel = seed.largePanelIds[0]!;
+  await bringOnScreen(page, `.react-flow__node[data-id="${panel}"] .panel-header`);
+  await settle(page, 500);
   const before = await flowPosition(page, panel);
   // Panels drag by their header only; a press on the body starts a selection box.
   const header = await page
@@ -251,6 +295,8 @@ async function runOnce(seed: ReturnType<typeof buildLargeDiagramSeed>) {
   // The drags above commit once per gesture; this is the scenario where the
   // cost of a single store write (persist, projection, subscribers) adds up.
   const nudged = seed.leafIds.filter((id) => id.startsWith("leaf_"))[1]!;
+  await bringOnScreen(page, `.react-flow__node[data-id="${nudged}"]`);
+  await settle(page, 500);
   const nudgeBefore = await flowPosition(page, nudged);
   await page.mouse.click(
     ...(Object.values(await nodeCenter(page, nudged, { fx: 0.5, fy: 0.5 })) as [number, number]),
@@ -349,7 +395,13 @@ function mergeRuns(runs: Record<string, unknown>[]) {
 const seed = buildLargeDiagramSeed();
 const runs: Record<string, unknown>[] = [];
 for (let i = 0; i < RUNS; i += 1) runs.push(await runOnce(seed));
-const report = { url: BASE, runs: RUNS, fixture: seed.stats, ...mergeRuns(runs) };
+const report = {
+  url: BASE,
+  runs: RUNS,
+  cpuThrottle: CPU_THROTTLE,
+  fixture: seed.stats,
+  ...mergeRuns(runs),
+};
 const json = JSON.stringify(report, null, 2);
 console.log(json);
 if (process.env.PERF_OUT) writeFileSync(process.env.PERF_OUT, json + "\n");
