@@ -23,9 +23,9 @@ export interface RouteMismatch {
   belongsTo: string;
 }
 
-const SECTION = "text-[9px] font-semibold uppercase tracking-wider text-muted-foreground";
+const SECTION = "text-xs font-semibold text-foreground";
 const FIELD =
-  "w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring";
+  "w-full rounded-md border border-border bg-secondary px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring";
 
 /**
  * A field that still says what it is once it holds something.
@@ -36,8 +36,8 @@ const FIELD =
  */
 function Labelled({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="flex flex-col gap-0.5">
-      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
   );
@@ -52,8 +52,8 @@ function Labelled({ label, children }: { label: string; children: React.ReactNod
  */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
       {children}
     </div>
   );
@@ -75,8 +75,11 @@ export interface FlowScriptRowProps {
   endpoints: readonly EndpointOption[];
   /** Set when the route this step names is not where its call arrives. */
   routeMismatch?: RouteMismatch | null;
-  /** Recorder-only: jump into this condition's branches. */
-  onOpenBranchSelect?: (conditionStepId: string) => void;
+  /**
+   * Recorder-only, on a branch's first row: whether the recorder writes into this branch, and
+   * choosing it (again, to go back to the main sequence).
+   */
+  writeTarget?: { active: boolean; onWrite: () => void };
   /** Set while a row is being dragged; absent outside a reorderable list. */
   drag?: {
     isDragging: boolean;
@@ -109,7 +112,7 @@ export function FlowScriptRow({
   onToggleExpand,
   onSelect,
   onConvertToCondition,
-  onOpenBranchSelect,
+  writeTarget,
   drag,
 }: FlowScriptRowProps) {
   const { t } = useTranslation();
@@ -118,9 +121,34 @@ export function FlowScriptRow({
   return (
     <div data-step-id={row.stepId} style={{ paddingLeft: row.depth * INDENT_PX }}>
       {row.isBranchHead && row.branch && (
-        <div className="flex items-center gap-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider">
-          <span className="h-2 w-1 rounded-full" style={{ backgroundColor: branchColor }} />
-          <span style={{ color: branchColor }}>{row.branch.label}</span>
+        <div className="flex items-center gap-1.5 pb-0.5 pt-1.5 text-[11px] font-semibold">
+          <span className="h-2.5 w-1 rounded-full" style={{ backgroundColor: branchColor }} />
+          <span className="min-w-0 flex-1 truncate" style={{ color: branchColor }}>
+            {row.branch.label}
+          </span>
+          {writeTarget && (
+            <button
+              type="button"
+              data-testid="script-branch-target"
+              aria-pressed={writeTarget.active}
+              onClick={writeTarget.onWrite}
+              title={
+                writeTarget.active
+                  ? t("flowScript.writeTrunkTitle")
+                  : t("flowScript.writeHereTitle")
+              }
+              className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-px text-[11px] font-medium transition-colors ${
+                writeTarget.active
+                  ? "border-red-500/40 bg-red-500/10 text-red-500"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {writeTarget.active && (
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+              )}
+              {writeTarget.active ? t("flowScript.writingHere") : t("flowScript.writeHere")}
+            </button>
+          )}
         </div>
       )}
       <div
@@ -133,7 +161,7 @@ export function FlowScriptRow({
           onSelect();
           onToggleExpand();
         }}
-        className={`group flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1.5 text-xs transition-colors hover:bg-secondary/50 ${
+        className={`group flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1.5 text-[13px] transition-colors hover:bg-secondary/50 ${
           isSelected ? "bg-primary/15 text-primary" : isLast ? "bg-primary/10" : "text-foreground"
         } ${row.isBranchPoint ? "border-l-2 border-amber-400" : ""} ${
           drag?.isDragging ? "opacity-40" : ""
@@ -145,23 +173,23 @@ export function FlowScriptRow({
         }
       >
         {drag && (
-          <GripVertical className="h-3 w-3 shrink-0 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
         )}
-        <span className="shrink-0 text-[10px] text-muted-foreground">{isExpanded ? "▾" : "▸"}</span>
-        <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+        <span className="shrink-0 text-[11px] text-muted-foreground">{isExpanded ? "▾" : "▸"}</span>
+        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
           {row.label}
         </span>
         <span className="flex-1 truncate">{title}</span>
         {step.duration && (
-          <span className="shrink-0 font-mono text-[9px] text-primary/70">{step.duration}</span>
+          <span className="shrink-0 font-mono text-[10px] text-primary/80">{step.duration}</span>
         )}
         {step.isAsync && (
-          <span className="shrink-0 font-mono text-[9px] text-amber-400">
+          <span className="shrink-0 font-mono text-[10px] text-amber-500">
             {t("flowScript.async")}
           </span>
         )}
         {step.handleId && (
-          <span className="shrink-0 font-mono text-[9px] text-muted-foreground">
+          <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
             [{step.handleId}]
           </span>
         )}
@@ -174,7 +202,7 @@ export function FlowScriptRow({
           title={t("flowScript.addStepAfter")}
           className="shrink-0 text-muted-foreground opacity-0 transition-all hover:text-foreground group-hover:opacity-100"
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-3.5 w-3.5" />
         </button>
         <button
           type="button"
@@ -185,12 +213,12 @@ export function FlowScriptRow({
           title={t("flowScript.removeStep")}
           className="shrink-0 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100"
         >
-          <X className="h-3 w-3" />
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {isExpanded && (
-        <div className="space-y-1 pb-1 pl-7 pr-2 pt-0.5">
+        <div className="space-y-2 pb-2 pl-7 pr-2 pt-1">
           {row.isBranchPoint ? (
             <>
               <div className="flex items-start gap-1">
@@ -210,7 +238,7 @@ export function FlowScriptRow({
                   onClick={(event) => event.stopPropagation()}
                   title={t("flowScript.conditionKind.title")}
                   aria-label={t("flowScript.conditionKind.title")}
-                  className="shrink-0 rounded border border-border bg-secondary px-1 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="shrink-0 rounded-md border border-border bg-secondary px-1.5 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                   {FLOW_CONDITION_KINDS.map((kind) => (
                     <option key={kind} value={kind}>
@@ -224,24 +252,12 @@ export function FlowScriptRow({
                     actions.updateStep(row.stepId, { conditionLabel: event.target.value })
                   }
                   placeholder={t("flowScript.conditionLabel")}
-                  className="w-full rounded border border-border bg-secondary px-2 py-1 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-full rounded-md border border-border bg-secondary px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                   onClick={(event) => event.stopPropagation()}
                 />
               </div>
-              {onOpenBranchSelect && (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onOpenBranchSelect(row.stepId);
-                  }}
-                  className="w-full rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[10px] font-semibold text-amber-400 hover:bg-amber-500/15"
-                >
-                  {t("flowScript.recordBranches")}
-                </button>
-              )}
               <div className="space-y-0.5 pt-1">
-                <p className="text-[9px] font-semibold uppercase text-muted-foreground">
+                <p className="text-[11px] font-medium text-muted-foreground">
                   {t("flowScript.branches")}
                 </p>
                 {step.branches?.map((branch, branchIndex) => (
@@ -255,7 +271,7 @@ export function FlowScriptRow({
                       onChange={(event) =>
                         actions.setBranchLabel(row.stepId, branchIndex, event.target.value)
                       }
-                      className="flex-1 rounded border border-border bg-secondary px-2 py-0.5 text-[10px] text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                      className="flex-1 rounded-md border border-border bg-secondary px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                       onClick={(event) => event.stopPropagation()}
                     />
                     {(step.branches?.length ?? 0) > 2 && (
@@ -268,7 +284,7 @@ export function FlowScriptRow({
                         title={t("flowScript.removeBranch")}
                         className="text-muted-foreground hover:text-destructive"
                       >
-                        <X className="h-3 w-3" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     )}
                   </div>
@@ -279,7 +295,7 @@ export function FlowScriptRow({
                     event.stopPropagation();
                     actions.addBranch(row.stepId, t("flowScript.newBranch"));
                   }}
-                  className="text-[9px] text-primary hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   + {t("flowScript.addBranch")}
                 </button>
@@ -295,7 +311,7 @@ export function FlowScriptRow({
                     actions.updateStep(row.stepId, { title: event.target.value || undefined })
                   }
                   placeholder={t("flowScript.titlePlaceholder")}
-                  className={`${FIELD} font-semibold`}
+                  className={`${FIELD} font-semibold placeholder:font-normal`}
                   onClick={(event) => event.stopPropagation()}
                 />
               </Labelled>
@@ -357,7 +373,7 @@ export function FlowScriptRow({
                             onClick={() =>
                               actions.updateStep(row.stepId, { payloadDirection: direction })
                             }
-                            className={`px-2 py-0.5 text-[9px] font-medium transition-colors ${
+                            className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
                               (step.payloadDirection ?? "request") === direction
                                 ? direction === "request"
                                   ? "bg-cyan-500/20 text-cyan-400"
@@ -403,7 +419,7 @@ export function FlowScriptRow({
                   {routeMismatch && (
                     <span
                       data-testid="step-route-mismatch"
-                      className="text-[9px] leading-relaxed text-amber-500"
+                      className="text-[11px] leading-relaxed text-amber-500"
                     >
                       {t("flowScript.routeElsewhere", {
                         arrivesAt: routeMismatch.arrivesAt,
@@ -434,7 +450,7 @@ export function FlowScriptRow({
                     />
                   )}
                   <label
-                    className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground"
+                    className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground"
                     onClick={(event) => event.stopPropagation()}
                   >
                     <input
@@ -455,9 +471,9 @@ export function FlowScriptRow({
                   event.stopPropagation();
                   onConvertToCondition(row.stepId);
                 }}
-                className="mt-1 flex items-center gap-1 text-[9px] text-amber-400 hover:text-amber-300"
+                className="mt-1 flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-600"
               >
-                <GitBranch className="h-3 w-3" /> {t("flowScript.convertToCondition")}
+                <GitBranch className="h-3.5 w-3.5" /> {t("flowScript.convertToCondition")}
               </button>
             </>
           )}

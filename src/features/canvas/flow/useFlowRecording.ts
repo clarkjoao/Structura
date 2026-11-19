@@ -106,9 +106,7 @@ export function useFlowRecording(
   const write = useCallback(
     (content: RecordedStepContent) => {
       if (!recording) return;
-      const cursor = recordingCursor(recording.context);
-      if (!cursor) return;
-      announce(recordFlowStep(recording.flowId, content, cursor));
+      announce(recordFlowStep(recording.flowId, content, recordingCursor(recording.context)));
     },
     [announce, recordFlowStep, recording],
   );
@@ -197,15 +195,9 @@ export function useFlowRecording(
         : undefined;
       const cursor = recordingCursor(recording.context);
 
-      const payloadDirection =
-        flow && cursor
-          ? directionForRecordedClick(
-              flow,
-              buildFlowOutline(flow),
-              getFlowTail(flow, cursor),
-              edgeId,
-            )
-          : "request";
+      const payloadDirection = flow
+        ? directionForRecordedClick(flow, buildFlowOutline(flow), getFlowTail(flow, cursor), edgeId)
+        : "request";
 
       write({ connectionId: edgeId, handleId, payloadDirection });
     },
@@ -219,9 +211,7 @@ export function useFlowRecording(
 
   const onRecordUndo = useCallback(() => {
     if (!recording) return;
-    const cursor = recordingCursor(recording.context);
-    if (!cursor) return;
-    announce(undoLastRecordedStep(recording.flowId, cursor));
+    announce(undoLastRecordedStep(recording.flowId, recordingCursor(recording.context)));
   }, [announce, recording, undoLastRecordedStep]);
 
   return useMemo(

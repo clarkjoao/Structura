@@ -526,3 +526,65 @@ describe("jumping to a spine step", () => {
     expect(screen.getByRole("button", { name: /Go to step 1:/ })).toBeInTheDocument();
   });
 });
+
+describe("a long reading", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  /** Thirty calls, each carrying a body so the variables block has content. */
+  const LONG = (ids: Seeded): Record<string, FlowStep> =>
+    Object.fromEntries(
+      Array.from({ length: 30 }, (_, i) => [
+        `s${i + 1}`,
+        {
+          id: `s${i + 1}`,
+          type: "action",
+          connectionId: ids.connectionId,
+          payload: '{"amount": 10}',
+          title: `Step ${i + 1}`,
+          ...(i < 29 ? { next: `s${i + 2}` } : {}),
+          context: { sets: { [`k${i + 1}`]: "v" } },
+        } satisfies FlowStep,
+      ]),
+    );
+  const walkedTo = (n: number) => Array.from({ length: n - 1 }, (_, i) => `s${i + 1}`);
+
+  it("lists only the steps around the one in hand, and says how many it holds back", () => {
+    const { read } = seed(LONG);
+    renderRail(read(), "s15", walkedTo(15));
+
+    expect(screen.getAllByTestId("flow-reading-step")).toHaveLength(3 + 5);
+    expect(screen.getByTestId("flow-reading-more-past")).toHaveTextContent("11 earlier steps");
+    expect(screen.getByTestId("flow-reading-more-upcoming")).toHaveTextContent("10 more steps");
+  });
+
+  it("brings the earlier steps back when asked", () => {
+    const { read } = seed(LONG);
+    renderRail(read(), "s15", walkedTo(15));
+
+    fireEvent.click(screen.getByTestId("flow-reading-more-past"));
+
+    expect(screen.queryByTestId("flow-reading-more-past")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("flow-reading-step")).toHaveLength(14 + 5);
+  });
+
+  it("starts the variables folded, and opens them on request", () => {
+    const { read } = seed(LONG);
+    renderRail(read(), "s15", walkedTo(15));
+
+    const toggle = screen.getByTestId("flow-variables-toggle");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("leaves a short reading whole and its variables open", () => {
+    const { read } = seed((ids) => Object.fromEntries(Object.entries(LONG(ids)).slice(0, 4)));
+    renderRail(read(), "s2", ["s1"]);
+
+    expect(screen.queryByTestId("flow-reading-more-past")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("flow-reading-more-upcoming")).not.toBeInTheDocument();
+    expect(screen.getByTestId("flow-variables-toggle")).toHaveAttribute("aria-expanded", "true");
+  });
+});

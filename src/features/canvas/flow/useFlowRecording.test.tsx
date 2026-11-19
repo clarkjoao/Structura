@@ -155,16 +155,6 @@ describe("recording writes into the store as it goes", () => {
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
-  it("records nothing while the recorder is choosing a branch", () => {
-    const { recorded } = mountRecorder();
-    act(() => api.startRecording());
-    act(() => api.onRecordNodeClick("n1"));
-    const conditionId = Object.keys(recorded().steps)[0]!;
-    act(() => api.setRecordingContext({ mode: "branch-select", conditionStepId: conditionId }));
-    act(() => api.onRecordNodeClick("n2"));
-    expect(Object.keys(recorded().steps)).toHaveLength(1);
-  });
-
   it("takes the whole recording back with one undo", () => {
     const { flows } = mountRecorder();
     act(() => api.startRecording());

@@ -20,16 +20,9 @@ const KEYBOARD_STEP = 16;
  */
 export function PanelFrame({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const width = useCanvasPreferencesStore((s) => s.elementPanelWidth);
   const collapsed = useCanvasPreferencesStore((s) => s.elementPanelCollapsed);
-  const setWidth = useCanvasPreferencesStore((s) => s.setElementPanelWidth);
   const setCollapsed = useCanvasPreferencesStore((s) => s.setElementPanelCollapsed);
   const hasRail = useContext(PanelRailContext);
-  const [dragWidth, setDragWidth] = useState<number | null>(null);
-  const startRef = useRef<{ x: number; width: number } | null>(null);
-
-  const clamp = (value: number) =>
-    Math.min(ELEMENT_PANEL_MAX_WIDTH, Math.max(ELEMENT_PANEL_MIN_WIDTH, value));
 
   if (collapsed) {
     // The page's rail expands it again.
@@ -51,44 +44,64 @@ export function PanelFrame({ children }: { children: ReactNode }) {
 
   return (
     <PanelFrameContext.Provider value={{ collapse: () => setCollapsed(true) }}>
-      <div
-        style={{ width: dragWidth ?? width }}
-        className="relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-l border-border bg-card"
-      >
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          aria-label={t("panelShell.resize")}
-          aria-valuemin={ELEMENT_PANEL_MIN_WIDTH}
-          aria-valuemax={ELEMENT_PANEL_MAX_WIDTH}
-          aria-valuenow={dragWidth ?? width}
-          tabIndex={0}
-          className="absolute inset-y-0 left-0 z-10 w-1.5 cursor-col-resize hover:bg-primary/30 focus-visible:bg-primary/40 focus-visible:outline-none"
-          onPointerDown={(event) => {
-            event.currentTarget.setPointerCapture(event.pointerId);
-            startRef.current = { x: event.clientX, width };
-          }}
-          onPointerMove={(event) => {
-            const start = startRef.current;
-            if (!start) return;
-            // The handle is on the left edge: dragging left widens the panel.
-            setDragWidth(clamp(start.width + (start.x - event.clientX)));
-          }}
-          onPointerUp={(event) => {
-            const start = startRef.current;
-            startRef.current = null;
-            event.currentTarget.releasePointerCapture(event.pointerId);
-            if (start) setWidth(clamp(start.width + (start.x - event.clientX)));
-            setDragWidth(null);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowLeft") setWidth(width + KEYBOARD_STEP);
-            else if (event.key === "ArrowRight") setWidth(width - KEYBOARD_STEP);
-          }}
-        />
-        {children}
-      </div>
+      <PanelColumn>{children}</PanelColumn>
     </PanelFrameContext.Provider>
+  );
+}
+
+/**
+ * The docked, resizable column every right-hand panel sits in — the inspector and the flows
+ * panel alike — so switching between them on the rail keeps the same edge and the same width.
+ */
+export function PanelColumn({ children, testId }: { children: ReactNode; testId?: string }) {
+  const { t } = useTranslation();
+  const width = useCanvasPreferencesStore((s) => s.elementPanelWidth);
+  const setWidth = useCanvasPreferencesStore((s) => s.setElementPanelWidth);
+  const [dragWidth, setDragWidth] = useState<number | null>(null);
+  const startRef = useRef<{ x: number; width: number } | null>(null);
+
+  const clamp = (value: number) =>
+    Math.min(ELEMENT_PANEL_MAX_WIDTH, Math.max(ELEMENT_PANEL_MIN_WIDTH, value));
+
+  return (
+    <div
+      data-testid={testId}
+      style={{ width: dragWidth ?? width }}
+      className="relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-l border-border bg-card"
+    >
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={t("panelShell.resize")}
+        aria-valuemin={ELEMENT_PANEL_MIN_WIDTH}
+        aria-valuemax={ELEMENT_PANEL_MAX_WIDTH}
+        aria-valuenow={dragWidth ?? width}
+        tabIndex={0}
+        className="absolute inset-y-0 left-0 z-10 w-1.5 cursor-col-resize hover:bg-primary/30 focus-visible:bg-primary/40 focus-visible:outline-none"
+        onPointerDown={(event) => {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          startRef.current = { x: event.clientX, width };
+        }}
+        onPointerMove={(event) => {
+          const start = startRef.current;
+          if (!start) return;
+          // The handle is on the left edge: dragging left widens the panel.
+          setDragWidth(clamp(start.width + (start.x - event.clientX)));
+        }}
+        onPointerUp={(event) => {
+          const start = startRef.current;
+          startRef.current = null;
+          event.currentTarget.releasePointerCapture(event.pointerId);
+          if (start) setWidth(clamp(start.width + (start.x - event.clientX)));
+          setDragWidth(null);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowLeft") setWidth(width + KEYBOARD_STEP);
+          else if (event.key === "ArrowRight") setWidth(width - KEYBOARD_STEP);
+        }}
+      />
+      {children}
+    </div>
   );
 }
 
@@ -109,8 +122,19 @@ export function PanelCollapseButton() {
   );
 }
 
-/** The inspector's button on the panel rail: folds the panel away and brings it back. */
-export function InspectorRailToggle({ disabled }: { disabled?: boolean }) {
+/**
+ * The inspector's button on the panel rail: folds the panel away and brings it back.
+ *
+ * `displacedBy` is set while another panel holds the inspector's column (flows): the button
+ * then reads as off, and pressing it hands the column back instead of folding anything.
+ */
+export function InspectorRailToggle({
+  disabled,
+  displacedBy,
+}: {
+  disabled?: boolean;
+  displacedBy?: { onReclaim: () => void };
+}) {
   const { t } = useTranslation();
   const collapsed = useCanvasPreferencesStore((s) => s.elementPanelCollapsed);
   const setCollapsed = useCanvasPreferencesStore((s) => s.setElementPanelCollapsed);
@@ -118,9 +142,16 @@ export function InspectorRailToggle({ disabled }: { disabled?: boolean }) {
     <PanelRailButton
       label={t("panelShell.inspector")}
       icon={<PanelRight className="h-4 w-4" />}
-      active={!collapsed && !disabled}
+      active={!collapsed && !disabled && !displacedBy}
       disabled={disabled}
-      onClick={() => setCollapsed(!collapsed)}
+      onClick={() => {
+        if (displacedBy) {
+          displacedBy.onReclaim();
+          setCollapsed(false);
+          return;
+        }
+        setCollapsed(!collapsed);
+      }}
     />
   );
 }

@@ -45,9 +45,10 @@ import {
   useFlowMode,
   useInteractionMode,
 } from "@/features/canvas";
-import { PanelRail } from "@/components/PanelRail";
+import { PanelRail, PanelRailButton } from "@/components/PanelRail";
 import { PanelRailContext } from "@/components/panelRail.context";
 import { useFlowPanelHandover } from "@/features/canvas/flow/useFlowPanelHandover";
+import { RecordingStrip } from "@/features/canvas/flow/recorder/RecordingStrip";
 import { useFlowReadingKeys } from "@/features/canvas/flow/reading/useFlowReadingKeys";
 import { useDiagramStore, useStorageMonitor, type Diagram, type Flow } from "@/features/diagram";
 import { StorageWarningBanner } from "@/features/canvas/components/StorageWarningBanner";
@@ -198,6 +199,7 @@ export function WorkspaceContent({
     startRecording,
     cancelRecording,
     finalizeRecording,
+    onRecordUndo,
     editFlow,
     recordingContext,
     setRecordingContext,
@@ -363,20 +365,6 @@ export function WorkspaceContent({
                 onEndCollab={handleEndCollab}
               />
               <button
-                onClick={() => {
-                  if (flowButtonLocked) return;
-                  setShowFlows(!showFlows);
-                }}
-                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                  showFlows
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
-                } ${flowButtonLocked ? "opacity-50 pointer-events-none" : ""}`}
-                title={!interaction.canUseFlow ? t("flows.unavailableDuringCollab") : undefined}
-              >
-                <GitBranch className="h-3.5 w-3.5" /> {t("flows.panelTitle")}
-              </button>
-              <button
                 type="button"
                 disabled={canvasInteractionLocked}
                 onClick={() => setShareModalOpen(true)}
@@ -504,24 +492,37 @@ export function WorkspaceContent({
                     if (targetFlow) play(targetFlow);
                   }}
                 />
-                {showFlows && !activeFlow && !isRecording && (
-                  <FlowPanel
-                    onClose={() => setShowFlows(false)}
-                    onPlay={play}
-                    onStartRecording={startRecordingWhenAllowed}
-                    onEditFlow={editFlowWhenAllowed}
-                    onGetInsertPosition={() => {
-                      const instance = reactFlowInstanceRef.current;
-                      if (!instance) return { x: 0, y: 0 };
-                      return getViewportCenter(instance, !!showFlows);
-                    }}
-                    panelActionsLocked={compareModeBlocksRecorder || !interaction.canUseFlow}
-                    panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
-                  />
+                {isRecording && recordingState && (
+                  <div className="pointer-events-none absolute inset-x-0 top-3 z-30 flex justify-center px-4">
+                    <RecordingStrip
+                      flowId={recordingState.flowId}
+                      context={recordingContext}
+                      isEditing={isEditingFlow}
+                      onUndo={onRecordUndo}
+                      onBackToTrunk={() => setRecordingContext({ mode: "trunk" })}
+                      onFinish={finalizeRecording}
+                    />
+                  </div>
                 )}
               </div>
+              <DocumentPaneSlot isEditMode={!canvasInteractionLocked} />
+              {/* Docked beside the canvas, in the inspector's column — never over the diagram. */}
+              {showFlows && !activeFlow && !isRecording && (
+                <FlowPanel
+                  onClose={() => setShowFlows(false)}
+                  onPlay={play}
+                  onStartRecording={startRecordingWhenAllowed}
+                  onEditFlow={editFlowWhenAllowed}
+                  onGetInsertPosition={() => {
+                    const instance = reactFlowInstanceRef.current;
+                    if (!instance) return { x: 0, y: 0 };
+                    return getViewportCenter(instance, !!showFlows);
+                  }}
+                  panelActionsLocked={compareModeBlocksRecorder || !interaction.canUseFlow}
+                  panelActionsLockedTitle={t("diagramNav.unavailableWhileRecordingOrPlayback")}
+                />
+              )}
             </DiagramFlowProvider>
-            <DocumentPaneSlot isEditMode={!canvasInteractionLocked} />
             {isRecording && recordingState && (
               <FlowRecorderPanel
                 flowId={recordingState.flowId}
@@ -533,7 +534,17 @@ export function WorkspaceContent({
               />
             )}
             <PanelRail label={t("panelShell.rail")}>
-              <InspectorRailToggle disabled={canvasInteractionLocked} />
+              <InspectorRailToggle
+                disabled={canvasInteractionLocked}
+                displacedBy={showFlows ? { onReclaim: () => setShowFlows(false) } : undefined}
+              />
+              <PanelRailButton
+                label={t("flows.panelTitle")}
+                icon={<GitBranch className="h-4 w-4" />}
+                active={showFlows || isRecording}
+                disabled={flowButtonLocked}
+                onClick={() => setShowFlows(!showFlows)}
+              />
               <DocumentPaneToggles />
             </PanelRail>
           </div>

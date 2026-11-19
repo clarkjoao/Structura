@@ -107,8 +107,11 @@ describe("the actions a flow carries", () => {
     useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
   });
 
+  // The panel header has a ⋯ of its own (import); the flow's is the one on its row.
   const openOverflow = () => {
-    fireEvent.keyDown(screen.getByTitle("More actions"), { key: "Enter" });
+    const menus = screen.getAllByTitle("More actions");
+    const rowMenu = menus[menus.length - 1]!;
+    fireEvent.keyDown(rowMenu, { key: "Enter" });
     return screen.getByRole("menu");
   };
 

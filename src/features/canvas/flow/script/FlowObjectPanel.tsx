@@ -64,13 +64,11 @@ export function FlowObjectPanel({ flow, selectedStepId, actions }: Props) {
   return (
     <div
       data-testid="flow-object"
-      className="sticky top-0 z-10 mb-2 rounded-md border border-primary/25 bg-background/95 px-2 py-1.5 backdrop-blur"
+      className="sticky top-0 z-10 mb-2 rounded-md border border-border bg-card/95 px-2.5 py-2 backdrop-blur"
     >
       <div className="flex items-baseline gap-2">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("flowScript.objectLabel")}
-        </span>
-        <span className="ml-auto font-mono text-[9px] text-muted-foreground">
+        <span className="text-xs font-semibold text-foreground">{t("flowScript.objectLabel")}</span>
+        <span className="ml-auto font-mono text-[10px] text-muted-foreground">
           {selectedStepId
             ? t("flowScript.objectAtStep", { number: object.atNumber })
             : t("flowScript.objectAtEnd")}

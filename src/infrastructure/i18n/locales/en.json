@@ -2538,11 +2538,22 @@
     "tagPlaceholder": "Add tag (Enter)...",
     "copyMermaidTitle": "Copy Mermaid",
     "finalize": "Finish",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "stepsSection": "Steps",
+    "description": "Description",
+    "removeTag": "Remove tag {{tag}}",
+    "participants": "Participants",
+    "strip": {
+      "recording_one": "Recording · {{count}} step",
+      "recording_other": "Recording · {{count}} steps",
+      "inTrunk": "main sequence",
+      "inBranch": "branch “{{label}}”",
+      "hint": "Click the next element, or an edge to record the call. Backspace undoes.",
+      "undo": "Undo last",
+      "backToTrunk": "Main sequence"
+    }
   },
   "flowScript": {
-    "stepsHeading_one": "{{count}} step",
-    "stepsHeading_other": "{{count}} steps",
     "empty": "No steps yet. Click nodes, handles, or connections on the canvas to record them.",
     "emptyStep": "Empty step",
     "unknownStep": "?",
@@ -2570,16 +2581,8 @@
     "createCondition": "Create",
     "cancel": "Cancel",
     "minBranches": "A condition needs at least two branches.",
-    "recordBranches": "Record the branches",
-    "selectBranchPrompt": "Pick a branch to record:",
-    "branchEmptyHint": "Empty — click to record",
-    "branchStepCount_one": "{{count}} step recorded",
-    "branchStepCount_other": "{{count}} steps recorded",
-    "continueMainFlow": "Back to the main flow",
     "unreachable_one": "{{count}} step is not reachable from the start",
     "unreachable_other": "{{count}} steps are not reachable from the start",
-    "recordingBranch": "Recording branch",
-    "branchDone": "Done",
     "branchRemoved_one": "The branch went, and the step only it reached went with it.",
     "branchRemoved_other": "The branch went, and the {{count}} steps only it reached went with it.",
     "contextReadsPlaceholder": "another key",
@@ -2628,7 +2631,11 @@
     "objectAddKey": "key",
     "objectWriteHere": "Write this key from this step",
     "objectStopWriting": "Stop writing it here",
-    "objectUsesHere": "This step uses this key"
+    "objectUsesHere": "This step uses this key",
+    "writeHere": "Record here",
+    "writingHere": "Recording here",
+    "writeHereTitle": "Record the next clicks into this branch",
+    "writeTrunkTitle": "Stop recording into this branch and go back to the main sequence"
   },
   "flowRefusal": {
     "unknown_flow": "That flow is no longer open.",
@@ -2735,7 +2742,12 @@
     "pin": "Follow this key",
     "unpin": "Stop following",
     "leavesWith": "goes with {{name}}",
-    "readHere": "read by this step"
+    "readHere": "read by this step",
+    "earlierSteps_one": "{{count}} earlier step",
+    "earlierSteps_other": "{{count}} earlier steps",
+    "laterSteps_one": "{{count}} more step",
+    "laterSteps_other": "{{count}} more steps",
+    "variablesTitle": "Variables"
   },
   "shortcutsModal": {
     "title": "Canvas shortcuts",
@@ -2999,7 +3011,12 @@
     "copyPrefix": "Copy of {{name}}",
     "newFlow": "New flow",
     "stepsCount": "{{count}} steps",
-    "participantsCount": "· {{count}} participants"
+    "participantsCount": "· {{count}} participants",
+    "listTitle_one": "{{count}} flow",
+    "listTitle_other": "{{count}} flows",
+    "filterByTag": "Filter flows by tag",
+    "untitled": "Untitled flow",
+    "emptyHint": "A flow walks through the diagram one step at a time. Start one and click the elements in order."
   },
   "icons": {
     "pickerTitle": "Choose icon",

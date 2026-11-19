@@ -67,15 +67,13 @@ export function JsonField({ value, onChange, label, testId, minLines = 3 }: Prop
   return (
     <div className="flex flex-col gap-1" onClick={(event) => event.stopPropagation()}>
       <div className="flex items-center justify-between">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
+        <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
         {parsed !== null && (
           <button
             type="button"
             data-testid={`${testId}-format`}
             onClick={() => onChange(JSON.stringify(parsed, null, 2))}
-            className="text-[9px] text-muted-foreground transition-colors hover:text-foreground"
+            className="text-[11px] text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("flowScript.jsonFormat")}
           </button>
@@ -83,7 +81,7 @@ export function JsonField({ value, onChange, label, testId, minLines = 3 }: Prop
       </div>
       <div
         data-testid={testId}
-        className="overflow-hidden rounded border border-border bg-secondary"
+        className="overflow-hidden rounded-md border border-border bg-secondary"
         style={{ height }}
       >
         <LazyMonacoEditor
@@ -103,7 +101,7 @@ export function JsonField({ value, onChange, label, testId, minLines = 3 }: Prop
         />
       </div>
       {isText && (
-        <span data-testid={`${testId}-not-json`} className="text-[9px] text-muted-foreground">
+        <span data-testid={`${testId}-not-json`} className="text-[11px] text-muted-foreground">
           {t("flowScript.jsonReadAsText")}
         </span>
       )}

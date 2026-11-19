@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { Copy, GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -9,10 +10,12 @@ import {
   useFlows,
 } from "@/features/diagram";
 import type { RecordingContext } from "./flowMode.types";
-import { RecorderHeader } from "./recorder/RecorderHeader";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { PanelColumn } from "../panels/ElementPanel/shell/PanelFrame";
+import { PanelHeader, type PanelMenuItem } from "../panels/ElementPanel/shell/PanelHeader";
+import { PanelSection } from "../panels/ElementPanel/shell/PanelSection";
 import { RecorderMetadataForm } from "./recorder/RecorderMetadataForm";
-import { BranchRecordingStrip } from "./recorder/BranchRecordingStrip";
-import { BranchSelectView } from "./recorder/BranchSelectView";
 import { MermaidPreview } from "./recorder/MermaidPreview";
 import { FlowScriptPanel } from "./script/FlowScriptPanel";
 
@@ -40,6 +43,15 @@ const FlowRecorderPanel = ({
   const { updateFlow } = useDiagramActions();
 
   const flow = useMemo(() => flows.find((candidate) => candidate.id === flowId), [flows, flowId]);
+
+  // A new recording opens on its name: it is the one field a flow needs.
+  const nameRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const focusName = recordingContext.mode === "trunk" && !isEditing;
+  useEffect(() => {
+    if (focusName) nameRef.current?.focus();
+    // Only on open: re-focusing on every context change would steal the caret.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const participants = useMemo(() => {
     if (!flow) return [];
@@ -84,88 +96,82 @@ const FlowRecorderPanel = ({
 
   if (!flow) return null;
 
-  const branchSelectCondition =
-    recordingContext.mode === "branch-select"
-      ? flow.steps[recordingContext.conditionStepId]
-      : undefined;
-
-  const showScript = recordingContext.mode === "trunk" || recordingContext.mode === "branch-record";
+  const stepCount = Object.keys(flow.steps).length;
+  const menu: PanelMenuItem[] = [
+    {
+      key: "copy-mermaid",
+      label: t("flowRecorder.copyMermaidTitle"),
+      icon: Copy,
+      onSelect: () => {
+        void navigator.clipboard?.writeText(mermaidPreview);
+        toast.success(t("flows.copiedMermaid"));
+      },
+    },
+  ];
 
   return (
-    <div className="flex h-full min-h-0 w-96 flex-col overflow-hidden border-l border-border bg-card">
-      <RecorderHeader isEditing={isEditing} onCancel={onCancel} />
-      <RecorderMetadataForm
+    <PanelColumn testId="flow-recorder-panel">
+      <PanelHeader
+        icon={<GitBranch className="h-3.5 w-3.5" />}
+        typeLabel={t("flows.panelTitle")}
+        badges={<RecordingBadge isEditing={isEditing} />}
         name={flow.name}
-        onNameChange={(name) => updateFlow(flow.id, { name })}
-        description={flow.description ?? ""}
-        onDescriptionChange={(description) => updateFlow(flow.id, { description })}
-        tags={flow.tags ?? []}
-        onAddTag={onAddTag}
-        onRemoveTag={onRemoveTag}
-        participants={participants}
-        recordingMode={recordingContext.mode}
-        autoFocusName={recordingContext.mode === "trunk"}
-        defaultDetailsOpen={!isEditing}
+        namePlaceholder={t("flowRecorder.namePlaceholder")}
+        onCommitName={(name) => updateFlow(flow.id, { name })}
+        nameInputRef={nameRef}
+        menu={menu}
+        onClose={onCancel}
       />
-      {recordingContext.mode === "branch-record" && (
-        <BranchRecordingStrip
-          conditionStepId={recordingContext.conditionStepId}
-          branchIndex={recordingContext.branchIndex}
-          branchLabel={recordingContext.branchLabel}
-          onDone={(conditionStepId) =>
-            setRecordingContext({ mode: "branch-select", conditionStepId })
-          }
-        />
-      )}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {recordingContext.mode === "branch-select" && branchSelectCondition && (
-          <BranchSelectView
-            branchSelectCondition={branchSelectCondition}
+        <RecorderMetadataForm
+          description={flow.description ?? ""}
+          onDescriptionChange={(description) => updateFlow(flow.id, { description })}
+          tags={flow.tags ?? []}
+          onAddTag={onAddTag}
+          onRemoveTag={onRemoveTag}
+          participants={participants}
+          defaultDetailsOpen={!isEditing}
+        />
+        <PanelSection
+          title={t("flowRecorder.stepsSection")}
+          summary={t("flowPanel.stepsCount", { count: stepCount })}
+        >
+          <FlowScriptPanel
             flow={flow}
-            conditionStepId={recordingContext.conditionStepId}
-            onEnterBranch={(conditionStepId, branchIndex) => {
-              const branch = flow.steps[conditionStepId]?.branches?.[branchIndex];
-              if (!branch) return;
-              setRecordingContext({
-                mode: "branch-record",
-                conditionStepId,
-                branchIndex,
-                branchLabel: branch.label,
-              });
-            }}
-            onContinueMainFlow={() => setRecordingContext({ mode: "trunk" })}
+            recording={{ target: recordingContext, onTarget: setRecordingContext }}
           />
-        )}
-        {showScript && (
-          <div className="min-h-0 flex-1 space-y-3 p-3">
-            <FlowScriptPanel
-              flow={flow}
-              onOpenBranchSelect={(conditionStepId) =>
-                setRecordingContext({ mode: "branch-select", conditionStepId })
-              }
-            />
-            {Object.keys(flow.steps).length > 0 && <MermaidPreview mermaid={mermaidPreview} />}
-          </div>
+        </PanelSection>
+        {stepCount > 0 && (
+          <PanelSection title={t("flowRecorder.mermaid")} defaultOpen={false}>
+            <MermaidPreview mermaid={mermaidPreview} />
+          </PanelSection>
         )}
       </div>
-      <div className="flex shrink-0 gap-2 border-t border-border p-3">
-        <button
-          type="button"
-          onClick={handleFinalize}
-          className="flex-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-        >
+      <div className="flex shrink-0 gap-2 border-t border-border px-4 py-3">
+        <Button size="sm" onClick={handleFinalize} className="h-8 flex-1">
           {t("flowRecorder.finalize")}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-md border border-border px-3 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
+        </Button>
+        <Button size="sm" variant="outline" onClick={onCancel} className="h-8">
           {t("flowRecorder.cancel")}
-        </button>
+        </Button>
       </div>
-    </div>
+    </PanelColumn>
   );
 };
+
+/** REC for a new recording, EDIT for a stored flow — the canvas is listening either way. */
+function RecordingBadge({ isEditing }: { isEditing?: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <span
+      className={cn(
+        "shrink-0 animate-pulse rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold",
+        isEditing ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500",
+      )}
+    >
+      {isEditing ? t("flows.recordingEdit") : t("flows.recordingRec")}
+    </span>
+  );
+}
 
 export default FlowRecorderPanel;

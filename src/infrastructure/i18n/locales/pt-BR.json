@@ -2538,11 +2538,22 @@
     "tagPlaceholder": "Adicionar tag (Enter)...",
     "copyMermaidTitle": "Copiar Mermaid",
     "finalize": "Finalizar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "stepsSection": "Passos",
+    "description": "Descrição",
+    "removeTag": "Remover tag {{tag}}",
+    "participants": "Participantes",
+    "strip": {
+      "recording_one": "Gravando · {{count}} passo",
+      "recording_other": "Gravando · {{count}} passos",
+      "inTrunk": "sequência principal",
+      "inBranch": "ramo “{{label}}”",
+      "hint": "Clique no próximo elemento, ou numa aresta para gravar a chamada. Backspace desfaz.",
+      "undo": "Desfazer último",
+      "backToTrunk": "Sequência principal"
+    }
   },
   "flowScript": {
-    "stepsHeading_one": "{{count}} passo",
-    "stepsHeading_other": "{{count}} passos",
     "empty": "Nenhum passo ainda. Clique em nós, handles ou conexões no canvas para gravá-los.",
     "emptyStep": "Passo vazio",
     "unknownStep": "?",
@@ -2570,16 +2581,8 @@
     "createCondition": "Criar",
     "cancel": "Cancelar",
     "minBranches": "Uma condição precisa de pelo menos dois ramos.",
-    "recordBranches": "Gravar os ramos",
-    "selectBranchPrompt": "Escolha um ramo para gravar:",
-    "branchEmptyHint": "Vazio — clique para gravar",
-    "branchStepCount_one": "{{count}} passo gravado",
-    "branchStepCount_other": "{{count}} passos gravados",
-    "continueMainFlow": "Voltar ao fluxo principal",
     "unreachable_one": "{{count}} passo não é alcançável a partir do início",
     "unreachable_other": "{{count}} passos não são alcançáveis a partir do início",
-    "recordingBranch": "Gravando ramo",
-    "branchDone": "Pronto",
     "branchRemoved_one": "O ramo saiu, e o passo que só ele alcançava foi junto.",
     "branchRemoved_other": "O ramo saiu, e os {{count}} passos que só ele alcançava foram junto.",
     "contextReadsPlaceholder": "outra chave",
@@ -2628,7 +2631,11 @@
     "objectAddKey": "chave",
     "objectWriteHere": "Escrever esta chave a partir deste passo",
     "objectStopWriting": "Parar de escrever aqui",
-    "objectUsesHere": "Este passo usa esta chave"
+    "objectUsesHere": "Este passo usa esta chave",
+    "writeHere": "Gravar aqui",
+    "writingHere": "Gravando aqui",
+    "writeHereTitle": "Gravar os próximos cliques neste ramo",
+    "writeTrunkTitle": "Parar de gravar neste ramo e voltar à sequência principal"
   },
   "flowRefusal": {
     "unknown_flow": "Esse fluxo não está mais aberto.",
@@ -2735,7 +2742,12 @@
     "pin": "Seguir esta chave",
     "unpin": "Parar de seguir",
     "leavesWith": "sai com {{name}}",
-    "readHere": "consumida por este passo"
+    "readHere": "consumida por este passo",
+    "earlierSteps_one": "{{count}} passo anterior",
+    "earlierSteps_other": "{{count}} passos anteriores",
+    "laterSteps_one": "mais {{count}} passo",
+    "laterSteps_other": "mais {{count}} passos",
+    "variablesTitle": "Variáveis"
   },
   "shortcutsModal": {
     "title": "Atalhos do Canvas",
@@ -2999,7 +3011,12 @@
     "copyPrefix": "Cópia de {{name}}",
     "newFlow": "Novo Fluxo",
     "stepsCount": "{{count}} passos",
-    "participantsCount": "· {{count}} participantes"
+    "participantsCount": "· {{count}} participantes",
+    "listTitle_one": "{{count}} fluxo",
+    "listTitle_other": "{{count}} fluxos",
+    "filterByTag": "Filtrar fluxos por tag",
+    "untitled": "Fluxo sem nome",
+    "emptyHint": "Um fluxo percorre o diagrama passo a passo. Comece um e clique nos elementos em ordem."
   },
   "icons": {
     "pickerTitle": "Escolher ícone",

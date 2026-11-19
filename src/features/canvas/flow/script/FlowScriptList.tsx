@@ -14,19 +14,26 @@ import {
   useConnections,
 } from "@/features/diagram";
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
+import type { RecordingContext } from "../flowMode.types";
 import { useFlowScriptActions } from "../useFlowScriptActions";
 import { ConditionForm, type ConditionFormState } from "./ConditionForm";
 import { FlowScriptRow, type EndpointOption, type RouteMismatch } from "./FlowScriptRow";
 
 const EMPTY_ENDPOINTS: readonly EndpointOption[] = [];
 
+/** Recorder-only: where the next canvas click is written, and how to move it. */
+export interface ScriptRecording {
+  target: RecordingContext;
+  onTarget: (target: RecordingContext) => void;
+}
+
 export interface FlowScriptListProps {
   flow: Flow;
   /** Step highlighted on the canvas, if any. */
   selectedStepId?: string | null;
   onSelectStep?: (stepId: string) => void;
-  /** Recorder-only: jump into a condition's branches. */
-  onOpenBranchSelect?: (conditionStepId: string) => void;
+  /** Recorder-only: branch heads become places to write into. */
+  recording?: ScriptRecording;
 }
 
 /**
@@ -40,7 +47,7 @@ export function FlowScriptList({
   flow,
   selectedStepId,
   onSelectStep,
-  onOpenBranchSelect,
+  recording,
 }: FlowScriptListProps) {
   const { t } = useTranslation();
   const components = useComponents();
@@ -116,7 +123,14 @@ export function FlowScriptList({
     }
     actions.convertToCondition(conditionForm.stepId, conditionForm.label, branches);
     setConditionForm(null);
-  }, [actions, conditionForm, t]);
+    // A new condition is written next: its first branch is where the next click goes.
+    recording?.onTarget({
+      mode: "branch-record",
+      conditionStepId: conditionForm.stepId,
+      branchIndex: 0,
+      branchLabel: branches[0]!,
+    });
+  }, [actions, conditionForm, recording, t]);
 
   const lastStepId = outline.rows[outline.rows.length - 1]?.stepId;
 
@@ -161,12 +175,8 @@ export function FlowScriptList({
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {t("flowScript.stepsHeading", { count: outline.rows.length })}
-      </p>
-
       {outline.rows.length === 0 ? (
-        <p className="py-2 text-xs italic text-muted-foreground">{t("flowScript.empty")}</p>
+        <p className="py-2 text-sm text-muted-foreground">{t("flowScript.empty")}</p>
       ) : (
         <div className="space-y-0.5">
           {outline.rows.map((row) => {
@@ -191,7 +201,11 @@ export function FlowScriptList({
                 onConvertToCondition={(stepId) =>
                   setConditionForm({ stepId, label: "", branches: ["", ""] })
                 }
-                onOpenBranchSelect={onOpenBranchSelect}
+                writeTarget={
+                  recording && row.isBranchHead && row.branch
+                    ? writeTargetFor(recording, row.branch)
+                    : undefined
+                }
                 drag={{
                   isDragging: draggingStepId === row.stepId,
                   isDragOver:
@@ -210,7 +224,7 @@ export function FlowScriptList({
       )}
 
       {outline.unreachable.length > 0 && (
-        <p className="flex items-center gap-1 text-[10px] text-amber-400">
+        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
           <AlertTriangle className="h-3 w-3 shrink-0" />
           {t("flowScript.unreachable", { count: outline.unreachable.length })}
         </p>
@@ -226,4 +240,29 @@ export function FlowScriptList({
       )}
     </div>
   );
+}
+
+function writeTargetFor(
+  recording: ScriptRecording,
+  branch: { conditionStepId: string; branchIndex: number; label: string },
+) {
+  const { target } = recording;
+  const active =
+    target.mode === "branch-record" &&
+    target.conditionStepId === branch.conditionStepId &&
+    target.branchIndex === branch.branchIndex;
+  return {
+    active,
+    onWrite: () =>
+      recording.onTarget(
+        active
+          ? { mode: "trunk" }
+          : {
+              mode: "branch-record",
+              conditionStepId: branch.conditionStepId,
+              branchIndex: branch.branchIndex,
+              branchLabel: branch.label,
+            },
+      ),
+  };
 }

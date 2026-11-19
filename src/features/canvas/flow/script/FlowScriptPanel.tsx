@@ -3,14 +3,14 @@ import type { Flow } from "@/features/diagram";
 import { buildFlowOutline } from "@/features/diagram";
 import { useCanvasSelectionStore } from "../../hooks/useCanvasSelectionStore";
 import { useFlowViewStore } from "../useFlowViewStore";
-import { FlowScriptList } from "./FlowScriptList";
+import { FlowScriptList, type ScriptRecording } from "./FlowScriptList";
 import { FlowObjectPanel } from "./FlowObjectPanel";
 import { useFlowScriptActions } from "../useFlowScriptActions";
 
 export interface FlowScriptPanelProps {
   flow: Flow;
-  /** Recorder-only: jump into a condition's branches. */
-  onOpenBranchSelect?: (conditionStepId: string) => void;
+  /** Recorder-only: where the next click is written, and moving it. */
+  recording?: ScriptRecording;
 }
 
 /**
@@ -21,7 +21,7 @@ export interface FlowScriptPanelProps {
  * stays put while the canvas selection still matches it, so a flow that visits
  * the same node twice does not snap back to the first visit.
  */
-export function FlowScriptPanel({ flow, onOpenBranchSelect }: FlowScriptPanelProps) {
+export function FlowScriptPanel({ flow, recording }: FlowScriptPanelProps) {
   const selectedStepId = useFlowViewStore((state) => state.selectedStepId);
   const selectStep = useFlowViewStore((state) => state.selectStep);
   const selectedNodeId = useCanvasSelectionStore((state) => state.selectedNodeId);
@@ -73,7 +73,7 @@ export function FlowScriptPanel({ flow, onOpenBranchSelect }: FlowScriptPanelPro
         flow={flow}
         selectedStepId={selectedStepId}
         onSelectStep={onSelectStep}
-        onOpenBranchSelect={onOpenBranchSelect}
+        recording={recording}
       />
     </>
   );

@@ -18,6 +18,7 @@ import FlowReadingScene from "./FlowReadingScene";
 import { describeStepHeading, describeStepTarget, type StepHeadingLabels } from "./readingScene";
 import { compactContainerIdsOf } from "../visibleTarget";
 import { buildReadingSpine, type ReadingRow } from "./readingSpine";
+import { VARIABLES_OPEN_MAX_ROWS, windowSpineRows } from "./spineWindow";
 import { describeStepCall } from "./stepCall";
 import FlowVariablesPanel from "./FlowVariablesPanel";
 import {
@@ -173,6 +174,13 @@ const FlowReadingRail = ({
       ),
     [flow, currentStepId, history, seen, components, connections, headingLabels, compactIds],
   );
+
+  // Which sides of the spine the reader has opened; a new script starts windowed again.
+  const [openSides, setOpenSides] = useState({ past: false, upcoming: false });
+  useEffect(() => setOpenSides({ past: false, upcoming: false }), [flow.id]);
+  const past = windowSpineRows(spine.past, "past", openSides.past);
+  const upcoming = windowSpineRows(spine.upcoming, "upcoming", openSides.upcoming);
+  const isLongReading = spine.past.length + spine.upcoming.length + 1 > VARIABLES_OPEN_MAX_ROWS;
 
   // The one thing the rail asks about a branch point: whether the ways out are
   // a choice or threads that all run. Everything it says differently — glyph,
@@ -372,7 +380,14 @@ const FlowReadingRail = ({
           </div>
         )}
 
-        {spine.past.map((row) => (
+        {past.hidden > 0 && (
+          <HiddenRows
+            testId="flow-reading-more-past"
+            label={t("flowReading.earlierSteps", { count: past.hidden })}
+            onReveal={() => setOpenSides((sides) => ({ ...sides, past: true }))}
+          />
+        )}
+        {past.shown.map((row) => (
           <SpineRow key={row.stepId} row={row} walked callerOf={callerOf} onGoToStep={onGoToStep} />
         ))}
 
@@ -410,7 +425,7 @@ const FlowReadingRail = ({
           </>
         )}
 
-        {spine.upcoming.map((row) => (
+        {upcoming.shown.map((row) => (
           <SpineRow
             key={row.stepId}
             row={row}
@@ -419,6 +434,13 @@ const FlowReadingRail = ({
             onGoToStep={onGoToStep}
           />
         ))}
+        {upcoming.hidden > 0 && (
+          <HiddenRows
+            testId="flow-reading-more-upcoming"
+            label={t("flowReading.laterSteps", { count: upcoming.hidden })}
+            onReveal={() => setOpenSides((sides) => ({ ...sides, upcoming: true }))}
+          />
+        )}
 
         {!isCondition &&
           spine.branches.map((branch) => (
@@ -435,6 +457,8 @@ const FlowReadingRail = ({
       </div>
 
       <FlowVariablesPanel
+        key={flow.id}
+        defaultOpen={!isLongReading}
         sends={sends}
         expected={expected}
         context={runningContext}
@@ -526,6 +550,27 @@ const CallGuides = ({ depth }: { depth: number }) => {
     </span>
   );
 };
+
+/** Stands in for the spine rows held back, and brings them back. */
+const HiddenRows = ({
+  label,
+  onReveal,
+  testId,
+}: {
+  label: string;
+  onReveal: () => void;
+  testId: string;
+}) => (
+  <button
+    type="button"
+    data-testid={testId}
+    onClick={onReveal}
+    className="flex w-full items-center gap-3 py-[7px] text-left text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+  >
+    <span className="w-[34px] shrink-0 text-right font-mono text-xs">⋮</span>
+    <span className="text-[12.5px]">{label}</span>
+  </button>
+);
 
 /** A call ending where the script never wrote the return. */
 const ReturnRow = ({ callDepth, caller }: { callDepth: number; caller: string }) => {
