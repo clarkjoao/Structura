@@ -39,3 +39,29 @@ folded when the reading has more than six steps.
 - **GIVEN** a reading showing the variables block
 - **WHEN** its header is chosen
 - **THEN** its body is hidden and the step in hand gains the room
+
+### Requirement: The canvas follows the reading at a readable zoom
+
+While a flow is read, the canvas SHALL bring the step in hand into view at no more than 1× and,
+when the step and its neighbours fit at a readable zoom, SHALL frame them together. A step that
+names both a component and a call SHALL be framed with both ends of the call. A step too long to
+read at once SHALL be framed on the node the reading names after "on". When the step is already
+comfortably in view at a readable zoom, the canvas SHALL NOT move.
+
+#### Scenario: A call is framed with both of its ends
+
+- **GIVEN** a step on one component that calls another
+- **WHEN** the step is read
+- **THEN** both components are on screen
+
+#### Scenario: The camera stays when nothing needs to move
+
+- **GIVEN** a step whose nodes are already well inside the canvas at a readable zoom
+- **WHEN** the step is read
+- **THEN** the viewport does not change
+
+#### Scenario: A call across the whole diagram
+
+- **GIVEN** a step whose call spans more than the canvas can show at a readable zoom
+- **WHEN** the step is read
+- **THEN** the node the call arrives at is framed at a readable zoom

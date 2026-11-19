@@ -15,6 +15,11 @@
 - [x] 3.1 Window the spine's past and upcoming rows with reveal controls; verify by test.
 - [x] 3.2 Make the variables block foldable, folded by default on a windowed reading; verify by test.
 
-## 4. Close
+## 4. Following the reading on the canvas
 
-- [x] 4.1 Strings in `en` and `pt-BR`; typecheck, lint, format, vitest, fallow green (pre-existing opscr finding excepted).
+- [x] 4.1 `readingFrame.planReadingFrame`: step + neighbours at ≤1×, else the step, else the node it lands on; stay when already in view; verify by test.
+- [x] 4.2 `useFrameReadStep` frames a step's component and both ends of its call, focusing where the call arrives (as the rail names it); verify in the editor across a 7-step flow (zoom 0.85–1.0 on every step).
+
+## 5. Close
+
+- [x] 5.1 Strings in `en` and `pt-BR`; typecheck, lint, format, vitest, fallow green (pre-existing opscr finding excepted).
