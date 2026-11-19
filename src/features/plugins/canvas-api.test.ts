@@ -49,6 +49,7 @@ describe("v1.11 canvas API", () => {
     expect(useHighlightRequests.getState().request).toEqual({
       componentIds: ["a"],
       connectionIds: ["c1"],
+      frame: true,
       token: before + 1,
     });
   });

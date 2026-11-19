@@ -26,6 +26,7 @@ export function usePluginHighlightRequests(visualState: CanvasVisualState): void
       return;
     }
     visualState.setHighlight(connectionIds, [...nodeIds]);
+    if (!highlightRequest.frame) return;
     const { width, height } = flowStore.getState();
     frameUnlessInView(reactFlowInstance, [...nodeIds], { width, height });
   }, [highlightRequest, reactFlowInstance, flowStore, visualState]);

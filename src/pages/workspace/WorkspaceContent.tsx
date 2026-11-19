@@ -484,6 +484,7 @@ export function WorkspaceContent({
                   onDrillDownToDiagram={handleDrillDownToDiagram}
                   isViewingCoverage={isViewingCoverage}
                   isFlowPanelOpen={showFlows}
+                  onYieldFlowPanel={() => setShowFlows(false)}
                   diagramSidebarOpen={diagramSidebarOpen}
                   onDiagramSidebarOpenChange={setDiagramSidebarOpen}
                   focusMode={focusMode}

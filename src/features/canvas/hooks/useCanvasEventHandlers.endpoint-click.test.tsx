@@ -61,7 +61,9 @@ const port: Node = {
 };
 
 /** Clicks a port and reports what the click did to the selection. */
-function clickPort(options: { isPlaying?: boolean; isFlowPanelOpen?: boolean } = {}) {
+function clickPort(
+  options: { isPlaying?: boolean; isFlowPanelOpen?: boolean; onYieldFlowPanel?: () => void } = {},
+) {
   setSelectedNodeId.mockClear();
   setSelectedNodeIds.mockClear();
   const held: { current: ReturnType<typeof useCanvasEventHandlers> | null } = { current: null };
@@ -71,6 +73,7 @@ function clickPort(options: { isPlaying?: boolean; isFlowPanelOpen?: boolean } =
       visualState: visualState(),
       isPlaying: options.isPlaying ?? false,
       isFlowPanelOpen: options.isFlowPanelOpen ?? false,
+      onYieldFlowPanel: options.onYieldFlowPanel,
       updateViewport: vi.fn(),
       addConnection: vi.fn(),
       screenToFlowPosition: (pos) => pos,
@@ -99,7 +102,19 @@ describe("clicking a port answers to the same gate as clicking an element", () =
     expect(clickPort({ isPlaying: true })).toEqual([]);
   });
 
-  it("selects nothing while the flow panel has the canvas", () => {
+  it("selects nothing while the flow panel has the canvas and nothing can take it back", () => {
     expect(clickPort({ isFlowPanelOpen: true })).toEqual([]);
+  });
+
+  it("hands the column back from the flows list and selects, when it can", () => {
+    const onYieldFlowPanel = vi.fn();
+    expect(clickPort({ isFlowPanelOpen: true, onYieldFlowPanel })).toEqual(["group-1"]);
+    expect(onYieldFlowPanel).toHaveBeenCalledOnce();
+  });
+
+  it("does not close a flows list that is not open", () => {
+    const onYieldFlowPanel = vi.fn();
+    clickPort({ onYieldFlowPanel });
+    expect(onYieldFlowPanel).not.toHaveBeenCalled();
   });
 });

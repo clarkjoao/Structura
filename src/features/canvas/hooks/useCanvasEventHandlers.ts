@@ -28,6 +28,8 @@ interface UseCanvasEventHandlersParams {
   isPlaying: boolean;
   isCompareMode?: boolean;
   isFlowPanelOpen: boolean;
+  /** Closes the flows list so a click on an element can select it (see `CanvasProps`). */
+  onYieldFlowPanel?: () => void;
   updateViewport: (vp: { x: number; y: number; zoom: number }, diagramId?: string) => void;
   addConnection: (
     source: string,
@@ -54,7 +56,8 @@ export function useCanvasEventHandlers({
   visualState,
   isPlaying,
   isCompareMode = false,
-  isFlowPanelOpen,
+  isFlowPanelOpen: flowPanelOpen,
+  onYieldFlowPanel,
   updateViewport,
   addConnection,
   screenToFlowPosition,
@@ -62,6 +65,14 @@ export function useCanvasEventHandlers({
 }: UseCanvasEventHandlersParams) {
   const { t } = useTranslation();
   const { isRecording, onRecordNodeClick, onRecordEdgeClick } = useFlowMode();
+  /**
+   * The flows list only makes the canvas inert when nothing can take it back. With a way to hand
+   * the column back, a click on an element closes the list and selects as usual.
+   */
+  const isFlowPanelOpen = flowPanelOpen && !onYieldFlowPanel;
+  const yieldFlowPanel = useCallback(() => {
+    if (flowPanelOpen) onYieldFlowPanel?.();
+  }, [flowPanelOpen, onYieldFlowPanel]);
   const reactFlowInstance = useReactFlow();
   const reactFlowStore = useStoreApi();
   const {
@@ -85,6 +96,7 @@ export function useCanvasEventHandlers({
   const openContextMenuFromFunnel = useCallback(
     (target: GestureTarget, atScreen: { x: number; y: number }) => {
       if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
+      yieldFlowPanel();
       const isOnNode =
         target.kind === "node" ||
         target.kind === "panel-header" ||
@@ -128,6 +140,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      yieldFlowPanel,
       isRecording,
       reactFlowInstance,
       screenToFlowPosition,
@@ -243,6 +256,7 @@ export function useCanvasEventHandlers({
           // Same read-only gate the ordinary node path applies below. Clicking a
           // port selects the group it belongs to, and selecting is editing.
           if (isPlaying || isFlowPanelOpen) return;
+          yieldFlowPanel();
           clearHighlight();
           setSelectedEdgeId(null);
           setContextMenu(null);
@@ -265,6 +279,7 @@ export function useCanvasEventHandlers({
       }
       if (isCompareMode) return;
       if (isPlaying || isFlowPanelOpen) return;
+      yieldFlowPanel();
       clearHighlight();
       setSelectedEdgeId(null);
       setContextMenu(null);
@@ -288,6 +303,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      yieldFlowPanel,
       isRecording,
       onRecordNodeClick,
       setSelectedNodeId,
@@ -313,6 +329,7 @@ export function useCanvasEventHandlers({
       }
       if (isCompareMode) return;
       if (isFlowPanelOpen) return;
+      yieldFlowPanel();
       // Same focus as ElementPanel → Connections: edge + both ends.
       setHighlight(edge.id, [edge.source, edge.target]);
       setSelectedEdgeId(edge.id);
@@ -324,6 +341,7 @@ export function useCanvasEventHandlers({
       setHighlight,
       isCompareMode,
       isFlowPanelOpen,
+      yieldFlowPanel,
       isRecording,
       onRecordEdgeClick,
       setSelectedEdgeId,
@@ -421,6 +439,7 @@ export function useCanvasEventHandlers({
   const onNodeDoubleClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       if (isCompareMode || isPlaying || isFlowPanelOpen || isRecording) return;
+      yieldFlowPanel();
       clearHighlight();
       setSelectedEdgeId(null);
       setContextMenu(null);
@@ -443,6 +462,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      yieldFlowPanel,
       isRecording,
       clearHighlight,
       setSelectedEdgeId,
@@ -457,6 +477,7 @@ export function useCanvasEventHandlers({
   const onEdgeDoubleClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
       if (isCompareMode || isPlaying || isFlowPanelOpen || isRecording) return;
+      yieldFlowPanel();
       clearHighlight();
       setSelectedNodeId(null);
       setSelectedNodeIds(new Set());
@@ -469,6 +490,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      yieldFlowPanel,
       isRecording,
       clearHighlight,
       setSelectedNodeId,
@@ -490,6 +512,7 @@ export function useCanvasEventHandlers({
     (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
       if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
+      yieldFlowPanel();
       if (
         visualState.selectedNodeId ||
         visualState.selectedEdgeId ||
@@ -512,6 +535,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      yieldFlowPanel,
       visualState.selectedNodeId,
       visualState.selectedEdgeId,
       visualState.selectedNodeIds,
@@ -534,6 +558,7 @@ export function useCanvasEventHandlers({
       if (!(event.target instanceof Element)) return;
       if (!event.target.classList.contains("react-flow__pane")) return;
       if (isRecording || isCompareMode || isPlaying || isFlowPanelOpen) return;
+      yieldFlowPanel();
       clearHighlight();
       setContextMenu(null);
       setPaneContextMenu(null);
@@ -549,6 +574,7 @@ export function useCanvasEventHandlers({
       isCompareMode,
       isPlaying,
       isFlowPanelOpen,
+      yieldFlowPanel,
       clearHighlight,
       setContextMenu,
       setPaneContextMenu,

@@ -3,6 +3,11 @@ export interface CanvasProps {
   onDrillDownToDiagram?: (id: string) => void;
   isViewingCoverage?: boolean;
   isFlowPanelOpen?: boolean;
+  /**
+   * The flows list holds the inspector's column; a click on an element hands the column back
+   * (closes the list) and selects it, rather than the canvas going inert while the list is open.
+   */
+  onYieldFlowPanel?: () => void;
   onPlayFlow?: (flowId: string) => void;
   diagramSidebarOpen?: boolean;
   onDiagramSidebarOpenChange?: (open: boolean) => void;

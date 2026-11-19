@@ -82,3 +82,15 @@ folded when empty), Object at this step (folded). A script row SHALL hold no fie
 - **GIVEN** the panel of the first step of a three-step flow
 - **WHEN** next is chosen twice
 - **THEN** the third step's panel is shown and next is disabled
+
+### Requirement: The flows list does not freeze the canvas
+
+With the flows list open, a click on an element SHALL close the list, give the column back to the
+inspector and select the element. Hovering a flow in the list SHALL light the elements and
+connections it passes through, without moving the camera, and leaving SHALL put the canvas back.
+
+#### Scenario: Selecting from under the list
+
+- **GIVEN** the flows list open
+- **WHEN** an element on the canvas is clicked
+- **THEN** the list closes and the inspector shows that element

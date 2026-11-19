@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactFlow } from "@xyflow/react";
 import {
@@ -51,6 +51,7 @@ import { PanelColumn } from "../panels/ElementPanel/shell/PanelFrame";
 import { PanelHeader, type PanelMenuItem } from "../panels/ElementPanel/shell/PanelHeader";
 import MermaidImportDialog from "./MermaidImportDialog";
 import { useFlowViewStore } from "./useFlowViewStore";
+import { useHighlightRequests } from "../focus/highlightRequests";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
 import { activeDirection } from "../hooks/useActiveDirection";
@@ -196,6 +197,31 @@ const FlowPanel = ({
 
   const allTags = [...new Set(flows.flatMap((f) => f.tags ?? []))];
   const filtered = tagFilter ? flows.filter((f) => f.tags?.includes(tagFilter)) : flows;
+
+  /**
+   * Hovering a card lights what the flow passes through, so a list of names maps onto the
+   * diagram before anything is opened. The camera stays put; a hover is not a navigation.
+   */
+  const requestHighlight = useHighlightRequests((state) => state.requestHighlight);
+  const lit = useRef(false);
+  const lightParticipants = useCallback(
+    (componentIds: ReadonlySet<string>, connectionIds: ReadonlySet<string>) => {
+      lit.current = true;
+      requestHighlight({
+        componentIds: [...componentIds],
+        connectionIds: [...connectionIds],
+        frame: false,
+      });
+    },
+    [requestHighlight],
+  );
+  const unlightParticipants = useCallback(() => {
+    if (!lit.current) return;
+    lit.current = false;
+    requestHighlight({});
+  }, [requestHighlight]);
+  // Closed under the pointer, the list would otherwise leave its last hover lit.
+  useEffect(() => unlightParticipants, [unlightParticipants]);
 
   /**
    * The check that used to sit in place of the icon lived on a button that is
@@ -356,12 +382,15 @@ const FlowPanel = ({
       <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-3">
         {filtered.map((flow) => {
           const stepCount = getStepCount(flow);
-          const { componentIds } = getFlowParticipants(flow);
+          const { componentIds, connectionIds } = getFlowParticipants(flow);
           const isSelected = scriptFlowId === flow.id;
           const select = () => openScript(isSelected ? null : flow.id);
           return (
             <div
               key={flow.id}
+              data-testid="flow-card"
+              onMouseEnter={() => lightParticipants(componentIds, connectionIds)}
+              onMouseLeave={unlightParticipants}
               className={cn(
                 "group rounded-lg border px-3 py-2.5 transition-colors",
                 isSelected ? "border-primary/50 bg-primary/5" : "border-border hover:bg-accent/40",

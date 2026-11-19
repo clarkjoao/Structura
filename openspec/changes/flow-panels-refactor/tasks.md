@@ -11,6 +11,7 @@
 - [x] 2.3 Forking from the recording strip (`recordFlowCondition`) writes a condition after the last step and moves the recorder into its first way out; the script row no longer turns a step into a condition (it moved to the step panel's ⋯, see 2.5); verify by test.
 - [x] 2.4 The reading scene names the step first, then call → target · duration on one line, and the stack as one line of text; verify by test.
 - [x] 2.5 A step opens in its own panel (`FlowStepPanel`) in place of the script: header name, ‹ › between steps, ⋯ (insert after, turn into condition, remove), sections Ways out / Reading / Call / Data / Object; script rows hold no fields; verify by test.
+- [x] 2.6 With the flows list open, a click on an element hands the column back to the inspector and selects it (`onYieldFlowPanel`); right-button pan works; hovering a card lights the flow's participants without moving the camera (`requestHighlight({ frame: false })`); verify by test and in the editor.
 
 ## 3. Reading a long flow (M3)
 
