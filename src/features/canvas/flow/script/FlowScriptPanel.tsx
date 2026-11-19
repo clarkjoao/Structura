@@ -4,13 +4,14 @@ import { buildFlowOutline } from "@/features/diagram";
 import { useCanvasSelectionStore } from "../../hooks/useCanvasSelectionStore";
 import { useFlowViewStore } from "../useFlowViewStore";
 import { FlowScriptList, type ScriptRecording } from "./FlowScriptList";
-import { FlowObjectPanel } from "./FlowObjectPanel";
-import { useFlowScriptActions } from "../useFlowScriptActions";
+import { selectStepOnCanvas } from "./selectStepOnCanvas";
 
 export interface FlowScriptPanelProps {
   flow: Flow;
   /** Recorder-only: where the next click is written, and moving it. */
   recording?: ScriptRecording;
+  /** Opens a step in its own panel, after selecting it on the canvas. */
+  onOpenStep?: (stepId: string) => void;
 }
 
 /**
@@ -21,14 +22,13 @@ export interface FlowScriptPanelProps {
  * stays put while the canvas selection still matches it, so a flow that visits
  * the same node twice does not snap back to the first visit.
  */
-export function FlowScriptPanel({ flow, recording }: FlowScriptPanelProps) {
+export function FlowScriptPanel({ flow, recording, onOpenStep }: FlowScriptPanelProps) {
   const selectedStepId = useFlowViewStore((state) => state.selectedStepId);
   const selectStep = useFlowViewStore((state) => state.selectStep);
   const selectedNodeId = useCanvasSelectionStore((state) => state.selectedNodeId);
   const selectedEdgeId = useCanvasSelectionStore((state) => state.selectedEdgeId);
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
-  const actions = useFlowScriptActions(flow.id);
 
   useEffect(() => {
     if (!selectedNodeId && !selectedEdgeId) return;
@@ -47,34 +47,21 @@ export function FlowScriptPanel({ flow, recording }: FlowScriptPanelProps) {
     selectStep(match?.stepId ?? null);
   }, [flow, outline, selectStep, selectedEdgeId, selectedNodeId, selectedStepId]);
 
-  const onSelectStep = useCallback(
+  const onOpen = useCallback(
     (stepId: string) => {
       selectStep(stepId);
-      const step = flow.steps[stepId];
-      const selection = useCanvasSelectionStore.getState();
-      if (step?.componentId) {
-        selection.setSelectedNodeId(step.componentId);
-        selection.setSelectedEdgeId(null);
-        return;
-      }
-      if (step?.connectionId) {
-        selection.setSelectedNodeId(null);
-        selection.setSelectedNodeIds(new Set());
-        selection.setSelectedEdgeId(step.connectionId);
-      }
+      onOpenStep?.(stepId);
+      selectStepOnCanvas(flow.steps[stepId]);
     },
-    [flow, selectStep],
+    [flow, onOpenStep, selectStep],
   );
 
   return (
-    <>
-      <FlowObjectPanel flow={flow} selectedStepId={selectedStepId} actions={actions} />
-      <FlowScriptList
-        flow={flow}
-        selectedStepId={selectedStepId}
-        onSelectStep={onSelectStep}
-        recording={recording}
-      />
-    </>
+    <FlowScriptList
+      flow={flow}
+      selectedStepId={selectedStepId}
+      onOpenStep={onOpen}
+      recording={recording}
+    />
   );
 }

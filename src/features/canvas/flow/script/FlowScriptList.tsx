@@ -2,22 +2,12 @@ import { useCallback, useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
-import type { Flow, FlowStep } from "@/features/diagram";
-import {
-  buildFlowOutline,
-  conditionKindOf,
-  endpointLabel,
-  findEndpointMismatch,
-  isEndpointComponent,
-  useComponents,
-  useConnections,
-} from "@/features/diagram";
-import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
+import type { Flow } from "@/features/diagram";
+import { buildFlowOutline } from "@/features/diagram";
 import type { RecordingContext } from "../flowMode.types";
 import { useFlowScriptActions } from "../useFlowScriptActions";
-import { FlowScriptRow, type EndpointOption, type RouteMismatch } from "./FlowScriptRow";
-
-const EMPTY_ENDPOINTS: readonly EndpointOption[] = [];
+import { FlowScriptRow } from "./FlowScriptRow";
+import { useStepNaming } from "./useStepNaming";
 
 /** Recorder-only: where the next canvas click is written, and how to move it. */
 export interface ScriptRecording {
@@ -29,7 +19,8 @@ export interface FlowScriptListProps {
   flow: Flow;
   /** Step highlighted on the canvas, if any. */
   selectedStepId?: string | null;
-  onSelectStep?: (stepId: string) => void;
+  /** Opens a step in its own panel. */
+  onOpenStep?: (stepId: string) => void;
   /** Recorder-only: branch heads become places to write into. */
   recording?: ScriptRecording;
 }
@@ -44,72 +35,16 @@ export interface FlowScriptListProps {
 export function FlowScriptList({
   flow,
   selectedStepId,
-  onSelectStep,
+  onOpenStep,
   recording,
 }: FlowScriptListProps) {
   const { t } = useTranslation();
-  const components = useComponents();
-  const connections = useConnections();
+  const { subjectOf } = useStepNaming();
   const actions = useFlowScriptActions(flow.id);
-  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
   const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
-
-  /**
-   * Every route on the diagram, named the way a list of routes reads.
-   *
-   * The group's name comes along because two services can serve the same path,
-   * and `POST /urls` on its own would then name two different operations.
-   */
-  const endpointOptions = useMemo<EndpointOption[]>(() => {
-    const options: EndpointOption[] = [];
-    for (const component of Object.values(components)) {
-      if (!isEndpointComponent(component)) continue;
-      const group = component.parentId ? components[component.parentId] : undefined;
-      options.push({
-        id: component.id,
-        label: endpointLabel(component),
-        groupName: group?.name ?? t("flowScript.routeUngrouped"),
-      });
-    }
-    return options.sort(
-      (a, b) => a.groupName.localeCompare(b.groupName) || a.label.localeCompare(b.label),
-    );
-  }, [components, t]);
-
-  /** Named here, where both maps are to hand; the row only renders it. */
-  const routeMismatchOf = useCallback(
-    (step: FlowStep): RouteMismatch | null => {
-      const mismatch = findEndpointMismatch(step, components, connections);
-      if (!mismatch) return null;
-      return {
-        arrivesAt: components[mismatch.arrivesAtId]?.name ?? t("flowScript.unknownStep"),
-        belongsTo: components[mismatch.belongsToId]?.name ?? t("flowScript.unknownStep"),
-      };
-    },
-    [components, connections, t],
-  );
-
-  const titleOf = useCallback(
-    (step: FlowStep): string => {
-      if (step.branches && step.branches.length > 0) {
-        const kind = conditionKindOf(step);
-        return `${conditionGlyph(kind)} ${step.conditionLabel?.trim() || t(CONDITION_KIND_LABEL[kind])}`;
-      }
-      if (step.connectionId) {
-        const connection = connections[step.connectionId];
-        if (connection) return `${t("flowScript.connectionPrefix")}${connection.label}`;
-      }
-      if (step.componentId) {
-        return components[step.componentId]?.name ?? t("flowScript.unknownStep");
-      }
-      if (step.description?.trim()) return step.description;
-      return t("flowScript.emptyStep");
-    },
-    [components, connections, t],
-  );
 
   const lastStepId = outline.rows[outline.rows.length - 1]?.stepId;
 
@@ -166,17 +101,13 @@ export function FlowScriptList({
                 key={row.stepId}
                 row={row}
                 step={step}
-                title={titleOf(step)}
-                isExpanded={expandedStepId === row.stepId}
+                title={
+                  step.branches?.length ? subjectOf(step) : step.title?.trim() || subjectOf(step)
+                }
                 isSelected={selectedStepId === row.stepId}
                 isLast={lastStepId === row.stepId}
                 actions={actions}
-                endpoints={expandedStepId === row.stepId ? endpointOptions : EMPTY_ENDPOINTS}
-                routeMismatch={expandedStepId === row.stepId ? routeMismatchOf(step) : null}
-                onToggleExpand={() =>
-                  setExpandedStepId(expandedStepId === row.stepId ? null : row.stepId)
-                }
-                onSelect={() => onSelectStep?.(row.stepId)}
+                onOpen={() => onOpenStep?.(row.stepId)}
                 writeTarget={
                   recording && row.isBranchHead && row.branch
                     ? writeTargetFor(recording, row.branch)

@@ -8,8 +8,9 @@
 
 - [x] 2.1 Recording strip on the canvas: target, step count, undo, finish; verify by test and in the editor.
 - [x] 2.2 Remove the `branch-select` mode, `BranchSelectView` and `BranchRecordingStrip`; branch heads in the script become write targets; verify a click lands in the chosen branch. A branch that runs straight back to the trunk is not offered: the store refuses to record into it (it has no sequence of its own).
-- [x] 2.3 Forking from the recording strip (`recordFlowCondition`) writes a condition after the last step and moves the recorder into its first way out; the step panel no longer turns a step into a condition; verify by test.
+- [x] 2.3 Forking from the recording strip (`recordFlowCondition`) writes a condition after the last step and moves the recorder into its first way out; the script row no longer turns a step into a condition (it moved to the step panel's ⋯, see 2.5); verify by test.
 - [x] 2.4 The reading scene names the step first, then call → target · duration on one line, and the stack as one line of text; verify by test.
+- [x] 2.5 A step opens in its own panel (`FlowStepPanel`) in place of the script: header name, ‹ › between steps, ⋯ (insert after, turn into condition, remove), sections Ways out / Reading / Call / Data / Object; script rows hold no fields; verify by test.
 
 ## 3. Reading a long flow (M3)
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, GitBranch } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -18,6 +18,10 @@ import { PanelSection } from "../panels/ElementPanel/shell/PanelSection";
 import { RecorderMetadataForm } from "./recorder/RecorderMetadataForm";
 import { MermaidPreview } from "./recorder/MermaidPreview";
 import { FlowScriptPanel } from "./script/FlowScriptPanel";
+import { FlowStepPanel } from "./script/FlowStepPanel";
+import { selectStepOnCanvas } from "./script/selectStepOnCanvas";
+import { useFlowScriptActions } from "./useFlowScriptActions";
+import { useFlowViewStore } from "./useFlowViewStore";
 
 interface Props {
   flowId: string;
@@ -43,6 +47,20 @@ const FlowRecorderPanel = ({
   const { updateFlow } = useDiagramActions();
 
   const flow = useMemo(() => flows.find((candidate) => candidate.id === flowId), [flows, flowId]);
+  const scriptActions = useFlowScriptActions(flowId);
+  const selectStep = useFlowViewStore((state) => state.selectStep);
+
+  /** The step drilled into, in place of the script; null shows the flow. */
+  const [openStepId, setOpenStepId] = useState<string | null>(null);
+  useEffect(() => setOpenStepId(null), [flowId]);
+  const openStep = useCallback(
+    (stepId: string) => {
+      selectStep(stepId);
+      selectStepOnCanvas(flow?.steps[stepId]);
+      setOpenStepId(stepId);
+    },
+    [flow, selectStep],
+  );
 
   // A new recording opens on its name: it is the one field a flow needs.
   const nameRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -109,6 +127,33 @@ const FlowRecorderPanel = ({
     },
   ];
 
+  const footer = (
+    <div className="flex shrink-0 gap-2 border-t border-border px-4 py-3">
+      <Button size="sm" onClick={handleFinalize} className="h-8 flex-1">
+        {t("flowRecorder.finalize")}
+      </Button>
+      <Button size="sm" variant="outline" onClick={onCancel} className="h-8">
+        {t("flowRecorder.cancel")}
+      </Button>
+    </div>
+  );
+
+  if (openStepId && flow.steps[openStepId]) {
+    return (
+      <PanelColumn testId="flow-recorder-panel">
+        <FlowStepPanel
+          key={openStepId}
+          flow={flow}
+          stepId={openStepId}
+          actions={scriptActions}
+          onBack={() => setOpenStepId(null)}
+          onOpenStep={openStep}
+        />
+        {footer}
+      </PanelColumn>
+    );
+  }
+
   return (
     <PanelColumn testId="flow-recorder-panel">
       <PanelHeader
@@ -139,6 +184,7 @@ const FlowRecorderPanel = ({
           <FlowScriptPanel
             flow={flow}
             recording={{ target: recordingContext, onTarget: setRecordingContext }}
+            onOpenStep={setOpenStepId}
           />
         </PanelSection>
         {stepCount > 0 && (
@@ -147,14 +193,7 @@ const FlowRecorderPanel = ({
           </PanelSection>
         )}
       </div>
-      <div className="flex shrink-0 gap-2 border-t border-border px-4 py-3">
-        <Button size="sm" onClick={handleFinalize} className="h-8 flex-1">
-          {t("flowRecorder.finalize")}
-        </Button>
-        <Button size="sm" variant="outline" onClick={onCancel} className="h-8">
-          {t("flowRecorder.cancel")}
-        </Button>
-      </div>
+      {footer}
     </PanelColumn>
   );
 };

@@ -60,10 +60,25 @@ There SHALL be no separate screen for choosing a branch.
 
 A condition SHALL be created from the strip over the canvas, at the end of the sequence being
 recorded, in one line: an optional question and ways out that start as yes / no. Enter SHALL fork
-the flow. The step panel SHALL NOT offer turning a step into a condition.
+the flow. Turning a step already in the flow into a condition SHALL stay in that step's own
+panel, under ⋯, rather than in the script row.
 
 #### Scenario: Forking with the defaults
 
 - **GIVEN** a recording
 - **WHEN** Condition is chosen on the strip and Enter is pressed
 - **THEN** a condition with the ways out "Yes" and "No" ends the sequence, in one undo step
+
+### Requirement: A step is edited in its own panel
+
+Opening a step from the script SHALL replace the script with the step's panel, in the inspector's
+anatomy: the step's title as the header name (the call or element as its placeholder), ‹ › to the
+neighbouring steps in script order, a way back to the flow, and fields in folding sections —
+Reading (note, description), Call (direction, route, duration, async), Data (body, expected back;
+folded when empty), Object at this step (folded). A script row SHALL hold no fields.
+
+#### Scenario: Walking the steps
+
+- **GIVEN** the panel of the first step of a three-step flow
+- **WHEN** next is chosen twice
+- **THEN** the third step's panel is shown and next is disabled

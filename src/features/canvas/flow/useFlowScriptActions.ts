@@ -10,6 +10,7 @@ export interface FlowScriptActions {
   removeStep: (stepId: string) => void;
   moveStep: (stepId: string, target: MoveStepTarget) => void;
   insertStepAfter: (stepId: string) => void;
+  convertToCondition: (stepId: string, conditionLabel: string, branchLabels: string[]) => void;
   addBranch: (conditionStepId: string, label: string) => void;
   removeBranch: (conditionStepId: string, branchIndex: number) => void;
   setBranchLabel: (conditionStepId: string, branchIndex: number, label: string) => void;
@@ -57,6 +58,13 @@ export function useFlowScriptActions(flowId: string | null): FlowScriptActions {
       },
       insertStepAfter: (stepId) => {
         announce(flowId ? actions.insertFlowStepAt(flowId, { kind: "after", stepId }) : noFlow());
+      },
+      convertToCondition: (stepId, conditionLabel, branchLabels) => {
+        announce(
+          flowId
+            ? actions.convertStepToCondition(flowId, stepId, conditionLabel, branchLabels)
+            : noFlow(),
+        );
       },
       addBranch: (conditionStepId, label) => {
         announce(flowId ? actions.addFlowBranch(flowId, conditionStepId, label) : noFlow());
