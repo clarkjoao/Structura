@@ -19,7 +19,7 @@
 // zero built-in plugins.
 
 import { spawnSync } from "node:child_process";
-import fs from "node:fs";
+import fs, { realpathSync } from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
@@ -138,6 +138,48 @@ function installDeps(dir, name) {
   run(NPM, ["--prefix", dir, "install", "--legacy-peer-deps"], ROOT);
 }
 
+/** Find the `opscr` package by walking up from the project root. */
+function findOpscrRoot() {
+  const env = process.env.OPSCR_ROOT;
+  if (env && fs.existsSync(path.join(env, "package.json"))) return env;
+  let dir = ROOT;
+  while (dir !== path.dirname(dir)) {
+    const candidate = path.join(dir, "opscr");
+    if (fs.existsSync(path.join(candidate, "package.json"))) return candidate;
+    dir = path.dirname(dir);
+  }
+  return null;
+}
+
+/** Ensure `opscr` is resolvable from `pluginDir/node_modules` for build-skill. */
+function linkOpscr(pluginDir) {
+  const opscrRoot = findOpscrRoot();
+  if (!opscrRoot) {
+    console.warn(
+      "[build:plugins] opscr checkout not found — build-skill will fail if the plugin uses it.",
+    );
+    return;
+  }
+  const target = path.join(pluginDir, "node_modules", "opscr");
+  if (fs.existsSync(target)) return;
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  try {
+    fs.symlinkSync(realpathSync(opscrRoot), target, "junction");
+    console.log(`[build:plugins] linked opscr -> ${opscrRoot}`);
+  } catch {
+    console.warn(`[build:plugins] could not link opscr to ${target}`);
+  }
+  // Ensure opscr's own deps are installed so its CLI can run.
+  if (!fs.existsSync(path.join(opscrRoot, "node_modules", "commander"))) {
+    console.log("[build:plugins] installing opscr's own deps...");
+    spawnSync(NPM, ["install", "--legacy-peer-deps"], {
+      cwd: opscrRoot,
+      stdio: "inherit",
+      env: process.env,
+    });
+  }
+}
+
 for (const name of plugins) {
   const dir = path.join(PLUGINS_DIR, name);
   if (!fs.existsSync(path.join(dir, "package.json"))) {
@@ -148,6 +190,7 @@ for (const name of plugins) {
     if (!fs.existsSync(path.join(dir, "node_modules"))) {
       installDeps(dir, name);
     }
+    linkOpscr(dir);
     console.log(`[build:plugins] building ${name}...`);
     run(NPM, ["--prefix", dir, "run", "build"], ROOT);
   }
