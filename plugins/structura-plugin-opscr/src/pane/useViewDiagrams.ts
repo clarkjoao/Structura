@@ -102,6 +102,7 @@ export function useViewDiagrams(options: {
       project: projector,
       isManifest,
       configFile: CONFIG_FILE,
+      autoLayout: true,
       onEvent: (event) => {
         if (event.type === "view-diagrams") {
           setReport({ diagrams: event.diagrams, orphans: event.orphans });

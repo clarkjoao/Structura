@@ -62,6 +62,8 @@ export interface ViewDiagramsOptions {
   project: Projector;
   isManifest: (name: string) => boolean;
   configFile: string;
+  /** Lay each View's diagram out afresh on every sync (see `EngineOptions.autoLayout`). */
+  autoLayout?: boolean;
   onEvent?: (event: ViewDiagramsEvent) => void;
 }
 
@@ -115,6 +117,7 @@ export class ViewDiagrams {
     if (cached) return cached;
     const { host, texts, state, project, isManifest, configFile } = this.options;
     const engine = new OpscrEngine({
+      autoLayout: this.options.autoLayout,
       texts,
       diagram: {
         get: () => host.getDiagram(diagramId),

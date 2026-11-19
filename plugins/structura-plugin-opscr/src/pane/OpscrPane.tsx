@@ -399,6 +399,7 @@ export function createOpscrPane(api: StructuraPluginApi) {
       const live = () => currentDiagram.current === diagramId && loadedForRef.current === diagramId;
       let folderName: string | undefined;
       return new OpscrEngine({
+        autoLayout: true,
         texts: {
           // The root only: initiatives are overlays, drawn as Versions (`useInitiatives`).
           get: () =>

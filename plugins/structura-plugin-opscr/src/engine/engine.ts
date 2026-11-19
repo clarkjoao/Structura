@@ -127,6 +127,12 @@ export interface EngineOptions {
    * when there is none. Without it a box opens nothing.
    */
   resolveLink?: (view: string) => string | undefined;
+  /**
+   * Lay the diagram out afresh on every sync (opening, and each change of the YAML): the
+   * elements go where the auto-layout puts them, and the saved sidecar boxes and the canvas's
+   * own are not kept. Moves the reader makes on the canvas stay until the next sync.
+   */
+  autoLayout?: boolean;
   onEvent?: (event: EngineEvent) => void;
 }
 
@@ -283,7 +289,9 @@ export class OpscrEngine {
     const projection = await this.options.project(
       manifests,
       config === undefined ? undefined : { name: this.options.configFile, text: config },
-      previousLayout(binding, diagram, this.text(LAYOUT_FILE)),
+      this.options.autoLayout
+        ? undefined
+        : previousLayout(binding, diagram, this.text(LAYOUT_FILE)),
       binding.view,
     );
     this.emit({ type: "diagnostics", diagnostics: projection.diagnostics });
@@ -314,7 +322,9 @@ export class OpscrEngine {
       await this.reconcileNow();
       return this.syncNow(retries - 1);
     }
-    const plan = planSync(this.withVisual(this.withLinks(projection.graph)), binding, now);
+    const plan = planSync(this.withVisual(this.withLinks(projection.graph)), binding, now, {
+      relayout: this.options.autoLayout === true,
+    });
     const result = plan.empty
       ? { idsByKey: {}, connectionIds: [] }
       : await this.options.diagram.apply(plan.changes);

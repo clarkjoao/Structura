@@ -297,12 +297,14 @@ export interface SyncPlan {
  * The changes that make the diagram show `graph`, given what the binding created before and
  * what the diagram holds now. Elements whose id is gone (the user deleted them) come back;
  * survivors are updated in place unless their type or parent changed; panels that grew get
- * their new size; nothing else moves.
+ * their new size; nothing else moves — unless `relayout`: then every survivor goes to the box
+ * the graph gives it (the auto-layout), visual-layer elements excepted.
  */
 export function planSync(
   graph: ImporterGraph,
   binding: BindingState,
   diagram: DiagramSnapshot,
+  options: { relayout?: boolean } = {},
 ): SyncPlan {
   const live = new Map(diagram.components.map((c) => [c.id, c]));
   const liveConnections = new Set(diagram.connections.map((c) => c.id));
@@ -356,6 +358,27 @@ export function planSync(
         // the user's, drawn by hand, and are left alone.
         ...(binding.view !== undefined ? { linkedDiagramId: component.linkedDiagramId ?? "" } : {}),
       });
+    }
+    if (options.relayout && !isVisualKey(component.key)) {
+      const was = live.get(id);
+      const moved =
+        !was?.position ||
+        Math.abs(was.position.x - component.x) > 0.5 ||
+        Math.abs(was.position.y - component.y) > 0.5 ||
+        (component.width !== undefined &&
+          (!was.size ||
+            Math.abs(was.size.width - component.width) > 0.5 ||
+            Math.abs((was.size.height ?? 0) - (component.height ?? 0)) > 0.5));
+      if (moved) {
+        changes.move.push({
+          id,
+          x: component.x,
+          y: component.y,
+          ...(component.width !== undefined ? { width: component.width } : {}),
+          ...(component.height !== undefined ? { height: component.height } : {}),
+        });
+      }
+      continue;
     }
     const size = live.get(id)?.size;
     if (component.width !== undefined && component.height !== undefined) {

@@ -227,3 +227,16 @@ describe("sidecarMoves", () => {
     expect(sidecarMoves(binding, diagram, "not json")).toEqual([]);
   });
 });
+
+describe("planSync — relayout", () => {
+  it("moves the survivors to the graph's boxes, and leaves them alone without it", () => {
+    const first = apply(graph(), emptyBinding(), diagramFor(emptyBinding(), graph())).next;
+    const base = graph();
+    const moved = { ...base, components: base.components.map((c) => ({ ...c, x: c.x + 50 })) };
+    const diagram = diagramFor(first, base);
+    expect(planSync(moved, first, diagram).changes.move ?? []).toEqual([]);
+    const plan = planSync(moved, first, diagram, { relayout: true });
+    expect(plan.changes.move?.length).toBe(base.components.length);
+    expect(plan.changes.move?.[0]?.x).toBe(base.components[0]!.x + 50);
+  });
+});
