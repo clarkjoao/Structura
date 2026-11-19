@@ -1,4 +1,4 @@
-import type { Diagram } from "../model/diagram.types";
+import type { Diagram, VersionDiff } from "../model/diagram.types";
 import { isEndpointType } from "../model/component-type-constants";
 import { isApiGroupComponent } from "../model/component.guards";
 import { computeApiGroupSize } from "./api-group-size";
@@ -34,6 +34,23 @@ function sewFlowsAfterSceneRemoval(
     connectionIds,
   );
   return toFlowSewNotices(reports, names);
+}
+
+/** Forgets the Version's copies (and node layout overrides) of base elements it now hides. */
+function dropCopies(
+  sc: VersionDiff,
+  componentIds: readonly string[],
+  connectionIds: readonly string[],
+): void {
+  for (const id of componentIds) {
+    if (sc.modifiedComponents) delete sc.modifiedComponents[id];
+    if (sc.baseHashes) delete sc.baseHashes[id];
+    delete sc.nodeLayouts[id];
+  }
+  for (const id of connectionIds) {
+    if (sc.modifiedConnections) delete sc.modifiedConnections[id];
+    if (sc.baseHashes) delete sc.baseHashes[id];
+  }
 }
 
 /**
@@ -129,6 +146,8 @@ export function mutateRemoveComponentInVersion(
         sc.removedConnectionIds.push(cid);
       }
     }
+    // A hidden element keeps no copy or layout override of its own in the Version.
+    dropCopies(sc, ids, connIds);
   }
 
   return [];
@@ -159,6 +178,7 @@ export function mutateRemoveConnectionInVersion(
   if (d.snapshot.connections[connectionId] && !sc.removedConnectionIds.includes(connectionId)) {
     sc.removedConnectionIds.push(connectionId);
   }
+  dropCopies(sc, [], [connectionId]);
 
   return [];
 }

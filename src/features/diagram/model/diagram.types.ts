@@ -138,6 +138,21 @@ export interface UserTemplate {
   >;
 }
 
+/** Where a Version is in its lifecycle, like a planned change on a roadmap. */
+export type VersionStatus = "proposed" | "approved" | "in-progress" | "done";
+
+export const VERSION_STATUSES: readonly VersionStatus[] = [
+  "proposed",
+  "approved",
+  "in-progress",
+  "done",
+];
+
+/**
+ * A logical branch over the diagram's base: what it adds, replaces and hides. The fields after
+ * `nodeLayouts` are optional so a Version that never uses them stores and hashes as before; read
+ * them through the helpers in `version.utils.ts`.
+ */
 export interface VersionDiff {
   id: string;
   name: string;
@@ -148,7 +163,19 @@ export interface VersionDiff {
   removedComponentIds: string[];
   removedConnectionIds: string[];
   viewport?: { x: number; y: number; zoom: number };
+  /** Layouts of added nodes, and overrides for base nodes moved inside the Version. */
   nodeLayouts: Record<string, NodeLayout>;
+  /** Base components replaced whole inside the Version (copy-on-write), by id. */
+  modifiedComponents?: Record<string, Component>;
+  /** Base connections replaced whole inside the Version (copy-on-write), by id. */
+  modifiedConnections?: Record<string, Connection>;
+  /** Element id → hash of the base element when the Version copied it (`hashElement`). */
+  baseHashes?: Record<string, string>;
+  status?: VersionStatus;
+  /** A stable id given from outside (e.g. an opscr initiative), shared across diagrams. */
+  key?: string;
+  /** The plugin that owns this Version: its merge, rename and delete go to that plugin. */
+  ownerPluginId?: string;
 }
 
 export interface Diagram {

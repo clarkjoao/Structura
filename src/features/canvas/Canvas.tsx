@@ -28,11 +28,13 @@ import { DiagramSurface, writePolicy } from "./core";
 import { CanvasOverlays } from "./chrome/CanvasOverlays";
 import { CanvasRightRail } from "./chrome/CanvasRightRail";
 import { CompareModeBanner } from "./chrome/CompareModeBanner";
+import { VersionChangesLegend } from "./toolbar/VersionChangesLegend";
 import { PendingSuggestionToolbars } from "./chrome/PendingSuggestionToolbars";
 import { SelectionToolbars } from "./chrome/SelectionToolbars";
 import { useSelectedComponent } from "./chrome/useSelectedComponent";
 import { useCanvasArrangeControl } from "./chrome/useCanvasArrangeControl";
 import { useCanvasChat } from "./chrome/useCanvasChat";
+import { usePluginHighlightRequests } from "./chrome/usePluginHighlightRequests";
 import { useCanvasDropTarget } from "./chrome/useCanvasDropTarget";
 import { useCanvasFocusFromUrl, useCanvasNotices } from "./chrome/useCanvasNotices";
 import { useFlowModeClosesChrome } from "./chrome/useFlowModeClosesChrome";
@@ -128,6 +130,7 @@ const Canvas = (props: CanvasProps = {}) => {
   );
 
   useCanvasFocusFromUrl(visualState);
+  usePluginHighlightRequests(visualState);
 
   const showMiniMap = useCanvasPreferencesStore((state) => state.showMiniMap);
   const occupancy = useViewportOccupancy();
@@ -229,6 +232,7 @@ const Canvas = (props: CanvasProps = {}) => {
               className="w-full h-full"
             >
               {isCompareMode && <CompareModeBanner />}
+              {!isCompareMode && <VersionChangesLegend diagram={diagram} />}
               <DiagramSurface
                 policy={writePolicy(interactionMode.canEditCanvas)}
                 readingDirection={diagram.direction ?? "LR"}
@@ -335,6 +339,7 @@ const Canvas = (props: CanvasProps = {}) => {
             focusMode={props.focusMode}
             onToggleFocusMode={props.onToggleFocusMode}
             chat={chat}
+            showChat={props.showChat !== false}
             showElementPanel={controller.showElementPanel}
             visualState={visualState}
             selectedNodes={selectedNodes}

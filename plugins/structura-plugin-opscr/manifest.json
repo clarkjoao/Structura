@@ -1,0 +1,19 @@
+{
+  "id": "structura-plugin-opscr",
+  "name": "opscr",
+  "version": "0.16.0",
+  "author": "Structura",
+  "description": "Import and export opscr manifests, or edit a folder of them beside a diagram that follows",
+  "apiVersion": "^1.15",
+  "capabilities": [
+    "io:importers",
+    "io:exporters",
+    "ui:panels",
+    "diagram:read",
+    "diagram:write",
+    "events:diagram",
+    "storage",
+    "files:folder",
+    "llm:context"
+  ]
+}

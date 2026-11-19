@@ -4,7 +4,9 @@ import type { VersionDiff } from "../model/diagram.types";
 import {
   canMoveNodeInSceneMode,
   computeMergePreview,
+  countVersionChanges,
   resolveVersionSnapshot,
+  versionChanges,
   versionHasDiff,
 } from "./version.utils";
 
@@ -282,7 +284,7 @@ describe("canMoveNodeInSceneMode", () => {
     expect(canMoveNodeInSceneMode(d, "sceneNode")).toBe(true);
   });
 
-  it("returns false for a base snapshot node while a scene is active", () => {
+  it("returns true for a base snapshot node while a scene is active (its move is a layout override)", () => {
     const d = emptyDiagram({
       activeVersionId: "s1",
       snapshot: {
@@ -307,6 +309,81 @@ describe("canMoveNodeInSceneMode", () => {
         },
       },
     });
-    expect(canMoveNodeInSceneMode(d, "baseNode")).toBe(false);
+    expect(canMoveNodeInSceneMode(d, "baseNode")).toBe(true);
+  });
+});
+
+describe("versionChanges", () => {
+  const sys = (id: string, extra: Record<string, unknown> = {}) =>
+    ({
+      id,
+      name: id.toUpperCase(),
+      type: "system",
+      description: "",
+      parentId: null,
+      ...extra,
+    }) as never;
+  const diagram = () =>
+    emptyDiagram({
+      snapshot: {
+        components: {
+          api: sys("api"),
+          cache: sys("cache"),
+          moved: sys("moved"),
+          same: sys("same"),
+        },
+        connections: {
+          c1: { id: "c1", sourceId: "api", targetId: "cache", label: "reads" },
+          c2: { id: "c2", sourceId: "api", targetId: "moved", label: "calls" },
+        },
+        flows: {},
+        iconLibrary: {},
+      },
+      versions: {
+        v: {
+          id: "v",
+          name: "V",
+          color: "#000",
+          createdAt: 0,
+          addedComponents: { topic: sys("topic") },
+          addedConnections: {
+            c3: { id: "c3", sourceId: "api", targetId: "topic", label: "publishes" },
+          },
+          modifiedComponents: {
+            api: sys("api", { description: "Publishes events" }),
+            // A copy equal to its base (made by a move) is no change.
+            same: sys("same"),
+          },
+          modifiedConnections: {
+            c2: { id: "c2", sourceId: "api", targetId: "moved", label: "calls" },
+          },
+          removedComponentIds: ["cache", "gone-from-base"],
+          removedConnectionIds: ["c1"],
+          nodeLayouts: { moved: { elementId: "moved", x: 500, y: 500 } },
+        },
+      },
+    });
+
+  it("reads added, changed (with the fields) and removed against the base", () => {
+    const changes = versionChanges(diagram(), "v")!;
+    expect([...changes.added.components]).toEqual(["topic"]);
+    expect([...changes.added.connections]).toEqual(["c3"]);
+    expect([...changes.changed.keys()]).toEqual(["api"]);
+    expect(changes.changed.get("api")).toEqual([
+      { field: "description", base: "", version: "Publishes events" },
+    ]);
+    expect(changes.removed).toEqual({ components: ["cache"], connections: ["c1"] });
+    expect(countVersionChanges(changes, diagram().snapshot.connections)).toEqual({
+      added: 1,
+      changed: 1,
+      removed: 1,
+      connections: 2,
+    });
+  });
+
+  it("is null for a Version that is not there, and the same object while nothing changed", () => {
+    const d = diagram();
+    expect(versionChanges(d, "nope")).toBeNull();
+    expect(versionChanges(d, "v")).toBe(versionChanges(d, "v"));
   });
 });

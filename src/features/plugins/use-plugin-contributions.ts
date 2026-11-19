@@ -1,13 +1,18 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { ExporterContribution, ImporterContribution, PluginPanelSlot } from "./plugin.types";
 import type { PanelContribution } from "./plugin.types";
-import { getIoRegistrySnapshot, subscribeIoRegistry } from "./io-registry";
+import {
+  getIoRegistrySnapshot,
+  subscribeIoRegistry,
+  type RegisteredWorkspaceImporter,
+} from "./io-registry";
 import { getPanelRegistrySnapshot, subscribePanelRegistry } from "./panel-registry";
 
-/** Reactive list of plugin importers/exporters for import/export UI. */
+/** Reactive list of plugin importers/exporters (and workspace importers) for import/export UI. */
 export function usePluginIoContributions(): {
   importers: ImporterContribution[];
   exporters: ExporterContribution[];
+  workspaceImporters: RegisteredWorkspaceImporter[];
 } {
   return useSyncExternalStore(subscribeIoRegistry, getIoRegistrySnapshot);
 }

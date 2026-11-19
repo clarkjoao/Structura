@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Upload, FileJson, FolderOpen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Upload, FileJson, FolderOpen, FolderInput, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,10 @@ import { usePluginIoContributions } from "@/features/plugins/use-plugin-contribu
 import { resolveLocalizedText } from "@/features/plugins/localized-text";
 import { runPluginImport } from "@/features/plugins/run-plugin-import";
 import { isImportableDiagramFileName } from "@/pages/import-folder-path";
+import type { RegisteredWorkspaceImporter } from "@/features/plugins/io-registry";
+import { getPanelRegistrySnapshot } from "@/features/plugins/panel-registry";
+import { setOpenPaneId } from "@/features/plugins/components/document-pane-state";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 
 interface ImportModalProps {
   open: boolean;
@@ -58,8 +63,49 @@ export function ImportModal({
     useWorkspaceImport({
       targetFolderId,
     });
-  const { importers } = usePluginIoContributions();
+  const { importers, workspaceImporters } = usePluginIoContributions();
   const pluginImporters = allowPluginImporters ? importers : [];
+  const navigate = useNavigate();
+  const [running, setRunning] = useState<string | null>(null);
+
+  /**
+   * A workspace importer sets a whole source up (plugin API 1.14): it runs from this click, and
+   * the diagram it names opens — with the plugin's pane beside it when it asks for one.
+   */
+  const runWorkspaceImporter = useCallback(
+    async (importer: RegisteredWorkspaceImporter) => {
+      setRunning(importer.id);
+      try {
+        const result = await importer.run({
+          locale: i18n.language,
+          folderId: targetFolderId ?? null,
+        });
+        if (!result) return;
+        const diagramId = typeof result.diagramId === "string" ? result.diagramId : "";
+        if (!useDiagramStore.getState().diagrams[diagramId]) return;
+        onOpenChange(false);
+        useDiagramStore.getState().openDiagram(diagramId);
+        navigate(`/model/${diagramId}`);
+        // Only a document pane of the same plugin.
+        const pane = getPanelRegistrySnapshot().find(
+          (panel) =>
+            panel.id === result.openPane &&
+            panel.slot === "document-pane" &&
+            importer.ownsPanel(panel.id),
+        );
+        if (pane) setOpenPaneId(pane.id);
+      } catch (error) {
+        toast.error(
+          t("import.setupFailed", {
+            reason: error instanceof Error ? error.message : String(error),
+          }),
+        );
+      } finally {
+        setRunning(null);
+      }
+    },
+    [i18n.language, targetFolderId, onOpenChange, navigate, t],
+  );
   const [activeImporter, setActiveImporter] = useState<ImporterContribution | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -220,6 +266,41 @@ export function ImportModal({
             </DialogTitle>
             <DialogDescription>{t("import.description")}</DialogDescription>
           </DialogHeader>
+
+          {workspaceImporters.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t("import.setup")}
+              </p>
+              {workspaceImporters.map((importer) => (
+                <button
+                  key={importer.id}
+                  type="button"
+                  disabled={running !== null}
+                  onClick={() => void runWorkspaceImporter(importer)}
+                  className="flex w-full items-center gap-3 rounded-lg border border-border p-3 text-left transition-all hover:border-primary/50 hover:bg-muted/50 disabled:opacity-60"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    {running === importer.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FolderInput className="h-4 w-4" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                      {resolveLocalizedText(importer.label, i18n.language)}
+                    </p>
+                    {importer.description && (
+                      <p className="text-xs text-muted-foreground">
+                        {resolveLocalizedText(importer.description, i18n.language)}
+                      </p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
 
           {hasPlugins && (
             <div className="space-y-2">

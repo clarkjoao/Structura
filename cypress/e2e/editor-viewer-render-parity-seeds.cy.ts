@@ -24,6 +24,8 @@
  * author has open and a link has to draw the same one.
  */
 const DIAGRAM_STORE_LOCAL_STORAGE_KEY = "structura_diagram-store";
+/** `CANVAS_PREFERENCES_KEY`: the canvas preferences, read on load. */
+const CANVAS_PREFERENCES_KEY = "structura:canvas-preferences";
 
 /** Below this, two coordinates are the same point: float noise, not a difference. */
 const TOLERANCE_PX = 0.01;
@@ -274,9 +276,15 @@ describe("every way of reading a diagram draws what the editor draws", () => {
       sceneDiagramId = diagramIds[0];
       openInScene(diagrams[sceneDiagramId]);
       // A workspace written to localStorage is a seed: the next load adopts it.
-      cy.window().then((win) =>
-        win.localStorage.setItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY, JSON.stringify(stored)),
-      );
+      cy.window().then((win) => {
+        win.localStorage.setItem(DIAGRAM_STORE_LOCAL_STORAGE_KEY, JSON.stringify(stored));
+        // The changes view outlines what the scene changes and draws what it removes as ghosts,
+        // in the editor only: off, so the editor draws the scene as a reader sees it.
+        win.localStorage.setItem(
+          CANVAS_PREFERENCES_KEY,
+          JSON.stringify({ state: { showVersionChanges: false }, version: 0 }),
+        );
+      });
     });
 
     cy.then(() => {

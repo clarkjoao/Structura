@@ -4,7 +4,7 @@ import { useStoreApi, type Node } from "@xyflow/react";
 import type { Component } from "@/features/diagram";
 import type { DiagramVersionState } from "../nodes/useCanvasNodes";
 import type { Flow } from "@/features/diagram";
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore, versionChanges as readVersionChanges } from "@/features/diagram";
 import { useCanvasEdges } from "../edges/useCanvasEdges";
 import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDerivations";
 import { useCanvasHandleReorder } from "../edges/useCanvasHandleReorder";
@@ -19,6 +19,8 @@ import { useConnectionInternalsSync } from "./useConnectionInternalsSync";
 import { useLocalNodes } from "./useLocalNodes";
 import { useSyncSelectionControls } from "../selection/selectionControls";
 import { useFlowMode } from "../flow/FlowModeContext";
+import { useCanvasPreferencesStore } from "../preferences";
+import { versionGhostView } from "../core/versionGhosts";
 
 type FlowSlice = ReturnType<typeof import("./useCanvasFlowState").useCanvasFlowState>;
 type CompareSlice = ReturnType<typeof import("./useCanvasCompareState").useCanvasCompareState>;
@@ -176,6 +178,34 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     ],
   );
 
+  /*
+   * The changes view: with a Version active (and no comparison), what it changes against the
+   * base — outlines for added and changed, ghosts for what it removes. Drawn only, never stored.
+   */
+  const showVersionChanges = useCanvasPreferencesStore((state) => state.showVersionChanges);
+  const changesVersionId =
+    showVersionChanges && !compareState.isCompareMode ? (diagram?.activeVersionId ?? null) : null;
+  const versionChanges = useMemo(
+    () => (diagram && changesVersionId ? readVersionChanges(diagram, changesVersionId) : null),
+    // The Version object and the base snapshot are what the changes depend on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [changesVersionId, diagram?.versions, diagram?.snapshot],
+  );
+  const ghostView = useMemo(
+    () =>
+      diagram && versionChanges
+        ? versionGhostView(
+            diagram,
+            versionChanges,
+            new Set(Object.keys(resolvedComponentsRef ?? {})),
+            resolveNodeDescriptor,
+            textsVisible,
+          )
+        : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [versionChanges, resolvedComponentsRef, diagram?.nodeLayouts, textsVisible],
+  );
+
   // Edges into a compact container's children are drawn on the container —
   // the same remap the view applies for the reader (`remapConnectionsToVisible`).
   const drawnConnections = useMemo(
@@ -250,6 +280,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     setNoteInlineEditingId,
     setJsonViewerInlineEditingId,
     updateComponent: actions.updateComponent,
+    versionChanges,
+    ghostView,
   });
 
   const lastUndoRedoAt = useDiagramStore((s) => s._lastUndoRedoAt);
@@ -303,9 +335,25 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     [reactFlowStore],
   );
 
+  // Ghosts are drawn only: React Flow measures them, but nothing of theirs reaches the store.
+  const ghostIds = useMemo(
+    () => new Set(ghostView?.nodes.map((n) => n.component.id) ?? []),
+    [ghostView],
+  );
+  const onLiveNodesChange = useCallback<typeof innerOnNodesChange>(
+    (changes) => {
+      const live =
+        ghostIds.size === 0
+          ? changes
+          : changes.filter((change) => !("id" in change) || !ghostIds.has(change.id));
+      if (live.length > 0) innerOnNodesChange(live);
+    },
+    [ghostIds, innerOnNodesChange],
+  );
+
   const { nodes, onNodesChange } = useLocalNodes(
     storeNodes,
-    innerOnNodesChange,
+    onLiveNodesChange,
     localNodesRef,
     onSelectionFromChanges,
     diagram,
@@ -328,6 +376,8 @@ export function useCanvasGraphState(params: UseCanvasGraphStateParams) {
     coverage: flowState.coverage,
     visibleTags,
     visibleTagsKey,
+    versionChanges,
+    ghostView,
   });
 
   useConnectionInternalsSync(connectionCountPerNode, updateNodeInternals);

@@ -5,6 +5,7 @@ export type {
   PluginManifest,
   ImporterContribution,
   ExporterContribution,
+  PluginExportFile,
   PluginPanelSlot,
   DiagramSnapshot,
   PluginComponentSnapshot,

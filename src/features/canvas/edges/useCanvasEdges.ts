@@ -1,13 +1,14 @@
 import { useMemo, useRef, type CSSProperties } from "react";
 import type { Edge } from "@xyflow/react";
-import type { Diagram, DiagramModel, FlowStep } from "@/features/diagram";
+import type { Diagram, DiagramModel, FlowStep, VersionChanges } from "@/features/diagram";
 import { useFlowMode } from "../flow/FlowModeContext";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
 import { getPendingEdgeIds, useLLMStore } from "@/features/llm";
 import { writePolicy } from "../core/canvasInteractionPolicy";
 import { projectEdges } from "../core/projectDiagram";
 import type { ViewSnapshot } from "../core/resolveViewSnapshot";
-import { applyEditorEdgeOverlays } from "./edgeOverlays";
+import { applyEditorEdgeOverlays, versionGhostEdgeOverlay } from "./edgeOverlays";
+import { buildEdgeHandleAssignments } from "./connectionDerivations";
 
 /** The projection's policy on the editor path; interactivity is React Flow's, per canvas. */
 const EDITOR_PROJECTION = writePolicy(true);
@@ -27,6 +28,10 @@ interface UseCanvasEdgesParams {
   coverage: Pick<CoverageInfo, "edgeFlows"> | null;
   visibleTags: Set<string> | null;
   visibleTagsKey: string | null;
+  /** The changes view: what the active Version changes, when it is on. */
+  versionChanges?: VersionChanges | null;
+  /** The changes view: the base connections the active Version removes, drawn as ghosts. */
+  ghostView?: ViewSnapshot | null;
 }
 
 const EMPTY_EDGE_LIST: Edge[] = [];
@@ -84,6 +89,8 @@ export function useCanvasEdges({
   coverage,
   visibleTags: _visibleTags,
   visibleTagsKey,
+  versionChanges = null,
+  ghostView = null,
 }: UseCanvasEdgesParams): Edge[] {
   void _visibleTags;
   const { isRecording } = useFlowMode();
@@ -157,6 +164,11 @@ export function useCanvasEdges({
         compareConnectionOpacity,
         dimmedByTag: isEndpointHiddenByTag(base.source) || isEndpointHiddenByTag(base.target),
         pending: pendingEdgeIds.has(base.id),
+        ...(versionChanges?.added.connections.has(base.id)
+          ? { versionChange: "added" as const }
+          : versionChanges?.changed.has(base.id)
+            ? { versionChange: "changed" as const }
+            : {}),
       });
 
       // Reuse the previous nested objects when their contents did not move, so
@@ -209,6 +221,23 @@ export function useCanvasEdges({
       return built;
     });
 
+    // The changes view's ghost edges: projected from the base, dashed and inert.
+    if (ghostView) {
+      const assignments = buildEdgeHandleAssignments(
+        ghostView.shownConnections,
+        {},
+        ghostView.components,
+      );
+      for (const ghost of projectEdges(
+        ghostView,
+        { diagram, isPlaying, isRecording, activeStep, flowHighlight, flowBadges, coverage },
+        EDITOR_PROJECTION,
+        assignments,
+      )) {
+        nextEdges.push(versionGhostEdgeOverlay(ghost));
+      }
+    }
+
     const prevArr = prevArrayRef.current;
     if (
       nextEdges.length === prevArr.length &&
@@ -238,5 +267,7 @@ export function useCanvasEdges({
     coverage,
     visibleTagsSet,
     pendingPreviews,
+    versionChanges,
+    ghostView,
   ]);
 }

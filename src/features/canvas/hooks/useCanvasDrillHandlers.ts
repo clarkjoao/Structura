@@ -18,6 +18,7 @@ import {
   DB_TABLE_COLLAPSED_W,
   DB_TABLE_COLLAPSED_H,
 } from "../canvas.constants";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 
 const DB_TABLE_EXPAND_FIXED_H = 32 + 22 + 20 + 2;
 const DB_TABLE_EXPAND_ROW_H = 24;
@@ -65,6 +66,8 @@ export function useCanvasDrillHandlers({
       const r = getCachedCanvasSnapshot(d);
       const comp = r.components[elementId];
       if (!comp?.linkedDiagramId || !allDiagramsRef.current[comp.linkedDiagramId]) return;
+      // The initiative the user is looking at stays selected in the diagram they open.
+      useDiagramStore.getState().carryActiveVersionKey(d.id, comp.linkedDiagramId);
 
       if (onDrillDownToDiagram) {
         onDrillDownToDiagram(comp.linkedDiagramId);

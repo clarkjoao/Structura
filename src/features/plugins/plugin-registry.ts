@@ -25,6 +25,8 @@ import { getBundledPlugins } from "./bundled-plugins";
 
 export const PLUGIN_INSTALL_RECORDS_KEY = "plugins:installed";
 export const PLUGIN_BUNDLED_DISABLED_KEY = "plugins:bundled-disabled";
+/** Ids of default-off bundled plugins the user turned on. */
+const PLUGIN_BUNDLED_ENABLED_KEY = "plugins:bundled-enabled";
 
 export type PluginSource = "user" | "bundled";
 
@@ -34,6 +36,8 @@ export interface PluginRuntimeState {
   errored: boolean;
   active: boolean;
   installedAt: number;
+  /** A bundled plugin the build forbids disabling (the toggle is hidden/disabled). */
+  locked: boolean;
   /** "bundled" = shipped in this build (no uninstall); "user" = uploaded and persisted. */
   source: PluginSource;
 }
@@ -55,6 +59,10 @@ let records: PluginInstallRecord[] = [];
 let bundledRecords: PluginInstallRecord[] = [];
 /** Ids of bundled plugins the user turned off. Persisted under PLUGIN_BUNDLED_DISABLED_KEY. */
 let bundledDisabled = new Set<string>();
+/** Ids of default-off bundled plugins the user turned on. Persisted under PLUGIN_BUNDLED_ENABLED_KEY. */
+let bundledEnabled = new Set<string>();
+/** Build-time options per bundled plugin id. */
+const bundledOptions = new Map<string, { defaultEnabled: boolean; locked: boolean }>();
 const activePlugins = new Map<string, ActivePlugin>();
 
 const listeners = new Set<() => void>();
@@ -67,6 +75,7 @@ function toRuntimeState(record: PluginInstallRecord, source: PluginSource): Plug
     errored: record.errored,
     active: activePlugins.has(record.manifest.id),
     installedAt: record.installedAt,
+    locked: source === "bundled" && (bundledOptions.get(record.manifest.id)?.locked ?? false),
     source,
   };
 }
@@ -111,6 +120,7 @@ async function persistRecords(): Promise<void> {
 
 async function persistBundledDisabled(): Promise<void> {
   await storagePort.save(PLUGIN_BUNDLED_DISABLED_KEY, [...bundledDisabled]);
+  await storagePort.save(PLUGIN_BUNDLED_ENABLED_KEY, [...bundledEnabled]);
 }
 
 async function activateFromDefinition(
@@ -247,10 +257,13 @@ export async function uninstallPlugin(pluginId: string): Promise<void> {
 export async function setBundledPluginEnabled(pluginId: string, enabled: boolean): Promise<void> {
   const record = bundledRecords.find((r) => r.manifest.id === pluginId);
   if (!record || record.enabled === enabled) return;
+  // A locked plugin is always on: the build says it cannot be turned off.
+  if (!enabled && bundledOptions.get(pluginId)?.locked) return;
   record.enabled = enabled;
 
   if (enabled) {
     bundledDisabled.delete(pluginId);
+    bundledEnabled.add(pluginId);
     record.errored = false;
     try {
       await activateRecord(record);
@@ -260,6 +273,7 @@ export async function setBundledPluginEnabled(pluginId: string, enabled: boolean
     }
   } else {
     bundledDisabled.add(pluginId);
+    bundledEnabled.delete(pluginId);
     await deactivatePlugin(pluginId);
   }
   await persistBundledDisabled();
@@ -274,9 +288,12 @@ export async function setBundledPluginEnabled(pluginId: string, enabled: boolean
 async function initializeBundledPlugins(): Promise<void> {
   const disabledStored = await storagePort.load<string[]>(PLUGIN_BUNDLED_DISABLED_KEY);
   bundledDisabled = new Set(Array.isArray(disabledStored) ? disabledStored : []);
+  const enabledStored = await storagePort.load<string[]>(PLUGIN_BUNDLED_ENABLED_KEY);
+  bundledEnabled = new Set(Array.isArray(enabledStored) ? enabledStored : []);
   bundledRecords = [];
+  bundledOptions.clear();
 
-  for (const { dir, code } of getBundledPlugins()) {
+  for (const { dir, code, defaultEnabled = true, locked = false } of getBundledPlugins()) {
     let manifest: PluginManifest;
     try {
       const definition = executePluginCode(code);
@@ -291,7 +308,13 @@ async function initializeBundledPlugins(): Promise<void> {
       continue;
     }
 
-    const enabled = !bundledDisabled.has(manifest.id);
+    bundledOptions.set(manifest.id, { defaultEnabled, locked });
+    // Locked: always on. Otherwise the user's choice wins; with none, the build's default.
+    const enabled =
+      locked ||
+      (bundledDisabled.has(manifest.id)
+        ? false
+        : bundledEnabled.has(manifest.id) || defaultEnabled);
     const record: PluginInstallRecord = { manifest, code, enabled, errored: false, installedAt: 0 };
     bundledRecords.push(record);
 
@@ -348,6 +371,8 @@ export async function resetPluginRegistryForTests(): Promise<void> {
   records = [];
   bundledRecords = [];
   bundledDisabled = new Set();
+  bundledEnabled = new Set();
+  bundledOptions.clear();
   storagePort = defaultStorage;
   rebuildSnapshot();
 }

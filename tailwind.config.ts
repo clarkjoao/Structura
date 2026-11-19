@@ -9,6 +9,8 @@ export default {
     "./components/**/*.{ts,tsx}",
     "./app/**/*.{ts,tsx}",
     "./src/**/*.{ts,tsx}",
+    // Built-in plugins render with the host's classes.
+    "./plugins/*/src/**/*.{ts,tsx}",
   ],
   prefix: "",
   theme: {

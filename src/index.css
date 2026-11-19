@@ -318,6 +318,43 @@
     border-radius: inherit;
   }
 
+  .node-version-conflict {
+    outline: 2px dashed #f59e0b;
+    outline-offset: 3px;
+    border-radius: inherit;
+  }
+
+  /* The changes view (a Version against the base). */
+  .node-version-removed {
+    opacity: 0.45;
+    outline: 2px dashed #ef4444;
+    outline-offset: 3px;
+    border-radius: inherit;
+    filter: grayscale(0.6);
+  }
+
+  .node-version-removed :is(h1, h2, h3, h4, p, span) {
+    text-decoration: line-through;
+    text-decoration-color: #ef4444;
+  }
+
+  .edge-version-added .react-flow__edge-path {
+    stroke: #22c55e;
+  }
+
+  .edge-version-changed .react-flow__edge-path {
+    stroke: #f59e0b;
+  }
+
+  .edge-version-removed {
+    opacity: 0.5;
+  }
+
+  .edge-version-removed .react-flow__edge-path {
+    stroke: #ef4444;
+    stroke-dasharray: 6 4;
+  }
+
   .edge-pending .react-flow__edge-path {
     stroke: #22c55e;
     stroke-dasharray: 6 4;

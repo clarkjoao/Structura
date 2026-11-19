@@ -21,12 +21,18 @@ function structuraBundledPlugins(): Plugin {
     },
     load(id) {
       if (id !== BUNDLED_RESOLVED_ID) return;
+      // Each entry is "<dir>" or "<dir>:<flag>[:<flag>]" with flags `off` (starts disabled)
+      // and `locked` (cannot be disabled), e.g. "structura-plugin-opscr:off,structura-plugin-leanix:locked".
       const selected = (process.env.STRUCTURA_BUNDLED_PLUGINS ?? "")
         .split(",")
-        .map((name) => name.trim())
-        .filter(Boolean);
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+        .map((entry) => {
+          const [dir, ...flags] = entry.split(":");
+          return { dir, defaultEnabled: !flags.includes("off"), locked: flags.includes("locked") };
+        });
 
-      const bundled = selected.map((dir) => {
+      const bundled = selected.map(({ dir, defaultEnabled, locked }) => {
         const distPath = path.resolve(import.meta.dirname, "plugins", dir, "dist", "plugin.js");
         if (!fs.existsSync(distPath)) {
           throw new Error(
@@ -34,7 +40,7 @@ function structuraBundledPlugins(): Plugin {
               `Build it first, or use \`npm run build:plugins -- ${dir}\`.`,
           );
         }
-        return { dir, code: fs.readFileSync(distPath, "utf8") };
+        return { dir, code: fs.readFileSync(distPath, "utf8"), defaultEnabled, locked };
       });
 
       // JSON.stringify safely escapes the IIFE source into a string literal in the app bundle.

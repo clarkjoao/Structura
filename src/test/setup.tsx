@@ -35,4 +35,10 @@ vi.mock("@/lib/monaco/LazyMonacoEditor", () => ({
       onChange={(event) => onChange?.(event.target.value)}
     />
   ),
+  LazyMonacoDiffEditor: ({ original, modified }: { original?: string; modified?: string }) => (
+    <div data-testid="monaco-diff-stand-in">
+      <pre data-testid="monaco-diff-original">{original}</pre>
+      <pre data-testid="monaco-diff-modified">{modified}</pre>
+    </div>
+  ),
 }));

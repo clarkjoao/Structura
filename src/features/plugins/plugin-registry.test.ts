@@ -1,3 +1,4 @@
+import type { BundledPlugin } from "./bundled-plugins";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InMemoryAdapter } from "@/infrastructure/persistence";
 import { NODE_TYPE_REGISTRY } from "@/features/canvas/nodes/node-types/registry";
@@ -18,7 +19,7 @@ import type { PluginInstallRecord } from "./plugin.types";
 
 // The bundled ("built-in") layer is fed from a build-only virtual module; mock its accessor so
 // tests can inject fixtures. Default is empty, so the suites above see no built-in plugins.
-const bundledFixture = vi.hoisted(() => ({ list: [] as { dir: string; code: string }[] }));
+const bundledFixture = vi.hoisted(() => ({ list: [] as BundledPlugin[] }));
 vi.mock("./bundled-plugins", () => ({
   getBundledPlugins: () => bundledFixture.list,
 }));
@@ -253,7 +254,7 @@ function bundledCode(id: string, importerId: string): string {
 }
 
 /** Set the built-in fixture and boot the registry against it from a clean slate. */
-async function bootWithBundled(list: { dir: string; code: string }[]): Promise<void> {
+async function bootWithBundled(list: BundledPlugin[]): Promise<void> {
   bundledFixture.list = list;
   await resetPluginRegistryForTests();
   await initializePluginRegistry(port);
@@ -328,5 +329,38 @@ describe("bundled (built-in) plugins", () => {
     await uninstallPlugin(BUNDLED_ID);
     expect(getImporterContribution("bundled-importer")).toBeDefined();
     expect(getPluginRegistrySnapshot()).toHaveLength(1);
+  });
+
+  it("starts a default-off bundled plugin disabled, and remembers turning it on", async () => {
+    const entry = {
+      dir: "bundled",
+      code: bundledCode(BUNDLED_ID, "bundled-importer"),
+      defaultEnabled: false,
+    };
+    await bootWithBundled([entry]);
+    expect(getImporterContribution("bundled-importer")).toBeUndefined();
+    expect(getPluginRegistrySnapshot()[0]).toMatchObject({
+      enabled: false,
+      active: false,
+      locked: false,
+    });
+
+    await setBundledPluginEnabled(BUNDLED_ID, true);
+    expect(getImporterContribution("bundled-importer")).toBeDefined();
+
+    await resetPluginRegistryForTests();
+    await initializePluginRegistry(port);
+    expect(getImporterContribution("bundled-importer")).toBeDefined();
+  });
+
+  it("keeps a locked bundled plugin on and refuses to disable it", async () => {
+    await bootWithBundled([
+      { dir: "bundled", code: bundledCode(BUNDLED_ID, "bundled-importer"), locked: true },
+    ]);
+    expect(getPluginRegistrySnapshot()[0]).toMatchObject({ enabled: true, locked: true });
+
+    await setBundledPluginEnabled(BUNDLED_ID, false);
+    expect(getImporterContribution("bundled-importer")).toBeDefined();
+    expect(getPluginRegistrySnapshot()[0]).toMatchObject({ enabled: true });
   });
 });

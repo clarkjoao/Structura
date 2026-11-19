@@ -12,7 +12,17 @@ export default tseslint.config(
   // workspace does not depend on — linting them here triggers "rule not found"
   // errors that no source change can fix. `.gitignore` already excludes them
   // from version control.
-  { ignores: ["dist", "cypress", ".claude/worktrees", "**/dist", "extensions/**/dist"] },
+  {
+    ignores: [
+      "dist",
+      "dist-embed",
+      "cypress",
+      ".claude/worktrees",
+      "**/dist",
+      "extensions/**/dist",
+      "extensions/*/media",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

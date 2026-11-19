@@ -8,7 +8,7 @@ import { STRUCTURAL_MUTATION_MARKER } from "../store.constants";
 import { pushHistory } from "./history.slice";
 import { getActiveDiagram, touchDiagram } from "../helpers/get-active-diagram";
 import { publishSewNotices } from "../helpers/publish-sew-notices";
-import { resolveActiveVersion } from "../helpers/version-helpers";
+import { resolveActiveVersion, writableConnection } from "../helpers/version-helpers";
 import { mutateRemoveConnectionInVersion } from "../../utils/version-mutations";
 import { canBeConnectionSource, canBeConnectionTarget } from "../../model/connection-rules";
 import { swapConnectionEnds } from "../../utils/connection-semantics-migration";
@@ -109,9 +109,9 @@ export const connectionsSlice = (
         if (targetType !== undefined && !canBeConnectionTarget(targetType)) return;
       }
       const scene = resolveActiveVersion(d);
-      const inScene = !!(scene && scene.addedConnections[id]);
+      const inScene = !!(scene && (scene.addedConnections[id] || scene.modifiedConnections?.[id]));
       if (!inScene) pushHistory(state);
-      const conn = inScene ? scene!.addedConnections[id] : d.snapshot.connections[id];
+      const conn = writableConnection(d, scene, id)?.connection;
       if (conn) Object.assign(conn, patch);
       touchDiagram(d);
     });
@@ -127,15 +127,19 @@ export const connectionsSlice = (
       const d = getActiveDiagram(state);
       if (!d) return;
       const scene = resolveActiveVersion(d);
-      const inScene = !!(scene && scene.addedConnections[id]);
-      const conn = inScene ? scene!.addedConnections[id] : d.snapshot.connections[id];
-      if (!conn) return;
+      const existing =
+        scene?.addedConnections[id] ??
+        scene?.modifiedConnections?.[id] ??
+        d.snapshot.connections[id];
+      if (!existing) return;
       const components = { ...d.snapshot.components, ...(scene?.addedComponents ?? {}) };
-      const newSourceType = components[conn.targetId]?.type;
-      const newTargetType = components[conn.sourceId]?.type;
+      const newSourceType = components[existing.targetId]?.type;
+      const newTargetType = components[existing.sourceId]?.type;
       if (newSourceType !== undefined && !canBeConnectionSource(newSourceType)) return;
       if (newTargetType !== undefined && !canBeConnectionTarget(newTargetType)) return;
       pushHistory(state, STRUCTURAL_MUTATION_MARKER);
+      const conn = writableConnection(d, scene, id)?.connection;
+      if (!conn) return;
       swapConnectionEnds(conn, { components, connections: {}, edgeLayouts: d.edgeLayouts });
       swapped = true;
       touchDiagram(d);
