@@ -158,16 +158,27 @@ export default function WorkspacePage() {
           const exporter = getExporterContribution(exporterId);
           if (!exporter || !snapshot) continue;
           const content = await exporter.export(snapshot);
-          files.push({
-            filename: `${baseName}.${exporter.extension}`,
-            content,
-            mime: exporter.mime,
-          });
+          if (typeof content === "string") {
+            files.push({
+              filename: `${baseName}.${exporter.extension}`,
+              content,
+              mime: exporter.mime,
+            });
+            continue;
+          }
+          // A multi-file export (API 1.15) keeps its own folder layout, under one folder.
+          for (const file of content) {
+            files.push({
+              filename: `${baseName}/${file.path.replace(/^\/+/, "")}`,
+              content: file.content,
+              mime: exporter.mime,
+            });
+          }
         }
 
         if (files.length === 1) {
           const [file] = files;
-          downloadFile(file.content, file.filename, file.mime);
+          downloadFile(file.content, file.filename.split("/").pop() ?? file.filename, file.mime);
           return;
         }
 

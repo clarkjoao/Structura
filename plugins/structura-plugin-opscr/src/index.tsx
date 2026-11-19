@@ -2,14 +2,17 @@
  * Structura opscr plugin — opscr architecture-as-code manifests in Structura.
  *
  * - Importer: one `*.opscr.yaml` file → a laid-out technical diagram.
+ * - Exporter: a drawn diagram → opscr YAML (one multi-document file).
  * - Document pane (API 1.4): bind the active diagram to a folder of manifests, edit them
  *   beside the canvas, and the diagram follows as you type.
  * - Workspace importer (API 1.14): set a whole folder up from the workspace home.
+ * - Workspace exporter: save a bound folder's current diagram state as opscr manifests.
  *
  * Build: npm link opscr && npm run build
  */
 import type { StructuraPluginGlobal } from "./types/plugin.types";
 import { canImportOpscr, importOpscr } from "./import-opscr";
+import { opscrExporter } from "./export-opscr";
 import { createOpscrPane } from "./pane/OpscrPane";
 import { createChatContext } from "./chat-context";
 import { createWorkspaceImport, PANE_ID } from "./workspace-import";
@@ -26,8 +29,9 @@ window.StructuraPlugin.define({
     name: "opscr",
     version: "0.16.0",
     author: "Structura",
-    description: "Import opscr manifests, or edit a folder of them beside a diagram that follows",
-    apiVersion: "^1.14",
+    description:
+      "Import and export opscr manifests, or edit a folder of them beside a diagram that follows",
+    apiVersion: "^1.15",
     capabilities: [
       "io:importers",
       "ui:panels",
@@ -47,6 +51,8 @@ window.StructuraPlugin.define({
       canImport: canImportOpscr,
       import: importOpscr,
     });
+    // Any drawn diagram as opscr YAML, from the export menu.
+    api.registerExporter(opscrExporter);
     api.registerPanel({
       id: PANE_ID,
       slot: "document-pane",

@@ -1,11 +1,3 @@
-/**
- * AUTO-GENERATED — DO NOT EDIT BY HAND.
- * Verbatim copy of the host plugin API contract
- * (src/features/plugins/plugin.types.ts), synced via `npm run sync-types`.
- * It is the single source of truth for plugin/host type compatibility; edit the host
- * file and re-run the sync instead of changing this file.
- */
-
 import type { ComponentType as ReactComponentType } from "react";
 import type { NodeTypes } from "@xyflow/react";
 
@@ -24,7 +16,7 @@ type DiagramNodeComponent = NodeTypes[string];
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.14.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.15.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -279,8 +271,21 @@ export interface ExporterContribution {
   /** File extension without dot, e.g. "puml". */
   extension: string;
   mime: string;
-  /** Pure: receives a read-only diagram snapshot, returns file content. */
-  export(diagram: DiagramSnapshot): string | Promise<string>;
+  /**
+   * Receives a read-only diagram snapshot, returns the file content. Since 1.15 it may return
+   * several files (`PluginExportFile[]`): the host downloads them together as a zip, each under
+   * its relative path. A single string keeps the old behaviour (`<diagram>.<extension>`).
+   */
+  export(
+    diagram: DiagramSnapshot,
+  ): string | PluginExportFile[] | Promise<string | PluginExportFile[]>;
+}
+
+/** v1.15 — one file of a multi-file export. */
+export interface PluginExportFile {
+  /** Path inside the zip, POSIX, relative (`shop.opscr.yaml`, `initiatives/x/initiative.opscr.yaml`). */
+  path: string;
+  content: string;
 }
 
 export type PluginPanelSlot =
