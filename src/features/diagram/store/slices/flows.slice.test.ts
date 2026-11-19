@@ -125,6 +125,43 @@ describe("flowsSlice — writing a flow one step at a time", () => {
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
+  it("forks after the last recorded step, leaving that step as it was", () => {
+    const store = createTestDiagramStore();
+    const { flowId } = openFlow(store);
+    const first = store.getState().recordFlowStep(flowId, { componentId: "n1" }, { kind: "trunk" });
+    if (!first.ok || !first.stepId) throw new Error("expected a step");
+
+    const fork = store
+      .getState()
+      .recordFlowCondition(flowId, { kind: "trunk" }, "paid?", ["yes", "no"]);
+
+    if (!fork.ok || !fork.stepId) throw new Error("expected a condition");
+    const flow = readFlow(store, flowId);
+    const labels = labelsOf(store, flowId);
+    expect(flow.steps[first.stepId]).toMatchObject({ type: "action", componentId: "n1" });
+    expect(flow.steps[first.stepId]!.next).toBe(fork.stepId);
+    expect(flow.steps[fork.stepId]).toMatchObject({ type: "condition", conditionLabel: "paid?" });
+    expect(labels[fork.stepId]).toBe("2");
+    expect(checkFlowInvariants(flow)).toEqual([]);
+
+    // The next click in the first way out fills its placeholder.
+    const cursor = { kind: "branch" as const, conditionStepId: fork.stepId, branchIndex: 0 };
+    const inBranch = store.getState().recordFlowStep(flowId, { componentId: "n2" }, cursor);
+    if (!inBranch.ok || !inBranch.stepId) throw new Error("expected a step");
+    expect(labelsOf(store, flowId)[inBranch.stepId]).toBe("2a");
+  });
+
+  it("turns a placeholder holding the end open into the fork, with no empty row left", () => {
+    const store = createTestDiagramStore();
+    const { flowId } = openFlow(store);
+    const emptyStepId = Object.keys(readFlow(store, flowId).steps)[0]!;
+
+    const fork = store.getState().recordFlowCondition(flowId, { kind: "trunk" }, "", ["a", "b"]);
+
+    expect(fork).toMatchObject({ ok: true, stepId: emptyStepId });
+    expect(Object.keys(readFlow(store, flowId).steps)).toHaveLength(3);
+  });
+
   it("refuses to record into a flow the active diagram does not have", () => {
     const store = createTestDiagramStore();
     openFlow(store);

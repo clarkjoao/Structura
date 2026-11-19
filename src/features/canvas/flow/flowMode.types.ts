@@ -111,6 +111,11 @@ export interface FlowModeState {
   onRecordEdgeClick: (edgeId: string, handleId?: string) => void;
   onRecordHandleClick: (nodeId: string, handleId: string) => void;
   onRecordUndo: () => void;
+  /**
+   * Forks the sequence being recorded with a condition and moves recording into
+   * its first way out. False when the store refused (the refusal is announced).
+   */
+  onRecordCondition: (conditionLabel: string, branchLabels: readonly string[]) => boolean;
 }
 
 export interface FlowModeProviderProps {

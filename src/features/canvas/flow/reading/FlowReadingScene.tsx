@@ -109,20 +109,20 @@ const FlowReadingScene = ({
     >
       {stackTrail.length > 0 && (
         <div
+          role="group"
           data-testid="flow-reading-stack"
-          className="mb-2.5 flex flex-wrap items-center gap-1.5 border-b border-dashed border-border pb-2.5 text-[11.5px] text-muted-foreground"
+          aria-label={t("flowReading.stack")}
+          title={t("flowReading.stack")}
+          className="mb-1.5 flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap text-[11.5px] text-muted-foreground"
         >
-          <span className="mr-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.1em] opacity-80">
-            {t("flowReading.stack")}
-          </span>
           {stackTrail.map((frame, index) => (
-            <span key={frame.frameId} className="flex items-center gap-1.5">
+            <span key={frame.frameId} className="flex min-w-0 items-center gap-1">
               {index > 0 && <span className="opacity-50">›</span>}
               <button
                 type="button"
                 data-testid="flow-reading-stack-frame"
                 onClick={onLeaveFrame}
-                className="rounded-[5px] bg-secondary px-1.5 py-px font-medium text-foreground transition-colors hover:bg-surface-hover"
+                className="truncate transition-colors hover:text-foreground hover:underline"
               >
                 {frame.name}
               </button>
@@ -131,44 +131,9 @@ const FlowReadingScene = ({
         </div>
       )}
 
-      {call && (
-        <div className="mb-2.5 flex flex-wrap items-center gap-2">
-          <span
-            data-testid="flow-reading-call"
-            className={`rounded-md px-2.5 py-1 font-mono text-[13px] font-semibold ${
-              isCondition
-                ? "border border-border bg-card text-foreground"
-                : "bg-primary text-primary-foreground shadow-md"
-            }`}
-          >
-            {call.label}
-          </span>
-          {call.direction && (
-            <span
-              data-testid="flow-reading-direction"
-              className="rounded bg-secondary px-1.5 py-[3px] text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground"
-            >
-              {t(call.direction === "response" ? "flowReading.response" : "flowReading.request")}
-            </span>
-          )}
-        </div>
-      )}
-
-      {target && (
-        <p data-testid="flow-reading-target" className="mb-2 text-xs text-muted-foreground">
-          <span
-            className="mr-1.5 inline-block h-[7px] w-[7px] rounded-[2px] align-middle"
-            style={{ background: target.color }}
-          />
-          {t("flowReading.at")}{" "}
-          <strong className="font-semibold text-foreground">{target.name}</strong>
-          {target.detail ? ` · ${target.detail}` : null}
-        </p>
-      )}
-
       <h2
         data-testid="flow-step-title"
-        className="mb-2 text-[18px] font-semibold leading-[1.3] text-foreground [font-weight:650] [text-wrap:pretty]"
+        className="mb-1.5 text-[18px] font-semibold leading-[1.3] text-foreground [font-weight:650] [text-wrap:pretty]"
       >
         {isCondition && (
           <span
@@ -180,6 +145,45 @@ const FlowReadingScene = ({
         )}
         {heading}
       </h2>
+
+      {(call || target || duration) && (
+        <p
+          data-testid="flow-reading-meta"
+          className="mb-2.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-[1.5] text-muted-foreground"
+        >
+          {call && (
+            <span
+              data-testid="flow-reading-call"
+              className={`font-mono text-[12px] font-semibold ${
+                isCondition ? "text-foreground" : "text-primary"
+              }`}
+            >
+              {call.label}
+            </span>
+          )}
+          {call?.direction === "response" && (
+            <span data-testid="flow-reading-direction">({t("flowReading.response")})</span>
+          )}
+          {(target || duration) && (
+            // One span, so the latency never wraps onto a line of its own behind a stray dot.
+            <span className="whitespace-nowrap">
+              {target && (
+                <span data-testid="flow-reading-target">
+                  {call ? "→ " : `${t("flowReading.at")} `}
+                  <span className="font-medium text-foreground">{target.name}</span>
+                  {target.detail ? ` · ${target.detail}` : null}
+                </span>
+              )}
+              {duration && (
+                <span data-testid="flow-reading-duration" className="font-mono text-[11px]">
+                  {target ? " · " : ""}
+                  {duration}
+                </span>
+              )}
+            </span>
+          )}
+        </p>
+      )}
 
       {isCondition && question && question !== heading && (
         <p className="mb-2 text-[14.5px] leading-[1.55] text-foreground [text-wrap:pretty]">
@@ -205,17 +209,6 @@ const FlowReadingScene = ({
         >
           {aside}
         </p>
-      )}
-
-      {duration && (
-        <div className="mt-3 flex items-center gap-2">
-          <span
-            data-testid="flow-reading-duration"
-            className="rounded-[5px] border border-primary/35 bg-card px-[7px] py-[3px] font-mono text-[11px] font-semibold text-primary"
-          >
-            {duration}
-          </span>
-        </div>
       )}
 
       {isCondition && readValues.length > 0 && (

@@ -117,12 +117,34 @@ describe("the call is the headline of the step being read", () => {
     expect(screen.getByTestId("flow-reading-call")).toHaveTextContent("POST /v2/score");
   });
 
-  it("says which way the payload runs", () => {
+  it("says nothing about direction for a request, the way every call reads by default", () => {
     const { read } = seed(CALL);
 
     renderRail(read(), "s2", ["s1"]);
 
-    expect(screen.getByTestId("flow-reading-direction")).toHaveTextContent("request");
+    expect(screen.queryByTestId("flow-reading-direction")).not.toBeInTheDocument();
+  });
+
+  it("marks a response, which runs against the arrow", () => {
+    const { read } = seed((ids) => ({
+      ...CALL(ids),
+      s2: { ...CALL(ids).s2!, payloadDirection: "response" },
+    }));
+
+    renderRail(read(), "s2", ["s1"]);
+
+    expect(screen.getByTestId("flow-reading-direction")).toHaveTextContent("response");
+  });
+
+  it("names the call, where it lands and how long it takes on one line under the title", () => {
+    const { read } = seed(CALL);
+
+    renderRail(read(), "s2", ["s1"]);
+
+    const meta = screen.getByTestId("flow-reading-meta");
+    expect(meta).toHaveTextContent("POST /v2/score");
+    expect(meta).toHaveTextContent("Antifraude");
+    expect(meta).toHaveTextContent("120 ms");
   });
 
   it("names the element the call lands on", () => {

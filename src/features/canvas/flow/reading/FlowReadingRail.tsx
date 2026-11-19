@@ -580,12 +580,9 @@ const ReturnRow = ({ callDepth, caller }: { callDepth: number; caller: string })
     <div data-testid="flow-reading-return" className="flex items-start gap-3 py-[5px] opacity-70">
       <span className="w-[34px] shrink-0" />
       <CallGuides depth={callDepth} />
-      <span className="mt-px shrink-0 text-[11px] leading-none text-muted-foreground">↩</span>
+      <span className="mt-px shrink-0 text-[11px] leading-none text-muted-foreground">{"↩︎"}</span>
       <span className="text-[12.5px] italic leading-[1.35] text-muted-foreground">
         {t("flowReading.returnsTo", { name: caller })}
-        <span className="ml-1.5 rounded-[3px] bg-secondary px-1 py-px text-[9px] not-italic uppercase tracking-[0.06em]">
-          {t("flowReading.derived")}
-        </span>
       </span>
     </div>
   );

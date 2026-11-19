@@ -26,9 +26,6 @@ function seed(steps: FlowStep[]) {
   return created.id;
 }
 
-const CONDITION_PLACEHOLDER = /customer has no card on file/;
-const CREATE_CONDITION = "Create";
-
 let target: RecordingContext = { mode: "trunk" };
 
 function renderRecording(flowId: string) {
@@ -91,20 +88,5 @@ describe("writing branches from the script", () => {
     fireEvent.click(second());
 
     expect(target).toEqual({ mode: "trunk" });
-  });
-
-  it("opens the first branch of a condition it has just made", () => {
-    renderRecording(seed([{ id: "s1", type: "action", description: "submits" }]));
-    fireEvent.click(screen.getByText("submits"));
-    fireEvent.click(screen.getByText("Turn into a condition"));
-    fireEvent.change(screen.getByPlaceholderText(CONDITION_PLACEHOLDER), {
-      target: { value: "paid?" },
-    });
-    const [first, second] = screen.getAllByPlaceholderText(/^Option \d/);
-    fireEvent.change(first!, { target: { value: "ok" } });
-    fireEvent.change(second!, { target: { value: "ko" } });
-    fireEvent.click(screen.getByRole("button", { name: CREATE_CONDITION }));
-
-    expect(target).toMatchObject({ mode: "branch-record", branchIndex: 0, branchLabel: "ok" });
   });
 });

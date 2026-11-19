@@ -31,6 +31,7 @@ export interface FlowRecordingSlice {
   onRecordEdgeClick: (edgeId: string, handleId?: string) => void;
   onRecordHandleClick: (nodeId: string, handleId: string) => void;
   onRecordUndo: () => void;
+  onRecordCondition: (conditionLabel: string, branchLabels: readonly string[]) => boolean;
 }
 
 const TRUNK: RecordingContext = { mode: "trunk" };
@@ -70,6 +71,7 @@ export function useFlowRecording(
     commitFlowSession,
     cancelFlowSession,
     recordFlowStep,
+    recordFlowCondition,
     undoLastRecordedStep,
   } = useDiagramActions();
 
@@ -214,6 +216,29 @@ export function useFlowRecording(
     announce(undoLastRecordedStep(recording.flowId, recordingCursor(recording.context)));
   }, [announce, recording, undoLastRecordedStep]);
 
+  const onRecordCondition = useCallback(
+    (conditionLabel: string, branchLabels: readonly string[]) => {
+      if (!recording || branchLabels.length < 2) return false;
+      const result = recordFlowCondition(
+        recording.flowId,
+        recordingCursor(recording.context),
+        conditionLabel,
+        branchLabels,
+      );
+      announce(result);
+      if (!result.ok || !result.stepId) return false;
+      // The fork is written next: its first way out is where the next click lands.
+      setRecordingContext({
+        mode: "branch-record",
+        conditionStepId: result.stepId,
+        branchIndex: 0,
+        branchLabel: branchLabels[0]!,
+      });
+      return true;
+    },
+    [announce, recordFlowCondition, recording, setRecordingContext],
+  );
+
   return useMemo(
     () => ({
       recordingFlowId,
@@ -227,6 +252,7 @@ export function useFlowRecording(
       onRecordEdgeClick,
       onRecordHandleClick,
       onRecordUndo,
+      onRecordCondition,
     }),
     [
       cancelRecording,
@@ -236,6 +262,7 @@ export function useFlowRecording(
       onRecordHandleClick,
       onRecordNodeClick,
       onRecordUndo,
+      onRecordCondition,
       recordingContext,
       recordingFlowId,
       setRecordingContext,

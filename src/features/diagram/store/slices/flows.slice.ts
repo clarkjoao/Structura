@@ -309,6 +309,57 @@ export const flowsSlice = (set: (fn: (state: AppState) => void) => void, get: ()
   },
 
   /**
+   * Splits the sequence the cursor points at: a condition is written at its end,
+   * with one placeholder per way out. It is the recorder's "from here the flow
+   * forks" — the last step recorded stays what it was, rather than being turned
+   * into the question. A placeholder already holding the end open becomes the
+   * condition itself, so no empty row is left behind it. One undo step.
+   */
+  recordFlowCondition: (
+    flowId: string,
+    cursor: FlowCursor,
+    conditionLabel: string,
+    branchLabels: readonly string[],
+  ): FlowStoreResult => {
+    let outcome: FlowStoreResult = UNKNOWN_FLOW(flowId);
+    set((state) => {
+      const d = getActiveDiagram(state);
+      if (!d) return;
+      const draft = d.snapshot.flows[flowId];
+      if (!draft) return;
+      const flow = current(draft) as Flow;
+
+      const tailId = getFlowTail(flow, cursor);
+      const tail = tailId ? flow.steps[tailId] : undefined;
+      let base: Flow = flow;
+      let conditionId: string;
+      if (tail && isPlaceholderStep(tail)) {
+        conditionId = tail.id;
+      } else {
+        const step: FlowStep = { id: generateId("step"), type: "action" };
+        const appended = appendFlowStep(flow, step, cursor);
+        if (!appended.ok) {
+          outcome = toStoreResult(appended);
+          return;
+        }
+        conditionId = step.id;
+        base = { ...flow, steps: appended.steps, entryStepId: appended.entryStepId };
+      }
+
+      const result = convertFlowStepToCondition(
+        base,
+        conditionId,
+        conditionLabel,
+        branchLabels.map((label) => ({ label, stepId: generateId("step") })),
+      );
+      outcome = toStoreResult(result, conditionId);
+      if (!result.ok) return;
+      applyGraph(state, d, draft, result);
+    });
+    return outcome;
+  },
+
+  /**
    * Takes back the last recorded step of the sequence the cursor points at.
    *
    * The head of a sequence is emptied rather than removed — the flow keeps its

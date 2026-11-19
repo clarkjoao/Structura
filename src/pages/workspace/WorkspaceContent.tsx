@@ -200,6 +200,7 @@ export function WorkspaceContent({
     cancelRecording,
     finalizeRecording,
     onRecordUndo,
+    onRecordCondition,
     editFlow,
     recordingContext,
     setRecordingContext,
@@ -499,6 +500,7 @@ export function WorkspaceContent({
                       context={recordingContext}
                       isEditing={isEditingFlow}
                       onUndo={onRecordUndo}
+                      onFork={onRecordCondition}
                       onBackToTrunk={() => setRecordingContext({ mode: "trunk" })}
                       onFinish={finalizeRecording}
                     />

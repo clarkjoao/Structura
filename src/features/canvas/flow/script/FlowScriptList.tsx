@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
 import type { Flow, FlowStep } from "@/features/diagram";
 import {
@@ -16,7 +15,6 @@ import {
 import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
 import type { RecordingContext } from "../flowMode.types";
 import { useFlowScriptActions } from "../useFlowScriptActions";
-import { ConditionForm, type ConditionFormState } from "./ConditionForm";
 import { FlowScriptRow, type EndpointOption, type RouteMismatch } from "./FlowScriptRow";
 
 const EMPTY_ENDPOINTS: readonly EndpointOption[] = [];
@@ -54,7 +52,6 @@ export function FlowScriptList({
   const connections = useConnections();
   const actions = useFlowScriptActions(flow.id);
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
-  const [conditionForm, setConditionForm] = useState<ConditionFormState | null>(null);
   const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
@@ -113,24 +110,6 @@ export function FlowScriptList({
     },
     [components, connections, t],
   );
-
-  const submitConditionForm = useCallback(() => {
-    if (!conditionForm) return;
-    const branches = conditionForm.branches.filter((branch) => branch.trim());
-    if (branches.length < 2) {
-      toast.warning(t("flowScript.minBranches"));
-      return;
-    }
-    actions.convertToCondition(conditionForm.stepId, conditionForm.label, branches);
-    setConditionForm(null);
-    // A new condition is written next: its first branch is where the next click goes.
-    recording?.onTarget({
-      mode: "branch-record",
-      conditionStepId: conditionForm.stepId,
-      branchIndex: 0,
-      branchLabel: branches[0]!,
-    });
-  }, [actions, conditionForm, recording, t]);
 
   const lastStepId = outline.rows[outline.rows.length - 1]?.stepId;
 
@@ -198,9 +177,6 @@ export function FlowScriptList({
                   setExpandedStepId(expandedStepId === row.stepId ? null : row.stepId)
                 }
                 onSelect={() => onSelectStep?.(row.stepId)}
-                onConvertToCondition={(stepId) =>
-                  setConditionForm({ stepId, label: "", branches: ["", ""] })
-                }
                 writeTarget={
                   recording && row.isBranchHead && row.branch
                     ? writeTargetFor(recording, row.branch)
@@ -228,15 +204,6 @@ export function FlowScriptList({
           <AlertTriangle className="h-3 w-3 shrink-0" />
           {t("flowScript.unreachable", { count: outline.unreachable.length })}
         </p>
-      )}
-
-      {conditionForm && (
-        <ConditionForm
-          form={conditionForm}
-          onChange={setConditionForm}
-          onSubmit={submitConditionForm}
-          onCancel={() => setConditionForm(null)}
-        />
       )}
     </div>
   );

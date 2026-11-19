@@ -40,6 +40,7 @@ function createDefaultFlowModeState(): FlowModeState {
     onRecordEdgeClick: noop,
     onRecordHandleClick: noop,
     onRecordUndo: noop,
+    onRecordCondition: () => false,
   };
 }
 

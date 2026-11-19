@@ -1,7 +1,7 @@
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { JsonField } from "./JsonField";
-import { GitBranch, GripVertical, Plus, X } from "lucide-react";
+import { GripVertical, Plus, X } from "lucide-react";
 import { FLOW_CONDITION_KINDS, conditionKindOf } from "@/features/diagram";
 import type { FlowConditionKind, FlowOutlineRow, FlowStep } from "@/features/diagram";
 import { getBranchColor } from "../branchColors";
@@ -70,7 +70,6 @@ export interface FlowScriptRowProps {
   actions: FlowScriptActions;
   onToggleExpand: () => void;
   onSelect: () => void;
-  onConvertToCondition: (stepId: string) => void;
   /** Every route on the diagram, for the step to point at one. */
   endpoints: readonly EndpointOption[];
   /** Set when the route this step names is not where its call arrives. */
@@ -111,7 +110,6 @@ export function FlowScriptRow({
   routeMismatch,
   onToggleExpand,
   onSelect,
-  onConvertToCondition,
   writeTarget,
   drag,
 }: FlowScriptRowProps) {
@@ -465,16 +463,6 @@ export function FlowScriptRow({
                   </label>
                 </>
               )}
-              <button
-                type="button"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onConvertToCondition(row.stepId);
-                }}
-                className="mt-1 flex items-center gap-1.5 text-xs text-amber-500 hover:text-amber-600"
-              >
-                <GitBranch className="h-3.5 w-3.5" /> {t("flowScript.convertToCondition")}
-              </button>
             </>
           )}
         </div>

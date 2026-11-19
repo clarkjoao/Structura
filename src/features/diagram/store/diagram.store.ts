@@ -231,6 +231,7 @@ const selectDiagramActions = pickFromStore([
   "commitFlowSession",
   "cancelFlowSession",
   "recordFlowStep",
+  "recordFlowCondition",
   "undoLastRecordedStep",
   "insertFlowStepAt",
   "moveFlowStep",

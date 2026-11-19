@@ -33,6 +33,7 @@ describe("RecordingStrip", () => {
         flowId={seed(TWO)}
         context={{ mode: "trunk" }}
         onUndo={() => {}}
+        onFork={() => true}
         onBackToTrunk={() => {}}
         onFinish={() => {}}
       />,
@@ -49,6 +50,7 @@ describe("RecordingStrip", () => {
         flowId={seed(TWO)}
         context={{ mode: "branch-record", conditionStepId: "c", branchIndex: 1, branchLabel: "no" }}
         onUndo={() => {}}
+        onFork={() => true}
         onBackToTrunk={onBackToTrunk}
         onFinish={() => {}}
       />,
@@ -66,6 +68,7 @@ describe("RecordingStrip", () => {
         flowId={seed(TWO)}
         context={{ mode: "trunk" }}
         onUndo={onUndo}
+        onFork={() => true}
         onBackToTrunk={() => {}}
         onFinish={onFinish}
       />,
@@ -82,10 +85,48 @@ describe("RecordingStrip", () => {
         flowId={seed([])}
         context={{ mode: "trunk" }}
         onUndo={() => {}}
+        onFork={() => true}
         onBackToTrunk={() => {}}
         onFinish={() => {}}
       />,
     );
     expect(screen.getByRole("button", { name: /Undo last/ })).toBeDisabled();
+  });
+
+  it("forks the flow from the strip with yes / no by default, on Enter", () => {
+    const onFork = vi.fn(() => true);
+    render(
+      <RecordingStrip
+        flowId={seed(TWO)}
+        context={{ mode: "trunk" }}
+        onUndo={() => {}}
+        onFork={onFork}
+        onBackToTrunk={() => {}}
+        onFinish={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Condition/ }));
+    const question = screen.getByRole("textbox", { name: "Question" });
+    fireEvent.change(question, { target: { value: "paid?" } });
+    fireEvent.keyDown(question, { key: "Enter" });
+
+    expect(onFork).toHaveBeenCalledWith("paid?", ["Yes", "No"]);
+    expect(screen.queryByTestId("recording-fork-form")).not.toBeInTheDocument();
+  });
+
+  it("keeps the fork open when the flow refuses it", () => {
+    render(
+      <RecordingStrip
+        flowId={seed(TWO)}
+        context={{ mode: "trunk" }}
+        onUndo={() => {}}
+        onFork={() => false}
+        onBackToTrunk={() => {}}
+        onFinish={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Condition/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Fork" }));
+    expect(screen.getByTestId("recording-fork-form")).toBeInTheDocument();
   });
 });

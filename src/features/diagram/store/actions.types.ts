@@ -239,6 +239,13 @@ export interface AppActions {
     content: RecordedStepContent,
     cursor: FlowCursor,
   ) => FlowStoreResult;
+  /** Writes a condition at the end of the cursor's sequence; one undo step. */
+  recordFlowCondition: (
+    flowId: string,
+    cursor: FlowCursor,
+    conditionLabel: string,
+    branchLabels: readonly string[],
+  ) => FlowStoreResult;
   undoLastRecordedStep: (flowId: string, cursor: FlowCursor) => FlowStoreResult;
   insertFlowStepAt: (flowId: string, target: MoveStepTarget) => FlowStoreResult;
   moveFlowStep: (flowId: string, stepId: string, target: MoveStepTarget) => FlowStoreResult;

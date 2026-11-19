@@ -52,5 +52,18 @@ There SHALL be no separate screen for choosing a branch.
 #### Scenario: A new condition opens its first branch
 
 - **GIVEN** a recording with a step
-- **WHEN** that step is turned into a condition with two branches
-- **THEN** the recorder writes into the first branch
+- **WHEN** the flow is forked from the recording strip with two ways out
+- **THEN** a condition is written after that step, which is left as it was
+- **AND** the recorder writes into the first way out
+
+### Requirement: The flow forks from the recording strip
+
+A condition SHALL be created from the strip over the canvas, at the end of the sequence being
+recorded, in one line: an optional question and ways out that start as yes / no. Enter SHALL fork
+the flow. The step panel SHALL NOT offer turning a step into a condition.
+
+#### Scenario: Forking with the defaults
+
+- **GIVEN** a recording
+- **WHEN** Condition is chosen on the strip and Enter is pressed
+- **THEN** a condition with the ways out "Yes" and "No" ends the sequence, in one undo step
