@@ -2629,7 +2629,8 @@
     "writeHere": "Record here",
     "writingHere": "Recording here",
     "writeHereTitle": "Record the next clicks into this branch",
-    "writeTrunkTitle": "Stop recording into this branch and go back to the main sequence"
+    "writeTrunkTitle": "Stop recording into this branch and go back to the main sequence",
+    "waitingNextClick": "waiting for the next click"
   },
   "flowRefusal": {
     "unknown_flow": "That flow is no longer open.",

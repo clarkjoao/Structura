@@ -15,6 +15,10 @@ export interface FlowScriptRowProps {
   actions: FlowScriptActions;
   /** Opens the step in its own panel; the row itself holds no fields. */
   onOpen: () => void;
+  /** The call the step captured, shown beside an author's title that no longer names it. */
+  call?: string;
+  /** Recorder-only: this row is the placeholder the next canvas click fills. */
+  waiting?: boolean;
   /**
    * Recorder-only, on a branch's first row: whether the recorder writes into this branch, and
    * choosing it (again, to go back to the main sequence).
@@ -45,6 +49,8 @@ export function FlowScriptRow({
   isLast,
   actions,
   onOpen,
+  call,
+  waiting = false,
   writeTarget,
   drag,
 }: FlowScriptRowProps) {
@@ -84,62 +90,94 @@ export function FlowScriptRow({
           )}
         </div>
       )}
-      <div
-        draggable={Boolean(drag)}
-        onDragStart={drag ? (event) => drag.onDragStart(event, row.stepId) : undefined}
-        onDragOver={drag ? (event) => drag.onDragOver(event, row.stepId) : undefined}
-        onDrop={drag ? (event) => drag.onDrop(event, row.stepId) : undefined}
-        onDragEnd={drag?.onDragEnd}
-        onClick={onOpen}
-        className={`group flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1.5 text-[13px] transition-colors hover:bg-secondary/50 ${
-          isSelected ? "bg-primary/15 text-primary" : isLast ? "bg-primary/10" : "text-foreground"
-        } ${row.isBranchPoint ? "border-l-2 border-amber-400" : ""} ${
-          drag?.isDragging ? "opacity-40" : ""
-        } ${drag?.isDragOver ? "ring-1 ring-primary/50" : ""}`}
-        style={
-          row.branch && !row.isBranchPoint
-            ? { borderLeft: `1px solid ${branchColor}55` }
-            : undefined
-        }
-      >
-        {drag && (
-          <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-        )}
-        <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
-          {row.label}
-        </span>
-        <span className="flex-1 truncate">{title}</span>
-        {step.duration && (
-          <span className="shrink-0 font-mono text-[10px] text-primary/80">{step.duration}</span>
-        )}
-        {step.isAsync && (
-          <span className="shrink-0 font-mono text-[10px] text-amber-500">
-            {t("flowScript.async")}
+      {waiting ? (
+        <WaitingLine label={row.label} />
+      ) : (
+        <div
+          draggable={Boolean(drag)}
+          onDragStart={drag ? (event) => drag.onDragStart(event, row.stepId) : undefined}
+          onDragOver={drag ? (event) => drag.onDragOver(event, row.stepId) : undefined}
+          onDrop={drag ? (event) => drag.onDrop(event, row.stepId) : undefined}
+          onDragEnd={drag?.onDragEnd}
+          onClick={onOpen}
+          className={`group flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1.5 text-[13px] transition-colors hover:bg-secondary/50 ${
+            isSelected ? "bg-primary/15 text-primary" : isLast ? "bg-primary/10" : "text-foreground"
+          } ${row.isBranchPoint ? "border-l-2 border-amber-400" : ""} ${
+            drag?.isDragging ? "opacity-40" : ""
+          } ${drag?.isDragOver ? "ring-1 ring-primary/50" : ""}`}
+          style={
+            row.branch && !row.isBranchPoint
+              ? { borderLeft: `1px solid ${branchColor}55` }
+              : undefined
+          }
+        >
+          {drag && (
+            <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          )}
+          <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+            {row.label}
           </span>
-        )}
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            actions.insertStepAfter(row.stepId);
-          }}
-          title={t("flowScript.addStepAfter")}
-          className="shrink-0 text-muted-foreground opacity-0 transition-all hover:text-foreground group-hover:opacity-100"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            actions.removeStep(row.stepId);
-          }}
-          title={t("flowScript.removeStep")}
-          className="shrink-0 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" />
+          <span className="flex-1 truncate">{title}</span>
+          {call && (
+            <span
+              data-testid="script-row-call"
+              className="max-w-[40%] shrink truncate font-mono text-[9.5px] text-muted-foreground"
+            >
+              {call}
+            </span>
+          )}
+          {step.duration && (
+            <span className="shrink-0 font-mono text-[10px] text-primary/80">{step.duration}</span>
+          )}
+          {step.isAsync && (
+            <span className="shrink-0 font-mono text-[10px] text-amber-500">
+              {t("flowScript.async")}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              actions.insertStepAfter(row.stepId);
+            }}
+            title={t("flowScript.addStepAfter")}
+            className="shrink-0 text-muted-foreground opacity-0 transition-all hover:text-foreground group-hover:opacity-100"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              actions.removeStep(row.stepId);
+            }}
+            title={t("flowScript.removeStep")}
+            className="shrink-0 text-muted-foreground opacity-0 transition-all hover:text-destructive group-hover:opacity-100"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Where the next canvas click lands, said before it happens: the number it will take, on a
+ * dashed line. Recorder-only.
+ */
+export function WaitingLine({ label, depth = 0 }: { label: string; depth?: number }) {
+  const { t } = useTranslation();
+  return (
+    <div style={{ paddingLeft: depth * INDENT_PX }}>
+      <div
+        data-testid="script-waiting"
+        className="flex items-center gap-1.5 rounded-md border border-dashed border-primary/40 px-1.5 py-1.5 text-[13px] text-muted-foreground"
+      >
+        <span className="shrink-0 font-mono text-[11px] tabular-nums text-primary">{label}</span>
+        <span className="flex-1 truncate italic">{t("flowScript.waitingNextClick")}</span>
+        <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-red-500" />
       </div>
     </div>
   );

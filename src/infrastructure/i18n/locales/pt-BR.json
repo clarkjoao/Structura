@@ -2629,7 +2629,8 @@
     "writeHere": "Gravar aqui",
     "writingHere": "Gravando aqui",
     "writeHereTitle": "Gravar os próximos cliques neste ramo",
-    "writeTrunkTitle": "Parar de gravar neste ramo e voltar à sequência principal"
+    "writeTrunkTitle": "Parar de gravar neste ramo e voltar à sequência principal",
+    "waitingNextClick": "aguardando o próximo clique"
   },
   "flowRefusal": {
     "unknown_flow": "Esse fluxo não está mais aberto.",

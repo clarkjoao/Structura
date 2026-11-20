@@ -155,4 +155,24 @@ describe("FlowScriptList", () => {
     expect(screen.queryByText("orphan")).not.toBeInTheDocument();
     expect(screen.getByText(/not reachable from the start/)).toBeInTheDocument();
   });
+
+  it("keeps the captured call beside a title the author wrote over it", () => {
+    const store = useDiagramStore.getState();
+    const diagram = store.addDiagram("Calls", "context");
+    store.openDiagram(diagram.id);
+    const from = useDiagramStore.getState().addComponent("system", "Web", null, { x: 0, y: 0 });
+    const to = useDiagramStore.getState().addComponent("system", "API", null, { x: 200, y: 0 });
+    const connection = useDiagramStore.getState().addConnection(from.id, to.id, "POST /pay")!;
+    const flow = useDiagramStore.getState().addFlow(diagram.id, "Pay", "")!;
+    useDiagramStore.getState().updateFlow(flow.id, {
+      steps: {
+        s1: { id: "s1", type: "action", connectionId: connection.id, title: "Charges the card" },
+      },
+      entryStepId: "s1",
+    });
+    renderScript(() => useDiagramStore.getState().diagrams[diagram.id]!.snapshot.flows[flow.id]!);
+
+    expect(screen.getByText("Charges the card")).toBeInTheDocument();
+    expect(screen.getByTestId("script-row-call")).toHaveTextContent("POST /pay");
+  });
 });

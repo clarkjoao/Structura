@@ -94,3 +94,15 @@ connections it passes through, without moving the camera, and leaving SHALL put 
 - **GIVEN** the flows list open
 - **WHEN** an element on the canvas is clicked
 - **THEN** the list closes and the inspector shows that element
+
+### Requirement: The recorder says where the next click lands
+
+While recording, the script SHALL show, on a dashed line, the label the next step will take in the
+sequence being recorded — on the placeholder holding it open when there is one, otherwise after
+the sequence's last step and below any branches of a condition ending it. The node of the last
+recorded step SHALL wear a halo on the canvas.
+
+#### Scenario: Two steps into the main sequence
+
+- **GIVEN** a recording with steps 1 and 2 on the main sequence
+- **THEN** the script shows "3 · waiting for the next click" after step 2

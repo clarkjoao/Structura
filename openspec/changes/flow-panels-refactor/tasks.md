@@ -12,6 +12,7 @@
 - [x] 2.4 The reading scene names the step first, then call → target · duration on one line, and the stack as one line of text; verify by test.
 - [x] 2.5 A step opens in its own panel (`FlowStepPanel`) in place of the script: header name, ‹ › between steps, ⋯ (insert after, turn into condition, remove), sections Ways out / Reading / Call / Data / Object; script rows hold no fields; verify by test.
 - [x] 2.6 With the flows list open, a click on an element hands the column back to the inspector and selects it (`onYieldFlowPanel`); right-button pan works; hovering a card lights the flow's participants without moving the camera (`requestHighlight({ frame: false })`); verify by test and in the editor.
+- [x] 2.7 Recorder design 1d: a script row keeps its captured call beside an author's title; a dashed line says where the next click lands and the number it takes (the placeholder itself when the sequence ends on one, below a final condition's branches otherwise); the last recorded node wears a halo that wins over the selection ring; verify by test and in the editor. The "probable next target" outline is left out: it would guess.
 
 ## 3. Reading a long flow (M3)
 

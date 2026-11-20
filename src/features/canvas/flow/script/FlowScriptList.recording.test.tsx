@@ -6,6 +6,7 @@ import type { Flow, FlowStep } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import type { RecordingContext } from "../flowMode.types";
 import { FlowScriptList } from "./FlowScriptList";
+import { nextStepLabel } from "./nextStepLabel";
 
 vi.mock("sonner", () => ({
   toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() },
@@ -88,5 +89,51 @@ describe("writing branches from the script", () => {
     fireEvent.click(second());
 
     expect(target).toEqual({ mode: "trunk" });
+  });
+});
+
+describe("the script says where the next click lands", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  it("puts a dashed line after the main sequence, with the number the click will take", () => {
+    renderRecording(
+      seed([
+        { id: "s1", type: "action", next: "s2", description: "opens" },
+        { id: "s2", type: "action", description: "pays" },
+      ]),
+    );
+    expect(screen.getByTestId("script-waiting")).toHaveTextContent("3");
+    expect(screen.getByTestId("script-waiting")).toHaveTextContent("waiting for the next click");
+  });
+
+  it("puts the line below a condition's branches, not between them and the condition", () => {
+    const { container } = renderRecording(seed(BRANCHED));
+    const rows = [...container.querySelectorAll("[data-step-id], [data-testid=script-waiting]")];
+    expect(rows[rows.length - 1]?.getAttribute("data-testid")).toBe("script-waiting");
+    expect(screen.getByTestId("script-waiting")).toHaveTextContent("2");
+  });
+
+  it("marks the placeholder itself when the sequence ends on one", () => {
+    renderRecording(seed([{ id: "s1", type: "action" }]));
+    const waiting = screen.getByTestId("script-waiting");
+    expect(waiting).toHaveTextContent("1");
+    expect(screen.queryByText("Empty step")).not.toBeInTheDocument();
+  });
+
+  it("follows the branch being written", () => {
+    renderRecording(seed(BRANCHED));
+    fireEvent.click(screen.getAllByTestId("script-branch-target")[0]!);
+    expect(screen.getByTestId("script-waiting")).toHaveTextContent("1a.1");
+  });
+});
+
+describe("nextStepLabel", () => {
+  it("counts on along the main sequence and inside a branch", () => {
+    expect(nextStepLabel("3")).toBe("4");
+    expect(nextStepLabel("2a")).toBe("2a.1");
+    expect(nextStepLabel("2a.1")).toBe("2a.2");
+    expect(nextStepLabel("2a.1b")).toBe("2a.1b.1");
   });
 });
