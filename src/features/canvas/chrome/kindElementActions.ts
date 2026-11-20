@@ -2,7 +2,11 @@ import { toast } from "sonner";
 import type { Diagram, DiagramModel } from "@/features/diagram";
 import { kindCommandContextFor, resolveKindText } from "@/features/diagram-kinds/context";
 import { isKindActive, resolveKindPolicy } from "@/features/diagram-kinds/policy";
-import type { KindCommandOutcome, KindText } from "@/features/diagram-kinds/kind.types";
+import type {
+  KindActionGlyph,
+  KindCommandOutcome,
+  KindText,
+} from "@/features/diagram-kinds/kind.types";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { applyKindCommandOutcome } from "../hooks/keyboard/createKindShortcuts";
 
@@ -12,6 +16,7 @@ export interface KindMenuItem {
   label: string;
   group: string;
   danger?: boolean;
+  glyph?: KindActionGlyph;
   shortcut?: string;
   onSelect: () => void;
 }
@@ -66,6 +71,7 @@ export function kindMenuItemsFor(
       group: action.group,
       label: resolveKindText(action.label, action.values),
       ...(action.danger && { danger: true }),
+      ...(action.glyph && { glyph: action.glyph }),
       onSelect: () => runOutcome(action.run()),
     });
   }

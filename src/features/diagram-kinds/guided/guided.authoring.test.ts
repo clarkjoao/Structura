@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkFlowInvariants } from "@/features/diagram/utils/flow-traversal";
+import { checkFlowInvariants, getFlowParticipants } from "@/features/diagram/utils/flow-traversal";
 import { kindContextFor } from "../context";
 import { guidedKind } from "./guided.kind";
 import { guidedHarness } from "./guided.harness";
@@ -187,11 +187,13 @@ describe("Enter labels a decision's exits", () => {
     return { h, decision: decision.id, exits };
   };
   const outcomeOf = (h: ReturnType<typeof guidedHarness>, ids: string[]) =>
-    guidedKind.commands!.find((c) => c.id === "guided.labelExit")!.run({
-      ...kindContextFor(h.diagram()),
-      diagram: h.diagram(),
-      selectedIds: ids,
-    });
+    guidedKind
+      .commands!.find((c) => c.id === "guided.labelExit")!
+      .run({
+        ...kindContextFor(h.diagram()),
+        diagram: h.diagram(),
+        selectedIds: ids,
+      });
 
   it("opens the first unlabelled exit, then the next, then returns to the decision", () => {
     const { h, decision, exits } = decisionWithTwoExits();
@@ -200,7 +202,10 @@ describe("Enter labels a decision's exits", () => {
     const [first, second] = exits as [(typeof exits)[0], (typeof exits)[0]];
     expect(outcomeOf(h, [decision])).toMatchObject({ selectConnection: first.id, editLabel: true });
     h.label(first.id, "yes");
-    expect(outcomeOf(h, [first.id])).toMatchObject({ selectConnection: second.id, editLabel: true });
+    expect(outcomeOf(h, [first.id])).toMatchObject({
+      selectConnection: second.id,
+      editLabel: true,
+    });
     h.label(second.id, "no");
     expect(outcomeOf(h, [second.id])).toMatchObject({ select: decision });
     // All labelled: Enter on the decision reopens its first exit.
@@ -281,7 +286,7 @@ describe("conformance", () => {
     expect(issues(h)).toContain("unknownElement");
   });
 
-  it("reads lane order from the lanes' current positions", () => {
+  it("keeps the lane order when the lanes are moved around (an Arrange, a drag, a peer)", () => {
     const h = guidedHarness();
     const [first, second] = h.laneIds as [string, string];
     const a = h.diagram().nodeLayouts[first]!;
@@ -292,11 +297,74 @@ describe("conformance", () => {
         { id: second, x: b.x, y: a.y },
       ],
     });
+    expect(h.reading().lanes.map((l) => l.id)).toEqual([first, second]);
+    // The arrangement puts the bands back in that order.
+    expect(h.absolute(first).y).toBeLessThan(h.absolute(second).y);
+    expect(h.diagram().kindData?.laneOrder).toEqual([first, second]);
+  });
+
+  it("comes back from freehand in its lane order, whatever an Arrange did there", () => {
+    const h = guidedHarness();
+    const [first, second] = h.laneIds as [string, string];
+    const a = h.diagram().nodeLayouts[first]!;
+    const b = h.diagram().nodeLayouts[second]!;
+    h.store.getState().setKindMode(h.diagramId, "freehand");
+    // An Arrange (ELK) while freehand stacks the lanes the other way round.
+    h.store.getState().applyAutoLayout(
+      [
+        { elementId: first, x: a.x, y: b.y + 10 },
+        { elementId: second, x: b.x, y: a.y },
+      ],
+      undefined,
+      { history: false },
+    );
+    const derived = guidedKind.derive!(h.diagram(), kindContextFor(h.diagram())) ?? undefined;
+    h.store.getState().setKindMode(h.diagramId, "kind", derived);
+    h.settle();
+    expect(h.reading().lanes.map((l) => l.id)).toEqual([first, second]);
+    expect(h.absolute(first).y).toBeLessThan(h.absolute(second).y);
+  });
+
+  it("reads lanes by position when no order is stored yet (an older or imported diagram)", () => {
+    const h = guidedHarness();
+    const [first, second] = h.laneIds as [string, string];
+    const { laneOrder: _order, ...rest } = h.diagram().kindData ?? {};
+    const a = h.diagram().nodeLayouts[first]!;
+    const b = h.diagram().nodeLayouts[second]!;
+    h.store.getState().applyKindEdit(
+      {
+        kindData: rest,
+        move: [
+          { id: first, x: a.x, y: b.y + 10 },
+          { id: second, x: b.x, y: a.y },
+        ],
+      },
+      { history: false },
+    );
     expect(h.reading().lanes.map((l) => l.id)).toEqual([second, first]);
   });
 });
 
 describe("derived flow", () => {
+  it("reads like a recording: a step on each connection travelled, between the journey steps", () => {
+    const h = guidedHarness();
+    const a = h.run("guided.next", [h.startId])!;
+    const b = h.run("guided.next", [a])!;
+    const flow = h.flow()!;
+    const travelled = [h.startId, a].map((id) => h.reading().outgoing.get(id)![0]!.id);
+    // Playback lights the lines as well as the boxes.
+    expect([...getFlowParticipants(flow).connectionIds].sort()).toEqual([...travelled].sort());
+    const kinds: string[] = [];
+    let id = flow.entryStepId;
+    while (id) {
+      const step = flow.steps[id]!;
+      kinds.push(step.componentId ?? `→${step.connectionId}`);
+      id = step.next;
+    }
+    expect(kinds).toEqual([h.startId, `→${travelled[0]}`, a, `→${travelled[1]}`, b]);
+    expect(checkFlowInvariants(flow)).toEqual([]);
+  });
+
   it("makes a decision a condition with labelled branches", () => {
     const h = guidedHarness();
     const step = h.run("guided.next", [h.startId])!;

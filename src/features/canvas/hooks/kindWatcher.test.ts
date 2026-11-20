@@ -133,6 +133,34 @@ describe("watchDiagramKind", () => {
     stop();
   });
 
+  it("arranges after a move that changes what the kind's arrange key reads", async () => {
+    // A lane reorder only moves: the structure is the same, the order across the axis is not.
+    stub.arrangeKey = (d) =>
+      Object.entries(d.nodeLayouts)
+        .sort(([, a], [, b]) => a.y - b.y)
+        .map(([id]) => id)
+        .join(",");
+    try {
+      const { store, arrange, stop } = await setup();
+      const a = add(store, "A");
+      const b = add(store, "B");
+      await settle();
+      arrange.mockClear();
+      vi.advanceTimersByTime(HISTORY_COALESCE_MS + 100);
+      store.getState().applyKindEdit({
+        move: [
+          { id: a, x: 0, y: 500 },
+          { id: b, x: 0, y: -500 },
+        ],
+      });
+      await settle();
+      expect(arrange).toHaveBeenCalledTimes(1);
+      stop();
+    } finally {
+      delete stub.arrangeKey;
+    }
+  });
+
   it("does nothing for a peer's change", async () => {
     const { store, derive, arrange, stop } = await setup();
     const diagramId = store.getState().activeDiagramId!;

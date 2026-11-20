@@ -3650,6 +3650,8 @@
         "rename": "Rename lane",
         "moveUp": "Move lane up",
         "moveDown": "Move lane down",
+        "moveLeft": "Move lane left",
+        "moveRight": "Move lane right",
         "remove": "Remove lane",
         "field": "Lane",
         "moveTo": "Move to lane"

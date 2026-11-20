@@ -30,10 +30,14 @@ export function guidedElementActions(
   }
   const index = reading.lanes.findIndex((lane) => lane.id === targetId);
   if (index < 0) return [];
+  // A top-to-bottom diagram stands its lanes side by side: they move left and right.
+  const across =
+    ctx.diagram.direction === "TB" ? ["moveLeft", "moveRight"] : ["moveUp", "moveDown"];
   const actions: KindElementAction[] = [
     {
       id: "guided.lane.add",
       group: "lane",
+      glyph: "add",
       label: { key: "diagramKinds.guided.lanes.add" },
       run: () => ({
         edit: guidedAddLane(ctx.diagram, ctx.t("diagramKinds.guided.lanes.newLane"), targetId),
@@ -45,7 +49,8 @@ export function guidedElementActions(
     actions.push({
       id: "guided.lane.up",
       group: "lane",
-      label: { key: "diagramKinds.guided.lanes.moveUp" },
+      glyph: "before",
+      label: { key: `diagramKinds.guided.lanes.${across[0]}` },
       run: () => ({ edit: guidedMoveLane(ctx.diagram, targetId, -1), select: targetId }),
     });
   }
@@ -53,7 +58,8 @@ export function guidedElementActions(
     actions.push({
       id: "guided.lane.down",
       group: "lane",
-      label: { key: "diagramKinds.guided.lanes.moveDown" },
+      glyph: "after",
+      label: { key: `diagramKinds.guided.lanes.${across[1]}` },
       run: () => ({ edit: guidedMoveLane(ctx.diagram, targetId, 1), select: targetId }),
     });
   }
@@ -62,6 +68,7 @@ export function guidedElementActions(
       id: "guided.lane.remove",
       group: "lane",
       danger: true,
+      glyph: "remove",
       label: { key: "diagramKinds.guided.lanes.remove" },
       run: () => {
         const edit = guidedRemoveLane(ctx.diagram, targetId);

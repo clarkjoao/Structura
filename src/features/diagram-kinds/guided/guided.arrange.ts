@@ -23,8 +23,8 @@ import {
  *    stack; steps sharing a lane and a column stack in layer order.
  *
  * Written along/across and mapped to x/y at the end, so top-to-bottom is the
- * same arrangement mirrored rather than a second one. The first lane keeps its
- * origin, so the diagram does not jump.
+ * same arrangement mirrored rather than a second one. The bands start where the
+ * lanes already start, so the diagram does not jump.
  */
 export async function arrangeGuided(
   diagram: DiagramModel,
@@ -98,8 +98,12 @@ export function arrangeGuidedSync(
     list.reduce((sum, id) => sum + across(id), 0) + services.gaps.node * (list.length - 1);
 
   const layouts: KindArrangement["layouts"] = [];
-  const first = nodeLayouts[reading.lanes[0]!.id];
-  const origin = { x: first?.x ?? 0, y: first?.y ?? 0 };
+  // The bands start where the lanes already start, whichever lane comes first now.
+  const placed = reading.lanes.map((lane) => nodeLayouts[lane.id]).filter((l) => l !== undefined);
+  const origin = {
+    x: placed.length > 0 ? Math.min(...placed.map((l) => l.x)) : 0,
+    y: placed.length > 0 ? Math.min(...placed.map((l) => l.y)) : 0,
+  };
   let laneCursor = 0;
   for (const lane of reading.lanes) {
     let deepest = 0;

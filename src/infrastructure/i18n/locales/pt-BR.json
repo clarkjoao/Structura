@@ -3650,6 +3650,8 @@
         "rename": "Renomear raia",
         "moveUp": "Subir raia",
         "moveDown": "Descer raia",
+        "moveLeft": "Mover raia para a esquerda",
+        "moveRight": "Mover raia para a direita",
         "remove": "Remover raia",
         "field": "Raia",
         "moveTo": "Mover para a raia"

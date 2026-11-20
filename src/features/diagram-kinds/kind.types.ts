@@ -35,6 +35,11 @@ export interface KindInteraction {
   arrangeModeChoice: boolean;
   /** Whether the flows panel offers recording a new flow. */
   recordFlows: boolean;
+  /**
+   * Whether an element can be referenced (a shared reference, an edge routed through one).
+   * A kind whose rules read every element where it stands turns them off. Absent means allowed.
+   */
+  references?: boolean;
 }
 
 import type { KindEdit } from "@/features/diagram/model/kind-edit.types";
@@ -109,8 +114,15 @@ export interface KindElementAction {
   /** Actions sharing a group are shown together (e.g. "lane", "moveTo"). */
   group: string;
   danger?: boolean;
+  /**
+   * How the canvas draws it as an icon beside the element: `before` / `after` point across the
+   * reading axis (up/down, or left/right on a top-to-bottom diagram). Absent: shown as text.
+   */
+  glyph?: KindActionGlyph;
   run: () => KindCommandOutcome | { refused: KindText };
 }
+
+export type KindActionGlyph = "add" | "before" | "after" | "remove";
 
 /** A command a kind contributes: a keyboard shortcut and/or a context-menu entry. */
 export interface KindCommand {

@@ -27,6 +27,10 @@ interface Seen {
   diagramId: string | null;
   policy: string;
   snapshot: unknown;
+  /** Positions: a gesture that only moves something can change what `arrangeKey` reads. */
+  nodeLayouts: unknown;
+  /** The kind's own data: a gesture may only change it (a lane reorder stored as an order). */
+  kindData: unknown;
   versions: unknown;
   activeVersionId: unknown;
   signature: string | null;
@@ -73,6 +77,8 @@ export function watchDiagramKind({
     diagramId: null,
     policy: "",
     snapshot: null,
+    nodeLayouts: null,
+    kindData: null,
     versions: null,
     activeVersionId: null,
     signature: null,
@@ -96,12 +102,16 @@ export function watchDiagramKind({
       diagram !== undefined &&
       seen.diagramId === diagramId &&
       seen.snapshot === diagram.snapshot &&
+      seen.nodeLayouts === diagram.nodeLayouts &&
+      seen.kindData === diagram.kindData &&
       seen.versions === diagram.versions &&
       seen.activeVersionId === diagram.activeVersionId;
     return {
       diagramId,
       policy: policy.type === "kind" ? `kind:${policy.descriptor.id}` : policy.type,
       snapshot: diagram?.snapshot ?? null,
+      nodeLayouts: diagram?.nodeLayouts ?? null,
+      kindData: diagram?.kindData ?? null,
       versions: diagram?.versions ?? null,
       activeVersionId: diagram?.activeVersionId ?? null,
       signature:
@@ -187,6 +197,8 @@ export function watchDiagramKind({
     }
     const contentChanged =
       next.snapshot !== before.snapshot ||
+      next.nodeLayouts !== before.nodeLayouts ||
+      next.kindData !== before.kindData ||
       next.versions !== before.versions ||
       next.activeVersionId !== before.activeVersionId;
     if (!contentChanged) return;

@@ -27,17 +27,17 @@ The guided kind's conformance check SHALL pass when, ignoring free text and note
 element is a lane, no lane is nested in another, every element inside a lane is one of the
 journey step shapes, there is exactly one start step, and every connection joins two steps. Each
 failure SHALL be reported as an issue naming the element and the rule. On return to guided mode,
-lane order SHALL be taken from the lanes' current order along the cross axis.
+lanes SHALL keep their stored order; a lane added freehand SHALL take its place by position.
 
 #### Scenario: Two starts
 
 - **WHEN** a guided diagram edited freehand has two start steps and the author chooses "Back to guided"
 - **THEN** the check fails with an issue on the second start step
 
-#### Scenario: Lanes reordered by hand
+#### Scenario: An Arrange while freehand does not reorder lanes
 
-- **WHEN** in freehand mode the author drags lane "API" above lane "App" and returns to guided
-- **THEN** the guided arrangement keeps "API" above "App"
+- **WHEN** in freehand mode an Arrange stacks lane "API" above lane "App" and the author returns to guided
+- **THEN** the guided arrangement puts "App" above "API" again, as the stored order says
 
 ### Requirement: A new guided diagram starts ready to type
 
@@ -51,9 +51,12 @@ the first lane, arranged, with the start step selected, so the first `Tab` adds 
 
 ### Requirement: A guided diagram is made of ordered lanes
 
-A guided diagram SHALL hold one or more lanes in a stated order. Each lane SHALL have a name and
+A guided diagram SHALL hold one or more lanes in a stated order, stored with the diagram. Only the
+lane actions SHALL change it: no arrangement, Arrange run, drag or peer move SHALL reorder lanes. A
+diagram with no stored order SHALL read its lanes by position. Each lane SHALL have a name and
 SHALL contain steps only. The author SHALL be able to add a lane (after the selected one, or
-last), rename it in place, move it up or down, and remove it. Removing a lane that holds steps
+last), rename it in place, move it up or down (left or right on a top-to-bottom diagram), and
+remove it, from the lane's floating bar on the canvas. Removing a lane that holds steps
 SHALL move those steps to the neighbouring lane rather than delete them. The last remaining lane
 SHALL NOT be removable. Each of these actions SHALL be one undo step.
 

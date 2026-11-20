@@ -85,7 +85,8 @@ export function guidedHarness(direction?: "TB") {
     while (id && f && !seen.has(id)) {
       seen.add(id);
       const step = f.steps[id]!;
-      out.push(nameOf(step.componentId!) ?? "?");
+      // Steps on a connection travelled sit between journey steps: the sequence names the steps.
+      if (step.componentId) out.push(nameOf(step.componentId) ?? "?");
       id = step.next ?? step.branches?.[0]?.nextId;
     }
     return out;

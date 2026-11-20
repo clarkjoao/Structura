@@ -104,11 +104,16 @@ kind's arrangement as one undo step (`useAutoLayout`).
 
 `features/diagram-kinds/guided/`:
 
-- **Reading** (`guided.model.ts`). Lanes are top-level swimlane panels, ordered along the cross
-  axis, with the other axis breaking ties. Steps are the journey flowchart shapes (task, start,
-  end, event, decision, subprocess, data store, document) inside a lane. The sequence is the
-  connections between steps. Nothing else is stored, and `kindData` holds only `flowId` and
-  `arrangedSignature`.
+- **Reading** (`guided.model.ts`). Lanes are top-level swimlane panels, in the order
+  `kindData.laneOrder` stores. Only the lane actions change it, so no arrangement, Arrange run
+  (ELK, while freehand), drag or peer move reorders lanes. A lane the order does not name yet
+  takes its place by position, and a diagram with no stored order reads its lanes by position.
+  Steps are the journey flowchart shapes (task, start, end, event, decision, subprocess, data
+  store, document) inside a lane. The sequence is the connections between steps. `kindData` holds
+  `flowId`, `laneOrder` and `arrangedSignature`.
+- **Derived flow** (`guided.derive.ts`). It reads like a recording: a step at each journey step
+  and, between two of them, a step on the connection travelled, so playback lights the lines.
+  Each lane's header orientation follows the diagram's direction.
 - **Gestures** (`guided.edits.ts`, bound as commands):
   - `Tab` adds the next step: an append, an insert between, or a decision's new exit.
   - `Shift+Tab` adds a branch, inserting a decision first when the step is not one.

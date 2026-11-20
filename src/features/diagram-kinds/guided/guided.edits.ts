@@ -9,6 +9,7 @@ import {
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import type { KindCommandOutcome, KindContext, KindText } from "../kind.types";
 import {
+  GUIDED_LANE_ORDER_KEY,
   type GuidedReading,
   isGuidedDecision,
   isGuidedEnd,
@@ -467,22 +468,19 @@ export function guidedAddLane(diagram: DiagramModel, name: string, afterLaneId?:
   };
 }
 
-/** Swaps a lane with its neighbour (`-1` up/left, `+1` down/right). */
+/**
+ * Swaps a lane with its neighbour (`-1` up/left, `+1` down/right) in the stored
+ * lane order; the arrangement then re-packs the bands in that order.
+ */
 export function guidedMoveLane(diagram: DiagramModel, laneId: string, offset: 1 | -1): KindEdit {
   const reading = readGuided(diagram);
+  const index = reading.lanes.findIndex((lane) => lane.id === laneId);
   const other = neighbourLane(reading, laneId, offset);
-  if (!other) return {};
-  const { nodeLayouts } = getCachedCanvasSnapshot(diagram);
-  const a = nodeLayouts[laneId];
-  const b = nodeLayouts[other.id];
-  if (!a || !b) return {};
-  // The arrangement re-packs the bands; swapping the origins is enough to say the order.
-  return {
-    move: [
-      { id: laneId, x: b.x, y: b.y },
-      { id: other.id, x: a.x, y: a.y },
-    ],
-  };
+  if (index < 0 || !other) return {};
+  const order = reading.lanes.map((lane) => lane.id);
+  order[index] = other.id;
+  order[index + offset] = laneId;
+  return { kindData: { ...(diagram.kindData ?? {}), [GUIDED_LANE_ORDER_KEY]: order } };
 }
 
 /**

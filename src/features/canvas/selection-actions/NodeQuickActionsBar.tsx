@@ -38,6 +38,8 @@ import { isSharedRefComponent } from "@/features/diagram/model/component.guards"
 import { canBeReferenced } from "@/features/elements/referencing";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 import { FloatingSelectionToolbar } from "./FloatingSelectionToolbar";
+import { KindQuickActions } from "./KindQuickActions";
+import { useKindAllowsReferences } from "../hooks/useKindAllowsReferences";
 
 interface NodeQuickActionsBarProps {
   nodeId: string;
@@ -126,6 +128,7 @@ export function NodeQuickActionsBar({
   );
   const { incrementIconUsage, decrementIconUsage } = useIconActions();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const referencesAllowed = useKindAllowsReferences();
 
   const colorGroup = pickColorGroup(component ?? null);
   // What an unset accent resolves to here — the lane's, else the element's.
@@ -315,6 +318,9 @@ export function NodeQuickActionsBar({
             )}
           </button>
 
+          {/* The diagram kind's own actions: lanes, and moving a step between them */}
+          <KindQuickActions elementId={nodeId} />
+
           {/* Color picker — for all component types */}
           {hasColor && (
             <div className="mx-1 border-l border-border pl-1">
@@ -341,13 +347,15 @@ export function NodeQuickActionsBar({
           )}
 
           {/* How the edges into it are drawn when many things use it */}
-          {!isSharedRefComponent(component) && (
+          {referencesAllowed && !isSharedRefComponent(component) && (
             <SharedModeControl
               component={component}
               onChange={(patch) => updateComponent(nodeId, patch)}
             />
           )}
-          {canBeReferenced(component) && <CreateRefButton original={component} />}
+          {referencesAllowed && canBeReferenced(component) && (
+            <CreateRefButton original={component} />
+          )}
 
           {/* Compact / expanded — only for collapsible typed containers */}
           {isCollapsible && (

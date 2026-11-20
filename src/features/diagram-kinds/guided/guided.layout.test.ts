@@ -49,6 +49,21 @@ describe("lane-banded arrangement", () => {
     expect(h.absolute(lanes[1]!).y).toBe(h.absolute(lanes[0]!).y + h.absolute(lanes[0]!).height);
   });
 
+  it("turns the lane headers with a direction switch", () => {
+    const { h, lanes } = threeLanes();
+    const orientations = () =>
+      lanes.map((id) => h.reading().lanes.find((l) => l.id === id)!.swimlane?.orientation);
+    expect(orientations()).toEqual(["horizontal", "horizontal", "horizontal"]);
+    h.store.setState((s) => ({
+      diagrams: {
+        ...s.diagrams,
+        [h.diagramId]: { ...s.diagrams[h.diagramId]!, direction: "TB" },
+      },
+    }));
+    h.settle();
+    expect(orientations()).toEqual(["vertical", "vertical", "vertical"]);
+  });
+
   it("top to bottom: the same arrangement mirrored", () => {
     const { h, lanes, a, b } = threeLanes("TB");
     const ys = [h.startId, a, b].map((id) => h.absolute(id).y);

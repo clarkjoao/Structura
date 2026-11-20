@@ -115,6 +115,8 @@ export const guidedKind: DiagramKindDescriptor = {
     resizable: false,
     arrangeModeChoice: false,
     recordFlows: false,
+    // A step is where it is in the sequence: a copy of it elsewhere would read as another step.
+    references: false,
   },
   create: guidedCreate,
   conforms: guidedConforms,

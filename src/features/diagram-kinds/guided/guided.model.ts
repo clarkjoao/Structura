@@ -25,6 +25,31 @@ import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache
 
 export const GUIDED_KIND_ID = "guided";
 
+/** The kind data key holding the lanes' order: ids, first lane first. */
+export const GUIDED_LANE_ORDER_KEY = "laneOrder";
+
+/** The stored lane order, when the kind data holds one. */
+export function guidedLaneOrder(diagram: Pick<DiagramModel, "kindData">): readonly string[] {
+  const value = diagram.kindData?.[GUIDED_LANE_ORDER_KEY];
+  return Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
+}
+
+/**
+ * Lanes in their order. The stored order is the truth: an arrangement, an
+ * Arrange run while edited freehand, a drag or a peer's move cannot reorder
+ * lanes, only the lane gestures can. A lane the order does not name yet (just
+ * added, or drawn freehand) takes its place by position among the others.
+ */
+function orderLanes(byPosition: GuidedLane[], stored: readonly string[]): GuidedLane[] {
+  const rank = new Map(stored.map((id, index) => [id, index]));
+  const known = byPosition
+    .filter((lane) => rank.has(lane.id))
+    .sort((a, b) => rank.get(a.id)! - rank.get(b.id)!);
+  let next = 0;
+  // The slots the known lanes hold by position are refilled in the stored order.
+  return byPosition.map((lane) => (rank.has(lane.id) ? known[next++]! : lane));
+}
+
 /** The journey step shapes, in palette order. */
 export const GUIDED_STEP_SHAPES = [
   "rectangle",
@@ -68,7 +93,10 @@ export function isGuidedAnnotation(component: Component): boolean {
 }
 
 export interface GuidedReading {
-  /** Lanes in reading order across the axis: top to bottom (LR), left to right (TB). */
+  /**
+   * Lanes in reading order across the axis: top to bottom (LR), left to right (TB) — the
+   * stored lane order, with lanes it does not name yet placed by position.
+   */
   lanes: GuidedLane[];
   /** Steps that sit in a lane, by id. */
   steps: Map<string, GuidedStep>;
@@ -88,7 +116,7 @@ export function readGuided(diagram: DiagramModel): GuidedReading {
   const { components, connections, nodeLayouts } = resolved;
   const vertical = diagram.direction === "TB";
 
-  const lanes = Object.values(components)
+  const lanesByPosition = Object.values(components)
     .filter((c): c is GuidedLane => isGuidedLane(c) && c.parentId === null)
     .sort((a, b) => {
       const la = nodeLayouts[a.id];
@@ -101,6 +129,7 @@ export function readGuided(diagram: DiagramModel): GuidedReading {
       const qb = vertical ? (lb?.y ?? 0) : (lb?.x ?? 0);
       return pa - pb || qa - qb || a.id.localeCompare(b.id);
     });
+  const lanes = orderLanes(lanesByPosition, guidedLaneOrder(diagram));
   const laneIds = new Set(lanes.map((lane) => lane.id));
 
   const steps = new Map<string, GuidedStep>();

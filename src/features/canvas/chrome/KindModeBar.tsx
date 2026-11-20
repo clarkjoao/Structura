@@ -16,7 +16,11 @@ interface KindModeBarProps {
   onSelectElement: (id: string) => void;
 }
 
-const PLACED = "absolute top-12 left-1/2 z-20 -translate-x-1/2";
+/**
+ * In the canvas's top-left corner, out of the way of the selection's floating bar, which
+ * centres over whatever is selected — a lane's bar and this one met at the top centre.
+ */
+const PLACED = "absolute top-3 left-3 z-10";
 const BOX =
   "flex max-w-[min(100vw-2rem,40rem)] items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-sm";
 const BAR = `${PLACED} ${BOX}`;

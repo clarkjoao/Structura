@@ -5,6 +5,7 @@ import { registerBuiltInDiagramKinds } from "@/features/diagram-kinds/bootstrap"
 import { createKindDiagram } from "@/features/diagram-kinds/actions";
 import { readGuided } from "@/features/diagram-kinds/guided/guided.model";
 import { KindActionsSection } from "./KindActionsSection";
+import { KindQuickActions } from "../../../selection-actions/KindQuickActions";
 import { kindMenuItemsFor } from "../../../chrome/kindElementActions";
 
 registerBuiltInDiagramKinds();
@@ -30,9 +31,13 @@ describe("guided element actions", () => {
     expect(readGuided(d()).laneOf.get(startId)).toBe(lanes[1]);
   });
 
-  it("offers lane controls on a lane, and adds one after it", () => {
+  it("offers lane controls in a lane's floating bar, and adds one after it", () => {
     const { d, lanes } = setup();
-    render(<KindActionsSection elementId={lanes[0]!} />);
+    const { container } = render(<KindActionsSection elementId={lanes[0]!} />);
+    expect(container).toBeEmptyDOMElement();
+    render(<KindQuickActions elementId={lanes[0]!} />);
+    expect(screen.getByRole("button", { name: /Move lane down|Descer raia/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Remove lane|Remover raia/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Add lane|Adicionar raia/ }));
     expect(readGuided(d()).lanes).toHaveLength(3);
     expect(readGuided(d()).lanes[2]!.id).toBe(lanes[1]);
