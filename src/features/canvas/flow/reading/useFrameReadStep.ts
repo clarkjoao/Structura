@@ -1,7 +1,16 @@
 import { useEffect } from "react";
-import { useStore, type ReactFlowInstance } from "@xyflow/react";
+import { getViewportForBounds, useStore, type ReactFlowInstance } from "@xyflow/react";
 import { getStepById, type Flow, type FlowStep } from "@/features/diagram";
-import { FIT_VIEW_DURATION_MS, FIT_VIEW_MAX_ZOOM, FIT_VIEW_PADDING } from "../../canvas.constants";
+import { FIT_VIEW_DURATION_MS } from "../../canvas.constants";
+import {
+  neighbourSteps,
+  planReadingFrame,
+  READING_MAX_ZOOM,
+  READING_PADDING,
+} from "./readingFrame";
+
+/** Only for a step too big to fit at a reading zoom: it is still shown whole. */
+const STEP_ALONE_MIN_ZOOM = 0.1;
 
 interface Params {
   reactFlowInstance: ReactFlowInstance;
@@ -17,18 +26,33 @@ interface Params {
  * A call frames both of its ends, because a call is the pair and framing one
  * of them hides who it is talking to.
  */
-function targetsOf(step: FlowStep, instance: ReactFlowInstance): string[] | null {
-  if (step.componentId) {
-    const drawn = drawnNodeId(step.componentId, instance);
-    return drawn ? [drawn] : null;
-  }
+interface StepTargets {
+  ids: string[];
+  /** The node the step happens on: where its call arrives, or else its component. */
+  focus: string;
+}
 
-  if (!step.connectionId) return null;
-  const edge = instance.getEdge(step.connectionId);
-  if (!edge) return null;
-  return instance.getNode(edge.source) && instance.getNode(edge.target)
-    ? [edge.source, edge.target]
-    : null;
+function targetsOf(step: FlowStep, instance: ReactFlowInstance): StepTargets | null {
+  const ids = new Set<string>();
+  const component = step.componentId ? drawnNodeId(step.componentId, instance) : null;
+  if (component) ids.add(component);
+  // A step can name both its component and the call it makes: the call's far end is part of
+  // the step too, or a step "on DICT Client calling SPI" frames DICT Client and leaves SPI off.
+  let arrival: string | null = null;
+  if (step.connectionId) {
+    const edge = instance.getEdge(step.connectionId);
+    const source = edge ? drawnNodeId(edge.source, instance) : null;
+    const target = edge ? drawnNodeId(edge.target, instance) : null;
+    if (source && target) {
+      ids.add(source);
+      ids.add(target);
+      // A response travels the call's edge backwards, as `describeStepTarget` reads it.
+      arrival = step.payloadDirection === "response" ? source : target;
+    }
+  }
+  // The same node the rail names after "on": where the call arrives, else the component.
+  const focus = arrival ?? component;
+  return focus ? { ids: [...ids], focus } : null;
 }
 
 /**
@@ -47,7 +71,8 @@ function drawnNodeId(nodeId: string, instance: ReactFlowInstance): string | null
 }
 
 /**
- * Brings what the step points at into view, as the reader moves through it.
+ * Brings what the step points at into view, as the reader moves through it — with its neighbours,
+ * at a reading zoom, and only when it is not already comfortably on screen (see `readingFrame`).
  *
  * Without it the reader is told about a node and left to find it: the reading
  * says "Redirect API" and the canvas stays wherever it was, often with that
@@ -62,6 +87,7 @@ export function useFrameReadStep({
   currentStepId,
 }: Params): void {
   const paneWidth = useStore((state) => state.width);
+  const paneHeight = useStore((state) => state.height);
 
   useEffect(() => {
     if (!isReading || !flow || !currentStepId) return;
@@ -79,13 +105,30 @@ export function useFrameReadStep({
         if (cancelled) return;
         const targets = targetsOf(step, reactFlowInstance);
         if (!targets) return;
-
-        void reactFlowInstance.fitView({
-          nodes: targets.map((nodeId) => ({ id: nodeId })),
-          duration: FIT_VIEW_DURATION_MS,
-          padding: FIT_VIEW_PADDING,
-          maxZoom: FIT_VIEW_MAX_ZOOM,
+        const neighbours = neighbourSteps(flow, currentStepId).flatMap(
+          (neighbour) => targetsOf(neighbour, reactFlowInstance)?.ids ?? [],
+        );
+        const pane = { width: paneWidth, height: paneHeight };
+        const plan = planReadingFrame({
+          step: reactFlowInstance.getNodesBounds(targets.ids),
+          focus: reactFlowInstance.getNodesBounds([targets.focus]),
+          context: neighbours.length > 0 ? reactFlowInstance.getNodesBounds(neighbours) : null,
+          viewport: reactFlowInstance.getViewport(),
+          pane,
         });
+        if (plan.kind === "stay") return;
+
+        void reactFlowInstance.setViewport(
+          getViewportForBounds(
+            plan.bounds,
+            pane.width,
+            pane.height,
+            STEP_ALONE_MIN_ZOOM,
+            READING_MAX_ZOOM,
+            READING_PADDING,
+          ),
+          { duration: FIT_VIEW_DURATION_MS },
+        );
       });
     });
 
@@ -93,5 +136,5 @@ export function useFrameReadStep({
       cancelled = true;
       cancelAnimationFrame(id);
     };
-  }, [isReading, flow, currentStepId, paneWidth, reactFlowInstance]);
+  }, [isReading, flow, currentStepId, paneWidth, paneHeight, reactFlowInstance]);
 }

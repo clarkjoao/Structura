@@ -1,32 +1,29 @@
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import type { DragEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
-import type { Flow, FlowStep } from "@/features/diagram";
-import {
-  buildFlowOutline,
-  conditionKindOf,
-  endpointLabel,
-  findEndpointMismatch,
-  isEndpointComponent,
-  useComponents,
-  useConnections,
-} from "@/features/diagram";
-import { CONDITION_KIND_LABEL, conditionGlyph } from "../conditionKinds";
+import type { Flow } from "@/features/diagram";
+import { buildFlowOutline, getFlowTail, isPlaceholderStep } from "@/features/diagram";
+import { recordingCursor, type RecordingContext } from "../flowMode.types";
 import { useFlowScriptActions } from "../useFlowScriptActions";
-import { ConditionForm, type ConditionFormState } from "./ConditionForm";
-import { FlowScriptRow, type EndpointOption, type RouteMismatch } from "./FlowScriptRow";
+import { FlowScriptRow, WaitingLine } from "./FlowScriptRow";
+import { nextStepLabel } from "./nextStepLabel";
+import { useStepNaming } from "./useStepNaming";
 
-const EMPTY_ENDPOINTS: readonly EndpointOption[] = [];
+/** Recorder-only: where the next canvas click is written, and how to move it. */
+export interface ScriptRecording {
+  target: RecordingContext;
+  onTarget: (target: RecordingContext) => void;
+}
 
 export interface FlowScriptListProps {
   flow: Flow;
   /** Step highlighted on the canvas, if any. */
   selectedStepId?: string | null;
-  onSelectStep?: (stepId: string) => void;
-  /** Recorder-only: jump into a condition's branches. */
-  onOpenBranchSelect?: (conditionStepId: string) => void;
+  /** Opens a step in its own panel. */
+  onOpenStep?: (stepId: string) => void;
+  /** Recorder-only: branch heads become places to write into. */
+  recording?: ScriptRecording;
 }
 
 /**
@@ -39,86 +36,45 @@ export interface FlowScriptListProps {
 export function FlowScriptList({
   flow,
   selectedStepId,
-  onSelectStep,
-  onOpenBranchSelect,
+  onOpenStep,
+  recording,
 }: FlowScriptListProps) {
   const { t } = useTranslation();
-  const components = useComponents();
-  const connections = useConnections();
+  const { subjectOf, callOf } = useStepNaming();
   const actions = useFlowScriptActions(flow.id);
-  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
-  const [conditionForm, setConditionForm] = useState<ConditionFormState | null>(null);
   const [draggingStepId, setDraggingStepId] = useState<string | null>(null);
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
   const outline = useMemo(() => buildFlowOutline(flow), [flow]);
 
-  /**
-   * Every route on the diagram, named the way a list of routes reads.
-   *
-   * The group's name comes along because two services can serve the same path,
-   * and `POST /urls` on its own would then name two different operations.
-   */
-  const endpointOptions = useMemo<EndpointOption[]>(() => {
-    const options: EndpointOption[] = [];
-    for (const component of Object.values(components)) {
-      if (!isEndpointComponent(component)) continue;
-      const group = component.parentId ? components[component.parentId] : undefined;
-      options.push({
-        id: component.id,
-        label: endpointLabel(component),
-        groupName: group?.name ?? t("flowScript.routeUngrouped"),
-      });
-    }
-    return options.sort(
-      (a, b) => a.groupName.localeCompare(b.groupName) || a.label.localeCompare(b.label),
-    );
-  }, [components, t]);
-
-  /** Named here, where both maps are to hand; the row only renders it. */
-  const routeMismatchOf = useCallback(
-    (step: FlowStep): RouteMismatch | null => {
-      const mismatch = findEndpointMismatch(step, components, connections);
-      if (!mismatch) return null;
-      return {
-        arrivesAt: components[mismatch.arrivesAtId]?.name ?? t("flowScript.unknownStep"),
-        belongsTo: components[mismatch.belongsToId]?.name ?? t("flowScript.unknownStep"),
-      };
-    },
-    [components, connections, t],
-  );
-
-  const titleOf = useCallback(
-    (step: FlowStep): string => {
-      if (step.branches && step.branches.length > 0) {
-        const kind = conditionKindOf(step);
-        return `${conditionGlyph(kind)} ${step.conditionLabel?.trim() || t(CONDITION_KIND_LABEL[kind])}`;
-      }
-      if (step.connectionId) {
-        const connection = connections[step.connectionId];
-        if (connection) return `${t("flowScript.connectionPrefix")}${connection.label}`;
-      }
-      if (step.componentId) {
-        return components[step.componentId]?.name ?? t("flowScript.unknownStep");
-      }
-      if (step.description?.trim()) return step.description;
-      return t("flowScript.emptyStep");
-    },
-    [components, connections, t],
-  );
-
-  const submitConditionForm = useCallback(() => {
-    if (!conditionForm) return;
-    const branches = conditionForm.branches.filter((branch) => branch.trim());
-    if (branches.length < 2) {
-      toast.warning(t("flowScript.minBranches"));
-      return;
-    }
-    actions.convertToCondition(conditionForm.stepId, conditionForm.label, branches);
-    setConditionForm(null);
-  }, [actions, conditionForm, t]);
-
   const lastStepId = outline.rows[outline.rows.length - 1]?.stepId;
+
+  /**
+   * Recorder-only: where the next click lands. A placeholder holding the sequence open is that
+   * place itself; otherwise a dashed line after the sequence's last step names the number the
+   * click will take.
+   */
+  const waiting = useMemo(() => {
+    if (!recording) return null;
+    const tailId = getFlowTail(flow, recordingCursor(recording.target));
+    const tail = tailId ? flow.steps[tailId] : undefined;
+    const tailRow = outline.rows.find((row) => row.stepId === tailId);
+    if (!tail || !tailRow) return null;
+    if (isPlaceholderStep(tail)) return { kind: "fill" as const, stepId: tail.id };
+    // Below the tail's own subtree: a condition at the end keeps its branches above the line.
+    const from = outline.rows.indexOf(tailRow);
+    let anchor = tailRow;
+    for (const row of outline.rows.slice(from + 1)) {
+      if (row.depth <= tailRow.depth) break;
+      anchor = row;
+    }
+    return {
+      kind: "after" as const,
+      stepId: anchor.stepId,
+      label: nextStepLabel(tailRow.label),
+      depth: tailRow.depth,
+    };
+  }, [flow, outline.rows, recording]);
 
   const onDragStart = useCallback((event: DragEvent, stepId: string) => {
     event.dataTransfer.effectAllowed = "move";
@@ -161,69 +117,85 @@ export function FlowScriptList({
 
   return (
     <div className="space-y-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {t("flowScript.stepsHeading", { count: outline.rows.length })}
-      </p>
-
       {outline.rows.length === 0 ? (
-        <p className="py-2 text-xs italic text-muted-foreground">{t("flowScript.empty")}</p>
+        <p className="py-2 text-sm text-muted-foreground">{t("flowScript.empty")}</p>
       ) : (
         <div className="space-y-0.5">
           {outline.rows.map((row) => {
             const step = flow.steps[row.stepId];
             if (!step) return null;
+            const call = step.title?.trim() ? callOf(step)?.label : undefined;
             return (
-              <FlowScriptRow
-                key={row.stepId}
-                row={row}
-                step={step}
-                title={titleOf(step)}
-                isExpanded={expandedStepId === row.stepId}
-                isSelected={selectedStepId === row.stepId}
-                isLast={lastStepId === row.stepId}
-                actions={actions}
-                endpoints={expandedStepId === row.stepId ? endpointOptions : EMPTY_ENDPOINTS}
-                routeMismatch={expandedStepId === row.stepId ? routeMismatchOf(step) : null}
-                onToggleExpand={() =>
-                  setExpandedStepId(expandedStepId === row.stepId ? null : row.stepId)
-                }
-                onSelect={() => onSelectStep?.(row.stepId)}
-                onConvertToCondition={(stepId) =>
-                  setConditionForm({ stepId, label: "", branches: ["", ""] })
-                }
-                onOpenBranchSelect={onOpenBranchSelect}
-                drag={{
-                  isDragging: draggingStepId === row.stepId,
-                  isDragOver:
-                    dragOverStepId === row.stepId &&
-                    draggingStepId !== null &&
-                    draggingStepId !== row.stepId,
-                  onDragStart,
-                  onDragOver,
-                  onDrop,
-                  onDragEnd: endDrag,
-                }}
-              />
+              <Fragment key={row.stepId}>
+                <FlowScriptRow
+                  row={row}
+                  step={step}
+                  title={
+                    step.branches?.length ? subjectOf(step) : step.title?.trim() || subjectOf(step)
+                  }
+                  isSelected={selectedStepId === row.stepId}
+                  isLast={lastStepId === row.stepId}
+                  actions={actions}
+                  onOpen={() => onOpenStep?.(row.stepId)}
+                  call={call}
+                  waiting={waiting?.kind === "fill" && waiting.stepId === row.stepId}
+                  writeTarget={
+                    recording && row.isBranchHead && row.branch
+                      ? writeTargetFor(recording, row.branch)
+                      : undefined
+                  }
+                  drag={{
+                    isDragging: draggingStepId === row.stepId,
+                    isDragOver:
+                      dragOverStepId === row.stepId &&
+                      draggingStepId !== null &&
+                      draggingStepId !== row.stepId,
+                    onDragStart,
+                    onDragOver,
+                    onDrop,
+                    onDragEnd: endDrag,
+                  }}
+                />
+                {waiting?.kind === "after" && waiting.stepId === row.stepId && (
+                  <WaitingLine label={waiting.label} depth={waiting.depth} />
+                )}
+              </Fragment>
             );
           })}
         </div>
       )}
 
       {outline.unreachable.length > 0 && (
-        <p className="flex items-center gap-1 text-[10px] text-amber-400">
+        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
           <AlertTriangle className="h-3 w-3 shrink-0" />
           {t("flowScript.unreachable", { count: outline.unreachable.length })}
         </p>
       )}
-
-      {conditionForm && (
-        <ConditionForm
-          form={conditionForm}
-          onChange={setConditionForm}
-          onSubmit={submitConditionForm}
-          onCancel={() => setConditionForm(null)}
-        />
-      )}
     </div>
   );
+}
+
+function writeTargetFor(
+  recording: ScriptRecording,
+  branch: { conditionStepId: string; branchIndex: number; label: string },
+) {
+  const { target } = recording;
+  const active =
+    target.mode === "branch-record" &&
+    target.conditionStepId === branch.conditionStepId &&
+    target.branchIndex === branch.branchIndex;
+  return {
+    active,
+    onWrite: () =>
+      recording.onTarget(
+        active
+          ? { mode: "trunk" }
+          : {
+              mode: "branch-record",
+              conditionStepId: branch.conditionStepId,
+              branchIndex: branch.branchIndex,
+              branchLabel: branch.label,
+            },
+      ),
+  };
 }

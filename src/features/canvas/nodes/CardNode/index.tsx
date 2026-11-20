@@ -204,9 +204,13 @@ const CardNode = memo(({ data, selected }: NodeProps<Node<NodeData>>) => {
       ref={rootRef}
       aria-label={t("cardNode.ariaNamed", { name: d.name, type: d.type })}
       className={`group relative rounded-lg bg-card border border-border ${borderClass} border-l-[3px] transition-shadow duration-200 flex flex-col ${
-        isActive
-          ? "overflow-hidden ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
-          : "opacity-90"
+        // While recording, the node the last step landed on wears a halo — the next click
+        // continues from here. It wins over the selection ring, which would also clip its badge.
+        d.isRecording && d.isLastRecorded
+          ? "ring-2 ring-primary shadow-[0_0_0_10px_hsl(var(--primary)/0.16)]"
+          : isActive
+            ? "overflow-hidden ring-2 ring-primary shadow-[0_0_0_2px_rgba(59,130,246,0.4)] brightness-110"
+            : "opacity-90"
       }`}
       style={{
         minWidth: CARD_MIN_W,

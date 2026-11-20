@@ -12,11 +12,13 @@ export function useElementPanelGate({
   visualState,
   resolvedComponents,
   canEditCanvas,
+  isFlowPanelOpen = false,
 }: {
   nodes: Node[];
   visualState: CanvasVisualState;
   resolvedComponents: ReturnType<typeof useResolvedComponents>;
   canEditCanvas: boolean;
+  isFlowPanelOpen?: boolean;
 }) {
   const selectedNodes = useMemo(
     () => nodes.filter((node) => visualState.selectedNodeIds.has(node.id)),
@@ -36,6 +38,7 @@ export function useElementPanelGate({
   const showElementPanel =
     !isLoneTextSelected &&
     canEditCanvas &&
+    !isFlowPanelOpen &&
     visualState.noteInlineEditingId === null &&
     visualState.jsonViewerInlineEditingId === null;
   return { selectedNodes, selectedCount, showElementPanel };

@@ -6,6 +6,7 @@ import type { Flow, FlowStep } from "@/features/diagram";
 import { useDiagramStore } from "@/features/diagram";
 import FlowPanel from "./FlowPanel";
 import { useFlowViewStore } from "./useFlowViewStore";
+import { useHighlightRequests } from "../focus/highlightRequests";
 
 vi.mock("sonner", () => ({
   toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() },
@@ -107,8 +108,11 @@ describe("the actions a flow carries", () => {
     useFlowViewStore.setState({ scriptFlowId: null, selectedStepId: null });
   });
 
+  // The panel header has a ⋯ of its own (import); the flow's is the one on its row.
   const openOverflow = () => {
-    fireEvent.keyDown(screen.getByTitle("More actions"), { key: "Enter" });
+    const menus = screen.getAllByTitle("More actions");
+    const rowMenu = menus[menus.length - 1]!;
+    fireEvent.keyDown(rowMenu, { key: "Enter" });
     return screen.getByRole("menu");
   };
 
@@ -140,5 +144,53 @@ describe("the actions a flow carries", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Remove" }));
 
     expect(flowsOf(diagramId)).not.toContain(flowId);
+  });
+});
+
+describe("hovering a flow lights what it passes through", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+    useHighlightRequests.setState({ request: null });
+  });
+
+  it("asks the canvas to light the flow's participants, without moving the camera", () => {
+    seed();
+    renderPanel();
+    const node = Object.values(
+      useDiagramStore.getState().diagrams[useDiagramStore.getState().activeDiagramId!]!.snapshot
+        .components,
+    )[0]!;
+
+    fireEvent.mouseEnter(screen.getByTestId("flow-card"));
+
+    expect(useHighlightRequests.getState().request).toMatchObject({
+      componentIds: [node.id],
+      connectionIds: [],
+      frame: false,
+    });
+  });
+
+  it("puts the canvas back when the pointer leaves", () => {
+    seed();
+    renderPanel();
+    const card = screen.getByTestId("flow-card");
+
+    fireEvent.mouseEnter(card);
+    fireEvent.mouseLeave(card);
+
+    expect(useHighlightRequests.getState().request).toMatchObject({
+      componentIds: [],
+      connectionIds: [],
+    });
+  });
+
+  it("leaves another highlight alone when nothing was lit from here", () => {
+    seed();
+    const { unmount } = renderPanel();
+    const before = useHighlightRequests.getState().request;
+
+    unmount();
+
+    expect(useHighlightRequests.getState().request).toBe(before);
   });
 });

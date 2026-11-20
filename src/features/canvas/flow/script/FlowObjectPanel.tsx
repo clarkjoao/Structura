@@ -7,7 +7,7 @@ import { setsFromPayload, valuesFromPaste } from "./stepContext";
 import type { FlowScriptActions } from "../useFlowScriptActions";
 
 /**
- * The object the script carries, above the steps rather than inside one.
+ * The object the script carries, as it stands at the step open in the step panel.
  *
  * It used to be two lists inside every expanded step — what is already set, and
  * what this step adds — and a reader had to join them in their head to know how
@@ -62,21 +62,7 @@ export function FlowObjectPanel({ flow, selectedStepId, actions }: Props) {
   if (object.rows.length === 0 && drafts.length === 0 && !step) return null;
 
   return (
-    <div
-      data-testid="flow-object"
-      className="sticky top-0 z-10 mb-2 rounded-md border border-primary/25 bg-background/95 px-2 py-1.5 backdrop-blur"
-    >
-      <div className="flex items-baseline gap-2">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("flowScript.objectLabel")}
-        </span>
-        <span className="ml-auto font-mono text-[9px] text-muted-foreground">
-          {selectedStepId
-            ? t("flowScript.objectAtStep", { number: object.atNumber })
-            : t("flowScript.objectAtEnd")}
-        </span>
-      </div>
-
+    <div data-testid="flow-object" className="rounded-md border border-border px-2.5 py-2">
       <p className="font-mono text-[10.5px] text-muted-foreground">{"{"}</p>
       {object.rows.map((row) => (
         <ObjectRowView

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { MoreHorizontal, X } from "lucide-react";
+import { ChevronLeft, MoreHorizontal, X } from "lucide-react";
 import { Fragment, type MutableRefObject, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -47,6 +47,10 @@ export interface PanelHeaderProps {
   badges?: ReactNode;
   /** A row under the name, above the trail — the multi-selection's type chips. */
   subheader?: ReactNode;
+  /** A panel opened from another one (a flow's step): the way back, named. */
+  back?: { label: string; onBack: () => void };
+  /** Controls beside the ⋯ menu (‹ › between siblings). */
+  actions?: ReactNode;
 }
 
 /**
@@ -67,17 +71,30 @@ export function PanelHeader({
   onClose,
   badges,
   subheader,
+  back,
+  actions,
 }: PanelHeaderProps) {
   const { t } = useTranslation();
   return (
     <header className="shrink-0 space-y-1.5 border-b border-border px-4 pb-3 pt-3">
       <div className="flex items-center gap-2">
+        {back && (
+          <button
+            type="button"
+            onClick={back.onBack}
+            className="-ml-1 flex shrink-0 items-center gap-0.5 rounded px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+            {back.label}
+          </button>
+        )}
         <span className="flex min-w-0 items-center gap-1.5 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
           <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">{icon}</span>
           <span className="truncate">{typeLabel}</span>
         </span>
         {badges}
         <span className="flex-1" />
+        {actions}
         {menu.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -14,6 +14,7 @@ import {
 } from "@/features/diagram";
 import type { FlowMode, RecordingContext } from "./flowMode.types";
 import { recordingCursor } from "./flowMode.types";
+import { suggestFlowName } from "./suggestFlowName";
 import { useFlowViewStore } from "./useFlowViewStore";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { resolveShared } from "@/features/diagram/utils/shared";
@@ -31,6 +32,7 @@ export interface FlowRecordingSlice {
   onRecordEdgeClick: (edgeId: string, handleId?: string) => void;
   onRecordHandleClick: (nodeId: string, handleId: string) => void;
   onRecordUndo: () => void;
+  onRecordCondition: (conditionLabel: string, branchLabels: readonly string[]) => boolean;
 }
 
 const TRUNK: RecordingContext = { mode: "trunk" };
@@ -70,6 +72,7 @@ export function useFlowRecording(
     commitFlowSession,
     cancelFlowSession,
     recordFlowStep,
+    recordFlowCondition,
     undoLastRecordedStep,
   } = useDiagramActions();
 
@@ -106,9 +109,7 @@ export function useFlowRecording(
   const write = useCallback(
     (content: RecordedStepContent) => {
       if (!recording) return;
-      const cursor = recordingCursor(recording.context);
-      if (!cursor) return;
-      announce(recordFlowStep(recording.flowId, content, cursor));
+      announce(recordFlowStep(recording.flowId, content, recordingCursor(recording.context)));
     },
     [announce, recordFlowStep, recording],
   );
@@ -161,7 +162,16 @@ export function useFlowRecording(
     const flow = diagramId
       ? store.diagrams[diagramId]?.snapshot.flows[recording.flowId]
       : undefined;
-    if (flow && !flow.name.trim()) updateFlow(recording.flowId, { name: t("flows.unnamed") });
+    if (flow && !flow.name.trim()) {
+      // Unnamed, it takes the name the panel's placeholder was offering — first participant →
+      // last — and only a flow with nothing to go by is called "unnamed".
+      const diagram = diagramId ? store.diagrams[diagramId] : undefined;
+      const view = diagram ? getCachedCanvasSnapshot(diagram) : undefined;
+      const suggested = view
+        ? suggestFlowName(flow, (id) => view.components[id]?.name, view.connections)
+        : null;
+      updateFlow(recording.flowId, { name: suggested ?? t("flows.unnamed") });
+    }
     commitFlowSession();
     clearRecordingSelection();
     setMode({ kind: "idle" });
@@ -197,15 +207,9 @@ export function useFlowRecording(
         : undefined;
       const cursor = recordingCursor(recording.context);
 
-      const payloadDirection =
-        flow && cursor
-          ? directionForRecordedClick(
-              flow,
-              buildFlowOutline(flow),
-              getFlowTail(flow, cursor),
-              edgeId,
-            )
-          : "request";
+      const payloadDirection = flow
+        ? directionForRecordedClick(flow, buildFlowOutline(flow), getFlowTail(flow, cursor), edgeId)
+        : "request";
 
       write({ connectionId: edgeId, handleId, payloadDirection });
     },
@@ -219,10 +223,31 @@ export function useFlowRecording(
 
   const onRecordUndo = useCallback(() => {
     if (!recording) return;
-    const cursor = recordingCursor(recording.context);
-    if (!cursor) return;
-    announce(undoLastRecordedStep(recording.flowId, cursor));
+    announce(undoLastRecordedStep(recording.flowId, recordingCursor(recording.context)));
   }, [announce, recording, undoLastRecordedStep]);
+
+  const onRecordCondition = useCallback(
+    (conditionLabel: string, branchLabels: readonly string[]) => {
+      if (!recording || branchLabels.length < 2) return false;
+      const result = recordFlowCondition(
+        recording.flowId,
+        recordingCursor(recording.context),
+        conditionLabel,
+        branchLabels,
+      );
+      announce(result);
+      if (!result.ok || !result.stepId) return false;
+      // The fork is written next: its first way out is where the next click lands.
+      setRecordingContext({
+        mode: "branch-record",
+        conditionStepId: result.stepId,
+        branchIndex: 0,
+        branchLabel: branchLabels[0]!,
+      });
+      return true;
+    },
+    [announce, recordFlowCondition, recording, setRecordingContext],
+  );
 
   return useMemo(
     () => ({
@@ -237,6 +262,7 @@ export function useFlowRecording(
       onRecordEdgeClick,
       onRecordHandleClick,
       onRecordUndo,
+      onRecordCondition,
     }),
     [
       cancelRecording,
@@ -246,6 +272,7 @@ export function useFlowRecording(
       onRecordHandleClick,
       onRecordNodeClick,
       onRecordUndo,
+      onRecordCondition,
       recordingContext,
       recordingFlowId,
       setRecordingContext,

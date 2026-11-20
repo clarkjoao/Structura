@@ -155,16 +155,6 @@ describe("recording writes into the store as it goes", () => {
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
-  it("records nothing while the recorder is choosing a branch", () => {
-    const { recorded } = mountRecorder();
-    act(() => api.startRecording());
-    act(() => api.onRecordNodeClick("n1"));
-    const conditionId = Object.keys(recorded().steps)[0]!;
-    act(() => api.setRecordingContext({ mode: "branch-select", conditionStepId: conditionId }));
-    act(() => api.onRecordNodeClick("n2"));
-    expect(Object.keys(recorded().steps)).toHaveLength(1);
-  });
-
   it("takes the whole recording back with one undo", () => {
     const { flows } = mountRecorder();
     act(() => api.startRecording());
@@ -198,6 +188,19 @@ describe("recording writes into the store as it goes", () => {
     act(() => api.onRecordNodeClick("n1"));
     act(() => api.finalizeRecording());
     expect(flows()[flowId]!.name).toBe(i18n.t("flows.unnamed"));
+  });
+
+  it("names an unnamed flow after where it starts and ends, when it can", () => {
+    const { flows, diagramId } = mountRecorder();
+    const web = useDiagramStore.getState().addComponent("system", "Web", null, { x: 0, y: 0 });
+    const api_ = useDiagramStore.getState().addComponent("system", "API", null, { x: 200, y: 0 });
+    act(() => api.startRecording());
+    const flowId = api.recordingFlowId!;
+    act(() => api.onRecordNodeClick(web.id));
+    act(() => api.onRecordNodeClick(api_.id));
+    act(() => api.finalizeRecording());
+    expect(useDiagramStore.getState().activeDiagramId).toBe(diagramId);
+    expect(flows()[flowId]!.name).toBe("Web → API");
   });
 
   it("empties the first step instead of removing it when undoing back to the start", () => {

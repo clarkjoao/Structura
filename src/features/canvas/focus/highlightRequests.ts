@@ -6,6 +6,8 @@ export interface HighlightRequest {
   connectionIds: readonly string[];
   /** A new request, even for the same elements. */
   token: number;
+  /** Bring the elements into view when they are not (default). A hover must not move the camera. */
+  frame: boolean;
 }
 
 interface HighlightRequestState {
@@ -13,6 +15,7 @@ interface HighlightRequestState {
   requestHighlight(target: {
     componentIds?: readonly string[];
     connectionIds?: readonly string[];
+    frame?: boolean;
   }): void;
 }
 
@@ -22,8 +25,8 @@ interface HighlightRequestState {
  */
 export const useHighlightRequests = create<HighlightRequestState>((set) => ({
   request: null,
-  requestHighlight: ({ componentIds = [], connectionIds = [] }) =>
+  requestHighlight: ({ componentIds = [], connectionIds = [], frame = true }) =>
     set((state) => ({
-      request: { componentIds, connectionIds, token: (state.request?.token ?? 0) + 1 },
+      request: { componentIds, connectionIds, frame, token: (state.request?.token ?? 0) + 1 },
     })),
 }));

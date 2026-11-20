@@ -389,28 +389,28 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-payer": {
         "elementId": "pl-hub-payer",
         "x": 116,
-        "y": 625,
+        "y": 105,
         "width": 260,
         "height": 85
       },
       "pl-hub-merchant-sys": {
         "elementId": "pl-hub-merchant-sys",
         "x": 116,
-        "y": 1080.75,
+        "y": 506,
         "width": 260,
         "height": 85
       },
       "pl-hub-boundary": {
         "elementId": "pl-hub-boundary",
         "x": 1404.5,
-        "y": 433.25,
+        "y": 173.25,
         "width": 2662,
-        "height": 1224
+        "height": 1209
       },
       "pl-hub-cob-api": {
         "elementId": "pl-hub-cob-api",
         "x": 1762,
-        "y": 83,
+        "y": 82,
         "width": 260,
         "height": 174
       },
@@ -424,7 +424,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-webhook": {
         "elementId": "pl-hub-webhook",
         "x": 1762,
-        "y": 795.5,
+        "y": 793,
         "width": 260,
         "height": 174
       },
@@ -438,77 +438,77 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-queue": {
         "elementId": "pl-hub-queue",
         "x": 2362,
-        "y": 934,
+        "y": 786,
         "width": 260,
         "height": 104
       },
       "pl-hub-worker": {
         "elementId": "pl-hub-worker",
         "x": 40,
-        "y": 1040,
+        "y": 1025,
         "width": 260,
         "height": 104
       },
       "pl-hub-spi": {
         "elementId": "pl-hub-spi",
         "x": 774,
-        "y": 621,
+        "y": 101,
         "width": 260,
         "height": 85
       },
       "pl-hub-risk-ext": {
         "elementId": "pl-hub-risk-ext",
         "x": 4461,
-        "y": 1327,
+        "y": 1091.75,
         "width": 260,
         "height": 85
       },
       "pl-hub-ledger-ext": {
         "elementId": "pl-hub-ledger-ext",
         "x": 4461,
-        "y": 1522,
+        "y": 1286.75,
         "width": 260,
         "height": 68
       },
       "pl-hub-note": {
         "elementId": "pl-hub-note",
         "x": 40,
-        "y": 40,
+        "y": 701,
         "width": 336,
         "height": 475
       },
       "pl-hub-ep-post": {
         "elementId": "pl-hub-ep-post",
         "x": 40,
-        "y": 384.5,
+        "y": 379.75,
         "width": 260,
         "height": 104
       },
       "pl-hub-auth-guard": {
         "elementId": "pl-hub-auth-guard",
         "x": 598,
-        "y": 384.5,
+        "y": 379.75,
         "width": 260,
         "height": 104
       },
       "pl-hub-cob-svc": {
         "elementId": "pl-hub-cob-svc",
         "x": 1186,
-        "y": 384.5,
+        "y": 379.75,
         "width": 260,
         "height": 104
       },
       "pl-hub-cache-svc": {
         "elementId": "pl-hub-cache-svc",
         "x": 1762,
-        "y": 384.5,
+        "y": 369.5,
         "width": 260,
         "height": 104
       },
       "pl-hub-event-pub": {
         "elementId": "pl-hub-event-pub",
         "x": 1765.5,
-        "y": 598.5,
+        "y": 583.5,
         "width": 253,
         "height": 87
       }
@@ -553,12 +553,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-webhook": {
         "outgoing": [
           "pl-hub-c-cache",
-          "pl-hub-c-risk",
-          "pl-hub-c-queue"
+          "pl-hub-c-queue",
+          "pl-hub-c-risk"
         ],
         "incoming": [
-          "pl-hub-c-spi",
-          "pl-hub-c-merchant-wh"
+          "pl-hub-c-merchant-wh",
+          "pl-hub-c-spi"
         ]
       },
       "pl-hub-cache": {
@@ -580,8 +580,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-hub-worker": {
         "outgoing": [
           "pl-hub-c-worker",
-          "pl-hub-c-ledger",
-          "pl-hub-c-worker-risk"
+          "pl-hub-c-worker-risk",
+          "pl-hub-c-ledger"
         ],
         "incoming": []
       },
@@ -654,12 +654,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-payer-cp0",
             "x": 575,
-            "y": 667.5
+            "y": 147.5
           },
           {
             "id": "pl-hub-c-payer-cp1",
             "x": 575,
-            "y": 667.5
+            "y": 147.5
           }
         ],
         "labelOffset": 0.5
@@ -669,322 +669,292 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-merchant-cp0",
             "x": 386,
-            "y": 1119.25
+            "y": 544.5
           },
           {
             "id": "pl-hub-c-merchant-cp1",
             "x": 386,
-            "y": 847.75
+            "y": 327.75
           },
           {
             "id": "pl-hub-c-merchant-cp2",
             "x": 1292,
-            "y": 847.75
+            "y": 327.75
           },
           {
             "id": "pl-hub-c-merchant-cp3",
             "x": 1292,
-            "y": 574.75
+            "y": 314.75
           },
           {
             "id": "pl-hub-c-merchant-cp4",
             "x": 3066.5,
-            "y": 574.75
+            "y": 314.75
           },
           {
             "id": "pl-hub-c-merchant-cp5",
             "x": 3066.5,
-            "y": 599.25
+            "y": 338.25
           }
         ],
-        "labelOffset": 0.238
+        "labelOffset": 0.2447
       },
       "pl-hub-c-dict": {
         "points": [
           {
             "id": "pl-hub-c-dict-cp0",
             "x": 3436.5,
-            "y": 599.25
+            "y": 338.25
           },
           {
             "id": "pl-hub-c-dict-cp1",
             "x": 3436.5,
-            "y": 572.25
+            "y": 312.25
           }
         ],
-        "labelOffset": 0.5368
+        "labelOffset": 0.5355
       },
       "pl-hub-c-spi": {
         "points": [
           {
             "id": "pl-hub-c-spi-cp0",
             "x": 1312,
-            "y": 663.5
+            "y": 143.5
           },
           {
             "id": "pl-hub-c-spi-cp1",
             "x": 1312,
-            "y": 1294.75
-          },
-          {
-            "id": "pl-hub-c-spi-cp2",
-            "x": 3086.5,
-            "y": 1294.75
-          },
-          {
-            "id": "pl-hub-c-spi-cp3",
-            "x": 3086.5,
-            "y": 1311.75
+            "y": 1057.25
           }
         ],
-        "labelOffset": 0.0644
+        "labelOffset": 0.0588
       },
       "pl-hub-c-cache": {
         "points": [
           {
             "id": "pl-hub-c-cache-cp0",
             "x": 3436.5,
-            "y": 1307.75
+            "y": 1045.25
           },
           {
             "id": "pl-hub-c-cache-cp1",
             "x": 3436.5,
-            "y": 1201.75
+            "y": 896
           },
           {
             "id": "pl-hub-c-cache-cp2",
-            "x": 3686.5,
-            "y": 1201.75
+            "x": 3666.5,
+            "y": 896
           },
           {
             "id": "pl-hub-c-cache-cp3",
-            "x": 3686.5,
-            "y": 862.75
+            "x": 3666.5,
+            "y": 602.75
           }
         ],
-        "labelOffset": 0.3516
+        "labelOffset": 0.408
       },
       "pl-hub-c-risk": {
         "points": [
           {
             "id": "pl-hub-c-risk-cp0",
-            "x": 4089,
-            "y": 1315.75
+            "x": 3436.5,
+            "y": 1061.25
           },
           {
             "id": "pl-hub-c-risk-cp1",
-            "x": 4089,
-            "y": 1317.75
+            "x": 3436.5,
+            "y": 1143.75
           },
           {
             "id": "pl-hub-c-risk-cp2",
-            "x": 4361,
-            "y": 1317.75
+            "x": 4089,
+            "y": 1143.75
           },
           {
             "id": "pl-hub-c-risk-cp3",
+            "x": 4089,
+            "y": 1100.75
+          },
+          {
+            "id": "pl-hub-c-risk-cp4",
             "x": 4361,
-            "y": 1365.5
+            "y": 1100.75
+          },
+          {
+            "id": "pl-hub-c-risk-cp5",
+            "x": 4361,
+            "y": 1130.25
           }
         ],
-        "labelOffset": 0.7798
+        "labelOffset": 0.8146
       },
       "pl-hub-c-worker-risk": {
         "points": [
           {
             "id": "pl-hub-c-worker-risk-cp0",
-            "x": 1714.5,
-            "y": 1533.25
+            "x": 4089,
+            "y": 1250.25
           },
           {
             "id": "pl-hub-c-worker-risk-cp1",
-            "x": 1714.5,
-            "y": 1554.75
+            "x": 4089,
+            "y": 1177
           },
           {
             "id": "pl-hub-c-worker-risk-cp2",
-            "x": 4089,
-            "y": 1554.75
+            "x": 4361,
+            "y": 1177
           },
           {
             "id": "pl-hub-c-worker-risk-cp3",
-            "x": 4089,
-            "y": 1575.25
-          },
-          {
-            "id": "pl-hub-c-worker-risk-cp4",
             "x": 4361,
-            "y": 1575.25
-          },
-          {
-            "id": "pl-hub-c-worker-risk-cp5",
-            "x": 4361,
-            "y": 1373.5
+            "y": 1138.25
           }
         ],
-        "labelOffset": 0.8691
+        "labelOffset": 0.9199
       },
       "pl-hub-c-merchant-wh": {
         "points": [
           {
             "id": "pl-hub-c-merchant-wh-cp0",
-            "x": 386,
-            "y": 1127.25
+            "x": 1292,
+            "y": 552.5
           },
           {
             "id": "pl-hub-c-merchant-wh-cp1",
-            "x": 386,
-            "y": 1156.75
-          },
-          {
-            "id": "pl-hub-c-merchant-wh-cp2",
             "x": 1292,
-            "y": 1156.75
-          },
-          {
-            "id": "pl-hub-c-merchant-wh-cp3",
-            "x": 1292,
-            "y": 1319.75
+            "y": 1049.25
           }
         ],
-        "labelOffset": 0.1869
+        "labelOffset": 0.1606
       },
       "pl-hub-c-queue": {
         "points": [
           {
             "id": "pl-hub-c-queue-cp0",
-            "x": 3436.5,
-            "y": 1323.75
+            "x": 3666.5,
+            "y": 1053.25
           },
           {
             "id": "pl-hub-c-queue-cp1",
-            "x": 3436.5,
-            "y": 1395.25
-          },
-          {
-            "id": "pl-hub-c-queue-cp2",
             "x": 3666.5,
-            "y": 1395.25
-          },
-          {
-            "id": "pl-hub-c-queue-cp3",
-            "x": 3666.5,
-            "y": 1419.25
+            "y": 1011.25
           }
         ],
-        "labelOffset": 0.5545
+        "labelOffset": 0.445
       },
       "pl-hub-c-worker": {
         "points": [
           {
             "id": "pl-hub-c-worker-cp0",
             "x": 1714.5,
-            "y": 1517.25
+            "y": 1242.25
           },
           {
             "id": "pl-hub-c-worker-cp1",
             "x": 1714.5,
-            "y": 1458.75
+            "y": 1194.25
           },
           {
             "id": "pl-hub-c-worker-cp2",
-            "x": 3666.5,
-            "y": 1458.75
+            "x": 3686.5,
+            "y": 1194.25
           },
           {
             "id": "pl-hub-c-worker-cp3",
-            "x": 3666.5,
-            "y": 1427.25
+            "x": 3686.5,
+            "y": 1019.25
           }
         ],
-        "labelOffset": 0.4993
+        "labelOffset": 0.4656
       },
       "pl-hub-c-ledger": {
         "points": [
           {
             "id": "pl-hub-c-ledger-cp0",
-            "x": 4089,
-            "y": 1525.25
+            "x": 1714.5,
+            "y": 1258.25
           },
           {
             "id": "pl-hub-c-ledger-cp1",
-            "x": 4089,
-            "y": 1508.25
+            "x": 1714.5,
+            "y": 1281.25
           },
           {
             "id": "pl-hub-c-ledger-cp2",
-            "x": 4381,
-            "y": 1508.25
+            "x": 4089,
+            "y": 1281.25
           },
           {
             "id": "pl-hub-c-ledger-cp3",
-            "x": 4381,
-            "y": 1556
+            "x": 4089,
+            "y": 1320.75
           }
         ],
-        "labelOffset": 0.9154
+        "labelOffset": 0.9322
       },
       "pl-hub-c-dict-spi": {
         "points": [
           {
             "id": "pl-hub-c-dict-spi-cp0",
             "x": 4089,
-            "y": 572.25
+            "y": 312.25
           },
           {
             "id": "pl-hub-c-dict-spi-cp1",
             "x": 4089,
-            "y": 321
+            "y": 61
           },
           {
             "id": "pl-hub-c-dict-spi-cp2",
             "x": 674,
-            "y": 321
+            "y": 61
           },
           {
             "id": "pl-hub-c-dict-spi-cp3",
             "x": 674,
-            "y": 659.5
+            "y": 139.5
           }
         ],
-        "labelOffset": 0.7654
+        "labelOffset": 0.8164
       },
       "pl-hub-c-cob-cache": {
         "points": [
           {
             "id": "pl-hub-c-cob-cache-cp0",
             "x": 3436.5,
-            "y": 607.25
+            "y": 346.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp1",
             "x": 3436.5,
-            "y": 639.25
+            "y": 379.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp2",
             "x": 3666.5,
-            "y": 639.25
+            "y": 379.25
           },
           {
             "id": "pl-hub-c-cob-cache-cp3",
             "x": 3666.5,
-            "y": 846.75
+            "y": 586.75
           }
         ],
-        "labelOffset": 0.3486
+        "labelOffset": 0.3497
       },
       "pl-hub-c-ep-guard": {
         "points": [
           {
             "id": "pl-hub-c-ep-guard-cp0",
             "x": 1853.5,
-            "y": 869.75
+            "y": 605
           },
           {
             "id": "pl-hub-c-ep-guard-cp1",
             "x": 1853.5,
-            "y": 869.75
+            "y": 605
           }
         ],
         "labelOffset": 0.5
@@ -994,12 +964,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-guard-svc-cp0",
             "x": 2426.5,
-            "y": 869.75
+            "y": 605
           },
           {
             "id": "pl-hub-c-guard-svc-cp1",
             "x": 2426.5,
-            "y": 869.75
+            "y": 605
           }
         ],
         "labelOffset": 0.5
@@ -1009,85 +979,85 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-hub-c-svc-api-cp0",
             "x": 2860.5,
-            "y": 861.75
+            "y": 597
           },
           {
             "id": "pl-hub-c-svc-api-cp1",
             "x": 2860.5,
-            "y": 636.75
+            "y": 376.75
           },
           {
             "id": "pl-hub-c-svc-api-cp2",
             "x": 3066.5,
-            "y": 636.75
+            "y": 376.75
           },
           {
             "id": "pl-hub-c-svc-api-cp3",
             "x": 3066.5,
-            "y": 607.25
+            "y": 346.25
           }
         ],
-        "labelOffset": 0.6713
+        "labelOffset": 0.6674
       },
       "pl-hub-c-svc-cache": {
         "points": [
           {
             "id": "pl-hub-c-svc-cache-cp0",
-            "x": 3008.5,
-            "y": 869.75
+            "x": 2880.5,
+            "y": 605
           },
           {
             "id": "pl-hub-c-svc-cache-cp1",
-            "x": 3008.5,
-            "y": 869.75
+            "x": 2880.5,
+            "y": 594.75
           }
         ],
-        "labelOffset": 0.5
+        "labelOffset": 0.5157
       },
       "pl-hub-c-cache-redis": {
         "points": [
           {
             "id": "pl-hub-c-cache-redis-cp0",
-            "x": 3666.5,
-            "y": 869.75
+            "x": 3596.5,
+            "y": 594.75
           },
           {
             "id": "pl-hub-c-cache-redis-cp1",
-            "x": 3666.5,
-            "y": 854.75
+            "x": 3596.5,
+            "y": 594.75
           }
         ],
-        "labelOffset": 0.4789
+        "labelOffset": 0.5
       },
       "pl-hub-c-svc-pub": {
         "points": [
           {
             "id": "pl-hub-c-svc-pub-cp0",
             "x": 2860.5,
-            "y": 877.75
+            "y": 613
           },
           {
             "id": "pl-hub-c-svc-pub-cp1",
             "x": 2860.5,
-            "y": 1075.25
+            "y": 800.25
           }
         ],
-        "labelOffset": 0.6876
+        "labelOffset": 0.6813
       },
       "pl-hub-c-pub-queue": {
         "points": [
           {
             "id": "pl-hub-c-pub-queue-cp0",
-            "x": 3706.5,
-            "y": 1075.25
+            "x": 3686.5,
+            "y": 800.25
           },
           {
             "id": "pl-hub-c-pub-queue-cp1",
-            "x": 3706.5,
-            "y": 1411.25
+            "x": 3686.5,
+            "y": 1003.25
           }
         ],
-        "labelOffset": 0.2553
+        "labelOffset": 0.3175
       }
     }
   },
@@ -1103,49 +1073,49 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-led-boundary": {
         "elementId": "pl-led-boundary",
         "x": 700.5,
-        "y": 224.5,
+        "y": 508.5,
         "width": 970,
         "height": 610
       },
       "pl-led-engine": {
         "elementId": "pl-led-engine",
         "x": 40,
-        "y": 356,
+        "y": 72,
         "width": 260,
         "height": 174
       },
       "pl-led-db": {
         "elementId": "pl-led-db",
         "x": 670,
-        "y": 424.5,
+        "y": 73.5,
         "width": 260,
         "height": 104
       },
       "pl-led-settlement": {
         "elementId": "pl-led-settlement",
         "x": 40,
-        "y": 72,
+        "y": 356,
         "width": 260,
         "height": 174
       },
       "pl-led-kafka": {
         "elementId": "pl-led-kafka",
         "x": 670,
-        "y": 190.5,
+        "y": 308,
         "width": 260,
         "height": 104
       },
       "pl-led-bank": {
         "elementId": "pl-led-bank",
         "x": 2029,
-        "y": 217.75,
+        "y": 862.25,
         "width": 259,
         "height": 68
       },
       "pl-led-risk": {
         "elementId": "pl-led-risk",
         "x": 2029,
-        "y": 395.75,
+        "y": 1040.25,
         "width": 260,
         "height": 85
       },
@@ -1171,8 +1141,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-led-engine": {
         "outgoing": [
-          "pl-led-c3",
-          "pl-led-c2"
+          "pl-led-c2",
+          "pl-led-c3"
         ],
         "incoming": [
           "pl-led-c1"
@@ -1186,17 +1156,17 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-led-settlement": {
         "outgoing": [
+          "pl-led-c4",
           "pl-led-c5",
-          "pl-led-c6",
-          "pl-led-c4"
+          "pl-led-c6"
         ],
         "incoming": []
       },
       "pl-led-kafka": {
         "outgoing": [],
         "incoming": [
-          "pl-led-c4",
-          "pl-led-c3"
+          "pl-led-c3",
+          "pl-led-c4"
         ]
       },
       "pl-led-bank": {
@@ -1233,12 +1203,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-led-c2-cp0",
             "x": 1010.5,
-            "y": 671.5
+            "y": 663.5
           },
           {
             "id": "pl-led-c2-cp1",
             "x": 1010.5,
-            "y": 701
+            "y": 634
           }
         ],
         "labelOffset": 0.5369
@@ -1248,100 +1218,100 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-led-c3-cp0",
             "x": 1010.5,
-            "y": 663.5
+            "y": 671.5
           },
           {
             "id": "pl-led-c3-cp1",
             "x": 1010.5,
-            "y": 562.5
+            "y": 772.5
           },
           {
             "id": "pl-led-c3-cp2",
             "x": 1270.5,
-            "y": 562.5
+            "y": 772.5
           },
           {
             "id": "pl-led-c3-cp3",
             "x": 1270.5,
-            "y": 471
+            "y": 864.5
           }
         ],
-        "labelOffset": 0.5084
+        "labelOffset": 0.508
       },
       "pl-led-c4": {
         "points": [
           {
             "id": "pl-led-c4-cp0",
             "x": 1010.5,
-            "y": 391.5
+            "y": 943.5
           },
           {
             "id": "pl-led-c4-cp1",
             "x": 1010.5,
-            "y": 433.5
+            "y": 902
           },
           {
             "id": "pl-led-c4-cp2",
             "x": 1270.5,
-            "y": 433.5
+            "y": 902
           },
           {
             "id": "pl-led-c4-cp3",
             "x": 1270.5,
-            "y": 463
+            "y": 872.5
           }
         ],
-        "labelOffset": 0.5142
+        "labelOffset": 0.5136
       },
       "pl-led-c5": {
         "points": [
           {
             "id": "pl-led-c5-cp0",
-            "x": 1010.5,
-            "y": 375.5
+            "x": 1030.5,
+            "y": 951.5
           },
           {
             "id": "pl-led-c5-cp1",
-            "x": 1010.5,
-            "y": 332
+            "x": 1030.5,
+            "y": 976.5
           },
           {
             "id": "pl-led-c5-cp2",
             "x": 1693,
-            "y": 332
+            "y": 976.5
           },
           {
             "id": "pl-led-c5-cp3",
             "x": 1693,
-            "y": 251.75
+            "y": 896.25
           }
         ],
-        "labelOffset": 0.8499
+        "labelOffset": 0.8474
       },
       "pl-led-c6": {
         "points": [
           {
             "id": "pl-led-c6-cp0",
-            "x": 1030.5,
-            "y": 383.5
+            "x": 1010.5,
+            "y": 959.5
           },
           {
             "id": "pl-led-c6-cp1",
-            "x": 1030.5,
-            "y": 358
+            "x": 1010.5,
+            "y": 1002.5
           },
           {
             "id": "pl-led-c6-cp2",
             "x": 1693,
-            "y": 358
+            "y": 1002.5
           },
           {
             "id": "pl-led-c6-cp3",
             "x": 1693,
-            "y": 438.25
+            "y": 1082.75
           }
         ],
-        "labelOffset": 0.8475
+        "labelOffset": 0.8498
       }
     }
   },
@@ -1350,21 +1320,21 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-risk-hub-ext": {
         "elementId": "pl-risk-hub-ext",
         "x": 116,
-        "y": 803,
+        "y": 40,
         "width": 260,
         "height": 85
       },
       "pl-risk-led-ext": {
         "elementId": "pl-risk-led-ext",
         "x": 143,
-        "y": 40,
+        "y": 820,
         "width": 233,
         "height": 68
       },
       "pl-risk-boundary": {
         "elementId": "pl-risk-boundary",
         "x": 746.5,
-        "y": 121.75,
+        "y": 130.25,
         "width": 1467,
         "height": 505
       },
@@ -1378,14 +1348,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-risk-rules": {
         "elementId": "pl-risk-rules",
         "x": 1167,
-        "y": 286,
+        "y": 72,
         "width": 260,
         "height": 104
       },
       "pl-risk-features": {
         "elementId": "pl-risk-features",
         "x": 1167,
-        "y": 72,
+        "y": 286,
         "width": 260,
         "height": 104
       },
@@ -1399,14 +1369,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-risk-kyc": {
         "elementId": "pl-risk-kyc",
         "x": 2530,
-        "y": 517.75,
+        "y": 526.25,
         "width": 200,
         "height": 68
       },
       "pl-risk-note": {
         "elementId": "pl-risk-note",
         "x": 40,
-        "y": 218,
+        "y": 235,
         "width": 336,
         "height": 475
       }
@@ -1431,8 +1401,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       },
       "pl-risk-engine": {
         "outgoing": [
-          "pl-risk-c5",
           "pl-risk-c4",
+          "pl-risk-c5",
           "pl-risk-c6"
         ],
         "incoming": [
@@ -1456,8 +1426,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           "pl-risk-c3"
         ],
         "incoming": [
-          "pl-risk-c2",
-          "pl-risk-c1"
+          "pl-risk-c1",
+          "pl-risk-c2"
         ]
       },
       "pl-risk-kyc": {
@@ -1473,12 +1443,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c1-cp0",
             "x": 634,
-            "y": 845.5
+            "y": 82.5
           },
           {
             "id": "pl-risk-c1-cp1",
             "x": 634,
-            "y": 463.75
+            "y": 464.25
           }
         ],
         "labelOffset": 0.2259
@@ -1488,12 +1458,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c2-cp0",
             "x": 634,
-            "y": 74
+            "y": 854
           },
           {
             "id": "pl-risk-c2-cp1",
             "x": 634,
-            "y": 455.75
+            "y": 472.25
           }
         ],
         "labelOffset": 0.2259
@@ -1503,12 +1473,12 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           {
             "id": "pl-risk-c3-cp0",
             "x": 1189,
-            "y": 459.75
+            "y": 468.25
           },
           {
             "id": "pl-risk-c3-cp1",
             "x": 1189,
-            "y": 459.75
+            "y": 468.25
           }
         ],
         "labelOffset": 0.5
@@ -1517,43 +1487,43 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-risk-c4-cp0",
-            "x": 1752.5,
-            "y": 459.75
+            "x": 1601.5,
+            "y": 460.25
           },
           {
             "id": "pl-risk-c4-cp1",
-            "x": 1752.5,
-            "y": 459.75
+            "x": 1601.5,
+            "y": 254.25
           }
         ],
-        "labelOffset": 0.5
+        "labelOffset": 0.6951
       },
       "pl-risk-c5": {
         "points": [
           {
             "id": "pl-risk-c5-cp0",
-            "x": 1601.5,
-            "y": 451.75
+            "x": 1752.5,
+            "y": 468.25
           },
           {
             "id": "pl-risk-c5-cp1",
-            "x": 1601.5,
-            "y": 245.75
+            "x": 1752.5,
+            "y": 468.25
           }
         ],
-        "labelOffset": 0.6951
+        "labelOffset": 0.5
       },
       "pl-risk-c6": {
         "points": [
           {
             "id": "pl-risk-c6-cp0",
             "x": 1601.5,
-            "y": 467.75
+            "y": 476.25
           },
           {
             "id": "pl-risk-c6-cp1",
             "x": 1601.5,
-            "y": 551.75
+            "y": 560.25
           }
         ],
         "labelOffset": 0.8513
@@ -1614,14 +1584,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-mer-hub": {
         "elementId": "pl-mer-hub",
         "x": 2491,
-        "y": 659.5,
+        "y": 837.5,
         "width": 225,
         "height": 68
       },
       "pl-mer-ledger": {
         "elementId": "pl-mer-ledger",
         "x": 2491,
-        "y": 837.5,
+        "y": 659.5,
         "width": 200,
         "height": 68
       },
@@ -1665,8 +1635,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
           "pl-mer-c6",
           "pl-mer-c5",
           "pl-mer-c7",
-          "pl-mer-c3",
-          "pl-mer-c4"
+          "pl-mer-c4",
+          "pl-mer-c3"
         ],
         "incoming": [
           "pl-mer-c2"
@@ -1746,51 +1716,51 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-mer-c3-cp0",
-            "x": 1540.5,
-            "y": 675.5
-          },
-          {
-            "id": "pl-mer-c3-cp1",
-            "x": 1540.5,
-            "y": 766
-          },
-          {
-            "id": "pl-mer-c3-cp2",
-            "x": 2167,
-            "y": 766
-          },
-          {
-            "id": "pl-mer-c3-cp3",
-            "x": 2167,
-            "y": 693.5
-          }
-        ],
-        "labelOffset": 0.854
-      },
-      "pl-mer-c4": {
-        "points": [
-          {
-            "id": "pl-mer-c4-cp0",
             "x": 1520.5,
             "y": 683.5
           },
           {
-            "id": "pl-mer-c4-cp1",
+            "id": "pl-mer-c3-cp1",
             "x": 1520.5,
             "y": 792
           },
           {
-            "id": "pl-mer-c4-cp2",
+            "id": "pl-mer-c3-cp2",
             "x": 2167,
             "y": 792
           },
           {
-            "id": "pl-mer-c4-cp3",
+            "id": "pl-mer-c3-cp3",
             "x": 2167,
             "y": 871.5
           }
         ],
         "labelOffset": 0.8571
+      },
+      "pl-mer-c4": {
+        "points": [
+          {
+            "id": "pl-mer-c4-cp0",
+            "x": 1540.5,
+            "y": 675.5
+          },
+          {
+            "id": "pl-mer-c4-cp1",
+            "x": 1540.5,
+            "y": 766
+          },
+          {
+            "id": "pl-mer-c4-cp2",
+            "x": 2167,
+            "y": 766
+          },
+          {
+            "id": "pl-mer-c4-cp3",
+            "x": 2167,
+            "y": 693.5
+          }
+        ],
+        "labelOffset": 0.854
       },
       "pl-mer-c5": {
         "points": [
@@ -2589,14 +2559,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-dpm-rds": {
         "elementId": "pl-dpm-rds",
         "x": 40,
-        "y": 272,
+        "y": 472,
         "width": 200,
         "height": 90
       },
       "pl-dpm-redis": {
         "elementId": "pl-dpm-redis",
         "x": 40,
-        "y": 472,
+        "y": 272,
         "width": 200,
         "height": 90
       },
@@ -2635,8 +2605,8 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-dpm-ecs": {
         "outgoing": [
           "pl-dpm-c5",
-          "pl-dpm-c3",
-          "pl-dpm-c4"
+          "pl-dpm-c4",
+          "pl-dpm-c3"
         ],
         "incoming": [
           "pl-dpm-c2"
@@ -2703,51 +2673,51 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
         "points": [
           {
             "id": "pl-dpm-c3-cp0",
-            "x": 1052.5,
-            "y": 741
-          },
-          {
-            "id": "pl-dpm-c3-cp1",
-            "x": 1052.5,
-            "y": 762.5
-          },
-          {
-            "id": "pl-dpm-c3-cp2",
-            "x": 1202.5,
-            "y": 762.5
-          },
-          {
-            "id": "pl-dpm-c3-cp3",
-            "x": 1202.5,
-            "y": 813.5
-          }
-        ],
-        "labelOffset": 0.4763
-      },
-      "pl-dpm-c4": {
-        "points": [
-          {
-            "id": "pl-dpm-c4-cp0",
             "x": 1032.5,
             "y": 749
           },
           {
-            "id": "pl-dpm-c4-cp1",
+            "id": "pl-dpm-c3-cp1",
             "x": 1032.5,
             "y": 888
           },
           {
-            "id": "pl-dpm-c4-cp2",
+            "id": "pl-dpm-c3-cp2",
             "x": 1202.5,
             "y": 888
           },
           {
-            "id": "pl-dpm-c4-cp3",
+            "id": "pl-dpm-c3-cp3",
             "x": 1202.5,
             "y": 1013.5
           }
         ],
         "labelOffset": 0.516
+      },
+      "pl-dpm-c4": {
+        "points": [
+          {
+            "id": "pl-dpm-c4-cp0",
+            "x": 1052.5,
+            "y": 741
+          },
+          {
+            "id": "pl-dpm-c4-cp1",
+            "x": 1052.5,
+            "y": 762.5
+          },
+          {
+            "id": "pl-dpm-c4-cp2",
+            "x": 1202.5,
+            "y": 762.5
+          },
+          {
+            "id": "pl-dpm-c4-cp3",
+            "x": 1202.5,
+            "y": 813.5
+          }
+        ],
+        "labelOffset": 0.4763
       },
       "pl-dpm-c5": {
         "points": [
@@ -2848,35 +2818,35 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-aws-lambda": {
         "elementId": "pl-cat-aws-lambda",
         "x": 52,
-        "y": 1472,
+        "y": 872,
         "width": 202,
         "height": 90
       },
       "pl-cat-aws-s3": {
         "elementId": "pl-cat-aws-s3",
         "x": 53,
-        "y": 672,
+        "y": 1672,
         "width": 200,
         "height": 90
       },
       "pl-cat-aws-rds": {
         "elementId": "pl-cat-aws-rds",
         "x": 53,
-        "y": 472,
+        "y": 1272,
         "width": 200,
         "height": 90
       },
       "pl-cat-aws-vpc": {
         "elementId": "pl-cat-aws-vpc",
         "x": 53,
-        "y": 1672,
+        "y": 672,
         "width": 200,
         "height": 90
       },
       "pl-cat-aws-iam": {
         "elementId": "pl-cat-aws-iam",
         "x": 53,
-        "y": 1272,
+        "y": 1072,
         "width": 200,
         "height": 90
       },
@@ -2890,7 +2860,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-aws-sqs": {
         "elementId": "pl-cat-aws-sqs",
         "x": 53,
-        "y": 1072,
+        "y": 1472,
         "width": 200,
         "height": 90
       },
@@ -2904,7 +2874,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-aws-cw": {
         "elementId": "pl-cat-aws-cw",
         "x": 40,
-        "y": 872,
+        "y": 472,
         "width": 226,
         "height": 90
       },
@@ -2918,28 +2888,28 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-gcp-run": {
         "elementId": "pl-cat-gcp-run",
         "x": 51,
-        "y": 472,
+        "y": 72,
         "width": 216,
         "height": 90
       },
       "pl-cat-gcp-gcs": {
         "elementId": "pl-cat-gcp-gcs",
         "x": 40,
-        "y": 72,
+        "y": 1072,
         "width": 238,
         "height": 90
       },
       "pl-cat-gcp-sql": {
         "elementId": "pl-cat-gcp-sql",
         "x": 50.5,
-        "y": 1072,
+        "y": 1272,
         "width": 217,
         "height": 90
       },
       "pl-cat-gcp-net": {
         "elementId": "pl-cat-gcp-net",
         "x": 47.5,
-        "y": 1472,
+        "y": 472,
         "width": 223,
         "height": 90
       },
@@ -2967,7 +2937,7 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-gcp-int": {
         "elementId": "pl-cat-gcp-int",
         "x": 50,
-        "y": 1272,
+        "y": 1472,
         "width": 218,
         "height": 90
       },
@@ -2981,14 +2951,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-az-fn": {
         "elementId": "pl-cat-az-fn",
         "x": 60.5,
-        "y": 1072,
+        "y": 872,
         "width": 212,
         "height": 90
       },
       "pl-cat-az-blob": {
         "elementId": "pl-cat-az-blob",
         "x": 51.5,
-        "y": 272,
+        "y": 672,
         "width": 230,
         "height": 90
       },
@@ -3002,28 +2972,28 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-az-vnet": {
         "elementId": "pl-cat-az-vnet",
         "x": 66.5,
-        "y": 672,
+        "y": 1272,
         "width": 200,
         "height": 90
       },
       "pl-cat-az-kv": {
         "elementId": "pl-cat-az-kv",
         "x": 61.5,
-        "y": 1272,
+        "y": 472,
         "width": 210,
         "height": 90
       },
       "pl-cat-az-sa": {
         "elementId": "pl-cat-az-sa",
         "x": 40,
-        "y": 472,
+        "y": 272,
         "width": 253,
         "height": 90
       },
       "pl-cat-az-bus": {
         "elementId": "pl-cat-az-bus",
         "x": 54.5,
-        "y": 872,
+        "y": 1072,
         "width": 224,
         "height": 90
       },
@@ -3037,21 +3007,21 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-k8s-deploy": {
         "elementId": "pl-cat-k8s-deploy",
         "x": 40,
-        "y": 472,
+        "y": 672,
         "width": 225,
         "height": 90
       },
       "pl-cat-k8s-ing": {
         "elementId": "pl-cat-k8s-ing",
         "x": 52.5,
-        "y": 72,
+        "y": 472,
         "width": 200,
         "height": 90
       },
       "pl-cat-k8s-pvc": {
         "elementId": "pl-cat-k8s-pvc",
         "x": 52.5,
-        "y": 672,
+        "y": 72,
         "width": 200,
         "height": 90
       },
@@ -3072,14 +3042,14 @@ export const SEED_PL_LAID_OUT: Record<string, SeedLaidOutSlice> = {
       "pl-cat-oss-redis": {
         "elementId": "pl-cat-oss-redis",
         "x": 40,
-        "y": 272,
+        "y": 72,
         "width": 200,
         "height": 90
       },
       "pl-cat-oss-kafka": {
         "elementId": "pl-cat-oss-kafka",
         "x": 40,
-        "y": 72,
+        "y": 272,
         "width": 200,
         "height": 90
       },

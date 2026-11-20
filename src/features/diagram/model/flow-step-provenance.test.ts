@@ -53,7 +53,7 @@ const PROVENANCE: Record<OptionalKeys<FlowStep>, FieldProvenance> = {
     consumers: [`${DIAGRAM}/flow-outline.ts`],
   },
   title: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${READING}/readingScene.ts`],
   },
   componentId: {
@@ -65,15 +65,15 @@ const PROVENANCE: Record<OptionalKeys<FlowStep>, FieldProvenance> = {
     consumers: [`${DIAGRAM}/flow-call-stack.ts`],
   },
   endpointId: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${DIAGRAM}/flow-endpoint.ts`],
   },
   description: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${READING}/FlowReadingScene.tsx`],
   },
   note: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${READING}/FlowReadingScene.tsx`],
   },
   handleId: {
@@ -81,11 +81,11 @@ const PROVENANCE: Record<OptionalKeys<FlowStep>, FieldProvenance> = {
     consumers: [`${S}/canvas/flow/flowState.ts`],
   },
   duration: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${READING}/FlowReadingScene.tsx`],
   },
   payload: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${READING}/readingVariables.ts`],
   },
   payloadDirection: {
@@ -93,7 +93,7 @@ const PROVENANCE: Record<OptionalKeys<FlowStep>, FieldProvenance> = {
     consumers: [`${DIAGRAM}/flow-call-stack.ts`],
   },
   isAsync: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${DIAGRAM}/flow-call-stack.ts`],
   },
   connectionIntent: {
@@ -105,15 +105,15 @@ const PROVENANCE: Record<OptionalKeys<FlowStep>, FieldProvenance> = {
       "or the script panel shows it, and no author can set it.",
   },
   context: {
-    producers: [`${SCRIPT}/FlowObjectPanel.tsx`, `${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowObjectPanel.tsx`, `${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${READING}/readingVariables.ts`],
   },
   conditionLabel: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`],
     consumers: [`${READING}/readingScene.ts`],
   },
   conditionKind: {
-    producers: [`${SCRIPT}/FlowScriptRow.tsx`, `${DIAGRAM}/import-mermaid-sequence.ts`],
+    producers: [`${SCRIPT}/FlowStepPanel.tsx`, `${DIAGRAM}/import-mermaid-sequence.ts`],
     consumers: [`${DIAGRAM}/flow-condition-kind.ts`],
   },
 };

@@ -2,17 +2,15 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { Flow, FlowCallStack, FlowCursor, FlowStep, FrameExit } from "@/features/diagram";
 
 /**
- * Where the recorder is pointing. `branch-select` writes nothing: it is the
- * moment between finishing one branch and choosing the next.
+ * Where the recorder is pointing: the main sequence, or one branch of a condition. Branches are
+ * chosen from the script itself, so there is no moment in between where clicks write nothing.
  */
 export type RecordingContext =
   | { mode: "trunk" }
-  | { mode: "branch-select"; conditionStepId: string }
   | { mode: "branch-record"; conditionStepId: string; branchIndex: number; branchLabel: string };
 
-/** The write position a recording context points at, or null when it points at none. */
-export function recordingCursor(context: RecordingContext): FlowCursor | null {
-  if (context.mode === "trunk") return { kind: "trunk" };
+/** The write position a recording context points at. */
+export function recordingCursor(context: RecordingContext): FlowCursor {
   if (context.mode === "branch-record") {
     return {
       kind: "branch",
@@ -20,7 +18,7 @@ export function recordingCursor(context: RecordingContext): FlowCursor | null {
       branchIndex: context.branchIndex,
     };
   }
-  return null;
+  return { kind: "trunk" };
 }
 
 export type FlowMode =
@@ -113,6 +111,11 @@ export interface FlowModeState {
   onRecordEdgeClick: (edgeId: string, handleId?: string) => void;
   onRecordHandleClick: (nodeId: string, handleId: string) => void;
   onRecordUndo: () => void;
+  /**
+   * Forks the sequence being recorded with a condition and moves recording into
+   * its first way out. False when the store refused (the refusal is announced).
+   */
+  onRecordCondition: (conditionLabel: string, branchLabels: readonly string[]) => boolean;
 }
 
 export interface FlowModeProviderProps {

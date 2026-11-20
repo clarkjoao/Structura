@@ -178,6 +178,7 @@ export function useCanvasInteraction(
     isPlaying: flowState.isPlaying,
     isCompareMode: compareState.isCompareMode,
     isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
+    onYieldFlowPanel: canvasProps.onYieldFlowPanel,
     updateViewport: actions.updateViewport,
     addConnection: actions.addConnection,
     screenToFlowPosition,

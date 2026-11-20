@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import JsonTree from "./JsonTree";
 import type {
@@ -49,6 +50,11 @@ interface Props {
   onTogglePin?: (key: string) => void;
   /** The events in one key's life along the path already walked. */
   lifeOf?: (key: string) => KeyEvent[];
+  /**
+   * Whether the block starts open. A long reading starts it folded: the scene being read is
+   * what the rail is for, and this block could take 40% of it.
+   */
+  defaultOpen?: boolean;
 }
 
 interface RootProps {
@@ -236,9 +242,11 @@ const FlowVariablesPanel = ({
   pinnedKeys = [],
   onTogglePin,
   lifeOf,
+  defaultOpen = true,
 }: Props) => {
   const { t } = useTranslation();
   const [openLifeKey, setOpenLifeKey] = useState<string | null>(null);
+  const [open, setOpen] = useState(defaultOpen);
 
   const hasChange = Boolean(change && !change.empty);
   // A step that ends a call has something to say even when nothing survives it.
@@ -278,124 +286,143 @@ const FlowVariablesPanel = ({
       data-testid="flow-variables"
       className="max-h-[40%] shrink-0 overflow-y-auto border-t border-border bg-background/60 px-5 py-1.5"
     >
-      {pinnedKeys.length > 0 && (
-        <div data-testid="flow-variables-watch" className="flex flex-col gap-1 py-1.5">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {pinnedKeys.map((key) => {
-              const held = context.byKey.get(key);
-              const going = held ? undefined : leaving.get(key);
-              return (
-                <span key={key} className="flex items-baseline gap-1 font-mono text-[10.5px]">
-                  <button
-                    type="button"
-                    data-testid="flow-variables-watch-key"
-                    onClick={() => setOpenLifeKey(openLifeKey === key ? null : key)}
-                    className="text-json-key"
-                  >
-                    {openLifeKey === key ? "▾" : "▸"} {key}
-                  </button>
-                  {held && <span className="text-json-string">{held.value}</span>}
-                  {going && (
-                    <span
-                      data-testid="flow-variables-watch-leaving"
-                      className="flex items-baseline gap-1"
-                    >
-                      <span className="text-json-string opacity-50">{going.entry.value}</span>
-                      <span className="text-rose-500">
-                        ↩ {t("flowReading.leavesWith", { name: frameName(going.frameId) })}
-                      </span>
-                    </span>
-                  )}
-                  {!held && !going && (
-                    /*
+      <button
+        type="button"
+        data-testid="flow-variables-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-1.5 py-1 text-left text-xs font-semibold text-foreground"
+      >
+        <ChevronRight
+          className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`}
+        />
+        {t("flowReading.variablesTitle")}
+        {!open && pinnedKeys.length > 0 && (
+          <span className="ml-auto truncate font-mono text-[10px] font-normal text-muted-foreground">
+            {pinnedKeys.join(", ")}
+          </span>
+        )}
+      </button>
+      {open && (
+        <>
+          {pinnedKeys.length > 0 && (
+            <div data-testid="flow-variables-watch" className="flex flex-col gap-1 py-1.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                {pinnedKeys.map((key) => {
+                  const held = context.byKey.get(key);
+                  const going = held ? undefined : leaving.get(key);
+                  return (
+                    <span key={key} className="flex items-baseline gap-1 font-mono text-[10.5px]">
+                      <button
+                        type="button"
+                        data-testid="flow-variables-watch-key"
+                        onClick={() => setOpenLifeKey(openLifeKey === key ? null : key)}
+                        className="text-json-key"
+                      >
+                        {openLifeKey === key ? "▾" : "▸"} {key}
+                      </button>
+                      {held && <span className="text-json-string">{held.value}</span>}
+                      {going && (
+                        <span
+                          data-testid="flow-variables-watch-leaving"
+                          className="flex items-baseline gap-1"
+                        >
+                          <span className="text-json-string opacity-50">{going.entry.value}</span>
+                          <span className="text-rose-500">
+                            ↩ {t("flowReading.leavesWith", { name: frameName(going.frameId) })}
+                          </span>
+                        </span>
+                      )}
+                      {!held && !going && (
+                        /*
                       Not hidden when the fold no longer holds it: that absence
                       *is* the answer, and it is the one place the rule about a
                       call taking its values with it explains itself.
                     */
-                    <span data-testid="flow-variables-watch-gone" className="text-rose-500">
-                      — {t("flowReading.outOfScope")}
+                        <span data-testid="flow-variables-watch-gone" className="text-rose-500">
+                          — {t("flowReading.outOfScope")}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        data-testid="flow-variables-unpin"
+                        title={t("flowReading.unpin")}
+                        onClick={() => onTogglePin?.(key)}
+                        className="text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+              {openLifeKey && (
+                <div
+                  data-testid="flow-variables-life"
+                  className="flex flex-wrap items-center gap-1 font-mono text-[10px]"
+                >
+                  {(lifeOf?.(openLifeKey) ?? []).map((event, index) => (
+                    <button
+                      key={`${event.kind}-${event.stepId}-${index}`}
+                      type="button"
+                      data-testid="flow-variables-life-event"
+                      onClick={() => onGoToStep?.(event.stepId)}
+                      className="flex items-baseline gap-1 rounded border border-border bg-secondary px-1.5 py-px"
+                    >
+                      <span className="text-muted-foreground">{numberOf(event.stepId)}</span>
+                      <span className={LIFE_MARK[event.kind]}>{LIFE_GLYPH[event.kind]}</span>
+                      {event.value !== undefined && (
+                        <span className="text-json-string">{event.value}</span>
+                      )}
+                      {event.frameId && (
+                        <span className="text-rose-500">{frameName(event.frameId)}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {hasState && (
+            <Root
+              id="state"
+              label={t("flowReading.state")}
+              hint={t("flowReading.keys", { count: context.size })}
+              defaultOpen
+            >
+              {change && !change.empty && (
+                <div
+                  data-testid="flow-variables-delta"
+                  className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-border bg-secondary/60 px-1.5 py-1 font-mono text-[10px]"
+                >
+                  {change.introduced.length > 0 && (
+                    <span data-testid="flow-variables-delta-new" className="text-json-number">
+                      ⊕ {t("flowReading.deltaNew", { count: change.introduced.length })}
                     </span>
                   )}
-                  <button
-                    type="button"
-                    data-testid="flow-variables-unpin"
-                    title={t("flowReading.unpin")}
-                    onClick={() => onTogglePin?.(key)}
-                    className="text-muted-foreground opacity-70 transition-opacity hover:opacity-100"
-                  >
-                    ×
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-          {openLifeKey && (
-            <div
-              data-testid="flow-variables-life"
-              className="flex flex-wrap items-center gap-1 font-mono text-[10px]"
-            >
-              {(lifeOf?.(openLifeKey) ?? []).map((event, index) => (
-                <button
-                  key={`${event.kind}-${event.stepId}-${index}`}
-                  type="button"
-                  data-testid="flow-variables-life-event"
-                  onClick={() => onGoToStep?.(event.stepId)}
-                  className="flex items-baseline gap-1 rounded border border-border bg-secondary px-1.5 py-px"
-                >
-                  <span className="text-muted-foreground">{numberOf(event.stepId)}</span>
-                  <span className={LIFE_MARK[event.kind]}>{LIFE_GLYPH[event.kind]}</span>
-                  {event.value !== undefined && (
-                    <span className="text-json-string">{event.value}</span>
+                  {change.replaced.length > 0 && (
+                    <span data-testid="flow-variables-delta-changed" className="text-amber-500">
+                      ~ {t("flowReading.deltaChanged", { count: change.replaced.length })}
+                    </span>
                   )}
-                  {event.frameId && (
-                    <span className="text-rose-500">{frameName(event.frameId)}</span>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {hasState && (
-        <Root
-          id="state"
-          label={t("flowReading.state")}
-          hint={t("flowReading.keys", { count: context.size })}
-          defaultOpen
-        >
-          {change && !change.empty && (
-            <div
-              data-testid="flow-variables-delta"
-              className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-border bg-secondary/60 px-1.5 py-1 font-mono text-[10px]"
-            >
-              {change.introduced.length > 0 && (
-                <span data-testid="flow-variables-delta-new" className="text-json-number">
-                  ⊕ {t("flowReading.deltaNew", { count: change.introduced.length })}
-                </span>
+                  {change.gone.map((frame) => (
+                    <span
+                      key={frame.frameId}
+                      data-testid="flow-variables-delta-gone"
+                      className="text-rose-500"
+                    >
+                      ↩{" "}
+                      {t("flowReading.deltaGone", {
+                        count: frame.entries.length,
+                        name: frameName(frame.frameId),
+                      })}
+                    </span>
+                  ))}
+                </div>
               )}
-              {change.replaced.length > 0 && (
-                <span data-testid="flow-variables-delta-changed" className="text-amber-500">
-                  ~ {t("flowReading.deltaChanged", { count: change.replaced.length })}
-                </span>
-              )}
-              {change.gone.map((frame) => (
-                <span
-                  key={frame.frameId}
-                  data-testid="flow-variables-delta-gone"
-                  className="text-rose-500"
-                >
-                  ↩{" "}
-                  {t("flowReading.deltaGone", {
-                    count: frame.entries.length,
-                    name: frameName(frame.frameId),
-                  })}
-                </span>
-              ))}
-            </div>
-          )}
 
-          {/*
+              {/*
             One object, in the order its keys arrived. It used to be split by
             the call each value was introduced inside, with each group headed by
             the *caller* of that call — so a key the Management API wrote sat
@@ -403,118 +430,120 @@ const FlowVariablesPanel = ({
             known now, not a lesson in frames; where a value came from is on its
             own line, and where it is going is the mark beside it.
           */}
-          <p className="font-mono text-[11.5px] text-muted-foreground">{"{"}</p>
-          {context.entries.map((entry) => (
-            <EntryRow
-              key={markOf(entry)}
-              entry={entry}
-              isRead={context.reads.includes(entry.key)}
-              isNew={introduced.has(markOf(entry))}
-              changed={replaced.has(markOf(entry))}
-              pinned={pinned.has(entry.key)}
-              onTogglePin={onTogglePin}
-              numberOf={numberOf}
-              onGoToStep={onGoToStep}
-            />
-          ))}
+              <p className="font-mono text-[11.5px] text-muted-foreground">{"{"}</p>
+              {context.entries.map((entry) => (
+                <EntryRow
+                  key={markOf(entry)}
+                  entry={entry}
+                  isRead={context.reads.includes(entry.key)}
+                  isNew={introduced.has(markOf(entry))}
+                  changed={replaced.has(markOf(entry))}
+                  pinned={pinned.has(entry.key)}
+                  onTogglePin={onTogglePin}
+                  numberOf={numberOf}
+                  onGoToStep={onGoToStep}
+                />
+              ))}
 
-          {/*
+              {/*
             The values a call takes with it, shown on the step that ends it and
             gone on the next. The fold has already dropped them, so this is the
             one place they are still legible — which is the whole point of
             showing them at all.
           */}
-          {(change?.gone ?? []).flatMap((frame) =>
-            frame.entries.map((entry) => (
-              <EntryRow
-                key={markOf(entry)}
-                entry={entry}
-                isRead={false}
-                isNew={false}
-                leaving
-                pinned={pinned.has(entry.key)}
-                onTogglePin={onTogglePin}
-                numberOf={numberOf}
-                onGoToStep={onGoToStep}
-              />
-            )),
-          )}
-          <p className="font-mono text-[11.5px] text-muted-foreground">{"}"}</p>
-
-          {context.unsetReads.length > 0 && (
-            <p
-              data-testid="flow-variables-unset"
-              className="mt-1.5 font-mono text-[10px] leading-[1.5] text-amber-600"
-            >
-              {t("flowReading.unsetRead", { keys: context.unsetReads.join(", ") })}
-            </p>
-          )}
-        </Root>
-      )}
-      {sends && (
-        <Root
-          id="sends"
-          label={t(`flowReading.${sendsLabel}`)}
-          hint={
-            sends.json ? t("flowReading.fields", { count: Object.keys(sends.json).length }) : ""
-          }
-          defaultOpen
-        >
-          <PayloadBody payload={sends} />
-          {contract && (
-            <p
-              data-testid="flow-variables-contract"
-              className="mt-2 font-mono text-[10px] leading-[1.5] text-muted-foreground"
-            >
-              {contract.matches ? (
-                <span className="text-json-number">
-                  ✓ {t("flowReading.contractMatches", { number: contractStepNumber ?? "" })}
-                </span>
-              ) : (
-                <>
-                  {contract.missing.length > 0 && (
-                    <span className="block">
-                      {t("flowReading.contractMissing", { keys: contract.missing.join(", ") })}
-                    </span>
-                  )}
-                  {contract.unexpected.length > 0 && (
-                    <span className="block">
-                      {t("flowReading.contractUnexpected", {
-                        keys: contract.unexpected.join(", "),
-                      })}
-                    </span>
-                  )}
-                </>
+              {(change?.gone ?? []).flatMap((frame) =>
+                frame.entries.map((entry) => (
+                  <EntryRow
+                    key={markOf(entry)}
+                    entry={entry}
+                    isRead={false}
+                    isNew={false}
+                    leaving
+                    pinned={pinned.has(entry.key)}
+                    onTogglePin={onTogglePin}
+                    numberOf={numberOf}
+                    onGoToStep={onGoToStep}
+                  />
+                )),
               )}
-            </p>
-          )}
-        </Root>
-      )}
+              <p className="font-mono text-[11.5px] text-muted-foreground">{"}"}</p>
 
-      {expected && (
-        <Root
-          id="expects"
-          label={t("flowReading.expects")}
-          hint={
-            expected.fromStepId
-              ? t("flowReading.fromStep", { number: numberOf(expected.fromStepId) })
-              : undefined
-          }
-          defaultOpen={!expected.nothingComesBack}
-        >
-          {expected.nothingComesBack || !expected.payload ? (
-            <p
-              data-testid="flow-variables-nothing"
-              className="font-mono text-[11px] italic text-muted-foreground"
-            >
-              {t("flowReading.nothingComesBack")}
-            </p>
-          ) : (
-            <div className="opacity-85">
-              <PayloadBody payload={expected.payload} />
-            </div>
+              {context.unsetReads.length > 0 && (
+                <p
+                  data-testid="flow-variables-unset"
+                  className="mt-1.5 font-mono text-[10px] leading-[1.5] text-amber-600"
+                >
+                  {t("flowReading.unsetRead", { keys: context.unsetReads.join(", ") })}
+                </p>
+              )}
+            </Root>
           )}
-        </Root>
+          {sends && (
+            <Root
+              id="sends"
+              label={t(`flowReading.${sendsLabel}`)}
+              hint={
+                sends.json ? t("flowReading.fields", { count: Object.keys(sends.json).length }) : ""
+              }
+              defaultOpen
+            >
+              <PayloadBody payload={sends} />
+              {contract && (
+                <p
+                  data-testid="flow-variables-contract"
+                  className="mt-2 font-mono text-[10px] leading-[1.5] text-muted-foreground"
+                >
+                  {contract.matches ? (
+                    <span className="text-json-number">
+                      ✓ {t("flowReading.contractMatches", { number: contractStepNumber ?? "" })}
+                    </span>
+                  ) : (
+                    <>
+                      {contract.missing.length > 0 && (
+                        <span className="block">
+                          {t("flowReading.contractMissing", { keys: contract.missing.join(", ") })}
+                        </span>
+                      )}
+                      {contract.unexpected.length > 0 && (
+                        <span className="block">
+                          {t("flowReading.contractUnexpected", {
+                            keys: contract.unexpected.join(", "),
+                          })}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
+              )}
+            </Root>
+          )}
+
+          {expected && (
+            <Root
+              id="expects"
+              label={t("flowReading.expects")}
+              hint={
+                expected.fromStepId
+                  ? t("flowReading.fromStep", { number: numberOf(expected.fromStepId) })
+                  : undefined
+              }
+              defaultOpen={!expected.nothingComesBack}
+            >
+              {expected.nothingComesBack || !expected.payload ? (
+                <p
+                  data-testid="flow-variables-nothing"
+                  className="font-mono text-[11px] italic text-muted-foreground"
+                >
+                  {t("flowReading.nothingComesBack")}
+                </p>
+              ) : (
+                <div className="opacity-85">
+                  <PayloadBody payload={expected.payload} />
+                </div>
+              )}
+            </Root>
+          )}
+        </>
       )}
     </div>
   );

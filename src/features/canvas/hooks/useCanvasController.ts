@@ -133,6 +133,8 @@ export function useCanvasController(canvasProps: CanvasProps = {}) {
     visualState,
     resolvedComponents,
     canEditCanvas: interactionMode.canEditCanvas,
+    // The flows panel takes the inspector's column; the two never stand side by side.
+    isFlowPanelOpen: !!canvasProps.isFlowPanelOpen,
   });
   return {
     t,

@@ -65,7 +65,19 @@ describe("the panel a flow is written in", () => {
 
     expect(screen.getByText("Checkout API")).toBeInTheDocument();
     expect(screen.getByText("sends the receipt")).toBeInTheDocument();
-    expect(screen.getByTestId("flow-object")).toBeInTheDocument();
+  });
+
+  it("opens a step in its own panel, and comes back to the script", () => {
+    const { flowId } = seed();
+    renderPanel(flowId, true);
+
+    fireEvent.click(screen.getByText("sends the receipt"));
+    expect(screen.getByTestId("flow-step-panel")).toBeInTheDocument();
+    expect(screen.queryByText("Checkout API")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Flow/ }));
+    expect(screen.queryByTestId("flow-step-panel")).not.toBeInTheDocument();
+    expect(screen.getByText("Checkout API")).toBeInTheDocument();
   });
 
   it("opens a stored flow with its own fields folded, and its name out", () => {

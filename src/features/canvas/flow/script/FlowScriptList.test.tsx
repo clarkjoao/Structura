@@ -101,15 +101,6 @@ describe("FlowScriptList", () => {
     expect(indentOf("join")).toBe("0px");
   });
 
-  it("writes a description straight into the stored flow", () => {
-    const { read } = seedFlow(CHAIN);
-    renderScript(read);
-    fireEvent.click(screen.getByText("signs in"));
-    const input = screen.getByPlaceholderText("Step description...");
-    fireEvent.change(input, { target: { value: "signs in with SSO" } });
-    expect(read().steps.s2!.description).toBe("signs in with SSO");
-  });
-
   it("sews the graph shut when a step is removed", () => {
     const { read } = seedFlow(CHAIN);
     renderScript(read);
@@ -126,59 +117,6 @@ describe("FlowScriptList", () => {
     const before = JSON.stringify(read().steps);
     fireEvent.click(screen.getAllByTitle("Remove step")[1]!);
     expect(JSON.stringify(read().steps)).toBe(before);
-  });
-
-  it("renames a branch without moving anything", () => {
-    const { read } = seedFlow(BRANCHED);
-    renderScript(read);
-    fireEvent.click(screen.getByText("◇ paid?"));
-    const input = screen.getByDisplayValue("no");
-    fireEvent.change(input, { target: { value: "declined" } });
-    const branches = read().steps.c!.branches!;
-    expect(branches.map((branch) => branch.label)).toEqual(["yes", "declined"]);
-    expect(branches.map((branch) => branch.nextId)).toEqual(["a1", "b1"]);
-  });
-
-  /**
-   * The keyword used to be authorable only by typing it into the question, and
-   * nothing on screen said that the word `par` in a label meant anything. This
-   * is the path from the panel to the field — the piece itself is tested next
-   * door, and testing a piece is no proof that anything reaches it.
-   */
-  it("writes the kind of branch point the author picks", () => {
-    const { read } = seedFlow(BRANCHED);
-    renderScript(read);
-    fireEvent.click(screen.getByText("◇ paid?"));
-
-    fireEvent.change(screen.getByLabelText("What this branch point is"), {
-      target: { value: "par" },
-    });
-
-    expect(read().steps.c!.conditionKind).toBe("par");
-  });
-
-  it("leaves the question alone when the kind changes", () => {
-    const { read } = seedFlow(BRANCHED);
-    renderScript(read);
-    fireEvent.click(screen.getByText("◇ paid?"));
-
-    fireEvent.change(screen.getByLabelText("What this branch point is"), {
-      target: { value: "loop" },
-    });
-
-    expect(read().steps.c!.conditionLabel).toBe("paid?");
-  });
-
-  it("marks the row with what the branch point is once it is threads", () => {
-    const { read } = seedFlow(BRANCHED);
-    renderScript(read);
-    fireEvent.click(screen.getByText("◇ paid?"));
-
-    fireEvent.change(screen.getByLabelText("What this branch point is"), {
-      target: { value: "par" },
-    });
-
-    expect(screen.getByText("⇉ paid?")).toBeTruthy();
   });
 
   it("calls an unnamed branch point what it is rather than nothing", () => {
@@ -211,38 +149,30 @@ describe("FlowScriptList", () => {
     expect(checkFlowInvariants(flow)).toEqual([]);
   });
 
-  it("says how many steps a removed branch takes with it", () => {
-    // Three branches: the panel only offers to remove one while more than two
-    // remain, so a two-branch condition has no remove button to click.
-    const { read } = seedFlow([
-      { id: "s1", type: "action", next: "c", description: "submits" },
-      {
-        id: "c",
-        type: "condition",
-        conditionLabel: "paid?",
-        branches: [
-          { label: "yes", nextId: "a1" },
-          { label: "no", nextId: "b1" },
-          { label: "later", nextId: "m1" },
-        ],
-      },
-      { id: "a1", type: "action", next: "a2", description: "ships" },
-      { id: "a2", type: "action", description: "invoices" },
-      { id: "b1", type: "action", description: "declines" },
-      { id: "m1", type: "action", description: "waits" },
-    ]);
-    renderScript(read);
-    fireEvent.click(screen.getByText("◇ paid?"));
-    fireEvent.click(screen.getAllByTitle("Remove branch")[0]!);
-
-    expect(read().steps.a1).toBeUndefined();
-    expect(read().steps.a2).toBeUndefined();
-  });
-
   it("says how many steps nothing reaches instead of hiding them", () => {
     const { read } = seedFlow([...CHAIN, { id: "lost", type: "action", description: "orphan" }]);
     renderScript(read);
     expect(screen.queryByText("orphan")).not.toBeInTheDocument();
     expect(screen.getByText(/not reachable from the start/)).toBeInTheDocument();
+  });
+
+  it("keeps the captured call beside a title the author wrote over it", () => {
+    const store = useDiagramStore.getState();
+    const diagram = store.addDiagram("Calls", "context");
+    store.openDiagram(diagram.id);
+    const from = useDiagramStore.getState().addComponent("system", "Web", null, { x: 0, y: 0 });
+    const to = useDiagramStore.getState().addComponent("system", "API", null, { x: 200, y: 0 });
+    const connection = useDiagramStore.getState().addConnection(from.id, to.id, "POST /pay")!;
+    const flow = useDiagramStore.getState().addFlow(diagram.id, "Pay", "")!;
+    useDiagramStore.getState().updateFlow(flow.id, {
+      steps: {
+        s1: { id: "s1", type: "action", connectionId: connection.id, title: "Charges the card" },
+      },
+      entryStepId: "s1",
+    });
+    renderScript(() => useDiagramStore.getState().diagrams[diagram.id]!.snapshot.flows[flow.id]!);
+
+    expect(screen.getByText("Charges the card")).toBeInTheDocument();
+    expect(screen.getByTestId("script-row-call")).toHaveTextContent("POST /pay");
   });
 });
