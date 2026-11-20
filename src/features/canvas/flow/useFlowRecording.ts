@@ -14,6 +14,7 @@ import {
 } from "@/features/diagram";
 import type { FlowMode, RecordingContext } from "./flowMode.types";
 import { recordingCursor } from "./flowMode.types";
+import { suggestFlowName } from "./suggestFlowName";
 import { useFlowViewStore } from "./useFlowViewStore";
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { resolveShared } from "@/features/diagram/utils/shared";
@@ -161,7 +162,16 @@ export function useFlowRecording(
     const flow = diagramId
       ? store.diagrams[diagramId]?.snapshot.flows[recording.flowId]
       : undefined;
-    if (flow && !flow.name.trim()) updateFlow(recording.flowId, { name: t("flows.unnamed") });
+    if (flow && !flow.name.trim()) {
+      // Unnamed, it takes the name the panel's placeholder was offering — first participant →
+      // last — and only a flow with nothing to go by is called "unnamed".
+      const diagram = diagramId ? store.diagrams[diagramId] : undefined;
+      const view = diagram ? getCachedCanvasSnapshot(diagram) : undefined;
+      const suggested = view
+        ? suggestFlowName(flow, (id) => view.components[id]?.name, view.connections)
+        : null;
+      updateFlow(recording.flowId, { name: suggested ?? t("flows.unnamed") });
+    }
     commitFlowSession();
     clearRecordingSelection();
     setMode({ kind: "idle" });

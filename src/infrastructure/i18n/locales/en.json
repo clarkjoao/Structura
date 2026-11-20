@@ -2388,8 +2388,6 @@
     },
     "copyDrawio": "Copy to Drawio",
     "shortcuts": "Shortcuts",
-    "recordingEdit": "✎ EDIT",
-    "recordingRec": "● REC",
     "backToDashboard": "Back to dashboard",
     "noDiagram": "No diagram selected.",
     "unnamed": "Unnamed flow",
@@ -2550,7 +2548,9 @@
       "inBranch": "branch “{{label}}”",
       "hint": "Click the next element, or an edge to record the call. Backspace undoes.",
       "undo": "Undo last",
-      "backToTrunk": "Main sequence"
+      "backToTrunk": "Main sequence",
+      "editing_one": "Editing · {{count}} step",
+      "editing_other": "Editing · {{count}} steps"
     },
     "fork": {
       "open": "Condition",

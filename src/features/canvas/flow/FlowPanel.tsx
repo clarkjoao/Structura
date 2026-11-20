@@ -441,7 +441,16 @@ const FlowPanel = ({
                     )}
                   </div>
                 </button>
-                <div className="flex shrink-0 items-center gap-0.5">
+                {/* Quiet until the card is pointed at, focused or selected: six cards of three
+                    icons each read as a toolbar, not a list. Touch screens have no hover. */}
+                <div
+                  data-testid="flow-card-actions"
+                  className={cn(
+                    "flex shrink-0 items-center gap-0.5 transition-opacity",
+                    !isSelected &&
+                      "opacity-0 focus-within:opacity-100 group-hover:opacity-100 has-[[data-state=open]]:opacity-100 [@media(hover:none)]:opacity-100",
+                  )}
+                >
                   <button
                     type="button"
                     disabled={flowOrCompareLocked}

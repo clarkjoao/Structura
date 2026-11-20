@@ -190,6 +190,19 @@ describe("recording writes into the store as it goes", () => {
     expect(flows()[flowId]!.name).toBe(i18n.t("flows.unnamed"));
   });
 
+  it("names an unnamed flow after where it starts and ends, when it can", () => {
+    const { flows, diagramId } = mountRecorder();
+    const web = useDiagramStore.getState().addComponent("system", "Web", null, { x: 0, y: 0 });
+    const api_ = useDiagramStore.getState().addComponent("system", "API", null, { x: 200, y: 0 });
+    act(() => api.startRecording());
+    const flowId = api.recordingFlowId!;
+    act(() => api.onRecordNodeClick(web.id));
+    act(() => api.onRecordNodeClick(api_.id));
+    act(() => api.finalizeRecording());
+    expect(useDiagramStore.getState().activeDiagramId).toBe(diagramId);
+    expect(flows()[flowId]!.name).toBe("Web → API");
+  });
+
   it("empties the first step instead of removing it when undoing back to the start", () => {
     const { recorded } = mountRecorder();
     act(() => api.startRecording());

@@ -58,7 +58,9 @@ export function RecordingStrip({
         />
         <div className="min-w-0">
           <p className="text-[13px] font-semibold text-foreground">
-            {t("flowRecorder.strip.recording", { count: stepCount })}
+            {t(isEditing ? "flowRecorder.strip.editing" : "flowRecorder.strip.recording", {
+              count: stepCount,
+            })}
             <span className="font-normal text-muted-foreground"> · </span>
             {inBranch ? (
               <span style={{ color: branchColor }}>

@@ -2388,8 +2388,6 @@
     },
     "copyDrawio": "Copiar para Drawio",
     "shortcuts": "Atalhos",
-    "recordingEdit": "✎ EDIT",
-    "recordingRec": "● REC",
     "backToDashboard": "Voltar ao Dashboard",
     "noDiagram": "Nenhum diagrama selecionado.",
     "unnamed": "Fluxo sem nome",
@@ -2550,7 +2548,9 @@
       "inBranch": "ramo “{{label}}”",
       "hint": "Clique no próximo elemento, ou numa aresta para gravar a chamada. Backspace desfaz.",
       "undo": "Desfazer último",
-      "backToTrunk": "Sequência principal"
+      "backToTrunk": "Sequência principal",
+      "editing_one": "Editando · {{count}} passo",
+      "editing_other": "Editando · {{count}} passos"
     },
     "fork": {
       "open": "Condição",

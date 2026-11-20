@@ -11,7 +11,6 @@ import {
 } from "@/features/diagram";
 import type { RecordingContext } from "./flowMode.types";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { PanelColumn } from "../panels/ElementPanel/shell/PanelFrame";
 import { PanelHeader, type PanelMenuItem } from "../panels/ElementPanel/shell/PanelHeader";
 import { PanelSection } from "../panels/ElementPanel/shell/PanelSection";
@@ -20,6 +19,7 @@ import { MermaidPreview } from "./recorder/MermaidPreview";
 import { FlowScriptPanel } from "./script/FlowScriptPanel";
 import { FlowStepPanel } from "./script/FlowStepPanel";
 import { selectStepOnCanvas } from "./script/selectStepOnCanvas";
+import { suggestFlowName } from "./suggestFlowName";
 import { useFlowScriptActions } from "./useFlowScriptActions";
 import { useFlowViewStore } from "./useFlowViewStore";
 
@@ -82,6 +82,12 @@ const FlowRecorderPanel = ({
     ];
   }, [flow, components]);
 
+  /** What the flow would be called if nobody names it: first participant → last. */
+  const suggestedName = useMemo(
+    () => (flow ? suggestFlowName(flow, (id) => components[id]?.name, connections) : null),
+    [flow, components, connections],
+  );
+
   const mermaidPreview = useMemo(
     () => (flow ? stepsToMermaid(flow, components, connections) : ""),
     [flow, components, connections],
@@ -89,10 +95,12 @@ const FlowRecorderPanel = ({
 
   const handleFinalize = useCallback(() => {
     if (!flow) return;
-    if (!flow.name.trim()) toast.warning(t("flowRecorder.emptyNameWarning"));
+    // Unnamed, finishing takes the suggested name (see `finalizeRecording`); only a flow with
+    // nothing to suggest a name from is worth a warning.
+    if (!flow.name.trim() && !suggestedName) toast.warning(t("flowRecorder.emptyNameWarning"));
     if (Object.keys(flow.steps).length === 0) toast.warning(t("flowRecorder.noStepsWarning"));
     onFinalize();
-  }, [flow, onFinalize, t]);
+  }, [flow, onFinalize, suggestedName, t]);
 
   const onAddTag = useCallback(
     (tag: string) => {
@@ -159,9 +167,8 @@ const FlowRecorderPanel = ({
       <PanelHeader
         icon={<GitBranch className="h-3.5 w-3.5" />}
         typeLabel={t("flows.panelTitle")}
-        badges={<RecordingBadge isEditing={isEditing} />}
         name={flow.name}
-        namePlaceholder={t("flowRecorder.namePlaceholder")}
+        namePlaceholder={suggestedName ?? t("flowRecorder.namePlaceholder")}
         onCommitName={(name) => updateFlow(flow.id, { name })}
         nameInputRef={nameRef}
         menu={menu}
@@ -197,20 +204,5 @@ const FlowRecorderPanel = ({
     </PanelColumn>
   );
 };
-
-/** REC for a new recording, EDIT for a stored flow — the canvas is listening either way. */
-function RecordingBadge({ isEditing }: { isEditing?: boolean }) {
-  const { t } = useTranslation();
-  return (
-    <span
-      className={cn(
-        "shrink-0 animate-pulse rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold",
-        isEditing ? "bg-amber-500/10 text-amber-500" : "bg-red-500/10 text-red-500",
-      )}
-    >
-      {isEditing ? t("flows.recordingEdit") : t("flows.recordingRec")}
-    </span>
-  );
-}
 
 export default FlowRecorderPanel;

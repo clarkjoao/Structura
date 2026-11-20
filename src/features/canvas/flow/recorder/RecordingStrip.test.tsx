@@ -129,4 +129,19 @@ describe("RecordingStrip", () => {
     fireEvent.click(screen.getByRole("button", { name: "Fork" }));
     expect(screen.getByTestId("recording-fork-form")).toBeInTheDocument();
   });
+
+  it("says it is editing, not recording, a flow that already existed", () => {
+    render(
+      <RecordingStrip
+        flowId={seed(TWO)}
+        context={{ mode: "trunk" }}
+        isEditing
+        onUndo={() => {}}
+        onFork={() => true}
+        onBackToTrunk={() => {}}
+        onFinish={() => {}}
+      />,
+    );
+    expect(screen.getByTestId("recording-strip")).toHaveTextContent("Editing · 2 steps");
+  });
 });

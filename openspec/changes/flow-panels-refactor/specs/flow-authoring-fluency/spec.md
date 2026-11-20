@@ -106,3 +106,15 @@ recorded step SHALL wear a halo on the canvas.
 
 - **GIVEN** a recording with steps 1 and 2 on the main sequence
 - **THEN** the script shows "3 · waiting for the next click" after step 2
+
+### Requirement: An unnamed flow is named for where it runs
+
+A flow being recorded without a name SHALL show, as its name's placeholder, its first participant
+and its last (`Web → Ledger`, one name when they are the same), and finishing it unnamed SHALL
+give it that name. Only a flow whose steps name nothing is finished as "Unnamed".
+
+#### Scenario: Finishing without typing a name
+
+- **GIVEN** a recording that clicked Web, then API, and was never named
+- **WHEN** it is finished
+- **THEN** the flow is called "Web → API"

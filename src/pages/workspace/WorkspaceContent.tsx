@@ -342,15 +342,6 @@ export function WorkspaceContent({
                   }
                 />
               )}
-              {isRecording && (
-                <span
-                  className={`shrink-0 text-[10px] font-mono rounded px-1.5 py-0.5 animate-pulse ${
-                    isEditingFlow ? "text-amber-400 bg-amber-400/10" : "text-red-400 bg-red-400/10"
-                  }`}
-                >
-                  {isEditingFlow ? t("flows.recordingEdit") : t("flows.recordingRec")}
-                </span>
-              )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <SaveStatusIndicator />
