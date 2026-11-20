@@ -222,3 +222,31 @@ describe("Share payload hardening", () => {
     expect(decoded?.snapshot.components).toEqual({});
   });
 });
+
+describe("Sharing — diagram kind", () => {
+  const base: Diagram = {
+    id: "k",
+    name: "Kind",
+    level: "context",
+    createdAt: 0,
+    updatedAt: 0,
+    snapshot: { components: {}, connections: {}, flows: {}, iconLibrary: {} },
+    nodeLayouts: {},
+    edgeLayouts: {},
+    viewport: { x: 0, y: 0, zoom: 1 },
+  };
+
+  it("carries a kind through a link, even one nothing registers", () => {
+    const shared = { ...base, kind: "acme:value-stream", kindData: { lanes: 2 } };
+    const decoded = decodeShareParam(shareParamOf(generateShareUrl(shared).url));
+    expect(decoded?.kind).toBe("acme:value-stream");
+    expect(decoded?.kindData).toEqual({ lanes: 2 });
+  });
+
+  it("drops a malformed kind from a link", () => {
+    const payload = LZString.compressToEncodedURIComponent(JSON.stringify({ ...base, kind: 7 }));
+    const decoded = decodeShareParam(payload);
+    expect(decoded).toBeTruthy();
+    expect(decoded && "kind" in decoded).toBe(false);
+  });
+});

@@ -170,6 +170,14 @@ export function lockOverlay(node: Node, locked: boolean): Node {
   return locked ? withoutInteraction(withClass(node, "cursor-not-allowed"), ["draggable"]) : node;
 }
 
+/**
+ * A diagram whose kind places its elements (ADR-0014): nothing is dragged or resized by hand.
+ * The class hides the resize handles (`index.css`); selecting, connecting and editing stay.
+ */
+export function kindPlacedOverlay(node: Node, placed: boolean): Node {
+  return placed ? withoutInteraction(withClass(node, "kind-placed"), ["draggable"]) : node;
+}
+
 /** In a Version, a node whose copy conflicts with the base (the base changed after the copy). */
 export function versionConflictOverlay(node: Node, conflicted: boolean): Node {
   return conflicted ? withClass(node, "node-version-conflict") : node;
@@ -215,6 +223,10 @@ export interface EditorNodeOverlayInput {
   hiddenByTag: boolean;
   isReading: boolean;
   locked: boolean;
+  /** The diagram's kind places its elements: no drag, no resize. */
+  kindPlaced?: boolean;
+  /** The diagram's kind marks this node (a quiet check). */
+  kindMarked?: boolean;
   /** The active Version's copy of this node conflicts with the base. */
   versionConflict: boolean;
   /** The changes view: what the active Version did to this node, if anything. */
@@ -248,6 +260,8 @@ export function applyEditorNodeOverlays(
   next = tagFilterOverlay(next, input.hiddenByTag);
   next = readingOverlay(next, input.isReading);
   next = lockOverlay(next, input.locked);
+  next = kindPlacedOverlay(next, input.kindPlaced === true);
+  if (input.kindMarked) next = withClass(next, "kind-check");
   // A conflict says more than "changed": its marker takes the outline.
   next = versionChangeOverlay(next, input.versionConflict ? undefined : input.versionChange);
   next = versionConflictOverlay(next, input.versionConflict);

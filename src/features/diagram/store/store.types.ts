@@ -35,6 +35,13 @@ export interface DiagramSnapshot {
   /** The reading direction at the checkpoint; undefined is left-to-right. */
   direction?: "TB";
   timestamp: number;
+  /**
+   * The kind mode and kind data at the checkpoint (ADR-0014), so undoing a
+   * switch to freehand, a return to the kind, or a derivation puts them back.
+   * The kind id itself never changes after creation.
+   */
+  kindMode?: "freehand";
+  kindData?: import("../model/diagram-kind").JsonObject;
 }
 
 export interface ClipboardEntry {

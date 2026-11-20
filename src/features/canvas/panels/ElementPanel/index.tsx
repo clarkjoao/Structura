@@ -7,6 +7,7 @@ import { CollabEditingWarning } from "@/features/collaboration";
 import { useComponent, useConnections, useDiagramActions } from "@/features/diagram";
 import type { Node } from "@xyflow/react";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
+import { KindActionsSection } from "./sections/KindActionsSection";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import { getElement } from "@/features/elements/element.registry";
 import ComponentPanel from "./ComponentPanel";
@@ -127,6 +128,7 @@ const ElementPanel = ({
           onFocusElement={onFocusElement}
           onTogglePanelCollapse={onTogglePanelCollapse}
         />
+        <KindActionsSection elementId={selectedElementId} />
         <div className="shrink-0 overflow-y-auto p-2 empty:hidden">
           <PluginPanelSlot slot="element-inspector" selectionIds={[selectedElementId]} />
         </div>

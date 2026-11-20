@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { Diagram, DiagramModel, ResolvedSnapshot } from "@/features/diagram";
 import { isApiGroupComponent, isPanelComponent, useDiagramActions } from "@/features/diagram";
 import NodeContextMenu from "./NodeContextMenu";
+import { kindMenuItemsFor } from "../chrome/kindElementActions";
 import { getCenterOfNodes, getCopyableIds, getPlatform } from "../hooks/keyboard/helpers";
 import { duplicateSelection } from "../utils/duplicateSelection";
 import { withDeleteFeedback } from "../utils/notifyElementsDeleted";
@@ -162,6 +163,7 @@ export function CanvasContextMenu({
       isAutoLayoutRunning={isAutoLayoutRunning}
       selectionCount={selectionCount}
       platform={getPlatform()}
+      kindItems={canEditCanvas ? kindMenuItemsFor(diagram, contextMenuId, effectiveIds) : undefined}
     />
   );
 }

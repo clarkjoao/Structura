@@ -3619,5 +3619,76 @@
       "object": "Object at this step",
       "ways": "Ways out"
     }
+  },
+  "diagramKinds": {
+    "kindChoice": "Kind",
+    "freehand": {
+      "label": "Freehand",
+      "description": "Draw anything and place it anywhere."
+    },
+    "editFreehand": "Edit freehand",
+    "editFreehandHint": "The whole palette and free placement. You can come back afterwards.",
+    "freehandBanner": "Editing freehand. The {{kind}} layout and checks are paused.",
+    "unavailable": "This diagram was made with “{{kind}}”, which is not available here. It opens freehand and keeps its kind.",
+    "issuesTitle": "It does not fit {{kind}} yet",
+    "issuesHint": "Fix these and try again. The diagram stays freehand until then.",
+    "returned": "Back to {{kind}}.",
+    "derivedFlow": "Derived from the steps",
+    "derivedFlowHint": "This flow follows the steps on the canvas. Edit the steps to change its order.",
+    "guided": {
+      "label": "Guided",
+      "description": "A journey or data flow in lanes. You write the steps; the layout is automatic.",
+      "return": "Back to guided",
+      "newStep": "New step",
+      "newDecision": "Decision?",
+      "startName": "Start",
+      "lanes": {
+        "first": "User",
+        "second": "System",
+        "newLane": "New lane",
+        "add": "Add lane",
+        "rename": "Rename lane",
+        "moveUp": "Move lane up",
+        "moveDown": "Move lane down",
+        "remove": "Remove lane",
+        "field": "Lane",
+        "moveTo": "Move to lane"
+      },
+      "commands": {
+        "next": "Add next step",
+        "branch": "Add branch",
+        "laneUp": "Move to the lane above",
+        "laneDown": "Move to the lane below",
+        "delete": "Delete step"
+      },
+      "refused": {
+        "selectOneStep": "Select one step first.",
+        "endHasNoNext": "An end step has nothing after it.",
+        "keepStart": "A guided diagram needs a start step.",
+        "keepLastLane": "A guided diagram needs at least one lane."
+      },
+      "checks": {
+        "unlabelledExit": "This exit has no label",
+        "openEnd": "This path does not reach an end"
+      },
+      "issues": {
+        "noLane": "There is no lane.",
+        "unknownElement": "This element’s type is not available here.",
+        "nestedLane": "A lane is inside another element.",
+        "outsideLane": "This element is outside every lane.",
+        "notAStep": "Only journey steps go in a lane.",
+        "noStart": "There is no start step.",
+        "extraStart": "There is more than one start step.",
+        "connectionNotBetweenSteps": "This connection does not join two steps."
+      },
+      "shortcuts": {
+        "title": "Guided diagram",
+        "next": "Add the next step",
+        "branch": "Add a branch",
+        "lane": "Move the step to another lane",
+        "delete": "Delete the step and reconnect",
+        "escape": "Clear the selection (Tab moves focus again)"
+      }
+    }
   }
 }

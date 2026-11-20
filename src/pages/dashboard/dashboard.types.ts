@@ -37,7 +37,14 @@ export interface DiagramListProps {
 
 export interface AddDiagramDialogProps {
   onClose: () => void;
-  onAdd: (name: string, level: Level, domain?: string, description?: string) => void;
+  onAdd: (
+    name: string,
+    level: Level,
+    domain?: string,
+    description?: string,
+    /** The diagram kind chosen (ADR-0014); null for freehand. */
+    kindId?: string | null,
+  ) => void;
 }
 
 export type GlobalSearchHit = Component & {

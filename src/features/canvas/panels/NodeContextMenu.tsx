@@ -14,6 +14,7 @@ import {
   Trash2,
   Ungroup,
   Unlock,
+  Workflow,
 } from "lucide-react";
 import type { Platform } from "../hooks/keyboard/helpers";
 
@@ -44,6 +45,14 @@ interface Props {
   selectionCount: number;
   platform: Platform;
   onClose: () => void;
+  /** What the diagram's kind offers on this element (ADR-0014), shown first. */
+  kindItems?: ReadonlyArray<{
+    id: string;
+    label: string;
+    danger?: boolean;
+    shortcut?: string;
+    onSelect: () => void;
+  }>;
 }
 
 function ShortcutHint({
@@ -141,6 +150,7 @@ const NodeContextMenu = ({
   selectionCount,
   platform,
   onClose,
+  kindItems,
 }: Props) => {
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -206,6 +216,25 @@ const NodeContextMenu = ({
         visibility: visible ? "visible" : "hidden",
       }}
     >
+      {kindItems && kindItems.length > 0 ? (
+        <>
+          {kindItems.map((item) => (
+            <MenuItem
+              key={item.id}
+              icon={Workflow}
+              label={item.label}
+              {...(item.shortcut && { shortcutMac: item.shortcut, shortcutOther: item.shortcut })}
+              platform={platform}
+              danger={item.danger}
+              onClick={() => {
+                item.onSelect();
+                onClose();
+              }}
+            />
+          ))}
+          <Divider />
+        </>
+      ) : null}
       {hasEditActions ? (
         <>
           <SectionLabel label={t("nodeContextMenu.sectionEdit")} />

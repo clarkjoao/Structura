@@ -54,6 +54,11 @@ import { useFlowViewStore } from "./useFlowViewStore";
 import { useHighlightRequests } from "../focus/highlightRequests";
 import { validateFlow, type BrokenStep } from "./validateFlow";
 import BrokenFlowDialog from "./BrokenFlowDialog";
+import {
+  interactionOf,
+  kindDerivedFlowIds,
+  resolveKindPolicy,
+} from "@/features/diagram-kinds/policy";
 import { activeDirection } from "../hooks/useActiveDirection";
 import type { DiagramDirection } from "@/features/diagram";
 
@@ -85,6 +90,11 @@ const FlowPanel = ({
   const { t } = useTranslation();
   const { isIdle } = useFlowMode();
   const flowOrCompareLocked = !isIdle || panelActionsLocked;
+  const activeForKind = useActiveDiagram();
+  // A diagram kind that derives its flow (ADR-0014): no recording, and the derived flow is the
+  // steps' — read and played here, its order changed on the canvas.
+  const recordFlows = interactionOf(resolveKindPolicy(activeForKind)).recordFlows;
+  const derivedFlowIds = kindDerivedFlowIds(activeForKind);
   const flows = useFlows();
   const diagram = useActiveDiagram();
   const activeDiagramId = useActiveDiagramId();
@@ -341,15 +351,17 @@ const FlowPanel = ({
         onClose={onClose}
         subheader={
           <div className="space-y-2 px-1.5 pt-1">
-            <Button
-              size="sm"
-              disabled={flowOrCompareLocked}
-              onClick={onStartRecording}
-              title={flowOrCompareLocked ? panelActionsLockedTitle : undefined}
-              className="h-8 w-full gap-1.5"
-            >
-              <Plus className="h-4 w-4" /> {t("flowPanel.newFlow")}
-            </Button>
+            {recordFlows && (
+              <Button
+                size="sm"
+                disabled={flowOrCompareLocked}
+                onClick={onStartRecording}
+                title={flowOrCompareLocked ? panelActionsLockedTitle : undefined}
+                className="h-8 w-full gap-1.5"
+              >
+                <Plus className="h-4 w-4" /> {t("flowPanel.newFlow")}
+              </Button>
+            )}
             {allTags.length > 0 && (
               <div
                 role="group"
@@ -422,6 +434,15 @@ const FlowPanel = ({
                     </p>
                   )}
                   <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                    {derivedFlowIds.has(flow.id) && (
+                      <span
+                        data-testid="flow-derived-badge"
+                        title={t("diagramKinds.derivedFlowHint")}
+                        className="rounded-full bg-primary/10 px-2 py-px text-[11px] text-primary"
+                      >
+                        {t("diagramKinds.derivedFlow")}
+                      </span>
+                    )}
                     <span>{t("flowPanel.stepsCount", { count: stepCount })}</span>
                     {componentIds.size > 0 && (
                       <span>{t("flowPanel.participantsCount", { count: componentIds.size })}</span>
@@ -489,13 +510,17 @@ const FlowPanel = ({
                       <DropdownMenuItem onClick={() => handleCopy(flow)}>
                         <Copy className="mr-2 h-3.5 w-3.5" /> {t("flows.copyMermaidTitle")}
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => removeFlow(flow.id)}
-                        className="text-destructive focus:text-destructive"
-                      >
-                        <Trash2 className="mr-2 h-3.5 w-3.5" /> {t("flows.removeTitle")}
-                      </DropdownMenuItem>
+                      {!derivedFlowIds.has(flow.id) && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => removeFlow(flow.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="mr-2 h-3.5 w-3.5" /> {t("flows.removeTitle")}
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

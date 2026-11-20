@@ -260,7 +260,7 @@ Sequenced so each step is useful alone and none blocks `main`:
 | Next | **Command system** | Second-most-shared dependency: UI extensibility, shortcuts, palette, MCP all sit on it. |
 | Then | **Derived Model Index** (vision §6, step 2) | Unblocks Architecture Map, cross-diagram references, better AI — without migration. |
 | Then | **Contribution-point plugin architecture** (build-time, no runtime loader) | Formalizes the registries into one coherent Extension API. See [plugin-system-preparation.md](plugin-system-preparation.md). |
-| Later | **Diagram profiles** — VSM, Step Functions, Saga as contributed diagram types | Proof that the extension surface is real; each profile ships as a plugin. |
+| Started | **Diagram kinds** (profiles) — the contract and the first kind, *guided* ([ADR-0014](../adr/0014-diagram-kinds.md), [diagram-kinds.md](../concepts/diagram-kinds.md)); VSM, Step Functions, Saga next | Proof that the extension surface is real; plugin-contributed kinds follow once a second kind has exercised the contract. |
 | Later | **Identity promotion** (vision §6, step 3), then reassess model-first | The product decides, informed by usage. |
 
 Non-goals for this horizon: a plugin marketplace, a runtime plugin loader,
@@ -278,9 +278,9 @@ see the security discussion in
 - **Collaboration vs. model identity:** live sessions sync diagram-scoped
   state; a workspace model adds a second consistency domain. Is the model
   its own room, or are model edits made outside sessions? (→ spec 0001, risks section)
-- **Profile vs. plugin boundary:** is a "diagram type" (VSM) one plugin or a
-  bundle of node types + validators + palette entries? (→ spec on plugin
-  contribution points)
+- ~~**Profile vs. plugin boundary:**~~ settled by [ADR-0014](../adr/0014-diagram-kinds.md): a
+  diagram kind is a bundle of policies (palette, conformance, derivation, arrangement, checks,
+  commands) over existing elements, registered through one contract a plugin will use too.
 - **Mermaid-inspired text DSLs:** first-class authoring mode or import-only?
   Text authoring pulls toward model-first faster than the canvas does.
 - **pt-BR content ecosystem:** how do community templates/catalogs carry

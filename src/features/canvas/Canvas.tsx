@@ -27,6 +27,7 @@ import type { CanvasProps } from "./canvas.types";
 import { DiagramSurface, writePolicy } from "./core";
 import { CanvasOverlays } from "./chrome/CanvasOverlays";
 import { CanvasRightRail } from "./chrome/CanvasRightRail";
+import { KindModeBar } from "./chrome/KindModeBar";
 import { CompareModeBanner } from "./chrome/CompareModeBanner";
 import { VersionChangesLegend } from "./toolbar/VersionChangesLegend";
 import { PendingSuggestionToolbars } from "./chrome/PendingSuggestionToolbars";
@@ -232,6 +233,23 @@ const Canvas = (props: CanvasProps = {}) => {
               className="w-full h-full"
             >
               {isCompareMode && <CompareModeBanner />}
+              {!isCompareMode && !interactionMode.isPlaying && (
+                <KindModeBar
+                  diagram={diagram}
+                  canEdit={canEditStructure}
+                  onSelectElement={(id) => {
+                    if (resolvedSnapshot.components[id]) {
+                      visualState.setSelectedEdgeId(null);
+                      visualState.setSelectedNodeIds(new Set([id]));
+                      visualState.setSelectedNodeId(id);
+                    } else {
+                      visualState.setSelectedNodeIds(new Set());
+                      visualState.setSelectedNodeId(null);
+                      visualState.setSelectedEdgeId(id);
+                    }
+                  }}
+                />
+              )}
               {!isCompareMode && <VersionChangesLegend diagram={diagram} />}
               <DiagramSurface
                 policy={writePolicy(interactionMode.canEditCanvas)}

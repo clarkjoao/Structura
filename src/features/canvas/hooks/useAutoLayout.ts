@@ -1,3 +1,8 @@
+import { isKindActive, resolveKindPolicy } from "@/features/diagram-kinds/policy";
+import { kindContextFor } from "@/features/diagram-kinds/context";
+import { kindLayoutServices } from "../layout/kindLayoutServices";
+import { isPanelComponent } from "@/features/diagram/model/component.guards";
+import { PanelKind } from "@/features/diagram/enums";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactFlow, useStoreApi } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
@@ -100,6 +105,49 @@ export function useAutoLayout() {
         const direction = options.direction ?? active?.direction;
         const settings = writeSettings ? options.settings : active?.layoutSettings;
         const startedOn = arrangedState(store);
+
+        // A diagram whose kind arranges it (ADR-0014): the deliberate Arrange, a density change
+        // and a direction switch run the kind's arrangement, as one undo step.
+        const kindPolicy = resolveKindPolicy(active);
+        if (active && isKindActive(kindPolicy) && kindPolicy.descriptor.arrange) {
+          const { direction: _direction, layoutSettings: _settings, ...rest } = active;
+          const target = {
+            ...rest,
+            ...(direction === "TB" && { direction: "TB" as const }),
+            ...(settings && { layoutSettings: settings }),
+          };
+          const { layouts } = await kindPolicy.descriptor.arrange(
+            target,
+            kindContextFor(target),
+            kindLayoutServices(settings, Object.fromEntries(measuredSizesOf(nodesToUse))),
+          );
+          if (!sameArrangedState(startedOn, arrangedState(useDiagramStore.getState()))) {
+            toast.info(t("autoLayout.discardedChanged"));
+            return;
+          }
+          endTransitionRef.current = startLayoutTransition(reactFlowStore.getState().domNode);
+          applyAutoLayout(layouts, undefined, {
+            ...(writeSettings && settings ? { layoutSettings: settings } : {}),
+            ...(writeDirection && direction ? { direction } : {}),
+          });
+          if (writeDirection) {
+            const lanes = Object.values(getCachedCanvasSnapshot(target).components).filter(
+              (c) =>
+                isPanelComponent(c) && c.panelKind === PanelKind.Swimlane && c.parentId === null,
+            );
+            const orientation =
+              direction === "TB" ? ("vertical" as const) : ("horizontal" as const);
+            useDiagramStore
+              .getState()
+              .applyKindEdit(
+                { laneOrientation: lanes.map((lane) => ({ id: lane.id, orientation })) },
+                { history: false },
+              );
+          }
+          requestAnimationFrame(() => fitView({ duration: 400, padding: 0.2 }));
+          toast.success(t("autoLayout.applied"));
+          return;
+        }
         // The same plan the assistant and generation run (`autoLayoutDiagram.ts`),
         // with the sizes React Flow measured.
         const plan = await planDiagramAutoLayout({

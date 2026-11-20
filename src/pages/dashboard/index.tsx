@@ -39,6 +39,7 @@ import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
 import { DIAGRAM_DRAG_MIME } from "@/components/folders/dragTypes";
 import { cn } from "@/lib/utils";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
+import { createKindDiagram } from "@/features/diagram-kinds/actions";
 import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";
 import { LibraryFilterToolbar } from "@/components/filters/LibraryFilterToolbar";
@@ -408,7 +409,24 @@ export default function DashboardPage() {
     : null;
 
   const handleAddDiagram = useCallback(
-    (name: string, level: Level, domain?: string, description?: string) => {
+    (name: string, level: Level, domain?: string, description?: string, kindId?: string | null) => {
+      if (kindId) {
+        // A kind diagram starts with its template; the element it names opens selected.
+        const { diagram, selectId } = createKindDiagram({
+          name,
+          level,
+          kindId,
+          domain,
+          folderId: selectedFolderId,
+          description,
+        });
+        openDiagram(diagram.id);
+        navigate(
+          `/model/${diagram.id}${selectId ? `?nodeId=${encodeURIComponent(selectId)}` : ""}`,
+        );
+        setShowAdd(false);
+        return;
+      }
       const d = addDiagram(name, level, domain, selectedFolderId, description);
       openDiagram(d.id);
       navigate(`/model/${d.id}`);

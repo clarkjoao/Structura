@@ -508,3 +508,19 @@
     outline-offset: 2px;
   }
 }
+
+/* A diagram whose kind places its elements (ADR-0014): no resize handles. */
+.react-flow__node.kind-placed .react-flow__resize-control {
+  display: none;
+}
+
+/* A diagram kind's quiet check (ADR-0014): never a dialog, only a mark. */
+.react-flow__node.kind-check {
+  outline: 2px dashed rgb(245 158 11 / 0.8);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+.react-flow__edge.kind-check path.react-flow__edge-path {
+  stroke: rgb(245 158 11) !important;
+  stroke-dasharray: 6 4;
+}

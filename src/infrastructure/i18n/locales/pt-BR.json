@@ -3619,5 +3619,76 @@
       "object": "Objeto neste passo",
       "ways": "Saídas"
     }
+  },
+  "diagramKinds": {
+    "kindChoice": "Tipo",
+    "freehand": {
+      "label": "Livre",
+      "description": "Desenhe qualquer coisa e posicione onde quiser."
+    },
+    "editFreehand": "Editar livremente",
+    "editFreehandHint": "Paleta completa e posicionamento livre. Você pode voltar depois.",
+    "freehandBanner": "Editando livremente. O layout e as verificações de {{kind}} estão pausados.",
+    "unavailable": "Este diagrama foi feito com “{{kind}}”, que não está disponível aqui. Ele abre como livre e mantém o tipo.",
+    "issuesTitle": "Ainda não cabe em {{kind}}",
+    "issuesHint": "Corrija estes pontos e tente de novo. Até lá o diagrama segue livre.",
+    "returned": "De volta ao {{kind}}.",
+    "derivedFlow": "Derivado dos passos",
+    "derivedFlowHint": "Este flow segue os passos do canvas. Edite os passos para mudar a ordem.",
+    "guided": {
+      "label": "Guiado",
+      "description": "Uma jornada ou fluxo de dados em raias. Você escreve os passos; o layout é automático.",
+      "return": "Voltar ao guiado",
+      "newStep": "Novo passo",
+      "newDecision": "Decisão?",
+      "startName": "Início",
+      "lanes": {
+        "first": "Usuário",
+        "second": "Sistema",
+        "newLane": "Nova raia",
+        "add": "Adicionar raia",
+        "rename": "Renomear raia",
+        "moveUp": "Subir raia",
+        "moveDown": "Descer raia",
+        "remove": "Remover raia",
+        "field": "Raia",
+        "moveTo": "Mover para a raia"
+      },
+      "commands": {
+        "next": "Adicionar próximo passo",
+        "branch": "Adicionar desvio",
+        "laneUp": "Mover para a raia de cima",
+        "laneDown": "Mover para a raia de baixo",
+        "delete": "Apagar passo"
+      },
+      "refused": {
+        "selectOneStep": "Selecione um passo primeiro.",
+        "endHasNoNext": "Um passo de fim não tem nada depois.",
+        "keepStart": "Um diagrama guiado precisa de um passo de início.",
+        "keepLastLane": "Um diagrama guiado precisa de pelo menos uma raia."
+      },
+      "checks": {
+        "unlabelledExit": "Esta saída não tem rótulo",
+        "openEnd": "Este caminho não chega a um fim"
+      },
+      "issues": {
+        "noLane": "Não há nenhuma raia.",
+        "unknownElement": "O tipo deste elemento não está disponível aqui.",
+        "nestedLane": "Uma raia está dentro de outro elemento.",
+        "outsideLane": "Este elemento está fora de todas as raias.",
+        "notAStep": "Só passos de jornada vão dentro de uma raia.",
+        "noStart": "Não há passo de início.",
+        "extraStart": "Há mais de um passo de início.",
+        "connectionNotBetweenSteps": "Esta conexão não liga dois passos."
+      },
+      "shortcuts": {
+        "title": "Diagrama guiado",
+        "next": "Adicionar o próximo passo",
+        "branch": "Adicionar um desvio",
+        "lane": "Mover o passo para outra raia",
+        "delete": "Apagar o passo e religar",
+        "escape": "Limpar a seleção (Tab volta a mover o foco)"
+      }
+    }
   }
 }

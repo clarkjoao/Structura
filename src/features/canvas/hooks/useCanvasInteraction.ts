@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useMemo,
   useRef,
   type Dispatch,
   type MutableRefObject,
@@ -15,6 +16,8 @@ import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
 import { useCanvasDrillHandlers } from "./useCanvasDrillHandlers";
 import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { useCanvasKeyboard } from "./useCanvasKeyboard";
+import { createKindShortcuts } from "./keyboard/createKindShortcuts";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import { useCanvasEffects } from "./useCanvasEffects";
 import { useNodeDragParenting } from "./useNodeDragParenting";
 import { useCatalogUiStore } from "../catalog/catalogUi.store";
@@ -203,7 +206,26 @@ export function useCanvasInteraction(
     [reactFlowInstance, setShowSearch, visualState],
   );
 
+  const kindHandler = useMemo(
+    () =>
+      createKindShortcuts({
+        getDiagram: () => {
+          const state = useDiagramStore.getState();
+          return state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null;
+        },
+        getSelectedIds: () => [...visualState.selectedNodeIds],
+        select: (id) => {
+          visualState.setSelectedEdgeId(null);
+          visualState.setSelectedNodeIds(new Set([id]));
+          visualState.setSelectedNodeId(id);
+        },
+        requestEditLabel: handleRequestFocusTitle,
+      }),
+    [visualState, handleRequestFocusTitle],
+  );
+
   useCanvasKeyboard({
+    kindHandler,
     diagram,
     setCompareVersion: actions.setCompareVersion,
     isCompareMode: compareState.isCompareMode,

@@ -98,7 +98,11 @@ interface UseCanvasKeyboardParams {
   onExitFlowPlayback?: () => boolean;
   onExitFocusMode?: () => boolean;
   onExitCompareMode?: () => boolean;
+  /** The diagram kind's own keyboard (ADR-0014); first in the edit chain. */
+  kindHandler?: KeyHandler;
 }
+
+const NO_KIND_HANDLER: KeyHandler = () => false;
 
 function useStableHandlerRef(handler: KeyHandler): MutableRefObject<KeyHandler> {
   const ref = useRef(handler);
@@ -278,6 +282,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const groupRef = useStableHandlerRef(groupHandler);
   const edgeWaypointRef = useStableHandlerRef(edgeWaypointHandler);
   const lockRef = useStableHandlerRef(lockHandler);
+  const kindRef = useStableHandlerRef(params.kindHandler ?? NO_KIND_HANDLER);
 
   const dispatchRef = useRef<CanvasKeydownDispatch | null>(null);
   dispatchRef.current = {
@@ -297,6 +302,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
     setCompareVersion,
     recordingHandler,
     editHandlers: [
+      (event) => kindRef.current(event),
       (event) => copyPasteRef.current(event),
       (event) => selectionRef.current(event),
       (event) => undoRedoRef.current(event),

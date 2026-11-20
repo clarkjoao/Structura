@@ -10,9 +10,12 @@ import { MemoryRouter } from "react-router-dom";
 import "@/infrastructure/i18n/i18n";
 import "@/features/cloud/bootstrap";
 import "@/features/elements/bootstrap";
+import { registerBuiltInDiagramKinds } from "@/features/diagram-kinds/bootstrap";
 import "@/index.css";
 import { Toaster } from "@/components/ui/sonner";
 import { EmbedEditor } from "./EmbedEditor";
+
+registerBuiltInDiagramKinds();
 
 createRoot(document.getElementById("root")!).render(
   <MemoryRouter>

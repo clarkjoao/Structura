@@ -53,6 +53,11 @@ export interface ArrangeControlProps {
    * button and every setting that would re-arrange.
    */
   arrangeLockedReasonKey: string | null;
+  /**
+   * Whether the Manual/Automatic choice is offered. False on a diagram whose kind arranges it
+   * after every edit (ADR-0014): there is no manual mode to choose. Absent means offered.
+   */
+  modeChoice?: boolean;
   onOpenChange?: (open: boolean) => void;
   buttonClassName: string;
 }
@@ -113,6 +118,7 @@ export function ArrangeControl({
   onDirectionChange,
   directionLockedReasonKey,
   arrangeLockedReasonKey,
+  modeChoice = true,
   onOpenChange,
   buttonClassName,
 }: ArrangeControlProps) {
@@ -129,7 +135,7 @@ export function ArrangeControl({
 
   const shown = pending ?? settings ?? {};
   const density = shown.density ?? "normal";
-  const automatic = shown.mode === "automatic";
+  const automatic = modeChoice && shown.mode === "automatic";
   const gaps = effectiveLayoutGaps(shown, labelled);
   const refs = referenceRules(shown);
   const sliderValues: Record<SliderKey, number> = {
@@ -288,46 +294,50 @@ export function ArrangeControl({
             )}
           </div>
 
-          <p className={SECTION_TITLE_CLASS}>{t("canvasToolbar.arrange.mode")}</p>
-          <div
-            role="radiogroup"
-            aria-label={t("canvasToolbar.arrange.mode")}
-            className="mb-3 grid grid-cols-2 gap-1"
-          >
-            {(["manual", "automatic"] as const).map((mode) => {
-              const checked = (mode === "automatic") === automatic;
-              const labelKey =
-                mode === "automatic"
-                  ? "canvasToolbar.arrange.modeAutomatic"
-                  : "canvasToolbar.arrange.modeManual";
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  role="radio"
-                  aria-checked={checked}
-                  onClick={() => {
-                    if (!checked) changeMode(mode);
-                  }}
-                  className={cn(
-                    "rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
-                    checked
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {t(labelKey)}
-                </button>
-              );
-            })}
-          </div>
-          <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
-            {t(
-              automatic
-                ? "canvasToolbar.arrange.modeAutomaticHint"
-                : "canvasToolbar.arrange.modeManualHint",
-            )}
-          </p>
+          {modeChoice && (
+            <>
+              <p className={SECTION_TITLE_CLASS}>{t("canvasToolbar.arrange.mode")}</p>
+              <div
+                role="radiogroup"
+                aria-label={t("canvasToolbar.arrange.mode")}
+                className="mb-3 grid grid-cols-2 gap-1"
+              >
+                {(["manual", "automatic"] as const).map((mode) => {
+                  const checked = (mode === "automatic") === automatic;
+                  const labelKey =
+                    mode === "automatic"
+                      ? "canvasToolbar.arrange.modeAutomatic"
+                      : "canvasToolbar.arrange.modeManual";
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      onClick={() => {
+                        if (!checked) changeMode(mode);
+                      }}
+                      className={cn(
+                        "rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+                        checked
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {t(labelKey)}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="-mt-2 mb-3 text-[11px] text-muted-foreground">
+                {t(
+                  automatic
+                    ? "canvasToolbar.arrange.modeAutomaticHint"
+                    : "canvasToolbar.arrange.modeManualHint",
+                )}
+              </p>
+            </>
+          )}
 
           <p className={SECTION_TITLE_CLASS}>{t("canvasToolbar.arrange.direction")}</p>
           <div

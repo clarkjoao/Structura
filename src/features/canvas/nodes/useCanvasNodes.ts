@@ -1,3 +1,5 @@
+import { kindMarkersFor } from "@/features/diagram-kinds/markers";
+import { interactionOf, resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import { useMemo, useRef, type CSSProperties } from "react";
 import type { Node } from "@xyflow/react";
 import type {
@@ -362,6 +364,9 @@ export function useCanvasNodes({
      */
     const isReading = ctx.isPlaying;
     const flowModeActive = ctx.isPlaying || ctx.isRecording;
+    // A kind that places its elements (ADR-0014) takes drag and resize away from every node.
+    const kindPlaced = !interactionOf(resolveKindPolicy(diagram)).nodesDraggable;
+    const kindMarked = kindMarkersFor(diagram).nodes;
 
     const visibleIds = new Set(view.nodes.map((viewNode) => viewNode.component.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
@@ -398,6 +403,8 @@ export function useCanvasNodes({
         hiddenByTag: isNodeHiddenByTagFilter(comp),
         isReading,
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
+        kindPlaced,
+        kindMarked: kindMarked.has(comp.id),
         versionConflict: conflictIds.has(comp.id),
         ...(versionChanges?.added.components.has(comp.id)
           ? { versionChange: "added" as const }

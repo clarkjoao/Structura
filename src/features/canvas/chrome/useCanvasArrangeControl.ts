@@ -10,6 +10,8 @@ import {
 } from "@/features/diagram";
 import type { CanvasBottomToolbar } from "../catalog/CanvasBottomToolbar";
 import { useAutoArrange } from "../hooks/useAutoArrange";
+import { useDiagramKindWatcher } from "../hooks/useDiagramKindWatcher";
+import { interactionOf, resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import type { useCanvasController } from "../hooks/useCanvasController";
 import { isArrangeBlockedInSession } from "../layout/sessionArrangeGuard";
 
@@ -49,7 +51,11 @@ export function useCanvasArrangeControl({
     (dirtyIds: string[]) => placeTouched(dirtyIds, arrangeLabelled),
     [placeTouched, arrangeLabelled],
   );
-  useAutoArrange({ enabled: canEditStructure, arrange: placeAutomatically });
+  // A kind that arranges its diagram replaces the automatic mode there (ADR-0014).
+  const interaction = interactionOf(resolveKindPolicy(diagram));
+  const kindArranges = !interaction.arrangeModeChoice;
+  useAutoArrange({ enabled: canEditStructure && !kindArranges, arrange: placeAutomatically });
+  useDiagramKindWatcher({ enabled: canEditStructure });
   const { session: collabSession } = useCollab();
   const switchDirection = useCallback(
     (direction: DiagramDirection) => void arrange({ direction }),
@@ -71,6 +77,7 @@ export function useCanvasArrangeControl({
     direction: diagram.direction ?? "LR",
     onDirectionChange: switchDirection,
     directionLockedReasonKey: collabSession ? "canvasToolbar.arrange.directionLockedSession" : null,
+    modeChoice: interaction.arrangeModeChoice,
     arrangeLockedReasonKey: isArrangeBlockedInSession(
       getCachedCanvasSnapshot(diagram).components,
       collabSession !== null,
