@@ -25,8 +25,8 @@ export interface KindShortcutsDeps {
   select: (id: string) => void;
   /** Selects a connection (an outcome's `selectConnection`). */
   selectConnection?: (id: string) => void;
-  /** Opens label editing on the selected element (the inspector's title). */
-  requestEditLabel: () => void;
+  /** Opens label editing (the inspector's title) on `id` once it is the selection. */
+  requestEditLabel: (id: string) => void;
 }
 
 /** Applies a command's outcome as one undo step; selects and edits what it names. */
@@ -36,17 +36,20 @@ export function applyKindCommandOutcome(
   onEditLabel?: () => void,
 ): void {
   const result = useDiagramStore.getState().applyKindEdit(outcome.edit);
+  let selected: string;
   if (outcome.selectConnection && deps.selectConnection) {
-    deps.selectConnection(outcome.selectConnection);
+    selected = outcome.selectConnection;
+    deps.selectConnection(selected);
   } else if (outcome.select) {
-    deps.select(result.idsByKey[outcome.select] ?? outcome.select);
+    selected = result.idsByKey[outcome.select] ?? outcome.select;
+    deps.select(selected);
   } else {
     return;
   }
   if (!outcome.editLabel) return;
   onEditLabel?.();
-  // After the selection settled: the title focus request resets on a selection change.
-  setTimeout(deps.requestEditLabel, 0);
+  // Named, so the request survives the selection change it follows.
+  deps.requestEditLabel(selected);
 }
 
 /** Runs `command` on the current selection; true when it ran (or refused with a notice). */

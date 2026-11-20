@@ -235,7 +235,7 @@ export function useCanvasInteraction(
           selection.setSelectedNodeId(null);
           selection.setSelectedEdgeId(id);
         },
-        requestEditLabel: () => requestFocusTitleRef.current(),
+        requestEditLabel: (id) => requestFocusTitleRef.current(id),
       }),
     [],
   );

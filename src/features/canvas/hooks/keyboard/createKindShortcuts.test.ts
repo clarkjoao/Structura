@@ -66,8 +66,7 @@ describe("kind shortcuts", () => {
         (c) => c.sourceId === start && c.targetId === next,
       ),
     ).toBe(true);
-    vi.runAllTimers();
-    expect(s.requestEditLabel).toHaveBeenCalled();
+    expect(s.requestEditLabel).toHaveBeenCalledWith(next);
   });
 
   it("lets Tab through when nothing the kind acts on is selected", () => {
