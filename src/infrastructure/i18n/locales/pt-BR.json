@@ -3659,6 +3659,7 @@
         "branch": "Adicionar desvio",
         "laneUp": "Mover para a raia de cima",
         "laneDown": "Mover para a raia de baixo",
+        "labelExit": "Rotular a próxima saída",
         "delete": "Apagar passo"
       },
       "refused": {
@@ -3686,6 +3687,7 @@
         "next": "Adicionar o próximo passo",
         "branch": "Adicionar um desvio",
         "lane": "Mover o passo para outra raia",
+        "labelExit": "Numa decisão: rotular as saídas, uma após a outra",
         "delete": "Apagar o passo e religar",
         "escape": "Limpar a seleção (Tab volta a mover o foco)"
       }

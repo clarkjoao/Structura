@@ -10,7 +10,7 @@ function key(
   k: string,
   mods: Partial<Pick<KeyboardEvent, "shiftKey" | "altKey" | "ctrlKey" | "metaKey">> = {},
 ) {
-  return new KeyboardEvent("keydown", { key: k, ...mods });
+  return new KeyboardEvent("keydown", { key: k, cancelable: true, ...mods });
 }
 
 function setup() {
@@ -22,7 +22,7 @@ function setup() {
   useDiagramStore.getState().openDiagram(diagram.id);
   let selected: string[] = selectId ? [selectId] : [];
   const requestEditLabel = vi.fn();
-  const handler = createKindShortcuts({
+  const { handler, fromLabelField } = createKindShortcuts({
     getDiagram: () => useDiagramStore.getState().diagrams[diagram.id],
     getSelectedIds: () => selected,
     select: (id) => {
@@ -33,6 +33,7 @@ function setup() {
   return {
     diagramId: diagram.id,
     handler,
+    fromLabelField,
     requestEditLabel,
     selected: () => selected,
     setSelected: (ids: string[]) => {
@@ -79,5 +80,50 @@ describe("kind shortcuts", () => {
     const s = setup();
     useDiagramStore.getState().setKindMode(s.diagramId, "freehand");
     expect(s.handler(key("Tab"))).toBe(false);
+  });
+
+  it("Tab from the name a gesture opened commits it and chains the next step", () => {
+    const s = setup();
+    s.handler(key("Tab"));
+    const named = s.selected()[0]!;
+    vi.runAllTimers();
+
+    const title = document.createElement("textarea");
+    title.dataset.panelTitle = "";
+    const commit = vi.fn(() => useDiagramStore.getState().updateComponent(named, { name: "Pay" }));
+    title.addEventListener("blur", commit);
+    document.body.appendChild(title);
+    title.focus();
+
+    const event = key("Tab");
+    Object.defineProperty(event, "target", { value: title });
+    expect(s.fromLabelField(event)).toBe(true);
+    expect(event.defaultPrevented).toBe(true);
+    expect(commit).toHaveBeenCalled();
+    const next = s.selected()[0]!;
+    expect(next).not.toBe(named);
+    const d = useDiagramStore.getState().diagrams[s.diagramId]!;
+    expect(d.snapshot.components[named]!.name).toBe("Pay");
+    expect(
+      Object.values(d.snapshot.connections).some(
+        (c) => c.sourceId === named && c.targetId === next,
+      ),
+    ).toBe(true);
+    title.remove();
+  });
+
+  it("leaves a name field alone unless a gesture just opened it", () => {
+    const s = setup();
+    const title = document.createElement("textarea");
+    title.dataset.panelTitle = "";
+    const event = key("Tab");
+    Object.defineProperty(event, "target", { value: title });
+    expect(s.fromLabelField(event)).toBe(false);
+
+    s.handler(key("Tab"));
+    const other = document.createElement("textarea");
+    const onOther = key("Tab");
+    Object.defineProperty(onOther, "target", { value: other });
+    expect(s.fromLabelField(onOther)).toBe(false);
   });
 });

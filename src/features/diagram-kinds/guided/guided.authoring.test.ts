@@ -130,11 +130,91 @@ describe("Delete reconnects the sequence", () => {
     expect(out[0]).toMatchObject({ targetId: c, label: "pedido" });
   });
 
+  it("sews around several selected steps in a row: A → D", () => {
+    const h = guidedHarness();
+    const a = h.run("guided.next", [h.startId])!;
+    const b = h.run("guided.next", [a])!;
+    const c = h.run("guided.next", [b])!;
+    const d = h.run("guided.next", [c])!;
+    h.run("guided.delete", [b, c]);
+    expect(h.reading().steps.has(b) || h.reading().steps.has(c)).toBe(false);
+    const out = h.reading().outgoing.get(a)!;
+    expect(out).toHaveLength(1);
+    expect(out[0]!.targetId).toBe(d);
+  });
+
+  it("sews each gap when the selected steps are apart", () => {
+    const h = guidedHarness();
+    const a = h.run("guided.next", [h.startId])!;
+    const b = h.run("guided.next", [a])!;
+    const c = h.run("guided.next", [b])!;
+    const d = h.run("guided.next", [c])!;
+    const e = h.run("guided.next", [d])!;
+    h.run("guided.delete", [b, d]);
+    expect(h.reading().outgoing.get(a)![0]!.targetId).toBe(c);
+    expect(h.reading().outgoing.get(c)![0]!.targetId).toBe(e);
+  });
+
+  it("lets a mixed selection fall through to the canvas delete", () => {
+    const h = guidedHarness();
+    const a = h.run("guided.next", [h.startId])!;
+    const command = guidedKind.commands!.find((c) => c.id === "guided.delete")!;
+    const ctx = (ids: string[]) => ({
+      ...kindContextFor(h.diagram()),
+      diagram: h.diagram(),
+      selectedIds: ids,
+    });
+    expect(command.enabled(ctx([a]))).toBe(true);
+    expect(command.enabled(ctx([a, h.laneIds[0]!]))).toBe(false);
+  });
+
   it("refuses to delete the only start", () => {
     const h = guidedHarness();
     expect(h.refusalOf("guided.delete", [h.startId])).toEqual({
       key: "diagramKinds.guided.refused.keepStart",
     });
+  });
+});
+
+describe("Enter labels a decision's exits", () => {
+  const decisionWithTwoExits = () => {
+    const h = guidedHarness();
+    const a = h.run("guided.next", [h.startId])!;
+    h.run("guided.next", [a]);
+    h.run("guided.branch", [a]);
+    const decision = [...h.reading().steps.values()].find((s) => isGuidedDecision(s))!;
+    const exits = h.reading().outgoing.get(decision.id)!;
+    return { h, decision: decision.id, exits };
+  };
+  const outcomeOf = (h: ReturnType<typeof guidedHarness>, ids: string[]) =>
+    guidedKind.commands!.find((c) => c.id === "guided.labelExit")!.run({
+      ...kindContextFor(h.diagram()),
+      diagram: h.diagram(),
+      selectedIds: ids,
+    });
+
+  it("opens the first unlabelled exit, then the next, then returns to the decision", () => {
+    const { h, decision, exits } = decisionWithTwoExits();
+    expect(exits).toHaveLength(2);
+    for (const exit of exits) h.label(exit.id, "");
+    const [first, second] = exits as [(typeof exits)[0], (typeof exits)[0]];
+    expect(outcomeOf(h, [decision])).toMatchObject({ selectConnection: first.id, editLabel: true });
+    h.label(first.id, "yes");
+    expect(outcomeOf(h, [first.id])).toMatchObject({ selectConnection: second.id, editLabel: true });
+    h.label(second.id, "no");
+    expect(outcomeOf(h, [second.id])).toMatchObject({ select: decision });
+    // All labelled: Enter on the decision reopens its first exit.
+    expect(outcomeOf(h, [decision])).toMatchObject({ selectConnection: first.id });
+  });
+
+  it("is only offered on a decision or one of its exits", () => {
+    const { h, decision, exits } = decisionWithTwoExits();
+    const command = guidedKind.commands!.find((c) => c.id === "guided.labelExit")!;
+    const enabled = (ids: string[]) =>
+      command.enabled({ ...kindContextFor(h.diagram()), diagram: h.diagram(), selectedIds: ids });
+    expect(enabled([decision])).toBe(true);
+    expect(enabled([exits[0]!.id])).toBe(true);
+    expect(enabled([h.startId])).toBe(false);
   });
 });
 

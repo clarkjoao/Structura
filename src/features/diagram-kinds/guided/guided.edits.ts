@@ -12,7 +12,6 @@ import {
   type GuidedReading,
   isGuidedDecision,
   isGuidedEnd,
-  isGuidedStart,
   neighbourLane,
   readGuided,
 } from "./guided.model";
@@ -321,38 +320,89 @@ export function guidedDeleteStep(
   diagram: DiagramModel,
   selectedIds: readonly string[],
 ): GuidedOutcome {
-  const found = singleSelectedStep(diagram, selectedIds);
-  if (!found) return refused("selectOneStep");
-  const { reading, step } = found;
-  if (isGuidedStart(step) && reading.starts.length <= 1) return refused("keepStart");
+  if (selectedIds.length === 0) return refused("selectOneStep");
+  const reading = readGuided(diagram);
+  const steps = selectedIds.map((id) => reading.steps.get(id));
+  if (steps.some((step) => step === undefined)) return refused("selectOneStep");
+  const doomed = new Set(selectedIds);
+  if (reading.starts.length > 0 && reading.starts.every((start) => doomed.has(start.id)))
+    return refused("keepStart");
 
-  const exits = reading.outgoing.get(step.id) ?? [];
-  const entries = reading.incoming.get(step.id) ?? [];
-  const continuation = exits[0];
-  const remove = [step.id];
-  if (isGuidedDecision(step)) {
+  // A decision takes the branches only it reaches (its first exit carries on).
+  for (const step of steps) {
+    if (!step || !isGuidedDecision(step)) continue;
+    const exits = reading.outgoing.get(step.id) ?? [];
     for (const other of exits.slice(1)) {
       const reachedElsewhere = (reading.incoming.get(other.targetId) ?? []).some(
-        (connection) => connection.sourceId !== step.id,
+        (connection) => !doomed.has(connection.sourceId),
       );
-      if (!reachedElsewhere && other.targetId !== continuation?.targetId)
-        remove.push(other.targetId);
+      if (!reachedElsewhere && other.targetId !== exits[0]?.targetId) doomed.add(other.targetId);
     }
   }
-  const connect =
-    continuation && continuation.targetId !== step.id
-      ? entries
-          .filter((entry) => entry.sourceId !== step.id)
-          .map((entry) => ({
-            source: entry.sourceId,
-            target: continuation.targetId,
-            label: continuation.label ?? "",
-          }))
-      : [];
-  return {
-    edit: { remove, connect },
-    ...(entries[0] ? { select: entries[0].sourceId } : {}),
+
+  /** Where the sequence picks up after a removed run entered at `id`, and the label it arrives with. */
+  const landing = (id: string): { target: string; label: string } | null => {
+    const seen = new Set<string>();
+    let at = id;
+    while (doomed.has(at) && !seen.has(at)) {
+      seen.add(at);
+      const continuation = reading.outgoing.get(at)?.[0];
+      if (!continuation) return null;
+      if (!doomed.has(continuation.targetId))
+        return { target: continuation.targetId, label: continuation.label ?? "" };
+      at = continuation.targetId;
+    }
+    return null;
   };
+
+  const existing = new Set(
+    [...reading.outgoing.values()].flat().map((c) => `${c.sourceId}→${c.targetId}`),
+  );
+  const connect: { source: string; target: string; label: string }[] = [];
+  let select: string | undefined;
+  for (const id of selectedIds) {
+    for (const entry of reading.incoming.get(id) ?? []) {
+      if (doomed.has(entry.sourceId)) continue;
+      select ??= entry.sourceId;
+      const to = landing(id);
+      if (!to) continue;
+      const key = `${entry.sourceId}→${to.target}`;
+      if (existing.has(key)) continue;
+      existing.add(key);
+      connect.push({ source: entry.sourceId, target: to.target, label: to.label });
+    }
+  }
+  return { edit: { remove: [...doomed], connect }, ...(select ? { select } : {}) };
+}
+
+/**
+ * Enter: label the exits of a decision from the keyboard. On the decision it
+ * opens the first exit without a label (or the first exit); on an exit — the
+ * label just written — the next one still unlabelled, and once none is left
+ * it goes back to the decision.
+ */
+export function guidedLabelExit(
+  diagram: DiagramModel,
+  selectedIds: readonly string[],
+): GuidedOutcome {
+  if (selectedIds.length !== 1) return refused("selectOneStep");
+  const reading = readGuided(diagram);
+  const id = selectedIds[0]!;
+  const unlabelled = (exits: readonly { id: string; label?: string }[], skip?: string) =>
+    exits.find((exit) => exit.id !== skip && !exit.label?.trim());
+
+  if (reading.steps.has(id)) {
+    const exits = reading.outgoing.get(id) ?? [];
+    const exit = unlabelled(exits) ?? exits[0];
+    if (!exit) return refused("selectOneStep");
+    return { edit: {}, selectConnection: exit.id, editLabel: true };
+  }
+  const connection = [...reading.outgoing.values()].flat().find((c) => c.id === id);
+  if (!connection) return refused("selectOneStep");
+  const next = unlabelled(reading.outgoing.get(connection.sourceId) ?? [], connection.id);
+  return next
+    ? { edit: {}, selectConnection: next.id, editLabel: true }
+    : { edit: {}, select: connection.sourceId };
 }
 
 // ─── Lanes ──────────────────────────────────────────────────────────────────

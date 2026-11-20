@@ -146,4 +146,20 @@ describe("guided diagram", () => {
       });
     cy.get('[data-testid="kind-mode-bar"]').should("contain.text", "Guided");
   });
+
+  it("chains from the keyboard: type the name, Tab, type the next", () => {
+    cy.get('[data-id="step_start"]').click({ force: true });
+    cy.get(".react-flow__node.kind-placed").its("length").then((before) => {
+      press("Tab");
+      cy.focused().should("have.attr", "data-panel-title");
+      cy.focused().type("{selectall}Pay").trigger("keydown", { key: "Tab" });
+      cy.wait(150);
+      // The name was committed, and the next step is open for its own.
+      cy.contains(".react-flow__node", "Pay").should("exist");
+      cy.focused().should("have.attr", "data-panel-title");
+      cy.focused().type("{selectall}Confirm{enter}");
+      cy.contains(".react-flow__node", "Confirm").should("exist");
+      cy.get(".react-flow__node.kind-placed").should("have.length", before + 2);
+    });
+  });
 });

@@ -11,6 +11,7 @@ import {
   guidedAddNext,
   guidedCreate,
   guidedDeleteStep,
+  guidedLabelExit,
   guidedInsertStep,
   guidedMoveToLane,
 } from "./guided.edits";
@@ -18,12 +19,19 @@ import {
   GUIDED_KIND_ID,
   GUIDED_STEP_SHAPES,
   isGuidedAnnotation,
+  isGuidedDecision,
   isGuidedLane,
   readGuided,
 } from "./guided.model";
 
 const oneStepSelected: KindCommand["enabled"] = (ctx) =>
   ctx.selectedIds.length === 1 && readGuided(ctx.diagram).steps.has(ctx.selectedIds[0]!);
+
+const onlyStepsSelected: KindCommand["enabled"] = (ctx) => {
+  if (ctx.selectedIds.length === 0) return false;
+  const { steps } = readGuided(ctx.diagram);
+  return ctx.selectedIds.every((id) => steps.has(id));
+};
 
 const commands: readonly KindCommand[] = [
   {
@@ -59,10 +67,30 @@ const commands: readonly KindCommand[] = [
     run: (ctx) => guidedMoveToLane(ctx.diagram, ctx.selectedIds, 1),
   },
   {
+    id: "guided.labelExit",
+    label: { key: "diagramKinds.guided.commands.labelExit" },
+    keys: ["Enter"],
+    enabled: (ctx) => {
+      if (ctx.selectedIds.length !== 1) return false;
+      const reading = readGuided(ctx.diagram);
+      const id = ctx.selectedIds[0]!;
+      const step = reading.steps.get(id);
+      if (step) return isGuidedDecision(step) && (reading.outgoing.get(id)?.length ?? 0) > 0;
+      // An exit of a decision: its label was just written.
+      for (const [sourceId, exits] of reading.outgoing) {
+        if (!exits.some((c) => c.id === id)) continue;
+        const source = reading.steps.get(sourceId);
+        return source !== undefined && isGuidedDecision(source);
+      }
+      return false;
+    },
+    run: (ctx) => guidedLabelExit(ctx.diagram, ctx.selectedIds),
+  },
+  {
     id: "guided.delete",
     label: { key: "diagramKinds.guided.commands.delete" },
     keys: ["Delete", "Backspace"],
-    enabled: oneStepSelected,
+    enabled: onlyStepsSelected,
     run: (ctx) => guidedDeleteStep(ctx.diagram, ctx.selectedIds),
   },
 ];

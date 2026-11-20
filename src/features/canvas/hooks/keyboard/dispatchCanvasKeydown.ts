@@ -24,6 +24,8 @@ export interface CanvasKeydownDispatch {
   onAutoLayout?: () => void;
   setCompareVersion: (versionId: string | null) => void;
   recordingHandler: KeyHandler;
+  /** Runs ahead of the focus yield: a kind's chords from the name field its gesture opened. */
+  labelFieldHandler?: KeyHandler;
   /** Handlers that mutate the diagram / selection; claimed on success. */
   editHandlers: readonly KeyHandler[];
   toolHandler: KeyHandler;
@@ -38,6 +40,14 @@ export async function dispatchCanvasKeydown(
   event: KeyboardEvent,
   dispatch: CanvasKeydownDispatch,
 ): Promise<void> {
+  if (
+    dispatch.labelFieldHandler &&
+    !isCanvasEditingLocked(dispatch.flags) &&
+    !isCanvasOverlayOpen(dispatch.flags) &&
+    dispatch.labelFieldHandler(event)
+  )
+    return;
+
   if (shouldYieldCanvasShortcutToFocusedField(event)) return;
 
   if (keyIs(event, KEY.ESCAPE) && isDialogLayerOpen()) return;

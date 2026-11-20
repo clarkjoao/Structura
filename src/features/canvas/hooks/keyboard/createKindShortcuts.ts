@@ -23,6 +23,8 @@ export interface KindShortcutsDeps {
   getDiagram: () => Diagram | DiagramModel | null | undefined;
   getSelectedIds: () => readonly string[];
   select: (id: string) => void;
+  /** Selects a connection (an outcome's `selectConnection`). */
+  selectConnection?: (id: string) => void;
   /** Opens label editing on the selected element (the inspector's title). */
   requestEditLabel: () => void;
 }
@@ -31,17 +33,28 @@ export interface KindShortcutsDeps {
 export function applyKindCommandOutcome(
   outcome: KindCommandOutcome,
   deps: KindShortcutsDeps,
+  onEditLabel?: () => void,
 ): void {
   const result = useDiagramStore.getState().applyKindEdit(outcome.edit);
-  if (!outcome.select) return;
-  const id = result.idsByKey[outcome.select] ?? outcome.select;
-  deps.select(id);
+  if (outcome.selectConnection && deps.selectConnection) {
+    deps.selectConnection(outcome.selectConnection);
+  } else if (outcome.select) {
+    deps.select(result.idsByKey[outcome.select] ?? outcome.select);
+  } else {
+    return;
+  }
+  if (!outcome.editLabel) return;
+  onEditLabel?.();
   // After the selection settled: the title focus request resets on a selection change.
-  if (outcome.editLabel) setTimeout(deps.requestEditLabel, 0);
+  setTimeout(deps.requestEditLabel, 0);
 }
 
 /** Runs `command` on the current selection; true when it ran (or refused with a notice). */
-function runKindCommand(command: KindCommand, deps: KindShortcutsDeps): boolean {
+function runKindCommand(
+  command: KindCommand,
+  deps: KindShortcutsDeps,
+  onEditLabel?: () => void,
+): boolean {
   const diagram = deps.getDiagram();
   if (!diagram) return false;
   const ctx = kindCommandContextFor(diagram, deps.getSelectedIds());
@@ -51,8 +64,25 @@ function runKindCommand(command: KindCommand, deps: KindShortcutsDeps): boolean 
     toast.info(resolveKindText(outcome.refused));
     return true;
   }
-  applyKindCommandOutcome(outcome, deps);
+  applyKindCommandOutcome(outcome, deps, onEditLabel);
   return true;
+}
+
+/** The name field a kind gesture opens: the element panel's title (`CommitField` marks it). */
+function isPanelTitle(target: EventTarget | null): target is HTMLElement {
+  return target instanceof HTMLElement && target.dataset.panelTitle !== undefined;
+}
+
+export interface KindShortcuts {
+  /** The kind's chords on the canvas; placed first in the edit chain. */
+  handler: KeyHandler;
+  /**
+   * The kind's chords from the name field a kind gesture just opened, so
+   * "type the name, Tab, type the next" chains: the field is let go (which
+   * commits the name) and the gesture runs on the step it named. Runs before
+   * the canvas yields to focused fields; any other field keeps its keys.
+   */
+  fromLabelField: KeyHandler;
 }
 
 /**
@@ -62,13 +92,34 @@ function runKindCommand(command: KindCommand, deps: KindShortcutsDeps): boolean 
  * gestures there; with nothing the kind can act on selected the event falls
  * through, and `Tab` moves focus as usual.
  */
-export function createKindShortcuts(deps: KindShortcutsDeps): KeyHandler {
-  return (event) => {
-    const policy = resolveKindPolicy(deps.getDiagram());
-    if (!isKindActive(policy)) return false;
-    const chord = chordOf(event);
-    const command = policy.descriptor.commands?.find((c) => c.keys?.includes(chord));
-    if (!command) return false;
-    return runKindCommand(command, deps);
+export function createKindShortcuts(deps: KindShortcutsDeps): KindShortcuts {
+  // Armed when a gesture opens the name field, spent by the next key from it.
+  let labelFieldArmed = false;
+  const arm = () => {
+    labelFieldArmed = true;
   };
+  const commandFor = (event: KeyboardEvent): KindCommand | null => {
+    const policy = resolveKindPolicy(deps.getDiagram());
+    if (!isKindActive(policy)) return null;
+    const chord = chordOf(event);
+    return policy.descriptor.commands?.find((c) => c.keys?.includes(chord)) ?? null;
+  };
+
+  const handler: KeyHandler = (event) => {
+    labelFieldArmed = false;
+    const command = commandFor(event);
+    return command ? runKindCommand(command, deps, arm) : false;
+  };
+
+  const fromLabelField: KeyHandler = (event) => {
+    if (!labelFieldArmed || !isPanelTitle(event.target)) return false;
+    const command = commandFor(event);
+    if (!command) return false;
+    labelFieldArmed = false;
+    event.preventDefault();
+    event.target.blur();
+    return runKindCommand(command, deps, arm);
+  };
+
+  return { handler, fromLabelField };
 }

@@ -4,6 +4,7 @@ import type { TFunction } from "i18next";
 import { toast } from "sonner";
 import { useDiagramStore } from "@/features/diagram";
 import type { FlowSewNotice } from "@/features/diagram";
+import { kindDerivedFlowIds } from "@/features/diagram-kinds/policy";
 
 /**
  * Says out loud when deleting from the canvas changed a flow.
@@ -23,7 +24,13 @@ export function useFlowSewNotices(): void {
   useEffect(() => {
     if (!batch || batch.id === shownId.current) return;
     shownId.current = batch.id;
+    // A flow a diagram kind derives follows the steps by design (ADR-0014):
+    // closing it up around a deleted step is the point, not news.
+    const state = useDiagramStore.getState();
+    const active = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null;
+    const derived = kindDerivedFlowIds(active);
     for (const notice of batch.notices) {
+      if (derived.has(notice.flowId)) continue;
       toast.warning(messageFor(notice, t), {
         action: {
           label: t("flowSew.undo"),

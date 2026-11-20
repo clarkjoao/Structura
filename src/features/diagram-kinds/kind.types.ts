@@ -95,7 +95,9 @@ export interface KindCommandOutcome {
   edit: KindEdit;
   /** A node key of the edit, or an existing id. */
   select?: string;
-  /** Open inline label editing on the selected node. */
+  /** An existing connection to select instead of a node. */
+  selectConnection?: string;
+  /** Open label editing on what the outcome selects. */
   editLabel?: boolean;
 }
 

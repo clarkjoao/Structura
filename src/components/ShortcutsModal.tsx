@@ -93,6 +93,10 @@ export default function ShortcutsModal({
                 }
               />
               <ShortcutRow
+                label={t("diagramKinds.guided.shortcuts.labelExit")}
+                keys={<Kbd>Enter</Kbd>}
+              />
+              <ShortcutRow
                 label={t("diagramKinds.guided.shortcuts.delete")}
                 keys={<Kbd>Delete</Kbd>}
               />

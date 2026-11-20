@@ -3659,6 +3659,7 @@
         "branch": "Add branch",
         "laneUp": "Move to the lane above",
         "laneDown": "Move to the lane below",
+        "labelExit": "Label the next exit",
         "delete": "Delete step"
       },
       "refused": {
@@ -3686,6 +3687,7 @@
         "next": "Add the next step",
         "branch": "Add a branch",
         "lane": "Move the step to another lane",
+        "labelExit": "On a decision: label its exits, one after another",
         "delete": "Delete the step and reconnect",
         "escape": "Clear the selection (Tab moves focus again)"
       }

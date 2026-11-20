@@ -151,6 +151,7 @@ export function CommitField({
           {...common}
           ref={setRefs}
           rows={1}
+          data-panel-title={isTitle ? "" : undefined}
           className={cn(isTitle ? PANEL_TITLE_CLASS : PANEL_TEXTAREA_CLASS, mono && "font-mono")}
           onKeyDown={(event) => {
             if (keyIs(event, KEY.ESCAPE)) {

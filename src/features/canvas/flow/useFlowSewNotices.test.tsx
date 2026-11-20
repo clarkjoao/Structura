@@ -1,4 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
+import { registerBuiltInDiagramKinds } from "@/features/diagram-kinds/bootstrap";
+
+vi.mock("sonner", () => ({ toast: { warning: vi.fn() } }));
 import { act, renderHook } from "@testing-library/react";
 import i18n from "@/infrastructure/i18n";
 import type { FlowStep } from "@/features/diagram";
@@ -87,5 +91,43 @@ describe("deleting a node that a script walks through says so", () => {
     act(() => useDiagramStore.getState().removeElements([n3], []));
     // Both removals should have published notices
     expect(useDiagramStore.getState()._flowSewNotices).not.toBeNull();
+  });
+});
+
+describe("a flow a diagram kind derives is sewn without a word", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+    registerBuiltInDiagramKinds();
+    vi.mocked(toast.warning).mockClear();
+    useDiagramStore.setState({ _flowSewNotices: null, _lastUndoRedoTimestamp: 0 });
+  });
+
+  const asGuided = (diagramId: string, flowId: string | null) =>
+    useDiagramStore.setState((s) => ({
+      diagrams: {
+        ...s.diagrams,
+        [diagramId]: {
+          ...s.diagrams[diagramId]!,
+          kind: "guided",
+          kindData: flowId ? { flowId } : {},
+        },
+      },
+    }));
+
+  it("says nothing when the sewn flow is the guided diagram's own", () => {
+    const { diagramId, flowId, n2 } = seed();
+    asGuided(diagramId, flowId);
+    renderHook(() => useFlowSewNotices());
+    act(() => useDiagramStore.getState().removeElements([n2], []));
+    expect(useDiagramStore.getState()._flowSewNotices).not.toBeNull();
+    expect(toast.warning).not.toHaveBeenCalled();
+  });
+
+  it("still warns about a hand-made flow in the same diagram", () => {
+    const { diagramId, n2 } = seed();
+    asGuided(diagramId, null);
+    renderHook(() => useFlowSewNotices());
+    act(() => useDiagramStore.getState().removeElements([n2], []));
+    expect(toast.warning).toHaveBeenCalledTimes(1);
   });
 });
