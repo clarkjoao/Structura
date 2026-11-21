@@ -184,6 +184,18 @@ function mapToolCallToAction(toolCall: LLMToolCall): DiagramPatchAction | null {
         },
       } as DiagramPatchAction;
     }
+    case "add_journey_outline": {
+      const outline = toolCall.parameters.outline;
+      if (typeof outline !== "string" || !outline.trim()) {
+        console.warn("[LLM] add_journey_outline without an outline - action skipped");
+        return null;
+      }
+      const after = toolCall.parameters.afterStepId;
+      return {
+        type: "ADD_JOURNEY_OUTLINE",
+        payload: { outline, ...(typeof after === "string" && after ? { afterStepId: after } : {}) },
+      };
+    }
     case "auto_layout":
       return {
         type: "AUTO_LAYOUT",

@@ -21,7 +21,7 @@ export interface KindMenuItem {
   onSelect: () => void;
 }
 
-const selectionDeps = {
+export const canvasSelectionDeps = {
   getDiagram: () => null,
   getSelectedIds: () => [...useCanvasSelectionStore.getState().selectedNodeIds],
   select: (id: string) => {
@@ -38,7 +38,7 @@ function runOutcome(outcome: KindCommandOutcome | { refused: KindText }): void {
     toast.info(resolveKindText(outcome.refused));
     return;
   }
-  applyKindCommandOutcome(outcome, selectionDeps);
+  applyKindCommandOutcome(outcome, canvasSelectionDeps);
 }
 
 /**

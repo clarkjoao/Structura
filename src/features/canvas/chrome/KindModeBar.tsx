@@ -7,6 +7,7 @@ import { resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import { editKindFreehand, returnToKind } from "@/features/diagram-kinds/actions";
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import type { KindIssue } from "@/features/diagram-kinds/kind.types";
+import { KindTextPanel } from "./KindTextPanel";
 
 interface KindModeBarProps {
   diagram: Diagram | DiagramModel;
@@ -63,6 +64,9 @@ export function KindModeBar({ diagram, canEdit, onSelectElement }: KindModeBarPr
         >
           {t("diagramKinds.editFreehand")}
         </button>
+        {policy.descriptor.textCapture && (
+          <KindTextPanel capture={policy.descriptor.textCapture} disabled={!canEdit} />
+        )}
       </div>
     );
   }

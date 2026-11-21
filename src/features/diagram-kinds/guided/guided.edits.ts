@@ -468,6 +468,36 @@ export function guidedAddLane(diagram: DiagramModel, name: string, afterLaneId?:
   };
 }
 
+/** New lanes named `names`, stacked after the last lane (keys from `keyOf`). */
+export function guidedAppendLanes(
+  diagram: DiagramModel,
+  names: readonly string[],
+  keyOf: (index: number) => string,
+): KindNodeInput[] {
+  const reading = readGuided(diagram);
+  const { vertical, lastLayout, length } = laneFrame(diagram, reading);
+  const base = lastLayout
+    ? vertical
+      ? { x: lastLayout.x + (lastLayout.width ?? LANE_MIN_DEPTH), y: lastLayout.y }
+      : { x: lastLayout.x, y: lastLayout.y + (lastLayout.height ?? LANE_MIN_DEPTH) }
+    : { x: 0, y: 0 };
+  return names.map((name, index) => ({
+    key: keyOf(index),
+    type: COMPONENT_TYPE_PANEL,
+    panelKind: PanelKind.Swimlane,
+    name,
+    parent: null,
+    lane: {
+      orientation: vertical ? "vertical" : "horizontal",
+      color: laneColor(reading.lanes.length + index),
+    },
+    x: vertical ? base.x + index * LANE_MIN_DEPTH : base.x,
+    y: vertical ? base.y : base.y + index * LANE_MIN_DEPTH,
+    width: vertical ? LANE_MIN_DEPTH : length,
+    height: vertical ? length : LANE_MIN_DEPTH,
+  }));
+}
+
 /**
  * Swaps a lane with its neighbour (`-1` up/left, `+1` down/right) in the stored
  * lane order; the arrangement then re-packs the bands in that order.

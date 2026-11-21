@@ -12,6 +12,7 @@ import {
   isImportableCanvasImageFile,
 } from "../utils/importSvgToCanvas";
 import { rasterBlobToSvgMarkup } from "../utils/wrapRasterAsSvg";
+import { pasteKindText } from "../chrome/kindTextCapture";
 
 interface UseCanvasMediaPasteParams {
   enabled: boolean;
@@ -134,6 +135,14 @@ export function useCanvasMediaPaste({
           translate: t,
         });
         if (newId) selectIds([newId]);
+        return;
+      }
+
+      // A guided journey typed elsewhere (spec guided-journey-outline): added as steps.
+      if (pasteKindText(plain)) {
+        event.preventDefault();
+        event.stopPropagation();
+        mediaPasteConsumedRef.current = true;
       }
     };
 

@@ -13,6 +13,9 @@ const SRC = path.resolve(__dirname, "../..");
 const FILES = [
   "features/diagram-kinds",
   "features/canvas/chrome/KindModeBar.tsx",
+  "features/canvas/chrome/KindTextPanel.tsx",
+  "features/canvas/chrome/kindTextCapture.ts",
+  "features/canvas/hooks/useCanvasMediaPaste.ts",
   "features/canvas/panels/ElementPanel/sections/KindActionsSection.tsx",
   "features/canvas/flow/FlowPanel.tsx",
   "components/ShortcutsModal.tsx",
@@ -48,8 +51,31 @@ const DYNAMIC: Record<string, readonly string[]> = {
     "extraStart",
     "connectionNotBetweenSteps",
   ],
-  "diagramKinds.guided.refused": ["selectOneStep", "endHasNoNext", "keepStart", "keepLastLane"],
+  "diagramKinds.guided.refused": [
+    "selectOneStep",
+    "endHasNoNext",
+    "keepStart",
+    "keepLastLane",
+    "outlineClosesPath",
+  ],
+  "diagramKinds.guided.outline.errors": [
+    "exitOutsideDecision",
+    "exitExpected",
+    "decisionWithoutExits",
+    "exitWithoutTarget",
+    "indentUnderStep",
+    "emptyName",
+    "unreachableLine",
+    "unknownJump",
+    "ambiguousJump",
+  ],
 };
+
+/** A key, or its plural forms (`_one` / `_other`, as i18next resolves a `count`). */
+const has = (bundle: unknown, key: string) =>
+  typeof lookup(bundle, key) === "string" ||
+  (typeof lookup(bundle, `${key}_one`) === "string" &&
+    typeof lookup(bundle, `${key}_other`) === "string");
 
 describe("diagram kind locale coverage", () => {
   it("has every key in en and pt-BR", () => {
@@ -67,9 +93,7 @@ describe("diagram kind locale coverage", () => {
       [
         ["en", en],
         ["pt-BR", ptBR],
-      ].flatMap(([locale, bundle]) =>
-        typeof lookup(bundle, key) === "string" ? [] : [`${String(locale)}: ${key}`],
-      ),
+      ].flatMap(([locale, bundle]) => (has(bundle, key) ? [] : [`${String(locale)}: ${key}`])),
     );
     expect(missing).toEqual([]);
   });

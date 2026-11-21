@@ -662,7 +662,8 @@
         "removeEdge": "Remove edge {{edgeId}}",
         "insertPattern": "Insert pattern {{patternId}}",
         "autoLayout": "Auto layout diagram",
-        "getTags": "List diagram tags"
+        "getTags": "List diagram tags",
+        "journeyOutline": "Add a journey from text ({{count}} lines)"
       },
       "defaultTitle": "Suggested changes",
       "noChanges": "no changes",
@@ -3668,7 +3669,8 @@
         "selectOneStep": "Select one step first.",
         "endHasNoNext": "An end step has nothing after it.",
         "keepStart": "A guided diagram needs a start step.",
-        "keepLastLane": "A guided diagram needs at least one lane."
+        "keepLastLane": "A guided diagram needs at least one lane.",
+        "outlineClosesPath": "This text ends every path, so what came after the selected step would be cut off. Select the last step instead."
       },
       "checks": {
         "unlabelledExit": "This exit has no label",
@@ -3692,6 +3694,39 @@
         "labelExit": "On a decision: label its exits, one after another",
         "delete": "Delete the step and reconnect",
         "escape": "Clear the selection (Tab moves focus again)"
+      },
+      "endName": "Done",
+      "outline": {
+        "open": "Text",
+        "openHint": "Write the journey as text",
+        "title": "Write as text",
+        "placeholder": "Customer: Chooses product\nApp: Creates Pix charge\n? Paid\n  yes -> API: Confirms payment\n  no -> @Chooses product\n! Done",
+        "syntax": "Lane: step · ? decision · label -> exit · ! end · -> @Step jumps back · # comment",
+        "apply": "Apply",
+        "applyHint": "Ctrl/Cmd + Enter",
+        "copy": "Copy as text",
+        "copied": "Journey copied as text.",
+        "summary": "Steps: {{steps}} · Decisions: {{decisions}} · New lanes: {{lanes}}",
+        "empty": "Type the steps, one per line.",
+        "added_one": "{{count}} step added from text.",
+        "added_other": "{{count}} steps added from text.",
+        "undo": "Undo",
+        "line": "Line {{line}}",
+        "omittedSteps_one": "{{count}} step not reachable from the start was left out",
+        "omittedSteps_other": "{{count}} steps not reachable from the start were left out",
+        "omittedConnections_one": "{{count}} connection the outline cannot express was left out",
+        "omittedConnections_other": "{{count}} connections the outline cannot express were left out",
+        "errors": {
+          "exitOutsideDecision": "An exit (label -> …) must be indented under a decision (? …).",
+          "exitExpected": "Under a decision, write its exits: label -> step.",
+          "decisionWithoutExits": "This decision has no exits. Indent them under it: label -> step.",
+          "exitWithoutTarget": "This exit leads nowhere. Write a step after ->, or indent one under it.",
+          "indentUnderStep": "Only a decision's exits are indented. Remove the indentation.",
+          "emptyName": "This line has no name.",
+          "unreachableLine": "The path ended on the line before (! end or -> @jump), so nothing reaches this line.",
+          "unknownJump": "No step is named “{{name}}”.",
+          "ambiguousJump": "More than one step is named “{{name}}”. Rename one of them first."
+        }
       }
     }
   }

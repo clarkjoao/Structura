@@ -124,6 +124,38 @@ export interface KindElementAction {
 
 export type KindActionGlyph = "add" | "before" | "after" | "remove";
 
+/** A text the kind could not read, by 1-based line. */
+export interface KindTextError {
+  line: number;
+  message: KindText;
+  values?: Record<string, string | number>;
+}
+
+/** What a text adds: the edit to apply (one undo step), and a summary to show. */
+export interface KindTextBuild extends KindCommandOutcome {
+  summary: KindText;
+  summaryValues?: Record<string, string | number>;
+  /** Elements the text adds; the canvas only takes a paste as text when it adds two or more. */
+  nodeCount: number;
+}
+
+/**
+ * Writing a kind diagram as text (spec guided-journey-outline): the panel, a
+ * canvas paste and the assistant all build through it; the host applies.
+ */
+export interface KindTextCapture {
+  /** Pure: the edit `text` adds after the selection, or why it cannot. */
+  build: (
+    ctx: KindCommandContext,
+    text: string,
+  ) => KindTextBuild | { refused: KindText } | { errors: KindTextError[] };
+  /** The diagram written back as text. */
+  serialize: (diagram: DiagramModel, ctx: KindContext) => string;
+  /** A short description of the syntax, for the panel and the assistant. */
+  syntax: KindText;
+  placeholder?: KindText;
+}
+
 /** A command a kind contributes: a keyboard shortcut and/or a context-menu entry. */
 export interface KindCommand {
   id: string;
@@ -181,6 +213,8 @@ export interface DiagramKindDescriptor {
     ctx: KindCommandContext,
     element: KindElementRef,
   ) => KindCommandOutcome | { refused: KindText };
+  /** Writing the diagram as text: offered while in kind mode. */
+  textCapture?: KindTextCapture;
   /** Whether a component may be dragged/inserted where it is, beyond `elements` (lanes, notes). */
   isAnnotation?: (component: Component) => boolean;
 }

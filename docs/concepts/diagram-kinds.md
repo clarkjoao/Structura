@@ -46,6 +46,7 @@ app and embed-editor entries). With nothing registered, the editor is exactly th
 | `commands` | keyboard chords and context-menu entries |
 | `elementActions` | per-element actions in the context menu and the inspector |
 | `insert` | where a palette element goes in kind mode |
+| `textCapture` | writing the diagram as text: `build` (text → edit), `serialize`, `syntax` |
 
 A kind reads the world only through `KindContext` (`context.ts`), which provides `t`, the element
 registry lookup, direction, layout settings and id minting. It returns `KindEdit` change sets
@@ -131,6 +132,40 @@ kind's arrangement as one undo step (`useAutoLayout`).
   survives by the step it points at.
 - **Checks** (`guided.checks.ts`): a decision exit without a label, and a step that ends a path
   without being an end step.
+
+## Writing a journey as text
+
+The guided kind's `textCapture` (`guided.outline.*.ts`, spec `guided-journey-outline`) reads an
+outline, one line per step:
+
+```text
+Cliente: Escolhe produto        # a step in a lane; a line without "Lane:" keeps the lane
+App: Gera cobrança Pix
+? Pagou                         # a decision; its exits indented under it
+  sim -> API: Confirma          # label -> step | ? decision | ! end | @jump
+  não -> @Escolhe produto       # a jump to a step written before (closes the path)
+App: Emite nota                 # reached from every branch still open
+! Concluído                     # an end step (closes the path)
+```
+
+- **Lanes.** `Lane:` alone declares a lane. Lane names match trimmed and case-insensitively, and a
+  missing lane is created after the others. `-> Step` (no label) is an exit without a label.
+- **Escaping.** `\` makes the next character literal: write `Status\: pago` for a colon in a
+  name. The markers are the same in every language.
+- **Where it goes.** After the selected step, like Tab (inserted before its next step), or as a
+  decision's new exit. With nothing selected, at the end of the main path (each decision's first
+  exit), before its end step. An end step selected is refused.
+- **One edit.** The whole outline is one `KindEdit`, so one undo removes it. Errors are per line,
+  and any error applies nothing.
+- **Three ways in.** The "Text" button in the kind bar opens the panel: it checks as you type,
+  `Ctrl/Cmd+Enter` applies, and "Copy as text" serializes the journey. A canvas paste of plain
+  text that reads without errors and has two or more steps is added the same way, with an Undo
+  notice. Markup and JSON (a canvas copy writes drawio XML) are never read as an outline. The
+  assistant gets the format, the current journey and the `add_journey_outline` tool on guided
+  diagrams only, and an outline with errors is dropped and its errors are told back.
+- **Serializing.** Lanes are declared first, then the journey from the start. Every step reached
+  again (a convergence or a retry) is written as a jump, so the text reproduces the same
+  connections. Unreachable steps are left out with a comment.
 
 ## Known limits
 

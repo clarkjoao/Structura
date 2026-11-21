@@ -662,7 +662,8 @@
         "removeEdge": "Remover conexão {{edgeId}}",
         "insertPattern": "Inserir pattern {{patternId}}",
         "autoLayout": "Organizar diagrama automaticamente",
-        "getTags": "Listar tags do diagrama"
+        "getTags": "Listar tags do diagrama",
+        "journeyOutline": "Adicionar jornada a partir de texto ({{count}} linhas)"
       },
       "defaultTitle": "Alterações sugeridas",
       "noChanges": "sem alterações",
@@ -3668,7 +3669,8 @@
         "selectOneStep": "Selecione um passo primeiro.",
         "endHasNoNext": "Um passo de fim não tem nada depois.",
         "keepStart": "Um diagrama guiado precisa de um passo de início.",
-        "keepLastLane": "Um diagrama guiado precisa de pelo menos uma raia."
+        "keepLastLane": "Um diagrama guiado precisa de pelo menos uma raia.",
+        "outlineClosesPath": "Este texto encerra todos os caminhos, e o que vinha depois do passo selecionado ficaria solto. Selecione o último passo."
       },
       "checks": {
         "unlabelledExit": "Esta saída não tem rótulo",
@@ -3692,6 +3694,39 @@
         "labelExit": "Numa decisão: rotular as saídas, uma após a outra",
         "delete": "Apagar o passo e religar",
         "escape": "Limpar a seleção (Tab volta a mover o foco)"
+      },
+      "endName": "Fim",
+      "outline": {
+        "open": "Texto",
+        "openHint": "Escrever a jornada como texto",
+        "title": "Escrever como texto",
+        "placeholder": "Cliente: Escolhe produto\nApp: Gera cobrança Pix\n? Pagou\n  sim -> API: Confirma pagamento\n  não -> @Escolhe produto\n! Concluído",
+        "syntax": "Raia: passo · ? decisão · rótulo -> saída · ! fim · -> @Passo volta · # comentário",
+        "apply": "Aplicar",
+        "applyHint": "Ctrl/Cmd + Enter",
+        "copy": "Copiar como texto",
+        "copied": "Jornada copiada como texto.",
+        "summary": "Passos: {{steps}} · Decisões: {{decisions}} · Raias novas: {{lanes}}",
+        "empty": "Digite os passos, um por linha.",
+        "added_one": "{{count}} passo adicionado a partir do texto.",
+        "added_other": "{{count}} passos adicionados a partir do texto.",
+        "undo": "Desfazer",
+        "line": "Linha {{line}}",
+        "omittedSteps_one": "{{count}} passo que não é alcançado a partir do início ficou de fora",
+        "omittedSteps_other": "{{count}} passos que não são alcançados a partir do início ficaram de fora",
+        "omittedConnections_one": "{{count}} conexão que o texto não consegue expressar ficou de fora",
+        "omittedConnections_other": "{{count}} conexões que o texto não consegue expressar ficaram de fora",
+        "errors": {
+          "exitOutsideDecision": "Uma saída (rótulo -> …) precisa estar recuada embaixo de uma decisão (? …).",
+          "exitExpected": "Embaixo de uma decisão, escreva as saídas: rótulo -> passo.",
+          "decisionWithoutExits": "Esta decisão não tem saídas. Recue-as embaixo dela: rótulo -> passo.",
+          "exitWithoutTarget": "Esta saída não leva a nada. Escreva um passo depois de -> ou recue um embaixo dela.",
+          "indentUnderStep": "Só as saídas de uma decisão são recuadas. Tire o recuo.",
+          "emptyName": "Esta linha não tem nome.",
+          "unreachableLine": "O caminho terminou na linha anterior (! fim ou -> @salto), então nada chega a esta linha.",
+          "unknownJump": "Nenhum passo se chama “{{name}}”.",
+          "ambiguousJump": "Mais de um passo se chama “{{name}}”. Renomeie um deles antes."
+        }
       }
     }
   }

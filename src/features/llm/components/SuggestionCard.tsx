@@ -56,6 +56,7 @@ function getActionIcon(type: string) {
     case "REMOVE_EDGE":
       return <GitBranch className="h-3.5 w-3.5" />;
     case "INSERT_PATTERN":
+    case "ADD_JOURNEY_OUTLINE":
       return <LayoutGrid className="h-3.5 w-3.5" />;
     case "AUTO_LAYOUT":
       return <Zap className="h-3.5 w-3.5" />;
@@ -107,6 +108,10 @@ function formatActionLabel(action: DiagramPatchAction, translate: TFunction): st
       return `${translate("llmChat.suggestion.action.autoLayout")}`;
     case "GET_TAGS":
       return `${translate("llmChat.suggestion.action.getTags")}`;
+    case "ADD_JOURNEY_OUTLINE":
+      return translate("llmChat.suggestion.action.journeyOutline", {
+        count: action.payload.outline.trim().split("\n").length,
+      });
     default:
       return "Unknown action";
   }

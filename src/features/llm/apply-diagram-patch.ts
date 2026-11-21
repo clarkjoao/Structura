@@ -6,6 +6,7 @@ import type { DiagramPatchAction } from "./types";
 import { listElementFamilies, searchElements } from "./element-catalog-query";
 import { listPatterns } from "./pattern-catalog-query";
 import { validateAddNodeAgainstRegistry } from "./add-node-validation";
+import { applyJourneyOutline } from "./journey-outline";
 
 export interface AppliedPatchResult {
   addedNodeId: string | null;
@@ -16,6 +17,7 @@ export interface AppliedPatchResult {
     type:
       | "INSERT_PATTERN"
       | "AUTO_LAYOUT"
+      | "ADD_JOURNEY_OUTLINE"
       | "GET_TAGS"
       | "LIST_ELEMENT_FAMILIES"
       | "SEARCH_ELEMENTS"
@@ -142,6 +144,15 @@ export function applyDiagramPatchAction(
           type: "INSERT_PATTERN",
           data: { patternId: pattern.id, createdNodes: insertedIds },
         },
+      };
+    }
+    case "ADD_JOURNEY_OUTLINE": {
+      const { applied, data } = applyJourneyOutline(action.payload);
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        ...(applied ? {} : { skipped: true, skipReason: data.errors?.join("; ") }),
+        toolResult: { type: "ADD_JOURNEY_OUTLINE", data },
       };
     }
     case "AUTO_LAYOUT": {

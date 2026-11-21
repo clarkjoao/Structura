@@ -176,6 +176,22 @@ export const ALL_TOOLS: LLMTool[] = [
     },
   },
   {
+    name: "add_journey_outline",
+    description:
+      "Guided journey diagrams only. Adds a whole journey (lanes, steps, decisions, exits) written as an outline, after the given step or at the end of the journey, as one undo step. Prefer it to add_node/add_edge on a guided diagram. An outline with errors changes nothing.",
+    parametersSchema: {
+      type: "object",
+      properties: {
+        outline: { type: "string", description: "The outline text, one line per step." },
+        afterStepId: {
+          type: "string",
+          description: "Optional: the id of the step the outline follows.",
+        },
+      },
+      required: ["outline"],
+    },
+  },
+  {
     name: "auto_layout",
     description:
       "Automatically arranges all nodes in the diagram using a clean layout algorithm. Useful when the diagram becomes cluttered.",
@@ -190,8 +206,12 @@ export const WRITE_TOOL_NAMES: string[] = [
   "add_edge",
   "remove_edge",
   "insert_pattern",
+  "add_journey_outline",
   "auto_layout",
 ];
+
+/** Offered only where the active diagram's kind writes itself as text. */
+export const JOURNEY_OUTLINE_TOOL = "add_journey_outline";
 
 /** Catalog discovery tools — executable reads, never confirmation-gated writes. */
 export const CATALOG_READ_TOOL_NAMES: string[] = [

@@ -1,4 +1,4 @@
-import { ALL_TOOLS } from "./tools";
+import { ALL_TOOLS, JOURNEY_OUTLINE_TOOL } from "./tools";
 import { buildComponentTypeCatalog, buildPatternCatalogCompact } from "./component-catalog";
 
 const DIAGRAM_DSL_DESCRIPTION = `
@@ -203,8 +203,44 @@ export function buildResponseLanguageInstruction(responseLocale: string): string
   ].join("\n");
 }
 
-function buildToolsSection(): string {
-  const toolBlocks = ALL_TOOLS.map((tool) =>
+/**
+ * A guided journey diagram (spec guided-journey-outline): the assistant writes the
+ * journey as an outline through one tool, and sees the current journey the same way.
+ */
+function buildJourneyOutlineSection(currentOutline: string): string {
+  return [
+    "## Guided journey diagram",
+    "",
+    "The active diagram is a guided journey: lanes (who or what acts) hold steps in sequence; positions are automatic.",
+    `To add to it, use the ${JOURNEY_OUTLINE_TOOL} tool with an outline, never add_node/add_edge. One line per step:`,
+    "- `Lane: Step name` — a step in a lane; a line without `Lane:` stays in the previous line's lane. A lane that does not exist is created.",
+    "- `? Question` — a decision. Its exits are indented under it: `label -> Step`, `label -> ? Decision`, `label -> ! End`, `label -> @Existing step`.",
+    "- Lines indented under an exit continue that branch. After a decision's block, the next line at the decision's indentation is reached from every branch still open.",
+    "- `! Name` — an end step (closes the path). `-> @Step name` — jumps back to a step written earlier or already in the diagram (closes the path).",
+    "- `Lane:` alone declares a lane. `#` starts a comment. Write `\\:` for a colon inside a name.",
+    "The outline is added after `afterStepId` when given, else at the end of the journey (before its end step). Keep step names short, as verbs.",
+    "",
+    "Example:",
+    "Cliente: Escolhe produto",
+    "App: Gera cobrança Pix",
+    "? Pagou",
+    "  sim -> API: Confirma pagamento",
+    "  não -> @Escolhe produto",
+    "App: Emite nota",
+    "! Concluído",
+    "",
+    "Current journey as an outline:",
+    "```",
+    currentOutline,
+    "```",
+  ].join("\n");
+}
+
+function buildToolsSection(journeyOutline: boolean): string {
+  const tools = journeyOutline
+    ? ALL_TOOLS
+    : ALL_TOOLS.filter((tool) => tool.name !== JOURNEY_OUTLINE_TOOL);
+  const toolBlocks = tools.map((tool) =>
     [
       `Tool: ${tool.name}`,
       `Description: ${tool.description}`,
@@ -225,7 +261,13 @@ function buildToolsSection(): string {
   ].join("\n");
 }
 
-export function buildSystemPrompt(diagramContext: string, responseLocale: string): string {
+export function buildSystemPrompt(
+  diagramContext: string,
+  responseLocale: string,
+  /** The active guided journey written as an outline; absent on any other diagram. */
+  journeyOutline?: string | null,
+): string {
+  const journey = typeof journeyOutline === "string";
   return [
     DIAGRAM_DSL_DESCRIPTION,
     "",
@@ -238,10 +280,11 @@ export function buildSystemPrompt(diagramContext: string, responseLocale: string
     "Current diagram context:",
     diagramContext,
     "",
+    ...(journey ? [buildJourneyOutlineSection(journeyOutline), ""] : []),
     RESPONSE_RULES,
     "",
     FEWSHOT_EXAMPLES,
     "",
-    buildToolsSection(),
+    buildToolsSection(journey),
   ].join("\n");
 }

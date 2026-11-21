@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
+import { checkJourneyOutline, currentJourneyOutline } from "./journey-outline";
 import { findChatContext } from "@/features/plugins/chat-context-registry";
 import { runPluginChatTurn } from "./plugin-chat-turn";
 import { toast } from "sonner";
@@ -13,6 +14,7 @@ import type {
   AnalysisResponse,
   ChatMessage,
   ConversationThread,
+  DiagramPatch,
   DiagramThreadState,
   LLMCompletion,
   LLMConfig,
@@ -269,6 +271,19 @@ function persistActiveThread(state: LLMStoreState): void {
 
 function freshThreadState(): DiagramThreadState {
   return { threads: [], activeThreadId: "" };
+}
+
+/** Removes the patch's journey outlines that do not read against the active diagram; their errors. */
+function dropInvalidJourneyOutlines(patch: DiagramPatch): string[] {
+  const errors: string[] = [];
+  patch.actions = patch.actions.filter((action) => {
+    if (action.type !== "ADD_JOURNEY_OUTLINE") return true;
+    const check = checkJourneyOutline(action.payload);
+    if (check.ok) return true;
+    errors.push(...check.errors);
+    return false;
+  });
+  return errors;
 }
 
 export const useLLMStore = create<LLMStoreState>((set, get) => {
@@ -682,7 +697,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           return;
         }
 
-        const systemPrompt = buildSystemPrompt(diagramContext, getResolvedAppLanguage());
+        const systemPrompt = buildSystemPrompt(
+          diagramContext,
+          getResolvedAppLanguage(),
+          currentJourneyOutline(),
+        );
         const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
         let fullResponse = "";
         const { text: rawAssistantResponse } = await executeLLMMessage(
@@ -707,6 +726,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           },
         );
         const parsedResponse = parseLLMResponse(rawAssistantResponse);
+        // An outline that does not read changes nothing: dropped, its errors told back.
+        const outlineErrors =
+          parsedResponse.kind === "patch" && parsedResponse.patch
+            ? dropInvalidJourneyOutlines(parsedResponse.patch)
+            : [];
 
         if (parsedResponse.kind === "analysis") {
           set({
@@ -849,6 +873,13 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             : parsedResponse.kind === "text"
               ? parsedResponse.message
               : "";
+        if (outlineErrors.length > 0) {
+          const block = [
+            "Journey outline not applied — errors:",
+            ...outlineErrors.map((error) => `- ${error}`),
+          ].join("\n");
+          assistantContent = assistantContent ? `${assistantContent}\n\n${block}` : block;
+        }
         if (catalogToolResults.length > 0) {
           const catalogBlock = [
             "Catalog tool results:",

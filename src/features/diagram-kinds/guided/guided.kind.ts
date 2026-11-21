@@ -5,6 +5,7 @@ import { arrangeGuided, guidedArrangeKey } from "./guided.arrange";
 import { guidedChecks } from "./guided.checks";
 import { guidedElementActions } from "./guided.elementActions";
 import { guidedConforms } from "./guided.conforms";
+import { guidedTextCapture } from "./guided.outline";
 import { deriveGuidedFlow, guidedFlowId } from "./guided.derive";
 import {
   guidedAddBranch,
@@ -130,6 +131,7 @@ export const guidedKind: DiagramKindDescriptor = {
   checks: guidedChecks,
   commands,
   elementActions: guidedElementActions,
+  textCapture: guidedTextCapture,
   insert: (ctx, element) =>
     guidedInsertStep(ctx.diagram, ctx.selectedIds, element.flowShape ?? "rectangle", ctx),
   isAnnotation: (component: Component) => isGuidedAnnotation(component) || isGuidedLane(component),
