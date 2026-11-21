@@ -3702,7 +3702,7 @@
         "openHint": "Escrever a jornada como texto",
         "title": "Escrever como texto",
         "placeholder": "Cliente: Escolhe produto\nApp: Gera cobrança Pix\n? Pagou\n  sim -> API: Confirma pagamento\n  não -> @Escolhe produto\n! Concluído",
-        "syntax": "Raia: passo · ? decisão · rótulo -> saída · ! fim · -> @Passo volta · # comentário",
+        "syntax": "Raia: passo · ? decisão · rótulo -> saída · ! fim · -> @Passo volta · # comentário · ou cole Mermaid (swimlane-beta, flowchart, journey)",
         "apply": "Aplicar",
         "applyHint": "Ctrl/Cmd + Enter",
         "copy": "Copiar como texto",
@@ -3726,7 +3726,13 @@
           "emptyName": "Esta linha não tem nome.",
           "unreachableLine": "O caminho terminou na linha anterior (! fim ou -> @salto), então nada chega a esta linha.",
           "unknownJump": "Nenhum passo se chama “{{name}}”.",
-          "ambiguousJump": "Mais de um passo se chama “{{name}}”. Renomeie um deles antes."
+          "ambiguousJump": "Mais de um passo se chama “{{name}}”. Renomeie um deles antes.",
+          "mermaidUnclosedSubgraph": "Este subgraph não tem “end”.",
+          "mermaidStrayEnd": "“end” sem subgraph aberto.",
+          "mermaidUnreadable": "Não foi possível ler esta linha como nós e setas.",
+          "mermaidTaskWithoutScore": "Uma tarefa de jornada é “Tarefa: nota: atores”.",
+          "mermaidScoreOutOfRange": "A nota deve ser de 1 a 5 (aqui: {{score}}).",
+          "mermaidEmpty": "Este bloco Mermaid não tem passos."
         }
       },
       "inspector": {
@@ -3747,6 +3753,17 @@
         "subroutine": "Subprocesso",
         "cylinder": "Dados",
         "document": "Documento"
+      },
+      "mermaid": {
+        "formats": {
+          "outline": "Texto",
+          "swimlane": "Mermaid (raias)",
+          "journey": "Mermaid (jornada)"
+        },
+        "exportedFrom": "Exportado do Structura: {{name}}",
+        "journeyLeftOut": "Só o caminho principal: {{branches}} desvio(s) e {{steps}} outro(s) passo(s) ficaram de fora.",
+        "summarySetAside": "Passos: {{steps}} · Decisões: {{decisions}} · Raias novas: {{lanes}} · Ainda não guardadas: {{sections}} fase(s), {{scores}} nota(s)",
+        "copyAs": "Copiar como…"
       }
     },
     "toolbar": {

@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { Copy, TextCursorInput } from "lucide-react";
+import { ChevronDown, Copy, TextCursorInput } from "lucide-react";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import type { KindTextCapture } from "@/features/diagram-kinds/kind.types";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
@@ -74,8 +80,8 @@ export function KindTextPanel({
     }
   };
 
-  const copy = async () => {
-    const outline = serializeKindText();
+  const copy = async (formatId?: string) => {
+    const outline = serializeKindText(formatId);
     if (outline === null) return;
     try {
       await navigator.clipboard.writeText(outline);
@@ -114,15 +120,43 @@ export function KindTextPanel({
           <p className="text-xs font-semibold text-foreground">
             {t("diagramKinds.guided.outline.title")}
           </p>
-          <button
-            type="button"
-            className={`${ACTION} inline-flex items-center gap-1`}
-            onClick={() => void copy()}
-            data-testid="kind-text-copy"
-          >
-            <Copy className="h-3 w-3" aria-hidden />
-            {t("diagramKinds.guided.outline.copy")}
-          </button>
+          {capture.formats && capture.formats.length > 1 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={`${ACTION} inline-flex items-center gap-1`}
+                  data-testid="kind-text-copy"
+                >
+                  <Copy className="h-3 w-3" aria-hidden />
+                  {t("diagramKinds.guided.mermaid.copyAs")}
+                  <ChevronDown className="h-3 w-3" aria-hidden />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onPointerDown={(e) => e.stopPropagation()}>
+                {capture.formats.map((format) => (
+                  <DropdownMenuItem
+                    key={format.id}
+                    onSelect={() => void copy(format.id)}
+                    className="text-xs"
+                    data-testid={`kind-text-copy-${format.id}`}
+                  >
+                    {resolveKindText(format.label)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <button
+              type="button"
+              className={`${ACTION} inline-flex items-center gap-1`}
+              onClick={() => void copy()}
+              data-testid="kind-text-copy"
+            >
+              <Copy className="h-3 w-3" aria-hidden />
+              {t("diagramKinds.guided.outline.copy")}
+            </button>
+          )}
         </div>
         <textarea
           ref={textareaRef}

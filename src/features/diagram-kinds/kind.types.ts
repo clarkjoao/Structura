@@ -157,6 +157,8 @@ export interface KindTextCapture {
   serialize: (diagram: DiagramModel, ctx: KindContext) => string;
   /** A short description of the syntax, for the panel and the assistant. */
   syntax: KindText;
+  /** The formats the diagram can be copied as; the first is `serialize`'s. Absent: only that one. */
+  formats?: readonly KindTextFormat[];
   placeholder?: KindText;
 }
 
@@ -208,6 +210,13 @@ export interface KindInspector {
   hiddenFields: readonly KindInspectorField[];
   /** The tab's sections for `elementId`; null when the tab does not apply to it (lanes, notes). */
   sections: (ctx: KindCommandContext, elementId: string) => KindInspectorSection[] | null;
+}
+
+/** A format a kind diagram can be written in (e.g. the outline, Mermaid). */
+export interface KindTextFormat {
+  id: string;
+  label: KindText;
+  serialize: (diagram: DiagramModel, ctx: KindContext) => string;
 }
 
 /** A command a kind contributes: a keyboard shortcut and/or a context-menu entry. */

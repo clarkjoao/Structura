@@ -220,6 +220,8 @@ function buildJourneyOutlineSection(currentOutline: string): string {
     "- `Lane:` alone declares a lane. `#` starts a comment. Write `\\:` for a colon inside a name.",
     "The outline is added after `afterStepId` when given, else at the end of the journey (before its end step). Keep step names short, as verbs.",
     "",
+    "The same tool also accepts a Mermaid block instead of an outline: `swimlane-beta` (or `flowchart`/`graph`) with one top-level `subgraph` per lane, `{}` for decisions and `-->|label|` for labelled exits; or `journey` (tasks in order, lane = first actor). Use it when the user gives Mermaid or asks for it.",
+    "",
     "Example:",
     "Cliente: Escolhe produto",
     "App: Gera cobrança Pix",

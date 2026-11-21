@@ -1,0 +1,124 @@
+import type { FlowNodeShape } from "@/features/diagram/model/component.types";
+import type { DiagramModel } from "@/features/diagram/model/diagram.types";
+import type { KindContext } from "../kind.types";
+import { isGuidedDecision, isGuidedEnd, readGuided, type GuidedReading } from "./guided.model";
+
+/**
+ * A guided journey written as Mermaid (spec guided-mermaid-interchange). The
+ * swimlane form keeps everything and reads back to the same journey; the
+ * journey form keeps the main path, as Mermaid's `journey` has no branches.
+ */
+
+/** Steps in reading order: depth-first from the start along each exit, then the rest. */
+function readingOrder(reading: GuidedReading): string[] {
+  const order: string[] = [];
+  const seen = new Set<string>();
+  const visit = (id: string) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    order.push(id);
+    for (const exit of reading.outgoing.get(id) ?? []) visit(exit.targetId);
+  };
+  for (const start of reading.starts) visit(start.id);
+  for (const id of reading.steps.keys()) visit(id);
+  return order;
+}
+
+/** A label as Mermaid reads it back: quoted when it holds syntax. */
+function label(text: string): string {
+  const clean = text.replace(/"/g, "'").replace(/\s+/g, " ").trim();
+  return /[[\](){}|<>;%@&#:]/.test(clean) || clean === "" ? `"${clean}"` : clean;
+}
+
+function node(id: string, name: string, shape: FlowNodeShape): string {
+  const text = label(name);
+  switch (shape) {
+    case "diamond":
+      return `${id}{${text}}`;
+    case "cylinder":
+      return `${id}[(${text})]`;
+    case "subroutine":
+      return `${id}[[${text}]]`;
+    case "start":
+      return `${id}((${text}))`;
+    case "end":
+      return `${id}(((${text})))`;
+    case "document":
+      return `${id}@{ shape: doc, label: "${text.replace(/^"|"$/g, "")}" }`;
+    case "event":
+      return `${id}@{ shape: event, label: "${text.replace(/^"|"$/g, "")}" }`;
+    default:
+      return `${id}[${text}]`;
+  }
+}
+
+export function serializeMermaidSwimlane(diagram: DiagramModel, ctx: KindContext): string {
+  const reading = readGuided(diagram);
+  const order = readingOrder(reading);
+  const idOf = new Map(order.map((stepId, index) => [stepId, `s${index + 1}`]));
+  const lines = [
+    `%% ${ctx.t("diagramKinds.guided.mermaid.exportedFrom", { name: diagram.name })}`,
+    `swimlane-beta ${diagram.direction === "TB" ? "TB" : "LR"}`,
+  ];
+  reading.lanes.forEach((lane, index) => {
+    lines.push(`  subgraph lane${index + 1} [${label(lane.name)}]`);
+    for (const stepId of order) {
+      if (reading.laneOf.get(stepId) !== lane.id) continue;
+      const step = reading.steps.get(stepId)!;
+      lines.push(`    ${node(idOf.get(stepId)!, step.name, step.flowShape)}`);
+    }
+    lines.push("  end");
+  });
+  lines.push("");
+  for (const stepId of order) {
+    for (const exit of reading.outgoing.get(stepId) ?? []) {
+      const text = exit.label?.trim();
+      lines.push(
+        `  ${idOf.get(stepId)} -->${text ? `|${text.replace(/\|/g, "/")}|` : ""} ${idOf.get(exit.targetId)}`,
+      );
+    }
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+/** The main path (each decision's first exit) as a Mermaid journey, with a neutral score. */
+export function serializeMermaidJourney(diagram: DiagramModel, ctx: KindContext): string {
+  const reading = readGuided(diagram);
+  const laneName = new Map(reading.lanes.map((lane) => [lane.id, lane.name]));
+  const path: string[] = [];
+  const seen = new Set<string>();
+  let at: string | undefined = reading.starts[0]?.id;
+  while (at && !seen.has(at)) {
+    seen.add(at);
+    path.push(at);
+    at = reading.outgoing.get(at)?.[0]?.targetId;
+  }
+  const tasks = path.filter((id) => {
+    const step = reading.steps.get(id)!;
+    return step.flowShape !== "start" && !isGuidedEnd(step);
+  });
+  const clean = (text: string) => text.replace(/[:\n]/g, " ").replace(/\s+/g, " ").trim();
+  const lines = [
+    "journey",
+    `  title ${clean(diagram.name)}`,
+    `  section ${clean(diagram.name)}`,
+    ...tasks.map((id) => {
+      const step = reading.steps.get(id)!;
+      return `    ${clean(step.name)}: 3: ${clean(laneName.get(reading.laneOf.get(id)!) ?? "")}`;
+    }),
+  ];
+  const branches = path.reduce(
+    (n, id) =>
+      n +
+      (isGuidedDecision(reading.steps.get(id)!)
+        ? Math.max(0, (reading.outgoing.get(id)?.length ?? 0) - 1)
+        : 0),
+    0,
+  );
+  const leftOut = [...reading.steps.keys()].filter((id) => !seen.has(id)).length;
+  if (branches > 0 || leftOut > 0)
+    lines.push(
+      `  %% ${ctx.t("diagramKinds.guided.mermaid.journeyLeftOut", { steps: leftOut, branches })}`,
+    );
+  return `${lines.join("\n")}\n`;
+}

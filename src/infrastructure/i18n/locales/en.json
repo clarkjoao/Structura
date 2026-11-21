@@ -3702,7 +3702,7 @@
         "openHint": "Write the journey as text",
         "title": "Write as text",
         "placeholder": "Customer: Chooses product\nApp: Creates Pix charge\n? Paid\n  yes -> API: Confirms payment\n  no -> @Chooses product\n! Done",
-        "syntax": "Lane: step · ? decision · label -> exit · ! end · -> @Step jumps back · # comment",
+        "syntax": "Lane: step · ? decision · label -> exit · ! end · -> @Step jumps back · # comment · or paste Mermaid (swimlane-beta, flowchart, journey)",
         "apply": "Apply",
         "applyHint": "Ctrl/Cmd + Enter",
         "copy": "Copy as text",
@@ -3726,7 +3726,13 @@
           "emptyName": "This line has no name.",
           "unreachableLine": "The path ended on the line before (! end or -> @jump), so nothing reaches this line.",
           "unknownJump": "No step is named “{{name}}”.",
-          "ambiguousJump": "More than one step is named “{{name}}”. Rename one of them first."
+          "ambiguousJump": "More than one step is named “{{name}}”. Rename one of them first.",
+          "mermaidUnclosedSubgraph": "This subgraph has no “end”.",
+          "mermaidStrayEnd": "“end” without an open subgraph.",
+          "mermaidUnreadable": "This line cannot be read as nodes and arrows.",
+          "mermaidTaskWithoutScore": "A journey task is “Task: score: actors”.",
+          "mermaidScoreOutOfRange": "The score must be 1 to 5 (here: {{score}}).",
+          "mermaidEmpty": "This Mermaid block has no steps."
         }
       },
       "inspector": {
@@ -3747,6 +3753,17 @@
         "subroutine": "Subprocess",
         "cylinder": "Data",
         "document": "Document"
+      },
+      "mermaid": {
+        "formats": {
+          "outline": "Text",
+          "swimlane": "Mermaid (lanes)",
+          "journey": "Mermaid (journey)"
+        },
+        "exportedFrom": "Exported from Structura: {{name}}",
+        "journeyLeftOut": "Main path only: {{branches}} branch(es) and {{steps}} other step(s) left out.",
+        "summarySetAside": "Steps: {{steps}} · Decisions: {{decisions}} · New lanes: {{lanes}} · Not kept yet: {{sections}} section(s), {{scores}} score(s)",
+        "copyAs": "Copy as…"
       }
     },
     "toolbar": {

@@ -47,6 +47,18 @@ describe("pasting text on a guided canvas", () => {
     expect(names()).toHaveLength(before);
   });
 
+  it("builds a fenced Mermaid swimlane block and a Mermaid journey", () => {
+    const { names } = setup();
+    expect(
+      pasteKindText(
+        "```mermaid\nswimlane-beta LR\n  subgraph Loja\n    a[Escolhe] --> b[Paga]\n  end\n```",
+      ),
+    ).toBe(true);
+    expect(names()).toEqual(expect.arrayContaining(["Escolhe", "Paga"]));
+    expect(pasteKindText("journey\n  section Casa\n  Acorda: 3: Eu\n  Café: 5: Eu")).toBe(true);
+    expect(names()).toEqual(expect.arrayContaining(["Acorda", "Café"]));
+  });
+
   it("does nothing on a guided diagram edited freehand", () => {
     const { d, names } = setup();
     useDiagramStore.getState().setKindMode(d().id, "freehand");
@@ -79,6 +91,35 @@ describe("KindTextPanel", () => {
     expect(screen.getByTestId("kind-text-errors")).toHaveTextContent(/2/);
     expect(screen.getByTestId("kind-text-apply")).toBeDisabled();
     vi.useRealTimers();
+  });
+
+  it("says what a Mermaid journey sets aside", () => {
+    setup();
+    const input = open();
+    type(input, "journey\n  section A\n  Um: 2: Eu\n  section B\n  Dois: 4: Eu");
+    expect(screen.getByTestId("kind-text-summary")).toHaveTextContent(/2.*2/);
+    expect(screen.getByTestId("kind-text-summary").textContent).toMatch(/section|fase/i);
+    vi.useRealTimers();
+  });
+
+  it("copies the journey in each format", async () => {
+    vi.useRealTimers();
+    setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<KindTextPanel capture={capture} disabled={false} />);
+    fireEvent.click(screen.getByTestId("kind-text-open"));
+    for (const [id, pattern] of [
+      ["outline", /^[^%]/],
+      ["mermaid-swimlane", /swimlane-beta/],
+      ["mermaid-journey", /^journey/],
+    ] as const) {
+      const trigger = screen.getByTestId("kind-text-copy");
+      fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+      fireEvent.click(await screen.findByTestId(`kind-text-copy-${id}`));
+      await act(async () => {});
+      expect(writeText.mock.lastCall?.[0]).toMatch(pattern);
+    }
   });
 
   it("applies with Ctrl+Enter, clears, and selects the last step added", () => {

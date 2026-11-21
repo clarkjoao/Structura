@@ -80,6 +80,12 @@ const DYNAMIC: Record<string, readonly string[]> = {
     "unreachableLine",
     "unknownJump",
     "ambiguousJump",
+    "mermaidUnclosedSubgraph",
+    "mermaidStrayEnd",
+    "mermaidUnreadable",
+    "mermaidTaskWithoutScore",
+    "mermaidScoreOutOfRange",
+    "mermaidEmpty",
   ],
 };
 

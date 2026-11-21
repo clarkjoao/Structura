@@ -89,10 +89,11 @@ describe("parseOutline", () => {
     expect(parsed.errors).toEqual([]);
     const a = parsed.items[0]!;
     if (a.kind !== "decision") throw new Error("decision");
-    expect(a.exits[0]!.body.map((i) => (i.kind === "jump" ? i.target : i.name))).toEqual([
-      "X",
-      "Y",
-    ]);
+    expect(
+      a.exits[0]!.body.map((i) =>
+        i.kind === "jump" ? i.target : i.kind === "fanout" ? "" : i.name,
+      ),
+    ).toEqual(["X", "Y"]);
     const b = a.exits[1]!.body[0]!;
     if (b.kind !== "decision") throw new Error("decision");
     expect(b.exits.map((x) => x.label)).toEqual(["ok", "nok"]);

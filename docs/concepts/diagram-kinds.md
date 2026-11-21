@@ -168,6 +168,21 @@ App: Emite nota                 # reached from every branch still open
   again (a convergence or a retry) is written as a jump, so the text reproduces the same
   connections. Unreachable steps are left out with a comment.
 
+### Mermaid in and out
+
+The same capture reads Mermaid (`guided.mermaid.*.ts`, spec `guided-mermaid-interchange`). A text whose first meaningful line is `swimlane-beta`, `flowchart`, `graph` or `journey` is read as Mermaid. The first meaningful line skips any ` ```mermaid ` fence, front matter and `%%` comments. Everything else is read as an outline.
+
+- **Swimlane / flowchart.**
+  - **Lanes.** Each top-level `subgraph` becomes a lane. Nested subgraphs add their nodes to the enclosing lane.
+  - **Shapes.** `{}` becomes a decision, and so does any plain node where the path splits. `[()]` is data, `[[]]` a subprocess, and `@{ shape: doc | event }` a document or an event. A circle or stadium with no incoming edge stands for the start and is not added; its edges leave from the anchor instead. A circle or stadium with no outgoing edge is an end.
+  - **Edges.** `-->|x|`, `-- x -->`, chains and `&` groups all become connections.
+  - **How it is read.** The graph is turned into the outline AST by a depth-first walk. A node reached again becomes a jump by Mermaid id, and several entries become a fan-out from the anchor. So `buildOutline` adds Mermaid exactly as it adds an outline: after the selection, as one undo step.
+- **Journey.** Tasks are added in order, each in the lane of its first actor. Sections and scores are counted and reported as not kept yet; they are stored once the score and phases parts ship.
+- **Ignored lines.** Styling and metadata (`classDef`, `class`, `style`, `linkStyle`, `click`, `acc*`, `title`, `direction`) are ignored. Any other line that cannot be read is an error on that line.
+- **Copy as.** The Text panel's menu offers Text (the outline), Mermaid (lanes) and Mermaid (journey):
+  - Mermaid (lanes) writes `swimlane-beta`, which reads back into the same journey.
+  - Mermaid (journey) writes the main path (each decision's first exit in reading order) with a neutral score of 3, and a comment on what was left out.
+
 ## Known limits
 
 - Cut and paste mints new ids, so a pasted step loses its derived-flow content.

@@ -1,3 +1,4 @@
+import type { FlowNodeShape } from "@/features/diagram/model/component.types";
 /**
  * The guided journey outline (spec guided-journey-outline): a line-based text a
  * journey can be typed in as fast as notes. Parsing is pure and knows nothing of
@@ -23,7 +24,14 @@ export type OutlineErrorCode =
   | "emptyName"
   | "unreachableLine"
   | "unknownJump"
-  | "ambiguousJump";
+  | "ambiguousJump"
+  // Mermaid (spec guided-mermaid-interchange)
+  | "mermaidUnclosedSubgraph"
+  | "mermaidStrayEnd"
+  | "mermaidUnreadable"
+  | "mermaidTaskWithoutScore"
+  | "mermaidScoreOutOfRange"
+  | "mermaidEmpty";
 
 export interface OutlineError {
   /** 1-based. */
@@ -39,15 +47,32 @@ export interface OutlineNode {
   /** The lane the line names or inherits; null: the diagram's first lane. */
   lane: string | null;
   exits: OutlineExit[];
+  /** A source id (a Mermaid node id): jumps may name it instead of the name. */
+  ref?: string;
+  /** The shape, when the source says more than step / decision / end. */
+  shape?: FlowNodeShape;
 }
 
 export interface OutlineJump {
   kind: "jump";
   line: number;
   target: string;
+  /** Resolved before the name: the `ref` of a node written earlier in the same text. */
+  ref?: string;
 }
 
-export type OutlineItem = OutlineNode | OutlineJump;
+/**
+ * Several paths leaving the current open ends at once (a Mermaid block with
+ * several entries); each exit's body starts from them. The outline syntax never
+ * produces it.
+ */
+export interface OutlineFanOut {
+  kind: "fanout";
+  line: number;
+  exits: OutlineExit[];
+}
+
+export type OutlineItem = OutlineNode | OutlineJump | OutlineFanOut;
 
 export interface OutlineExit {
   line: number;
@@ -62,6 +87,8 @@ export interface ParsedOutline {
   lanes: string[];
   /** Steps, decisions and ends (jumps are not nodes). */
   nodeCount: number;
+  /** What the source holds that the journey does not keep yet (a Mermaid journey's sections, scores). */
+  setAside?: { sections: number; scores: number };
 }
 
 type Token =
@@ -283,7 +310,7 @@ function resolveLanes(tokens: Token[]): string[] {
   };
   let current: string | null = null;
   const visit = (item: OutlineItem | null) => {
-    if (!item || item.kind === "jump") return;
+    if (!item || item.kind === "jump" || item.kind === "fanout") return;
     if (item.lane) current = item.lane;
     else item.lane = current;
     if (item.lane) note(item.lane);
@@ -298,11 +325,11 @@ function resolveLanes(tokens: Token[]): string[] {
   return lanes;
 }
 
-function countNodes(items: OutlineItem[]): number {
+export function countNodes(items: OutlineItem[]): number {
   let count = 0;
   for (const item of items) {
     if (item.kind === "jump") continue;
-    count += 1;
+    if (item.kind !== "fanout") count += 1;
     for (const exit of item.exits) count += countNodes(exit.body);
   }
   return count;

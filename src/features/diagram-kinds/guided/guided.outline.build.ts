@@ -166,6 +166,7 @@ export function buildOutline(
   const connect: KindEdgeInput[] = [];
   const reconnect: NonNullable<KindEdit["reconnect"]> = [];
   const writtenByName = new Map<string, string>();
+  const writtenByRef = new Map<string, string>();
   const added: OutlineAdded = { lanes: newLanes.length, steps: 0, decisions: 0 };
   let column = 0;
   let lastKey: string | undefined;
@@ -180,9 +181,26 @@ export function buildOutline(
   const walk = (items: OutlineItem[], open: OpenEnd[]): OpenEnd[] => {
     let current = open;
     for (const item of items) {
+      if (item.kind === "fanout") {
+        // Every branch leaves the same open ends; only the first may re-wire an existing
+        // connection (an insert), the others add their own.
+        const from = current;
+        current = item.exits.flatMap((exit, index) =>
+          walk(
+            exit.body,
+            from.map((end) => {
+              const { reconnect: wire, ...plain } = end;
+              const base = index === 0 && wire ? end : plain;
+              return exit.label ? { ...base, label: exit.label } : base;
+            }),
+          ),
+        );
+        continue;
+      }
       if (item.kind === "jump") {
         const key = nameKey(item.target);
         const target =
+          (item.ref ? writtenByRef.get(item.ref) : undefined) ??
           writtenByName.get(key) ??
           (existingByName.get(key)?.length === 1 ? existingByName.get(key)![0] : undefined);
         if (!target) {
@@ -198,7 +216,7 @@ export function buildOutline(
       }
       const key = `outline-${add.length}`;
       const laneKey = (item.lane && laneByName.get(nameKey(item.lane))) || firstLane!;
-      const shape = SHAPE[item.kind];
+      const shape = item.shape ?? SHAPE[item.kind];
       const size = stepSize(shape);
       column += 1;
       const alongAbs =
@@ -220,10 +238,11 @@ export function buildOutline(
       if (item.kind === "decision") added.decisions += 1;
       lastKey = key;
       if (item.name) writtenByName.set(nameKey(item.name), key);
+      if (item.ref) writtenByRef.set(item.ref, key);
       link(current, key);
       if (item.kind === "end") {
         current = [];
-      } else if (item.kind === "decision") {
+      } else if (item.kind === "decision" || item.exits.length > 0) {
         current = item.exits.flatMap((exit) =>
           walk(exit.body, [{ source: key, ...(exit.label ? { label: exit.label } : {}) }]),
         );

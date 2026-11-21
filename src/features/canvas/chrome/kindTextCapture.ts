@@ -25,12 +25,16 @@ export function buildKindText(text: string): KindTextResult | null {
   return capture.build(kindCommandContextFor(diagram, selectedIds()), text);
 }
 
-/** The active diagram written as text by its kind; null without capture. */
-export function serializeKindText(): string | null {
+/**
+ * The active diagram written as text by its kind, in `formatId` (one of the
+ * capture's `formats`; the default format when absent); null without capture.
+ */
+export function serializeKindText(formatId?: string): string | null {
   const diagram = activeDiagram();
   const capture = kindTextCaptureFor(diagram);
   if (!diagram || !capture) return null;
-  return capture.serialize(diagram, kindCommandContextFor(diagram, []));
+  const format = formatId ? capture.formats?.find((f) => f.id === formatId) : undefined;
+  return (format?.serialize ?? capture.serialize)(diagram, kindCommandContextFor(diagram, []));
 }
 
 /**

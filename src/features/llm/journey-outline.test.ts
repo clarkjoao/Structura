@@ -75,6 +75,26 @@ describe("the assistant's journey outline", () => {
     expect(names()).toHaveLength(before);
   });
 
+  it("adds a Mermaid swimlane block through the same tool, and drops one with errors", () => {
+    const { names } = guided();
+    const applied = applyDiagramPatchAction({
+      type: "ADD_JOURNEY_OUTLINE",
+      payload: {
+        outline:
+          "swimlane-beta\n  subgraph API\n    v[Valida] --> r{Ok?}\n  end\n  r -->|sim| s[Salva]",
+      },
+    });
+    expect(applied.skipped).toBeUndefined();
+    expect(names()).toEqual(expect.arrayContaining(["Valida", "Ok?", "Salva"]));
+    const bad = applyDiagramPatchAction({
+      type: "ADD_JOURNEY_OUTLINE",
+      payload: { outline: "swimlane-beta\n  subgraph API\n    v[Valida]" },
+    });
+    expect(bad.skipped).toBe(true);
+    expect(bad.skipReason).toMatch(/line 2/);
+    expect(buildSystemPrompt("ctx", "en", currentJourneyOutline())).toContain("swimlane-beta");
+  });
+
   it("offers the tool and the current journey only on a guided diagram", () => {
     guided();
     const outline = currentJourneyOutline();
