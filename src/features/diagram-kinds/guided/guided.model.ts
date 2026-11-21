@@ -53,10 +53,10 @@ function orderLanes(byPosition: GuidedLane[], stored: readonly string[]): Guided
 /** The journey step shapes, in palette order. */
 export const GUIDED_STEP_SHAPES = [
   "rectangle",
-  "start",
-  "end",
-  "event",
   "diamond",
+  "end",
+  "start",
+  "event",
   "subroutine",
   "cylinder",
   "document",

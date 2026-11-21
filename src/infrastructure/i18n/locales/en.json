@@ -3670,7 +3670,8 @@
         "endHasNoNext": "An end step has nothing after it.",
         "keepStart": "A guided diagram needs a start step.",
         "keepLastLane": "A guided diagram needs at least one lane.",
-        "outlineClosesPath": "This text ends every path, so what came after the selected step would be cut off. Select the last step instead."
+        "outlineClosesPath": "This text ends every path, so what came after the selected step would be cut off. Select the last step instead.",
+        "oneStart": "A guided diagram has one start step."
       },
       "checks": {
         "unlabelledExit": "This exit has no label",
@@ -3727,7 +3728,30 @@
           "unknownJump": "No step is named “{{name}}”.",
           "ambiguousJump": "More than one step is named “{{name}}”. Rename one of them first."
         }
+      },
+      "inspector": {
+        "tab": "Journey",
+        "stepKind": "Step kind",
+        "exits": "Exits",
+        "exitTo": "To {{name}}",
+        "exitPlaceholder": "Label this exit",
+        "noExits": "No exits yet. Shift+Tab on the canvas adds one.",
+        "newLane": "New lane"
+      },
+      "stepKinds": {
+        "rectangle": "Step",
+        "start": "Start",
+        "end": "End",
+        "event": "Event",
+        "diamond": "Decision",
+        "subroutine": "Subprocess",
+        "cylinder": "Data",
+        "document": "Document"
       }
+    },
+    "toolbar": {
+      "more": "More",
+      "moreMenu": "More elements of this kind"
     }
   }
 }

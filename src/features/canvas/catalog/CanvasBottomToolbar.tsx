@@ -35,6 +35,8 @@ import { catalogShortcutLabel } from "./shortcutLabels";
 import { registryCatalog, TOOLBAR_TOOLS } from "./toolbarTools";
 import { useDockAutoHide } from "./useDockAutoHide";
 import { useInsertAtCenter } from "./useInsertAtCenter";
+import { kindCatalogFor, useActiveKindKey } from "./kindCatalog";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 
 export interface CanvasBottomToolbarProps {
   diagram: Pick<Diagram, "versions" | "activeVersionId">;
@@ -93,6 +95,7 @@ export function CanvasBottomToolbar({
   const setAutoHide = useCanvasPreferencesStore((state) => state.setAutoHideBottomToolbar);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const textLayer = useTextLayer();
+  const kindFields = useActiveKindKey();
   const dock = useDockAutoHide(autoHide, open || versions.open || menuOpen !== null);
 
   useEffect(() => {
@@ -104,9 +107,13 @@ export function CanvasBottomToolbar({
   const holdWhileOpen = (id: string) => (isOpen: boolean) =>
     setMenuOpen((current) => (isOpen ? id : current === id ? null : current));
 
-  const { tools, c4, flowchart } = useMemo(() => {
+  const { tools, c4, flowchart, kind } = useMemo(() => {
     const catalog = registryCatalog();
+    const state = useDiagramStore.getState();
+    const active = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
     return {
+      // In a kind's mode, its elements replace the C4 and flowchart menus (spec guided-editing-surfaces).
+      kind: kindCatalogFor(active, catalog),
       tools: TOOLBAR_TOOLS.flatMap((tool) => {
         const entry = catalog.byId.get(tool.entryId);
         return entry ? [{ tool, entry }] : [];
@@ -114,9 +121,9 @@ export function CanvasBottomToolbar({
       c4: catalog.entries.filter((entry) => entry.groupId === "c4"),
       flowchart: catalog.entries.filter((entry) => entry.groupId === "flowchart"),
     };
-    // Rebuilt per language: the labels are resolved in the catalog.
+    // Rebuilt per language (the labels are resolved in the catalog) and per kind mode.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [i18n.language]);
+  }, [i18n.language, kindFields]);
 
   const shortcut = catalogShortcutLabel();
   const autoHideLabel = t(
@@ -181,11 +188,38 @@ export function CanvasBottomToolbar({
         <Type aria-hidden className="h-4 w-4" />
       </button>
       <Separator />
-      {renderMenu("elementCatalog.toolbar.c4", "elementCatalog.toolbar.c4Menu", c4)}
-      {renderMenu(
-        "elementCatalog.toolbar.flowchart",
-        "elementCatalog.toolbar.flowchartMenu",
-        flowchart,
+      {kind ? (
+        <>
+          {kind.entries
+            .filter((item) => item.primary)
+            .map(({ entry }) => (
+              <button
+                key={entry.id}
+                type="button"
+                title={entry.label}
+                onClick={() => insertAtCenter(entry)}
+                className={TOOL_BUTTON_CLASS}
+                data-testid={`kind-toolbar-${entry.id}`}
+              >
+                <CatalogEntryIcon entry={entry} size={16} />
+                {entry.label}
+              </button>
+            ))}
+          {renderMenu(
+            "diagramKinds.toolbar.more",
+            "diagramKinds.toolbar.moreMenu",
+            kind.entries.filter((item) => !item.primary).map((item) => item.entry),
+          )}
+        </>
+      ) : (
+        <>
+          {renderMenu("elementCatalog.toolbar.c4", "elementCatalog.toolbar.c4Menu", c4)}
+          {renderMenu(
+            "elementCatalog.toolbar.flowchart",
+            "elementCatalog.toolbar.flowchartMenu",
+            flowchart,
+          )}
+        </>
       )}
       <Separator />
       <Popover open={open} onOpenChange={setOpen}>

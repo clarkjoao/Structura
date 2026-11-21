@@ -38,6 +38,9 @@ import {
   PositionSection,
 } from "./sections";
 import { ElementTypeSelect } from "./sections/ElementTypeSelect";
+import { KindInspectorTab } from "./components/KindInspectorTab";
+import { kindInspectorFor } from "@/features/diagram-kinds/inspector";
+import { resolveKindText } from "@/features/diagram-kinds/context";
 import { BoundarySections } from "./sections/BoundarySection";
 import { DiagramLinkField } from "@/features/canvas/palette/DiagramLinkField";
 import { toast } from "sonner";
@@ -60,7 +63,7 @@ import {
   useElementTrail,
 } from "./shell";
 
-const TAB_IDS: readonly Tab[] = ["details", "connections", "services"];
+const TAB_IDS: readonly Tab[] = ["kind", "details", "connections", "services"];
 
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
@@ -135,18 +138,29 @@ const ComponentPanel = ({
   const isFlowchart = isProcessNodeComponent(component);
   const isSimple = isPanel || isNote;
 
-  // The tab last used for this type survives switching to another element of it.
-  const storedTab = useCanvasPreferencesStore((s) => s.elementPanelTabByType[component.type]);
+  // The diagram kind's own tab for this element (spec guided-editing-surfaces), in kind mode.
+  const kindInspector = useMemo(
+    () => kindInspectorFor(activeDiagram, component.id),
+    [activeDiagram, component.id],
+  );
+  const hidden = (field: "technology" | "type" | "shape") =>
+    kindInspector?.hiddenFields.has(field) ?? false;
+
+  // The tab last used for this type survives switching to another element of it; in a kind's
+  // mode it is remembered apart, so the kind's tab opens first until the author leaves it.
+  const tabKey = kindInspector ? `${component.type}@kind` : component.type;
+  const storedTab = useCanvasPreferencesStore((s) => s.elementPanelTabByType[tabKey]);
   const setStoredTab = useCanvasPreferencesStore((s) => s.setElementPanelTab);
   const showConnections = !isSimple;
   const showServices = !isSimple && !isFlowchart;
   const tab: Tab = (() => {
-    const wanted = TAB_IDS.find((id) => id === storedTab) ?? "details";
+    const wanted = TAB_IDS.find((id) => id === storedTab) ?? (kindInspector ? "kind" : "details");
+    if (wanted === "kind" && !kindInspector) return "details";
     if (wanted === "connections" && !showConnections) return "details";
     if (wanted === "services" && !showServices) return "details";
     return wanted;
   })();
-  const setTab = (next: Tab) => setStoredTab(component.type, next);
+  const setTab = (next: Tab) => setStoredTab(tabKey, next);
 
   const [tagInput, setTagInput] = useState("");
   const type: ComponentType = component.type;
@@ -187,6 +201,16 @@ const ComponentPanel = ({
   };
 
   const identity = useElementIdentity(component);
+  // In a kind's mode the header names what the element is in the kind (a "Decision", not
+  // "Processes"): the selected option the kind draws with an element.
+  const kindTypeLabel = (() => {
+    for (const section of kindInspector?.sections ?? []) {
+      if (section.type !== "choice") continue;
+      const option = section.options.find((o) => o.selected && o.element);
+      if (option) return resolveKindText(option.label);
+    }
+    return undefined;
+  })();
   const trail = useElementTrail(component);
   const menu = useElementMenu(
     component,
@@ -231,7 +255,7 @@ const ComponentPanel = ({
     <div className="flex min-h-0 flex-1 flex-col">
       <PanelHeader
         icon={identity.icon}
-        typeLabel={identity.typeLabel}
+        typeLabel={kindTypeLabel ?? identity.typeLabel}
         name={headerName}
         namePlaceholder={namePlaceholder}
         onCommitName={(value) =>
@@ -244,15 +268,18 @@ const ComponentPanel = ({
         menu={menu}
         onClose={onClose}
       />
-      {(showConnections || showServices) && (
+      {(showConnections || showServices || kindInspector) && (
         <TabBar
           active={tab}
           onChange={setTab}
           showConnections={showConnections}
           showServices={showServices}
+          {...(kindInspector && { kindTab: resolveKindText(kindInspector.tab) })}
         />
       )}
-      {tab === "connections" ? (
+      {tab === "kind" && kindInspector ? (
+        <KindInspectorTab sections={kindInspector.sections} />
+      ) : tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
       ) : tab === "services" ? (
         <ServicesTab
@@ -337,7 +364,7 @@ const ComponentPanel = ({
                   </select>
                 </div>
               )}
-              {!isSimple && (
+              {!isSimple && !hidden("technology") && (
                 <CommitField
                   label={t("common.technology")}
                   value={technology}
@@ -358,8 +385,10 @@ const ComponentPanel = ({
                 onBlur={textLock.onBlur}
                 onCommit={(value) => editFields({ description: value })}
               />
-              {isFlowchart && (
+              {isFlowchart && !(hidden("type") && hidden("shape")) && (
                 <FlowchartFieldsSection
+                  showType={!hidden("type")}
+                  showShape={!hidden("shape")}
                   flowShape={flowShape}
                   onFlowShapeChange={(shape) =>
                     updateComponent(component.id, { flowShape: shape } as ComponentPatch)

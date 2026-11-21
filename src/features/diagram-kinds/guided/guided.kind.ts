@@ -6,6 +6,7 @@ import { guidedChecks } from "./guided.checks";
 import { guidedElementActions } from "./guided.elementActions";
 import { guidedConforms } from "./guided.conforms";
 import { guidedTextCapture } from "./guided.outline";
+import { guidedInspector } from "./guided.inspector";
 import { deriveGuidedFlow, guidedFlowId } from "./guided.derive";
 import {
   guidedAddBranch,
@@ -24,6 +25,9 @@ import {
   isGuidedLane,
   readGuided,
 } from "./guided.model";
+
+/** The step kinds the canvas toolbar offers as buttons; the rest sit under "More". */
+const GUIDED_PRIMARY_SHAPES: ReadonlySet<string> = new Set(["rectangle", "diamond", "end"]);
 
 const oneStepSelected: KindCommand["enabled"] = (ctx) =>
   ctx.selectedIds.length === 1 && readGuided(ctx.diagram).steps.has(ctx.selectedIds[0]!);
@@ -110,6 +114,8 @@ export const guidedKind: DiagramKindDescriptor = {
   elements: GUIDED_STEP_SHAPES.map((flowShape) => ({
     type: COMPONENT_TYPE_PROCESS_NODE,
     flowShape,
+    label: { key: `diagramKinds.guided.stepKinds.${flowShape}` },
+    ...(GUIDED_PRIMARY_SHAPES.has(flowShape) && { primary: true }),
   })),
   interaction: {
     nodesDraggable: false,
@@ -132,6 +138,7 @@ export const guidedKind: DiagramKindDescriptor = {
   commands,
   elementActions: guidedElementActions,
   textCapture: guidedTextCapture,
+  inspector: guidedInspector,
   insert: (ctx, element) =>
     guidedInsertStep(ctx.diagram, ctx.selectedIds, element.flowShape ?? "rectangle", ctx),
   isAnnotation: (component: Component) => isGuidedAnnotation(component) || isGuidedLane(component),

@@ -25,6 +25,10 @@ export interface KindElementRef {
   type: string;
   /** For `process-node`: the flowchart shape. */
   flowShape?: FlowNodeShape;
+  /** Offered as its own button on the canvas toolbar; the rest sit under "More". */
+  primary?: boolean;
+  /** The name surfaces show for it, instead of the catalog entry's. */
+  label?: KindText;
 }
 
 /** What the canvas lets the author do while the diagram is in its kind's mode. */
@@ -156,6 +160,56 @@ export interface KindTextCapture {
   placeholder?: KindText;
 }
 
+/** An inspector field a kind may hide in kind mode (spec guided-editing-surfaces). */
+export type KindInspectorField = "technology" | "type" | "shape";
+
+/** One option of a choice section; `run` applies it. */
+export interface KindInspectorOption {
+  id: string;
+  label: KindText;
+  /** Drawn with this element's icon. */
+  element?: KindElementRef;
+  selected: boolean;
+  /** Creates something new (e.g. a new lane), drawn apart from the choices. */
+  creates?: boolean;
+  run: () => KindCommandOutcome | { refused: KindText };
+}
+
+/** One editable label of a labels section (e.g. a decision's exit). */
+export interface KindInspectorLabel {
+  id: string;
+  /** The field's title, e.g. "To {{name}}" for an exit. */
+  title: KindText;
+  values?: Record<string, string | number>;
+  placeholder?: KindText;
+  label: string;
+  commit: (label: string) => KindCommandOutcome | { refused: KindText };
+}
+
+/** A block of the kind's inspector tab, drawn by the host. */
+export type KindInspectorSection =
+  | { type: "choice"; id: string; label: KindText; options: KindInspectorOption[] }
+  | {
+      type: "labels";
+      id: string;
+      label: KindText;
+      items: KindInspectorLabel[];
+      /** Shown when there is nothing to label yet. */
+      empty?: KindText;
+    };
+
+/**
+ * The kind's own inspector tab (spec guided-editing-surfaces): data and pure
+ * functions; the host draws the sections and applies what they return.
+ */
+export interface KindInspector {
+  tab: KindText;
+  /** Details fields hidden for the elements the tab applies to. */
+  hiddenFields: readonly KindInspectorField[];
+  /** The tab's sections for `elementId`; null when the tab does not apply to it (lanes, notes). */
+  sections: (ctx: KindCommandContext, elementId: string) => KindInspectorSection[] | null;
+}
+
 /** A command a kind contributes: a keyboard shortcut and/or a context-menu entry. */
 export interface KindCommand {
   id: string;
@@ -215,6 +269,8 @@ export interface DiagramKindDescriptor {
   ) => KindCommandOutcome | { refused: KindText };
   /** Writing the diagram as text: offered while in kind mode. */
   textCapture?: KindTextCapture;
+  /** The kind's inspector tab, offered while in kind mode. */
+  inspector?: KindInspector;
   /** Whether a component may be dragged/inserted where it is, beyond `elements` (lanes, notes). */
   isAnnotation?: (component: Component) => boolean;
 }

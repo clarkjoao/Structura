@@ -3670,7 +3670,8 @@
         "endHasNoNext": "Um passo de fim não tem nada depois.",
         "keepStart": "Um diagrama guiado precisa de um passo de início.",
         "keepLastLane": "Um diagrama guiado precisa de pelo menos uma raia.",
-        "outlineClosesPath": "Este texto encerra todos os caminhos, e o que vinha depois do passo selecionado ficaria solto. Selecione o último passo."
+        "outlineClosesPath": "Este texto encerra todos os caminhos, e o que vinha depois do passo selecionado ficaria solto. Selecione o último passo.",
+        "oneStart": "Um diagrama guiado tem um único passo de início."
       },
       "checks": {
         "unlabelledExit": "Esta saída não tem rótulo",
@@ -3727,7 +3728,30 @@
           "unknownJump": "Nenhum passo se chama “{{name}}”.",
           "ambiguousJump": "Mais de um passo se chama “{{name}}”. Renomeie um deles antes."
         }
+      },
+      "inspector": {
+        "tab": "Jornada",
+        "stepKind": "Tipo de passo",
+        "exits": "Saídas",
+        "exitTo": "Para {{name}}",
+        "exitPlaceholder": "Rotule esta saída",
+        "noExits": "Ainda sem saídas. Shift+Tab no canvas adiciona uma.",
+        "newLane": "Nova raia"
+      },
+      "stepKinds": {
+        "rectangle": "Passo",
+        "start": "Início",
+        "end": "Fim",
+        "event": "Evento",
+        "diamond": "Decisão",
+        "subroutine": "Subprocesso",
+        "cylinder": "Dados",
+        "document": "Documento"
       }
+    },
+    "toolbar": {
+      "more": "Mais",
+      "moreMenu": "Mais elementos deste tipo"
     }
   }
 }

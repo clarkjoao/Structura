@@ -3,7 +3,7 @@ import { checkFlowInvariants, getFlowParticipants } from "@/features/diagram/uti
 import { kindContextFor } from "../context";
 import { guidedKind } from "./guided.kind";
 import { guidedHarness } from "./guided.harness";
-import { guidedAddLane, guidedMoveLane, guidedRemoveLane } from "./guided.edits";
+import { guidedAddLane, guidedChangeShape, guidedMoveLane, guidedRemoveLane } from "./guided.edits";
 import { isGuidedDecision } from "./guided.model";
 
 describe("guided creation", () => {
@@ -476,5 +476,42 @@ describe("walkthrough scenes on the derived flow", () => {
     expect(played).toBeDefined();
     expect(h.sequence()).toEqual(["Start", "Confirma", "Paga"]);
     expect(Object.values(played.steps).map((s) => s.componentId)).toContain(inserted);
+  });
+});
+
+describe("the step kind changes from the Journey tab", () => {
+  const change = (
+    h: ReturnType<typeof guidedHarness>,
+    id: string,
+    shape: "diamond" | "end" | "start" | "rectangle",
+  ) => guidedChangeShape(h.diagram(), id, shape);
+
+  it("turns a step into a decision, resized and arranged, in one undo step", () => {
+    const h = guidedHarness();
+    const step = h.run("guided.next", [h.startId])!;
+    const outcome = change(h, step, "diamond");
+    if ("refused" in outcome) throw new Error("refused");
+    h.apply(outcome.edit);
+    expect(isGuidedDecision(h.diagram().snapshot.components[step]!)).toBe(true);
+    expect(h.absolute(step).width).toBe(180);
+    expect(h.reading().laneOf.get(step)).toBe(h.laneIds[0]);
+    h.store.getState().undo();
+    expect(isGuidedDecision(h.diagram().snapshot.components[step]!)).toBe(false);
+  });
+
+  it("refuses an end that has exits, a second start, and removing the only start", () => {
+    const h = guidedHarness();
+    const step = h.run("guided.next", [h.startId])!;
+    expect(change(h, h.startId, "end")).toEqual({
+      refused: { key: "diagramKinds.guided.refused.endHasNoNext" },
+    });
+    expect(change(h, h.startId, "rectangle")).toEqual({
+      refused: { key: "diagramKinds.guided.refused.keepStart" },
+    });
+    expect(change(h, step, "start")).toEqual({
+      refused: { key: "diagramKinds.guided.refused.oneStart" },
+    });
+    // The last step has no exit: it may end the journey.
+    expect("refused" in change(h, step, "end")).toBe(false);
   });
 });

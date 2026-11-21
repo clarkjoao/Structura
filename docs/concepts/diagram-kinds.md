@@ -35,7 +35,7 @@ app and embed-editor entries). With nothing registered, the editor is exactly th
 
 | Field | What it decides |
 | --- | --- |
-| `elements` | the palette and quick insert in kind mode (any registered type, plugin types included) |
+| `elements` | the palette, quick insert and bottom toolbar in kind mode (any registered type, plugin types included); `label` renames an element there, `primary` makes it a toolbar button (the rest go under "More") |
 | `interaction` | drag, resize, the Arrange menu's Manual/Automatic choice, recording flows |
 | `create` | a new diagram's template |
 | `conforms` (required) | whether a diagram edited freehand can come back; issues name their element |
@@ -44,9 +44,10 @@ app and embed-editor entries). With nothing registered, the editor is exactly th
 | `arrange`, `arrangeKey` | the arrangement, and what beyond structure triggers it (guided: lane order) |
 | `checks` | quiet markers (a class on the node or edge, never a dialog) |
 | `commands` | keyboard chords and context-menu entries |
-| `elementActions` | per-element actions in the context menu and the inspector |
+| `elementActions` | per-element actions in the context menu and the canvas's floating bar |
 | `insert` | where a palette element goes in kind mode |
 | `textCapture` | writing the diagram as text: `build` (text → edit), `serialize`, `syntax` |
+| `inspector` | the kind's own inspector tab (e.g. guided "Journey"): `tab`, `hiddenFields` (Details fields hidden in kind mode), `sections(ctx, id)` as data — choice groups and label fields whose `run`/`commit` return a kind outcome; `null` means no tab for that element |
 
 A kind reads the world only through `KindContext` (`context.ts`), which provides `t`, the element
 registry lookup, direction, layout settings and id minting. It returns `KindEdit` change sets

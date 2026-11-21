@@ -12,12 +12,14 @@ import { Kbd } from "../catalog/Kbd";
 import { catalogShortcutLabel } from "../catalog/shortcutLabels";
 import { useCanvasCatalogIndex } from "../catalog/useCanvasCatalogIndex";
 import { useCatalogInsert } from "../catalog/useCatalogInsert";
+import { kindCatalogFor, useActiveKindKey } from "../catalog/kindCatalog";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 
 const POPOVER_W = 320;
 const POPOVER_H_MAX = 400;
 /** Search hits listed; the full catalog is one click away for the rest. */
 const MAX_HITS = 30;
-/** The group offered when the field is empty, after Recents. */
+/** The group offered when the field is empty, after Recents (a diagram kind offers its own). */
 const TOP_GROUP_ID = "c4";
 
 interface QuickInsertPopoverProps {
@@ -67,6 +69,7 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
   const { index, byId } = useCanvasCatalogIndex();
   const recentIds = useCanvasPreferencesStore((state) => state.recentCatalogEntryIds);
   const insert = useCatalogInsert();
+  const kindFields = useActiveKindKey();
 
   const restoreFocusRef = useRef(true);
 
@@ -92,6 +95,13 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
   }, [onClose]);
 
   const sections = useMemo((): QuickSection[] => {
+    const state = useDiagramStore.getState();
+    const diagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+    // In a kind's mode its own elements come first, under its name and with its labels
+    // (spec guided-editing-surfaces).
+    const kind = kindCatalogFor(diagram, index);
+    const kindEntry = new Map(kind?.entries.map((item) => [item.entry.id, item.entry]));
+    const named = (entry: CatalogEntry) => kindEntry.get(entry.id) ?? entry;
     if (query.trim()) {
       const hits = searchCatalog(index, query).hits.slice(0, MAX_HITS);
       if (hits.length === 0) return [];
@@ -99,14 +109,21 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
         {
           key: "results",
           label: t("elementCatalog.results"),
-          options: hits.map((hit) => ({ key: `results:${hit.entry.id}`, entry: hit.entry, hit })),
+          options: hits.map((hit) => ({
+            key: `results:${hit.entry.id}`,
+            entry: named(hit.entry),
+            hit,
+          })),
         },
       ];
     }
     const recents = recentIds
       .map((id) => byId.get(id))
-      .filter((entry): entry is CatalogEntry => !!entry);
-    const top = index.entries.filter((entry) => entry.groupId === TOP_GROUP_ID);
+      .filter((entry): entry is CatalogEntry => !!entry)
+      .map(named);
+    const top = kind
+      ? kind.entries.map((item) => item.entry)
+      : index.entries.filter((entry) => entry.groupId === TOP_GROUP_ID);
     const result: QuickSection[] = [];
     if (recents.length > 0) {
       result.push({
@@ -115,13 +132,17 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
         options: recents.map((entry) => ({ key: `recents:${entry.id}`, entry })),
       });
     }
-    result.push({
-      key: "top",
-      label: t("elementCatalog.quickInsert.top"),
-      options: top.map((entry) => ({ key: `top:${entry.id}`, entry })),
-    });
+    if (top.length > 0) {
+      result.push({
+        key: "top",
+        label: kind ? kind.label : t("elementCatalog.quickInsert.top"),
+        options: top.map((entry) => ({ key: `top:${entry.id}`, entry })),
+      });
+    }
     return result;
-  }, [query, index, byId, recentIds, t]);
+    // `kindFields` re-reads the active diagram's kind when its mode changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, index, byId, recentIds, t, kindFields]);
 
   const options = useMemo(() => sections.flatMap((section) => section.options), [sections]);
 
@@ -251,7 +272,12 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
                       <span className="block truncate text-foreground">
                         <HighlightedText
                           text={option.entry.label}
-                          ranges={hit?.matchedOn === "name" ? hit.ranges : []}
+                          // A kind's own label for the entry is not what the search matched.
+                          ranges={
+                            hit?.matchedOn === "name" && hit.entry.label === option.entry.label
+                              ? hit.ranges
+                              : []
+                          }
                         />
                       </span>
                       {hit && hit.matchedOn !== "name" && (

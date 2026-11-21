@@ -58,7 +58,9 @@ function newStepInput(
     name:
       shape === "diamond"
         ? ctx.t("diagramKinds.guided.newDecision")
-        : ctx.t("diagramKinds.guided.newStep"),
+        : shape === "end"
+          ? ctx.t("diagramKinds.guided.endName")
+          : ctx.t("diagramKinds.guided.newStep"),
     parent: laneId,
     x: at.x,
     y: at.y,
@@ -571,5 +573,71 @@ export function guidedCreate(ctx: KindContext): { edit: KindEdit; select: string
       ],
     },
     select: "start",
+  };
+}
+
+// ─── Step kind ──────────────────────────────────────────────────────────────
+
+/**
+ * The step drawn as another journey shape (spec guided-editing-surfaces): an
+ * end has nothing after it, and a journey keeps exactly one start.
+ */
+export function guidedChangeShape(
+  diagram: DiagramModel,
+  stepId: string,
+  shape: FlowNodeShape,
+): GuidedOutcome {
+  const reading = readGuided(diagram);
+  const step = reading.steps.get(stepId);
+  if (!step) return refused("selectOneStep");
+  if (step.flowShape === shape) return { edit: {}, select: stepId };
+  if (shape === "end" && (reading.outgoing.get(stepId)?.length ?? 0) > 0)
+    return refused("endHasNoNext");
+  if (step.flowShape === "start" && reading.starts.length <= 1) return refused("keepStart");
+  if (shape === "start" && reading.starts.length > 0) return refused("oneStart");
+  const layout = getCachedCanvasSnapshot(diagram).nodeLayouts[stepId];
+  const size = stepSize(shape);
+  return {
+    edit: {
+      update: [{ id: stepId, flowShape: shape }],
+      ...(layout && {
+        move: [{ id: stepId, x: layout.x, y: layout.y, width: size.width, height: size.height }],
+      }),
+    },
+    select: stepId,
+  };
+}
+
+/**
+ * The step into a new lane, added after the last one (spec guided-editing-surfaces):
+ * one edit, so one undo removes the lane and puts the step back.
+ */
+export function guidedMoveStepToNewLane(
+  diagram: DiagramModel,
+  stepId: string,
+  name: string,
+): GuidedOutcome {
+  const reading = readGuided(diagram);
+  if (!reading.steps.has(stepId)) return refused("selectOneStep");
+  const { nodeLayouts } = getCachedCanvasSnapshot(diagram);
+  const layout = nodeLayouts[stepId];
+  const fromLane = nodeLayouts[reading.laneOf.get(stepId) ?? ""];
+  const laneEdit = guidedAddLane(diagram, name);
+  const lane = laneEdit.add![0]!;
+  if (!layout) return { edit: laneEdit, select: stepId };
+  const vertical = diagram.direction === "TB";
+  const alongAbs = vertical ? (fromLane?.y ?? 0) + layout.y : (fromLane?.x ?? 0) + layout.x;
+  const size = vertical ? (layout.width ?? 0) : (layout.height ?? 0);
+  const across = Math.max(0, LANE_MIN_DEPTH / 2 - size / 2);
+  return {
+    edit: {
+      ...laneEdit,
+      reparent: [
+        vertical
+          ? { id: stepId, parent: lane.key, x: across, y: alongAbs - lane.y }
+          : { id: stepId, parent: lane.key, x: alongAbs - lane.x, y: across },
+      ],
+    },
+    select: stepId,
   };
 }

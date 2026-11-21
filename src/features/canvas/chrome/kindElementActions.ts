@@ -33,7 +33,8 @@ export const canvasSelectionDeps = {
   requestEditLabel: () => {},
 };
 
-function runOutcome(outcome: KindCommandOutcome | { refused: KindText }): void {
+/** Applies a kind's outcome, or shows its refusal as a notice. */
+export function runKindOutcome(outcome: KindCommandOutcome | { refused: KindText }): void {
   if ("refused" in outcome) {
     toast.info(resolveKindText(outcome.refused));
     return;
@@ -62,7 +63,7 @@ export function kindMenuItemsFor(
       group: "commands",
       label: resolveKindText(command.label),
       ...(command.keys?.[0] && { shortcut: command.keys[0] }),
-      onSelect: () => runOutcome(command.run(ctx)),
+      onSelect: () => runKindOutcome(command.run(ctx)),
     });
   }
   for (const action of policy.descriptor.elementActions?.(ctx, elementId) ?? []) {
@@ -72,7 +73,7 @@ export function kindMenuItemsFor(
       label: resolveKindText(action.label, action.values),
       ...(action.danger && { danger: true }),
       ...(action.glyph && { glyph: action.glyph }),
-      onSelect: () => runOutcome(action.run()),
+      onSelect: () => runKindOutcome(action.run()),
     });
   }
   return items;
