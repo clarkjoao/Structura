@@ -64,9 +64,9 @@ describe("the experience score", () => {
     const h = guidedHarness();
     add(h, "Cliente: A [5]\nB [3]\nC [1]\nD [2]");
     const sets = kindMarkersFor(h.diagram());
-    expect(sets.badges.get(step(h, "A").id)).toEqual({ text: "😄 5", tone: "success" });
+    expect(sets.badges.get(step(h, "A").id)).toEqual({ text: "5/5", tone: "success" });
     expect(sets.badges.get(step(h, "B").id)?.tone).toBe("neutral");
-    expect(sets.badges.get(step(h, "C").id)).toEqual({ text: "😞 1", tone: "danger" });
+    expect(sets.badges.get(step(h, "C").id)).toEqual({ text: "1/5", tone: "danger" });
     expect(sets.nodes.has(step(h, "A").id)).toBe(false);
     expect(sets.nodes.has(step(h, "C").id)).toBe(true);
     const pain = sets.markers.filter((m) => m.code === "painPoint").map((m) => m.elementId);

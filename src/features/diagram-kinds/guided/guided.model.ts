@@ -98,9 +98,6 @@ export function experienceOf(component: Component): number | null {
 /** Scores 1–2: where the journey hurts. */
 export const isPainPoint = (score: number | null): boolean => score !== null && score <= 2;
 
-/** The face shown for a score. */
-export const EXPERIENCE_FACES = ["😞", "🙁", "😐", "🙂", "😄"] as const;
-
 /** Free text and notes: allowed anywhere, ignored by the guided rules. */
 export function isGuidedAnnotation(component: Component): boolean {
   return isTextType(component.type) || component.type === COMPONENT_TYPE_NOTE;

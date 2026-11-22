@@ -1,7 +1,6 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindMarker } from "../kind.types";
 import {
-  EXPERIENCE_FACES,
   experienceOf,
   isGuidedDecision,
   isGuidedEnd,
@@ -49,7 +48,7 @@ export function guidedChecks(diagram: DiagramModel): KindMarker[] {
         },
         values: { score },
         badge: {
-          text: `${EXPERIENCE_FACES[score - 1]} ${score}`,
+          text: `${score}/5`,
           tone: pain ? "danger" : score === 3 ? "neutral" : "success",
         },
         marks: pain,

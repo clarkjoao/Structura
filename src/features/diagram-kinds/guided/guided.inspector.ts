@@ -8,13 +8,7 @@ import {
   guidedSetPhaseStart,
 } from "./guided.edits";
 import { guidedPhases, phaseStartOf } from "./guided.phases";
-import {
-  EXPERIENCE_FACES,
-  GUIDED_STEP_SHAPES,
-  experienceOf,
-  isGuidedDecision,
-  readGuided,
-} from "./guided.model";
+import { GUIDED_STEP_SHAPES, experienceOf, isGuidedDecision, readGuided } from "./guided.model";
 
 /**
  * The guided "Journey" tab (spec guided-editing-surfaces): the step's lane,
@@ -104,11 +98,11 @@ export const guidedInspector: KindInspector = {
           selected: score === null,
           run: () => guidedSetExperience(ctx.diagram, elementId, null),
         },
-        ...EXPERIENCE_FACES.map((face, index) => ({
-          id: String(index + 1),
-          label: { text: `${face} ${index + 1}` },
-          selected: score === index + 1,
-          run: () => guidedSetExperience(ctx.diagram, elementId, index + 1),
+        ...[1, 2, 3, 4, 5].map((value) => ({
+          id: String(value),
+          label: { text: String(value) },
+          selected: score === value,
+          run: () => guidedSetExperience(ctx.diagram, elementId, value),
         })),
       ],
     });

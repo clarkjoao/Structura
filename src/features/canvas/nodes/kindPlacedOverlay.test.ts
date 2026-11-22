@@ -21,10 +21,10 @@ describe("kindPlacedOverlay", () => {
 describe("kindBadgeOverlay", () => {
   it("puts the kind's badge on the node as data attributes, keeping its own", () => {
     const withAttr = { ...node, domAttributes: { "data-testid": "x" } } as Node;
-    const badged = kindBadgeOverlay(withAttr, { text: "😞 1", tone: "danger" });
+    const badged = kindBadgeOverlay(withAttr, { text: "1/5", tone: "danger" });
     expect(badged.domAttributes).toMatchObject({
       "data-testid": "x",
-      "data-kind-badge": "😞 1",
+      "data-kind-badge": "1/5",
       "data-kind-badge-tone": "danger",
     });
   });
