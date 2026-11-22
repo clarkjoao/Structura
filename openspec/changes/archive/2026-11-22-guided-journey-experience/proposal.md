@@ -17,8 +17,8 @@ Today the guided journey has no place for that:
 
   `KindEdit` can set or clear it (`update[].kindProps`, `add[].kindProps`). Guided stores `kindProps.experience` (1–5). Part 3 will store `phase` the same way.
 
-- **Experience in the Journey tab.** A new "Experience" choice runs from 1 (😞) to 5 (😄), plus "—" to clear it. Picking one is one undo step.
-- **A badge on the canvas.** In kind mode, a scored step shows a small face badge with the score.
+- **Experience in the Journey tab.** A new "Experience" choice runs from 1 to 5, plus "—" to clear it. Picking one is one undo step.
+- **A badge on the canvas.** In kind mode, a scored step shows a small badge with the score ("2/5").
   - Steps scored 1–2 are **pain points**: the badge is red, and the step gets the quiet marker "Pain point".
   - 3 is neutral and 4–5 are green.
   - The badge comes through a new generic marker field (`KindMarker.badge`), so the host draws it for any kind.

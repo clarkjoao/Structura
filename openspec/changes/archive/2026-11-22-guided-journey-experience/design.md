@@ -65,4 +65,3 @@ The kind exposes the code to the host through an optional `focusMarkers?: { code
 ## Risks
 
 - **`kindProps` is a model field.** Collab sync of a component carries it wholesale, which is acceptable because components already travel whole. Older clients drop an unknown field on write; the `kindData` rollout accepted the same.
-- **Emoji rendering differs across platforms.** The number always sits next to the face, so the score stays readable.

@@ -19,5 +19,5 @@
 
 ## 4. Wrap-up
 
-- [x] 4.1 Add the en/pt-BR keys (section, faces, marker, chip plurals, error), extend `i18n-coverage.test.ts`, and update `docs/concepts/diagram-kinds.md` (`kindProps`, badges, the score syntax). Verify: the coverage test passes.
+- [x] 4.1 Add the en/pt-BR keys (section, marker, chip plurals, error), extend `i18n-coverage.test.ts`, and update `docs/concepts/diagram-kinds.md` (`kindProps`, badges, the score syntax). Verify: the coverage test passes.
 - [x] 4.2 Add a Cypress scratch tour: score two steps from the Journey tab, check the badges and the chip, cycle the chip, paste the Mermaid "My working day" and check that "Do work" shows a red 1. Then run `openspec validate`, vitest, typecheck, lint, fallow and prettier. Verify: all pass.

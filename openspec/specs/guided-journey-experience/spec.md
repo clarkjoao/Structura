@@ -1,4 +1,10 @@
-## ADDED Requirements
+# guided-journey-experience Specification
+
+## Purpose
+
+An experience score from 1 to 5 on guided steps, stored in the element's kind data. It is set from the Journey tab, shown as a badge, and turns scores of 1–2 into pain points the mode bar can walk through. Scores survive the outline and Mermaid.
+
+## Requirements
 
 ### Requirement: An element can carry its kind's data
 
@@ -20,23 +26,23 @@ A component SHALL accept an optional `kindProps` JSON object, owned by the diagr
 
 ### Requirement: A step has an experience score
 
-A guided step MAY carry an experience score from 1 to 5, stored as `kindProps.experience`. The Journey tab SHALL offer an "Experience" choice with 1 😞, 2 🙁, 3 😐, 4 🙂, 5 😄 and "—" (no score), with the current value marked. Picking one SHALL set or clear the score as one undo step, keeping the selection on the step.
+A guided step MAY carry an experience score from 1 to 5, stored as `kindProps.experience`. The Journey tab SHALL offer an "Experience" choice with 1 to 5 and "—" (no score), with the current value marked. Picking one SHALL set or clear the score as one undo step, keeping the selection on the step.
 
 #### Scenario: Scoring a step
 
-- **WHEN** the author picks 🙁 2 for a selected step
+- **WHEN** the author picks 2 for a selected step
 - **THEN** the step's experience is 2, and one undo removes it
 
 ### Requirement: Scores show on the canvas and pain points are marked
 
-In kind mode, a scored step SHALL show a badge with its face and number. The badge SHALL be red for 1–2, neutral for 3 and green for 4–5.
+In kind mode, a scored step SHALL show a badge with its score out of five ("2/5"). The badge SHALL be red for 1–2, neutral for 3 and green for 4–5.
 
 A step scored 1 or 2 is a **pain point**: it SHALL carry the quiet marker "Pain point" and be counted in the mode bar. The badge SHALL be drawn by the host from a generic `KindMarker.badge` (`text`, `tone`), so any kind can use it. Freehand mode and read-only surfaces SHALL not show badges, as for every kind marker.
 
 #### Scenario: A pain point
 
 - **WHEN** a step is scored 1
-- **THEN** it shows a red "😞 1" badge and the marker "Pain point", and the mode bar reads "1 pain point"
+- **THEN** it shows a red "1/5" badge and the marker "Pain point", and the mode bar reads "1 pain point"
 
 ### Requirement: The mode bar walks the pain points
 

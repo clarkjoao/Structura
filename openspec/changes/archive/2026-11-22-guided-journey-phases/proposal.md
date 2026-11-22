@@ -26,7 +26,7 @@ Implement part 2 first.
   - **Separators:** faint dashed separators cross the lanes between phases.
   - **Selecting:** clicking a phase header selects the step where it starts.
 - **The emotion curve.** When any step is scored (part 2), the header band also draws the curve:
-  - a line through each scored step's column, in reading order, high for 😄 5 and low for 😞 1;
+  - a line through each scored step's column, in reading order, high for 5 and low for 1;
   - pain points as red dots.
 
   It is drawn by the host from a generic kind **overlay** (bands plus a polyline), so any kind can use it.
