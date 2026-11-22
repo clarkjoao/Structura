@@ -1,7 +1,8 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import type { KindArrangement, KindContext, KindLayoutServices } from "../kind.types";
-import { type GuidedReading, readGuided } from "./guided.model";
+import { type GuidedReading, forwardGraph, readGuided } from "./guided.model";
+import { guidedPhases, phaseStartOf } from "./guided.phases";
 import {
   LANE_HEADER,
   LANE_INSET,
@@ -153,50 +154,42 @@ export function arrangeGuidedSync(
 }
 
 /**
- * Longest-path layers and discovery order. The walk starts at the start step,
- * then at any step it did not reach, in their current order along the axis
- * (so a step not yet connected stays roughly where it is drawn). An edge to a
- * step on the walk's current path is a back-edge and does not layer.
+ * Longest-path layers over the forward edges, with phase floors (spec
+ * guided-journey-phases): a phase's steps come after every column of the
+ * phases before it. Floors depend on layers and layers on floors, so it
+ * relaxes until nothing moves (floors only grow; a few passes in practice).
  */
 function layerSteps(
   reading: GuidedReading,
   alongOf: (id: string) => number,
 ): { layer: Map<string, number>; order: Map<string, number> } {
-  const order = new Map<string, number>();
-  const forward = new Map<string, string[]>();
-  const onPath = new Set<string>();
-  const visited = new Set<string>();
-  const visit = (id: string) => {
-    visited.add(id);
-    onPath.add(id);
-    order.set(id, order.size);
-    for (const exit of reading.outgoing.get(id) ?? []) {
-      if (onPath.has(exit.targetId)) continue; // a retry
-      forward.set(id, [...(forward.get(id) ?? []), exit.targetId]);
-      if (!visited.has(exit.targetId)) visit(exit.targetId);
+  const { forward, order, topo } = forwardGraph(reading, alongOf);
+  const { phaseOf, phases } = guidedPhases(reading, { forward, topo });
+  // Steps before the first phase start are group -1; group p's floor follows all groups before it.
+  const groupOf = (id: string) => phaseOf.get(id) ?? -1;
+  const floors = new Map<number, number>();
+  let layer = new Map<string, number>();
+  for (let pass = 0; pass <= phases.length + 1; pass++) {
+    layer = new Map([...reading.steps.keys()].map((id) => [id, floors.get(groupOf(id)) ?? 0]));
+    for (const id of topo) {
+      for (const target of forward.get(id) ?? [])
+        layer.set(target, Math.max(layer.get(target)!, layer.get(id)! + 1));
     }
-    onPath.delete(id);
-  };
-  const roots = [
-    ...reading.starts.map((s) => s.id),
-    ...[...reading.steps.keys()].sort((a, b) => alongOf(a) - alongOf(b) || a.localeCompare(b)),
-  ];
-  for (const root of roots) if (!visited.has(root)) visit(root);
-
-  // Longest path over the forward edges (a DAG), by repeated relaxation in discovery order.
-  const layer = new Map<string, number>([...reading.steps.keys()].map((id) => [id, 0]));
-  const byOrder = [...order.keys()].sort((a, b) => order.get(a)! - order.get(b)!);
-  const indegree = new Map<string, number>(byOrder.map((id) => [id, 0]));
-  for (const targets of forward.values())
-    for (const t of targets) indegree.set(t, (indegree.get(t) ?? 0) + 1);
-  const queue = byOrder.filter((id) => indegree.get(id) === 0);
-  while (queue.length > 0) {
-    const id = queue.shift()!;
-    for (const target of forward.get(id) ?? []) {
-      layer.set(target, Math.max(layer.get(target)!, layer.get(id)! + 1));
-      indegree.set(target, indegree.get(target)! - 1);
-      if (indegree.get(target) === 0) queue.push(target);
+    if (phases.length === 0) break;
+    let changed = false;
+    let ceiling = -1;
+    for (let group = -1; group < phases.length; group++) {
+      if (group >= 0 && ceiling >= 0) {
+        const floor = ceiling + 1;
+        if ((floors.get(group) ?? 0) < floor) {
+          floors.set(group, floor);
+          changed = true;
+        }
+      }
+      for (const [id, value] of layer)
+        if (groupOf(id) === group) ceiling = Math.max(ceiling, value);
     }
+    if (!changed) break;
   }
   return { layer, order };
 }
@@ -208,5 +201,12 @@ function round<T extends { x: number; y: number }>(layout: T): T {
 /** The order of lanes across the axis: a reorder re-arranges like a structural edit. */
 export function guidedArrangeKey(diagram: DiagramModel): string {
   const reading = readGuided(diagram);
-  return `${diagram.direction ?? "LR"}:${reading.lanes.map((lane) => lane.id).join(",")}`;
+  // Phase starts move columns (spec guided-journey-phases).
+  const starts = [...reading.steps.values()]
+    .flatMap((step) => {
+      const phase = phaseStartOf(step);
+      return phase ? [`${step.id}=${phase}`] : [];
+    })
+    .sort();
+  return `${diagram.direction ?? "LR"}:${reading.lanes.map((lane) => lane.id).join(",")}|${starts.join(",")}`;
 }

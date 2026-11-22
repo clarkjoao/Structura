@@ -28,6 +28,7 @@ import { DiagramSurface, writePolicy } from "./core";
 import { CanvasOverlays } from "./chrome/CanvasOverlays";
 import { CanvasRightRail } from "./chrome/CanvasRightRail";
 import { KindModeBar } from "./chrome/KindModeBar";
+import { KindOverlayLayer } from "./chrome/KindOverlayLayer";
 import { CompareModeBanner } from "./chrome/CompareModeBanner";
 import { VersionChangesLegend } from "./toolbar/VersionChangesLegend";
 import { PendingSuggestionToolbars } from "./chrome/PendingSuggestionToolbars";
@@ -282,6 +283,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 defaultViewport={initialViewport}
                 onMoveEnd={eventHandlers.onMoveEnd}
               >
+                {!isCompareMode && <KindOverlayLayer onSelectElement={handleSearchSelect} />}
                 <SharedLayer
                   suggest={interactionMode.canEditCanvas}
                   components={resolvedSnapshot.components}

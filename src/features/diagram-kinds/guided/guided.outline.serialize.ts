@@ -1,6 +1,7 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindContext } from "../kind.types";
 import { experienceOf, isGuidedDecision, isGuidedEnd, readGuided } from "./guided.model";
+import { phaseStartOf } from "./guided.phases";
 import { escapeOutlineText } from "./guided.outline.parse";
 
 const INDENT = "  ";
@@ -41,6 +42,9 @@ export function serializeGuidedOutline(diagram: DiagramModel, ctx: KindContext):
       currentLane = lane;
       const marker = isGuidedDecision(step) ? "? " : isGuidedEnd(step) ? "! " : "";
       const score = experienceOf(step);
+      const phase = phaseStartOf(step);
+      // A phase heading sits on its own line, at the indentation of what it starts.
+      if (phase) lines.push(`${ind}## ${phase.replace(/\\/g, "\\\\")}`);
       lines.push(`${ind}${prefix}${lanePrefix}${marker}${nameOf(id)}${score ? ` [${score}]` : ""}`);
       const exits = reading.outgoing.get(id) ?? [];
       const underExit = prefix !== "";

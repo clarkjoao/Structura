@@ -8,6 +8,7 @@ import {
   readGuided,
   readingOrder,
 } from "./guided.model";
+import { guidedPhases, phaseStartOf } from "./guided.phases";
 
 /**
  * A guided journey written as Mermaid (spec guided-mermaid-interchange). The
@@ -75,6 +76,12 @@ export function serializeMermaidSwimlane(diagram: DiagramModel, ctx: KindContext
     return score ? [`${idOf.get(stepId)}=${score}`] : [];
   });
   if (scored.length > 0) lines.push(`  %% experience: ${scored.join(", ")}`);
+  // Phase starts, likewise (spec guided-journey-phases).
+  const phased = order.flatMap((stepId) => {
+    const phase = phaseStartOf(reading.steps.get(stepId)!);
+    return phase ? [`${idOf.get(stepId)}=${phase.replace(/[,=\n]/g, " ").trim()}`] : [];
+  });
+  if (phased.length > 0) lines.push(`  %% phases: ${phased.join(", ")}`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -95,16 +102,22 @@ export function serializeMermaidJourney(diagram: DiagramModel, ctx: KindContext)
     return step.flowShape !== "start" && !isGuidedEnd(step);
   });
   const clean = (text: string) => text.replace(/[:\n]/g, " ").replace(/\s+/g, " ").trim();
-  const lines = [
-    "journey",
-    `  title ${clean(diagram.name)}`,
-    `  section ${clean(diagram.name)}`,
-    ...tasks.map((id) => {
-      const step = reading.steps.get(id)!;
-      const score = experienceOf(step) ?? 3;
-      return `    ${clean(step.name)}: ${score}: ${clean(laneName.get(reading.laneOf.get(id)!) ?? "")}`;
-    }),
-  ];
+  const { phases, phaseOf } = guidedPhases(reading);
+  const lines = ["journey", `  title ${clean(diagram.name)}`];
+  // One section per phase along the path; the diagram's name before the first phase.
+  let section: number | undefined | null = null;
+  for (const id of tasks) {
+    const phase = phaseOf.get(id);
+    if (phase !== section) {
+      lines.push(`  section ${clean(phase === undefined ? diagram.name : phases[phase]!.name)}`);
+      section = phase;
+    }
+    const step = reading.steps.get(id)!;
+    const score = experienceOf(step) ?? 3;
+    lines.push(
+      `    ${clean(step.name)}: ${score}: ${clean(laneName.get(reading.laneOf.get(id)!) ?? "")}`,
+    );
+  }
   const branches = path.reduce(
     (n, id) =>
       n +

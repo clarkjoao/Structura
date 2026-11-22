@@ -3704,7 +3704,7 @@
         "openHint": "Escrever a jornada como texto",
         "title": "Escrever como texto",
         "placeholder": "Cliente: Escolhe produto\nApp: Gera cobrança Pix\n? Pagou\n  sim -> API: Confirma pagamento\n  não -> @Escolhe produto\n! Concluído",
-        "syntax": "Raia: passo · ? decisão · rótulo -> saída · ! fim · -> @Passo volta · # comentário · ou cole Mermaid (swimlane-beta, flowchart, journey)",
+        "syntax": "Raia: passo · ? decisão · rótulo -> saída · ! fim · -> @Passo volta · ## fase · # comentário · ou cole Mermaid (swimlane-beta, flowchart, journey)",
         "apply": "Aplicar",
         "applyHint": "Ctrl/Cmd + Enter",
         "copy": "Copiar como texto",
@@ -3735,7 +3735,8 @@
           "mermaidTaskWithoutScore": "Uma tarefa de jornada é “Tarefa: nota: atores”.",
           "mermaidScoreOutOfRange": "A nota deve ser de 1 a 5 (aqui: {{score}}).",
           "mermaidEmpty": "Este bloco Mermaid não tem passos.",
-          "experienceOutOfRange": "A nota de experiência deve ser de 1 a 5 (aqui: {{score}})."
+          "experienceOutOfRange": "A nota de experiência deve ser de 1 a 5 (aqui: {{score}}).",
+          "phaseWithoutStep": "“##” começa uma fase, mas nenhum passo vem depois."
         }
       },
       "inspector": {
@@ -3765,13 +3766,18 @@
         },
         "exportedFrom": "Exportado do Structura: {{name}}",
         "journeyLeftOut": "Só o caminho principal: {{branches}} desvio(s) e {{steps}} outro(s) passo(s) ficaram de fora.",
-        "summarySetAside": "Passos: {{steps}} · Decisões: {{decisions}} · Raias novas: {{lanes}} · Ainda não guardadas: {{sections}} fase(s)",
         "copyAs": "Copiar como…"
       },
       "experience": {
         "field": "Experiência",
         "painPoints_one": "{{count}} ponto de dor",
         "painPoints_other": "{{count}} pontos de dor"
+      },
+      "phases": {
+        "field": "Fase",
+        "startHere": "Começar uma fase aqui",
+        "inPhase": "Em: {{name}} — digite para começar uma fase aqui",
+        "noPhase": "Sem fase — digite para começar uma aqui"
       }
     },
     "toolbar": {

@@ -3704,7 +3704,7 @@
         "openHint": "Write the journey as text",
         "title": "Write as text",
         "placeholder": "Customer: Chooses product\nApp: Creates Pix charge\n? Paid\n  yes -> API: Confirms payment\n  no -> @Chooses product\n! Done",
-        "syntax": "Lane: step · ? decision · label -> exit · ! end · -> @Step jumps back · # comment · or paste Mermaid (swimlane-beta, flowchart, journey)",
+        "syntax": "Lane: step · ? decision · label -> exit · ! end · -> @Step jumps back · ## phase · # comment · or paste Mermaid (swimlane-beta, flowchart, journey)",
         "apply": "Apply",
         "applyHint": "Ctrl/Cmd + Enter",
         "copy": "Copy as text",
@@ -3735,7 +3735,8 @@
           "mermaidTaskWithoutScore": "A journey task is “Task: score: actors”.",
           "mermaidScoreOutOfRange": "The score must be 1 to 5 (here: {{score}}).",
           "mermaidEmpty": "This Mermaid block has no steps.",
-          "experienceOutOfRange": "The experience score must be 1 to 5 (here: {{score}})."
+          "experienceOutOfRange": "The experience score must be 1 to 5 (here: {{score}}).",
+          "phaseWithoutStep": "“##” starts a phase, but no step follows it."
         }
       },
       "inspector": {
@@ -3765,13 +3766,18 @@
         },
         "exportedFrom": "Exported from Structura: {{name}}",
         "journeyLeftOut": "Main path only: {{branches}} branch(es) and {{steps}} other step(s) left out.",
-        "summarySetAside": "Steps: {{steps}} · Decisions: {{decisions}} · New lanes: {{lanes}} · Not kept yet: {{sections}} section(s)",
         "copyAs": "Copy as…"
       },
       "experience": {
         "field": "Experience",
         "painPoints_one": "{{count}} pain point",
         "painPoints_other": "{{count}} pain points"
+      },
+      "phases": {
+        "field": "Phase",
+        "startHere": "Start a phase here",
+        "inPhase": "In: {{name}} — type to start a new phase here",
+        "noPhase": "No phase — type to start one here"
       }
     },
     "toolbar": {

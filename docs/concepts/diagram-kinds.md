@@ -47,6 +47,7 @@ app and embed-editor entries). With nothing registered, the editor is exactly th
 | `elementActions` | per-element actions in the context menu and the canvas's floating bar |
 | `insert` | where a palette element goes in kind mode |
 | `textCapture` | writing the diagram as text: `build` (text → edit), `serialize`, `syntax` |
+| `overlay` | what the kind draws over the canvas in kind mode, in flow coordinates: a header band with segments, separators across the lanes, a curve (guided: phases and the emotion curve); never an element |
 | `focusMarkers` | marker code the mode bar counts and walks in order (guided: `painPoint`) |
 | `inspector` | the kind's own inspector tab (e.g. guided "Journey"): `tab`, `hiddenFields` (Details fields hidden in kind mode), `sections(ctx, id)` as data — choice groups and label fields whose `run`/`commit` return a kind outcome; `null` means no tab for that element |
 
@@ -193,6 +194,18 @@ Guided stores the **experience score** there (`experience`, 1–5; spec `guided-
 - **Setting it.** The Journey tab's "Experience" choice sets or clears the score.
 - **On the canvas.** `checks` emits a badge marker (`KindMarker.badge`), which the host draws as a pill through `data-kind-badge` attributes. Scores 1–2 are `painPoint`s: the badge is red and the node is outlined. The mode bar counts them (`focusMarkers`), and each click selects the next pain point in reading order.
 - **In text.** The outline writes the score as `Step [n]`. In Mermaid, journey scores are imported and exported, and the swimlane export keeps scores in a `%% experience: s1=2` comment that the import reads back.
+
+### Phases
+
+A guided step may **start a phase** (`kindProps.phase`, spec `guided-journey-phases`). The phase runs through the following steps until the next start. Where branches converge, a step takes the latest phase among its forward predecessors. Retries carry no phase back. The starts are the phase list: there is nothing else to keep in sync.
+
+- **Arrangement.** The arrangement gives each phase contiguous columns after every column of the phases before it. It does this with floors in the longest-path layering, relaxed until stable. Phase starts are part of `arrangeKey`.
+- **The band.** The overlay draws a header band beside the lanes, above them or left of them on top-to-bottom diagrams. It has one segment per phase (a click selects the phase's start) and dashed separators across the lanes. It also draws the **emotion curve**: the scored steps on the main path, high for 5 and low for 1, with red dots for pain points. Nothing moves to make room, and freehand mode hides the band.
+- **Editing and text.**
+  - The Journey tab's "Phase" field starts or clears a phase.
+  - The outline writes `## Name` on its own line before the step that starts a phase.
+  - Mermaid `journey` sections are phase starts, both ways.
+  - The swimlane export keeps phases in a `%% phases: s1=Discover` comment.
 
 ## Known limits
 

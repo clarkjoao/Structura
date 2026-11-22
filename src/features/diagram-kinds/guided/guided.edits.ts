@@ -670,3 +670,18 @@ export function guidedSetExperience(
     select: stepId,
   };
 }
+
+/** A phase starts at the step (a name), or no longer does (null / empty) — spec guided-journey-phases. */
+export function guidedSetPhaseStart(
+  diagram: DiagramModel,
+  stepId: string,
+  name: string | null,
+): GuidedOutcome {
+  const step = readGuided(diagram).steps.get(stepId);
+  if (!step) return refused("selectOneStep");
+  const clean = name?.trim() || null;
+  return {
+    edit: { update: [{ id: stepId, kindProps: mergedKindProps(step, "phase", clean) }] },
+    select: stepId,
+  };
+}

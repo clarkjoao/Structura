@@ -93,12 +93,12 @@ describe("KindTextPanel", () => {
     vi.useRealTimers();
   });
 
-  it("says what a Mermaid journey sets aside", () => {
+  it("summarises a Mermaid journey like an outline", () => {
     setup();
     const input = open();
     type(input, "journey\n  section A\n  Um: 2: Eu\n  section B\n  Dois: 4: Eu");
-    expect(screen.getByTestId("kind-text-summary")).toHaveTextContent(/2.*2/);
-    expect(screen.getByTestId("kind-text-summary").textContent).toMatch(/section|fase/i);
+    expect(screen.getByTestId("kind-text-summary")).toHaveTextContent(/2/);
+    expect(screen.getByTestId("kind-text-apply")).not.toBeDisabled();
     vi.useRealTimers();
   });
 

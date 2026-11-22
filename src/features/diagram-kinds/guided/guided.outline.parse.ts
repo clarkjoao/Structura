@@ -33,7 +33,9 @@ export type OutlineErrorCode =
   | "mermaidScoreOutOfRange"
   | "mermaidEmpty"
   // Experience (spec guided-journey-experience)
-  | "experienceOutOfRange";
+  | "experienceOutOfRange"
+  // Phases (spec guided-journey-phases)
+  | "phaseWithoutStep";
 
 export interface OutlineError {
   /** 1-based. */
@@ -93,8 +95,6 @@ export interface ParsedOutline {
   lanes: string[];
   /** Steps, decisions and ends (jumps are not nodes). */
   nodeCount: number;
-  /** What the source holds that the journey does not keep yet (a Mermaid journey's sections, scores). */
-  setAside?: { sections: number; scores: number };
 }
 
 type Token =
@@ -175,8 +175,22 @@ function parseItemText(
 
 function tokenize(text: string, errors: OutlineError[]): Token[] {
   const tokens: Token[] = [];
+  // `## Phase` starts a phase at the next step written (spec guided-journey-phases).
+  let pendingPhase: { name: string; line: number } | null = null;
+  const takePhase = (item: OutlineItem | null) => {
+    if (!pendingPhase || !item || item.kind === "jump" || item.kind === "fanout") return;
+    item.phase = pendingPhase.name;
+    pendingPhase = null;
+  };
   text.split(/\r?\n/).forEach((raw, index) => {
     const line = index + 1;
+    const heading = /^##\s+(.+?)\s*$/.exec(raw.trim());
+    if (heading) {
+      const name = unescape(heading[1]!.replace(/\s+#(?:\s.*)?$/, "")).trim();
+      if (pendingPhase) errors.push({ line: pendingPhase.line, code: "phaseWithoutStep" });
+      pendingPhase = name ? { name, line } : null;
+      return;
+    }
     const content = stripComment(raw.trim());
     if (!content) return;
     const indent = indentOf(raw);
@@ -203,13 +217,17 @@ function tokenize(text: string, errors: OutlineError[]): Token[] {
           errors.push({ line, code: "emptyName" });
         }
       }
+      takePhase(inline);
       tokens.push({ kind: "exit", line, indent, label, inline });
       return;
     }
     const { lane, item } = parseItemText(content, line, errors);
+    takePhase(item);
     if (item) tokens.push({ kind: "item", line, indent, item });
     else if (lane) tokens.push({ kind: "lane", line, indent, lane });
   });
+  if (pendingPhase)
+    errors.push({ line: (pendingPhase as { line: number }).line, code: "phaseWithoutStep" });
   return tokens;
 }
 

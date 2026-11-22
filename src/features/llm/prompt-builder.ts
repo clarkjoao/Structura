@@ -218,6 +218,7 @@ function buildJourneyOutlineSection(currentOutline: string): string {
     "- Lines indented under an exit continue that branch. After a decision's block, the next line at the decision's indentation is reached from every branch still open.",
     "- `! Name` — an end step (closes the path). `-> @Step name` — jumps back to a step written earlier or already in the diagram (closes the path).",
     "- `Lane:` alone declares a lane. `#` starts a comment. Write `\\:` for a colon inside a name.",
+    "- `## Phase name` on its own line starts a phase (a stage of the journey, e.g. Discover, Buy, Use) at the next step; the steps after it stay in that phase until the next `##`. Use phases to group meeting notes into stages.",
     "- A step line may end with `[1]`…`[5]`: the customer's experience at that step (1 = very bad, 5 = great). Steps scored 1–2 are pain points: point them out when asked, and propose steps that remove them.",
     "The outline is added after `afterStepId` when given, else at the end of the journey (before its end step). Keep step names short, as verbs.",
     "",

@@ -225,7 +225,10 @@ describe("Mermaid swimlane import", () => {
 describe("Mermaid journey import", () => {
   it("builds the tasks in order, in the first actor's lane, and counts what it sets aside", () => {
     const parsed = parseMermaid(JOURNEY_DOC);
-    expect(parsed.setAside).toEqual({ sections: 2, scores: 0 });
+    expect(parsed.items.flatMap((i) => (i.kind === "step" && i.phase ? [i.phase] : []))).toEqual([
+      "Go to work",
+      "Go home",
+    ]);
     const h = guidedHarness();
     add(h, JOURNEY_DOC, [h.startId]);
     expect(h.sequence()).toEqual([

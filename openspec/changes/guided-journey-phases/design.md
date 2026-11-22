@@ -1,5 +1,11 @@
 ## Context
 
+Implementation notes:
+
+- The overlay host memoises on the snapshot and the node layouts.
+- The forward graph (back-edges removed, with a topological order) lives in `guided.model.ts`, shared by the phases and the arrangement.
+- The steps before the first phase start form a group of their own. A separator also falls between them and the first phase.
+
 - **Arrangement.** The guided arrangement (`guided.arrange.ts`) runs a longest-path layering of the step graph, back-edges left out. It derives columns from the layers and lane bands from the lanes. It is deterministic and runs after every structural edit and every `arrangeKey` change.
 - **Part 2** adds two things this change builds on:
   - `kindProps` on components;
@@ -37,7 +43,7 @@ Floors depend on layers and layers depend on floors, so the arrangement relaxes.
 
 Determinism holds, because each pass is deterministic. `guidedArrangeKey` adds the phase starts, so renaming a phase or moving its start re-arranges the diagram.
 
-The band needs room. When a phase exists, the lanes start `PHASE_BAND` (56 px) further along the cross axis. That is below the band on LR diagrams, and right of it on TB diagrams. This uses the same "bands start where the lanes already start" rule, so the diagram does not jump on later edits.
+The band needs no room from the arrangement. It is drawn in the empty space just beyond the first lane, so nothing moves when the first phase is created.
 
 ### 3. A generic overlay, drawn by the host
 
@@ -91,5 +97,5 @@ The Phase section is a `labels` section with one item:
 ## Risks
 
 - **Relaxation cost on large journeys.** Mitigation: phases are few, and floors converge in at most `phases + 1` passes. There is a test on a 300-step journey with 6 phases.
-- **The band shifts the lanes** when the first phase is created. This is a one-time move, documented in the spec scenario. Later edits keep the band.
+- **The band may overlap content placed above the lanes** (free text, notes). It is translucent, and such annotations are rare in guided mode.
 - **The overlay is not exported to PNG/SVG** in this change; the export takes elements only. A follow-up can add it.

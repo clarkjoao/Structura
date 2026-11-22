@@ -66,6 +66,7 @@ describe("the guided Journey tab", () => {
     expect(kindInspectorFor(d(), startId)?.sections.map((s) => s.id)).toEqual([
       "lane",
       "stepKind",
+      "phase",
       "experience",
     ]);
     expect(kindInspectorFor(d(), lanes[0]!)).toBeNull();

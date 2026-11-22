@@ -23,17 +23,11 @@ export const guidedTextCapture: KindTextCapture = {
         })),
       };
     const { added, ...outcome } = built;
-    const aside = parsed.setAside;
-    const setAside = !!aside && aside.sections + aside.scores > 0;
     return {
       ...outcome,
       nodeCount: added.steps,
-      summary: {
-        key: setAside
-          ? "diagramKinds.guided.mermaid.summarySetAside"
-          : "diagramKinds.guided.outline.summary",
-      },
-      summaryValues: { ...added, ...(setAside ? aside : {}) },
+      summary: { key: "diagramKinds.guided.outline.summary" },
+      summaryValues: { ...added },
     };
   },
   serialize: serializeGuidedOutline,

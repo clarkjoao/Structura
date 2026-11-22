@@ -104,6 +104,13 @@ describe("the assistant's journey outline", () => {
     const prompt = buildSystemPrompt("ctx", "en", currentJourneyOutline());
     expect(prompt).toContain("Cobra [2]");
     expect(prompt).toContain("pain points");
+    applyDiagramPatchAction({
+      type: "ADD_JOURNEY_OUTLINE",
+      payload: { outline: "## Comprar\nAPI: Confirma" },
+    });
+    const withPhase = buildSystemPrompt("ctx", "en", currentJourneyOutline());
+    expect(withPhase).toMatch(/## Comprar\n.*Confirma/);
+    expect(withPhase).toContain("`## Phase name`");
   });
 
   it("offers the tool and the current journey only on a guided diagram", () => {

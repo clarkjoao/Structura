@@ -7,6 +7,7 @@ import { guidedElementActions } from "./guided.elementActions";
 import { guidedConforms } from "./guided.conforms";
 import { guidedTextCapture } from "./guided.outline";
 import { guidedInspector } from "./guided.inspector";
+import { guidedOverlay } from "./guided.overlay";
 import { deriveGuidedFlow, guidedFlowId } from "./guided.derive";
 import {
   guidedAddBranch,
@@ -139,6 +140,7 @@ export const guidedKind: DiagramKindDescriptor = {
   elementActions: guidedElementActions,
   textCapture: guidedTextCapture,
   inspector: guidedInspector,
+  overlay: guidedOverlay,
   focusMarkers: { code: "painPoint", label: { key: "diagramKinds.guided.experience.painPoints" } },
   insert: (ctx, element) =>
     guidedInsertStep(ctx.diagram, ctx.selectedIds, element.flowShape ?? "rectangle", ctx),

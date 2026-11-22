@@ -442,12 +442,14 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
   const errors: OutlineError[] = [];
   const items: OutlineItem[] = [];
   const lanes: string[] = [];
-  let sections = 0;
+  // A section starts a phase at the next task (spec guided-journey-phases).
+  let pendingPhase: string | null = null;
   let lane: string | null = null;
   for (const { line, text } of lines.slice(1)) {
     if (/^title\b/.test(text) || IGNORED.test(text)) continue;
-    if (/^section\b/.test(text)) {
-      sections += 1;
+    const section = /^section\b\s*(.*)$/.exec(text);
+    if (section) {
+      pendingPhase = section[1]!.trim() || null;
       continue;
     }
     const task = /^(.+?)\s*:\s*([^:]*?)\s*(?::\s*(.*))?$/.exec(text);
@@ -469,12 +471,21 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
     if (actor && !lanes.some((l) => l.toLowerCase() === actor.toLowerCase())) lanes.push(actor);
     // A task without actors stays with the one before it.
     lane = actor ?? lane;
-    items.push({ kind: "step", line, name: task[1]!.trim(), lane, exits: [], experience: score });
+    items.push({
+      kind: "step",
+      line,
+      name: task[1]!.trim(),
+      lane,
+      exits: [],
+      experience: score,
+      ...(pendingPhase && { phase: pendingPhase }),
+    });
+    pendingPhase = null;
   }
   if (errors.length === 0 && items.length === 0)
     errors.push({ line: lines[0]?.line ?? 1, code: "mermaidEmpty" });
   if (errors.length > 0) return { items: [], errors, lanes: [], nodeCount: 0 };
-  return { items, errors, lanes, nodeCount: items.length, setAside: { sections, scores: 0 } };
+  return { items, errors, lanes, nodeCount: items.length };
 }
 
 /** A Mermaid block as the outline AST; check `isMermaid` first. */

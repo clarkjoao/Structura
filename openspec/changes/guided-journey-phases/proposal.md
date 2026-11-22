@@ -39,6 +39,7 @@ Implement part 2 first.
     - Export: one `section` per phase along the main path, in place of the single section named after the diagram.
   - **Mermaid swimlane:** the export adds `%% phases: s1=Discover, s4=Buy`, which the import reads back.
 - **The assistant.** The outline section documents `##`, so it can structure a journey from meeting notes into phases.
+- **No more set-aside counts.** Scores (part 2) and sections are both stored now, so the "not kept yet" summary from part 1 is removed.
 
 ## Capabilities
 

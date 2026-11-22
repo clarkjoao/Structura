@@ -5,7 +5,9 @@ import {
   guidedMoveStepToLane,
   guidedMoveStepToNewLane,
   guidedSetExperience,
+  guidedSetPhaseStart,
 } from "./guided.edits";
+import { guidedPhases, phaseStartOf } from "./guided.phases";
 import {
   EXPERIENCE_FACES,
   GUIDED_STEP_SHAPES,
@@ -66,6 +68,30 @@ export const guidedInspector: KindInspector = {
         })),
       },
     ];
+    // The phase it is in, and the phase it starts (spec guided-journey-phases).
+    const { phases, phaseOf } = guidedPhases(reading);
+    const inPhase = phaseOf.get(elementId);
+    sections.push({
+      type: "labels",
+      id: "phase",
+      label: { key: "diagramKinds.guided.phases.field" },
+      items: [
+        {
+          id: "phase-start",
+          title: { key: "diagramKinds.guided.phases.startHere" },
+          label: phaseStartOf(step) ?? "",
+          placeholder:
+            inPhase !== undefined
+              ? {
+                  text: ctx.t("diagramKinds.guided.phases.inPhase", {
+                    name: phases[inPhase]!.name,
+                  }),
+                }
+              : { key: "diagramKinds.guided.phases.noPhase" },
+          commit: (name) => guidedSetPhaseStart(ctx.diagram, elementId, name),
+        },
+      ],
+    });
     const score = experienceOf(step);
     sections.push({
       type: "choice",

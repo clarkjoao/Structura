@@ -209,3 +209,52 @@ export function readingOrder(reading: GuidedReading): string[] {
   for (const id of reading.steps.keys()) visit(id);
   return order;
 }
+
+/**
+ * The step graph without its back-edges, in discovery order. The walk starts
+ * at the start step, then at any step it did not reach, in their current order
+ * along the axis (so a step not yet connected stays roughly where it is drawn).
+ * An edge to a step on the walk's current path is a back-edge (a retry).
+ * `topo` is a topological order of the forward edges (Kahn, discovery order).
+ */
+export function forwardGraph(
+  reading: GuidedReading,
+  alongOf: (id: string) => number = () => 0,
+): { forward: Map<string, string[]>; order: Map<string, number>; topo: string[] } {
+  const order = new Map<string, number>();
+  const forward = new Map<string, string[]>();
+  const onPath = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (id: string) => {
+    visited.add(id);
+    onPath.add(id);
+    order.set(id, order.size);
+    for (const exit of reading.outgoing.get(id) ?? []) {
+      if (onPath.has(exit.targetId)) continue; // a retry
+      forward.set(id, [...(forward.get(id) ?? []), exit.targetId]);
+      if (!visited.has(exit.targetId)) visit(exit.targetId);
+    }
+    onPath.delete(id);
+  };
+  const roots = [
+    ...reading.starts.map((s) => s.id),
+    ...[...reading.steps.keys()].sort((a, b) => alongOf(a) - alongOf(b) || a.localeCompare(b)),
+  ];
+  for (const root of roots) if (!visited.has(root)) visit(root);
+
+  const byOrder = [...order.keys()].sort((a, b) => order.get(a)! - order.get(b)!);
+  const indegree = new Map<string, number>(byOrder.map((id) => [id, 0]));
+  for (const targets of forward.values())
+    for (const t of targets) indegree.set(t, (indegree.get(t) ?? 0) + 1);
+  const queue = byOrder.filter((id) => indegree.get(id) === 0);
+  const topo: string[] = [];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    topo.push(id);
+    for (const target of forward.get(id) ?? []) {
+      indegree.set(target, indegree.get(target)! - 1);
+      if (indegree.get(target) === 0) queue.push(target);
+    }
+  }
+  return { forward, order, topo };
+}
