@@ -218,6 +218,7 @@ function buildJourneyOutlineSection(currentOutline: string): string {
     "- Lines indented under an exit continue that branch. After a decision's block, the next line at the decision's indentation is reached from every branch still open.",
     "- `! Name` — an end step (closes the path). `-> @Step name` — jumps back to a step written earlier or already in the diagram (closes the path).",
     "- `Lane:` alone declares a lane. `#` starts a comment. Write `\\:` for a colon inside a name.",
+    "- A step line may end with `[1]`…`[5]`: the customer's experience at that step (1 = very bad, 5 = great). Steps scored 1–2 are pain points: point them out when asked, and propose steps that remove them.",
     "The outline is added after `afterStepId` when given, else at the end of the journey (before its end step). Keep step names short, as verbs.",
     "",
     "The same tool also accepts a Mermaid block instead of an outline: `swimlane-beta` (or `flowchart`/`graph`) with one top-level `subgraph` per lane, `{}` for decisions and `-->|label|` for labelled exits; or `journey` (tasks in order, lane = first actor). Use it when the user gives Mermaid or asks for it.",

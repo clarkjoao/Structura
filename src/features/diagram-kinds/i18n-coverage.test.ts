@@ -86,6 +86,7 @@ const DYNAMIC: Record<string, readonly string[]> = {
     "mermaidTaskWithoutScore",
     "mermaidScoreOutOfRange",
     "mermaidEmpty",
+    "experienceOutOfRange",
   ],
 };
 

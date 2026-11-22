@@ -8,6 +8,7 @@ import { editKindFreehand, returnToKind } from "@/features/diagram-kinds/actions
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import type { KindIssue } from "@/features/diagram-kinds/kind.types";
 import { KindTextPanel } from "./KindTextPanel";
+import { kindMarkersFor } from "@/features/diagram-kinds/markers";
 
 interface KindModeBarProps {
   diagram: Diagram | DiagramModel;
@@ -15,6 +16,8 @@ interface KindModeBarProps {
   canEdit: boolean;
   /** Selects an element an issue names. */
   onSelectElement: (id: string) => void;
+  /** Selects an element and brings it into view (the kind's focus markers). */
+  onFocusElement?: (id: string) => void;
 }
 
 /**
@@ -33,9 +36,15 @@ const ACTION =
  * the diagram, and the way across — "Edit freehand", and back to the kind when
  * the diagram still conforms; or why a kind is not available here.
  */
-export function KindModeBar({ diagram, canEdit, onSelectElement }: KindModeBarProps) {
+export function KindModeBar({
+  diagram,
+  canEdit,
+  onSelectElement,
+  onFocusElement,
+}: KindModeBarProps) {
   const { t } = useTranslation();
   const [issues, setIssues] = useState<KindIssue[] | null>(null);
+  const [focusIndex, setFocusIndex] = useState(-1);
   const policy = resolveKindPolicy(diagram);
   if (policy.type === "freehand") return null;
 
@@ -49,6 +58,13 @@ export function KindModeBar({ diagram, canEdit, onSelectElement }: KindModeBarPr
   }
 
   const kindName = resolveKindText(policy.descriptor.label);
+  // Markers worth walking (guided: pain points), in the order the kind's checks give them.
+  const focus = policy.type === "kind" ? policy.descriptor.focusMarkers : undefined;
+  const focusIds = focus
+    ? kindMarkersFor(diagram as DiagramModel)
+        .markers.filter((m) => m.code === focus.code && !m.onConnection)
+        .map((m) => m.elementId)
+    : [];
 
   if (policy.type === "kind") {
     return (
@@ -66,6 +82,20 @@ export function KindModeBar({ diagram, canEdit, onSelectElement }: KindModeBarPr
         </button>
         {policy.descriptor.textCapture && (
           <KindTextPanel capture={policy.descriptor.textCapture} disabled={!canEdit} />
+        )}
+        {focus && focusIds.length > 0 && (
+          <button
+            type="button"
+            className={`${ACTION} inline-flex items-center gap-1 border-red-500/40 text-red-700 dark:text-red-300`}
+            onClick={() => {
+              const next = (focusIndex + 1) % focusIds.length;
+              setFocusIndex(next);
+              (onFocusElement ?? onSelectElement)(focusIds[next]!);
+            }}
+            data-testid="kind-focus-markers"
+          >
+            {resolveKindText(focus.label, { count: focusIds.length })}
+          </button>
         )}
       </div>
     );

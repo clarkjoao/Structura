@@ -1,3 +1,4 @@
+import { isKindProps } from "@/features/diagram/model/diagram-kind";
 import type {
   Component,
   Connection,
@@ -66,6 +67,9 @@ function applyKindEditInDraft(state: AppState, d: Diagram, edit: KindEdit): Kind
     if (update.flowShape !== undefined && isProcessNodeComponent(component)) {
       component.flowShape = update.flowShape;
     }
+    if (update.kindProps === null) delete component.kindProps;
+    else if (update.kindProps !== undefined && isKindProps(update.kindProps))
+      component.kindProps = update.kindProps;
   }
 
   // Nodes first, in order, so a node may name an earlier one of the batch as its parent.
@@ -87,6 +91,8 @@ function applyKindEditInDraft(state: AppState, d: Diagram, edit: KindEdit): Kind
       node.flowShape,
     );
     if (node.description !== undefined) component.description = node.description;
+    if (node.kindProps !== undefined && isKindProps(node.kindProps))
+      component.kindProps = node.kindProps;
     if (isPanelComponent(component) && component.panelKind === PanelKind.Swimlane) {
       component.swimlane = {
         ...component.swimlane,

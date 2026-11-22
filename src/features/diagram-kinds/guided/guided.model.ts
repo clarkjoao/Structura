@@ -87,6 +87,20 @@ export function isGuidedEnd(component: Component): boolean {
   return isProcessNodeComponent(component) && component.flowShape === "end";
 }
 
+/** A step's experience score (spec guided-journey-experience): 1–5, or null. */
+export function experienceOf(component: Component): number | null {
+  const value = component.kindProps?.experience;
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 5
+    ? value
+    : null;
+}
+
+/** Scores 1–2: where the journey hurts. */
+export const isPainPoint = (score: number | null): boolean => score !== null && score <= 2;
+
+/** The face shown for a score. */
+export const EXPERIENCE_FACES = ["😞", "🙁", "😐", "🙂", "😄"] as const;
+
 /** Free text and notes: allowed anywhere, ignored by the guided rules. */
 export function isGuidedAnnotation(component: Component): boolean {
   return isTextType(component.type) || component.type === COMPONENT_TYPE_NOTE;
@@ -179,4 +193,19 @@ export function neighbourLane(
   const index = reading.lanes.findIndex((lane) => lane.id === laneId);
   if (index < 0) return null;
   return reading.lanes[index + offset] ?? null;
+}
+
+/** Steps in reading order: depth-first from the start along each exit, then the rest. */
+export function readingOrder(reading: GuidedReading): string[] {
+  const order: string[] = [];
+  const seen = new Set<string>();
+  const visit = (id: string) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    order.push(id);
+    for (const exit of reading.outgoing.get(id) ?? []) visit(exit.targetId);
+  };
+  for (const start of reading.starts) visit(start.id);
+  for (const id of reading.steps.keys()) visit(id);
+  return order;
 }

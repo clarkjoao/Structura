@@ -77,3 +77,30 @@ describe("KindModeBar", () => {
     expect(screen.getByRole("status").textContent).toContain("acme:value-stream");
   });
 });
+
+describe("KindModeBar pain points", () => {
+  it("counts the pain points and walks them in reading order", async () => {
+    const { applyKindTextBuild, buildKindText } = await import("./kindTextCapture");
+    const id = guided();
+    const built = buildKindText("Usuário: A [2]\nB [5]\nC [1]");
+    if (!built || !("edit" in built)) throw new Error("no build");
+    applyKindTextBuild(built);
+    const steps = Object.values(useDiagramStore.getState().diagrams[id]!.snapshot.components);
+    const idOf = (name: string) => steps.find((s) => s.name === name)!.id;
+    const onFocus = vi.fn();
+    render(
+      <KindModeBar
+        diagram={useDiagramStore.getState().diagrams[id]!}
+        canEdit
+        onSelectElement={vi.fn()}
+        onFocusElement={onFocus}
+      />,
+    );
+    const chip = screen.getByTestId("kind-focus-markers");
+    expect(chip).toHaveTextContent(/2 (pain points|pontos de dor)/);
+    fireEvent.click(chip);
+    fireEvent.click(chip);
+    fireEvent.click(chip);
+    expect(onFocus.mock.calls.map((c) => c[0])).toEqual([idOf("A"), idOf("C"), idOf("A")]);
+  });
+});

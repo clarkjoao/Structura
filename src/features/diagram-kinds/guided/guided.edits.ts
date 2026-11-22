@@ -1,6 +1,7 @@
 import type { FlowNodeShape } from "@/features/diagram/model/component.types";
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindEdit, KindNodeInput } from "@/features/diagram/model/kind-edit.types";
+import type { JsonObject, JsonValue } from "@/features/diagram/model/diagram-kind";
 import { PanelKind } from "@/features/diagram/enums";
 import {
   COMPONENT_TYPE_PANEL,
@@ -638,6 +639,34 @@ export function guidedMoveStepToNewLane(
           : { id: stepId, parent: lane.key, x: alongAbs - lane.x, y: across },
       ],
     },
+    select: stepId,
+  };
+}
+
+// ─── Kind data on a step ────────────────────────────────────────────────────
+
+/** The step's `kindProps` with `key` set to `value`, or removed when null (empty → null). */
+function mergedKindProps(
+  step: { kindProps?: JsonObject },
+  key: string,
+  value: JsonValue | null,
+): JsonObject | null {
+  const next: JsonObject = { ...(step.kindProps ?? {}) };
+  if (value === null) delete next[key];
+  else next[key] = value;
+  return Object.keys(next).length > 0 ? next : null;
+}
+
+/** The step's experience score (1–5), or none (spec guided-journey-experience). */
+export function guidedSetExperience(
+  diagram: DiagramModel,
+  stepId: string,
+  score: number | null,
+): GuidedOutcome {
+  const step = readGuided(diagram).steps.get(stepId);
+  if (!step) return refused("selectOneStep");
+  return {
+    edit: { update: [{ id: stepId, kindProps: mergedKindProps(step, "experience", score) }] },
     select: stepId,
   };
 }

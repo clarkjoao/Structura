@@ -42,3 +42,38 @@ describe("normalizeImportedDiagram — diagram kind", () => {
     expect(out.name).toBe("kept");
   });
 });
+
+describe("normalizeImportedDiagram — element kind data", () => {
+  const withProps = (kindProps: unknown) =>
+    imported({
+      snapshot: {
+        components: {
+          a: {
+            id: "a",
+            name: "A",
+            description: "",
+            parentId: null,
+            type: "process-node",
+            flowShape: "rectangle",
+            kindProps,
+          },
+        },
+        connections: {},
+        flows: {},
+        iconLibrary: {},
+      },
+    });
+
+  it("keeps well-formed kindProps and drops a malformed or oversized one", () => {
+    expect(
+      normalizeImportedDiagram(withProps({ experience: 2 })).snapshot.components.a!.kindProps,
+    ).toEqual({ experience: 2 });
+    expect("kindProps" in normalizeImportedDiagram(withProps("x")).snapshot.components.a!).toBe(
+      false,
+    );
+    expect(
+      "kindProps" in
+        normalizeImportedDiagram(withProps({ big: "x".repeat(5000) })).snapshot.components.a!,
+    ).toBe(false);
+  });
+});

@@ -22,6 +22,50 @@ const HEADER = /^(swimlane-beta|flowchart|graph|journey)\b/;
 const IGNORED =
   /^(classDef|class|style|linkStyle|click|accTitle|accDescr|title|direction)\b|^accDescr\s*\{/;
 
+/**
+ * Structura's own `%%` comment lines (Mermaid ignores them): `%% experience: s1=2, s3=5`
+ * and `%% phases: s1=Discover`, keyed by Mermaid node id.
+ */
+interface MermaidDirectives {
+  experience: Map<string, number>;
+  phases: Map<string, string>;
+}
+
+function readDirectives(text: string): MermaidDirectives {
+  const directives: MermaidDirectives = { experience: new Map(), phases: new Map() };
+  for (const raw of text.split(/\r?\n/)) {
+    const match = /^\s*%%\s*(experience|phases)\s*:\s*(.*)$/.exec(raw);
+    if (!match) continue;
+    for (const pair of match[2]!.split(",")) {
+      const eq = pair.indexOf("=");
+      if (eq < 0) continue;
+      const id = pair.slice(0, eq).trim();
+      const value = pair.slice(eq + 1).trim();
+      if (!id || !value) continue;
+      if (match[1] === "experience") {
+        const score = Number(value);
+        if (Number.isInteger(score) && score >= 1 && score <= 5)
+          directives.experience.set(id, score);
+      } else directives.phases.set(id, value);
+    }
+  }
+  return directives;
+}
+
+/** Applies the directives to the nodes they name, through each node's `ref`. */
+function applyDirectives(items: OutlineItem[], directives: MermaidDirectives): void {
+  for (const item of items) {
+    if (item.kind === "jump") continue;
+    if (item.kind !== "fanout" && item.ref) {
+      const score = directives.experience.get(item.ref);
+      if (score !== undefined) item.experience = score;
+      const phase = directives.phases.get(item.ref);
+      if (phase !== undefined) item.phase = phase;
+    }
+    for (const exit of item.exits) applyDirectives(exit.body, directives);
+  }
+}
+
 /** The block's lines with their 1-based numbers: fences, front matter and comments removed. */
 function meaningfulLines(text: string): Array<{ line: number; text: string }> {
   const out: Array<{ line: number; text: string }> = [];
@@ -229,7 +273,10 @@ function nodeShape(shape: string | null): {
   }
 }
 
-function parseFlowchart(lines: Array<{ line: number; text: string }>): ParsedOutline {
+function parseFlowchart(
+  lines: Array<{ line: number; text: string }>,
+  directives: MermaidDirectives,
+): ParsedOutline {
   const errors: OutlineError[] = [];
   const nodes = new Map<string, MermaidNode>();
   const edges: MermaidEdge[] = [];
@@ -302,6 +349,7 @@ function parseFlowchart(lines: Array<{ line: number; text: string }>): ParsedOut
   if (errors.length > 0) return { items: [], errors, lanes: [], nodeCount: 0 };
 
   const items = toOutline([...nodes.values()], edges);
+  applyDirectives(items, directives);
   return { items, errors, lanes, nodeCount: countNodes(items) };
 }
 
@@ -395,7 +443,6 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
   const items: OutlineItem[] = [];
   const lanes: string[] = [];
   let sections = 0;
-  let scores = 0;
   let lane: string | null = null;
   for (const { line, text } of lines.slice(1)) {
     if (/^title\b/.test(text) || IGNORED.test(text)) continue;
@@ -413,7 +460,7 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
       errors.push({ line, code: "mermaidScoreOutOfRange", values: { score: task[2] } });
       continue;
     }
-    scores += 1;
+
     const actor =
       (task[3] ?? "")
         .split(",")
@@ -422,17 +469,17 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
     if (actor && !lanes.some((l) => l.toLowerCase() === actor.toLowerCase())) lanes.push(actor);
     // A task without actors stays with the one before it.
     lane = actor ?? lane;
-    items.push({ kind: "step", line, name: task[1]!.trim(), lane, exits: [] });
+    items.push({ kind: "step", line, name: task[1]!.trim(), lane, exits: [], experience: score });
   }
   if (errors.length === 0 && items.length === 0)
     errors.push({ line: lines[0]?.line ?? 1, code: "mermaidEmpty" });
   if (errors.length > 0) return { items: [], errors, lanes: [], nodeCount: 0 };
-  return { items, errors, lanes, nodeCount: items.length, setAside: { sections, scores } };
+  return { items, errors, lanes, nodeCount: items.length, setAside: { sections, scores: 0 } };
 }
 
 /** A Mermaid block as the outline AST; check `isMermaid` first. */
 export function parseMermaid(text: string): ParsedOutline {
   const lines = meaningfulLines(text);
   const header = HEADER.exec(lines[0]?.text ?? "")?.[1];
-  return header === "journey" ? parseJourney(lines) : parseFlowchart(lines);
+  return header === "journey" ? parseJourney(lines) : parseFlowchart(lines, readDirectives(text));
 }

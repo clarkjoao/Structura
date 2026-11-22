@@ -1,3 +1,4 @@
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import { kindMarkersFor } from "@/features/diagram-kinds/markers";
 import { interactionOf, resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import { useMemo, useRef, type CSSProperties } from "react";
@@ -142,8 +143,15 @@ function isSameBuiltFlowNode(a: Node, b: Node): boolean {
     a.extent === b.extent &&
     a.hidden === b.hidden &&
     a.style === b.style &&
-    a.data === b.data
+    a.data === b.data &&
+    badgeKey(a) === badgeKey(b)
   );
+}
+
+/** A kind's badge rides on data attributes (`kindBadgeOverlay`). */
+function badgeKey(node: Node): string {
+  const attrs = node.domAttributes as Record<string, unknown> | undefined;
+  return `${String(attrs?.["data-kind-badge"] ?? "")}|${String(attrs?.["data-kind-badge-tone"] ?? "")}`;
 }
 
 function shallowEqualIgnoringFunctions(
@@ -213,6 +221,12 @@ export function useCanvasNodes({
 }: UseCanvasNodesParams): Node[] {
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
+  // The kind's markers, subscribed to on their own: a property-only edit (an experience score)
+  // changes a badge without changing anything else the nodes are built from. Memoised per
+  // snapshot, so the selector returns the same object while nothing changed.
+  const kindMarkerSets = useDiagramStore((state) =>
+    kindMarkersFor(diagram ? (state.diagrams[diagram.id] ?? diagram) : null),
+  );
 
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
@@ -366,7 +380,7 @@ export function useCanvasNodes({
     const flowModeActive = ctx.isPlaying || ctx.isRecording;
     // A kind that places its elements (ADR-0014) takes drag and resize away from every node.
     const kindPlaced = !interactionOf(resolveKindPolicy(diagram)).nodesDraggable;
-    const kindMarked = kindMarkersFor(diagram).nodes;
+    const { nodes: kindMarked, badges: kindBadges } = kindMarkerSets;
 
     const visibleIds = new Set(view.nodes.map((viewNode) => viewNode.component.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
@@ -405,6 +419,7 @@ export function useCanvasNodes({
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
         kindPlaced,
         kindMarked: kindMarked.has(comp.id),
+        kindBadge: kindBadges.get(comp.id),
         versionConflict: conflictIds.has(comp.id),
         ...(versionChanges?.added.components.has(comp.id)
           ? { versionChange: "added" as const }
@@ -485,6 +500,7 @@ export function useCanvasNodes({
     return allNodes;
   }, [
     diagramVersionState,
+    kindMarkerSets,
     dataCtx,
     nodeCtxPlayback,
     view,

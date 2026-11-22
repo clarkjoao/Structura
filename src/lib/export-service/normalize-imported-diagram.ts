@@ -3,7 +3,7 @@ import { logger } from "@/lib/core/logger";
 import { useIconStore } from "@/features/diagram";
 import { sanitizeDiagramSvg, sanitizeSvgIcon } from "./sanitize-diagram-svg";
 import { normalizeLayoutSettings } from "@/features/diagram/model/layout-settings";
-import { sanitizeKindFields } from "@/features/diagram/model/diagram-kind";
+import { isKindProps, sanitizeKindFields } from "@/features/diagram/model/diagram-kind";
 
 function normalizeOneIconEntry(key: string, value: unknown): IconDefinition | null {
   if (!value || typeof value !== "object") return null;
@@ -118,6 +118,12 @@ export function normalizeImportedDiagram(untrusted: Diagram): Diagram {
     const comp = components[key];
     if (comp && !("customIconId" in comp)) {
       components[key] = { ...comp, customIconId: undefined };
+    }
+    // An element's kind data is kept only when it is well-formed JSON within the cap.
+    const current = components[key];
+    if (current && "kindProps" in current && !isKindProps(current.kindProps)) {
+      const { kindProps: _dropped, ...clean } = current;
+      components[key] = clean as typeof current;
     }
   }
   // The reading direction and the arrange settings arrive from a file, a

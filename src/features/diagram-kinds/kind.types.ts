@@ -66,6 +66,17 @@ export interface KindMarker {
   /** Whether it sits on a connection rather than a node. */
   onConnection: boolean;
   message: KindText;
+  values?: Record<string, string | number>;
+  /** A small badge the host draws on the node (spec guided-journey-experience). */
+  badge?: KindBadge;
+  /** Whether the element is outlined as checked. Absent means yes; a badge-only marker says no. */
+  marks?: boolean;
+}
+
+/** A badge on a node: short text and a tone. */
+export interface KindBadge {
+  text: string;
+  tone: "danger" | "warning" | "success" | "neutral";
 }
 
 /** What a kind sees: read access and services, never the store. */
@@ -278,6 +289,11 @@ export interface DiagramKindDescriptor {
   ) => KindCommandOutcome | { refused: KindText };
   /** Writing the diagram as text: offered while in kind mode. */
   textCapture?: KindTextCapture;
+  /**
+   * Markers worth walking (guided: pain points): the mode bar counts those with this code
+   * and selects them in turn, in the order `checks` returns them. `label` takes `count`.
+   */
+  focusMarkers?: { code: string; label: KindText };
   /** The kind's inspector tab, offered while in kind mode. */
   inspector?: KindInspector;
   /** Whether a component may be dragged/inserted where it is, beyond `elements` (lanes, notes). */

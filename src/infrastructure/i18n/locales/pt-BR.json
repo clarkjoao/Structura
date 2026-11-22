@@ -3675,7 +3675,9 @@
       },
       "checks": {
         "unlabelledExit": "Esta saída não tem rótulo",
-        "openEnd": "Este caminho não chega a um fim"
+        "openEnd": "Este caminho não chega a um fim",
+        "painPoint": "Ponto de dor (experiência {{score}})",
+        "experience": "Experiência {{score}}"
       },
       "issues": {
         "noLane": "Não há nenhuma raia.",
@@ -3732,7 +3734,8 @@
           "mermaidUnreadable": "Não foi possível ler esta linha como nós e setas.",
           "mermaidTaskWithoutScore": "Uma tarefa de jornada é “Tarefa: nota: atores”.",
           "mermaidScoreOutOfRange": "A nota deve ser de 1 a 5 (aqui: {{score}}).",
-          "mermaidEmpty": "Este bloco Mermaid não tem passos."
+          "mermaidEmpty": "Este bloco Mermaid não tem passos.",
+          "experienceOutOfRange": "A nota de experiência deve ser de 1 a 5 (aqui: {{score}})."
         }
       },
       "inspector": {
@@ -3762,8 +3765,13 @@
         },
         "exportedFrom": "Exportado do Structura: {{name}}",
         "journeyLeftOut": "Só o caminho principal: {{branches}} desvio(s) e {{steps}} outro(s) passo(s) ficaram de fora.",
-        "summarySetAside": "Passos: {{steps}} · Decisões: {{decisions}} · Raias novas: {{lanes}} · Ainda não guardadas: {{sections}} fase(s), {{scores}} nota(s)",
+        "summarySetAside": "Passos: {{steps}} · Decisões: {{decisions}} · Raias novas: {{lanes}} · Ainda não guardadas: {{sections}} fase(s)",
         "copyAs": "Copiar como…"
+      },
+      "experience": {
+        "field": "Experiência",
+        "painPoints_one": "{{count}} ponto de dor",
+        "painPoints_other": "{{count}} pontos de dor"
       }
     },
     "toolbar": {

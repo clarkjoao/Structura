@@ -63,7 +63,11 @@ describe("the guided Journey tab", () => {
 
   it("is offered for a step only, and only in kind mode", () => {
     const { d, startId, lanes } = setup();
-    expect(kindInspectorFor(d(), startId)?.sections.map((s) => s.id)).toEqual(["lane", "stepKind"]);
+    expect(kindInspectorFor(d(), startId)?.sections.map((s) => s.id)).toEqual([
+      "lane",
+      "stepKind",
+      "experience",
+    ]);
     expect(kindInspectorFor(d(), lanes[0]!)).toBeNull();
     useDiagramStore.getState().setKindMode(d().id, "freehand");
     expect(kindInspectorFor(d(), startId)).toBeNull();

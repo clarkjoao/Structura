@@ -229,6 +229,7 @@ export function buildOutline(
         flowShape: shape,
         name: item.name || ctx.t("diagramKinds.guided.endName"),
         parent: laneKey,
+        ...(item.experience !== undefined && { kindProps: { experience: item.experience } }),
         x: vertical ? across : along,
         y: vertical ? along : across,
         width: size.width,

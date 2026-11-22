@@ -1,7 +1,18 @@
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import type { KindInspector, KindInspectorSection } from "../kind.types";
-import { guidedChangeShape, guidedMoveStepToLane, guidedMoveStepToNewLane } from "./guided.edits";
-import { GUIDED_STEP_SHAPES, isGuidedDecision, readGuided } from "./guided.model";
+import {
+  guidedChangeShape,
+  guidedMoveStepToLane,
+  guidedMoveStepToNewLane,
+  guidedSetExperience,
+} from "./guided.edits";
+import {
+  EXPERIENCE_FACES,
+  GUIDED_STEP_SHAPES,
+  experienceOf,
+  isGuidedDecision,
+  readGuided,
+} from "./guided.model";
 
 /**
  * The guided "Journey" tab (spec guided-editing-surfaces): the step's lane,
@@ -55,6 +66,26 @@ export const guidedInspector: KindInspector = {
         })),
       },
     ];
+    const score = experienceOf(step);
+    sections.push({
+      type: "choice",
+      id: "experience",
+      label: { key: "diagramKinds.guided.experience.field" },
+      options: [
+        {
+          id: "none",
+          label: { text: "—" },
+          selected: score === null,
+          run: () => guidedSetExperience(ctx.diagram, elementId, null),
+        },
+        ...EXPERIENCE_FACES.map((face, index) => ({
+          id: String(index + 1),
+          label: { text: `${face} ${index + 1}` },
+          selected: score === index + 1,
+          run: () => guidedSetExperience(ctx.diagram, elementId, index + 1),
+        })),
+      ],
+    });
     if (isGuidedDecision(step)) {
       sections.push({
         type: "labels",

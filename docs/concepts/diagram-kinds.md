@@ -47,6 +47,7 @@ app and embed-editor entries). With nothing registered, the editor is exactly th
 | `elementActions` | per-element actions in the context menu and the canvas's floating bar |
 | `insert` | where a palette element goes in kind mode |
 | `textCapture` | writing the diagram as text: `build` (text → edit), `serialize`, `syntax` |
+| `focusMarkers` | marker code the mode bar counts and walks in order (guided: `painPoint`) |
 | `inspector` | the kind's own inspector tab (e.g. guided "Journey"): `tab`, `hiddenFields` (Details fields hidden in kind mode), `sections(ctx, id)` as data — choice groups and label fields whose `run`/`commit` return a kind outcome; `null` means no tab for that element |
 
 A kind reads the world only through `KindContext` (`context.ts`), which provides `t`, the element
@@ -182,6 +183,16 @@ The same capture reads Mermaid (`guided.mermaid.*.ts`, spec `guided-mermaid-inte
 - **Copy as.** The Text panel's menu offers Text (the outline), Mermaid (lanes) and Mermaid (journey):
   - Mermaid (lanes) writes `swimlane-beta`, which reads back into the same journey.
   - Mermaid (journey) writes the main path (each decision's first exit in reading order) with a neutral score of 3, and a comment on what was left out.
+
+### Element kind data and the experience score
+
+`Component.kindProps` is data the diagram's kind owns on one element: JSON, at most 4 096 characters, dropped on import when malformed. It is kept in freehand mode, and it is copied, versioned and removed with the element. A kind edit sets it with `add[].kindProps` and replaces or clears it with `update[].kindProps` (`null` clears it).
+
+Guided stores the **experience score** there (`experience`, 1–5; spec `guided-journey-experience`):
+
+- **Setting it.** The Journey tab's "Experience" choice sets or clears the score.
+- **On the canvas.** `checks` emits a badge marker (`KindMarker.badge`), which the host draws as a pill through `data-kind-badge` attributes. Scores 1–2 are `painPoint`s: the badge is red and the node is outlined. The mode bar counts them (`focusMarkers`), and each click selects the next pain point in reading order.
+- **In text.** The outline writes the score as `Step [n]`. In Mermaid, journey scores are imported and exported, and the swimlane export keeps scores in a `%% experience: s1=2` comment that the import reads back.
 
 ## Known limits
 

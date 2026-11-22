@@ -22,6 +22,8 @@ export interface KindNodeInput {
   flowShape?: FlowNodeShape;
   /** For a swimlane: its orientation and accent. Its header label follows `name`. */
   lane?: { orientation?: "horizontal" | "vertical"; color?: string };
+  /** The kind's data on the element (`Component.kindProps`). */
+  kindProps?: JsonObject;
   /** Relative to the parent, like React Flow child nodes. */
   x: number;
   y: number;
@@ -39,7 +41,14 @@ export interface KindEdgeInput {
 export interface KindEdit {
   remove?: string[];
   disconnect?: string[];
-  update?: Array<{ id: string; name?: string; description?: string; flowShape?: FlowNodeShape }>;
+  update?: Array<{
+    id: string;
+    name?: string;
+    description?: string;
+    flowShape?: FlowNodeShape;
+    /** Replaces the element's kind data; null clears it. */
+    kindProps?: JsonObject | null;
+  }>;
   move?: Array<{ id: string; x: number; y: number; width?: number; height?: number }>;
   add?: KindNodeInput[];
   connect?: KindEdgeInput[];

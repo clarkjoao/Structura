@@ -31,7 +31,9 @@ export type OutlineErrorCode =
   | "mermaidUnreadable"
   | "mermaidTaskWithoutScore"
   | "mermaidScoreOutOfRange"
-  | "mermaidEmpty";
+  | "mermaidEmpty"
+  // Experience (spec guided-journey-experience)
+  | "experienceOutOfRange";
 
 export interface OutlineError {
   /** 1-based. */
@@ -51,6 +53,10 @@ export interface OutlineNode {
   ref?: string;
   /** The shape, when the source says more than step / decision / end. */
   shape?: FlowNodeShape;
+  /** The experience score, 1–5 (`[n]` at the end of the line). */
+  experience?: number;
+  /** A phase starts at this node (spec guided-journey-phases). */
+  phase?: string;
 }
 
 export interface OutlineJump {
@@ -141,6 +147,15 @@ function parseItemText(
     rest = text.slice(colon.index + 1).trim();
     if (!rest) return { lane, item: null };
   }
+  // `[n]` at the end: the experience score (spec guided-journey-experience).
+  let experience: number | undefined;
+  const scored = /\s*\[(\d+)\]\s*$/.exec(mask(rest));
+  if (scored) {
+    const score = Number(scored[1]);
+    if (score >= 1 && score <= 5) experience = score;
+    else errors.push({ line, code: "experienceOutOfRange", values: { score: scored[1]! } });
+    rest = rest.slice(0, scored.index);
+  }
   let kind: OutlineNode["kind"] = "step";
   const restMasked = mask(rest);
   if (restMasked.startsWith("?")) {
@@ -152,7 +167,10 @@ function parseItemText(
   }
   const name = unescape(rest).trim();
   if (!name && kind !== "end") errors.push({ line, code: "emptyName" });
-  return { lane, item: { kind, line, name, lane, exits: [] } };
+  return {
+    lane,
+    item: { kind, line, name, lane, exits: [], ...(experience !== undefined && { experience }) },
+  };
 }
 
 function tokenize(text: string, errors: OutlineError[]): Token[] {
@@ -346,11 +364,15 @@ export function parseOutline(text: string): ParsedOutline {
 
 /** Escapes text so the parser reads it back as a name (or an exit label). */
 export function escapeOutlineText(text: string): string {
-  return text
-    .replace(/\\/g, "\\\\")
-    .replace(/:/g, "\\:")
-    .replace(/->/g, "\\->")
-    .replace(/→/g, "\\→")
-    .replace(/(\s)#/g, "$1\\#")
-    .replace(/^([?!#@])/, "\\$1");
+  return (
+    text
+      .replace(/\\/g, "\\\\")
+      .replace(/:/g, "\\:")
+      .replace(/->/g, "\\->")
+      .replace(/→/g, "\\→")
+      .replace(/(\s)#/g, "$1\\#")
+      .replace(/^([?!#@])/, "\\$1")
+      // A name ending like a score keeps its brackets.
+      .replace(/\[(\d+)\]$/, "\\[$1]")
+  );
 }

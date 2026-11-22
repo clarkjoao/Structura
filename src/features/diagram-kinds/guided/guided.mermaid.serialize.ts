@@ -1,28 +1,19 @@
 import type { FlowNodeShape } from "@/features/diagram/model/component.types";
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindContext } from "../kind.types";
-import { isGuidedDecision, isGuidedEnd, readGuided, type GuidedReading } from "./guided.model";
+import {
+  experienceOf,
+  isGuidedDecision,
+  isGuidedEnd,
+  readGuided,
+  readingOrder,
+} from "./guided.model";
 
 /**
  * A guided journey written as Mermaid (spec guided-mermaid-interchange). The
  * swimlane form keeps everything and reads back to the same journey; the
  * journey form keeps the main path, as Mermaid's `journey` has no branches.
  */
-
-/** Steps in reading order: depth-first from the start along each exit, then the rest. */
-function readingOrder(reading: GuidedReading): string[] {
-  const order: string[] = [];
-  const seen = new Set<string>();
-  const visit = (id: string) => {
-    if (seen.has(id)) return;
-    seen.add(id);
-    order.push(id);
-    for (const exit of reading.outgoing.get(id) ?? []) visit(exit.targetId);
-  };
-  for (const start of reading.starts) visit(start.id);
-  for (const id of reading.steps.keys()) visit(id);
-  return order;
-}
 
 /** A label as Mermaid reads it back: quoted when it holds syntax. */
 function label(text: string): string {
@@ -78,10 +69,16 @@ export function serializeMermaidSwimlane(diagram: DiagramModel, ctx: KindContext
       );
     }
   }
+  // Mermaid has no score: Structura keeps it in a comment it reads back.
+  const scored = order.flatMap((stepId) => {
+    const score = experienceOf(reading.steps.get(stepId)!);
+    return score ? [`${idOf.get(stepId)}=${score}`] : [];
+  });
+  if (scored.length > 0) lines.push(`  %% experience: ${scored.join(", ")}`);
   return `${lines.join("\n")}\n`;
 }
 
-/** The main path (each decision's first exit) as a Mermaid journey, with a neutral score. */
+/** The main path (each decision's first exit) as a Mermaid journey; an unscored step is a neutral 3. */
 export function serializeMermaidJourney(diagram: DiagramModel, ctx: KindContext): string {
   const reading = readGuided(diagram);
   const laneName = new Map(reading.lanes.map((lane) => [lane.id, lane.name]));
@@ -104,7 +101,8 @@ export function serializeMermaidJourney(diagram: DiagramModel, ctx: KindContext)
     `  section ${clean(diagram.name)}`,
     ...tasks.map((id) => {
       const step = reading.steps.get(id)!;
-      return `    ${clean(step.name)}: 3: ${clean(laneName.get(reading.laneOf.get(id)!) ?? "")}`;
+      const score = experienceOf(step) ?? 3;
+      return `    ${clean(step.name)}: ${score}: ${clean(laneName.get(reading.laneOf.get(id)!) ?? "")}`;
     }),
   ];
   const branches = path.reduce(

@@ -237,6 +237,7 @@ const Canvas = (props: CanvasProps = {}) => {
                 <KindModeBar
                   diagram={diagram}
                   canEdit={canEditStructure}
+                  onFocusElement={handleSearchSelect}
                   onSelectElement={(id) => {
                     if (resolvedSnapshot.components[id]) {
                       visualState.setSelectedEdgeId(null);

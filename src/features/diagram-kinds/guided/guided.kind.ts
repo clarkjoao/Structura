@@ -139,6 +139,7 @@ export const guidedKind: DiagramKindDescriptor = {
   elementActions: guidedElementActions,
   textCapture: guidedTextCapture,
   inspector: guidedInspector,
+  focusMarkers: { code: "painPoint", label: { key: "diagramKinds.guided.experience.painPoints" } },
   insert: (ctx, element) =>
     guidedInsertStep(ctx.diagram, ctx.selectedIds, element.flowShape ?? "rectangle", ctx),
   isAnnotation: (component: Component) => isGuidedAnnotation(component) || isGuidedLane(component),

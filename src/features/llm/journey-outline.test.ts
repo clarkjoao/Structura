@@ -95,6 +95,17 @@ describe("the assistant's journey outline", () => {
     expect(buildSystemPrompt("ctx", "en", currentJourneyOutline())).toContain("swimlane-beta");
   });
 
+  it("carries the experience scores in the current journey and documents them", () => {
+    guided();
+    applyDiagramPatchAction({
+      type: "ADD_JOURNEY_OUTLINE",
+      payload: { outline: "API: Cobra [2]" },
+    });
+    const prompt = buildSystemPrompt("ctx", "en", currentJourneyOutline());
+    expect(prompt).toContain("Cobra [2]");
+    expect(prompt).toContain("pain points");
+  });
+
   it("offers the tool and the current journey only on a guided diagram", () => {
     guided();
     const outline = currentJourneyOutline();

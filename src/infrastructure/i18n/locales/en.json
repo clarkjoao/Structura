@@ -3675,7 +3675,9 @@
       },
       "checks": {
         "unlabelledExit": "This exit has no label",
-        "openEnd": "This path does not reach an end"
+        "openEnd": "This path does not reach an end",
+        "painPoint": "Pain point (experience {{score}})",
+        "experience": "Experience {{score}}"
       },
       "issues": {
         "noLane": "There is no lane.",
@@ -3732,7 +3734,8 @@
           "mermaidUnreadable": "This line cannot be read as nodes and arrows.",
           "mermaidTaskWithoutScore": "A journey task is “Task: score: actors”.",
           "mermaidScoreOutOfRange": "The score must be 1 to 5 (here: {{score}}).",
-          "mermaidEmpty": "This Mermaid block has no steps."
+          "mermaidEmpty": "This Mermaid block has no steps.",
+          "experienceOutOfRange": "The experience score must be 1 to 5 (here: {{score}})."
         }
       },
       "inspector": {
@@ -3762,8 +3765,13 @@
         },
         "exportedFrom": "Exported from Structura: {{name}}",
         "journeyLeftOut": "Main path only: {{branches}} branch(es) and {{steps}} other step(s) left out.",
-        "summarySetAside": "Steps: {{steps}} · Decisions: {{decisions}} · New lanes: {{lanes}} · Not kept yet: {{sections}} section(s), {{scores}} score(s)",
+        "summarySetAside": "Steps: {{steps}} · Decisions: {{decisions}} · New lanes: {{lanes}} · Not kept yet: {{sections}} section(s)",
         "copyAs": "Copy as…"
+      },
+      "experience": {
+        "field": "Experience",
+        "painPoints_one": "{{count}} pain point",
+        "painPoints_other": "{{count}} pain points"
       }
     },
     "toolbar": {

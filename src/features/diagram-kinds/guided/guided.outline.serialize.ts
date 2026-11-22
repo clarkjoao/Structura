@@ -1,6 +1,6 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindContext } from "../kind.types";
-import { isGuidedDecision, isGuidedEnd, readGuided } from "./guided.model";
+import { experienceOf, isGuidedDecision, isGuidedEnd, readGuided } from "./guided.model";
 import { escapeOutlineText } from "./guided.outline.parse";
 
 const INDENT = "  ";
@@ -40,7 +40,8 @@ export function serializeGuidedOutline(diagram: DiagramModel, ctx: KindContext):
         lane !== currentLane ? `${escapeOutlineText(laneName.get(lane!) ?? "")}: ` : "";
       currentLane = lane;
       const marker = isGuidedDecision(step) ? "? " : isGuidedEnd(step) ? "! " : "";
-      lines.push(`${ind}${prefix}${lanePrefix}${marker}${nameOf(id)}`);
+      const score = experienceOf(step);
+      lines.push(`${ind}${prefix}${lanePrefix}${marker}${nameOf(id)}${score ? ` [${score}]` : ""}`);
       const exits = reading.outgoing.get(id) ?? [];
       const underExit = prefix !== "";
       // What follows an exit's first line goes one level deeper than the exit.

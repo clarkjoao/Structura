@@ -189,3 +189,38 @@ describe("setKindMode", () => {
     expect("kindMode" in store.getState().diagrams[d.id]!).toBe(false);
   });
 });
+
+describe("applyKindEdit — element kind data", () => {
+  it("sets kindProps on add, replaces and clears it on update, and undoes", () => {
+    const { store, diagramId } = seed();
+    const comp = () =>
+      Object.values(store.getState().diagrams[diagramId]!.snapshot.components).find(
+        (c) => c.name === "Step",
+      )!;
+    store.getState().applyKindEdit({
+      add: [
+        {
+          key: "s",
+          type: "process-node",
+          name: "Step",
+          parent: null,
+          x: 0,
+          y: 0,
+          kindProps: { experience: 2 },
+        },
+      ],
+    });
+    expect(comp().kindProps).toEqual({ experience: 2 });
+    store.setState({ _lastUndoRedoTimestamp: 0 });
+    store
+      .getState()
+      .applyKindEdit({ update: [{ id: comp().id, kindProps: { experience: 5, phase: "Buy" } }] });
+    expect(comp().kindProps).toEqual({ experience: 5, phase: "Buy" });
+    store.setState({ _lastUndoRedoTimestamp: 0 });
+    store.getState().applyKindEdit({ update: [{ id: comp().id, kindProps: null }] });
+    expect("kindProps" in comp()).toBe(false);
+    store.setState({ _lastUndoRedoTimestamp: 0 });
+    store.getState().undo();
+    expect(comp().kindProps).toEqual({ experience: 5, phase: "Buy" });
+  });
+});

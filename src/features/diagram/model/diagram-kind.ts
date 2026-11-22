@@ -106,6 +106,22 @@ function isKindData(value: unknown): value is JsonObject {
   }
 }
 
+/** Serialized size cap of an element's `kindProps`. */
+const KIND_PROPS_MAX_CHARS = 4 * 1024;
+
+/**
+ * An element's kind data (`Component.kindProps`): a plain JSON object no larger
+ * than {@link KIND_PROPS_MAX_CHARS} serialized, owned by the diagram's kind.
+ */
+export function isKindProps(value: unknown): value is JsonObject {
+  if (!isJsonObjectAt(value, 0)) return false;
+  try {
+    return JSON.stringify(value).length <= KIND_PROPS_MAX_CHARS;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * The kind fields of an untrusted source (a file, a folder, a link, a peer),
  * keeping what is well-formed and dropping the rest. A well-formed kind is kept
