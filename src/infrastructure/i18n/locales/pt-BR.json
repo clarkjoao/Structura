@@ -3775,14 +3775,19 @@
       },
       "phases": {
         "field": "Fase",
-        "startHere": "Começar uma fase aqui",
-        "inPhase": "Em: {{name}} — digite para começar uma fase aqui",
-        "noPhase": "Sem fase — digite para começar uma aqui"
+        "noPhase": "Sem fase",
+        "create": "Criar fase “{{name}}”",
+        "continuePrevious": "Continuar a fase anterior",
+        "remove": "Remover a fase"
       }
     },
     "toolbar": {
       "more": "Mais",
       "moreMenu": "Mais elementos deste tipo"
+    },
+    "inspector": {
+      "selectSearch": "Busque ou digite um nome novo…",
+      "selectEmpty": "Nada ainda — digite um nome para criar"
     }
   }
 }

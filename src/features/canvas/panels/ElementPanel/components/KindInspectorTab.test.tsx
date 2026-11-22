@@ -26,6 +26,14 @@ vi.mock("@/features/collaboration/hooks/useElementLocks", () => ({
 
 registerBuiltInDiagramKinds();
 
+// The phase select (cmdk) measures its list.
+(globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver ??= class {
+  observe(): void {}
+  unobserve(): void {}
+  disconnect(): void {}
+};
+Element.prototype.scrollIntoView ??= () => undefined;
+
 function setup() {
   const { diagram, selectId } = createKindDiagram({
     name: `Journey ${Math.random()}`,
@@ -96,6 +104,26 @@ describe("the guided Journey tab", () => {
     useDiagramStore.getState().undo();
     expect(readGuided(d()).lanes).toHaveLength(2);
     expect(readGuided(d()).laneOf.get(startId)).toBe(lanes[0]);
+  });
+
+  it("creates a phase from the phase select, then offers it to pick", () => {
+    const { d, startId } = setup();
+    const { unmount } = renderTab(d, startId);
+    const field = screen.getByTestId("kind-inspector-phase");
+    expect(field.textContent).toBe("No phase");
+    fireEvent.click(field);
+    fireEvent.change(screen.getByTestId("kind-inspector-phase-search"), {
+      target: { value: "Discover" },
+    });
+    fireEvent.click(screen.getByTestId("kind-inspector-phase-create"));
+    expect(readGuided(d()).steps.get(startId)!.kindProps?.phase).toBe("Discover");
+    unmount();
+    renderTab(d, startId);
+    expect(screen.getByTestId("kind-inspector-phase").textContent).toBe("Discover");
+    fireEvent.click(screen.getByTestId("kind-inspector-phase"));
+    expect(screen.getByRole("option", { name: "Discover" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("option", { name: "Remove the phase" }));
+    expect(readGuided(d()).steps.get(startId)!.kindProps?.phase).toBeUndefined();
   });
 
   it("leaves a step's floating bar without the lane menu", () => {

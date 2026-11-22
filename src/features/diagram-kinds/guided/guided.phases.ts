@@ -25,34 +25,53 @@ export interface GuidedPhases {
   phases: GuidedPhase[];
   /** Each step's phase index; absent: before every start. */
   phaseOf: Map<string, number>;
+  /** The phase each step would be in without its own start; absent: none. */
+  inheritedOf: Map<string, number>;
 }
 
 /**
  * Each step's phase: its own start, else the latest phase among its forward
- * predecessors (back-edges, the retries, do not carry a phase back).
+ * predecessors (back-edges, the retries, do not carry a phase back). A start
+ * naming the phase the step is already in opens nothing: it continues it.
  */
 export function guidedPhases(
   reading: GuidedReading,
   graph: Pick<ReturnType<typeof forwardGraph>, "forward" | "topo"> = forwardGraph(reading),
 ): GuidedPhases {
-  const phases: GuidedPhase[] = [];
+  const starts: GuidedPhase[] = [];
   const indexOfStart = new Map<string, number>();
   for (const id of readingOrder(reading)) {
     const name = phaseStartOf(reading.steps.get(id)!);
     if (!name) continue;
-    indexOfStart.set(id, phases.length);
-    phases.push({ name, startId: id });
+    indexOfStart.set(id, starts.length);
+    starts.push({ name, startId: id });
   }
   const phaseOf = new Map<string, number>();
-  if (phases.length === 0) return { phases, phaseOf };
-  const inherited = new Map<string, number>();
+  const inheritedOf = new Map<string, number>();
+  if (starts.length === 0) return { phases: starts, phaseOf, inheritedOf };
   for (const id of graph.topo) {
-    const own = indexOfStart.get(id);
-    const phase = own ?? inherited.get(id);
+    const inherited = inheritedOf.get(id);
+    let phase = indexOfStart.get(id) ?? inherited;
     if (phase === undefined) continue;
+    if (inherited !== undefined && starts[phase]!.name === starts[inherited]!.name)
+      phase = inherited;
     phaseOf.set(id, phase);
     for (const target of graph.forward.get(id) ?? [])
-      inherited.set(target, Math.max(inherited.get(target) ?? -1, phase));
+      inheritedOf.set(target, Math.max(inheritedOf.get(target) ?? -1, phase));
   }
-  return { phases, phaseOf };
+  // Keep only the starts that open a phase, in reading order, and renumber.
+  const used = [...new Set(phaseOf.values())].sort((a, b) => a - b);
+  if (used.length === starts.length) return { phases: starts, phaseOf, inheritedOf };
+  const renumber = new Map(used.map((index, i) => [index, i]));
+  const remap = (map: Map<string, number>) => {
+    for (const [id, index] of map) map.set(id, renumber.get(index)!);
+  };
+  remap(phaseOf);
+  remap(inheritedOf);
+  return { phases: used.map((index) => starts[index]!), phaseOf, inheritedOf };
+}
+
+/** The distinct phase names, in reading order of their first start. */
+export function guidedPhaseNames(phases: readonly GuidedPhase[]): string[] {
+  return [...new Set(phases.map((phase) => phase.name))];
 }

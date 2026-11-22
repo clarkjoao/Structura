@@ -7,7 +7,7 @@ import {
   guidedSetExperience,
   guidedSetPhaseStart,
 } from "./guided.edits";
-import { guidedPhases, phaseStartOf } from "./guided.phases";
+import { guidedPhaseNames, guidedPhases, phaseStartOf } from "./guided.phases";
 import { GUIDED_STEP_SHAPES, experienceOf, isGuidedDecision, readGuided } from "./guided.model";
 
 /**
@@ -63,28 +63,35 @@ export const guidedInspector: KindInspector = {
       },
     ];
     // The phase it is in, and the phase it starts (spec guided-journey-phases).
-    const { phases, phaseOf } = guidedPhases(reading);
-    const inPhase = phaseOf.get(elementId);
+    // Picking a phase: continue it when the step already inherits it, else start it here.
+    const { phases, phaseOf, inheritedOf } = guidedPhases(reading);
+    const current = phases[phaseOf.get(elementId) ?? -1]?.name ?? null;
+    const inherited = phases[inheritedOf.get(elementId) ?? -1]?.name ?? null;
+    const pick = (name: string) =>
+      guidedSetPhaseStart(ctx.diagram, elementId, name.trim() === inherited ? "" : name);
+    const startsHere = phaseStartOf(step) !== null && current !== inherited;
     sections.push({
-      type: "labels",
+      type: "select",
       id: "phase",
       label: { key: "diagramKinds.guided.phases.field" },
-      items: [
-        {
-          id: "phase-start",
-          title: { key: "diagramKinds.guided.phases.startHere" },
-          label: phaseStartOf(step) ?? "",
-          placeholder:
-            inPhase !== undefined
-              ? {
-                  text: ctx.t("diagramKinds.guided.phases.inPhase", {
-                    name: phases[inPhase]!.name,
-                  }),
-                }
-              : { key: "diagramKinds.guided.phases.noPhase" },
-          commit: (name) => guidedSetPhaseStart(ctx.diagram, elementId, name),
+      value: current,
+      placeholder: { key: "diagramKinds.guided.phases.noPhase" },
+      options: guidedPhaseNames(phases).map((name) => ({
+        id: name,
+        label: name,
+        selected: name === current,
+        run: () => pick(name),
+      })),
+      create: { label: { key: "diagramKinds.guided.phases.create" }, run: pick },
+      ...(startsHere && {
+        clear: {
+          label:
+            inherited !== null
+              ? { key: "diagramKinds.guided.phases.continuePrevious" }
+              : { key: "diagramKinds.guided.phases.remove" },
+          run: () => guidedSetPhaseStart(ctx.diagram, elementId, ""),
         },
-      ],
+      }),
     });
     const score = experienceOf(step);
     sections.push({

@@ -10,7 +10,7 @@ Journey phases: a step can start a named phase that runs on until the next start
 
 A guided step MAY start a phase, stored as `kindProps.phase` (a non-empty name). Every step SHALL belong to the phase of the nearest phase start found by walking back through its first forward predecessor in reading order. A step that starts a phase belongs to that phase. A step with no start behind it SHALL belong to no phase. When a step's forward predecessors are in different phases, the step SHALL take the latest of them in phase order.
 
-The phases SHALL be the phase starts, in reading order. A name SHALL be trimmed. Two starts MAY share a name; they are still two phases.
+The phases SHALL be the phase starts, in reading order. A name SHALL be trimmed. A start that names the phase its step already inherits SHALL open no new phase: the step continues it. Two separate starts MAY share a name (a journey returning to an earlier phase); they are still two phases.
 
 #### Scenario: Inherited phase
 
@@ -59,23 +59,27 @@ When at least one step has an experience score, the header band SHALL draw the e
 
 Unscored steps SHALL be skipped, without breaking the line.
 
-#### Scenario: A dip
+#### Scenario: A ### Requirement: The Journey tab picks or creates a phase
 
-- **WHEN** three steps on the main path are scored 5, 1 and 4
-- **THEN** the curve goes high, low and high again, with a red dot at the middle step
+The Journey tab SHALL show a "Phase" select holding the phase the step is in (or "No phase"). Opening it SHALL list the journey's phase names, each once, in reading order, with the current one marked, and SHALL filter them by the typed text. Typed text that names no phase SHALL offer "Create phase “name”".
 
-### Requirement: The Journey tab shows and starts phases
+- Picking a phase, or creating one, SHALL make the step start it; picking the phase the step already inherits SHALL instead clear the step's own start.
+- When the step starts its own phase, the select SHALL also offer "Continue the previous phase" (or "Remove the phase" when nothing comes before it), which clears the start.
 
-The Journey tab SHALL show a "Phase" section:
+Each choice SHALL be one undo step.
 
-- the phase the step is in (or "No phase");
-- a field "Start a phase here", holding the step's own start name.
+#### Scenario: Creating a phase from the tab
 
-Committing a name SHALL set the start, and committing an empty field SHALL clear it, each as one undo step.
+- **WHEN** the author types "Pay" in the phase select of a step and picks "Create phase “Pay”"
+- **THEN** the band shows a new segment "Pay" starting at that step, and one undo removes it
 
-#### Scenario: Starting a phase from the tab
+#### Scenario: Picking an existing phase
 
-- **WHEN** the author types "Pay" in "Start a phase here" on a step and presses Enter
+- **WHEN** a journey has Discover (A, B) then Buy (from C), and the author picks "Buy" on B
+- **THEN** B, C and the steps after are in Buy, and the band shows two segments, not three
+
+s "Pay" in "Start a phase here" on a step and presses Enter
+
 - **THEN** the band shows a new segment "Pay" starting at that step, and one undo removes it
 
 ### Requirement: Outline and Mermaid carry phases

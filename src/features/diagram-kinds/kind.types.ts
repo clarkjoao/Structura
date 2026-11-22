@@ -217,9 +217,30 @@ export interface KindInspectorLabel {
   commit: (label: string) => KindCommandOutcome | { refused: KindText };
 }
 
+/**
+ * A pick among named values that can also create a new one (e.g. a phase):
+ * drawn as a searchable select whose typed text offers "create".
+ */
+export interface KindInspectorSelect {
+  type: "select";
+  id: string;
+  label: KindText;
+  /** The value shown on the field; null shows `placeholder`. */
+  value: string | null;
+  placeholder: KindText;
+  options: { id: string; label: string; selected: boolean; run: () => KindRunOutcome }[];
+  /** Offered for typed text that names no option; `{{name}}` is the text. */
+  create: { label: KindText; run: (name: string) => KindRunOutcome };
+  /** An option that undoes the pick (e.g. "Continue the previous phase"). */
+  clear?: { label: KindText; run: () => KindRunOutcome };
+}
+
+type KindRunOutcome = KindCommandOutcome | { refused: KindText };
+
 /** A block of the kind's inspector tab, drawn by the host. */
 export type KindInspectorSection =
   | { type: "choice"; id: string; label: KindText; options: KindInspectorOption[] }
+  | KindInspectorSelect
   | {
       type: "labels";
       id: string;

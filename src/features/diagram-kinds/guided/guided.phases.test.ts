@@ -128,21 +128,69 @@ describe("phases", () => {
     expect(guidedPhases(h.reading()).phases).toHaveLength(5);
   });
 
-  it("are shown and started from the Journey tab", () => {
-    const h = guidedHarness();
-    add(h, "## Discover\nCliente: A\nB");
+  const phaseSection = (h: Harness, name: string) => {
     const ctx = { ...kindContextFor(h.diagram()), diagram: h.diagram(), selectedIds: [] };
-    const section = guidedInspector.sections(ctx, idOf(h, "B"))!.find((s) => s.id === "phase")!;
-    if (section.type !== "labels") throw new Error("labels");
-    const item = section.items[0]!;
-    expect(item.label).toBe("");
-    expect(item.placeholder && "text" in item.placeholder ? item.placeholder.text : "").toContain(
-      "Discover",
-    );
-    const outcome = item.commit("  Pay ");
+    const section = guidedInspector.sections(ctx, idOf(h, name))!.find((s) => s.id === "phase")!;
+    if (section.type !== "select") throw new Error("select");
+    return section;
+  };
+  const run = (h: Harness, outcome: ReturnType<typeof guidedSetPhaseStart>) => {
     if ("refused" in outcome) throw new Error("refused");
     h.apply(outcome.edit);
+  };
+
+  it("are picked or created from the Journey tab", () => {
+    const h = guidedHarness();
+    add(h, "## Discover\nCliente: A\nB\n## Buy\nC\nD");
+    let section = phaseSection(h, "B");
+    expect(section.value).toBe("Discover");
+    expect(section.options.map((o) => [o.label, o.selected])).toEqual([
+      ["Discover", true],
+      ["Buy", false],
+    ]);
+    expect(section.clear).toBeUndefined();
+    // Create: B starts a new phase.
+    run(h, section.create.run("  Pay "));
     expect(phaseStartOf(h.reading().steps.get(idOf(h, "B"))!)).toBe("Pay");
+    section = phaseSection(h, "B");
+    expect(section.options.map((o) => o.label)).toEqual(["Discover", "Pay", "Buy"]);
+    // Clear: back to the phase before it.
+    expect(section.clear?.label).toEqual({ key: "diagramKinds.guided.phases.continuePrevious" });
+    run(h, section.clear!.run());
+    expect(phaseName(h, "B")).toBe("Discover");
+    // Pick an existing phase: B starts Buy, and C's own start now just continues it.
+    run(
+      h,
+      phaseSection(h, "B")
+        .options.find((o) => o.label === "Buy")!
+        .run(),
+    );
+    expect(["A", "B", "C", "D"].map((n) => phaseName(h, n))).toEqual([
+      "Discover",
+      "Buy",
+      "Buy",
+      "Buy",
+    ]);
+    expect(guidedPhases(h.reading()).phases.map((p) => p.name)).toEqual(["Discover", "Buy"]);
+    // Picking the inherited phase on C clears its own start.
+    run(
+      h,
+      phaseSection(h, "C")
+        .options.find((o) => o.label === "Buy")!
+        .run(),
+    );
+    expect(phaseStartOf(h.reading().steps.get(idOf(h, "C"))!)).toBeNull();
+  });
+
+  it("let a later step return to an earlier phase", () => {
+    const h = guidedHarness();
+    add(h, "## Discover\nCliente: A\n## Buy\nB\n## Discover\nC");
+    expect(guidedPhases(h.reading()).phases.map((p) => p.name)).toEqual([
+      "Discover",
+      "Buy",
+      "Discover",
+    ]);
+    expect(phaseSection(h, "C").options.map((o) => o.label)).toEqual(["Discover", "Buy"]);
   });
 });
 

@@ -49,7 +49,7 @@ app and embed-editor entries). With nothing registered, the editor is exactly th
 | `textCapture` | writing the diagram as text: `build` (text → edit), `serialize`, `syntax` |
 | `overlay` | what the kind draws over the canvas in kind mode, in flow coordinates: a header band with segments, separators across the lanes, a curve (guided: phases and the emotion curve); never an element |
 | `focusMarkers` | marker code the mode bar counts and walks in order (guided: `painPoint`) |
-| `inspector` | the kind's own inspector tab (e.g. guided "Journey"): `tab`, `hiddenFields` (Details fields hidden in kind mode), `sections(ctx, id)` as data — choice groups and label fields whose `run`/`commit` return a kind outcome; `null` means no tab for that element |
+| `inspector` | the kind's own inspector tab (e.g. guided "Journey"): `tab`, `hiddenFields` (Details fields hidden in kind mode), `sections(ctx, id)` as data — choice groups, select-or-create fields (`select`) and label fields whose `run`/`commit` return a kind outcome; `null` means no tab for that element |
 
 A kind reads the world only through `KindContext` (`context.ts`), which provides `t`, the element
 registry lookup, direction, layout settings and id minting. It returns `KindEdit` change sets
@@ -202,7 +202,7 @@ A guided step may **start a phase** (`kindProps.phase`, spec `guided-journey-pha
 - **Arrangement.** The arrangement gives each phase contiguous columns after every column of the phases before it. It does this with floors in the longest-path layering, relaxed until stable. Phase starts are part of `arrangeKey`.
 - **The band.** The overlay draws a header band beside the lanes, above them or left of them on top-to-bottom diagrams. It has one segment per phase (a click selects the phase's start) and dashed separators across the lanes. It also draws the **emotion curve**: the scored steps on the main path, high for 5 and low for 1, with red dots for pain points. Nothing moves to make room, and freehand mode hides the band.
 - **Editing and text.**
-  - The Journey tab's "Phase" field starts or clears a phase.
+  - The Journey tab's "Phase" select picks an existing phase or creates one; picking the phase a step already inherits clears its start. A start naming the inherited phase opens nothing.
   - The outline writes `## Name` on its own line before the step that starts a phase.
   - Mermaid `journey` sections are phase starts, both ways.
   - The swimlane export keeps phases in a `%% phases: s1=Discover` comment.

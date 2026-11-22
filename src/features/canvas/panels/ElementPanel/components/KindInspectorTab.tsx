@@ -5,6 +5,7 @@ import { FlowShapeIcon } from "@/features/canvas/nodes/ProcessNode/FlowShapeIcon
 import { cn } from "@/lib/utils";
 import { runKindOutcome } from "../../../chrome/kindElementActions";
 import { CommitField, PanelSection } from "../shell";
+import { KindSelectField } from "./KindSelectField";
 
 const CHOICE_CLASS =
   "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
@@ -19,6 +20,13 @@ export function KindInspectorTab({ sections }: { sections: KindInspectorSection[
     <div className="min-h-0 flex-1 overflow-y-auto" data-testid="kind-inspector">
       {sections.map((section) => {
         const title = resolveKindText(section.label);
+        if (section.type === "select") {
+          return (
+            <PanelSection key={section.id} title={title}>
+              <KindSelectField section={section} title={title} />
+            </PanelSection>
+          );
+        }
         if (section.type === "choice") {
           return (
             <PanelSection key={section.id} title={title}>
