@@ -15,6 +15,7 @@ import { useCanvasPreferencesStore } from "../preferences";
 import { useFrameReadStep } from "../flow/reading/useFrameReadStep";
 import { resolveWheelIntent } from "./resolve-wheel-intent";
 import { computeViewportOccupancy } from "./useViewportOccupancy";
+import { activeKindOverlay, frameDiagram } from "../focus/frameDiagram";
 
 interface UseCanvasEffectsParams {
   diagram: Diagram | DiagramModel | null | undefined;
@@ -103,13 +104,21 @@ export function useCanvasEffects({
   // also persist its viewport before this read it and turn this fit into a restore.
   useEffect(() => {
     if (!diagramId || skipInitialFit) return;
-    const fit = () =>
-      void reactFlowInstance.fitView({
+    const fit = () => {
+      const options = {
         padding: FIT_VIEW_INITIAL_PADDING,
         minZoom: VIEWPORT_MIN_ZOOM,
         maxZoom: FIT_VIEW_MAX_ZOOM,
         duration: 0,
-      });
+      };
+      const fitted = reactFlowInstance.fitView(options);
+      // The kind overlay (the phase band) sits beside the nodes, unknown to React Flow's
+      // fit: once that fit has measured and applied, frame the band too, before the paint.
+      if (activeKindOverlay())
+        void fitted.then(() =>
+          frameDiagram(reactFlowInstance, store.getState(), activeKindOverlay(), options),
+        );
+    };
     // Non-reactive read: subscribing to the viewport would re-run this
     // effect on every pan/zoom (onMoveEnd persists it to the store).
     if (!hasSavedViewport(useDiagramStore.getState().diagrams[diagramId]?.viewport)) {
@@ -254,7 +263,7 @@ export function useCanvasEffects({
     let cancelled = false;
     const id = requestAnimationFrame(() => {
       if (cancelled) return;
-      void reactFlowInstance.fitView({
+      void frameDiagram(reactFlowInstance, store.getState(), activeKindOverlay(), {
         duration: FIT_VIEW_DURATION_MS,
         padding: FIT_VIEW_READING_PADDING,
       });
@@ -263,7 +272,7 @@ export function useCanvasEffects({
       cancelled = true;
       cancelAnimationFrame(id);
     };
-  }, [paneWidth, reactFlowInstance]);
+  }, [paneWidth, reactFlowInstance, store]);
 
   useFrameReadStep({
     reactFlowInstance,

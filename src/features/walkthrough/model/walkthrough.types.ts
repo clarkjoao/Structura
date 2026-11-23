@@ -44,6 +44,11 @@ export interface WalkthroughPresentation {
    */
   folderId?: string | null;
   steps: WalkthroughStepRef[];
+  /**
+   * A walkthrough the app made from a diagram (a guided journey presented by phase):
+   * presenting it again updates this one instead of making another.
+   */
+  source?: { diagramId: string; kind: "phases" };
   createdAt: number;
   updatedAt: number;
 }

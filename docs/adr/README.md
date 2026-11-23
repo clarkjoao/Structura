@@ -36,3 +36,4 @@ review like code.
 | [0011](0011-collaboration-server-authority.md) | Live sessions: the relay's store is the source of truth during a session | Accepted |
 | [0012](0012-go-relay-and-serverless.md) | A Go relay, long-lived or serverless, with Redis optional | Accepted |
 | [0013](0013-diagram-reading-direction.md) | A diagram declares its reading direction: left-to-right or top-to-bottom | Accepted |
+| [0014](0014-diagram-kinds.md) | Diagram kinds: metadata that guides construction over an ordinary diagram | Accepted |

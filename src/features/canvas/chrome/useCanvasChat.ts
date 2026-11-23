@@ -7,6 +7,8 @@ export interface CanvasChat {
   /** The floating button: opens or closes the panel; refused while a flow is active. */
   toggle: () => void;
   close: () => void;
+  /** Opens the panel (a kind's preset request is about to be sent). */
+  open: () => void;
 }
 
 /**
@@ -46,6 +48,11 @@ export function useCanvasChat(isFlowActive: boolean): CanvasChat {
     });
   }, [isFlowActive]);
   const close = useCallback(() => setIsOpen(false), []);
+  const open = useCallback(() => {
+    if (isFlowActive) return;
+    setHasUnread(false);
+    setIsOpen(true);
+  }, [isFlowActive]);
 
-  return { isOpen, hasUnread, toggle, close };
+  return { isOpen, hasUnread, toggle, close, open };
 }

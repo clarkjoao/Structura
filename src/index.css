@@ -318,6 +318,14 @@
     border-radius: inherit;
   }
 
+  /* A step an assistant revision would remove (spec guided-assistant-revisions). */
+  .node-pending-remove {
+    opacity: 0.55;
+    outline: 2px dashed #ef4444;
+    outline-offset: 3px;
+    border-radius: inherit;
+  }
+
   .node-version-conflict {
     outline: 2px dashed #f59e0b;
     outline-offset: 3px;
@@ -507,4 +515,38 @@
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
+}
+
+/* A diagram whose kind places its elements (ADR-0014): no resize handles. */
+.react-flow__node.kind-placed .react-flow__resize-control {
+  display: none;
+}
+
+/* A diagram kind's quiet check (ADR-0014): never a dialog, only a mark. */
+.react-flow__node.kind-check {
+  outline: 2px dashed rgb(245 158 11 / 0.8);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+/* A kind's tag at a node's foot (spec guided-journey-blueprint): the step's participants. */
+.react-flow__node[data-kind-tag]::before {
+  content: attr(data-kind-tag);
+  position: absolute;
+  bottom: -9px;
+  left: 8px;
+  z-index: 5;
+  padding: 0 6px;
+  border-radius: 9999px;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid hsl(var(--primary) / 0.4);
+  background: hsl(var(--card));
+  color: hsl(var(--primary));
+}
+.react-flow__edge.kind-check path.react-flow__edge-path {
+  stroke: rgb(245 158 11) !important;
+  stroke-dasharray: 6 4;
 }

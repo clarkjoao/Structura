@@ -4,6 +4,9 @@ import { useAllServices } from "@/features/diagram";
 import { useElementPresetStore } from "@/features/element-presets";
 import { loadedLocalesKey, type CatalogEntry, type CatalogIndex } from "@/features/elements/search";
 import { buildCanvasCatalogIndex, catalogEntriesById } from "./canvasCatalogIndex";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { isKindActive, resolveKindPolicy } from "@/features/diagram-kinds/policy";
+import { kindOffersElement } from "@/features/diagram-kinds/palette";
 
 /**
  * The catalog index, rebuilt when the language, the services or the presets
@@ -17,15 +20,35 @@ export function useCanvasCatalogIndex(): {
   const { i18n } = useTranslation();
   const services = useAllServices();
   const presetsMap = useElementPresetStore((state) => state.presets);
+  // The active diagram's kind narrows what is offered (ADR-0014); the mode switches it back.
+  const kindKey = useDiagramStore((state) => {
+    const d = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+    const policy = resolveKindPolicy(d);
+    return isKindActive(policy) ? policy.descriptor.id : "";
+  });
 
   // Cross-locale terms come from every loaded bundle; the second one arrives in idle time.
   const loadedLocales = loadedLocalesKey();
 
   return useMemo(() => {
     const presets = Object.values(presetsMap).sort((a, b) => b.updatedAt - a.updatedAt);
-    const index = buildCanvasCatalogIndex(services, presets);
+    const kind = kindKey ? { kind: kindKey } : null;
+    const index = buildCanvasCatalogIndex(
+      services,
+      presets,
+      kind
+        ? (entry) =>
+            entry.insert.kind === "element" &&
+            kindOffersElement(kind, {
+              type: entry.insert.type,
+              ...(entry.insert.createOptions.flowShape && {
+                flowShape: entry.insert.createOptions.flowShape,
+              }),
+            })
+        : undefined,
+    );
     return { index, byId: catalogEntriesById(index) };
     // `i18n.language` is deliberate: labels are resolved when the index is built.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [services, presetsMap, i18n.language, loadedLocales]);
+  }, [services, presetsMap, i18n.language, loadedLocales, kindKey]);
 }

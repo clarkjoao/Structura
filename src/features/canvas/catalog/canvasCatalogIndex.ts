@@ -51,8 +51,18 @@ function presetEntry(preset: ElementPreset): CatalogEntry {
 export function buildCanvasCatalogIndex(
   services: readonly ServiceDefinition[],
   presets: readonly ElementPreset[],
+  /** What a diagram kind offers (ADR-0014); everything when omitted. */
+  offered?: (entry: CatalogEntry) => boolean,
 ): CatalogIndex {
   const registry = registryCatalogEntries();
+  if (offered) {
+    const entries = registry.entries.filter(offered);
+    const used = new Set(entries.map((entry) => entry.groupId));
+    return createCatalogIndex(
+      registry.groups.filter((group) => used.has(group.id)),
+      entries,
+    );
+  }
   return createCatalogIndex(
     [
       ...registry.groups,

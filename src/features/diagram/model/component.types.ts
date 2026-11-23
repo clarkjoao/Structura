@@ -1,3 +1,4 @@
+import type { JsonObject } from "./diagram-kind";
 import type { AwsCategoryId } from "@/features/cloud/providers/aws/aws.catalog";
 import type { GcpCategoryId } from "@/features/cloud/providers/gcp/gcp.catalog";
 import type { AzureCategoryId } from "@/features/cloud/providers/azure/azure.catalog";
@@ -85,6 +86,13 @@ interface BaseComponent {
   templateId?: string;
 
   externalLinks?: ExternalLink[];
+
+  /**
+   * Data the diagram's kind owns on this element (`diagram-kind.ts`), opaque to
+   * everything else: a guided step's phase start and participants. Kept in
+   * freehand mode; copied, versioned and removed with the element.
+   */
+  kindProps?: JsonObject;
 
   /**
    * How the edges into it are drawn when many things use it. Absent means

@@ -6,6 +6,7 @@ import type { DiagramPatchAction } from "./types";
 import { listElementFamilies, searchElements } from "./element-catalog-query";
 import { listPatterns } from "./pattern-catalog-query";
 import { validateAddNodeAgainstRegistry } from "./add-node-validation";
+import { applyJourneyOutline } from "./journey-outline";
 
 export interface AppliedPatchResult {
   addedNodeId: string | null;
@@ -16,6 +17,7 @@ export interface AppliedPatchResult {
     type:
       | "INSERT_PATTERN"
       | "AUTO_LAYOUT"
+      | "ADD_JOURNEY_OUTLINE"
       | "GET_TAGS"
       | "LIST_ELEMENT_FAMILIES"
       | "SEARCH_ELEMENTS"
@@ -144,6 +146,23 @@ export function applyDiagramPatchAction(
         },
       };
     }
+    case "ADD_JOURNEY_OUTLINE": {
+      const { applied, data } = applyJourneyOutline(action.payload);
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        ...(applied ? {} : { skipped: true, skipReason: data.errors?.join("; ") }),
+        toolResult: { type: "ADD_JOURNEY_OUTLINE", data },
+      };
+    }
+    case "REVISE_JOURNEY":
+      // Applied on accept from the suggestion's reviewed revision, never one by one.
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        skipped: true,
+        skipReason: "reviewed revision",
+      };
     case "AUTO_LAYOUT": {
       const diagramId = diagramState.activeDiagramId;
       if (!diagramId) {

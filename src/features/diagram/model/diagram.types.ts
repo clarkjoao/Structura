@@ -57,6 +57,7 @@ import type { Connection } from "./connection.types";
 import type { Flow } from "./flow.types";
 import type { EdgeLayout, NodeLayout } from "./layout.types";
 import type { DiagramLayoutSettings } from "./layout-settings";
+import type { DiagramKindMode, JsonObject } from "./diagram-kind";
 
 export type Level = "context" | "container" | "component" | string;
 
@@ -222,6 +223,16 @@ export interface Diagram {
    * layout it needs are one undo step.
    */
   direction?: "TB";
+
+  /**
+   * The kind that guides this diagram's construction (`diagram-kind.ts`).
+   * Absent means freehand. Kept even when nothing registers it.
+   */
+  kind?: string;
+  /** `"freehand"` while a kind diagram is edited freehand; absent means the kind's editor. */
+  kindMode?: DiagramKindMode;
+  /** Owned by the kind, opaque to everything else; carried unchanged by every path. */
+  kindData?: JsonObject;
 }
 
 export type DiagramModel = Omit<Diagram, "viewport">;

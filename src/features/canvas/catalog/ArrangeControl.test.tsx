@@ -266,3 +266,18 @@ describe("ArrangeControl", () => {
     });
   });
 });
+
+describe("ArrangeControl — diagram kind", () => {
+  it("hides the Manual/Automatic choice when a kind arranges the diagram", () => {
+    setup({ modeChoice: false, settings: { mode: "automatic" } });
+    openMenu();
+    expect(screen.queryByRole("radiogroup", { name: "canvasToolbar.arrange.mode" })).toBeNull();
+    expect(screen.queryByText("canvasToolbar.arrange.autoBadge")).toBeNull();
+  });
+
+  it("offers it by default", () => {
+    setup();
+    openMenu();
+    expect(screen.getByRole("radiogroup", { name: "canvasToolbar.arrange.mode" })).toBeTruthy();
+  });
+});

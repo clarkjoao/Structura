@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useMemo,
   useRef,
   type Dispatch,
   type MutableRefObject,
@@ -15,6 +16,9 @@ import { useCanvasDiagramNavigation } from "./useCanvasDiagramNavigation";
 import { useCanvasDrillHandlers } from "./useCanvasDrillHandlers";
 import { useCanvasEventHandlers } from "./useCanvasEventHandlers";
 import { useCanvasKeyboard } from "./useCanvasKeyboard";
+import { createKindShortcuts } from "./keyboard/createKindShortcuts";
+import { useCanvasSelectionStore } from "./useCanvasSelectionStore";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import { useCanvasEffects } from "./useCanvasEffects";
 import { useNodeDragParenting } from "./useNodeDragParenting";
 import { useCatalogUiStore } from "../catalog/catalogUi.store";
@@ -203,7 +207,42 @@ export function useCanvasInteraction(
     [reactFlowInstance, setShowSearch, visualState],
   );
 
+  // One instance for the canvas's life: it remembers that a gesture just
+  // opened a name field, across the re-renders that gesture causes.
+  const requestFocusTitleRef = useRef(handleRequestFocusTitle);
+  requestFocusTitleRef.current = handleRequestFocusTitle;
+  const kindShortcuts = useMemo(
+    () =>
+      createKindShortcuts({
+        getDiagram: () => {
+          const state = useDiagramStore.getState();
+          return state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null;
+        },
+        getSelectedIds: () => {
+          const { selectedNodeIds, selectedEdgeId } = useCanvasSelectionStore.getState();
+          if (selectedNodeIds.size > 0) return [...selectedNodeIds];
+          return selectedEdgeId ? [selectedEdgeId] : [];
+        },
+        select: (id) => {
+          const selection = useCanvasSelectionStore.getState();
+          selection.setSelectedEdgeId(null);
+          selection.setSelectedNodeIds(new Set([id]));
+          selection.setSelectedNodeId(id);
+        },
+        selectConnection: (id) => {
+          const selection = useCanvasSelectionStore.getState();
+          selection.setSelectedNodeIds(new Set());
+          selection.setSelectedNodeId(null);
+          selection.setSelectedEdgeId(id);
+        },
+        requestEditLabel: (id) => requestFocusTitleRef.current(id),
+      }),
+    [],
+  );
+
   useCanvasKeyboard({
+    kindHandler: kindShortcuts.handler,
+    kindLabelFieldHandler: kindShortcuts.fromLabelField,
     diagram,
     setCompareVersion: actions.setCompareVersion,
     isCompareMode: compareState.isCompareMode,

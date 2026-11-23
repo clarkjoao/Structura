@@ -662,7 +662,8 @@
         "removeEdge": "Remove edge {{edgeId}}",
         "insertPattern": "Insert pattern {{patternId}}",
         "autoLayout": "Auto layout diagram",
-        "getTags": "List diagram tags"
+        "getTags": "List diagram tags",
+        "journeyOutline": "Add a journey from text ({{count}} lines)"
       },
       "defaultTitle": "Suggested changes",
       "noChanges": "no changes",
@@ -798,6 +799,17 @@
       "exported": "IR exported!",
       "noIR": "No IR generated yet. Use /generate first.",
       "analyzing": "Analyzing…"
+    },
+    "revision": {
+      "title": "Journey revision",
+      "applySelected_one": "Apply {{count}} change",
+      "applySelected_other": "Apply {{count}} changes",
+      "noPhase": "Before any phase",
+      "stale": "No longer applicable: its step is gone.",
+      "tickAll": "Tick all",
+      "untickAll": "Untick all",
+      "count_one": "{{count}} change to review",
+      "count_other": "{{count}} changes to review"
     }
   },
   "versions": {
@@ -947,7 +959,8 @@
     "laneLabel": "Lane label",
     "orientation": "Orientation",
     "horizontal": "Horizontal",
-    "vertical": "Vertical"
+    "vertical": "Vertical",
+    "renameHint": "Double-click to rename the lane"
   },
   "dbTable": {
     "panelTitle": "Database table",
@@ -3618,6 +3631,277 @@
       "data": "Data",
       "object": "Object at this step",
       "ways": "Ways out"
+    }
+  },
+  "diagramKinds": {
+    "kindChoice": "Kind",
+    "freehand": {
+      "label": "Freehand",
+      "description": "Draw anything and place it anywhere."
+    },
+    "editFreehand": "Edit freehand",
+    "editFreehandHint": "The whole palette and free placement. You can come back afterwards.",
+    "freehandBanner": "Editing freehand. The {{kind}} layout and checks are paused.",
+    "unavailable": "This diagram was made with “{{kind}}”, which is not available here. It opens freehand and keeps its kind.",
+    "issuesTitle": "It does not fit {{kind}} yet",
+    "issuesHint": "Fix these and try again. The diagram stays freehand until then.",
+    "returned": "Back to {{kind}}.",
+    "derivedFlow": "Derived from the steps",
+    "derivedFlowHint": "This flow follows the steps on the canvas. Edit the steps to change its order.",
+    "guided": {
+      "label": "Guided",
+      "description": "A journey or data flow in lanes. You write the steps; the layout is automatic.",
+      "return": "Back to guided",
+      "newStep": "New step",
+      "newDecision": "Decision?",
+      "startName": "Start",
+      "lanes": {
+        "first": "User",
+        "second": "System",
+        "newLane": "New lane",
+        "add": "Add lane",
+        "rename": "Rename lane",
+        "moveUp": "Move lane up",
+        "moveDown": "Move lane down",
+        "moveLeft": "Move lane left",
+        "moveRight": "Move lane right",
+        "remove": "Remove lane",
+        "field": "Lane",
+        "moveTo": "Move to lane"
+      },
+      "commands": {
+        "next": "Add next step",
+        "branch": "Add branch",
+        "laneUp": "Move to the lane above",
+        "laneDown": "Move to the lane below",
+        "labelExit": "Label the next exit",
+        "delete": "Delete step"
+      },
+      "refused": {
+        "selectOneStep": "Select one step first.",
+        "endHasNoNext": "An end step has nothing after it.",
+        "keepStart": "A guided diagram needs a start step.",
+        "keepLastLane": "A guided diagram needs at least one lane.",
+        "outlineClosesPath": "This text ends every path, so what came after the selected step would be cut off. Select the last step instead.",
+        "oneStart": "A guided diagram has one start step."
+      },
+      "checks": {
+        "unlabelledExit": "This exit has no label",
+        "openEnd": "This path does not reach an end"
+      },
+      "issues": {
+        "noLane": "There is no lane.",
+        "unknownElement": "This element’s type is not available here.",
+        "nestedLane": "A lane is inside another element.",
+        "outsideLane": "This element is outside every lane.",
+        "notAStep": "Only journey steps go in a lane.",
+        "noStart": "There is no start step.",
+        "extraStart": "There is more than one start step.",
+        "connectionNotBetweenSteps": "This connection does not join two steps."
+      },
+      "shortcuts": {
+        "title": "Guided diagram",
+        "next": "Add the next step",
+        "branch": "Add a branch",
+        "lane": "Move the step to another lane",
+        "labelExit": "On a decision: label its exits, one after another",
+        "delete": "Delete the step and reconnect",
+        "escape": "Clear the selection (Tab moves focus again)"
+      },
+      "endName": "Done",
+      "outline": {
+        "open": "Text",
+        "openHint": "Write the journey as text",
+        "title": "Write as text",
+        "placeholder": "Customer: Chooses product\nApp: Creates Pix charge\n? Paid\n  yes -> API: Confirms payment\n  no -> @Chooses product\n! Done",
+        "syntax": "Lane: step · ? decision · label -> exit · ! end · -> @Step jumps back · ## phase · # comment · or paste Mermaid (swimlane-beta, flowchart, journey)",
+        "apply": "Apply",
+        "applyHint": "Ctrl/Cmd + Enter",
+        "copy": "Copy as text",
+        "copied": "Journey copied as text.",
+        "summary": "Steps: {{steps}} · Decisions: {{decisions}} · New lanes: {{lanes}}",
+        "empty": "Type the steps, one per line.",
+        "added_one": "{{count}} step added from text.",
+        "added_other": "{{count}} steps added from text.",
+        "undo": "Undo",
+        "line": "Line {{line}}",
+        "omittedSteps_one": "{{count}} step not reachable from the start was left out",
+        "omittedSteps_other": "{{count}} steps not reachable from the start were left out",
+        "omittedConnections_one": "{{count}} connection the outline cannot express was left out",
+        "omittedConnections_other": "{{count}} connections the outline cannot express were left out",
+        "errors": {
+          "exitOutsideDecision": "An exit (label -> …) must be indented under a decision (? …).",
+          "exitExpected": "Under a decision, write its exits: label -> step.",
+          "decisionWithoutExits": "This decision has no exits. Indent them under it: label -> step.",
+          "exitWithoutTarget": "This exit leads nowhere. Write a step after ->, or indent one under it.",
+          "indentUnderStep": "Only a decision's exits are indented. Remove the indentation.",
+          "emptyName": "This line has no name.",
+          "unreachableLine": "The path ended on the line before (! end or -> @jump), so nothing reaches this line.",
+          "unknownJump": "No step is named “{{name}}”.",
+          "ambiguousJump": "More than one step is named “{{name}}”. Rename one of them first.",
+          "mermaidUnclosedSubgraph": "This subgraph has no “end”.",
+          "mermaidStrayEnd": "“end” without an open subgraph.",
+          "mermaidUnreadable": "This line cannot be read as nodes and arrows.",
+          "mermaidTaskWithoutScore": "A journey task is “Task: score: actors”.",
+          "mermaidScoreOutOfRange": "The score must be 1 to 5 (here: {{score}}).",
+          "mermaidEmpty": "This Mermaid block has no steps.",
+          "phaseWithoutStep": "“##” starts a phase, but no step follows it.",
+          "unknownHandle": "No step has the handle {#{{handle}}}",
+          "duplicateHandle": "The handle {#{{handle}}} is used twice",
+          "visibilityMisplaced": "--- belongs between the lane declarations at the top, before a lane"
+        }
+      },
+      "inspector": {
+        "tab": "Journey",
+        "stepKind": "Step kind",
+        "exits": "Exits",
+        "exitTo": "To {{name}}",
+        "exitPlaceholder": "Label this exit",
+        "noExits": "No exits yet. Shift+Tab on the canvas adds one.",
+        "newLane": "New lane"
+      },
+      "stepKinds": {
+        "rectangle": "Step",
+        "start": "Start",
+        "end": "End",
+        "event": "Event",
+        "diamond": "Decision",
+        "subroutine": "Subprocess",
+        "cylinder": "Data",
+        "document": "Document"
+      },
+      "mermaid": {
+        "formats": {
+          "outline": "Text",
+          "swimlane": "Mermaid (lanes)",
+          "journey": "Mermaid (journey)",
+          "outlineIds": "Text with ids"
+        },
+        "exportedFrom": "Exported from Structura: {{name}}",
+        "journeyLeftOut": "Main path only: {{branches}} branch(es) and {{steps}} other step(s) left out.",
+        "copyAs": "Copy as…"
+      },
+      "phases": {
+        "field": "Phase",
+        "noPhase": "No phase",
+        "create": "Create phase “{{name}}”",
+        "continuePrevious": "Continue the previous phase",
+        "remove": "Remove the phase",
+        "renameHint": "Double-click to rename the phase",
+        "moveHint": "Drag to move where the next phase starts"
+      },
+      "text": {
+        "changes": {
+          "add": "Add “{{name}}”",
+          "remove": "Remove “{{name}}”",
+          "rename": "Rename “{{name}}” → “{{after}}”",
+          "kind": "“{{name}}” becomes a {{after}}",
+          "lane": "Move “{{name}}” to {{after}}",
+          "phase": "Phase at “{{name}}”: {{before}} → {{after}}",
+          "connect": "Connect “{{source}}” → “{{target}}”",
+          "disconnect": "Disconnect “{{source}}” → “{{target}}”",
+          "relabel": "Label “{{source}}” → “{{target}}”: {{after}}",
+          "participants": "Participants of “{{name}}”: {{before}} → {{after}}",
+          "visibility": "Line of visibility: above {{before}} → above {{after}}"
+        },
+        "count": "+{{added}} ~{{changed}} −{{removed}}",
+        "noChanges": "No changes",
+        "review": "Review",
+        "reviewHide": "Hide",
+        "stale": "The diagram changed since this text was written.",
+        "reload": "Reload from the diagram",
+        "skipped_one": "{{count}} change was left out: its step no longer exists.",
+        "skipped_other": "{{count}} changes were left out: their steps no longer exist.",
+        "insert": "Insert at the selection",
+        "insertPlaceholder": "Steps to add after the selected step…",
+        "insertApply": "Insert",
+        "applied": "Journey updated",
+        "journey": "Journey"
+      },
+      "blueprint": {
+        "lineAbove": "Line of visibility above this lane",
+        "lineLeft": "Line of visibility left of this lane",
+        "removeLine": "Remove the line of visibility",
+        "frontstage": "Visible to the customer",
+        "backstage": "Backstage",
+        "participants": "Participants",
+        "addParticipant": "Add “{{name}}”",
+        "removeParticipant": "Remove {{name}}",
+        "participantsSearch": "A lane or a new name…",
+        "noParticipants": "Only the lane acts"
+      },
+      "document": {
+        "format": "Document (Markdown)",
+        "download": "Download document (.md)",
+        "beforePhases": "Before the phases",
+        "decision": "Decision",
+        "end": "End",
+        "backTo": "back to {{name}}"
+      },
+      "review": {
+        "errorPaths": {
+          "label": "Missing error paths",
+          "prompt": "Review this journey for missing error paths: where can a step fail (payment refused, timeout, invalid data) without a branch that handles it? Propose a revision that adds the missing branches."
+        },
+        "handoffs": {
+          "label": "Handoffs without an owner",
+          "prompt": "Review the handoffs between lanes in this journey: where does work pass from one lane to another without a step that clearly owns the handoff? Propose a revision that makes each handoff explicit."
+        },
+        "negativeExits": {
+          "label": "Decisions without a negative exit",
+          "prompt": "Review the decisions in this journey: which ones lack an exit for the negative or unexpected answer? Propose a revision that adds those exits and where they lead."
+        },
+        "customerLanguage": {
+          "label": "Customer language",
+          "prompt": "Rewrite this journey's step names in the customer's own words, short and as verbs, keeping its structure. Propose it as a revision."
+        }
+      },
+      "templates": {
+        "checkout": {
+          "label": "Checkout",
+          "text": "Customer:\nStore:\nPayments:\n## Choose\nCustomer: Browses products\nAdds to cart\n## Pay\nReviews the order\nStore: Creates the charge\nPayments: ? Approved\n  yes -> Store: Confirms the order\n  no -> Customer: Tries another method\n    -> @Reviews the order\n## Receive\nStore: Ships the order\nCustomer: ! Receives the order"
+        },
+        "onboarding": {
+          "label": "Onboarding",
+          "text": "Customer:\nApp:\nTeam:\n## Sign up\nCustomer: Signs up\nApp: Sends confirmation e-mail\nCustomer: Confirms the e-mail\n## First use\nApp: Shows the guided tour\nCustomer: ? Finishes the tour\n  yes -> Creates the first project\n  no -> Team: Offers help\n    Customer: Creates the first project\n## Adoption\nApp: Suggests next steps\nCustomer: ! Uses it every week"
+        },
+        "support": {
+          "label": "Support ticket",
+          "text": "Customer:\nSupport:\nEngineering:\n## Report\nCustomer: Opens a ticket\nSupport: Triages the ticket\n## Solve\n? Known issue\n  yes -> Sends the solution\n  no -> Engineering: Investigates\n    Fixes the problem\n    Support: Sends the solution\n## Close\nCustomer: ? Problem solved\n  yes -> ! Closes the ticket\n  no -> @Triages the ticket"
+        },
+        "blank": "Blank",
+        "notes": "Paste meeting notes",
+        "notesPlaceholder": "Paste the notes; the assistant builds the journey from them.",
+        "notesPrompt": "Build the journey from these meeting notes, with lanes for who acts, phases for the stages, and decisions where the notes say it depends:\n\n{{notes}}",
+        "choice": "Start from"
+      }
+    },
+    "toolbar": {
+      "more": "More",
+      "moreMenu": "More elements of this kind"
+    },
+    "inspector": {
+      "selectSearch": "Search or type a new name…",
+      "selectEmpty": "Nothing yet — type a name to create one"
+    },
+    "overlay": {
+      "exportLayer": "Phases"
+    },
+    "direction": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "toHorizontal": "Switch to horizontal (lanes as rows)",
+      "toVertical": "Switch to vertical (lanes as columns)",
+      "switchHint": "Re-arranges the journey in the other direction. Undo puts it back.",
+      "choice": "Direction",
+      "horizontalChoice": "Horizontal (lanes as rows)",
+      "verticalChoice": "Vertical (lanes as columns)"
+    },
+    "present": "Present by phase",
+    "review": "Review journey",
+    "text": {
+      "dock": "Dock beside the canvas",
+      "undock": "Undock"
     }
   }
 }

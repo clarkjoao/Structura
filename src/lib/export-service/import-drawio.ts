@@ -378,6 +378,8 @@ function collectMxCellVertices(mxCellNodes: HTMLCollectionOf<Element>, ctx: Coll
 
     // A shared element's badge is a drawing of an edge the object carries, not an element.
     if (style.includes("structuraBadge=1;")) continue;
+    // A kind overlay drawn into the export (the phase band) is a drawing, not an element.
+    if (style.includes("structuraDecoration=1;")) continue;
 
     const vertexOf = (kind: PendingVertex["kind"]): PendingVertex =>
       pendingVertex(cellId, kind, getAttr(mxCell, "parent"), readGeometry(mxCell), mxCell);

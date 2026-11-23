@@ -26,6 +26,7 @@ import { laneAccentFor } from "@/features/canvas/nodes/laneAccent";
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { isProcessNodeComponent } from "@/features/diagram/model/component.guards";
 import type { ElementDescriptor } from "../element.types";
+import { playbackStyle } from "../families/deploy/deploy.shared";
 
 /**
  * The flowchart shapes as palette entries, in the order the palette shows them:
@@ -110,7 +111,10 @@ export const processNodeElement: ElementDescriptor = {
         fill: comp.fill,
         stroke: comp.stroke,
         laneAccent: laneAccentFor(comp, ctx),
-        isSelected: ctx.selectedNodeId === comp.id,
+        // While a flow is read, the ring follows the step being read, as on every card.
+        isSelected: ctx.isPlaying
+          ? ctx.flowHighlight.activeNodeId === comp.id
+          : ctx.selectedNodeId === comp.id,
       };
     },
 
@@ -121,6 +125,8 @@ export const processNodeElement: ElementDescriptor = {
       return {
         width: layout?.width ?? fallback.width,
         height: layout?.height ?? fallback.height,
+        // The flow's dimming while a script is read: what it does not reach steps back.
+        ...playbackStyle(comp, ctx),
       };
     },
   },

@@ -662,7 +662,8 @@
         "removeEdge": "Remover conexão {{edgeId}}",
         "insertPattern": "Inserir pattern {{patternId}}",
         "autoLayout": "Organizar diagrama automaticamente",
-        "getTags": "Listar tags do diagrama"
+        "getTags": "Listar tags do diagrama",
+        "journeyOutline": "Adicionar jornada a partir de texto ({{count}} linhas)"
       },
       "defaultTitle": "Alterações sugeridas",
       "noChanges": "sem alterações",
@@ -798,6 +799,17 @@
       "exported": "IR exportado!",
       "noIR": "Nenhum IR gerado ainda. Use /generate primeiro.",
       "analyzing": "Analisando…"
+    },
+    "revision": {
+      "title": "Revisão da jornada",
+      "applySelected_one": "Aplicar {{count}} alteração",
+      "applySelected_other": "Aplicar {{count}} alterações",
+      "noPhase": "Antes das fases",
+      "stale": "Não se aplica mais: o passo não existe.",
+      "tickAll": "Marcar todas",
+      "untickAll": "Desmarcar todas",
+      "count_one": "{{count}} alteração para revisar",
+      "count_other": "{{count}} alterações para revisar"
     }
   },
   "versions": {
@@ -947,7 +959,8 @@
     "laneLabel": "Rótulo da faixa",
     "orientation": "Orientação",
     "horizontal": "Horizontal",
-    "vertical": "Vertical"
+    "vertical": "Vertical",
+    "renameHint": "Clique duas vezes para renomear a raia"
   },
   "dbTable": {
     "panelTitle": "Tabela de banco de dados",
@@ -3618,6 +3631,277 @@
       "data": "Dados",
       "object": "Objeto neste passo",
       "ways": "Saídas"
+    }
+  },
+  "diagramKinds": {
+    "kindChoice": "Tipo",
+    "freehand": {
+      "label": "Livre",
+      "description": "Desenhe qualquer coisa e posicione onde quiser."
+    },
+    "editFreehand": "Editar livremente",
+    "editFreehandHint": "Paleta completa e posicionamento livre. Você pode voltar depois.",
+    "freehandBanner": "Editando livremente. O layout e as verificações de {{kind}} estão pausados.",
+    "unavailable": "Este diagrama foi feito com “{{kind}}”, que não está disponível aqui. Ele abre como livre e mantém o tipo.",
+    "issuesTitle": "Ainda não cabe em {{kind}}",
+    "issuesHint": "Corrija estes pontos e tente de novo. Até lá o diagrama segue livre.",
+    "returned": "De volta ao {{kind}}.",
+    "derivedFlow": "Derivado dos passos",
+    "derivedFlowHint": "Este flow segue os passos do canvas. Edite os passos para mudar a ordem.",
+    "guided": {
+      "label": "Guiado",
+      "description": "Uma jornada ou fluxo de dados em raias. Você escreve os passos; o layout é automático.",
+      "return": "Voltar ao guiado",
+      "newStep": "Novo passo",
+      "newDecision": "Decisão?",
+      "startName": "Início",
+      "lanes": {
+        "first": "Usuário",
+        "second": "Sistema",
+        "newLane": "Nova raia",
+        "add": "Adicionar raia",
+        "rename": "Renomear raia",
+        "moveUp": "Subir raia",
+        "moveDown": "Descer raia",
+        "moveLeft": "Mover raia para a esquerda",
+        "moveRight": "Mover raia para a direita",
+        "remove": "Remover raia",
+        "field": "Raia",
+        "moveTo": "Mover para a raia"
+      },
+      "commands": {
+        "next": "Adicionar próximo passo",
+        "branch": "Adicionar desvio",
+        "laneUp": "Mover para a raia de cima",
+        "laneDown": "Mover para a raia de baixo",
+        "labelExit": "Rotular a próxima saída",
+        "delete": "Apagar passo"
+      },
+      "refused": {
+        "selectOneStep": "Selecione um passo primeiro.",
+        "endHasNoNext": "Um passo de fim não tem nada depois.",
+        "keepStart": "Um diagrama guiado precisa de um passo de início.",
+        "keepLastLane": "Um diagrama guiado precisa de pelo menos uma raia.",
+        "outlineClosesPath": "Este texto encerra todos os caminhos, e o que vinha depois do passo selecionado ficaria solto. Selecione o último passo.",
+        "oneStart": "Um diagrama guiado tem um único passo de início."
+      },
+      "checks": {
+        "unlabelledExit": "Esta saída não tem rótulo",
+        "openEnd": "Este caminho não chega a um fim"
+      },
+      "issues": {
+        "noLane": "Não há nenhuma raia.",
+        "unknownElement": "O tipo deste elemento não está disponível aqui.",
+        "nestedLane": "Uma raia está dentro de outro elemento.",
+        "outsideLane": "Este elemento está fora de todas as raias.",
+        "notAStep": "Só passos de jornada vão dentro de uma raia.",
+        "noStart": "Não há passo de início.",
+        "extraStart": "Há mais de um passo de início.",
+        "connectionNotBetweenSteps": "Esta conexão não liga dois passos."
+      },
+      "shortcuts": {
+        "title": "Diagrama guiado",
+        "next": "Adicionar o próximo passo",
+        "branch": "Adicionar um desvio",
+        "lane": "Mover o passo para outra raia",
+        "labelExit": "Numa decisão: rotular as saídas, uma após a outra",
+        "delete": "Apagar o passo e religar",
+        "escape": "Limpar a seleção (Tab volta a mover o foco)"
+      },
+      "endName": "Fim",
+      "outline": {
+        "open": "Texto",
+        "openHint": "Escrever a jornada como texto",
+        "title": "Escrever como texto",
+        "placeholder": "Cliente: Escolhe produto\nApp: Gera cobrança Pix\n? Pagou\n  sim -> API: Confirma pagamento\n  não -> @Escolhe produto\n! Concluído",
+        "syntax": "Raia: passo · ? decisão · rótulo -> saída · ! fim · -> @Passo volta · ## fase · # comentário · ou cole Mermaid (swimlane-beta, flowchart, journey)",
+        "apply": "Aplicar",
+        "applyHint": "Ctrl/Cmd + Enter",
+        "copy": "Copiar como texto",
+        "copied": "Jornada copiada como texto.",
+        "summary": "Passos: {{steps}} · Decisões: {{decisions}} · Raias novas: {{lanes}}",
+        "empty": "Digite os passos, um por linha.",
+        "added_one": "{{count}} passo adicionado a partir do texto.",
+        "added_other": "{{count}} passos adicionados a partir do texto.",
+        "undo": "Desfazer",
+        "line": "Linha {{line}}",
+        "omittedSteps_one": "{{count}} passo que não é alcançado a partir do início ficou de fora",
+        "omittedSteps_other": "{{count}} passos que não são alcançados a partir do início ficaram de fora",
+        "omittedConnections_one": "{{count}} conexão que o texto não consegue expressar ficou de fora",
+        "omittedConnections_other": "{{count}} conexões que o texto não consegue expressar ficaram de fora",
+        "errors": {
+          "exitOutsideDecision": "Uma saída (rótulo -> …) precisa estar recuada embaixo de uma decisão (? …).",
+          "exitExpected": "Embaixo de uma decisão, escreva as saídas: rótulo -> passo.",
+          "decisionWithoutExits": "Esta decisão não tem saídas. Recue-as embaixo dela: rótulo -> passo.",
+          "exitWithoutTarget": "Esta saída não leva a nada. Escreva um passo depois de -> ou recue um embaixo dela.",
+          "indentUnderStep": "Só as saídas de uma decisão são recuadas. Tire o recuo.",
+          "emptyName": "Esta linha não tem nome.",
+          "unreachableLine": "O caminho terminou na linha anterior (! fim ou -> @salto), então nada chega a esta linha.",
+          "unknownJump": "Nenhum passo se chama “{{name}}”.",
+          "ambiguousJump": "Mais de um passo se chama “{{name}}”. Renomeie um deles antes.",
+          "mermaidUnclosedSubgraph": "Este subgraph não tem “end”.",
+          "mermaidStrayEnd": "“end” sem subgraph aberto.",
+          "mermaidUnreadable": "Não foi possível ler esta linha como nós e setas.",
+          "mermaidTaskWithoutScore": "Uma tarefa de jornada é “Tarefa: nota: atores”.",
+          "mermaidScoreOutOfRange": "A nota deve ser de 1 a 5 (aqui: {{score}}).",
+          "mermaidEmpty": "Este bloco Mermaid não tem passos.",
+          "phaseWithoutStep": "“##” começa uma fase, mas nenhum passo vem depois.",
+          "unknownHandle": "Nenhum passo tem o id {#{{handle}}}",
+          "duplicateHandle": "O id {#{{handle}}} aparece duas vezes",
+          "visibilityMisplaced": "--- fica entre as declarações de raia no início, antes de uma raia"
+        }
+      },
+      "inspector": {
+        "tab": "Jornada",
+        "stepKind": "Tipo de passo",
+        "exits": "Saídas",
+        "exitTo": "Para {{name}}",
+        "exitPlaceholder": "Rotule esta saída",
+        "noExits": "Ainda sem saídas. Shift+Tab no canvas adiciona uma.",
+        "newLane": "Nova raia"
+      },
+      "stepKinds": {
+        "rectangle": "Passo",
+        "start": "Início",
+        "end": "Fim",
+        "event": "Evento",
+        "diamond": "Decisão",
+        "subroutine": "Subprocesso",
+        "cylinder": "Dados",
+        "document": "Documento"
+      },
+      "mermaid": {
+        "formats": {
+          "outline": "Texto",
+          "swimlane": "Mermaid (raias)",
+          "journey": "Mermaid (jornada)",
+          "outlineIds": "Texto com ids"
+        },
+        "exportedFrom": "Exportado do Structura: {{name}}",
+        "journeyLeftOut": "Só o caminho principal: {{branches}} desvio(s) e {{steps}} outro(s) passo(s) ficaram de fora.",
+        "copyAs": "Copiar como…"
+      },
+      "phases": {
+        "field": "Fase",
+        "noPhase": "Sem fase",
+        "create": "Criar fase “{{name}}”",
+        "continuePrevious": "Continuar a fase anterior",
+        "remove": "Remover a fase",
+        "renameHint": "Clique duas vezes para renomear a fase",
+        "moveHint": "Arraste para mudar onde a próxima fase começa"
+      },
+      "text": {
+        "changes": {
+          "add": "Adicionar “{{name}}”",
+          "remove": "Remover “{{name}}”",
+          "rename": "Renomear “{{name}}” → “{{after}}”",
+          "kind": "“{{name}}” vira {{after}}",
+          "lane": "Mover “{{name}}” para {{after}}",
+          "phase": "Fase em “{{name}}”: {{before}} → {{after}}",
+          "connect": "Ligar “{{source}}” → “{{target}}”",
+          "disconnect": "Desligar “{{source}}” → “{{target}}”",
+          "relabel": "Rótulo “{{source}}” → “{{target}}”: {{after}}",
+          "participants": "Participantes de “{{name}}”: {{before}} → {{after}}",
+          "visibility": "Linha de visibilidade: acima de {{before}} → acima de {{after}}"
+        },
+        "count": "+{{added}} ~{{changed}} −{{removed}}",
+        "noChanges": "Nenhuma alteração",
+        "review": "Revisar",
+        "reviewHide": "Ocultar",
+        "stale": "O diagrama mudou desde que este texto foi escrito.",
+        "reload": "Recarregar do diagrama",
+        "skipped_one": "{{count}} alteração ficou de fora: o passo não existe mais.",
+        "skipped_other": "{{count}} alterações ficaram de fora: os passos não existem mais.",
+        "insert": "Inserir na seleção",
+        "insertPlaceholder": "Passos para adicionar depois do passo selecionado…",
+        "insertApply": "Inserir",
+        "applied": "Jornada atualizada",
+        "journey": "Jornada"
+      },
+      "blueprint": {
+        "lineAbove": "Linha de visibilidade acima desta raia",
+        "lineLeft": "Linha de visibilidade à esquerda desta raia",
+        "removeLine": "Remover a linha de visibilidade",
+        "frontstage": "Visível ao cliente",
+        "backstage": "Bastidores",
+        "participants": "Participantes",
+        "addParticipant": "Adicionar “{{name}}”",
+        "removeParticipant": "Remover {{name}}",
+        "participantsSearch": "Uma raia ou um nome novo…",
+        "noParticipants": "Só a raia participa"
+      },
+      "document": {
+        "format": "Documento (Markdown)",
+        "download": "Baixar documento (.md)",
+        "beforePhases": "Antes das fases",
+        "decision": "Decisão",
+        "end": "Fim",
+        "backTo": "volta para {{name}}"
+      },
+      "review": {
+        "errorPaths": {
+          "label": "Caminhos de erro que faltam",
+          "prompt": "Revise esta jornada procurando caminhos de erro que faltam: onde um passo pode falhar (pagamento recusado, tempo esgotado, dado inválido) sem uma saída que trate isso? Proponha uma revisão que adicione esses caminhos."
+        },
+        "handoffs": {
+          "label": "Passagens sem dono",
+          "prompt": "Revise as passagens entre raias desta jornada: onde o trabalho passa de uma raia para outra sem um passo que assuma claramente a passagem? Proponha uma revisão que deixe cada passagem explícita."
+        },
+        "negativeExits": {
+          "label": "Decisões sem saída negativa",
+          "prompt": "Revise as decisões desta jornada: quais não têm saída para a resposta negativa ou inesperada? Proponha uma revisão que adicione essas saídas e para onde elas levam."
+        },
+        "customerLanguage": {
+          "label": "Linguagem do cliente",
+          "prompt": "Reescreva os nomes dos passos desta jornada nas palavras do cliente, curtos e como verbos, mantendo a estrutura. Proponha como revisão."
+        }
+      },
+      "templates": {
+        "checkout": {
+          "label": "Checkout",
+          "text": "Cliente:\nLoja:\nPagamentos:\n## Escolher\nCliente: Navega pelos produtos\nAdiciona ao carrinho\n## Pagar\nRevisa o pedido\nLoja: Gera a cobrança\nPagamentos: ? Aprovado\n  sim -> Loja: Confirma o pedido\n  não -> Cliente: Tenta outro meio\n    -> @Revisa o pedido\n## Receber\nLoja: Envia o pedido\nCliente: ! Recebe o pedido"
+        },
+        "onboarding": {
+          "label": "Onboarding",
+          "text": "Cliente:\nApp:\nTime:\n## Cadastro\nCliente: Cria a conta\nApp: Envia e-mail de confirmação\nCliente: Confirma o e-mail\n## Primeiro uso\nApp: Mostra o tour guiado\nCliente: ? Termina o tour\n  sim -> Cria o primeiro projeto\n  não -> Time: Oferece ajuda\n    Cliente: Cria o primeiro projeto\n## Adoção\nApp: Sugere próximos passos\nCliente: ! Usa toda semana"
+        },
+        "support": {
+          "label": "Atendimento",
+          "text": "Cliente:\nSuporte:\nEngenharia:\n## Relato\nCliente: Abre um chamado\nSuporte: Faz a triagem\n## Solução\n? Problema conhecido\n  sim -> Envia a solução\n  não -> Engenharia: Investiga\n    Corrige o problema\n    Suporte: Envia a solução\n## Encerramento\nCliente: ? Problema resolvido\n  sim -> ! Encerra o chamado\n  não -> @Faz a triagem"
+        },
+        "blank": "Em branco",
+        "notes": "Colar notas de reunião",
+        "notesPlaceholder": "Cole as notas; o assistente monta a jornada a partir delas.",
+        "notesPrompt": "Monte a jornada a partir destas notas de reunião, com raias para quem age, fases para as etapas e decisões onde as notas dizem que depende:\n\n{{notes}}",
+        "choice": "Começar de"
+      }
+    },
+    "toolbar": {
+      "more": "Mais",
+      "moreMenu": "Mais elementos deste tipo"
+    },
+    "inspector": {
+      "selectSearch": "Busque ou digite um nome novo…",
+      "selectEmpty": "Nada ainda — digite um nome para criar"
+    },
+    "overlay": {
+      "exportLayer": "Fases"
+    },
+    "direction": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "toHorizontal": "Mudar para horizontal (raias em linhas)",
+      "toVertical": "Mudar para vertical (raias em colunas)",
+      "switchHint": "Reorganiza a jornada na outra direção. Desfazer volta como estava.",
+      "choice": "Direção",
+      "horizontalChoice": "Horizontal (raias em linhas)",
+      "verticalChoice": "Vertical (raias em colunas)"
+    },
+    "present": "Apresentar por fase",
+    "review": "Revisar jornada",
+    "text": {
+      "dock": "Fixar ao lado do canvas",
+      "undock": "Desacoplar"
     }
   }
 }

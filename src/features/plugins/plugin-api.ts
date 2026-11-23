@@ -24,6 +24,7 @@ import {
   type PluginApplyOptions,
   type PluginDiagramChangesResult,
   type PluginDiagramInput,
+  type PluginMoveResult,
   type PluginFolderInput,
   type WorkspaceImporterContribution,
   type PluginFiles,
@@ -58,6 +59,28 @@ import { PluginCodeEditor } from "./components/PluginCodeEditor";
 import { registerChatContextContribution } from "./chat-context-registry";
 import { createPluginFolders } from "@/infrastructure/persistence/pluginFolders";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
+import { interactionOf, resolveKindPolicy } from "@/features/diagram-kinds/policy";
+
+/**
+ * A panel's `appliesTo.kinds` as the host can use it: a list of strings. Anything else is dropped,
+ * with a warning, and the panel shows everywhere as it did before 1.16.
+ */
+function withValidKindScope(section: PanelContribution, pluginId: string): PanelContribution {
+  const kinds = section.appliesTo?.kinds;
+  if (kinds === undefined) return section;
+  if (Array.isArray(kinds) && kinds.every((kind) => typeof kind === "string")) return section;
+  console.warn(
+    `[plugins] ${pluginId}: panel "${section.id}" has an invalid appliesTo.kinds; it shows for every diagram.`,
+  );
+  const { appliesTo: _appliesTo, ...rest } = section;
+  return rest;
+}
+
+/** Whether the diagram's kind places its elements, so positions are not written from outside. */
+function kindControlsLayout(diagramId: string | null | undefined): boolean {
+  const diagram = diagramId ? useDiagramStore.getState().diagrams[diagramId] : undefined;
+  return !interactionOf(resolveKindPolicy(diagram)).nodesDraggable;
+}
 import { useHighlightRequests } from "@/features/canvas/focus/highlightRequests";
 
 /**
@@ -384,7 +407,7 @@ export function createScopedPluginApi(
 
     registerPanel(section: PanelContribution): void {
       warnUndeclaredCapability(manifest, "ui:panels");
-      registerPanelContribution(section);
+      registerPanelContribution(withValidKindScope(section, manifest.id));
       tracker.panelIds.push(section.id);
     },
 
@@ -434,18 +457,23 @@ export function createScopedPluginApi(
       useDiagramStore.getState().updateComponent(componentId, sanitizeComponentPatch(patch));
     },
 
-    moveComponents(moves: Array<{ id: string; x: number; y: number }>): void {
+    moveComponents(moves: Array<{ id: string; x: number; y: number }>): PluginMoveResult {
       warnUndeclaredCapability(manifest, "diagram:write");
+      // A diagram whose kind places its elements is not moved by hand, by anyone (ADR-0014).
+      if (kindControlsLayout(useDiagramStore.getState().activeDiagramId)) {
+        return { refused: "kind_controls_layout" };
+      }
       const layouts = moves
         .filter(
           (move) =>
             typeof move?.id === "string" && Number.isFinite(move.x) && Number.isFinite(move.y),
         )
         .map((move) => ({ elementId: move.id, x: move.x, y: move.y }));
-      if (layouts.length === 0) return;
+      if (layouts.length === 0) return {};
       // applyAutoLayout pushes ONE history step for the batch — a single undo reverts
       // the whole rearrangement — and skips unknown element ids itself.
       useDiagramStore.getState().applyAutoLayout(layouts);
+      return {};
     },
 
     createDiagram(input: PluginDiagramInput): string {
@@ -504,10 +532,18 @@ export function createScopedPluginApi(
                 ownerPluginId: manifest.id,
               }
             : undefined;
-      const result = useDiagramStore
-        .getState()
-        .applyGraphChanges(toGraphChanges(changes), diagramId, target);
-      return { idsByKey: result.componentIdByExternalId, connectionIds: result.connectionIds };
+      // A diagram whose kind places its elements takes the structure but not the positions: the
+      // kind arranges what was added (ADR-0014).
+      const refuseMoves =
+        (changes?.move?.length ?? 0) > 0 &&
+        kindControlsLayout(diagramId ?? useDiagramStore.getState().activeDiagramId);
+      const graphChanges = toGraphChanges(refuseMoves ? { ...changes, move: [] } : changes);
+      const result = useDiagramStore.getState().applyGraphChanges(graphChanges, diagramId, target);
+      return {
+        idsByKey: result.componentIdByExternalId,
+        connectionIds: result.connectionIds,
+        ...(refuseMoves && { movesRefused: "kind_controls_layout" as const }),
+      };
     },
 
     files: scopedFiles(manifest),

@@ -1,3 +1,6 @@
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { kindMarkersFor } from "@/features/diagram-kinds/markers";
+import { interactionOf, resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import { useMemo, useRef, type CSSProperties } from "react";
 import type { Node } from "@xyflow/react";
 import type {
@@ -26,7 +29,7 @@ import type { ViewSnapshot } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { applyEditorNodeOverlays, versionGhostOverlay } from "./nodeOverlays";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
-import { getPendingNodeIds, useLLMStore } from "@/features/llm";
+import { getPendingNodeIds, getPendingRemovedNodeIds, useLLMStore } from "@/features/llm";
 
 /** The projection's policy on the editor path; interactivity is React Flow's, per canvas. */
 const EDITOR_PROJECTION = writePolicy(true);
@@ -140,8 +143,15 @@ function isSameBuiltFlowNode(a: Node, b: Node): boolean {
     a.extent === b.extent &&
     a.hidden === b.hidden &&
     a.style === b.style &&
-    a.data === b.data
+    a.data === b.data &&
+    tagKey(a) === tagKey(b)
   );
+}
+
+/** A kind's tag rides on data attributes (`kindTagOverlay`). */
+function tagKey(node: Node): string {
+  const attrs = node.domAttributes as Record<string, unknown> | undefined;
+  return `${String(attrs?.["data-kind-tag"] ?? "")}|${String(attrs?.title ?? "")}`;
 }
 
 function shallowEqualIgnoringFunctions(
@@ -211,10 +221,20 @@ export function useCanvasNodes({
 }: UseCanvasNodesParams): Node[] {
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
+  // The kind's markers, subscribed to on their own: a property-only edit (a step's participants)
+  // changes a badge without changing anything else the nodes are built from. Memoised per
+  // snapshot, so the selector returns the same object while nothing changed.
+  const kindMarkerSets = useDiagramStore((state) =>
+    kindMarkersFor(diagram ? (state.diagrams[diagram.id] ?? diagram) : null),
+  );
 
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingNodeIds = useMemo(() => getPendingNodeIds(pendingPreviews), [pendingPreviews]);
+  const pendingRemovedIds = useMemo(
+    () => getPendingRemovedNodeIds(pendingPreviews),
+    [pendingPreviews],
+  );
 
   // Stabilize Sets by content so they don't cause unnecessary dataCtx re-creation on
   // selection/highlight toggles that only add/remove a single member.
@@ -362,6 +382,9 @@ export function useCanvasNodes({
      */
     const isReading = ctx.isPlaying;
     const flowModeActive = ctx.isPlaying || ctx.isRecording;
+    // A kind that places its elements (ADR-0014) takes drag and resize away from every node.
+    const kindPlaced = !interactionOf(resolveKindPolicy(diagram)).nodesDraggable;
+    const { nodes: kindMarked, tags: kindTags } = kindMarkerSets;
 
     const visibleIds = new Set(view.nodes.map((viewNode) => viewNode.component.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
@@ -398,13 +421,16 @@ export function useCanvasNodes({
         hiddenByTag: isNodeHiddenByTagFilter(comp),
         isReading,
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
+        kindPlaced,
+        kindMarked: kindMarked.has(comp.id),
+        kindTag: kindTags.get(comp.id),
         versionConflict: conflictIds.has(comp.id),
         ...(versionChanges?.added.components.has(comp.id)
           ? { versionChange: "added" as const }
           : versionChanges?.changed.has(comp.id)
             ? { versionChange: "changed" as const }
             : {}),
-        pending: pendingNodeIds.has(comp.id),
+        pending: pendingRemovedIds.has(comp.id) ? "remove" : pendingNodeIds.has(comp.id),
       });
 
       // Identity cache, unchanged: React Flow keeps the previous object unless
@@ -478,11 +504,13 @@ export function useCanvasNodes({
     return allNodes;
   }, [
     diagramVersionState,
+    kindMarkerSets,
     dataCtx,
     nodeCtxPlayback,
     view,
     isNodeHiddenByTagFilter,
     pendingNodeIds,
+    pendingRemovedIds,
     versionChanges,
     ghostView,
   ]);

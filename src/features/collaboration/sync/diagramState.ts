@@ -9,6 +9,7 @@ import {
 } from "@collab-protocol";
 import type { Diagram, DiagramSnapshot } from "@/features/diagram";
 import { normalizeLayoutSettings } from "@/features/diagram/model/layout-settings";
+import { sanitizeKindFields } from "@/features/diagram/model/diagram-kind";
 
 /**
  * The doc fields a relay accepts. Until a relay declares more (`joined.docFields`), a session
@@ -54,6 +55,11 @@ export function diagramToState(
     // default arrange settings.
     ...(fields.has("direction") && { direction: diagram.direction ?? null }),
     ...(fields.has("layoutSettings") && { layoutSettings: diagram.layoutSettings ?? null }),
+    // The diagram kind (ADR-0014), only to a relay that declared it. An older relay does not
+    // carry it: its peers see the diagram freehand, and the local kind is left untouched.
+    ...(fields.has("kind") && { kind: diagram.kind ?? null }),
+    ...(fields.has("kindMode") && { kindMode: diagram.kindMode ?? null }),
+    ...(fields.has("kindData") && { kindData: diagram.kindData ?? null }),
   };
   const entities: Record<CollectionName, EntityMap> = {
     components: entityMap(diagram.snapshot.components),
@@ -107,10 +113,9 @@ export function applyStateToDiagram(diagram: Diagram, state: DiagramState): Diag
  * does not have (an older relay, or a room nobody wrote it in) leaves the local value alone;
  * `null` clears it.
  */
-function withLayoutDoc<T extends Pick<Diagram, "direction" | "layoutSettings">>(
-  target: T,
-  doc: DiagramState["doc"],
-): T {
+function withLayoutDoc<
+  T extends Pick<Diagram, "direction" | "layoutSettings" | "kind" | "kindMode" | "kindData">,
+>(target: T, doc: DiagramState["doc"]): T {
   let next = target;
   if ("direction" in doc) {
     const { direction: _direction, ...rest } = next;
@@ -122,6 +127,16 @@ function withLayoutDoc<T extends Pick<Diagram, "direction" | "layoutSettings">>(
       ? normalizeLayoutSettings(doc.layoutSettings)
       : undefined;
     next = (settings ? { ...rest, layoutSettings: settings } : rest) as T;
+  }
+  // The kind fields travel together: a doc that carries any of them states all three.
+  if ("kind" in doc || "kindMode" in doc || "kindData" in doc) {
+    const { kind: _kind, kindMode: _kindMode, kindData: _kindData, ...rest } = next;
+    const fields = sanitizeKindFields({
+      kind: "kind" in doc ? doc.kind : next.kind,
+      kindMode: "kindMode" in doc ? doc.kindMode : next.kindMode,
+      kindData: "kindData" in doc ? doc.kindData : next.kindData,
+    });
+    next = { ...rest, ...fields } as T;
   }
   return next;
 }

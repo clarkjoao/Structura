@@ -24,7 +24,7 @@ type DiagramNodeComponent = NodeTypes[string];
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.15.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.16.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -143,6 +143,22 @@ export interface DiagramSnapshot {
   connections: readonly PluginConnectionSnapshot[];
   /** v1.14 — the Version applied to `components` / `connections`; null on the base. */
   activeVersion?: PluginActiveVersion | null;
+  /**
+   * v1.16 — the diagram's kind (ADR-0014), read only; absent on a freehand diagram. A kind
+   * diagram can be in its kind's editor or edited freehand (`kindMode: "freehand"`), and its
+   * kind may not be registered in this build (`kindAvailable: false`).
+   */
+  kind?: string;
+  kindMode?: "kind" | "freehand";
+  kindAvailable?: boolean;
+}
+
+/**
+ * v1.16 — what a position write did. On a diagram whose kind places its elements (in its kind's
+ * editor), positions are left unchanged and `refused` says why.
+ */
+export interface PluginMoveResult {
+  refused?: "kind_controls_layout";
 }
 
 /** v1.14 — options of `getDiagram`. */
@@ -336,6 +352,11 @@ export interface PanelContribution {
   id: string;
   slot: PluginPanelSlot;
   title: LocalizedText;
+  /**
+   * v1.16 — the diagram kinds the panel shows for (ADR-0014): kind ids, with `"freehand"` for
+   * diagrams that have none. Absent shows it for every diagram, as before.
+   */
+  appliesTo?: { kinds?: readonly string[] };
   /** React component; rendered inside the host slot, error-boundaried. */
   component: ReactComponentType<PluginPanelProps>;
 }
@@ -672,6 +693,11 @@ export interface PluginDiagramChangesResult {
   idsByKey: Record<string, string>;
   /** Per `connect` entry, in order: the connection created, or null when its ends did not resolve. */
   connectionIds: Array<string | null>;
+  /**
+   * v1.16 — set when `move` entries were left unapplied because the diagram's kind places its
+   * elements (ADR-0014); the rest of the changes were applied, and the kind arranges them.
+   */
+  movesRefused?: "kind_controls_layout";
 }
 
 /** v1.14 — element ids, by what a Version does to them. */
@@ -791,9 +817,10 @@ export interface StructuraPluginApi {
   /**
    * v1.1 — capability "diagram:write". Batch position changes on the ACTIVE diagram,
    * applied as one history step (a single undo reverts the whole batch). Unknown ids
-   * are ignored.
+   * are ignored. Since 1.16 it returns what it did: on a diagram whose kind places its
+   * elements, nothing moves and the result says so.
    */
-  moveComponents(moves: Array<{ id: string; x: number; y: number }>): void;
+  moveComponents(moves: Array<{ id: string; x: number; y: number }>): PluginMoveResult;
 
   /**
    * v1.4 — capability "diagram:write". Remove, update, move, add and connect as one history

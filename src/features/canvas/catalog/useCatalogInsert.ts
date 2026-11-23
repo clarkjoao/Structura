@@ -12,6 +12,11 @@ import type { CatalogEntry } from "@/features/elements/search";
 import { panelKindDefaultName } from "@/lib/catalogs/panels";
 import { useCanvasPreferencesStore } from "../preferences";
 import { useTextToolStore } from "../text/textLayer.store";
+import { toast } from "sonner";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
+import { isKindActive, resolveKindPolicy } from "@/features/diagram-kinds/policy";
+import { kindCommandContextFor, resolveKindText } from "@/features/diagram-kinds/context";
 
 export interface CatalogInsertTarget {
   /** Flow position of the new node. */
@@ -31,6 +36,36 @@ function defaultNameFor(entry: CatalogEntry): string {
     ? panelKindDefaultName(createOptions.panelKind)
     : undefined;
   return getDefaultNameForNewComponent(type, entry.label, panelDefault);
+}
+
+/**
+ * The insert as the active diagram's kind does it, or `undefined` when no kind
+ * takes it (freehand, or a kind without an `insert`). A refusal is shown and
+ * yields null.
+ */
+function insertThroughKind(
+  entry: CatalogEntry,
+  sourceNodeId: string | null,
+): string | null | undefined {
+  if (entry.insert.kind !== "element") return undefined;
+  const state = useDiagramStore.getState();
+  const diagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+  const policy = resolveKindPolicy(diagram);
+  if (!diagram || !isKindActive(policy) || !policy.descriptor.insert) return undefined;
+  const { type, createOptions } = entry.insert;
+  if (isTextType(type)) return undefined;
+  const selection = useCanvasSelectionStore.getState();
+  const selectedIds = sourceNodeId ? [sourceNodeId] : [...selection.selectedNodeIds];
+  const outcome = policy.descriptor.insert(kindCommandContextFor(diagram, selectedIds), {
+    type,
+    ...(createOptions.flowShape && { flowShape: createOptions.flowShape }),
+  });
+  if ("refused" in outcome) {
+    toast.info(resolveKindText(outcome.refused));
+    return null;
+  }
+  const result = state.applyKindEdit(outcome.edit);
+  return outcome.select ? (result.idsByKey[outcome.select] ?? outcome.select) : null;
 }
 
 /**
@@ -57,6 +92,14 @@ export function useCatalogInsert(): (
       };
       const connectFrom = sourceNodeId ? { sourceId: sourceNodeId, edge } : undefined;
       let createdId: string | null = null;
+
+      // A diagram kind places what is inserted (ADR-0014): into the selected lane, after the
+      // selected step. The position asked for is the kind's to decide.
+      const kindInsert = insertThroughKind(entry, sourceNodeId ?? null);
+      if (kindInsert !== undefined) {
+        if (kindInsert) recordUse(entry.id);
+        return kindInsert;
+      }
 
       switch (entry.insert.kind) {
         case "element": {

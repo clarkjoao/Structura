@@ -22,7 +22,13 @@ export type {
 } from "./types";
 
 // ─── Store ────────────────────────────────────────────────────────────────────
-export { useLLMStore, getPendingNodeIds, getPendingEdgeIds, getSuggestionIdForNode } from "./store";
+export {
+  useLLMStore,
+  getPendingNodeIds,
+  getPendingRemovedNodeIds,
+  getPendingEdgeIds,
+  getSuggestionIdForNode,
+} from "./store";
 
 // ─── Serializers ──────────────────────────────────────────────────────────────
 export { serializeDiagramContext } from "./serializer";

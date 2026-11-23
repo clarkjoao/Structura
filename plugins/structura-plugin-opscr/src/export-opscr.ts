@@ -35,7 +35,7 @@ function parentsFirst(diagram: DiagramSnapshot) {
   return [...diagram.components].sort((a, b) => depth(a.id) - depth(b.id));
 }
 
-export function diagramToOpscrDocuments(diagram: DiagramSnapshot): {
+function diagramToOpscrDocuments(diagram: DiagramSnapshot): {
   documents: string[];
   skipped: string[];
 } {

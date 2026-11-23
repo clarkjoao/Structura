@@ -71,6 +71,40 @@ export default function ShortcutsModal({
 
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">
           <div className="grid gap-4 md:grid-cols-2">
+            <ShortcutCard title={t("diagramKinds.guided.shortcuts.title")}>
+              <ShortcutRow label={t("diagramKinds.guided.shortcuts.next")} keys={<Kbd>Tab</Kbd>} />
+              <ShortcutRow
+                label={t("diagramKinds.guided.shortcuts.branch")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Shift</Kbd>
+                    <Kbd>Tab</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
+                label={t("diagramKinds.guided.shortcuts.lane")}
+                keys={
+                  <span className="inline-flex items-center gap-1">
+                    <Kbd>Alt</Kbd>
+                    <Kbd>↑</Kbd>
+                    <Kbd>↓</Kbd>
+                  </span>
+                }
+              />
+              <ShortcutRow
+                label={t("diagramKinds.guided.shortcuts.labelExit")}
+                keys={<Kbd>Enter</Kbd>}
+              />
+              <ShortcutRow
+                label={t("diagramKinds.guided.shortcuts.delete")}
+                keys={<Kbd>Delete</Kbd>}
+              />
+              <ShortcutRow
+                label={t("diagramKinds.guided.shortcuts.escape")}
+                keys={<Kbd>Esc</Kbd>}
+              />
+            </ShortcutCard>
             <ShortcutCard title={t("shortcutsModal.searchNav")}>
               <ShortcutRow
                 label={t("shortcutsModal.searchCanvas")}

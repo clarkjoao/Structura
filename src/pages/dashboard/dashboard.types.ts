@@ -1,5 +1,5 @@
 import type { MouseEvent, DragEvent } from "react";
-import type { Component, Diagram, Level } from "@/features/diagram";
+import type { DiagramDirection, Component, Diagram, Level } from "@/features/diagram";
 
 export type SortKey = "name" | "domain" | "level" | "updatedAt";
 /** One definition, shared with the walkthrough library via the filter toolbar. */
@@ -37,7 +37,16 @@ export interface DiagramListProps {
 
 export interface AddDiagramDialogProps {
   onClose: () => void;
-  onAdd: (name: string, level: Level, domain?: string, description?: string) => void;
+  onAdd: (
+    name: string,
+    level: Level,
+    domain?: string,
+    description?: string,
+    /** The diagram kind chosen (ADR-0014); null for freehand. */
+    kindId?: string | null,
+    /** How a kind diagram starts: its direction, a template, or notes for the assistant. */
+    start?: { direction?: DiagramDirection; templateId?: string; notes?: string },
+  ) => void;
 }
 
 export type GlobalSearchHit = Component & {

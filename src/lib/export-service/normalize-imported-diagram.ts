@@ -3,6 +3,7 @@ import { logger } from "@/lib/core/logger";
 import { useIconStore } from "@/features/diagram";
 import { sanitizeDiagramSvg, sanitizeSvgIcon } from "./sanitize-diagram-svg";
 import { normalizeLayoutSettings } from "@/features/diagram/model/layout-settings";
+import { isKindProps, sanitizeKindFields } from "@/features/diagram/model/diagram-kind";
 
 function normalizeOneIconEntry(key: string, value: unknown): IconDefinition | null {
   if (!value || typeof value !== "object") return null;
@@ -118,14 +119,23 @@ export function normalizeImportedDiagram(untrusted: Diagram): Diagram {
     if (comp && !("customIconId" in comp)) {
       components[key] = { ...comp, customIconId: undefined };
     }
+    // An element's kind data is kept only when it is well-formed JSON within the cap.
+    const current = components[key];
+    if (current && "kindProps" in current && !isKindProps(current.kindProps)) {
+      const { kindProps: _dropped, ...clean } = current;
+      components[key] = clean as typeof current;
+    }
   }
   // The reading direction and the arrange settings arrive from a file, a
   // folder or a link: keep what is valid, drop the rest rather than store it.
-  const { direction, layoutSettings, ...rest } = diagram;
+  // The kind fields too: a well-formed kind is kept even when nothing here
+  // registers it, a malformed one is dropped (`diagram-kind.ts`).
+  const { direction, layoutSettings, kind, kindMode, kindData, ...rest } = diagram;
   const settings = normalizeLayoutSettings(layoutSettings);
   return {
     ...rest,
     ...(direction === "TB" && { direction }),
+    ...sanitizeKindFields({ kind, kindMode, kindData }),
     ...(settings && { layoutSettings: settings }),
     edgeLayouts:
       diagram.edgeLayouts &&

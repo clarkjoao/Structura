@@ -18,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { DiagramPatchAction, PendingSuggestion } from "@/features/llm";
+import { RevisionReview } from "./RevisionReview";
+import { useRevisionSelection } from "./useRevisionSelection";
 
 interface SuggestionCardProps {
   suggestion: PendingSuggestion;
@@ -56,6 +58,7 @@ function getActionIcon(type: string) {
     case "REMOVE_EDGE":
       return <GitBranch className="h-3.5 w-3.5" />;
     case "INSERT_PATTERN":
+    case "ADD_JOURNEY_OUTLINE":
       return <LayoutGrid className="h-3.5 w-3.5" />;
     case "AUTO_LAYOUT":
       return <Zap className="h-3.5 w-3.5" />;
@@ -107,6 +110,12 @@ function formatActionLabel(action: DiagramPatchAction, translate: TFunction): st
       return `${translate("llmChat.suggestion.action.autoLayout")}`;
     case "GET_TAGS":
       return `${translate("llmChat.suggestion.action.getTags")}`;
+    case "REVISE_JOURNEY":
+      return translate("llmChat.revision.title");
+    case "ADD_JOURNEY_OUTLINE":
+      return translate("llmChat.suggestion.action.journeyOutline", {
+        count: action.payload.outline.trim().split("\n").length,
+      });
     default:
       return "Unknown action";
   }
@@ -177,6 +186,8 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
   );
 
   const changes = useMemo(() => countChanges(suggestion.patch.actions), [suggestion.patch.actions]);
+  const revision = suggestion.revision;
+  const { selected } = useRevisionSelection(revision);
 
   // Build summary text
   const summaryParts: string[] = [];
@@ -224,7 +235,9 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
             {/* A plugin's reply (API 1.7) has no patch actions; its title says what changed. */}
             {suggestion.patch.actions.length > 0 && (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                {summaryText}
+                {revision
+                  ? t("llmChat.revision.count", { count: revision.initial.length })
+                  : summaryText}
               </span>
             )}
 
@@ -248,8 +261,13 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
         </div>
       </div>
 
+      {/* A journey revision is reviewed change by change (spec guided-assistant-revisions). */}
+      {revision && (
+        <RevisionReview suggestionId={suggestion.id} revision={revision} pending={isPending} />
+      )}
+
       {/* Action groups */}
-      <div className="px-4 pb-3">
+      <div className={cn("px-4 pb-3", revision && "hidden")}>
         <div className="space-y-2">
           {actionGroups.map((group) => (
             <div
@@ -302,10 +320,14 @@ export function SuggestionCard({ suggestion, onAccept, onReject }: SuggestionCar
             type="button"
             size="sm"
             onClick={() => onAccept(suggestion.id)}
+            disabled={revision !== undefined && selected === 0}
             className="flex-1 gap-1.5 bg-green-600 hover:bg-green-700 text-white"
+            data-testid="suggestion-accept"
           >
             <Check className="h-3.5 w-3.5" />
-            {t("llmChat.suggestion.accept")}
+            {revision
+              ? t("llmChat.revision.applySelected", { count: selected })
+              : t("llmChat.suggestion.accept")}
           </Button>
           <Button
             type="button"

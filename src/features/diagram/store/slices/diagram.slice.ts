@@ -4,6 +4,7 @@ import { generateId } from "../../utils/generate-id";
 import { touchDiagram } from "../helpers/get-active-diagram";
 import { reparentOrphanDiagram } from "../helpers/reparent-orphan-diagram";
 import { toast } from "sonner";
+import { sanitizeKindFields } from "../../model/diagram-kind";
 
 export const diagramsSlice = (
   set: (fn: (state: AppState) => void) => void,
@@ -19,8 +20,11 @@ export const diagramsSlice = (
     domain?: string,
     folderId?: string | null,
     description?: string,
+    /** The diagram kind (ADR-0014); a malformed id leaves the diagram freehand. */
+    options?: { kind?: string },
   ) => {
     const now = Date.now();
+    const kindFields = sanitizeKindFields({ kind: options?.kind });
     const diagram: Diagram = {
       id: generateId("d"),
       name,
@@ -34,6 +38,7 @@ export const diagramsSlice = (
       edgeLayouts: {},
       viewport: { x: 0, y: 0, zoom: 1 },
       folderId: folderId ?? undefined,
+      ...kindFields,
     };
     set((state) => {
       state.diagrams[diagram.id] = diagram;

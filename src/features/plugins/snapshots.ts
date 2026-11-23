@@ -1,3 +1,4 @@
+import { resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import type {
   Component,
   ComponentPatch,
@@ -113,6 +114,13 @@ export function toDiagramSnapshot(
     ),
     connections: Object.values(resolved.connections).map(toConnectionSnapshot),
   };
+  // v1.16 — the kind, read only (ADR-0014); a freehand diagram's snapshot is unchanged.
+  const policy = resolveKindPolicy(diagram);
+  if (policy.type !== "freehand") {
+    snapshot.kind = policy.type === "kind-unavailable" ? policy.kindId : policy.descriptor.id;
+    snapshot.kindMode = policy.type === "kind" ? "kind" : "freehand";
+    snapshot.kindAvailable = policy.type !== "kind-unavailable";
+  }
   if (options.version !== undefined) {
     snapshot.activeVersion = version
       ? { id: version.id, key: version.key ?? null, status: version.status ?? null }

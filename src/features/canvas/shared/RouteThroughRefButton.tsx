@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useConnection, useDiagramActions, useResolvedComponents } from "@/features/diagram";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { canBeReferenced } from "@/features/elements/referencing";
+import { useKindAllowsReferences } from "../hooks/useKindAllowsReferences";
 
 /**
  * On a selected edge: end it on a new reference to its target, beside its
@@ -16,8 +17,10 @@ export function RouteThroughRefButton({ connectionId }: { connectionId: string }
   const connection = useConnection(connectionId);
   const components = useResolvedComponents();
   const { routeConnectionThroughRef } = useDiagramActions();
+  const referencesAllowed = useKindAllowsReferences();
   const target = connection ? components[connection.targetId] : undefined;
-  if (!target || isSharedRefComponent(target) || !canBeReferenced(target)) return null;
+  if (!referencesAllowed || !target || isSharedRefComponent(target) || !canBeReferenced(target))
+    return null;
   return (
     <button
       type="button"

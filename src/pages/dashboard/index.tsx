@@ -6,7 +6,7 @@ import { Plus, Network, FolderOpen, Upload, Clock, Star, Download } from "lucide
 import Navbar from "@/components/Navbar";
 import { useAllDiagrams, useFolders, useDiagramActions, removeRecentRef } from "@/features/diagram";
 import { deletePreview } from "@/lib/diagram-preview/previewCache";
-import type { Level, Diagram } from "@/features/diagram";
+import type { Level, Diagram, DiagramDirection } from "@/features/diagram";
 import { useRecentDiagrams } from "@/features/canvas/navigation/useRecentDiagrams";
 import { ImportModal } from "@/pages/ImportModal";
 import { WorkspaceExportModal } from "@/pages/workspace/WorkspaceExportModal";
@@ -39,6 +39,8 @@ import { ConnectedFolderCard } from "@/pages/ConnectedFolderCard";
 import { DIAGRAM_DRAG_MIME } from "@/components/folders/dragTypes";
 import { cn } from "@/lib/utils";
 import { AddDiagramDialog } from "@/pages/dashboard/AddDiagramDialog";
+import { createKindDiagram } from "@/features/diagram-kinds/actions";
+import { useLLMStore } from "@/features/llm";
 import { DiagramGrid } from "@/pages/dashboard/DiagramGrid";
 import { DiagramList } from "@/pages/dashboard/DiagramList";
 import { LibraryFilterToolbar } from "@/components/filters/LibraryFilterToolbar";
@@ -408,13 +410,44 @@ export default function DashboardPage() {
     : null;
 
   const handleAddDiagram = useCallback(
-    (name: string, level: Level, domain?: string, description?: string) => {
+    (
+      name: string,
+      level: Level,
+      domain?: string,
+      description?: string,
+      kindId?: string | null,
+      start?: { direction?: DiagramDirection; templateId?: string; notes?: string },
+    ) => {
+      if (kindId) {
+        // A kind diagram starts with its template; the element it names opens selected.
+        const { diagram, selectId } = createKindDiagram({
+          name,
+          level,
+          kindId,
+          domain,
+          folderId: selectedFolderId,
+          description,
+          ...(start?.direction && { direction: start.direction }),
+          ...(start?.templateId && { templateId: start.templateId }),
+        });
+        // Meeting notes: the assistant builds the journey from them once the canvas opens.
+        if (start?.notes)
+          useLLMStore
+            .getState()
+            .queuePrompt(t("diagramKinds.guided.templates.notesPrompt", { notes: start.notes }));
+        openDiagram(diagram.id);
+        navigate(
+          `/model/${diagram.id}${selectId ? `?nodeId=${encodeURIComponent(selectId)}` : ""}`,
+        );
+        setShowAdd(false);
+        return;
+      }
       const d = addDiagram(name, level, domain, selectedFolderId, description);
       openDiagram(d.id);
       navigate(`/model/${d.id}`);
       setShowAdd(false);
     },
-    [addDiagram, openDiagram, navigate, selectedFolderId],
+    [addDiagram, openDiagram, navigate, selectedFolderId, t],
   );
 
   const handleDragStart = useCallback((e: React.DragEvent, diagramId: string) => {

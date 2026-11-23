@@ -39,6 +39,8 @@ export function pushHistoryCheckpoint(state: AppState, diagram?: Diagram): boole
     versions: toPlain(d.versions),
     ...(d.layoutSettings && { layoutSettings: toPlain(d.layoutSettings) }),
     ...(d.direction && { direction: d.direction }),
+    ...(d.kindMode && { kindMode: d.kindMode }),
+    ...(d.kindData && { kindData: toPlain(d.kindData) }),
   });
   if (state.past.length > MAX_HISTORY_STEPS) state.past.shift();
   state.future = [];
@@ -93,6 +95,8 @@ export const historySlice = (
       const currentScenes = d.versions;
       const currentLayoutSettings = d.layoutSettings;
       const currentDirection = d.direction;
+      const currentKindMode = d.kindMode;
+      const currentKindData = d.kindData;
 
       state.past.splice(entryIndex, 1);
       state.future.push({
@@ -103,6 +107,8 @@ export const historySlice = (
         versions: currentScenes,
         ...(currentLayoutSettings && { layoutSettings: currentLayoutSettings }),
         ...(currentDirection && { direction: currentDirection }),
+        ...(currentKindMode && { kindMode: currentKindMode }),
+        ...(currentKindData && { kindData: currentKindData }),
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
@@ -113,6 +119,13 @@ export const historySlice = (
       else delete d.layoutSettings;
       if (entry.direction) d.direction = entry.direction;
       else delete d.direction;
+      // Only a kind diagram's mode and data are checkpointed; a freehand diagram has neither.
+      if (d.kind !== undefined) {
+        if (entry.kindMode) d.kindMode = entry.kindMode;
+        else delete d.kindMode;
+        if (entry.kindData) d.kindData = entry.kindData;
+        else delete d.kindData;
+      }
       state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
       state._lastUndoRedoTimestamp = Date.now();
     });
@@ -144,6 +157,8 @@ export const historySlice = (
       const currentScenes = d.versions;
       const currentLayoutSettings = d.layoutSettings;
       const currentDirection = d.direction;
+      const currentKindMode = d.kindMode;
+      const currentKindData = d.kindData;
 
       state.future.splice(entryIndex, 1);
       state.past.push({
@@ -154,6 +169,8 @@ export const historySlice = (
         versions: currentScenes,
         ...(currentLayoutSettings && { layoutSettings: currentLayoutSettings }),
         ...(currentDirection && { direction: currentDirection }),
+        ...(currentKindMode && { kindMode: currentKindMode }),
+        ...(currentKindData && { kindData: currentKindData }),
         timestamp: Date.now(),
       } as DiagramSnapshot);
       d.snapshot = entry.snapshot;
@@ -164,6 +181,13 @@ export const historySlice = (
       else delete d.layoutSettings;
       if (entry.direction) d.direction = entry.direction;
       else delete d.direction;
+      // Only a kind diagram's mode and data are checkpointed; a freehand diagram has neither.
+      if (d.kind !== undefined) {
+        if (entry.kindMode) d.kindMode = entry.kindMode;
+        else delete d.kindMode;
+        if (entry.kindData) d.kindData = entry.kindData;
+        else delete d.kindData;
+      }
       state._lastUndoRedoAt = (state._lastUndoRedoAt ?? 0) + 1;
       state._lastUndoRedoTimestamp = Date.now();
     });

@@ -13,6 +13,7 @@ export { diagramsSlice } from "./diagram.slice";
 export { foldersSlice } from "./folders.slice";
 export { patternsSlice } from "./patterns.slice";
 export { generatedGraphSlice } from "./generated-graph.slice";
+export { kindSlice } from "./kind.slice";
 export type {
   GeneratedEdgeInput,
   GeneratedGraphResult,

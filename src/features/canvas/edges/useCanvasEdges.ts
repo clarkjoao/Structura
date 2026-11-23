@@ -1,3 +1,4 @@
+import { kindMarkersFor } from "@/features/diagram-kinds/markers";
 import { useMemo, useRef, type CSSProperties } from "react";
 import type { Edge } from "@xyflow/react";
 import type { Diagram, DiagramModel, FlowStep, VersionChanges } from "@/features/diagram";
@@ -156,9 +157,11 @@ export function useCanvasEdges({
 
     const pendingEdgeIds = getPendingEdgeIds(pendingPreviews);
 
+    // The diagram kind's quiet markers (ADR-0014): a class, so nothing else on the edge changes.
+    const kindMarked = kindMarkersFor(diagram).connections;
     const nextEdges = projected.map((base) => {
       const conn = { id: base.id };
-      const edge = applyEditorEdgeOverlays(base, {
+      const overlaid = applyEditorEdgeOverlays(base, {
         selectedEdgeId,
         isCompareMode: isCompareMode ?? false,
         compareConnectionOpacity,
@@ -170,6 +173,9 @@ export function useCanvasEdges({
             ? { versionChange: "changed" as const }
             : {}),
       });
+      const edge = kindMarked.has(base.id)
+        ? { ...overlaid, className: `${overlaid.className ?? ""} kind-check`.trim() }
+        : overlaid;
 
       // Reuse the previous nested objects when their contents did not move, so
       // the identity comparison below can be a plain reference check.

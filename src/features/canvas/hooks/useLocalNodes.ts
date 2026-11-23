@@ -282,6 +282,7 @@ export function useLocalNodes(
             position: useRemotePosition ? sn.position : ln.position,
             parentId: sn.parentId,
             extent: sn.extent,
+            domAttributes: sn.domAttributes,
           };
         });
         localNodesStateRef.current = merged;
@@ -322,7 +323,8 @@ export function useLocalNodes(
             ln.type === sn.type &&
             ln.position === positionToUse &&
             ln.parentId === sn.parentId &&
-            ln.extent === sn.extent
+            ln.extent === sn.extent &&
+            ln.domAttributes === sn.domAttributes
           ) {
             return ln;
           }
@@ -347,6 +349,7 @@ export function useLocalNodes(
             position: positionToUse,
             parentId: sn.parentId,
             extent: sn.extent,
+            domAttributes: sn.domAttributes,
           };
         });
 

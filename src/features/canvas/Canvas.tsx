@@ -1,5 +1,9 @@
 import { SharedLayer } from "./shared/SharedLayer";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useLLMStore } from "@/features/llm";
+import { WALKTHROUGH_ENABLED } from "@/features/walkthrough/config";
+import { isKindActive, resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import { Panel, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNodeTypes } from "./nodes/node-types";
@@ -17,6 +21,9 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
 import { useRevealedLabelEdgeIds } from "./contexts/useRevealedLabelEdgeIds";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { useFrameDiagram } from "./focus/frameDiagram";
+import { LaneRenameContext } from "./contexts/LaneRenameContext";
+import { useActiveKindKey } from "./catalog/kindCatalog";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useSelectInsertedNodes } from "./hooks/useSelectInsertedNodes";
 import { getCachedCanvasSnapshot, useDiagramStore, isTextComponent } from "@/features/diagram";
@@ -27,6 +34,8 @@ import type { CanvasProps } from "./canvas.types";
 import { DiagramSurface, writePolicy } from "./core";
 import { CanvasOverlays } from "./chrome/CanvasOverlays";
 import { CanvasRightRail } from "./chrome/CanvasRightRail";
+import { KindModeBar } from "./chrome/KindModeBar";
+import { KindOverlayLayer } from "./chrome/KindOverlayLayer";
 import { CompareModeBanner } from "./chrome/CompareModeBanner";
 import { VersionChangesLegend } from "./toolbar/VersionChangesLegend";
 import { PendingSuggestionToolbars } from "./chrome/PendingSuggestionToolbars";
@@ -88,6 +97,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const inputProfile = useCanvasInputProfile();
   const edgeReconnect = useEdgeReconnect();
   const controller = useCanvasController(props);
+  const frameDiagram = useFrameDiagram();
   const {
     t,
     diagram,
@@ -118,6 +128,31 @@ const Canvas = (props: CanvasProps = {}) => {
   const { isFlowActive } = interactionMode;
   const canEditStructure = interactionMode.canEditCanvas && !isFlowActive && !isCompareMode;
   const arrangeControl = useCanvasArrangeControl({ ...controller, diagram, canEditStructure });
+  // Lanes are renamed from their header while a kind arranges the diagram (spec
+  // guided-direct-editing); never on a freehand diagram or a read-only canvas.
+  const kindKey = useActiveKindKey();
+  const navigate = useNavigate();
+  // Presents the journey by phase (spec guided-journey-sharing): the walkthrough made for
+  // it before, updated, or a new one, opened in the player.
+  const presentKindDiagram = useCallback(() => {
+    const active = diagram ? useDiagramStore.getState().diagrams[diagram.id] : undefined;
+    const policy = resolveKindPolicy(active);
+    if (!active || !isKindActive(policy)) return;
+    const scenes = policy.descriptor.presentation?.(active) ?? [];
+    if (scenes.length === 0) return;
+    // Loaded on demand: the walkthrough module stays out of the canvas chunk.
+    void import("@/features/walkthrough/kindPresentation")
+      .then(({ upsertKindPresentation }) => upsertKindPresentation(active, scenes))
+      .then((presentation) => navigate(`/workflow/${presentation.id}/step/0`));
+  }, [diagram, navigate]);
+  const laneRename = useMemo(
+    () =>
+      kindKey && canEditStructure && !isCompareMode
+        ? (laneId: string, name: string) =>
+            void useDiagramStore.getState().applyKindEdit({ update: [{ id: laneId, name }] })
+        : null,
+    [kindKey, canEditStructure, isCompareMode],
+  );
   const { selectInsertedNode, selectInsertedNodes } = useSelectInsertedNodes(visualState);
   const dropTarget = useCanvasDropTarget({
     canEditCanvas: interactionMode.canEditCanvas,
@@ -136,6 +171,12 @@ const Canvas = (props: CanvasProps = {}) => {
   const occupancy = useViewportOccupancy();
 
   const chat = useCanvasChat(isFlowActive);
+  // A request queued for the assistant (meeting notes at creation, a review preset) opens it.
+  const queuedPrompt = useLLMStore((state) => state.queuedPrompt);
+  const openChat = chat.open;
+  useEffect(() => {
+    if (queuedPrompt) openChat();
+  }, [queuedPrompt, openChat]);
   useFlowModeClosesChrome({
     isFlowActive,
     diagramId: diagram?.id,
@@ -232,90 +273,131 @@ const Canvas = (props: CanvasProps = {}) => {
               className="w-full h-full"
             >
               {isCompareMode && <CompareModeBanner />}
-              {!isCompareMode && <VersionChangesLegend diagram={diagram} />}
-              <DiagramSurface
-                policy={writePolicy(interactionMode.canEditCanvas)}
-                readingDirection={diagram.direction ?? "LR"}
-                dragActivity={drag.dragActivity}
-                nodes={drag.lockedNodes}
-                edges={edges}
-                nodeTypes={nodeTypes}
-                inputProfile={inputProfile}
-                snapToGrid={!isSnapToGridDisabledForE2E()}
-                nodeDragThreshold={DRAG_THRESHOLD_PX}
-                onNodesChange={controller.onNodesChange}
-                onEdgesChange={eventHandlers.onEdgesChange}
-                onConnect={eventHandlers.onConnect}
-                onConnectEnd={eventHandlers.onConnectEnd}
-                onReconnect={edgeReconnect.onReconnect}
-                onReconnectStart={edgeReconnect.onReconnectStart}
-                onReconnectEnd={edgeReconnect.onReconnectEnd}
-                onNodeClick={eventHandlers.onNodeClick}
-                onEdgeClick={eventHandlers.onEdgeClick}
-                onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
-                onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
-                onPaneClick={eventHandlers.onPaneClick}
-                onPaneContextMenu={eventHandlers.onPaneContextMenu}
-                onNodeContextMenu={eventHandlers.onNodeContextMenu}
-                onNodeDragStart={drag.onNodeDragStart}
-                onNodeDragStop={drag.onNodeDragStop}
-                onSelectionChange={eventHandlers.onSelectionChange}
-                defaultViewport={initialViewport}
-                onMoveEnd={eventHandlers.onMoveEnd}
-              >
-                <SharedLayer
-                  suggest={interactionMode.canEditCanvas}
-                  components={resolvedSnapshot.components}
-                  connections={resolvedSnapshot.connections}
-                  onPick={(originalId) => {
-                    // A badge stands for its original: picking it is picking the original.
-                    const node = nodes.find((candidate) => candidate.id === originalId);
-                    if (node) eventHandlers.onNodeClick?.({} as never, node);
+              {!isCompareMode && !interactionMode.isPlaying && (
+                <KindModeBar
+                  diagram={diagram}
+                  canEdit={canEditStructure}
+                  {...(WALKTHROUGH_ENABLED && { onPresent: presentKindDiagram })}
+                  onFocusElement={handleSearchSelect}
+                  onReview={(prompt) => {
+                    useLLMStore.getState().queuePrompt(prompt);
+                    chat.open();
+                  }}
+                  {...(arrangeControl && {
+                    direction: {
+                      value: arrangeControl.direction,
+                      onChange: arrangeControl.onDirectionChange,
+                      lockedReasonKey: arrangeControl.directionLockedReasonKey,
+                    },
+                  })}
+                  onSelectElement={(id) => {
+                    if (resolvedSnapshot.components[id]) {
+                      visualState.setSelectedEdgeId(null);
+                      visualState.setSelectedNodeIds(new Set([id]));
+                      visualState.setSelectedNodeId(id);
+                    } else {
+                      visualState.setSelectedNodeIds(new Set());
+                      visualState.setSelectedNodeId(null);
+                      visualState.setSelectedEdgeId(id);
+                    }
                   }}
                 />
-                <PendingSuggestionToolbars
-                  selectedNodeIds={visualState.selectedNodeIds}
-                  selectedNodeId={visualState.selectedNodeId}
-                />
-                <SelectionToolbars
-                  nodeId={visualState.selectedNodeId}
-                  selectedCount={selectedNodes.length}
-                  component={selectedComponent}
-                  canEditCanvas={interactionMode.canEditCanvas}
-                  diagramId={diagram?.id ?? ""}
-                  actions={actions}
-                  onFocusElement={handleSearchSelect}
-                />
-                {/* Zoom, fit, view options and the minimap all move the viewport, and a
+              )}
+              {!isCompareMode && <VersionChangesLegend diagram={diagram} />}
+              <LaneRenameContext.Provider value={laneRename}>
+                <DiagramSurface
+                  policy={writePolicy(interactionMode.canEditCanvas)}
+                  readingDirection={diagram.direction ?? "LR"}
+                  dragActivity={drag.dragActivity}
+                  nodes={drag.lockedNodes}
+                  edges={edges}
+                  nodeTypes={nodeTypes}
+                  inputProfile={inputProfile}
+                  snapToGrid={!isSnapToGridDisabledForE2E()}
+                  nodeDragThreshold={DRAG_THRESHOLD_PX}
+                  onNodesChange={controller.onNodesChange}
+                  onEdgesChange={eventHandlers.onEdgesChange}
+                  onConnect={eventHandlers.onConnect}
+                  onConnectEnd={eventHandlers.onConnectEnd}
+                  onReconnect={edgeReconnect.onReconnect}
+                  onReconnectStart={edgeReconnect.onReconnectStart}
+                  onReconnectEnd={edgeReconnect.onReconnectEnd}
+                  onNodeClick={eventHandlers.onNodeClick}
+                  onEdgeClick={eventHandlers.onEdgeClick}
+                  onNodeDoubleClick={eventHandlers.onNodeDoubleClick}
+                  onEdgeDoubleClick={eventHandlers.onEdgeDoubleClick}
+                  onPaneClick={eventHandlers.onPaneClick}
+                  onPaneContextMenu={eventHandlers.onPaneContextMenu}
+                  onNodeContextMenu={eventHandlers.onNodeContextMenu}
+                  onNodeDragStart={drag.onNodeDragStart}
+                  onNodeDragStop={drag.onNodeDragStop}
+                  onSelectionChange={eventHandlers.onSelectionChange}
+                  defaultViewport={initialViewport}
+                  onMoveEnd={eventHandlers.onMoveEnd}
+                >
+                  {!isCompareMode && (
+                    <KindOverlayLayer
+                      onSelectElement={handleSearchSelect}
+                      editable={canEditStructure && !interactionMode.isPlaying}
+                    />
+                  )}
+                  <SharedLayer
+                    suggest={interactionMode.canEditCanvas}
+                    components={resolvedSnapshot.components}
+                    connections={resolvedSnapshot.connections}
+                    onPick={(originalId) => {
+                      // A badge stands for its original: picking it is picking the original.
+                      const node = nodes.find((candidate) => candidate.id === originalId);
+                      if (node) eventHandlers.onNodeClick?.({} as never, node);
+                    }}
+                  />
+                  <PendingSuggestionToolbars
+                    selectedNodeIds={visualState.selectedNodeIds}
+                    selectedNodeId={visualState.selectedNodeId}
+                  />
+                  <SelectionToolbars
+                    nodeId={visualState.selectedNodeId}
+                    selectedCount={selectedNodes.length}
+                    component={selectedComponent}
+                    canEditCanvas={interactionMode.canEditCanvas}
+                    diagramId={diagram?.id ?? ""}
+                    actions={actions}
+                    onFocusElement={handleSearchSelect}
+                  />
+                  {/* Zoom, fit, view options and the minimap all move the viewport, and a
               reading moves it for you — every step frames its own element. Leaving
               them out keeps the two from fighting over the same viewport, and keeps
               the reading's canvas as clean as the rail beside it. Recording still
               needs them: that is where you go looking for the next element to click. */}
-                {!interactionMode.isPlaying && (
-                  <>
-                    <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
-                    <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
-                      <CanvasViewOptions />
-                    </Panel>
-                    {showMiniMap && (
-                      <DragThrottledMiniMap
-                        dragActivity={drag.dragActivity}
-                        pannable
-                        zoomable
-                        position="bottom-right"
-                        nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
-                        /* Offset above the floating chat button, which also sits bottom-right. */
-                        className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
-                        maskColor="hsl(var(--muted) / 0.6)"
+                  {!interactionMode.isPlaying && (
+                    <>
+                      <Controls
+                        onFitView={() => void frameDiagram()}
+                        className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8"
                       />
-                    )}
-                  </>
-                )}
-                <CollabPresenceLayer />
-                {occupancy.hasNodes && !occupancy.anyNodeVisible && (
-                  <NothingInViewCard elementCount={occupancy.nodeCount} />
-                )}
-              </DiagramSurface>
+                      <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
+                        <CanvasViewOptions />
+                      </Panel>
+                      {showMiniMap && (
+                        <DragThrottledMiniMap
+                          dragActivity={drag.dragActivity}
+                          pannable
+                          zoomable
+                          position="bottom-right"
+                          nodeColor={makeMiniMapNodeColor(resolvedSnapshot.components)}
+                          /* Offset above the floating chat button, which also sits bottom-right. */
+                          className="!mb-20 !mr-4 !bg-card !border !border-border !rounded-lg !shadow-lg"
+                          maskColor="hsl(var(--muted) / 0.6)"
+                        />
+                      )}
+                    </>
+                  )}
+                  <CollabPresenceLayer />
+                  {occupancy.hasNodes && !occupancy.anyNodeVisible && (
+                    <NothingInViewCard elementCount={occupancy.nodeCount} />
+                  )}
+                </DiagramSurface>
+              </LaneRenameContext.Provider>
             </div>
           </div>
 

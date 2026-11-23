@@ -8,6 +8,7 @@ import { READER_CATALOG_KEY } from "./encode";
 import { currentHashParams } from "./utils";
 import { sanitizeDiagramSvg } from "@/lib/export-service/sanitize-diagram-svg";
 import { logger } from "@/lib/core/logger";
+import { withSanitizedKindFields } from "@/features/diagram/model/diagram-kind";
 
 /** A diagram as a link hands it over, with the names it shows but does not hold. */
 export interface SharedPayload {
@@ -96,10 +97,9 @@ export function decodeSharePayload(shareParam: string): SharedPayload | null {
         logger.warn("[share-url]", "Share payload is not a diagram");
         return null;
       }
-      return splitSharedPayload({
-        ...parsed,
-        snapshot: withDefaults(parsed.snapshot),
-      });
+      return splitSharedPayload(
+        withSanitizedKindFields({ ...parsed, snapshot: withDefaults(parsed.snapshot) }, parsed),
+      );
     }
   } catch (err) {
     logger.warn("[share-url]", "Failed to parse URL:", err);
@@ -113,10 +113,9 @@ export function decodeSharePayload(shareParam: string): SharedPayload | null {
     if (json.length > MAX_SHARE_PAYLOAD_CHARS) return null;
     const parsed: unknown = JSON.parse(json);
     if (!isSharedDiagramShape(parsed)) return null;
-    return splitSharedPayload({
-      ...parsed,
-      snapshot: withDefaults(parsed.snapshot),
-    });
+    return splitSharedPayload(
+      withSanitizedKindFields({ ...parsed, snapshot: withDefaults(parsed.snapshot) }, parsed),
+    );
   } catch {
     return null;
   }

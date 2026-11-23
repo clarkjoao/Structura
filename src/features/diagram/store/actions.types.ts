@@ -46,6 +46,8 @@ export interface AppActions {
     domain?: string,
     folderId?: string | null,
     description?: string,
+    /** The diagram kind (ADR-0014); absent or malformed means freehand. */
+    options?: { kind?: string },
   ) => Diagram;
   addImportedDiagram: (diagram: Diagram) => Diagram;
   importDiagram: (diagram: Diagram) => Diagram;
@@ -289,6 +291,25 @@ export interface AppActions {
     /** Write into the Version with this key (created if absent) instead of the active context. */
     version?: import("./slices/generated-graph.slice").GraphChangesVersionTarget | "base",
   ) => import("./slices/generated-graph.slice").GraphChangesResult;
+
+  /**
+   * Applies a diagram kind's change set (ADR-0014) to a diagram, the active one by default.
+   * `history: false` amends the last checkpoint: a kind's derivation and arrangement after an
+   * edit, reverted with that edit by one undo.
+   */
+  applyKindEdit: (
+    edit: import("../model/kind-edit.types").KindEdit,
+    options?: { diagramId?: string; history?: boolean },
+  ) => import("../model/kind-edit.types").KindEditResult;
+  /**
+   * Switches a kind diagram to its kind's editor or to freehand, with `edit` (the return's
+   * arrangement and derivation) in the same undo step. A diagram without a kind is left alone.
+   */
+  setKindMode: (
+    diagramId: string,
+    mode: "kind" | "freehand",
+    edit?: import("../model/kind-edit.types").KindEdit,
+  ) => import("../model/kind-edit.types").KindEditResult;
 
   undo: () => void;
   redo: () => void;

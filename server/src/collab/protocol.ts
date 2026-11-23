@@ -37,10 +37,18 @@ export const LEGACY_DOC_FIELDS = [
 
 /**
  * Top-level fields of a diagram, assigned whole. Beyond the legacy set: the reading direction
- * (`"TB"` or `null`, ADR-0013) and the arrange settings (an object or `null`). A relay declares
- * the list it accepts in `joined.docFields`, and a client sends nothing outside it.
+ * (`"TB"` or `null`, ADR-0013), the arrange settings (an object or `null`) and the diagram kind
+ * (`kind` a string, `kindMode` `"freehand"`, `kindData` an object, each or `null`; ADR-0014). A
+ * relay declares the list it accepts in `joined.docFields`, and a client sends nothing outside it.
  */
-export const DOC_FIELDS = [...LEGACY_DOC_FIELDS, "direction", "layoutSettings"] as const;
+export const DOC_FIELDS = [
+  ...LEGACY_DOC_FIELDS,
+  "direction",
+  "layoutSettings",
+  "kind",
+  "kindMode",
+  "kindData",
+] as const;
 export type DocField = (typeof DOC_FIELDS)[number];
 
 /** Doc fields fixed at seed time; a patch may not change them. */
