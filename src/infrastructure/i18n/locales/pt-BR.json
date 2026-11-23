@@ -3686,9 +3686,7 @@
       },
       "checks": {
         "unlabelledExit": "Esta saída não tem rótulo",
-        "openEnd": "Este caminho não chega a um fim",
-        "painPoint": "Ponto de dor (experiência {{score}})",
-        "experience": "Experiência {{score}}"
+        "openEnd": "Este caminho não chega a um fim"
       },
       "issues": {
         "noLane": "Não há nenhuma raia.",
@@ -3746,7 +3744,6 @@
           "mermaidTaskWithoutScore": "Uma tarefa de jornada é “Tarefa: nota: atores”.",
           "mermaidScoreOutOfRange": "A nota deve ser de 1 a 5 (aqui: {{score}}).",
           "mermaidEmpty": "Este bloco Mermaid não tem passos.",
-          "experienceOutOfRange": "A nota de experiência deve ser de 1 a 5 (aqui: {{score}}).",
           "phaseWithoutStep": "“##” começa uma fase, mas nenhum passo vem depois.",
           "unknownHandle": "Nenhum passo tem o id {#{{handle}}}",
           "duplicateHandle": "O id {#{{handle}}} aparece duas vezes",
@@ -3783,11 +3780,6 @@
         "journeyLeftOut": "Só o caminho principal: {{branches}} desvio(s) e {{steps}} outro(s) passo(s) ficaram de fora.",
         "copyAs": "Copiar como…"
       },
-      "experience": {
-        "field": "Experiência",
-        "painPoints_one": "{{count}} ponto de dor",
-        "painPoints_other": "{{count}} pontos de dor"
-      },
       "phases": {
         "field": "Fase",
         "noPhase": "Sem fase",
@@ -3802,7 +3794,6 @@
           "rename": "Renomear “{{name}}” → “{{after}}”",
           "kind": "“{{name}}” vira {{after}}",
           "lane": "Mover “{{name}}” para {{after}}",
-          "score": "Nota de “{{name}}”: {{before}} → {{after}}",
           "phase": "Fase em “{{name}}”: {{before}} → {{after}}",
           "connect": "Ligar “{{source}}” → “{{target}}”",
           "disconnect": "Desligar “{{source}}” → “{{target}}”",

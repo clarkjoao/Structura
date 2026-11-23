@@ -528,43 +528,6 @@
   outline-offset: 4px;
   border-radius: 8px;
 }
-/* A kind's badge on a node (spec guided-journey-experience): an experience score. */
-.react-flow__node[data-kind-badge]::after {
-  content: attr(data-kind-badge);
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  z-index: 5;
-  padding: 1px 6px;
-  border-radius: 9999px;
-  font-size: 11px;
-  line-height: 16px;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-  border: 1px solid hsl(var(--border));
-  background: hsl(var(--card));
-  color: hsl(var(--foreground));
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
-}
-.react-flow__node[data-kind-badge-tone="danger"]::after {
-  border-color: rgb(239 68 68 / 0.6);
-  background: rgb(254 226 226);
-  color: rgb(153 27 27);
-}
-.react-flow__node[data-kind-badge-tone="success"]::after {
-  border-color: rgb(34 197 94 / 0.5);
-  background: rgb(220 252 231);
-  color: rgb(22 101 52);
-}
-.dark .react-flow__node[data-kind-badge-tone="danger"]::after {
-  background: rgb(127 29 29 / 0.6);
-  color: rgb(254 202 202);
-}
-.dark .react-flow__node[data-kind-badge-tone="success"]::after {
-  background: rgb(20 83 45 / 0.6);
-  color: rgb(187 247 208);
-}
 /* A kind's tag at a node's foot (spec guided-journey-blueprint): the step's participants. */
 .react-flow__node[data-kind-tag]::before {
   content: attr(data-kind-tag);
@@ -582,9 +545,6 @@
   border: 1px solid hsl(var(--primary) / 0.4);
   background: hsl(var(--card));
   color: hsl(var(--primary));
-}
-.react-flow__node.kind-check[data-kind-badge-tone="danger"] {
-  outline-color: rgb(239 68 68 / 0.8);
 }
 .react-flow__edge.kind-check path.react-flow__edge-path {
   stroke: rgb(245 158 11) !important;

@@ -194,10 +194,10 @@ describe("phases", () => {
   });
 });
 
-describe("the phase band and the emotion curve", () => {
-  it("draws a segment per phase, separators between them, and the curve on the main path", () => {
+describe("the phase band", () => {
+  it("draws a segment per phase and separators between them", () => {
     const h = guidedHarness();
-    add(h, "## Discover\nCliente: A [5]\nB\n## Buy\nC [1]\nD [4]");
+    add(h, "## Discover\nCliente: A\nB\n## Buy\nC\nD");
     const overlay = guidedOverlay(h.diagram())!;
     expect(overlay.axis).toBe("x");
     expect(overlay.segments.map((s) => s.label)).toEqual(["Discover", "Buy"]);
@@ -207,17 +207,12 @@ describe("the phase band and the emotion curve", () => {
     const sep = overlay.separators[1]!.along;
     expect(sep).toBeGreaterThan(h.absolute(idOf(h, "B")).x);
     expect(sep).toBeLessThan(h.absolute(idOf(h, "C")).x);
-    expect(overlay.curve.map((p) => [p.value, p.tone])).toEqual([
-      [1, "success"],
-      [0, "danger"],
-      [0.75, "success"],
-    ]);
     // Above the lanes.
     const firstLane = readGuided(h.diagram()).lanes[0]!;
     expect(overlay.at + overlay.depth).toBeLessThan(h.diagram().nodeLayouts[firstLane.id]!.y);
   });
 
-  it("is nothing without phases or scores, and nothing in freehand mode", () => {
+  it("is nothing without phases, and nothing in freehand mode", () => {
     const h = guidedHarness();
     add(h, "Cliente: A\nB");
     expect(guidedOverlay(h.diagram())).toBeNull();
@@ -264,8 +259,8 @@ describe("phases in text and Mermaid", () => {
       "journey\n  section Go to work\n    Make tea: 5: Me\n    Do work: 1: Me\n  section Go home\n    Sit down: 5: Me",
     );
     const journey = serializeMermaidJourney(a.diagram(), kindContextFor(a.diagram()));
-    expect(journey).toContain("  section Go to work\n    Make tea: 5: Me\n    Do work: 1: Me\n");
-    expect(journey).toContain("  section Go home\n    Sit down: 5: Me\n");
+    expect(journey).toContain("  section Go to work\n    Make tea: 3: Me\n    Do work: 3: Me\n");
+    expect(journey).toContain("  section Go home\n    Sit down: 3: Me\n");
     const swim = serializeMermaidSwimlane(a.diagram(), kindContextFor(a.diagram()));
     expect(swim).toMatch(/%% phases: s\d+=Go to work, s\d+=Go home/);
     const b = guidedHarness();

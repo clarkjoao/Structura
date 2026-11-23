@@ -20,7 +20,6 @@ const overlay: KindOverlay = {
   depth: 36,
   segments: [{ id: "p", label: "P", from: 50, to: 600 }],
   separators: [],
-  curve: [],
 };
 
 describe("frameDiagram", () => {

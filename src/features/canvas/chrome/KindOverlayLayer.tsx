@@ -5,18 +5,7 @@ import { kindOverlayFor } from "@/features/diagram-kinds/overlay";
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import { cn } from "@/lib/utils";
 import type { KindOverlay } from "@/features/diagram-kinds/kind.types";
-import {
-  OVERLAY_LABEL_DEPTH,
-  overlayCurvePoints,
-  overlayRect,
-} from "@/features/diagram-kinds/overlay.geometry";
-
-const TONE: Record<KindOverlay["curve"][number]["tone"], string> = {
-  danger: "rgb(239 68 68)",
-  warning: "rgb(245 158 11)",
-  success: "rgb(34 197 94)",
-  neutral: "rgb(148 163 184)",
-};
+import { OVERLAY_LABEL_DEPTH, overlayRect } from "@/features/diagram-kinds/overlay.geometry";
 
 const SEGMENT_CLASS =
   "absolute flex items-center justify-center truncate rounded-md border border-border bg-card/90 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground shadow-sm";
@@ -28,7 +17,7 @@ function css(rect: { x: number; y: number; width: number; height: number }): CSS
 
 /**
  * A kind overlay drawn inside the viewport (spec guided-journey-phases): the
- * phase band, the separators across the lanes and the emotion curve. It is not
+ * phase band, the separators across the lanes and the lines between lanes. It is not
  * an element, so it cannot be selected, moved or exported as a node. With
  * `onSelectElement`, clicking a phase selects the step it starts at; without
  * it (read-only surfaces) the segments are plain labels.
@@ -41,11 +30,6 @@ export function KindOverlayView({
   onSelectElement?: (id: string) => void;
 }) {
   const horizontal = overlay.axis === "x";
-  const points = overlayCurvePoints(overlay);
-  const minX = Math.min(...points.map((p) => p.x));
-  const minY = Math.min(...points.map((p) => p.y));
-  const maxX = Math.max(...points.map((p) => p.x));
-  const maxY = Math.max(...points.map((p) => p.y));
 
   return (
     <div className="pointer-events-none" data-testid="kind-overlay">
@@ -143,29 +127,6 @@ export function KindOverlayView({
           </div>
         );
       })}
-      {points.length > 0 && (
-        <svg
-          className="absolute overflow-visible"
-          style={{
-            left: minX,
-            top: minY,
-            width: Math.max(1, maxX - minX),
-            height: Math.max(1, maxY - minY),
-          }}
-          data-testid="kind-overlay-curve"
-        >
-          <polyline
-            points={points.map((p) => `${p.x - minX},${p.y - minY}`).join(" ")}
-            fill="none"
-            stroke="hsl(var(--muted-foreground) / 0.6)"
-            strokeWidth={2}
-            strokeLinejoin="round"
-          />
-          {points.map((p) => (
-            <circle key={p.id} cx={p.x - minX} cy={p.y - minY} r={5} fill={TONE[p.tone]} />
-          ))}
-        </svg>
-      )}
     </div>
   );
 }

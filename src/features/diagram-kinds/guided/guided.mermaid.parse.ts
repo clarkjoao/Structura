@@ -23,12 +23,10 @@ const IGNORED =
   /^(classDef|class|style|linkStyle|click|accTitle|accDescr|title|direction)\b|^accDescr\s*\{/;
 
 /**
- * Structura's own `%%` comment lines (Mermaid ignores them): `%% experience: s1=2, s3=5`
- * and `%% phases: s1=Discover`, keyed by Mermaid node id; `%% participants: s4=A|B`
+ * Structura's own `%%` comment lines (Mermaid ignores them): `%% phases: s1=Discover`, keyed by Mermaid node id; `%% participants: s4=A|B`
  * and `%% visibility: lane2`, the first backstage lane's subgraph id.
  */
 interface MermaidDirectives {
-  experience: Map<string, number>;
   phases: Map<string, string>;
   participants: Map<string, string[]>;
   visibility?: string;
@@ -36,7 +34,6 @@ interface MermaidDirectives {
 
 function readDirectives(text: string): MermaidDirectives {
   const directives: MermaidDirectives = {
-    experience: new Map(),
     phases: new Map(),
     participants: new Map(),
   };
@@ -46,7 +43,7 @@ function readDirectives(text: string): MermaidDirectives {
       directives.visibility = visibility[1]!;
       continue;
     }
-    const match = /^\s*%%\s*(experience|phases|participants)\s*:\s*(.*)$/.exec(raw);
+    const match = /^\s*%%\s*(phases|participants)\s*:\s*(.*)$/.exec(raw);
     if (!match) continue;
     for (const pair of match[2]!.split(",")) {
       const eq = pair.indexOf("=");
@@ -54,11 +51,7 @@ function readDirectives(text: string): MermaidDirectives {
       const id = pair.slice(0, eq).trim();
       const value = pair.slice(eq + 1).trim();
       if (!id || !value) continue;
-      if (match[1] === "experience") {
-        const score = Number(value);
-        if (Number.isInteger(score) && score >= 1 && score <= 5)
-          directives.experience.set(id, score);
-      } else if (match[1] === "participants") {
+      if (match[1] === "participants") {
         directives.participants.set(
           id,
           value
@@ -77,8 +70,6 @@ function applyDirectives(items: OutlineItem[], directives: MermaidDirectives): v
   for (const item of items) {
     if (item.kind === "jump") continue;
     if (item.kind !== "fanout" && item.ref) {
-      const score = directives.experience.get(item.ref);
-      if (score !== undefined) item.experience = score;
       const phase = directives.phases.get(item.ref);
       if (phase !== undefined) item.phase = phase;
       const participants = directives.participants.get(item.ref);
@@ -511,7 +502,6 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
       name: task[1]!.trim(),
       lane,
       exits: [],
-      experience: score,
       ...(pendingPhase && { phase: pendingPhase }),
       ...(participants.length > 0 && { participants }),
     });

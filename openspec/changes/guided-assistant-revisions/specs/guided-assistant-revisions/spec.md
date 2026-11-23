@@ -14,9 +14,9 @@ The tool SHALL change nothing by itself. It SHALL produce a pending suggestion. 
 
 #### Scenario: A revision becomes a suggestion
 
-- **GIVEN** a guided journey with steps s1 "Paga" and s2 "Espera" scored 1
-- **WHEN** the assistant calls `revise_journey` with `Paga com Pix {#s1}` and `Espera [3] {#s2}`, and `# why: tela de espera com progresso` above s2
-- **THEN** the diagram is unchanged, and a suggestion lists a rename of "Paga" and a score change on "Espera" with that reason
+- **GIVEN** a guided journey with steps s1 "Paga" and s2 "Espera"
+- **WHEN** the assistant calls `revise_journey` with `Paga com Pix {#s1}` and `Espera com progresso {#s2}`, and `# why: tela de espera com progresso` above s2
+- **THEN** the diagram is unchanged, and a suggestion lists a rename of "Paga" and a rename of "Espera" with that reason
 
 #### Scenario: An invalid revision
 
@@ -28,7 +28,7 @@ The tool SHALL change nothing by itself. It SHALL produce a pending suggestion. 
 
 A revision suggestion SHALL list its changes grouped by phase in reading order, with steps before the first phase in their own group. Each change SHALL show:
 
-- its kind (add, remove, rename, step kind, lane, score, phase, exits);
+- its kind (add, remove, rename, step kind, lane, phase, participants, exits);
 - the step's name, with before and after values;
 - the reason, when given.
 
@@ -53,9 +53,9 @@ With nothing ticked, the action SHALL be disabled.
 
 #### Scenario: Partial accept
 
-- **GIVEN** a suggestion with a rename, a score change and a removal
+- **GIVEN** a suggestion with two renames and a removal
 - **WHEN** the author unticks the removal and applies
-- **THEN** the rename and the score change are applied, the step is kept, and one undo reverts both
+- **THEN** the two renames are applied, the step is kept, and one undo reverts both
 
 #### Scenario: Dependent changes
 

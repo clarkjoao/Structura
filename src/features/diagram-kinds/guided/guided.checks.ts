@@ -1,10 +1,8 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindMarker } from "../kind.types";
 import {
-  experienceOf,
   isGuidedDecision,
   isGuidedEnd,
-  isPainPoint,
   participantsOf,
   readGuided,
   readingOrder,
@@ -13,7 +11,7 @@ import {
 /**
  * The guided quiet checks (spec: Quiet checks mark what is missing): a
  * decision exit without a label, and a step that ends a path without being an
- * end step; and the experience badges, pain points outlined. Never a dialog, never blocking; gone as soon as the cause is.
+ * end step; and the participants tags. Never a dialog, never blocking; gone as soon as the cause is.
  */
 export function guidedChecks(diagram: DiagramModel): KindMarker[] {
   const reading = readGuided(diagram);
@@ -33,27 +31,6 @@ export function guidedChecks(diagram: DiagramModel): KindMarker[] {
           });
         }
       }
-    }
-    // The experience score (spec guided-journey-experience): a badge; 1–2 is a pain point.
-    const score = experienceOf(step);
-    if (score !== null) {
-      const pain = isPainPoint(score);
-      markers.push({
-        code: pain ? "painPoint" : "experience",
-        elementId: id,
-        onConnection: false,
-        message: {
-          key: pain
-            ? "diagramKinds.guided.checks.painPoint"
-            : "diagramKinds.guided.checks.experience",
-        },
-        values: { score },
-        badge: {
-          text: `${score}/5`,
-          tone: pain ? "danger" : score === 3 ? "neutral" : "success",
-        },
-        marks: pain,
-      });
     }
     // Participants besides the lane (spec guided-journey-blueprint): a tag, never a check.
     const laneName = reading.lanes.find((l) => l.id === reading.laneOf.get(id))?.name;

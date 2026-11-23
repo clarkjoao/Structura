@@ -4,18 +4,11 @@ import {
   guidedChangeShape,
   guidedMoveStepToLane,
   guidedMoveStepToNewLane,
-  guidedSetExperience,
   guidedSetParticipants,
   guidedSetPhaseStart,
 } from "./guided.edits";
 import { guidedPhaseNames, guidedPhases, phaseStartOf } from "./guided.phases";
-import {
-  GUIDED_STEP_SHAPES,
-  experienceOf,
-  isGuidedDecision,
-  participantsOf,
-  readGuided,
-} from "./guided.model";
+import { GUIDED_STEP_SHAPES, isGuidedDecision, participantsOf, readGuided } from "./guided.model";
 
 /**
  * The guided "Journey" tab (spec guided-editing-surfaces): the step's lane,
@@ -99,26 +92,6 @@ export const guidedInspector: KindInspector = {
           run: () => guidedSetPhaseStart(ctx.diagram, elementId, ""),
         },
       }),
-    });
-    const score = experienceOf(step);
-    sections.push({
-      type: "choice",
-      id: "experience",
-      label: { key: "diagramKinds.guided.experience.field" },
-      options: [
-        {
-          id: "none",
-          label: { text: "—" },
-          selected: score === null,
-          run: () => guidedSetExperience(ctx.diagram, elementId, null),
-        },
-        ...[1, 2, 3, 4, 5].map((value) => ({
-          id: String(value),
-          label: { text: String(value) },
-          selected: score === value,
-          run: () => guidedSetExperience(ctx.diagram, elementId, value),
-        })),
-      ],
     });
     // Participants besides the lane's actor (spec guided-journey-blueprint).
     const laneName = reading.lanes.find((l) => l.id === laneId)?.name;

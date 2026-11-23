@@ -32,8 +32,6 @@ export type OutlineErrorCode =
   | "mermaidTaskWithoutScore"
   | "mermaidScoreOutOfRange"
   | "mermaidEmpty"
-  // Experience (spec guided-journey-experience)
-  | "experienceOutOfRange"
   // Phases (spec guided-journey-phases)
   | "phaseWithoutStep"
   // Whole-journey text (spec guided-journey-text-sync)
@@ -60,8 +58,6 @@ export interface OutlineNode {
   ref?: string;
   /** The shape, when the source says more than step / decision / end. */
   shape?: FlowNodeShape;
-  /** The experience score, 1–5 (`[n]` at the end of the line). */
-  experience?: number;
   /** A phase starts at this node (spec guided-journey-phases). */
   phase?: string;
   /** `{#name}`: the element this line stands for, in a whole-journey text (spec guided-journey-text-sync). */
@@ -184,15 +180,6 @@ function parseItemText(
     handle = handled[1]!;
     rest = rest.slice(0, handled.index);
   }
-  // `[n]` at the end: the experience score (spec guided-journey-experience).
-  let experience: number | undefined;
-  const scored = /\s*\[(\d+)\]\s*$/.exec(mask(rest));
-  if (scored) {
-    const score = Number(scored[1]);
-    if (score >= 1 && score <= 5) experience = score;
-    else errors.push({ line, code: "experienceOutOfRange", values: { score: scored[1]! } });
-    rest = rest.slice(0, scored.index);
-  }
   let kind: OutlineNode["kind"] = "step";
   const restMasked = mask(rest);
   if (restMasked.startsWith("?")) {
@@ -213,7 +200,6 @@ function parseItemText(
       name,
       lane,
       exits: [],
-      ...(experience !== undefined && { experience }),
       ...(handle !== undefined && { handle }),
       ...(participants && { participants }),
     },

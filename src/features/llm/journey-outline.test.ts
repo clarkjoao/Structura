@@ -102,15 +102,15 @@ describe("the assistant's journey outline", () => {
     expect(buildSystemPrompt("ctx", "en", currentJourneyOutline())).toContain("swimlane-beta");
   });
 
-  it("carries the experience scores in the current journey and documents them", () => {
+  it("carries the phases and handles in the current journey and documents them", () => {
     guided();
     applyDiagramPatchAction({
       type: "ADD_JOURNEY_OUTLINE",
-      payload: { outline: "API: Cobra [2]" },
+      payload: { outline: "API: Cobra" },
     });
     const prompt = buildSystemPrompt("ctx", "en", currentJourneyOutline());
-    expect(prompt).toContain("Cobra [2]");
-    expect(prompt).toContain("pain points");
+    expect(prompt).toMatch(/Cobra \{#s1\}/);
+    expect(prompt).not.toContain("pain points");
     applyDiagramPatchAction({
       type: "ADD_JOURNEY_OUTLINE",
       payload: { outline: "## Comprar\nAPI: Confirma" },
@@ -149,7 +149,7 @@ describe("the assistant's journey revisions", () => {
     const g = guided();
     applyDiagramPatchAction({
       type: "ADD_JOURNEY_OUTLINE",
-      payload: { outline: "Usuário: Paga\nEspera [1]\nRecebe" },
+      payload: { outline: "Usuário: Paga\nEspera\nRecebe" },
     });
     return g;
   };
@@ -193,13 +193,13 @@ describe("the assistant's journey revisions", () => {
     const good = checkJourneyRevision(
       base,
       base!.text
-        .replace("Espera [1] {#s2}", "# why: show progress\nEspera com progresso [3] {#s2}")
+        .replace("Espera {#s2}", "# why: show progress\nEspera com progresso {#s2}")
         .replace("Recebe {#s3}\n", ""),
     );
     if (!good.ok) throw new Error(good.errors.join());
     expect(names()).toContain("Espera");
     const kinds = good.revision.initial.map((c) => c.kind);
-    expect(kinds).toEqual(expect.arrayContaining(["rename", "score", "remove"]));
+    expect(kinds).toEqual(expect.arrayContaining(["rename", "remove"]));
     expect(good.revision.initial.find((c) => c.kind === "rename")!.reason).toBe("show progress");
   });
 
@@ -208,9 +208,7 @@ describe("the assistant's journey revisions", () => {
     const base = currentJourneyBase();
     const check = checkJourneyRevision(
       base,
-      base!.text
-        .replace("Espera [1] {#s2}", "Espera menos [1] {#s2}")
-        .replace("Recebe {#s3}\n", ""),
+      base!.text.replace("Espera {#s2}", "Espera menos {#s2}").replace("Recebe {#s3}\n", ""),
     );
     if (!check.ok) throw new Error(check.errors.join());
     const removal = check.revision.initial.find((c) => c.kind === "remove")!;
@@ -232,7 +230,7 @@ describe("the assistant's journey revisions", () => {
     const check = checkJourneyRevision(
       base,
       base!.text
-        .replace("Espera [1] {#s2}", "Espera menos [1] {#s2}")
+        .replace("Espera {#s2}", "Espera menos {#s2}")
         .replace("Paga {#s1}", "Paga já {#s1}"),
     );
     if (!check.ok) throw new Error(check.errors.join());

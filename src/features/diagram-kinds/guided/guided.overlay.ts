@@ -2,18 +2,17 @@ import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import type { KindOverlay } from "../kind.types";
 import { LANE_HEADER } from "./guided.geometry";
-import { experienceOf, isPainPoint, readGuided, visibilityLaneOf } from "./guided.model";
+import { readGuided, visibilityLaneOf } from "./guided.model";
 import { guidedPhases } from "./guided.phases";
 
-/** The header band's depth, with and without the emotion curve, and its gap to the lanes. */
+/** The header band's depth, and its gap to the lanes. */
 const BAND_DEPTH = 36;
-const BAND_DEPTH_WITH_CURVE = 96;
 const BAND_GAP = 12;
 
 /**
  * The guided overlay (spec guided-journey-phases): the phases as segments of a
- * header band beside the lanes, separators between them, and the emotion curve
- * along the main path. Null when there is neither a phase nor a score.
+ * header band beside the lanes, separators between them, and the line of
+ * visibility. Null when there is neither a phase nor a line.
  */
 export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
   const reading = readGuided(diagram);
@@ -47,25 +46,6 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
     return { from, to: from + length(box) };
   };
 
-  // The emotion curve: the main path (each decision's first exit), scored steps only.
-  const curve: KindOverlay["curve"] = [];
-  const seen = new Set<string>();
-  let at: string | undefined = reading.starts[0]?.id;
-  while (at && !seen.has(at)) {
-    seen.add(at);
-    const score = experienceOf(reading.steps.get(at)!);
-    const s = span(at);
-    if (score !== null && s) {
-      curve.push({
-        id: at,
-        along: (s.from + s.to) / 2,
-        value: (score - 1) / 4,
-        tone: isPainPoint(score) ? "danger" : score === 3 ? "neutral" : "success",
-      });
-    }
-    at = reading.outgoing.get(at)?.[0]?.targetId;
-  }
-
   // The line of visibility (spec guided-journey-blueprint): before the first backstage lane.
   const lines: NonNullable<KindOverlay["lines"]> = [];
   const backstage = visibilityLaneOf(diagram, reading);
@@ -83,7 +63,7 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
     });
 
   const { phases, phaseOf } = guidedPhases(reading);
-  if (phases.length === 0 && curve.length === 0) {
+  if (phases.length === 0) {
     if (lines.length === 0) return null;
     return {
       axis: vertical ? "y" : "x",
@@ -91,7 +71,6 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
       depth: 0,
       segments: [],
       separators: [],
-      curve: [],
       lines,
     };
   }
@@ -132,14 +111,13 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
     if (index > 0) segments[index - 1]!.to = from;
   });
 
-  const depth = curve.length > 0 ? BAND_DEPTH_WITH_CURVE : BAND_DEPTH;
+  const depth = BAND_DEPTH;
   return {
     axis: vertical ? "y" : "x",
     at: acrossStart - BAND_GAP - depth,
     depth,
     segments,
     separators: boundaries.map((b) => ({ along: b, from: acrossStart, to: acrossEnd })),
-    curve,
     ...(lines.length > 0 && { lines }),
   };
 }

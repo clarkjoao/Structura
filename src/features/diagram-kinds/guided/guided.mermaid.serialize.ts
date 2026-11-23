@@ -2,7 +2,6 @@ import type { FlowNodeShape } from "@/features/diagram/model/component.types";
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindContext } from "../kind.types";
 import {
-  experienceOf,
   isGuidedDecision,
   isGuidedEnd,
   participantsOf,
@@ -72,13 +71,7 @@ export function serializeMermaidSwimlane(diagram: DiagramModel, ctx: KindContext
       );
     }
   }
-  // Mermaid has no score: Structura keeps it in a comment it reads back.
-  const scored = order.flatMap((stepId) => {
-    const score = experienceOf(reading.steps.get(stepId)!);
-    return score ? [`${idOf.get(stepId)}=${score}`] : [];
-  });
-  if (scored.length > 0) lines.push(`  %% experience: ${scored.join(", ")}`);
-  // Phase starts, likewise (spec guided-journey-phases).
+  // Mermaid has no phase starts: Structura keeps them in a comment it reads back.
   const phased = order.flatMap((stepId) => {
     const phase = phaseStartOf(reading.steps.get(stepId)!);
     return phase ? [`${idOf.get(stepId)}=${phase.replace(/[,=\n]/g, " ").trim()}`] : [];
@@ -127,13 +120,13 @@ export function serializeMermaidJourney(diagram: DiagramModel, ctx: KindContext)
       section = phase;
     }
     const step = reading.steps.get(id)!;
-    const score = experienceOf(step) ?? 3;
     const lane = laneName.get(reading.laneOf.get(id)!) ?? "";
     // The lane is the first actor; the participants follow (spec guided-journey-blueprint).
     const actors = [lane, ...participantsOf(step, lane)]
       .map((name) => clean(name).replace(/,/g, " "))
       .join(", ");
-    lines.push(`    ${clean(step.name)}: ${score}: ${actors}`);
+    // Mermaid requires a score; Structura keeps none, so every task is a neutral 3.
+    lines.push(`    ${clean(step.name)}: 3: ${actors}`);
   }
   const branches = path.reduce(
     (n, id) =>

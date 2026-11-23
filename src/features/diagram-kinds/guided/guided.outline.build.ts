@@ -235,9 +235,8 @@ export function buildOutline(
         flowShape: shape,
         name: item.name || ctx.t("diagramKinds.guided.endName"),
         parent: laneKey,
-        ...((item.experience !== undefined || item.phase || item.participants?.length) && {
+        ...((item.phase || item.participants?.length) && {
           kindProps: {
-            ...(item.experience !== undefined && { experience: item.experience }),
             ...(item.phase && { phase: item.phase }),
             ...(item.participants?.length && {
               participants: cleanParticipants(item.participants, item.lane ?? undefined),

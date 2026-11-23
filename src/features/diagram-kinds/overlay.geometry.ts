@@ -1,6 +1,6 @@
 import type { KindOverlay } from "./kind.types";
 
-/** The label row's depth inside the band; the curve takes the rest. */
+/** The label row's depth inside the band. */
 export const OVERLAY_LABEL_DEPTH = 28;
 
 export interface OverlayRect {
@@ -10,12 +10,9 @@ export interface OverlayRect {
   height: number;
 }
 
-/** The band's extent along the axis: its segments and its curve. Null when it has neither. */
+/** The band's extent along the axis: its segments. Null when it has none. */
 function bandAlong(overlay: KindOverlay): { min: number; max: number } | null {
-  const along = [
-    ...overlay.segments.flatMap((s) => [s.from, s.to]),
-    ...overlay.curve.map((p) => p.along),
-  ];
+  const along = overlay.segments.flatMap((s) => [s.from, s.to]);
   if (along.length === 0) return null;
   return { min: Math.min(...along), max: Math.max(...along) };
 }
@@ -66,21 +63,4 @@ export function unionRect(a: OverlayRect | null, b: OverlayRect | null): Overlay
     width: Math.max(a.x + a.width, b.x + b.width) - x,
     height: Math.max(a.y + a.height, b.y + b.height) - y,
   };
-}
-
-export interface OverlayCurvePoint {
-  id: string;
-  x: number;
-  y: number;
-  tone: KindOverlay["curve"][number]["tone"];
-}
-
-/** The emotion curve's points in flow coordinates: high values near the label row. */
-export function overlayCurvePoints(overlay: KindOverlay): OverlayCurvePoint[] {
-  const curveDepth = overlay.depth - OVERLAY_LABEL_DEPTH;
-  return overlay.curve.map((p) => {
-    const across = overlay.at + OVERLAY_LABEL_DEPTH + 6 + (1 - p.value) * (curveDepth - 12);
-    const { x, y } = overlayRect(overlay, p.along, 0, across, 0);
-    return { id: p.id, x, y, tone: p.tone };
-  });
 }

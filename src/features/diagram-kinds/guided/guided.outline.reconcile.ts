@@ -10,7 +10,6 @@ import { COLUMN_GAP, LANE_HEADER, LANE_INSET, LANE_MIN_DEPTH, stepSize } from ".
 import {
   type GuidedReading,
   cleanParticipants,
-  experienceOf,
   isGuidedDecision,
   isGuidedEnd,
   participantsOf,
@@ -223,16 +222,6 @@ export function reconcileOutline(
           edit: mergeKindEdits(reading.components, [laneParts(laneKey), move]),
         });
       }
-      const score = node.experience ?? null;
-      if (score !== experienceOf(step))
-        changes.push({
-          key: `score:${id}`,
-          kind: "score",
-          elementId: id,
-          label: changeLabel("score"),
-          values: { ...values, before: experienceOf(step) ?? "—", after: score ?? "—" },
-          edit: { update: [{ id, kindProps: patched(step, "experience", score) }] },
-        });
       const participants = cleanParticipants(node.participants ?? [], node.lane ?? undefined);
       const currentParticipants = participantsOf(
         step,
@@ -290,9 +279,8 @@ export function reconcileOutline(
             flowShape: shape,
             name,
             parent: laneKey,
-            ...((node.experience !== undefined || node.phase || node.participants?.length) && {
+            ...((node.phase || node.participants?.length) && {
               kindProps: {
-                ...(node.experience !== undefined && { experience: node.experience }),
                 ...(node.phase && { phase: node.phase }),
                 ...(node.participants?.length && {
                   participants: cleanParticipants(node.participants, node.lane ?? undefined),
@@ -487,7 +475,6 @@ export function reconcileOutline(
     rename: 1,
     kind: 2,
     lane: 3,
-    score: 4,
     phase: 5,
     participants: 6,
     visibility: 7,

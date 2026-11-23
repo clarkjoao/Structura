@@ -3686,9 +3686,7 @@
       },
       "checks": {
         "unlabelledExit": "This exit has no label",
-        "openEnd": "This path does not reach an end",
-        "painPoint": "Pain point (experience {{score}})",
-        "experience": "Experience {{score}}"
+        "openEnd": "This path does not reach an end"
       },
       "issues": {
         "noLane": "There is no lane.",
@@ -3746,7 +3744,6 @@
           "mermaidTaskWithoutScore": "A journey task is “Task: score: actors”.",
           "mermaidScoreOutOfRange": "The score must be 1 to 5 (here: {{score}}).",
           "mermaidEmpty": "This Mermaid block has no steps.",
-          "experienceOutOfRange": "The experience score must be 1 to 5 (here: {{score}}).",
           "phaseWithoutStep": "“##” starts a phase, but no step follows it.",
           "unknownHandle": "No step has the handle {#{{handle}}}",
           "duplicateHandle": "The handle {#{{handle}}} is used twice",
@@ -3783,11 +3780,6 @@
         "journeyLeftOut": "Main path only: {{branches}} branch(es) and {{steps}} other step(s) left out.",
         "copyAs": "Copy as…"
       },
-      "experience": {
-        "field": "Experience",
-        "painPoints_one": "{{count}} pain point",
-        "painPoints_other": "{{count}} pain points"
-      },
       "phases": {
         "field": "Phase",
         "noPhase": "No phase",
@@ -3802,7 +3794,6 @@
           "rename": "Rename “{{name}}” → “{{after}}”",
           "kind": "“{{name}}” becomes a {{after}}",
           "lane": "Move “{{name}}” to {{after}}",
-          "score": "Score “{{name}}”: {{before}} → {{after}}",
           "phase": "Phase at “{{name}}”: {{before}} → {{after}}",
           "connect": "Connect “{{source}}” → “{{target}}”",
           "disconnect": "Disconnect “{{source}}” → “{{target}}”",

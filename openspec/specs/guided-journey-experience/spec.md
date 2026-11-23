@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An experience score from 1 to 5 on guided steps, stored in the element's kind data. It is set from the Journey tab, shown as a badge, and turns scores of 1–2 into pain points the mode bar can walk through. Scores survive the outline and Mermaid.
+Per-element kind data: a kind may store small JSON data on its elements (`kindProps`), kept through copy, paste, versions and freehand mode. Guided steps use it for phase starts and participants.
 
 ## Requirements
 

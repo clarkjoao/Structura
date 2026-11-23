@@ -1,13 +1,11 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import { isKindActive, resolveKindPolicy } from "./policy";
-import type { KindBadge, KindMarker, KindTag } from "./kind.types";
+import type { KindMarker, KindTag } from "./kind.types";
 
 export interface KindMarkerSets {
   /** Nodes outlined as checked. */
   nodes: ReadonlySet<string>;
   connections: ReadonlySet<string>;
-  /** Node badges, by element id (the last marker with a badge wins). */
-  badges: ReadonlyMap<string, KindBadge>;
   /** Node tags, by element id. */
   tags: ReadonlyMap<string, KindTag>;
   markers: readonly KindMarker[];
@@ -16,7 +14,6 @@ export interface KindMarkerSets {
 const EMPTY: KindMarkerSets = {
   nodes: new Set(),
   connections: new Set(),
-  badges: new Map(),
   tags: new Map(),
   markers: [],
 };
@@ -50,11 +47,6 @@ export function kindMarkersFor(diagram: DiagramModel | null | undefined): KindMa
     markers,
     nodes: new Set(marking.filter((m) => !m.onConnection).map((m) => m.elementId)),
     connections: new Set(marking.filter((m) => m.onConnection).map((m) => m.elementId)),
-    badges: new Map(
-      markers
-        .filter((m) => !m.onConnection && m.badge)
-        .map((m) => [m.elementId, m.badge!] as const),
-    ),
     tags: new Map(
       markers.filter((m) => !m.onConnection && m.tag).map((m) => [m.elementId, m.tag!] as const),
     ),

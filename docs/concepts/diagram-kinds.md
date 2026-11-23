@@ -47,8 +47,7 @@ app and embed-editor entries). With nothing registered, the editor is exactly th
 | `elementActions` | per-element actions in the context menu and the canvas's floating bar |
 | `insert` | where a palette element goes in kind mode |
 | `textCapture` | writing the diagram as text: `build` (text → edit), `serialize`, `syntax`; optionally `writeBase` (the whole diagram, with each line's element, handles and the connections it writes) and `reconcile` (an edited whole text → the difference as a `KindEdit` plus a per-change list), which turn the Text panel into a whole-diagram editor |
-| `overlay` | what the kind draws over the canvas in kind mode, in flow coordinates: a header band with segments, separators across the lanes, a curve (guided: phases and the emotion curve); never an element |
-| `focusMarkers` | marker code the mode bar counts and walks in order (guided: `painPoint`) |
+| `overlay` | what the kind draws over the canvas in kind mode, in flow coordinates: a header band with segments, separators across the lanes, and lines between lanes (guided: phases and the line of visibility); never an element |
 | `inspector` | the kind's own inspector tab (e.g. guided "Journey"): `tab`, `hiddenFields` (Details fields hidden in kind mode), `sections(ctx, id)` as data — choice groups, select-or-create fields (`select`) and label fields whose `run`/`commit` return a kind outcome; `null` means no tab for that element |
 
 A kind reads the world only through `KindContext` (`context.ts`), which provides `t`, the element
@@ -177,11 +176,11 @@ journey. The edited text is reconciled against the text the panel wrote:
 
 - **Identity.** Each written line knows its step (`writeGuidedOutline` → `lineIds`). Edited lines
   are aligned to them by a line diff (`guided.outline.align.ts`): kept lines keep their step, a
-  line edited in place (a rename, a new score) is paired with the one it replaced, and a line
+  line edited in place (a rename) is paired with the one it replaced, and a line
   moved unchanged is found again. A trailing handle, `Paga {#s4}` ("Copy as… Text with ids"),
   overrides the alignment; an unknown or repeated handle is a line error. Handles are ignored when
   an outline is only added.
-- **The difference.** Renames, step kinds, lanes, scores, phases, steps added and removed, and the
+- **The difference.** Renames, step kinds, lanes, phases, participants, steps added and removed, and the
   connections the text writes (connected, disconnected, relabelled) become one `KindEdit`, one
   undo step. Each change also carries its own part of the edit (`KindTextChange`), for the
   "Review" list. Steps the text does not write (unreachable ones, the start), a non-decision
@@ -219,28 +218,24 @@ The same capture reads Mermaid (`guided.mermaid.*.ts`, spec `guided-mermaid-inte
   - **Shapes.** `{}` becomes a decision, and so does any plain node where the path splits. `[()]` is data, `[[]]` a subprocess, and `@{ shape: doc | event }` a document or an event. A circle or stadium with no incoming edge stands for the start and is not added; its edges leave from the anchor instead. A circle or stadium with no outgoing edge is an end.
   - **Edges.** `-->|x|`, `-- x -->`, chains and `&` groups all become connections.
   - **How it is read.** The graph is turned into the outline AST by a depth-first walk. A node reached again becomes a jump by Mermaid id, and several entries become a fan-out from the anchor. So `buildOutline` adds Mermaid exactly as it adds an outline: after the selection, as one undo step.
-- **Journey.** Tasks are added in order, each in the lane of its first actor. Sections and scores are counted and reported as not kept yet; they are stored once the score and phases parts ship.
+- **Journey.** Tasks are added in order, each in the lane of its first actor. Sections become phases; scores are checked (Mermaid requires them) but not kept.
 - **Ignored lines.** Styling and metadata (`classDef`, `class`, `style`, `linkStyle`, `click`, `acc*`, `title`, `direction`) are ignored. Any other line that cannot be read is an error on that line.
 - **Copy as.** The Text panel's menu offers Text (the outline), Mermaid (lanes) and Mermaid (journey):
   - Mermaid (lanes) writes `swimlane-beta`, which reads back into the same journey.
-  - Mermaid (journey) writes the main path (each decision's first exit in reading order) with a neutral score of 3, and a comment on what was left out.
+  - Mermaid (journey) writes the main path (each decision's first exit in reading order) with every task scored 3 (Mermaid requires a score; Structura keeps none), and a comment on what was left out.
 
-### Element kind data and the experience score
+### Element kind data
 
 `Component.kindProps` is data the diagram's kind owns on one element: JSON, at most 4 096 characters, dropped on import when malformed. It is kept in freehand mode, and it is copied, versioned and removed with the element. A kind edit sets it with `add[].kindProps` and replaces or clears it with `update[].kindProps` (`null` clears it).
 
-Guided stores the **experience score** there (`experience`, 1–5; spec `guided-journey-experience`):
-
-- **Setting it.** The Journey tab's "Experience" choice sets or clears the score.
-- **On the canvas.** `checks` emits a badge marker (`KindMarker.badge`), which the host draws as a pill through `data-kind-badge` attributes. Scores 1–2 are `painPoint`s: the badge is red and the node is outlined. The mode bar counts them (`focusMarkers`), and each click selects the next pain point in reading order.
-- **In text.** The outline writes the score as `Step [n]`. In Mermaid, journey scores are imported and exported, and the swimlane export keeps scores in a `%% experience: s1=2` comment that the import reads back.
+Guided stores a step's **phase start** (`phase`) and its **participants** (`participants`) there. An `experience` value left by the removed experience score is ignored.
 
 ### Phases
 
 A guided step may **start a phase** (`kindProps.phase`, spec `guided-journey-phases`). The phase runs through the following steps until the next start. Where branches converge, a step takes the latest phase among its forward predecessors. Retries carry no phase back. The starts are the phase list: there is nothing else to keep in sync.
 
 - **Arrangement.** The arrangement gives each phase contiguous columns after every column of the phases before it. It does this with floors in the longest-path layering, relaxed until stable. Phase starts are part of `arrangeKey`.
-- **The band.** The overlay draws a header band beside the lanes, above them or left of them on top-to-bottom diagrams. It has one segment per phase (a click selects the phase's start) and dashed separators across the lanes. It also draws the **emotion curve**: the scored steps on the main path, high for 5 and low for 1, with red dots for pain points. Nothing moves to make room, and freehand mode hides the band.
+- **The band.** The overlay draws a header band beside the lanes, above them or left of them on top-to-bottom diagrams. It has one segment per phase (a click selects the phase's start) and dashed separators across the lanes. Nothing moves to make room, and freehand mode hides the band.
 - **Framing, viewer, draw.io.** The band takes no layout room, so whole-diagram framing adds it explicitly: Fit view, the opening viewport, the framing after Arrange or a reading, and "Show all" fit the nodes and the overlay together (`frameDiagram`, through `overlayBounds`). The viewer and embeds draw the band read-only. The draw.io export writes it into a locked "Phases" layer of plain shapes (`structuraDecoration=1`), which the draw.io import ignores; a selection export leaves it out.
 - **Editing and text.**
   - The Journey tab's "Phase" select picks an existing phase or creates one; picking the phase a step already inherits clears its start. A start naming the inherited phase opens nothing.

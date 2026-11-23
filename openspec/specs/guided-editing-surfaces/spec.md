@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The editing surfaces a guided diagram offers in kind mode: the Journey tab in the element panel (lane, step kind, phase, experience, exits), quick insert that suggests guided elements, and a bottom toolbar built from the kind's catalog.
+The editing surfaces a guided diagram offers in kind mode: the Journey tab in the element panel (lane, step kind, phase, participants, exits), quick insert that suggests guided elements, and a bottom toolbar built from the kind's catalog.
 
 ## Requirements
 

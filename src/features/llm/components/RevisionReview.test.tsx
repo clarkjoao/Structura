@@ -22,7 +22,7 @@ function journey() {
   useDiagramStore.getState().openDiagram(diagram.id);
   applyDiagramPatchAction({
     type: "ADD_JOURNEY_OUTLINE",
-    payload: { outline: "## Descobrir\nUsuário: Busca\n## Comprar\nPaga\nEspera [1]" },
+    payload: { outline: "## Descobrir\nUsuário: Busca\n## Comprar\nPaga\nEspera" },
   });
   const names = () =>
     [...readGuided(useDiagramStore.getState().diagrams[diagram.id]!).steps.values()].map(
@@ -73,7 +73,7 @@ describe("reviewing a journey revision", () => {
     const { id } = suggest((t) =>
       t
         .replace(/^(.*)Busca \{#s1\}$/m, "# why: plainer\n$1Procura {#s1}")
-        .replace("Espera [1] {#s3}", "Espera [4] {#s3}\nRecebe"),
+        .replace("Espera {#s3}", "Espera pouco {#s3}\nRecebe"),
     );
     render(<Card id={id} />);
     const phases = screen
@@ -121,9 +121,7 @@ describe("reviewing a journey revision", () => {
   it("shows a change whose step is gone as no longer applicable", () => {
     const { id: diagramId } = journey();
     const { id } = suggest((t) =>
-      t
-        .replace("Espera [1] {#s3}", "Espera mais [1] {#s3}")
-        .replace("Busca {#s1}", "Procura {#s1}"),
+      t.replace("Espera {#s3}", "Espera mais {#s3}").replace("Busca {#s1}", "Procura {#s1}"),
     );
     render(<Card id={id} />);
     const espera = Object.values(

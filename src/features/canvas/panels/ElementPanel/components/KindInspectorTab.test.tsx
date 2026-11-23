@@ -75,7 +75,6 @@ describe("the guided Journey tab", () => {
       "lane",
       "stepKind",
       "phase",
-      "experience",
       "participants",
     ]);
     expect(kindInspectorFor(d(), lanes[0]!)).toBeNull();

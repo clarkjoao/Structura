@@ -664,20 +664,6 @@ function mergedKindProps(
   return Object.keys(next).length > 0 ? next : null;
 }
 
-/** The step's experience score (1–5), or none (spec guided-journey-experience). */
-export function guidedSetExperience(
-  diagram: DiagramModel,
-  stepId: string,
-  score: number | null,
-): GuidedOutcome {
-  const step = readGuided(diagram).steps.get(stepId);
-  if (!step) return refused("selectOneStep");
-  return {
-    edit: { update: [{ id: stepId, kindProps: mergedKindProps(step, "experience", score) }] },
-    select: stepId,
-  };
-}
-
 /** The line of visibility above `laneId`, or none (spec guided-journey-blueprint). */
 export function guidedSetVisibilityLine(diagram: DiagramModel, laneId: string | null): KindEdit {
   const next: JsonObject = { ...(diagram.kindData ?? {}) };

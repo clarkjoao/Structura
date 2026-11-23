@@ -89,7 +89,7 @@ interface BaseComponent {
 
   /**
    * Data the diagram's kind owns on this element (`diagram-kind.ts`), opaque to
-   * everything else: a guided step's experience score and phase start. Kept in
+   * everything else: a guided step's phase start and participants. Kept in
    * freehand mode; copied, versioned and removed with the element.
    */
   kindProps?: JsonObject;

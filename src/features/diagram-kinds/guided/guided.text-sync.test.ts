@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { kindContextFor } from "../context";
 import { registerBuiltInDiagramKinds } from "../bootstrap";
 import { guidedHarness } from "./guided.harness";
-import { experienceOf } from "./guided.model";
 import { alignLines } from "./guided.outline.align";
 import { buildOutline } from "./guided.outline.build";
 import { parseOutline } from "./guided.outline.parse";
@@ -56,7 +55,7 @@ function edit(h: Harness, change: (text: string) => string) {
 describe("step handles in the outline", () => {
   it("reads a trailing handle, after a score, also on exits; keeps an escaped brace", () => {
     const parsed = parseOutline(
-      "Cliente: A [2] {#s1}\n? Ok {#s2}\n  sim -> B {#s-3_x}\nC \\{#s4}\nD {#bad name}",
+      "Cliente: A {#s1}\n? Ok {#s2}\n  sim -> B {#s-3_x}\nC \\{#s4}\nD {#bad name}",
     );
     expect(parsed.errors).toEqual([]);
     const [a, ok, c, d] = parsed.items as Array<{
@@ -65,7 +64,7 @@ describe("step handles in the outline", () => {
       experience?: number;
       exits: Array<{ body: Array<{ name: string; handle?: string }> }>;
     }>;
-    expect([a!.name, a!.handle, a!.experience]).toEqual(["A", "s1", 2]);
+    expect([a!.name, a!.handle]).toEqual(["A", "s1"]);
     expect(ok!.handle).toBe("s2");
     expect(ok!.exits[0]!.body[0]).toMatchObject({ name: "B", handle: "s-3_x" });
     expect([c!.name, c!.handle]).toEqual(["C {#s4}", undefined]);
@@ -134,15 +133,13 @@ describe("applying a whole-journey text", () => {
     expect(idOf(h, "B")).toBe(b);
   });
 
-  it("removes, adds and scores in one edit, undone at once", () => {
+  it("removes, adds and renames in one edit, undone at once", () => {
     const h = guidedHarness();
     add(h, "Cliente: A\nB\nC");
-    edit(h, (t) => t.replace("A\n", "A [2]\n").replace("\nB\n", "\n").replace("C\n", "C\nD\n"));
-    expect(sequence(h)).toEqual(["A", "C", "D"]);
-    expect(experienceOf(h.reading().steps.get(idOf(h, "A")!)!)).toBe(2);
+    edit(h, (t) => t.replace("A\n", "Alpha\n").replace("\nB\n", "\n").replace("C\n", "C\nD\n"));
+    expect(sequence(h)).toEqual(["Alpha", "C", "D"]);
     h.store.getState().undo();
     expect(sequence(h)).toEqual(["A", "B", "C"]);
-    expect(experienceOf(h.reading().steps.get(idOf(h, "A")!)!)).toBeNull();
   });
 
   it("changes kind, lane, phase and exit labels", () => {
@@ -231,13 +228,14 @@ describe("applying a whole-journey text", () => {
     const result = reconcileOutline(
       h.diagram(),
       base,
-      base.text.replace("\nB\n", "\nBee\n").replace("A\n", "A [4]\n"),
+      base.text.replace("\nB\n", "\nBee\n").replace("A\n", "Alpha\n"),
       kindContextFor(h.diagram()),
     );
     if ("errors" in result) throw new Error("errors");
     expect(result.skipped).toBe(1);
-    expect(result.changes.map((c) => c.kind)).toContain("score");
-    expect(result.changes.map((c) => c.kind)).not.toContain("rename");
+    expect(result.changes.filter((c) => c.kind === "rename").map((c) => c.values.after)).toEqual([
+      "Alpha",
+    ]);
   });
 
   it("stays fast on a long journey", () => {
@@ -284,7 +282,7 @@ describe("changes for review", () => {
     const h = guidedHarness();
     add(h, "Cliente: A\nB\nC");
     const result = reconcile(h, (t) =>
-      t.replace("A\n", "A [2]\n").replace("\nB\n", "\n").replace("C\n", "Cee\n"),
+      t.replace("A\n", "Alpha\n").replace("\nB\n", "\n").replace("C\n", "Cee\n"),
     );
     const taken = new Set(
       result.changes
@@ -293,10 +291,9 @@ describe("changes for review", () => {
     );
     const before = Object.keys(h.diagram().snapshot.connections).length;
     h.apply(editForChanges(h.reading().components, result.changes, taken));
-    expect(names(h)).toEqual(expect.arrayContaining(["A", "B", "Cee"]));
-    expect(experienceOf(h.reading().steps.get(idOf(h, "A")!)!)).toBe(2);
+    expect(names(h)).toEqual(expect.arrayContaining(["Alpha", "B", "Cee"]));
     expect(Object.keys(h.diagram().snapshot.connections)).toHaveLength(before);
-    expect(sequence(h)).toEqual(["A", "B", "Cee"]);
+    expect(sequence(h)).toEqual(["Alpha", "B", "Cee"]);
   });
 
   it("carries a `# why:` reason and the phase a change falls in", () => {

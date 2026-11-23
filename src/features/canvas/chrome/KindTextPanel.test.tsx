@@ -171,18 +171,18 @@ describe("KindTextPanel", () => {
     const { d } = withSteps();
     const area = openJourney();
     const b = idOf(d, "B")!;
-    type(area, area.value.replace("\nB\n", "\nBee [2]\n").replace("\nC\n", "\n"));
-    expect(screen.getByTestId("kind-text-summary")).toHaveTextContent("+0 ~2 −1");
+    type(area, area.value.replace("\nB\n", "\nBee\n").replace("\nC\n", "\n"));
+    expect(screen.getByTestId("kind-text-summary")).toHaveTextContent("+0 ~1 −1");
     fireEvent.click(screen.getByTestId("kind-text-review-toggle"));
     const rows = [...screen.getByTestId("kind-text-review").querySelectorAll("li")].map(
       (li) => li.textContent,
     );
-    expect(rows).toEqual(["Remove “C”", "Rename “B” → “Bee”", "Score “B”: — → 2"]);
+    expect(rows).toEqual(["Remove “C”", "Rename “B” → “Bee”"]);
     fireEvent.keyDown(area, { key: "Enter", ctrlKey: true });
     expect(idOf(d, "Bee")).toBe(b);
     expect(idOf(d, "C")).toBeUndefined();
     expect(useCanvasSelectionStore.getState().selectedNodeIds).toEqual(new Set([b]));
-    expect(area.value).toContain("Bee [2]");
+    expect(area.value).toContain("Bee");
     useDiagramStore.setState({ _lastUndoRedoTimestamp: 0 });
     act(() => useDiagramStore.getState().undo());
     expect(idOf(d, "B")).toBe(b);

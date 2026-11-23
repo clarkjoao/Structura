@@ -228,8 +228,6 @@ export interface EditorNodeOverlayInput {
   kindPlaced?: boolean;
   /** The diagram's kind marks this node (a quiet check). */
   kindMarked?: boolean;
-  /** A badge the diagram's kind draws on this node (an experience score). */
-  kindBadge?: { text: string; tone: string };
   /** A tag the diagram's kind draws at this node's foot (its participants). */
   kindTag?: { text: string; title: string };
   /** The active Version's copy of this node conflicts with the base. */
@@ -238,18 +236,6 @@ export interface EditorNodeOverlayInput {
   versionChange?: "added" | "changed";
   /** Part of a pending suggestion; "remove": a suggested removal. */
   pending: boolean | "remove";
-}
-
-/** The kind's badge, drawn by CSS from data attributes (`index.css`, `.react-flow__node[data-kind-badge]`). */
-export function kindBadgeOverlay(node: Node, badge: { text: string; tone: string }): Node {
-  return {
-    ...node,
-    domAttributes: {
-      ...node.domAttributes,
-      "data-kind-badge": badge.text,
-      "data-kind-badge-tone": badge.tone,
-    } as Node["domAttributes"],
-  };
 }
 
 /** The kind's tag, drawn by CSS from data attributes (`.react-flow__node[data-kind-tag]`). */
@@ -292,7 +278,6 @@ export function applyEditorNodeOverlays(
   next = lockOverlay(next, input.locked);
   next = kindPlacedOverlay(next, input.kindPlaced === true);
   if (input.kindMarked) next = withClass(next, "kind-check");
-  if (input.kindBadge) next = kindBadgeOverlay(next, input.kindBadge);
   if (input.kindTag) next = kindTagOverlay(next, input.kindTag);
   // A conflict says more than "changed": its marker takes the outline.
   next = versionChangeOverlay(next, input.versionConflict ? undefined : input.versionChange);

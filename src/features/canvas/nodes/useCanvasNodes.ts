@@ -144,14 +144,14 @@ function isSameBuiltFlowNode(a: Node, b: Node): boolean {
     a.hidden === b.hidden &&
     a.style === b.style &&
     a.data === b.data &&
-    badgeKey(a) === badgeKey(b)
+    tagKey(a) === tagKey(b)
   );
 }
 
-/** A kind's badge rides on data attributes (`kindBadgeOverlay`). */
-function badgeKey(node: Node): string {
+/** A kind's tag rides on data attributes (`kindTagOverlay`). */
+function tagKey(node: Node): string {
   const attrs = node.domAttributes as Record<string, unknown> | undefined;
-  return `${String(attrs?.["data-kind-badge"] ?? "")}|${String(attrs?.["data-kind-badge-tone"] ?? "")}|${String(attrs?.["data-kind-tag"] ?? "")}|${String(attrs?.title ?? "")}`;
+  return `${String(attrs?.["data-kind-tag"] ?? "")}|${String(attrs?.title ?? "")}`;
 }
 
 function shallowEqualIgnoringFunctions(
@@ -221,7 +221,7 @@ export function useCanvasNodes({
 }: UseCanvasNodesParams): Node[] {
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
-  // The kind's markers, subscribed to on their own: a property-only edit (an experience score)
+  // The kind's markers, subscribed to on their own: a property-only edit (a step's participants)
   // changes a badge without changing anything else the nodes are built from. Memoised per
   // snapshot, so the selector returns the same object while nothing changed.
   const kindMarkerSets = useDiagramStore((state) =>
@@ -384,7 +384,7 @@ export function useCanvasNodes({
     const flowModeActive = ctx.isPlaying || ctx.isRecording;
     // A kind that places its elements (ADR-0014) takes drag and resize away from every node.
     const kindPlaced = !interactionOf(resolveKindPolicy(diagram)).nodesDraggable;
-    const { nodes: kindMarked, badges: kindBadges, tags: kindTags } = kindMarkerSets;
+    const { nodes: kindMarked, tags: kindTags } = kindMarkerSets;
 
     const visibleIds = new Set(view.nodes.map((viewNode) => viewNode.component.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
@@ -423,7 +423,6 @@ export function useCanvasNodes({
         locked: comp.locked === true || isAncestorLocked(comp, dataCtx.resolvedComponents),
         kindPlaced,
         kindMarked: kindMarked.has(comp.id),
-        kindBadge: kindBadges.get(comp.id),
         kindTag: kindTags.get(comp.id),
         versionConflict: conflictIds.has(comp.id),
         ...(versionChanges?.added.components.has(comp.id)

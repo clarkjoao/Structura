@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Journey phases: a step can start a named phase that runs on until the next start. Phases keep contiguous columns in the arrangement, show as a band with an emotion curve beside the lanes, and survive the outline (`## Phase`) and Mermaid sections.
+Journey phases: a step can start a named phase that runs on until the next start. Phases keep contiguous columns in the arrangement, show as a band beside the lanes, and survive the outline (`## Phase`) and Mermaid sections.
 
 ## Requirements
 

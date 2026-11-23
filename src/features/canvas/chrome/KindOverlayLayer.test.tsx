@@ -15,21 +15,20 @@ vi.mock("@xyflow/react", async (importOriginal) => ({
 registerBuiltInDiagramKinds();
 
 describe("KindOverlayLayer", () => {
-  it("draws the phases and the curve, selects a phase's start, and hides in freehand mode", () => {
+  it("draws the phases, selects a phase's start, and hides in freehand mode", () => {
     const { diagram } = createKindDiagram({
       name: `O ${Math.random()}`,
       level: "context",
       kindId: "guided",
     });
     useDiagramStore.getState().openDiagram(diagram.id);
-    const built = buildKindText("## Discover\nUsuário: A [5]\n## Buy\nB [1]");
+    const built = buildKindText("## Discover\nUsuário: A\n## Buy\nB");
     if (!built || !("edit" in built)) throw new Error("no build");
     applyKindTextBuild(built);
     const onSelect = vi.fn();
     const view = render(<KindOverlayLayer onSelectElement={onSelect} />);
     const segments = screen.getAllByTestId("kind-overlay-segment");
     expect(segments.map((s) => s.textContent)).toEqual(["Discover", "Buy"]);
-    expect(screen.getByTestId("kind-overlay-curve").querySelectorAll("circle")).toHaveLength(2);
     fireEvent.click(segments[1]!);
     const b = Object.values(
       useDiagramStore.getState().diagrams[diagram.id]!.snapshot.components,
@@ -49,7 +48,6 @@ describe("KindOverlayLayer", () => {
           depth: 0,
           segments: [],
           separators: [],
-          curve: [],
           lines: [
             {
               id: "visibility",

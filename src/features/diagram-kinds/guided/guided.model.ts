@@ -87,14 +87,6 @@ export function isGuidedEnd(component: Component): boolean {
   return isProcessNodeComponent(component) && component.flowShape === "end";
 }
 
-/** A step's experience score (spec guided-journey-experience): 1–5, or null. */
-export function experienceOf(component: Component): number | null {
-  const value = component.kindProps?.experience;
-  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 5
-    ? value
-    : null;
-}
-
 /** The diagram's kind data key for the line of visibility: the first backstage lane's id. */
 export const GUIDED_VISIBILITY_KEY = "visibilityLane";
 
@@ -134,9 +126,6 @@ export function participantsOf(component: Component, laneName?: string): string[
   const value = component.kindProps?.participants;
   return Array.isArray(value) ? cleanParticipants(value, laneName) : [];
 }
-
-/** Scores 1–2: where the journey hurts. */
-export const isPainPoint = (score: number | null): boolean => score !== null && score <= 2;
 
 /** Free text and notes: allowed anywhere, ignored by the guided rules. */
 export function isGuidedAnnotation(component: Component): boolean {

@@ -171,7 +171,7 @@ describe("blueprint text", () => {
     add(h, "journey\n  section Work\n    Do work: 1: Me, Cat\n    Rest: 4: Me");
     expect(participantsOf(stepOf(h, "Do work"))).toEqual(["Cat"]);
     expect(serializeMermaidJourney(h.diagram(), kindContextFor(h.diagram()))).toContain(
-      "Do work: 1: Me, Cat",
+      "Do work: 3: Me, Cat",
     );
     h.apply(guidedSetVisibilityLine(h.diagram(), laneId(h, "System")));
     const swim = serializeMermaidSwimlane(h.diagram(), kindContextFor(h.diagram()));

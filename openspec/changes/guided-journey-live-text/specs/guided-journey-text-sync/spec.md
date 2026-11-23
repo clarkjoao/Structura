@@ -33,7 +33,6 @@ The difference SHALL be expressed per step:
 - renamed;
 - kind changed (step, decision, end);
 - moved to another lane;
-- score set or cleared;
 - phase start set or cleared;
 - exits added, removed or relabelled.
 
@@ -48,8 +47,8 @@ Positions SHALL never come from the text: the guided arrangement places the resu
 #### Scenario: Several changes, one undo
 
 - **GIVEN** a journey A → B → C
-- **WHEN** the author removes the line "B", adds "D" after "C", sets "A [2]", and applies
-- **THEN** A → C → D with A scored 2, and one undo restores A → B → C without the score
+- **WHEN** the author removes the line "B", adds "D" after "C", renames "A" to "Alpha", and applies
+- **THEN** Alpha → C → D, and one undo restores A → B → C
 
 #### Scenario: Errors block applying
 

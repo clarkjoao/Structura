@@ -1,17 +1,12 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import { kindOverlayFor } from "@/features/diagram-kinds/overlay";
-import {
-  OVERLAY_LABEL_DEPTH,
-  overlayCurvePoints,
-  overlayRect,
-} from "@/features/diagram-kinds/overlay.geometry";
+import { OVERLAY_LABEL_DEPTH, overlayRect } from "@/features/diagram-kinds/overlay.geometry";
 import i18n from "@/infrastructure/i18n";
 import type { ExportDecorations } from "../export-core";
 
 /**
  * The diagram kind's overlay as draw.io decorations (spec guided-overlay-fit-export):
- * each phase a labelled rectangle, each separator a dashed line, the emotion curve
- * one polyline. Undefined outside kind mode, or when the kind draws nothing.
+ * each phase a labelled rectangle, each separator and lane line a dashed line. Undefined outside kind mode, or when the kind draws nothing.
  */
 export function kindExportDecorations(diagram: DiagramModel): ExportDecorations | undefined {
   const overlay = kindOverlayFor(diagram);
@@ -51,14 +46,7 @@ export function kindExportDecorations(diagram: DiagramModel): ExportDecorations 
       dashed: true,
     });
   }
-  const curve = overlayCurvePoints(overlay);
-  const lines =
-    curve.length > 1
-      ? [
-          ...separators,
-          { id: "structura-emotion-curve", points: curve.map(({ x, y }) => ({ x, y })) },
-        ]
-      : separators;
+  const lines = separators;
   if (rects.length === 0 && lines.length === 0) return undefined;
   return { layerName: i18n.t("diagramKinds.overlay.exportLayer"), rects, lines };
 }

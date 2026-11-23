@@ -1,7 +1,6 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import type { KindContext, KindTextBase } from "../kind.types";
 import {
-  experienceOf,
   isGuidedDecision,
   isGuidedEnd,
   participantsOf,
@@ -82,14 +81,13 @@ export function writeGuidedOutline(
           : "";
       currentLane = lane;
       const marker = isGuidedDecision(step) ? "? " : isGuidedEnd(step) ? "! " : "";
-      const score = experienceOf(step);
       const phase = phaseStartOf(step);
       // A phase heading sits on its own line, at the indentation of what it starts.
       if (phase) push(`${ind}## ${phase.replace(/\\/g, "\\\\")}`);
       const handle = `s${Object.keys(handles).length + 1}`;
       handles[handle] = id;
       push(
-        `${ind}${prefix}${lanePrefix}${marker}${nameOf(id)}${score ? ` [${score}]` : ""}${
+        `${ind}${prefix}${lanePrefix}${marker}${nameOf(id)}${
           options.handles ? ` {#${handle}}` : ""
         }`,
         id,

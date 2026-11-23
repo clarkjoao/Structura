@@ -43,11 +43,11 @@ Framing a selection or a single element SHALL be unchanged.
 
 - **GIVEN** a guided journey with phases, scrolled so the band is off-screen
 - **WHEN** the author clicks Fit view
-- **THEN** the whole band, the curve and every lane are inside the viewport
+- **THEN** the whole band and every lane are inside the viewport
 
 #### Scenario: No overlay, no change
 
-- **GIVEN** a freehand diagram, or a guided journey without phases or scores
+- **GIVEN** a freehand diagram, or a guided journey without phases or a line of visibility
 - **WHEN** the author clicks Fit view
 - **THEN** the viewport is the same as React Flow's node-only fit
 
@@ -56,16 +56,15 @@ Framing a selection or a single element SHALL be unchanged.
 When the exported diagram is guided, in kind mode, with a band, the draw.io export SHALL add:
 
 - one labelled rectangle per phase segment, at the band's position;
-- one dashed line per separator;
-- one polyline for the emotion curve, when the band has one.
+- one dashed line per separator and per line between lanes.
 
 These shapes SHALL be grouped in a locked layer named after the band ("Phases" / "Fases"), translated through i18n. No shapes SHALL be added in freehand mode or without a band.
 
 #### Scenario: Phases in draw.io
 
-- **GIVEN** a guided journey with phases Discover and Buy and three scored steps
+- **GIVEN** a guided journey with phases Discover and Buy
 - **WHEN** it is exported to draw.io
-- **THEN** the file holds two labelled phase cells above the lanes, the separators, and a curve polyline, in a locked "Phases" layer, and the steps and lanes are exported as before
+- **THEN** the file holds two labelled phase cells above the lanes and the separators, in a locked "Phases" layer, and the steps and lanes are exported as before
 
 #### Scenario: Freehand export
 

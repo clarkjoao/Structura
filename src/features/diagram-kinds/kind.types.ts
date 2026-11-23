@@ -67,18 +67,16 @@ export interface KindMarker {
   onConnection: boolean;
   message: KindText;
   values?: Record<string, string | number>;
-  /** A small badge the host draws on the node (spec guided-journey-experience). */
-  badge?: KindBadge;
   /** A short tag the host draws at the node's foot, with a tooltip (spec guided-journey-blueprint). */
   tag?: KindTag;
-  /** Whether the element is outlined as checked. Absent means yes; a badge-only marker says no. */
+  /** Whether the element is outlined as checked. Absent means yes; a tag-only marker says no. */
   marks?: boolean;
 }
 
 /**
  * What a kind draws over the canvas (spec guided-journey-phases): a header band
  * along the reading axis with labelled segments, separators crossing the
- * lanes, and a curve. Flow coordinates; drawn by the host, never an element.
+ * lanes, and lines between lanes. Flow coordinates; drawn by the host, never an element.
  */
 export interface KindOverlay {
   /** The reading axis: "x" left to right, "y" top to bottom. */
@@ -89,8 +87,6 @@ export interface KindOverlay {
   segments: Array<{ id: string; label: string; from: number; to: number; selects?: string }>;
   /** Lines across the lanes at a position along the axis. */
   separators: Array<{ along: number; from: number; to: number }>;
-  /** Points along the axis, `value` 0 (low) to 1 (high), drawn in the band. */
-  curve: Array<{ id: string; along: number; value: number; tone: KindBadge["tone"] }>;
   /**
    * Lines along the axis between two lanes, at `across`, from `from` to `to` along it,
    * labelled on each side (spec guided-journey-blueprint: the line of visibility).
@@ -108,12 +104,6 @@ export interface KindOverlay {
 export interface KindTag {
   text: string;
   title: string;
-}
-
-/** A badge on a node: short text and a tone. */
-export interface KindBadge {
-  text: string;
-  tone: "danger" | "warning" | "success" | "neutral";
 }
 
 /** What a kind sees: read access and services, never the store. */
@@ -243,7 +233,6 @@ export interface KindTextChange {
     | "rename"
     | "kind"
     | "lane"
-    | "score"
     | "phase"
     | "participants"
     | "visibility"
@@ -432,12 +421,7 @@ export interface DiagramKindDescriptor {
   ) => KindCommandOutcome | { refused: KindText };
   /** Writing the diagram as text: offered while in kind mode. */
   textCapture?: KindTextCapture;
-  /**
-   * Markers worth walking (guided: pain points): the mode bar counts those with this code
-   * and selects them in turn, in the order `checks` returns them. `label` takes `count`.
-   */
-  focusMarkers?: { code: string; label: KindText };
-  /** What the kind draws over the canvas in kind mode (phases, a curve); null for nothing. */
+  /** What the kind draws over the canvas in kind mode (phases, lines); null for nothing. */
   overlay?: (diagram: DiagramModel) => KindOverlay | null;
   /** The kind's inspector tab, offered while in kind mode. */
   inspector?: KindInspector;

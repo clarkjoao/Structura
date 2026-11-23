@@ -17,7 +17,7 @@ function phasedJourney() {
     kindId: "guided",
   });
   useDiagramStore.getState().openDiagram(diagram.id);
-  const built = buildKindText("## Discover\nUsuário: A [5]\nB [3]\n## Buy\nC [1]");
+  const built = buildKindText("## Discover\nUsuário: A\nB\n## Buy\nC");
   if (!built || !("edit" in built)) throw new Error("no build");
   applyKindTextBuild(built);
   return diagram.id;
@@ -30,12 +30,12 @@ describe("draw.io export of a guided journey's phases", () => {
     await i18n.changeLanguage("pt-BR");
   });
 
-  it("adds the phases, separators and the curve in a locked layer", () => {
+  it("adds the phases and separators in a locked layer", () => {
     const xml = exportDrawio(current(phasedJourney()), {});
     expect(xml).toContain('value="Fases" style="locked=1;" parent="0"');
     expect(xml.match(/id="structura-phase-[^s"][^"]*" value="(Discover|Buy)"/g)).toHaveLength(2);
     expect(xml).toContain('id="structura-phase-separator-');
-    expect(xml).toContain('id="structura-emotion-curve"');
+    expect(xml).not.toContain("structura-emotion-curve");
   });
 
   it("adds nothing in freehand mode", () => {
