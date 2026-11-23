@@ -60,6 +60,12 @@ import {
 import { ExportModal } from "./ExportModal";
 import { ShareModal } from "./ShareModal";
 import type { WorkspaceContentProps } from "./types";
+import type { DiagramExportFormat } from "@/lib/export-service";
+import {
+  useFlowPlaybackRecorder,
+  type RecordingSpeed,
+} from "@/features/canvas/flow/useFlowPlaybackRecorder";
+import { downloadFile } from "@/lib/export-service/download-file";
 import { getViewportCenter } from "@/features/canvas/viewport-utils";
 
 /** Stable identity, so the progress memo is not rebuilt on every render. */
@@ -265,6 +271,42 @@ export function WorkspaceContent({
     },
     [interaction.canUseFlow, compareModeBlocksRecorder, editFlow, t],
   );
+
+  const reactFlowInstanceRef = useRef<DiagramFlowInstance | null>(null);
+  const playbackRecorder = useFlowPlaybackRecorder();
+  const recordGifRef = useRef(playbackRecorder.record);
+  recordGifRef.current = playbackRecorder.record;
+
+  const handleRecordGif = useCallback(
+    async (flow: Flow, speed: RecordingSpeed) => {
+      if (!interaction.canUseFlow) {
+        toast.warning(t("flows.unavailableDuringCollab"));
+        return;
+      }
+      if (!reactFlowInstanceRef.current) {
+        toast.error(t("flows.gifCanvasNotReady"));
+        return;
+      }
+      const toastId = toast.loading(t("flows.gifRecording"));
+      try {
+        const blob = await recordGifRef.current({ flow, speed });
+        if (!blob) {
+          toast.error(t("flows.gifFailed"), { id: toastId });
+          return;
+        }
+        const baseName =
+          flow.name
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "") || "flow";
+        downloadFile(blob, `${baseName}.gif`, "image/gif");
+        toast.success(t("flows.gifExported"), { id: toastId });
+      } catch {
+        toast.error(t("flows.gifFailed"), { id: toastId });
+      }
+    },
+    [interaction.canUseFlow, t],
+  );
   const handleEndCollab = useCallback(() => {
     closeSession();
     onCollabSessionEnded?.();
@@ -273,7 +315,22 @@ export function WorkspaceContent({
   const [embedModalOpen, setEmbedModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const reactFlowInstanceRef = useRef<DiagramFlowInstance | null>(null);
+
+  const handleExportWithInstance = useCallback(
+    async (
+      formats: DiagramExportFormat[],
+      pluginExporterIds: string[],
+      framing?: "viewport" | "full",
+    ) => {
+      return handleExportFormats(
+        formats,
+        pluginExporterIds,
+        reactFlowInstanceRef.current ?? undefined,
+        framing,
+      );
+    },
+    [handleExportFormats],
+  );
 
   // The cursor itself is sent from inside the canvas, in flow coordinates (CollabPresenceLayer).
   const handleCanvasPointerMove = useCallback(
@@ -420,7 +477,7 @@ export function WorkspaceContent({
               open={exportModalOpen}
               onOpenChange={setExportModalOpen}
               hasFlows={flows.length > 0}
-              onExport={handleExportFormats}
+              onExport={handleExportWithInstance}
               onCopyDrawio={handleCopyDrawio}
               onCopyJson={handleCopyJson}
               copiedClipboardKind={copiedClipboardKind}
@@ -507,6 +564,7 @@ export function WorkspaceContent({
                   onPlay={play}
                   onStartRecording={startRecordingWhenAllowed}
                   onEditFlow={editFlowWhenAllowed}
+                  onRecordGif={handleRecordGif}
                   onGetInsertPosition={() => {
                     const instance = reactFlowInstanceRef.current;
                     if (!instance) return { x: 0, y: 0 };

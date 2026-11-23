@@ -35,6 +35,7 @@ import {
   parseMermaidSequence,
 } from "@/features/diagram";
 import type { Flow } from "@/features/diagram";
+import type { RecordingSpeed } from "./useFlowPlaybackRecorder";
 import { toast } from "sonner";
 import { isEditableTarget, KEY, keyIs } from "@/lib/core/keyboard";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -62,11 +66,18 @@ import { activeDirection } from "../hooks/useActiveDirection";
 import type { DiagramDirection } from "@/features/diagram";
 import { useFrameDiagram } from "../focus/frameDiagram";
 
+const GIF_SPEEDS: { speed: RecordingSpeed; labelKey: string }[] = [
+  { speed: "slow", labelKey: "flows.gifSpeedSlow" },
+  { speed: "normal", labelKey: "flows.gifSpeedNormal" },
+  { speed: "fast", labelKey: "flows.gifSpeedFast" },
+];
+
 interface Props {
   onClose: () => void;
   onPlay: (flow: Flow) => void;
   onStartRecording: () => void;
   onEditFlow: (flow: Flow) => void;
+  onRecordGif?: (flow: Flow, speed: RecordingSpeed) => void;
   panelActionsLocked?: boolean;
   panelActionsLockedTitle?: string;
   onGetInsertPosition: () => { x: number; y: number };
@@ -83,6 +94,7 @@ const FlowPanel = ({
   onPlay,
   onStartRecording,
   onEditFlow,
+  onRecordGif,
   panelActionsLocked = false,
   panelActionsLockedTitle,
   onGetInsertPosition,
@@ -510,6 +522,26 @@ const FlowPanel = ({
                       <DropdownMenuItem onClick={() => handleCopy(flow)}>
                         <Copy className="mr-2 h-3.5 w-3.5" /> {t("flows.copyMermaidTitle")}
                       </DropdownMenuItem>
+                      {onRecordGif && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger title={t("flows.recordGifHint")}>
+                              <Play className="mr-2 h-3.5 w-3.5" /> {t("flows.recordGif")}
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              {GIF_SPEEDS.map(({ speed, labelKey }) => (
+                                <DropdownMenuItem
+                                  key={speed}
+                                  onClick={() => onRecordGif(flow, speed)}
+                                >
+                                  {t(labelKey)}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                        </>
+                      )}
                       {!derivedFlowIds.has(flow.id) && (
                         <>
                           <DropdownMenuSeparator />

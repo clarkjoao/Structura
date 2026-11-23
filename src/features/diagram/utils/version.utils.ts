@@ -232,10 +232,15 @@ export function diagramWithResolvedScene<T extends VersionDiagram>(diagram: T): 
 }
 
 export function exportFilenameSlug(diagram: Diagram): string {
-  const base = diagram.name.toLowerCase().replace(/\s+/g, "-");
+  const sanitize = (name: string) =>
+    name
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+  const base = sanitize(diagram.name);
   const sid = diagram.activeVersionId;
   if (!sid || !diagram.versions?.[sid]) return base;
-  const sceneSlug = diagram.versions[sid].name.toLowerCase().replace(/\s+/g, "-");
+  const sceneSlug = sanitize(diagram.versions[sid].name);
   return `${base}-${sceneSlug}`;
 }
 

@@ -22,7 +22,7 @@ export interface WorkspaceExportEntry {
   filename: string;
 }
 
-const FORMAT_EXTENSION: Record<DiagramExportFormat, string> = {
+const FORMAT_EXTENSION: Record<"json" | "drawio" | "mermaid", string> = {
   json: "json",
   drawio: "drawio",
   mermaid: "md",
@@ -95,7 +95,7 @@ export function planWorkspaceExport({
       entries.push({
         diagram,
         format,
-        filename: `${uniqueStem}${suffix}.${FORMAT_EXTENSION[format]}`,
+        filename: `${uniqueStem}${suffix}.${FORMAT_EXTENSION[format as "json" | "drawio" | "mermaid"]}`,
       });
     }
   }
@@ -111,15 +111,20 @@ export function buildWorkspaceExportFiles({
   services,
   ...planOptions
 }: WorkspaceExportOptions): ZipEntryFile[] {
-  return planWorkspaceExport(planOptions).map(({ diagram, format, filename }) => ({
-    filename,
-    content: buildExportContent(diagram, format, services),
-  }));
+  return planWorkspaceExport(planOptions)
+    .filter(
+      (entry): entry is WorkspaceExportEntry & { format: "json" | "drawio" | "mermaid" } =>
+        entry.format === "json" || entry.format === "drawio" || entry.format === "mermaid",
+    )
+    .map(({ diagram, format, filename }) => ({
+      filename,
+      content: buildExportContent(diagram, format, services),
+    }));
 }
 
 function buildExportContent(
   diagram: Diagram,
-  format: DiagramExportFormat,
+  format: "json" | "drawio" | "mermaid",
   services: Record<string, ServiceDefinition>,
 ): string {
   switch (format) {

@@ -2416,17 +2416,38 @@
     "emptyTagged": "No flows with this tag.",
     "emptyNone": "No flows defined.",
     "recorderBlockedInCompare": "Exit version comparison mode to record or edit a flow",
-    "unavailableDuringCollab": "Flows are unavailable during a collaboration session"
+    "unavailableDuringCollab": "Flows are unavailable during a collaboration session",
+    "recordGif": "Record GIF",
+    "recordGifHint": "Play the flow and capture as an animated GIF",
+    "gifSpeed": "Playback speed",
+    "gifSpeedSlow": "Slow",
+    "gifSpeedNormal": "Normal",
+    "gifSpeedFast": "Fast",
+    "gifRecording": "Recording GIF…",
+    "gifEncoding": "Encoding GIF…",
+    "gifExported": "GIF exported",
+    "gifFailed": "GIF recording failed",
+    "gifCanvasNotReady": "Canvas not ready — please try again"
   },
   "export": {
     "title": "Export",
     "description": "Download your diagram in different formats or copy to clipboard.",
     "toolbarButton": "Export",
+    "visualUnavailable": "Fully load the diagram to export images",
     "tabs": {
       "download": "Download",
       "copy": "Copy"
     },
     "downloadHint": "Select one or more formats to download.",
+    "summary": {
+      "formats_one": "{{count}} format",
+      "formats_other": "{{count}} formats",
+      "none": "No format selected"
+    },
+    "groups": {
+      "data": "Data",
+      "image": "Image"
+    },
     "copyHint": "Copy directly to your clipboard.",
     "options": {
       "json": {
@@ -2441,6 +2462,17 @@
         "title": "Mermaid",
         "description": "Export flows as Markdown with Mermaid diagrams"
       },
+      "svg": {
+        "title": "SVG",
+        "description": "Vector image — infinitely scalable"
+      },
+      "png": {
+        "title": "PNG",
+        "description": "Raster image — great for docs and presentations"
+      },
+      "visualSection": "Image export",
+      "viewport": "Viewport",
+      "full": "Full diagram",
       "recommended": "Recommended"
     },
     "plugins": "Other formats",
@@ -2471,6 +2503,7 @@
       "noDiagrams": "No diagrams to export with the current selection.",
       "noFormats": "Pick at least one format.",
       "exportButton": "Export",
+      "exporting": "Exporting…",
       "mermaidNote": "Flows exported as Markdown",
       "success": "Exported {{count}} files",
       "error": "Export failed"

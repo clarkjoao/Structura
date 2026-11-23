@@ -3,12 +3,15 @@ import { exportFilenameSlug } from "@/features/diagram";
 import { exportDrawio } from "./export-drawio";
 import { exportJSON } from "./export-json";
 import { exportMermaid } from "./export-mermaid";
+import { exportSvg } from "./export-svg";
+import { exportPng } from "./export-png";
+import type { ReactFlowInstance } from "@xyflow/react";
 
-export type DiagramExportFormat = "json" | "drawio" | "mermaid";
+export type DiagramExportFormat = "json" | "drawio" | "mermaid" | "svg" | "png";
 
 export interface ExportArtifact {
   filename: string;
-  content: string;
+  content: string | Blob;
   mime: string;
 }
 
@@ -17,43 +20,102 @@ interface BuildDiagramExportFilesArgs {
   flows: Flow[];
   services: Record<string, ServiceDefinition>;
   formats: DiagramExportFormat[];
+  /** Required when any visual format (svg, png) is requested. */
+  reactFlowInstance?: ReactFlowInstance;
+  framing?: "viewport" | "full";
 }
 
-const FORMAT_EXTENSION: Record<DiagramExportFormat, string> = {
+const TEXT_FORMAT_EXTENSION: Record<Exclude<DiagramExportFormat, "svg" | "png">, string> = {
   json: "json",
   drawio: "drawio",
   mermaid: "md",
 };
 
-const FORMAT_MIME: Record<DiagramExportFormat, string> = {
+const TEXT_FORMAT_MIME: Record<Exclude<DiagramExportFormat, "svg" | "png">, string> = {
   json: "application/json",
   drawio: "application/xml",
   mermaid: "text/markdown",
 };
 
-export function buildDiagramExportFiles({
+const VISUAL_FORMAT_MIME: Record<"svg" | "png", string> = {
+  svg: "image/svg+xml",
+  png: "image/png",
+};
+
+const VISUAL_FORMAT_EXTENSION: Record<"svg" | "png", string> = {
+  svg: "svg",
+  png: "png",
+};
+
+export interface BuildDiagramExportFilesResult {
+  baseName: string;
+  files: ExportArtifact[];
+  visualErrors: string[];
+}
+
+export async function buildDiagramExportFiles({
   diagram,
   flows,
   services,
   formats,
-}: BuildDiagramExportFilesArgs): { baseName: string; files: ExportArtifact[] } {
+  reactFlowInstance,
+  framing = "full",
+}: BuildDiagramExportFilesArgs): Promise<BuildDiagramExportFilesResult> {
   const baseName = exportFilenameSlug(diagram);
-  const files = formats.map((format) => {
-    const content = buildExportContent(format, diagram, flows, services);
+
+  const textFormats = formats.filter(
+    (f): f is Exclude<DiagramExportFormat, "svg" | "png"> =>
+      f === "json" || f === "drawio" || f === "mermaid",
+  );
+  const visualFormats = formats.filter((f): f is "svg" | "png" => f === "svg" || f === "png");
+
+  const textFiles = textFormats.map((format) => {
+    const content = buildTextExport(format, diagram, flows, services);
     const suffix = format === "mermaid" ? "-flows" : "";
 
     return {
-      filename: `${baseName}${suffix}.${FORMAT_EXTENSION[format]}`,
+      filename: `${baseName}${suffix}.${TEXT_FORMAT_EXTENSION[format]}`,
       content,
-      mime: FORMAT_MIME[format],
-    };
+      mime: TEXT_FORMAT_MIME[format],
+    } as ExportArtifact;
   });
 
-  return { baseName, files };
+  const visualFiles: ExportArtifact[] = [];
+  const visualErrors: string[] = [];
+
+  if (visualFormats.length > 0 && !reactFlowInstance) {
+    visualErrors.push("Canvas not ready — visual exports require the diagram to be fully loaded.");
+  }
+
+  for (const format of visualFormats) {
+    if (!reactFlowInstance) continue;
+    try {
+      const content =
+        format === "svg"
+          ? await exportSvg(diagram, framing, reactFlowInstance)
+          : await exportPng(diagram, framing, reactFlowInstance);
+
+      visualFiles.push({
+        filename: `${baseName}.${VISUAL_FORMAT_EXTENSION[format]}`,
+        content,
+        mime: VISUAL_FORMAT_MIME[format],
+      });
+    } catch (error) {
+      const label = format.toUpperCase();
+      const message = error instanceof Error ? error.message : "Unknown error";
+      visualErrors.push(`${label} export failed: ${message}`);
+    }
+  }
+
+  return {
+    baseName,
+    files: [...textFiles, ...visualFiles],
+    visualErrors,
+  };
 }
 
-function buildExportContent(
-  format: DiagramExportFormat,
+function buildTextExport(
+  format: Exclude<DiagramExportFormat, "svg" | "png">,
   diagram: Diagram,
   flows: Flow[],
   services: Record<string, ServiceDefinition>,

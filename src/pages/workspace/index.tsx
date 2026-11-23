@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import type { ReactFlowInstance } from "@xyflow/react";
 import {
   useActiveDiagramId,
   useDiagramActions,
@@ -24,7 +25,7 @@ import { writeDrawioToClipboard } from "@/lib/clipboard";
 import { FlowModeProvider } from "@/features/canvas";
 import { CollabProvider, CollabStartModal } from "@/features/collaboration";
 import { ImportModal } from "@/pages/ImportModal";
-import type { CopiedClipboardKind } from "./types";
+import type { CopiedClipboardKind, ExportBuildResult } from "./types";
 import { WorkspaceContent } from "./WorkspaceContent";
 
 function readActiveDiagram() {
@@ -139,17 +140,32 @@ export default function WorkspacePage() {
   }, [flashCopied, services]);
 
   const handleExportFormats = useCallback(
-    async (formats: DiagramExportFormat[], pluginExporterIds: string[]) => {
+    async (
+      formats: DiagramExportFormat[],
+      pluginExporterIds: string[],
+      reactFlowInstance?: ReactFlowInstance,
+      framing: "viewport" | "full" = "full",
+    ): Promise<ExportBuildResult> => {
       const diagram = readActiveDiagram();
-      if (!diagram) return;
-      if (formats.length === 0 && pluginExporterIds.length === 0) return;
+      if (!diagram) return { files: [], visualErrors: [] };
+      if (formats.length === 0 && pluginExporterIds.length === 0)
+        return { files: [], visualErrors: [] };
       try {
-        const { baseName, files } = buildDiagramExportFiles({
+        const { baseName, files, visualErrors } = await buildDiagramExportFiles({
           diagram,
           flows,
           services,
           formats,
+          reactFlowInstance,
+          framing,
         });
+
+        // Report visual export errors to the user
+        if (visualErrors.length > 0) {
+          for (const err of visualErrors) {
+            toast.error(err);
+          }
+        }
 
         // Plugin exporters see a read-only snapshot; their output joins the same
         // download/zip flow as the built-in formats.
@@ -176,18 +192,41 @@ export default function WorkspacePage() {
           }
         }
 
-        if (files.length === 1) {
-          const [file] = files;
-          downloadFile(file.content, file.filename.split("/").pop() ?? file.filename, file.mime);
-          return;
+        if (files.length === 0) {
+          toast.error(t("export.workspace.noFormats"));
+          return { files: [], visualErrors };
         }
 
-        void downloadZip(
-          files.map(({ filename, content }) => ({ filename, content })),
-          `${baseName}.zip`,
+        // Separate Blobs (visual exports) from strings (text exports)
+        const stringFiles = files.filter(
+          (f): f is { filename: string; content: string; mime: string } =>
+            typeof f.content === "string",
         );
+        const blobFiles = files.filter(
+          (f) => typeof f.content === "object" && typeof f.content.arrayBuffer === "function",
+        );
+
+        for (const file of blobFiles) {
+          downloadFile(file.content, file.filename.split("/").pop() ?? file.filename, file.mime);
+        }
+
+        if (stringFiles.length === 1) {
+          const [file] = stringFiles;
+          downloadFile(file.content, file.filename.split("/").pop() ?? file.filename, file.mime);
+          return { files: stringFiles, visualErrors };
+        }
+
+        if (stringFiles.length > 1) {
+          void downloadZip(
+            stringFiles.map(({ filename, content }) => ({ filename, content })),
+            `${baseName}.zip`,
+          );
+        }
+
+        return { files: stringFiles, visualErrors };
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : t("export.modal.error"));
+        toast.error(error instanceof Error ? error.message : t("export.workspace.error"));
+        return { files: [], visualErrors: [] };
       }
     },
     [flows, services, t],

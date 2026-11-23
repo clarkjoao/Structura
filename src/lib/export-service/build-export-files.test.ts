@@ -23,7 +23,7 @@ function minimalDiagram(overrides: Partial<Diagram> = {}): Diagram {
 }
 
 describe("buildDiagramExportFiles", () => {
-  it("builds consistent filenames for single and flow exports", () => {
+  it("builds consistent filenames for single and flow exports", async () => {
     const diagram = minimalDiagram();
     diagram.snapshot.components.api = {
       id: "api",
@@ -33,7 +33,7 @@ describe("buildDiagramExportFiles", () => {
       parentId: null,
     };
 
-    const { baseName, files } = buildDiagramExportFiles({
+    const { baseName, files } = await buildDiagramExportFiles({
       diagram,
       flows: [],
       services: {},
@@ -47,10 +47,10 @@ describe("buildDiagramExportFiles", () => {
     ]);
   });
 
-  it("uses the flows suffix for Mermaid exports", () => {
+  it("uses the flows suffix for Mermaid exports", async () => {
     const diagram = minimalDiagram();
 
-    const { files } = buildDiagramExportFiles({
+    const { files } = await buildDiagramExportFiles({
       diagram,
       flows: [
         {
@@ -68,7 +68,7 @@ describe("buildDiagramExportFiles", () => {
     expect(files[0]?.filename).toBe("payments-platform-flows.md");
   });
 
-  it("uses trunk snapshot for Mermaid so scene-filtered caller graphs cannot empty flow export", () => {
+  it("uses trunk snapshot for Mermaid so scene-filtered caller graphs cannot empty flow export", async () => {
     const components: Record<string, Component> = {
       api: {
         id: "api",
@@ -119,7 +119,7 @@ describe("buildDiagramExportFiles", () => {
       },
     });
 
-    const { files } = buildDiagramExportFiles({
+    const { files } = await buildDiagramExportFiles({
       diagram,
       flows: Object.values(diagram.snapshot.flows),
       services: {},
@@ -129,5 +129,34 @@ describe("buildDiagramExportFiles", () => {
     const content = files[0]?.content ?? "";
     expect(content).toContain("participant A as API");
     expect(content).toContain("A->>W: Ping");
+  });
+
+  it("returns visualErrors when reactFlowInstance is missing for visual formats", async () => {
+    const diagram = minimalDiagram();
+
+    const result = await buildDiagramExportFiles({
+      diagram,
+      flows: [],
+      services: {},
+      formats: ["svg", "png"],
+    });
+
+    expect(result.visualErrors).toHaveLength(1);
+    expect(result.visualErrors[0]).toContain("Canvas not ready");
+    expect(result.files).toHaveLength(0);
+  });
+
+  it("returns empty visualErrors when only text formats are requested", async () => {
+    const diagram = minimalDiagram();
+
+    const result = await buildDiagramExportFiles({
+      diagram,
+      flows: [],
+      services: {},
+      formats: ["json", "drawio"],
+    });
+
+    expect(result.visualErrors).toHaveLength(0);
+    expect(result.files).toHaveLength(2);
   });
 });

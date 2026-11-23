@@ -2416,17 +2416,38 @@
     "emptyTagged": "Nenhum fluxo com essa tag.",
     "emptyNone": "Nenhum fluxo definido.",
     "recorderBlockedInCompare": "Saia do modo de comparação de versões para gravar ou editar um fluxo",
-    "unavailableDuringCollab": "Fluxos não estão disponíveis durante uma sessão de colaboração"
+    "unavailableDuringCollab": "Fluxos não estão disponíveis durante uma sessão de colaboração",
+    "recordGif": "Gravar GIF",
+    "recordGifHint": "Reproduzir o fluxo e capturar como GIF animado",
+    "gifSpeed": "Velocidade da reprodução",
+    "gifSpeedSlow": "Lenta",
+    "gifSpeedNormal": "Normal",
+    "gifSpeedFast": "Rápida",
+    "gifRecording": "Gravando GIF…",
+    "gifEncoding": "Codificando GIF…",
+    "gifExported": "GIF exportado",
+    "gifFailed": "Falha ao gravar o GIF",
+    "gifCanvasNotReady": "Canvas ainda não está pronto — tente novamente"
   },
   "export": {
     "title": "Exportar",
     "description": "Baixe seu diagrama em diferentes formatos ou copie para a área de transferência.",
     "toolbarButton": "Exportar",
+    "visualUnavailable": "Carregue o diagrama completamente para exportar imagens",
     "tabs": {
       "download": "Baixar",
       "copy": "Copiar"
     },
     "downloadHint": "Selecione um ou mais formatos para baixar.",
+    "summary": {
+      "formats_one": "{{count}} formato",
+      "formats_other": "{{count}} formatos",
+      "none": "Nenhum formato selecionado"
+    },
+    "groups": {
+      "data": "Dados",
+      "image": "Imagem"
+    },
     "copyHint": "Copie diretamente para sua área de transferência.",
     "options": {
       "json": {
@@ -2441,6 +2462,17 @@
         "title": "Mermaid",
         "description": "Exportar fluxos como Markdown com diagramas Mermaid"
       },
+      "svg": {
+        "title": "SVG",
+        "description": "Imagem vetorial — infinitamente escalável"
+      },
+      "png": {
+        "title": "PNG",
+        "description": "Imagem raster — ideal para docs e apresentações"
+      },
+      "visualSection": "Exportar imagem",
+      "viewport": "Viewport",
+      "full": "Diagrama completo",
       "recommended": "Recomendado"
     },
     "plugins": "Outros formatos",
@@ -2471,6 +2503,7 @@
       "noDiagrams": "Nenhum diagrama para exportar com a seleção atual.",
       "noFormats": "Escolha pelo menos um formato.",
       "exportButton": "Exportar",
+      "exporting": "Exportando…",
       "mermaidNote": "Fluxos exportados como Markdown",
       "success": "{{count}} arquivos exportados",
       "error": "Falha na exportação"

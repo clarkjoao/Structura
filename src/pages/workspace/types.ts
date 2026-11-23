@@ -1,7 +1,15 @@
 import type { DiagramExportFormat } from "@/lib/export-service";
 import type { Flow } from "@/features/diagram";
+import type { ReactFlowInstance } from "@xyflow/react";
 
 export type CopiedClipboardKind = "drawio" | "json";
+
+export interface ExportBuildResult {
+  /** Files generated for download. */
+  files: { filename: string; content: string | Blob; mime: string }[];
+  /** Human-readable errors from visual (SVG/PNG) exports. Empty when all succeeded. */
+  visualErrors: string[];
+}
 
 export interface WorkspaceContentProps {
   showFlows: boolean;
@@ -18,7 +26,12 @@ export interface WorkspaceContentProps {
   handleDrillUpTo: (index: number) => void;
   handleCopyDrawio: () => void;
   handleCopyJson: () => void;
-  handleExportFormats: (formats: DiagramExportFormat[], pluginExporterIds: string[]) => void;
+  handleExportFormats: (
+    formats: DiagramExportFormat[],
+    pluginExporterIds: string[],
+    reactFlowInstance?: ReactFlowInstance,
+    framing?: "viewport" | "full",
+  ) => Promise<ExportBuildResult>;
   onStartCollab: () => void;
   onCollabSessionEnded?: () => void;
   copiedClipboardKind: CopiedClipboardKind | null;
