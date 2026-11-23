@@ -369,8 +369,21 @@ export interface ExportEdge {
   entryY?: number;
 }
 
+/**
+ * Drawings beside the diagram that are not elements (spec guided-overlay-fit-export):
+ * a guided journey's phase band, written into a locked layer of its own. Coordinates
+ * are canvas (flow) coordinates, like root nodes.
+ */
+export interface ExportDecorations {
+  layerName: string;
+  rects: Array<{ id: string; label: string; x: number; y: number; width: number; height: number }>;
+  /** Open polylines: dashed separators, or the emotion curve. */
+  lines: Array<{ id: string; points: Array<{ x: number; y: number }>; dashed?: boolean }>;
+}
+
 export interface ExportModel {
   name: string;
   nodes: ExportNode[];
   edges: ExportEdge[];
+  decorations?: ExportDecorations;
 }

@@ -60,12 +60,51 @@ async function interceptable(page, label = "") {
   };
 }
 
+/**
+ * The persisted workspace JSON in the page: IndexedDB (`structura-workspace` / `kv`, a
+ * `{ value, savedAt }` record under the diagram store key) since the workspace moved
+ * there, else localStorage. Defined on every load by `installWorkspaceReader`.
+ */
+async function installWorkspaceReader(page) {
+  await page.addInitScript((legacyKey) => {
+    window.__readWorkspace = async () => {
+      if (window.indexedDB) {
+        const db = await new Promise((resolve) => {
+          const request = window.indexedDB.open("structura-workspace");
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => resolve(null);
+        });
+        if (db && db.objectStoreNames.contains("kv")) {
+          const store = () => db.transaction("kv", "readonly").objectStore("kv");
+          const keys = await new Promise((resolve) => {
+            const request = store().getAllKeys();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => resolve([]);
+          });
+          const key = keys.find((k) => String(k).endsWith("diagram-store"));
+          if (key !== undefined) {
+            const record = await new Promise((resolve) => {
+              const request = store().get(key);
+              request.onsuccess = () => resolve(request.result);
+              request.onerror = () => resolve(null);
+            });
+            db.close();
+            if (record && typeof record.value === "string") return record.value;
+          } else db.close();
+        }
+      }
+      return window.localStorage.getItem(legacyKey);
+    };
+  }, STORAGE_KEY);
+}
+
 async function readDiagram(page) {
   return page.evaluate(
-    ([key, id]) => {
-      const raw = window.localStorage.getItem(key);
+    async ([, id]) => {
+      if (!window.__readWorkspace) return null;
+      const raw = await window.__readWorkspace();
       if (!raw) return null;
-      const d = JSON.parse(raw).state.diagrams?.[id];
+      const d = JSON.parse(raw).state?.diagrams?.[id];
       if (!d) return null;
       const layouts = {};
       for (const [k, l] of Object.entries(d.nodeLayouts ?? {}))
@@ -153,6 +192,7 @@ async function drag(page, id, dx, dy) {
 async function startSession(browser) {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
+  await installWorkspaceReader(page);
   const errors = [];
   page.on("pageerror", (e) => errors.push(`host: ${e.message}`));
   const cut = await interceptable(page, "HOST");
@@ -180,8 +220,8 @@ async function startSession(browser) {
   await sleep(1500);
   // Drag only leaf nodes: dragging a container drags its children, and some containers are fixed.
   const ids = await page.evaluate(
-    ([key, id]) => {
-      const d = JSON.parse(window.localStorage.getItem(key)).state.diagrams[id];
+    async ([, id]) => {
+      const d = JSON.parse(await window.__readWorkspace()).state.diagrams[id];
       const components = Object.values(d.snapshot.components);
       const parents = new Set(components.map((c) => c.parentId).filter(Boolean));
       // Only nodes the editor lets you drag (an endpoint, say, is pinned to its parent).
@@ -200,6 +240,7 @@ async function startSession(browser) {
 async function joinGuest(browser, link, errors) {
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
+  await installWorkspaceReader(page);
   page.on("pageerror", (e) => errors.push(`guest: ${e.message}`));
   const cut = await interceptable(page, "GUEST");
   await page.goto(link, { waitUntil: "domcontentloaded" });

@@ -17,6 +17,7 @@
 export { buildMxGraphXml, type MxGraphWrapper } from "./build";
 export type {
   ExportModel,
+  ExportDecorations,
   ExportNode,
   ExportNodeKind,
   ExportEdge,

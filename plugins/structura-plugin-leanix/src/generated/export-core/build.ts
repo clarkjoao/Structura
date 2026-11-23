@@ -16,7 +16,7 @@ import {
   DRAWIO_MIN_MARGIN,
   getContainerIds,
 } from "./geometry";
-import type { ExportModel, ExportNode } from "./model";
+import type { ExportDecorations, ExportModel, ExportNode } from "./model";
 import { escXml } from "./xml-utils";
 
 /** Which XML envelope to emit: full `<mxfile>` (app) or bare `<mxGraphModel>` (LeanIX). */
@@ -115,6 +115,70 @@ function badgeCells(node: ExportNode, height: number): string {
     .join("");
 }
 
+const DECORATION_LAYER_ID = "structura-decorations";
+
+/** The bounding box grown to hold the decorations, so they land in positive space too. */
+function withDecorations(
+  bbox: BoundingBox,
+  decorations: ExportDecorations | undefined,
+): BoundingBox {
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const r of decorations?.rects ?? []) {
+    xs.push(r.x, r.x + r.width);
+    ys.push(r.y, r.y + r.height);
+  }
+  for (const l of decorations?.lines ?? []) {
+    for (const p of l.points) {
+      xs.push(p.x);
+      ys.push(p.y);
+    }
+  }
+  if (xs.length === 0) return bbox;
+  const empty = bbox.width === 0 && bbox.height === 0 && bbox.minX === 0 && bbox.minY === 0;
+  const minX = Math.min(...xs, ...(empty ? [] : [bbox.minX]));
+  const minY = Math.min(...ys, ...(empty ? [] : [bbox.minY]));
+  const maxX = Math.max(...xs, ...(empty ? [] : [bbox.maxX]));
+  const maxY = Math.max(...ys, ...(empty ? [] : [bbox.maxY]));
+  return { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY };
+}
+
+/** The decorations as a locked layer: plain shapes and open lines, never elements. */
+function decorationCells(decorations: ExportDecorations | undefined, bbox: BoundingBox): string {
+  if (!decorations || (decorations.rects.length === 0 && decorations.lines.length === 0)) return "";
+  const layer = `<mxCell id="${DECORATION_LAYER_ID}" value="${escXml(decorations.layerName)}" style="locked=1;" parent="0"/>`;
+  const rects = decorations.rects.map((r) => {
+    const at = transformCanvasPoint(r.x, r.y, bbox);
+    return (
+      `<mxCell id="${escXml(r.id)}" value="${escXml(r.label)}" ` +
+      `style="rounded=1;whiteSpace=wrap;html=1;fontSize=11;fontStyle=1;fillColor=#f8fafc;` +
+      `strokeColor=#cbd5e1;fontColor=#475569;structuraDecoration=1;" vertex="1" parent="${DECORATION_LAYER_ID}">` +
+      `<mxGeometry x="${at.x}" y="${at.y}" width="${Math.round(r.width)}" height="${Math.round(r.height)}" as="geometry"/>` +
+      `</mxCell>`
+    );
+  });
+  const lines = decorations.lines.flatMap((l) => {
+    if (l.points.length < 2) return [];
+    const points = l.points.map((p) => transformCanvasPoint(p.x, p.y, bbox));
+    const first = points[0]!;
+    const last = points[points.length - 1]!;
+    const middle = points.slice(1, -1);
+    return [
+      `<mxCell id="${escXml(l.id)}" value="" ` +
+        `style="endArrow=none;startArrow=none;html=1;rounded=0;strokeColor=#94a3b8;` +
+        `${l.dashed ? "dashed=1;strokeWidth=1;" : "strokeWidth=2;"}structuraDecoration=1;" edge="1" parent="${DECORATION_LAYER_ID}">` +
+        `<mxGeometry relative="1" as="geometry">` +
+        `<mxPoint x="${first.x}" y="${first.y}" as="sourcePoint"/>` +
+        `<mxPoint x="${last.x}" y="${last.y}" as="targetPoint"/>` +
+        (middle.length > 0
+          ? `<Array as="points">${middle.map((p) => `<mxPoint x="${p.x}" y="${p.y}"/>`).join("")}</Array>`
+          : "") +
+        `</mxGeometry></mxCell>`,
+    ];
+  });
+  return layer + rects.join("") + lines.join("");
+}
+
 /**
  * Turn a neutral `ExportModel` into mxGraph XML.
  *
@@ -126,7 +190,7 @@ function badgeCells(node: ExportNode, height: number): string {
 export function buildMxGraphXml(model: ExportModel, opts: { wrapper: MxGraphWrapper }): string {
   const { nodes, edges } = model;
   const containerIds = getContainerIds(nodes);
-  const bbox = computeBoundingBox(nodes, containerIds);
+  const bbox = withDecorations(computeBoundingBox(nodes, containerIds), model.decorations);
 
   const ordered = sortExportOrder(nodes, containerIds);
 
@@ -177,6 +241,7 @@ export function buildMxGraphXml(model: ExportModel, opts: { wrapper: MxGraphWrap
     `<mxCell id="1" parent="0"/>`,
     ...vertexCells,
     ...edgeCells,
+    decorationCells(model.decorations, bbox),
   ].join("");
 
   const mxGraphModel =
