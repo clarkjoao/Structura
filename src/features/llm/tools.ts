@@ -192,6 +192,21 @@ export const ALL_TOOLS: LLMTool[] = [
     },
   },
   {
+    name: "revise_journey",
+    description:
+      "Guided journey diagrams only. Proposes a revision of the whole journey: the current journey's outline, edited, keeping each existing step's handle ({#s4}) on its line. Renames, scores, phases, lanes, participants, added and removed steps and exits become a suggestion the user reviews change by change; nothing changes until they accept. Put `# why: reason` on the line above a changed step to explain it. Use it to change existing steps; use add_journey_outline to only add.",
+    parametersSchema: {
+      type: "object",
+      properties: {
+        outline: {
+          type: "string",
+          description: "The whole revised journey as an outline, handles kept on existing steps.",
+        },
+      },
+      required: ["outline"],
+    },
+  },
+  {
     name: "auto_layout",
     description:
       "Automatically arranges all nodes in the diagram using a clean layout algorithm. Useful when the diagram becomes cluttered.",
@@ -207,11 +222,14 @@ export const WRITE_TOOL_NAMES: string[] = [
   "remove_edge",
   "insert_pattern",
   "add_journey_outline",
+  "revise_journey",
   "auto_layout",
 ];
 
 /** Offered only where the active diagram's kind writes itself as text. */
 export const JOURNEY_OUTLINE_TOOL = "add_journey_outline";
+/** Offered with it: a revision of the whole journey, reviewed before it applies. */
+export const JOURNEY_REVISE_TOOL = "revise_journey";
 
 /** Catalog discovery tools — executable reads, never confirmation-gated writes. */
 export const CATALOG_READ_TOOL_NAMES: string[] = [

@@ -24,17 +24,29 @@ const IGNORED =
 
 /**
  * Structura's own `%%` comment lines (Mermaid ignores them): `%% experience: s1=2, s3=5`
- * and `%% phases: s1=Discover`, keyed by Mermaid node id.
+ * and `%% phases: s1=Discover`, keyed by Mermaid node id; `%% participants: s4=A|B`
+ * and `%% visibility: lane2`, the first backstage lane's subgraph id.
  */
 interface MermaidDirectives {
   experience: Map<string, number>;
   phases: Map<string, string>;
+  participants: Map<string, string[]>;
+  visibility?: string;
 }
 
 function readDirectives(text: string): MermaidDirectives {
-  const directives: MermaidDirectives = { experience: new Map(), phases: new Map() };
+  const directives: MermaidDirectives = {
+    experience: new Map(),
+    phases: new Map(),
+    participants: new Map(),
+  };
   for (const raw of text.split(/\r?\n/)) {
-    const match = /^\s*%%\s*(experience|phases)\s*:\s*(.*)$/.exec(raw);
+    const visibility = /^\s*%%\s*visibility\s*:\s*(\S+)\s*$/.exec(raw);
+    if (visibility) {
+      directives.visibility = visibility[1]!;
+      continue;
+    }
+    const match = /^\s*%%\s*(experience|phases|participants)\s*:\s*(.*)$/.exec(raw);
     if (!match) continue;
     for (const pair of match[2]!.split(",")) {
       const eq = pair.indexOf("=");
@@ -46,6 +58,14 @@ function readDirectives(text: string): MermaidDirectives {
         const score = Number(value);
         if (Number.isInteger(score) && score >= 1 && score <= 5)
           directives.experience.set(id, score);
+      } else if (match[1] === "participants") {
+        directives.participants.set(
+          id,
+          value
+            .split("|")
+            .map((n) => n.trim())
+            .filter(Boolean),
+        );
       } else directives.phases.set(id, value);
     }
   }
@@ -61,6 +81,8 @@ function applyDirectives(items: OutlineItem[], directives: MermaidDirectives): v
       if (score !== undefined) item.experience = score;
       const phase = directives.phases.get(item.ref);
       if (phase !== undefined) item.phase = phase;
+      const participants = directives.participants.get(item.ref);
+      if (participants?.length) item.participants = participants;
     }
     for (const exit of item.exits) applyDirectives(exit.body, directives);
   }
@@ -281,6 +303,7 @@ function parseFlowchart(
   const nodes = new Map<string, MermaidNode>();
   const edges: MermaidEdge[] = [];
   const lanes: string[] = [];
+  const laneById = new Map<string, string>();
   const stack: Array<{ line: number; lane: string }> = [];
 
   const mention = (
@@ -308,6 +331,8 @@ function parseFlowchart(
         const rest = sub[1]!.trim();
         const bracket = /^[^\s[]+\s*\[(.*)\]$/.exec(rest);
         const name = unquote(bracket ? bracket[1]! : rest) || `Lane ${lanes.length + 1}`;
+        const subgraphId = /^([^\s[]+)/.exec(rest)?.[1];
+        if (stack.length === 0 && subgraphId) laneById.set(subgraphId, name);
         if (stack.length === 0 && !lanes.some((l) => l.toLowerCase() === name.toLowerCase()))
           lanes.push(name);
         stack.push({ line, lane: stack[0]?.lane ?? name });
@@ -350,7 +375,14 @@ function parseFlowchart(
 
   const items = toOutline([...nodes.values()], edges);
   applyDirectives(items, directives);
-  return { items, errors, lanes, nodeCount: countNodes(items) };
+  const visibilityLane = directives.visibility ? laneById.get(directives.visibility) : undefined;
+  return {
+    items,
+    errors,
+    lanes,
+    nodeCount: countNodes(items),
+    ...(visibilityLane && { visibilityLane }),
+  };
 }
 
 /** The graph as the outline AST: a depth-first walk from the entries, revisits as jumps. */
@@ -463,11 +495,13 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
       continue;
     }
 
-    const actor =
-      (task[3] ?? "")
-        .split(",")
-        .map((a) => a.trim())
-        .find(Boolean) ?? null;
+    const actors = (task[3] ?? "")
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean);
+    const actor = actors[0] ?? null;
+    // The other actors act with the lane (spec guided-journey-blueprint).
+    const participants = actors.slice(1);
     if (actor && !lanes.some((l) => l.toLowerCase() === actor.toLowerCase())) lanes.push(actor);
     // A task without actors stays with the one before it.
     lane = actor ?? lane;
@@ -479,6 +513,7 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
       exits: [],
       experience: score,
       ...(pendingPhase && { phase: pendingPhase }),
+      ...(participants.length > 0 && { participants }),
     });
     pendingPhase = null;
   }

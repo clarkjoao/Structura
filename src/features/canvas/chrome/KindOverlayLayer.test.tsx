@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import { registerBuiltInDiagramKinds } from "@/features/diagram-kinds/bootstrap";
 import { createKindDiagram } from "@/features/diagram-kinds/actions";
-import { KindOverlayLayer } from "./KindOverlayLayer";
+import { KindOverlayLayer, KindOverlayView } from "./KindOverlayLayer";
 import { applyKindTextBuild, buildKindText } from "./kindTextCapture";
 
 vi.mock("@xyflow/react", async (importOriginal) => ({
@@ -38,5 +38,37 @@ describe("KindOverlayLayer", () => {
     useDiagramStore.getState().setKindMode(diagram.id, "freehand");
     view.rerender(<KindOverlayLayer onSelectElement={onSelect} />);
     expect(screen.queryByTestId("kind-overlay")).toBeNull();
+  });
+
+  it("draws the line of visibility with its two labels", () => {
+    const view = render(
+      <KindOverlayView
+        overlay={{
+          axis: "x",
+          at: 0,
+          depth: 0,
+          segments: [],
+          separators: [],
+          curve: [],
+          lines: [
+            {
+              id: "visibility",
+              across: 200,
+              from: 0,
+              to: 800,
+              labels: {
+                before: { text: "Visible to the customer" },
+                after: { text: "Backstage" },
+              },
+            },
+          ],
+        }}
+      />,
+    );
+    const line = view.getByTestId("kind-overlay-line");
+    expect(line).toHaveStyle({ top: "200px", width: "800px" });
+    expect(line).toHaveTextContent("Visible to the customer");
+    expect(line).toHaveTextContent("Backstage");
+    expect(view.queryAllByRole("button")).toHaveLength(0);
   });
 });

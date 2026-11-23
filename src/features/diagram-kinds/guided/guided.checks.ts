@@ -5,6 +5,7 @@ import {
   isGuidedDecision,
   isGuidedEnd,
   isPainPoint,
+  participantsOf,
   readGuided,
   readingOrder,
 } from "./guided.model";
@@ -52,6 +53,24 @@ export function guidedChecks(diagram: DiagramModel): KindMarker[] {
           tone: pain ? "danger" : score === 3 ? "neutral" : "success",
         },
         marks: pain,
+      });
+    }
+    // Participants besides the lane (spec guided-journey-blueprint): a tag, never a check.
+    const laneName = reading.lanes.find((l) => l.id === reading.laneOf.get(id))?.name;
+    const participants = participantsOf(step, laneName);
+    if (participants.length > 0) {
+      const head =
+        participants[0]!.length > 18 ? `${participants[0]!.slice(0, 17)}…` : participants[0]!;
+      markers.push({
+        code: "participants",
+        elementId: id,
+        onConnection: false,
+        message: { key: "diagramKinds.guided.blueprint.participants" },
+        tag: {
+          text: `+ ${head}${participants.length > 1 ? ` +${participants.length - 1}` : ""}`,
+          title: participants.join(", "),
+        },
+        marks: false,
       });
     }
     if (exits.length === 0 && !isGuidedEnd(step)) {

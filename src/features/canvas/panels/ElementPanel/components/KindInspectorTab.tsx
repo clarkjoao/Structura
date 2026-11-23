@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import type { KindInspectorSection } from "@/features/diagram-kinds/kind.types";
 import { FlowShapeIcon } from "@/features/canvas/nodes/ProcessNode/FlowShapeIcon";
@@ -20,6 +20,59 @@ export function KindInspectorTab({ sections }: { sections: KindInspectorSection[
     <div className="min-h-0 flex-1 overflow-y-auto" data-testid="kind-inspector">
       {sections.map((section) => {
         const title = resolveKindText(section.label);
+        if (section.type === "tags") {
+          return (
+            <PanelSection key={section.id} title={title}>
+              <div className="space-y-2" data-testid={`kind-inspector-${section.id}`}>
+                {section.values.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {section.values.map((name) => (
+                      <span
+                        key={name}
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/50 py-0.5 pl-2 pr-1 text-xs text-foreground"
+                      >
+                        {name}
+                        <button
+                          type="button"
+                          aria-label={resolveKindText(section.removeLabel, { name })}
+                          onClick={() => runKindOutcome(section.remove(name))}
+                          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" aria-hidden />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  section.empty && (
+                    <p className="text-[11px] text-muted-foreground">
+                      {resolveKindText(section.empty)}
+                    </p>
+                  )
+                )}
+                <KindSelectField
+                  title={title}
+                  section={{
+                    type: "select",
+                    id: `${section.id}-add`,
+                    label: section.label,
+                    value: null,
+                    placeholder: section.placeholder,
+                    options: section.suggestions
+                      .filter((name) => !section.values.includes(name))
+                      .map((name) => ({
+                        id: name,
+                        label: name,
+                        selected: false,
+                        run: () => section.add(name),
+                      })),
+                    create: { label: section.addLabel, run: section.add },
+                  }}
+                />
+              </div>
+            </PanelSection>
+          );
+        }
         if (section.type === "select") {
           return (
             <PanelSection key={section.id} title={title}>

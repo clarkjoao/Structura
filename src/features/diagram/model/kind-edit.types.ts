@@ -60,7 +60,7 @@ export interface KindEdit {
   reparent?: Array<{ id: string; parent: string | null; x: number; y: number }>;
   relabel?: Array<{ id: string; label: string }>;
   flows?: { set?: Flow[]; remove?: string[] };
-  /** Replaces the diagram's kind data. */
+  /** Replaces the diagram's kind data; a top-level string naming an added node's key becomes its id. */
   kindData?: JsonObject;
 }
 

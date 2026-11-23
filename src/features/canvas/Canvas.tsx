@@ -17,6 +17,7 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
 import { useRevealedLabelEdgeIds } from "./contexts/useRevealedLabelEdgeIds";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { useFrameDiagram } from "./focus/frameDiagram";
 import { useCanvasInputProfile } from "./hooks/useCanvasInputProfile";
 import { useSelectInsertedNodes } from "./hooks/useSelectInsertedNodes";
 import { getCachedCanvasSnapshot, useDiagramStore, isTextComponent } from "@/features/diagram";
@@ -90,6 +91,7 @@ const Canvas = (props: CanvasProps = {}) => {
   const inputProfile = useCanvasInputProfile();
   const edgeReconnect = useEdgeReconnect();
   const controller = useCanvasController(props);
+  const frameDiagram = useFrameDiagram();
   const {
     t,
     diagram,
@@ -314,7 +316,10 @@ const Canvas = (props: CanvasProps = {}) => {
               needs them: that is where you go looking for the next element to click. */}
                 {!interactionMode.isPlaying && (
                   <>
-                    <Controls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+                    <Controls
+                      onFitView={() => void frameDiagram()}
+                      className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8"
+                    />
                     <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">
                       <CanvasViewOptions />
                     </Panel>

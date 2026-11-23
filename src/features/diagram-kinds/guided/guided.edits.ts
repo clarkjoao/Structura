@@ -11,6 +11,8 @@ import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache
 import type { KindCommandOutcome, KindContext, KindText } from "../kind.types";
 import {
   GUIDED_LANE_ORDER_KEY,
+  GUIDED_VISIBILITY_KEY,
+  cleanParticipants,
   type GuidedReading,
   isGuidedDecision,
   isGuidedEnd,
@@ -534,7 +536,12 @@ export function guidedRemoveLane(
     const outcome = guidedMoveStepToLane(diagram, reading, stepId, target.id);
     if ("edit" in outcome) reparent.push(...(outcome.edit.reparent ?? []));
   }
-  return { reparent, remove: [laneId] };
+  // The line of visibility goes with the lane it sat above.
+  const dropLine =
+    diagram.kindData?.[GUIDED_VISIBILITY_KEY] === laneId
+      ? guidedSetVisibilityLine(diagram, null)
+      : {};
+  return { reparent, remove: [laneId], ...dropLine };
 }
 
 /** The guided creation template: two lanes and a start step in the first. */
@@ -667,6 +674,38 @@ export function guidedSetExperience(
   if (!step) return refused("selectOneStep");
   return {
     edit: { update: [{ id: stepId, kindProps: mergedKindProps(step, "experience", score) }] },
+    select: stepId,
+  };
+}
+
+/** The line of visibility above `laneId`, or none (spec guided-journey-blueprint). */
+export function guidedSetVisibilityLine(diagram: DiagramModel, laneId: string | null): KindEdit {
+  const next: JsonObject = { ...(diagram.kindData ?? {}) };
+  if (laneId === null) delete next[GUIDED_VISIBILITY_KEY];
+  else next[GUIDED_VISIBILITY_KEY] = laneId;
+  return { kindData: next };
+}
+
+/** The step's participants besides its lane, cleaned; empty clears them (spec guided-journey-blueprint). */
+export function guidedSetParticipants(
+  diagram: DiagramModel,
+  stepId: string,
+  names: readonly string[],
+): GuidedOutcome {
+  const reading = readGuided(diagram);
+  const step = reading.steps.get(stepId);
+  if (!step) return refused("selectOneStep");
+  const lane = reading.lanes.find((l) => l.id === reading.laneOf.get(stepId));
+  const clean = cleanParticipants(names, lane?.name);
+  return {
+    edit: {
+      update: [
+        {
+          id: stepId,
+          kindProps: mergedKindProps(step, "participants", clean.length > 0 ? clean : null),
+        },
+      ],
+    },
     select: stepId,
   };
 }

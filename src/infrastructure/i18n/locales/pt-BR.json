@@ -799,6 +799,17 @@
       "exported": "IR exportado!",
       "noIR": "Nenhum IR gerado ainda. Use /generate primeiro.",
       "analyzing": "Analisando…"
+    },
+    "revision": {
+      "title": "Revisão da jornada",
+      "applySelected_one": "Aplicar {{count}} alteração",
+      "applySelected_other": "Aplicar {{count}} alterações",
+      "noPhase": "Antes das fases",
+      "stale": "Não se aplica mais: o passo não existe.",
+      "tickAll": "Marcar todas",
+      "untickAll": "Desmarcar todas",
+      "count_one": "{{count}} alteração para revisar",
+      "count_other": "{{count}} alterações para revisar"
     }
   },
   "versions": {
@@ -3736,7 +3747,10 @@
           "mermaidScoreOutOfRange": "A nota deve ser de 1 a 5 (aqui: {{score}}).",
           "mermaidEmpty": "Este bloco Mermaid não tem passos.",
           "experienceOutOfRange": "A nota de experiência deve ser de 1 a 5 (aqui: {{score}}).",
-          "phaseWithoutStep": "“##” começa uma fase, mas nenhum passo vem depois."
+          "phaseWithoutStep": "“##” começa uma fase, mas nenhum passo vem depois.",
+          "unknownHandle": "Nenhum passo tem o id {#{{handle}}}",
+          "duplicateHandle": "O id {#{{handle}}} aparece duas vezes",
+          "visibilityMisplaced": "--- fica entre as declarações de raia no início, antes de uma raia"
         }
       },
       "inspector": {
@@ -3762,7 +3776,8 @@
         "formats": {
           "outline": "Texto",
           "swimlane": "Mermaid (raias)",
-          "journey": "Mermaid (jornada)"
+          "journey": "Mermaid (jornada)",
+          "outlineIds": "Texto com ids"
         },
         "exportedFrom": "Exportado do Structura: {{name}}",
         "journeyLeftOut": "Só o caminho principal: {{branches}} desvio(s) e {{steps}} outro(s) passo(s) ficaram de fora.",
@@ -3779,6 +3794,47 @@
         "create": "Criar fase “{{name}}”",
         "continuePrevious": "Continuar a fase anterior",
         "remove": "Remover a fase"
+      },
+      "text": {
+        "changes": {
+          "add": "Adicionar “{{name}}”",
+          "remove": "Remover “{{name}}”",
+          "rename": "Renomear “{{name}}” → “{{after}}”",
+          "kind": "“{{name}}” vira {{after}}",
+          "lane": "Mover “{{name}}” para {{after}}",
+          "score": "Nota de “{{name}}”: {{before}} → {{after}}",
+          "phase": "Fase em “{{name}}”: {{before}} → {{after}}",
+          "connect": "Ligar “{{source}}” → “{{target}}”",
+          "disconnect": "Desligar “{{source}}” → “{{target}}”",
+          "relabel": "Rótulo “{{source}}” → “{{target}}”: {{after}}",
+          "participants": "Participantes de “{{name}}”: {{before}} → {{after}}",
+          "visibility": "Linha de visibilidade: acima de {{before}} → acima de {{after}}"
+        },
+        "count": "+{{added}} ~{{changed}} −{{removed}}",
+        "noChanges": "Nenhuma alteração",
+        "review": "Revisar",
+        "reviewHide": "Ocultar",
+        "stale": "O diagrama mudou desde que este texto foi escrito.",
+        "reload": "Recarregar do diagrama",
+        "skipped_one": "{{count}} alteração ficou de fora: o passo não existe mais.",
+        "skipped_other": "{{count}} alterações ficaram de fora: os passos não existem mais.",
+        "insert": "Inserir na seleção",
+        "insertPlaceholder": "Passos para adicionar depois do passo selecionado…",
+        "insertApply": "Inserir",
+        "applied": "Jornada atualizada",
+        "journey": "Jornada"
+      },
+      "blueprint": {
+        "lineAbove": "Linha de visibilidade acima desta raia",
+        "lineLeft": "Linha de visibilidade à esquerda desta raia",
+        "removeLine": "Remover a linha de visibilidade",
+        "frontstage": "Visível ao cliente",
+        "backstage": "Bastidores",
+        "participants": "Participantes",
+        "addParticipant": "Adicionar “{{name}}”",
+        "removeParticipant": "Remover {{name}}",
+        "participantsSearch": "Uma raia ou um nome novo…",
+        "noParticipants": "Só a raia participa"
       }
     },
     "toolbar": {
@@ -3788,6 +3844,9 @@
     "inspector": {
       "selectSearch": "Busque ou digite um nome novo…",
       "selectEmpty": "Nada ainda — digite um nome para criar"
+    },
+    "overlay": {
+      "exportLayer": "Fases"
     }
   }
 }

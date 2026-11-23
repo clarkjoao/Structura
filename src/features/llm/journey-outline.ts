@@ -1,6 +1,12 @@
 import { useDiagramStore } from "@/features/diagram";
 import { kindCommandContextFor, resolveKindText } from "@/features/diagram-kinds/context";
-import type { KindTextBuild } from "@/features/diagram-kinds/kind.types";
+import type {
+  KindTextBase,
+  KindTextBuild,
+  KindTextChange,
+} from "@/features/diagram-kinds/kind.types";
+import { editForChanges } from "@/features/diagram-kinds/kindEditMerge";
+import type { JourneyRevision, PendingNodePreview } from "./types";
 import { kindTextCaptureFor } from "@/features/diagram-kinds/textCapture";
 
 /**
@@ -22,13 +28,26 @@ function activeDiagram() {
   return state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
 }
 
+/**
+ * The current journey written whole with its handles (spec guided-assistant-revisions):
+ * what the assistant sees, and what a revision it sends is read against. Null when the
+ * active diagram's kind cannot reconcile a text.
+ */
+export function currentJourneyBase(): KindTextBase | null {
+  const diagram = activeDiagram();
+  const capture = kindTextCaptureFor(diagram);
+  if (!diagram || !capture?.writeBase || !capture.reconcile) return null;
+  return capture.writeBase(diagram, kindCommandContextFor(diagram, []), { handles: true });
+}
+
 /** The current journey as an outline, when the active diagram is written as text; else null. */
-export function currentJourneyOutline(): string | null {
+export function currentJourneyOutline(
+  base: KindTextBase | null = currentJourneyBase(),
+): string | null {
   const diagram = activeDiagram();
   const capture = kindTextCaptureFor(diagram);
   if (!diagram || !capture) return null;
-  const lines = capture
-    .serialize(diagram, kindCommandContextFor(diagram, []))
+  const lines = (base?.text ?? capture.serialize(diagram, kindCommandContextFor(diagram, [])))
     .trimEnd()
     .split("\n");
   if (lines.length <= JOURNEY_OUTLINE_PROMPT_LINES) return lines.join("\n");
@@ -69,4 +88,102 @@ export function applyJourneyOutline(payload: JourneyOutlinePayload): {
   if (!check.ok) return { applied: false, data: { errors: check.errors } };
   useDiagramStore.getState().applyKindEdit(check.build.edit);
   return { applied: true, data: { added: { ...(check.build.summaryValues ?? {}) } } };
+}
+
+/** A revision read against the journey the assistant saw, as it stands now. */
+function reconcileRevision(base: KindTextBase, outline: string) {
+  const diagram = activeDiagram();
+  const capture = kindTextCaptureFor(diagram);
+  if (!diagram || !capture?.reconcile) return null;
+  return { diagram, result: capture.reconcile(kindCommandContextFor(diagram, []), base, outline) };
+}
+
+/**
+ * Checks a revision the assistant sent (spec guided-assistant-revisions): the
+ * revision to review, or the errors to tell back. Changes nothing.
+ */
+export function checkJourneyRevision(
+  base: KindTextBase | null,
+  outline: string,
+): { ok: true; revision: JourneyRevision } | { ok: false; errors: string[] } {
+  if (!base)
+    return { ok: false, errors: ["The active diagram is not a guided diagram in guided mode."] };
+  const read = reconcileRevision(base, outline);
+  if (!read)
+    return { ok: false, errors: ["The active diagram is not a guided diagram in guided mode."] };
+  if ("errors" in read.result)
+    return {
+      ok: false,
+      errors: read.result.errors.map(
+        (error) => `line ${error.line}: ${resolveKindText(error.message, error.values)}`,
+      ),
+    };
+  if (read.result.changes.length === 0)
+    return { ok: false, errors: ["The revision changes nothing."] };
+  return {
+    ok: true,
+    revision: {
+      base,
+      outline,
+      initial: read.result.changes.map(({ key, kind, label, values, group, phase, reason }) => ({
+        key,
+        kind,
+        label,
+        values,
+        ...(group !== undefined && { group }),
+        ...(phase !== undefined && { phase }),
+        ...(reason !== undefined && { reason }),
+      })),
+      unticked: [],
+    },
+  };
+}
+
+/** The revision's changes against the journey as it is now; empty when it no longer reads. */
+export function currentRevisionChanges(revision: JourneyRevision): KindTextChange[] {
+  const read = reconcileRevision(revision.base, revision.outline);
+  return read && !("errors" in read.result) ? read.result.changes : [];
+}
+
+const groupOf = (change: { key: string; group?: string }) => change.group ?? change.key;
+
+/** Applies the ticked changes of a revision as one undo step; how many were applied. */
+export function applyJourneyRevision(revision: JourneyRevision): number {
+  const read = reconcileRevision(revision.base, revision.outline);
+  if (!read || "errors" in read.result) return 0;
+  const unticked = new Set(revision.unticked);
+  const keys = new Set(
+    read.result.changes.filter((c) => !unticked.has(groupOf(c))).map((c) => c.key),
+  );
+  if (keys.size === 0) return 0;
+  const edit = editForChanges(read.diagram.snapshot.components, read.result.changes, keys);
+  useDiagramStore.getState().applyKindEdit(edit);
+  return keys.size;
+}
+
+/** The canvas preview of a revision: the steps its ticked changes touch, and those it removes. */
+export function journeyRevisionPreviews(
+  suggestionId: string,
+  revision: JourneyRevision,
+): PendingNodePreview[] {
+  const unticked = new Set(revision.unticked);
+  const ticked = currentRevisionChanges(revision).filter((c) => !unticked.has(groupOf(c)));
+  const steps = activeDiagram()?.snapshot.components ?? {};
+  const isStep = (id: string | null): id is string => id !== null && steps[id] !== undefined;
+  const removed = ticked
+    .filter((c) => c.kind === "remove")
+    .map((c) => c.elementId)
+    .filter(isStep);
+  const changed = [
+    ...new Set(
+      ticked
+        .filter((c) => c.kind !== "remove")
+        .map((c) => c.elementId)
+        .filter(isStep),
+    ),
+  ].filter((id) => !removed.includes(id));
+  return [
+    { suggestionId, nodeIds: changed, edgeIds: [], tone: "change", toolbars: false },
+    { suggestionId, nodeIds: removed, edgeIds: [], tone: "remove", toolbars: false },
+  ];
 }

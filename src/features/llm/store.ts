@@ -2,7 +2,14 @@ import { create } from "zustand";
 import { useDiagramStore } from "@/features/diagram";
 import i18n from "@/infrastructure/i18n";
 import { buildSystemPrompt } from "./prompt-builder";
-import { checkJourneyOutline, currentJourneyOutline } from "./journey-outline";
+import {
+  applyJourneyRevision,
+  checkJourneyOutline,
+  checkJourneyRevision,
+  currentJourneyBase,
+  currentJourneyOutline,
+  journeyRevisionPreviews,
+} from "./journey-outline";
 import { findChatContext } from "@/features/plugins/chat-context-registry";
 import { runPluginChatTurn } from "./plugin-chat-turn";
 import { toast } from "sonner";
@@ -16,6 +23,7 @@ import type {
   ConversationThread,
   DiagramPatch,
   DiagramThreadState,
+  JourneyRevision,
   LLMCompletion,
   LLMConfig,
   LLMConnection,
@@ -234,6 +242,10 @@ export interface LLMStoreState {
    */
   generateDiagramFromIR: (description: string, userText: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
+  /** Ticks or unticks one dependency group of a journey revision (spec guided-assistant-revisions). */
+  toggleRevisionGroup: (suggestionId: string, group: string) => void;
+  /** Re-reads a pending journey revision's canvas preview against the diagram as it is now. */
+  refreshRevisionPreview: (suggestionId: string) => void;
   rejectSuggestion: (suggestionId: string) => void;
   dismissPendingAnalysis: () => void;
   /**
@@ -271,6 +283,28 @@ function persistActiveThread(state: LLMStoreState): void {
 
 function freshThreadState(): DiagramThreadState {
   return { threads: [], activeThreadId: "" };
+}
+
+/**
+ * Takes the patch's journey revisions out (spec guided-assistant-revisions): the last
+ * one that reads becomes the suggestion's revision; the errors of the others are told back.
+ */
+function takeJourneyRevision(
+  patch: DiagramPatch,
+  base: ReturnType<typeof currentJourneyBase>,
+): { revision?: JourneyRevision; errors: string[] } {
+  const errors: string[] = [];
+  let revision: JourneyRevision | undefined;
+  for (const action of patch.actions) {
+    if (action.type !== "REVISE_JOURNEY") continue;
+    const check = checkJourneyRevision(base, action.payload.outline);
+    if (check.ok) revision = check.revision;
+    else errors.push(...check.errors);
+  }
+  patch.actions = patch.actions.filter(
+    (action) => action.type !== "REVISE_JOURNEY" || action.payload.outline === revision?.outline,
+  );
+  return { ...(revision && { revision }), errors };
 }
 
 /** Removes the patch's journey outlines that do not read against the active diagram; their errors. */
@@ -697,10 +731,12 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           return;
         }
 
+        // The journey with handles, kept for the turn: a revision is read against it.
+        const journeyBase = currentJourneyBase();
         const systemPrompt = buildSystemPrompt(
           diagramContext,
           getResolvedAppLanguage(),
-          currentJourneyOutline(),
+          currentJourneyOutline(journeyBase),
         );
         const sanitizedMessages = sanitizeMessagesForLLM(outgoingMessages);
         let fullResponse = "";
@@ -731,6 +767,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
           parsedResponse.kind === "patch" && parsedResponse.patch
             ? dropInvalidJourneyOutlines(parsedResponse.patch)
             : [];
+        const taken =
+          parsedResponse.kind === "patch" && parsedResponse.patch
+            ? takeJourneyRevision(parsedResponse.patch, journeyBase)
+            : { errors: [] };
+        outlineErrors.push(...taken.errors);
 
         if (parsedResponse.kind === "analysis") {
           set({
@@ -757,8 +798,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
             messageId: assistantMessageId,
             patch: parsedResponse.patch,
             status: "pending",
+            ...(taken.revision && { revision: taken.revision }),
           };
           nextSuggestions.push(suggestion);
+          if (suggestion.revision)
+            nextPreviews.push(...journeyRevisionPreviews(suggestion.id, suggestion.revision));
 
           const addNodeActions = parsedResponse.patch.actions.filter(
             (action) => action.type === "ADD_NODE",
@@ -869,7 +913,12 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         const locale = getResolvedAppLanguage();
         let assistantContent =
           parsedResponse.kind === "patch"
-            ? buildPatchMessage(locale, parsedResponse.patch?.actions.length ?? 0)
+            ? buildPatchMessage(
+                locale,
+                // A revision counts its changes, not its one action.
+                (parsedResponse.patch?.actions.length ?? 0) +
+                  (taken.revision ? taken.revision.initial.length - 1 : 0),
+              )
             : parsedResponse.kind === "text"
               ? parsedResponse.message
               : "";
@@ -1095,6 +1144,11 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         if (action.type === "ADD_NODE" || action.type === "ADD_EDGE") {
           continue;
         }
+        // A journey revision applies only the changes the reviewer kept, as one undo step.
+        if (action.type === "REVISE_JOURNEY") {
+          if (suggestion.revision) applyJourneyRevision(suggestion.revision);
+          continue;
+        }
         applyDiagramPatchAction(action);
       }
 
@@ -1107,6 +1161,36 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
         pendingPreviews: state.pendingPreviews.filter(
           (pendingPreview) => pendingPreview.suggestionId !== suggestionId,
         ),
+      }));
+    },
+
+    toggleRevisionGroup: (suggestionId, group) => {
+      const suggestion = get().pendingSuggestions.find((s) => s.id === suggestionId);
+      if (!suggestion?.revision || suggestion.status !== "pending") return;
+      const unticked = suggestion.revision.unticked.includes(group)
+        ? suggestion.revision.unticked.filter((g) => g !== group)
+        : [...suggestion.revision.unticked, group];
+      const revision = { ...suggestion.revision, unticked };
+      set((state) => ({
+        pendingSuggestions: state.pendingSuggestions.map((s) =>
+          s.id === suggestionId ? { ...s, revision } : s,
+        ),
+        pendingPreviews: [
+          ...state.pendingPreviews.filter((p) => p.suggestionId !== suggestionId),
+          ...journeyRevisionPreviews(suggestionId, revision),
+        ],
+      }));
+    },
+
+    refreshRevisionPreview: (suggestionId) => {
+      const suggestion = get().pendingSuggestions.find((s) => s.id === suggestionId);
+      if (!suggestion?.revision || suggestion.status !== "pending") return;
+      const revision = suggestion.revision;
+      set((state) => ({
+        pendingPreviews: [
+          ...state.pendingPreviews.filter((p) => p.suggestionId !== suggestionId),
+          ...journeyRevisionPreviews(suggestionId, revision),
+        ],
       }));
     },
 
@@ -1191,7 +1275,20 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
 });
 
 export function getPendingNodeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
-  return new Set(pendingPreviews.flatMap((pendingPreview) => pendingPreview.nodeIds));
+  return new Set(
+    pendingPreviews
+      .filter((pendingPreview) => pendingPreview.tone !== "remove")
+      .flatMap((pendingPreview) => pendingPreview.nodeIds),
+  );
+}
+
+/** The nodes a pending suggestion would remove (a journey revision's removals). */
+export function getPendingRemovedNodeIds(pendingPreviews: PendingNodePreview[]): Set<string> {
+  return new Set(
+    pendingPreviews
+      .filter((pendingPreview) => pendingPreview.tone === "remove")
+      .flatMap((pendingPreview) => pendingPreview.nodeIds),
+  );
 }
 
 export function getPendingEdgeIds(pendingPreviews: PendingNodePreview[]): Set<string> {

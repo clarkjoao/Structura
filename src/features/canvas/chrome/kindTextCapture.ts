@@ -2,7 +2,13 @@ import { toast } from "sonner";
 import i18n from "@/infrastructure/i18n/i18n";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import { kindCommandContextFor, resolveKindText } from "@/features/diagram-kinds/context";
-import type { KindTextBuild, KindTextError, KindText } from "@/features/diagram-kinds/kind.types";
+import type {
+  KindText,
+  KindTextBase,
+  KindTextBuild,
+  KindTextError,
+  KindTextReconcile,
+} from "@/features/diagram-kinds/kind.types";
 import { kindTextCaptureFor } from "@/features/diagram-kinds/textCapture";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { applyKindCommandOutcome } from "../hooks/keyboard/createKindShortcuts";
@@ -35,6 +41,37 @@ export function serializeKindText(formatId?: string): string | null {
   if (!diagram || !capture) return null;
   const format = formatId ? capture.formats?.find((f) => f.id === formatId) : undefined;
   return (format?.serialize ?? capture.serialize)(diagram, kindCommandContextFor(diagram, []));
+}
+
+/**
+ * The active diagram written whole by its kind, with what each line stands for
+ * (spec guided-journey-text-sync); null when its kind cannot reconcile a text.
+ */
+export function writeKindTextBase(): KindTextBase | null {
+  const diagram = activeDiagram();
+  const capture = kindTextCaptureFor(diagram);
+  if (!diagram || !capture?.writeBase || !capture.reconcile) return null;
+  return capture.writeBase(diagram, kindCommandContextFor(diagram, []));
+}
+
+/** What turning the active diagram into `edited` would change; null without reconcile. */
+export function reconcileKindText(base: KindTextBase, edited: string): KindTextReconcile | null {
+  const diagram = activeDiagram();
+  const capture = kindTextCaptureFor(diagram);
+  if (!diagram || !capture?.reconcile) return null;
+  return capture.reconcile(kindCommandContextFor(diagram, []), base, edited);
+}
+
+/** Applies a reconciled text as one undo step and selects the first changed element. */
+export function applyKindTextReconcile(result: KindTextReconcile): boolean {
+  if ("errors" in result || result.changes.length === 0) return false;
+  applyKindCommandOutcome(
+    { edit: result.edit, ...(result.select ? { select: result.select } : {}) },
+    canvasSelectionDeps,
+  );
+  if (result.skipped > 0)
+    toast.info(i18n.t("diagramKinds.guided.text.skipped", { count: result.skipped }));
+  return true;
 }
 
 /**

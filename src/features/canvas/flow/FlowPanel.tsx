@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useReactFlow } from "@xyflow/react";
 import {
   GitBranch,
   Plus,
@@ -61,6 +60,7 @@ import {
 } from "@/features/diagram-kinds/policy";
 import { activeDirection } from "../hooks/useActiveDirection";
 import type { DiagramDirection } from "@/features/diagram";
+import { useFrameDiagram } from "../focus/frameDiagram";
 
 interface Props {
   onClose: () => void;
@@ -103,7 +103,7 @@ const FlowPanel = ({
   const { removeFlow, addFlow, updateFlow, applyAutoLayout } = useDiagramActions();
   const importMermaidSequenceResult = useDiagramStore((state) => state.importMermaidSequenceResult);
   const importDrawioResult = useDiagramStore((state) => state.importDrawioResult);
-  const reactFlowInstance = useReactFlow();
+  const frameDiagram = useFrameDiagram();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [pendingPlay, setPendingPlay] = useState<{ flow: Flow; broken: BrokenStep[] } | null>(null);
   const [showMermaidImport, setShowMermaidImport] = useState(false);
@@ -151,10 +151,10 @@ const FlowPanel = ({
       if (!applied) return;
 
       requestAnimationFrame(() => {
-        reactFlowInstance.fitView({ duration: 400, padding: 0.2 });
+        void frameDiagram({ duration: 400, padding: 0.2 });
       });
     },
-    [applyAutoLayout, activeDiagramId, onGetInsertPosition, reactFlowInstance],
+    [applyAutoLayout, activeDiagramId, onGetInsertPosition, frameDiagram],
   );
 
   const preselectAfterImport = useCallback(

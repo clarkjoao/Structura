@@ -318,6 +318,14 @@
     border-radius: inherit;
   }
 
+  /* A step an assistant revision would remove (spec guided-assistant-revisions). */
+  .node-pending-remove {
+    opacity: 0.55;
+    outline: 2px dashed #ef4444;
+    outline-offset: 3px;
+    border-radius: inherit;
+  }
+
   .node-version-conflict {
     outline: 2px dashed #f59e0b;
     outline-offset: 3px;
@@ -556,6 +564,24 @@
 .dark .react-flow__node[data-kind-badge-tone="success"]::after {
   background: rgb(20 83 45 / 0.6);
   color: rgb(187 247 208);
+}
+/* A kind's tag at a node's foot (spec guided-journey-blueprint): the step's participants. */
+.react-flow__node[data-kind-tag]::before {
+  content: attr(data-kind-tag);
+  position: absolute;
+  bottom: -9px;
+  left: 8px;
+  z-index: 5;
+  padding: 0 6px;
+  border-radius: 9999px;
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  border: 1px solid hsl(var(--primary) / 0.4);
+  background: hsl(var(--card));
+  color: hsl(var(--primary));
 }
 .react-flow__node.kind-check[data-kind-badge-tone="danger"] {
   outline-color: rgb(239 68 68 / 0.8);

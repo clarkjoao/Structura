@@ -35,7 +35,12 @@ export type OutlineErrorCode =
   // Experience (spec guided-journey-experience)
   | "experienceOutOfRange"
   // Phases (spec guided-journey-phases)
-  | "phaseWithoutStep";
+  | "phaseWithoutStep"
+  // Whole-journey text (spec guided-journey-text-sync)
+  | "unknownHandle"
+  | "duplicateHandle"
+  // Blueprint (spec guided-journey-blueprint)
+  | "visibilityMisplaced";
 
 export interface OutlineError {
   /** 1-based. */
@@ -59,6 +64,10 @@ export interface OutlineNode {
   experience?: number;
   /** A phase starts at this node (spec guided-journey-phases). */
   phase?: string;
+  /** `{#name}`: the element this line stands for, in a whole-journey text (spec guided-journey-text-sync). */
+  handle?: string;
+  /** `Lane, Other:`: names acting besides the lane (spec guided-journey-blueprint). */
+  participants?: string[];
 }
 
 export interface OutlineJump {
@@ -95,6 +104,8 @@ export interface ParsedOutline {
   lanes: string[];
   /** Steps, decisions and ends (jumps are not nodes). */
   nodeCount: number;
+  /** `---` between lane declarations: the first backstage lane, as written. */
+  visibilityLane?: string;
 }
 
 type Token =
@@ -119,6 +130,20 @@ function indentOf(raw: string): number {
   return width;
 }
 
+/** Splits on `separator` where it is not escaped. */
+function splitUnescaped(text: string, separator: string): string[] {
+  const masked = mask(text);
+  const parts: string[] = [];
+  let from = 0;
+  for (let i = 0; i < masked.length; i++) {
+    if (masked[i] !== separator) continue;
+    parts.push(text.slice(from, i));
+    from = i + 1;
+  }
+  parts.push(text.slice(from));
+  return parts;
+}
+
 /** Strips a comment: a leading `#`, or ` #` followed by a space or the end. */
 function stripComment(content: string): string {
   const masked = mask(content);
@@ -132,7 +157,7 @@ function parseItemText(
   text: string,
   line: number,
   errors: OutlineError[],
-): { lane: string | null; item: OutlineItem | null } {
+): { lane: string | null; participants?: string[]; item: OutlineItem | null } {
   const masked = mask(text);
   if (masked.startsWith("@")) {
     const target = unescape(text.slice(1)).trim();
@@ -140,12 +165,24 @@ function parseItemText(
     return { lane: null, item: { kind: "jump", line, target } };
   }
   let lane: string | null = null;
+  let participants: string[] | undefined;
   let rest = text;
   const colon = /:(?:\s|$)/.exec(masked);
   if (colon && colon.index > 0) {
-    lane = unescape(text.slice(0, colon.index)).trim();
+    // `Lane, Other, …:` — the first name is the lane, the others act with it.
+    const names = splitUnescaped(text.slice(0, colon.index), ",").map((n) => unescape(n).trim());
+    lane = names[0] ?? "";
+    const others = names.slice(1).filter(Boolean);
+    if (others.length > 0) participants = others;
     rest = text.slice(colon.index + 1).trim();
     if (!rest) return { lane, item: null };
+  }
+  // `{#name}` at the very end: the step's handle (spec guided-journey-text-sync).
+  let handle: string | undefined;
+  const handled = /\s*\{#([A-Za-z0-9_-]+)\}\s*$/.exec(mask(rest));
+  if (handled) {
+    handle = handled[1]!;
+    rest = rest.slice(0, handled.index);
   }
   // `[n]` at the end: the experience score (spec guided-journey-experience).
   let experience: number | undefined;
@@ -169,12 +206,29 @@ function parseItemText(
   if (!name && kind !== "end") errors.push({ line, code: "emptyName" });
   return {
     lane,
-    item: { kind, line, name, lane, exits: [], ...(experience !== undefined && { experience }) },
+    ...(participants && { participants }),
+    item: {
+      kind,
+      line,
+      name,
+      lane,
+      exits: [],
+      ...(experience !== undefined && { experience }),
+      ...(handle !== undefined && { handle }),
+      ...(participants && { participants }),
+    },
   };
 }
 
-function tokenize(text: string, errors: OutlineError[]): Token[] {
+function tokenize(
+  text: string,
+  errors: OutlineError[],
+  visibility: { lane?: string } = {},
+): Token[] {
   const tokens: Token[] = [];
+  // `---` between lane declarations: the line of visibility before the next one.
+  let pendingLine: number | null = null;
+  let structure = false;
   // `## Phase` starts a phase at the next step written (spec guided-journey-phases).
   let pendingPhase: { name: string; line: number } | null = null;
   const takePhase = (item: OutlineItem | null) => {
@@ -189,6 +243,11 @@ function tokenize(text: string, errors: OutlineError[]): Token[] {
       const name = unescape(heading[1]!.replace(/\s+#(?:\s.*)?$/, "")).trim();
       if (pendingPhase) errors.push({ line: pendingPhase.line, code: "phaseWithoutStep" });
       pendingPhase = name ? { name, line } : null;
+      return;
+    }
+    if (raw.trim() === "---") {
+      if (structure) errors.push({ line, code: "visibilityMisplaced" });
+      else pendingLine = line;
       return;
     }
     const content = stripComment(raw.trim());
@@ -219,13 +278,27 @@ function tokenize(text: string, errors: OutlineError[]): Token[] {
       }
       takePhase(inline);
       tokens.push({ kind: "exit", line, indent, label, inline });
+      structure = true;
       return;
     }
     const { lane, item } = parseItemText(content, line, errors);
     takePhase(item);
-    if (item) tokens.push({ kind: "item", line, indent, item });
-    else if (lane) tokens.push({ kind: "lane", line, indent, lane });
+    if (item) {
+      tokens.push({ kind: "item", line, indent, item });
+      structure = true;
+    } else if (lane) {
+      tokens.push({ kind: "lane", line, indent, lane });
+      if (pendingLine !== null && !structure) {
+        visibility.lane = lane;
+        pendingLine = null;
+      }
+    }
+    if (structure && pendingLine !== null) {
+      errors.push({ line: pendingLine, code: "visibilityMisplaced" });
+      pendingLine = null;
+    }
   });
+  if (pendingLine !== null) errors.push({ line: pendingLine, code: "visibilityMisplaced" });
   if (pendingPhase)
     errors.push({ line: (pendingPhase as { line: number }).line, code: "phaseWithoutStep" });
   return tokens;
@@ -373,11 +446,23 @@ export function countNodes(items: OutlineItem[]): number {
 
 export function parseOutline(text: string): ParsedOutline {
   const errors: OutlineError[] = [];
-  const tokens = tokenize(text, errors);
+  const visibility: { lane?: string } = {};
+  const tokens = tokenize(text, errors, visibility);
   const lanes = resolveLanes(tokens);
   const items = structure(tokens, errors);
   errors.sort((a, b) => a.line - b.line);
-  return { items, errors, lanes, nodeCount: countNodes(items) };
+  return {
+    items,
+    errors,
+    lanes,
+    nodeCount: countNodes(items),
+    ...(visibility.lane && { visibilityLane: visibility.lane }),
+  };
+}
+
+/** Escapes a lane or participant name for a `Lane, Other:` prefix. */
+export function escapeOutlineLane(text: string): string {
+  return escapeOutlineText(text).replace(/,/g, "\\,");
 }
 
 /** Escapes text so the parser reads it back as a name (or an exit label). */
@@ -392,5 +477,9 @@ export function escapeOutlineText(text: string): string {
       .replace(/^([?!#@])/, "\\$1")
       // A name ending like a score keeps its brackets.
       .replace(/\[(\d+)\]$/, "\\[$1]")
+      // A step named `---` is not the line of visibility.
+      .replace(/^---$/, "\\---")
+      // A name ending like a handle keeps its brace.
+      .replace(/\{#([A-Za-z0-9_-]+)\}$/, "\\{#$1}")
   );
 }

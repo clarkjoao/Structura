@@ -5,10 +5,17 @@ import {
   guidedMoveStepToLane,
   guidedMoveStepToNewLane,
   guidedSetExperience,
+  guidedSetParticipants,
   guidedSetPhaseStart,
 } from "./guided.edits";
 import { guidedPhaseNames, guidedPhases, phaseStartOf } from "./guided.phases";
-import { GUIDED_STEP_SHAPES, experienceOf, isGuidedDecision, readGuided } from "./guided.model";
+import {
+  GUIDED_STEP_SHAPES,
+  experienceOf,
+  isGuidedDecision,
+  participantsOf,
+  readGuided,
+} from "./guided.model";
 
 /**
  * The guided "Journey" tab (spec guided-editing-surfaces): the step's lane,
@@ -112,6 +119,27 @@ export const guidedInspector: KindInspector = {
           run: () => guidedSetExperience(ctx.diagram, elementId, value),
         })),
       ],
+    });
+    // Participants besides the lane's actor (spec guided-journey-blueprint).
+    const laneName = reading.lanes.find((l) => l.id === laneId)?.name;
+    const participants = participantsOf(step, laneName);
+    sections.push({
+      type: "tags",
+      id: "participants",
+      label: { key: "diagramKinds.guided.blueprint.participants" },
+      values: participants,
+      suggestions: reading.lanes.map((l) => l.name).filter((name) => name !== laneName),
+      empty: { key: "diagramKinds.guided.blueprint.noParticipants" },
+      placeholder: { key: "diagramKinds.guided.blueprint.participantsSearch" },
+      addLabel: { key: "diagramKinds.guided.blueprint.addParticipant" },
+      removeLabel: { key: "diagramKinds.guided.blueprint.removeParticipant" },
+      add: (name) => guidedSetParticipants(ctx.diagram, elementId, [...participants, name]),
+      remove: (name) =>
+        guidedSetParticipants(
+          ctx.diagram,
+          elementId,
+          participants.filter((p) => p !== name),
+        ),
     });
     if (isGuidedDecision(step)) {
       sections.push({

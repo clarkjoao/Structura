@@ -799,6 +799,17 @@
       "exported": "IR exported!",
       "noIR": "No IR generated yet. Use /generate first.",
       "analyzing": "Analyzing…"
+    },
+    "revision": {
+      "title": "Journey revision",
+      "applySelected_one": "Apply {{count}} change",
+      "applySelected_other": "Apply {{count}} changes",
+      "noPhase": "Before any phase",
+      "stale": "No longer applicable: its step is gone.",
+      "tickAll": "Tick all",
+      "untickAll": "Untick all",
+      "count_one": "{{count}} change to review",
+      "count_other": "{{count}} changes to review"
     }
   },
   "versions": {
@@ -3736,7 +3747,10 @@
           "mermaidScoreOutOfRange": "The score must be 1 to 5 (here: {{score}}).",
           "mermaidEmpty": "This Mermaid block has no steps.",
           "experienceOutOfRange": "The experience score must be 1 to 5 (here: {{score}}).",
-          "phaseWithoutStep": "“##” starts a phase, but no step follows it."
+          "phaseWithoutStep": "“##” starts a phase, but no step follows it.",
+          "unknownHandle": "No step has the handle {#{{handle}}}",
+          "duplicateHandle": "The handle {#{{handle}}} is used twice",
+          "visibilityMisplaced": "--- belongs between the lane declarations at the top, before a lane"
         }
       },
       "inspector": {
@@ -3762,7 +3776,8 @@
         "formats": {
           "outline": "Text",
           "swimlane": "Mermaid (lanes)",
-          "journey": "Mermaid (journey)"
+          "journey": "Mermaid (journey)",
+          "outlineIds": "Text with ids"
         },
         "exportedFrom": "Exported from Structura: {{name}}",
         "journeyLeftOut": "Main path only: {{branches}} branch(es) and {{steps}} other step(s) left out.",
@@ -3779,6 +3794,47 @@
         "create": "Create phase “{{name}}”",
         "continuePrevious": "Continue the previous phase",
         "remove": "Remove the phase"
+      },
+      "text": {
+        "changes": {
+          "add": "Add “{{name}}”",
+          "remove": "Remove “{{name}}”",
+          "rename": "Rename “{{name}}” → “{{after}}”",
+          "kind": "“{{name}}” becomes a {{after}}",
+          "lane": "Move “{{name}}” to {{after}}",
+          "score": "Score “{{name}}”: {{before}} → {{after}}",
+          "phase": "Phase at “{{name}}”: {{before}} → {{after}}",
+          "connect": "Connect “{{source}}” → “{{target}}”",
+          "disconnect": "Disconnect “{{source}}” → “{{target}}”",
+          "relabel": "Label “{{source}}” → “{{target}}”: {{after}}",
+          "participants": "Participants of “{{name}}”: {{before}} → {{after}}",
+          "visibility": "Line of visibility: above {{before}} → above {{after}}"
+        },
+        "count": "+{{added}} ~{{changed}} −{{removed}}",
+        "noChanges": "No changes",
+        "review": "Review",
+        "reviewHide": "Hide",
+        "stale": "The diagram changed since this text was written.",
+        "reload": "Reload from the diagram",
+        "skipped_one": "{{count}} change was left out: its step no longer exists.",
+        "skipped_other": "{{count}} changes were left out: their steps no longer exist.",
+        "insert": "Insert at the selection",
+        "insertPlaceholder": "Steps to add after the selected step…",
+        "insertApply": "Insert",
+        "applied": "Journey updated",
+        "journey": "Journey"
+      },
+      "blueprint": {
+        "lineAbove": "Line of visibility above this lane",
+        "lineLeft": "Line of visibility left of this lane",
+        "removeLine": "Remove the line of visibility",
+        "frontstage": "Visible to the customer",
+        "backstage": "Backstage",
+        "participants": "Participants",
+        "addParticipant": "Add “{{name}}”",
+        "removeParticipant": "Remove {{name}}",
+        "participantsSearch": "A lane or a new name…",
+        "noParticipants": "Only the lane acts"
       }
     },
     "toolbar": {
@@ -3788,6 +3844,9 @@
     "inspector": {
       "selectSearch": "Search or type a new name…",
       "selectEmpty": "Nothing yet — type a name to create one"
+    },
+    "overlay": {
+      "exportLayer": "Phases"
     }
   }
 }

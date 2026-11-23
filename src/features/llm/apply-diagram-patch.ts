@@ -155,6 +155,14 @@ export function applyDiagramPatchAction(
         toolResult: { type: "ADD_JOURNEY_OUTLINE", data },
       };
     }
+    case "REVISE_JOURNEY":
+      // Applied on accept from the suggestion's reviewed revision, never one by one.
+      return {
+        addedNodeId: null,
+        addedEdgeId: null,
+        skipped: true,
+        skipReason: "reviewed revision",
+      };
     case "AUTO_LAYOUT": {
       const diagramId = diagramState.activeDiagramId;
       if (!diagramId) {

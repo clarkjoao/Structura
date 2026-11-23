@@ -205,7 +205,8 @@ export function versionGhostOverlay(node: Node): Node {
 }
 
 /** A node an LLM suggestion would add, waiting to be kept or discarded. */
-export function pendingOverlay(node: Node, pending: boolean): Node {
+export function pendingOverlay(node: Node, pending: boolean | "remove"): Node {
+  if (pending === "remove") return withClass(node, "node-pending-remove");
   return pending ? withClass(node, "node-pending") : node;
 }
 
@@ -229,11 +230,14 @@ export interface EditorNodeOverlayInput {
   kindMarked?: boolean;
   /** A badge the diagram's kind draws on this node (an experience score). */
   kindBadge?: { text: string; tone: string };
+  /** A tag the diagram's kind draws at this node's foot (its participants). */
+  kindTag?: { text: string; title: string };
   /** The active Version's copy of this node conflicts with the base. */
   versionConflict: boolean;
   /** The changes view: what the active Version did to this node, if anything. */
   versionChange?: "added" | "changed";
-  pending: boolean;
+  /** Part of a pending suggestion; "remove": a suggested removal. */
+  pending: boolean | "remove";
 }
 
 /** The kind's badge, drawn by CSS from data attributes (`index.css`, `.react-flow__node[data-kind-badge]`). */
@@ -244,6 +248,18 @@ export function kindBadgeOverlay(node: Node, badge: { text: string; tone: string
       ...node.domAttributes,
       "data-kind-badge": badge.text,
       "data-kind-badge-tone": badge.tone,
+    } as Node["domAttributes"],
+  };
+}
+
+/** The kind's tag, drawn by CSS from data attributes (`.react-flow__node[data-kind-tag]`). */
+export function kindTagOverlay(node: Node, tag: { text: string; title: string }): Node {
+  return {
+    ...node,
+    domAttributes: {
+      ...node.domAttributes,
+      "data-kind-tag": tag.text,
+      title: tag.title,
     } as Node["domAttributes"],
   };
 }
@@ -277,6 +293,7 @@ export function applyEditorNodeOverlays(
   next = kindPlacedOverlay(next, input.kindPlaced === true);
   if (input.kindMarked) next = withClass(next, "kind-check");
   if (input.kindBadge) next = kindBadgeOverlay(next, input.kindBadge);
+  if (input.kindTag) next = kindTagOverlay(next, input.kindTag);
   // A conflict says more than "changed": its marker takes the outline.
   next = versionChangeOverlay(next, input.versionConflict ? undefined : input.versionChange);
   next = versionConflictOverlay(next, input.versionConflict);

@@ -1,6 +1,6 @@
 import { Compass } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useReactFlow } from "@xyflow/react";
+import { useFrameDiagram } from "../focus/frameDiagram";
 import {
   FIT_VIEW_DURATION_MS,
   FIT_VIEW_INITIAL_PADDING,
@@ -20,7 +20,7 @@ interface NothingInViewCardProps {
  */
 export function NothingInViewCard({ elementCount }: NothingInViewCardProps) {
   const { t } = useTranslation();
-  const reactFlow = useReactFlow();
+  const frameDiagram = useFrameDiagram();
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-24 z-30 flex justify-center">
@@ -35,7 +35,7 @@ export function NothingInViewCard({ elementCount }: NothingInViewCardProps) {
         <button
           type="button"
           onClick={() =>
-            void reactFlow.fitView({
+            void frameDiagram({
               padding: FIT_VIEW_INITIAL_PADDING,
               minZoom: VIEWPORT_MIN_ZOOM,
               maxZoom: FIT_VIEW_MAX_ZOOM,

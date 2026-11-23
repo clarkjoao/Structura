@@ -8,9 +8,15 @@ import type {
 import { COMPONENT_TYPE_PROCESS_NODE } from "@/features/diagram/model/component-type-constants";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import type { KindCommandOutcome, KindContext, KindText } from "../kind.types";
-import { guidedAppendLanes } from "./guided.edits";
+import { guidedAppendLanes, guidedSetVisibilityLine } from "./guided.edits";
 import { COLUMN_GAP, LANE_HEADER, LANE_INSET, LANE_MIN_DEPTH, stepSize } from "./guided.geometry";
-import { type GuidedReading, isGuidedDecision, isGuidedEnd, readGuided } from "./guided.model";
+import {
+  type GuidedReading,
+  cleanParticipants,
+  isGuidedDecision,
+  isGuidedEnd,
+  readGuided,
+} from "./guided.model";
 import type { OutlineError, OutlineItem, ParsedOutline } from "./guided.outline.parse";
 
 /** What an outline adds: shown by the panel, returned to the assistant. */
@@ -229,10 +235,13 @@ export function buildOutline(
         flowShape: shape,
         name: item.name || ctx.t("diagramKinds.guided.endName"),
         parent: laneKey,
-        ...((item.experience !== undefined || item.phase) && {
+        ...((item.experience !== undefined || item.phase || item.participants?.length) && {
           kindProps: {
             ...(item.experience !== undefined && { experience: item.experience }),
             ...(item.phase && { phase: item.phase }),
+            ...(item.participants?.length && {
+              participants: cleanParticipants(item.participants, item.lane ?? undefined),
+            }),
           },
         }),
         x: vertical ? across : along,
@@ -266,11 +275,16 @@ export function buildOutline(
     if (open.length === 0) return refused("outlineClosesPath");
     link(open, anchor.before);
   }
+  // `---`: the line of visibility before that lane (spec guided-journey-blueprint).
+  const visibilityLane = outline.visibilityLane
+    ? laneByName.get(nameKey(outline.visibilityLane))
+    : undefined;
   return {
     edit: {
       add,
       ...(connect.length > 0 ? { connect } : {}),
       ...(reconnect.length > 0 ? { reconnect } : {}),
+      ...(visibilityLane && guidedSetVisibilityLine(diagram, visibilityLane)),
     },
     ...(lastKey ? { select: lastKey } : {}),
     added,

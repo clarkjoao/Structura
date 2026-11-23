@@ -196,6 +196,14 @@ function mapToolCallToAction(toolCall: LLMToolCall): DiagramPatchAction | null {
         payload: { outline, ...(typeof after === "string" && after ? { afterStepId: after } : {}) },
       };
     }
+    case "revise_journey": {
+      const outline = toolCall.parameters.outline;
+      if (typeof outline !== "string" || !outline.trim()) {
+        console.warn("[LLM] revise_journey without an outline - action skipped");
+        return null;
+      }
+      return { type: "REVISE_JOURNEY", payload: { outline } };
+    }
     case "auto_layout":
       return {
         type: "AUTO_LAYOUT",

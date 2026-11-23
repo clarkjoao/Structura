@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Node } from "@xyflow/react";
-import { kindBadgeOverlay, kindPlacedOverlay } from "./nodeOverlays";
+import { kindBadgeOverlay, kindPlacedOverlay, kindTagOverlay } from "./nodeOverlays";
 
 const node: Node = { id: "n", position: { x: 0, y: 0 }, data: {}, draggable: true };
 
@@ -27,5 +27,18 @@ describe("kindBadgeOverlay", () => {
       "data-kind-badge": "1/5",
       "data-kind-badge-tone": "danger",
     });
+  });
+});
+
+describe("kindTagOverlay", () => {
+  it("puts the kind's tag and its tooltip on the node, keeping its own attributes", () => {
+    const withAttr = { ...node, domAttributes: { "data-testid": "x" } } as Node;
+    expect(kindTagOverlay(withAttr, { text: "+ Ana +1", title: "Ana, Bia" }).domAttributes).toEqual(
+      {
+        "data-testid": "x",
+        "data-kind-tag": "+ Ana +1",
+        title: "Ana, Bia",
+      },
+    );
   });
 });

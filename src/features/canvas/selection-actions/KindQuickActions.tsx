@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
 import type { KindActionGlyph } from "@/features/diagram-kinds/kind.types";
@@ -18,6 +18,10 @@ function glyphIcon(glyph: KindActionGlyph, vertical: boolean): LucideIcon {
       return vertical ? ArrowRight : ArrowDown;
     case "remove":
       return Trash2;
+    case "visibility":
+      return Eye;
+    case "visibilityOff":
+      return EyeOff;
   }
 }
 

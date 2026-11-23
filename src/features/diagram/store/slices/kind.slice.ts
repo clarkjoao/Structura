@@ -192,7 +192,15 @@ function applyKindEditInDraft(state: AppState, d: Diagram, edit: KindEdit): Kind
   for (const id of edit.flows?.remove ?? []) delete d.snapshot.flows[id];
   for (const flow of edit.flows?.set ?? []) d.snapshot.flows[flow.id] = flow;
 
-  if (edit.kindData !== undefined) d.kindData = edit.kindData;
+  if (edit.kindData !== undefined) {
+    // A value naming a node added by this edit (its key) is that node's new id.
+    d.kindData = Object.fromEntries(
+      Object.entries(edit.kindData).map(([key, value]) => [
+        key,
+        typeof value === "string" && idsByKey[value] ? idsByKey[value]! : value,
+      ]),
+    );
+  }
 
   touchDiagram(d);
   return { idsByKey, connectionIds };

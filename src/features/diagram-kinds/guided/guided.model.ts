@@ -95,6 +95,46 @@ export function experienceOf(component: Component): number | null {
     : null;
 }
 
+/** The diagram's kind data key for the line of visibility: the first backstage lane's id. */
+export const GUIDED_VISIBILITY_KEY = "visibilityLane";
+
+/**
+ * The first backstage lane (spec guided-journey-blueprint): the line of visibility
+ * sits before it. None when unset, when the lane is gone, or when it is the first lane.
+ */
+export function visibilityLaneOf(
+  diagram: Pick<DiagramModel, "kindData">,
+  reading: Pick<GuidedReading, "lanes">,
+): string | null {
+  const value = diagram.kindData?.[GUIDED_VISIBILITY_KEY];
+  if (typeof value !== "string") return null;
+  return reading.lanes.findIndex((lane) => lane.id === value) > 0 ? value : null;
+}
+
+const MAX_PARTICIPANTS = 8;
+const MAX_PARTICIPANT_LENGTH = 60;
+
+/** Participant names cleaned: trimmed, non-empty, distinct, capped; never `exclude` (the own lane). */
+export function cleanParticipants(names: readonly unknown[], exclude?: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>(exclude ? [exclude.trim().toLowerCase()] : []);
+  for (const raw of names) {
+    if (typeof raw !== "string") continue;
+    const name = raw.trim().slice(0, MAX_PARTICIPANT_LENGTH);
+    if (!name || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    out.push(name);
+    if (out.length === MAX_PARTICIPANTS) break;
+  }
+  return out;
+}
+
+/** A step's participants besides its lane (spec guided-journey-blueprint). */
+export function participantsOf(component: Component, laneName?: string): string[] {
+  const value = component.kindProps?.participants;
+  return Array.isArray(value) ? cleanParticipants(value, laneName) : [];
+}
+
 /** Scores 1–2: where the journey hurts. */
 export const isPainPoint = (score: number | null): boolean => score !== null && score <= 2;
 

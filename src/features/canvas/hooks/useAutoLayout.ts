@@ -8,6 +8,7 @@ import { useReactFlow, useStoreApi } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { measuredSizesOf } from "../layout/applyLayout";
+import { useFrameDiagram } from "../focus/frameDiagram";
 import { applyDiagramAutoLayout, planDiagramAutoLayout } from "../layout/autoLayoutDiagram";
 import { startLayoutTransition } from "../layout/layoutTransition";
 import {
@@ -43,7 +44,8 @@ export interface AutoLayoutRunOptions {
 
 export function useAutoLayout() {
   const { t } = useTranslation();
-  const { fitView, getNodes } = useReactFlow();
+  const { getNodes } = useReactFlow();
+  const frameDiagram = useFrameDiagram();
   const reactFlowStore = useStoreApi();
   const { applyAutoLayout } = useDiagramActions();
   const [isRunning, setIsRunning] = useState(false);
@@ -144,7 +146,7 @@ export function useAutoLayout() {
                 { history: false },
               );
           }
-          requestAnimationFrame(() => fitView({ duration: 400, padding: 0.2 }));
+          requestAnimationFrame(() => void frameDiagram({ duration: 400, padding: 0.2 }));
           toast.success(t("autoLayout.applied"));
           return;
         }
@@ -180,7 +182,7 @@ export function useAutoLayout() {
         } else applyAutoLayout(plan.layouts, plan.autoRefs);
 
         requestAnimationFrame(() => {
-          fitView({ duration: 400, padding: 0.2 });
+          void frameDiagram({ duration: 400, padding: 0.2 });
         });
         const stats = plan.ruleRefStats;
         toast.success(
@@ -215,7 +217,7 @@ export function useAutoLayout() {
         setIsRunning(false);
       }
     },
-    [isRunning, applyAutoLayout, fitView, getNodes, reactFlowStore, t],
+    [isRunning, applyAutoLayout, frameDiagram, getNodes, reactFlowStore, t],
   );
 
   // Keep ref in sync with the callback

@@ -5,8 +5,10 @@ import {
   experienceOf,
   isGuidedDecision,
   isGuidedEnd,
+  participantsOf,
   readGuided,
   readingOrder,
+  visibilityLaneOf,
 } from "./guided.model";
 import { guidedPhases, phaseStartOf } from "./guided.phases";
 
@@ -82,6 +84,18 @@ export function serializeMermaidSwimlane(diagram: DiagramModel, ctx: KindContext
     return phase ? [`${idOf.get(stepId)}=${phase.replace(/[,=\n]/g, " ").trim()}`] : [];
   });
   if (phased.length > 0) lines.push(`  %% phases: ${phased.join(", ")}`);
+  // Participants and the line of visibility, likewise (spec guided-journey-blueprint).
+  const laneNameOf = (stepId: string) =>
+    reading.lanes.find((lane) => lane.id === reading.laneOf.get(stepId))?.name;
+  const shared = order.flatMap((stepId) => {
+    const names = participantsOf(reading.steps.get(stepId)!, laneNameOf(stepId));
+    const clean = names.map((n) => n.replace(/[,=|\n]/g, " ").trim()).filter(Boolean);
+    return clean.length > 0 ? [`${idOf.get(stepId)}=${clean.join("|")}`] : [];
+  });
+  if (shared.length > 0) lines.push(`  %% participants: ${shared.join(", ")}`);
+  const backstage = visibilityLaneOf(diagram, reading);
+  const backstageIndex = reading.lanes.findIndex((lane) => lane.id === backstage);
+  if (backstageIndex > 0) lines.push(`  %% visibility: lane${backstageIndex + 1}`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -114,9 +128,12 @@ export function serializeMermaidJourney(diagram: DiagramModel, ctx: KindContext)
     }
     const step = reading.steps.get(id)!;
     const score = experienceOf(step) ?? 3;
-    lines.push(
-      `    ${clean(step.name)}: ${score}: ${clean(laneName.get(reading.laneOf.get(id)!) ?? "")}`,
-    );
+    const lane = laneName.get(reading.laneOf.get(id)!) ?? "";
+    // The lane is the first actor; the participants follow (spec guided-journey-blueprint).
+    const actors = [lane, ...participantsOf(step, lane)]
+      .map((name) => clean(name).replace(/,/g, " "))
+      .join(", ");
+    lines.push(`    ${clean(step.name)}: ${score}: ${actors}`);
   }
   const branches = path.reduce(
     (n, id) =>

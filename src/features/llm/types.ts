@@ -1,3 +1,4 @@
+import type { KindTextBase, KindTextChange } from "@/features/diagram-kinds/kind.types";
 import type { ComponentPatch, ComponentType, Connection, EdgeStyle } from "@/features/diagram";
 
 export type LLMProvider = "openai" | "anthropic" | "custom";
@@ -92,6 +93,7 @@ export type DiagramPatchAction =
   | { type: "INSERT_PATTERN"; payload: { patternId: string; provider?: string } }
   | { type: "AUTO_LAYOUT"; payload: Record<string, never> }
   | { type: "ADD_JOURNEY_OUTLINE"; payload: { outline: string; afterStepId?: string } }
+  | { type: "REVISE_JOURNEY"; payload: { outline: string } }
   | { type: "GET_TAGS"; payload: Record<string, never> }
   | { type: "LIST_ELEMENT_FAMILIES"; payload: Record<string, never> }
   | { type: "LIST_PATTERNS"; payload: Record<string, never> }
@@ -117,12 +119,32 @@ export interface PendingSuggestion {
   messageId: string;
   patch: DiagramPatch;
   status: "pending" | "accepted" | "rejected";
+  /** A revision of the guided journey, reviewed change by change (spec guided-assistant-revisions). */
+  revision?: JourneyRevision;
+}
+
+/** What a journey revision was read against, and what the reviewer has left out. */
+export interface JourneyRevision {
+  /** The journey as the assistant saw it, with its handles. */
+  base: KindTextBase;
+  /** The revised journey the assistant sent. */
+  outline: string;
+  /** The changes when it arrived: a change gone since is shown as no longer applicable. */
+  initial: ReadonlyArray<
+    Pick<KindTextChange, "key" | "kind" | "label" | "values" | "group" | "phase" | "reason">
+  >;
+  /** Dependency groups the reviewer unticked. */
+  unticked: readonly string[];
 }
 
 export interface PendingNodePreview {
   suggestionId: string;
   nodeIds: string[];
   edgeIds: string[];
+  /** How the nodes are marked: a change (default) or a removal. */
+  tone?: "change" | "remove";
+  /** Whether each node gets the Keep / Discard toolbar (not for a reviewed revision). */
+  toolbars?: boolean;
   /** Fit the canvas to these nodes when the preview arrives (plugin chat replies). */
   focus?: boolean;
   /** Whether Discard is offered (false when the plugin cannot undo the change). */

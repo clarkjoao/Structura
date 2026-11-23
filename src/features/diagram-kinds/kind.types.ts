@@ -69,6 +69,8 @@ export interface KindMarker {
   values?: Record<string, string | number>;
   /** A small badge the host draws on the node (spec guided-journey-experience). */
   badge?: KindBadge;
+  /** A short tag the host draws at the node's foot, with a tooltip (spec guided-journey-blueprint). */
+  tag?: KindTag;
   /** Whether the element is outlined as checked. Absent means yes; a badge-only marker says no. */
   marks?: boolean;
 }
@@ -89,6 +91,23 @@ export interface KindOverlay {
   separators: Array<{ along: number; from: number; to: number }>;
   /** Points along the axis, `value` 0 (low) to 1 (high), drawn in the band. */
   curve: Array<{ id: string; along: number; value: number; tone: KindBadge["tone"] }>;
+  /**
+   * Lines along the axis between two lanes, at `across`, from `from` to `to` along it,
+   * labelled on each side (spec guided-journey-blueprint: the line of visibility).
+   */
+  lines?: Array<{
+    id: string;
+    across: number;
+    from: number;
+    to: number;
+    labels?: { before: KindText; after: KindText };
+  }>;
+}
+
+/** A tag on a node: short text, and the full text as its tooltip. */
+export interface KindTag {
+  text: string;
+  title: string;
 }
 
 /** A badge on a node: short text and a tone. */
@@ -155,7 +174,8 @@ export interface KindElementAction {
   run: () => KindCommandOutcome | { refused: KindText };
 }
 
-export type KindActionGlyph = "add" | "before" | "after" | "remove";
+export type KindActionGlyph =
+  "add" | "before" | "after" | "remove" | "visibility" | "visibilityOff";
 
 /** A text the kind could not read, by 1-based line. */
 export interface KindTextError {
@@ -189,7 +209,70 @@ export interface KindTextCapture {
   /** The formats the diagram can be copied as; the first is `serialize`'s. Absent: only that one. */
   formats?: readonly KindTextFormat[];
   placeholder?: KindText;
+  /**
+   * The whole diagram as editable text, with what each line stands for (spec
+   * guided-journey-text-sync). With `reconcile`, the text panel edits the whole
+   * diagram instead of only adding to it.
+   */
+  writeBase?: (
+    diagram: DiagramModel,
+    ctx: KindContext,
+    options?: { handles?: boolean },
+  ) => KindTextBase;
+  /** Pure: the edit that turns the diagram into `edited`, read against `base`. */
+  reconcile?: (ctx: KindCommandContext, base: KindTextBase, edited: string) => KindTextReconcile;
 }
+
+/** A text the kind wrote for the whole diagram, and what it stands for. */
+export interface KindTextBase {
+  text: string;
+  /** Per line: the element it writes, or null (lanes, headings, jumps, comments). */
+  lineIds: readonly (string | null)[];
+  /** The handles a text may name elements by (`{#s1}`), to element ids. */
+  handles: Readonly<Record<string, string>>;
+  /** The connections the text writes: the only ones an edit of it may change. */
+  writtenConnections: readonly string[];
+}
+
+/** One change a text edit makes, for review; `edit` is its own part of the whole edit. */
+export interface KindTextChange {
+  key: string;
+  kind:
+    | "add"
+    | "remove"
+    | "rename"
+    | "kind"
+    | "lane"
+    | "score"
+    | "phase"
+    | "participants"
+    | "visibility"
+    | "connect"
+    | "disconnect"
+    | "relabel";
+  /** The element changed; null for one the edit adds. */
+  elementId: string | null;
+  label: KindText;
+  values: Record<string, string | number>;
+  edit: KindEdit;
+  /** The changes that apply only together share a group (the key of one of them). */
+  group?: string;
+  /** The phase the change falls in, for grouping a review. */
+  phase?: string;
+  /** Why, when the text says so (`# why: …` above the step). */
+  reason?: string;
+}
+
+export type KindTextReconcile =
+  | {
+      edit: KindEdit;
+      changes: KindTextChange[];
+      /** Changes left out because their element no longer exists. */
+      skipped: number;
+      /** What to select after applying: the first changed element (an id or an added key). */
+      select?: string;
+    }
+  | { errors: KindTextError[] };
 
 /** An inspector field a kind may hide in kind mode (spec guided-editing-surfaces). */
 export type KindInspectorField = "technology" | "type" | "shape";
@@ -237,10 +320,31 @@ export interface KindInspectorSelect {
 
 type KindRunOutcome = KindCommandOutcome | { refused: KindText };
 
+/**
+ * A list of names (e.g. a step's participants): drawn as removable chips and a
+ * select that suggests names and accepts a new one.
+ */
+export interface KindInspectorTags {
+  type: "tags";
+  id: string;
+  label: KindText;
+  values: readonly string[];
+  suggestions: readonly string[];
+  /** Shown when there are no values. */
+  empty?: KindText;
+  /** The select's placeholder, and its "add" entry (`{{name}}` is the text). */
+  placeholder: KindText;
+  addLabel: KindText;
+  removeLabel: KindText;
+  add: (name: string) => KindRunOutcome;
+  remove: (name: string) => KindRunOutcome;
+}
+
 /** A block of the kind's inspector tab, drawn by the host. */
 export type KindInspectorSection =
   | { type: "choice"; id: string; label: KindText; options: KindInspectorOption[] }
   | KindInspectorSelect
+  | KindInspectorTags
   | {
       type: "labels";
       id: string;

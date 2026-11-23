@@ -4,12 +4,12 @@ import { isKindActive, resolveKindPolicy } from "./policy";
 
 const cache = new WeakMap<
   object,
-  { layouts: unknown; kindId: string; result: KindOverlay | null }
+  { layouts: unknown; kindData: unknown; kindId: string; result: KindOverlay | null }
 >();
 
 /**
  * The active kind's overlay (spec guided-journey-phases), memoised on the
- * snapshot and the layouts, so the selector that reads it returns the same
+ * snapshot, the layouts and the kind data (the line of visibility), so the selector that reads it returns the same
  * object while nothing it draws changed. Null outside kind mode.
  */
 export function kindOverlayFor(diagram: DiagramModel | null | undefined): KindOverlay | null {
@@ -17,11 +17,17 @@ export function kindOverlayFor(diagram: DiagramModel | null | undefined): KindOv
   const policy = resolveKindPolicy(diagram);
   if (!isKindActive(policy) || !policy.descriptor.overlay) return null;
   const hit = cache.get(diagram.snapshot);
-  if (hit && hit.layouts === diagram.nodeLayouts && hit.kindId === policy.descriptor.id)
+  if (
+    hit &&
+    hit.layouts === diagram.nodeLayouts &&
+    hit.kindData === diagram.kindData &&
+    hit.kindId === policy.descriptor.id
+  )
     return hit.result;
   const result = policy.descriptor.overlay(diagram);
   cache.set(diagram.snapshot, {
     layouts: diagram.nodeLayouts,
+    kindData: diagram.kindData,
     kindId: policy.descriptor.id,
     result,
   });

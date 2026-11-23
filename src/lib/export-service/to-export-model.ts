@@ -1,3 +1,4 @@
+import { kindExportDecorations } from "./kind-decorations";
 import { hideSharedEdges, sharedMode, sharedUses } from "@/features/diagram/utils/shared";
 import { withoutHiddenTexts } from "@/features/diagram/utils/without-hidden-texts";
 import { elementAccent } from "@/features/canvas/shared/sharedLayerModel";
@@ -480,5 +481,7 @@ export function diagramToExportModel(
     ),
   );
 
-  return { name: diagramForExport.name, nodes, edges };
+  // A selection export leaves the kind overlay out: it frames the whole journey.
+  const decorations = shouldFilter ? undefined : kindExportDecorations(diagramForExport);
+  return { name: diagramForExport.name, nodes, edges, ...(decorations && { decorations }) };
 }

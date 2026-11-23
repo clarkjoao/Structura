@@ -2,7 +2,7 @@ import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import type { KindOverlay } from "../kind.types";
 import { LANE_HEADER } from "./guided.geometry";
-import { experienceOf, isPainPoint, readGuided } from "./guided.model";
+import { experienceOf, isPainPoint, readGuided, visibilityLaneOf } from "./guided.model";
 import { guidedPhases } from "./guided.phases";
 
 /** The header band's depth, with and without the emotion curve, and its gap to the lanes. */
@@ -66,8 +66,35 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
     at = reading.outgoing.get(at)?.[0]?.targetId;
   }
 
+  // The line of visibility (spec guided-journey-blueprint): before the first backstage lane.
+  const lines: NonNullable<KindOverlay["lines"]> = [];
+  const backstage = visibilityLaneOf(diagram, reading);
+  const backstageBox = backstage ? nodeLayouts[backstage] : undefined;
+  if (backstage && backstageBox)
+    lines.push({
+      id: "visibility",
+      across: across(backstageBox),
+      from: alongStart - LANE_HEADER,
+      to: alongEnd,
+      labels: {
+        before: { key: "diagramKinds.guided.blueprint.frontstage" },
+        after: { key: "diagramKinds.guided.blueprint.backstage" },
+      },
+    });
+
   const { phases, phaseOf } = guidedPhases(reading);
-  if (phases.length === 0 && curve.length === 0) return null;
+  if (phases.length === 0 && curve.length === 0) {
+    if (lines.length === 0) return null;
+    return {
+      axis: vertical ? "y" : "x",
+      at: acrossStart,
+      depth: 0,
+      segments: [],
+      separators: [],
+      curve: [],
+      lines,
+    };
+  }
 
   // Each phase group's extent along the axis; group -1 is the steps before the first start.
   const extent = new Map<number, { from: number; to: number }>();
@@ -113,5 +140,6 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
     segments,
     separators: boundaries.map((b) => ({ along: b, from: acrossStart, to: acrossEnd })),
     curve,
+    ...(lines.length > 0 && { lines }),
   };
 }

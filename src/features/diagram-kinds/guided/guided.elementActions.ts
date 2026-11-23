@@ -4,8 +4,9 @@ import {
   guidedMoveLane,
   guidedMoveStepToLane,
   guidedRemoveLane,
+  guidedSetVisibilityLine,
 } from "./guided.edits";
-import { readGuided } from "./guided.model";
+import { readGuided, visibilityLaneOf } from "./guided.model";
 
 /**
  * The guided actions on one element: a step moves to another lane; a lane is
@@ -61,6 +62,30 @@ export function guidedElementActions(
       glyph: "after",
       label: { key: `diagramKinds.guided.lanes.${across[1]}` },
       run: () => ({ edit: guidedMoveLane(ctx.diagram, targetId, 1), select: targetId }),
+    });
+  }
+  // The line of visibility (spec guided-journey-blueprint): before this lane, or no longer.
+  const line = visibilityLaneOf(ctx.diagram, reading);
+  if (line === targetId) {
+    actions.push({
+      id: "guided.lane.visibility",
+      group: "lane",
+      glyph: "visibilityOff",
+      label: { key: "diagramKinds.guided.blueprint.removeLine" },
+      run: () => ({ edit: guidedSetVisibilityLine(ctx.diagram, null), select: targetId }),
+    });
+  } else if (index > 0) {
+    actions.push({
+      id: "guided.lane.visibility",
+      group: "lane",
+      glyph: "visibility",
+      label: {
+        key:
+          ctx.diagram.direction === "TB"
+            ? "diagramKinds.guided.blueprint.lineLeft"
+            : "diagramKinds.guided.blueprint.lineAbove",
+      },
+      run: () => ({ edit: guidedSetVisibilityLine(ctx.diagram, targetId), select: targetId }),
     });
   }
   if (reading.lanes.length > 1) {

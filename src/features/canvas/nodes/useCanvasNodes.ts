@@ -29,7 +29,7 @@ import type { ViewSnapshot } from "../core/resolveViewSnapshot";
 import { useFlowMode } from "../flow/FlowModeContext";
 import { applyEditorNodeOverlays, versionGhostOverlay } from "./nodeOverlays";
 import type { FlowHighlight, FlowBadges, CoverageInfo } from "../flow/flowState";
-import { getPendingNodeIds, useLLMStore } from "@/features/llm";
+import { getPendingNodeIds, getPendingRemovedNodeIds, useLLMStore } from "@/features/llm";
 
 /** The projection's policy on the editor path; interactivity is React Flow's, per canvas. */
 const EDITOR_PROJECTION = writePolicy(true);
@@ -151,7 +151,7 @@ function isSameBuiltFlowNode(a: Node, b: Node): boolean {
 /** A kind's badge rides on data attributes (`kindBadgeOverlay`). */
 function badgeKey(node: Node): string {
   const attrs = node.domAttributes as Record<string, unknown> | undefined;
-  return `${String(attrs?.["data-kind-badge"] ?? "")}|${String(attrs?.["data-kind-badge-tone"] ?? "")}`;
+  return `${String(attrs?.["data-kind-badge"] ?? "")}|${String(attrs?.["data-kind-badge-tone"] ?? "")}|${String(attrs?.["data-kind-tag"] ?? "")}|${String(attrs?.title ?? "")}`;
 }
 
 function shallowEqualIgnoringFunctions(
@@ -231,6 +231,10 @@ export function useCanvasNodes({
   const { isRecording, onRecordHandleClick } = useFlowMode();
   const pendingPreviews = useLLMStore((state) => state.pendingPreviews);
   const pendingNodeIds = useMemo(() => getPendingNodeIds(pendingPreviews), [pendingPreviews]);
+  const pendingRemovedIds = useMemo(
+    () => getPendingRemovedNodeIds(pendingPreviews),
+    [pendingPreviews],
+  );
 
   // Stabilize Sets by content so they don't cause unnecessary dataCtx re-creation on
   // selection/highlight toggles that only add/remove a single member.
@@ -380,7 +384,7 @@ export function useCanvasNodes({
     const flowModeActive = ctx.isPlaying || ctx.isRecording;
     // A kind that places its elements (ADR-0014) takes drag and resize away from every node.
     const kindPlaced = !interactionOf(resolveKindPolicy(diagram)).nodesDraggable;
-    const { nodes: kindMarked, badges: kindBadges } = kindMarkerSets;
+    const { nodes: kindMarked, badges: kindBadges, tags: kindTags } = kindMarkerSets;
 
     const visibleIds = new Set(view.nodes.map((viewNode) => viewNode.component.id));
     for (const cachedId of prevNodeDataRef.current.keys()) {
@@ -420,13 +424,14 @@ export function useCanvasNodes({
         kindPlaced,
         kindMarked: kindMarked.has(comp.id),
         kindBadge: kindBadges.get(comp.id),
+        kindTag: kindTags.get(comp.id),
         versionConflict: conflictIds.has(comp.id),
         ...(versionChanges?.added.components.has(comp.id)
           ? { versionChange: "added" as const }
           : versionChanges?.changed.has(comp.id)
             ? { versionChange: "changed" as const }
             : {}),
-        pending: pendingNodeIds.has(comp.id),
+        pending: pendingRemovedIds.has(comp.id) ? "remove" : pendingNodeIds.has(comp.id),
       });
 
       // Identity cache, unchanged: React Flow keeps the previous object unless
@@ -506,6 +511,7 @@ export function useCanvasNodes({
     view,
     isNodeHiddenByTagFilter,
     pendingNodeIds,
+    pendingRemovedIds,
     versionChanges,
     ghostView,
   ]);

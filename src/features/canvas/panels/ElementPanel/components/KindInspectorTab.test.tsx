@@ -76,6 +76,7 @@ describe("the guided Journey tab", () => {
       "stepKind",
       "phase",
       "experience",
+      "participants",
     ]);
     expect(kindInspectorFor(d(), lanes[0]!)).toBeNull();
     useDiagramStore.getState().setKindMode(d().id, "freehand");
@@ -124,6 +125,29 @@ describe("the guided Journey tab", () => {
     expect(screen.getByRole("option", { name: "Discover" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("option", { name: "Remove the phase" }));
     expect(readGuided(d()).steps.get(startId)!.kindProps?.phase).toBeUndefined();
+  });
+
+  it("adds participants from a lane or a new name, and removes them", () => {
+    const { d, startId } = setup();
+    const participants = () =>
+      (readGuided(d()).steps.get(startId)!.kindProps?.participants as string[] | undefined) ?? [];
+    const { unmount } = renderTab(d, startId);
+    fireEvent.click(screen.getByTestId("kind-inspector-participants-add"));
+    fireEvent.click(screen.getByRole("option", { name: "System" }));
+    expect(participants()).toEqual(["System"]);
+    unmount();
+    const second = renderTab(d, startId);
+    fireEvent.click(screen.getByTestId("kind-inspector-participants-add"));
+    fireEvent.change(screen.getByTestId("kind-inspector-participants-add-search"), {
+      target: { value: "Gerente" },
+    });
+    fireEvent.click(screen.getByTestId("kind-inspector-participants-add-create"));
+    expect(participants()).toEqual(["System", "Gerente"]);
+    expect(screen.queryByTestId("kind-inspector-participants-add-search")).toBeNull();
+    second.unmount();
+    renderTab(d, startId);
+    fireEvent.click(screen.getByRole("button", { name: "Remove System" }));
+    expect(participants()).toEqual(["Gerente"]);
   });
 
   it("leaves a step's floating bar without the lane menu", () => {

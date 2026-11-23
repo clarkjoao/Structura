@@ -1,4 +1,4 @@
-import { ALL_TOOLS, JOURNEY_OUTLINE_TOOL } from "./tools";
+import { ALL_TOOLS, JOURNEY_OUTLINE_TOOL, JOURNEY_REVISE_TOOL } from "./tools";
 import { buildComponentTypeCatalog, buildPatternCatalogCompact } from "./component-catalog";
 
 const DIAGRAM_DSL_DESCRIPTION = `
@@ -212,14 +212,18 @@ function buildJourneyOutlineSection(currentOutline: string): string {
     "## Guided journey diagram",
     "",
     "The active diagram is a guided journey: lanes (who or what acts) hold steps in sequence; positions are automatic.",
-    `To add to it, use the ${JOURNEY_OUTLINE_TOOL} tool with an outline, never add_node/add_edge. One line per step:`,
+    `To add to it, use the ${JOURNEY_OUTLINE_TOOL} tool with an outline, never add_node/add_edge. To change existing steps (rename, rescore, move, remove, regroup into phases), use the ${JOURNEY_REVISE_TOOL} tool with the whole current journey edited, keeping every existing step's {#sN} handle on its line; the user reviews each change before it applies. One line per step:`,
     "- `Lane: Step name` — a step in a lane; a line without `Lane:` stays in the previous line's lane. A lane that does not exist is created.",
     "- `? Question` — a decision. Its exits are indented under it: `label -> Step`, `label -> ? Decision`, `label -> ! End`, `label -> @Existing step`.",
     "- Lines indented under an exit continue that branch. After a decision's block, the next line at the decision's indentation is reached from every branch still open.",
     "- `! Name` — an end step (closes the path). `-> @Step name` — jumps back to a step written earlier or already in the diagram (closes the path).",
     "- `Lane:` alone declares a lane. `#` starts a comment. Write `\\:` for a colon inside a name.",
+    "- `Lane, Other: Step` — the step's lane first, then other people or systems acting in it with it (participants). Write `\\,` for a comma inside a lane name.",
+    "- `---` on its own line between the lane declarations at the top is the line of visibility: lanes above it are what the customer sees, lanes below are backstage.",
     "- `## Phase name` on its own line starts a phase (a stage of the journey, e.g. Discover, Buy, Use) at the next step; the steps after it stay in that phase until the next `##`. Use phases to group meeting notes into stages.",
     "- A step line may end with `[1]`…`[5]`: the customer's experience at that step (1 = very bad, 5 = great). Steps scored 1–2 are pain points: point them out when asked, and propose steps that remove them.",
+    "- A step line may end with a handle such as `{#s4}`: the existing step it is. Keep handles on their steps when revising; a new step has none. Never invent or reuse a handle. The add tool ignores handles.",
+    "- In a revision, `# why: reason` on the line above a changed step explains the change to the user.",
     "The outline is added after `afterStepId` when given, else at the end of the journey (before its end step). Keep step names short, as verbs.",
     "",
     "The same tool also accepts a Mermaid block instead of an outline: `swimlane-beta` (or `flowchart`/`graph`) with one top-level `subgraph` per lane, `{}` for decisions and `-->|label|` for labelled exits; or `journey` (tasks in order, lane = first actor). Use it when the user gives Mermaid or asks for it.",
@@ -233,7 +237,7 @@ function buildJourneyOutlineSection(currentOutline: string): string {
     "App: Emite nota",
     "! Concluído",
     "",
-    "Current journey as an outline:",
+    "Current journey as an outline (with handles):",
     "```",
     currentOutline,
     "```",
@@ -243,7 +247,9 @@ function buildJourneyOutlineSection(currentOutline: string): string {
 function buildToolsSection(journeyOutline: boolean): string {
   const tools = journeyOutline
     ? ALL_TOOLS
-    : ALL_TOOLS.filter((tool) => tool.name !== JOURNEY_OUTLINE_TOOL);
+    : ALL_TOOLS.filter(
+        (tool) => tool.name !== JOURNEY_OUTLINE_TOOL && tool.name !== JOURNEY_REVISE_TOOL,
+      );
   const toolBlocks = tools.map((tool) =>
     [
       `Tool: ${tool.name}`,

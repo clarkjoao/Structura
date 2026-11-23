@@ -37,6 +37,10 @@ import CanvasSearch from "@/features/canvas/toolbar/CanvasSearch";
 import { frameComponents, frameUnlessInView } from "@/features/canvas/focus/focusComponents";
 import { KEY, keyMatchesLetter } from "@/lib/core/keyboard";
 import { framingSignature } from "./framing";
+import { ViewerKindOverlay } from "./ViewerKindOverlay";
+import { frameDiagram } from "@/features/canvas/focus/frameDiagram";
+import { FIT_VIEW_OPTIONS_READ } from "@/features/canvas/core/reactFlowBaseConfig";
+import { kindOverlayFor } from "@/features/diagram-kinds/overlay";
 import { OpenInStructuraButton } from "./OpenInStructuraButton";
 import { FlowInvite } from "./FlowInvite";
 import { iconLookupForDiagram } from "../icons/diagramIconLookup";
@@ -639,8 +643,19 @@ const ViewerCanvasContent = ({
               onEdgeClick={handleEdgeClick}
               onPaneClick={handlePaneClick}
             >
-              <DiagramControls className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8" />
+              <DiagramControls
+                onFitView={() =>
+                  void frameDiagram(
+                    reactFlowInstance,
+                    flowStore.getState(),
+                    kindOverlayFor(diagram),
+                    FIT_VIEW_OPTIONS_READ,
+                  )
+                }
+                className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8"
+              />
               <SharedLayer components={view.components} connections={view.connections} />
+              <ViewerKindOverlay diagram={diagram} frame={!framesPreviewEntry} />
             </DiagramSurface>
           </EdgeLabelRevealProvider>
         </HandleHighlightProvider>

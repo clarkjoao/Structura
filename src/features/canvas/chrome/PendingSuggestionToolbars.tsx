@@ -58,7 +58,8 @@ export function PendingSuggestionToolbars({
     reject: rejectSuggestion,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
   const pendingNodeIds = useMemo(
-    () => Array.from(getPendingNodeIds(pendingPreviews)),
+    // A reviewed revision is kept or dropped from its card, not node by node.
+    () => Array.from(getPendingNodeIds(pendingPreviews.filter((p) => p.toolbars !== false))),
     [pendingPreviews],
   );
 
