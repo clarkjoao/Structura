@@ -1,8 +1,24 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, PencilRuler, Workflow, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowRight,
+  ChevronDown,
+  PencilRuler,
+  Presentation,
+  Sparkles,
+  Workflow,
+  X,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import type { Diagram, DiagramModel } from "@/features/diagram";
+import type { Diagram, DiagramDirection, DiagramModel } from "@/features/diagram";
 import { resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import { editKindFreehand, returnToKind } from "@/features/diagram-kinds/actions";
 import { resolveKindText } from "@/features/diagram-kinds/context";
@@ -15,6 +31,21 @@ interface KindModeBarProps {
   canEdit: boolean;
   /** Selects an element an issue names. */
   onSelectElement: (id: string) => void;
+  /**
+   * The diagram's reading direction and its switch (spec guided-vertical-journeys): the
+   * same switch as Arrange → Direction, offered here where the journey is edited.
+   */
+  direction?: {
+    value: DiagramDirection;
+    onChange: (direction: DiagramDirection) => void;
+    lockedReasonKey: string | null;
+  };
+  /** Presents the diagram scene by scene (guided: by phase), when the kind offers it. */
+  onPresent?: () => void;
+  /** Asks the assistant one of the kind's preset requests. */
+  onReview?: (prompt: string) => void;
+  /** Selects an element and brings it into view (the text panel's cursor on its line). */
+  onFocusElement?: (id: string) => void;
 }
 
 /**
@@ -23,17 +54,25 @@ interface KindModeBarProps {
  */
 const PLACED = "absolute top-3 left-3 z-10";
 const BOX =
-  "flex max-w-[min(100vw-2rem,40rem)] items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-sm";
+  "flex max-w-[min(100vw-2rem,56rem)] flex-wrap items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground shadow-sm";
 const BAR = `${PLACED} ${BOX}`;
 const ACTION =
-  "rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-50";
+  "whitespace-nowrap rounded-md border border-border px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-50";
 
 /**
  * The diagram kind's mode on the canvas (ADR-0014): which editor is guiding
  * the diagram, and the way across — "Edit freehand", and back to the kind when
  * the diagram still conforms; or why a kind is not available here.
  */
-export function KindModeBar({ diagram, canEdit, onSelectElement }: KindModeBarProps) {
+export function KindModeBar({
+  diagram,
+  canEdit,
+  onSelectElement,
+  direction,
+  onPresent,
+  onReview,
+  onFocusElement,
+}: KindModeBarProps) {
   const { t } = useTranslation();
   const [issues, setIssues] = useState<KindIssue[] | null>(null);
   const policy = resolveKindPolicy(diagram);
@@ -64,7 +103,76 @@ export function KindModeBar({ diagram, canEdit, onSelectElement }: KindModeBarPr
           {t("diagramKinds.editFreehand")}
         </button>
         {policy.descriptor.textCapture && (
-          <KindTextPanel capture={policy.descriptor.textCapture} disabled={!canEdit} />
+          <KindTextPanel
+            capture={policy.descriptor.textCapture}
+            disabled={!canEdit}
+            {...(onFocusElement && { onFocusStep: onFocusElement })}
+          />
+        )}
+        {onPresent &&
+          (policy.descriptor.presentation?.(diagram as DiagramModel)?.length ?? 0) > 0 && (
+            <button
+              type="button"
+              className={`${ACTION} inline-flex items-center gap-1`}
+              onClick={onPresent}
+              data-testid="kind-present"
+            >
+              <Presentation className="h-3 w-3" aria-hidden />
+              {t("diagramKinds.present")}
+            </button>
+          )}
+        {onReview && canEdit && policy.descriptor.reviewPresets && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={`${ACTION} inline-flex items-center gap-1`}
+                data-testid="kind-review"
+              >
+                <Sparkles className="h-3 w-3" aria-hidden />
+                {t("diagramKinds.review")}
+                <ChevronDown className="h-3 w-3" aria-hidden />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" onPointerDown={(e) => e.stopPropagation()}>
+              {policy.descriptor.reviewPresets.map((preset) => (
+                <DropdownMenuItem
+                  key={preset.id}
+                  className="text-xs"
+                  onSelect={() => onReview(resolveKindText(preset.prompt))}
+                  data-testid={`kind-review-${preset.id}`}
+                >
+                  {resolveKindText(preset.label)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        {direction && (
+          <button
+            type="button"
+            className={`${ACTION} inline-flex items-center gap-1`}
+            disabled={!canEdit || direction.lockedReasonKey !== null}
+            title={t(direction.lockedReasonKey ?? "diagramKinds.direction.switchHint")}
+            aria-label={t(
+              direction.value === "TB"
+                ? "diagramKinds.direction.toHorizontal"
+                : "diagramKinds.direction.toVertical",
+            )}
+            onClick={() => direction.onChange(direction.value === "TB" ? "LR" : "TB")}
+            data-testid="kind-direction-toggle"
+          >
+            {direction.value === "TB" ? (
+              <ArrowDown className="h-3 w-3" aria-hidden />
+            ) : (
+              <ArrowRight className="h-3 w-3" aria-hidden />
+            )}
+            {t(
+              direction.value === "TB"
+                ? "diagramKinds.direction.vertical"
+                : "diagramKinds.direction.horizontal",
+            )}
+          </button>
         )}
       </div>
     );

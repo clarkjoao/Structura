@@ -119,12 +119,26 @@ function anchorAtEnd(diagram: DiagramModel, reading: GuidedReading): Anchor {
  * exits labelled, open paths converging, jumps to steps written before.
  */
 export function buildOutline(
-  diagram: DiagramModel,
+  source: DiagramModel,
   outline: ParsedOutline,
   selectedIds: readonly string[],
   ctx: KindContext,
 ): OutlineBuild {
   if (outline.errors.length > 0) return { errors: outline.errors };
+  // A Mermaid block's direction starts a journey that is still only its start step
+  // (spec guided-vertical-journeys); an existing journey keeps its own.
+  const turn =
+    outline.direction &&
+    outline.direction !== (source.direction ?? "LR") &&
+    readGuided(source).steps.size <= 1
+      ? outline.direction
+      : undefined;
+  const diagram: DiagramModel =
+    turn === "TB"
+      ? { ...source, direction: "TB" }
+      : turn === "LR"
+        ? (({ direction: _left, ...rest }) => rest)(source)
+        : source;
   if (outline.items.length === 0 && outline.lanes.length === 0)
     return { edit: {}, added: { lanes: 0, steps: 0, decisions: 0 } };
   const reading = readGuided(diagram);
@@ -284,6 +298,13 @@ export function buildOutline(
       ...(connect.length > 0 ? { connect } : {}),
       ...(reconnect.length > 0 ? { reconnect } : {}),
       ...(visibilityLane && guidedSetVisibilityLine(diagram, visibilityLane)),
+      ...(turn && {
+        direction: turn,
+        laneOrientation: reading.lanes.map((lane) => ({
+          id: lane.id,
+          orientation: turn === "TB" ? ("vertical" as const) : ("horizontal" as const),
+        })),
+      }),
     },
     ...(lastKey ? { select: lastKey } : {}),
     added,

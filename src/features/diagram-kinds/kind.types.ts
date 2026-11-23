@@ -84,9 +84,23 @@ export interface KindOverlay {
   /** The band's near edge across the axis (its top on "x"), and its depth. */
   at: number;
   depth: number;
-  segments: Array<{ id: string; label: string; from: number; to: number; selects?: string }>;
+  segments: Array<{
+    id: string;
+    label: string;
+    from: number;
+    to: number;
+    selects?: string;
+    /** Renames the segment in place; an empty name removes it (spec guided-direct-editing). */
+    rename?: (name: string) => KindCommandOutcome | { refused: KindText };
+  }>;
   /** Lines across the lanes at a position along the axis. */
-  separators: Array<{ along: number; from: number; to: number }>;
+  separators: Array<{
+    along: number;
+    from: number;
+    to: number;
+    /** Where the separator may be dragged to, and what dropping there does. */
+    moves?: Array<{ along: number; run: () => KindCommandOutcome | { refused: KindText } }>;
+  }>;
   /**
    * Lines along the axis between two lanes, at `across`, from `from` to `to` along it,
    * labelled on each side (spec guided-journey-blueprint: the line of visibility).
@@ -209,8 +223,16 @@ export interface KindTextCapture {
     ctx: KindContext,
     options?: { handles?: boolean },
   ) => KindTextBase;
+  /** Completions for the line being typed, up to the cursor (spec guided-text-workspace). */
+  suggest?: (diagram: DiagramModel, linePrefix: string) => KindTextSuggestions | null;
   /** Pure: the edit that turns the diagram into `edited`, read against `base`. */
   reconcile?: (ctx: KindCommandContext, base: KindTextBase, edited: string) => KindTextReconcile;
+}
+
+/** Completions for a line: what to insert from `from` (an offset in the line) on. */
+export interface KindTextSuggestions {
+  from: number;
+  items: Array<{ label: string; insert: string }>;
 }
 
 /** A text the kind wrote for the whole diagram, and what it stands for. */
@@ -360,6 +382,8 @@ export interface KindTextFormat {
   id: string;
   label: KindText;
   serialize: (diagram: DiagramModel, ctx: KindContext) => string;
+  /** The format can also be downloaded as a file with this extension and type. */
+  download?: { extension: string; mime: string; label: KindText };
 }
 
 /** A command a kind contributes: a keyboard shortcut and/or a context-menu entry. */
@@ -384,6 +408,15 @@ export interface DiagramKindDescriptor {
   returnLabel: KindText;
   /** Offered in the new-diagram dialog. */
   creatable: boolean;
+  /** Creation offers the reading direction (spec guided-vertical-journeys). */
+  directionChoice?: boolean;
+  /**
+   * Starting points creation offers besides the blank template: text the kind's
+   * capture builds after the template (spec guided-journey-sharing).
+   */
+  templates?: ReadonlyArray<{ id: string; label: KindText; text: KindText }>;
+  /** Tidies a fresh diagram after a template was built on it (guided: drops blank lanes). */
+  tidyTemplate?: (diagram: DiagramModel) => KindEdit | null;
   /** The palette while in kind mode. Empty means the whole palette. */
   elements: readonly KindElementRef[];
   interaction: KindInteraction;
@@ -425,6 +458,22 @@ export interface DiagramKindDescriptor {
   overlay?: (diagram: DiagramModel) => KindOverlay | null;
   /** The kind's inspector tab, offered while in kind mode. */
   inspector?: KindInspector;
+  /**
+   * Scenes to present the diagram by (guided: one per phase, each playing its derived
+   * flow); null or empty when there is nothing to present (spec guided-journey-sharing).
+   */
+  presentation?: (diagram: DiagramModel) => Array<{ label: string; flowId: string }> | null;
+  /** Requests the assistant can be asked about the diagram in one click (guided: reviews). */
+  reviewPresets?: ReadonlyArray<{ id: string; label: KindText; prompt: KindText }>;
+  /**
+   * A name typed for an element in kind mode, read with the kind's shortcuts (guided:
+   * `? `, `! `, `Lane: `): the edit it makes, or null to store the name as typed.
+   */
+  nameCommit?: (
+    ctx: KindCommandContext,
+    elementId: string,
+    text: string,
+  ) => KindCommandOutcome | { refused: KindText } | null;
   /** Whether a component may be dragged/inserted where it is, beyond `elements` (lanes, notes). */
   isAnnotation?: (component: Component) => boolean;
 }

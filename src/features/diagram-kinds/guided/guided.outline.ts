@@ -7,6 +7,8 @@ import {
   writeGuidedOutline,
 } from "./guided.outline.serialize";
 import { reconcileOutline } from "./guided.outline.reconcile";
+import { serializeGuidedDocument } from "./guided.document";
+import { guidedSuggest } from "./guided.suggest";
 import type { OutlineError } from "./guided.outline.parse";
 import { isMermaid, parseMermaid } from "./guided.mermaid.parse";
 import { serializeMermaidJourney, serializeMermaidSwimlane } from "./guided.mermaid.serialize";
@@ -38,6 +40,7 @@ export const guidedTextCapture: KindTextCapture = {
   },
   serialize: serializeGuidedOutline,
   writeBase: (diagram, ctx, options) => writeGuidedOutline(diagram, ctx, options),
+  suggest: guidedSuggest,
   reconcile: (ctx, base, edited) => {
     const result = reconcileOutline(ctx.diagram, base, edited, ctx);
     return "errors" in result ? { errors: textErrors(result.errors) } : result;
@@ -52,6 +55,16 @@ export const guidedTextCapture: KindTextCapture = {
       id: "outline-ids",
       label: { key: "diagramKinds.guided.mermaid.formats.outlineIds" },
       serialize: serializeGuidedOutlineWithIds,
+    },
+    {
+      id: "document",
+      label: { key: "diagramKinds.guided.document.format" },
+      serialize: serializeGuidedDocument,
+      download: {
+        extension: "md",
+        mime: "text/markdown",
+        label: { key: "diagramKinds.guided.document.download" },
+      },
     },
     {
       id: "mermaid-swimlane",

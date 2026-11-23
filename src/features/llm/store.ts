@@ -242,6 +242,12 @@ export interface LLMStoreState {
    */
   generateDiagramFromIR: (description: string, userText: string) => Promise<void>;
   acceptSuggestion: (suggestionId: string) => void;
+  /**
+   * A request waiting for the chat panel to send it with the diagram's context (a kind's
+   * preset, e.g. "Review journey"): queued here, sent when the panel shows.
+   */
+  queuedPrompt: string | null;
+  queuePrompt: (text: string | null) => void;
   /** Ticks or unticks one dependency group of a journey revision (spec guided-assistant-revisions). */
   toggleRevisionGroup: (suggestionId: string, group: string) => void;
   /** Re-reads a pending journey revision's canvas preview against the diagram as it is now. */
@@ -359,6 +365,8 @@ export const useLLMStore = create<LLMStoreState>((set, get) => {
     isLoading: false,
     error: null,
     lastGeneratedIR: null,
+    queuedPrompt: null,
+    queuePrompt: (text) => set({ queuedPrompt: text }),
 
     setLLMConfig: (config) => {
       const { activeConnectionId, connections } = get();

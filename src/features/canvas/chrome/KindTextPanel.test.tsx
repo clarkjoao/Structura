@@ -8,6 +8,10 @@ import { getDiagramKind } from "@/features/diagram-kinds/registry";
 import { useCanvasSelectionStore } from "../hooks/useCanvasSelectionStore";
 import { KindTextPanel } from "./KindTextPanel";
 import { pasteKindText } from "./kindTextCapture";
+import { useCanvasPreferencesStore } from "../preferences";
+import { downloadFile } from "@/lib/export-service/download-file";
+
+vi.mock("@/lib/export-service/download-file", () => ({ downloadFile: vi.fn() }));
 
 registerBuiltInDiagramKinds();
 const capture = getDiagramKind("guided")!.textCapture!;
@@ -204,5 +208,81 @@ describe("KindTextPanel", () => {
     expect(area.value).toContain("Cê");
     expect(screen.queryByTestId("kind-text-stale")).toBeNull();
     vi.useRealTimers();
+  });
+
+  it("downloads the journey as a Markdown document", async () => {
+    vi.useRealTimers();
+    setup();
+    pasteKindText("## Descobrir\nUsuário: A\nB");
+    render(<KindTextPanel capture={capture} disabled={false} />);
+    fireEvent.click(screen.getByTestId("kind-text-open"));
+    fireEvent.pointerDown(screen.getByTestId("kind-text-copy"), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
+    });
+    fireEvent.click(await screen.findByTestId("kind-text-download-document"));
+    const [text, filename, mime] = vi.mocked(downloadFile).mock.lastCall!;
+    expect(text).toContain("## Descobrir");
+    expect(filename).toMatch(/\.md$/);
+    expect(mime).toBe("text/markdown");
+  });
+
+  describe("docked", () => {
+    beforeEach(() => useCanvasPreferencesStore.setState({ textDock: false, textDockWidth: 380 }));
+
+    it("docks, stays open without a popover, clamps its width, and undocks", () => {
+      withSteps();
+      render(<KindTextPanel capture={capture} disabled={false} />);
+      fireEvent.click(screen.getByTestId("kind-text-open"));
+      fireEvent.click(screen.getByTestId("kind-text-dock"));
+      expect(useCanvasPreferencesStore.getState().textDock).toBe(true);
+      expect(screen.getByTestId("kind-text-dock")).toBeInTheDocument();
+      expect(screen.getByTestId("kind-text-journey")).toBeInTheDocument();
+      useCanvasPreferencesStore.getState().setTextDockWidth(2000);
+      expect(useCanvasPreferencesStore.getState().textDockWidth).toBe(640);
+      fireEvent.click(screen.getByTestId("kind-text-undock"));
+      expect(useCanvasPreferencesStore.getState().textDock).toBe(false);
+      vi.useRealTimers();
+    });
+
+    it("links the caret's line to its step and the selected step to its line", () => {
+      const { d } = withSteps();
+      useCanvasPreferencesStore.setState({ textDock: true });
+      const onFocusStep = vi.fn();
+      render(<KindTextPanel capture={capture} disabled={false} onFocusStep={onFocusStep} />);
+      const area = screen.getByTestId("kind-text-journey") as HTMLTextAreaElement;
+      const offset = area.value.indexOf("\nB\n") + 2;
+      area.setSelectionRange(offset, offset);
+      fireEvent.click(area);
+      act(() => vi.advanceTimersByTime(200));
+      expect(onFocusStep).toHaveBeenCalledWith(idOf(d, "B"));
+      act(() => {
+        useCanvasSelectionStore.getState().setSelectedNodeId(idOf(d, "C")!);
+      });
+      const line = area.value.split("\n").indexOf("C") + 1;
+      const row = screen.getByTestId("kind-text-gutter").querySelector(`[data-line="${line}"]`)!;
+      expect(row.className).toContain("bg-primary/15");
+      vi.useRealTimers();
+    });
+
+    it("completes a jump, closes the list with Esc, and marks error lines", () => {
+      withSteps();
+      useCanvasPreferencesStore.setState({ textDock: true });
+      render(<KindTextPanel capture={capture} disabled={false} />);
+      const area = screen.getByTestId("kind-text-journey") as HTMLTextAreaElement;
+      const text = `${area.value}-> @`;
+      fireEvent.change(area, { target: { value: text } });
+      area.setSelectionRange(text.length, text.length);
+      fireEvent.keyUp(area, { key: "@" });
+      expect(screen.getByTestId("kind-text-suggestions")).toBeInTheDocument();
+      fireEvent.keyDown(area, { key: "Escape" });
+      expect(screen.queryByTestId("kind-text-suggestions")).toBeNull();
+      const broken = `${area.value.replace(/-> @$/, "")}-> @Nowhere`;
+      fireEvent.change(area, { target: { value: broken } });
+      act(() => vi.advanceTimersByTime(200));
+      expect(screen.getAllByTestId("kind-text-gutter-error").length).toBeGreaterThan(0);
+      vi.useRealTimers();
+    });
   });
 });

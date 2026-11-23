@@ -60,6 +60,8 @@ export interface KindEdit {
   reparent?: Array<{ id: string; parent: string | null; x: number; y: number }>;
   relabel?: Array<{ id: string; label: string }>;
   flows?: { set?: Flow[]; remove?: string[] };
+  /** Sets the diagram's reading direction (a guided journey started from a vertical Mermaid block). */
+  direction?: "LR" | "TB";
   /** Replaces the diagram's kind data; a top-level string naming an added node's key becomes its id. */
   kindData?: JsonObject;
 }
@@ -85,6 +87,7 @@ export function isEmptyKindEdit(edit: KindEdit): boolean {
     !edit.laneOrientation?.length &&
     !edit.flows?.set?.length &&
     !edit.flows?.remove?.length &&
-    edit.kindData === undefined
+    edit.kindData === undefined &&
+    edit.direction === undefined
   );
 }

@@ -230,6 +230,25 @@ describe("the inspector in guided mode", () => {
     expect(screen.getByText("Description")).toBeInTheDocument();
   });
 
+  it("reads the name shortcuts typed in the title", () => {
+    const { d, startId } = setup();
+    const run = (id: string) => {
+      const item = kindMenuItemsFor(d(), id, [id]).find((i) => i.id === "guided.next")!;
+      item.onSelect();
+    };
+    run(startId);
+    const stepId = [...readGuided(d()).steps.keys()].find((id) => id !== startId)!;
+    renderPanel(d().snapshot.components[stepId]!);
+    const title = screen.getByRole("textbox", { name: "Name" });
+    fireEvent.focus(title);
+    fireEvent.change(title, { target: { value: "System: ? Valid?" } });
+    fireEvent.blur(title);
+    const step = readGuided(d()).steps.get(stepId)!;
+    expect(step.name).toBe("Valid?");
+    expect(step.flowShape).toBe("diamond");
+    expect(readGuided(d()).laneOf.get(stepId)).toBe(readGuided(d()).lanes[1]!.id);
+  });
+
   it("has no Journey tab when the diagram is edited freehand", () => {
     const { d, startId } = setup();
     useDiagramStore.getState().setKindMode(d().id, "freehand");

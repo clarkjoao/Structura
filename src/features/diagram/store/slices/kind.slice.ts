@@ -192,6 +192,9 @@ function applyKindEditInDraft(state: AppState, d: Diagram, edit: KindEdit): Kind
   for (const id of edit.flows?.remove ?? []) delete d.snapshot.flows[id];
   for (const flow of edit.flows?.set ?? []) d.snapshot.flows[flow.id] = flow;
 
+  // Left to right is the default: stored as no direction.
+  if (edit.direction === "TB") d.direction = "TB";
+  else if (edit.direction === "LR") delete d.direction;
   if (edit.kindData !== undefined) {
     // A value naming a node added by this edit (its key) is that node's new id.
     d.kindData = Object.fromEntries(

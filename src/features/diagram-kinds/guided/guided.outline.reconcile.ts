@@ -16,7 +16,7 @@ import {
   readGuided,
   visibilityLaneOf,
 } from "./guided.model";
-import { alignLines } from "./guided.outline.align";
+import { alignLines } from "../textAlign";
 import { mergeKindEdits } from "../kindEditMerge";
 import {
   type OutlineError,

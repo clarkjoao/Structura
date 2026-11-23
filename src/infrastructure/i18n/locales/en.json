@@ -959,7 +959,8 @@
     "laneLabel": "Lane label",
     "orientation": "Orientation",
     "horizontal": "Horizontal",
-    "vertical": "Vertical"
+    "vertical": "Vertical",
+    "renameHint": "Double-click to rename the lane"
   },
   "dbTable": {
     "panelTitle": "Database table",
@@ -3785,7 +3786,9 @@
         "noPhase": "No phase",
         "create": "Create phase “{{name}}”",
         "continuePrevious": "Continue the previous phase",
-        "remove": "Remove the phase"
+        "remove": "Remove the phase",
+        "renameHint": "Double-click to rename the phase",
+        "moveHint": "Drag to move where the next phase starts"
       },
       "text": {
         "changes": {
@@ -3826,6 +3829,51 @@
         "removeParticipant": "Remove {{name}}",
         "participantsSearch": "A lane or a new name…",
         "noParticipants": "Only the lane acts"
+      },
+      "document": {
+        "format": "Document (Markdown)",
+        "download": "Download document (.md)",
+        "beforePhases": "Before the phases",
+        "decision": "Decision",
+        "end": "End",
+        "backTo": "back to {{name}}"
+      },
+      "review": {
+        "errorPaths": {
+          "label": "Missing error paths",
+          "prompt": "Review this journey for missing error paths: where can a step fail (payment refused, timeout, invalid data) without a branch that handles it? Propose a revision that adds the missing branches."
+        },
+        "handoffs": {
+          "label": "Handoffs without an owner",
+          "prompt": "Review the handoffs between lanes in this journey: where does work pass from one lane to another without a step that clearly owns the handoff? Propose a revision that makes each handoff explicit."
+        },
+        "negativeExits": {
+          "label": "Decisions without a negative exit",
+          "prompt": "Review the decisions in this journey: which ones lack an exit for the negative or unexpected answer? Propose a revision that adds those exits and where they lead."
+        },
+        "customerLanguage": {
+          "label": "Customer language",
+          "prompt": "Rewrite this journey's step names in the customer's own words, short and as verbs, keeping its structure. Propose it as a revision."
+        }
+      },
+      "templates": {
+        "checkout": {
+          "label": "Checkout",
+          "text": "Customer:\nStore:\nPayments:\n## Choose\nCustomer: Browses products\nAdds to cart\n## Pay\nReviews the order\nStore: Creates the charge\nPayments: ? Approved\n  yes -> Store: Confirms the order\n  no -> Customer: Tries another method\n    -> @Reviews the order\n## Receive\nStore: Ships the order\nCustomer: ! Receives the order"
+        },
+        "onboarding": {
+          "label": "Onboarding",
+          "text": "Customer:\nApp:\nTeam:\n## Sign up\nCustomer: Signs up\nApp: Sends confirmation e-mail\nCustomer: Confirms the e-mail\n## First use\nApp: Shows the guided tour\nCustomer: ? Finishes the tour\n  yes -> Creates the first project\n  no -> Team: Offers help\n    Customer: Creates the first project\n## Adoption\nApp: Suggests next steps\nCustomer: ! Uses it every week"
+        },
+        "support": {
+          "label": "Support ticket",
+          "text": "Customer:\nSupport:\nEngineering:\n## Report\nCustomer: Opens a ticket\nSupport: Triages the ticket\n## Solve\n? Known issue\n  yes -> Sends the solution\n  no -> Engineering: Investigates\n    Fixes the problem\n    Support: Sends the solution\n## Close\nCustomer: ? Problem solved\n  yes -> ! Closes the ticket\n  no -> @Triages the ticket"
+        },
+        "blank": "Blank",
+        "notes": "Paste meeting notes",
+        "notesPlaceholder": "Paste the notes; the assistant builds the journey from them.",
+        "notesPrompt": "Build the journey from these meeting notes, with lanes for who acts, phases for the stages, and decisions where the notes say it depends:\n\n{{notes}}",
+        "choice": "Start from"
       }
     },
     "toolbar": {
@@ -3838,6 +3886,22 @@
     },
     "overlay": {
       "exportLayer": "Phases"
+    },
+    "direction": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "toHorizontal": "Switch to horizontal (lanes as rows)",
+      "toVertical": "Switch to vertical (lanes as columns)",
+      "switchHint": "Re-arranges the journey in the other direction. Undo puts it back.",
+      "choice": "Direction",
+      "horizontalChoice": "Horizontal (lanes as rows)",
+      "verticalChoice": "Vertical (lanes as columns)"
+    },
+    "present": "Present by phase",
+    "review": "Review journey",
+    "text": {
+      "dock": "Dock beside the canvas",
+      "undock": "Undock"
     }
   }
 }

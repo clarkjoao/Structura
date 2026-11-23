@@ -39,6 +39,13 @@ import {
 } from "./sections";
 import { ElementTypeSelect } from "./sections/ElementTypeSelect";
 import { KindInspectorTab } from "./components/KindInspectorTab";
+import { commitKindName } from "../../chrome/kindElementActions";
+import { useDiagramStore } from "@/features/diagram/store/diagram.store";
+
+const currentDiagram = () => {
+  const state = useDiagramStore.getState();
+  return state.activeDiagramId ? state.diagrams[state.activeDiagramId] : null;
+};
 import { kindInspectorFor } from "@/features/diagram-kinds/inspector";
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import { BoundarySections } from "./sections/BoundarySection";
@@ -258,9 +265,11 @@ const ComponentPanel = ({
         typeLabel={kindTypeLabel ?? identity.typeLabel}
         name={headerName}
         namePlaceholder={namePlaceholder}
-        onCommitName={(value) =>
-          editFields(isDbTable ? { name: value, tableName: value } : { name: value })
-        }
+        onCommitName={(value) => {
+          // A kind reads its shortcuts in the name first (guided: `? `, `! `, `Lane: `).
+          if (component && commitKindName(currentDiagram(), component.id, value)) return;
+          editFields(isDbTable ? { name: value, tableName: value } : { name: value });
+        }}
         nameInputRef={titleInputRef}
         textLock={textLock}
         trail={trail}

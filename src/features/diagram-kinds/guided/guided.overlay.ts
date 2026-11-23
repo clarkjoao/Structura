@@ -1,8 +1,9 @@
 import type { DiagramModel } from "@/features/diagram/model/diagram.types";
 import { getCachedCanvasSnapshot } from "@/features/diagram/utils/snapshot-cache";
 import type { KindOverlay } from "../kind.types";
-import { LANE_HEADER } from "./guided.geometry";
-import { readGuided, visibilityLaneOf } from "./guided.model";
+import { COLUMN_GAP, LANE_HEADER } from "./guided.geometry";
+import { guidedMovePhaseStart, guidedSetPhaseStart } from "./guided.edits";
+import { readGuided, readingOrder, visibilityLaneOf } from "./guided.model";
 import { guidedPhases } from "./guided.phases";
 
 /** The header band's depth, and its gap to the lanes. */
@@ -87,7 +88,26 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
       known ? { from: Math.min(known.from, s.from), to: Math.max(known.to, s.to) } : s,
     );
   }
-  const boundaries: number[] = [];
+  const boundaries: Array<{ along: number; phase: number }> = [];
+  // Where a phase's start may move: the steps after the previous start and before the next,
+  // each at the gap before its own column (spec guided-direct-editing).
+  const order = readingOrder(reading).filter((id) => id !== reading.starts[0]?.id);
+  const moveTargets = (index: number) => {
+    const startAt = order.indexOf(phases[index]!.startId);
+    const previous = index > 0 ? order.indexOf(phases[index - 1]!.startId) : -1;
+    const next =
+      index + 1 < phases.length ? order.indexOf(phases[index + 1]!.startId) : order.length;
+    return order.slice(previous + 1, next).flatMap((id, offset) => {
+      const s = span(id);
+      if (!s || previous + 1 + offset === startAt) return [];
+      return [
+        {
+          along: s.from - COLUMN_GAP / 2,
+          run: () => guidedMovePhaseStart(diagram, phases[index]!.startId, id),
+        },
+      ];
+    });
+  };
   const segments: KindOverlay["segments"] = [];
   phases.forEach((phase, index) => {
     const own = extent.get(index);
@@ -100,13 +120,15 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
         : index === 0
           ? alongStart
           : (own?.from ?? alongStart);
-    if (before !== null) boundaries.push(from);
+    if (before !== null) boundaries.push({ along: from, phase: index });
     segments.push({
       id: phase.startId,
       label: phase.name,
       from,
       to: alongEnd,
       selects: phase.startId,
+      // Edited in place on the band (spec guided-direct-editing).
+      rename: (name) => guidedSetPhaseStart(diagram, phase.startId, name),
     });
     if (index > 0) segments[index - 1]!.to = from;
   });
@@ -117,7 +139,12 @@ export function guidedOverlay(diagram: DiagramModel): KindOverlay | null {
     at: acrossStart - BAND_GAP - depth,
     depth,
     segments,
-    separators: boundaries.map((b) => ({ along: b, from: acrossStart, to: acrossEnd })),
+    separators: boundaries.map((b) => ({
+      along: b.along,
+      from: acrossStart,
+      to: acrossEnd,
+      moves: moveTargets(b.phase),
+    })),
     ...(lines.length > 0 && { lines }),
   };
 }

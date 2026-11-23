@@ -77,3 +77,73 @@ describe("KindModeBar", () => {
     expect(screen.getByRole("status").textContent).toContain("acme:value-stream");
   });
 });
+
+describe("KindModeBar direction", () => {
+  it("switches the direction through the given switch, and is locked with its reason", () => {
+    const id = guided();
+    const onChange = vi.fn();
+    const diagram = useDiagramStore.getState().diagrams[id]!;
+    const view = render(
+      <KindModeBar
+        diagram={diagram}
+        canEdit
+        onSelectElement={vi.fn()}
+        direction={{ value: "LR", onChange, lockedReasonKey: null }}
+      />,
+    );
+    const toggle = screen.getByTestId("kind-direction-toggle");
+    expect(toggle).toHaveTextContent("Horizontal");
+    fireEvent.click(toggle);
+    expect(onChange).toHaveBeenCalledWith("TB");
+    view.rerender(
+      <KindModeBar
+        diagram={diagram}
+        canEdit
+        onSelectElement={vi.fn()}
+        direction={{
+          value: "TB",
+          onChange,
+          lockedReasonKey: "canvasToolbar.arrange.directionLockedSession",
+        }}
+      />,
+    );
+    expect(screen.getByTestId("kind-direction-toggle")).toBeDisabled();
+    expect(screen.getByTestId("kind-direction-toggle")).toHaveTextContent("Vertical");
+  });
+});
+
+describe("KindModeBar present and review", () => {
+  it("offers Present by phase only with phases, and the review presets", async () => {
+    const { applyKindTextBuild, buildKindText } = await import("./kindTextCapture");
+    const id = guided();
+    const onPresent = vi.fn();
+    const onReview = vi.fn();
+    const bar = () => (
+      <KindModeBar
+        diagram={useDiagramStore.getState().diagrams[id]!}
+        canEdit
+        onSelectElement={vi.fn()}
+        onPresent={onPresent}
+        onReview={onReview}
+      />
+    );
+    const view = render(bar());
+    expect(screen.queryByTestId("kind-present")).toBeNull();
+    const built = buildKindText("## Discover\nUsuário: A\n## Buy\nB");
+    if (!built || !("edit" in built)) throw new Error("no build");
+    applyKindTextBuild(built);
+    // The canvas's kind watcher derives the phase flows; here it is done by hand.
+    const { getDiagramKind } = await import("@/features/diagram-kinds/registry");
+    const { kindContextFor } = await import("@/features/diagram-kinds/context");
+    const d = useDiagramStore.getState().diagrams[id]!;
+    const derived = getDiagramKind("guided")!.derive!(d, kindContextFor(d));
+    if (derived) useDiagramStore.getState().applyKindEdit(derived, { history: false });
+    view.rerender(bar());
+    fireEvent.click(screen.getByTestId("kind-present"));
+    expect(onPresent).toHaveBeenCalled();
+    const trigger = screen.getByTestId("kind-review");
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
+    fireEvent.click(await screen.findByTestId("kind-review-errorPaths"));
+    expect(onReview).toHaveBeenCalledWith(expect.stringMatching(/error paths|caminhos de erro/i));
+  });
+});

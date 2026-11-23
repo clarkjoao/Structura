@@ -959,7 +959,8 @@
     "laneLabel": "Rótulo da faixa",
     "orientation": "Orientação",
     "horizontal": "Horizontal",
-    "vertical": "Vertical"
+    "vertical": "Vertical",
+    "renameHint": "Clique duas vezes para renomear a raia"
   },
   "dbTable": {
     "panelTitle": "Tabela de banco de dados",
@@ -3785,7 +3786,9 @@
         "noPhase": "Sem fase",
         "create": "Criar fase “{{name}}”",
         "continuePrevious": "Continuar a fase anterior",
-        "remove": "Remover a fase"
+        "remove": "Remover a fase",
+        "renameHint": "Clique duas vezes para renomear a fase",
+        "moveHint": "Arraste para mudar onde a próxima fase começa"
       },
       "text": {
         "changes": {
@@ -3826,6 +3829,51 @@
         "removeParticipant": "Remover {{name}}",
         "participantsSearch": "Uma raia ou um nome novo…",
         "noParticipants": "Só a raia participa"
+      },
+      "document": {
+        "format": "Documento (Markdown)",
+        "download": "Baixar documento (.md)",
+        "beforePhases": "Antes das fases",
+        "decision": "Decisão",
+        "end": "Fim",
+        "backTo": "volta para {{name}}"
+      },
+      "review": {
+        "errorPaths": {
+          "label": "Caminhos de erro que faltam",
+          "prompt": "Revise esta jornada procurando caminhos de erro que faltam: onde um passo pode falhar (pagamento recusado, tempo esgotado, dado inválido) sem uma saída que trate isso? Proponha uma revisão que adicione esses caminhos."
+        },
+        "handoffs": {
+          "label": "Passagens sem dono",
+          "prompt": "Revise as passagens entre raias desta jornada: onde o trabalho passa de uma raia para outra sem um passo que assuma claramente a passagem? Proponha uma revisão que deixe cada passagem explícita."
+        },
+        "negativeExits": {
+          "label": "Decisões sem saída negativa",
+          "prompt": "Revise as decisões desta jornada: quais não têm saída para a resposta negativa ou inesperada? Proponha uma revisão que adicione essas saídas e para onde elas levam."
+        },
+        "customerLanguage": {
+          "label": "Linguagem do cliente",
+          "prompt": "Reescreva os nomes dos passos desta jornada nas palavras do cliente, curtos e como verbos, mantendo a estrutura. Proponha como revisão."
+        }
+      },
+      "templates": {
+        "checkout": {
+          "label": "Checkout",
+          "text": "Cliente:\nLoja:\nPagamentos:\n## Escolher\nCliente: Navega pelos produtos\nAdiciona ao carrinho\n## Pagar\nRevisa o pedido\nLoja: Gera a cobrança\nPagamentos: ? Aprovado\n  sim -> Loja: Confirma o pedido\n  não -> Cliente: Tenta outro meio\n    -> @Revisa o pedido\n## Receber\nLoja: Envia o pedido\nCliente: ! Recebe o pedido"
+        },
+        "onboarding": {
+          "label": "Onboarding",
+          "text": "Cliente:\nApp:\nTime:\n## Cadastro\nCliente: Cria a conta\nApp: Envia e-mail de confirmação\nCliente: Confirma o e-mail\n## Primeiro uso\nApp: Mostra o tour guiado\nCliente: ? Termina o tour\n  sim -> Cria o primeiro projeto\n  não -> Time: Oferece ajuda\n    Cliente: Cria o primeiro projeto\n## Adoção\nApp: Sugere próximos passos\nCliente: ! Usa toda semana"
+        },
+        "support": {
+          "label": "Atendimento",
+          "text": "Cliente:\nSuporte:\nEngenharia:\n## Relato\nCliente: Abre um chamado\nSuporte: Faz a triagem\n## Solução\n? Problema conhecido\n  sim -> Envia a solução\n  não -> Engenharia: Investiga\n    Corrige o problema\n    Suporte: Envia a solução\n## Encerramento\nCliente: ? Problema resolvido\n  sim -> ! Encerra o chamado\n  não -> @Faz a triagem"
+        },
+        "blank": "Em branco",
+        "notes": "Colar notas de reunião",
+        "notesPlaceholder": "Cole as notas; o assistente monta a jornada a partir delas.",
+        "notesPrompt": "Monte a jornada a partir destas notas de reunião, com raias para quem age, fases para as etapas e decisões onde as notas dizem que depende:\n\n{{notes}}",
+        "choice": "Começar de"
       }
     },
     "toolbar": {
@@ -3838,6 +3886,22 @@
     },
     "overlay": {
       "exportLayer": "Fases"
+    },
+    "direction": {
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "toHorizontal": "Mudar para horizontal (raias em linhas)",
+      "toVertical": "Mudar para vertical (raias em colunas)",
+      "switchHint": "Reorganiza a jornada na outra direção. Desfazer volta como estava.",
+      "choice": "Direção",
+      "horizontalChoice": "Horizontal (raias em linhas)",
+      "verticalChoice": "Vertical (raias em colunas)"
+    },
+    "present": "Apresentar por fase",
+    "review": "Revisar jornada",
+    "text": {
+      "dock": "Fixar ao lado do canvas",
+      "undock": "Desacoplar"
     }
   }
 }

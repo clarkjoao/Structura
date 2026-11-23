@@ -7,8 +7,10 @@ import { guidedElementActions } from "./guided.elementActions";
 import { guidedConforms } from "./guided.conforms";
 import { guidedTextCapture } from "./guided.outline";
 import { guidedInspector } from "./guided.inspector";
+import { guidedNameCommit } from "./guided.names";
+import { guidedPhases } from "./guided.phases";
 import { guidedOverlay } from "./guided.overlay";
-import { deriveGuidedFlow, guidedFlowId } from "./guided.derive";
+import { deriveGuidedFlow, guidedFlowId, guidedPhaseFlowIds } from "./guided.derive";
 import {
   guidedAddBranch,
   guidedAddNext,
@@ -17,6 +19,7 @@ import {
   guidedLabelExit,
   guidedInsertStep,
   guidedMoveToLane,
+  guidedTidyTemplate,
 } from "./guided.edits";
 import {
   GUIDED_KIND_ID,
@@ -112,6 +115,7 @@ export const guidedKind: DiagramKindDescriptor = {
   description: { key: "diagramKinds.guided.description" },
   returnLabel: { key: "diagramKinds.guided.return" },
   creatable: true,
+  directionChoice: true,
   elements: GUIDED_STEP_SHAPES.map((flowShape) => ({
     type: COMPONENT_TYPE_PROCESS_NODE,
     flowShape,
@@ -131,7 +135,7 @@ export const guidedKind: DiagramKindDescriptor = {
   derive: deriveGuidedFlow,
   derivedFlowIds: (diagram) => {
     const id = guidedFlowId(diagram);
-    return id ? [id] : [];
+    return [...(id ? [id] : []), ...Object.values(guidedPhaseFlowIds(diagram))];
   },
   arrange: arrangeGuided,
   arrangeKey: guidedArrangeKey,
@@ -140,6 +144,26 @@ export const guidedKind: DiagramKindDescriptor = {
   elementActions: guidedElementActions,
   textCapture: guidedTextCapture,
   inspector: guidedInspector,
+  nameCommit: guidedNameCommit,
+  tidyTemplate: guidedTidyTemplate,
+  templates: ["checkout", "onboarding", "support"].map((id) => ({
+    id,
+    label: { key: `diagramKinds.guided.templates.${id}.label` },
+    text: { key: `diagramKinds.guided.templates.${id}.text` },
+  })),
+  reviewPresets: ["errorPaths", "handoffs", "negativeExits", "customerLanguage"].map((id) => ({
+    id,
+    label: { key: `diagramKinds.guided.review.${id}.label` },
+    prompt: { key: `diagramKinds.guided.review.${id}.prompt` },
+  })),
+  presentation: (diagram) => {
+    const flows = guidedPhaseFlowIds(diagram);
+    return guidedPhases(readGuided(diagram))
+      .phases.filter(
+        (phase) => flows[phase.startId] && diagram.snapshot.flows[flows[phase.startId]!],
+      )
+      .map((phase) => ({ label: phase.name, flowId: flows[phase.startId]! }));
+  },
   overlay: guidedOverlay,
   insert: (ctx, element) =>
     guidedInsertStep(ctx.diagram, ctx.selectedIds, element.flowShape ?? "rectangle", ctx),

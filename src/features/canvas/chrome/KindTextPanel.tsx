@@ -1,6 +1,17 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Copy, TextCursorInput } from "lucide-react";
+import {
+  ChevronDown,
+  Copy,
+  Download,
+  PanelLeft,
+  PanelLeftClose,
+  TextCursorInput,
+} from "lucide-react";
+import { useCanvasPreferencesStore } from "../preferences";
+import { alignLines } from "@/features/diagram-kinds/textAlign";
+import { KindJourneyEditor } from "./KindJourneyEditor";
+import { downloadFile } from "@/lib/export-service/download-file";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -72,13 +83,23 @@ function ErrorList({ errors }: { errors: readonly KindTextError[] }) {
 export function KindTextPanel({
   capture,
   disabled,
+  onFocusStep,
 }: {
   capture: KindTextCapture;
   disabled: boolean;
+  /** Selects a step and brings it into view (the cursor resting on its line). */
+  onFocusStep?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const whole = Boolean(capture.writeBase && capture.reconcile);
   const [open, setOpen] = useState(false);
+  // Docked beside the canvas, the panel stays open while the canvas is used (spec
+  // guided-text-workspace); popped over, it closes on a canvas click.
+  const docked = useCanvasPreferencesStore((s) => s.textDock);
+  const setDocked = useCanvasPreferencesStore((s) => s.setTextDock);
+  const dockWidth = useCanvasPreferencesStore((s) => s.textDockWidth);
+  const setDockWidth = useCanvasPreferencesStore((s) => s.setTextDockWidth);
+  const active = open || docked;
   const [mode, setMode] = useState<"journey" | "insert">(whole ? "journey" : "insert");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   // The checks depend on the diagram and the selection too (where the text goes, jump targets).
@@ -92,14 +113,14 @@ export function KindTextPanel({
   const [text, setText] = useState("");
   const [result, setResult] = useState<KindTextResult | null>(null);
   useEffect(() => {
-    if (!open || journey) return;
+    if (!active || journey) return;
     if (!text.trim()) {
       setResult(null);
       return;
     }
     const timer = setTimeout(() => setResult(buildKindText(text)), CHECK_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [open, journey, text, diagramVersion, selection]);
+  }, [active, journey, text, diagramVersion, selection]);
   const insertErrors = result && "errors" in result ? result.errors : [];
   const insertReady = result !== null && !("errors" in result);
   const insert = () => {
@@ -130,21 +151,56 @@ export function KindTextPanel({
     setReview(null);
   };
   useEffect(() => {
-    if (!open || !journey) return;
+    if (!active || !journey) return;
     const current = baseRef.current;
     // Untouched, the text follows the diagram; edited, the edit is kept and flagged.
     if (current && draftRef.current !== current.text) setStale(true);
     else rebase();
-  }, [open, journey, diagramVersion]);
+  }, [active, journey, diagramVersion]);
   const dirty = base !== null && draft !== base.text;
   useEffect(() => {
-    if (!open || !journey || !base || !dirty) {
+    if (!active || !journey || !base || !dirty) {
       setReview(null);
       return;
     }
     const timer = setTimeout(() => setReview(reconcileKindText(base, draft)), CHECK_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [open, journey, base, draft, dirty, diagramVersion]);
+  }, [active, journey, base, draft, dirty, diagramVersion]);
+  // Which step each line stands for: the written lines as they are, an edited draft
+  // through the same alignment applying uses.
+  const lineIds = useMemo(() => {
+    if (!base) return [] as (string | null)[];
+    if (!dirty) return [...base.lineIds];
+    const lines = draft.split("\n");
+    const aligned = alignLines(
+      base.text.split("\n"),
+      base.lineIds,
+      lines,
+      new Set(lines.map((_, i) => i + 1)),
+    );
+    return lines.map((_, i) => aligned.get(i + 1) ?? null);
+  }, [base, draft, dirty]);
+  const selectedNodeId = useCanvasSelectionStore((s) => s.selectedNodeId);
+  const highlightLine = useMemo(() => {
+    const index = selectedNodeId ? lineIds.indexOf(selectedNodeId) : -1;
+    return index >= 0 ? index + 1 : null;
+  }, [lineIds, selectedNodeId]);
+  const caretTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(caretTimer.current), []);
+  const onCaretLine = (line: number) => {
+    clearTimeout(caretTimer.current);
+    caretTimer.current = setTimeout(() => {
+      const id = lineIds[line - 1];
+      if (id && id !== useCanvasSelectionStore.getState().selectedNodeId) onFocusStep?.(id);
+    }, CHECK_DELAY_MS);
+  };
+  const suggest = capture.suggest
+    ? (linePrefix: string) => {
+        const state = useDiagramStore.getState();
+        const diagram = state.activeDiagramId ? state.diagrams[state.activeDiagramId] : undefined;
+        return diagram ? capture.suggest!(diagram, linePrefix) : null;
+      }
+    : undefined;
   const journeyErrors = review && "errors" in review ? review.errors : [];
   const changes = review && !("errors" in review) ? review.changes : [];
   const added = changes.filter((c) => c.kind === "add").length;
@@ -183,6 +239,17 @@ export function KindTextPanel({
     }
   };
 
+  /** A format offered as a file too (the journey as a document). */
+  const download = (formatId: string) => {
+    const format = capture.formats?.find((f) => f.id === formatId);
+    const text = serializeKindText(formatId);
+    if (!format?.download || text === null) return;
+    const state = useDiagramStore.getState();
+    const name = state.activeDiagramId ? state.diagrams[state.activeDiagramId]?.name : undefined;
+    const base = (name ?? "journey").trim().replace(/[\\/:*?"<>|]+/g, "-") || "journey";
+    downloadFile(text, `${base}.${format.download.extension}`, format.download.mime);
+  };
+
   const tab = (value: "journey" | "insert", label: string) => (
     <button
       type="button"
@@ -199,41 +266,40 @@ export function KindTextPanel({
     </button>
   );
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={`${ACTION} inline-flex items-center gap-1`}
-          disabled={disabled}
-          title={t("diagramKinds.guided.outline.openHint")}
-          data-testid="kind-text-open"
-        >
-          <TextCursorInput className="h-3 w-3" aria-hidden />
-          {t("diagramKinds.guided.outline.open")}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-[min(100vw-2rem,30rem)] p-3"
-        onOpenAutoFocus={(event) => {
-          event.preventDefault();
-          textareaRef.current?.focus();
-        }}
-        onPointerDown={(event) => event.stopPropagation()}
-        data-testid="kind-text-panel"
-      >
-        <div className="mb-2 flex items-center justify-between gap-2">
-          {whole ? (
-            <div role="tablist" className="flex items-center gap-1">
-              {tab("journey", t("diagramKinds.guided.text.journey"))}
-              {tab("insert", t("diagramKinds.guided.text.insert"))}
-            </div>
-          ) : (
-            <p className="text-xs font-semibold text-foreground">
-              {t("diagramKinds.guided.outline.title")}
-            </p>
-          )}
+  const dockToggle = (
+    <button
+      type="button"
+      className={`${ACTION} inline-flex items-center gap-1`}
+      onClick={() => {
+        setDocked(!docked);
+        setOpen(false);
+      }}
+      title={t(docked ? "diagramKinds.text.undock" : "diagramKinds.text.dock")}
+      aria-label={t(docked ? "diagramKinds.text.undock" : "diagramKinds.text.dock")}
+      data-testid={docked ? "kind-text-undock" : "kind-text-dock"}
+    >
+      {docked ? (
+        <PanelLeftClose className="h-3 w-3" aria-hidden />
+      ) : (
+        <PanelLeft className="h-3 w-3" aria-hidden />
+      )}
+    </button>
+  );
+  const body = (
+    <>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        {whole ? (
+          <div role="tablist" className="flex items-center gap-1">
+            {tab("journey", t("diagramKinds.guided.text.journey"))}
+            {tab("insert", t("diagramKinds.guided.text.insert"))}
+          </div>
+        ) : (
+          <p className="text-xs font-semibold text-foreground">
+            {t("diagramKinds.guided.outline.title")}
+          </p>
+        )}
+        <div className="flex items-center gap-1">
+          {dockToggle}
           {capture.formats && capture.formats.length > 1 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -258,6 +324,19 @@ export function KindTextPanel({
                     {resolveKindText(format.label)}
                   </DropdownMenuItem>
                 ))}
+                {capture.formats
+                  .filter((format) => format.download)
+                  .map((format) => (
+                    <DropdownMenuItem
+                      key={`download-${format.id}`}
+                      onSelect={() => download(format.id)}
+                      className="text-xs"
+                      data-testid={`kind-text-download-${format.id}`}
+                    >
+                      <Download className="mr-1 h-3 w-3" aria-hidden />
+                      {resolveKindText(format.download!.label)}
+                    </DropdownMenuItem>
+                  ))}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -272,139 +351,213 @@ export function KindTextPanel({
             </button>
           )}
         </div>
+      </div>
 
-        {journey ? (
-          <>
-            {stale && (
-              <div
-                role="status"
-                className="mb-2 flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] text-foreground"
-                data-testid="kind-text-stale"
+      {journey ? (
+        <>
+          {stale && (
+            <div
+              role="status"
+              className="mb-2 flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-[11px] text-foreground"
+              data-testid="kind-text-stale"
+            >
+              <span>{t("diagramKinds.guided.text.stale")}</span>
+              <button
+                type="button"
+                className={ACTION}
+                onClick={rebase}
+                data-testid="kind-text-reload"
               >
-                <span>{t("diagramKinds.guided.text.stale")}</span>
+                {t("diagramKinds.guided.text.reload")}
+              </button>
+            </div>
+          )}
+          <KindJourneyEditor
+            value={draft}
+            onChange={setDraft}
+            onKeyDown={onKeyDown}
+            textareaRef={textareaRef}
+            errorsByLine={
+              new Map(
+                journeyErrors.map((error) => [
+                  error.line,
+                  resolveKindText(error.message, error.values),
+                ]),
+              )
+            }
+            highlightLine={highlightLine}
+            onCaretLine={onCaretLine}
+            {...(suggest && { suggest })}
+            ariaLabel={t("diagramKinds.guided.text.journey")}
+            invalid={journeyErrors.length > 0}
+            rows={docked ? 16 : 14}
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {resolveKindText(capture.syntax)}
+          </p>
+          <ErrorList errors={journeyErrors} />
+          {showReview && changes.length > 0 && (
+            <ul
+              className="mt-2 max-h-40 space-y-0.5 overflow-y-auto rounded-md border border-border p-2 text-[11px] text-foreground"
+              data-testid="kind-text-review"
+            >
+              {changes.map((change) => (
+                <li key={change.key}>{resolveKindText(change.label, change.values)}</li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-foreground" data-testid="kind-text-summary">
+              {changes.length > 0
+                ? t("diagramKinds.guided.text.count", {
+                    added,
+                    removed,
+                    changed: changes.length - added - removed,
+                  })
+                : journeyErrors.length === 0
+                  ? t("diagramKinds.guided.text.noChanges")
+                  : ""}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {changes.length > 0 && (
                 <button
                   type="button"
                   className={ACTION}
-                  onClick={rebase}
-                  data-testid="kind-text-reload"
+                  aria-expanded={showReview}
+                  onClick={() => setShowReview((v) => !v)}
+                  data-testid="kind-text-review-toggle"
                 >
-                  {t("diagramKinds.guided.text.reload")}
+                  {showReview
+                    ? t("diagramKinds.guided.text.reviewHide")
+                    : t("diagramKinds.guided.text.review")}
                 </button>
-              </div>
-            )}
-            <textarea
-              ref={textareaRef}
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              onKeyDown={onKeyDown}
-              spellCheck={false}
-              rows={14}
-              aria-label={t("diagramKinds.guided.text.journey")}
-              aria-invalid={journeyErrors.length > 0}
-              className={TEXTAREA}
-              data-testid="kind-text-journey"
-            />
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {resolveKindText(capture.syntax)}
-            </p>
-            <ErrorList errors={journeyErrors} />
-            {showReview && changes.length > 0 && (
-              <ul
-                className="mt-2 max-h-40 space-y-0.5 overflow-y-auto rounded-md border border-border p-2 text-[11px] text-foreground"
-                data-testid="kind-text-review"
-              >
-                {changes.map((change) => (
-                  <li key={change.key}>{resolveKindText(change.label, change.values)}</li>
-                ))}
-              </ul>
-            )}
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground" data-testid="kind-text-summary">
-                {changes.length > 0
-                  ? t("diagramKinds.guided.text.count", {
-                      added,
-                      removed,
-                      changed: changes.length - added - removed,
-                    })
-                  : journeyErrors.length === 0
-                    ? t("diagramKinds.guided.text.noChanges")
-                    : ""}
-              </span>
-              <div className="flex items-center gap-1.5">
-                {changes.length > 0 && (
-                  <button
-                    type="button"
-                    className={ACTION}
-                    aria-expanded={showReview}
-                    onClick={() => setShowReview((v) => !v)}
-                    data-testid="kind-text-review-toggle"
-                  >
-                    {showReview
-                      ? t("diagramKinds.guided.text.reviewHide")
-                      : t("diagramKinds.guided.text.review")}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={PRIMARY}
-                  disabled={changes.length === 0}
-                  title={t("diagramKinds.guided.outline.applyHint")}
-                  onClick={applyJourney}
-                  data-testid="kind-text-apply"
-                >
-                  {t("diagramKinds.guided.outline.apply")}
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              onKeyDown={onKeyDown}
-              spellCheck={false}
-              rows={9}
-              placeholder={
-                whole
-                  ? t("diagramKinds.guided.text.insertPlaceholder")
-                  : capture.placeholder
-                    ? resolveKindText(capture.placeholder)
-                    : undefined
-              }
-              aria-label={t("diagramKinds.guided.outline.title")}
-              aria-invalid={insertErrors.length > 0}
-              className={TEXTAREA}
-              data-testid="kind-text-input"
-            />
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {resolveKindText(capture.syntax)}
-            </p>
-            <ErrorList errors={insertErrors} />
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground" data-testid="kind-text-summary">
-                {result && "summary" in result
-                  ? resolveKindText(result.summary, result.summaryValues)
-                  : !text.trim()
-                    ? t("diagramKinds.guided.outline.empty")
-                    : ""}
-              </span>
+              )}
               <button
                 type="button"
                 className={PRIMARY}
-                disabled={!insertReady}
+                disabled={changes.length === 0}
                 title={t("diagramKinds.guided.outline.applyHint")}
-                onClick={insert}
-                data-testid="kind-text-insert-apply"
+                onClick={applyJourney}
+                data-testid="kind-text-apply"
               >
-                {whole
-                  ? t("diagramKinds.guided.text.insertApply")
-                  : t("diagramKinds.guided.outline.apply")}
+                {t("diagramKinds.guided.outline.apply")}
               </button>
             </div>
-          </>
-        )}
+          </div>
+        </>
+      ) : (
+        <>
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            onKeyDown={onKeyDown}
+            spellCheck={false}
+            rows={9}
+            placeholder={
+              whole
+                ? t("diagramKinds.guided.text.insertPlaceholder")
+                : capture.placeholder
+                  ? resolveKindText(capture.placeholder)
+                  : undefined
+            }
+            aria-label={t("diagramKinds.guided.outline.title")}
+            aria-invalid={insertErrors.length > 0}
+            className={TEXTAREA}
+            data-testid="kind-text-input"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {resolveKindText(capture.syntax)}
+          </p>
+          <ErrorList errors={insertErrors} />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-foreground" data-testid="kind-text-summary">
+              {result && "summary" in result
+                ? resolveKindText(result.summary, result.summaryValues)
+                : !text.trim()
+                  ? t("diagramKinds.guided.outline.empty")
+                  : ""}
+            </span>
+            <button
+              type="button"
+              className={PRIMARY}
+              disabled={!insertReady}
+              title={t("diagramKinds.guided.outline.applyHint")}
+              onClick={insert}
+              data-testid="kind-text-insert-apply"
+            >
+              {whole
+                ? t("diagramKinds.guided.text.insertApply")
+                : t("diagramKinds.guided.outline.apply")}
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
+  const trigger = (
+    <button
+      type="button"
+      className={cn(`${ACTION} inline-flex items-center gap-1`, docked && "bg-muted")}
+      disabled={disabled}
+      aria-pressed={docked || undefined}
+      title={t("diagramKinds.guided.outline.openHint")}
+      onClick={docked ? () => setDocked(false) : undefined}
+      data-testid="kind-text-open"
+    >
+      <TextCursorInput className="h-3 w-3" aria-hidden />
+      {t("diagramKinds.guided.outline.open")}
+    </button>
+  );
+
+  if (docked)
+    return (
+      <>
+        {trigger}
+        <div
+          className="absolute left-0 top-full z-20 mt-2 flex max-h-[calc(100vh-12rem)] flex-col overflow-y-auto rounded-xl border border-border bg-card p-3 shadow-lg"
+          style={{ width: dockWidth }}
+          onPointerDown={(event) => event.stopPropagation()}
+          data-testid="kind-text-dock"
+        >
+          {body}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-primary/20"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              const startX = event.clientX;
+              const startWidth = dockWidth;
+              const move = (e: globalThis.PointerEvent) =>
+                setDockWidth(startWidth + (e.clientX - startX));
+              const up = () => {
+                window.removeEventListener("pointermove", move);
+                window.removeEventListener("pointerup", up);
+              };
+              window.addEventListener("pointermove", move);
+              window.addEventListener("pointerup", up);
+            }}
+            data-testid="kind-text-dock-resize"
+          />
+        </div>
+      </>
+    );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-[min(100vw-2rem,30rem)] p-3"
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          textareaRef.current?.focus();
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+        data-testid="kind-text-panel"
+      >
+        {body}
       </PopoverContent>
     </Popover>
   );

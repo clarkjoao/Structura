@@ -293,6 +293,7 @@ describe("Mermaid export", () => {
     expect(guidedKind.textCapture!.formats!.map((f) => f.id)).toEqual([
       "outline",
       "outline-ids",
+      "document",
       "mermaid-swimlane",
       "mermaid-journey",
     ]);

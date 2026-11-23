@@ -664,6 +664,32 @@ function mergedKindProps(
   return Object.keys(next).length > 0 ? next : null;
 }
 
+/**
+ * Moves a phase's start from one step to another (spec guided-direct-editing): the
+ * phase keeps its name; one undo step.
+ */
+export function guidedMovePhaseStart(
+  diagram: DiagramModel,
+  fromId: string,
+  toId: string,
+): GuidedOutcome {
+  const reading = readGuided(diagram);
+  const from = reading.steps.get(fromId);
+  const to = reading.steps.get(toId);
+  const name = typeof from?.kindProps?.phase === "string" ? from.kindProps.phase : null;
+  if (!from || !to || !name) return refused("selectOneStep");
+  if (fromId === toId) return { edit: {} };
+  return {
+    edit: {
+      update: [
+        { id: fromId, kindProps: mergedKindProps(from, "phase", null) },
+        { id: toId, kindProps: mergedKindProps(to, "phase", name) },
+      ],
+    },
+    select: toId,
+  };
+}
+
 /** The line of visibility above `laneId`, or none (spec guided-journey-blueprint). */
 export function guidedSetVisibilityLine(diagram: DiagramModel, laneId: string | null): KindEdit {
   const next: JsonObject = { ...(diagram.kindData ?? {}) };
@@ -709,4 +735,29 @@ export function guidedSetPhaseStart(
     edit: { update: [{ id: stepId, kindProps: mergedKindProps(step, "phase", clean) }] },
     select: stepId,
   };
+}
+
+/**
+ * After a template was built on a fresh journey (spec guided-journey-sharing): the start
+ * moves into the lane of the step after it, and the template's own lanes replace the
+ * blank lanes it left empty.
+ */
+export function guidedTidyTemplate(diagram: DiagramModel): KindEdit | null {
+  const reading = readGuided(diagram);
+  const start = reading.starts[0];
+  const first = start ? reading.outgoing.get(start.id)?.[0]?.targetId : undefined;
+  if (!start || !first) return null;
+  const target = reading.laneOf.get(first)!;
+  const reparent: NonNullable<KindEdit["reparent"]> = [];
+  if (reading.laneOf.get(start.id) !== target) {
+    const moved = guidedMoveStepToLane(diagram, reading, start.id, target);
+    if ("edit" in moved) reparent.push(...(moved.edit.reparent ?? []));
+  }
+  const used = new Set(
+    [...reading.laneOf.entries()].filter(([id]) => id !== start.id).map(([, lane]) => lane),
+  );
+  used.add(target);
+  const remove = reading.lanes.filter((lane) => !used.has(lane.id)).map((lane) => lane.id);
+  if (reparent.length === 0 && remove.length === 0) return null;
+  return { ...(reparent.length > 0 && { reparent }), ...(remove.length > 0 && { remove }) };
 }

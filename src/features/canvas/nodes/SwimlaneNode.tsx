@@ -1,4 +1,5 @@
-import { memo } from "react";
+import { memo, useState } from "react";
+import { useLaneRename } from "../contexts/LaneRenameContext";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { accentTextColor, tintOver } from "@/features/diagram";
 import { resolveThemeColor } from "./ProcessNode/useOnAccentColor";
@@ -67,6 +68,13 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
   const isUnparentCandidate = d.isUnparentCandidate ?? false;
   const collabHighlight = useCollabHighlight(d.elementId);
   const motionClass = dragging || isResizing ? "" : "transition-all duration-200";
+  const renameLane = useLaneRename();
+  const [draft, setDraft] = useState<string | null>(null);
+  const commitDraft = () => {
+    const next = draft?.trim();
+    setDraft(null);
+    if (renameLane && next && next !== labelText) renameLane(d.elementId, next);
+  };
 
   return (
     <>
@@ -101,7 +109,7 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
           <VersionElementBadge name={d.versionBadge.name} color={d.versionBadge.color} />
         )}
         <div
-          className={`absolute z-[1] pointer-events-none flex items-center justify-center overflow-hidden ${
+          className={`absolute z-[1] ${renameLane ? "pointer-events-auto" : "pointer-events-none"} flex items-center justify-center overflow-hidden ${
             isHorizontal
               ? "left-0 top-0 bottom-0 rounded-l-lg"
               : "top-0 left-0 right-0 rounded-t-lg"
@@ -116,6 +124,12 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
               : {}),
           }}
           data-testid="swimlane-header"
+          onDoubleClick={(event) => {
+            if (!renameLane) return;
+            event.stopPropagation();
+            setDraft(labelText);
+          }}
+          title={renameLane ? t("swimlane.renameHint") : undefined}
         >
           <span
             className="max-h-full max-w-full select-none truncate whitespace-nowrap px-1 text-xs font-semibold uppercase tracking-[0.04em]"
@@ -129,6 +143,24 @@ const SwimlaneNode = memo((props: NodeProps<Node<SwimlaneNodeData>>) => {
             {labelText}
           </span>
         </div>
+        {draft !== null ? (
+          <input
+            autoFocus
+            value={draft}
+            aria-label={t("swimlane.renameHint")}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              event.stopPropagation();
+              if (event.key === "Enter") commitDraft();
+              if (event.key === "Escape") setDraft(null);
+            }}
+            onBlur={commitDraft}
+            onPointerDown={(event) => event.stopPropagation()}
+            className="nodrag absolute z-20 w-40 rounded border border-primary bg-card px-1.5 py-0.5 text-xs text-foreground outline-none"
+            style={isHorizontal ? { left: 6, top: 8 } : { left: 8, top: 10 }}
+            data-testid="swimlane-header-input"
+          />
+        ) : null}
         {isDragTarget && (
           <div
             className="absolute inset-0 rounded-lg animate-pulse-glow pointer-events-none z-0"

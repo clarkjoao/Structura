@@ -10,9 +10,26 @@ import {
   isGuidedDecision,
   readGuided,
 } from "./guided.model";
+import { guidedPhases } from "./guided.phases";
 
 /** The kind data key holding the derived flow's id. */
 const GUIDED_FLOW_ID_KEY = "flowId";
+
+/** The kind data key holding each phase's derived flow id, by the phase's start step. */
+const GUIDED_PHASE_FLOWS_KEY = "phaseFlowIds";
+
+/** The phases' derived flows: their ids by start step (spec guided-journey-sharing). */
+export function guidedPhaseFlowIds(
+  diagram: Pick<DiagramModel, "kindData">,
+): Record<string, string> {
+  const value = diagram.kindData?.[GUIDED_PHASE_FLOWS_KEY];
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] => typeof entry[1] === "string",
+    ),
+  );
+}
 
 /** The derived flow's id, when the kind data names one. */
 export function guidedFlowId(diagram: Pick<DiagramModel, "kindData">): string | undefined {
@@ -53,13 +70,18 @@ function content(step: FlowStep | undefined): Omit<FlowStep, Topology> {
  *
  * Returns null when the stored flow already is the derivation.
  */
-export function deriveGuidedFlow(diagram: DiagramModel, ctx: KindContext): KindEdit | null {
-  const reading = readGuided(diagram);
-  const start = reading.starts[0];
-  const existingId = guidedFlowId(diagram);
-  const previous = existingId ? diagram.snapshot.flows[existingId] : undefined;
-  const flowId = previous?.id ?? existingId ?? ctx.newId("flow");
-
+/**
+ * The flow steps of a walk from `entryId` through the steps `include` admits: a step at
+ * each journey step and one on each connection travelled, retries left out, the content
+ * already written on a previous flow's steps kept.
+ */
+function walkFlow(
+  reading: ReturnType<typeof readGuided>,
+  entryId: string | undefined,
+  include: (componentId: string) => boolean,
+  previous: Flow | undefined,
+  ctx: KindContext,
+): { steps: Record<string, FlowStep>; entryStepId?: string } {
   const previousByComponent = new Map<string, FlowStep>();
   const previousByConnection = new Map<string, FlowStep>();
   for (const step of Object.values(previous?.steps ?? {})) {
@@ -109,7 +131,7 @@ export function deriveGuidedFlow(diagram: DiagramModel, ctx: KindContext): KindE
     onPath.add(componentId);
     const component = reading.steps.get(componentId)!;
     const exits = (reading.outgoing.get(componentId) ?? []).filter(
-      (connection) => !onPath.has(connection.targetId),
+      (connection) => !onPath.has(connection.targetId) && include(connection.targetId),
     );
     for (const exit of exits) visit(exit.targetId);
     const kept = content(previousByComponent.get(componentId));
@@ -136,26 +158,63 @@ export function deriveGuidedFlow(diagram: DiagramModel, ctx: KindContext): KindE
     onPath.delete(componentId);
     done.add(componentId);
   };
-  if (start) visit(start.id);
+  if (entryId && include(entryId)) visit(entryId);
+  return { steps, ...(entryId && include(entryId) ? { entryStepId: stepId(entryId) } : {}) };
+}
+
+export function deriveGuidedFlow(diagram: DiagramModel, ctx: KindContext): KindEdit | null {
+  const reading = readGuided(diagram);
+  const start = reading.starts[0];
+  const existingId = guidedFlowId(diagram);
+  const previous = existingId ? diagram.snapshot.flows[existingId] : undefined;
+  const flowId = previous?.id ?? existingId ?? ctx.newId("flow");
+  const walked = walkFlow(reading, start?.id, () => true, previous, ctx);
 
   const flow: Flow = {
     ...(previous ?? {}),
     id: flowId,
     name: previous?.name ?? diagram.name,
     diagramId: diagram.id,
-    steps,
+    steps: walked.steps,
     mermaid: "",
-    ...(start ? { entryStepId: stepId(start.id) } : {}),
+    ...(walked.entryStepId ? { entryStepId: walked.entryStepId } : {}),
   };
-  if (!start) delete flow.entryStepId;
+  if (!walked.entryStepId) delete flow.entryStepId;
   flow.mermaid = stepsToMermaid(flow, reading.components, reading.connections);
+
+  // One flow per phase, entered at its start (spec guided-journey-sharing).
+  const { phases, phaseOf } = guidedPhases(reading);
+  const previousPhaseIds = guidedPhaseFlowIds(diagram);
+  const phaseFlowIds: Record<string, string> = {};
+  const phaseFlows: Flow[] = [];
+  phases.forEach((phase, index) => {
+    const id = previousPhaseIds[phase.startId] ?? ctx.newId("flow");
+    phaseFlowIds[phase.startId] = id;
+    const before = diagram.snapshot.flows[id];
+    const steps = walkFlow(reading, phase.startId, (c) => phaseOf.get(c) === index, before, ctx);
+    const phaseFlow: Flow = {
+      ...(before ?? {}),
+      id,
+      name: `${diagram.name} — ${phase.name}`,
+      diagramId: diagram.id,
+      steps: steps.steps,
+      mermaid: "",
+      ...(steps.entryStepId ? { entryStepId: steps.entryStepId } : {}),
+    };
+    phaseFlow.mermaid = stepsToMermaid(phaseFlow, reading.components, reading.connections);
+    if (!before || JSON.stringify(before) !== JSON.stringify(phaseFlow)) phaseFlows.push(phaseFlow);
+  });
+  const removedPhaseFlows = Object.entries(previousPhaseIds)
+    .filter(([startId, id]) => phaseFlowIds[startId] !== id && diagram.snapshot.flows[id])
+    .map(([, id]) => id);
+  const samePhaseIds = JSON.stringify(previousPhaseIds) === JSON.stringify(phaseFlowIds);
 
   const sameFlow = previous !== undefined && JSON.stringify(previous) === JSON.stringify(flow);
   // The lane order names exactly the lanes there are: a new lane joins it where it was put, a
   // removed one leaves it.
   const laneOrder = reading.lanes.map((lane) => lane.id);
   const sameOrder = JSON.stringify(guidedLaneOrder(diagram)) === JSON.stringify(laneOrder);
-  const sameData = existingId === flowId && sameOrder;
+  const sameData = existingId === flowId && sameOrder && samePhaseIds;
   // A lane renamed in the inspector: its header label follows the name.
   const renamedLanes = reading.lanes
     .filter((lane) => lane.swimlane && lane.swimlane.laneLabel !== lane.name)
@@ -165,16 +224,31 @@ export function deriveGuidedFlow(diagram: DiagramModel, ctx: KindContext): KindE
   const turnedLanes = reading.lanes
     .filter((lane) => (lane.swimlane?.orientation ?? "horizontal") !== orientation)
     .map((lane) => ({ id: lane.id, orientation }) as const);
-  if (sameFlow && sameData && renamedLanes.length === 0 && turnedLanes.length === 0) return null;
+  if (
+    sameFlow &&
+    sameData &&
+    renamedLanes.length === 0 &&
+    turnedLanes.length === 0 &&
+    phaseFlows.length === 0 &&
+    removedPhaseFlows.length === 0
+  )
+    return null;
+  const setFlows = [...(sameFlow ? [] : [flow]), ...phaseFlows];
   return {
     ...(renamedLanes.length > 0 && { update: renamedLanes }),
     ...(turnedLanes.length > 0 && { laneOrientation: turnedLanes }),
-    ...(!sameFlow && { flows: { set: [flow] } }),
+    ...((setFlows.length > 0 || removedPhaseFlows.length > 0) && {
+      flows: {
+        ...(setFlows.length > 0 && { set: setFlows }),
+        ...(removedPhaseFlows.length > 0 && { remove: removedPhaseFlows }),
+      },
+    }),
     ...(!sameData && {
       kindData: {
         ...(diagram.kindData ?? {}),
         [GUIDED_FLOW_ID_KEY]: flowId,
         [GUIDED_LANE_ORDER_KEY]: laneOrder,
+        [GUIDED_PHASE_FLOWS_KEY]: phaseFlowIds,
       },
     }),
   };

@@ -102,6 +102,8 @@ export interface ParsedOutline {
   nodeCount: number;
   /** `---` between lane declarations: the first backstage lane, as written. */
   visibilityLane?: string;
+  /** The direction a Mermaid block's header names (spec guided-vertical-journeys). */
+  direction?: "LR" | "TB";
 }
 
 type Token =
@@ -443,6 +445,24 @@ export function parseOutline(text: string): ParsedOutline {
     lanes,
     nodeCount: countNodes(items),
     ...(visibility.lane && { visibilityLane: visibility.lane }),
+  };
+}
+
+/**
+ * One outline line read on its own (a step's name typed on the canvas): its lane,
+ * participants and item, or null when it is not a single step, decision or end.
+ */
+export function parseOutlineLine(
+  text: string,
+): { lane: string | null; participants?: string[]; item: OutlineNode } | null {
+  const errors: OutlineError[] = [];
+  const parsed = parseItemText(text.trim(), 1, errors);
+  const item = parsed.item;
+  if (errors.length > 0 || !item || item.kind === "jump" || item.kind === "fanout") return null;
+  return {
+    lane: parsed.lane,
+    ...(parsed.participants && { participants: parsed.participants }),
+    item,
   };
 }
 

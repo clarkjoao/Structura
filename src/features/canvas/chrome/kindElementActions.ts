@@ -88,3 +88,25 @@ export function kindElementActionItems(
     (item) => item.group !== "commands",
   );
 }
+
+/**
+ * A name typed for an element on a kind diagram (spec guided-direct-editing): when the
+ * kind reads a shortcut in it (guided: `? `, `! `, `Lane: `), its edit is applied and
+ * true is returned; false leaves the plain rename to the caller.
+ */
+export function commitKindName(
+  diagram: Diagram | DiagramModel | null | undefined,
+  elementId: string,
+  text: string,
+): boolean {
+  const policy = resolveKindPolicy(diagram);
+  if (!diagram || !isKindActive(policy) || !policy.descriptor.nameCommit) return false;
+  const outcome = policy.descriptor.nameCommit(
+    kindCommandContextFor(diagram as DiagramModel, [elementId]),
+    elementId,
+    text,
+  );
+  if (!outcome) return false;
+  runKindOutcome(outcome);
+  return true;
+}

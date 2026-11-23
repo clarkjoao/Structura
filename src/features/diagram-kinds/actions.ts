@@ -1,7 +1,7 @@
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
-import type { Diagram, Level } from "@/features/diagram/model/diagram.types";
+import type { Diagram, DiagramDirection, Level } from "@/features/diagram/model/diagram.types";
 import type { KindEdit } from "@/features/diagram/model/kind-edit.types";
-import { kindContextFor } from "./context";
+import { kindCommandContextFor, kindContextFor, resolveKindText } from "./context";
 import { getDiagramKind } from "./registry";
 import { resolveKindPolicy } from "./policy";
 import type { KindIssue } from "./kind.types";
@@ -54,6 +54,10 @@ export function createKindDiagram(input: {
   domain?: string;
   folderId?: string | null;
   description?: string;
+  /** The reading direction to start in (spec guided-vertical-journeys); absent: left to right. */
+  direction?: DiagramDirection;
+  /** One of the kind's templates, built after its blank start (spec guided-journey-sharing). */
+  templateId?: string;
 }): { diagram: Diagram; selectId: string | null } {
   const store = useDiagramStore.getState();
   const descriptor = input.kindId ? getDiagramKind(input.kindId) : undefined;
@@ -66,15 +70,45 @@ export function createKindDiagram(input: {
     input.description,
     kind ? { kind } : undefined,
   );
-  if (!descriptor?.creatable || !descriptor.create) {
-    return { diagram: created, selectId: null };
+  if (input.direction && input.direction !== (created.direction ?? "LR")) {
+    // Before the template: it orients its lanes by the diagram's direction.
+    useDiagramStore.setState((state) => ({
+      diagrams: {
+        ...state.diagrams,
+        [created.id]: { ...state.diagrams[created.id]!, direction: input.direction },
+      },
+    }));
   }
-  const template = descriptor.create(kindContextFor(created));
+  const withDirection = useDiagramStore.getState().diagrams[created.id] ?? created;
+  if (!descriptor?.creatable || !descriptor.create) {
+    return { diagram: withDirection, selectId: null };
+  }
+  const template = descriptor.create(kindContextFor(withDirection));
   const result = store.applyKindEdit(template.edit, { diagramId: created.id, history: false });
   const diagram = useDiagramStore.getState().diagrams[created.id] ?? created;
   const derived = descriptor.derive?.(diagram, kindContextFor(diagram));
   if (derived) store.applyKindEdit(derived, { diagramId: created.id, history: false });
   const selectId = template.select ? (result.idsByKey[template.select] ?? template.select) : null;
+  const chosen = input.templateId
+    ? descriptor.templates?.find((candidate) => candidate.id === input.templateId)
+    : undefined;
+  if (chosen && descriptor.textCapture) {
+    // The template's text, added after the start like a pasted outline, without history:
+    // the new diagram starts from it.
+    const current = useDiagramStore.getState().diagrams[created.id]!;
+    const built = descriptor.textCapture.build(
+      kindCommandContextFor(current, selectId ? [selectId] : []),
+      resolveKindText(chosen.text),
+    );
+    if ("edit" in built) {
+      store.applyKindEdit(built.edit, { diagramId: created.id, history: false });
+      const tidy = descriptor.tidyTemplate?.(useDiagramStore.getState().diagrams[created.id]!);
+      if (tidy) store.applyKindEdit(tidy, { diagramId: created.id, history: false });
+      const after = useDiagramStore.getState().diagrams[created.id]!;
+      const again = descriptor.derive?.(after, kindContextFor(after));
+      if (again) store.applyKindEdit(again, { diagramId: created.id, history: false });
+    }
+  }
   return { diagram: useDiagramStore.getState().diagrams[created.id] ?? diagram, selectId };
 }
 

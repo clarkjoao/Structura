@@ -97,6 +97,14 @@ export const AssistantUIChatPanel = memo(function AssistantUIChatPanel({
     reject,
     clearHistory,
   } = useLLMChat({ selectedNodeIds, selectedNodeId });
+  // A preset queued elsewhere (the guided mode bar's "Review journey"): sent once, here,
+  // where the message carries the diagram's context.
+  const queuedPrompt = useLLMStore((state) => state.queuedPrompt);
+  useEffect(() => {
+    if (!queuedPrompt || isLoading) return;
+    useLLMStore.getState().queuePrompt(null);
+    void send(queuedPrompt, []);
+  }, [queuedPrompt, isLoading, send]);
 
   // Empty state is rendered *without* creating a thread — no auto-persistence.
   const hasMessages = messages.length > 0;

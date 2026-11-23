@@ -3,7 +3,8 @@ import { listDiagramKinds, subscribeDiagramKinds } from "@/features/diagram-kind
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import type { Level } from "@/features/diagram";
+import type { DiagramDirection, Level } from "@/features/diagram";
+import { ArrowDown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,7 +22,13 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
   const [domain, setDomain] = useState("");
   const [description, setDescription] = useState("");
   const [kindId, setKindId] = useState<string | null>(null);
+  const [direction, setDirection] = useState<DiagramDirection>("LR");
   const kinds = useSyncExternalStore(subscribeDiagramKinds, listCreatableKinds);
+  const chosenKind = kinds.find((kind) => kind.id === kindId);
+  const directionChoice = chosenKind?.directionChoice === true;
+  const templates = chosenKind?.templates ?? [];
+  const [start, setStart] = useState<string>("blank");
+  const [notes, setNotes] = useState("");
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -71,6 +78,87 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
                       </span>
                       <span className="block text-[11px] leading-snug text-muted-foreground">
                         {option.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {templates.length > 0 && (
+            <div role="radiogroup" aria-label={t("diagramKinds.guided.templates.choice")}>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                {t("diagramKinds.guided.templates.choice")}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { id: "blank", label: t("diagramKinds.guided.templates.blank") },
+                  ...templates.map((template) => ({
+                    id: template.id,
+                    label: resolveKindText(template.label),
+                  })),
+                  { id: "notes", label: t("diagramKinds.guided.templates.notes") },
+                ].map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={start === option.id}
+                    onClick={() => setStart(option.id)}
+                    className={cn(
+                      "rounded-md border px-2.5 py-1 text-xs transition-colors",
+                      start === option.id
+                        ? "border-primary bg-primary/10 text-foreground"
+                        : "border-border text-muted-foreground hover:border-foreground/30",
+                    )}
+                    data-testid={`template-choice-${option.id}`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {start === "notes" && (
+                <textarea
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  placeholder={t("diagramKinds.guided.templates.notesPlaceholder")}
+                  className="mt-2 w-full min-h-24 resize-y rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  data-testid="template-notes"
+                />
+              )}
+            </div>
+          )}
+          {directionChoice && (
+            <div role="radiogroup" aria-label={t("diagramKinds.direction.choice")}>
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">
+                {t("diagramKinds.direction.choice")}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(["LR", "TB"] as const).map((value) => {
+                  const checked = value === direction;
+                  const Icon = value === "TB" ? ArrowDown : ArrowRight;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      role="radio"
+                      aria-checked={checked}
+                      onClick={() => setDirection(value)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
+                        checked
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-foreground/30",
+                      )}
+                      data-testid={`direction-choice-${value}`}
+                    >
+                      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                      <span className="text-foreground">
+                        {t(
+                          value === "TB"
+                            ? "diagramKinds.direction.verticalChoice"
+                            : "diagramKinds.direction.horizontalChoice",
+                        )}
                       </span>
                     </button>
                   );
@@ -141,6 +229,15 @@ export function AddDiagramDialog({ onClose, onAdd }: AddDiagramDialogProps) {
                   domain.trim() || undefined,
                   description.trim() || undefined,
                   kindId,
+                  ...(directionChoice || templates.length > 0
+                    ? [
+                        {
+                          ...(directionChoice && { direction }),
+                          ...(start !== "blank" && start !== "notes" && { templateId: start }),
+                          ...(start === "notes" && notes.trim() && { notes: notes.trim() }),
+                        },
+                      ]
+                    : []),
                 );
             }}
             disabled={!name.trim()}

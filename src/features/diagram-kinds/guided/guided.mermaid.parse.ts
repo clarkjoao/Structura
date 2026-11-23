@@ -517,5 +517,10 @@ function parseJourney(lines: Array<{ line: number; text: string }>): ParsedOutli
 export function parseMermaid(text: string): ParsedOutline {
   const lines = meaningfulLines(text);
   const header = HEADER.exec(lines[0]?.text ?? "")?.[1];
-  return header === "journey" ? parseJourney(lines) : parseFlowchart(lines, readDirectives(text));
+  if (header === "journey") return parseJourney(lines);
+  const parsed = parseFlowchart(lines, readDirectives(text));
+  // `flowchart TD`, `swimlane-beta LR`: the direction a new journey takes from it.
+  const named = /^\S+\s+(TB|TD|BT|LR|RL)\b/i.exec(lines[0]?.text ?? "")?.[1]?.toUpperCase();
+  const direction = named ? (named === "LR" || named === "RL" ? "LR" : "TB") : undefined;
+  return direction && parsed.errors.length === 0 ? { ...parsed, direction } : parsed;
 }

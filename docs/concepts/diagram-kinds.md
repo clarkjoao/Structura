@@ -189,6 +189,39 @@ journey. The edited text is reconciled against the text the panel wrote:
   changes, with a "Reload from the diagram" notice; applying then skips the changes whose step no
   longer exists and says how many. "Insert at the selection" keeps the add-only panel.
 
+### Editing in place
+
+Spec `guided-direct-editing`. In kind mode, on an editable canvas:
+
+- **Phases on the band.** A double click on a segment renames the phase (`segments[].rename`). An empty name removes it. Dragging a separator moves the next phase's start to the step at the drop column (`separators[].moves`, candidates between the neighbouring starts), with a snapped preview.
+- **Step names.** `nameCommit` reads a name typed in the inspector title with the outline's shortcuts: `? ` makes a decision, `! ` an end (refused with exits), and `Lane: ` moves the step to that lane when the lane exists. Otherwise the text stays the name, so "Meeting: kickoff" is kept. Escapes keep the characters.
+- **Lane headers.** A double click on a lane's header renames it in place (`LaneRenameContext`, provided only by the editor canvas in kind mode).
+
+### The text as a workspace
+
+Spec `guided-text-workspace`.
+
+- **Docking.** The Text panel can be docked: it becomes a persistent panel under the mode bar, resizable from 280 to 640 px, and remembered per browser (`textDock`, `textDockWidth`).
+- **Caret and selection.** The journey field (`KindJourneyEditor`) has a gutter with line numbers and error markers. The caret's line selects its step on the canvas and frames it (debounced). The selected step's line is highlighted and scrolled to. An edited draft is mapped to steps through `alignLines`.
+- **Completions.** `KindTextCapture.suggest(diagram, linePrefix)` offers lanes at a line's start, steps after `@`, and phases after `##`. Tab or Enter completes, Esc closes.
+
+### Sharing, presenting, reviewing and starting
+
+Spec `guided-journey-sharing`.
+
+- **Document.** The "Document (Markdown)" format (`guided.document.ts`) writes one section per phase in reading order. Each step is listed with its lane and participants, each decision with its exits, and ways back as "back to …". A format with `download` is also offered as a file in "Copy as…".
+- **Present by phase.** Derivation keeps one flow per phase (`kindData.phaseFlowIds`, listed as derived and read-only), entered at the phase's start and ending where an exit leaves the phase. The kind's `presentation(diagram)` gives the scenes. The mode bar's "Present by phase" upserts the walkthrough marked `source: { diagramId, kind: "phases" }`, keeping scene notes, and opens the player.
+- **Review journey.** `reviewPresets` are translated requests. Picking one queues it (`useLLMStore.queuePrompt`), the canvas opens the assistant, and the chat panel sends it with the diagram's context. The answer comes back as a reviewable revision.
+- **Templates.** `templates` are translated outlines built after the blank start when the diagram is created. `tidyTemplate` then drops the blank lanes the template left empty. "Paste meeting notes" queues a request to build the journey from the notes, and the assistant opens with the new diagram.
+
+### Vertical journeys
+
+Spec `guided-vertical-journeys`. A guided journey reads left to right (lanes as rows) or top to bottom (lanes as columns). Every guided feature follows `diagram.direction`: the arrangement, the lanes' orientation, the phase band (left of the lanes when vertical), the line of visibility, tags, text and exports.
+
+- **Creating.** The creation dialog offers the direction when the kind sets `directionChoice`. `createKindDiagram({ direction })` sets it before the template, so the lanes are made in that orientation.
+- **Switching.** The guided mode bar has a →/↓ toggle that runs the same switch as Arrange → Direction (`useCanvasArrangeControl`). It is one undo step and is locked for the same reasons.
+- **From Mermaid.** A `flowchart TD`/`swimlane-beta LR` header gives the parsed outline a `direction`. `buildOutline` applies it, as `KindEdit.direction` plus `laneOrientation`, only to a journey that is still just its start step. An existing journey keeps its own.
+
 ### The assistant revises a journey
 
 Spec `guided-assistant-revisions`. On a guided diagram in kind mode, the assistant sees the journey written with handles (`{#s1}`…) and gets two tools: `add_journey_outline` to add, and `revise_journey` to propose the whole journey edited.

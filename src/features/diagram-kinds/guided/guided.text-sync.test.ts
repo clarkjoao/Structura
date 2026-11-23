@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { kindContextFor } from "../context";
 import { registerBuiltInDiagramKinds } from "../bootstrap";
 import { guidedHarness } from "./guided.harness";
-import { alignLines } from "./guided.outline.align";
+import { alignLines } from "../textAlign";
 import { buildOutline } from "./guided.outline.build";
 import { parseOutline } from "./guided.outline.parse";
 import { reconcileOutline } from "./guided.outline.reconcile";

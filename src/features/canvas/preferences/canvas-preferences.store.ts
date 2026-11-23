@@ -50,7 +50,16 @@ export interface CanvasPreferencesStore {
    */
   showVersionChanges: boolean;
   setShowVersionChanges: (show: boolean) => void;
+  /** The kind's text panel docked beside the canvas, and its width (spec guided-text-workspace). */
+  textDock: boolean;
+  setTextDock: (docked: boolean) => void;
+  textDockWidth: number;
+  setTextDockWidth: (width: number) => void;
 }
+
+const TEXT_DOCK_DEFAULT_WIDTH = 380;
+const TEXT_DOCK_MIN_WIDTH = 280;
+const TEXT_DOCK_MAX_WIDTH = 640;
 
 export const ELEMENT_PANEL_DEFAULT_WIDTH = 320;
 export const ELEMENT_PANEL_MIN_WIDTH = 280;
@@ -99,6 +108,16 @@ export const useCanvasPreferencesStore = create<CanvasPreferencesStore>()(
         })),
       showVersionChanges: true,
       setShowVersionChanges: (show) => set({ showVersionChanges: show }),
+      textDock: false,
+      setTextDock: (docked) => set({ textDock: docked }),
+      textDockWidth: TEXT_DOCK_DEFAULT_WIDTH,
+      setTextDockWidth: (width) =>
+        set({
+          textDockWidth: Math.min(
+            TEXT_DOCK_MAX_WIDTH,
+            Math.max(TEXT_DOCK_MIN_WIDTH, Math.round(width)),
+          ),
+        }),
     }),
     {
       name: CANVAS_PREFERENCES_KEY,
