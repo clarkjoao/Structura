@@ -11,20 +11,24 @@ A plain-text outline for guided journeys, used to write a journey as fast as not
 The outline SHALL be line-based text in which each non-blank line, after its indentation, is one of the following:
 
 - **Comment.** A line starting with `#`.
-- **Step.** `[Lane:] name`: a step with the default step shape.
-- **Decision.** `[Lane:] ? name`.
-- **End step.** `[Lane:] ! name`.
+- **Step.** `[Lane[, Participant…]:] name`: a step with the default step shape.
+- **Decision.** `[Lane[, Participant…]:] ? name`.
+- **End step.** `[Lane[, Participant…]:] ! name`.
 - **Jump.** `-> @name`: a connection to an existing step, which ends the current path.
 - **Exit.** `label -> <step, decision, end or jump>`: valid only directly under a decision, indented or right after it. `-> <step>` is an exit without a label.
 - **Lane declaration.** `Lane:` alone: declares the lane and makes it current, adding no step.
+- **Line of visibility.** `---` alone, between lane declarations: the line of visibility sits before the next declared lane.
 
 The lane rules SHALL be:
 
 - `Lane:` is the text before the first `: `.
-- A line without a lane stays in the lane of the line before it.
+- In a step's prefix, the names after the first `,` are the step's participants (spec `guided-journey-blueprint`); the first name is the lane.
+- A line without a lane stays in the lane of the line before it, and has no participants.
 - The first line without a lane uses the diagram's first lane.
 
-`\:` SHALL write a literal colon that is not a lane prefix. `→` SHALL be accepted wherever `->` is. Lane names SHALL match existing lanes trimmed and case-insensitively. The syntax SHALL NOT depend on the interface language.
+`\:` SHALL write a literal colon that is not a lane prefix. `\,` SHALL write a literal comma inside a lane or participant name. `→` SHALL be accepted wherever `->` is. Lane names SHALL match existing lanes trimmed and case-insensitively. The syntax SHALL NOT depend on the interface language.
+
+A `---` line anywhere other than between lane declarations SHALL be an error on that line. Copy as text SHALL write `---` before the first backstage lane's declaration, and each step's participants after its lane, writing the lane prefix whenever the step has participants.
 
 #### Scenario: A linear journey across lanes
 
@@ -40,8 +44,20 @@ The lane rules SHALL be:
 
 #### Scenario: Comments and blank lines
 
+- **GIVEN** a guided diagram
 - **WHEN** an outline contains blank lines and lines starting with `#`
 - **THEN** those lines add nothing to the journey
+
+#### Scenario: Participants and the line of visibility
+
+- **GIVEN** a new guided diagram
+- **WHEN** the outline `Cliente:` / `---` / `Atendente:` / `Cliente, Atendente: Revisa pedido` is added
+- **THEN** the line of visibility sits above Atendente, and "Revisa pedido" is in Cliente with participant Atendente
+
+#### Scenario: A misplaced separator
+
+- **WHEN** a `---` line follows a step line
+- **THEN** that line is reported as an error and nothing is added
 
 ### Requirement: Decisions, exits, convergence and jumps
 
@@ -135,22 +151,31 @@ Adding an outline SHALL apply all of its lanes, steps and connections as a singl
 
 ### Requirement: The write-as-text panel
 
-In guided mode, the guided kind SHALL offer a "write as text" panel:
+In guided mode, the guided kind SHALL offer a text panel that holds the whole journey (spec `guided-journey-text-sync`):
 
 - **Text area.** It shows the outline's errors per line as the user types.
-- **Summary.** It shows how many lanes, steps and decisions the outline would add.
-- **Apply.** Apply is disabled while the outline has errors, and Ctrl/Cmd+Enter applies.
-- **After applying,** the panel clears and the last added step is selected.
+- **Summary.** It shows the count of steps the edit adds, changes and removes, with a "Review" list.
+- **Apply.** Apply is disabled while the outline has errors or nothing changed. Ctrl/Cmd+Enter applies.
+- **Insert at the selection.** A secondary action keeps the previous behaviour: the text typed in its own field is _added_ after the selected step, as described in "Where an outline is added".
+- **After applying,** the panel shows the journey's new text, and the first changed step is selected.
 
 #### Scenario: Typing an invalid outline
 
+- **GIVEN** the text panel is open
 - **WHEN** the user types an outline with an error
 - **THEN** the error and its line are shown, and Apply is disabled
 
 #### Scenario: Applying from the keyboard
 
-- **WHEN** the user presses Ctrl/Cmd+Enter in a valid outline
-- **THEN** the outline is added, and the last added step is selected
+- **GIVEN** the user renamed a step in the panel's text
+- **WHEN** they press Ctrl/Cmd+Enter
+- **THEN** the rename is applied, and the renamed step is selected
+
+#### Scenario: Inserting at the selection
+
+- **GIVEN** steps A → B with A selected
+- **WHEN** the user writes "X" in "Insert at the selection" and confirms
+- **THEN** the sequence reads A → X → B
 
 ### Requirement: Pasting an outline onto the canvas
 
@@ -207,11 +232,15 @@ Steps that cannot be reached from the start step SHALL be left out, and a commen
 
 When the active diagram is guided and in guided mode, the assistant SHALL be given:
 
-- a description of the outline format;
-- the current journey as an outline;
-- one tool that adds an outline, optionally after a given step id.
+- a description of the outline format, including step handles;
+- the current journey as an outline with handles (`{#s1}`…);
+- two tools:
+  - one that adds an outline, optionally after a given step id;
+  - one that proposes a revision of the whole journey (spec `guided-assistant-revisions`).
 
-The tool SHALL follow the same rules as the panel. An invalid outline SHALL change nothing, and its per-line errors SHALL be returned to the assistant. The tool SHALL NOT be offered on other diagrams.
+The prompt SHALL say to use the add tool for new parts and the revise tool for changes to existing steps.
+
+The add tool SHALL follow the same rules as the panel, ignoring handles. An invalid outline SHALL change nothing, and its per-line errors SHALL be returned to the assistant. Neither tool SHALL be offered on other diagrams.
 
 #### Scenario: The assistant turns notes into a journey
 
@@ -221,8 +250,15 @@ The tool SHALL follow the same rules as the panel. An invalid outline SHALL chan
 
 #### Scenario: The assistant sends an invalid outline
 
+- **GIVEN** an open guided diagram
 - **WHEN** the tool is called with an outline that has an error
 - **THEN** the diagram is unchanged, and the result lists the errors with their line numbers
+
+#### Scenario: The current journey carries handles
+
+- **GIVEN** a guided journey Start → A → B
+- **WHEN** the assistant prompt is built
+- **THEN** it contains `A {#s1}` and `B {#s2}`, and both tools are offered
 
 ### Requirement: Outline text is translated
 
@@ -233,3 +269,18 @@ Every label, error message, summary and comment the outline features show or wri
 - **GIVEN** the interface language is pt-BR
 - **WHEN** an outline has an error
 - **THEN** the error message is shown in Portuguese
+
+### Requirement: Step handles in the outline
+
+A step, decision or end line MAY end with `{#name}`, where the name uses letters, digits, `-` and `_`. "Copy as… Text with ids" SHALL write a handle on every step line, numbered in reading order (`s1`, `s2`…). Adding an outline (paste, insert, the assistant's add tool) SHALL ignore handles. Only applying a whole-journey text SHALL use them (spec `guided-journey-text-sync`).
+
+#### Scenario: Copy with ids
+
+- **GIVEN** a journey Start → A → B
+- **WHEN** the author picks "Copy as… Text with ids"
+- **THEN** the lines read `A {#s1}` and `B {#s2}`
+
+#### Scenario: Handles ignored when adding
+
+- **WHEN** an outline with `X {#s1}` is pasted onto the canvas
+- **THEN** a step named "X" is added, and the handle does not appear in its name

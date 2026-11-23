@@ -37,7 +37,7 @@ In kind mode, when the journey has at least one phase start, the canvas SHALL sh
 
 A faint separator SHALL cross the lanes between consecutive phases. Clicking a segment SHALL select the step that starts it.
 
-The band SHALL be drawn by the host from the kind's `overlay`. It SHALL NOT be drawn in freehand mode or on read-only surfaces, and it SHALL not be a diagram element: it cannot be selected, moved or exported as a node.
+The band SHALL be drawn by the host from the kind's `overlay`. It SHALL NOT be drawn in freehand mode. On read-only surfaces (the viewer and embeds) it SHALL be drawn without click selection. It SHALL not be a diagram element: it cannot be selected, moved or exported as a node.
 
 #### Scenario: Two phases
 
@@ -49,38 +49,11 @@ The band SHALL be drawn by the host from the kind's `overlay`. It SHALL NOT be d
 - **WHEN** the author switches to "Edit freehand"
 - **THEN** the band and separators are gone, and the phase starts are kept
 
-### Requirement: The band draws the emotion curve
+#### Scenario: A shared journey shows its phases
 
-When at least one step has an experience score, the header band SHALL draw the emotion curve:
-
-- a polyline through the scored steps in reading order, along the main path (each decision's first exit), at each step's column centre;
-- the height running from 1 (low) to 5 (high);
-- a dot for each scored step, red for pain points.
-
-Unscored steps SHALL be skipped, without breaking the line.
-
-#### Scenario: A ### Requirement: The Journey tab picks or creates a phase
-
-The Journey tab SHALL show a "Phase" select holding the phase the step is in (or "No phase"). Opening it SHALL list the journey's phase names, each once, in reading order, with the current one marked, and SHALL filter them by the typed text. Typed text that names no phase SHALL offer "Create phase “name”".
-
-- Picking a phase, or creating one, SHALL make the step start it; picking the phase the step already inherits SHALL instead clear the step's own start.
-- When the step starts its own phase, the select SHALL also offer "Continue the previous phase" (or "Remove the phase" when nothing comes before it), which clears the start.
-
-Each choice SHALL be one undo step.
-
-#### Scenario: Creating a phase from the tab
-
-- **WHEN** the author types "Pay" in the phase select of a step and picks "Create phase “Pay”"
-- **THEN** the band shows a new segment "Pay" starting at that step, and one undo removes it
-
-#### Scenario: Picking an existing phase
-
-- **WHEN** a journey has Discover (A, B) then Buy (from C), and the author picks "Buy" on B
-- **THEN** B, C and the steps after are in Buy, and the band shows two segments, not three
-
-s "Pay" in "Start a phase here" on a step and presses Enter
-
-- **THEN** the band shows a new segment "Pay" starting at that step, and one undo removes it
+- **GIVEN** a guided journey with phases Discover and Buy, opened in the viewer from a share link
+- **WHEN** the viewer renders it
+- **THEN** the band shows both segments and the separators, and clicking a segment selects nothing
 
 ### Requirement: Outline and Mermaid carry phases
 
@@ -119,3 +92,47 @@ The section name, the field, "No phase", the outline error and the summary SHALL
 
 - **WHEN** the app is in pt-BR
 - **THEN** the section reads "Fase" and the field "Começar uma fase aqui"
+
+### Requirement: Whole-diagram framing includes the band
+
+Every framing of the whole diagram SHALL fit the union of the nodes' bounds and the kind overlay's bounds, with the same padding and zoom limits as before. This SHALL apply to:
+
+- the Fit view control;
+- the opening viewport;
+- the framing after "Arrange" and after leaving a reading;
+- "Show all".
+
+Framing a selection or a single element SHALL be unchanged.
+
+#### Scenario: Fit view shows the band
+
+- **GIVEN** a guided journey with phases, scrolled so the band is off-screen
+- **WHEN** the author clicks Fit view
+- **THEN** the whole band and every lane are inside the viewport
+
+#### Scenario: No overlay, no change
+
+- **GIVEN** a freehand diagram, or a guided journey without phases or a line of visibility
+- **WHEN** the author clicks Fit view
+- **THEN** the viewport is the same as React Flow's node-only fit
+
+### Requirement: The draw.io export carries the band
+
+When the exported diagram is guided, in kind mode, with a band, the draw.io export SHALL add:
+
+- one labelled rectangle per phase segment, at the band's position;
+- one dashed line per separator and per line between lanes.
+
+These shapes SHALL be grouped in a locked layer named after the band ("Phases" / "Fases"), translated through i18n. No shapes SHALL be added in freehand mode or without a band.
+
+#### Scenario: Phases in draw.io
+
+- **GIVEN** a guided journey with phases Discover and Buy
+- **WHEN** it is exported to draw.io
+- **THEN** the file holds two labelled phase cells above the lanes and the separators, in a locked "Phases" layer, and the steps and lanes are exported as before
+
+#### Scenario: Freehand export
+
+- **GIVEN** the same journey switched to "Edit freehand"
+- **WHEN** it is exported to draw.io
+- **THEN** the file has no phase layer
