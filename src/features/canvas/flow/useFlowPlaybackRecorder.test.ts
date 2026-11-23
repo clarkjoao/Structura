@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Flow, FlowStep } from "@/features/diagram";
-import { planPlaybackPath } from "./useFlowPlaybackRecorder";
+import {
+  particleDash,
+  particleDashOffset,
+  particleScale,
+  planPlaybackPath,
+} from "./useFlowPlaybackRecorder";
 
 vi.mock("gif.js/dist/gif.worker.js?url", () => ({ default: "gif.worker.js" }));
 
@@ -45,5 +50,40 @@ describe("planPlaybackPath", () => {
 
   it("is empty when the entry step is missing", () => {
     expect(planPlaybackPath(flow({ s1: {} }, "missing"))).toEqual([]);
+  });
+});
+
+describe("particleDashOffset", () => {
+  it("moves a request particle forward along the edge, like the flowParticle keyframes", () => {
+    expect(particleDashOffset(0, false)).toBeCloseTo(0);
+    expect(particleDashOffset(600, false)).toBeCloseTo(-56);
+    expect(particleDashOffset(1200, false)).toBeCloseTo(0);
+  });
+
+  it("plays the keyframes backwards for a response", () => {
+    expect(particleDashOffset(0, true)).toBeCloseTo(-112);
+    expect(particleDashOffset(300, true)).toBeCloseTo(-84);
+  });
+});
+
+describe("particleScale", () => {
+  it("enlarges the particle when the recording is zoomed out", () => {
+    expect(particleScale(0.5)).toBeCloseTo(3);
+    expect(particleScale(0.25)).toBeCloseTo(6);
+  });
+
+  it("never draws it smaller than live", () => {
+    expect(particleScale(2)).toBe(1);
+  });
+
+  it("grows the dash but keeps the live spacing, so edges keep their particle count", () => {
+    expect(particleDash(1)).toEqual([6, 106]);
+    const [dash, gap] = particleDash(3);
+    expect(dash).toBeCloseTo(18);
+    expect(dash + gap).toBeCloseTo(112);
+  });
+
+  it("caps the dash at half the cycle so particles never merge into a line", () => {
+    expect(particleDash(50)).toEqual([56, 56]);
   });
 });

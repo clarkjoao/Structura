@@ -8,6 +8,7 @@ import {
   READING_MAX_ZOOM,
   READING_PADDING,
 } from "./readingFrame";
+import { useFlowViewStore } from "../useFlowViewStore";
 
 /** Only for a step too big to fit at a reading zoom: it is still shown whole. */
 const STEP_ALONE_MIN_ZOOM = 0.1;
@@ -55,6 +56,11 @@ function targetsOf(step: FlowStep, instance: ReactFlowInstance): StepTargets | n
   return focus ? { ids: [...ids], focus } : null;
 }
 
+/** Every node a step points at on the canvas (see `targetsOf`). */
+export function stepTargetIds(step: FlowStep, instance: ReactFlowInstance): string[] {
+  return targetsOf(step, instance)?.ids ?? [];
+}
+
 /**
  * The node on screen for `nodeId`: itself, or — hidden inside a compact
  * container — the first ancestor that is drawn. (An ancestor above a drawn one
@@ -88,9 +94,10 @@ export function useFrameReadStep({
 }: Params): void {
   const paneWidth = useStore((state) => state.width);
   const paneHeight = useStore((state) => state.height);
+  const cameraLocked = useFlowViewStore((state) => state.cameraLocked);
 
   useEffect(() => {
-    if (!isReading || !flow || !currentStepId) return;
+    if (!isReading || cameraLocked || !flow || !currentStepId) return;
     const step = getStepById(flow, currentStepId);
     if (!step) return;
 
@@ -136,5 +143,5 @@ export function useFrameReadStep({
       cancelled = true;
       cancelAnimationFrame(id);
     };
-  }, [isReading, flow, currentStepId, paneWidth, paneHeight, reactFlowInstance]);
+  }, [isReading, cameraLocked, flow, currentStepId, paneWidth, paneHeight, reactFlowInstance]);
 }

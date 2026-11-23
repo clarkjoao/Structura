@@ -283,13 +283,14 @@ export function WorkspaceContent({
         toast.warning(t("flows.unavailableDuringCollab"));
         return;
       }
-      if (!reactFlowInstanceRef.current) {
+      const reactFlowInstance = reactFlowInstanceRef.current;
+      if (!reactFlowInstance) {
         toast.error(t("flows.gifCanvasNotReady"));
         return;
       }
       const toastId = toast.loading(t("flows.gifRecording"));
       try {
-        const blob = await recordGifRef.current({ flow, speed });
+        const blob = await recordGifRef.current({ flow, speed, reactFlowInstance });
         if (!blob) {
           toast.error(t("flows.gifFailed"), { id: toastId });
           return;

@@ -9,13 +9,20 @@ interface FlowViewState {
   scriptFlowId: string | null;
   /** The row the script panel has focused, kept in step with the canvas selection. */
   selectedStepId: string | null;
+  /**
+   * While true, reading a flow does not move the camera to each step. Set by the
+   * GIF recorder, which frames the whole flow once so the frames line up.
+   */
+  cameraLocked: boolean;
   openScript: (flowId: string | null) => void;
   selectStep: (stepId: string | null) => void;
+  setCameraLocked: (locked: boolean) => void;
 }
 
 export const useFlowViewStore = create<FlowViewState>((set) => ({
   scriptFlowId: null,
   selectedStepId: null,
+  cameraLocked: false,
   openScript: (flowId) =>
     set((state) => ({
       scriptFlowId: flowId,
@@ -23,4 +30,5 @@ export const useFlowViewStore = create<FlowViewState>((set) => ({
       selectedStepId: flowId === state.scriptFlowId ? state.selectedStepId : null,
     })),
   selectStep: (stepId) => set({ selectedStepId: stepId }),
+  setCameraLocked: (locked) => set({ cameraLocked: locked }),
 }));

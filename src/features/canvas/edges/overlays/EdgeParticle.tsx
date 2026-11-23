@@ -14,6 +14,7 @@ export function EdgeParticle({ edgePath, direction }: EdgeParticleProps) {
       <style>{`@keyframes flowParticle { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -112; } }`}</style>
       <path
         d={edgePath}
+        data-flow-particle={direction === "response" ? "response" : "request"}
         fill="none"
         stroke={direction === "response" ? "hsl(152 60% 45%)" : "hsl(187 72% 51%)"}
         strokeWidth={2.5}

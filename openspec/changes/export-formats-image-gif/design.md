@@ -54,6 +54,8 @@ The existing `DownloadFile` and `downloadZip` utilities handle the final user do
 
 GIF is exported from the Flow Panel ("Record GIF" → speed submenu), **not** from the Export modal or `buildDiagramExportFiles`: the export service is a pure diagram → files function and cannot drive React playback state. `DiagramExportFormat` therefore does not include `"gif"`.
 
+Recording holds the camera still (`useFlowViewStore.cameraLocked` suppresses the per-step reading frame) after framing every node the flow touches once, so frames line up. The live step animation is a CSS particle on the active edge, which a still DOM capture cannot show: each step is captured once without it, and the particle is redrawn along the edge path on a 2D canvas in 40ms sub-frames (25fps). Because the recording frames the whole flow (usually zoomed out), the particle's width and dash are drawn at their reading-zoom screen size (×1.5, with a soft halo) while its spacing and speed stay the live ones, so it reads as clearly as during playback (same dash, period and direction as `flowParticle`), clipped out of edge labels.
+
 **Rationale:** Reuses the playback engine already implemented and tested. `gif.js` is the smallest viable GIF encoder with web-worker support (avoids blocking the UI thread during encoding).
 
 **Alternative:** Record via `MediaRecorder` API. Rejected because it captures a `<video>` stream, not individual canvas frames, and produces WebM rather than GIF — the user explicitly asked for GIF.
