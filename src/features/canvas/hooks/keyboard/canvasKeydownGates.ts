@@ -13,6 +13,8 @@ export interface CanvasKeydownModeFlags {
   isPlaying: boolean;
   isRecording: boolean;
   isFlowPanelOpen: boolean;
+  /** The Controls padlock: edits are off, saving still works. */
+  isCanvasLocked?: boolean;
   isSearchOpen?: boolean;
   isCommandPaletteOpen?: boolean;
   isVersionsDrawerOpen?: boolean;
@@ -77,7 +79,7 @@ export function handleAutoLayoutShortcut(
   if (!isModKeyPressed(event) || !event.shiftKey || event.altKey) return false;
   if (!keyMatchesLetterOrCode(event, KEY.L, "KeyL")) return false;
   claimShortcutEvent(event);
-  if (!isCanvasEditingLocked(flags)) {
+  if (!isCanvasEditingLocked(flags) && !flags.isCanvasLocked) {
     onAutoLayout?.();
   }
   return true;

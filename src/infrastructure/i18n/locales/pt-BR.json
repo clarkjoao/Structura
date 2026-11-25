@@ -2001,10 +2001,6 @@
     "sourceType": "Cor do tipo de fronteira",
     "sourceCustom": "Cor personalizada",
     "backToDerived": "Voltar ao derivado",
-    "content": "Conteúdo",
-    "contentCount_one": "{{count}} elemento",
-    "contentCount_other": "{{count}} elementos",
-    "empty": "Nada dentro ainda",
     "collapseOnCanvas": "Recolher no canvas"
   },
   "legend": {

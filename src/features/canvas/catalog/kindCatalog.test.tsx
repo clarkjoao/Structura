@@ -12,6 +12,7 @@ import QuickInsertPopover from "../toolbar/QuickInsertPopover";
 import { CanvasBottomToolbar } from "./CanvasBottomToolbar";
 import { kindCatalogFor } from "./kindCatalog";
 import { registryCatalog } from "./toolbarTools";
+import { useCanvasPreferencesStore } from "../preferences";
 
 vi.mock("sonner", () => ({
   toast: { warning: vi.fn(), error: vi.fn(), success: vi.fn(), info: vi.fn() },
@@ -104,6 +105,29 @@ describe("insert surfaces follow the diagram kind", () => {
       />,
     );
     expect(screen.getByRole("group", { name: "C4" })).toBeInTheDocument();
+  });
+
+  it("quick insert lists the last four recents, and does not repeat them under C4", () => {
+    const store = useDiagramStore.getState();
+    const diagram = store.addDiagram(`Recents ${Math.random()}`, "context");
+    store.openDiagram(diagram.id);
+    const c4 = registryCatalog().entries.filter((entry) => entry.groupId === "c4");
+    const flowchart = registryCatalog().entries.filter((entry) => entry.groupId === "flowchart");
+    const recent = [c4[0]!.id, ...flowchart.slice(0, 5).map((entry) => entry.id)];
+    useCanvasPreferencesStore.setState({ recentCatalogEntryIds: recent });
+    wrap(
+      <QuickInsertPopover
+        screenPos={{ x: 10, y: 10 }}
+        flowPos={{ x: 0, y: 0 }}
+        onInsert={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    const recents = screen.getByRole("group", { name: "Recent" });
+    expect(within(recents).getAllByRole("option")).toHaveLength(4);
+    const top = screen.getByRole("group", { name: "C4" });
+    expect(within(top).getAllByRole("option")).toHaveLength(c4.length - 1);
+    useCanvasPreferencesStore.setState({ recentCatalogEntryIds: [] });
   });
 
   it("the bottom toolbar offers Step, Decision, End and More instead of C4 and Flowchart", () => {

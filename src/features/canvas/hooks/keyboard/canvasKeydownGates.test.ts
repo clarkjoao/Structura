@@ -22,6 +22,29 @@ describe("canvasKeydownGates", () => {
     ).toBe(true);
   });
 
+  it("a locked canvas runs no auto layout, but still claims the chord", () => {
+    vi.stubGlobal("navigator", {
+      ...navigator,
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)",
+      platform: "MacIntel",
+    });
+    const onAutoLayout = vi.fn();
+    const handled = handleAutoLayoutShortcut(
+      modEvent("l", { shiftKey: true }),
+      {
+        isCompareMode: false,
+        isPlaying: false,
+        isRecording: false,
+        isFlowPanelOpen: false,
+        isCanvasLocked: true,
+      },
+      onAutoLayout,
+    );
+    expect(handled).toBe(true);
+    expect(onAutoLayout).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it("treats search and palette as overlays", () => {
     expect(
       isCanvasOverlayOpen({

@@ -22,6 +22,7 @@ import { HandleHighlightProvider } from "./contexts/HandleHighlightContext";
 import { EdgeLabelRevealProvider } from "./contexts/EdgeLabelRevealContext";
 import { useRevealedLabelEdgeIds } from "./contexts/useRevealedLabelEdgeIds";
 import { useCanvasController } from "./hooks/useCanvasController";
+import { useCanvasLockStore } from "./hooks/canvasLock.store";
 import { useFrameDiagram } from "./focus/frameDiagram";
 import { LaneRenameContext } from "./contexts/LaneRenameContext";
 import { useActiveKindKey } from "./catalog/kindCatalog";
@@ -127,6 +128,11 @@ const Canvas = (props: CanvasProps = {}) => {
   } = controller;
   const drag = useLockedNodeDrag(nodes, controller.onNodeDragStop);
   const { isFlowActive } = interactionMode;
+  // A lock is about the diagram in front of the author: another one opens unlocked.
+  const diagramId = diagram?.id;
+  useEffect(() => {
+    useCanvasLockStore.getState().setLocked(false);
+  }, [diagramId]);
   const canEditStructure = interactionMode.canEditCanvas && !isFlowActive && !isCompareMode;
   const arrangeControl = useCanvasArrangeControl({ ...controller, diagram, canEditStructure });
   // Lanes are renamed from their header while a kind arranges the diagram (spec
@@ -320,7 +326,10 @@ const Canvas = (props: CanvasProps = {}) => {
                   onEdgesChange={eventHandlers.onEdgesChange}
                   onConnect={eventHandlers.onConnect}
                   onConnectEnd={eventHandlers.onConnectEnd}
-                  onReconnect={edgeReconnect.onReconnect}
+                  // Without a handler React Flow offers no reconnection: none on a read-only canvas.
+                  onReconnect={
+                    interactionMode.canEditCanvas ? edgeReconnect.onReconnect : undefined
+                  }
                   onReconnectStart={edgeReconnect.onReconnectStart}
                   onReconnectEnd={edgeReconnect.onReconnectEnd}
                   onNodeClick={eventHandlers.onNodeClick}
@@ -377,6 +386,13 @@ const Canvas = (props: CanvasProps = {}) => {
                     <>
                       <Controls
                         onFitView={() => void frameDiagram()}
+                        // The padlock locks the whole canvas (drag, select, insert, paste,
+                        // delete), not only React Flow's own flags. Compare mode and a flow
+                        // already hold the canvas read-only, so it is not offered there.
+                        showInteractive={!isCompareMode && !isFlowActive}
+                        onInteractiveChange={(interactive) =>
+                          useCanvasLockStore.getState().setLocked(!interactive)
+                        }
                         className="!bg-card !border-border !rounded-lg !shadow-lg [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-surface-hover [&>button]:!rounded-md [&>button]:!w-8 [&>button]:!h-8"
                       />
                       <Panel position="bottom-left" className="!mb-4 !ml-[3.25rem]">

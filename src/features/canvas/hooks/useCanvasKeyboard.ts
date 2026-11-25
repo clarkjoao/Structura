@@ -14,6 +14,7 @@ import type {
 import { getCachedCanvasSnapshot } from "@/features/diagram";
 import { exportDrawio } from "@/lib/export-service";
 import { useCopyPasteShortcuts } from "./keyboard/useCopyPasteShortcuts";
+import { useCanvasLockStore } from "./canvasLock.store";
 import { KEY, type KeyHandler } from "./keyboard/helpers";
 import { useRecordingShortcuts } from "./keyboard/useRecordingShortcuts";
 import { useSelectionShortcuts } from "./keyboard/useSelectionShortcuts";
@@ -115,6 +116,7 @@ function useStableHandlerRef(handler: KeyHandler): MutableRefObject<KeyHandler> 
 export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   const { t } = useTranslation();
   const lastPointerScreenRef = useRef<{ x: number; y: number } | null>(null);
+  const isCanvasLocked = useCanvasLockStore((state) => state.locked);
   const mediaPasteConsumedRef = useRef(false);
   const c4ShortcutMap = useMemo<Record<string, { type: ComponentType; name: string } | undefined>>(
     () => ({
@@ -205,7 +207,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   );
 
   useCanvasMediaPaste({
-    enabled: Boolean(diagram),
+    enabled: Boolean(diagram) && !isCanvasLocked,
     mediaPasteConsumedRef,
     reactFlowInstance,
     reactFlowWrapperRef,
@@ -291,6 +293,7 @@ export function useCanvasKeyboard(params: UseCanvasKeyboardParams) {
   dispatchRef.current = {
     flags: {
       isCompareMode,
+      isCanvasLocked,
       isPlaying,
       isRecording,
       isFlowPanelOpen,

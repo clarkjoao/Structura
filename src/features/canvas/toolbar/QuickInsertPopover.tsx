@@ -19,6 +19,8 @@ const POPOVER_W = 320;
 const POPOVER_H_MAX = 400;
 /** Search hits listed; the full catalog is one click away for the rest. */
 const MAX_HITS = 30;
+/** Recents shown when the field is empty: the last few, so the next group stays in view. */
+const MAX_RECENTS = 4;
 /** The group offered when the field is empty, after Recents (a diagram kind offers its own). */
 const TOP_GROUP_ID = "c4";
 
@@ -120,10 +122,15 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
     const recents = recentIds
       .map((id) => byId.get(id))
       .filter((entry): entry is CatalogEntry => !!entry)
+      .slice(0, MAX_RECENTS)
       .map(named);
-    const top = kind
-      ? kind.entries.map((item) => item.entry)
-      : index.entries.filter((entry) => entry.groupId === TOP_GROUP_ID);
+    // An entry already under Recents is not offered a second time below it.
+    const recentSet = new Set(recents.map((entry) => entry.id));
+    const top = (
+      kind
+        ? kind.entries.map((item) => item.entry)
+        : index.entries.filter((entry) => entry.groupId === TOP_GROUP_ID)
+    ).filter((entry) => !recentSet.has(entry.id));
     const result: QuickSection[] = [];
     if (recents.length > 0) {
       result.push({
@@ -287,7 +294,7 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
                         </span>
                       )}
                     </span>
-                    {hit && (
+                    {(hit || section.key === "recents") && (
                       <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                         {index.groups.find((group) => group.id === option.entry.groupId)?.label}
                       </span>

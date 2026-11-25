@@ -17,20 +17,18 @@ import { PANEL_LABEL_CLASS, PanelSection } from "../shell";
 interface BoundarySectionProps {
   component: PanelComponent;
   updateComponent: (id: string, patch: ComponentPatch) => void;
-  onSelectElement?: (id: string) => void;
   onTogglePanelCollapse?: (id: string) => void;
 }
 
 /**
- * What the boundary is — its type, the domain it sits in, the look both give it — and what it
- * holds. The look is derived, not picked: colour comes from the domain (the group the boundary is
+ * What the boundary is — its type, the domain it sits in, the look both give it — and whether it is
+ * collapsed. The look is derived, not picked: colour comes from the domain (the group the boundary is
  * in), the outline from the type. A colour the author had already chosen stays, and can be handed
- * back to the derivation.
+ * back to the derivation. What it holds is on the canvas itself, so it is not listed here.
  */
 export function BoundarySections({
   component,
   updateComponent,
-  onSelectElement,
   onTogglePanelCollapse,
 }: BoundarySectionProps) {
   const { t } = useTranslation();
@@ -39,13 +37,6 @@ export function BoundarySections({
   const appearance = useMemo(
     () => resolveBoundaryAppearance(component, components),
     [component, components],
-  );
-  const children = useMemo(
-    () =>
-      Object.values(components)
-        .filter((candidate) => candidate.parentId === component.id)
-        .sort((a, b) => a.name.localeCompare(b.name)),
-    [components, component.id],
   );
 
   const setType = (type: BoundaryType | undefined) =>
@@ -130,29 +121,6 @@ export function BoundarySections({
               </button>
             )}
           </div>
-        )}
-      </PanelSection>
-      <PanelSection
-        title={t("boundary.content")}
-        summary={t("boundary.contentCount", { count: children.length })}
-      >
-        {children.length === 0 ? (
-          <p className="text-xs text-muted-foreground">{t("boundary.empty")}</p>
-        ) : (
-          <ul className="space-y-0.5">
-            {children.map((child) => (
-              <li key={child.id}>
-                <button
-                  type="button"
-                  disabled={!onSelectElement}
-                  onClick={() => onSelectElement?.(child.id)}
-                  className="w-full truncate rounded px-1.5 py-1 text-left text-sm text-foreground enabled:hover:bg-accent"
-                >
-                  {child.name.trim() || t("common.unnamedElement")}
-                </button>
-              </li>
-            ))}
-          </ul>
         )}
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor={`collapse-${component.id}`} className="text-sm font-medium">

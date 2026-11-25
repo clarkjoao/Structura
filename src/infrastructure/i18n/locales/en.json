@@ -2001,10 +2001,6 @@
     "sourceType": "Colour from the boundary type",
     "sourceCustom": "Custom colour",
     "backToDerived": "Back to derived",
-    "content": "Content",
-    "contentCount_one": "{{count}} element",
-    "contentCount_other": "{{count}} elements",
-    "empty": "Nothing inside yet",
     "collapseOnCanvas": "Collapse on canvas"
   },
   "legend": {

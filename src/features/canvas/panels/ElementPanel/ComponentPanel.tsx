@@ -417,7 +417,6 @@ const ComponentPanel = ({
               <BoundarySections
                 component={component}
                 updateComponent={updateComponent}
-                onSelectElement={onFocusElement}
                 onTogglePanelCollapse={onTogglePanelCollapse}
               />
             )}
