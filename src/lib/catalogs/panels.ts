@@ -106,6 +106,23 @@ export const AWS_SERVICE_TO_PANEL_KIND: Record<string, PanelKind> = {
   "aws-region": PanelKind.AvailabilityZone,
 };
 
+/**
+ * AWS services that only exist as a boundary — a region, the VPC group, a subnet — so the
+ * catalog offers them as a group only. The other mapped services (ECS, EKS, Auto Scaling, the
+ * VPC service) are also drawn as a plain node: an "ECS" box in a context view, a cluster that
+ * holds tasks in a deployment view.
+ */
+const AWS_GROUP_ONLY_SERVICES: ReadonlySet<string> = new Set([
+  "aws-region",
+  "aws-vpc-group",
+  "public-subnet",
+  "private-subnet",
+]);
+
+export function isAwsGroupOnlyService(serviceId: string): boolean {
+  return AWS_GROUP_ONLY_SERVICES.has(serviceId);
+}
+
 export function getPanelKindForAwsService(serviceId: string): PanelKind | undefined {
   return AWS_SERVICE_TO_PANEL_KIND[serviceId];
 }

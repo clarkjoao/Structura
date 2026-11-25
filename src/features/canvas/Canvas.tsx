@@ -1,4 +1,5 @@
 import { SharedLayer } from "./shared/SharedLayer";
+import { useRefsMenuStore } from "./selection-actions/refsMenu.store";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLLMStore } from "@/features/llm";
@@ -346,9 +347,12 @@ const Canvas = (props: CanvasProps = {}) => {
                     components={resolvedSnapshot.components}
                     connections={resolvedSnapshot.connections}
                     onPick={(originalId) => {
-                      // A badge stands for its original: picking it is picking the original.
+                      // A badge stands for its original: picking it is picking the original,
+                      // and what it is shared with is in the references menu on its toolbar.
                       const node = nodes.find((candidate) => candidate.id === originalId);
-                      if (node) eventHandlers.onNodeClick?.({} as never, node);
+                      if (!node) return;
+                      eventHandlers.onNodeClick?.({} as never, node);
+                      useRefsMenuStore.getState().setOpenFor(originalId);
                     }}
                   />
                   <PendingSuggestionToolbars

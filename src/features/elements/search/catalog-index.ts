@@ -1,7 +1,8 @@
 import type { LucideIcon } from "lucide-react";
 import i18n from "@/infrastructure/i18n";
 import { COMPONENT_TYPE_PANEL } from "@/features/diagram/model/component-type-constants";
-import { getPanelKindForAwsService } from "@/lib/catalogs/panels";
+import type { PanelKind } from "@/features/diagram/enums";
+import { getPanelKindForAwsService, isAwsGroupOnlyService } from "@/lib/catalogs/panels";
 import { offeredElements } from "../element.registry";
 import { paletteEntriesForElements } from "../element.palette";
 import type { ElementCreateOptions, ElementTypeId } from "../element.types";
@@ -81,11 +82,22 @@ export interface CatalogSearchResult {
 }
 
 /**
- * Palette categories shown before the catalog families, in this order. Kept
- * as literals — the same ids the descriptors declare — so this module does not
- * import the canvas enum.
+ * The groups the catalog leads with, in this order: the ones most diagrams are drawn from. The
+ * rest (flowchart, the other catalog families, services, presets) follow. Kept as literals —
+ * the same ids the descriptors and families declare — so this module does not import the
+ * canvas enum.
  */
-const LEADING_GROUP_IDS = ["c4", "flowchart", "canvas"] as const;
+function panelInsert(panelKind: PanelKind): CatalogInsert {
+  return { kind: "element", type: COMPONENT_TYPE_PANEL, createOptions: { panelKind } };
+}
+
+/** The id suffix of the group variant of an AWS service that is offered as a node and a group. */
+const GROUP_VARIANT_SUFFIX = "#group";
+
+export const PRIMARY_GROUP_IDS = ["c4", "aws", "canvas"] as const;
+
+/** Shown right after the primary groups, before the remaining catalog families. */
+const SECONDARY_LEADING_GROUP_IDS = ["flowchart"] as const;
 
 /**
  * A group's chip label: the catalog's own label when it has one, then the
@@ -138,24 +150,24 @@ export function registryCatalogEntries(): {
 
   const byGroup = new Map<string, { rank: number; order: number; entry: CatalogEntry }[]>();
   let order = 0;
+  // A family can list the same service under two categories (AWS has ECS and EKS under compute
+  // and under containers): the catalog shows it once, from the first category.
+  const seenServices = new Set<string>();
 
   for (const element of offeredElements()) {
     const family = familiesById.get(element.family);
     for (const palette of paletteEntriesForElements([element])) {
       const { serviceId } = palette.createOptions;
+      if (family && serviceId) {
+        const sameService = `${family.id}|${palette.label}|${palette.awsIconName ?? ""}`;
+        if (seenServices.has(sameService)) continue;
+        seenServices.add(sameService);
+      }
       const rank = entryRank(family, element.id, serviceId);
       const service = serviceId
         ? family?.services.find((candidate) => candidate.id === serviceId)
         : undefined;
       const descriptionKey = service?.descriptionKey ?? element.descriptionKey;
-
-      // AWS services that are really containers (a VPC, an EKS cluster) are
-      // created as the panel kind that draws them — the picker always did.
-      const panelKind =
-        family?.id === "aws" && serviceId ? getPanelKindForAwsService(serviceId) : undefined;
-      const insert: CatalogInsert = panelKind
-        ? { kind: "element", type: COMPONENT_TYPE_PANEL, createOptions: { panelKind } }
-        : { kind: "element", type: palette.type, createOptions: palette.createOptions };
 
       const entry: CatalogEntry = {
         id: palette.key,
@@ -167,21 +179,49 @@ export function registryCatalogEntries(): {
         icon: palette.icon,
         ...(palette.awsIconName ? { awsIconName: palette.awsIconName } : {}),
         ...(palette.familyIcon ? { familyIcon: palette.familyIcon } : {}),
-        insert,
+        insert: { kind: "element", type: palette.type, createOptions: palette.createOptions },
       };
-      const list = byGroup.get(entry.groupId) ?? [];
-      list.push({ rank, order: order++, entry });
-      byGroup.set(entry.groupId, list);
+
+      // AWS services that can hold others (an ECS or EKS cluster, a VPC) are offered twice:
+      // as the node and as the group (panel kind) that draws them. A boundary that is only
+      // ever a group (a region, a subnet) is offered as the group alone.
+      const panelKind =
+        family?.id === "aws" && serviceId ? getPanelKindForAwsService(serviceId) : undefined;
+      const groupOnly = panelKind !== undefined && isAwsGroupOnlyService(serviceId ?? "");
+      const variants: CatalogEntry[] = [];
+      if (!panelKind) {
+        variants.push(entry);
+      } else if (groupOnly) {
+        variants.push({ ...entry, insert: panelInsert(panelKind) });
+      } else {
+        variants.push(
+          { ...entry, label: i18n.t("elementCatalog.asNode", { name: palette.label }) },
+          {
+            ...entry,
+            id: `${palette.key}${GROUP_VARIANT_SUFFIX}`,
+            label: i18n.t("elementCatalog.asGroup", { name: palette.label }),
+            synonyms: [...entry.synonyms, ...i18n.t("elementCatalog.groupSynonyms").split("|")],
+            insert: panelInsert(panelKind),
+          },
+        );
+      }
+
+      for (const variant of variants) {
+        const list = byGroup.get(variant.groupId) ?? [];
+        list.push({ rank, order: order++, entry: variant });
+        byGroup.set(variant.groupId, list);
+      }
     }
   }
 
-  const groupIds = [
-    ...LEADING_GROUP_IDS.filter((id) => byGroup.has(id)),
-    ...allCloudFamilies()
-      .map((family) => family.paletteCategoryId)
-      .filter((id) => byGroup.has(id)),
-  ];
-  for (const id of byGroup.keys()) if (!groupIds.includes(id)) groupIds.push(id);
+  const groupIds: string[] = [];
+  const add = (id: string) => {
+    if (byGroup.has(id) && !groupIds.includes(id)) groupIds.push(id);
+  };
+  PRIMARY_GROUP_IDS.forEach(add);
+  SECONDARY_LEADING_GROUP_IDS.forEach(add);
+  allCloudFamilies().forEach((family) => add(family.paletteCategoryId));
+  for (const id of byGroup.keys()) add(id);
 
   const groups = groupIds.map((id) => ({
     id,

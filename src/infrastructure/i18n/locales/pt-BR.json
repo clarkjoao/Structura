@@ -3499,6 +3499,16 @@
     }
   },
   "shared": {
+    "menu": {
+      "trigger": "Refs",
+      "title": "Referências",
+      "intro": "Desenhe este elemento de novo onde ele é usado, em vez de arestas longas cruzando o diagrama.",
+      "create": "Nova referência ao lado",
+      "createHint": "Ou Alt+arraste o elemento até onde ele é usado",
+      "existing_one": "{{count}} referência neste diagrama",
+      "existing_other": "{{count}} referências neste diagrama",
+      "refRow": "{{name}} — referência {{index}}"
+    },
     "chip": "compartilhado",
     "uses_one": "{{count}} uso",
     "uses_other": "{{count}} usos",
@@ -3506,12 +3516,6 @@
     "usedBy_other": "Usado por {{count}}",
     "goToOriginal": "Ir para o original",
     "focusOriginal": "Focar no elemento principal",
-    "mode": {
-      "label": "Compartilhado",
-      "edges": "Arestas",
-      "badge": "Selos",
-      "ref": "Referências"
-    },
     "showEdges_one": "Mostrar a aresta",
     "showEdges_other": "Mostrar as {{count}} arestas",
     "hideEdges_one": "Esconder a aresta",
@@ -3525,6 +3529,9 @@
     "refsRemoved_other": "{{name}} saiu com as suas {{count}} referências"
   },
   "elementCatalog": {
+    "asNode": "{{name}} — nó",
+    "asGroup": "{{name}} — grupo",
+    "groupSynonyms": "grupo|cluster|agrupador|fronteira|group",
     "groups": {
       "c4": "C4",
       "flowchart": "Fluxograma",

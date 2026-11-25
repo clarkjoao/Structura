@@ -1,6 +1,7 @@
 export {
   catalogGroupCounts,
   createCatalogIndex,
+  PRIMARY_GROUP_IDS,
   registryCatalogEntries,
   searchCatalog,
   type CatalogEntry,

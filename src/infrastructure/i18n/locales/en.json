@@ -3499,6 +3499,16 @@
     }
   },
   "shared": {
+    "menu": {
+      "trigger": "Refs",
+      "title": "References",
+      "intro": "Draw this element again where it is used, instead of long edges across the diagram.",
+      "create": "New reference beside it",
+      "createHint": "Or Alt+drag the element to where it is used",
+      "existing_one": "{{count}} reference in this diagram",
+      "existing_other": "{{count}} references in this diagram",
+      "refRow": "{{name}} — reference {{index}}"
+    },
     "chip": "shared",
     "uses_one": "{{count}} use",
     "uses_other": "{{count}} uses",
@@ -3506,12 +3516,6 @@
     "usedBy_other": "Used by {{count}}",
     "goToOriginal": "Go to the original",
     "focusOriginal": "Focus on the original element",
-    "mode": {
-      "label": "Shared",
-      "edges": "Edges",
-      "badge": "Badges",
-      "ref": "References"
-    },
     "showEdges_one": "Show the edge",
     "showEdges_other": "Show the {{count}} edges",
     "hideEdges_one": "Hide the edge",
@@ -3525,6 +3529,9 @@
     "refsRemoved_other": "{{name}} left with its {{count}} references"
   },
   "elementCatalog": {
+    "asNode": "{{name}} — node",
+    "asGroup": "{{name}} — group",
+    "groupSynonyms": "group|cluster|container|boundary",
     "groups": {
       "c4": "C4",
       "flowchart": "Flowchart",

@@ -53,7 +53,10 @@ const LEAVE_DELAY_MS = 400;
 export interface SharedLayerProps {
   components: Record<string, Component>;
   connections: Record<string, Connection>;
-  /** What picking a badge does — the editor selects (or records) the original. */
+  /**
+   * What picking a chip, badge or suggestion does — the editor selects the original and opens its
+   * references menu. Given, hovering only lights the original and its uses: no popover.
+   */
   onPick?: (originalId: string) => void;
   /** Hint at elements worth sharing (the editor; a reader has nothing to change). */
   suggest?: boolean;
@@ -232,7 +235,9 @@ export const SharedLayer = memo(function SharedLayer({
           );
         })}
 
-      {active && hovered && anchorBox && (
+      {/* The editor answers a pick with the element's references menu on its toolbar; only a
+          reader, who has no toolbar, gets the "used by" popover on hover. */}
+      {!onPick && active && hovered && anchorBox && (
         <UsedByPopover
           original={active}
           box={anchorBox}
