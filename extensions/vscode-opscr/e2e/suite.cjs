@@ -26,11 +26,33 @@ exports.run = async function run() {
   await vscode.window.showTextDocument(doc);
   await vscode.commands.executeCommand("opscr.openPreview");
 
+  // Automatic by default: arranged in the webview with Structura's canvas arranger, whose
+  // references can add boxes to the host's elements.
+  const arrangedFirst = await until("the webview to arrange and draw", async () => {
+    const s = await status(folder);
+    return s && s.ready && s.components > 0 && s.arranged && s.rendered >= s.components
+      ? s
+      : undefined;
+  });
+  assert.equal(arrangedFirst.arrange.mode, "automatic");
+  console.log(
+    `[e2e] webview arranged ${arrangedFirst.components} elements as the canvas does (${arrangedFirst.rendered} boxes)`,
+  );
+  const arrange = (settings) =>
+    vscode.commands.executeCommand("opscr._previewArrange", folder, settings);
+  await arrange({ ...arrangedFirst.arrange, references: "off" });
+  await until("an arrangement without references", async () => {
+    const s = await status(folder);
+    return s.arranged && s.arrange.references === "off" && s.rendered === s.components;
+  });
+  console.log("[e2e] references off: one box per element");
+  // The rest of the suite checks the extension's own stable placement.
+  await arrange({ ...arrangedFirst.arrange, mode: "manual" });
   const first = await until("the webview to load and draw", async () => {
     const s = await status(folder);
-    return s && s.ready && s.components > 0 && s.rendered === s.components ? s : undefined;
+    return s && !s.arranged && s.components > 0 && s.rendered === s.components ? s : undefined;
   });
-  console.log(`[e2e] webview drew ${first.rendered} of ${first.components} elements`);
+  console.log(`[e2e] manual: webview drew ${first.rendered} of ${first.components} elements`);
   const probe = () => vscode.commands.executeCommand("opscr._previewProbe", folder);
   const start = await probe();
   await vscode.commands.executeCommand("opscr.searchPreview");

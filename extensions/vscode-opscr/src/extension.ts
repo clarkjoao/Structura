@@ -2,7 +2,8 @@
  * opscr Preview — a live, read-only Structura diagram of the opscr workspace of the active
  * `*.opscr.yaml`. The extension host validates the YAML with opscr and turns it into a graph
  * (the technical view, ELK, stable placement); the webview is Structura's embed preview, which
- * draws it. The YAML is edited in VSCode — by the user or Claude Code — never from the diagram.
+ * draws it — arranged there with Structura's canvas arranger and its references by default
+ * (`./arrange.ts`), or at the extension's own positions in manual mode. The YAML is edited in VSCode — by the user or Claude Code — never from the diagram.
  * The two point at each other: a click on an element opens the YAML that writes it, and the
  * element the cursor is in is lit in the preview.
  */
@@ -11,6 +12,14 @@ import { basename, join as joinPath, sep } from "node:path";
 import * as vscode from "vscode";
 import type { Diagnostic as OpscrDiagnostic } from "opscr/core";
 import type { GraphElementRef, SourceIndex, SourceLocation } from "./generated/opscr-mapping";
+import {
+  arrangeChanged,
+  arrangeMenu,
+  arrangeMessage,
+  describeArrange,
+  readArrangeSettings,
+  type ArrangeSettings,
+} from "./arrange";
 import { collectWorkspace, detectWorkspaceRoot, isManifestPath, PreviewPipeline } from "./pipeline";
 import { previewHtml } from "./webview-html";
 
@@ -31,6 +40,8 @@ const PROBE_UNANSWERED = {
 interface WebviewMessage {
   type?: string;
   nodes?: number;
+  /** STRUCTURA_RENDERED: the picture was arranged in the webview (automatic mode). */
+  arranged?: boolean;
   element?: GraphElementRef;
   index?: number;
 }
@@ -43,6 +54,8 @@ class Preview {
   private timer: NodeJS.Timeout | undefined;
   private ready = false;
   private rendered = 0;
+  /** Whether the last picture drawn was arranged by the embed. */
+  private arrangedRendered = false;
   private lastGraph: { components: unknown[] } | undefined;
   private readonly probes: Array<(result: unknown) => void> = [];
   /** The last STRUCTURA_BLOCKED sent, re-sent when the webview reloads; null while drawing. */
@@ -70,12 +83,23 @@ class Preview {
   private links = new Map<string, string>();
   /** Names the picture on screen and opens the view picker; shown when there are Views. */
   private readonly viewItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+  /** How the picture is arranged; opens the Arrange menu. */
+  private readonly arrangeItem = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    98,
+  );
+  /** How the preview arranges this folder, saved per folder. */
+  private arrange: ArrangeSettings;
 
   constructor(
     readonly folder: string,
     private readonly panel: vscode.WebviewPanel,
     private readonly diagnostics: vscode.DiagnosticCollection,
+    private readonly state?: vscode.Memento,
   ) {
+    this.arrange = readArrangeSettings(state?.get(this.arrangeKey));
+    this.arrangeItem.command = "opscr.arrangePreview";
+    this.showArrange();
     this.viewItem.command = "opscr.selectView";
     panel.webview.onDidReceiveMessage((message: WebviewMessage) =>
       // Opening a file can fail (deleted meanwhile): nothing to do but say so in the log.
@@ -85,7 +109,10 @@ class Preview {
 
   /** A message from the webview (or, for the end-to-end test, one posed as it). */
   async receive(message: WebviewMessage): Promise<void> {
-    if (message?.type === "STRUCTURA_RENDERED") this.rendered = message.nodes ?? 0;
+    if (message?.type === "STRUCTURA_RENDERED") {
+      this.rendered = message.nodes ?? 0;
+      this.arrangedRendered = message.arranged === true;
+    }
     if (message?.type === "STRUCTURA_PROBE_RESULT") {
       for (const resolve of this.probes.splice(0)) resolve(message);
     }
@@ -109,7 +136,7 @@ class Preview {
     if (message?.type !== "STRUCTURA_READY") return;
     this.ready = true;
     this.postTheme();
-    if (this.lastGraph) this.post({ type: "STRUCTURA_LOAD_GRAPH", ...this.lastGraph });
+    if (this.lastGraph) this.postGraph();
     if (this.lastBlocked) this.post(this.lastBlocked);
     if (this.selected) this.post({ type: "STRUCTURA_SELECT", element: this.selected });
   }
@@ -131,9 +158,92 @@ class Preview {
     this.timer = setTimeout(() => void this.update(), UPDATE_DELAY_MS);
   }
 
+  /** Lays the picture out from scratch: the stable placement, and the embed's arrangement. */
   relayout(): void {
     this.pipeline.relayout(this.view);
+    if (this.arrange.mode === "automatic") this.postArrange();
     void this.update();
+  }
+
+  private get arrangeKey(): string {
+    return `opscr.arrange:${this.folder}`;
+  }
+
+  /** The current arrangement, for the end-to-end test and the menu. */
+  arrangeSettings(): ArrangeSettings {
+    return { ...this.arrange };
+  }
+
+  /** Saves a new arrangement for this folder and lays the picture out again if it changes it. */
+  async setArrange(next: ArrangeSettings): Promise<void> {
+    const before = this.arrange;
+    this.arrange = readArrangeSettings(next);
+    this.showArrange();
+    await this.state?.update(this.arrangeKey, this.arrange);
+    if (arrangeChanged(before, this.arrange)) this.postArrange();
+  }
+
+  /** The Arrange menu: picks apply at once, and the menu opens again until dismissed. */
+  async pickArrange(): Promise<void> {
+    type Item = vscode.QuickPickItem & { index: number };
+    for (;;) {
+      const menu = arrangeMenu(this.arrange);
+      const items: Item[] = menu.map((item, index) => ({
+        label: item.label,
+        ...(item.description ? { description: item.description } : {}),
+        ...(item.separator ? { kind: vscode.QuickPickItemKind.Separator } : {}),
+        index,
+      }));
+      const chosen = await vscode.window.showQuickPick(items, {
+        title: "Arrange the opscr preview",
+        placeHolder: describeArrange(this.arrange),
+      });
+      const action = chosen && menu[chosen.index]?.action;
+      if (!action) return;
+      if ("next" in action) {
+        await this.setArrange(action.next);
+        continue;
+      }
+      const options = Array.from({ length: action.max - action.min + 1 }, (_, i) => {
+        const value = action.min + i;
+        return {
+          label: String(value),
+          description: [
+            value === this.arrange[action.ask] ? "current" : "",
+            value === action.default ? "default" : "",
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          value,
+        };
+      });
+      const picked = await vscode.window.showQuickPick(options, {
+        title:
+          action.ask === "refNeighborColumns"
+            ? "A back-connection further back than this many columns ends on a reference"
+            : "The fewest connections an original keeps",
+      });
+      if (picked) await this.setArrange({ ...this.arrange, [action.ask]: picked.value });
+    }
+  }
+
+  private showArrange(): void {
+    this.arrangeItem.text = `$(type-hierarchy) ${describeArrange(this.arrange)}`;
+    this.arrangeItem.tooltip = "How the opscr preview arranges the diagram — click to change";
+    this.arrangeItem.show();
+  }
+
+  private postArrange(): void {
+    this.post({ type: "STRUCTURA_ARRANGE", arrange: arrangeMessage(this.arrange) });
+  }
+
+  private postGraph(): void {
+    if (!this.lastGraph) return;
+    this.post({
+      type: "STRUCTURA_LOAD_GRAPH",
+      ...this.lastGraph,
+      arrange: arrangeMessage(this.arrange),
+    });
   }
 
   /** Draws another View (undefined: the whole workspace); the element lit before is not kept. */
@@ -232,6 +342,7 @@ class Preview {
     this.published.clear();
     this.statusItem.dispose();
     this.viewItem.dispose();
+    this.arrangeItem.dispose();
   }
 
   /** For the end-to-end test: did the webview load, and what did it last receive. */
@@ -243,8 +354,12 @@ class Preview {
     broken: number;
     view: string | null;
     views: string[];
+    arrange: ArrangeSettings;
+    arranged: boolean;
   } {
     return {
+      arrange: this.arrangeSettings(),
+      arranged: this.arrangedRendered,
       view: this.view ?? null,
       views: this.views,
       ready: this.ready,
@@ -327,7 +442,7 @@ class Preview {
     if (!result.graph) return;
     this.lastGraph = result.graph;
     this.sources = result.sources;
-    this.post({ type: "STRUCTURA_LOAD_GRAPH", ...result.graph });
+    this.postGraph();
   }
 }
 
@@ -469,7 +584,7 @@ export function activate(context: vscode.ExtensionContext): void {
       panel.webview.asWebviewUri(embedRoot).toString(),
       panel.webview.cspSource,
     );
-    const preview = new Preview(folder, panel, diagnostics);
+    const preview = new Preview(folder, panel, diagnostics, context.workspaceState);
     previews.set(folder, preview);
     // Files written outside any editor — Claude Code, git, Structura's layout sidecar — come
     // from disk: watch the folder itself.
@@ -515,6 +630,19 @@ export function activate(context: vscode.ExtensionContext): void {
         [...previews.values()][0];
       return preview?.pickView();
     }),
+    vscode.commands.registerCommand("opscr.arrangePreview", () => {
+      // The focused preview, else the one of the file being edited.
+      const uri = vscode.window.activeTextEditor?.document.uri;
+      const preview =
+        [...previews.values()].find((p) => p.isActive()) ??
+        (uri && forDocument(uri)) ??
+        [...previews.values()][0];
+      return preview?.pickArrange();
+    }),
+    vscode.commands.registerCommand(
+      "opscr._previewArrange",
+      (folder: string, settings: ArrangeSettings) => previews.get(folder)?.setArrange(settings),
+    ),
     vscode.commands.registerCommand("opscr.relayoutPreview", () => {
       // The focused preview (its shortcut), else the one of the file being edited.
       const uri = vscode.window.activeTextEditor?.document.uri;

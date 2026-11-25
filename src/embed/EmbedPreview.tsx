@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import type { Diagram } from "@/features/diagram/model/diagram.types";
 import { ViewerCanvas, type ViewerElementRef } from "@/features/viewer/components/ViewerCanvas";
+import { arrangePreviewDiagram, arrangeSignature, withContentOf } from "./arrange";
 import { buildPreviewDiagram, changedComponentIds } from "./build-diagram";
-import type { PreviewGraph } from "./protocol";
+import type { PreviewArrange, PreviewGraph } from "./protocol";
 import {
+  ARRANGE,
   BLOCKED,
   LOAD_GRAPH,
   OPEN_PROBLEM,
@@ -26,12 +29,22 @@ import {
  * survive updates — except that what an update changed is brought into view. Ctrl/Cmd+F
  * searches the diagram's elements. A click on an element tells the host (`STRUCTURA_REVEAL`),
  * and the host can light one (`STRUCTURA_SELECT`) — together, the way between picture and source.
+ *
+ * Who places the picture is the host's `arrange`: its own positions (`manual`, the default), or
+ * the canvas arranger here (`automatic`), so the preview reads the way the diagram reads on the
+ * canvas, references included. Like the canvas, an automatic picture is re-arranged only when
+ * its structure changes: a text edit keeps every element where it was.
  */
 export function EmbedPreview() {
   const { t } = useTranslation();
   const [diagram, setDiagram] = useState<Diagram | null>(null);
   const [focus, setFocus] = useState<{ ids: string[]; token: number } | null>(null);
   const lastGraph = useRef<PreviewGraph | null>(null);
+  /** The diagram on screen, for the callbacks: a click on a reference names its original. */
+  const shown = useRef<Diagram | null>(null);
+  shown.current = diagram;
+  /** Whether the picture on screen was arranged here (for the host's tests). */
+  const arrangedHere = useRef(false);
   const [searchRequest, setSearchRequest] = useState(0);
   const [select, setSelect] = useState<{
     element: ViewerElementRef | null;
@@ -45,15 +58,60 @@ export function EmbedPreview() {
   } | null>(null);
 
   useEffect(() => {
+    let arrange: PreviewArrange = { mode: "manual" };
+    /** The last automatic arrangement, kept while the structure it was made for lasts. */
+    let arranged: { signature: string; diagram: Diagram } | null = null;
+    /** Monotonic: an arrangement that finishes after a newer graph arrived is dropped. */
+    let run = 0;
+
+    const show = (graph: PreviewGraph) => {
+      const fresh = buildPreviewDiagram(graph);
+      const current = ++run;
+      if (arrange.mode !== "automatic") {
+        arrangedHere.current = false;
+        setDiagram(fresh);
+        return;
+      }
+      const { settings } = arrange;
+      const signature = arrangeSignature(fresh, settings);
+      if (arranged?.signature === signature) {
+        arranged = { signature, diagram: withContentOf(arranged.diagram, fresh) };
+        arrangedHere.current = true;
+        setDiagram(arranged.diagram);
+        return;
+      }
+      arrangePreviewDiagram(fresh, settings).then(
+        (diagram) => {
+          if (current !== run) return;
+          arranged = { signature, diagram };
+          arrangedHere.current = true;
+          setDiagram(diagram);
+        },
+        (error: unknown) => {
+          // Something to read beats nothing: the host's own positions.
+          console.warn("[Structura] embed: could not arrange the preview", error);
+          if (current !== run) return;
+          arrangedHere.current = false;
+          setDiagram(fresh);
+        },
+      );
+    };
+
     const onMessage = (event: MessageEvent) => {
       const message = readEmbedMessage(event.data);
       if (!message) return;
       if (message.type === LOAD_GRAPH) {
         const changed = changedComponentIds(lastGraph.current, message.graph);
         lastGraph.current = message.graph;
-        setDiagram(buildPreviewDiagram(message.graph));
+        if (message.arrange) arrange = message.arrange;
+        show(message.graph);
         setBlocked(null);
         if (changed.length > 0) setFocus((f) => ({ ids: changed, token: (f?.token ?? 0) + 1 }));
+      } else if (message.type === ARRANGE) {
+        // Asked again: arrange from scratch, even when nothing changed.
+        arrange = message.arrange;
+        arranged = null;
+        if (lastGraph.current) show(lastGraph.current);
       } else if (message.type === SEARCH) setSearchRequest((n) => n + 1);
       else if (message.type === SELECT) {
         const { element } = message;
@@ -92,22 +150,29 @@ export function EmbedPreview() {
         postToHost({
           type: RENDERED,
           nodes: document.querySelectorAll(".react-flow__node").length,
+          arranged: arrangedHere.current,
         }),
       );
     });
     return () => cancelAnimationFrame(frame);
   }, [diagram]);
 
+  /** The host's name for an element: a reference the arrangement made is its original there. */
+  const hostRef = useCallback((element: ViewerElementRef) => {
+    const component =
+      element.kind === "component" ? shown.current?.snapshot.components[element.id] : undefined;
+    const key = component && isSharedRefComponent(component) ? component.refOf : element.id;
+    return { kind: element.kind, key };
+  }, []);
+
   const reveal = useCallback(
-    (element: ViewerElementRef) =>
-      postToHost({ type: REVEAL, element: { kind: element.kind, key: element.id } }),
-    [],
+    (element: ViewerElementRef) => postToHost({ type: REVEAL, element: hostRef(element) }),
+    [hostRef],
   );
 
   const open = useCallback(
-    (element: ViewerElementRef) =>
-      postToHost({ type: OPEN, element: { kind: element.kind, key: element.id } }),
-    [],
+    (element: ViewerElementRef) => postToHost({ type: OPEN, element: hostRef(element) }),
+    [hostRef],
   );
 
   const openProblem = (index: number) => postToHost({ type: OPEN_PROBLEM, index });

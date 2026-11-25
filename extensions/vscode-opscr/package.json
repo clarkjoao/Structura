@@ -31,6 +31,11 @@
         "category": "opscr"
       },
       {
+        "command": "opscr.arrangePreview",
+        "title": "Arrange Preview…",
+        "category": "opscr"
+      },
+      {
         "command": "opscr.searchPreview",
         "title": "Find Element in Preview",
         "category": "opscr"

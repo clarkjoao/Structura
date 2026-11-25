@@ -1,11 +1,16 @@
+import {
+  normalizeLayoutSettings,
+  type DiagramLayoutSettings,
+} from "@/features/diagram/model/layout-settings";
 import type { ImportResult } from "@/features/plugins/plugin.types";
 
 /**
  * The embed preview's `postMessage` protocol.
  *
  *   embed → host   STRUCTURA_READY                                listening
- *   embed → host   STRUCTURA_RENDERED { nodes }                    a graph is on screen
- *   host  → embed  STRUCTURA_LOAD_GRAPH { components, connections }  replace the picture
+ *   embed → host   STRUCTURA_RENDERED { nodes, arranged }          a graph is on screen (arranged here?)
+ *   host  → embed  STRUCTURA_LOAD_GRAPH { components, connections, arrange? }  replace the picture
+ *   host  → embed  STRUCTURA_ARRANGE { arrange }                    arrange the picture again
  *   host  → embed  STRUCTURA_THEME { theme: "light" | "dark" }      follow the host's theme
  *   host  → embed  STRUCTURA_SEARCH                                  open the element search
  *   host  → embed  STRUCTURA_BLOCKED { reason, errors, problems }    why there is no (new) picture
@@ -19,6 +24,11 @@ import type { ImportResult } from "@/features/plugins/plugin.types";
  * The graph is the plugin importer result (API 1.3), so a host that can write an importer
  * can drive the preview, and both draw the same thing. An element is named by its component
  * `key`, or for a connection by its key from `connectionKeys` (ends, label, occurrence).
+ *
+ * `arrange` is `{ mode, settings? }`. `"manual"` (the default) draws the host's positions;
+ * `"automatic"` arranges every picture in the embed with the canvas arranger, under
+ * `settings` (a `DiagramLayoutSettings`: density, gaps, references), so it reads the way the
+ * diagram reads on the canvas. An absent or malformed `arrange` on LOAD_GRAPH keeps the current one.
  *
  * Messages to the host go to the embedding page (`window.parent`), or — inside a VSCode
  * webview, where the parent is not the extension — through `acquireVsCodeApi()`.
@@ -35,6 +45,14 @@ export const SELECT = "STRUCTURA_SELECT";
 export const REVEAL = "STRUCTURA_REVEAL";
 export const OPEN = "STRUCTURA_OPEN";
 export const OPEN_PROBLEM = "STRUCTURA_OPEN_PROBLEM";
+export const ARRANGE = "STRUCTURA_ARRANGE";
+
+/** Who places the picture: the host (`manual`), or the canvas arranger in the embed (`automatic`). */
+export interface PreviewArrange {
+  mode: "automatic" | "manual";
+  /** Normalised: defaults dropped, values clamped, unknown fields gone; absent is the defaults. */
+  settings?: DiagramLayoutSettings;
+}
 
 /** A component by its key, or a connection by its `connectionKeys` key. */
 export interface PreviewElementRef {
@@ -45,7 +63,8 @@ export interface PreviewElementRef {
 export type PreviewGraph = Pick<ImportResult, "components" | "connections">;
 
 export type EmbedMessage =
-  | { type: typeof LOAD_GRAPH; graph: PreviewGraph }
+  | { type: typeof LOAD_GRAPH; graph: PreviewGraph; arrange?: PreviewArrange }
+  | { type: typeof ARRANGE; arrange: PreviewArrange }
   | { type: typeof THEME; theme: "light" | "dark" }
   | { type: typeof SEARCH }
   | { type: typeof PROBE }
@@ -60,6 +79,27 @@ export type EmbedMessage =
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
+
+/**
+ * A posted `arrange`, or undefined when it is not one. The settings go through the same
+ * normalisation as a diagram's (`normalizeLayoutSettings`): a host is not trusted with them.
+ * The arrangement's own `mode` (`automatic` re-arranging after edits) is the embed's `mode` here,
+ * so it is not kept in the settings.
+ */
+function readArrange(value: unknown): PreviewArrange | undefined {
+  if (!isRecord(value)) return undefined;
+  if (value["mode"] !== "automatic" && value["mode"] !== "manual") return undefined;
+  const raw = value["settings"];
+  // Normalisation checks every field it keeps; the cast only lets it read them.
+  const normalized = isRecord(raw)
+    ? normalizeLayoutSettings(raw as DiagramLayoutSettings)
+    : undefined;
+  const { mode: _ignored, ...settings } = normalized ?? {};
+  return {
+    mode: value["mode"],
+    ...(Object.keys(settings).length > 0 && { settings }),
+  };
+}
 
 /** The message, when it is one of ours and well-formed; null otherwise (ignored). */
 export function readEmbedMessage(data: unknown): EmbedMessage | null {
@@ -86,15 +126,21 @@ export function readEmbedMessage(data: unknown): EmbedMessage | null {
       : [];
     return { type: BLOCKED, reason, errors, problems };
   }
+  if (data["type"] === ARRANGE) {
+    const arrange = readArrange(data["arrange"]);
+    return arrange ? { type: ARRANGE, arrange } : null;
+  }
   if (data["type"] === LOAD_GRAPH) {
     const { components, connections } = data;
     if (!Array.isArray(components) || !Array.isArray(connections)) return null;
+    const arrange = readArrange(data["arrange"]);
     return {
       type: LOAD_GRAPH,
       graph: {
         components: components as PreviewGraph["components"],
         connections: connections as PreviewGraph["connections"],
       },
+      ...(arrange && { arrange }),
     };
   }
   return null;

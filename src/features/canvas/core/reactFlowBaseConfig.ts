@@ -6,7 +6,6 @@ import {
   FIT_VIEW_MAX_ZOOM,
   FIT_VIEW_READING_PADDING,
   GRID_SIZE,
-  VIEWPORT_MIN_ZOOM,
 } from "../canvas.constants";
 import type { CanvasInputProfile } from "../hooks/useCanvasInputProfile";
 import type { DiagramSurfacePolicy } from "./canvasInteractionPolicy";
@@ -99,7 +98,7 @@ export function buildReactFlowShellProps(
       zoomOnScroll: true,
       zoomOnPinch: true,
       zoomOnDoubleClick: false,
-      minZoom: VIEWPORT_MIN_ZOOM,
+      minZoom: CANVAS_MIN_ZOOM,
       maxZoom: FIT_VIEW_MAX_ZOOM,
       fitViewOptions: FIT_VIEW_OPTIONS_READ,
       proOptions: PRO_OPTIONS,

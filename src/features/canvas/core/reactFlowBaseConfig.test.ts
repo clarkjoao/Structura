@@ -6,7 +6,6 @@ import {
   CANVAS_MIN_ZOOM,
   FIT_VIEW_MAX_ZOOM,
   FIT_VIEW_READING_PADDING,
-  VIEWPORT_MIN_ZOOM,
 } from "../canvas.constants";
 import {
   DIAGRAM_EDGE_RF_TYPE,
@@ -26,7 +25,8 @@ describe("buildReactFlowShellProps", () => {
     expect(props.panOnScrollMode).toBe(PanOnScrollMode.Free);
     expect(props.zoomOnScroll).toBe(true);
     expect(props.zoomOnPinch).toBe(true);
-    expect(props.minZoom).toBe(VIEWPORT_MIN_ZOOM);
+    // Read-only surfaces zoom out as far as the canvas: a large arranged diagram must fit.
+    expect(props.minZoom).toBe(CANVAS_MIN_ZOOM);
     expect(props.maxZoom).toBe(FIT_VIEW_MAX_ZOOM);
     expect(props.fitViewOptions.padding).toBe(FIT_VIEW_READING_PADDING);
   });
