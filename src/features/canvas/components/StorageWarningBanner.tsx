@@ -11,7 +11,7 @@ import {
 import {
   isFileSystemSupported,
   requestConnectFolder,
-  useFileSystemStorage,
+  useFolderSyncStatus,
 } from "@/infrastructure/persistence";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +30,9 @@ export function StorageWarningBanner() {
   const storageHealthLevel = useSaveStatusStore((state) => state.storageHealthLevel);
   const storageUsedBytes = useSaveStatusStore((state) => state.storageUsedBytes);
   const storageQuotaBytes = useSaveStatusStore((state) => state.storageQuotaBytes);
-  const folderSyncStatus = useFileSystemStorage().status;
+  // Read-only: the banner must not run the folder boot a second time (it used to call the whole
+  // `useFileSystemStorage`, with a status of its own stuck at "disconnected").
+  const { status: folderSyncStatus, folderName, lastWrite } = useFolderSyncStatus();
   const [dismissed, setDismissed] = useState(false);
   const [freedBytes, setFreedBytes] = useState<number | null>(null);
 
@@ -39,18 +41,22 @@ export function StorageWarningBanner() {
   }
 
   const isCritical = storageHealthLevel === "critical";
-  // Dismissal is only allowed when the user already has the suggested safety
-  // net (folder sync connected) or for the critical branch (which is its own
-  // catch-all and never dismissible by design).
-  const suggestFolder = shouldSuggestFolderSync(storageHealthLevel, folderSyncStatus);
   const isDanger = storageHealthLevel === "danger";
+  // With a folder connected the work is saved there; the browser copy is only a backup. Nothing
+  // asks to connect a folder, a near-full browser is not worth a banner, and a full one is news,
+  // not an alarm.
+  // Connected and receiving: a folder whose last write failed protects nothing until it succeeds.
+  const folderConnected = folderSyncStatus === "connected" && lastWrite !== "failed";
+  const folderFailing = folderSyncStatus === "connected" && lastWrite === "failed";
+  const folderLost = folderSyncStatus === "needs_permission" || folderSyncStatus === "error";
+  const suggestFolder = shouldSuggestFolderSync(storageHealthLevel, folderSyncStatus);
 
-  if (dismissed && !isCritical && !suggestFolder) {
-    return null;
-  }
-  // In the danger branch the suggestion replaces the dismiss control entirely;
-  // mirrors the critical branch's "no escape hatch" treatment.
-  const showDismiss = !isCritical && !suggestFolder;
+  // A folder that is connected (receiving or retrying) makes warning/danger moot: the indicator
+  // reports a failing folder on its own.
+  if (folderSyncStatus === "connected" && !isCritical) return null;
+  // Only an unprotected workspace keeps the banner up: full with no folder, or a folder to connect.
+  const dismissible = folderConnected || (!isCritical && !suggestFolder);
+  if (dismissed && dismissible) return null;
 
   const handleClearStorage = () => {
     const freed = clearNonEssentialStorage();
@@ -58,15 +64,20 @@ export function StorageWarningBanner() {
     void checkStorageHealth();
   };
 
-  const handleConnectFolder = () => {
-    requestConnectFolder();
-  };
-
-  // Copy resolution: suggestion copy (warning/danger + disconnected) wins over
-  // the generic warning/danger copy because that's the point of the change.
+  // Copy resolution: a connected folder first (the work is safe), then a folder to restore, then
+  // the suggestion (warning/danger + disconnected), then the generic levels.
   let titleKey: string;
   let descKey: string;
-  if (suggestFolder && isDanger) {
+  if (folderConnected) {
+    titleKey = "storage.savedToFolder.title";
+    descKey = "storage.savedToFolder.description";
+  } else if (folderFailing) {
+    titleKey = "storage.critical.title";
+    descKey = "storage.folderFailing.description";
+  } else if (folderLost && isCritical) {
+    titleKey = "storage.critical.title";
+    descKey = "storage.restoreFolder.description";
+  } else if (suggestFolder && isDanger) {
     titleKey = "storage.urgentSuggest.title";
     descKey = "storage.urgentSuggest.description";
   } else if (suggestFolder) {
@@ -82,22 +93,28 @@ export function StorageWarningBanner() {
     titleKey = "storage.warning.title";
     descKey = "storage.warning.description";
   }
+  const folderAction =
+    !isFileSystemSupported || folderSyncStatus === "connected" || folderSyncStatus === "connecting"
+      ? null
+      : folderLost
+        ? "storage.action.restoreFolder"
+        : "storage.action.connectFolder";
+  const tone = folderConnected ? "info" : isCritical ? "critical" : isDanger ? "danger" : "warning";
 
   return (
     <div
       role="alert"
       className={cn(
         "flex items-start gap-3 px-4 py-3 text-sm border-b shrink-0",
-        isCritical && "bg-destructive/10 border-destructive/30 text-destructive",
-        !isCritical &&
-          isDanger &&
+        tone === "info" && "bg-muted/60 border-border text-foreground",
+        tone === "critical" && "bg-destructive/10 border-destructive/30 text-destructive",
+        tone === "danger" &&
           "bg-orange-500/10 border-orange-500/30 text-orange-700 dark:text-orange-400",
-        !isCritical &&
-          !isDanger &&
+        tone === "warning" &&
           "bg-yellow-500/10 border-yellow-500/30 text-yellow-700 dark:text-yellow-400",
       )}
     >
-      {isCritical ? (
+      {tone === "critical" ? (
         <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
       ) : (
         <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
@@ -107,6 +124,7 @@ export function StorageWarningBanner() {
         <p className="font-medium">{t(titleKey)}</p>
         <p className="text-xs opacity-80 mt-0.5">
           {t(descKey, {
+            folder: folderName ?? "",
             used: formatBytes(storageUsedBytes),
             quota:
               storageQuotaBytes === null
@@ -137,18 +155,18 @@ export function StorageWarningBanner() {
             {t("storage.action.clear")}
           </Button>
         ) : null}
-        {isFileSystemSupported ? (
+        {folderAction ? (
           <Button
             type="button"
             size="sm"
             className={cn("h-7 text-xs gap-1", suggestFolder && "w-full")}
-            onClick={handleConnectFolder}
+            onClick={() => requestConnectFolder()}
           >
             <FolderOpen className="h-3 w-3" aria-hidden />
-            {t("storage.action.connectFolder")}
+            {t(folderAction)}
           </Button>
         ) : null}
-        {showDismiss ? (
+        {dismissible ? (
           <Button
             type="button"
             size="icon"

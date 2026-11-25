@@ -7,7 +7,7 @@ import {
 } from "./bootWorkspaceStorage";
 import { IndexedDbAdapter } from "./IndexedDbAdapter";
 import { LocalStorageAdapter } from "./LocalStorageAdapter";
-import { writeRescue } from "./workspaceRescue";
+import { removeRescueWrittenAt, writeRescue } from "./workspaceRescue";
 
 /**
  * The port the diagram workspace is persisted through. Its target is chosen
@@ -133,6 +133,23 @@ export class WorkspaceStorage implements IStoragePort, BrowserWorkspaceStorage {
       });
     }
     return writeRescue(key, value, savedAt);
+  }
+
+  /**
+   * The page was hidden — on mobile it may never come back. With IndexedDB the synchronous rescue
+   * goes first, so a tab killed in the background still has its last edit at the next start;
+   * then the real write, after which the rescue is no longer needed. Rejects when the write fails.
+   */
+  async writeOnHide(key: string, value: string): Promise<void> {
+    const target = await this.use();
+    if (!(target instanceof IndexedDbAdapter) || this.pausedFlag) {
+      await target.setItem(key, value);
+      return;
+    }
+    const savedAt = this.now();
+    const rescued = writeRescue(key, value, savedAt);
+    await target.putRecord(key, value, savedAt);
+    if (rescued) removeRescueWrittenAt(key, savedAt);
   }
 }
 

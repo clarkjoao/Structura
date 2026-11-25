@@ -100,6 +100,38 @@ describe("WorkspaceStorage", () => {
   });
 });
 
+describe("writeOnHide", () => {
+  it("with IndexedDB, keeps a rescue until the record has landed, then drops it", async () => {
+    const storage = idbWorkspace(new IDBFactory(), () => 42);
+    await storage.ready();
+    const putRecord = IndexedDbAdapter.prototype.putRecord;
+    let rescueWhileWriting: ReturnType<typeof readRescue> = null;
+    vi.spyOn(IndexedDbAdapter.prototype, "putRecord").mockImplementation(function (
+      this: IndexedDbAdapter,
+      ...args: Parameters<IndexedDbAdapter["putRecord"]>
+    ) {
+      rescueWhileWriting = readRescue(KEY);
+      return putRecord.apply(this, args);
+    });
+    await storage.writeOnHide(KEY, "hidden edit");
+    // The rescue was already there while the record was being written...
+    expect(rescueWhileWriting).toEqual({ savedAt: 42, value: "hidden edit" });
+    // ...and is gone once the record holds the edit.
+    expect(await storage.getItem(KEY)).toBe("hidden edit");
+    expect(readRescue(KEY)).toBeNull();
+  });
+
+  it("keeps the rescue when the record cannot be written", async () => {
+    const storage = idbWorkspace(new IDBFactory(), () => 42);
+    await storage.ready();
+    vi.spyOn(IndexedDbAdapter.prototype, "putRecord").mockRejectedValue(
+      new DOMException("full", "QuotaExceededError"),
+    );
+    await expect(storage.writeOnHide(KEY, "hidden edit")).rejects.toThrow();
+    expect(readRescue(KEY)).toEqual({ savedAt: 42, value: "hidden edit" });
+  });
+});
+
 describe("diagram store on an IndexedDB workspace", () => {
   it("hydrates the workspace migrated from localStorage", async () => {
     const source = createTestDiagramStore();

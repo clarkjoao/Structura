@@ -52,3 +52,11 @@ export function removeRescue(key: string): void {
     // Nothing to do: a leftover rescue older than the record is dropped at the next start.
   }
 }
+
+/**
+ * Drops the rescue written at `savedAt`, once the write it stood in for has landed. A newer rescue
+ * (another hide or unload since) is left alone.
+ */
+export function removeRescueWrittenAt(key: string, savedAt: number): void {
+  if (readRescue(key)?.savedAt === savedAt) removeRescue(key);
+}

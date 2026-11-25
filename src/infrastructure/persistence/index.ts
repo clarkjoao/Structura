@@ -6,9 +6,10 @@ export { InMemoryAdapter } from "./InMemoryAdapter";
 export { FileSystemAdapter, fileSystemAdapter } from "./FileSystemAdapter";
 export type { WorkspaceManifest, WorkspacePayload, WorkspaceScanResult } from "./FileSystemAdapter";
 export { useFileSystemSync } from "./useFileSystemSync";
-export { useFileSystemStorage, isFileSystemSupported } from "./useFileSystemStorage";
+export { isFileSystemSupported } from "./useFileSystemStorage";
 export { registerConnectFolderRequestHandler, requestConnectFolder } from "./requestConnectFolder";
-export type { FsStatus } from "./useFileSystemStorage";
+export type { FsStatus } from "./folderSyncStatus.store";
+export { useFolderSyncStatus } from "./folderSyncStatus.store";
 export {
   bootFileSystem,
   flushWorkspaceToConnectedFolder,

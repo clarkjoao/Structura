@@ -33,8 +33,9 @@ import { readElementPresetsField } from "./read-element-presets-field";
 import { manifestSemanticFingerprint } from "./workspace-manifest-fingerprint";
 import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { WORKSPACE_SCHEMA_VERSION as WORKSPACE_VERSION } from "./versions";
+import { useFolderSyncStatusStore, type FolderSyncStatusSetters } from "./folderSyncStatus.store";
 
-export type FsStatus = "disconnected" | "connecting" | "connected" | "error" | "needs_permission";
+export type { FsStatus } from "./folderSyncStatus.store";
 
 export const isFileSystemSupported = "showDirectoryPicker" in globalThis;
 
@@ -54,10 +55,17 @@ function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {
   };
 }
 
+/** The shared status's setters: stable, outside any render, so no hook lists them as deps. */
+const setStatus: FolderSyncStatusSetters["setStatus"] = (next) =>
+  useFolderSyncStatusStore.getState().setStatus(next);
+const setFolderName: FolderSyncStatusSetters["setFolderName"] = (name) =>
+  useFolderSyncStatusStore.getState().setFolderName(name);
+
 export function useFileSystemStorage() {
   const { t } = useTranslation();
-  const [status, setStatus] = useState<FsStatus>("disconnected");
-  const [folderName, setFolderName] = useState<string | null>(null);
+  // Shared, not per caller: every reader sees the same connection (folderSyncStatus.store.ts).
+  const status = useFolderSyncStatusStore((state) => state.status);
+  const folderName = useFolderSyncStatusStore((state) => state.folderName);
   const [scanResult, setScanResult] = useState<WorkspaceScanResult | null>(null);
   const [pendingMerge, setPendingMerge] = useState(false);
   const [pendingDisconnect, setPendingDisconnect] = useState(false);

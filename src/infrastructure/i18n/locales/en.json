@@ -326,7 +326,18 @@
     "localStorageQuota": "~5 MB",
     "action": {
       "clear": "Free up space",
-      "connectFolder": "Connect folder"
+      "connectFolder": "Connect folder",
+      "restoreFolder": "Restore access"
+    },
+    "savedToFolder": {
+      "title": "The browser is out of space",
+      "description": "Your work is still being saved to the {{folder}} folder. Only the backup copy in the browser stopped updating."
+    },
+    "restoreFolder": {
+      "description": "Browser storage is full and the {{folder}} folder lost its permission. Restore access to keep saving."
+    },
+    "folderFailing": {
+      "description": "Browser storage is full and the last write to the {{folder}} folder failed. It is being tried again; keep this tab open until it says saved."
     }
   },
   "filesystem": {
@@ -482,7 +493,10 @@
       "outline": "Border and fill",
       "markerStart": "Start cap",
       "markerEnd": "End cap"
-    }
+    },
+    "savedToFolder": "Saved to folder",
+    "folderSaveError": "Not saved to folder",
+    "folderSaveErrorHint": "The last write to the folder failed. It is tried again by itself in a few seconds."
   },
   "compareMode": {
     "added": "Added",

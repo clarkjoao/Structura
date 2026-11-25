@@ -303,30 +303,41 @@
   },
   "storage": {
     "warning": {
-      "title": "Espaço local quase esgotado",
-      "description": "A usar {{used}} de {{quota}} disponíveis. Diagramas futuros podem não ser guardados."
+      "title": "Espaço do navegador quase no fim",
+      "description": "Usando {{used}} de {{quota}}. Diagramas novos podem não ser salvos."
     },
     "danger": {
-      "title": "Espaço local crítico",
-      "description": "A usar {{used}} de {{quota}}. Novos elementos podem não ser guardados."
+      "title": "Espaço do navegador crítico",
+      "description": "Usando {{used}} de {{quota}}. Novos elementos podem não ser salvos."
     },
     "critical": {
-      "title": "Não foi possível guardar",
-      "description": "O armazenamento local está cheio. Ligue uma pasta ou liberte espaço para continuar."
+      "title": "Não foi possível salvar no navegador",
+      "description": "O armazenamento do navegador está cheio. Conecte uma pasta ou libere espaço para continuar."
     },
     "suggest": {
-      "title": "Sincronizar com uma pasta",
-      "description": "O seu workspace está grande. Ligue uma pasta local para manter o seu trabalho seguro mesmo que o armazenamento do navegador encha."
+      "title": "Sincronize com uma pasta",
+      "description": "Seu workspace está grande. Conecte uma pasta local para manter o trabalho seguro mesmo se o armazenamento do navegador encher."
     },
     "urgentSuggest": {
       "title": "Sincronize com uma pasta agora",
-      "description": "O armazenamento do navegador está quase cheio. Ligue uma pasta para não perder nada se o armazenamento for limpo."
+      "description": "O armazenamento do navegador está quase cheio. Conecte uma pasta para não perder nada se ele for limpo."
     },
-    "freed": "{{amount}} libertados com sucesso.",
+    "freed": "{{amount}} liberados.",
     "localStorageQuota": "~5 MB",
     "action": {
-      "clear": "Libertar espaço",
-      "connectFolder": "Ligar pasta"
+      "clear": "Liberar espaço",
+      "connectFolder": "Conectar pasta",
+      "restoreFolder": "Restaurar acesso"
+    },
+    "savedToFolder": {
+      "title": "O navegador ficou sem espaço",
+      "description": "Seu trabalho continua sendo salvo na pasta {{folder}}. Só a cópia de segurança no navegador parou de ser atualizada."
+    },
+    "restoreFolder": {
+      "description": "O armazenamento do navegador está cheio e a pasta {{folder}} perdeu a permissão. Restaure o acesso para continuar salvando."
+    },
+    "folderFailing": {
+      "description": "O armazenamento do navegador está cheio e a última gravação na pasta {{folder}} falhou. Estamos tentando de novo; mantenha esta aba aberta até aparecer salvo."
     }
   },
   "filesystem": {
@@ -482,7 +493,10 @@
       "outline": "Borda e preenchimento",
       "markerStart": "Extremidade inicial",
       "markerEnd": "Extremidade final"
-    }
+    },
+    "savedToFolder": "Salvo na pasta",
+    "folderSaveError": "Não salvou na pasta",
+    "folderSaveErrorHint": "A última gravação na pasta falhou. Ela é tentada de novo sozinha em alguns segundos."
   },
   "compareMode": {
     "added": "Adicionado",

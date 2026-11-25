@@ -25,7 +25,10 @@ import { reparentOrphanDiagrams } from "./helpers/reparent-orphan-diagram";
 import { migrateFlow } from "../utils/flow-migration";
 import { migrateConnectionsSemantics } from "../utils/connection-semantics-migration";
 import { useSaveStatusStore } from "./saveStatus.store";
-import { isQuotaExceededError } from "@/infrastructure/persistence/storageQuota";
+import {
+  isOriginStorageFull,
+  isQuotaExceededError,
+} from "@/infrastructure/persistence/storageQuota";
 import { PERSIST_DEBOUNCE_MS } from "@/lib/timing.constants";
 
 export const PERSIST_KEY = "diagram-store";
@@ -631,6 +634,21 @@ export interface DiagramPersistPort extends IStoragePort {
   setItemDeferred(name: string, serialize: () => string): void;
 }
 
+/**
+ * A workspace write failed. "Full" when the error says so — or, for a write that failed without
+ * saying why (an IndexedDB transaction aborted with no error, as Safari does), when the origin is
+ * at its quota.
+ */
+function reportWorkspaceWriteFailure(error: unknown): void {
+  const saveStatus = useSaveStatusStore.getState();
+  if (isQuotaExceededError(error)) saveStatus._setStorageCritical();
+  saveStatus._setError();
+  if (isQuotaExceededError(error)) return;
+  void isOriginStorageFull().then((full) => {
+    if (full) useSaveStatusStore.getState()._setStorageCritical();
+  });
+}
+
 export function wrapIStoragePortWithDiagramPersistTracking(
   storage: IStoragePort,
 ): DiagramPersistPort {
@@ -658,10 +676,7 @@ export function wrapIStoragePortWithDiagramPersistTracking(
       recordLocalStorageDiagramSyncSuccess();
     } catch (err: unknown) {
       if (name !== PERSIST_KEY) return;
-      if (isQuotaExceededError(err)) {
-        useSaveStatusStore.getState()._setStorageCritical();
-      }
-      useSaveStatusStore.getState()._setError();
+      reportWorkspaceWriteFailure(err);
     }
   };
 
@@ -729,18 +744,10 @@ export function wrapIStoragePortWithDiagramPersistTracking(
               recordLocalStorageDiagramSyncSuccess();
               useSaveStatusStore.getState()._setSaved();
             })
-            .catch((err: unknown) => {
-              if (isQuotaExceededError(err)) {
-                useSaveStatusStore.getState()._setStorageCritical();
-              }
-              useSaveStatusStore.getState()._setError();
-            });
+            .catch(reportWorkspaceWriteFailure);
         }
       } catch (err: unknown) {
-        if (isQuotaExceededError(err)) {
-          useSaveStatusStore.getState()._setStorageCritical();
-        }
-        useSaveStatusStore.getState()._setError();
+        reportWorkspaceWriteFailure(err);
       }
     };
     window.addEventListener("beforeunload", flushOnLeave);
@@ -765,18 +772,18 @@ export function wrapIStoragePortWithDiagramPersistTracking(
         useSaveStatusStore.getState()._setError();
         return;
       }
-      void storage
-        .setItem(name, value)
+      // A hidden tab may be killed without another event (mobile): with IndexedDB the write goes
+      // through the synchronous rescue first, so the next start still has this edit.
+      const write =
+        storage instanceof WorkspaceStorage
+          ? storage.writeOnHide(name, value)
+          : storage.setItem(name, value);
+      void write
         .then(() => {
           useSaveStatusStore.getState()._setSaved();
           recordLocalStorageDiagramSyncSuccess();
         })
-        .catch((err: unknown) => {
-          if (isQuotaExceededError(err)) {
-            useSaveStatusStore.getState()._setStorageCritical();
-          }
-          useSaveStatusStore.getState()._setError();
-        });
+        .catch(reportWorkspaceWriteFailure);
     });
   }
 
