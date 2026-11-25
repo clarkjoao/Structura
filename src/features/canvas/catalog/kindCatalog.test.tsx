@@ -107,7 +107,7 @@ describe("insert surfaces follow the diagram kind", () => {
     expect(screen.getByRole("group", { name: "C4" })).toBeInTheDocument();
   });
 
-  it("quick insert lists the last four recents, and does not repeat them under C4", () => {
+  it("quick insert lists the last four recents, and keeps C4 whole below them", () => {
     const store = useDiagramStore.getState();
     const diagram = store.addDiagram(`Recents ${Math.random()}`, "context");
     store.openDiagram(diagram.id);
@@ -126,7 +126,7 @@ describe("insert surfaces follow the diagram kind", () => {
     const recents = screen.getByRole("group", { name: "Recent" });
     expect(within(recents).getAllByRole("option")).toHaveLength(4);
     const top = screen.getByRole("group", { name: "C4" });
-    expect(within(top).getAllByRole("option")).toHaveLength(c4.length - 1);
+    expect(within(top).getAllByRole("option")).toHaveLength(c4.length);
     useCanvasPreferencesStore.setState({ recentCatalogEntryIds: [] });
   });
 

@@ -1,26 +1,37 @@
 import { useTranslation } from "react-i18next";
 
-export type Tab = "kind" | "details" | "connections" | "services";
+export type Tab = "kind" | "details" | "connections" | "services" | "references";
 
 export interface TabBarProps {
   active: Tab;
   onChange: (next: Tab) => void;
   showConnections: boolean;
   showServices: boolean;
+  /** The element can have references, or has some: its References tab. */
+  showReferences?: boolean;
   /** The diagram kind's own tab (spec guided-editing-surfaces), first when present. */
   kindTab?: string;
 }
 
-const TabBar = ({ active, onChange, showConnections, showServices, kindTab }: TabBarProps) => {
+const TabBar = ({
+  active,
+  onChange,
+  showConnections,
+  showServices,
+  showReferences = false,
+  kindTab,
+}: TabBarProps) => {
   const { t } = useTranslation();
   const tabs: Tab[] = kindTab ? ["kind", "details"] : ["details"];
   if (showConnections) tabs.push("connections");
   if (showServices) tabs.push("services");
+  if (showReferences) tabs.push("references");
 
   const labelFor = (tab: Tab) => {
     if (tab === "kind") return kindTab ?? "";
     if (tab === "details") return t("elementPanelTab.details");
     if (tab === "connections") return t("elementPanelTab.connections");
+    if (tab === "references") return t("elementPanelTab.references");
     return t("elementPanelTab.services");
   };
 
@@ -33,7 +44,7 @@ const TabBar = ({ active, onChange, showConnections, showServices, kindTab }: Ta
           aria-pressed={active === tab}
           data-testid={`element-tab-${tab}`}
           onClick={() => onChange(tab)}
-          className={`flex-1 px-3 py-2 text-xs font-medium transition-colors ${
+          className={`flex-1 whitespace-nowrap px-2 py-2 text-xs font-medium transition-colors ${
             active === tab
               ? "border-b-2 border-primary text-primary"
               : "text-muted-foreground hover:text-foreground"

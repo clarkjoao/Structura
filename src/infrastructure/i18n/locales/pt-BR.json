@@ -2376,6 +2376,7 @@
   "flows": {
     "panelTitle": "Fluxos",
     "importFlow": "Importar fluxo",
+    "importShort": "Importar",
     "importDialog": {
       "directionApproximated": "As direções BT e RL do Mermaid são importadas como de cima para baixo e da esquerda para a direita.",
       "directionKept": "Importado na direção deste diagrama; troque em Organizar se quiser a outra.",
@@ -3007,7 +3008,8 @@
   "elementPanelTab": {
     "details": "Detalhes",
     "connections": "Conexões",
-    "services": "Serviços"
+    "services": "Serviços",
+    "references": "Refs"
   },
   "flowPanel": {
     "copyPrefix": "Cópia de {{name}}",
@@ -3501,9 +3503,9 @@
       "intro": "Desenhe este elemento de novo onde ele é usado, em vez de arestas longas cruzando o diagrama.",
       "create": "Nova referência ao lado",
       "createHint": "Ou Alt+arraste o elemento até onde ele é usado",
-      "existing_one": "{{count}} referência neste diagrama",
-      "existing_other": "{{count}} referências neste diagrama",
-      "refRow": "{{name}} — referência {{index}}"
+      "refRow": "{{name}} — referência {{index}}",
+      "openTab": "Referências: criar uma, ver quem usa",
+      "noConsumers": "Nada usa este elemento ainda."
     },
     "chip": "compartilhado",
     "uses_one": "{{count}} uso",

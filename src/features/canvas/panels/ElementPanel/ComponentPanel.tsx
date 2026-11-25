@@ -49,6 +49,12 @@ const currentDiagram = () => {
 import { kindInspectorFor } from "@/features/diagram-kinds/inspector";
 import { resolveKindText } from "@/features/diagram-kinds/context";
 import { BoundarySections } from "./sections/BoundarySection";
+import { ReferencesTab } from "./components/ReferencesTab";
+import { useReferenceUsage } from "@/features/canvas/shared/useReferenceUsage";
+import { useKindAllowsReferences } from "@/features/canvas/hooks/useKindAllowsReferences";
+import { useReferencesTabStore } from "@/features/canvas/selection-actions/referencesTab.store";
+import { canBeReferenced } from "@/features/elements/referencing";
+import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
 import { DiagramLinkField } from "@/features/canvas/palette/DiagramLinkField";
 import { toast } from "sonner";
 import { serviceEditOf, serviceSeedFromComponent } from "@/features/diagram/utils/service-sync";
@@ -70,7 +76,7 @@ import {
   useElementTrail,
 } from "./shell";
 
-const TAB_IDS: readonly Tab[] = ["kind", "details", "connections", "services"];
+const TAB_IDS: readonly Tab[] = ["kind", "details", "connections", "services", "references"];
 
 function buildComponentSyncPatch(service: ServiceDefinition, component: Component): ComponentPatch {
   const patch: ComponentPatch = {
@@ -160,14 +166,28 @@ const ComponentPanel = ({
   const setStoredTab = useCanvasPreferencesStore((s) => s.setElementPanelTab);
   const showConnections = !isSimple;
   const showServices = !isSimple && !isFlowchart;
+  const referencesAllowed = useKindAllowsReferences();
+  const canCreateRef = canBeReferenced(component);
+  const hasRefs = useReferenceUsage(component.id).refs.length > 0;
+  const showReferences =
+    referencesAllowed && !isSharedRefComponent(component) && (canCreateRef || hasRefs);
   const tab: Tab = (() => {
     const wanted = TAB_IDS.find((id) => id === storedTab) ?? (kindInspector ? "kind" : "details");
     if (wanted === "kind" && !kindInspector) return "details";
     if (wanted === "connections" && !showConnections) return "details";
     if (wanted === "services" && !showServices) return "details";
+    if (wanted === "references" && !showReferences) return "details";
     return wanted;
   })();
   const setTab = (next: Tab) => setStoredTab(tabKey, next);
+
+  // The toolbar's Refs button, or a shared chip picked on the canvas, asks for this tab.
+  const referencesRequested = useReferencesTabStore((s) => s.requestedFor === component.id);
+  useEffect(() => {
+    if (!referencesRequested) return;
+    useReferencesTabStore.getState().clear();
+    if (showReferences) setStoredTab(tabKey, "references");
+  }, [referencesRequested, showReferences, setStoredTab, tabKey]);
 
   const [tagInput, setTagInput] = useState("");
   const type: ComponentType = component.type;
@@ -277,12 +297,13 @@ const ComponentPanel = ({
         menu={menu}
         onClose={onClose}
       />
-      {(showConnections || showServices || kindInspector) && (
+      {(showConnections || showServices || showReferences || kindInspector) && (
         <TabBar
           active={tab}
           onChange={setTab}
           showConnections={showConnections}
           showServices={showServices}
+          showReferences={showReferences}
           {...(kindInspector && { kindTab: resolveKindText(kindInspector.tab) })}
         />
       )}
@@ -290,6 +311,12 @@ const ComponentPanel = ({
         <KindInspectorTab sections={kindInspector.sections} />
       ) : tab === "connections" ? (
         <ConnectionsTab componentId={component.id} />
+      ) : tab === "references" ? (
+        <ReferencesTab
+          component={component}
+          canCreate={canCreateRef}
+          onFocusElement={onFocusElement}
+        />
       ) : tab === "services" ? (
         <ServicesTab
           componentId={component.id}

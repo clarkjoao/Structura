@@ -124,13 +124,10 @@ const QuickInsertPopover = memo(function QuickInsertPopover({
       .filter((entry): entry is CatalogEntry => !!entry)
       .slice(0, MAX_RECENTS)
       .map(named);
-    // An entry already under Recents is not offered a second time below it.
-    const recentSet = new Set(recents.map((entry) => entry.id));
-    const top = (
-      kind
-        ? kind.entries.map((item) => item.entry)
-        : index.entries.filter((entry) => entry.groupId === TOP_GROUP_ID)
-    ).filter((entry) => !recentSet.has(entry.id));
+    // The top group stays whole even when some of it is under Recents: it is always in one place.
+    const top = kind
+      ? kind.entries.map((item) => item.entry)
+      : index.entries.filter((entry) => entry.groupId === TOP_GROUP_ID);
     const result: QuickSection[] = [];
     if (recents.length > 0) {
       result.push({

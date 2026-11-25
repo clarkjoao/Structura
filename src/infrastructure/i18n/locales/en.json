@@ -2376,6 +2376,7 @@
   "flows": {
     "panelTitle": "Flows",
     "importFlow": "Import flow",
+    "importShort": "Import",
     "importDialog": {
       "directionApproximated": "Mermaid’s BT and RL directions are imported as top-to-bottom and left-to-right.",
       "directionKept": "Imported along this diagram’s direction; switch it in Arrange if you want the other one.",
@@ -3007,7 +3008,8 @@
   "elementPanelTab": {
     "details": "Details",
     "connections": "Connections",
-    "services": "Services"
+    "services": "Services",
+    "references": "Refs"
   },
   "flowPanel": {
     "copyPrefix": "Copy of {{name}}",
@@ -3501,9 +3503,9 @@
       "intro": "Draw this element again where it is used, instead of long edges across the diagram.",
       "create": "New reference beside it",
       "createHint": "Or Alt+drag the element to where it is used",
-      "existing_one": "{{count}} reference in this diagram",
-      "existing_other": "{{count}} references in this diagram",
-      "refRow": "{{name}} — reference {{index}}"
+      "refRow": "{{name}} — reference {{index}}",
+      "openTab": "References: make one, see who uses it",
+      "noConsumers": "Nothing uses this element yet."
     },
     "chip": "shared",
     "uses_one": "{{count}} use",

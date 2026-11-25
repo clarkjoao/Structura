@@ -16,7 +16,7 @@ import {
   FileDown,
   Focus,
   FolderTree,
-  GitBranch,
+  Route,
   MoreHorizontal,
   Share2,
 } from "lucide-react";
@@ -534,7 +534,7 @@ export function WorkspaceContent({
               />
               <PanelRailButton
                 label={t("flows.panelTitle")}
-                icon={<GitBranch className="h-4 w-4" />}
+                icon={<Route className="h-4 w-4" />}
                 active={showFlows || isRecording}
                 disabled={flowButtonLocked}
                 onClick={() => setShowFlows(!showFlows)}

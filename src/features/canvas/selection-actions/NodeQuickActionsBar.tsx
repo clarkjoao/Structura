@@ -33,9 +33,8 @@ import { IconPickerModal } from "@/features/canvas/components/icons/IconPickerMo
 import { OpacityControl } from "./OpacityControl";
 import { OutlineControl } from "./OutlineControl";
 import { buildOutlineSections } from "./outlineSections";
-import { RefsMenu } from "./RefsMenu";
+import { RefsButton } from "./RefsButton";
 import { isSharedRefComponent } from "@/features/diagram/model/component.guards";
-import { canBeReferenced } from "@/features/elements/referencing";
 import { ColorPicker, type ColorPickerGroup } from "./ColorPicker";
 import { FloatingSelectionToolbar } from "./FloatingSelectionToolbar";
 import { KindQuickActions } from "./KindQuickActions";
@@ -346,14 +345,10 @@ export function NodeQuickActionsBar({
             </button>
           )}
 
-          {/* References: make one, the ones it has, who uses it */}
+          {/* References: opens the inspector's References tab */}
           {referencesAllowed && !isRef && (
             <div className="mx-1 border-l border-border pl-1">
-              <RefsMenu
-                component={component}
-                canCreate={canBeReferenced(component)}
-                onFocusElement={onFocusElement}
-              />
+              <RefsButton component={component} />
             </div>
           )}
 

@@ -1,5 +1,5 @@
 import { SharedLayer } from "./shared/SharedLayer";
-import { useRefsMenuStore } from "./selection-actions/refsMenu.store";
+import { requestReferencesTab } from "./selection-actions/referencesTab.store";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLLMStore } from "@/features/llm";
@@ -361,7 +361,7 @@ const Canvas = (props: CanvasProps = {}) => {
                       const node = nodes.find((candidate) => candidate.id === originalId);
                       if (!node) return;
                       eventHandlers.onNodeClick?.({} as never, node);
-                      useRefsMenuStore.getState().setOpenFor(originalId);
+                      requestReferencesTab(originalId);
                     }}
                   />
                   <PendingSuggestionToolbars
