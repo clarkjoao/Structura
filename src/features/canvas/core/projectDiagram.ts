@@ -107,9 +107,12 @@ function projectNode(
     type: descriptor.rfType,
     position: tab ? { x: tab.x, y: tab.y } : { x: layout?.x ?? 0, y: layout?.y ?? 0 },
     zIndex: viewNode.zIndex,
-    // No `extent: "parent"`: a child may be dragged out of its panel, or into another one —
-    // the drop decides its parent (useNodeDragParenting).
-    ...(viewNode.isChild ? { parentId: component.parentId! } : {}),
+    // A child stays inside its panel while dragged (`extent: "parent"`): leaving a group is
+    // an explicit ungroup (Cmd/Ctrl+Shift+G or the toolbar), never a drag. A tab sticks out
+    // of its compact parent by design, so it is not clamped.
+    ...(viewNode.isChild
+      ? { parentId: component.parentId!, ...(tab ? {} : { extent: "parent" as const }) }
+      : {}),
     hidden: viewNode.isHidden,
     data: descriptor.buildData(component, ctx) as Record<string, unknown>,
   };

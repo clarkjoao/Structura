@@ -5,8 +5,9 @@ import type { Diagram } from "@/features/diagram";
 import { useNodeDragParenting } from "./useNodeDragParenting";
 
 /**
- * Dropping a child somewhere else: into a sibling panel, into a panel nested in its own, out to
- * the ancestor around it, or out of everything. The drop point is the node's centre.
+ * Dropping a child: it may move into a panel nested in its own group, but leaving the group (a
+ * sibling panel, the ancestor around it, the top level) is an explicit ungroup, never a drag.
+ * The drop point is the node's centre.
  *
  *   P0 (0,0 2000×2000)
  *   ├── P1 (100,100 600×600)  ── L (relative 50,50, 100×50)
@@ -84,13 +85,13 @@ function setup() {
   return { drop };
 }
 
-describe("dropping a child into another container", () => {
-  it("moves into a sibling panel, keeping its place on screen", () => {
-    // absolute (100+950, 100+100) = (1050, 200): P2 is at (1000,100)
+describe("dropping a child: it never leaves its group by dragging", () => {
+  it("keeps its parent when dropped over a sibling panel", () => {
+    // absolute (100+950, 100+100) = (1050, 200) is inside P2, but leaving P1 is an ungroup
     expect(setup().drop(950, 100)).toEqual({
       nodeId: "L",
-      newParentId: "P2",
-      newPosition: { x: 50, y: 100 },
+      newParentId: "P1",
+      newPosition: { x: 950, y: 100 },
     });
   });
 
@@ -110,18 +111,11 @@ describe("dropping a child into another container", () => {
     });
   });
 
-  it("lands in the ancestor around it when it leaves its panel", () => {
-    // absolute (100+700, 100+700) = (800, 800): outside P1 and P2, inside P0
-    expect(setup().drop(700, 700)).toMatchObject({
-      newParentId: "P0",
-      newPosition: { x: 800, y: 800 },
-    });
+  it("keeps its parent when dropped in the ancestor around it", () => {
+    expect(setup().drop(700, 700)).toMatchObject({ newParentId: "P1" });
   });
 
-  it("goes to the top level when dropped outside everything", () => {
-    expect(setup().drop(2500, 2500)).toMatchObject({
-      newParentId: null,
-      newPosition: { x: 2600, y: 2600 },
-    });
+  it("keeps its parent when dropped outside everything", () => {
+    expect(setup().drop(2500, 2500)).toMatchObject({ newParentId: "P1" });
   });
 });

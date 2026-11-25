@@ -20,15 +20,7 @@ export function getPanelDimensions(node: Node): { width: number; height: number 
   return { width: w, height: h };
 }
 
-export function isOutsideParentBounds(
-  childPos: { x: number; y: number },
-  parent: Node,
-  childDimensions?: { width: number; height: number },
-): boolean {
-  return isOutsideParentSize(childPos, getPanelDimensions(parent), childDimensions);
-}
-
-/** Same rule as `isOutsideParentBounds`, given the parent's size instead of its node. */
+/** Whether a child at `childPos` (relative to its parent) lies outside a parent of this size. */
 export function isOutsideParentSize(
   childPos: { x: number; y: number },
   parentSize: { width: number; height: number },
