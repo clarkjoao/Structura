@@ -32,12 +32,31 @@ is the only thing edited, in VSCode; diagram editing is the Structura platform's
   error in is left out of the picture (and the edges to it), the rest is drawn, and the status bar
   says how many errors and elements are missing (click it for the Problems panel). Only YAML that
   does not parse keeps the last picture.
-- **Still:** elements already drawn keep their place when you add, remove or edit others; new ones
-  are placed next to their neighbours. **opscr: Re-layout Preview** (Ctrl/Cmd+Shift+L in the
-  preview) arranges everything from scratch.
-- **Layout sidecar:** when the folder has an `opscr.layout.json` (Structura writes it when you save a
-  bound folder), elements are drawn where it puts them; the preview redraws when the file changes.
-  Re-layout ignores it until it changes again.
+- **Arrange:** **opscr: Arrange Preview…** (also the status bar item) chooses how the picture is
+  laid out, saved per folder:
+  - **Automatic** (default): arranged with Structura's own canvas arranger, so the preview reads the
+    way the diagram reads in Structura. It uses the same reading direction, spacing and automatic
+    **references**: a connection pointing far back against the reading ends on a reference beside
+    its consumer instead of crossing the diagram.
+    - **Spacing:** compact, normal or spacious.
+    - **References:**
+      - **Rules** (default): a back-connection further back than _N_ columns (default 2) ends on a
+        reference. An original keeps at least _K_ connections (default 1). Forward lines longer
+        than 6 columns end on a reference too, unless you turn that off.
+      - **Trial:** a reference is kept only where the drawing reads better.
+      - **Off:** no automatic references.
+
+    A text edit (a description, a technology) moves nothing. A structural edit re-arranges. Clicking
+    a reference opens the YAML of its original.
+
+  - **Manual:** the extension's own placement, below. Nothing is arranged until you ask, and the
+    layout sidecar is used.
+- **Still (Manual):** elements already drawn keep their place when you add, remove or edit others;
+  new ones are placed next to their neighbours. **opscr: Re-layout Preview** (Ctrl/Cmd+Shift+L in
+  the preview) arranges everything from scratch, in either mode.
+- **Layout sidecar (Manual):** when the folder has an `opscr.layout.json` (Structura writes it when
+  you save a bound folder), elements are drawn where it puts them; the preview redraws when the
+  file changes. Re-layout ignores it until it changes again.
 - **Find:** Ctrl/Cmd+F in the preview searches its elements (name, description, technology, tags);
   picking one zooms to it — handy on large diagrams. Also **opscr: Find Element in Preview**.
 - **From the picture to the YAML and back:** clicking an element or a connection opens the

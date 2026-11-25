@@ -6,6 +6,7 @@ import {
   PREVIEW_DIAGRAM_ID,
 } from "./build-diagram";
 import {
+  ARRANGE,
   BLOCKED,
   LOAD_GRAPH,
   PROBE,
@@ -49,6 +50,43 @@ const graph: PreviewGraph = {
 };
 
 describe("readEmbedMessage", () => {
+  it("reads an arrange choice, normalising its settings like a diagram's", () => {
+    expect(
+      readEmbedMessage({
+        type: ARRANGE,
+        arrange: {
+          mode: "automatic",
+          settings: { density: "compact", refNeighborColumns: 99, references: "rules", x: 1 },
+        },
+      }),
+    ).toEqual({
+      type: ARRANGE,
+      arrange: { mode: "automatic", settings: { density: "compact", refNeighborColumns: 6 } },
+    });
+    // Defaults only, or the arrangement's own mode: nothing to keep.
+    expect(
+      readEmbedMessage({
+        type: ARRANGE,
+        arrange: { mode: "manual", settings: { mode: "automatic" } },
+      }),
+    ).toEqual({ type: ARRANGE, arrange: { mode: "manual" } });
+    expect(readEmbedMessage({ type: ARRANGE, arrange: { mode: "always" } })).toBeNull();
+    expect(readEmbedMessage({ type: ARRANGE })).toBeNull();
+  });
+
+  it("carries an arrange choice on a graph, and ignores a malformed one", () => {
+    const posted = { type: LOAD_GRAPH, components: [], connections: [] };
+    expect(readEmbedMessage({ ...posted, arrange: { mode: "automatic" } })).toEqual({
+      type: LOAD_GRAPH,
+      graph: { components: [], connections: [] },
+      arrange: { mode: "automatic" },
+    });
+    expect(readEmbedMessage({ ...posted, arrange: "automatic" })).toEqual({
+      type: LOAD_GRAPH,
+      graph: { components: [], connections: [] },
+    });
+  });
+
   it("reads an element to select, or none, and rejects a malformed one", () => {
     const element = { kind: "connection", key: "a->b:calls#0" };
     expect(readEmbedMessage({ type: SELECT, element })).toEqual({ type: SELECT, element });

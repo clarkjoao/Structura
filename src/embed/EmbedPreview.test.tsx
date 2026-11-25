@@ -1,9 +1,10 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/infrastructure/i18n";
 import { EmbedPreview } from "./EmbedPreview";
 import {
+  ARRANGE,
   BLOCKED,
   LOAD_GRAPH,
   OPEN,
@@ -142,5 +143,29 @@ describe("EmbedPreview", () => {
       type: OPEN,
       element: { kind: "component", key: "a" },
     });
+  });
+
+  it("arranges with the canvas rules when asked, and draws the host's positions otherwise", async () => {
+    const names = ["a", "b", "c", "d", "e"];
+    const chain = {
+      type: LOAD_GRAPH,
+      components: names.map((name, i) => ({ key: name, name, type: "system", x: i * 300, y: 0 })),
+      connections: [
+        ...names.slice(1).map((name, i) => ({ source: names[i], target: name, label: "calls" })),
+        { source: "e", target: "a", label: "retries" },
+      ],
+    };
+    const nodes = () => document.querySelectorAll(".react-flow__node").length;
+    render(<EmbedPreview />, { wrapper: MemoryRouter });
+    await send(chain);
+    await screen.findByText("e");
+    expect(nodes()).toBe(5);
+
+    // The far loop ends on a reference beside its consumer, as on the canvas.
+    await send({ type: ARRANGE, arrange: { mode: "automatic" } });
+    await waitFor(() => expect(nodes()).toBe(6));
+
+    await send({ type: ARRANGE, arrange: { mode: "automatic", settings: { references: "off" } } });
+    await waitFor(() => expect(nodes()).toBe(5));
   });
 });

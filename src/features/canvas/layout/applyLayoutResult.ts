@@ -1,6 +1,6 @@
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { useDiagramStore } from "@/features/diagram";
-import type { DiagramDirection, EdgeLayout } from "@/features/diagram";
+import type { DiagramDirection, DiagramStore, EdgeLayout } from "@/features/diagram";
 import type { LayoutEdgeEffects } from "@/features/diagram/store/actions.types";
 import {
   edgeLayoutsFromLayoutResult,
@@ -20,6 +20,11 @@ export type ApplyLayoutResultOptions = EdgeLayoutsFromResultOptions & {
    * mirrored graph the layout ran in (`axis.ts`) and reflected back.
    */
   direction?: DiagramDirection;
+  /**
+   * The store to write to. Absent is the app's; the embed preview arranges in a
+   * throwaway store of its own (`src/embed/arrange.ts`).
+   */
+  store?: { getState: () => DiagramStore };
 };
 
 /** Identity, so the common case pays nothing for the generation path's mapping. */
@@ -56,7 +61,7 @@ export function applyLayoutResultEdges(
 
   if (diagramId === null) return;
 
-  const store = useDiagramStore.getState();
+  const store = (options.store ?? useDiagramStore).getState();
 
   const edgesToStyle =
     edgeIds === null ? graph.edges : graph.edges.filter((edge) => edgeIds.has(edge.id));

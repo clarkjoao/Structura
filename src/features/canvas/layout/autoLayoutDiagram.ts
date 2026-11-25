@@ -2,7 +2,7 @@ import type { Component } from "@/features/diagram/model/component.types";
 import type { Connection } from "@/features/diagram/model/connection.types";
 import type { NodeLayout } from "@/features/diagram/model/layout.types";
 import type { AutoRefAssignment } from "@/features/diagram/store/actions.types";
-import { useDiagramStore } from "@/features/diagram";
+import { useDiagramStore, type DiagramStore } from "@/features/diagram";
 import { fitContainersToChildren, toAppliedLayouts, type AppliedLayout } from "./applyLayout";
 import { applyLayoutResultEdges } from "./applyLayoutResult";
 import { chooseAutoRefs, splitGraph, type AutoRefGroup, type AutoRefPlanOptions } from "./autoRefs";
@@ -184,7 +184,8 @@ async function chooseRefs(
  * `writeSettings` stores the settings the plan was made with in that same step
  * — what a settings change from the Arrange menu does — and `writeDirection`
  * the axis it was laid out on (switching direction). Omitted, the diagram's
- * stored settings and direction are left as they are.
+ * stored settings and direction are left as they are. `store` is the app's
+ * unless given: the embed preview arranges in a throwaway one.
  */
 export function applyDiagramAutoLayout(
   plan: DiagramAutoLayoutPlan,
@@ -192,15 +193,21 @@ export function applyDiagramAutoLayout(
   {
     writeSettings = false,
     writeDirection = false,
-  }: { writeSettings?: boolean; writeDirection?: boolean } = {},
+    store = useDiagramStore,
+  }: {
+    writeSettings?: boolean;
+    writeDirection?: boolean;
+    store?: { getState: () => DiagramStore };
+  } = {},
 ): void {
-  useDiagramStore.getState().applyAutoLayout(plan.layouts, plan.autoRefs, {
+  store.getState().applyAutoLayout(plan.layouts, plan.autoRefs, {
     ...(writeSettings && { layoutSettings: plan.settings ?? {} }),
     ...(writeDirection && { direction: plan.direction }),
   });
   applyLayoutResultEdges(plan.graph, plan.result, diagramId, {
     waypointOffset: plan.offset,
     direction: plan.direction,
+    store,
   });
 }
 
