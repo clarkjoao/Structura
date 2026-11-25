@@ -9,13 +9,15 @@ import { useTheme } from "@/hooks/useTheme";
 import { CompareVersionBadges, VersionElementBadge } from "../VersionElementBadge";
 import { singleIncomingTargetHandleId } from "../node-types/handle-spec";
 import type { JsonViewerNodeData, JsonViewerMode } from "./JsonViewerNode.types";
+import { jsonOutline, type JsonOutline } from "./jsonOutline";
 import { useHandleSides } from "../../contexts/ReadingDirectionContext";
 
 const COLLAPSED_W = 240;
 const COLLAPSED_H = 88;
 const EXPANDED_MIN_W = 320;
 const EXPANDED_MIN_H = 260;
-const PREVIEW_LINES = 3;
+/** Rows the collapsed outline shows; the last says how many more there are. */
+const OUTLINE_ROWS = 3;
 
 const jsonViewerIncomingHandleClassName =
   "!border-background transition-[width,height,background-color,box-shadow] duration-150 !w-2.5 !h-2.5 !bg-muted-foreground";
@@ -41,16 +43,6 @@ function JsonViewerEdgeHandles({ elementId }: { elementId: string }) {
   );
 }
 
-function buildPreview(raw: string, lines: number): string {
-  try {
-    const formatted = JSON.stringify(JSON.parse(raw), null, 2);
-    return `${formatted.split("\n").slice(0, lines).join("\n")}\n…`;
-  } catch {
-    const slice = raw.slice(0, 120);
-    return raw.length > 120 ? `${slice}…` : slice;
-  }
-}
-
 function isValidJson(raw: string): boolean {
   try {
     JSON.parse(raw);
@@ -58,6 +50,49 @@ function isValidJson(raw: string): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * The collapsed body: the payload's top level, one key a row with the kind of value it holds —
+ * the shape reads at a glance, where its first characters did not.
+ */
+function JsonOutlineRows({ outline }: { outline: JsonOutline }) {
+  const { t } = useTranslation();
+  if (!outline.valid) {
+    return (
+      <p className="flex-1 px-3 py-2 text-[11px] text-destructive">
+        {t("jsonViewer.invalidShort")}
+      </p>
+    );
+  }
+  if (outline.entries.length === 0) {
+    return (
+      <p className="flex-1 px-3 py-2 font-mono text-[11px] text-muted-foreground">
+        {outline.root === "object"
+          ? t("jsonViewer.emptyObject")
+          : outline.root === "array"
+            ? t("jsonViewer.emptyArray")
+            : t(`jsonViewer.kinds.${outline.root}`, { count: 0 })}
+      </p>
+    );
+  }
+  // More than fit: the last row says how many are left instead of naming one more key.
+  const overflow = outline.total > outline.entries.length;
+  const shown = overflow ? outline.entries.slice(0, -1) : outline.entries;
+  const more = outline.total - shown.length;
+  return (
+    <dl className="min-h-0 flex-1 overflow-hidden px-3 py-1 text-[11px] leading-4">
+      {shown.map((entry) => (
+        <div key={entry.key} className="flex items-baseline gap-2">
+          <dt className="min-w-0 flex-1 truncate font-mono text-foreground">{entry.key}</dt>
+          <dd className="shrink-0 text-muted-foreground">
+            {t(`jsonViewer.kinds.${entry.kind}`, { count: entry.size ?? 0 })}
+          </dd>
+        </div>
+      ))}
+      {overflow && <p className="text-muted-foreground">{t("jsonViewer.more", { count: more })}</p>}
+    </dl>
+  );
 }
 
 const JsonViewerNode = memo(
@@ -191,7 +226,7 @@ const JsonViewerNode = memo(
       setMode("expanded");
     }, [diagramNodeData.jsonContent, onInlineEditingChange]);
 
-    const preview = buildPreview(diagramNodeData.jsonContent ?? "{}", PREVIEW_LINES);
+    const outline = jsonOutline(diagramNodeData.jsonContent ?? "{}", OUTLINE_ROWS);
     const editorTheme = theme === "dark" ? "vs-dark" : "light";
 
     return (
@@ -298,11 +333,7 @@ const JsonViewerNode = memo(
           </div>
 
           {!isExpanded ? (
-            <div className="flex-1 px-3 py-2 overflow-hidden min-h-0">
-              <pre className="text-[10px] font-mono text-muted-foreground leading-relaxed whitespace-pre-wrap break-all line-clamp-3">
-                {preview}
-              </pre>
-            </div>
+            <JsonOutlineRows outline={outline} />
           ) : (
             <div className="flex-1 min-h-0 relative nodrag nowheel">
               {parseError && (

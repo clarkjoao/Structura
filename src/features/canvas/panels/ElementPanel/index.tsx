@@ -9,6 +9,8 @@ import type { Node } from "@xyflow/react";
 import { PluginPanelSlot } from "@/features/plugins/components/PluginPanelSlot";
 import { MultiSelectPanel } from "../MultiSelectPanel";
 import { getElement } from "@/features/elements/element.registry";
+import { COMPONENT_TYPE_UNKNOWN } from "@/features/diagram";
+import { resolveNodeDescriptor } from "../../nodes/node-types";
 import ComponentPanel from "./ComponentPanel";
 import ConnectionPanel from "./ConnectionPanel";
 import DiagramPanel from "./DiagramPanel";
@@ -77,7 +79,14 @@ const ElementPanel = ({
   if (selectedElementId && component) {
     // Registered elements answer first; the guard chain below still owns every
     // type that has not migrated.
-    const RegisteredPanel = getElement(component.type)?.inspector.panel;
+    // What the canvas draws as unknown (a removed type, an absent plugin's) gets the unknown
+    // element's panel too, never the generic one with fields that do not apply.
+    const descriptor =
+      getElement(component.type) ??
+      (resolveNodeDescriptor(component).rfType === COMPONENT_TYPE_UNKNOWN
+        ? getElement(COMPONENT_TYPE_UNKNOWN)
+        : undefined);
+    const RegisteredPanel = descriptor?.inspector.panel;
     if (RegisteredPanel) {
       return (
         <PanelFrame>

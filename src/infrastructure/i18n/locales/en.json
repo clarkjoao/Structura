@@ -1001,7 +1001,27 @@
     "invalidJson": "Invalid JSON — fix before saving",
     "schemaRef": "Schema / Reference",
     "schemaRefPlaceholder": "e.g. https://schema.org/...",
-    "jsonContent": "JSON Content"
+    "jsonContent": "JSON Content",
+    "invalidShort": "Invalid JSON",
+    "more": "+{{count}} more",
+    "valid": "Valid JSON",
+    "unsaved": "Valid, not applied yet",
+    "errorAt": "Invalid JSON at line {{line}}, column {{column}}",
+    "apply": "Apply",
+    "applyHint": "Apply (⌘/Ctrl+Enter)",
+    "discard": "Discard",
+    "kinds": {
+      "string": "text",
+      "number": "number",
+      "boolean": "yes/no",
+      "null": "empty",
+      "array_one": "list of {{count}}",
+      "array_other": "list of {{count}}",
+      "object_one": "{{count}} key",
+      "object_other": "{{count}} keys"
+    },
+    "emptyObject": "Empty object",
+    "emptyArray": "Empty list"
   },
   "nodeTypes": {
     "db-table": "Database table",
@@ -2145,12 +2165,15 @@
   },
   "connectionsTab": {
     "noneFound": "No connections found.",
-    "filterPlaceholder": "Filter by label...",
+    "filterPlaceholder": "Filter by name or protocol…",
     "noResultsFor": "No results for “{{query}}”.",
     "incoming": "Incoming",
     "outgoing": "Outgoing",
     "dragReorderHint": "Drag rows to reorder handles.",
-    "selectAll": "Select all"
+    "selectAll": "Highlight all",
+    "viaRef": "via reference {{index}}",
+    "goTo": "Go to {{name}}",
+    "drawnElsewhere": "Drawn elsewhere"
   },
   "technologyCombobox": {
     "searchPlaceholder": "Search or type...",
@@ -2348,13 +2371,19 @@
     "aria": "Unknown element: {{name}}",
     "defaultName": "Unknown element",
     "badge": "unknown",
-    "emptyHint": "No content available"
+    "emptyHint": "No content available",
+    "cannotDraw": "Structura can't draw this type."
   },
   "svgNode": {
     "aria": "SVG element: {{name}}",
     "defaultName": "SVG",
     "showBorder": "Show border",
-    "showBorderHint": "Card frame around the artwork. Off shows only the SVG."
+    "showBorderHint": "Card frame around the artwork. Off shows only the SVG.",
+    "size": "Original size {{width}} × {{height}}",
+    "replace": "Replace…",
+    "download": "Download",
+    "emptyHint": "No artwork yet. Choose an .svg file in the panel, or paste one onto the canvas.",
+    "choose": "Choose…"
   },
   "cardNode": {
     "drillAria": "Drill into element {{id}}",
@@ -3008,8 +3037,7 @@
   "elementPanelTab": {
     "details": "Details",
     "connections": "Connections",
-    "services": "Services",
-    "references": "Refs"
+    "services": "Services"
   },
   "flowPanel": {
     "copyPrefix": "Copy of {{name}}",
@@ -3499,13 +3527,11 @@
   "shared": {
     "menu": {
       "trigger": "Refs",
-      "title": "References",
       "intro": "Draw this element again where it is used, instead of long edges across the diagram.",
       "create": "New reference beside it",
       "createHint": "Or Alt+drag the element to where it is used",
       "refRow": "{{name}} — reference {{index}}",
-      "openTab": "References: make one, see who uses it",
-      "noConsumers": "Nothing uses this element yet."
+      "openTab": "References: make one, see who uses it"
     },
     "chip": "shared",
     "uses_one": "{{count}} use",
@@ -3908,5 +3934,19 @@
       "dock": "Dock beside the canvas",
       "undock": "Undock"
     }
+  },
+  "unknownElementPanel": {
+    "title": {
+      "content": "Content kept as it came",
+      "plugin": "From a plugin that is not installed",
+      "removed": "A type Structura no longer has"
+    },
+    "body": {
+      "content": "Structura doesn't read this content; it keeps it untouched, with the element's connections.",
+      "plugin": "The {{plugin}} plugin draws this element. Install it to see it again; until then the element and its connections stay as they are.",
+      "removed": "This element was saved with a type that no longer exists. Its name and connections are kept; replace it with another element when you can."
+    },
+    "content": "Content",
+    "copy": "Copy content"
   }
 }

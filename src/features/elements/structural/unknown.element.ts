@@ -7,7 +7,9 @@ import { isUnknownComponent } from "@/features/diagram/model/component.guards";
 import i18n from "@/infrastructure/i18n";
 import { MAX_HANDLES, MIN_HANDLES } from "@/features/diagram/model/layout.constants";
 import type { NodeBuildContext } from "@/features/canvas/nodes/node-types/types";
-import type { ElementDescriptor } from "../element.types";
+import type { ElementDescriptor, ElementInspectorProps } from "../element.types";
+import { createElement } from "react";
+import UnknownElementPanel from "@/features/canvas/panels/ElementPanel/UnknownElementPanel";
 
 const UNKNOWN_DEFAULT_W = 240;
 
@@ -27,6 +29,11 @@ function slotsFor(id: string, ctx: NodeBuildContext) {
   };
 }
 const UNKNOWN_DEFAULT_H = 140;
+
+/** Every component the canvas draws as unknown gets this panel, whatever its stored type. */
+function UnknownInspector(props: ElementInspectorProps) {
+  return createElement(UnknownElementPanel, props);
+}
 
 /**
  * The declared type for content Structura cannot interpret.
@@ -64,11 +71,13 @@ export const unknownElement: ElementDescriptor = {
       // Also the degradation target for plugin-typed components whose plugin is
       // absent, and for a type no longer built in (a removed family's element in
       // a saved diagram): show the name and the type, never touch the data.
-      const rawContent = isUnknownComponent(comp) ? comp.rawContent : comp.type;
+      const own = isUnknownComponent(comp);
       return {
         elementId: comp.id,
         name: comp.name,
-        rawContent,
+        rawContent: own ? comp.rawContent : undefined,
+        // The type the canvas could not draw (a removed family's, an absent plugin's).
+        originalType: own ? undefined : comp.type,
         isSelected: ctx.selectedNodeId === comp.id,
         ...slotsFor(comp.id, ctx),
         ...versionBadgePropsForNode(ctx, comp.id),
@@ -91,7 +100,9 @@ export const unknownElement: ElementDescriptor = {
     searchKeys: ["unknown", "desconhecido", "raw", "opaque"],
   },
 
-  inspector: {},
+  inspector: {
+    panel: UnknownInspector,
+  },
 
   export: {
     drawio: {

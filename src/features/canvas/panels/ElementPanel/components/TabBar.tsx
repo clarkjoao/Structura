@@ -1,37 +1,26 @@
 import { useTranslation } from "react-i18next";
 
-export type Tab = "kind" | "details" | "connections" | "services" | "references";
+export type Tab = "kind" | "details" | "connections" | "services";
 
 export interface TabBarProps {
   active: Tab;
   onChange: (next: Tab) => void;
   showConnections: boolean;
   showServices: boolean;
-  /** The element can have references, or has some: its References tab. */
-  showReferences?: boolean;
   /** The diagram kind's own tab (spec guided-editing-surfaces), first when present. */
   kindTab?: string;
 }
 
-const TabBar = ({
-  active,
-  onChange,
-  showConnections,
-  showServices,
-  showReferences = false,
-  kindTab,
-}: TabBarProps) => {
+const TabBar = ({ active, onChange, showConnections, showServices, kindTab }: TabBarProps) => {
   const { t } = useTranslation();
   const tabs: Tab[] = kindTab ? ["kind", "details"] : ["details"];
   if (showConnections) tabs.push("connections");
   if (showServices) tabs.push("services");
-  if (showReferences) tabs.push("references");
 
   const labelFor = (tab: Tab) => {
     if (tab === "kind") return kindTab ?? "";
     if (tab === "details") return t("elementPanelTab.details");
     if (tab === "connections") return t("elementPanelTab.connections");
-    if (tab === "references") return t("elementPanelTab.references");
     return t("elementPanelTab.services");
   };
 

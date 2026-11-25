@@ -1001,7 +1001,27 @@
     "invalidJson": "JSON inválido — corrija antes de salvar",
     "schemaRef": "Schema / Referência",
     "schemaRefPlaceholder": "ex: https://schema.org/...",
-    "jsonContent": "Conteúdo JSON"
+    "jsonContent": "Conteúdo JSON",
+    "invalidShort": "JSON inválido",
+    "more": "+{{count}} mais",
+    "valid": "JSON válido",
+    "unsaved": "Válido, ainda não aplicado",
+    "errorAt": "JSON inválido na linha {{line}}, coluna {{column}}",
+    "apply": "Aplicar",
+    "applyHint": "Aplicar (⌘/Ctrl+Enter)",
+    "discard": "Descartar",
+    "kinds": {
+      "string": "texto",
+      "number": "número",
+      "boolean": "sim/não",
+      "null": "vazio",
+      "array_one": "lista de {{count}}",
+      "array_other": "lista de {{count}}",
+      "object_one": "{{count}} chave",
+      "object_other": "{{count}} chaves"
+    },
+    "emptyObject": "Objeto vazio",
+    "emptyArray": "Lista vazia"
   },
   "nodeTypes": {
     "db-table": "Tabela de banco de dados",
@@ -2145,12 +2165,15 @@
   },
   "connectionsTab": {
     "noneFound": "Nenhuma conexão encontrada.",
-    "filterPlaceholder": "Filtrar por label...",
+    "filterPlaceholder": "Filtrar por nome ou protocolo…",
     "noResultsFor": "Nenhum resultado para “{{query}}”.",
     "incoming": "Entradas",
     "outgoing": "Saídas",
     "dragReorderHint": "Arraste as linhas para reordenar os handles.",
-    "selectAll": "Selecionar todas"
+    "selectAll": "Destacar todas",
+    "viaRef": "via referência {{index}}",
+    "goTo": "Ir para {{name}}",
+    "drawnElsewhere": "Desenhado em outros lugares"
   },
   "technologyCombobox": {
     "searchPlaceholder": "Buscar ou digitar...",
@@ -2348,13 +2371,19 @@
     "aria": "Elemento desconhecido: {{name}}",
     "defaultName": "Elemento desconhecido",
     "badge": "desconhecido",
-    "emptyHint": "Sem conteúdo disponível"
+    "emptyHint": "Sem conteúdo disponível",
+    "cannotDraw": "O Structura não sabe desenhar este tipo."
   },
   "svgNode": {
     "aria": "Elemento SVG: {{name}}",
     "defaultName": "SVG",
     "showBorder": "Mostrar borda",
-    "showBorderHint": "Moldura de card em volta da arte. Desligado mostra só o SVG."
+    "showBorderHint": "Moldura de card em volta da arte. Desligado mostra só o SVG.",
+    "size": "Tamanho original {{width}} × {{height}}",
+    "replace": "Substituir…",
+    "download": "Baixar",
+    "emptyHint": "Sem arte ainda. Escolha um arquivo .svg no painel ou cole um no canvas.",
+    "choose": "Escolher…"
   },
   "cardNode": {
     "drillAria": "Explorar interior do elemento {{id}}",
@@ -3008,8 +3037,7 @@
   "elementPanelTab": {
     "details": "Detalhes",
     "connections": "Conexões",
-    "services": "Serviços",
-    "references": "Refs"
+    "services": "Serviços"
   },
   "flowPanel": {
     "copyPrefix": "Cópia de {{name}}",
@@ -3499,13 +3527,11 @@
   "shared": {
     "menu": {
       "trigger": "Refs",
-      "title": "Referências",
       "intro": "Desenhe este elemento de novo onde ele é usado, em vez de arestas longas cruzando o diagrama.",
       "create": "Nova referência ao lado",
       "createHint": "Ou Alt+arraste o elemento até onde ele é usado",
       "refRow": "{{name}} — referência {{index}}",
-      "openTab": "Referências: criar uma, ver quem usa",
-      "noConsumers": "Nada usa este elemento ainda."
+      "openTab": "Referências: criar uma, ver quem usa"
     },
     "chip": "compartilhado",
     "uses_one": "{{count}} uso",
@@ -3908,5 +3934,19 @@
       "dock": "Fixar ao lado do canvas",
       "undock": "Desacoplar"
     }
+  },
+  "unknownElementPanel": {
+    "title": {
+      "content": "Conteúdo guardado como veio",
+      "plugin": "De um plugin que não está instalado",
+      "removed": "Um tipo que o Structura não tem mais"
+    },
+    "body": {
+      "content": "O Structura não lê este conteúdo; ele fica intacto, junto com as conexões do elemento.",
+      "plugin": "O plugin {{plugin}} desenha este elemento. Instale-o para vê-lo de novo; até lá, o elemento e suas conexões ficam como estão.",
+      "removed": "Este elemento foi salvo com um tipo que não existe mais. O nome e as conexões ficam; troque-o por outro elemento quando puder."
+    },
+    "content": "Conteúdo",
+    "copy": "Copiar conteúdo"
   }
 }

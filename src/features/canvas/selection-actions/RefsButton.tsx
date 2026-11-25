@@ -1,18 +1,19 @@
 import { Link2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Component } from "@/features/diagram";
-import { sharedMode } from "@/features/diagram/utils/shared";
+import { useMemo } from "react";
+import { useComponents, type Component } from "@/features/diagram";
+import { refsOf, sharedMode } from "@/features/diagram/utils/shared";
 import { cn } from "@/lib/utils";
-import { useReferenceUsage } from "../shared/useReferenceUsage";
 import { requestReferencesTab } from "./referencesTab.store";
 
 /**
  * The element's references, one labelled button on its toolbar: it opens the inspector's
- * References tab, where they are made, listed and followed.
+ * Connections tab, where references are made, listed and followed beside the connections.
  */
 export function RefsButton({ component }: { component: Component }) {
   const { t } = useTranslation();
-  const { refs } = useReferenceUsage(component.id);
+  const components = useComponents();
+  const refs = useMemo(() => refsOf(component.id, components), [component.id, components]);
   const shared = sharedMode(component) !== "edges" || refs.length > 0;
 
   return (

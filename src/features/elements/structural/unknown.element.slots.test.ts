@@ -15,7 +15,7 @@ const ctx = {
 } as unknown as NodeBuildContext;
 
 describe("the unknown element's data", () => {
-  it("gives a removed type its name, its type and a slot per edge", () => {
+  it("gives a removed type its name, its original type and a slot per edge", () => {
     const removed = {
       id: "x",
       name: "X",
@@ -24,7 +24,8 @@ describe("the unknown element's data", () => {
     } as unknown as Component;
     expect(unknownElement.canvas.buildData(removed, ctx)).toMatchObject({
       name: "X",
-      rawContent: "sfn-state",
+      originalType: "sfn-state",
+      rawContent: undefined,
       incomingCount: 2,
       outgoingCount: 1,
     });

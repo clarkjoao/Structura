@@ -1,10 +1,11 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Handle, NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import { useTranslation } from "react-i18next";
 import { useIsNodeHandleHighlighted } from "../contexts/highlightMembership";
 import { CompareVersionBadges, VersionElementBadge } from "./VersionElementBadge";
 import { useCollabHighlight } from "@/features/collaboration/hooks/useCollabHighlight";
 import { safeSvgMarkup } from "../utils/svg.render";
+import { svgHasArtwork } from "../utils/svg.utils";
 import { useHandleSides } from "../contexts/ReadingDirectionContext";
 
 export type SvgNodeData = {
@@ -35,6 +36,7 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
   const collabHighlight = useCollabHighlight(d.elementId);
   const showBorder = d.showBorder !== false;
   const accentColor = d.customColor || SVG_ACCENT_DEFAULT;
+  const hasArt = useMemo(() => svgHasArtwork(d.svgContent), [d.svgContent]);
 
   return (
     <>
@@ -92,11 +94,18 @@ const SvgNode = memo(({ data: d, selected }: NodeProps<Node<SvgNodeData>>) => {
             </span>
           </div>
 
-          <div
-            className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
-            style={{ pointerEvents: "none" }}
-            dangerouslySetInnerHTML={{ __html: safeSvgMarkup(d.svgContent) }}
-          />
+          {hasArt ? (
+            <div
+              className="flex-1 flex items-center justify-center px-3 pb-2.5 min-h-0 overflow-hidden [&>svg]:max-w-full [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:h-auto"
+              style={{ pointerEvents: "none" }}
+              dangerouslySetInnerHTML={{ __html: safeSvgMarkup(d.svgContent) }}
+            />
+          ) : (
+            // No artwork yet: say where it comes from instead of drawing an empty card.
+            <div className="mx-3 mb-2.5 flex flex-1 items-center justify-center rounded-md border border-dashed border-border px-3 text-center text-[11px] text-muted-foreground">
+              {t("svgNode.emptyHint")}
+            </div>
+          )}
         </div>
       ) : (
         <div
