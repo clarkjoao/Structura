@@ -57,6 +57,7 @@ import { onVersionAction } from "./version-actions";
 import { overlayRegistry } from "./overlay-registry";
 import { toGeneratedGraph } from "./import-graph";
 import { PluginCodeEditor } from "./components/PluginCodeEditor";
+import { PLUGIN_UI_KIT } from "./ui-kit";
 import { registerChatContextContribution } from "./chat-context-registry";
 import { createPluginFolders } from "@/infrastructure/persistence/pluginFolders";
 import { useCanvasSelectionStore } from "@/features/canvas/hooks/useCanvasSelectionStore";
@@ -570,7 +571,7 @@ export function createScopedPluginApi(
 
     versions: scopedVersions(manifest, tracker),
 
-    ui: { CodeEditor: PluginCodeEditor },
+    ui: { ...PLUGIN_UI_KIT, CodeEditor: PluginCodeEditor },
 
     storage: createPluginStorage(manifest.id, storagePort),
 

@@ -16,13 +16,15 @@ export default defineConfig({
       formats: ["iife"],
     },
     rollupOptions: {
-      external: ["react", "react/jsx-runtime", "react/jsx-dev-runtime"],
+      external: ["react", "react/jsx-runtime", "react/jsx-dev-runtime", "@structura/ui"],
       output: {
         inlineDynamicImports: true,
         globals: {
           react: "__REACT__",
           "react/jsx-runtime": "__REACT_JSX_RUNTIME__",
           "react/jsx-dev-runtime": "__REACT_JSX_DEV_RUNTIME__",
+          // API 1.18: the host's UI kit (Button, Select, Card, …), shared the same way.
+          "@structura/ui": "__STRUCTURA_UI__",
         },
       },
     },

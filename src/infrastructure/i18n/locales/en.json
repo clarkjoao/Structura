@@ -92,7 +92,8 @@
     "transportUdp": "UDP",
     "transportTypeTitle": "Transport type",
     "copySuffix": " (copy)",
-    "defaultNamePrefix": "New"
+    "defaultNamePrefix": "New",
+    "selectPlaceholder": "Select…"
   },
   "externalLinks": {
     "sectionTitle": "Links",

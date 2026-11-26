@@ -128,7 +128,13 @@ StructuraPlugin.registerImporter({
       components: [
         // C4 types, "panel", catalog categories ("aws-database", "oss-messaging", …) and
         // "<pluginId>/<name>" are kept; any other type becomes "unknown".
-        { key: "orders", name: "Orders", type: "panel", x: ctx.anchor.x, y: ctx.anchor.y },
+        {
+          key: "orders",
+          name: "Orders",
+          type: "panel",
+          x: ctx.anchor.x,
+          y: ctx.anchor.y,
+        },
         {
           key: "db",
           name: "orders-db",
@@ -152,6 +158,68 @@ A `parentKey` that is missing, names a component that cannot hold this type, or 
 puts the component at the top level. Connections whose ends cannot be resolved are skipped and
 counted.
 
+### Structura's components: the UI kit (API 1.18)
+
+Draw plugin UI with the host's own components, so it matches Structura in light and dark, with
+the same focus rings and disabled states — instead of copying Tailwind classes, which only
+exist while the host's CSS happens to use them.
+
+| Component                    | Props (besides `className` / `style`)                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `Button`                     | `variant`: `default` `secondary` `outline` `ghost` `destructive` `link`; `size`: `default` `sm` `lg` `icon`; button attributes |
+| `Input`, `Textarea`, `Label` | the HTML element's attributes                                                                                                  |
+| `Field`                      | `label`, `hint`, `error`, `htmlFor`; one control as children (gets the id and `aria-describedby`)                              |
+| `Checkbox`, `Switch`         | `checked`, `defaultChecked`, `onCheckedChange(boolean)`, `disabled`                                                            |
+| `Select`                     | `options: [{ value, label, disabled? }]`, `value`, `defaultValue`, `onValueChange(value)`, `placeholder`                       |
+| `Badge`                      | `variant`: `default` `secondary` `destructive` `outline`                                                                       |
+| `Card`                       | `title`, `description`, `footer`, children                                                                                     |
+| `Tabs`                       | `tabs: [{ value, label, content }]`, `value`, `defaultValue`, `onValueChange`                                                  |
+| `Tooltip`                    | `content`, `side`; one element as children                                                                                     |
+| `Separator`                  | `orientation`                                                                                                                  |
+| `Stack`                      | `direction` (`column`), `gap` (×4px, 2), `align`, `justify`, `wrap`                                                            |
+
+**JavaScript plugins** (no build) use `api.ui`:
+
+```javascript
+activate: function (api) {
+  var ui = api.ui;
+  api.registerPanel({
+    id: "my-plugin/panel",
+    slot: "element-inspector",
+    title: "My panel",
+    component: function () {
+      return React.createElement(ui.Button, { variant: "outline" }, "Run");
+    },
+  });
+}
+```
+
+**Bundled plugins** import `@structura/ui`, an external bound to a host global like `react`:
+
+```javascript
+// vite.config.js
+rollupOptions: {
+  external: ["react", "react/jsx-runtime", "@structura/ui"],
+  output: {
+    globals: {
+      react: "__REACT__",
+      "react/jsx-runtime": "__REACT_JSX_RUNTIME__",
+      "@structura/ui": "__STRUCTURA_UI__",
+    },
+  },
+}
+```
+
+```tsx
+import { Button, Field, Input, Stack } from "@structura/ui";
+```
+
+`npm run sync-types` copies the kit's types (`src/types/structura-ui.d.ts`); map them in
+`tsconfig.json` with `"paths": { "@structura/ui": ["./src/types/structura-ui.d.ts"] }`. Declare
+`"apiVersion": "^1.18"`. For anything the kit lacks, use the theme tokens —
+`hsl(var(--foreground))`, `--muted-foreground`, `--primary`, `--border`, `--card`, … — which
+follow light and dark. Icons: bundle your own (`lucide-react` tree-shakes).
+
 ### Element packs and shapes (API 1.17)
 
 `registerElementPack` adds a family of catalog elements — cards with an icon and a category
@@ -171,8 +239,18 @@ api.registerElementPack({
       accent: { light: "#3366ff", dark: "#6b8cff" }, // hex or "H S% L%"
     },
   ],
-  services: [{ id: "vm", name: "VM", category: "compute", icon: "vm", concepts: ["serverless"] }],
-  icons: { vm: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">…</svg>' },
+  services: [
+    {
+      id: "vm",
+      name: "VM",
+      category: "compute",
+      icon: "vm",
+      concepts: ["serverless"],
+    },
+  ],
+  icons: {
+    vm: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">…</svg>',
+  },
 });
 
 api.registerShape({
@@ -214,7 +292,8 @@ function Pane() {
 }
 
 // A folder the user picks, remembered per binding id (re-asks permission after a reload).
-const folder = (await api.files.open(diagramId)) ?? (await api.files.pick(diagramId));
+const folder =
+  (await api.files.open(diagramId)) ?? (await api.files.pick(diagramId));
 const names = await folder.list(); // top-level file names
 const stats = await folder.stats(); // API 1.9: [{ name, lastModified, size }] — poll for outside changes
 await folder.write("a.yaml", await folder.read("a.yaml"));
@@ -241,7 +320,8 @@ const { idsByKey, connectionIds } = api.applyChanges({
     // The renameable symbol at a text offset, or null ("Nothing here can be renamed").
     resolve: (offset) => symbolAt(text, offset), // { start, end, text }
     // Apply it yourself (it may span files); return a message to refuse.
-    rename: async (offset, newName) => (taken(newName) ? "Already used" : apply(offset, newName)),
+    rename: async (offset, newName) =>
+      taken(newName) ? "Already used" : apply(offset, newName),
   }}
 />
 ```

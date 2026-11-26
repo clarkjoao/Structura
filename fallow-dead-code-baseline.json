@@ -65,8 +65,6 @@
     "unused-export:src/components/ui/badge.tsx:badgeVariants",
     "unused-export:src/components/ui/breadcrumb.tsx:BreadcrumbEllipsis",
     "unused-export:src/components/ui/card.tsx:CardDescription",
-    "unused-export:src/components/ui/card.tsx:CardFooter",
-    "unused-export:src/components/ui/card.tsx:CardTitle",
     "unused-export:src/components/ui/command.tsx:CommandDialog",
     "unused-export:src/components/ui/command.tsx:CommandSeparator",
     "unused-export:src/components/ui/command.tsx:CommandShortcut",

@@ -14,6 +14,7 @@ sequencing live in
 | Node types (domain) | 🟢 | `features/elements` (`ElementDescriptor` / `elementRegistry`, `CloudFamilyDefinition`) | **Resolved.** Single owner for structural, C4, and cloud families. See [element-registry.md](element-registry.md). `NODE_TYPE_REGISTRY` is plugins-only; unknown types → `unknown`. |
 | Edge types | 🔴 | single `CustomEdge` renderer | Blocked on edge redesign; design `EdgeTypeDescriptor` there. |
 | Cloud providers / catalogs | 🟢 | `features/elements/packs/<id>/pack.json` → `registerElementPack` → `registerCloudFamily` | AWS/GCP/Azure/Kubernetes/OSS are element packs (data in JSON, a small TS adapter for icons/export). A new family, category, service or shape is a JSON edit; see [element-registry.md#element-packs](element-registry.md#element-packs). |
+| Plugin UI kit | 🟢 | `features/plugins/ui-kit` → `api.ui.*` and the `__STRUCTURA_UI__` global (`@structura/ui`) | API 1.18: host components behind stable props (Button, Field, Select, Tabs, Card, …), so plugin UI matches the design system without relying on host Tailwind classes. |
 | Element packs (plugins) | 🟢 | Plugin capability `canvas:elements` | `registerElementPack` / `registerShape` (API 1.17): same format as the built-in packs; types `<pluginId>/<id>`, offered in the palette, catalog, search and assistant, removed on deactivate. |
 | Storage backends | 🟢 | `IStoragePort` adapters | Add adapters, never bypass the port. |
 | AI providers | 🟡 | `features/llm/providers/*` | Common call shape exists; needs a formal provider registry + capability flags. |
