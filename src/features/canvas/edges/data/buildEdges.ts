@@ -197,4 +197,3 @@ export function buildEdge(
 
 // Lives with the rest of what the canvas shows, in the pure view module; kept
 // exported here for the editor's existing imports.
-export { filterVisibleConnections } from "../../core/resolveViewSnapshot";

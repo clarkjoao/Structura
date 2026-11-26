@@ -32,7 +32,6 @@ export function isModKeyPressed(e: KeyboardEvent): boolean {
 export {
   KEY,
   keyIs,
-  keyIsEnterOrSpace,
   keyIsOneOf,
   keyMatchesLetter,
   keyMatchesLetterOrCode,

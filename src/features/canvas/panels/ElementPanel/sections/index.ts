@@ -1,4 +1,4 @@
-export { PositionSection, type PositionSectionProps } from "./PositionSection";
-export { PanelStyleSection, type PanelStyleSectionProps } from "./PanelStyleSection";
-export { ExternalLinksSection, type ExternalLinksSectionProps } from "./ExternalLinksSection";
+export { PositionSection } from "./PositionSection";
+export { PanelStyleSection } from "./PanelStyleSection";
+export { ExternalLinksSection } from "./ExternalLinksSection";
 export { FlowchartFieldsSection, type FlowchartFieldsSectionProps } from "./FlowchartFieldsSection";

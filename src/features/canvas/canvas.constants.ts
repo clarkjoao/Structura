@@ -1,10 +1,7 @@
 export {
-  OPACITY_TAG_FILTER_DIM,
-  OPACITY_TAG_FILTER_TRANSITION,
   OPACITY_FLOW_PLAYBACK_EDGE_DIM,
   OPACITY_FLOW_PLAYBACK_IN_FLIGHT,
   OPACITY_FLOW_PLAYBACK_PARTICIPANT,
-  OPACITY_TAG_FILTER_EDGE_DIM,
   OPACITY_FLOW_PLAYBACK_NODE_DIM,
 } from "./constants/opacity";
 
@@ -54,7 +51,7 @@ export const WHEEL_PINCH_DELTA_BOOST = 10;
 export const WHEEL_LINE_HEIGHT_PX = 16;
 
 // Re-exported for internal use in canvas features
-export { VIEWPORT_DEBOUNCE_MS } from "@/features/diagram";
+
 export { HANDLE_PITCH, handleSlotOffset } from "@/features/diagram/model/layout.constants";
 
 export const FLOW_PARTICLE_DURATION_MS = 1200;
@@ -94,7 +91,6 @@ export {
   PANEL_COLLAPSED_H,
   MIN_HANDLES,
   MAX_HANDLES,
-  NODE_DRAG_PADDING,
   DEFAULT_NODE_W,
   DEFAULT_NODE_H,
   NOTE_DEFAULT_W,
