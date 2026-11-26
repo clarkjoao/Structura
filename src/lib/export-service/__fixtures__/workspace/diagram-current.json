@@ -1,0 +1,82 @@
+{
+  "$schema": "structura://diagrams/v1",
+  "schemaVersion": 1,
+  "data": {
+    "id": "fx-current",
+    "name": "Current",
+    "level": "context",
+    "createdAt": 1700000000000,
+    "updatedAt": 1700000000000,
+    "snapshot": {
+      "components": {
+        "user": {
+          "id": "user",
+          "name": "User",
+          "type": "person",
+          "description": "",
+          "parentId": null
+        },
+        "api": {
+          "id": "api",
+          "name": "API",
+          "type": "system",
+          "description": "",
+          "parentId": null
+        },
+        "db": {
+          "id": "db",
+          "name": "Database",
+          "type": "container",
+          "description": "",
+          "parentId": null
+        }
+      },
+      "connections": {
+        "e1": {
+          "id": "e1",
+          "sourceId": "user",
+          "targetId": "api",
+          "label": "uses"
+        },
+        "e2": {
+          "id": "e2",
+          "sourceId": "api",
+          "targetId": "db",
+          "label": "reads"
+        }
+      },
+      "flows": {},
+      "iconLibrary": {}
+    },
+    "nodeLayouts": {
+      "user": {
+        "elementId": "user",
+        "x": 0,
+        "y": 0,
+        "width": 200,
+        "height": 80
+      },
+      "api": {
+        "elementId": "api",
+        "x": 300,
+        "y": 0,
+        "width": 200,
+        "height": 80
+      },
+      "db": {
+        "elementId": "db",
+        "x": 600,
+        "y": 0,
+        "width": 200,
+        "height": 80
+      }
+    },
+    "edgeLayouts": {},
+    "viewport": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  },
+  "exportedAt": "2026-11-26T18:15:30.432Z"
+}

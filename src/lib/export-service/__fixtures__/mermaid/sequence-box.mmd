@@ -1,0 +1,9 @@
+sequenceDiagram
+  box rgb(200,220,255) Backend
+    participant S as Service
+    participant DB as Database
+  end
+  participant U as User
+  U->>S: save
+  S->>DB: insert
+  DB-->>S: ok

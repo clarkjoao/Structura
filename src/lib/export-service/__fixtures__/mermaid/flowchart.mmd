@@ -1,0 +1,5 @@
+flowchart TD
+  A[Client] --> B{Gateway}
+  B -->|yes| C[Orders]
+  B -->|no| D[Reject]
+  C --> E[(Database)]
