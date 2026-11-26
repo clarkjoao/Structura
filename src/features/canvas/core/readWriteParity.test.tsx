@@ -26,6 +26,9 @@ import { useCanvasConnectionDerivations } from "../edges/useCanvasConnectionDeri
 import { resolveLabelOffset } from "../edges/resolveEditableEdgeGeometry";
 import { resolveNodeDescriptor } from "../nodes/node-types";
 import type { EdgeData } from "../edges/data/edgeData.types";
+import { SEED_DIAGRAMS } from "@/fixtures/seeds";
+import { arrangePreviewDiagram } from "@/embed/arrange";
+import { buildPreviewDiagram } from "@/embed/build-diagram";
 import { projectReadDiagram } from "./projectReadDiagram";
 import { resolveViewSnapshot } from "./resolveViewSnapshot";
 
@@ -781,4 +784,162 @@ describe("slice 5: editor-only modes leave the base alone", () => {
       );
     });
   }
+});
+
+/*
+ * RT-016: what is visible, nested and stacked is the same on every surface.
+ *
+ * Regressions this block locks (see the commit body for the full list):
+ *  - dd17f47c "hide what the editor hides — collapsed children, unplaced nodes"
+ *  - dd17f47c "honour the stacking order the author set"
+ *  - dd17f47c "stamp every edge so the reader's store never draws it"
+ *  - fbff9f70 / dd17f47c "open a shared link on the scene the author has open"
+ * The embed has no projection of its own: `EmbedPreview` hands the diagram it
+ * built (and, in automatic mode, arranged) to `ViewerCanvas`, so it is held to
+ * the same editor-vs-reader comparison on the diagram it would draw.
+ */
+
+/** The visible picture, reduced to what a reader can tell apart. */
+function visiblePicture(nodes: Node[], edges: Edge[]) {
+  const shown = nodes.filter((node) => !node.hidden);
+  return {
+    nodeIds: shown.map((node) => node.id),
+    parents: Object.fromEntries(shown.map((node) => [node.id, node.parentId ?? null])),
+    stacking: Object.fromEntries(shown.map((node) => [node.id, node.zIndex])),
+    edgeIds: edges.map((edge) => edge.id),
+  };
+}
+
+/** Collapsed panels, an active scene that re-stacks and removes, and a custom z-order, at once. */
+function combinedDiagram(): Diagram {
+  const base = sceneDiagram(
+    [
+      panelOf("C", { collapsed: true }),
+      cardOf("c1", "C"),
+      cardOf("c2", "C"),
+      panelOf("O"),
+      cardOf("o1", "O"),
+      cardOf("x"),
+      cardOf("gone"),
+    ],
+    {
+      C: box(0, 0, -1),
+      c1: { x: 20, y: 60 },
+      c2: { x: 20, y: 160 },
+      O: box(600, 0, 5),
+      o1: { x: 40, y: 80, zIndex: 8 },
+      x: { x: 1200, y: 100, zIndex: -2 },
+      gone: { x: 1200, y: 400 },
+    },
+    [
+      connection("x-c1", "x", "c1"),
+      connection("x-o1", "x", "o1"),
+      connection("c2-o1", "c2", "o1"),
+      connection("x-gone", "x", "gone"),
+    ],
+    {
+      s1: scene("s1", {
+        nodeLayouts: { x: { elementId: "x", x: 1300, y: 150, zIndex: 11 } },
+        removedComponentIds: ["gone"],
+        removedConnectionIds: ["x-gone"],
+      }),
+    },
+  );
+  return { ...base, activeVersionId: "s1", compareVersionId: null };
+}
+
+describe("RT-016: editor and viewer agree on what is visible, nested and stacked", () => {
+  beforeEach(() => {
+    useDiagramStore.setState({ diagrams: {}, activeDiagramId: null });
+    useCanvasSelectionStore.getState().clearSelection();
+    editorModes = EDITOR_MODES_OFF;
+  });
+
+  it("collapsed panels + active scene + custom z-order: same visible ids, parents and stacking", () => {
+    const diagram = combinedDiagram();
+    const write = writeProjection(diagram);
+    const read = projectReadDiagram(diagram);
+
+    expect(visiblePicture(read.nodes, read.edges)).toEqual(
+      visiblePicture(write.nodes, write.edges),
+    );
+    expect(read.nodes.map(drawnNode)).toEqual(write.nodes.map(drawnNode));
+    expect(read.edges.map(drawnEdge)).toEqual(write.edges.map(drawnEdge));
+
+    // Pinned, so "the same" cannot mean "wrongly the same" (dd17f47c).
+    const picture = visiblePicture(read.nodes, read.edges);
+    expect(picture.nodeIds).not.toContain("c1"); // collapsed panel's children
+    expect(picture.nodeIds).not.toContain("c2");
+    expect(picture.nodeIds).not.toContain("gone"); // removed by the open scene
+    expect(picture.stacking["O"]).toBe(5); // z-order the author set
+    expect(picture.stacking["o1"]).toBe(8);
+    expect(picture.stacking["x"]).toBe(11); // the scene's z, not the base's -2
+    expect(picture.parents["o1"]).toBe("O");
+    expect(picture.edgeIds).not.toContain("x-gone"); // its end was removed by the scene
+    expect(picture.edgeIds).toContain("x-o1");
+  });
+
+  describe("every seed diagram", () => {
+    for (const [id, diagram] of Object.entries(SEED_DIAGRAMS)) {
+      it(`${id}: same visible nodes, edges, parents and stacking`, () => {
+        const write = writeProjection(diagram);
+        const read = projectReadDiagram(diagram);
+
+        expect(visiblePicture(read.nodes, read.edges)).toEqual(
+          visiblePicture(write.nodes, write.edges),
+        );
+        expect(read.nodes.map(drawnNode)).toEqual(write.nodes.map(drawnNode));
+        expect(read.edges.map(drawnEdge)).toEqual(write.edges.map(drawnEdge));
+      });
+    }
+
+    it("the seeds exercise nesting and stacking, so the comparison above is not vacuous", () => {
+      const reads = Object.values(SEED_DIAGRAMS).map((d) => projectReadDiagram(d));
+      expect(reads.some((r) => r.nodes.some((n) => n.parentId))).toBe(true);
+      expect(reads.every((r) => r.nodes.length > 0)).toBe(true);
+      expect(reads.some((r) => r.edges.length > 0)).toBe(true);
+    });
+  });
+
+  describe("the embed's diagram", () => {
+    const graph = {
+      components: [
+        { key: "P", name: "Panel", type: "panel", x: 0, y: 0 },
+        { key: "a", name: "a", type: "system", x: 20, y: 60, parentKey: "P" },
+        { key: "b", name: "b", type: "system", x: 900, y: 0 },
+      ],
+      connections: [{ source: "b", target: "a", label: "calls" }],
+    };
+
+    it("as the host placed it: editor and viewer draw the same picture", () => {
+      const diagram = buildPreviewDiagram(graph as never);
+      const write = writeProjection(diagram);
+      const read = projectReadDiagram(diagram);
+      expect(visiblePicture(read.nodes, read.edges)).toEqual(
+        visiblePicture(write.nodes, write.edges),
+      );
+      expect(visiblePicture(read.nodes, read.edges).parents["a"]).toBe("P");
+    });
+
+    it("arranged here (arrange: automatic): editor and viewer draw the same picture", async () => {
+      const arranged = await arrangePreviewDiagram(buildPreviewDiagram(graph as never));
+      const write = writeProjection(arranged);
+      const read = projectReadDiagram(arranged);
+      expect(visiblePicture(read.nodes, read.edges)).toEqual(
+        visiblePicture(write.nodes, write.edges),
+      );
+      expect(read.nodes.map(drawnNode)).toEqual(write.nodes.map(drawnNode));
+    });
+  });
+
+  it("the viewer never moves what the diagram placed (dd17f47c: no ELK on ?diagramId / file)", () => {
+    // The projection is pure: positions in are positions out, for every seed.
+    for (const diagram of Object.values(SEED_DIAGRAMS)) {
+      for (const node of projectReadDiagram(diagram).nodes) {
+        const layout = diagram.nodeLayouts[node.id];
+        if (!layout) continue;
+        expect(node.position).toEqual({ x: layout.x, y: layout.y });
+      }
+    }
+  });
 });
