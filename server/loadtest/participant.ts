@@ -65,11 +65,6 @@ export class Participant {
     return new Promise((resolve) => this.readyWaiters.push(resolve));
   }
 
-  /** Cut the socket as a network failure would. */
-  drop(): void {
-    this.ws?.terminate();
-  }
-
   /** Stop for good, without ending the session (a host that vanished). */
   vanish(): void {
     this.stopped = true;
@@ -79,10 +74,6 @@ export class Participant {
   close(): void {
     this.stopped = true;
     this.ws?.close();
-  }
-
-  endSession(): void {
-    this.send({ type: "close" });
   }
 
   /** Send a change composed against the state this participant holds. */

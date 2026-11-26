@@ -190,10 +190,6 @@ export class CollabSession {
     this.client.sendCursor(this.cursor, id);
   }
 
-  get hostToken(): string | null {
-    return this.client.credential;
-  }
-
   // ── Internals ───────────────────────────────────────────────────────────
 
   private collab(): CollabStoreState {
