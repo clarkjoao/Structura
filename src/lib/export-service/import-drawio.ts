@@ -13,6 +13,7 @@ import {
   isAwsType,
   type AwsCategoryId,
 } from "@/features/cloud/providers/aws/aws.catalog";
+import { inflateRaw } from "./inflate-raw";
 import { allElements } from "@/features/elements/element.registry";
 
 export interface DrawioImportResult {
@@ -44,9 +45,32 @@ const EMPTY_RESULT: DrawioImportResult = {
 
 const MXGRAPH_MODEL_RE = /<mxGraphModel\b[\s\S]*?<\/mxGraphModel>/;
 
+const COMPRESSED_DIAGRAM_RE = /<diagram\b[^>]*>\s*([A-Za-z0-9+/=\s]+?)\s*<\/diagram>/;
+
+/**
+ * draw.io desktop compresses `<diagram>` by default: base64 of raw-deflate of the
+ * URI-encoded mxGraphModel. Returns the decoded model, or null when there is none to decode.
+ */
+function decompressDiagram(xml: string): string | null {
+  const payload = xml.match(COMPRESSED_DIAGRAM_RE)?.[1];
+  if (!payload) return null;
+  try {
+    const binary = atob(payload.replace(/\s+/g, ""));
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    // The inflated bytes are the ASCII of encodeURIComponent(xml).
+    const inflated = new TextDecoder("latin1").decode(inflateRaw(bytes));
+    return decodeURIComponent(inflated);
+  } catch {
+    return null;
+  }
+}
+
 function extractMxGraphModelFragment(xml: string): string {
   const match = xml.match(MXGRAPH_MODEL_RE);
-  return match ? match[0] : xml;
+  if (match) return match[0];
+  const decompressed = decompressDiagram(xml);
+  if (decompressed) return extractMxGraphModelFragment(decompressed);
+  return xml;
 }
 
 function isParseErrorDocument(doc: Document): boolean {

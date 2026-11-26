@@ -130,7 +130,7 @@ describe("draw.io fixtures: import -> export -> import is stable", () => {
   // Gap found while building the corpus: draw.io desktop compresses <diagram> by default
   // (deflate-raw + base64 + URI-encoding). The importer only reads the inline mxGraphModel, so
   // a default draw.io desktop file imports as an empty diagram.
-  it.fails("imports a draw.io desktop file whose <diagram> is compressed", () => {
+  it("imports a draw.io desktop file whose <diagram> is compressed", () => {
     const r = importFile("desktop-uncompressed");
     const compressed = parseDrawioXml(fixture("drawio/desktop-compressed.drawio"), origin, {});
     expect(names(compressed.components)).toEqual(names(r.components));
