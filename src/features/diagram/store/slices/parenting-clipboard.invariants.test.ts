@@ -198,17 +198,14 @@ function step(ctx: Ctx, rng: Rng, label: string[]) {
         expect(before[copy.parentId], where()).toBeDefined();
         expect(copy.parentId, where()).toBe(preserve ? source.parentId : undefined);
       }
-      // Only chains of at most one pasted ancestor that end at the canvas root are
-      // checked: deeper chains are the known bug pinned below, and a chain ending
+      // Chains that end at the canvas root are checked at any depth; a chain ending
       // at an existing parent (preserveParentWhenMissing) is positioned inside it.
       const pastedSet = new Set(pasted);
-      let steps = 0;
       let top = copy;
       while (top.parentId && pastedSet.has(top.parentId)) {
         top = after[top.parentId];
-        steps++;
       }
-      if (!top.parentId && steps <= 1) {
+      if (!top.parentId) {
         const offset = clip.relativeOffsets![i];
         expect(absolute(ctx, pasted[i]), `${where()} offset of ${pasted[i]}`).toEqual({
           x: base.x + offset.dx,
@@ -243,11 +240,9 @@ function runSeed(seed: number) {
 }
 
 describe("parenting and clipboard invariants", () => {
-  // BUG found by the seeds above: pasting a chain panel > panel > node subtracts the
-  // parent's layout from the child after the parent was already rebased (the second
-  // loop in pasteFromClipboard rebases in clipboard order), so the grandchild lands
-  // far from where the copy was. Fix is to rebase deepest-first or from absolutes.
-  it.fails("pastes a three-level chain at its relative offsets", () => {
+  // Regression (RT-030): pasting a chain panel > panel > node used to subtract the
+  // parent's layout after the parent was already rebased, so the grandchild landed far off.
+  it("pastes a three-level chain at its relative offsets", () => {
     const ctx = setup();
     const s = ctx.store.getState();
     const a = s.addComponent("panel", "A", null, { x: 100, y: 100 });
