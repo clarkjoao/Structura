@@ -382,9 +382,9 @@ jobs:
       - name: Build
         run: npx vite build
 
-      # Selection matrix, right-button context menu and editable edges: the canvas
-      # interactions with no jsdom equivalent. editor-viewer-render-parity is left out
-      # until the box mismatch it reports is fixed (card RT-041).
+      # Selection matrix, right-button context menu, editable edges and editor/viewer
+      # render parity: the canvas interactions and DOM-measured boxes with no jsdom
+      # equivalent.
       - name: Run the smoke specs
         run: |
           npx vite preview --port 4173 --strictPort > /tmp/preview.log 2>&1 &
