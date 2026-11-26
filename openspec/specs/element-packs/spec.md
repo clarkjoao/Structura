@@ -1,6 +1,7 @@
 # element-packs Specification
 
 ## Purpose
+
 Element packs let developers (and plugins) add element families, categories, services and SVG
 shapes to Structura as declarative data, without editing TypeScript unions, locale files or CSS.
 
