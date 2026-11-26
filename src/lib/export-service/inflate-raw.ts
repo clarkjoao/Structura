@@ -49,7 +49,16 @@ const FIXED_LITERALS = buildHuffman([
 ]);
 const FIXED_DISTANCES = buildHuffman(new Array<number>(30).fill(5));
 
-export function inflateRaw(input: Uint8Array): Uint8Array {
+/**
+ * Output ceiling, the same 25 MB the workspace import accepts. A pasted or opened file is
+ * untrusted: a few KB of DEFLATE can expand to gigabytes, so decoding stops here.
+ */
+export const INFLATE_MAX_OUTPUT_BYTES = 25 * 1024 * 1024;
+
+export function inflateRaw(
+  input: Uint8Array,
+  maxOutputBytes: number = INFLATE_MAX_OUTPUT_BYTES,
+): Uint8Array {
   let position = 0;
   let bitBuffer = 0;
   let bitCount = 0;
@@ -85,6 +94,7 @@ export function inflateRaw(input: Uint8Array): Uint8Array {
   };
 
   const push = (byte: number): void => {
+    if (outLength >= maxOutputBytes) throw new Error("inflate: output exceeds the size limit");
     if (outLength === output.length) {
       const grown = new Uint8Array(output.length * 2);
       grown.set(output);
