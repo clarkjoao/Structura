@@ -43,6 +43,7 @@ export const versionsSlice = (
       if (!d) return;
       const src = d?.versions?.[versionId];
       if (!src) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       const versions = ensureVersions(d);
       const index = Object.keys(versions).length;
       const id = generateId("version");
@@ -68,6 +69,7 @@ export const versionsSlice = (
     set((state) => {
       const d = getActiveDiagram(state);
       if (!d) return;
+      pushHistory(state, STRUCTURAL_MUTATION_MARKER);
       const versions = ensureVersions(d);
       const index = Object.keys(versions).length;
       const id = generateId("version");

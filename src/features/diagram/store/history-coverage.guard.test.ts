@@ -280,7 +280,7 @@ const MUST_PUSH: Record<string, Row> = {
  * Real gaps found by this guard: the action should checkpoint but does not (current code).
  * Their rows run as `it.fails`, so fixing the action turns the row red until it is removed here.
  */
-const KNOWN_GAPS = new Set(["addVersion", "duplicateVersion"]);
+const KNOWN_GAPS = new Set<string>();
 
 /**
  * Actions that deliberately leave no checkpoint of their own. `reason` is the contract:
@@ -355,7 +355,6 @@ const EXEMPT: Record<string, string> = {
   fitGroupToChildren: "pushes; covered in layout.slice.test.ts",
   applyAutoLayout: "pushes; covered in layout.slice.autolayout.test.ts",
   setLayoutSettings: "pushes; covered in layout.slice.layoutSettings.test.ts",
-  // Possible gap, flagged in the report: z-order writes layout without a checkpoint.
   bringToFront: "z-order is a layout write with no checkpoint today (possible gap)",
   sendToBack: "z-order is a layout write with no checkpoint today (possible gap)",
   setNodeZIndex: "z-order is a layout write with no checkpoint today (possible gap)",
@@ -434,8 +433,6 @@ describe("every structural action writes undo history", () => {
 
   for (const name of Object.keys(MUST_PUSH)) {
     const title = `${name} adds one undo step and undo restores the diagram`;
-    // BUG (current code): addVersion and duplicateVersion in versions.slice.ts never call
-    // pushHistory, so creating or duplicating a version cannot be undone.
     if (KNOWN_GAPS.has(name)) it.fails(title, () => runRow(name));
     else it(title, () => runRow(name));
   }
