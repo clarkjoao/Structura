@@ -72,7 +72,7 @@ spine, in order:
 4. Importers/exporters, validators, layout providers, AI providers — each
    becomes a `contributes` key as its registry lands.
 
-Diagram **profiles** (VSM, Step Functions, Saga) are the intended first
+Diagram **profiles** (VSM, Saga) are the intended first
 consumers: a profile = one plugin bundling node/edge types + palette +
 validators + defaults.
 
@@ -94,7 +94,7 @@ Deliberately minimal in v1:
 
 - **v1: no inter-plugin dependencies.** Plugins depend on the Structura API
   only (`engine` semver range checked at registration). Inter-plugin deps
-  (a Saga plugin extending the Step Functions palette) are a real future
+  (a plugin extending another plugin's palette) are a real future
   need — the manifest reserves the field, the resolver is not built until
   two real plugins need it.
 - **The API is versioned as one surface.** Whatever `PluginContext` and the

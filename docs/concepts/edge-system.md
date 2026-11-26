@@ -41,8 +41,7 @@ to `ConnectionStyle` in the meantime.
 
 Unlike nodes, there is **one** edge renderer with internal branching, not a
 descriptor registry. That is fine while all edges are "labeled arrows", and
-wrong the moment VSM (timeline ladders), Step Functions (choice/parallel
-semantics), or Saga (compensation arrows) arrive — which is why the edge
+wrong the moment VSM (timeline ladders) or Saga (compensation arrows) arrive — which is why the edge
 redesign precedes those roadmap items.
 
 ## Where edge behavior belongs

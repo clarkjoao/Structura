@@ -21,7 +21,7 @@ Discovery feita em 2026-11-26 sobre a `main` `b3595158`, em worktree limpa. Os n
   - Nenhuma dependência morta: as 7 que o fallow aponta são falsos positivos.
 - **O gate do fallow não diminui o estoque:** ele passa porque o baseline aceita exatamente o estado atual. Desde que foi salvo, ninguém reduziu os números.
 - **O briefing não bate com o código em dois temas.** A geração por IR (`/generate`) está viva e sem flag. O módulo `walkthrough` foi reconstruído no #238, fica atrás de uma flag desligada e é usado pelo "Apresentar por fase" do guided. Os dois foram para decisão, não para remoção.
-- **ASL, Structurizr e GIF não existem na `main`:** não há código nem teste.
+- **Structurizr e GIF não existem na `main`:** não há código nem teste.
 - **As regressões se repetem onde não há teste:** `Canvas.tsx`, `useCanvasInteraction`, `useCanvasKeyboard` e `useFileSystemStorage` estão perto de 0% de cobertura e estão entre os arquivos mais corrigidos.
 - **E2E desligado:** nenhum dos 14 specs Cypress roda no CI.
 
@@ -114,7 +114,7 @@ Todo PR de remoção roda `fallow:baseline`, e o diff do baseline só pode encol
 6. **Fixtures `generated-diagrams`, ~72 KB (DC-034).** Recomendo manter enquanto o épico de layout usar como benchmark.
 7. **Exports mantidos só para testes (DC-065).** Recomendo mantê-los quando o teste cobre um comportamento real.
 8. **Testes de plugin sem o token opscr (BL-010).** Recomendo rodar sem token os testes que não importam o pacote `opscr`.
-9. **Onde está o épico ASL (BL-007).** Não há código dele na `main`, então nada a remover lá.
+9. **BL-007 (resolvido em 2026-11-26):** o épico vive no opscr, fora deste repo; as menções a um perfil Step Functions saíram dos docs.
 
 ## 7. Riscos e falsos positivos conhecidos
 

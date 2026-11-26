@@ -256,11 +256,11 @@ Sequenced so each step is useful alone and none blocks `main`:
 | Horizon | Move | Why this order |
 | --- | --- | --- |
 | Now | **Docs, ADRs, SDD process** (this phase) | Alignment before construction. |
-| Next | **Domain component descriptors** — open the `ComponentType` bottleneck | Everything on the roadmap (VSM, Step Functions, Saga) is blocked on cheap new element types. |
+| Next | **Domain component descriptors** — open the `ComponentType` bottleneck | Everything on the roadmap (VSM, Saga) is blocked on cheap new element types. |
 | Next | **Command system** | Second-most-shared dependency: UI extensibility, shortcuts, palette, MCP all sit on it. |
 | Then | **Derived Model Index** (vision §6, step 2) | Unblocks Architecture Map, cross-diagram references, better AI — without migration. |
 | Then | **Contribution-point plugin architecture** (build-time, no runtime loader) | Formalizes the registries into one coherent Extension API. See [plugin-system-preparation.md](plugin-system-preparation.md). |
-| Started | **Diagram kinds** (profiles) — the contract and the first kind, *guided* ([ADR-0014](../adr/0014-diagram-kinds.md), [diagram-kinds.md](../concepts/diagram-kinds.md)); VSM, Step Functions, Saga next | Proof that the extension surface is real; plugin-contributed kinds follow once a second kind has exercised the contract. |
+| Started | **Diagram kinds** (profiles) — the contract and the first kind, *guided* ([ADR-0014](../adr/0014-diagram-kinds.md), [diagram-kinds.md](../concepts/diagram-kinds.md)); VSM, Saga next | Proof that the extension surface is real; plugin-contributed kinds follow once a second kind has exercised the contract. |
 | Later | **Identity promotion** (vision §6, step 3), then reassess model-first | The product decides, informed by usage. |
 
 Non-goals for this horizon: a plugin marketplace, a runtime plugin loader,
