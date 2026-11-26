@@ -175,7 +175,7 @@ The Text panel (spec `guided-journey-text-sync`, `guided.outline.reconcile.ts`) 
 journey. The edited text is reconciled against the text the panel wrote:
 
 - **Identity.** Each written line knows its step (`writeGuidedOutline` → `lineIds`). Edited lines
-  are aligned to them by a line diff (`guided.outline.align.ts`): kept lines keep their step, a
+  are aligned to them by a line diff (`diagram-kinds/textAlign.ts`): kept lines keep their step, a
   line edited in place (a rename) is paired with the one it replaced, and a line
   moved unchanged is found again. A trailing handle, `Paga {#s4}` ("Copy as… Text with ids"),
   overrides the alignment; an unknown or repeated handle is a line error. Handles are ignored when

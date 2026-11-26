@@ -1,3 +1,5 @@
+> Archived, point-in-time document: it describes a throwaway spike from 2026-10-06 (branch `spike/vscode-viewer`). The spike became `extensions/vscode-opscr`; see `openspec/changes/archive/2026-10-11-vscode-opscr-preview`.
+
 # Spike: a read-only Structura preview for a VSCode webview
 
 Date: 2026-10-06 · Branch: `spike/vscode-viewer` (throwaway code, since removed; the real entry is `src/embed/`)

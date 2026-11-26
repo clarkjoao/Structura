@@ -1,3 +1,5 @@
+> Archived, point-in-time document: it describes the repository at commit `60d51ec2` (2026-11-10). Its audit items shipped in #268 (`ac72766c`); do not treat it as current.
+
 # Auditoria geral do Structura — performance, arquitetura e UX/UI
 
 Data: 2026-11-10 (seção 9 acrescentada em 2026-11-11). Somente leitura e medição nas seções 1–8; a seção 9 registra a implementação que se seguiu.

@@ -1,8 +1,9 @@
 # Import / Export (Interchange)
 
 The Interchange context converts between Structura's model and external
-formats. It lives in `src/lib/export-service/` (plus two Mermaid importers in
-`features/diagram/utils/`). Its governing rule: **format knowledge never
+formats. It lives in `src/lib/export-service/` (format entry points), `src/lib/export-core/`
+(shared cell, edge and geometry builders), plus two Mermaid importers in
+`features/diagram/utils/`. Its governing rule: **format knowledge never
 leaks inward** — the model has no idea draw.io exists.
 
 ## Supported formats
@@ -12,7 +13,6 @@ leaks inward** — the model has no idea draw.io exists.
 | JSON (native) | export / import | `export-json.ts`, `shared-import.ts` | Lossless; the sharing/backup format. Validated on import (`validateWorkspaceFile`, `validate-diagram`). |
 | draw.io (mxGraph XML) | export / import | `export-drawio.ts`, `import-drawio.ts` | The richest external target. Cell builders per component shape, geometry mapping, AWS icon style cache. |
 | Mermaid | export / import | `export-mermaid.ts`; `import-mermaid-flowchart.ts`, `import-mermaid-sequence.ts` | Export flattens; import parses flowchart + sequence into components/flows. |
-| Structurizr DSL | export / import | `export-structurizr.ts`, `import-structurizr.ts` | C4 semantic mapping; layout is not preserved (Structurizr auto-layouts). |
 
 ## Export pipeline (draw.io as the model case)
 
@@ -28,8 +28,8 @@ Diagram(s) → build-export-files → per-diagram conversion
 Design points:
 
 - **Builders are pure functions** from model + layout to format primitives —
-  fully unit-tested (`export-drawio.test.ts`, `edge-builder.test.ts`,
-  `geometry.test.ts`) with no DOM.
+  fully unit-tested (`export-drawio.test.ts`, `edge-builder.stroke.test.ts`,
+  `geometry.test.ts` in `export-core/`) with no DOM.
 - **Imports normalize before entering the store**
   (`normalize-imported-diagram.ts`): id regeneration, parent resolution,
   layout reconstruction, icon resolution (`resolve-used-icons.ts`). Nothing
@@ -49,7 +49,7 @@ explicit:
   (base snapshot + `VersionDiff`s), including when a scene is active at
   export time — the JSON keeps `scenes` / `activeVersionId` rather than
   flattening the active view.
-- Structurizr drops layout; Mermaid drops nearly all styling.
+- Mermaid drops nearly all styling.
 
 When improving a format (e.g. the roadmap's "better draw.io import/export"),
 extend the mapping tables in the spec first, so what round-trips and what

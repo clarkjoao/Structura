@@ -97,7 +97,7 @@ explicitly, with their responsibilities and allowed dependencies:
 | **Model** | `features/diagram` | Domain types (Component, Connection, Flow, Diagram, Scene), type guards, the Zustand store (slices/selectors), pure model utilities. **No React.** | nothing app-level |
 | **Canvas** | `features/canvas` | React Flow rendering, node/edge descriptors, toolbar, panels, interaction, flow playback UI. Domain-agnostic engine + descriptor contributions. | Model |
 | **Workspace** | `pages/`, `infrastructure/persistence` | Folders, dashboard, model explorer, storage adapters (`IStoragePort`), sync, migrations. | Model |
-| **Interchange** | `lib/export-service`, mermaid import utils | Converting to/from external formats (draw.io, Mermaid, Structurizr, JSON). Boundary converters only — no format knowledge leaks inward. | Model |
+| **Interchange** | `lib/export-service`, mermaid import utils | Converting to/from external formats (draw.io, Mermaid, JSON; Structurizr is not implemented). Boundary converters only — no format knowledge leaks inward. | Model |
 | **Catalogs** | `features/cloud`, `lib/catalogs` | AWS/GCP/Azure service catalogs and icons; pattern and panel catalogs. Data, not behavior. | Model |
 | **Collaboration** | `features/collaboration`, `server/`, `go-server/` | Live sessions: field-level patches ordered by the relay, presence, soft locks. The relay's store is the source of truth only while a session lasts (ADR-0011). | Model |
 | **Intelligence** | `features/llm` | Diagram assistant: providers (Anthropic/OpenAI/proxy), prompt building, patch parsing, applying `DiagramPatch` actions to the store. | Model |
