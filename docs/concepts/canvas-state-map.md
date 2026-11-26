@@ -55,7 +55,7 @@ are listed separately.
 | `useSharedRevealStore` | `canvas/shared/useSharedRevealStore.ts` | `useCanvasGraphState`, `useReadDiagramFlow` | `SharedLayer` | no |
 | `useElementPresetStore` | `element-presets/store/element-presets.store.ts` | `useCatalogDrop`, `useCanvasCatalogIndex`, `useCanvasDropTarget` (via `useElementPresetLibrary`) | `CanvasOverlays` (save preset), presets UI, file-system boot | yes |
 | `useCanvasPreferencesStore` | `canvas/preferences/canvas-preferences.store.ts` | `Canvas` (`showMiniMap`), event handlers and effects (scroll mode), catalog, panels, view options | view options, catalog | yes (browser preference) |
-| `useCanvasSelectionStore` | `canvas/hooks/useCanvasSelectionStore.ts` | `useCanvasSelection` (→ `useCanvasVisualState`), `pointerFunnel`, `useCanvasEventHandlers`, panels, flow panels, `llm/ir/apply-ir.ts` | the same | no |
+| `useCanvasSelectionStore` | `canvas/hooks/useCanvasSelectionStore.ts` | `useCanvasSelection` (→ `useCanvasVisualState`), `pointerFunnel`, `useCanvasEventHandlers`, panels, flow panels | the same | no |
 | `useTextToolStore` | `canvas/text/textLayer.store.ts` | `useTextLayer` (Canvas, via `useTextLayerSelectionGuard`), `useCanvasStore`, `useCanvasGraphState`, `useCatalogInsert` | `useTextLayer`, `useCatalogInsert` | no |
 | `useFlowViewStore` | `canvas/flow/useFlowViewStore.ts` | `useFlowState`, `FlowPanel`, `FlowScriptPanel`, `useFlowRecording` | the flow panels | no |
 | `useWalkthroughStore` | `walkthrough/store/walkthrough.store.ts` | not on the canvas path (walkthrough pages) | walkthrough pages | yes |

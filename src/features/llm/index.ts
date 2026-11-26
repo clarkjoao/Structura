@@ -26,7 +26,6 @@ export {
 // ─── Serializers ──────────────────────────────────────────────────────────────
 export { serializeDiagramContext } from "./serializer";
 export { buildMentionContextBlock } from "./mention-serializer";
-export { parseGenerateCommand } from "./ir";
 
 // ─── Errors ───────────────────────────────────────────────────────────────────
 export { getLLMErrorI18nKey } from "./errors";
@@ -38,10 +37,6 @@ export { getPresetsForProvider } from "./model-presets";
 // ─── Suggestions ──────────────────────────────────────────────────────────────
 // Used internally by LLM components.
 export { buildContextualSuggestions } from "./suggestions";
-
-// ─── IR ───────────────────────────────────────────────────────────────────────
-// Used internally by LLM components via dynamic import.
-export { downloadIR, buildIRFilename } from "./ir";
 
 // ─── Internal sub-modules — import directly: ──────────────────────────────────
 //   import { ... } from "@/features/llm/component-catalog";

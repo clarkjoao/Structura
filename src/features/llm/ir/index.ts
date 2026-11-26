@@ -22,10 +22,7 @@ export {
 } from "./ir.types";
 export type { IRIssueCode, IRValidationIssue, IRValidationResult } from "./ir-validator";
 export { extractIRJson, parseAndValidateIR, validateIR } from "./ir-validator";
-export { buildIRSystemPrompt } from "./ir-prompt";
 export type { MappedComponentType } from "./ir-to-component";
 export { mapNodeToComponent } from "./ir-to-component";
-export { buildIRFilename, downloadIR, serializeIR } from "./ir-export";
 export type { ApplyIRResult } from "./apply-ir";
 export { applyIRToDiagram } from "./apply-ir";
-export { parseGenerateCommand } from "./ir-command";
