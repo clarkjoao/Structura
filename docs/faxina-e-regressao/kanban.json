@@ -2,11 +2,11 @@
   "meta": {
     "project": "Structura — faxina de código morto e rede de regressão",
     "phase": "Execução",
-    "updated": "2026-11-26 17:58",
-    "note": "Os 9 bugs achados pelos testes foram corrigidos, um commit cada; nenhum it.fails restante. Branch local, sem push. Restam: RT-016..RT-024, Cypress no CI (BL-004), decisões de épicos e walkthrough (por último).",
+    "updated": "2026-11-26 19:05",
+    "note": "Backlog executado: todos os testes RT-016..RT-024 e as remoções DC-013/DC-024/DC-025 integrados e verificados. Restam: RT-020 (depende de BL-004), as decisões e o walkthrough (por último).",
     "baseline": {
-      "commit": "b5d9842b (branch)",
-      "test": "595 arquivos / 5733 testes verdes, 0 it.fails",
+      "commit": "7de14790 (branch)",
+      "test": "606 arquivos / 5840 testes verdes, 0 it.fails",
       "typecheck": "0 erros",
       "lint": "0 erros, 7 warnings",
       "format:check": "ok",
@@ -313,9 +313,9 @@
       "evidence": "SP/agents/A6/dyn-prefixes.txt (46 prefixos); patterns.* 379 via patternSearch.ts:77; diagramKinds.guided.* 67; common.* 42",
       "note": "Exige cruzar cada família com o enum ou registry que gera a chave.",
       "acceptance": "Lista de chaves órfãs por família, cada uma com o enum de origem conferido",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 29db594d (36 chaves; demais famílias conferidas contra a fonte)"
     },
     {
       "id": "DC-014",
@@ -441,9 +441,9 @@
       "evidence": "FileSystemAdapter.ts:922 deleteDirectory, :950 readDiagram, :980 deleteDiagram; classe sem implements (linha 240); nenhum call site em src, cypress ou plugins",
       "note": "Verificação extra: confirmar que folderSync e useFileSystemStorage não chegam a eles por outro handle; tombstone de deleteDiagram citado em validateWorkspaceFile.ts:24.",
       "acceptance": "Grep e testes de persistência confirmam zero chamadas; métodos removidos com suíte verde",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: f1456cf7"
     },
     {
       "id": "DC-025",
@@ -456,9 +456,9 @@
       "evidence": "CollabSession.ts:193 hostToken (token chega por onHostToken, CollabProvider.tsx:130); server/loadtest/participant.ts:69 drop, :84 endSession",
       "note": "10 dos 14 unused_class_members do fallow são falsos positivos (OpscrEngine.*, sendLock, updateActiveElement, LLMProviderError.kind, Participant.patch).",
       "acceptance": "acceptance.ts:~263 lido e sem uso confirmado; membros removidos",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 1026234f"
     },
     {
       "id": "DC-026",
@@ -1013,9 +1013,9 @@
       "evidence": "~8 correções: dd17f47c (viewer desenhava edge do store, filhos recolhidos, ordem de empilhamento, re-arranjo ELK indevido), 4313538e (portal de labels ausente no embed), fbff9f70 (link compartilhado abria na cena do autor), ac72766c D4; paridade em pixels só em editor-viewer-render-parity*.cy.ts (fora do CI)",
       "note": "Mais barato que pixel: projetar cada seed pelas duas rotas e comparar nós, edges, z-order e visibilidade.",
       "acceptance": "Todos os seeds de src/fixtures/seeds passam pela paridade de projeção",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: db1577b7 (paridade editor×viewer×embed, 3 mutações)"
     },
     {
       "id": "RT-017",
@@ -1027,9 +1027,9 @@
       "owner": "Haiku",
       "evidence": "ac72766c (um só dono do fit inicial, fit quando o viewport restaurado mostra < 20% dos nós), bac0981b (viewport persistido não restaurava), c5c03f6d / 68c52faf (zoom para a mudança, zoom legível); cobertura: canvas/navigation 0%",
       "acceptance": "Função de decisão de fit extraída ou testada com tabela de casos; navigation ≥ 60%",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: c1e2f889 (31 testes, 4 mutações; 68c52faf e 86d8f069 sem teste)"
     },
     {
       "id": "RT-018",
@@ -1042,9 +1042,9 @@
       "evidence": "322f0d25 (handles deslizando e sem re-medida ao trocar LR/TB, edges verticais), b034eae0 / 40c0fee0 (label e hops); guardas atuais: handleSides.guard.test.ts e connectionDerivations.fixedSides.test.ts",
       "note": "Complementa as guardas: render de cada tipo registrado em LR e TB, checando lados e posição dos handles.",
       "acceptance": "Teste itera allElements() e falha se algum tipo não respeitar useHandleSides nas duas direções",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 33fcf08a (todos os tipos em LR e TB, 2 mutações)"
     },
     {
       "id": "RT-019",
@@ -1056,9 +1056,9 @@
       "owner": "Sonnet",
       "evidence": "f6943cfa (renomear, duplicar, mover e apagar diagramas sumiram e foram restaurados), ac72766c (id desconhecido mostrava o diagrama anterior), aad2d0bf (efeito keyed no objeto); cobertura: pages/dashboard 15,5%, pages/workspace 14%; App.tsx sem teste de rotas",
       "acceptance": "Cada ação do card de diagrama tem teste; rota com id desconhecido testada",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 2aad26e0 (8 testes, 2 mutações) + sumWorkspaceStats órfão removido 517ebcea"
     },
     {
       "id": "RT-020",
@@ -1085,9 +1085,9 @@
       "owner": "Sonnet",
       "evidence": "15c1326a (edição local perdida ao correr com patch, eco da própria operação, resync indevido, bug de closure), 38ed79ea (validação de schema do patch), c5c03f6d (sync opscr no diagrama errado, edição redesenhada); cobertura: collaboration 62,7%; locks e presença sem teste",
       "acceptance": "Cada corrida citada reproduzida com intercalação fixa; teste de useElementLocks",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 7de14790 (23 testes, 5 mutações)"
     },
     {
       "id": "RT-022",
@@ -1099,9 +1099,9 @@
       "owner": "Haiku",
       "evidence": "AGENTS.md:170-174 (snapshot de allElements() no módulo do chunk lazy causou bug em produção com todos os testes verdes), ac72766c (índices do catálogo não reconstruídos ao carregar a 2ª locale), 49416c0b (gate de catálogo derrubava nós válidos)",
       "acceptance": "Teste importa o módulo llm antes do bootstrap do registry e falha com um snapshot no escopo de módulo",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: be98c22b (guarda de import e AST, 1 mutação)"
     },
     {
       "id": "RT-023",
@@ -1114,9 +1114,9 @@
       "evidence": "bac0981b e fbff9f70 'make typecheck actually check the project' (o gate de tipos não checava nada, duas vezes); c5c03f6d (LeanIX voltou a buildar); 5dd1afc7 e f6943cfa (trabalho perdido no squash, restaurado depois); observability sem typecheck (BL-006)",
       "note": "Ex.: tsc --listFilesOnly com contagem mínima de src; plugins:sync-check e typecheck cobrindo os 4 plugins.",
       "acceptance": "Esvaziar o include do tsconfig ou remover um plugin do check faz o CI falhar",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 71947b4d (19 testes, 2 mutações) + js-yaml declarado 77297819"
     },
     {
       "id": "RT-024",
@@ -1128,9 +1128,9 @@
       "owner": "Haiku",
       "evidence": "layoutEngine.ts:73 ELK_OPTIONS_INTERACTIVE × lib/opscr-layout/elk-layout.ts ('Keep in step', sem check)",
       "acceptance": "Teste compara as chaves e valores e falha em divergência não declarada",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: b9dfb932 (7 testes, 2 mutações)"
     },
     {
       "id": "RT-025",
@@ -1303,6 +1303,63 @@
       "column": "decisao",
       "pr": "",
       "status": ""
+    },
+    {
+      "id": "DC-071",
+      "title": "Decidir se uma exclusão de diagrama que falha na pasta deve deixar tombstone",
+      "area": "infrastructure/persistence",
+      "classification": "DECISÃO-HUMANA",
+      "priority": "baixa",
+      "risk": "médio",
+      "owner": "humano",
+      "evidence": "O caminho vivo FileSystemAdapter.deleteAtSegments ignora a falha de removeEntry em silêncio; o deleteDiagram removido (DC-024) gravava um marcador de exclusão como fallback. Se a remoção falhar (permissão), o diagrama apagado pode reaparecer no próximo scan da pasta.",
+      "acceptance": "Reproduzir com um handle sem permissão de escrita; decidir entre tombstone, aviso ao usuário ou retry",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-039",
+      "title": "Decidir se o reconnect com edições não confirmadas pode descartá-las",
+      "area": "features/collaboration",
+      "classification": "DECISÃO-HUMANA",
+      "priority": "alta",
+      "risk": "alto",
+      "owner": "humano",
+      "evidence": "RT-021: com op pendente, resumeVersion() é null, o cliente entra sem resumeFrom e recebe snapshot completo, que substitui o trabalho local não confirmado; collabRaces.test.ts trava o comportamento atual ('one patch ever sent, no replay')",
+      "note": "Possível perda de dados numa queda de rede durante a edição. Pode ser escolha do protocolo v3 (docs/collab-protocol-v3.md); confirmar antes de mudar.",
+      "acceptance": "Decisão documentada; se for bug, reenviar ou rebasear as ops pendentes após o snapshot e inverter o teste",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-040",
+      "title": "Validar no cliente os patches recebidos do relay",
+      "area": "features/collaboration",
+      "classification": "DECISÃO-HUMANA",
+      "priority": "média",
+      "risk": "médio",
+      "owner": "humano",
+      "evidence": "CollabClient.handle nunca chama isEntry; o cliente confia no relay (que valida). Um relay hostil ou com bug empurra patch malformado direto para applyEffectivePatch",
+      "acceptance": "Decisão; se sim, validar entry no cliente com teste de frame malformado",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "DC-072",
+      "title": "Traduzir as mensagens de erro do assistente no en.json",
+      "area": "i18n",
+      "classification": "bug",
+      "priority": "baixa",
+      "risk": "baixo",
+      "owner": "Opus",
+      "evidence": "en.json llmChat.error.* (9 textos) eram cópia do pt-BR; achado no DC-013",
+      "acceptance": "Textos em inglês; varredura não acha outros blocos em português no en.json",
+      "column": "concluido",
+      "status": "corrigido: 6f92f71a",
+      "pr": ""
     }
   ]
 }
