@@ -153,6 +153,31 @@ A `parentKey` that is missing, names a component that cannot hold this type, or 
 puts the component at the top level. Connections whose ends cannot be resolved are skipped and
 counted.
 
+### Laying out a graph: the host's engine (API 1.19)
+
+`api.layout.arrange(graph)` lays a graph out with the canvas's own engine (ELK, left to right,
+the Arrange spacing), so a plugin that builds a picture does not bundle a layout engine of its
+own. It needs no capability: it reads and writes nothing.
+
+```javascript
+const { boxes } = await api.layout.arrange({
+  nodes: [
+    { id: "shop", parentId: null, width: 240, height: 160 },
+    { id: "api", parentId: "shop", width: 180, height: 80 },
+    { id: "db", parentId: "shop", width: 180, height: 80 },
+  ],
+  edges: [{ id: "api-db", sourceId: "api", targetId: "db" }],
+});
+// boxes.api → { x, y, width, height }, relative to "shop"; "shop" is sized to hold both.
+```
+
+Sizes are the plugin's: the engine places the boxes it is given and fits a node with children
+around them. Each box comes back relative to its parent (a root's to the layout origin). Give
+nodes a `position` (where they are drawn now, relative to their parent) and the engine keeps
+that order instead of choosing its own. Edge routes are not returned — the canvas routes
+connections itself. Malformed nodes and edges (no id, no finite size, an end not in `nodes`) are
+dropped. Declare `"apiVersion": "^1.19"` to rely on it.
+
 ### Structura's components: the UI kit (API 1.18)
 
 Draw plugin UI with the host's own components, so it matches Structura in light and dark, with

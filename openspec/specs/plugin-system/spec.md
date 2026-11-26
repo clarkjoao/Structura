@@ -570,3 +570,27 @@ The API version SHALL be `1.18.0`.
 
 - **WHEN** a plugin renders `Select` with `options: [{ value: "a", label: "A" }]` and `onValueChange`
 - **THEN** picking "A" calls `onValueChange("a")`, with no Radix sub-components involved
+
+### Requirement: Host layout engine for plugins
+
+The API SHALL expose `api.layout.arrange(graph)`, which lays out a plain graph — nodes with an
+id, a containment parent, a size and optionally the position they are drawn at; edges with an
+id and two ends — with the same engine the canvas's Arrange runs, and resolves to each node's
+box relative to its parent, a node with children sized to hold them. When any node carries a
+position, the engine SHALL keep the drawn order instead of choosing its own. Malformed nodes
+and edges SHALL be dropped rather than fail the call. It SHALL need no capability, return no
+edge routes, and be loaded on first use so the engine stays out of the boot chunk. The API
+version SHALL be `1.19.0`.
+
+#### Scenario: A plugin lays out its own graph
+
+- **GIVEN** an active plugin with a graph of a panel holding two connected cards
+- **WHEN** it calls `api.layout.arrange(graph)`
+- **THEN** it receives a box per node, the cards relative to the panel and reading left to right,
+  and the panel sized to hold them
+
+#### Scenario: Drawn order is kept
+
+- **GIVEN** two unconnected nodes whose positions put the second above the first
+- **WHEN** a plugin arranges them with those positions
+- **THEN** the second stays above the first

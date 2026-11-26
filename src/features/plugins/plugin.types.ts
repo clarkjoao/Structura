@@ -26,7 +26,7 @@ type DiagramNodeComponent = NodeTypes[string];
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.18.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.19.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
@@ -996,6 +996,52 @@ export interface PluginStorage {
   remove(key: string): Promise<void>;
 }
 
+/**
+ * v1.19 — a graph for the host's layout engine: boxes and edges, no diagram. Sizes are the
+ * plugin's; the engine places the boxes it is given and fits a node with children around them.
+ */
+export interface PluginLayoutGraph {
+  nodes: Array<{
+    id: string;
+    /** Containment parent; one that is not in `nodes` makes the node a root. */
+    parentId: string | null;
+    width: number;
+    height: number;
+    /**
+     * Where the node is drawn now, relative to its parent. When any node has one, the engine
+     * keeps the order of what is drawn instead of choosing its own.
+     */
+    position?: { x: number; y: number };
+  }>;
+  /** An edge whose ends are not both in `nodes` is ignored. */
+  edges: Array<{ id: string; sourceId: string; targetId: string }>;
+}
+
+export interface PluginLayoutBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PluginLayoutResult {
+  /**
+   * By node id: the position relative to its parent (a root's relative to the layout origin)
+   * and the size the layout settled on — a node with children comes back sized to hold them.
+   * Edge routes are not returned: the canvas routes connections itself.
+   */
+  boxes: Record<string, PluginLayoutBox>;
+}
+
+/**
+ * v1.19 — the canvas's layout engine (ELK, left to right, the Arrange spacing), so a plugin lays
+ * out with the host's engine instead of bundling one. No capability: it reads and writes nothing.
+ */
+export interface PluginLayout {
+  /** Malformed nodes (no id, no finite size) and edges (an end not in `nodes`) are dropped. */
+  arrange(graph: PluginLayoutGraph): Promise<PluginLayoutResult>;
+}
+
 export interface StructuraPluginApi {
   /** Semver of this API surface, e.g. "1.0.0". */
   readonly apiVersion: string;
@@ -1071,6 +1117,9 @@ export interface StructuraPluginApi {
 
   /** v1.14 — the diagrams' Versions, as branches a plugin can own. */
   readonly versions: PluginVersions;
+
+  /** v1.19 — the host's layout engine, for a graph the plugin builds. */
+  readonly layout: PluginLayout;
 
   /**
    * v1.6 — capability "llm:context". Provide the chat's context and reply handling for the

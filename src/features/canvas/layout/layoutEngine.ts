@@ -184,6 +184,29 @@ export function layoutWithSettings(
   return (graph) => layout(graph, elkSpacingFor(settings, hasLabels(graph)));
 }
 
+/**
+ * ELK's interactive strategies: layers, the order within them and the placement are read from
+ * each node's `position` instead of chosen afresh. Measured on the canvas's own inserts they
+ * did not keep a picture stiller (`autoArrangeStability.experiment`), so the canvas does not
+ * use them; a host that pins survivors itself (the opscr plugin's `stabilizeLayout`) uses them
+ * only to keep the new elements' layout close to the drawn one.
+ */
+const ELK_OPTIONS_KEEP_ORDER: Record<string, string> = {
+  "elk.layered.layering.strategy": "INTERACTIVE",
+  "elk.layered.crossingMinimization.strategy": "INTERACTIVE",
+  "elk.layered.nodePlacement.strategy": "INTERACTIVE",
+};
+
+/**
+ * `layout` that keeps the order of what is drawn: when any node carries a `position`, the
+ * interactive strategies above read it; otherwise it is `layout`. What the plugin API's
+ * `layout.arrange` runs (`features/plugins/plugin-layout.ts`).
+ */
+export function layoutKeepingOrder(graph: LayoutGraph): Promise<LayoutResult> {
+  const seeded = graph.nodes.some((node) => node.position !== undefined);
+  return layout(graph, seeded ? ELK_OPTIONS_KEEP_ORDER : {});
+}
+
 const ELK_ROOT_ID = "__structura_layout_root__";
 
 /**
@@ -455,7 +478,8 @@ export async function layoutElkGraph(
  * measurement of a rendered element. Everything that varies is in the graph.
  *
  * `optionOverrides` has the same purpose as on `layoutElkGraph`: comparing
- * configurations end to end. Production callers omit it.
+ * configurations end to end. Production callers omit it, or go through
+ * `layoutWithSettings` / `layoutKeepingOrder`.
  */
 export async function layout(
   graph: LayoutGraph,
