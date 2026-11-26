@@ -2,20 +2,17 @@
   "meta": {
     "project": "Structura — faxina de código morto e rede de regressão",
     "phase": "Execução",
-    "updated": "2026-11-26 15:52",
-    "note": "Plano aprovado. Branch chore/faxina-e-regressao, um commit por item. Decisões: remover /generate, walkthrough por último, remover o gate de código morto do fallow, corrigir cópias geradas na fonte.",
+    "updated": "2026-11-26 16:20",
+    "note": "Faxina (itens 1-10 do plano) commitada em chore/faxina-e-regressao e verificada com suíte completa, lint, format, build, sync-check e cycles:check. Próximo: testes de regressão (RT-010..RT-015) em paralelo.",
     "baseline": {
-      "commit": "b3595158",
-      "npm ci": "ok, 764 pacotes, sem --legacy-peer-deps",
-      "typecheck": "0 erros",
-      "test": "585 arquivos / 5304 testes verdes (146 s)",
-      "cobertura v8": "linhas 69,7% · branches 60,8% · funções 64,0%",
-      "lint": "0 erros, 7 warnings (react-refresh/only-export-components)",
+      "commit": "1d9ccd15 (branch)",
+      "test": "582 arquivos / 5286 testes verdes (−3 arquivos e −18 testes do /generate)",
+      "lint": "0 erros, 7 warnings",
       "format:check": "ok",
-      "build": "ok (aviso de chunk > 500 kB)",
-      "build:embed": "ok",
-      "fallow:check": "ok só por baseline: 17 arquivos, 525 exports, 253 tipos aceitos",
-      "plugins:sync-check": "ok"
+      "build": "ok",
+      "plugins:sync-check": "ok (4 plugins + extensão)",
+      "cycles:check": "ok",
+      "baseline da main (b3595158)": "585 arquivos / 5304 testes; cobertura 69,7% linhas"
     }
   },
   "cards": [
@@ -59,8 +56,8 @@
       "note": "Hoje é só aviso; o Node 20 saiu de suporte em abr/2026. Local é Node 25.",
       "acceptance": "CI em Node 22 ou 24 com todos os jobs verdes; engines ou .nvmrc declarado",
       "pr": "",
-      "column": "backlog",
-      "status": ""
+      "column": "concluido",
+      "status": "commitado: CI em Node 24 + .nvmrc; confirmar no primeiro run do CI"
     },
     {
       "id": "BL-004",
@@ -102,8 +99,8 @@
       "evidence": "ci.yml job 'Plugins type check' cobre só leanix e example-ui; plugins/structura-plugin-observability/package.json existe",
       "acceptance": "Job de CI roda npm run typecheck no plugin observability e passa",
       "pr": "",
-      "column": "backlog",
-      "status": ""
+      "column": "concluido",
+      "status": "verificado: typecheck local do observability passa"
     },
     {
       "id": "DC-001",
@@ -285,9 +282,9 @@
       "evidence": "canvas/chat/useLLMChat.ts:44-66 → llm/store.ts:981-1080 generateDiagramFromIR → ir/ir-validator.ts, ir/apply-ir.ts; AssistantUIChatPanel.tsx:258,348 'export IR'; cypress/e2e/ir-generation-smoke.cy.ts",
       "note": "O briefing lista geração por LLM/IR/validators como descartada, mas o caminho está vivo, testado e sem flag. apply-ir.ts é do épico de layout desacoplado. ir.types.ts é o catálogo estático do assistente (AGENTS.md:172), e fica.",
       "acceptance": "Decisão registrada: manter, esconder atrás de flag, ou remover /generate e manter só ir.types.ts e apply-ir",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": "decidido: remover /generate (vai para MCP)"
+      "status": "verificado: 9018a5ca (/generate removido; ir.types, validator, layout-graph e apply-ir ficam como harness do layout)"
     },
     {
       "id": "DC-012",
@@ -300,9 +297,9 @@
       "evidence": "SP/agents/A6/i18n.py; 2986 chaves em en e pt-BR, paridade 100%; 223 sem literal nem prefixo dinâmico: landing.* 37 (nenhum 'landing.' em src), github.* 50, defectdojo.* 32, githubSearch* 7, walkthrough.* 15 e ~80 espalhadas",
       "note": "Fora deste PR: elementPanel 17, flowScript 11, llmChat 7 e services 6, que ficam para decisão (épicos), e walkthrough 15, que segue DC-010.",
       "acceptance": "Chaves removidas das duas locales; npm run test (i18n-coverage) e a busca do script retornam 0 seguras restantes",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 1d9ccd15 (169 chaves; 52 de épicos e walkthrough mantidas)"
     },
     {
       "id": "DC-013",
@@ -329,9 +326,9 @@
       "owner": "Haiku",
       "evidence": ".env.example:4,8; docs/features.md:209; grep -rn 'ENABLE_DEFECTDOJO\\|ENABLE_GITHUB' src plugins extensions server → 0 leitores",
       "acceptance": "Variáveis e frase da doc removidas; grep retorna 0",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: ef02a206"
     },
     {
       "id": "DC-015",
@@ -343,9 +340,9 @@
       "owner": "Haiku",
       "evidence": "src/features/llm/providers/proxy.ts:5-6 e integrations/proxy.ts:10 → localhost:3000; .env.example sugere 3001",
       "acceptance": "Um único default documentado e usado",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: ef02a206 (default 3000 documentado)"
     },
     {
       "id": "DC-016",
@@ -386,9 +383,9 @@
       "evidence": "fallow unused_files; SP/agents/A1/bar.py resolve todo import @/ e relativo em src, plugins, extensions, cypress, scripts, tools e server/src → 0 hits: src/features/canvas/{components,edges,hooks,navigation,panels,toolbar}/index.ts, src/lib/catalogs/index.ts (só um comentário), src/lib/core/index.ts, src/features/walkthrough/index.ts",
       "note": "Remove só os barrels, não o conteúdo. Ajuda o grafo de bundle (AGENTS.md: barrels acoplam chunks).",
       "acceptance": "9 arquivos removidos; typecheck, test e build verdes; fallow:baseline regravado com unused_files -9",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 91ac3536 (8 barrels; walkthrough fica com DC-010)"
     },
     {
       "id": "DC-021",
@@ -501,9 +498,9 @@
       "evidence": "fallow is_re_export; barrel importado só por CollabRoom.tsx, pages/workspace/index.tsx, WorkspaceContent.tsx e 1 teste; consumidores reais usam leafs (ex. sanitizeSvg via utils/svg.sanitizer). Scripts: SP/agents/A3/{g.json,e.sh,b.sh}",
       "note": "Exclui re-exports de flow/, layout/ e node-types/ (épicos, ver DC-033). Reduz o acoplamento de bundle citado em AGENTS.md.",
       "acceptance": "Barrel só com o que os 4 importadores usam; typecheck, test e build verdes; baseline do fallow encolhe",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 2d8a760a"
     },
     {
       "id": "DC-031",
@@ -515,9 +512,9 @@
       "owner": "Sonnet",
       "evidence": "core/index.ts ~19, chat/index.ts 3, patterns/index.ts 3, preferences/index.ts 2, ElementPanel/sections/index.ts 4, DbTableNode/JsonViewerNode index 4, ApiGroupNode PROTOCOL_COLORS; cada símbolo é importado do leaf",
       "acceptance": "Re-exports removidos; tsc e build verdes",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 2d8a760a (83 re-exports no total)"
     },
     {
       "id": "DC-032",
@@ -530,9 +527,9 @@
       "evidence": "A3 grupos 1-9: ex. catalog/canvasCatalogIndex.ts CATALOG_SERVICES_GROUP_ID, core/reactFlowBaseConfig.ts PAN_ACTIVATION_KEY, edges/geometry/orthogonal.ts MIN_SEGMENT_LENGTH, hooks/keyboard/helpers.ts PASTE_OFFSET; grep -rnw → 0 hits fora do arquivo",
       "note": "VersionPanel (toolbar/VersionPanel.tsx) tem teste: conferir o import antes.",
       "acceptance": "export removido; tsc verde; fallow unused_exports encolhe na mesma quantidade",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: cd8bcdc2"
     },
     {
       "id": "DC-033",
@@ -573,9 +570,9 @@
       "owner": "Sonnet",
       "evidence": "edge-system.md:26-55 (CustomEdge, edgeBuilding.ts, useCustomEdge, EdgeSvgLayer); import-export.md:15,52 + vision.md:100 (Structurizr inexistente); persistence.md:45; diagram-engine.md:56 (scene-mutations.ts); diagram-kinds.md:178; extension-points.md:15,33; canvas-hot-path.md / canvas-state-map.md (adoptUserNodes, EdgeLabelReveal); rendering-pipeline.md:26",
       "acceptance": "Script de extração de caminhos e símbolos entre crases (A7) retorna 0 referências quebradas nesses docs",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 582f3f29"
     },
     {
       "id": "DC-036",
@@ -587,9 +584,9 @@
       "owner": "Haiku",
       "evidence": "README.md:105 'npm run server' não existe (real: npm run proxy); AGENTS.md árvore de lib/ cita structurizr (grep -rli structurizr src → 0); árvore omite src/features/walkthrough",
       "acceptance": "Scripts e caminhos citados existem",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: ef02a206"
     },
     {
       "id": "DC-037",
@@ -631,9 +628,9 @@
       "owner": "Haiku",
       "evidence": "auditoria-geral-structura.md (98,9 KB, base 60d51ec2, itens entregues no #268, cita scripts e kanban inexistentes); vscode-preview-spike.md (arquivos spike/ inexistentes; virou extensions/vscode-opscr)",
       "acceptance": "Movidos para docs/investigation/archive com banner de contexto",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 582f3f29"
     },
     {
       "id": "DC-040",
@@ -646,9 +643,9 @@
       "evidence": "openspec/specs/step-edge-drag-preview/spec.md (Purpose 'TBD'); grep -rilE 'segmentPreview|dragPreview|previewSegment' src → 0",
       "note": "Ler edges/interaction/useSegmentDrag.ts e CornerHandles.tsx antes de concluir.",
       "acceptance": "Spec corrigida ou removida conforme o comportamento real",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "descartado: a spec bate com o código (previewPath em useSegmentDrag.ts:166,218)"
     },
     {
       "id": "DC-041",
@@ -675,9 +672,9 @@
       "owner": "Haiku",
       "evidence": "package.json:46 plugins:sync-check omite plugins/structura-plugin-observability/scripts/sync-types.mjs e extensions/vscode-opscr sync-shared:check (só roda no build condicionado a HAS_OPSCR)",
       "acceptance": "plugins:sync-check cobre os 4 plugins e a extensão; CI verde",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: plugins:sync-check cobre 4 plugins + extensão"
     },
     {
       "id": "DC-043",
@@ -720,9 +717,9 @@
       "evidence": "grep -rnw em src plugins extensions scripts cypress server → só a definição: llm-storage.ts:489-544 (load/saveThreadToStorage, load/saveConfigToLocalStorage); fileSystemBoot.ts:179 getReconnectPromise; stagedDiagramWrite.ts:39 getFinalFileName; versions.ts:26,57 unwrapDiagram/VersionedWorkspace; lib/catalogs/patterns/index.ts:25 PATTERNS_BY_CATEGORY; export-json.ts:57 exportJSONUnversioned; lib/timing.constants.ts:9-13 (3 constantes); azure/gcp.catalog.ts CATEGORY_MAP/ID_GENERAL (4); embed/editor/protocol.ts:32 EditorEmbedMessage; opscr patches.ts:456 hasEdge, yaml-text.ts:180 cutDocument",
       "note": "AWS_FAMILY_SPOTLIGHT_SERVICE_IDS e AWS_FAMILY_PRIMARY_CATEGORY_IDS (aws.family.ts:51) ficam de fora: épico de elementos.",
       "acceptance": "Símbolos removidos; typecheck, test e build verdes; baseline do fallow encolhe 22",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 6b452b1d (EditorEmbedMessage mantido: documenta o protocolo)"
     },
     {
       "id": "DC-051",
@@ -735,9 +732,9 @@
       "evidence": "persistence/index.ts: 23 re-exports sem importador pelo barrel (plugins só recebem o tipo IStoragePort, plugin-api.ts:2); cloud, collaboration, element-presets, elements/{patterns,roles,search}, llm, viewer, diagram-preview, export-service, share-url e export-core: ~66 re-exports com consumidores só nos leafs",
       "note": "Verificação extra: nenhum import() dinâmico do barrel nem global de runtime de plugin usa esses nomes.",
       "acceptance": "grep de import dinâmico limpo; barrels enxutos; build verde",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 9650364b (76 re-exports)"
     },
     {
       "id": "DC-052",
@@ -750,9 +747,9 @@
       "evidence": "A4 grupo M12: resolveParentRef, isCloudCatalogType, STRUCTURAL_TYPES, buildResponseLanguageInstruction, assertFileName, resolveBootScan, deactivatePlugin (plugin-registry.ts:204), MemoryStorage etc.; 2-8 hits, todos no arquivo de definição",
       "note": "Os de k8s, deploy e aws em features/elements ficam fora (épico).",
       "acceptance": "export removido; tsc verde",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: cd8bcdc2 + server 7dda1ee8"
     },
     {
       "id": "DC-053",
@@ -765,8 +762,8 @@
       "evidence": "plugins/*/src/types/plugin.types.ts (AUTO-GENERATED, sync-types); plugins/structura-plugin-leanix/src/generated/export-core (sync-shared); src/components/ui/* (shadcn, AGENTS.md proíbe editar à mão): ~50 entradas do fallow",
       "note": "Correção certa: ignorePatterns no fallow para as cópias geradas, e corrigir na fonte quando for o caso.",
       "acceptance": "Entradas tratadas como falso positivo no fallow",
-      "column": "backlog",
-      "status": "decidido: corrigir na fonte e ressincronizar",
+      "column": "concluido",
+      "status": "corrigido na fonte onde cabia (export-core + cópia LeanIX); contrato da API de plugin mantido: plugins externos o usam",
       "pr": ""
     },
     {
@@ -794,9 +791,9 @@
       "evidence": "grep -rnw em src plugins extensions scripts cypress docs openspec → só definição e linha do barrel: store/diagram.store.ts:368-376 (useComponentActions, useConnectionActions, useLayoutActions, useVersionActions, useClipboardActions); store/selectors/icon.selectors.ts:43-44 (useGlobalIconLibrary, useGlobalIconById); layout.selectors.ts:15 useEdgeLabelOffset; persist.config.ts:38 CURRENT_SCHEMA_VERSION; model/component-type-constants.ts:214 getUsageKeyForType; connection-defaults.ts:134 getIntentDefault; text-style.ts:13-16 isTextSize/isTextColor",
       "note": "Atualizar diagram/README.md:21,73 e store/README.md:75 (citam useEdgeLabelOffset).",
       "acceptance": "Símbolos removidos; typecheck, test e build verdes; baseline do fallow encolhe",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 6b452b1d"
     },
     {
       "id": "DC-061",
@@ -824,9 +821,9 @@
       "evidence": "198 das 281 entradas do fallow estão em model/index.ts (98), utils/index.ts (69), store/index.ts (26) e store/slices/index.ts (5); consumidores importam do arquivo de definição; 0 import * do barrel; 0 hits em plugins e extensions",
       "note": "Só a linha do barrel morre; os símbolos ficam. Exclui as linhas de FLOW, deploy, services e templates (DC-064).",
       "acceptance": "Linhas removidas; tsc e build verdes; fallow encolhe ~160",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 9acb3ba6 (150 re-exports)"
     },
     {
       "id": "DC-063",
@@ -839,9 +836,9 @@
       "evidence": "9 valores (PANEL_HEADER_* em layout.constants.ts:71-80, measureLocalStorageUsage, isRegisteredPluginComponentType, DIRECTION_MARKERS, resolveCompareSnapshot, DEFAULT_SHARED_MODE, SUGGEST_SHARED_AT) + 13 tipos (RgbColor, SaveStatus, FolderSyncStatus, IconSource...)",
       "note": "K8sStructureType e DeployComponentType ficam fora (épico de deployment).",
       "acceptance": "export removido; tsc verde",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: cd8bcdc2 (94 unexports, 21 mortos em cascata removidos)"
     },
     {
       "id": "DC-064",
@@ -896,9 +893,9 @@
       "owner": "Haiku",
       "evidence": "npx tsc -p tsconfig.cypress.json --noEmit → 724 erros (Cannot find name 'cy'); o Cypress usa cypress/tsconfig.json; o da raiz não tem consumidor",
       "acceptance": "Arquivo removido ou com types: [\"cypress\"] e 0 erros",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: tsconfig.cypress.json removido (sem consumidor)"
     },
     {
       "id": "BL-010",
@@ -1159,7 +1156,22 @@
       "evidence": "package.json:44-45 (fallow:check dead-code, fallow:baseline), fallow-dead-code-baseline.json (64 KB), .github/workflows/ci.yml:37-52, README.md:120, AGENTS.md:34-35, docs/architecture/overview.md:82",
       "note": "Decisão do usuário: o relatório tem falsos positivos demais (deps 7/7, membros de classe ~70%). O check de ciclos (fallow architecture) fica como cycles:check.",
       "acceptance": "Sem baseline nem script dead-code; CI roda só o check de ciclos; docs atualizadas; typecheck, lint e format verdes",
-      "column": "andamento",
+      "column": "concluido",
+      "pr": "",
+      "status": "verificado: f43b3547"
+    },
+    {
+      "id": "DC-070",
+      "title": "Decidir onde fica o harness IR do layout (só testes usam)",
+      "area": "features/llm/ir → canvas/layout",
+      "classification": "DECISÃO-HUMANA",
+      "priority": "média",
+      "risk": "médio",
+      "owner": "humano",
+      "evidence": "Depois de 9018a5ca: ir.types.ts, ir-validator.ts, ir-to-layout-graph.ts, apply-ir.ts, ir-to-component.ts só são importados por ~20 testes de canvas/layout e por reference-diagrams.ts/generated-diagrams (fixtures). ir.types.ts segue como catálogo estático do assistente.",
+      "note": "Opções: manter em llm/ir; mover para canvas/layout/test-support; ou reescrever os fixtures em formato de diagrama e apagar o IR. Épico de layout desacoplado.",
+      "acceptance": "Decisão do dono do épico de layout",
+      "column": "decisao",
       "pr": "",
       "status": ""
     }
