@@ -30,10 +30,6 @@ const ALLOWED = new Set(
     // The v13 migration: it *is* the cutover, and it writes the field by
     // definition when upgrading a stored payload.
     "features/diagram/store/persist.config.ts",
-    // Builds the tolerant-*read* input (`CloudServiceIdFields`) for
-    // `resolveCloudServiceId`. The key appears on the way in, not on the way
-    // to storage.
-    "features/element-presets/components/ElementPresetPreviewCard.tsx",
     // Declares the plugin importer input (API 1.3 `PluginComponentInput.cloudServiceId`) for
     // the opscr projection. It is request data: the host writes the persisted field through
     // `cloudServiceIdWrite()` when it inserts the graph (`features/plugins/import-graph.ts`).
