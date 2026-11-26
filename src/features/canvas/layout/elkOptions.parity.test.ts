@@ -2,8 +2,9 @@
  * Drift guard (no past regression to cite): the host's ELK options and the copies kept for
  * code that cannot import the host must not drift apart silently.
  *
- *  - `src/lib/opscr-layout/elk-layout.ts` keeps its own `ELK_OPTIONS` (not exported; read
- *    from source through the TypeScript AST).
+ *  - `src/lib/opscr-layout/elk-layout.ts` keeps its own `ELK_OPTIONS` for the VSCode extension,
+ *    the one consumer that cannot reach the host engine (the opscr plugin uses `api.layout`).
+ *    Not exported; read from source through the TypeScript AST.
  *  - `extensions/vscode-opscr/src/arrange.ts` mirrors the arrange defaults and bounds of
  *    `src/features/diagram/model/layout-settings.ts`.
  */

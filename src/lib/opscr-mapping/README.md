@@ -30,7 +30,8 @@ const placed = placeView(view, await layout(toLayoutGraph(view))); // app's ELK 
 const graph = toImporterGraph(placed); // plugin importer result / embed preview input
 ```
 
-Hosts that cannot import the app's layout engine use `src/lib/opscr-layout` (`layoutView`, same
+A plugin lays out with the app's engine through `api.layout.arrange` (API 1.19); the VSCode
+extension, which runs in Node and cannot reach it, uses `src/lib/opscr-layout` (`layoutView`, same
 ELK options). To keep a picture still across edits, seed it with the previous boxes and pass the
 result through `stabilizeLayout(view, fresh, previous)`: surviving elements keep their place. Where
 most of a panel is kept, a new element goes beside the sibling it is connected to, along the flow;

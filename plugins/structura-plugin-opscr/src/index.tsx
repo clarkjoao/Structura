@@ -1,7 +1,8 @@
 /**
  * Structura opscr plugin — opscr architecture-as-code manifests in Structura.
  *
- * - Importer: one `*.opscr.yaml` file → a laid-out technical diagram.
+ * - Importer: one `*.opscr.yaml` file → a technical diagram, laid out by the host's engine
+ *   (`api.layout`, API 1.19).
  * - Exporter: a drawn diagram → opscr YAML (one multi-document file).
  * - Document pane (API 1.4): bind the active diagram to a folder of manifests, edit them
  *   beside the canvas, and the diagram follows as you type.
@@ -16,6 +17,7 @@ import { opscrExporter } from "./export-opscr";
 import { createOpscrPane } from "./pane/OpscrPane";
 import { createChatContext } from "./chat-context";
 import { createWorkspaceImport, PANE_ID } from "./workspace-import";
+import { setHostLayout } from "./layout";
 
 declare global {
   interface Window {
@@ -27,11 +29,11 @@ window.StructuraPlugin.define({
   manifest: {
     id: "structura-plugin-opscr",
     name: "opscr",
-    version: "0.16.0",
+    version: "0.17.0",
     author: "Structura",
     description:
       "Import and export opscr manifests, or edit a folder of them beside a diagram that follows",
-    apiVersion: "^1.15",
+    apiVersion: "^1.19",
     capabilities: [
       "io:importers",
       "ui:panels",
@@ -44,6 +46,8 @@ window.StructuraPlugin.define({
     ],
   },
   activate(api) {
+    // Projections lay out with the host's engine (API 1.19): the plugin bundles none.
+    setHostLayout(api.layout);
     api.registerImporter({
       id: "structura-plugin-opscr/manifests",
       label: { en: "opscr manifests", "pt-BR": "Manifestos opscr" },

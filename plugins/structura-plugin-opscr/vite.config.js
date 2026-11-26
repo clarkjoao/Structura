@@ -3,10 +3,16 @@ import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
 // React is the host's: externalized and bound to the globals the host installs (see the
-// host's runtime-globals.ts), so hooks work across the boundary. opscr/core and elkjs are
-// bundled into the IIFE.
+// host's runtime-globals.ts), so hooks work across the boundary. opscr/core is bundled
+// into the IIFE; layout is the host's engine (`api.layout`), not bundled.
 export default defineConfig({
   plugins: [react({ jsxRuntime: "automatic" })],
+  // Tests lay out with the host's engine, as the app does (`test/host-layout.setup.ts`); the
+  // host's sources import through `@`. The bundle never imports the host.
+  test: {
+    setupFiles: ["./test/host-layout.setup.ts"],
+    alias: { "@": resolve(__dirname, "../../src") },
+  },
   build: {
     lib: {
       entry: resolve(__dirname, "src/index.tsx"),

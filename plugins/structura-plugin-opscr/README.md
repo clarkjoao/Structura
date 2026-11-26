@@ -76,8 +76,8 @@ connections labelled with their type. Kinds left out of the view, edges not draw
 validation errors come back as import warnings.
 
 How the workspace is drawn is decided by the host's `src/lib/opscr-mapping` (copied in by
-`sync-shared`); this plugin only parses, lays out with ELK and hands the result to the importer API
-(plugin API `^1.3`).
+`sync-shared`); this plugin only parses, lays out with the host's engine (`api.layout.arrange`,
+plugin API `^1.19`) and hands the result to the importer API.
 
 ## Build
 
@@ -115,7 +115,8 @@ folder-binding work, not to this plugin.
 
 - `npm run sync-types` — the host plugin API types (`src/types/plugin.types.ts`).
 - `npm run sync-shared` — the host projection (`src/generated/opscr-mapping`).
-- `npm run sync-shared` also copies the host ELK runner (`src/generated/opscr-layout`).
+- Layout is not copied: the plugin lays out with the host's engine through `api.layout` (API 1.19),
+  and its tests use the host's implementation of it (`test/host-layout.setup.ts`).
 
 Neither runs in CI: this plugin depends on an unpublished package.
 

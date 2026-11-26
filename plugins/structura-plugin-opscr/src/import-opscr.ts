@@ -8,7 +8,7 @@ import {
   type PlacedView,
 } from "./generated/opscr-mapping";
 import type { ImportContext, ImportResult } from "./types/plugin.types";
-import { layoutView } from "./generated/opscr-layout";
+import { layoutView } from "./layout";
 
 const OPSCR_API_VERSION = /^\s*apiVersion:\s*["']?opscr\.dev\//m;
 /** opscr errors listed one by one before the rest are only counted. */

@@ -67,8 +67,9 @@ src/
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
 ├── lib/                    # export-service (drawio/mermaid/json), catalogs, utils;
-│                           # opscr-mapping / opscr-layout are copied into plugins and the
-│                           # VSCode extension by their `sync-shared` scripts
+│                           # opscr-mapping is copied into the opscr plugin and the VSCode
+│                           # extension, opscr-layout into the extension only, by their
+│                           # `sync-shared` scripts (plugins lay out through `api.layout`)
 └── fixtures/seeds/         # demo workspace content (Portuguese demo data is intentional)
 ```
 
