@@ -15,7 +15,7 @@ if (foundEnvPath) {
 
 // ─── Server ──────────────────────────────────────────────────────────────────
 
-export const NODE_ENV = process.env.NODE_ENV ?? "development";
+const NODE_ENV = process.env.NODE_ENV ?? "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
 export const PORT = Number(process.env.PORT ?? 3000);
 export const WS_PATH = (() => {
