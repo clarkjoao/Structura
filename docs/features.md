@@ -205,8 +205,7 @@ and the wire protocol, [collab-protocol-v3.md](collab-protocol-v3.md).
 ## Services catalog
 
 A registry of services (name, description, repository, stack, owner, tags) that elements can
-link to. Sources: manual entry, GitHub and DefectDojo importers (enabled with
-`VITE_ENABLE_GITHUB_IMPORT` / `VITE_ENABLE_DEFECTDOJO`). Exported diagrams carry the services
+link to. Sources: manual entry and the GitHub and DefectDojo importers. Exported diagrams carry the services
 they reference and can relink them on import.
 
 ## AI assistant

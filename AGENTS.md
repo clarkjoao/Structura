@@ -59,14 +59,15 @@ src/
 │   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
 │   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
-│   └── viewer/             # read-only shared-diagram viewer
+│   ├── viewer/             # read-only shared-diagram viewer
+│   └── walkthrough/        # experimental walkthroughs, behind VITE_ENABLE_WALKTHROUGHS
 ├── infrastructure/
 │   ├── persistence/        # IStoragePort, IndexedDb/LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
 │   └── i18n/               # i18next setup + locales
 ├── embed/                  # embed.html / embed-editor.html entries and their postMessage protocols
 ├── pages/                  # route-level components (all lazy-loaded from App.tsx)
 ├── components/             # shared UI (shadcn/ui under components/ui/)
-├── lib/                    # export-service (drawio/mermaid/structurizr), catalogs, utils;
+├── lib/                    # export-service (drawio/mermaid/json), catalogs, utils;
 │                           # opscr-mapping / opscr-layout are copied into plugins and the
 │                           # VSCode extension by their `sync-shared` scripts
 └── fixtures/seeds/         # demo workspace content (Portuguese demo data is intentional)

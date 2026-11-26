@@ -102,7 +102,7 @@ Optional features are switched on with `VITE_*` variables; copy [`.env.example`]
 live sessions:
 
 ```bash
-npm run server       # installs and starts server/ in dev mode
+npm run proxy        # installs and starts server/ in dev mode
 ```
 
 ### Useful scripts
