@@ -68,6 +68,27 @@ interface Row {
 
 /** Actions that must leave exactly one undo checkpoint. */
 const MUST_PUSH: Record<string, Row> = {
+  // RT-032: z-order is a user edit, unlike the high-frequency layout writes below.
+  bringToFront: {
+    setup: (f) => {
+      const a = comp(f, "A");
+      comp(f, "B", 200);
+      return () => f.store.getState().bringToFront(a);
+    },
+  },
+  sendToBack: {
+    setup: (f) => {
+      comp(f, "A");
+      const b = comp(f, "B", 200);
+      return () => f.store.getState().sendToBack(b);
+    },
+  },
+  setNodeZIndex: {
+    setup: (f) => {
+      const a = comp(f, "A");
+      return () => f.store.getState().setNodeZIndex(a, 7);
+    },
+  },
   // 38ed79ea-era components/connections, plus the AGENTS.md rule itself.
   addComponent: { setup: (f) => () => void comp(f, "A") },
   updateComponent: {
@@ -355,9 +376,6 @@ const EXEMPT: Record<string, string> = {
   fitGroupToChildren: "pushes; covered in layout.slice.test.ts",
   applyAutoLayout: "pushes; covered in layout.slice.autolayout.test.ts",
   setLayoutSettings: "pushes; covered in layout.slice.layoutSettings.test.ts",
-  bringToFront: "z-order is a layout write with no checkpoint today (possible gap)",
-  sendToBack: "z-order is a layout write with no checkpoint today (possible gap)",
-  setNodeZIndex: "z-order is a layout write with no checkpoint today (possible gap)",
   updateFlowStep:
     "step edit routed through flows.slice checkpoint(); covered in flows.history.test.ts",
   insertFlowStepAt: "flows checkpoint(); covered in flows.slice.test.ts",
