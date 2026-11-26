@@ -2,7 +2,7 @@
 export { generateId } from "./generate-id";
 
 // ─── Edge style persistence ────────────────────────────────────────────────
-export { getLastEdgeStyle, saveLastEdgeStyle } from "./edge-style";
+export { getLastEdgeStyle } from "./edge-style";
 
 // ─── Import / Export ─────────────────────────────────────────────────────────
 export {
@@ -112,8 +112,6 @@ export { buildFlowDuplicatePatch } from "./flow-duplicate";
 // ─── Version ───────────────────────────────────────────────────────────────────
 export {
   resolveVersionSnapshot,
-  resolveCanvasSnapshot,
-  resolveCompareSnapshot,
   diagramWithResolvedScene,
   exportFilenameSlug,
   canMoveNodeInSceneMode,
@@ -128,7 +126,6 @@ export {
   countVersionChanges,
 } from "./version.utils";
 export type {
-  CompareSnapshotResult,
   CompareElementVisual,
   MergePreview,
   VersionChanges,
@@ -139,8 +136,8 @@ export { buildChildrenIndex, getDescendantIdsFromIndex } from "./children-index"
 
 // ─── Snapshot cache ──────────────────────────────────────────────────────────
 export { getCachedCanvasSnapshot } from "./snapshot-cache";
-export { placedComponents, placedConnections } from "./placement";
-export { withoutHiddenTexts } from "./without-hidden-texts";
+export { placedComponents } from "./placement";
+
 export type { ResolvedSnapshot } from "./snapshot-cache";
 
 // ─── Reader catalog ──────────────────────────────────────────────────────────
@@ -165,20 +162,10 @@ export {
 export type { RecentDiagramRef } from "./recent-diagrams";
 
 // ─── Colour / contrast ─────────────────────────────────────────────────────────
-export {
-  contrastLabelColor,
-  accentTextColor,
-  tintOver,
-  contrastRatio,
-  parseCssColorToRgb,
-  relativeLuminance,
-  rgbToHex,
-} from "./labelContrast";
-export type { RgbColor } from "./labelContrast";
+export { contrastLabelColor, accentTextColor, tintOver, parseCssColorToRgb } from "./labelContrast";
 
 // ─── Layout helpers ───────────────────────────────────────────────────────────
-export { computeApiGroupSize } from "./api-group-size";
-export { computeFitBounds } from "./fit-group-to-children";
+
 export {
   apiGroupFlows,
   endpointCallers,

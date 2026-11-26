@@ -31,9 +31,6 @@ import {
 import { buildPersistStoragePayload, createPersistConfig, PERSIST_KEY } from "./persist.config";
 import { loadSeedWorkspace, type FreshWorkspace } from "./seedWorkspace";
 
-export type { AppState, DiagramSnapshot } from "./store.types";
-export type { ClipboardEntry, DiagramStore } from "./store.types";
-
 let settleHydration: (error?: unknown) => void = () => {};
 
 /**

@@ -2,24 +2,14 @@
 export {
   useDiagramStore,
   useServiceActions,
-  createDiagramStore,
   useDiagramActions,
-  useComponentActions,
-  useConnectionActions,
-  useLayoutActions,
-  useVersionActions,
-  useClipboardActions,
   useIconActions,
   flushWorkspaceToBrowserStorageNow,
   diagramStoreHydrated,
-  updateDiagramDescription,
   saveUserTemplate,
-  updateUserTemplate,
-  deleteUserTemplate,
 } from "./diagram.store";
 
 export { useIconStore } from "./icon-store";
-export type { IconStore } from "./icon-store";
 
 export type { DiagramStore, DiagramSnapshot, ClipboardEntry } from "./store.types";
 export type {
@@ -57,32 +47,19 @@ export {
   useIconById,
   useComponentIcon,
   useEdgeControlPoints,
-  useEdgeLabelOffset,
   useAllUserTemplates,
-  useGlobalIconLibrary,
-  useGlobalIconById,
 } from "./selectors";
-export type { ActiveDiagramVersionState } from "./selectors/connection.selectors";
 
 // ─── Version helpers ────────────────────────────────────────────────────────────
 export { resolveActiveVersion } from "./helpers/version-helpers";
 
 // ─── Import safety helpers ────────────────────────────────────────────────────
-export { reparentOrphanDiagram, reparentOrphanDiagrams } from "./helpers/reparent-orphan-diagram";
-export type {
-  GeneratedEdgeInput,
-  GeneratedGraphResult,
-  GeneratedNodeInput,
-} from "./slices/generated-graph.slice";
-export type { NewConnectedComponent, NewConnectedEdge } from "./slices/components.slice";
+
+export type { GeneratedEdgeInput, GeneratedNodeInput } from "./slices/generated-graph.slice";
+export type { NewConnectedEdge } from "./slices/components.slice";
 
 // ─── Store constants ──────────────────────────────────────────────────────────
-export {
-  VIEWPORT_DEBOUNCE_MS,
-  MAX_HISTORY_STEPS,
-  HISTORY_COALESCE_MS,
-  UNDO_REDO_COOLDOWN_MS,
-} from "./store.constants";
+export { VIEWPORT_DEBOUNCE_MS } from "./store.constants";
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 export { PERSIST_KEY, buildPersistStoragePayload } from "./persist.config";
@@ -91,12 +68,9 @@ export { PERSIST_KEY, buildPersistStoragePayload } from "./persist.config";
 export { useStorageMonitor } from "./useStorageMonitor";
 export {
   checkStorageHealth,
-  measureLocalStorageUsage,
   clearNonEssentialStorage,
   shouldSuggestFolderSync,
 } from "./storage-monitor";
-export type { FolderSyncStatus } from "./storage-monitor";
 
 // ─── Save status ─────────────────────────────────────────────────────────────
 export { useSaveStatusStore } from "./saveStatus.store";
-export type { StorageHealthLevel, SaveStatus } from "./saveStatus.store";
