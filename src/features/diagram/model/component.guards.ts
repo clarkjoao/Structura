@@ -1,7 +1,6 @@
 import { isAwsType } from "@/features/cloud/providers/aws/aws.catalog";
 import { isGcpType } from "@/features/cloud/providers/gcp/gcp.catalog";
 import { isAzureType } from "@/features/cloud/providers/azure/azure.catalog";
-import { cloudRegistry } from "@/features/cloud";
 import type {
   Component,
   C4Component,
@@ -10,8 +9,6 @@ import type {
   AwsComponent,
   GcpComponent,
   AzureComponent,
-  K8sComponent,
-  OssComponent,
   ApiGroupComponent,
   EndpointComponent,
   UnknownComponent,
@@ -72,12 +69,6 @@ export const isAwsComponent = (c: Component): c is AwsComponent => isAwsType(c.t
 export const isGcpComponent = (c: Component): c is GcpComponent => isGcpType(c.type);
 
 export const isAzureComponent = (c: Component): c is AzureComponent => isAzureType(c.type);
-
-export type CloudProviderComponent =
-  AwsComponent | GcpComponent | AzureComponent | K8sComponent | OssComponent;
-
-export const isCloudComponent = (c: Component): c is CloudProviderComponent =>
-  cloudRegistry.isCloudType(c.type);
 
 export const isApiGroupComponent = (c: Component): c is ApiGroupComponent => isApiGroupType(c.type);
 

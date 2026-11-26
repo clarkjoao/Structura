@@ -364,7 +364,7 @@ export function setChatThreadsCacheEntry(diagramId: string, state: DiagramThread
   chatThreadsCache = { ...chatThreadsCache, [diagramId]: state };
 }
 
-export function replaceChatThreadsCache(next: Record<string, DiagramThreadState>): void {
+function replaceChatThreadsCache(next: Record<string, DiagramThreadState>): void {
   chatThreadsCache = { ...next };
 }
 

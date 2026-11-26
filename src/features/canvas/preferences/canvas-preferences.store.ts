@@ -11,7 +11,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
  */
 export type CanvasScrollMode = "pan" | "zoom";
 
-export interface CanvasPreferencesStore {
+interface CanvasPreferencesStore {
   scrollMode: CanvasScrollMode;
   setScrollMode: (mode: CanvasScrollMode) => void;
   /** The minimap costs screen space on small viewports, so it is opt-out rather than fixed. */

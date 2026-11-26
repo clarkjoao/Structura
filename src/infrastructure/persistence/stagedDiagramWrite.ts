@@ -17,7 +17,7 @@ export interface StagedDiagramWrite {
   finalSegments: string[];
 }
 
-export const TEMP_FILE_SUFFIX = ".tmp";
+const TEMP_FILE_SUFFIX = ".tmp";
 
 /**
  * Returns the temp filename for a diagram, e.g. "abc123.json.tmp"

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 /** Elements to light on the editor canvas, asked for from outside it (a plugin, API 1.11). */
-export interface HighlightRequest {
+interface HighlightRequest {
   componentIds: readonly string[];
   connectionIds: readonly string[];
   /** A new request, even for the same elements. */

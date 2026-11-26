@@ -61,7 +61,7 @@ export interface EdgeBuildParams {
   edgeLayouts?: Record<string, EdgeLayout>;
 }
 
-export function toMarkerType(
+function toMarkerType(
   marker: string | undefined,
 ): MarkerType.Arrow | MarkerType.ArrowClosed | undefined {
   if (!marker || marker === EdgeMarker.None) return undefined;

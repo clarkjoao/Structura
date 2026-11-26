@@ -46,7 +46,7 @@ export interface ImportJsonSource {
   relativePath?: string;
 }
 
-export interface ImportJsonBatchResult {
+interface ImportJsonBatchResult {
   imported: number;
   failed: number;
   pendingRelink: number;

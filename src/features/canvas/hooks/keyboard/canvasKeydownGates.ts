@@ -35,7 +35,7 @@ export function isCanvasOverlayOpen(flags: CanvasKeydownModeFlags): boolean {
   return Boolean(flags.isSearchOpen || flags.isCommandPaletteOpen) || isCanvasOverlayLayerOpen();
 }
 
-export function isCanvasOverlayLayerOpen(): boolean {
+function isCanvasOverlayLayerOpen(): boolean {
   if (typeof document === "undefined") return false;
   return document.querySelector('[data-canvas-overlay="open"]') !== null;
 }

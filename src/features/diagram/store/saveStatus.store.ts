@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type SaveStatus = "idle" | "pending" | "saved" | "error";
+type SaveStatus = "idle" | "pending" | "saved" | "error";
 
 /** localStorage: thresholds in bytes (chars × 2, UTF-16) of its ~5 MB. */
 const STORAGE_WARNING_BYTES = 3 * 1024 * 1024;

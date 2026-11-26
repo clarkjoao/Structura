@@ -172,10 +172,6 @@ export async function flushWorkspaceToConnectedFolder(state: DiagramStoreState):
 let _reconnected = false;
 let _reconnecting: Promise<boolean> | null = null;
 
-export function hasReconnected(): boolean {
-  return _reconnected;
-}
-
 async function clearLocalCache(): Promise<void> {
   await workspaceStorage.delete(PERSIST_KEY);
   clearLocalStorageDiagramSyncTimestamp();
@@ -288,7 +284,7 @@ export function awaitBootScan(): Promise<WorkspaceScanResult | null> {
   });
 }
 
-export function resolveBootScan(scan: WorkspaceScanResult | null): void {
+function resolveBootScan(scan: WorkspaceScanResult | null): void {
   _bootScanResolver?.(scan);
   _bootScanResolver = null;
 }

@@ -35,14 +35,14 @@ import { MergeVersionDialog } from "./MergeVersionDialog";
 import { groupVersionsByStatus, STATUS_LABEL } from "./version-groups";
 import { VersionChangesToggle } from "./VersionChangesLegend";
 
-export type VersionPanelVersion = VersionDiff;
+type VersionPanelVersion = VersionDiff;
 
 /**
  * The diagram's versions: switch, compare, create, rename, duplicate, merge.
  * Content only — the host (the bottom toolbar's popover) positions it and
  * closes it on Escape or an outside click.
  */
-export interface VersionPanelProps {
+interface VersionPanelProps {
   versions: VersionPanelVersion[];
   activeVersionId: string | null;
   compareVersionId: string | null;
@@ -240,7 +240,7 @@ function VersionRow({
   );
 }
 
-export function VersionPanel({
+function VersionPanel({
   versions,
   activeVersionId,
   compareVersionId,

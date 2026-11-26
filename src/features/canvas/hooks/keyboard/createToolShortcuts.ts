@@ -11,7 +11,7 @@ import {
   type KeyHandler,
 } from "./helpers";
 
-export interface ToolShortcutCallbacks {
+interface ToolShortcutCallbacks {
   onOpenSearch?: () => void;
   onOpenCommandPalette?: () => void;
   /** The element catalog (⌘K). */

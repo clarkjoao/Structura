@@ -64,11 +64,11 @@ export function handleSlotOffset(index: number, count: number, sideLength: numbe
 export const NODE_DRAG_PADDING = 40;
 
 /** A panel's header with only a title: `py-2.5` twice around one `text-sm` line. */
-export const PANEL_HEADER_H = 40;
+const PANEL_HEADER_H = 40;
 /** One more `text-xs` line, the unselected (`line-clamp-1`) description. */
-export const PANEL_HEADER_DESCRIPTION_H = 16;
+const PANEL_HEADER_DESCRIPTION_H = 16;
 /** Air between the header and the children inside the panel. */
-export const PANEL_HEADER_GAP = 16;
+const PANEL_HEADER_GAP = 16;
 
 /**
  * Space a panel reserves above its children: the header it draws, plus a gap.

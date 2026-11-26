@@ -209,8 +209,8 @@ function insertGeneratedGraphInDraft(
 }
 
 /**
- * Type-based guards, not `isCloudComponent`: that one asks the cloud registry,
- * which is only populated once `features/cloud/bootstrap` has run — so it
+ * Type-based guards, not a cloud registry lookup: the registry
+ * is only populated once `features/cloud/bootstrap` has run — so it
  * answers differently in the app and under test.
  */
 function setTechnology(component: Component, technology: string): void {

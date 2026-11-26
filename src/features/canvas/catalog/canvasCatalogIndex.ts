@@ -11,7 +11,7 @@ import {
 } from "@/features/elements/search";
 
 /** The diagram's business services: inserted as a linked `system`. */
-export const CATALOG_SERVICES_GROUP_ID = "services";
+const CATALOG_SERVICES_GROUP_ID = "services";
 /** The user's saved presets. */
 export const CATALOG_PRESETS_GROUP_ID = "presets";
 

@@ -59,7 +59,7 @@ function pathSegments(path: string): string[] {
 }
 
 /** A plain file name inside the folder — never a path that could leave it. */
-export function assertFileName(fileName: string): void {
+function assertFileName(fileName: string): void {
   if (
     typeof fileName !== "string" ||
     fileName === "" ||

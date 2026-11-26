@@ -20,7 +20,7 @@ export interface ComponentTypeDefinition {
   example?: string;
 }
 
-export const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [];
+const STRUCTURAL_TYPES: ComponentTypeDefinition[] = [];
 
 /**
  * Registered elements, as catalog entries.
@@ -41,13 +41,13 @@ function toTypeDefinition(element: ElementDescriptor): ComponentTypeDefinition {
 }
 
 /** Every element of one non-catalog family, as prompt entries. */
-export function familyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
+function familyRegisteredTypes(familyId: string): ComponentTypeDefinition[] {
   return offeredElements()
     .filter((element) => element.family === familyId)
     .map(toTypeDefinition);
 }
 
-export function registeredElementTypes(): ComponentTypeDefinition[] {
+function registeredElementTypes(): ComponentTypeDefinition[] {
   // Cloud families publish a compact catalog of their own; listing every
   // category here would duplicate them under "Structural & Canvas" without
   // service ids.
@@ -55,7 +55,7 @@ export function registeredElementTypes(): ComponentTypeDefinition[] {
 }
 
 /** C4 Model types from the registry (F9) — replaces the old hand-curated list. */
-export function c4RegisteredTypes(): ComponentTypeDefinition[] {
+function c4RegisteredTypes(): ComponentTypeDefinition[] {
   return familyRegisteredTypes("c4");
 }
 

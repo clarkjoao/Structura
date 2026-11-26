@@ -48,7 +48,7 @@ function formatConversationForCopy(
 }
 
 /* ── Slash commands ───────────────────────────────────────────────────── */
-export interface SlashCommandDef {
+interface SlashCommandDef {
   names: string[]; // Both PT and EN aliases
   labelKey: string;
   descriptionKey: string;

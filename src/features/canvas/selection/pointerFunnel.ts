@@ -78,9 +78,6 @@ export type GestureTarget =
   | { kind: "node"; nodeId: string }
   | { kind: "pane"; atScreen: { x: number; y: number } };
 
-/** What the funnel decided the gesture is. */
-export type Gesture = "click" | "drag" | "marquee" | "pan" | "context-menu" | "connect";
-
 /**
  * Selector panel parts the funnel looks for in the DOM. RF does not surface
  * a typed handle on the node element for "this part is the header" — we

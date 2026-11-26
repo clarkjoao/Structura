@@ -175,7 +175,7 @@ When in doubt, check the component catalog above for the correct nodeType and aw
  * Instructs the model to match the app's UI language (from the language switcher).
  * Keep instructions in English so the model applies them reliably.
  */
-export function buildResponseLanguageInstruction(responseLocale: string): string {
+function buildResponseLanguageInstruction(responseLocale: string): string {
   const normalized = responseLocale.toLowerCase().startsWith("pt") ? "pt-BR" : "en";
 
   if (normalized === "pt-BR") {

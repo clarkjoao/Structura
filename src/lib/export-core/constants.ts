@@ -332,7 +332,7 @@ export const C4_META: Record<string, C4MetaInfo> = {
   },
 };
 
-export const PERSON_POINTS =
+const PERSON_POINTS =
   "points=[[0.5,0,0],[1,0.5,0],[1,0.75,0],[0.75,1,0],[0.5,1,0],[0.25,1,0],[0,0.75,0],[0,0.5,0]];";
 
 export const BOX_POINTS =

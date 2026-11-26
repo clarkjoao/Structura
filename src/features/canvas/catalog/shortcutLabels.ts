@@ -1,7 +1,7 @@
 import { getPlatform } from "../hooks/keyboard/helpers";
 
 /** The modifier key as this platform prints it: ⌘ on macOS, Ctrl elsewhere. */
-export function modKeyLabel(): string {
+function modKeyLabel(): string {
   return getPlatform() === "mac" ? "⌘" : "Ctrl+";
 }
 

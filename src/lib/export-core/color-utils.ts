@@ -6,7 +6,7 @@
 const HEX_RE = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i;
 
 /** Convert `hsl(h s% l%)` (with optional whitespace) to a `#rrggbb` hex string. */
-export function hslToHex(hsl: string): string {
+function hslToHex(hsl: string): string {
   const match = hsl.match(/hsl\(\s*([\d.]+)\s+([\d.]+)%?\s+([\d.]+)%?\s*\)/);
   if (!match) return hsl;
   const h = parseFloat(match[1]) / 360;

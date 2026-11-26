@@ -5,7 +5,7 @@
  * - encode.ts    — compress + generate a share link
  * - decode.ts    — parse a share link from the URL
  * - viewer.ts    — standalone viewer URL helpers
- * - utils.ts     — shared URL helpers (getBasePath, getAppBaseUrl, getAppUrl, currentHashParams)
+ * - utils.ts     — shared URL helpers (getBasePath, getAppBaseUrl, currentHashParams)
  */
 export { generateShareUrl, getFlowParamFromUrl, type ShareUrlResult } from "./encode";
 

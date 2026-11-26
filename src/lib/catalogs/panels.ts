@@ -91,9 +91,9 @@ export const PANEL_KINDS: PanelKindDef[] = [
   },
 ];
 
-export const PANEL_KIND_MAP = new Map(PANEL_KINDS.map((p) => [p.id, p]));
+const PANEL_KIND_MAP = new Map(PANEL_KINDS.map((p) => [p.id, p]));
 
-export const AWS_SERVICE_TO_PANEL_KIND: Record<string, PanelKind> = {
+const AWS_SERVICE_TO_PANEL_KIND: Record<string, PanelKind> = {
   eks: PanelKind.EksCluster,
   "eks-2": PanelKind.EksCluster,
   ecs: PanelKind.EcsCluster,

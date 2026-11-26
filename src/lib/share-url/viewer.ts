@@ -20,10 +20,6 @@ export function generateViewerUrl(
   return `${getAppBaseUrl()}/viewer#data=${encoded}${flowParam}`;
 }
 
-export function getViewerDataFromHash(): Diagram | null {
-  return getViewerPayloadFromHash()?.diagram ?? null;
-}
-
 /** The `#data=` payload: the diagram, and the names it carried beside it. */
 export function getViewerPayloadFromHash(): SharedPayload | null {
   const params = new URLSearchParams(window.location.hash.slice(1));

@@ -9,9 +9,9 @@ import { isSharedRefComponent } from "../model/component.guards";
  * real graph through these.
  */
 
-export const DEFAULT_SHARED_MODE: SharedMode = "edges";
+const DEFAULT_SHARED_MODE: SharedMode = "edges";
 /** From this many consumers, an element is suggested as shared. */
-export const SUGGEST_SHARED_AT = 4;
+const SUGGEST_SHARED_AT = 4;
 
 export function sharedMode(component: Component | undefined): SharedMode {
   return component?.shared?.mode ?? DEFAULT_SHARED_MODE;

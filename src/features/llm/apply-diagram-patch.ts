@@ -48,10 +48,7 @@ export function computeGridPositions(
   }));
 }
 
-export function resolveParentRef(
-  value: string | null,
-  nameToIdMap: Map<string, string>,
-): string | null {
+function resolveParentRef(value: string | null, nameToIdMap: Map<string, string>): string | null {
   if (!value) return null;
   if (value.startsWith("@ref:")) {
     const resolved = nameToIdMap.get(value.slice(5).toLowerCase());

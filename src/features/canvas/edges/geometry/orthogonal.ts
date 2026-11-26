@@ -237,7 +237,7 @@ export function computeSegmentDrag(
 }
 
 /** Shortest orthogonal segment allowed during a drag (flow units). */
-export const MIN_SEGMENT_LENGTH = 10;
+const MIN_SEGMENT_LENGTH = 10;
 
 /**
  * Push `value` so it stays at least `min` away from `boundary`, keeping it on

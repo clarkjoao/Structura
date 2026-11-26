@@ -13,7 +13,7 @@ export interface NotePresetPair {
   dark: string;
 }
 
-export const NOTE_PRESET_PAIRS: NotePresetPair[] = [
+const NOTE_PRESET_PAIRS: NotePresetPair[] = [
   { light: "hsl(45 25% 97%)", dark: "hsl(38 10% 15%)" }, // ivory     ↔ warm dark paper
   { light: "hsl(0 0% 98%)", dark: "hsl(220 15% 18%)" }, // white     ↔ graphite
   { light: "hsl(40 30% 95%)", dark: "hsl(210 12% 20%)" }, // cream     ↔ charcoal
@@ -84,7 +84,7 @@ export const C4_PRESETS: ColorPreset[] = [
   { nameKey: "colors.darkAmber", color: "hsl(35 80% 42%)" },
 ];
 
-export const NEUTRAL_PRESETS: ColorPreset[] = [
+const NEUTRAL_PRESETS: ColorPreset[] = [
   { nameKey: "colors.grayDark", color: "hsl(220 20% 20%)" },
   { nameKey: "colors.slate", color: "hsl(215 25% 25%)" },
   { nameKey: "colors.graphite", color: "hsl(220 15% 18%)" },

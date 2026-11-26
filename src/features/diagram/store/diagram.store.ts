@@ -146,23 +146,8 @@ export async function flushWorkspaceToBrowserStorageNow(
   return true;
 }
 
-export function updateDiagramDescription(diagramId: string, description: string): void {
-  useDiagramStore.getState().updateDiagramDescription(diagramId, description);
-}
-
 export function saveUserTemplate(template: UserTemplate): void {
   useDiagramStore.getState().saveUserTemplate(template);
-}
-
-export function updateUserTemplate(
-  id: string,
-  patch: Partial<Pick<UserTemplate, "name" | "description" | "category">>,
-): void {
-  useDiagramStore.getState().updateUserTemplate(id, patch);
-}
-
-export function deleteUserTemplate(id: string): void {
-  useDiagramStore.getState().deleteUserTemplate(id);
 }
 
 const pickFromStore = createStableSlice<DiagramStore>();

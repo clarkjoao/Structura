@@ -1,6 +1,6 @@
 import { FLOW_PARTICLE_DURATION_MS } from "../../canvas.constants";
 
-export const PARTICLE_DURATION_MS = FLOW_PARTICLE_DURATION_MS;
+const PARTICLE_DURATION_MS = FLOW_PARTICLE_DURATION_MS;
 
 export interface EdgeParticleProps {
   edgePath: string;

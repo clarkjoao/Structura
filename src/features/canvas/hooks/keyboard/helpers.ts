@@ -8,7 +8,7 @@ import {
 } from "@/features/diagram";
 import { isEditableTarget, KEY, keyMatchesLetter } from "@/lib/core/keyboard";
 
-export const PASTE_OFFSET = 20;
+const PASTE_OFFSET = 20;
 
 export type KeyHandler = (e: KeyboardEvent) => boolean | Promise<boolean>;
 
@@ -170,7 +170,7 @@ export function getOffsetPositionOfNodes(
   return { x: minX + PASTE_OFFSET, y: minY + PASTE_OFFSET };
 }
 
-export function getPasteCenter(
+function getPasteCenter(
   rf: ReactFlowInstance,
   wrapperRef: React.RefObject<HTMLDivElement | null>,
 ): { x: number; y: number } {

@@ -8,7 +8,7 @@ import { PANEL_DEFAULT_W, PANEL_DEFAULT_H } from "../canvas.constants";
  * Whether a React Flow node type takes dropped nodes: a panel (or lane), or a
  * typed container. Whether it takes *this* node is `canContain`'s answer.
  */
-export function isDropContainerType(type: string): boolean {
+function isDropContainerType(type: string): boolean {
   return isReactFlowParentPanelType(type) || isTypedContainerType(type);
 }
 

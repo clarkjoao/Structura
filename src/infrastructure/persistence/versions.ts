@@ -22,14 +22,6 @@ export interface VersionedDiagram {
   services?: ServiceManifestEntry[];
 }
 
-// Manifest versionado
-export interface VersionedManifest {
-  version: number;
-  createdAt: string;
-  updatedAt: string;
-  diagramIds: string[];
-}
-
 // Helper para criar diagrama versionado
 export function createVersionedDiagram(
   diagram: Diagram,
@@ -42,32 +34,6 @@ export function createVersionedDiagram(
     exportedAt: new Date().toISOString(),
     ...(services && services.length > 0 ? { services } : {}),
   };
-}
-
-/** Dual-read legacy Scene fields onto Version fields (store schema v15). */
-export function normalizeDiagramVersionFields(diagram: Record<string, unknown>): void {
-  const legacyScenes = diagram.scenes;
-  if (legacyScenes && typeof legacyScenes === "object" && !Array.isArray(legacyScenes)) {
-    const existing = diagram.versions as Record<string, unknown> | undefined;
-    const existingIsEmpty = !existing || Object.keys(existing).length === 0;
-    if (existingIsEmpty) {
-      diagram.versions = legacyScenes;
-    }
-  }
-  delete diagram.scenes;
-
-  if ("activeSceneId" in diagram) {
-    if (diagram.activeVersionId === undefined) {
-      diagram.activeVersionId = diagram.activeSceneId;
-    }
-    delete diagram.activeSceneId;
-  }
-  if ("compareSceneId" in diagram) {
-    if (diagram.compareVersionId === undefined) {
-      diagram.compareVersionId = diagram.compareSceneId;
-    }
-    delete diagram.compareSceneId;
-  }
 }
 
 // Helper para detectar se é formato versionado

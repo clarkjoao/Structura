@@ -27,7 +27,7 @@ export function getContainerIds(nodes: ExportNode[]): Set<string> {
   return ids;
 }
 
-export function isRootExportNode(node: ExportNode | undefined, containerIds: Set<string>): boolean {
+function isRootExportNode(node: ExportNode | undefined, containerIds: Set<string>): boolean {
   if (!node) return true;
   return !node.parentId || !containerIds.has(node.parentId);
 }
@@ -39,7 +39,7 @@ export type CompensationOffsets = Map<string, number>;
  * Compute canonical (C4_META) dimensions for a node so the export always uses the
  * draw.io canonical box rather than the React Flow measured size.
  */
-export function canonicalDimensions(node: ExportNode): { width: number; height: number } {
+function canonicalDimensions(node: ExportNode): { width: number; height: number } {
   if (node.kind === "c4") {
     const meta = C4_META[node.subtype] ?? C4_META.system;
     return { width: meta.width, height: meta.height };

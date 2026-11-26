@@ -24,23 +24,6 @@ export type ExportStrokeStyle = "solid" | "dashed" | "dotted";
 /** Arrow marker at an edge end. */
 export type ExportMarker = "none" | "arrow" | "arrow-closed";
 
-/** Node kinds that map 1:1 to a cell-builder. Panels and api-groups are containers. */
-export type ExportNodeKind =
-  | "c4"
-  | "aws"
-  | "panel"
-  | "swimlane"
-  | "apiGroup"
-  | "endpoint"
-  | "dbTable"
-  | "note"
-  | "jsonViewer"
-  | "image"
-  | "passthrough"
-  | "flowNode"
-  | "stencil"
-  | "container";
-
 interface BaseNode {
   id: string;
   /** Container node id, or null at the diagram root. */
@@ -61,7 +44,7 @@ interface BaseNode {
   badges?: ExportBadge[];
 }
 
-export interface ExportBadge {
+interface ExportBadge {
   id: string;
   label: string;
   /** `#rrggbb`. */

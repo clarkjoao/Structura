@@ -12,7 +12,7 @@
 
 const CHANNEL_NAME = "structura-workspace-sync";
 
-export interface WorkspaceBroadcastPayload {
+interface WorkspaceBroadcastPayload {
   type: "manifest-changed";
   /** Workspace path (directory name) to filter broadcasts to the same workspace. */
   workspacePath: string;

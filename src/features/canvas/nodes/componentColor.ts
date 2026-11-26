@@ -11,7 +11,7 @@ import {
 
 /** Neutral swatch for group shapes, plugin types and anything without a palette entry. */
 export const COMPONENT_SWATCH_NEUTRAL = "hsl(var(--muted-foreground))";
-export const COMPONENT_SWATCH_SURFACE = "hsl(var(--border))";
+const COMPONENT_SWATCH_SURFACE = "hsl(var(--border))";
 
 /**
  * A component's palette entry as a resolved CSS color.

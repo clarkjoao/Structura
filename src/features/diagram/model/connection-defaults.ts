@@ -103,7 +103,7 @@ export function resolveConnectionSemantics(
   };
 }
 
-export const DIRECTION_MARKERS: Record<
+const DIRECTION_MARKERS: Record<
   ConnectionDirection,
   { markerStart: EdgeMarker; markerEnd: EdgeMarker }
 > = {

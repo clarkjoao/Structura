@@ -14,7 +14,7 @@ export type FolderSyncStatus =
   "disconnected" | "connecting" | "connected" | "needs_permission" | "error";
 
 /** Soma o tamanho de todas as chaves/valores do localStorage em bytes (UTF-16: char × 2). */
-export function measureLocalStorageUsage(): number {
+function measureLocalStorageUsage(): number {
   let total = 0;
   for (const key of kvKeys()) {
     const value = kvGetItem(key) ?? "";
