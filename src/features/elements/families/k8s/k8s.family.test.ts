@@ -4,9 +4,8 @@ import { getElement, isRegisteredElementType } from "@/features/elements/element
 import { isValidNodeType } from "@/features/llm/component-catalog";
 import { registryCatalogEntries } from "@/features/elements/search";
 import { isRegisteredCloudFamily } from "../cloud-family.registry";
-import { k8sElements, k8sFamily } from "./k8s.family";
+import { k8sElements, k8sFamily, k8sPackIcons } from "./k8s.family";
 import { K8S_CATEGORIES, K8S_SERVICE_MAP } from "./k8s.catalog";
-import { k8sIconDataUri } from "./k8s.export-icons";
 
 describe("k8s family", () => {
   it("is registered through registerCloudFamily at bootstrap", () => {
@@ -64,7 +63,7 @@ describe("k8s family", () => {
 
   it("has a data URI for every catalog icon", () => {
     for (const service of K8S_SERVICE_MAP.values()) {
-      expect(k8sIconDataUri(service.iconName), service.iconName).toBeTruthy();
+      expect(k8sPackIcons.get(service.iconName)?.dataUri(), service.iconName).toBeTruthy();
     }
   });
 

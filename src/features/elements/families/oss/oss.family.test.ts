@@ -5,9 +5,8 @@ import { isValidNodeType } from "@/features/llm/component-catalog";
 import { searchElements } from "@/features/llm/element-catalog-query";
 import i18n from "@/infrastructure/i18n";
 import { isRegisteredCloudFamily } from "../cloud-family.registry";
-import { ossElements, ossFamily } from "./oss.family";
+import { ossElements, ossFamily, ossPackIcons } from "./oss.family";
 import { OSS_CATEGORIES, OSS_SERVICE_MAP } from "./oss.catalog";
-import { ossIconDataUri } from "./oss.export-icons";
 
 describe("oss family", () => {
   it("is registered through registerCloudFamily at bootstrap", () => {
@@ -64,7 +63,7 @@ describe("oss family", () => {
 
   it("has a data URI for every catalog icon", () => {
     for (const service of OSS_SERVICE_MAP.values()) {
-      expect(ossIconDataUri(service.iconName), service.iconName).toBeTruthy();
+      expect(ossPackIcons.get(service.iconName)?.dataUri(), service.iconName).toBeTruthy();
     }
   });
 });

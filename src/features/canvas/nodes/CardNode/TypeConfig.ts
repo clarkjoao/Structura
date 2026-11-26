@@ -25,27 +25,3 @@ export const TypeConfig: Record<
     textColor: "text-node-component",
   },
 };
-
-/**
- * Not read at runtime: category borders are built as `border-l-${categoryId}`.
- * These literals are what Tailwind's content scan sees, so they are what makes
- * it emit the `border-l-aws-*` classes. Removing this map drops those styles.
- */
-export const awsCategoryBorders: Record<string, string> = {
-  "aws-compute": "border-l-aws-compute",
-  "aws-storage": "border-l-aws-storage",
-  "aws-database": "border-l-aws-database",
-  "aws-networking": "border-l-aws-networking",
-  "aws-security": "border-l-aws-security",
-  "aws-analytics": "border-l-aws-analytics",
-  "aws-ml": "border-l-aws-ml",
-  "aws-integration": "border-l-aws-integration",
-  "aws-management": "border-l-aws-management",
-  "aws-developer": "border-l-aws-developer",
-  "aws-containers": "border-l-aws-containers",
-  "aws-media": "border-l-aws-media",
-  "aws-migration": "border-l-aws-migration",
-  "aws-iot": "border-l-aws-iot",
-  "aws-end-user": "border-l-aws-end-user",
-  "aws-general": "border-l-aws-general",
-};

@@ -243,8 +243,6 @@ export {
   isAwsComponent,
   isGcpComponent,
   isAzureComponent,
-  isK8sComponent,
-  isOssComponent,
   isCloudComponent,
   isApiGroupComponent,
   isEndpointComponent,

@@ -1,0 +1,161 @@
+{
+  "id": "k8s",
+  "typeIds": "verbatim",
+  "label": {
+    "en": "Kubernetes",
+    "pt-BR": "Kubernetes"
+  },
+  "groupLabel": {
+    "en": "Kubernetes",
+    "pt-BR": "Kubernetes"
+  },
+  "primaryCategories": ["k8s-workloads", "k8s-networking", "k8s-storage", "k8s-config"],
+  "categories": [
+    {
+      "id": "k8s-workloads",
+      "label": {
+        "en": "Workloads",
+        "pt-BR": "Workloads"
+      },
+      "description": {
+        "en": "Kubernetes workloads (Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod).",
+        "pt-BR": "Workloads do Kubernetes (Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod)."
+      },
+      "accent": {
+        "light": "214 85% 48%",
+        "dark": "214 85% 55%"
+      }
+    },
+    {
+      "id": "k8s-networking",
+      "label": {
+        "en": "Networking",
+        "pt-BR": "Networking"
+      },
+      "description": {
+        "en": "Kubernetes networking (Service, Ingress, NetworkPolicy).",
+        "pt-BR": "Rede do Kubernetes (Service, Ingress, NetworkPolicy)."
+      },
+      "accent": {
+        "light": "199 78% 44%",
+        "dark": "199 78% 50%"
+      }
+    },
+    {
+      "id": "k8s-storage",
+      "label": {
+        "en": "Storage",
+        "pt-BR": "Storage"
+      },
+      "description": {
+        "en": "Kubernetes storage (PersistentVolume, PVC, StorageClass).",
+        "pt-BR": "Armazenamento do Kubernetes (PersistentVolume, PVC, StorageClass)."
+      },
+      "accent": {
+        "light": "142 52% 38%",
+        "dark": "142 52% 44%"
+      }
+    },
+    {
+      "id": "k8s-config",
+      "label": {
+        "en": "Config",
+        "pt-BR": "Config"
+      },
+      "description": {
+        "en": "Kubernetes configuration objects (ConfigMap, Secret).",
+        "pt-BR": "Objetos de configuração do Kubernetes (ConfigMap, Secret)."
+      },
+      "accent": {
+        "light": "270 45% 48%",
+        "dark": "270 45% 55%"
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "deployment",
+      "name": "Deployment",
+      "category": "k8s-workloads",
+      "icon": "deploy"
+    },
+    {
+      "id": "statefulset",
+      "name": "StatefulSet",
+      "category": "k8s-workloads",
+      "icon": "sts"
+    },
+    {
+      "id": "daemonset",
+      "name": "DaemonSet",
+      "category": "k8s-workloads",
+      "icon": "ds"
+    },
+    {
+      "id": "job",
+      "name": "Job",
+      "category": "k8s-workloads",
+      "icon": "job"
+    },
+    {
+      "id": "cronjob",
+      "name": "CronJob",
+      "category": "k8s-workloads",
+      "icon": "cronjob"
+    },
+    {
+      "id": "pod",
+      "name": "Pod",
+      "category": "k8s-workloads",
+      "icon": "pod"
+    },
+    {
+      "id": "service",
+      "name": "Service",
+      "category": "k8s-networking",
+      "icon": "svc"
+    },
+    {
+      "id": "ingress",
+      "name": "Ingress",
+      "category": "k8s-networking",
+      "icon": "ing"
+    },
+    {
+      "id": "networkpolicy",
+      "name": "NetworkPolicy",
+      "category": "k8s-networking",
+      "icon": "netpol"
+    },
+    {
+      "id": "persistentvolume",
+      "name": "PersistentVolume",
+      "category": "k8s-storage",
+      "icon": "pv"
+    },
+    {
+      "id": "persistentvolumeclaim",
+      "name": "PersistentVolumeClaim",
+      "category": "k8s-storage",
+      "icon": "pvc"
+    },
+    {
+      "id": "storageclass",
+      "name": "StorageClass",
+      "category": "k8s-storage",
+      "icon": "sc"
+    },
+    {
+      "id": "configmap",
+      "name": "ConfigMap",
+      "category": "k8s-config",
+      "icon": "cm"
+    },
+    {
+      "id": "secret",
+      "name": "Secret",
+      "category": "k8s-config",
+      "icon": "secret"
+    }
+  ]
+}

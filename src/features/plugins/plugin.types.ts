@@ -16,10 +16,12 @@ type DiagramNodeComponent = NodeTypes[string];
  * breaking changes here require a major version bump.
  */
 
-export const STRUCTURA_PLUGIN_API_VERSION = "1.16.0";
+export const STRUCTURA_PLUGIN_API_VERSION = "1.17.0";
 
 export const KNOWN_PLUGIN_CAPABILITIES = [
   "canvas:node-types",
+  /** v1.17 — `registerElementPack` / `registerShape`. */
+  "canvas:elements",
   "io:importers",
   "io:exporters",
   "ui:panels",
@@ -419,6 +421,78 @@ export interface PluginNodeTypeDescriptor {
   selectable?: boolean;
 }
 
+/** v1.17 — text in both host locales. */
+export interface PluginLocalizedLabel {
+  en: string;
+  "pt-BR": string;
+}
+
+/** v1.17 — one category of a plugin's element pack: an element type `<pluginId>/<id>`. */
+export interface PluginElementPackCategory {
+  /** Lowercase letters, digits and dashes. */
+  id: string;
+  label: PluginLocalizedLabel;
+  description: PluginLocalizedLabel;
+  /** `H S% L%` (as the theme tokens) or a hex colour; `dark` defaults to `light`. */
+  accent: { light: string; dark?: string };
+  /** The vendor's own name for the category, where it differs from the label. */
+  vendorName?: string;
+}
+
+/** v1.17 — one service of a category, offered as its own catalog entry. */
+export interface PluginElementPackService {
+  /** Stored on the component as its catalog service id. */
+  id: string;
+  /** Proper noun, shown as written. */
+  name: string;
+  /** The category's `id`. */
+  category: string;
+  /** A key of `PluginElementPack.icons`. */
+  icon: string;
+  description?: PluginLocalizedLabel;
+  /** Catalog concepts ("queue", "database", …) the search and the assistant match on. */
+  concepts?: string[];
+  searchKeys?: string[];
+}
+
+/**
+ * v1.17 — an SVG shape: its outline (path data only, in `viewBox` units) is stretched to the
+ * node, the node's name drawn inside. Element type `<pluginId>/<id>`.
+ */
+export interface PluginShape {
+  id: string;
+  label: PluginLocalizedLabel;
+  description?: PluginLocalizedLabel;
+  /** `minX minY width height`. */
+  viewBox: string;
+  /** SVG path `d` strings — commands and numbers only. */
+  paths: string[];
+  size?: { width: number; height: number };
+  searchKeys?: string[];
+}
+
+/**
+ * v1.17 — capability "canvas:elements". A family of catalog elements (cards with an icon, like
+ * the AWS services) and shapes, offered in the palette, the element catalog, search and the
+ * assistant. Same format as the host's built-in packs (`elements/packs/<id>/pack.json`).
+ */
+export interface PluginElementPack {
+  /** Must equal the plugin's manifest id. */
+  id: string;
+  label: PluginLocalizedLabel;
+  /** Catalog group heading; `label` when absent. */
+  groupLabel?: PluginLocalizedLabel;
+  categories?: PluginElementPackCategory[];
+  services?: PluginElementPackService[];
+  shapes?: PluginShape[];
+  /** Category ids listed first. */
+  primaryCategories?: string[];
+  /** Service ids the catalog lists first. */
+  spotlightServices?: string[];
+  /** SVG markup by icon name; sanitized by the host. */
+  icons?: Record<string, string>;
+}
+
 /** v1.4 — a problem shown on a line of `CodeEditor`. Lines are 1-based. */
 export interface PluginEditorMarker {
   line: number;
@@ -782,6 +856,13 @@ export interface StructuraPluginApi {
   readonly apiVersion: string;
 
   registerNodeType(descriptor: PluginNodeTypeDescriptor): void;
+  /**
+   * v1.17 — capability "canvas:elements". Registers the plugin's element pack (once); throws,
+   * registering nothing, when it is invalid or its id is not the plugin id.
+   */
+  registerElementPack(pack: PluginElementPack): void;
+  /** v1.17 — capability "canvas:elements". Adds one SVG shape to the plugin's palette group. */
+  registerShape(shape: PluginShape): void;
   registerExporter(handler: ExporterContribution): void;
   registerImporter(handler: ImporterContribution): void;
   /** v1.14 — capability "io:importers". An import offered on the workspace home. */

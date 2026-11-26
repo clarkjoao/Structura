@@ -1,0 +1,586 @@
+{
+  "id": "azure",
+  "typeIds": "verbatim",
+  "label": {
+    "en": "Azure services",
+    "pt-BR": "Azure Services"
+  },
+  "groupLabel": {
+    "en": "Azure",
+    "pt-BR": "Azure"
+  },
+  "primaryCategories": [
+    "azure-compute",
+    "azure-database",
+    "azure-storage",
+    "azure-networking",
+    "azure-security"
+  ],
+  "preferredServiceByConcept": {
+    "queue": "servicebus",
+    "nosql-db": "cosmosdb"
+  },
+  "categories": [
+    {
+      "id": "azure-compute",
+      "label": {
+        "en": "Compute",
+        "pt-BR": "Compute"
+      },
+      "description": {
+        "en": "Azure compute services (VMs, App Service, Functions).",
+        "pt-BR": "Serviços de computação do Azure (VMs, App Service, Functions)."
+      },
+      "accent": {
+        "light": "214 90% 50%",
+        "dark": "214 90% 58%"
+      }
+    },
+    {
+      "id": "azure-storage",
+      "label": {
+        "en": "Storage",
+        "pt-BR": "Storage"
+      },
+      "description": {
+        "en": "Azure storage services (Blob, Files, Queues).",
+        "pt-BR": "Serviços de armazenamento do Azure (Blob, Files, Queues)."
+      },
+      "accent": {
+        "light": "199 78% 46%",
+        "dark": "199 78% 52%"
+      }
+    },
+    {
+      "id": "azure-database",
+      "label": {
+        "en": "Databases",
+        "pt-BR": "Databases"
+      },
+      "description": {
+        "en": "Azure managed databases (SQL, Cosmos DB, Redis).",
+        "pt-BR": "Bancos gerenciados do Azure (SQL, Cosmos DB, Redis)."
+      },
+      "accent": {
+        "light": "214 68% 43%",
+        "dark": "214 68% 50%"
+      }
+    },
+    {
+      "id": "azure-networking",
+      "label": {
+        "en": "Networking",
+        "pt-BR": "Networking"
+      },
+      "description": {
+        "en": "Azure networking and connectivity.",
+        "pt-BR": "Rede e conectividade do Azure."
+      },
+      "accent": {
+        "light": "196 78% 42%",
+        "dark": "196 78% 49%"
+      }
+    },
+    {
+      "id": "azure-security",
+      "label": {
+        "en": "Security",
+        "pt-BR": "Security"
+      },
+      "description": {
+        "en": "Azure security and identity services.",
+        "pt-BR": "Serviços de segurança e identidade do Azure."
+      },
+      "accent": {
+        "light": "262 55% 48%",
+        "dark": "262 55% 55%"
+      }
+    },
+    {
+      "id": "azure-analytics",
+      "label": {
+        "en": "Analytics",
+        "pt-BR": "Analytics"
+      },
+      "description": {
+        "en": "Azure data analytics services.",
+        "pt-BR": "Serviços de analítica de dados do Azure."
+      },
+      "accent": {
+        "light": "24 100% 48%",
+        "dark": "24 100% 55%"
+      }
+    },
+    {
+      "id": "azure-ai",
+      "label": {
+        "en": "AI & Machine Learning",
+        "pt-BR": "AI & Machine Learning"
+      },
+      "description": {
+        "en": "Azure AI and machine-learning services.",
+        "pt-BR": "Serviços de IA e machine learning do Azure."
+      },
+      "accent": {
+        "light": "238 70% 52%",
+        "dark": "238 70% 60%"
+      }
+    },
+    {
+      "id": "azure-integration",
+      "label": {
+        "en": "Integration",
+        "pt-BR": "Integration"
+      },
+      "description": {
+        "en": "Azure integration and messaging services.",
+        "pt-BR": "Serviços de integração e mensageria do Azure."
+      },
+      "accent": {
+        "light": "174 58% 38%",
+        "dark": "174 58% 44%"
+      }
+    },
+    {
+      "id": "azure-devtools",
+      "label": {
+        "en": "Developer Tools",
+        "pt-BR": "Developer Tools"
+      },
+      "description": {
+        "en": "Azure developer and DevOps tooling.",
+        "pt-BR": "Ferramentas de desenvolvimento e DevOps do Azure."
+      },
+      "accent": {
+        "light": "214 78% 52%",
+        "dark": "214 78% 60%"
+      }
+    },
+    {
+      "id": "azure-iot",
+      "label": {
+        "en": "IoT",
+        "pt-BR": "IoT"
+      },
+      "description": {
+        "en": "Azure Internet of Things services.",
+        "pt-BR": "Serviços de Internet das Coisas do Azure."
+      },
+      "accent": {
+        "light": "142 52% 38%",
+        "dark": "142 52% 44%"
+      }
+    },
+    {
+      "id": "azure-management",
+      "label": {
+        "en": "Management",
+        "pt-BR": "Management"
+      },
+      "description": {
+        "en": "Azure management and monitoring tools.",
+        "pt-BR": "Ferramentas de gestão e monitoramento do Azure."
+      },
+      "accent": {
+        "light": "220 18% 48%",
+        "dark": "220 18% 55%"
+      }
+    },
+    {
+      "id": "azure-media",
+      "label": {
+        "en": "Media",
+        "pt-BR": "Media"
+      },
+      "description": {
+        "en": "Azure media services.",
+        "pt-BR": "Serviços de mídia do Azure."
+      },
+      "accent": {
+        "light": "330 65% 48%",
+        "dark": "330 65% 55%"
+      }
+    },
+    {
+      "id": "azure-general",
+      "label": {
+        "en": "General",
+        "pt-BR": "General"
+      },
+      "description": {
+        "en": "Other Azure services.",
+        "pt-BR": "Demais serviços do Azure."
+      },
+      "accent": {
+        "light": "214 90% 50%",
+        "dark": "214 90% 58%"
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "virtualmachine",
+      "name": "Virtual Machine",
+      "category": "azure-compute",
+      "icon": "AzVirtualMachine"
+    },
+    {
+      "id": "cloudservice",
+      "name": "Cloud Service",
+      "category": "azure-compute",
+      "icon": "AzCloudService"
+    },
+    {
+      "id": "functions",
+      "name": "Azure Functions",
+      "category": "azure-compute",
+      "icon": "AzFunctions",
+      "concepts": ["serverless"]
+    },
+    {
+      "id": "appservice",
+      "name": "App Service",
+      "category": "azure-compute",
+      "icon": "AzAppService"
+    },
+    {
+      "id": "batch",
+      "name": "Batch",
+      "category": "azure-compute",
+      "icon": "AzBatch"
+    },
+    {
+      "id": "containerservice",
+      "name": "Container Service",
+      "category": "azure-compute",
+      "icon": "AzContainerService"
+    },
+    {
+      "id": "containerregistry",
+      "name": "Container Registry",
+      "category": "azure-compute",
+      "icon": "AzContainerRegistry"
+    },
+    {
+      "id": "servicefabric",
+      "name": "Service Fabric",
+      "category": "azure-compute",
+      "icon": "AzServiceFabric"
+    },
+    {
+      "id": "vmscaleset",
+      "name": "VM Scale Set",
+      "category": "azure-compute",
+      "icon": "AzVMScaleSet"
+    },
+    {
+      "id": "storage",
+      "name": "Storage",
+      "category": "azure-storage",
+      "icon": "AzStorage"
+    },
+    {
+      "id": "storageblob",
+      "name": "Blob Storage",
+      "category": "azure-storage",
+      "icon": "AzStorageBlob",
+      "concepts": ["object-storage"]
+    },
+    {
+      "id": "storagefiles",
+      "name": "Files",
+      "category": "azure-storage",
+      "icon": "AzStorageFiles"
+    },
+    {
+      "id": "storagequeue",
+      "name": "Queue Storage",
+      "category": "azure-storage",
+      "icon": "AzStorageQueue",
+      "concepts": ["queue"]
+    },
+    {
+      "id": "storagetable",
+      "name": "Table Storage",
+      "category": "azure-storage",
+      "icon": "AzStorageTable",
+      "concepts": ["database", "nosql-db"]
+    },
+    {
+      "id": "sqldatabase",
+      "name": "SQL Database",
+      "category": "azure-database",
+      "icon": "AzSQLDatabase",
+      "concepts": ["database", "relational-db"]
+    },
+    {
+      "id": "cosmosdb",
+      "name": "Cosmos DB",
+      "category": "azure-database",
+      "icon": "AzDocumentDB",
+      "concepts": ["database", "nosql-db"]
+    },
+    {
+      "id": "datawarehouse",
+      "name": "Data Warehouse",
+      "category": "azure-database",
+      "icon": "AzDataWarehouse",
+      "concepts": ["database", "warehouse"]
+    },
+    {
+      "id": "databricks",
+      "name": "Databricks",
+      "category": "azure-database",
+      "icon": "AzDatabricks"
+    },
+    {
+      "id": "datalakestore",
+      "name": "Data Lake Store",
+      "category": "azure-database",
+      "icon": "AzDataLakeStore"
+    },
+    {
+      "id": "rediscache",
+      "name": "Redis Cache",
+      "category": "azure-database",
+      "icon": "AzCacheincludingRedis",
+      "concepts": ["cache"]
+    },
+    {
+      "id": "virtualnetwork",
+      "name": "Virtual Network",
+      "category": "azure-networking",
+      "icon": "AzVirtualNetwork"
+    },
+    {
+      "id": "loadbalancer",
+      "name": "Load Balancer",
+      "category": "azure-networking",
+      "icon": "AzLoadBalancer",
+      "concepts": ["load-balancer"]
+    },
+    {
+      "id": "vpngateway",
+      "name": "VPN Gateway",
+      "category": "azure-networking",
+      "icon": "AzVPNGateway"
+    },
+    {
+      "id": "expressroute",
+      "name": "Express Route",
+      "category": "azure-networking",
+      "icon": "AzExpressRoute"
+    },
+    {
+      "id": "trafficmanager",
+      "name": "Traffic Manager",
+      "category": "azure-networking",
+      "icon": "AzTrafficManager"
+    },
+    {
+      "id": "dns",
+      "name": "DNS",
+      "category": "azure-networking",
+      "icon": "AzDNS",
+      "concepts": ["dns"]
+    },
+    {
+      "id": "cdn",
+      "name": "Content Delivery Network",
+      "category": "azure-networking",
+      "icon": "AzContentDeliveryNetwork",
+      "concepts": ["cdn"]
+    },
+    {
+      "id": "appgateway",
+      "name": "Application Gateway",
+      "category": "azure-networking",
+      "icon": "AzApplicationGateway",
+      "concepts": ["load-balancer"]
+    },
+    {
+      "id": "securitycenter",
+      "name": "Security Center",
+      "category": "azure-security",
+      "icon": "AzSecurityCenter"
+    },
+    {
+      "id": "keyvault",
+      "name": "Key Vault",
+      "category": "azure-security",
+      "icon": "AzKeyVault",
+      "concepts": ["secrets"]
+    },
+    {
+      "id": "activedirectory",
+      "name": "Active Directory",
+      "category": "azure-security",
+      "icon": "ActiveDirectory",
+      "concepts": ["identity"]
+    },
+    {
+      "id": "mfa",
+      "name": "Multi-Factor Authentication",
+      "category": "azure-security",
+      "icon": "AzMultiFactorAuthentication",
+      "concepts": ["identity"]
+    },
+    {
+      "id": "rightsmanagement",
+      "name": "Rights Management",
+      "category": "azure-security",
+      "icon": "AzRightsManagement"
+    },
+    {
+      "id": "streamanalytics",
+      "name": "Stream Analytics",
+      "category": "azure-analytics",
+      "icon": "AzStreamAnalytics"
+    },
+    {
+      "id": "datafactory",
+      "name": "Data Factory",
+      "category": "azure-analytics",
+      "icon": "AzDataFactory"
+    },
+    {
+      "id": "hdinsight",
+      "name": "HDInsight",
+      "category": "azure-analytics",
+      "icon": "AzHDInsight"
+    },
+    {
+      "id": "datalakeanalytics",
+      "name": "Data Lake Analytics",
+      "category": "azure-analytics",
+      "icon": "AzDataLakeAnalytics"
+    },
+    {
+      "id": "machinelearning",
+      "name": "Machine Learning",
+      "category": "azure-ai",
+      "icon": "AzMachineLearning"
+    },
+    {
+      "id": "cognitiveservices",
+      "name": "Cognitive Services",
+      "category": "azure-ai",
+      "icon": "AzCognativeServices"
+    },
+    {
+      "id": "botservices",
+      "name": "Bot Services",
+      "category": "azure-ai",
+      "icon": "AzBotServices"
+    },
+    {
+      "id": "servicebus",
+      "name": "Service Bus",
+      "category": "azure-integration",
+      "icon": "AzServiceBus",
+      "concepts": ["queue", "topic"]
+    },
+    {
+      "id": "eventgrid",
+      "name": "Event Grid",
+      "category": "azure-integration",
+      "icon": "AzEventGrid",
+      "concepts": ["events", "event-bus"]
+    },
+    {
+      "id": "eventhubs",
+      "name": "Event Hubs",
+      "category": "azure-integration",
+      "icon": "AzEventHubs",
+      "concepts": ["events", "stream"]
+    },
+    {
+      "id": "logicapps",
+      "name": "Logic Apps",
+      "category": "azure-integration",
+      "icon": "AzLogicApps",
+      "concepts": ["workflow"]
+    },
+    {
+      "id": "apimanagement",
+      "name": "API Management",
+      "category": "azure-integration",
+      "icon": "APIManagement",
+      "concepts": ["api-gateway"]
+    },
+    {
+      "id": "notificationhubs",
+      "name": "Notification Hubs",
+      "category": "azure-integration",
+      "icon": "AzNotificationHubs"
+    },
+    {
+      "id": "devops",
+      "name": "Azure DevOps",
+      "category": "azure-devtools",
+      "icon": "VisualStudioTeamServices"
+    },
+    {
+      "id": "devtestlabs",
+      "name": "Dev/Test Labs",
+      "category": "azure-devtools",
+      "icon": "AzDevTestLabs"
+    },
+    {
+      "id": "appinsights",
+      "name": "Application Insights",
+      "category": "azure-devtools",
+      "icon": "AzApplicationInsights",
+      "concepts": ["monitoring"]
+    },
+    {
+      "id": "iothub",
+      "name": "IoT Hub",
+      "category": "azure-iot",
+      "icon": "AzIoTHub"
+    },
+    {
+      "id": "iotcentral",
+      "name": "IoT Central",
+      "category": "azure-iot",
+      "icon": "IoTCentralFifty"
+    },
+    {
+      "id": "monitor",
+      "name": "Monitor",
+      "category": "azure-management",
+      "icon": "AzMonitor",
+      "concepts": ["monitoring"]
+    },
+    {
+      "id": "automation",
+      "name": "Automation",
+      "category": "azure-management",
+      "icon": "AzAutomation"
+    },
+    {
+      "id": "advisor",
+      "name": "Advisor",
+      "category": "azure-management",
+      "icon": "AzAdvisor"
+    },
+    {
+      "id": "scheduler",
+      "name": "Scheduler",
+      "category": "azure-management",
+      "icon": "AzScheduler"
+    },
+    {
+      "id": "mediaservices",
+      "name": "Media Services",
+      "category": "azure-media",
+      "icon": "AzMediaServices"
+    },
+    {
+      "id": "azure",
+      "name": "Azure",
+      "category": "azure-general",
+      "icon": "Azure"
+    }
+  ]
+}

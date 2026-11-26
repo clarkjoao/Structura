@@ -1,4 +1,5 @@
 import type { Component } from "@/features/diagram";
+import { getElement } from "@/features/elements/element.registry";
 import {
   isAwsComponent,
   isAzureComponent,
@@ -23,11 +24,9 @@ export function componentSwatchColor(component: Component): string {
   if (isC4Component(component)) {
     return `hsl(var(--node-${component.type}))`;
   }
-  if (isAwsComponent(component) || isGcpComponent(component) || isAzureComponent(component)) {
-    // Cloud component types are already the category id ("aws-compute", "gcp-storage", …),
-    // which is exactly how the color tokens are named.
-    return `hsl(var(--${component.type}))`;
-  }
+  // Every catalog category (AWS, GCP, …, and any element pack) declares its accent token.
+  const accent = getElement(component.type)?.palette.accent;
+  if (accent?.kind === "token") return `hsl(var(${accent.cssVar}))`;
   if (isPanelComponent(component) || isNoteComponent(component)) {
     return COMPONENT_SWATCH_SURFACE;
   }

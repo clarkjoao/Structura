@@ -10,11 +10,12 @@ import {
   unregisterElement,
   offeredElements,
 } from "../element.registry";
-import type { ElementDescriptor } from "../element.types";
+import type { AccentToken, ElementDescriptor } from "../element.types";
 import type { CloudFamilyDefinition } from "./cloud-family.types";
 import { buildCloudFamilyDescriptors } from "./build-cloud-family-descriptors";
 import { forgetFamilyIconResolver } from "./family-icon-resolvers";
 import i18n from "@/infrastructure/i18n";
+import { borderClassForAccent } from "../accent-border";
 
 /**
  * Catalog-shaped families registered through `registerCloudFamily`.
@@ -137,6 +138,9 @@ export function cloudFamilyToProviderAdapter(family: CloudFamilyDefinition): Clo
   const categoryById = new Map<string, CloudCategory>(
     categories.map((category) => [category.id, category]),
   );
+  const accentByCategory = new Map<string, AccentToken>(
+    family.categories.map((category) => [category.id, category.accent]),
+  );
 
   return {
     id: family.id,
@@ -148,6 +152,9 @@ export function cloudFamilyToProviderAdapter(family: CloudFamilyDefinition): Clo
     matchesType: (type) => categoryIds.has(type),
     getCategoryForType: (type) => categoryById.get(type),
     getService: (serviceId) => serviceById.get(serviceId),
-    getCategoryStyle: (categoryId) => ({ borderClass: `border-l-${categoryId}` }),
+    getCategoryStyle: (categoryId) => {
+      const accent = accentByCategory.get(categoryId);
+      return { borderClass: accent ? borderClassForAccent(accent) : "" };
+    },
   };
 }

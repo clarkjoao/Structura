@@ -5,7 +5,23 @@ Built-in types go through the **element registry**
 [ADR-0010](../adr/0010-element-registry.md)). Plugins still use
 `NodeTypeDescriptor` + `registerDescriptor` on the canvas registry.
 
-## Built-in / family (preferred)
+## Catalog content: an element pack (preferred)
+
+A new family, category, service or SVG shape is data:
+
+1. Create or edit `src/features/elements/packs/<id>/pack.json` (format in
+   [element-registry.md#element-packs](../architecture/element-registry.md#element-packs)).
+   Labels and descriptions go in the JSON, in `en` and `pt-BR`; accents too.
+2. Put the service icons in `packs/<id>/icons/<icon>.svg`, with a license note beside them.
+3. Run `npx vitest run src/features/elements/packs` — it validates every pack and its icons.
+
+Nothing else changes: the pack is found on disk and registered at boot. For AWS, GCP, Azure,
+Kubernetes and OSS the pack is the same file (`packs/aws/pack.json`, …); a new *category* in one
+of those also needs its id in the family's id list (`AWS_CATEGORY_IDS`, …), because those ids
+type saved diagrams. Never rename or remove a service id there: saved diagrams store it
+(`legacy-packs.parity.test.ts` refuses it).
+
+## Built-in element with its own renderer
 
 1. **Descriptor:** implement `ElementDescriptor` under
    `src/features/elements/` (structural module or
@@ -23,7 +39,13 @@ Built-in types go through the **element registry**
 8. **Tests:** single-owner invariant covers registered ids; add family/export
    fixtures as needed.
 
-## Plugin types
+## Plugin elements
+
+- Catalog cards and SVG shapes: `api.registerElementPack` / `api.registerShape` (API 1.17,
+  capability `canvas:elements`) — same format as the built-in packs; see
+  `plugins/examples/element-pack`.
+
+## Plugin types (custom renderer)
 
 1. Implement `NodeTypeDescriptor` (see
    [node-types README](../../src/features/canvas/nodes/node-types/README.md)).

@@ -1,3 +1,4 @@
+import { builtinPacks } from "@/features/elements/packs/builtin-packs";
 import i18n from "@/infrastructure/i18n";
 import { describe, expect, it } from "vitest";
 import {
@@ -75,9 +76,14 @@ describe("hierarchical element catalog (F8)", () => {
     // Vocabularies registered since (deployment, Kubernetes structure)
     // are meant to reach the catalog — elements are derived, not curated —
     // each under its own heading or block, so they are measured apart from
-    // the old budget.
+    // the old budget. So are the element packs' shape families (`packs/shapes`).
     let withoutNew = catalog;
-    for (const familyId of ["deploy"]) {
+    for (const familyId of [
+      "deploy",
+      ...builtinPacks()
+        .filter(({ pack }) => pack.shapes.length > 0)
+        .map(({ pack }) => pack.id),
+    ]) {
       const heading = `### ${i18n.t(`elements.families.${familyId}.label`, { lng: "en" })}`;
       const start = withoutNew.indexOf(heading);
       if (start === -1) continue;

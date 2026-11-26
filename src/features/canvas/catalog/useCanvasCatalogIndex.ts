@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { useTranslation } from "react-i18next";
 import { useAllServices } from "@/features/diagram";
 import { useElementPresetStore } from "@/features/element-presets";
+import { elementsVersion, subscribeElements } from "@/features/elements/element.registry";
 import { loadedLocalesKey, type CatalogEntry, type CatalogIndex } from "@/features/elements/search";
 import { buildCanvasCatalogIndex, catalogEntriesById } from "./canvasCatalogIndex";
 import { useDiagramStore } from "@/features/diagram/store/diagram.store";
@@ -29,6 +30,8 @@ export function useCanvasCatalogIndex(): {
 
   // Cross-locale terms come from every loaded bundle; the second one arrives in idle time.
   const loadedLocales = loadedLocalesKey();
+  // A plugin may register an element pack while the catalog is open.
+  const registryVersion = useSyncExternalStore(subscribeElements, elementsVersion);
 
   return useMemo(() => {
     const presets = Object.values(presetsMap).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -50,5 +53,5 @@ export function useCanvasCatalogIndex(): {
     return { index, byId: catalogEntriesById(index) };
     // `i18n.language` is deliberate: labels are resolved when the index is built.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [services, presetsMap, i18n.language, loadedLocales, kindKey]);
+  }, [services, presetsMap, i18n.language, loadedLocales, kindKey, registryVersion]);
 }
