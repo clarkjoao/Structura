@@ -51,3 +51,6 @@ graphify-out
 .fallow/
 .design-sync/
 .playwright-mcp
+# Local tracking board for the dead-code cleanup (kept out of git)
+docs/faxina-e-regressao/kanban.json
+docs/faxina-e-regressao/kanban.html
