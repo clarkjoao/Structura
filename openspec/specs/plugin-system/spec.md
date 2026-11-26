@@ -166,13 +166,13 @@ Plugin code SHALL interact with application state and persistence exclusively th
 
 ### Requirement: Clean unregistration on deactivate and uninstall
 
-When a plugin is deactivated or uninstalled, the system SHALL remove all contributions registered by that plugin — node types, importers, exporters, panels, and event subscriptions — restoring each registry to a state as if the plugin had never registered, while preserving all user data. Diagram components whose node type was provided by the removed plugin SHALL degrade to the `unknown` descriptor without data loss. On uninstall, the system SHALL additionally delete the plugin's install record and its scoped storage namespace.
+When a plugin is deactivated or uninstalled, the system SHALL remove all contributions registered by that plugin — node types, element packs, shapes, importers, exporters, panels, and event subscriptions — restoring each registry to a state as if the plugin had never registered, while preserving all user data. Diagram components whose node type, pack element or shape was provided by the removed plugin SHALL degrade to the `unknown` descriptor without data loss. On uninstall, the system SHALL additionally delete the plugin's install record and its scoped storage namespace.
 
 #### Scenario: Deactivate removes all contributions
 
-- **GIVEN** an active plugin that registered a node type, an importer, a panel, and an `onDiagramChange` subscription
+- **GIVEN** an active plugin that registered a node type, an element pack, a shape, an importer, a panel, and an `onDiagramChange` subscription
 - **WHEN** the user disables the plugin
-- **THEN** the node type no longer resolves in the canvas registry, the importer and panel are no longer offered, and the callback is never invoked again
+- **THEN** the node type, the pack's elements and the shape no longer resolve, they are no longer offered in the palette or element catalog, the importer and panel are no longer offered, and the callback is never invoked again
 
 #### Scenario: Components degrade instead of corrupting
 
@@ -504,3 +504,69 @@ editable `value` when `original` is given.
 - **GIVEN** an edit in file A, then a switch to file B
 - **WHEN** the user presses undo in B
 - **THEN** only B's own edits are undone; A keeps its text
+
+### Requirement: registerElementPack contract
+
+With the `canvas:elements` capability, `api.registerElementPack(pack)` SHALL register an element
+pack in the element-pack format, with its icons given inline as SVG strings keyed by icon name.
+The pack's `id` SHALL equal the plugin's id; otherwise the call throws and nothing is
+registered. An invalid pack SHALL throw with the same errors a built-in pack would. On success
+the pack's categories, services and shapes SHALL be offered in every surface a built-in pack's
+are, without reloading the app. The API version SHALL be `1.17.0`.
+
+#### Scenario: Plugin adds a family
+
+- **GIVEN** an active plugin `acme-cloud` with capability `canvas:elements`
+- **WHEN** it calls `registerElementPack` with a pack `acme-cloud` holding category `compute`
+  and service `vm`
+- **THEN** the element catalog shows an "Acme Cloud" group with "VM", and inserting it creates a
+  node of type `acme-cloud/compute`
+
+#### Scenario: Pack id must match plugin id
+
+- **WHEN** plugin `acme-cloud` calls `registerElementPack` with a pack whose id is `aws`
+- **THEN** the call throws and no element is registered
+
+### Requirement: registerShape contract
+
+With the `canvas:elements` capability, `api.registerShape(shape)` SHALL register one SVG shape
+in the element-pack shape format as element type `<pluginId>/<shapeId>`, offered in the plugin's
+palette group (labelled with the plugin's name when the plugin registered no pack). A duplicate
+shape id SHALL throw. A shape outline SHALL accept only SVG path data, and pack icons SHALL
+pass the SVG sanitizer.
+
+#### Scenario: Plugin adds a shape
+
+- **GIVEN** an active plugin `acme-cloud`
+- **WHEN** it calls `registerShape` with id `cylinder-3d`, a label and an SVG outline
+- **THEN** the shape is offered in the palette and inserting it renders the outline with the
+  node's name inside
+
+### Requirement: Host UI kit for plugins
+
+The API SHALL expose, as `api.ui`, a UI kit of host components — `Button`, `Input`, `Textarea`,
+`Label`, `Field`, `Checkbox`, `Switch`, `Select`, `Badge`, `Card`, `Tabs`, `Tooltip`,
+`Separator`, `Stack` — rendered with the host's design system (its theme, light and dark, focus
+and disabled states). The same components SHALL be published on the host global
+`__STRUCTURA_UI__` before plugin code runs, so a bundled plugin can import them from
+`@structura/ui` as a build-time external. Their props SHALL be the documented kit props, not
+those of the underlying library, and SHALL change only with the API version. Every
+user-visible string a kit component shows by default SHALL come from the host's i18n layer.
+The API version SHALL be `1.18.0`.
+
+#### Scenario: No-build plugin uses a host button
+
+- **GIVEN** an active plugin whose panel renders `api.ui.Button` with `variant: "outline"`
+- **WHEN** the panel is shown in dark mode
+- **THEN** the button is the host's outline button, with the host's dark colours and focus ring
+
+#### Scenario: Bundled plugin imports the kit
+
+- **GIVEN** a plugin bundle built with `@structura/ui` external, bound to `__STRUCTURA_UI__`
+- **WHEN** the plugin is installed and its panel renders `Select` from `@structura/ui`
+- **THEN** the host's select renders with the plugin's options and reports the picked value
+
+#### Scenario: Simplified compound components
+
+- **WHEN** a plugin renders `Select` with `options: [{ value: "a", label: "A" }]` and `onValueChange`
+- **THEN** picking "A" calls `onValueChange("a")`, with no Radix sub-components involved
