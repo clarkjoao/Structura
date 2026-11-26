@@ -91,11 +91,7 @@ describe("useCanvasController selection", () => {
     expect(result.current.isPanelOpen).toBe(true);
   });
 
-  // KNOWN BUG on current code (suspected, not fixed here): 38ed79ea added an effect that clears
-  // the highlight whenever `selectedNodeId` changes. An edge click from a node selection sets
-  // the highlight and then nulls `selectedNodeId` in the same batch, so the effect wipes the
-  // highlight it was just given; the same click from an empty selection keeps it (test above).
-  it.fails("an edge click from a node selection keeps the edge's highlight", () => {
+  it("an edge click from a node selection keeps the edge's highlight", () => {
     const { a, b, connection } = seed();
     const { result } = renderHook(() => useCanvasController(), { wrapper });
     act(() => useCanvasSelectionStore.getState().setSelectedNodeIds(new Set([a])));
