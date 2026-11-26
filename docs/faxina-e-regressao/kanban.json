@@ -2,14 +2,14 @@
   "meta": {
     "project": "Structura — faxina de código morto e rede de regressão",
     "phase": "Execução",
-    "updated": "2026-11-26 17:20",
-    "note": "Usuário aprovou corrigir os bugs achados. 4 subagentes corrigindo em worktrees a partir da branch, um commit por bug.",
+    "updated": "2026-11-26 17:58",
+    "note": "Os 9 bugs achados pelos testes foram corrigidos, um commit cada; nenhum it.fails restante. Branch local, sem push. Restam: RT-016..RT-024, Cypress no CI (BL-004), decisões de épicos e walkthrough (por último).",
     "baseline": {
-      "commit": "9fdf8ae8 (branch)",
-      "test": "593 arquivos / 5713 testes verdes + 8 it.fails (bugs fixados)",
+      "commit": "b5d9842b (branch)",
+      "test": "595 arquivos / 5733 testes verdes, 0 it.fails",
+      "typecheck": "0 erros",
       "lint": "0 erros, 7 warnings",
       "format:check": "ok",
-      "typecheck": "0 erros",
       "build": "ok",
       "plugins:sync-check": "ok (4 plugins + extensão)",
       "cycles:check": "ok",
@@ -807,9 +807,9 @@
       "evidence": "git log -S 'saveLastEdgeStyle(' → 0cc57243 'Fix/lint errors (#198)', 2026-09-03: removeu onUpdateEdgeStyle do ConnectionPanel, o único chamador. getLastEdgeStyle segue lido por useCatalogInsert.ts:91 e useCanvasEventHandlers.ts:220, e sempre devolve EdgeStyle.EditableStep.",
       "note": "'Lembrar o último estilo de aresta' está quebrado há quase 3 meses, sem teste que pegasse.",
       "acceptance": "Decisão: religar a gravação onde o estilo é trocado hoje (com teste) ou remover get/save e usar o default direto",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "decidido: religar; corrigindo"
+      "status": "corrigido: b5d9842b (EdgeToolbar grava; isEdgeStyle aceita todo o enum)"
     },
     {
       "id": "DC-062",
@@ -1187,9 +1187,9 @@
       "evidence": "src/features/diagram/store/slices/parenting-clipboard.invariants.test.ts:250 it.fails 'pastes a three-level chain at its relative offsets': painel A > painel B > nó C copiados e colados em (1000,1000); C deveria ficar em (1070,1070) e cai longe, porque o segundo loop subtrai o layout do pai já rebaseado",
       "note": "Bug na main hoje. Corrigir troca it.fails por it e reativa a asserção de offset para cadeias profundas no teste de propriedades.",
       "acceptance": "it.fails vira it e passa; teste de propriedades sem o skip de cadeias profundas",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "corrigindo (store)"
+      "status": "corrigido: 2f18c1c2"
     },
     {
       "id": "RT-031",
@@ -1201,9 +1201,9 @@
       "owner": "humano",
       "evidence": "src/features/diagram/store/slices/versions.slice.ts:39 duplicateVersion e :66 addVersion sem pushHistory (removeVersion e as demais ações de versão chamam); history-coverage.guard.test.ts KNOWN_GAPS",
       "acceptance": "pushHistory nas duas; remover do KNOWN_GAPS; guarda verde",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "corrigindo (store)"
+      "status": "corrigido: d18046c7"
     },
     {
       "id": "RT-032",
@@ -1215,9 +1215,9 @@
       "owner": "humano",
       "evidence": "history-coverage.guard.test.ts EXEMPT 'possible gap': as três escrevem layout sem checkpoint",
       "acceptance": "Decisão registrada; se sim, checkpoint + mover para MUST_PUSH",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "decidido: entra no undo; corrigindo"
+      "status": "corrigido: 7bdb49de (z-order entra no undo)"
     },
     {
       "id": "RT-033",
@@ -1230,9 +1230,9 @@
       "evidence": "canvasKeydownGates.ts handleAutoLayoutShortcut ignora isCanvasOverlayOpen; useCanvasKeyboard.test.tsx it.fails 'an overlay layer also blocks auto layout'",
       "note": "Riscos a avaliar no mesmo card: Cmd+F, Cmd+/, Cmd+D, Cmd+K, Cmd+P e Cmd+B disparam ações do canvas enquanto se digita no Monaco do plugin (conflita com find/comment do Monaco); Delete/Backspace/Esc de um controle dentro do pane de plugin ou de menu aberto são capturados pelo canvas.",
       "acceptance": "it.fails vira it; decisão sobre os atalhos Mod dentro do Monaco",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "corrigindo (canvas)"
+      "status": "corrigido: 0ee04e78"
     },
     {
       "id": "RT-034",
@@ -1244,9 +1244,9 @@
       "owner": "humano",
       "evidence": "useCanvasVisualState.ts: efeito de 38ed79ea limpa o highlight quando selectedNodeId muda; onEdgeClick define o highlight e zera selectedNodeId no mesmo batch; useCanvasController.selection.test.tsx it.fails 'an edge click from a node selection keeps the edge's highlight'",
       "acceptance": "Confirmar no app; se for bug, it.fails vira it",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "corrigindo (canvas)"
+      "status": "corrigido: 44c283e2"
     },
     {
       "id": "RT-035",
@@ -1258,9 +1258,9 @@
       "owner": "humano",
       "evidence": "Desde 49416c0b o nó AWS com cloudServiceId sai como <object><mxCell/></object> e o mxCell interno não tem id; import-drawio.ts collectMxCellVertices o descarta como aws:missing-id; src/lib/export-service/fixtures.drawio.test.ts it.fails",
       "acceptance": "Round-trip export→import do fixture cloud-service-id preserva os nós AWS",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "corrigindo (import draw.io)"
+      "status": "corrigido: 62ef6bfe (<object>/<UserObject> em geral)"
     },
     {
       "id": "RT-036",
@@ -1272,9 +1272,9 @@
       "owner": "humano",
       "evidence": "__fixtures__/drawio/desktop-compressed.drawio (deflate-raw) importa vazio: o importer só lê mxGraphModel inline; fixtures.drawio.test.ts it.fails",
       "acceptance": "Fixture comprimido importa os mesmos nós do não comprimido",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "corrigindo (import draw.io)"
+      "status": "corrigido: 08d2cb06 + limite de 25 MB dfbb8c9c"
     },
     {
       "id": "RT-037",
@@ -1286,9 +1286,9 @@
       "owner": "humano",
       "evidence": "validateDiagramFile não migra arquivo legado sem $schema: type corrompido e campos antigos de conexão chegam ao store; com envelope a migração roda; workspace-fixtures.test.ts it.fails (fixture diagram-legacy-v0)",
       "acceptance": "Fixture legado sem envelope sai migrado igual ao com envelope",
-      "column": "andamento",
+      "column": "concluido",
       "pr": "",
-      "status": "corrigindo (persistence)"
+      "status": "corrigido: 0ee7d603"
     },
     {
       "id": "RT-038",
