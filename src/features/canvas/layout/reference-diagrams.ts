@@ -9,7 +9,7 @@ import type { DiagramIR } from "@/features/llm/ir/ir.types";
  * are reconstructions, not captures. They are what the numbers in the spec's
  * readability metric refer to, so changing one invalidates the baseline.
  *
- * `ir-prompt.test.ts` style guarantee: every document here is validated by
+ * Every document here is validated by
  * `layoutReadability.baseline.test.ts` before it is measured, so a malformed
  * fixture fails loudly rather than skewing a number.
  */
