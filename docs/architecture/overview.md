@@ -78,8 +78,7 @@ imports), `@/infrastructure/i18n`, `@/infrastructure/persistence`,
 `@/features/cloud`, `@/lib/export-service` and `@/features/canvas` (6 imports).
 Several other `index.ts` files are imported by nothing: `canvas/{components,
 edges,hooks,navigation,panels,toolbar}`, `elements`, `plugins`, `walkthrough`,
-`lib/catalogs` and `lib/core`. They are listed as unused files in
-`fallow-dead-code-baseline.json` and are kept as documentation of each folder's
+`lib/catalogs` and `lib/core`. They are kept as documentation of each folder's
 surface, not as entry points — import from the leaf module, and do not add a
 barrel import to code that mounts at startup (see above).
 
