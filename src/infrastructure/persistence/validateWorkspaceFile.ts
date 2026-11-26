@@ -70,7 +70,7 @@ export function validateDiagramFile(raw: unknown): ValidationResult {
     if (!legacy) {
       return { valid: false, reason: "Invalid diagram format", raw };
     }
-    diagram = legacy;
+    diagram = migrateDiagram(legacy, 0);
   }
 
   // Validate required fields

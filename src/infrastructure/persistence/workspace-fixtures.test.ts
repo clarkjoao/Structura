@@ -42,7 +42,7 @@ describe("workspace JSON fixtures", () => {
   // Gap found while building the corpus: a bare legacy file (no $schema envelope) is documented as
   // "schema version 0" but validateDiagramFile never runs migrateDiagram on it, so its corrupted
   // component type and legacy connection fields reach the store unmigrated.
-  it.fails("a bare legacy file (no envelope) is migrated like a versioned one", () => {
+  it("a bare legacy file (no envelope) is migrated like a versioned one", () => {
     const result = validateDiagramFile(jsonFixture("workspace/diagram-legacy-v0.json"));
     if (!result.valid) throw new Error(result.reason);
     expect(result.diagram.snapshot.components.api?.type).toBe("unknown");
