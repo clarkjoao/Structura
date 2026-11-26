@@ -222,11 +222,6 @@ Install plugins from a local JavaScript file on the **Plugins** page, or build t
 plugins pre-installed. See [../plugins/README.md](../plugins/README.md) and
 [architecture/extension-points.md](architecture/extension-points.md).
 
-## Walkthroughs (experimental)
-
-Guided, multi-diagram walkthroughs. Disabled unless the build sets
-`VITE_ENABLE_WALKTHROUGHS=true`.
-
 ## Interface
 
 - Light and dark themes.

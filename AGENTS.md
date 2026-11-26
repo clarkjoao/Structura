@@ -59,8 +59,7 @@ src/
 │   ├── integrations/       # external tool integrations (GitHub, DefectDojo)
 │   ├── llm/                # diagram assistant (chat UI, patch parser, suggestions)
 │   ├── plugins/            # plugin system (manifest, loader, registries, StructuraPlugin API)
-│   ├── viewer/             # read-only shared-diagram viewer
-│   └── walkthrough/        # experimental walkthroughs, behind VITE_ENABLE_WALKTHROUGHS
+│   └── viewer/             # read-only shared-diagram viewer
 ├── infrastructure/
 │   ├── persistence/        # IStoragePort, IndexedDb/LocalStorage/FileSystem/InMemory adapters, folder sync (bidirectional)
 │   └── i18n/               # i18next setup + locales

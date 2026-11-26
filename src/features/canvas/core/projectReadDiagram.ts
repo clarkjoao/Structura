@@ -24,8 +24,7 @@ export interface ReadDiagramRoutePlay {
  *
  * Draws the scene the diagram has open (`activeVersionId`), as the editor does:
  * a link shows the picture its author was looking at when they copied it, not
- * the base underneath. A host that must read the base — a walkthrough, whose
- * scripts were written against it — hands in the diagram without the field.
+ * the base underneath. A host that must read the base hands in the diagram without the field.
  * Everything else — what is shown (`resolveViewSnapshot`) and how it is drawn
  * (`projectDiagram`) — is the projection the editor runs, without the editor's
  * overlays, so a link draws what the author drew.

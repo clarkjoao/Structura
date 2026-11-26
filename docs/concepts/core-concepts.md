@@ -89,17 +89,6 @@ components and connections plus layout overrides. Scenes power what-if
 variants and compare mode without forking the diagram. Because a scene is a
 *diff*, the base diagram stays the single source and scenes stay cheap.
 
-## Walkthrough
-
-The cross-diagram narrative feature was removed in 2026-08; the
-decision is recorded at
-[`../decisions/2026-08-26-remove-walkthroughs.md`](../decisions/2026-08-26-remove-walkthroughs.md).
-What may want to come back, and from where, is in that document.
-
-> **Naming note.** The terms `Journey` and `Walkthrough` were both
-> considered for the now-removed feature. The glossary notes the
-> historical usage at [../grammar/glossary.md](../grammar/glossary.md) § Walkthrough.
-
 ## Service (catalog)
 
 `ServiceDefinition` (`model/service.types.ts`) is a **workspace-level**

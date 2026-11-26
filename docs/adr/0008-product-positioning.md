@@ -33,7 +33,7 @@ product built on top of the same engine, with its own ADR.
 The reason this is not "pure community" is that open core leaves the
 door open to a future cloud offering without forcing a relicense or
 a re-architecture. The engine's bounded contexts (`features/diagram`,
-`features/canvas`, `features/walkthroughs`, etc.) and the storage port
+`features/canvas`, etc.) and the storage port
 (`IStoragePort`) are already factored to allow a remote adapter
 without touching the engine.
 

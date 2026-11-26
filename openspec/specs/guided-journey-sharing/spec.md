@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Takes a guided journey to people and moments outside the editor: a Markdown document, a walkthrough by phase, one-click assistant reviews, and templates to start from.
+Takes a guided journey to people and moments outside the editor: a Markdown document, one-click assistant reviews, and templates to start from.
 
 ## Requirements
 
@@ -24,17 +24,9 @@ All fixed words in the document SHALL go through i18n.
 - **WHEN** the author copies it as Document
 - **THEN** the text has the headings "Descobrir" and "Comprar", lists A and B under Descobrir, and lists "Pagou?" with "sim → C" and "não → back to A" under Comprar
 
-### Requirement: The journey can be presented by phase
-
-In kind mode, the guided mode bar SHALL offer "Present by phase" when the journey has at least one phase. It SHALL create a walkthrough named after the diagram with one scene per phase, in reading order, each scene labelled with the phase name and playing that phase's flow. Running it again SHALL update the same walkthrough rather than create another.
+### Requirement: Phase flows are derived from the step graph
 
 Each phase flow SHALL be derived from the step graph, like the journey's flow: the phase's steps in reading order, entered at its start step. Phase flows SHALL be kept in sync on every structural edit and removed with their phase.
-
-#### Scenario: Presenting
-
-- **GIVEN** a journey with phases Descobrir and Comprar
-- **WHEN** the author picks "Present by phase"
-- **THEN** a walkthrough opens with the scenes "Descobrir" and "Comprar", and each one plays only its phase's steps
 
 ### Requirement: The assistant reviews the journey on request
 

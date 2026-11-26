@@ -101,7 +101,7 @@ explicitly, with their responsibilities and allowed dependencies:
 | **Catalogs** | `features/cloud`, `lib/catalogs` | AWS/GCP/Azure service catalogs and icons; pattern and panel catalogs. Data, not behavior. | Model |
 | **Collaboration** | `features/collaboration`, `server/`, `go-server/` | Live sessions: field-level patches ordered by the relay, presence, soft locks. The relay's store is the source of truth only while a session lasts (ADR-0011). | Model |
 | **Intelligence** | `features/llm` | Diagram assistant: providers (Anthropic/OpenAI/proxy), prompt building, patch parsing, applying `DiagramPatch` actions to the store. | Model |
-| **Storytelling** | flows in Model | Cross-diagram narrative: flow recording/playback. The cross-diagram *Walkthroughs* feature was removed in 2026-08; see `docs/decisions/2026-08-26-remove-walkthroughs.md`. | Model, Canvas |
+| **Storytelling** | flows in Model | Cross-diagram narrative: flow recording/playback. The cross-diagram narrative feature was removed; see `docs/decisions/`. | Model, Canvas |
 | **Sharing** | `features/viewer`, share/embed utils | Read-only viewer for shared diagrams. | Model, Canvas |
 
 Dependency rule: **everything may depend on Model; Model depends on nothing.**

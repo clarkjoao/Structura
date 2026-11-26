@@ -69,10 +69,9 @@ function buildDescendantTotals(
 
 /**
  * Filing by dragging. Omit it and the tree accepts no drops at all.
- *
- * `mimeType` is what keeps the two libraries from accepting each other's
- * cards: a diagram dragged onto the walkthrough tree carries a type the
- * walkthrough tree never reads, so the drop yields no id and nothing moves.
+
+ * `mimeType` is what keeps a tree from accepting another library's cards: a
+ * card of another type yields no id, so nothing moves.
  */
 export interface FolderTreeDrag {
   /** The `dataTransfer` type carrying the dragged item's id. */
@@ -102,7 +101,7 @@ export interface FolderTreeProps {
 }
 
 /**
- * The folder rail, shared by the diagram workspace and the walkthrough library.
+ * The folder rail of the diagram workspace.
  *
  * Both file into the *same* folders — the ones that live in the diagram store —
  * so folder CRUD goes through `useDiagramActions` here rather than being handed

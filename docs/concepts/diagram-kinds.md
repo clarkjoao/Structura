@@ -210,7 +210,6 @@ Spec `guided-text-workspace`.
 Spec `guided-journey-sharing`.
 
 - **Document.** The "Document (Markdown)" format (`guided.document.ts`) writes one section per phase in reading order. Each step is listed with its lane and participants, each decision with its exits, and ways back as "back to …". A format with `download` is also offered as a file in "Copy as…".
-- **Present by phase.** Derivation keeps one flow per phase (`kindData.phaseFlowIds`, listed as derived and read-only), entered at the phase's start and ending where an exit leaves the phase. The kind's `presentation(diagram)` gives the scenes. The mode bar's "Present by phase" upserts the walkthrough marked `source: { diagramId, kind: "phases" }`, keeping scene notes, and opens the player.
 - **Review journey.** `reviewPresets` are translated requests. Picking one queues it (`useLLMStore.queuePrompt`), the canvas opens the assistant, and the chat panel sends it with the diagram's context. The answer comes back as a reviewable revision.
 - **Templates.** `templates` are translated outlines built after the blank start when the diagram is created. `tidyTemplate` then drops the blank lanes the template left empty. "Paste meeting notes" queues a request to build the journey from the notes, and the assistant opens with the new diagram.
 

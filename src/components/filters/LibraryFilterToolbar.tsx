@@ -38,11 +38,10 @@ export interface LibraryFilterToolbarProps<F extends string, K extends string> {
 
 /**
  * The narrowing controls above a library listing: chips, search, view toggle
- * and sort, shared by the diagram workspace and the walkthrough library.
+ * and sort, used by the diagram workspace.
  *
- * Both libraries narrow the same way; what differs is only *what* they narrow
- * by — a diagram sorts by C4 level, a walkthrough by how many scenes it has —
- * so the chip set and the sort orderings arrive as props, already translated by
+ * What a library narrows by — a diagram sorts by C4 level — varies by host, so
+ * the chip set and the sort orderings arrive as props, already translated by
  * the host that knows what they mean.
  */
 export function LibraryFilterToolbar<F extends string, K extends string>({

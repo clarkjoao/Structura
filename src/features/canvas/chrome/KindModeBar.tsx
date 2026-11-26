@@ -6,7 +6,6 @@ import {
   ArrowRight,
   ChevronDown,
   PencilRuler,
-  Presentation,
   Sparkles,
   Workflow,
   X,
@@ -40,8 +39,6 @@ interface KindModeBarProps {
     onChange: (direction: DiagramDirection) => void;
     lockedReasonKey: string | null;
   };
-  /** Presents the diagram scene by scene (guided: by phase), when the kind offers it. */
-  onPresent?: () => void;
   /** Asks the assistant one of the kind's preset requests. */
   onReview?: (prompt: string) => void;
   /** Selects an element and brings it into view (the text panel's cursor on its line). */
@@ -69,7 +66,6 @@ export function KindModeBar({
   canEdit,
   onSelectElement,
   direction,
-  onPresent,
   onReview,
   onFocusElement,
 }: KindModeBarProps) {
@@ -109,18 +105,6 @@ export function KindModeBar({
             {...(onFocusElement && { onFocusStep: onFocusElement })}
           />
         )}
-        {onPresent &&
-          (policy.descriptor.presentation?.(diagram as DiagramModel)?.length ?? 0) > 0 && (
-            <button
-              type="button"
-              className={`${ACTION} inline-flex items-center gap-1`}
-              onClick={onPresent}
-              data-testid="kind-present"
-            >
-              <Presentation className="h-3 w-3" aria-hidden />
-              {t("diagramKinds.present")}
-            </button>
-          )}
         {onReview && canEdit && policy.descriptor.reviewPresets && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

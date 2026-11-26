@@ -58,7 +58,6 @@ are listed separately.
 | `useCanvasSelectionStore` | `canvas/hooks/useCanvasSelectionStore.ts` | `useCanvasSelection` (→ `useCanvasVisualState`), `pointerFunnel`, `useCanvasEventHandlers`, panels, flow panels | the same | no |
 | `useTextToolStore` | `canvas/text/textLayer.store.ts` | `useTextLayer` (Canvas, via `useTextLayerSelectionGuard`), `useCanvasStore`, `useCanvasGraphState`, `useCatalogInsert` | `useTextLayer`, `useCatalogInsert` | no |
 | `useFlowViewStore` | `canvas/flow/useFlowViewStore.ts` | `useFlowState`, `FlowPanel`, `FlowScriptPanel`, `useFlowRecording` | the flow panels | no |
-| `useWalkthroughStore` | `walkthrough/store/walkthrough.store.ts` | not on the canvas path (walkthrough pages) | walkthrough pages | yes |
 
 Per-instance stores built by hand (not Zustand), all read by subscription so a
 change re-renders only the members whose answer changed:

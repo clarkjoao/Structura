@@ -3,7 +3,7 @@
 ## Purpose
 
 A guided diagram's steps already are a flow. This capability keeps one stored flow equal to the
-step graph, so reading, playback, the shared reading and walkthroughs work on guided diagrams
+step graph, so reading, playback and the shared reading work on guided diagrams
 unchanged, and so what an author writes into that flow is not lost.
 
 ## Requirements
@@ -58,14 +58,7 @@ SHALL remain editable in the step panel.
 
 ### Requirement: The derived flow works wherever a flow works
 
-Reading, playback, the shared reading and walkthrough scenes SHALL accept the derived flow like
-any other flow. A walkthrough scene pointing at it SHALL keep working after the guided diagram is
-edited.
-
-#### Scenario: Walkthrough scene
-
-- **WHEN** a walkthrough scene references a guided diagram's derived flow and the author later inserts a step
-- **THEN** the scene plays the updated sequence
+Reading, playback and the shared reading SHALL accept the derived flow like any other flow.
 
 ### Requirement: Freehand mode pauses derivation; return re-derives
 

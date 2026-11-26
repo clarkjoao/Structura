@@ -1,10 +1,7 @@
 import { SharedLayer } from "./shared/SharedLayer";
 import { requestReferencesTab } from "./selection-actions/referencesTab.store";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useLLMStore } from "@/features/llm";
-import { WALKTHROUGH_ENABLED } from "@/features/walkthrough/config";
-import { isKindActive, resolveKindPolicy } from "@/features/diagram-kinds/policy";
 import { Panel, Controls } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useNodeTypes } from "./nodes/node-types";
@@ -138,20 +135,6 @@ const Canvas = (props: CanvasProps = {}) => {
   // Lanes are renamed from their header while a kind arranges the diagram (spec
   // guided-direct-editing); never on a freehand diagram or a read-only canvas.
   const kindKey = useActiveKindKey();
-  const navigate = useNavigate();
-  // Presents the journey by phase (spec guided-journey-sharing): the walkthrough made for
-  // it before, updated, or a new one, opened in the player.
-  const presentKindDiagram = useCallback(() => {
-    const active = diagram ? useDiagramStore.getState().diagrams[diagram.id] : undefined;
-    const policy = resolveKindPolicy(active);
-    if (!active || !isKindActive(policy)) return;
-    const scenes = policy.descriptor.presentation?.(active) ?? [];
-    if (scenes.length === 0) return;
-    // Loaded on demand: the walkthrough module stays out of the canvas chunk.
-    void import("@/features/walkthrough/kindPresentation")
-      .then(({ upsertKindPresentation }) => upsertKindPresentation(active, scenes))
-      .then((presentation) => navigate(`/workflow/${presentation.id}/step/0`));
-  }, [diagram, navigate]);
   const laneRename = useMemo(
     () =>
       kindKey && canEditStructure && !isCompareMode
@@ -284,7 +267,6 @@ const Canvas = (props: CanvasProps = {}) => {
                 <KindModeBar
                   diagram={diagram}
                   canEdit={canEditStructure}
-                  {...(WALKTHROUGH_ENABLED && { onPresent: presentKindDiagram })}
                   onFocusElement={handleSearchSelect}
                   onReview={(prompt) => {
                     useLLMStore.getState().queuePrompt(prompt);

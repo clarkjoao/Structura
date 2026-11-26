@@ -9,8 +9,7 @@ import { ViewerCanvas } from "./components/ViewerCanvas";
  * The edges of a reading, reported rather than acted on.
  *
  * The viewer holds the reading in its own state, so nothing above it could see
- * that a script had run out — which is why the walkthrough player grew a second
- * set of ⌘-modified keys to cross a scene. These callbacks are the edge of the
+ * that a script had run out. These callbacks are the edge of the
  * reading stated out loud; what lies beyond it stays the host's decision.
  */
 beforeAll(() => {

@@ -140,6 +140,10 @@ Highlights merged since 0.2.0 (see the linked pull requests for details):
 
 ### Removed
 
+- **BREAKING (experimental, off by default):** the walkthrough module and its
+  `VITE_ENABLE_WALKTHROUGHS` flag, together with the `/workflows` routes, the nav
+  entry and the guided "Present by phase" button. `.walkthrough.json` files in
+  connected folders are still skipped by the workspace scan.
 - **Deprecated `Journey*` aliases removed.** The following aliases
   (kept for one release after the rename) have been removed:
   `Journey`, `JourneyStep`, `JourneyCard`, `CreateJourneyModal`,

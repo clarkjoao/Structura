@@ -19,7 +19,7 @@ File System Access API). A small optional relay provides only the collaboration 
 ├──────────────┬──────────────────────────────────────────────┤
 │ Feature contexts                                            │
 │   canvas  elements  cloud  collaboration  llm  plugins      │
-│   viewer  integrations  element-presets  walkthrough        │
+│   viewer  integrations  element-presets                    │
 ├──────────────┴──────────────────────────────────────────────┤
 │ Model  (features/diagram — types, guards, store; no React)  │
 ├─────────────────────────────────────────────────────────────┤
@@ -78,7 +78,7 @@ imports), `@/infrastructure/i18n`, `@/infrastructure/persistence`,
 `@/features/cloud`, `@/lib/export-service` and `@/features/canvas` (6 imports).
 Folders with no barrel traffic have no `index.ts`: the unused barrels of
 `canvas/{components,edges,hooks,navigation,panels,toolbar}`, `lib/catalogs` and
-`lib/core` were removed. `elements`, `plugins` and `walkthrough` still have one that
+`lib/core` were removed. `elements` and `plugins` still have one that
 nothing imports; treat those as documentation of the folder's surface, not as entry
 points. Import from the leaf module, and do not add a
 barrel import to code that mounts at startup (see above).

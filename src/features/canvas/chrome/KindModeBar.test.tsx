@@ -112,23 +112,20 @@ describe("KindModeBar direction", () => {
   });
 });
 
-describe("KindModeBar present and review", () => {
-  it("offers Present by phase only with phases, and the review presets", async () => {
+describe("KindModeBar review", () => {
+  it("offers the review presets", async () => {
     const { applyKindTextBuild, buildKindText } = await import("./kindTextCapture");
     const id = guided();
-    const onPresent = vi.fn();
     const onReview = vi.fn();
     const bar = () => (
       <KindModeBar
         diagram={useDiagramStore.getState().diagrams[id]!}
         canEdit
         onSelectElement={vi.fn()}
-        onPresent={onPresent}
         onReview={onReview}
       />
     );
     const view = render(bar());
-    expect(screen.queryByTestId("kind-present")).toBeNull();
     const built = buildKindText("## Discover\nUsuário: A\n## Buy\nB");
     if (!built || !("edit" in built)) throw new Error("no build");
     applyKindTextBuild(built);
@@ -139,8 +136,6 @@ describe("KindModeBar present and review", () => {
     const derived = getDiagramKind("guided")!.derive!(d, kindContextFor(d));
     if (derived) useDiagramStore.getState().applyKindEdit(derived, { history: false });
     view.rerender(bar());
-    fireEvent.click(screen.getByTestId("kind-present"));
-    expect(onPresent).toHaveBeenCalled();
     const trigger = screen.getByTestId("kind-review");
     fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
     fireEvent.click(await screen.findByTestId("kind-review-errorPaths"));

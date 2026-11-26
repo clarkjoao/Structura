@@ -2,7 +2,7 @@ import type { MouseEvent, DragEvent } from "react";
 import type { DiagramDirection, Component, Diagram, Level } from "@/features/diagram";
 
 export type SortKey = "name" | "domain" | "level" | "updatedAt";
-/** One definition, shared with the walkthrough library via the filter toolbar. */
+/** One definition, shared with the filter toolbar. */
 export type { ViewMode } from "@/components/filters/LibraryFilterToolbar";
 export type ContentFilter = "all" | "recent" | "favorites";
 
