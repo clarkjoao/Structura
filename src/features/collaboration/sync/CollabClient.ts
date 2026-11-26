@@ -3,6 +3,7 @@ import {
   LIMITS,
   chunkString,
   isDiagramState,
+  isEntry,
   isRecord,
   type ClientMessage,
   type CollabUser,
@@ -119,6 +120,9 @@ export class CollabClient {
   private epoch: string | null = null;
   /** When a room that existed started answering `room_unknown`. */
   private lostSince: number | null = null;
+  /** A socket the relay sent a malformed entry on: its remaining frames are ignored until it closes. */
+  private quarantined: SocketLike | null = null;
+  private warnedBadEntry = false;
   private readonly opts: Required<
     Omit<CollabClientOptions, "hostToken" | "getSeed" | "createSocket" | "callbacks">
   >;
@@ -221,7 +225,7 @@ export class CollabClient {
       this.handshake();
     };
     socket.onmessage = (event) => {
-      if (this.socket !== socket) return;
+      if (this.socket !== socket || this.quarantined === socket) return;
       this.lastMessageAt = Date.now();
       if (typeof event.data !== "string") return;
       let parsed: unknown;
@@ -232,7 +236,7 @@ export class CollabClient {
       }
       // A serverless relay batches several messages into one frame, as an array, in order.
       for (const message of Array.isArray(parsed) ? parsed : [parsed]) {
-        if (this.socket !== socket) return;
+        if (this.socket !== socket || this.quarantined === socket) return;
         if (isRecord(message) && typeof message.type === "string") {
           this.handle(message as ServerMessage);
         }
@@ -385,6 +389,10 @@ export class CollabClient {
           ...(message.docFields && { docFields: message.docFields }),
         });
         if (message.catchup) {
+          if (!message.catchup.every(isEntry)) {
+            this.rejectEntry();
+            return;
+          }
           this.cb.onCatchup(message.version, message.catchup);
           this.becameReady();
         }
@@ -410,14 +418,21 @@ export class CollabClient {
         this.becameReady();
         return;
       }
-      case "entry":
-        this.cb.onEntry({
+      case "entry": {
+        const entry = {
           version: message.version,
           opId: message.opId,
           sender: message.sender,
           patch: message.patch,
-        });
+        };
+        // Never trust the relay with the store: a malformed patch must not reach the bridge.
+        if (!isEntry(entry)) {
+          this.rejectEntry();
+          return;
+        }
+        this.cb.onEntry(entry);
         return;
+      }
       case "ack":
         this.cb.onAck(message.opId, message.applied);
         return;
@@ -451,6 +466,20 @@ export class CollabClient {
       case "pong":
         return;
     }
+  }
+
+  /**
+   * The relay sent an entry that is not a valid patch. Like a torn snapshot, the socket is dropped
+   * and the reconnect resumes from the confirmed version, so the entry is fetched again (or the
+   * session ends as unreachable if the relay keeps sending garbage). Logged once per client.
+   */
+  private rejectEntry(): void {
+    if (!this.warnedBadEntry) {
+      this.warnedBadEntry = true;
+      console.warn("[collab] dropped a malformed entry from the relay; reconnecting");
+    }
+    this.quarantined = this.socket;
+    this.socket?.close(4003, "bad_entry");
   }
 
   private handleError(

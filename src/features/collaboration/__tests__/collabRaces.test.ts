@@ -386,4 +386,39 @@ describe("collaboration races (scripted transport)", () => {
     t.socket().deliver();
     expect(t.collabStore.getState().locks).toEqual({});
   });
+  it("a malformed entry from the relay never reaches the store; the session resyncs and applies valid ones", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const t = setup();
+    const [a, b] = t.ids as [string, string];
+    const before = structuredClone(t.layouts());
+
+    // A hostile entry (unknown entity collection) followed by a valid one in the same frame batch.
+    t.socket().enqueueRaw(
+      JSON.stringify([
+        {
+          type: "entry",
+          version: 1,
+          opId: "peer:1",
+          sender: "peer",
+          patch: { entities: { evil: {} } },
+        },
+        t.entry(2, "peer:2", "peer", moveOf(b, 777)),
+      ]),
+    );
+    const first = t.socket();
+    first.deliver();
+    expect(t.layouts()).toEqual(before);
+    expect(first.readyState).toBe(3);
+    expect(warn).toHaveBeenCalledTimes(1);
+
+    // The reconnect resumes and a well-formed entry is applied as usual.
+    vi.advanceTimersByTime(50);
+    expect(t.sockets).toHaveLength(2);
+    const second = t.socket();
+    second.open();
+    second.enqueue(t.joinedFrame(0), t.entry(1, "peer:3", "peer", moveOf(a, 321)));
+    second.deliver();
+    expect(t.layouts()[a]!.x).toBe(321);
+    warn.mockRestore();
+  });
 });
