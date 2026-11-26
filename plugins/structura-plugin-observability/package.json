@@ -1,0 +1,22 @@
+{
+  "name": "structura-plugin-observability",
+  "version": "1.0.0",
+  "description": "Test plugin: an element pack (observability family + shape) and an inspector panel built with the host UI kit",
+  "main": "dist/plugin.js",
+  "type": "module",
+  "scripts": {
+    "build": "npm run sync-types && vite build",
+    "dev": "vite build --watch",
+    "sync-types": "node scripts/sync-types.mjs",
+    "sync-types:check": "node scripts/sync-types.mjs --check",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "@xyflow/react": "^12.0.0",
+    "react": "^18.2.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.0.0"
+  }
+}

@@ -33,9 +33,10 @@ React plugins are in individual folders and require a build step. They are writt
 you `import { useState } from "react"` and use JSX directly (no `getReact()`, no bundled
 React). See [structura-plugin-example-ui/README.md](structura-plugin-example-ui/README.md).
 
-| Plugin                                                      | Capabilities                                                            | Description                         |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------- |
-| [structura-plugin-example-ui](structura-plugin-example-ui/) | `ui:panels`, `ui:overlays`, `diagram:read`, `events:diagram`, `storage` | Toolbar button, toasts, modals demo |
+| Plugin                                                            | Capabilities                                                            | Description                         |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------- |
+| [structura-plugin-example-ui](structura-plugin-example-ui/)       | `ui:panels`, `ui:overlays`, `diagram:read`, `events:diagram`, `storage` | Toolbar button, toasts, modals demo |
+| [structura-plugin-observability](structura-plugin-observability/) | `canvas:elements`, `ui:panels`, `ui:overlays`, `diagram:write`          | Element pack + shape + UI kit panel |
 
 ```bash
 cd plugins/structura-plugin-example-ui
@@ -128,13 +129,7 @@ StructuraPlugin.registerImporter({
       components: [
         // C4 types, "panel", catalog categories ("aws-database", "oss-messaging", …) and
         // "<pluginId>/<name>" are kept; any other type becomes "unknown".
-        {
-          key: "orders",
-          name: "Orders",
-          type: "panel",
-          x: ctx.anchor.x,
-          y: ctx.anchor.y,
-        },
+        { key: "orders", name: "Orders", type: "panel", x: ctx.anchor.x, y: ctx.anchor.y },
         {
           key: "db",
           name: "orders-db",
@@ -225,7 +220,8 @@ follow light and dark. Icons: bundle your own (`lucide-react` tree-shakes).
 `registerElementPack` adds a family of catalog elements — cards with an icon and a category
 accent, like the AWS services — and `registerShape` adds SVG shapes. Both appear in the
 palette, the element catalog, search and the assistant, under one group per plugin. The format
-is the host's built-in pack format (`src/features/elements/packs/<id>/pack.json`).
+is the host's built-in pack format (`src/features/elements/packs/<id>/pack.json`); see the
+`examples/element-pack` plugin.
 
 ```javascript
 api.registerElementPack({
@@ -239,18 +235,8 @@ api.registerElementPack({
       accent: { light: "#3366ff", dark: "#6b8cff" }, // hex or "H S% L%"
     },
   ],
-  services: [
-    {
-      id: "vm",
-      name: "VM",
-      category: "compute",
-      icon: "vm",
-      concepts: ["serverless"],
-    },
-  ],
-  icons: {
-    vm: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">…</svg>',
-  },
+  services: [{ id: "vm", name: "VM", category: "compute", icon: "vm", concepts: ["serverless"] }],
+  icons: { vm: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">…</svg>' },
 });
 
 api.registerShape({
@@ -292,8 +278,7 @@ function Pane() {
 }
 
 // A folder the user picks, remembered per binding id (re-asks permission after a reload).
-const folder =
-  (await api.files.open(diagramId)) ?? (await api.files.pick(diagramId));
+const folder = (await api.files.open(diagramId)) ?? (await api.files.pick(diagramId));
 const names = await folder.list(); // top-level file names
 const stats = await folder.stats(); // API 1.9: [{ name, lastModified, size }] — poll for outside changes
 await folder.write("a.yaml", await folder.read("a.yaml"));
@@ -320,8 +305,7 @@ const { idsByKey, connectionIds } = api.applyChanges({
     // The renameable symbol at a text offset, or null ("Nothing here can be renamed").
     resolve: (offset) => symbolAt(text, offset), // { start, end, text }
     // Apply it yourself (it may span files); return a message to refuse.
-    rename: async (offset, newName) =>
-      taken(newName) ? "Already used" : apply(offset, newName),
+    rename: async (offset, newName) => (taken(newName) ? "Already used" : apply(offset, newName)),
   }}
 />
 ```

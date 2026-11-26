@@ -30,6 +30,18 @@ Simple JavaScript plugins that require no build step. Upload the `plugin.js` fil
 - `plugin.js` — The plugin (upload this)
 - `README.md` — This file
 
+### element-pack
+
+**Capabilities:** `canvas:elements`
+
+- Adds an element pack (two catalog services with icons and accents) to the element catalog
+- Adds an SVG shape with `registerShape`
+
+**Files:**
+
+- `plugin.js` — The plugin (upload this)
+- `README.md` — This file
+
 ## How to Install
 
 1. Open Structura
@@ -40,9 +52,10 @@ Simple JavaScript plugins that require no build step. Upload the `plugin.js` fil
 
 ## Capability Reference
 
-| Capability       | Used By        |
-| ---------------- | -------------- |
-| `events:diagram` | console-log    |
-| `diagram:read`   | console-log    |
-| `diagram:write`  | console-log    |
-| `io:importers`   | mermaid-import |
+| Capability        | Used By        |
+| ----------------- | -------------- |
+| `events:diagram`  | console-log    |
+| `diagram:read`    | console-log    |
+| `diagram:write`   | console-log    |
+| `io:importers`    | mermaid-import |
+| `canvas:elements` | element-pack   |
