@@ -2,17 +2,18 @@
   "meta": {
     "project": "Structura — faxina de código morto e rede de regressão",
     "phase": "Execução",
-    "updated": "2026-11-26 16:20",
-    "note": "Faxina (itens 1-10 do plano) commitada em chore/faxina-e-regressao e verificada com suíte completa, lint, format, build, sync-check e cycles:check. Próximo: testes de regressão (RT-010..RT-015) em paralelo.",
+    "updated": "2026-11-26 17:10",
+    "note": "Faxina e os 6 testes de regressão de maior prioridade integrados e verificados na branch (593 arquivos, 5713 testes + 8 it.fails). 8 bugs reais achados pelos testes aguardam decisão. Restam: RT-016..RT-024, Cypress no CI e walkthrough (por último).",
     "baseline": {
-      "commit": "1d9ccd15 (branch)",
-      "test": "582 arquivos / 5286 testes verdes (−3 arquivos e −18 testes do /generate)",
+      "commit": "9fdf8ae8 (branch)",
+      "test": "593 arquivos / 5713 testes verdes + 8 it.fails (bugs fixados)",
       "lint": "0 erros, 7 warnings",
       "format:check": "ok",
+      "typecheck": "0 erros",
       "build": "ok",
       "plugins:sync-check": "ok (4 plugins + extensão)",
       "cycles:check": "ok",
-      "baseline da main (b3595158)": "585 arquivos / 5304 testes; cobertura 69,7% linhas"
+      "main (b3595158)": "585 arquivos / 5304 testes; cobertura 69,7% linhas"
     }
   },
   "cards": [
@@ -799,16 +800,16 @@
       "id": "DC-061",
       "title": "Investigar saveLastEdgeStyle sem chamador (possível bug)",
       "area": "features/diagram/utils",
-      "classification": "MORTO-PROVÁVEL",
+      "classification": "DECISÃO-HUMANA",
       "priority": "média",
       "risk": "médio",
-      "owner": "Sonnet",
-      "evidence": "utils/edge-style.ts:25 saveLastEdgeStyle: só definição e barrel; o par getLastEdgeStyle é usado, então sempre devolve o default",
-      "note": "Pode ser regressão: 'lembrar o último estilo de aresta' parou de gravar. Conferir no histórico antes de remover.",
-      "acceptance": "git log -S saveLastEdgeStyle mostra quando o chamador saiu; decisão: religar (bug) ou remover o par",
-      "column": "backlog",
+      "owner": "humano",
+      "evidence": "git log -S 'saveLastEdgeStyle(' → 0cc57243 'Fix/lint errors (#198)', 2026-09-03: removeu onUpdateEdgeStyle do ConnectionPanel, o único chamador. getLastEdgeStyle segue lido por useCatalogInsert.ts:91 e useCanvasEventHandlers.ts:220, e sempre devolve EdgeStyle.EditableStep.",
+      "note": "'Lembrar o último estilo de aresta' está quebrado há quase 3 meses, sem teste que pegasse.",
+      "acceptance": "Decisão: religar a gravação onde o estilo é trocado hoje (com teste) ou remover get/save e usar o default direto",
+      "column": "decisao",
       "pr": "",
-      "status": ""
+      "status": "confirmado: regressão desde #198"
     },
     {
       "id": "DC-062",
@@ -923,9 +924,9 @@
       "evidence": "9 correções de pushHistory ausente: 38ed79ea (removeService, removeScene, addComponentToScene, addConnectionToScene, removeIconReferences, convertStepToCondition), fbff9f70 (updateFlow, criar/apagar flow), 414aaf95 (duplicar versão clonava draft immer). Não existe guarda genérico (git grep).",
       "note": "Teste tabelado: para cada ação estrutural, chamar, checar que o histórico cresceu e que undo restaura o snapshot. Uma ação nova sem entrada na tabela falha o teste.",
       "acceptance": "Teste falha se pushHistory for removido de qualquer ação listada (mutation check manual em 3 ações)",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 79fa24f1 (27 linhas + meta-guarda; 2 mutações falharam como esperado)"
     },
     {
       "id": "RT-011",
@@ -936,11 +937,11 @@
       "risk": "médio",
       "owner": "Sonnet",
       "evidence": "~12 correções: ac72766c 'never write the workspace before it has been read', 38ed79ea (boot duplo no StrictMode, flush no beforeunload/visibilitychange, LLM salvando durante a hidratação), 8cdf408d (folder map ausente), 5cd0df8e (timestamps ausentes, tipos corrompidos), b3595158 (pedido de conexão com pasta já conectada); cobertura: useFileSystemStorage.ts 0,9%, fileSystemBoot.ts 38%, FileSystemAdapter.ts 51%; IndexedDbAdapter e LocalStorageAdapter sem teste próprio",
-      "note": "Invariantes com InMemoryAdapter e fake-indexeddb: nenhuma escrita antes da leitura, boot único, tolerância a mapa e timestamps ausentes, flush ao esconder a aba.",
+      "note": "Correção do discovery: escrita antes da leitura, flush ao esconder a aba, Saving sem mudança, timestamps ausentes, tipos corrompidos e contrato LocalStorage/IndexedDB já tinham teste (persist.read-before-write, persist.deferred-serialization, validateWorkspaceFile, migrations, storagePort.contract). Os novos cobrem folder map ausente, boot único (fileSystemBoot e StrictMode) e pasta já conectada.",
       "acceptance": "Cada invariante tem teste que falha ao reverter a correção correspondente; cobertura de fileSystemBoot ≥ 70%",
-      "column": "backlog",
-      "pr": "",
-      "status": ""
+      "column": "concluido",
+      "pr": "9fa28310",
+      "status": "verificado: 9fa28310 (9 testes, 4 mutações falharam como esperado)"
     },
     {
       "id": "RT-012",
@@ -953,9 +954,9 @@
       "evidence": "~10 correções: d35b7121 (âncoras e roteamento ortogonal no draw.io), 49416c0b (cloudServiceId no mxGraph, cenas no JSON), 50f2fcd1 (alias @ quebrou a cópia do LeanIX), 322f0d25 (import Mermaid com hook velho), 35f1dda8 (encoding de share URL), ac72766c (validação de share links, sanitização de SVG); não existe nenhum arquivo .drawio/.mmd de fixture; import-drawio tem 2 casos",
       "note": "Pasta __fixtures__ com arquivos reais (drawio de várias origens, mermaid flowchart/sequence, workspace JSON por versão de schema, share URLs) e testes import→export→import estáveis.",
       "acceptance": "≥ 15 fixtures; cada regressão citada reproduzida por uma fixture que falha na versão anterior",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 497095c9 (20 fixtures, 32 testes, 3 mutações falharam como esperado)"
     },
     {
       "id": "RT-013",
@@ -967,9 +968,9 @@
       "owner": "Sonnet",
       "evidence": "~10 correções: ac72766c (ping-pong de seleção, Shift/Cmd alternando duas vezes, chip de multi-seleção, pointerdown repassado pelo painel), 38ed79ea (highlight não limpa ×3, seleção dessincronizada), 5cd0df8e (nó travado não selecionável), fbff9f70 (seleção da gravação); cobertura: useCanvasInteraction.ts 0%, useCanvasEventHandlers.ts 49%, Canvas.tsx 0%; matriz de seleção só em cypress/e2e/selection-behavior-matrix.cy.ts (24 it, fora do CI)",
       "acceptance": "Os 8 cenários acima viram testes de renderHook; selection-behavior-matrix roda no CI (ver RT-020)",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 177a9661 (46 testes; 4 mutações falharam; useCanvasController 0→100%, useCanvasEventHandlers 49→80%)"
     },
     {
       "id": "RT-014",
@@ -982,9 +983,9 @@
       "evidence": "c5c03f6d (teclas no editor de código do plugin viravam atalho, pan do canvas ao digitar no pane opscr), d364c300 (setas controlando a cena em vez da reprodução), c1940fde (encadeamento no guided), 354880fb (atalhos de duplicação); cobertura: useCanvasKeyboard.ts 0%",
       "note": "Tabela de alvo do evento × atalho: input, textarea, contenteditable, Monaco, pane de plugin, dialog aberto. Nenhum atalho do canvas pode disparar fora do canvas.",
       "acceptance": "Tabela cobre todos os atalhos globais; useCanvasKeyboard ≥ 70% de linhas",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 9d46c4eb (313 testes; 2 mutações falharam; useCanvasKeyboard 0→91,5%)"
     },
     {
       "id": "RT-015",
@@ -997,9 +998,9 @@
       "evidence": "5cd0df8e (rebase de coordenadas no setParent, parentId velho no paste), 60d51ec2 #267 (painel pai de si mesmo / ciclos no drag), c5c03f6d (soltar elemento em outro painel reparenta); clipboard.slice.ts tem 99% de linhas, mas os bugs estavam em branches (78%)",
       "note": "Gerar árvores aleatórias e checar: sem ciclos, posição absoluta preservada após reparent, paste remapeia todos os parentIds.",
       "acceptance": "Teste de propriedades com ≥ 200 casos gerados passa e falha ao reverter #267",
-      "column": "backlog",
+      "column": "concluido",
       "pr": "",
-      "status": ""
+      "status": "verificado: 663c6160 (250 seeds; 2 mutações falharam como esperado)"
     },
     {
       "id": "RT-016",
@@ -1171,6 +1172,134 @@
       "evidence": "Depois de 9018a5ca: ir.types.ts, ir-validator.ts, ir-to-layout-graph.ts, apply-ir.ts, ir-to-component.ts só são importados por ~20 testes de canvas/layout e por reference-diagrams.ts/generated-diagrams (fixtures). ir.types.ts segue como catálogo estático do assistente.",
       "note": "Opções: manter em llm/ir; mover para canvas/layout/test-support; ou reescrever os fixtures em formato de diagrama e apagar o IR. Épico de layout desacoplado.",
       "acceptance": "Decisão do dono do épico de layout",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-030",
+      "title": "Corrigir pasteFromClipboard que rebaseia duas vezes uma cadeia aninhada",
+      "area": "diagram store / clipboard",
+      "classification": "bug (it.fails)",
+      "priority": "alta",
+      "risk": "médio",
+      "owner": "humano",
+      "evidence": "src/features/diagram/store/slices/parenting-clipboard.invariants.test.ts:250 it.fails 'pastes a three-level chain at its relative offsets': painel A > painel B > nó C copiados e colados em (1000,1000); C deveria ficar em (1070,1070) e cai longe, porque o segundo loop subtrai o layout do pai já rebaseado",
+      "note": "Bug na main hoje. Corrigir troca it.fails por it e reativa a asserção de offset para cadeias profundas no teste de propriedades.",
+      "acceptance": "it.fails vira it e passa; teste de propriedades sem o skip de cadeias profundas",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-031",
+      "title": "Fazer addVersion e duplicateVersion gravarem histórico",
+      "area": "diagram store / versions",
+      "classification": "bug (it.fails)",
+      "priority": "média",
+      "risk": "baixo",
+      "owner": "humano",
+      "evidence": "src/features/diagram/store/slices/versions.slice.ts:39 duplicateVersion e :66 addVersion sem pushHistory (removeVersion e as demais ações de versão chamam); history-coverage.guard.test.ts KNOWN_GAPS",
+      "acceptance": "pushHistory nas duas; remover do KNOWN_GAPS; guarda verde",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-032",
+      "title": "Decidir se bringToFront, sendToBack e setNodeZIndex entram no undo",
+      "area": "diagram store / layout",
+      "classification": "DECISÃO-HUMANA",
+      "priority": "baixa",
+      "risk": "baixo",
+      "owner": "humano",
+      "evidence": "history-coverage.guard.test.ts EXEMPT 'possible gap': as três escrevem layout sem checkpoint",
+      "acceptance": "Decisão registrada; se sim, checkpoint + mover para MUST_PUSH",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-033",
+      "title": "Bloquear o auto-layout (Cmd+Shift+L) com overlay aberto",
+      "area": "canvas/hooks/keyboard",
+      "classification": "bug (it.fails)",
+      "priority": "média",
+      "risk": "baixo",
+      "owner": "humano",
+      "evidence": "canvasKeydownGates.ts handleAutoLayoutShortcut ignora isCanvasOverlayOpen; useCanvasKeyboard.test.tsx it.fails 'an overlay layer also blocks auto layout'",
+      "note": "Riscos a avaliar no mesmo card: Cmd+F, Cmd+/, Cmd+D, Cmd+K, Cmd+P e Cmd+B disparam ações do canvas enquanto se digita no Monaco do plugin (conflita com find/comment do Monaco); Delete/Backspace/Esc de um controle dentro do pane de plugin ou de menu aberto são capturados pelo canvas.",
+      "acceptance": "it.fails vira it; decisão sobre os atalhos Mod dentro do Monaco",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-034",
+      "title": "Manter o highlight da aresta clicada a partir de uma seleção de nó",
+      "area": "canvas/hooks (seleção)",
+      "classification": "bug (it.fails, suspeito)",
+      "priority": "baixa",
+      "risk": "baixo",
+      "owner": "humano",
+      "evidence": "useCanvasVisualState.ts: efeito de 38ed79ea limpa o highlight quando selectedNodeId muda; onEdgeClick define o highlight e zera selectedNodeId no mesmo batch; useCanvasController.selection.test.tsx it.fails 'an edge click from a node selection keeps the edge's highlight'",
+      "acceptance": "Confirmar no app; se for bug, it.fails vira it",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-035",
+      "title": "Corrigir o reimport do próprio export AWS para draw.io",
+      "area": "lib/export-service (import-drawio)",
+      "classification": "bug (it.fails)",
+      "priority": "alta",
+      "risk": "médio",
+      "owner": "humano",
+      "evidence": "Desde 49416c0b o nó AWS com cloudServiceId sai como <object><mxCell/></object> e o mxCell interno não tem id; import-drawio.ts collectMxCellVertices o descarta como aws:missing-id; src/lib/export-service/fixtures.drawio.test.ts it.fails",
+      "acceptance": "Round-trip export→import do fixture cloud-service-id preserva os nós AWS",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-036",
+      "title": "Importar arquivos draw.io comprimidos (padrão do draw.io desktop)",
+      "area": "lib/export-service (import-drawio)",
+      "classification": "bug (it.fails)",
+      "priority": "alta",
+      "risk": "baixo",
+      "owner": "humano",
+      "evidence": "__fixtures__/drawio/desktop-compressed.drawio (deflate-raw) importa vazio: o importer só lê mxGraphModel inline; fixtures.drawio.test.ts it.fails",
+      "acceptance": "Fixture comprimido importa os mesmos nós do não comprimido",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-037",
+      "title": "Migrar arquivo de diagrama legado sem envelope $schema",
+      "area": "infrastructure/persistence (validateDiagramFile)",
+      "classification": "bug (it.fails)",
+      "priority": "média",
+      "risk": "médio",
+      "owner": "humano",
+      "evidence": "validateDiagramFile não migra arquivo legado sem $schema: type corrompido e campos antigos de conexão chegam ao store; com envelope a migração roda; workspace-fixtures.test.ts it.fails (fixture diagram-legacy-v0)",
+      "acceptance": "Fixture legado sem envelope sai migrado igual ao com envelope",
+      "column": "decisao",
+      "pr": "",
+      "status": ""
+    },
+    {
+      "id": "RT-038",
+      "title": "Decidir suporte a subgraph no import de Mermaid flowchart",
+      "area": "diagram/utils (import-mermaid-flowchart)",
+      "classification": "DECISÃO-HUMANA",
+      "priority": "baixa",
+      "risk": "baixo",
+      "owner": "humano",
+      "evidence": "__fixtures__/mermaid/flowchart-subgraph.mmd: linhas subgraph viram erro de parse e os nós entram sem painel; travado como comportamento atual",
+      "acceptance": "Decisão: mapear subgraph para painel ou manter",
       "column": "decisao",
       "pr": "",
       "status": ""
