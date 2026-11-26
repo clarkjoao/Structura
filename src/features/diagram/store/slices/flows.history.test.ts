@@ -288,6 +288,18 @@ describe("a whole flow coming or going is one undo step", () => {
     expect(store.getState().past.length - before).toBe(1);
   });
 
+  it("marks the diagram as changed when a flow is added to it (38ed79ea)", () => {
+    const store = createTestDiagramStore();
+    const diagram = store.getState().addDiagram("Touch", "context");
+    store.getState().openDiagram(diagram.id);
+    vi.setSystemTime(Date.now() + 60_000);
+    const before = store.getState().diagrams[diagram.id]!.updatedAt;
+
+    store.getState().addFlow(diagram.id, "Touched", "");
+
+    expect(store.getState().diagrams[diagram.id]!.updatedAt).toBeGreaterThan(before);
+  });
+
   it("records nothing for a flow added to a diagram nobody is looking at", () => {
     const store = createTestDiagramStore();
     const open = store.getState().addDiagram("Open", "context");

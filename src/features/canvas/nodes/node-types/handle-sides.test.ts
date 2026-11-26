@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Position } from "@xyflow/react";
-import { handleSides, isSideAlongHeight } from "./handle-sides";
+import { handleSides, isSideAlongHeight, middleOfSideStyle } from "./handle-sides";
 import { BOTTOM_SOURCE_HANDLE_ID, sidesFromHandles, TOP_TARGET_HANDLE_ID } from "./handle-spec";
 
 describe("handleSides", () => {
@@ -41,5 +41,22 @@ describe("sidesFromHandles", () => {
       targetSide: "left",
     });
     expect(sidesFromHandles("source-0", "target-0", "TB")).toEqual({});
+  });
+});
+
+describe("middleOfSideStyle", () => {
+  it("centres a marker on its side's border, half outside the node (f7466213)", () => {
+    expect(middleOfSideStyle(Position.Right)).toEqual({
+      top: "50%",
+      right: 0,
+      transform: "translate(50%, -50%)",
+    });
+    expect(middleOfSideStyle(Position.Bottom)).toEqual({
+      left: "50%",
+      bottom: 0,
+      transform: "translate(-50%, 50%)",
+    });
+    expect(middleOfSideStyle(Position.Left).transform).toBe("translate(-50%, -50%)");
+    expect(middleOfSideStyle(Position.Top).transform).toBe("translate(-50%, -50%)");
   });
 });
