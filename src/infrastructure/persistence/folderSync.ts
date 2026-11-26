@@ -2,7 +2,7 @@
  * Bidirectional folder synchronization helpers.
  *
  * Core sync lives in:
- * - `FileSystemAdapter.scanDirectoryStructure` / `createDirectory` / `deleteDirectory`
+ * - `FileSystemAdapter.scanDirectoryStructure` / `createDirectory`
  * - `fileSystemBoot.syncFoldersFromFilesystem` (and the diagram flush path for
  *   store → FS directory creation — there is no separate folder watcher)
  *
