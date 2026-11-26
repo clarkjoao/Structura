@@ -35,8 +35,6 @@ import { recordFolderSyncSuccess } from "./folderSyncTimestamp";
 import { WORKSPACE_SCHEMA_VERSION as WORKSPACE_VERSION } from "./versions";
 import { useFolderSyncStatusStore, type FolderSyncStatusSetters } from "./folderSyncStatus.store";
 
-export type { FsStatus } from "./folderSyncStatus.store";
-
 export const isFileSystemSupported = "showDirectoryPicker" in globalThis;
 
 function buildManifest(state: ReturnType<typeof useDiagramStore.getState>) {

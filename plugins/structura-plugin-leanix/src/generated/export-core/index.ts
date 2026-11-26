@@ -14,12 +14,11 @@
  * to `buildMxGraphXml`.
  */
 
-export { buildMxGraphXml, type MxGraphWrapper } from "./build";
+export { buildMxGraphXml } from "./build";
 export type {
   ExportModel,
   ExportDecorations,
   ExportNode,
-  ExportNodeKind,
   ExportEdge,
   ExportEdgeStyle,
   ExportStrokeStyle,
