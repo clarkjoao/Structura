@@ -19,6 +19,11 @@ export type NodeData = {
   serviceId?: string;
   serviceName?: string;
   linkedDiagramName?: string;
+  /**
+   * What the card links to, set while a flow plays too (`linkedDiagramName` is
+   * not): part of what the card holds, so editing it releases `laidOutMinHeight`.
+   */
+  linkedDiagramId?: string;
   externalLinks?: ExternalLink[];
   onDrillDown?: (elementId: string) => void;
   onEmbed?: (elementId: string) => void;
@@ -42,7 +47,7 @@ export type NodeData = {
    * The height auto-layout measured this card at, as a floor it cannot fall
    * below. Lives on the card itself, not on React Flow's wrapper, because the
    * handles are positioned against this box — see `laidOutMinHeight` in
-   * `buildCardNodeData`.
+   * `buildCardNodeData`. Applied on every surface but compare mode.
    */
   laidOutMinHeight?: number;
   versionBadge?: { name: string; color: string };

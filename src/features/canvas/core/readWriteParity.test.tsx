@@ -102,7 +102,8 @@ function parityDiagram(): Diagram {
       p2: { elementId: "p2", x: 20, y: 160 },
       Q: { elementId: "Q", x: 600, y: 0, zIndex: 3, width: 400, height: 300 },
       q1: { elementId: "q1", x: 40, y: 80 },
-      x: { elementId: "x", x: 1200, y: 100 },
+      // Laid out taller than a bare card's content, as ELK's boxes come back.
+      x: { elementId: "x", x: 1200, y: 100, width: 260, height: 180 },
       h: { elementId: "h", x: 1200, y: 400 },
     },
     edgeLayouts: {
@@ -225,7 +226,11 @@ function writeProjection(diagram: Diagram) {
 /** What the reader sees of a node: where, how big, how stacked, nested in what, and whether at all. */
 function nodeShape(node: Node) {
   const style = (node.style ?? {}) as { width?: unknown; height?: unknown };
-  const data = node.data as { incomingCount?: unknown; outgoingCount?: unknown };
+  const data = node.data as {
+    incomingCount?: unknown;
+    outgoingCount?: unknown;
+    laidOutMinHeight?: unknown;
+  };
   return {
     position: node.position,
     zIndex: node.zIndex,
@@ -234,6 +239,8 @@ function nodeShape(node: Node) {
     hidden: Boolean(node.hidden),
     width: style.width,
     height: style.height,
+    // A card is content-sized; the height it declares is its floor (RT-041).
+    laidOutMinHeight: data.laidOutMinHeight,
     incomingCount: data.incomingCount,
     outgoingCount: data.outgoingCount,
   };
@@ -297,6 +304,16 @@ describe("editor and viewer project one diagram the same way", () => {
     expect(read.q1?.hidden).toBe(false);
     expect(read.h?.hidden).toBe(true);
     expect(read.n).toBeUndefined();
+  });
+
+  it("declares the height the layout gave a card on both sides, not its content's", () => {
+    // RT-041: the editor left the floor off, drew the card at its content
+    // height and routed every edge off the corridor the viewer still followed.
+    const diagram = parityDiagram();
+    const write = byId(writeProjection(diagram).nodes);
+    const read = byId(projectReadDiagram(diagram).nodes);
+    expect((write.x?.data as { laidOutMinHeight?: number }).laidOutMinHeight).toBe(180);
+    expect((read.x?.data as { laidOutMinHeight?: number }).laidOutMinHeight).toBe(180);
   });
 
   it("stacks nodes in the order the author chose", () => {

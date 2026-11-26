@@ -26,6 +26,7 @@ import {
 } from "../models/panelParenting";
 import { getCachedCanvasSnapshot, canMoveNodeInSceneMode } from "@/features/diagram";
 import { getNodeType } from "../utils/node-type-utils";
+import { isCardExpanded } from "../nodes/CardNode/expandedCards";
 import { toast } from "sonner";
 import i18n from "@/infrastructure/i18n";
 
@@ -425,6 +426,9 @@ export function useNodeDragParenting({
       if (!change.resizing && measured && isCompactContainer(measured)) return;
       // Nor is a tab's: its box is derived from the compact parent it sits on.
       if (measured && isShownAsTab(measured, r.components)) return;
+      // Nor an expanded card's: the expansion passes, and the stored height is
+      // the floor the card declares — written, it would never shrink back.
+      if (!change.resizing && isCardExpanded(change.id)) return;
       // React Flow measures with offsetWidth/offsetHeight, which are whole
       // pixels: a node stored at 933.333 measures 933. Writing that back moved
       // the store off what the canvas draws, and every reader of the store (the

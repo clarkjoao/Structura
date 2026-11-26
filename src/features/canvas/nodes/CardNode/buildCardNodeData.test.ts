@@ -68,11 +68,12 @@ describe("buildCardNodeData reserves the height the layout assumed", () => {
     expect(data.laidOutMinHeight).toBe(174);
   });
 
-  // The editor writes what it measures back into the layout. A floor there is
-  // fed by its own measurement: a card that grew while selected (a long
-  // description) came back at the grown height and could never shrink.
-  it("does not floor the card in the editor otherwise", () => {
-    expect(buildCardNodeData(container, ctxWithLayout(174)).laidOutMinHeight).toBeUndefined();
+  // RT-041: the editor left the floor off and drew the card at its content
+  // height, so the two surfaces disagreed on the box and on every route. The
+  // ratchet that made it leave the floor off is closed where it happens
+  // (`expandedCards`, the content release in `CardNode`), not by a second rule here.
+  it("floors the card in the editor too", () => {
+    expect(buildCardNodeData(container, ctxWithLayout(174)).laidOutMinHeight).toBe(174);
   });
 
   it("leaves a card the layout never sized to its content", () => {
