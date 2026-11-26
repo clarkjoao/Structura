@@ -452,11 +452,6 @@ export function restoreElement(
   );
 }
 
-/** Whether the workspace already has this edge (same ends and type). */
-export function hasEdge(files: readonly SourceText[], edge: Omit<EdgeMatch, "n">): boolean {
-  return countEdges(files, edge) > 0;
-}
-
 /** A name the editor can rename (F2): a manifest's `metadata.name`, or an edge end's `id`. */
 export interface NameAt {
   ref: ElementRef;

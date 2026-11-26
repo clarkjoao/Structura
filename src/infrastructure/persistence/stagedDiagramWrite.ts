@@ -32,10 +32,3 @@ export function getTempFileName(diagramId: string): string {
 export function isTempFile(name: string): boolean {
   return name.endsWith(TEMP_FILE_SUFFIX);
 }
-
-/**
- * Converts a temp filename back to its final form, e.g. "abc123.json.tmp" → "abc123.json"
- */
-export function getFinalFileName(tempName: string): string {
-  return tempName.slice(0, -TEMP_FILE_SUFFIX.length);
-}

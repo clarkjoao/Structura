@@ -176,15 +176,6 @@ export function replaceDocument(text: string, doc: ParsedDocument, source: strin
   return { start, end, insert: `${body}\n${trailing.replace(/[^\n]/g, "")}` };
 }
 
-/** Cuts document `index`; the first document also takes the next one's `---` marker. */
-export function cutDocument(
-  text: string,
-  docs: readonly ParsedDocument[],
-  index: number,
-): TextEdit {
-  return cutDocuments(text, docs, [index])[0]!;
-}
-
 /**
  * Cuts several documents, one edit per run of adjacent ones. A run the file starts with, when
  * its first document has no `---` marker, also takes the marker of the document after it — so

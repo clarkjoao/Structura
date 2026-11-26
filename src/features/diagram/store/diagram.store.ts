@@ -271,78 +271,6 @@ const selectDiagramActions = pickFromStore([
   "deleteUserTemplate",
 ]);
 
-const selectComponentActions = pickFromStore([
-  "addComponent",
-  "addComponentConnectedFrom",
-  "addSharedRef",
-  "routeConnectionThroughRef",
-  "updateComponent",
-  "batchUpdateComponents",
-  "removeComponent",
-  "removeElements",
-  "groupNodes",
-  "ungroupNodes",
-  "updateHandleOrder",
-  "addExternalLink",
-  "updateExternalLink",
-  "removeExternalLink",
-]);
-
-const selectConnectionActions = pickFromStore([
-  "addConnection",
-  "updateConnection",
-  "removeConnection",
-  "swapConnectionDirection",
-]);
-
-const selectLayoutActions = pickFromStore([
-  "updateNodeLayout",
-  "batchUpdateNodeLayouts",
-  "updateViewport",
-  "setEdgeControlPoints",
-  "addEdgeControlPoint",
-  "removeEdgeControlPoint",
-  "resetEdgeControlPoints",
-  "setEdgeLabelOffset",
-  "bringToFront",
-  "sendToBack",
-  "setNodeZIndex",
-  "alignNodes",
-  "distributeNodes",
-  "fitGroupToChildren",
-  "applyAutoLayout",
-  "batchCommitNodeDrag",
-  "setParent",
-]);
-
-const selectVersionActions = pickFromStore([
-  "addVersion",
-  "duplicateVersion",
-  "removeVersion",
-  "mergeVersionIntoBase",
-  "setVersionStatus",
-  "carryActiveVersionKey",
-  "removeVersionByKey",
-  "setActiveVersionByKey",
-  "keepVersionCopy",
-  "takeBaseVersion",
-  "setActiveVersion",
-  "setCompareVersion",
-  "renameVersion",
-  "addComponentToVersion",
-  "removeComponentFromVersion",
-  "addConnectionToVersion",
-  "removeConnectionFromVersion",
-  "updateVersionNodeLayout",
-]);
-
-const selectClipboardActions = pickFromStore([
-  "copyToClipboard",
-  "pasteFromClipboard",
-  "clearClipboard",
-  "hydrateClipboard",
-]);
-
 const selectIconActions = pickFromStore([
   "addIcon",
   "removeIcon",
@@ -361,16 +289,6 @@ const selectServiceActions = pickFromStore([
 export const useDiagramActions = () => useDiagramStore(selectDiagramActions);
 
 // --- Domain-scoped action hooks ---
-
-export const useComponentActions = () => useDiagramStore(selectComponentActions);
-
-export const useConnectionActions = () => useDiagramStore(selectConnectionActions);
-
-export const useLayoutActions = () => useDiagramStore(selectLayoutActions);
-
-export const useVersionActions = () => useDiagramStore(selectVersionActions);
-
-export const useClipboardActions = () => useDiagramStore(selectClipboardActions);
 
 export const useIconActions = () => useDiagramStore(selectIconActions);
 

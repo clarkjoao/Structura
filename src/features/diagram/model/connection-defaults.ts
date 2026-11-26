@@ -130,7 +130,3 @@ export function getEffectiveConnectionStyle(conn: Connection): EffectiveConnecti
     animated: s?.animated ?? fromIntent?.animated ?? false,
   };
 }
-
-export function getIntentDefault(intent: ConnectionIntent): ConnectionStyle {
-  return { ...INTENT_DEFAULTS[intent] };
-}

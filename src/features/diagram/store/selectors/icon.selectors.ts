@@ -38,7 +38,3 @@ export const useComponentIcon = (componentId: string): IconDefinition | null => 
 
   return icon;
 };
-
-/** Aliases for the global icon library (same implementation, different name). */
-export const useGlobalIconLibrary = useIconLibrary;
-export const useGlobalIconById = useIconById;

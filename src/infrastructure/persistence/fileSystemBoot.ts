@@ -176,10 +176,6 @@ export function hasReconnected(): boolean {
   return _reconnected;
 }
 
-export function getReconnectPromise(): Promise<boolean> | null {
-  return _reconnecting;
-}
-
 async function clearLocalCache(): Promise<void> {
   await workspaceStorage.delete(PERSIST_KEY);
   clearLocalStorageDiagramSyncTimestamp();

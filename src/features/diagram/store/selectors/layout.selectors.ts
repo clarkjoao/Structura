@@ -11,9 +11,3 @@ export const useEdgeControlPoints = (connectionId: string): EdgeControlPoint[] =
       return diagram?.edgeLayouts[connectionId]?.points ?? EMPTY_CONTROL_POINTS;
     }),
   );
-
-export const useEdgeLabelOffset = (connectionId: string): number | undefined =>
-  useDiagramStore((state) => {
-    const diagram = state.diagrams[state.activeDiagramId ?? ""];
-    return diagram?.edgeLayouts[connectionId]?.labelOffset;
-  });
