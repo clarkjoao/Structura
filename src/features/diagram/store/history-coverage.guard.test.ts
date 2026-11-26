@@ -126,13 +126,11 @@ const MUST_PUSH: Record<string, Row> = {
     setup: (f) => {
       const id = comp(f, "A");
       return () =>
-        f.store
-          .getState()
-          .addExternalLink(id, {
-            label: "docs",
-            url: "https://example.com",
-            type: ExternalLinkType.Generic,
-          });
+        f.store.getState().addExternalLink(id, {
+          label: "docs",
+          url: "https://example.com",
+          type: ExternalLinkType.Generic,
+        });
     },
   },
   // 38ed79ea: removeService forgot pushHistory. Undo puts the components' serviceId back.
