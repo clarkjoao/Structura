@@ -98,15 +98,29 @@ describe("draw.io fixtures: import -> export -> import is stable", () => {
     expect(xml).toContain('cloudServiceId="s3"');
   });
 
-  // Bug found while building the corpus: since 49416c0b an AWS node with a cloudServiceId is
-  // exported as <object cloudServiceId><mxCell/></object>, and the inner mxCell has no id, so the
-  // importer skips it ("aws:missing-id"). Structura cannot re-import its own AWS export.
-  it.fails("re-imports an AWS node that Structura exported with cloudServiceId", () => {
+  // Since 49416c0b an AWS node with a cloudServiceId is exported as
+  // <object id cloudServiceId><mxCell/></object>: the id lives on the wrapper (RT-035).
+  it("re-imports an AWS node that Structura exported with cloudServiceId", () => {
     const first = importFile("aws-native");
     const r = parseDrawioXml(exportDrawio(diagramFrom(first), {}), origin, {});
     const lambda = r.components.find((c) => c.name === "Orders function") as
       { cloudServiceId?: string } | undefined;
     expect(lambda?.cloudServiceId).toBe("lambda");
+  });
+
+  it("reads wrapped <object>/<UserObject> vertices and edges generally", () => {
+    const cell = (extra: string, geom = "") => `<mxCell ${extra}>${geom}</mxCell>`;
+    const xml =
+      `<mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>` +
+      `<object label="A" id="a" owner="x">${cell('style="shape=mxgraph.aws4.productIcon;prIcon=mxgraph.aws4.s3;" vertex="1" parent="1"', '<mxGeometry x="0" y="0" width="60" height="60" as="geometry"/>')}</object>` +
+      `<UserObject label="B" id="b">${cell('style="shape=mxgraph.aws4.productIcon;prIcon=mxgraph.aws4.lambda;" vertex="1" parent="1"', '<mxGeometry x="200" y="0" width="60" height="60" as="geometry"/>')}</UserObject>` +
+      `<object label="calls" id="e">${cell('edge="1" source="a" target="b" parent="1"')}</object>` +
+      `</root></mxGraphModel>`;
+    const r = parseDrawioXml(xml, origin, {});
+    expect(names(r.components)).toEqual(["A", "B"]);
+    expect(r.connections).toHaveLength(1);
+    expect(r.connections[0]!.label).toBe("calls");
+    expect(r.skipped).toEqual([]);
   });
 
   it("not XML at all imports as nothing instead of throwing", () => {
