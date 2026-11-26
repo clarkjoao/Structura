@@ -2064,7 +2064,13 @@
       "unknownDiagramType": "Unrecognized diagram type. Start with sequenceDiagram or flowchart.",
       "detectedSequence": "Sequence diagram detected",
       "detectedFlowchart": "Flowchart detected",
-      "layoutError": "Could not arrange the elements. Adjust them manually."
+      "layoutError": "Could not arrange the elements. Adjust them manually.",
+      "warnings": {
+        "subgraphDirectionIgnored": "{{count}} subgraph direction line(s) were ignored; the diagram keeps its own direction.",
+        "subgraphEdgeInside": "Edge {{source}} to {{target}} was skipped: a subgraph cannot be connected to its own contents.",
+        "subgraphUnclosed": "{{count}} subgraph(s) are missing an end line; they were closed at the end of the text.",
+        "subgraphStrayEnd": "An end line with no open subgraph was ignored."
+      }
     },
     "copyDrawio": "Copy to Drawio",
     "shortcuts": "Shortcuts",

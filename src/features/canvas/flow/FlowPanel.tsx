@@ -309,6 +309,9 @@ const FlowPanel = ({
       }
 
       const createdIds = importDrawioResult(plan.newComponents, plan.newConnections, plan.layouts);
+      for (const warning of plan.warnings) {
+        toast.info(t(`flows.importDialog.warnings.${warning.key}`, warning.params));
+      }
       if (createdIds.length > 0) {
         const connectionIds = plan.newConnections.map((c) => c.id);
         preselectAfterImport(createdIds, connectionIds, {

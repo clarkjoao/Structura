@@ -39,13 +39,16 @@ describe("mermaid fixtures", () => {
     expect(lr.direction).toBe("LR");
   });
 
-  // Subgraphs are not modelled yet: the nodes and edges still import, and the unparsed lines are
-  // reported rather than silently dropped.
-  it("flowchart-subgraph.mmd: nodes and edges import, subgraph lines are reported", () => {
+  it("flowchart-subgraph.mmd: the subgraph becomes a panel holding its nodes", () => {
     const plan = parseMermaidFlowchart(fixture("mermaid/flowchart-subgraph.mmd"), {}, {}, origin);
-    expect(plan.newComponents.map((c) => c.name).sort()).toEqual(["API", "User", "Worker"]);
+    expect(plan.errors).toEqual([]);
+    expect(plan.warnings).toEqual([]);
+    const panel = byName(plan.newComponents, "Backend");
+    expect(panel.type).toBe("panel");
+    expect(byName(plan.newComponents, "API").parentId).toBe(panel.id);
+    expect(byName(plan.newComponents, "Worker").parentId).toBe(panel.id);
+    expect(byName(plan.newComponents, "User").parentId).toBeNull();
     expect(plan.newConnections).toHaveLength(2);
-    expect(plan.errors.some((e) => e.includes("subgraph Backend"))).toBe(true);
   });
 
   it("sequence.mmd and sequence-box.mmd: participants, calls and the box as a panel", () => {
@@ -112,5 +115,32 @@ describe("scoped layout after a mermaid import", () => {
     expect(fresh).toBe(true);
     expect(applied).toHaveLength(1);
     expect(applied[0]!.map((l) => l.elementId).sort()).toEqual([...nodeIds].sort());
+  });
+
+  it("sizes a subgraph panel to contain its members after the scoped layout", async () => {
+    const plan = parseMermaidFlowchart(fixture("mermaid/flowchart-subgraph.mmd"), {}, {}, origin);
+    const applied: AppliedLayout[][] = [];
+    const ok = await layoutScopedNodes({
+      nodeIds: plan.newComponents.map((c) => c.id),
+      connectionIds: plan.newConnections.map((c) => c.id),
+      nodeLayouts: Object.fromEntries(plan.layouts.map((l) => [l.elementId, l])),
+      anchor: origin,
+      activeDiagramId: null,
+      direction: plan.direction,
+      applyAutoLayout: (layouts: AppliedLayout[]) => void applied.push(layouts),
+      components: record(plan.newComponents),
+      connections: record(plan.newConnections),
+    });
+    expect(ok).toBe(true);
+    const out = new Map(applied[0]!.map((l) => [l.elementId, l]));
+    const panel = out.get(byName(plan.newComponents, "Backend").id)!;
+    for (const name of ["API", "Worker"]) {
+      const child = out.get(byName(plan.newComponents, name).id)!;
+      // Children are positioned relative to the panel.
+      expect(child.x).toBeGreaterThanOrEqual(0);
+      expect(child.y).toBeGreaterThanOrEqual(0);
+      expect(child.x + (child.width ?? 0)).toBeLessThanOrEqual(panel.width ?? 0);
+      expect(child.y + (child.height ?? 0)).toBeLessThanOrEqual(panel.height ?? 0);
+    }
   });
 });

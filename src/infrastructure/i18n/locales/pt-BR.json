@@ -2064,7 +2064,13 @@
       "unknownDiagramType": "Tipo de diagrama não reconhecido. Comece com sequenceDiagram ou flowchart.",
       "detectedSequence": "Diagrama de sequência detectado",
       "detectedFlowchart": "Fluxograma detectado",
-      "layoutError": "Não foi possível organizar os elementos. Ajuste manualmente."
+      "layoutError": "Não foi possível organizar os elementos. Ajuste manualmente.",
+      "warnings": {
+        "subgraphDirectionIgnored": "{{count}} linha(s) de direção de subgraph foram ignoradas; o diagrama mantém a própria direção.",
+        "subgraphEdgeInside": "A aresta {{source}} para {{target}} foi ignorada: um subgraph não pode se conectar ao próprio conteúdo.",
+        "subgraphUnclosed": "{{count}} subgraph(s) sem linha end; foram fechados no fim do texto.",
+        "subgraphStrayEnd": "Uma linha end sem subgraph aberto foi ignorada."
+      }
     },
     "copyDrawio": "Copiar para Drawio",
     "shortcuts": "Atalhos",

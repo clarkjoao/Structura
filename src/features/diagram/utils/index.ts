@@ -22,7 +22,7 @@ export { stepsToMermaid, parseMermaidToSteps } from "./flow-mermaid";
 export { parseMermaidSequence } from "./import-mermaid-sequence";
 export type { MermaidImportPlan } from "./import-mermaid-sequence";
 export { parseMermaidFlowchart } from "./import-mermaid-flowchart";
-export type { FlowchartImportPlan } from "./import-mermaid-flowchart";
+export type { FlowchartImportPlan, FlowchartImportWarning } from "./import-mermaid-flowchart";
 
 export {
   getStepById,
