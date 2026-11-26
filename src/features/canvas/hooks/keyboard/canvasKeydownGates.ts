@@ -79,7 +79,7 @@ export function handleAutoLayoutShortcut(
   if (!isModKeyPressed(event) || !event.shiftKey || event.altKey) return false;
   if (!keyMatchesLetterOrCode(event, KEY.L, "KeyL")) return false;
   claimShortcutEvent(event);
-  if (!isCanvasEditingLocked(flags) && !flags.isCanvasLocked) {
+  if (!isCanvasEditingLocked(flags) && !flags.isCanvasLocked && !isCanvasOverlayOpen(flags)) {
     onAutoLayout?.();
   }
   return true;

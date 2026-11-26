@@ -319,10 +319,7 @@ describe("useCanvasKeyboard shortcut scope", () => {
     expect(spies.removeElements).not.toHaveBeenCalled();
   });
 
-  // BUG on current code: handleAutoLayoutShortcut checks only the mode locks, not
-  // isCanvasOverlayOpen, so Cmd+Shift+L re-arranges the diagram behind an open catalog /
-  // quick insert while Cmd+S and every edit chord stand down. Remove `.fails` when fixed.
-  it.fails("an overlay layer also blocks auto layout", async () => {
+  it("an overlay layer also blocks auto layout", async () => {
     const { spies } = setup();
     el("div", { "data-canvas-overlay": "open" });
     await press(el("div", { class: "react-flow__pane" }), "l", { metaKey: true, shiftKey: true });
