@@ -168,7 +168,6 @@ export { contrastLabelColor, accentTextColor, tintOver, parseCssColorToRgb } fro
 
 export {
   apiGroupFlows,
-  endpointCallers,
   endpointCallersByRoute,
   endpointFlows,
   endpointLabel,
