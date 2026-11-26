@@ -12,9 +12,7 @@ import {
 } from "../edges/connectionDerivations";
 import { MAX_HANDLES } from "../canvas.constants";
 import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
-import { buildGeneratedGraphInputs } from "@/features/llm/ir/apply-ir";
-import { REFERENCE_DIAGRAMS, labelsOf } from "./reference-diagrams";
+import { fixtureGraph, REFERENCE_DIAGRAMS, labelsOf } from "./reference-diagrams";
 import { handPlacedDiagram } from "./hand-placed-diagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
@@ -22,14 +20,14 @@ import type { Component, Connection, NodeLayout } from "@/features/diagram";
 /**
  * The toolbar Auto Layout path, measured end to end.
  *
- * `layoutReadability.baseline.test.ts` measures the LLM route
- * (`irToLayoutGraph`). This covers the other consumer: a diagram that already
+ * `layoutReadability.baseline.test.ts` measures a fixture laid out
+ * straight from the graph (`fixtureGraph`). This covers the other consumer: a diagram that already
  * exists in the store, driven through `fromDiagram` -> `layout` ->
  * `applyAutoLayout` with the real store actions, and counted through the real
  * `buildEdgeHandleAssignments` — so the number is what the canvas would draw,
  * not what a mirror of it would.
  *
- * Why it matters more here than on the IR route: the button always writes ELK's
+ * Why it matters more here than on the plain fixture layout: the button always writes ELK's
  * routed waypoints as control points. With round-robin handles those control
  * points start and end nowhere near the handle the edge actually leaves from,
  * which is where most of the "before" crossings come from.
@@ -247,26 +245,29 @@ function measureRendered(
 async function seedReferenceDiagram(
   store: Store,
   name: string,
-  ir: (typeof REFERENCE_DIAGRAMS)[number]["ir"],
+  fixture: (typeof REFERENCE_DIAGRAMS)[number]["diagram"],
 ): Promise<{ diagramId: string; labels: Map<string, string> }> {
-  const diagram = store.getState().addDiagram(name, "container");
-  store.getState().openDiagram(diagram.id);
+  // The fixture is laid out once and imported with those positions, panels
+  // sized to hold their children and leaves on their intrinsic size: the
+  // diagram starts as a first generation would have left it, on round-robin
+  // handles with no stored routes.
+  const { boxes } = await layout(fixtureGraph(fixture));
+  const nodeLayouts: Record<string, NodeLayout> = {};
+  for (const [id, component] of Object.entries(fixture.snapshot.components)) {
+    const box = boxes.get(id);
+    nodeLayouts[id] = {
+      elementId: id,
+      x: box?.x ?? 0,
+      y: box?.y ?? 0,
+      ...(component.type === "panel" && box !== undefined
+        ? { width: box.width, height: box.height }
+        : {}),
+    };
+  }
+  const imported = store.getState().importDiagram({ ...fixture, name, nodeLayouts });
+  store.getState().openDiagram(imported.id);
 
-  // Seeded exactly the way `applyIRToDiagram` does, minus the handleOrder and
-  // waypoint writes: the diagram starts on round-robin handles.
-  const { boxes } = await layout(irToLayoutGraph(ir));
-  const { nodes, edges } = buildGeneratedGraphInputs(ir, boxes, { x: 0, y: 0 });
-  const inserted = store.getState().insertGeneratedGraph(nodes, edges);
-
-  const labels = new Map<string, string>();
-  const irLabels = labelsOf(ir);
-  ir.edges.forEach((edge, index) => {
-    const connectionId = inserted.connectionIds[index];
-    const text = irLabels.get(edge.id);
-    if (connectionId !== undefined && text !== undefined) labels.set(connectionId, text);
-  });
-
-  return { diagramId: diagram.id, labels };
+  return { diagramId: imported.id, labels: labelsOf(fixture) };
 }
 
 function seedHandPlaced(store: Store): { diagramId: string; labels: Map<string, string> } {
@@ -309,9 +310,9 @@ interface LayoutCase {
 }
 
 const CASES: LayoutCase[] = [
-  ...REFERENCE_DIAGRAMS.map(({ name, ir }) => ({
+  ...REFERENCE_DIAGRAMS.map(({ name, diagram }) => ({
     name,
-    seed: (store: Store) => seedReferenceDiagram(store, name, ir),
+    seed: (store: Store) => seedReferenceDiagram(store, name, diagram),
   })),
   { name: "Hand-placed (out of flow)", seed: async (store: Store) => seedHandPlaced(store) },
 ];
@@ -423,10 +424,10 @@ describe("toolbar auto layout writes ELK's handle order", () => {
    * same store action must move it.
    */
   it("responds to the ordering it is fed", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
       pinIds();
       const store = createTestDiagramStore();
-      const { diagramId, labels } = await seedReferenceDiagram(store, name, ir);
+      const { diagramId, labels } = await seedReferenceDiagram(store, name, diagram);
       const { graph, result } = await pressAutoLayout(store, diagramId);
 
       writeHandleOrder(store, graph, result);

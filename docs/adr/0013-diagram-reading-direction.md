@@ -166,7 +166,7 @@ Step 3 shipped as `diagram-direction-interchange`:
 - **Mermaid flowchart import.** `TD`/`TB` (and `BT`, approximated) read top-to-bottom. The
   header's direction becomes the diagram's only when the import is the whole diagram; into a
   diagram with content, the import follows that diagram, with a notice.
-- **Assistant.** The IR gains an optional `direction`. An invalid value is dropped, not
+- **Assistant.** (Removed with `/generate` and the IR, DC-070.) The IR gains an optional `direction`. An invalid value is dropped, not
   rejected, and it is honoured under the same whole-diagram rule.
 - **Imports.** An imported diagram's `direction` and `layoutSettings` are sanitised.
 - **draw.io import.** Still left-to-right: draw.io has no diagram-level direction to read.

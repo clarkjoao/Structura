@@ -2,11 +2,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ReactFlow, ReactFlowProvider, type Edge, type Node } from "@xyflow/react";
-import type { Component, Connection, NodeLayout } from "@/features/diagram";
+import type { Component, Connection, Diagram, NodeLayout } from "@/features/diagram";
 import { createTestDiagramStore } from "@/features/diagram/store/test-utils";
-import { layout } from "../layout/layoutEngine";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
-import { buildGeneratedGraphInputs } from "@/features/llm/ir/apply-ir";
 import { REFERENCE_DIAGRAMS } from "../layout/reference-diagrams";
 import { GENERATED_DIAGRAMS } from "../layout/generated-diagrams";
 import { getNodeTypesSnapshot, resolveNodeDescriptor } from "../nodes/node-types";
@@ -17,10 +14,9 @@ import {
   buildEffectiveHandleOrder,
   buildPanelIds,
 } from "./connectionDerivations";
-import type { DiagramIR } from "@/features/llm/ir/ir.types";
 
 /**
- * The invariant: **an IR edge either reaches the DOM or it is not silent.**
+ * The invariant: **a diagram edge either reaches the DOM or it is not silent.**
  *
  * This is the durable half of the container-edge fix. Giving `PanelNode` handles
  * closes one case; this closes the class, because it fails for any future node
@@ -163,17 +159,14 @@ function byDepth(nodes: Node[]): Node[] {
 }
 
 /**
- * Seeds a diagram from an IR exactly as `applyIRToDiagram` does, then renders it
+ * Imports a fixture diagram, then renders it
  * through the real node registry and the real handle assignment.
  */
-async function renderIR(ir: DiagramIR): Promise<RenderedDiagram> {
+async function renderFixture(fixture: Diagram): Promise<RenderedDiagram> {
   const store = createTestDiagramStore();
-  const diagram = store.getState().addDiagram("invariant", "container");
-  store.getState().openDiagram(diagram.id);
-
-  const { boxes } = await layout(irToLayoutGraph(ir));
-  const inputs = buildGeneratedGraphInputs(ir, boxes, { x: 0, y: 0 });
-  store.getState().insertGeneratedGraph(inputs.nodes, inputs.edges);
+  const imported = store.getState().importDiagram(fixture);
+  store.getState().openDiagram(imported.id);
+  const diagram = imported;
 
   const seeded = store.getState().diagrams[diagram.id]!;
   const components = seeded.snapshot.components;
@@ -256,41 +249,41 @@ async function renderIR(ir: DiagramIR): Promise<RenderedDiagram> {
 
 const ALL_DIAGRAMS = [...GENERATED_DIAGRAMS, ...REFERENCE_DIAGRAMS];
 
-describe("every IR edge reaches the DOM", () => {
+describe("every fixture edge reaches the DOM", () => {
   it("renders any edges at all — without this the assertions below are vacuous", async () => {
-    const { domEdgeIds, handlesByNode } = await renderIR(GENERATED_DIAGRAMS[3].ir);
+    const { domEdgeIds, handlesByNode } = await renderFixture(GENERATED_DIAGRAMS[3].diagram);
 
     expect(domEdgeIds.size).toBeGreaterThan(0);
     expect([...handlesByNode.values()].reduce((sum, set) => sum + set.size, 0)).toBeGreaterThan(0);
   });
 
-  it.each(ALL_DIAGRAMS.map((d) => [d.name, d.ir] as const))(
-    "%s: every IR edge produces an edge element",
-    async (name, ir) => {
-      const { domEdgeIds, connections } = await renderIR(ir);
+  it.each(ALL_DIAGRAMS.map((d) => [d.name, d.diagram] as const))(
+    "%s: every fixture edge produces an edge element",
+    async (name, fixture) => {
+      const { domEdgeIds, connections } = await renderFixture(fixture);
 
-      // Counted against the IR, not against the connections, so a drop anywhere
+      // Counted against the fixture, not against the connections, so a drop anywhere
       // on the way — the store insert, the applicator, the edge builder — fails
       // here too. Checking the DOM against the store's own connections would let
       // an edge lost before the store go unnoticed on both sides of the equals.
       expect(
         connections.length,
-        `${name}: the store holds ${connections.length} connections for ${ir.edges.length} IR edges`,
-      ).toBe(ir.edges.length);
+        `${name}: the store holds ${connections.length} connections for ${Object.keys(fixture.snapshot.connections).length} fixture edges`,
+      ).toBe(Object.keys(fixture.snapshot.connections).length);
 
       const missing = connections.filter((connection) => !domEdgeIds.has(connection.id));
       expect(
         missing.length,
         `${name}: ${missing.length} of ${connections.length} connections never reached the DOM`,
       ).toBe(0);
-      expect(domEdgeIds.size).toBe(ir.edges.length);
+      expect(domEdgeIds.size).toBe(Object.keys(fixture.snapshot.connections).length);
     },
   );
 
-  it.each(ALL_DIAGRAMS.map((d) => [d.name, d.ir] as const))(
+  it.each(ALL_DIAGRAMS.map((d) => [d.name, d.diagram] as const))(
     "%s: every assigned handle exists on the node that renders it",
-    async (name, ir) => {
-      const { handlesByNode, connections, components, assignments } = await renderIR(ir);
+    async (name, fixture) => {
+      const { handlesByNode, connections, components, assignments } = await renderFixture(fixture);
 
       const connectionById = new Map(connections.map((c) => [c.id, c]));
       const violations: string[] = [];
@@ -322,7 +315,7 @@ describe("every IR edge reaches the DOM", () => {
    * Kept for the day a React Flow version starts warning here too.
    */
   it("logs no React Flow #008 while rendering a container-heavy diagram", async () => {
-    const { warnings } = await renderIR(GENERATED_DIAGRAMS[3].ir);
+    const { warnings } = await renderFixture(GENERATED_DIAGRAMS[3].diagram);
 
     const eightHundredAndEight = warnings.filter(
       (warning) => warning.includes("error#008") || warning.includes("Couldn't create edge"),

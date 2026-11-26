@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { validateIR } from "@/features/llm/ir/ir-validator";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { layoutElkGraph } from "./layoutEngine";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import { measureRenderedReadability } from "./renderedEdgePath";
 import { measureReadability, readLaidOutGraph } from "./layoutReadability";
-import { labelsOf } from "./reference-diagrams";
+import { edgesOf, fixtureGraph, fixtureIssues, labelsOf } from "./reference-diagrams";
 import { GENERATED_DIAGRAMS } from "./generated-diagrams";
-import type { DiagramIR } from "@/features/llm/ir/ir.types";
+import type { Diagram } from "@/features/diagram/model/diagram.types";
 
 /**
  * Six real model outputs at ~40 nodes, measured through the production path.
@@ -17,7 +15,7 @@ import type { DiagramIR } from "@/features/llm/ir/ir.types";
  * in the repo at the size where the layout actually struggles.
  *
  * **The numbers are exact, not upper bounds.** That is the point of freezing the
- * input: with the IR fixed, `irToLayoutGraph → layoutElkGraph →
+ * input: with the fixture fixed, `fixtureGraph → layoutElkGraph →
  * readElkHandleOrder → measureRenderedReadability` is deterministic, so any move
  * is a change in the layout and nothing else. An upper bound would let a layout
  * change that improves one diagram and wrecks another read as green.
@@ -40,7 +38,7 @@ import type { DiagramIR } from "@/features/llm/ir/ir.types";
 interface Expected {
   nodes: number;
   edges: number;
-  /** IR edges whose source or target is a node that has children. */
+  /** fixture edges whose source or target is a node that has children. */
   containerEdges: number;
   elkCrossings: number;
   renderedCrossings: number;
@@ -56,8 +54,8 @@ interface Expected {
  * slightly on five of the six fixtures after layout-path changes upstream; the
  * ELK-side totals did not move (97 / 273 reproduced exactly). Each value below
  * was re-measured in a clean run and matched across repeated runs. The frozen-
- * input property — that `irToLayoutGraph → layoutElkGraph → readElkHandleOrder
- * → measureRenderedReadability` is deterministic for fixed IR — still holds;
+ * input property — that `fixtureGraph → layoutElkGraph → readElkHandleOrder
+ * → measureRenderedReadability` is deterministic for a fixed fixture — still holds;
  * the baseline numbers were the snapshot of that deterministic output as of
  * the date above, and this file is the place that snapshot lives.
  *
@@ -70,7 +68,7 @@ interface Expected {
  * 116 crossings and 16 → 11 label overlaps over the reference and generated
  * diagrams, which is why it shipped.
  *
- * Refreshed 2026-10-21 again: `irToLayoutGraph` now sends edge labels to ELK,
+ * Refreshed 2026-10-21 again: `fixtureGraph` now sends edge labels to ELK,
  * as `fromDiagram` does for the canvas, so generation lays out the way the
  * auto-layout does. ELK-routed crossings 97 → 117 (B-run3 52 → 72), mid-X
  * step crossings 284 → 263, edges through a node 69 → 47.
@@ -92,15 +90,17 @@ interface Expected {
  * anchors an edge to whatever box it names, panel or leaf — which is exactly why
  * the geometry numbers do not move now that the canvas draws them too.
  */
+// Measured on `fromDiagram` input (component-type sort keys, panel top insets) since DC-070;
+// before that the fixtures went through the retired generation format.
 const EXPECTED: Record<string, Expected> = {
   "A-run1 C4 insurer": {
     nodes: 33,
     edges: 33,
     containerEdges: 0,
-    elkCrossings: 2,
+    elkCrossings: 1,
     renderedCrossings: 11,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 7,
+    renderedEdgeNodeOverlaps: 6,
     maxNestingDepth: 2,
   },
   "A-run2 C4 insurer": {
@@ -120,7 +120,7 @@ const EXPECTED: Record<string, Expected> = {
     elkCrossings: 5,
     renderedCrossings: 42,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 8,
+    renderedEdgeNodeOverlaps: 9,
     maxNestingDepth: 2,
   },
   "B-run1 AWS deployment": {
@@ -128,27 +128,27 @@ const EXPECTED: Record<string, Expected> = {
     edges: 27,
     containerEdges: 16,
     elkCrossings: 7,
-    renderedCrossings: 21,
+    renderedCrossings: 38,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 16,
+    renderedEdgeNodeOverlaps: 21,
     maxNestingDepth: 4,
   },
   "B-run2 AWS deployment": {
     nodes: 42,
     edges: 33,
     containerEdges: 0,
-    elkCrossings: 31,
-    renderedCrossings: 60,
+    elkCrossings: 14,
+    renderedCrossings: 35,
     elkEdgeNodeOverlaps: 0,
-    renderedEdgeNodeOverlaps: 11,
+    renderedEdgeNodeOverlaps: 16,
     maxNestingDepth: 3,
   },
   "B-run3 AWS deployment": {
     nodes: 33,
     edges: 37,
     containerEdges: 0,
-    elkCrossings: 63,
-    renderedCrossings: 108,
+    elkCrossings: 58,
+    renderedCrossings: 104,
     elkEdgeNodeOverlaps: 0,
     renderedEdgeNodeOverlaps: 3,
     maxNestingDepth: 4,
@@ -161,10 +161,12 @@ interface Measured extends Expected {
   layoutHeight: number;
 }
 
-async function measure(ir: DiagramIR): Promise<Measured> {
-  const graph = await layoutElkGraph(irToLayoutGraph(ir));
-  const labels = labelsOf(ir);
-  const rendered = measureRenderedReadability(graph, ir.edges, {
+async function measure(diagram: Diagram): Promise<Measured> {
+  const graph = await layoutElkGraph(fixtureGraph(diagram));
+  const labels = labelsOf(diagram);
+  const edges = edgesOf(diagram);
+  const components = Object.values(diagram.snapshot.components);
+  const rendered = measureRenderedReadability(graph, edges, {
     labels,
     handleOrder: readElkHandleOrder(graph),
   });
@@ -172,7 +174,7 @@ async function measure(ir: DiagramIR): Promise<Measured> {
   const { boxes, parentOf } = readLaidOutGraph(graph);
 
   const containers = new Set(
-    ir.nodes.map((node) => node.parentId).filter((id): id is string => id !== null),
+    components.map((node) => node.parentId).filter((id): id is string => id !== null),
   );
 
   let childrenOutsideParent = 0;
@@ -199,9 +201,9 @@ async function measure(ir: DiagramIR): Promise<Measured> {
   }
 
   return {
-    nodes: ir.nodes.length,
-    edges: ir.edges.length,
-    containerEdges: ir.edges.filter(
+    nodes: components.length,
+    edges: edges.length,
+    containerEdges: edges.filter(
       (edge) => containers.has(edge.sourceId) || containers.has(edge.targetId),
     ).length,
     elkCrossings: elk.edgeCrossings,
@@ -216,10 +218,9 @@ async function measure(ir: DiagramIR): Promise<Measured> {
 }
 
 describe("frozen generated diagrams", () => {
-  it("are all schema-valid IR", () => {
-    for (const { name, ir } of GENERATED_DIAGRAMS) {
-      const result = validateIR(ir);
-      const issues = result.ok ? [] : result.issues;
+  it("are all structurally sound", () => {
+    for (const { name, diagram } of GENERATED_DIAGRAMS) {
+      const issues = fixtureIssues(diagram);
       expect(issues, `${name}: ${JSON.stringify(issues)}`).toHaveLength(0);
     }
   });
@@ -233,10 +234,10 @@ describe("frozen generated diagrams", () => {
 });
 
 describe("frozen generated diagram measurements", () => {
-  it.each(GENERATED_DIAGRAMS.map((d) => [d.name, d.ir] as const))(
+  it.each(GENERATED_DIAGRAMS.map((d) => [d.name, d.diagram] as const))(
     "%s measures exactly what it measured when frozen",
-    async (name, ir) => {
-      const measured = await measure(ir);
+    async (name, diagram) => {
+      const measured = await measure(diagram);
       const {
         childrenOutsideParent: _c,
         layoutWidth: _w,
@@ -250,8 +251,8 @@ describe("frozen generated diagram measurements", () => {
 
   it("keeps every child inside its parent, four levels deep included", async () => {
     const rows: string[] = [];
-    for (const { name, ir } of GENERATED_DIAGRAMS) {
-      const measured = await measure(ir);
+    for (const { name, diagram } of GENERATED_DIAGRAMS) {
+      const measured = await measure(diagram);
       rows.push(
         `${name.padEnd(24)} depth ${measured.maxNestingDepth}  outside ${measured.childrenOutsideParent}`,
       );
@@ -273,8 +274,8 @@ describe("frozen generated diagram measurements", () => {
     let elkTotal = 0;
     let renderedTotal = 0;
 
-    for (const { name, ir } of GENERATED_DIAGRAMS) {
-      const measured = await measure(ir);
+    for (const { name, diagram } of GENERATED_DIAGRAMS) {
+      const measured = await measure(diagram);
       elkTotal += measured.elkCrossings;
       renderedTotal += measured.renderedCrossings;
       rows.push(
@@ -291,7 +292,7 @@ describe("frozen generated diagram measurements", () => {
         `TOTAL elk ${elkTotal} -> rendered ${renderedTotal}   gap ${renderedTotal - elkTotal}\n`,
     );
 
-    expect(elkTotal).toBe(108);
-    expect(renderedTotal).toBe(245);
+    expect(elkTotal).toBe(85);
+    expect(renderedTotal).toBe(233);
   });
 });

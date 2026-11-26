@@ -167,5 +167,6 @@ When code and docs disagree, the code wins — fix the doc in the same PR.
   chat) imports leaf modules directly instead of the barrels.
 - The LLM feature is its own lazy chunk. Never snapshot `allElements()` at module
   scope inside it — the registry is empty there at chunk load, which shipped a
-  production bug that every unit test passed. Read the static catalog instead
-  (`llm/ir/ir.types.ts`), or call the registry at use time.
+  production bug that every unit test passed. Call the registry at use time
+  (inside the function, never in a top-level initialiser); `registry-snapshot.guard.test.ts`
+  locks it.

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { useDiagramStore } from "@/features/diagram";
 import { ELK_OPTIONS_INTERACTIVE, elkSpacingFor, layout, layoutWithSettings } from "./layoutEngine";
 import { autoLayoutActiveDiagram, planDiagramAutoLayout } from "./autoLayoutDiagram";
-import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { REFERENCE_DIAGRAMS, fixtureGraph } from "./reference-diagrams";
 
 /**
  * A diagram's density scales the tuned spacing; it never replaces it. Normal is
@@ -53,7 +52,7 @@ describe("elkSpacingFor", () => {
 
 describe("layoutWithSettings", () => {
   const reference = REFERENCE_DIAGRAMS[0]!;
-  const graph = irToLayoutGraph(reference.ir);
+  const graph = fixtureGraph(reference.diagram);
 
   it("is the tuned layout when the diagram has no settings", async () => {
     const plain = await layout(graph);

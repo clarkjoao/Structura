@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import { layoutElkGraph } from "./layoutEngine";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { totalReadability } from "./layoutReadability";
 import { measureRenderedReadability } from "./renderedEdgePath";
-import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { labelsOf, REFERENCE_DIAGRAMS, edgesOf, fixtureGraph } from "./reference-diagrams";
 
 /**
  * Fatia 5's experiment: the rendered crossings live at the edge ends, where
@@ -18,16 +17,16 @@ import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
  *   npx vitest run elkHandleOrder.experiment --reporter=verbose --silent=false
  */
 
-async function measureBothModes(ir: (typeof REFERENCE_DIAGRAMS)[number]["ir"]) {
-  const graph = await layoutElkGraph(irToLayoutGraph(ir));
-  const labels = labelsOf(ir);
+async function measureBothModes(diagram: (typeof REFERENCE_DIAGRAMS)[number]["diagram"]) {
+  const graph = await layoutElkGraph(fixtureGraph(diagram));
+  const labels = labelsOf(diagram);
   const handleOrder = readElkHandleOrder(graph);
 
   return {
     // Round-robin handles: what shipped before Fatia 5.
-    roundRobin: measureRenderedReadability(graph, ir.edges, { labels }),
+    roundRobin: measureRenderedReadability(graph, edgesOf(diagram), { labels }),
     // ELK order: the current default.
-    order: measureRenderedReadability(graph, ir.edges, { labels, handleOrder }),
+    order: measureRenderedReadability(graph, edgesOf(diagram), { labels, handleOrder }),
   };
 }
 
@@ -45,8 +44,8 @@ describe("handle order experiment", () => {
       order: [],
     };
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const measured = await measureBothModes(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const measured = await measureBothModes(diagram);
       for (const mode of MODES) totals[mode].push(measured[mode]);
 
       rows.push(
@@ -79,10 +78,10 @@ describe("handle order experiment", () => {
   });
 
   it("never loses an edge in any mode", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const measured = await measureBothModes(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const measured = await measureBothModes(diagram);
       for (const mode of MODES) {
-        expect(measured[mode].edgeCount, `${name} ${mode}`).toBe(ir.edges.length);
+        expect(measured[mode].edgeCount, `${name} ${mode}`).toBe(edgesOf(diagram).length);
       }
     }
   });

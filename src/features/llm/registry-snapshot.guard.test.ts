@@ -14,7 +14,7 @@ import {
  * History: F5c read `allElements()` at module scope for the IR allowlist; the LLM
  * feature is its own lazy chunk, the registry was empty at chunk load, and every
  * `aws-compute` IR was rejected while vitest stayed green. Reverted in 42ec2267
- * (introduced with 49416c0b, documented in llm/ir/ir.types.ts); AGENTS.md "Known
+ * (introduced with 49416c0b; the IR it guarded was removed in DC-070); AGENTS.md "Known
  * sharp edges". Related: ac72766c (rebuild catalog indexes when the second locale
  * bundle loads) and 49416c0b (same-turn catalog gate dropping valid nodes).
  */

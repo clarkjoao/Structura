@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { transposeGraph } from "./axis";
 import { layoutElkGraph } from "./layoutEngine";
 import { measureReadability } from "./layoutReadability";
-import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { labelsOf, REFERENCE_DIAGRAMS, fixtureGraph } from "./reference-diagrams";
 
 /**
  * Top-to-bottom readability, measured. Measurement only.
@@ -19,9 +18,9 @@ import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 describe("reading direction readability", () => {
   it("measures left-to-right against top-to-bottom", async () => {
     const rows: string[] = [];
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = irToLayoutGraph(ir);
-      const labels = labelsOf(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = fixtureGraph(diagram);
+      const labels = labelsOf(diagram);
       const lr = measureReadability(await layoutElkGraph(graph), { labels });
       const tb = measureReadability(await layoutElkGraph(transposeGraph(graph)), { labels });
       rows.push(

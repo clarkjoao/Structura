@@ -15,10 +15,10 @@ import type { ElkNode } from "elkjs";
  *
  * With `corners` (`cornersByEdgeId`) it is the path every layout consumer
  * leaves on screen today: ELK's corridor snapped onto the handles
- * (`handleAlignedRoutes`), which `applyIRToDiagram` and the auto-layout both
+ * (`handleAlignedRoutes`), which the auto-layout and the import paths both
  * write. Without them it is the mid-X step `defaultOrthogonalCorners` draws for
- * a connection with no stored path — what generated diagrams drew before
- * `apply-ir.ts` kept ELK's routes, and what the frozen baselines still measure.
+ * a connection with no stored path — what the generated diagrams drew before
+ * ELK's routes were kept, and what the frozen baselines still measure.
  */
 
 /**

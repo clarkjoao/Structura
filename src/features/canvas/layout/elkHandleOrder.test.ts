@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { ElkNode } from "elkjs";
 import { readElkHandleOrder } from "./elkHandleOrder";
 import { layoutElkGraph } from "./layoutEngine";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
-import type { DiagramIR } from "@/features/llm/ir/ir.types";
+import { DEFAULT_NODE_H, DEFAULT_NODE_W } from "@/features/diagram/model/layout.constants";
+import type { LayoutGraph } from "./contract";
 
 function edge(id: string, source: string, target: string, start: number[], end: number[]) {
   return {
@@ -99,26 +99,23 @@ describe("readElkHandleOrder — against a real ELK run", () => {
    * vertical order of the targets; this asserts that ordering survives the read.
    */
   it("recovers an order that matches the vertical order of the targets", async () => {
-    const ir: DiagramIR = {
-      type: "c4-context",
+    const leaf = (id: string, sortKey: string): LayoutGraph["nodes"][number] => ({
+      id,
+      parentId: null,
+      sortKey,
+      width: DEFAULT_NODE_W,
+      height: DEFAULT_NODE_H,
+    });
+    const targets = ["a", "b", "c", "d", "e"];
+    const input: LayoutGraph = {
       nodes: [
-        { id: "hub", semanticType: "container", name: "Hub", parentId: null, tier: "compute" },
-        ...["a", "b", "c", "d", "e"].map((id) => ({
-          id,
-          semanticType: "external-system" as const,
-          name: id.toUpperCase(),
-          parentId: null,
-          tier: "integration" as const,
-        })),
+        leaf("hub", "container\u0000Hub"),
+        ...targets.map((id) => leaf(id, `system\u0000${id.toUpperCase()}`)),
       ],
-      edges: ["a", "b", "c", "d", "e"].map((id) => ({
-        id: `to-${id}`,
-        sourceId: "hub",
-        targetId: id,
-      })),
+      edges: targets.map((id) => ({ id: `to-${id}`, sourceId: "hub", targetId: id })),
     };
 
-    const graph = await layoutElkGraph(irToLayoutGraph(ir));
+    const graph = await layoutElkGraph(input);
     const order = readElkHandleOrder(graph).outgoing.get("hub");
     expect(order).toHaveLength(5);
 

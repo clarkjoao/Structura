@@ -84,7 +84,7 @@ Turning the flag on is the release decision itself — see
 [ADR-0010](../adr/0010-element-registry.md) for why the gate is at the build
 rather than a runtime fallback to legacy writes.
 
-## LLM / IR
+## LLM
 
 - Palette and tools: hierarchical `list_element_families` + `search_elements`.
 - Same-turn patches: catalog reads run before `ADD_NODE`, so a model that emits
@@ -96,13 +96,11 @@ rather than a runtime fallback to legacy writes.
   patch's own search results; that dropped valid nodes — `search_elements("redis")`
   plus `add_node("aws-compute", "lambda")` lost the Lambda — so it was retired.
   See the rationale block in `llm/add-node-validation.ts`.
-- Diagram IR AWS category vocabulary: `getIrSemanticTypes()` /
-  `irAwsCategoryIdsFromCatalog()`, reading the static `AWS_CATEGORIES` —
-  **never** `allElements()`. Deriving it from the registry was tried (F5c) and
-  reverted after it shipped broken; see
-  [ADR-0010](../adr/0010-element-registry.md). Catalog↔registry parity is locked
-  by `ir.types.test.ts`; the chunk boundary itself is only reachable end to end,
-  by `cypress/e2e/ir-generation-smoke.cy.ts`.
+- The LLM chunk must not snapshot the registry at module scope (F5c shipped that
+  broken: the registry is empty at chunk load). Readers resolve it at call time;
+  `llm/registry-snapshot.guard.test.ts` locks it. The generation IR that once
+  carried a static AWS vocabulary was removed with `/generate` (DC-070); see
+  [ADR-0010](../adr/0010-element-registry.md).
 
 ## Element packs
 
@@ -142,7 +140,7 @@ them; plugins hand the same format to `api.registerElementPack` (API 1.17).
 | Strings | Written into i18n at `elements.<packId>.*`, `elementCatalog.groups.<packId>`, `elements.families.<packId>.label` (`pack.i18n.ts`, re-applied when a lazy locale loads) — not in `en.json` / `pt-BR.json` |
 | Accents | Injected `<style data-element-pack>`: the token (light + `.dark`) and its `border-l-*` / `text-*` classes — not in `index.css` / Tailwind |
 | Behaviour | A `PackAdapter` (`families/<id>/<id>.family.ts`) for what is not data: icon source (npm icon sets), native export (AWS mxgraph), the legacy id guard. Packs without one use pack SVGs and the image / passthrough export |
-| Catalog views | `AWS_CATEGORIES`, `GCP_CATEGORIES`, … are built from the JSON (`catalog-view.ts`, a leaf) so the LLM IR and draw.io import keep reading static data |
+| Catalog views | `AWS_CATEGORIES`, `GCP_CATEGORIES`, … are built from the JSON (`catalog-view.ts`, a leaf) so draw.io import keeps reading static data |
 | Shapes | `ShapeNode`: outline stretched (`preserveAspectRatio="none"`, `non-scaling-stroke`), name inside, one input/output on the reading direction's sides; exported as an image |
 
 ## Adding a family or type

@@ -43,4 +43,3 @@ export { buildContextualSuggestions } from "./suggestions";
 //   import { ... } from "@/features/llm/prompt-builder";
 //   import { ... } from "@/features/llm/patch-parser";
 //   import { ... } from "@/features/llm/tools";
-//   import { ... } from "@/features/llm/ir";

@@ -48,7 +48,10 @@ registries. This ADR records the domain-level registry that closes that gap for
   rewrite for corrupted types.
 - (+) New cloud families can call `registerCloudFamily` without widening closed
   unions for every category id (open family ids after the contract-close work).
-- (−) **The IR does not read the element registry, by decision.** F5c derived
+- (−) **The IR does not read the element registry, by decision.** (Historical: the IR and
+  its `ir.types.test.ts` / `ir-generation-smoke` were removed with `/generate` in DC-070; the
+  rule that the lazy LLM chunk resolves the registry at call time stands, locked by
+  `llm/registry-snapshot.guard.test.ts`.) F5c derived
   the AWS category semanticTypes from `allElements()`; that shipped broken. The
   LLM feature is its own Vite chunk, the registry snapshot taken at chunk load
   was empty there, and the allowlist came out boundaries-only — so production

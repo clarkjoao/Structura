@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { interiorWaypoints } from "./applyLayout";
 import { layout, layoutElkGraph } from "./layoutEngine";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { measureReadability, totalReadability } from "./layoutReadability";
 import { measureRenderedReadability } from "./renderedEdgePath";
-import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { labelsOf, REFERENCE_DIAGRAMS, edgesOf, fixtureGraph } from "./reference-diagrams";
 
 /**
  * Fatia 4's experiment: does feeding ELK's bend points to the canvas produce a
@@ -19,13 +18,13 @@ import { labelsOf, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
 const NO_ORIGIN = { x: 0, y: 0 };
 
-async function measureBothModes(ir: (typeof REFERENCE_DIAGRAMS)[number]["ir"]) {
-  const graph = await layoutElkGraph(irToLayoutGraph(ir));
-  const { edgeRoutes } = await layout(irToLayoutGraph(ir));
-  const labels = labelsOf(ir);
+async function measureBothModes(diagram: (typeof REFERENCE_DIAGRAMS)[number]["diagram"]) {
+  const graph = await layoutElkGraph(fixtureGraph(diagram));
+  const { edgeRoutes } = await layout(fixtureGraph(diagram));
+  const labels = labelsOf(diagram);
 
   const cornersByEdgeId = new Map<string, Array<{ x: number; y: number }>>();
-  for (const edge of ir.edges) {
+  for (const edge of edgesOf(diagram)) {
     const route = edgeRoutes.get(edge.id);
     if (!route) continue;
     const waypoints = interiorWaypoints(route, NO_ORIGIN);
@@ -33,8 +32,8 @@ async function measureBothModes(ir: (typeof REFERENCE_DIAGRAMS)[number]["ir"]) {
   }
 
   return {
-    off: measureRenderedReadability(graph, ir.edges, { labels }),
-    on: measureRenderedReadability(graph, ir.edges, { labels, cornersByEdgeId }),
+    off: measureRenderedReadability(graph, edgesOf(diagram), { labels }),
+    on: measureRenderedReadability(graph, edgesOf(diagram), { labels, cornersByEdgeId }),
     elk: measureReadability(graph, { labels }),
     withWaypoints: cornersByEdgeId.size,
   };
@@ -49,8 +48,8 @@ describe("ELK waypoints experiment", () => {
     const offReports = [];
     const onReports = [];
 
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const { off, on, withWaypoints } = await measureBothModes(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const { off, on, withWaypoints } = await measureBothModes(diagram);
       offReports.push(off);
       onReports.push(on);
 
@@ -59,7 +58,7 @@ describe("ELK waypoints experiment", () => {
           `${String(off.edgeCrossings).padStart(9)} /${String(on.edgeCrossings).padStart(3)}` +
           `${String(off.edgeNodeOverlaps).padStart(16)} /${String(on.edgeNodeOverlaps).padStart(3)}` +
           `${String(off.labelOverlaps).padStart(13)} /${String(on.labelOverlaps).padStart(3)}` +
-          `${String(withWaypoints).padStart(14)}/${ir.edges.length}`,
+          `${String(withWaypoints).padStart(14)}/${edgesOf(diagram).length}`,
       );
     }
 
@@ -79,10 +78,10 @@ describe("ELK waypoints experiment", () => {
   });
 
   it("never loses an edge in either mode", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const { off, on } = await measureBothModes(ir);
-      expect(off.edgeCount, `${name} off`).toBe(ir.edges.length);
-      expect(on.edgeCount, `${name} on`).toBe(ir.edges.length);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const { off, on } = await measureBothModes(diagram);
+      expect(off.edgeCount, `${name} off`).toBe(edgesOf(diagram).length);
+      expect(on.edgeCount, `${name} on`).toBe(edgesOf(diagram).length);
     }
   });
 });

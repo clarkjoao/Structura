@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Component, Connection, NodeLayout } from "@/features/diagram";
-import { irToLayoutGraph } from "@/features/llm/ir/ir-to-layout-graph";
 import { HANDLE_PITCH } from "@/features/diagram/model/layout.constants";
 import { layout } from "./layoutEngine";
 import { fromDiagram, resizableIds } from "./fromDiagram";
 import type { LayoutGraph, LayoutResult } from "./contract";
 import { toAppliedLayouts } from "./applyLayout";
 import { handPlacedDiagram, handPlacedParents } from "./hand-placed-diagram";
-import { REFERENCE_DIAGRAMS } from "./reference-diagrams";
+import { fixtureGraph, REFERENCE_DIAGRAMS } from "./reference-diagrams";
 
 /**
  * The behaviour this project asks of its layout, stated as numbers rather than
@@ -78,43 +77,52 @@ function handPlacedGraph(): LayoutGraph {
  * A reference diagram as the canvas holds it: components with a stored panel
  * size. This is the shape the overflow defect lived in — a panel pinned at
  * 600x400 while its children were placed as though it were three times wider —
- * so the containment guard has to cover this path, not only the IR one.
+ * so the containment guard has to cover this path, not only the fixture sizes.
  */
-function referenceAsDiagram(ir: (typeof REFERENCE_DIAGRAMS)[number]["ir"]): {
+function referenceAsDiagram(fixture: (typeof REFERENCE_DIAGRAMS)[number]["diagram"]): {
   components: Record<string, Component>;
   connections: Connection[];
   nodeLayouts: Record<string, NodeLayout>;
 } {
+  const nodes = Object.values(fixture.snapshot.components);
   const parents = new Set(
-    ir.nodes.map((node) => node.parentId).filter((id): id is string => id !== null),
+    nodes
+      .map((node) => node.parentId)
+      .filter((id): id is string => id !== null && id !== undefined),
   );
 
   const components: Record<string, Component> = {};
   const nodeLayouts: Record<string, NodeLayout> = {};
-  for (const node of ir.nodes) {
+  for (const node of nodes) {
     const isPanel = parents.has(node.id);
-    components[node.id] = component(node.id, node.parentId, isPanel ? "panel" : "container");
+    components[node.id] = component(
+      node.id,
+      node.parentId ?? null,
+      isPanel ? "panel" : "container",
+    );
     nodeLayouts[node.id] = isPanel
       ? { elementId: node.id, x: 0, y: 0, width: 600, height: 400 }
       : { elementId: node.id, x: 0, y: 0, width: 180, height: 80 };
   }
 
-  const connections = ir.edges.map((edge) => connection(edge.id, edge.sourceId, edge.targetId));
+  const connections = Object.values(fixture.snapshot.connections).map((edge) =>
+    connection(edge.id, edge.sourceId, edge.targetId),
+  );
   return { components, connections, nodeLayouts };
 }
 
 describe("layout — a child never leaves its parent", () => {
   it("keeps every child inside its parent box, on all four reference diagrams", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = irToLayoutGraph(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = fixtureGraph(diagram);
       const escaped = childrenOutsideParent(graph, await layout(graph));
       expect(escaped, `${name}: ${escaped.join(", ")} outside their parent`).toEqual([]);
     }
   });
 
   it("keeps every child inside its parent box on the diagram path, whatever the stored panel size", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const { components, connections, nodeLayouts } = referenceAsDiagram(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const { components, connections, nodeLayouts } = referenceAsDiagram(diagram);
       const graph = fromDiagram(components, connections, nodeLayouts);
       const escaped = childrenOutsideParent(graph, await layout(graph));
       expect(escaped, `${name}: ${escaped.join(", ")} outside their parent`).toEqual([]);
@@ -250,8 +258,8 @@ describe("layout — input order is not information", () => {
   }
 
   it("produces identical geometry however the reference diagrams are ordered", async () => {
-    for (const { name, ir } of REFERENCE_DIAGRAMS) {
-      const graph = irToLayoutGraph(ir);
+    for (const { name, diagram } of REFERENCE_DIAGRAMS) {
+      const graph = fixtureGraph(diagram);
       const expected = await layout(graph);
 
       for (const [index, permuted] of permutations(graph).entries()) {
